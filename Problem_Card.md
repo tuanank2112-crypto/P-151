@@ -9,16 +9,22 @@ Thời điểm / bối cảnh: : Một cụm/tòa thuộc Ocean Park 1 đã vậ
 
 Current workflow: Cư dân gửi câu hỏi qua hotline/Zalo → BQL xác định intent → yêu cầu bổ sung thông tin nếu cần → tra cứu quy định/tài liệu hiện hành → soạn câu trả lời → nếu không chắc chắn thì chuyển bộ phận liên quan → trả lời cư dân.
 
-Bottleneck: Hai bước tốn nguồn lực nhất cần xác minh là xác định chính xác intent của câu hỏi và tìm đúng phiên bản thông tin hiện hành.
+Bottleneck: 
+B1: Xác định đúng intent/context của câu hỏi.
+B2: Tìm đúng thông tin và đúng phiên bản tài liệu đang có hiệu lực.
 
 Impact: Với hypothesis 48–105 FAQ hành chính/ngày và 3–7 phút xử lý thủ công/case, workload có thể tương đương khoảng 2,4–12,25 giờ công/ngày/cụm. Đây là planning estimate,.
 
-Success metric:
-Chưa chốt. Cần baseline cho handling time, số repetitive inquiries/day, resident waiting time và incorrect/inconsistent answer rate, sau đó đặt target định lượng.
+MVP Success Criteria:
+Quality: ≥85% Correct & Grounded Answer Rate.
+Efficiency: ≥50% reduction in median handling time.
+Safety: ≥90% Safe Clarification/Escalation Rate.
 
 Risk / Failure impacts: Thông tin sai/lỗi thời có thể khiến cư dân hành động sai, khiếu nại và mất niềm tin; failure còn có thể tạo thêm contact volume cho BQL. Mức risk khác nhau theo từng loại thông tin.
 
 AI Hypothesis: AI có thể hỗ trợ hiểu intent + tìm đúng tri thức + draft/trả lời nhóm FAQ lặp lại, từ đó giảm workload
+
+Boundary: AI không tự xử lý tranh chấp, khiếu nại phức tạp, quyết định tài chính, thông tin cá nhân/căn hộ hoặc câu hỏi không có nguồn chính thức đáng tin cậy.
 ```
 **Scope MVP**: Các câu hỏi hành chính của cư dân tại một cụm/tòa thuộc Ocean Park 1 trong giai đoạn vận hành ổn định, qua hai kênh hotline và Zalo, quan sát trong 30 ngày.
 
