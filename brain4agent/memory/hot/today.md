@@ -1,0 +1,46 @@
+# 📅 Nhật Ký Làm Việc Ngày 2026-09-19 (Session Memory Log)
+
+> Cập nhật lúc: `2026-09-19T18:47:14.352Z` | Phiên bản: `v1.0.0`
+
+---
+
+## 🏁 Phiên 2026-09-19 — Khởi tạo cấu trúc dự án
+
+## 🎯 Thành Tựu Khởi Tạo:
+- Khởi tạo thành công cấu trúc dự án và bộ nhớ Đa Tầng brain4agent V5.2.
+
+---
+
+## 🏁 Phiên 2026-09-20 — Thiết kế SPEC hồ sơ Resident Agent v1.0 + đồng bộ não
+
+### 🎯 Đã làm:
+- Mở hồ sơ kế hoạch `planning/01_2026-09-20_resident-agent-v1/`. Nạp 6 đặc tả
+  v0.2 kế thừa từ `docs/` + 3 ảnh tham chiếu `docs/assets/`.
+- Chốt 12 quyết định kiến trúc Đ01–Đ12 trong `plan.md` §2 (rubric thay vì v0.2,
+  mô phỏng toàn phần, cổng P05 sau P01–P04, khuyết tật cài sẵn trong Knowledge
+  Pack, đảo nghĩa `pii_or_account_specific`, confidence 4 tín hiệu, agent verify
+  vừa là chốt chặn vừa là thước đo, bất biến "thao tác được ≠ được giải thích
+  luật", chính sách đọc-trước-khi-ghi, stack Next.js/Vercel/Neon+pgvector/Claude,
+  giữ 10 reason code canonical + thêm nhóm hành động).
+- Architect viết đủ **9 file SPEC** trong `specs/` (3711 dòng). Super Orchestrator
+  tự đo lại và **DUYỆT** — số đo chép trong
+  `planning/01_2026-09-20_resident-agent-v1/reports/R01_specs-design.md`.
+- Worker (phiên này): `git init` repo (trước đó chưa là git repository, tạo
+  `.gitignore` tối thiểu, branch `main`); viết `reports/R01_specs-design.md`;
+  tick 9 dòng bảng Mục 5 của `plan.md` thành `✅`; đồng bộ 8 file não theo Ma
+  Trận 6 Điểm + 2 file mở rộng (project-intro, -data-architecture) do dự án
+  thêm thư mục top-level mới (`planning/`, đổi nghĩa `docs/`) và đưa vào
+  stack mới (Next.js/TypeScript/Postgres).
+
+### 🎯 Quyết định của phiên này (worker, trong phạm vi được giao):
+- Không tự quyết bất cứ điều gì ngoài phạm vi cấp — mọi quyết định kiến trúc
+  đã chốt sẵn trong `plan.md` §2, worker chỉ phản ánh vào não.
+- Ghi nhận 1 câu hỏi mở: không tìm thấy căn cứ tường minh cho việc "Metric 2
+  Efficiency" từng tồn tại rồi bị rút — không bịa, để trong `roadmap.md` Idea
+  Vault kèm ghi chú "chưa đo được".
+
+### ⏳ Đang chờ:
+- Toàn bộ P00–P06 chưa bắt đầu thi công. Bước kế tiếp theo `plan.md` §3: P00
+  (Knowledge Pack mô phỏng + Golden Dataset, tầng 🔴, D1–D2).
+- Repo hiện chỉ có 1 commit local, chưa push, chưa có remote (đúng theo phạm vi
+  được cấp — CẤM push/tạo remote ở phiên này).
