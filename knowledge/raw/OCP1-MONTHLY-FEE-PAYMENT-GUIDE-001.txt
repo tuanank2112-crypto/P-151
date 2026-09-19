@@ -1,0 +1,55 @@
+SOURCE CAPTURE
+
+Document ID: OCP1-MONTHLY-FEE-PAYMENT-GUIDE-001
+Source title: Hướng dẫn thanh toán các khoản phí hàng tháng
+Property scope: Căn hộ và Nhà ở tại Khu Đô thị Vinhomes Ocean Park
+Source owner: Ban Quản lý Khu Đô thị Vinhomes Ocean Park
+Source type: Official payment guidance transcribed by resident
+Original source channel: Ứng dụng Vinhomes — kênh nội quy chính thức
+Issued at: 27/02/2026
+Effective status: Phiên bản mới nhất và đang có hiệu lực
+Source version: Không có số phiên bản
+Notice number: Không được cung cấp trong nội dung nguồn
+Superseded by: Hiện không có văn bản mới thay thế
+Approved for MVP use: Có
+Hotline and email confirmed current: Có; không có địa chỉ email hoặc số hotline cụ thể trong nội dung nguồn
+Contains resident PII: Không
+Contains public business bank account: Có
+Source capture completeness: Hoàn chỉnh theo nội dung được cung cấp
+Captured at: 19/09/2026
+
+ORIGINAL CONTENT
+
+# Hướng dẫn thanh toán các khoản phí hàng tháng
+
+Căn cứ theo Nội Quy Khu Đô thị đính kèm Hợp Đồng Mua Bán, đồng thời nhằm hỗ trợ Quý Cư dân nắm thông tin và thuận tiện trong việc thanh toán các khoản phí hàng tháng (phí quản lý/phí gửi xe/các khoản phí phát sinh khác…) tại Khu Đô thị, Ban Quản lý xin gửi hướng dẫn hình thức thanh toán, hình thức thông báo phí hàng tháng như sau:
+
+## 1. Các hình thức thanh toán
+
+- **Thanh toán qua ứng dụng:** Thanh toán nhanh chóng qua tính năng “Hóa đơn” trên ứng dụng **Vinhomes Resident** – trợ lý thông minh dành riêng cho Quý Cư dân.
+- **Thanh toán bằng hình thức chuyển khoản ngân hàng:**
+  - **Đơn vị thụ hưởng:** Công ty Cổ phần Vinhomes
+  - **Số tài khoản:** 19010000888784
+  - **Tại:** Ngân hàng Thương mại Cổ phần Kỹ thương Việt Nam – CN Hội sở chính, Hà Nội (Techcombank)
+  - **Nội dung/diễn giải thanh toán:** `Mã căn hộ/biệt thự thanh toán phí dịch vụ kỳ tháng…/năm/….`
+
+## 2. Cách thức gửi thông báo phí và hạn thanh toán
+
+| Số lần thông báo                                                                                 | Hình thức gửi                                               | Thời gian thông báo    | Thời hạn thanh toán        |
+| :----------------------------------------------------------------------------------------------- | :---------------------------------------------------------- | :--------------------- | :------------------------- |
+| **Lần 1:** Thông báo phí sử dụng dịch vụ (Debit note)                                            | - Gửi email<br>- Gửi tin nhắn Zalo OA                       | Ngày mùng 5 hàng tháng | Đến hết ngày 13 hàng tháng |
+| **Lần 2:** Nhắc lại thông tin Phí dịch vụ *(đối với những căn chưa thanh toán)*                  | - Gửi tin nhắn SMS<br>- Gửi tin nhắn Zalo OA                | Ngày 14 hàng tháng     | Đến hết ngày 21 hàng tháng |
+| **Lần 3:** Thông báo yêu cầu thanh toán các khoản phí chưa thanh toán và thông báo ngừng dịch vụ | - Gửi email<br>- Gửi tin nhắn SMS<br>- Gửi tin nhắn Zalo OA | Ngày 22 hàng tháng     | Đến hết ngày 29 hàng tháng |
+
+## 3. Lưu ý quan trọng
+
+1. Email và số điện thoại nhận thông báo là thông tin Chủ Sở hữu đã đăng ký với Chủ Đầu tư/Ban Quản lý.
+2. Thời gian thông báo và thời hạn thanh toán có thể thay đổi vào các ngày Lễ/Tết, trường hợp có thay đổi Ban Quản lý sẽ gửi thông báo trước để Quý Cư dân có thông tin.
+3. Sau thời hạn đã nêu tại Thông báo, Ban Quản lý rất tiếc phải áp dụng chế tài theo quy định đối với Căn hộ/Nhà ở chưa thực hiện nghĩa vụ thanh toán đúng kỳ hạn.
+4. Để đảm bảo hệ thống có thể cập nhật kịp thời, chính xác khoản thanh toán, trường hợp chuyển khoản qua ngân hàng, Quý Cư dân vui lòng ghi rõ địa chỉ mã căn hộ/biệt thự trong diễn giải thanh toán.
+   - Ví dụ: S2.01xxxx (ghi đầy đủ số tầng, mã căn) thanh toán phí dịch vụ kỳ tháng…/năm…
+5. Trường hợp đã thực hiện thanh toán nhưng vẫn nhận được thông báo phí/nhắc thanh toán, vui lòng liên hệ Ban Quản lý để được kiểm tra, hỗ trợ kịp thời.
+
+---
+
+Ban Quản lý trân trọng thông báo, kính đề nghị Quý Cư dân lưu ý kiểm tra điện thoại, email trong thời gian trên và thực hiện thanh toán đúng hạn các khoản phí dịch vụ.

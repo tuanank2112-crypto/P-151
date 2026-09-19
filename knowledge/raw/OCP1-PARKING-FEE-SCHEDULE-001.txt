@@ -1,0 +1,78 @@
+SOURCE CAPTURE
+
+Document ID: OCP1-PARKING-FEE-SCHEDULE-001
+Source title: Phí trông giữ xe tại Khu Đô thị Vinhomes Ocean Park
+Property scope: Hầm gửi xe các Tòa nhà và các Nhà xe nổi được liệt kê tại Khu Đô thị Vinhomes Ocean Park
+Source owner: Ban Quản lý Khu Đô thị Vinhomes Ocean Park
+Source type: Official fee schedule transcribed by resident
+Original source channel: Ứng dụng Vinhomes — kênh nội quy chính thức
+Issued at: 22/07/2026
+Effective status: Phiên bản mới nhất và đang có hiệu lực
+Source version: Không có số phiên bản
+Notice number: Không được cung cấp trong nội dung nguồn
+Superseded by: Hiện không có văn bản mới thay thế
+Approved for MVP use: Có
+Hotline and email confirmed current: Có; không xuất hiện trong nội dung nguồn
+Contains resident PII: Không
+Source capture completeness: Hoàn chỉnh theo nội dung được cung cấp
+Captured at: 19/09/2026
+
+ORIGINAL CONTENT
+
+# Phí trông giữ xe tại Khu Đô thị Vinhomes Ocean Park
+
+**Biểu phí trông giữ xe tại Khu Đô thị Vinhomes Ocean Park**
+*(Đơn vị tính: VNĐ, đơn giá đã bao gồm VAT)*
+
+---
+
+## I. TẠI HẦM GỬI XE CÁC TÒA NHÀ
+
+### 1. Giá trông giữ xe theo tháng dành cho cư dân
+
+| Xe ô tô | Xe máy/xe máy điện | Xe đạp/xe đạp điện | Phí sạc xe máy/xe đạp điện |
+|:---:|:---:|:---:|:---:|
+| 1.227.273 | 44.182 | 24.545 | 162.000 |
+
+### 2. Giá trông giữ xe vãng lai
+
+| Khung giờ | Xe ô tô (lượt/giờ) | Xe máy/xe máy điện (lượt) | Phí sạc xe máy/xe đạp điện (lượt) |
+|:---|:---:|:---:|:---:|
+| **06h00 - 17h59** | 10.000 | 2.000 | 1.000 |
+| **18h00 - 23h59** | 10.000 | 3.000 | 2.000 |
+
+### 3. Mức phí vãng lai vượt khung áp dụng cho khung giờ 00h00 đến 05h59
+
+| Khung giờ | Xe ô tô (lượt) | Xe máy/xe máy điện (lượt) | Phí sạc xe máy/xe đạp điện (lượt) |
+|:---|:---:|:---:|:---:|
+| **00h00 đến 05h59** | 100.000 | 30.000 | 10.000 |
+
+---
+
+## II. TẠI CÁC NHÀ XE NỔI
+
+### 1. Giá trông giữ xe theo tháng dành cho cư dân
+
+| Loại xe | Nhà xe nổi Đại Dương, Hải Đăng 1, Lý Thánh Tông, Hải Đăng 2 | Hầm xe Tòa nhà Techno Park | Nhà xe nổi Hải Âu 3 |
+|:---|:---:|:---:|:---:|
+| **Ô tô** | 1.227.273 | **613.636**<br>*(Thời gian gửi:<br>- Thứ 2 - Thứ 7: 18h00-7h00 ngày hôm sau<br>- Chủ Nhật: Cả ngày)* | **600.000**<br>*(đơn giá ưu đãi từ 01/08/2025 đến khi có thông báo mới từ BQL)* |
+| **Xe máy/xe máy điện** | 44.182 | Không áp dụng | 44.182 |
+| **Xe đạp/xe đạp điện** | 24.545 | Không áp dụng | 24.545 |
+| **Phí sạc xe máy/xe đạp điện** | 162.000 | Không áp dụng | 162.000 |
+
+### 2. Giá trông giữ xe vãng lai
+
+| Khung giờ | Xe ô tô (lượt/giờ) | Xe máy/xe máy điện (lượt) | Phí sạc xe máy/xe đạp điện (lượt) |
+|:---|:---:|:---:|:---:|
+| **06h00 - 17h59** | 10.000 | 2.000 | 1.000 |
+| **18h00 - 23h59** | 10.000 | 3.000 | 2.000 |
+| **00h00 - 05h59** | 30.000 | 10.000 | 10.000 *(Nếu có)* |
+
+---
+
+## III. LƯU Ý
+
+1. **Thủ tục đăng ký gửi xe thuê bao tháng:** Đăng ký qua ứng dụng Vinhomes Resident hoặc trực tiếp tại các quầy lễ tân văn phòng Ban Quản lý.
+2. **Đối với xe vãng lai (không đăng ký gửi theo tháng):** Đơn vị Trông giữ xe chỉ nhận trông xe trong thời gian **tối đa 30 ngày**. Trường hợp hết thời hạn này mà khách hàng không đến nhận xe được coi là khách hàng từ bỏ quyền sở hữu với xe và các tài sản trên xe (gọi chung là “tài sản”), theo đó đơn vị Trông giữ xe có toàn quyền (nhưng không có nghĩa vụ) thanh lý, tiêu hủy hoặc xử lý tài sản theo quy định của pháp luật đối với tài sản vô chủ/tài sản bị bỏ quên.
+3. **Đối với xe gửi theo tháng:** Ngày tính phí sẽ bắt đầu từ “Ngày kích hoạt” được ghi nhận tại Đơn đăng ký cho đến khi Quý Cư dân đăng ký đề nghị dừng dịch vụ (nếu có).
+4. **Tuân thủ nội quy:** Cư dân/Khách hàng gửi xe tuân thủ quy định của Ban Quản lý, nội quy trông giữ xe, đậu đỗ xe đúng nơi quy định.
