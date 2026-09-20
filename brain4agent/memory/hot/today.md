@@ -4,46 +4,59 @@
 
 ---
 
-## 🏁 Phiên 2026-09-19 — Khởi tạo cấu trúc dự án
+## 🏁 Phiên 2026-09-20 (tiếp) — Gói P01a: nền tảng chạy được không cần key
 
-## 🎯 Thành Tựu Khởi Tạo:
-- Khởi tạo thành công cấu trúc dự án và bộ nhớ Đa Tầng brain4agent V5.2.
-
----
-
-## 🏁 Phiên 2026-09-20 — Thiết kế SPEC hồ sơ Resident Agent v1.0 + đồng bộ não
+### 🎯 Bối cảnh chỉ đạo:
+Chủ tịch: *"làm hết những cái gì chưa cần api key đã nhé"*. SO cắt P01 theo
+`OPERATIONS.md` §4 (10 bước dựng): 4 bước không cần tài khoản ⇒ làm ngay; 6 bước
+cần Neon/Vercel/key ⇒ để lại, ghi rõ chặn ở đâu.
 
 ### 🎯 Đã làm:
-- Mở hồ sơ kế hoạch `planning/01_2026-09-20_resident-agent-v1/`. Nạp 6 đặc tả
-  v0.2 kế thừa từ `docs/` + 3 ảnh tham chiếu `docs/assets/`.
-- Chốt 12 quyết định kiến trúc Đ01–Đ12 trong `plan.md` §2 (rubric thay vì v0.2,
-  mô phỏng toàn phần, cổng P05 sau P01–P04, khuyết tật cài sẵn trong Knowledge
-  Pack, đảo nghĩa `pii_or_account_specific`, confidence 4 tín hiệu, agent verify
-  vừa là chốt chặn vừa là thước đo, bất biến "thao tác được ≠ được giải thích
-  luật", chính sách đọc-trước-khi-ghi, stack Next.js/Vercel/Neon+pgvector/Claude,
-  giữ 10 reason code canonical + thêm nhóm hành động).
-- Architect viết đủ **9 file SPEC** trong `specs/` (3711 dòng). Super Orchestrator
-  tự đo lại và **DUYỆT** — số đo chép trong
-  `planning/01_2026-09-20_resident-agent-v1/reports/R01_specs-design.md`.
-- Worker (phiên này): `git init` repo (trước đó chưa là git repository, tạo
-  `.gitignore` tối thiểu, branch `main`); viết `reports/R01_specs-design.md`;
-  tick 9 dòng bảng Mục 5 của `plan.md` thành `✅`; đồng bộ 8 file não theo Ma
-  Trận 6 Điểm + 2 file mở rộng (project-intro, -data-architecture) do dự án
-  thêm thư mục top-level mới (`planning/`, đổi nghĩa `docs/`) và đưa vào
-  stack mới (Next.js/TypeScript/Postgres).
+- Viết `handoffs/H03_p01a-nen-tang-offline.md`, phóng worker. **Trước khi phóng,
+  bắt được một lệch của chính mình:** bản nháp ghi `lib/db/` cho tầng kết nối;
+  đối chiếu `00-ARCHITECTURE.md` §5 thì `lib/adapters/db.ts` mới là file DUY NHẤT
+  được mở connection ⇒ `lib/db/` sẽ vi phạm BB-07 ngay ở gói đầu tiên. Sửa handoff
+  rồi mới giao. (Đúng loại lỗi G03 của phiên này, lần này chặn được trước.)
+- Worker dựng: `app/` (login + route 2 vai), `lib/types.ts` (enum 15 mã reason_code),
+  `lib/adapters/db.ts` + `lib/adapters/anthropic.ts`, `lib/auth/` (scrypt + cookie
+  HMAC), `lib/retrieval/query.ts` (giữ cờ chuẩn hoá 32), `db/migrations/` 4 file
+  theo thứ tự khoá ngoại, 5 script vận hành (soạn mã, chưa chạy), 3 script bất
+  biến, `tests/` 13 ca.
+- **SO đo lại độc lập:** `npx tsc --noEmit` exit 0 · `npm run build` KHÔNG có
+  `DATABASE_URL` exit 0 với 8/9 route dynamic · `npm test` 13/13 · ba script bất
+  biến exit 0 · P00 không hồi quy.
+- **SO tự thiết kế 4 phép phá khác worker**, cả bốn ĐỎ đúng rồi tái xanh: rò SDK
+  Anthropic ngoài adapter · rò connection Neon ngoài adapter · hardcode
+  `OCP1-POOL-RULES-001` vào code · prop `confidence` render ra UI.
+  ⇒ BB-05/BB-07/BB-10 **đã chứng minh**, không chỉ "xanh". **✅ DUYỆT.**
 
-### 🎯 Quyết định của phiên này (worker, trong phạm vi được giao):
-- Không tự quyết bất cứ điều gì ngoài phạm vi cấp — mọi quyết định kiến trúc
-  đã chốt sẵn trong `plan.md` §2, worker chỉ phản ánh vào não.
-- Ghi nhận 1 câu hỏi mở: không tìm thấy căn cứ tường minh cho việc "Metric 2
-  Efficiency" từng tồn tại rồi bị rút — không bịa, để trong `roadmap.md` Idea
-  Vault kèm ghi chú "chưa đo được".
+### 🎯 Quyết định của phiên:
+- **Đ15** — `db:migrate:down` trả exit 2 thay vì giả vờ chạy được. Không có DB thì
+  không kiểm chứng được đường lùi; ship rollback chưa từng chạy còn nguy hiểm hơn
+  là nói thẳng chưa có. **Nợ phải trả:** dòng "Migration hỏng" ở `OPERATIONS.md`
+  §8 CHƯA được thoả mãn — khi có `DATABASE_URL` phải thêm bảng `schema_migrations`
+  và chứng minh bằng một lần migrate-lên-rồi-down-về thật.
+- **Đ16** — `.gitignore` thêm `!.env.example` và `*.tsbuildinfo`. Pattern `.env*`
+  nuốt luôn file mẫu, người clone repo sẽ không biết cần biến gì.
+- `lib/types.ts` (file) thắng `lib/types/` (thư mục) mà H03 ghi nhầm — contract
+  thắng handoff.
 
-### ⏳ Đang chờ:
-- Toàn bộ P00–P06 chưa bắt đầu thi công. Bước kế tiếp theo `plan.md` §3: P00
-  (Knowledge Pack mô phỏng + Golden Dataset, tầng 🔴, D1–D2).
-- Repo hiện chỉ có 1 commit local, chưa push, chưa có remote (đúng theo phạm vi
-  được cấp — CẤM push/tạo remote ở phiên này).
+### ⚠️ Lỗi của SO trong phiên, ghi để không lặp:
+- Lại dẫm G02: chạy `python -c "..."` qua Bash với nội dung chứa backtick ⇒ bash
+  nuốt sạch phần trong backtick, `today.md` bị ghi hỏng (mất toàn bộ tên file,
+  tên biến). Đã `git checkout` khôi phục rồi viết lại qua file. **Luật rút ra:**
+  nội dung tiếng Việt có backtick thì LUÔN ghi ra file bằng công cụ ghi file, rồi
+  mới cho python đọc file đó — không nhúng thẳng vào lệnh shell.
+
+### ⏳ Đang chờ (đều ngoài tầm agent):
+- `DATABASE_URL` (Neon) — chặn migrate, seed, K-M5, và toàn bộ P02.
+- `ANTHROPIC_API_KEY` — key `sk-` chủ tịch cấp bị TokenRouter từ chối (đòi `tr_`);
+  chủ tịch đang soi lại dashboard.
+- Tài khoản Vercel (C-04) — chặn R1 deploy.
+
+⇒ **Phần không cần key của P01 đã hết việc.** Mọi thứ còn lại đều đụng một trong ba
+thứ trên. Gói kế tiếp khi có DB: P01b (migrate + seed + deploy) rồi P02.
+
 ---
 
 ## 🏁 Phiên 2026-09-20 (chiều) — Chốt C-01…C-04, thi công và nghiệm thu gói P00
@@ -95,3 +108,41 @@
 - **C-04 — tài khoản Vercel** (OPERATIONS §1 đòi deploy từ D2 = 2026-09-21).
 - K-M5 cần `DATABASE_URL` Neon; K-M6 cần P02.
 - Gói kế tiếp: **P01** (nền tảng, auth 2 vai, ingest, deploy 🟠 D2).
+
+---
+
+## 🏁 Phiên 2026-09-20 — Thiết kế SPEC hồ sơ Resident Agent v1.0 + đồng bộ não
+
+### 🎯 Đã làm:
+- Mở hồ sơ kế hoạch `planning/01_2026-09-20_resident-agent-v1/`. Nạp 6 đặc tả
+  v0.2 kế thừa từ `docs/` + 3 ảnh tham chiếu `docs/assets/`.
+- Chốt 12 quyết định kiến trúc Đ01–Đ12 trong `plan.md` §2 (rubric thay vì v0.2,
+  mô phỏng toàn phần, cổng P05 sau P01–P04, khuyết tật cài sẵn trong Knowledge
+  Pack, đảo nghĩa `pii_or_account_specific`, confidence 4 tín hiệu, agent verify
+  vừa là chốt chặn vừa là thước đo, bất biến "thao tác được ≠ được giải thích
+  luật", chính sách đọc-trước-khi-ghi, stack Next.js/Vercel/Neon+pgvector/Claude,
+  giữ 10 reason code canonical + thêm nhóm hành động).
+- Architect viết đủ **9 file SPEC** trong `specs/` (3711 dòng). Super Orchestrator
+  tự đo lại và **DUYỆT** — số đo chép trong
+  `planning/01_2026-09-20_resident-agent-v1/reports/R01_specs-design.md`.
+- Worker (phiên này): `git init` repo (trước đó chưa là git repository, tạo
+  `.gitignore` tối thiểu, branch `main`); viết `reports/R01_specs-design.md`;
+  tick 9 dòng bảng Mục 5 của `plan.md` thành `✅`; đồng bộ 8 file não theo Ma
+  Trận 6 Điểm + 2 file mở rộng (project-intro, -data-architecture) do dự án
+  thêm thư mục top-level mới (`planning/`, đổi nghĩa `docs/`) và đưa vào
+  stack mới (Next.js/TypeScript/Postgres).
+
+### 🎯 Quyết định của phiên này (worker, trong phạm vi được giao):
+- Không tự quyết bất cứ điều gì ngoài phạm vi cấp — mọi quyết định kiến trúc
+  đã chốt sẵn trong `plan.md` §2, worker chỉ phản ánh vào não.
+- Ghi nhận 1 câu hỏi mở: không tìm thấy căn cứ tường minh cho việc "Metric 2
+  Efficiency" từng tồn tại rồi bị rút — không bịa, để trong `roadmap.md` Idea
+  Vault kèm ghi chú "chưa đo được".
+
+### ⏳ Đang chờ:
+- Toàn bộ P00–P06 chưa bắt đầu thi công. Bước kế tiếp theo `plan.md` §3: P00
+  (Knowledge Pack mô phỏng + Golden Dataset, tầng 🔴, D1–D2).
+- Repo hiện chỉ có 1 commit local, chưa push, chưa có remote (đúng theo phạm vi
+  được cấp — CẤM push/tạo remote ở phiên này).
+
+---

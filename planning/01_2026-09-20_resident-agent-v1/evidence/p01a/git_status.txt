@@ -1,0 +1,19 @@
+ M package.json
+?? app/
+?? db/
+?? lib/
+?? next-env.d.ts
+?? next.config.mjs
+?? package-lock.json
+?? planning/01_2026-09-20_resident-agent-v1/evidence/p01a/
+?? planning/01_2026-09-20_resident-agent-v1/handoffs/H03_p01a-nen-tang-offline.md
+?? scripts/check_adapter_boundary.sh
+?? scripts/check_no_confidence_ui.sh
+?? scripts/check_no_hardcoded_knowledge.sh
+?? scripts/dump_schema.mjs
+?? scripts/migrate.mjs
+?? scripts/seed_knowledge.mjs
+?? scripts/seed_users.mjs
+?? scripts/sql.mjs
+?? tests/
+?? tsconfig.json

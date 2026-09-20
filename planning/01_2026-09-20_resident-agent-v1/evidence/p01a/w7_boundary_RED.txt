@@ -1,0 +1,4 @@
+--- import @anthropic-ai/sdk ngoài lib/adapters/ ---
+lib/retrieval/query.ts:35:import Anthropic from "@anthropic-ai/sdk";
+violations: 1
+EXIT:1

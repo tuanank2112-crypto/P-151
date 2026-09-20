@@ -1,0 +1,44 @@
+# Super Orchestrator tự thiết kế phép phá — P01a, 2026-09-20
+# Luật K.5: bộ đo MỚI phải từng ĐỎ trên hệ cố tình hỏng ít nhất một lần.
+# Bốn phép dưới đây do SO tự nghĩ, KHÁC với phép worker tự báo.
+
+## ĐỎ 1 — BB-07: import SDK Anthropic ngoài lib/adapters/
+# tạo lib/so_probe_bb07.ts:  import Anthropic from "@anthropic-ai/sdk";
+$ bash scripts/check_adapter_boundary.sh
+--- import @anthropic-ai/sdk ngoài lib/adapters/ ---
+lib/so_probe_bb07.ts:1:import Anthropic from "@anthropic-ai/sdk";
+violations: 1
+EXIT=1   <-- ĐỎ ĐÚNG
+
+## ĐỎ 2 — BB-07: mở connection DB ngoài lib/adapters/db.ts
+# tạo lib/so_probe_db.ts:  import { neon } from "@neondatabase/serverless";
+$ bash scripts/check_adapter_boundary.sh
+--- import @neondatabase/serverless ngoài lib/adapters/ ---
+lib/so_probe_db.ts:1:import { neon } from "@neondatabase/serverless";
+violations: 1
+EXIT=1   <-- ĐỎ ĐÚNG
+
+## ĐỎ 3 — BB-10: hardcode document_id của Knowledge Pack vào code
+# tạo lib/so_probe_bb10.ts:  export const POOL = "OCP1-POOL-RULES-001";
+$ bash scripts/check_no_hardcoded_knowledge.sh
+lib/so_probe_bb10.ts:1:export const POOL = "OCP1-POOL-RULES-001";
+matches: 1
+EXIT=1   <-- ĐỎ ĐÚNG
+
+## ĐỎ 4 — BB-05: confidence rò ra tầng UI
+# tạo app/so_probe_ui.tsx:  function Bad({ confidence }: { confidence: number })
+#                            return <span>{confidence}%</span>
+$ bash scripts/check_no_confidence_ui.sh
+app/so_probe_ui.tsx:1:export function Bad({ confidence }: { confidence: number }) {
+app/so_probe_ui.tsx:2:  return <span>{confidence}%</span>;
+matches: 2
+EXIT=1   <-- ĐỎ ĐÚNG
+
+## Phục hồi — gỡ cả 4 file thăm dò
+$ bash scripts/check_adapter_boundary.sh        -> violations: 0  EXIT=0
+$ bash scripts/check_no_hardcoded_knowledge.sh  -> matches: 0     EXIT=0
+$ bash scripts/check_no_confidence_ui.sh        -> matches: 0     EXIT=0
+$ git status --short | grep so_probe            -> không còn file thăm dò nào sót
+
+# Kết luận: BB-05, BB-07, BB-10 không chỉ "xanh" mà đã chứng minh bắt được
+# vi phạm thật, gồm cả hai đường rò khác nhau của BB-07 (SDK model và connection DB).

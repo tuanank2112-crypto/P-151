@@ -1,0 +1,119 @@
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(bql)/dashboard/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(bql)/documents/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(bql)/eval/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(bql)/layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(bql)/review/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(resident)/chat/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(resident)/layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/auth/logout/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/globals.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/login/actions.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/login/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'db/migrations/001_enums.sql', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'db/migrations/002_users.sql', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'db/migrations/003_knowledge.sql', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'db/migrations/004_operational.sql', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/adapters/anthropic.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/adapters/db.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/auth/guard.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/auth/password.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/auth/session.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/retrieval/query.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/types.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'next-env.d.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'next.config.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package-lock.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/git_status.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/npm_install.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/w10_validate_golden.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/w10_validate_knowledge.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/w1_tsc.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/w2_build.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/w3_w4_w5_w6_test.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/w4_node_check.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/w7_boundary_RED.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/w7_boundary_green_after.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/w7_boundary_green_before.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/w8_hardcoded_RED.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/w8_hardcoded_green_after.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/w8_hardcoded_green_before.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/w9_confidence_RED.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/w9_confidence_green_after.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/evidence/p01a/w9_confidence_green_before.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/01_2026-09-20_resident-agent-v1/handoffs/H03_p01a-nen-tang-offline.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/check_adapter_boundary.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/check_no_confidence_ui.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/check_no_hardcoded_knowledge.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/dump_schema.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/migrate.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/seed_knowledge.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/seed_users.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/sql.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/auth.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/migrations.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/retrieval.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/types.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tsconfig.json', LF will be replaced by CRLF the next time Git touches it
+ app/(bql)/dashboard/page.tsx                       |   14 +
+ app/(bql)/documents/page.tsx                       |   14 +
+ app/(bql)/eval/page.tsx                            |   14 +
+ app/(bql)/layout.tsx                               |   18 +
+ app/(bql)/review/page.tsx                          |   13 +
+ app/(resident)/chat/page.tsx                       |   15 +
+ app/(resident)/layout.tsx                          |   18 +
+ app/api/auth/logout/route.ts                       |   11 +
+ app/globals.css                                    |   21 +
+ app/layout.tsx                                     |   17 +
+ app/login/actions.ts                               |   61 +
+ app/login/page.tsx                                 |   41 +
+ app/page.tsx                                       |   16 +
+ db/migrations/001_enums.sql                        |   31 +
+ db/migrations/002_users.sql                        |   22 +
+ db/migrations/003_knowledge.sql                    |   56 +
+ db/migrations/004_operational.sql                  |   74 ++
+ lib/adapters/anthropic.ts                          |   32 +
+ lib/adapters/db.ts                                 |   28 +
+ lib/auth/guard.ts                                  |   13 +
+ lib/auth/password.ts                               |   29 +
+ lib/auth/session.ts                                |   65 ++
+ lib/retrieval/query.ts                             |   33 +
+ lib/types.ts                                       |  136 +++
+ next-env.d.ts                                      |    6 +
+ next.config.mjs                                    |    8 +
+ package-lock.json                                  | 1178 ++++++++++++++++++++
+ package.json                                       |   25 +-
+ .../evidence/p01a/git_status.txt                   |   20 +
+ .../evidence/p01a/npm_install.txt                  |   13 +
+ .../evidence/p01a/w10_validate_golden.txt          |    2 +
+ .../evidence/p01a/w10_validate_knowledge.txt       |    2 +
+ .../evidence/p01a/w1_tsc.txt                       |    1 +
+ .../evidence/p01a/w2_build.txt                     |   44 +
+ .../evidence/p01a/w3_w4_w5_w6_test.txt             |   26 +
+ .../evidence/p01a/w4_node_check.txt                |   10 +
+ .../evidence/p01a/w7_boundary_RED.txt              |    4 +
+ .../evidence/p01a/w7_boundary_green_after.txt      |    2 +
+ .../evidence/p01a/w7_boundary_green_before.txt     |    2 +
+ .../evidence/p01a/w8_hardcoded_RED.txt             |    3 +
+ .../evidence/p01a/w8_hardcoded_green_after.txt     |    2 +
+ .../evidence/p01a/w8_hardcoded_green_before.txt    |    2 +
+ .../evidence/p01a/w9_confidence_RED.txt            |    4 +
+ .../evidence/p01a/w9_confidence_green_after.txt    |    2 +
+ .../evidence/p01a/w9_confidence_green_before.txt   |    2 +
+ .../handoffs/H03_p01a-nen-tang-offline.md          |   86 ++
+ scripts/check_adapter_boundary.sh                  |   42 +
+ scripts/check_no_confidence_ui.sh                  |   18 +
+ scripts/check_no_hardcoded_knowledge.sh            |   18 +
+ scripts/dump_schema.mjs                            |   42 +
+ scripts/migrate.mjs                                |   59 +
+ scripts/seed_knowledge.mjs                         |  195 ++++
+ scripts/seed_users.mjs                             |   52 +
+ scripts/sql.mjs                                    |   31 +
+ tests/auth.test.ts                                 |   53 +
+ tests/migrations.test.ts                           |   57 +
+ tests/retrieval.test.ts                            |   15 +
+ tests/types.test.ts                                |   20 +
+ tsconfig.json                                      |   43 +
+ 59 files changed, 2880 insertions(+), 1 deletion(-)

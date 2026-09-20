@@ -11,7 +11,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 
 - [x] P00 — Knowledge Pack mô phỏng + Golden Dataset 🔴 (D1–D2) — ✅ DUYỆT, xem `Done`
-- [ ] P01 — Nền tảng, auth 2 vai, ingest, deploy 🟠 (D2) — phụ thuộc P00
+- [ ] P01 — Nền tảng, auth 2 vai, ingest, deploy 🟠 (D2) — **P01a (phần không cần key) ĐÃ XONG, ✅ DUYỆT**; còn lại chặn ở Neon + Vercel
 - [ ] P02 — RAG có trích dẫn, memory, 3 agent, cổng escalate 🔴🟠 (D3–D4) — phụ thuộc P00, P01
 - [ ] P03 — Console BQL: quản lý tài liệu + duyệt câu trả lời (HITL) 🟠 (D4–D5) — phụ thuộc P01, P02
 - [ ] P04 — Bảng eval faithfulness/relevance + dashboard 🟠 (D5) — phụ thuộc P00, P02
@@ -49,6 +49,15 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
   Ai muốn lật phải trả lời được "lấy baseline ở đâu".
 
 ## Đã hoàn thành (Done)
+
+- [x] **P01a — Nền tảng chạy được không cần key (2026-09-20):** khung Next.js + TS
+  strict, route 2 vai (`app/(resident)/chat`, `app/(bql)/documents|review|eval|dashboard`),
+  `lib/types.ts` (enum 15 reason_code), `lib/adapters/db.ts` + `lib/adapters/anthropic.ts`
+  (BB-07), `lib/auth/` (scrypt + cookie HMAC), `lib/retrieval/query.ts` (giữ cờ 32),
+  `db/migrations/` 4 file theo thứ tự FK, `tests/` 13 ca. Đo: `tsc --noEmit` exit 0 ·
+  `npm run build` KHÔNG có `DATABASE_URL` exit 0 (8/9 route dynamic) · `npm test` 13/13 ·
+  **BB-05/BB-07/BB-10 xanh và đã chứng minh đỏ được** (SO tự thiết kế 4 phép phá).
+  Phán quyết ✅ DUYỆT tại `reports/R03_p01a-nen-tang-offline.md`.
 
 - [x] **P00 — Knowledge Pack mô phỏng + Golden Dataset (2026-09-20):** 19 tài liệu
   / 98 section trong `knowledge/`, 4 khuyết tật cài sẵn DEF-01..04 (2 gap, 1 cặp

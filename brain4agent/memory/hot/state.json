@@ -1,20 +1,24 @@
 {
   "current_version": "1.0.0",
   "brain_template_version": "1.7.1",
-  "system_status": "p00_accepted",
+  "system_status": "p01a_accepted",
   "last_verification": {
-    "timestamp": "2026-09-20T02:55:00.000Z",
-    "grade": "P00 ✅ DUYỆT — Super Orchestrator đo lại độc lập",
-    "gates": {
-      "K-M1_validate_knowledge": "documents: 19 · sections: 98 · defects_ok: 4/4 · exit 0",
-      "K-M2_validate_golden": "faq: 50 (answerable 40) · safety: 16 · canonical_codes_covered: 10/10 · exit 0",
-      "K-M3_grep_pickleball": "rỗng · PASS",
-      "K-M4_facility_rules": "true: 13 · false: 1 (FAC-PICKLEBALL) · exit 0",
-      "red_tests_by_SO": "2 phép phá tự thiết kế, cả hai exit 1 đúng lỗi, phục hồi tái xanh"
+    "timestamp": "2026-09-20T03:35:00.000Z",
+    "grade": "P01a ✅ DUYỆT — Super Orchestrator đo lại độc lập",
+    "gates_no_key_needed": {
+      "tsc": "npx tsc --noEmit · exit 0",
+      "build": "npm run build KHÔNG có DATABASE_URL · exit 0 · 8/9 route dynamic",
+      "test": "npm test · tests 13 · pass 13 · fail 0 · skipped 0",
+      "BB-07": "check_adapter_boundary.sh · violations: 0 · exit 0",
+      "BB-10": "check_no_hardcoded_knowledge.sh · matches: 0 · exit 0",
+      "BB-05": "check_no_confidence_ui.sh · matches: 0 · exit 0",
+      "P00_regression": "validate_knowledge + validate_golden · exit 0",
+      "red_tests_by_SO": "4 phép phá tự thiết kế (rò SDK, rò connection, hardcode document_id, confidence ra UI) — cả bốn exit 1 rồi tái xanh"
     },
-    "blocked": {
-      "K-M5_db_seed": "thiếu DATABASE_URL (Neon) — C-04 chờ người",
-      "K-M6_probe_defects": "cần gói P02"
+    "blocked_needs_human": {
+      "DATABASE_URL": "Neon — chặn migrate, seed, K-M5, và toàn bộ P02",
+      "ANTHROPIC_API_KEY": "chặn P02 và eval:golden. Key sk- chủ tịch cấp bị TokenRouter từ chối (đòi tr_)",
+      "VERCEL": "C-04 — chặn R1 deploy, OPERATIONS §4 bước 5"
     }
   },
   "active_plans_completed": 0,
@@ -43,11 +47,12 @@
   },
   "work_packages": {
     "done": [
-      "P00"
+      "P00",
+      "P01a"
     ],
-    "next": "P01",
+    "next": "P01b (cần Neon + Vercel) rồi P02",
     "remaining": [
-      "P01",
+      "P01b",
       "P02",
       "P03",
       "P04",

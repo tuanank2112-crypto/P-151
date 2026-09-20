@@ -120,6 +120,20 @@ Kết luận: key `sk-…` không phải key TokenRouter (phải là `tr_…`), 
 
 Nếu sau này muốn `hybrid` chạy cả trên Vercel thì mới cần một endpoint embedding thật (Gemini có, Claude và TokenRouter không) — nhưng khi đó phải **re-embed toàn corpus** vì số chiều khác 384, tức sửa DDL `vector(384)` ở §3.3. Không làm trong vòng 1.0.0.
 
+### Đ15 — 2026-09-20 · `db:migrate:down` hoãn tới khi có DB, không ship rollback chưa từng chạy
+
+`OPERATIONS.md` §8 hứa một đường lùi cho migration hỏng: `npm run db:migrate:down -- --to=<version>`, dưới 2 phút. Gói P01a không có `DATABASE_URL` nên **không thể kiểm chứng** đường lùi đó, và spec cũng chưa đặc tả bảng lịch sử migration để biết đang ở version nào.
+
+Worker viết `scripts/migrate.mjs --down` in cảnh báo rồi **exit 2** thay vì giả vờ chạy được. **SO chấp nhận.** Một rollback chưa từng chạy thật còn nguy hiểm hơn một script nói thẳng là chưa có: nó chỉ hỏng đúng lúc người ta cần nó nhất.
+
+**Hệ quả phải nhớ:** dòng "Migration hỏng" trong bảng `OPERATIONS.md` §8 **CHƯA được thoả mãn**. Việc phải làm khi có `DATABASE_URL`: thêm bảng `schema_migrations` vào `db/migrations/001_enums.sql`, cài `--down`, rồi **chứng minh bằng một lần chạy thật** (migrate lên, down về, `dump_schema.mjs` khớp trạng thái trước).
+
+**Lật được:** không. Đây là điều kiện để bảng §8 nói thật. **Chi phí lật:** thấp nếu làm cùng lúc với bước 2–4 của `OPERATIONS.md` §4; cao nếu để tới ngày demo.
+
+### Đ16 — 2026-09-20 · `.gitignore` phải chừa `.env.example`
+
+Pattern `.env*` nuốt luôn file mẫu biến môi trường, nên `.env.example` (bảng `OPERATIONS.md` §3) không bao giờ commit được — người clone repo sẽ không biết cần biến gì. Thêm `!.env.example` và `*.tsbuildinfo`. Kiểm: `git add --dry-run .env.example` phải in `add '.env.example'`, còn `.env.local` vẫn phải bị chặn.
+
 ### Quyết định của chủ tịch — 2026-09-20
 
 | Mã | Phán quyết | Ghi chú |
@@ -150,8 +164,9 @@ Câu "Gói P00 chưa được phóng vì C-01 chưa chốt" ghi ngày 2026-09-20
 - [x] P00 — Knowledge Pack mô phỏng đủ phủ 12 tiện ích và 5 intent — `19 tài liệu · 98 section`, exit 0 (2026-09-20)
 - [x] P00 — Khuyết tật cài sẵn: 2 gap + 1 cặp conflict + 1 expired — `defects_ok: 4/4`, exit 0 (2026-09-20)
 - [x] P00 — Golden Dataset — `faq: 50 (answerable 40) · safety: 16 · canonical 10/10`, exit 0 (2026-09-20). `rubric.md` chuyển sang P04.
-- [ ] P01 — Deploy được URL công khai
-- [ ] P01 — Đăng nhập 2 vai trò Cư dân / BQL
+- [ ] P01 — Deploy được URL công khai — ⛔ chặn: chưa có tài khoản Vercel (C-04)
+- [ ] P01 — Đăng nhập 2 vai trò Cư dân / BQL — 🟡 mã xong và có test (`scrypt` + cookie HMAC, sửa 1 byte ⇒ verify false); **chưa tick** vì tài khoản nằm trong DB, cần `DATABASE_URL` mới chứng minh được đăng nhập thật
+- [x] P01a — Nền tảng chạy được không cần key: `tsc --noEmit` exit 0 · `npm run build` KHÔNG có `DATABASE_URL` exit 0 (8/9 route dynamic) · `npm test` 13/13 · **BB-05, BB-07, BB-10 xanh và đã chứng minh đỏ được** (2026-09-20)
 - [ ] P02 — Trả lời có trích dẫn tới `document_id` và `section_id`
 - [ ] P02 — Lịch sử hội thoại bền qua phiên
 - [ ] P02 — Ba agent chạy tách bạch, log được từng chặng

@@ -2,6 +2,42 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.0.0-p01a] - 2026-09-20: P01a — nền tảng chạy được không cần key
+### Added
+- Khung Next.js + TypeScript strict (App Router). Route 2 vai: `app/login`,
+  `app/(resident)/chat`, `app/(bql)/documents|review|eval|dashboard`.
+- `lib/types.ts` — nguồn chân lý kiểu theo `01-CONTRACTS.md` §7, enum đúng 15 mã
+  `reason_code` và 4 `lifecycle_state`.
+- `lib/adapters/db.ts` và `lib/adapters/anthropic.ts` — hai file DUY NHẤT được mở
+  connection / import SDK (BB-07). `lib/auth/` (scrypt + cookie HMAC ký bằng
+  `SESSION_SECRET`). `lib/retrieval/query.ts` giữ cờ chuẩn hoá `32` (C-05).
+- `db/migrations/` 4 file theo thứ tự khoá ngoại: `001_enums` → `002_users` →
+  `003_knowledge` → `004_operational`. **Soạn mã, chưa chạy lần nào.**
+- `scripts/`: `migrate.mjs`, `sql.mjs`, `dump_schema.mjs`, `seed_users.mjs`,
+  `seed_knowledge.mjs` (soạn mã), cùng 3 script bất biến `check_adapter_boundary.sh`
+  (BB-07), `check_no_hardcoded_knowledge.sh` (BB-10), `check_no_confidence_ui.sh` (BB-05).
+- `tests/` 13 ca trên `node:test`, không cần DB.
+
+### Measured
+- `npx tsc --noEmit` exit 0 · `npm run build` **không có `DATABASE_URL`** exit 0, 8/9
+  route là `ƒ Dynamic` · `npm test` 13/13, 0 fail, 0 skip · ba script bất biến exit 0.
+- Super Orchestrator tự thiết kế **4 phép phá** khác worker: rò SDK Anthropic, rò
+  connection Neon, hardcode `document_id`, prop `confidence` ra UI — cả bốn exit 1
+  đúng lỗi rồi phục hồi xanh. BB-05/BB-07/BB-10 đã chứng minh, không chỉ "xanh".
+
+### Decisions
+- **Đ15** — `db:migrate:down` trả exit 2 thay vì giả vờ chạy được. Không có DB thì
+  không kiểm chứng được đường lùi; ship rollback chưa từng chạy còn tệ hơn.
+  **Hệ quả:** dòng "Migration hỏng" ở `OPERATIONS.md` §8 CHƯA được thoả mãn.
+- **Đ16** — `.gitignore` thêm `!.env.example` và `*.tsbuildinfo`. Pattern `.env*` nuốt
+  luôn file mẫu, người clone repo sẽ không biết cần biến gì.
+
+### Notes
+- `lib/types.ts` (file) thắng `lib/types/` (thư mục) mà handoff H03 ghi nhầm —
+  `01-CONTRACTS.md` §7 tự xưng là nguồn chân lý kiểu.
+- `01-CONTRACTS.md` trình bày `documents` (§3.1) trước `users` (§6) theo mạch đọc,
+  không phải thứ tự chạy. Migration tách 4 file để khoá ngoại đúng thứ tự.
+
 ## [v1.0.0-p00] - 2026-09-20: Gói P00 — Knowledge Pack mô phỏng + Golden Dataset
 ### Added
 - **Mã sản phẩm đầu tiên của repo.** Ba thư mục top-level mới: `knowledge/`

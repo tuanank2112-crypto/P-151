@@ -1,0 +1,4 @@
+app/(resident)/chat/page.tsx:16:// VI_PHAM_GIA_TAM_THOI — chứng minh check_no_confidence_ui.sh phát hiện được (W9 red test).
+app/(resident)/chat/page.tsx:17:export function TempConfidenceBadge() {
+matches: 2
+EXIT:1

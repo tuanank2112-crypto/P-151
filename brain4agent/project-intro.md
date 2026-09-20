@@ -62,5 +62,11 @@ Trên đĩa đã có: `knowledge/` (19 tài liệu mô phỏng / 98 section, 4 k
 sẵn), `evals/golden/` (66 case đo), `scripts/` (3 script kiểm chạy **Node thuần,
 không cần DB, không gọi LLM**), `package.json` (Node ESM, chưa có dependency nào).
 
-**P01–P06 chưa bắt đầu.** Chưa có Next.js, chưa có DB, chưa deploy. Không gói nào
-được coi là "đã hoàn thành" cho tới khi có bằng chứng máy chạy thật.
+**P01a đã xong, ✅ DUYỆT** (`reports/R03`): khung Next.js + TS strict, route 2 vai,
+`lib/types.ts`, `lib/adapters/` (BB-07), `lib/auth/`, `lib/retrieval/`, `db/migrations/`
+(soạn mã, chưa chạy), 13 ca test. `npm run build` xanh **không cần `DATABASE_URL`**.
+
+**Còn chặn ở ngoài tầm agent:** chưa có `DATABASE_URL` (Neon), chưa có `ANTHROPIC_API_KEY`,
+chưa có tài khoản Vercel ⇒ **chưa migrate, chưa seed, chưa deploy, chưa chạy Golden**.
+P02–P06 chưa bắt đầu. Không gói nào được coi là "đã hoàn thành" cho tới khi có bằng
+chứng máy chạy thật.

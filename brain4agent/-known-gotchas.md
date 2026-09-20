@@ -45,3 +45,62 @@ thử đầu dùng `grep -v out_of_scope` — script vẫn xanh. Nguyên nhân: 
 KHÔNG nằm trong 10 mã canonical của bộ, nên grep xoá 0 dòng. **Trước khi kết luận
 một bộ đo bị hỏng, kiểm xem phép phá của mình có thật sự phá được gì không** —
 đối chiếu danh sách giá trị thật trong dữ liệu trước.
+
+## Next.js & hạ tầng
+
+### G06 — `npm run build` của Next.js chết khi chưa có `DATABASE_URL`
+Next.js App Router mặc định cố **prerender tĩnh** mọi route lúc build. Route nào
+chạm DB ở tầng server sẽ chạy thật lúc `npm run build` và nổ vì thiếu biến môi
+trường — trong khi đây đúng là tình huống của dự án suốt giai đoạn chưa có Neon.
+**Workaround (đã áp ở P01a):** ép mọi route chạm DB sang dynamic, kiểm bằng bảng
+route cuối output build — phải thấy `ƒ (Dynamic)` chứ không phải `○ (Static)`.
+Số đo chuẩn của repo này: 8/9 route `ƒ`, chỉ `/_not-found` là `○`.
+
+### G07 — `.gitignore` pattern `.env*` nuốt luôn `.env.example`
+File mẫu biến môi trường không bao giờ commit được, người clone repo không biết
+cần biến gì. **Fix:** thêm dòng `!.env.example` NGAY SAU `.env*` (Đ16). Kiểm bằng
+`git add --dry-run .env.example` phải in `add '.env.example'` — KHÔNG kiểm bằng
+`git check-ignore -v`, lệnh đó vẫn exit 0 và in ra chính dòng phủ định, dễ tưởng
+là còn bị chặn.
+
+### G08 — `create-next-app` treo khi thư mục không rỗng
+`npx create-next-app@latest --ts` vào repo đã có file sẽ hỏi tương tác, mà môi
+trường agent không có stdin ⇒ treo tới hết timeout. **Workaround:** dựng thủ công
+bộ file tương đương (`package.json`, `tsconfig.json`, `next.config.mjs`,
+`next-env.d.ts`, `app/layout.tsx`, `app/page.tsx`). Cổng nghiệm thu của bước này
+trong `OPERATIONS.md` §4 là `npx tsc --noEmit` exit 0, không phải "đã chạy đúng
+lệnh khởi tạo" — nên cách dựng không quan trọng, kết quả đo mới quan trọng.
+
+### G09 — CẤM tạo module mở connection ngoài `lib/adapters/db.ts`
+Thói quen thường thấy là tạo `lib/db/index.ts` cho tiện. Làm vậy vi phạm BB-07
+(`00-ARCHITECTURE.md` §5: `lib/adapters/db.ts` là file DUY NHẤT mở connection,
+`lib/adapters/anthropic.ts` là file DUY NHẤT import SDK) và `check_adapter_boundary.sh`
+sẽ đỏ. DDL để ở `db/migrations/*.sql` — đó là dữ liệu, không phải module kết nối.
+
+### G10 — python -c qua Bash nuốt sạch nội dung trong backtick
+Biến thể nguy hiểm hơn G02. Chạy `python -c "..."` qua Bash tool với chuỗi chứa
+backtick: bash coi backtick là command substitution và **thay bằng output rỗng**
+TRƯỚC khi python nhìn thấy. Kết quả: file ghi ra mất sạch tên file, tên biến, tên
+lệnh — mà lệnh vẫn exit 0 nên trông như thành công. Đã làm hỏng
+`brain4agent/memory/hot/today.md` ngày 2026-09-20, phải `git checkout` khôi phục.
+**Luật:** nội dung tiếng Việt có backtick thì LUÔN ghi ra file bằng công cụ ghi
+file chuyên dụng, rồi cho python đọc file đó. CẤM nhúng thẳng vào lệnh shell.
+Kiểm nhanh sau khi ghi: `grep -c '`' <file>` phải ra số > 0.
+
+### G11 — `today.md` PHẢI xếp phiên MỚI NHẤT lên đầu, nếu không `rotate_memory.js` archive nhầm
+`rotate_memory.js` giữ `allLines.slice(0, keptEndLine)` — tức giữ N phiên **ĐẦU
+file** và xoay phần **ĐUÔI** sang `memory/archive/`. Nó giả định quy ước
+newest-first. Repo này trước đó append phiên mới xuống đáy, nên lần xoay đầu tiên
+(2026-09-20) nó **archive đúng phiên mới nhất** và giữ lại phiên khởi tạo từ
+2026-09-19 — mất đúng phần ngữ cảnh mà phiên sau cần đọc, mà lệnh vẫn exit 0.
+
+**Luật cho repo này:** khi ghi nhật ký phiên, **chèn khối phiên mới lên NGAY SAU
+header**, không append xuống đáy. Kiểm trước khi xoay:
+`grep -n "^## " brain4agent/memory/hot/today.md` — dòng đầu tiên phải là phiên
+gần nhất. Xoay xong kiểm lại cả hai phía: `today.md` còn phiên mới nhất, và
+`memory/archive/<ngày cũ>.md` mới là file vừa sinh (tên file phải là ngày CŨ,
+thấy tên file là ngày HÔM NAY nghĩa là vừa archive nhầm).
+
+Không sửa engine — engine nằm ở hub dùng chung, sửa thứ tự file phía repo là đúng
+chỗ. Nếu đã lỡ archive nhầm: xoá file archive vừa sinh (nó chưa commit, không mất
+lịch sử), dựng lại `today.md` cho đúng thứ tự, rồi chạy lại lệnh xoay.

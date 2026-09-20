@@ -1,0 +1,47 @@
+# Super Orchestrator đo lại P01a — 2026-09-20 (KHÔNG tin report worker)
+
+$ npx tsc --noEmit
+EXIT=0
+
+$ env -u DATABASE_URL npm run build   (trích bảng route)
+Route (app)                                 Size  First Load JS
+┌ ƒ /                                      147 B         103 kB
+├ ○ /_not-found                            993 B         104 kB
+├ ƒ /api/auth/logout                       147 B         103 kB
+├ ƒ /chat                                  147 B         103 kB
+├ ƒ /dashboard                             147 B         103 kB
+├ ƒ /documents                             147 B         103 kB
+├ ƒ /eval                                  147 B         103 kB
+├ ƒ /login                                 147 B         103 kB
+└ ƒ /review                                147 B         103 kB
++ First Load JS shared by all             103 kB
+  ├ chunks/255-37e0f0325134c4d7.js       46.4 kB
+  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+  └ other shared chunks (total)          1.97 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+BUILD_EXIT=0
+
+$ npm test
+ℹ tests 13
+ℹ pass 13
+ℹ fail 0
+ℹ skipped 0
+$ bash scripts/check_adapter_boundary.sh
+violations: 0
+EXIT=0
+$ bash scripts/check_no_hardcoded_knowledge.sh
+matches: 0
+EXIT=0
+$ bash scripts/check_no_confidence_ui.sh
+matches: 0
+EXIT=0
+
+$ node scripts/validate_knowledge.mjs
+documents: 19 · sections: 98 · defects_ok: 4/4
+EXIT=0
+$ node scripts/validate_golden.mjs
+faq: 50 (answerable 40) · safety: 16 · canonical_codes_covered: 10/10
+EXIT=0

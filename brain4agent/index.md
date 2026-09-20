@@ -38,7 +38,22 @@ project-root/
 ├── AGENTS.md                         # [QUY TẮC TỐI THƯỢNG] Nguồn chân lý DUY NHẤT (Gemini/Codex đọc trực tiếp)
 ├── CLAUDE.md                         # [SHIM] Điểm nạp tự động của Claude Code — chỉ chứa @AGENTS.md
 ├── brain4agent-v1.7.1.md   # [MARKER] Phiên bản khung não — soi nhanh ở root
-├── package.json                      # [MỚI 2026-09-20] Node ESM ("type":"module") + script kiểm P00. CHƯA có dependency nào
+├── package.json / package-lock.json   # Next.js + TS strict; script db:*, test, check
+├── .env.example                       # mẫu biến môi trường (OPERATIONS §3), giá trị để RỖNG
+├── tsconfig.json / next.config.mjs
+├── app/                              # [P01a] Next.js App Router — mọi route chạm DB là dynamic
+│   ├── login/                        #   đăng nhập credential 2 vai
+│   ├── (resident)/chat/              #   giao diện cư dân
+│   └── (bql)/documents|review|eval|dashboard/   # giao diện BQL (nội dung do P03/P04 bồi)
+├── lib/                              # [P01a] lõi dùng chung
+│   ├── types.ts                      #   NGUỒN CHÂN LÝ kiểu (01-CONTRACTS §7); enum 15 reason_code
+│   ├── adapters/db.ts                #   *** FILE DUY NHẤT mở connection (BB-07) ***
+│   ├── adapters/anthropic.ts         #   *** FILE DUY NHẤT import SDK Anthropic (BB-07) ***
+│   ├── auth/                         #   password (scrypt) · session (cookie HMAC) · guard
+│   └── retrieval/query.ts            #   truy vấn lexical, giữ cờ chuẩn hoá 32 (C-05)
+├── db/migrations/                    # [P01a] DDL, chưa chạy lần nào (chưa có DATABASE_URL)
+│   └── 001_enums → 002_users → 003_knowledge → 004_operational  (thứ tự FK bắt buộc)
+├── tests/                            # [P01a] node:test — 13 ca, không cần DB
 ├── knowledge/                        # [MỚI - P00] Knowledge Pack MÔ PHỎNG, 19 tài liệu / 98 section
 │   ├── manifest.json                 #   siêu dữ liệu 19 tài liệu
 │   ├── sections/<document_id>.json   #   19 file, tên trùng document_id
@@ -48,10 +63,14 @@ project-root/
 │   ├── golden_safety.jsonl           #   16 case, phủ đủ 10 mã canonical — Metric 3
 │   ├── expected_defects.json         #   hợp đồng máy đọc của 4 khuyết tật (DEF-01..04)
 │   └── rubric.md                     #   CHƯA CÓ — chuyển sang gói P04
-├── scripts/                          # [MỚI - P00] Script kiểm, Node thuần, không cần DB
+├── scripts/                          # Script kiểm + vận hành, Node thuần
 │   ├── validate_knowledge.mjs        #   K-M1: documents 19 · sections 98 · defects_ok 4/4
 │   ├── validate_golden.mjs           #   K-M2: faq 50 (answerable 40) · safety 16 · canonical 10/10
-│   └── report_facility_rules.mjs     #   K-M4: has_authoritative_rules true 13 · false 1 (FAC-PICKLEBALL)
+│   ├── report_facility_rules.mjs     #   K-M4: has_authoritative_rules true 13 · false 1 (FAC-PICKLEBALL)
+│   ├── check_adapter_boundary.sh     #   [P01a] BB-07 — đã chứng minh bắt được cả 2 đường rò
+│   ├── check_no_hardcoded_knowledge.sh  # [P01a] BB-10
+│   ├── check_no_confidence_ui.sh     #   [P01a] BB-05
+│   └── migrate/sql/dump_schema/seed_users/seed_knowledge.mjs  # [P01a] SOẠN MÃ, CHƯA CHẠY (cần DATABASE_URL)
 ├── brain4agent/                      # [BỘ NHỚ DỰ ÁN] Single Source of Truth
 │   ├── memory/hot/                   # [HOT MEMORY] Ký ức nóng phiên (today.md, state.json)
 │   ├── memory-distill.txt            # [KERNEL] Bản cô đọng tối thượng (< 100 dòng)

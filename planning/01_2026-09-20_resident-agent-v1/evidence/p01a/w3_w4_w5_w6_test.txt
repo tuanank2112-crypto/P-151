@@ -1,0 +1,26 @@
+
+> resident-agent-v1@1.0.0 test
+> node --test
+
+✔ hashPassword rồi verifyPassword: mật khẩu đúng ⇒ true (118.2142ms)
+✔ verifyPassword: mật khẩu sai ⇒ false (117.4812ms)
+✔ cookie phiên hợp lệ: ký rồi xác minh trả đúng payload (3.5812ms)
+✔ cookie phiên bị sửa 1 byte ⇒ verify trả về null (false) (0.5836ms)
+✔ verifySessionCookie: thiếu cookie ⇒ null, không ném lỗi dù thiếu SESSION_SECRET (0.3954ms)
+✔ db/migrations chứa đủ 8 bảng bắt buộc của 01-CONTRACTS.md §3, §6 (10.2942ms)
+✔ db/migrations không chứa bảng của P05 (bookings, receipts) — Đ03/VC-09 (3.7757ms)
+✔ db/migrations định nghĩa đủ enum reason_code (15 giá trị) và lifecycle_state (4 giá trị) (3.103ms)
+✔ buildLexicalQuery sinh chuỗi SQL có ts_rank_cd(..., 32) — cờ chuẩn hoá bắt buộc (C-05) (1.3175ms)
+✔ buildLexicalQuery nhận topK tuỳ chỉnh (0.2696ms)
+✔ REASON_CODES có đúng 15 phần tử (Đ12, BB-09) (2.1906ms)
+✔ REASON_CODES chứa đúng mã pii_or_account_specific đã đảo nội hàm (Đ06) (0.5134ms)
+✔ LIFECYCLE_STATES có đúng 4 phần tử và KHÔNG chứa clarification_required như reason_code (0.3681ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 473.2207
+EXIT:0

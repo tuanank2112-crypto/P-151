@@ -1,0 +1,10 @@
+== scripts/sql.mjs ==
+exit:0
+== scripts/dump_schema.mjs ==
+exit:0
+== scripts/migrate.mjs ==
+exit:0
+== scripts/seed_users.mjs ==
+exit:0
+== scripts/seed_knowledge.mjs ==
+exit:0

@@ -9,8 +9,12 @@ Giai đoạn (2026-09-20): thiết kế xong (9 SPEC, 3711 dòng) + **gói P00 X
 đo lại độc lập, DUYỆT**. Trên đĩa: knowledge/ (19 tài liệu / 98 section, 4 khuyết
 tật cài sẵn DEF-01..04), evals/golden/ (50 FAQ + 16 Safety, phủ 10 mã canonical),
 scripts/ (3 script kiểm Node thuần), package.json (ESM, 0 dependency).
-P01–P06 CHƯA bắt đầu: chưa Next.js, chưa DB, chưa deploy. Cấm nói P01–P06 "đã
-hoàn thành" trước khi có bằng chứng máy chạy thật.
+P01a XONG (DUYỆT): app/ + lib/types.ts + lib/adapters/{db,anthropic}.ts (BB-07) +
+lib/auth/ (scrypt, cookie HMAC) + lib/retrieval/query.ts (cờ 32) + db/migrations/
+(4 file, SOẠN MÃ CHƯA CHẠY) + tests/ 13 ca. build xanh KHÔNG cần DATABASE_URL.
+CHẶN NGOÀI TẦM AGENT: thiếu DATABASE_URL (Neon), ANTHROPIC_API_KEY, tài khoản Vercel
+⇒ chưa migrate/seed/deploy/eval. P02–P06 chưa bắt đầu. Cấm nói đã hoàn thành
+trước khi có bằng chứng máy chạy thật.
 `docs/` mô tả SẢN PHẨM CŨ đã hạ cấp (v0.2, actor khác) — chỉ còn là nguồn tham
 chiếu. Nguồn chân lý thiết kế đang hiệu lực, đọc theo thứ tự:
 `planning/01_2026-09-20_resident-agent-v1/plan.md` §2 → `specs/00-ARCHITECTURE.md`
@@ -31,7 +35,7 @@ chiếu nội dung/giọng văn cũ).
 - Tech Stack (Đ11): Next.js + TypeScript trên Vercel · Postgres + pgvector trên Neon (RAG + state + sổ biên nhận, một kho chung) · auth credential 2 vai trò (Cư dân/BQL) · Claude cho 3 agent.
 - Data/State: DB chưa thi công. Tri thức đã có dạng FILE: `knowledge/` là nguồn chân lý, DB sẽ là bản dẫn xuất (seed ở P01). Sửa tri thức ⇒ sửa file + tăng `revision` ở `knowledge/README.md` (`SIM-1.0.0`), CẤM sửa thẳng DB. DDL/contract: `specs/01-CONTRACTS.md`.
 - Model: A1/A2/A3 vẫn là Claude (`01-CONTRACTS.md` §8). Đ13: key `stealth/union-alpha`+TokenRouter chủ tịch cấp ĐO RỒI, không dùng được (TokenRouter đòi tiền tố `tr_`; slug đó là của OpenRouter) — CHƯA đổi contract. Đ14: embedding chạy `Xenova/multilingual-e5-small` tại chỗ lúc seed, KHÔNG cần API key.
-- Cổng P00 (chạy được ngay, không cần DB/LLM): `node scripts/validate_knowledge.mjs` · `validate_golden.mjs` · `report_facility_rules.mjs` — cả ba exit 0.
+- Cổng chạy được ngay, KHÔNG cần DB/LLM/biến môi trường: `npx tsc --noEmit` · `npm run build` · `npm test` (13) · `bash scripts/check_{adapter_boundary,no_hardcoded_knowledge,no_confidence_ui}.sh` · `node scripts/validate_{knowledge,golden}.mjs` — tất cả exit 0. BB-07: CHỈ `lib/adapters/db.ts` mở connection, CHỈ `lib/adapters/anthropic.ts` import SDK.
 - Planning & RFCs: Thư mục `planning/` lưu trữ các bản kế hoạch theo định dạng `[STT]_[YYYY-MM-DD]_[Ten-Ngan]` (25-35 ký tự, cố định path). Hồ sơ đang mở: `01_2026-09-20_resident-agent-v1/` (quyết định Đ01–Đ14; hồ sơ trọn vòng đời `handoffs/` ↔ `reports/` ↔ `evidence/`).
 </project_foundation>
 
