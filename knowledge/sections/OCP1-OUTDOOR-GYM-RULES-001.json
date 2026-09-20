@@ -1,0 +1,62 @@
+[
+  {
+    "section_id": "GYM-SCOPE-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi Gym ngoài trời",
+    "body_vi": "Nội quy áp dụng cho khu vực Gym ngoài trời lắp đặt các thiết bị tập luyện cơ bản thuộc Khu đô thị mô phỏng OCP1, mở tự do cho cư dân, không thu phí sử dụng.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-OUTDOOR-GYM"
+    ]
+  },
+  {
+    "section_id": "GYM-AGE-02",
+    "ordinal": 2,
+    "heading_vi": "Độ tuổi sử dụng thiết bị tập luyện",
+    "body_vi": "Cư dân từ 14 tuổi trở lên được tự sử dụng thiết bị; trẻ nhỏ hơn cần có người lớn hướng dẫn để tránh sử dụng sai cách gây chấn thương.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-OUTDOOR-GYM"
+    ]
+  },
+  {
+    "section_id": "GYM-EQUIP-03",
+    "ordinal": 3,
+    "heading_vi": "Sử dụng và bảo quản thiết bị",
+    "body_vi": "Người tập lau khô mồ hôi trên thiết bị sau khi sử dụng, không mang tạ hoặc dụng cụ cá nhân gắn thêm vào máy tập cố định, báo Ban Quản lý khi thiết bị có dấu hiệu hỏng hóc.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-OUTDOOR-GYM"
+    ]
+  },
+  {
+    "section_id": "GYM-HOURS-04",
+    "ordinal": 4,
+    "heading_vi": "Giờ hoạt động Gym ngoài trời",
+    "body_vi": "Khu vực Gym ngoài trời mở cửa từ 05:00 đến 21:00 hằng ngày, có hệ thống đèn chiếu sáng vào buổi tối để cư dân tập luyện an toàn sau giờ làm việc.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-OUTDOOR-GYM"
+    ]
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "section_id": "PLAY-SCOPE-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi Sân chơi trẻ em",
+    "body_vi": "Nội quy áp dụng cho khu vực Sân chơi trẻ em ngoài trời thuộc Khu đô thị mô phỏng OCP1, không thu phí và không cần đặt lịch trước, mở tự do trong giờ hoạt động.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-PLAYGROUND"
+    ]
+  },
+  {
+    "section_id": "PLAY-AGE-02",
+    "ordinal": 2,
+    "heading_vi": "Độ tuổi sử dụng thiết bị",
+    "body_vi": "Thiết bị chơi được phân theo hai nhóm tuổi: 2–5 tuổi và 6–12 tuổi, có biển báo riêng cho từng khu vực; trẻ ngoài độ tuổi khuyến nghị cần phụ huynh giám sát chặt hơn.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-PLAYGROUND"
+    ]
+  },
+  {
+    "section_id": "PLAY-SAFETY-03",
+    "ordinal": 3,
+    "heading_vi": "An toàn khi vui chơi",
+    "body_vi": "Phụ huynh giám sát trẻ trong suốt thời gian vui chơi, không cho trẻ mang vật sắc nhọn vào khu vực, và kiểm tra giày dép trẻ trước khi leo trèo trên thiết bị.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-PLAYGROUND"
+    ]
+  },
+  {
+    "section_id": "PLAY-HOURS-04",
+    "ordinal": 4,
+    "heading_vi": "Giờ hoạt động Sân chơi trẻ em",
+    "body_vi": "Sân chơi trẻ em mở cửa từ 06:00 đến 20:00 hằng ngày; sau 20:00 khu vực được đóng đèn và không khuyến khích trẻ em vui chơi vì thiếu ánh sáng giám sát.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-PLAYGROUND"
+    ]
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "section_id": "LAKE-SCOPE-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi Biển hồ nước mặn",
+    "body_vi": "Nội quy áp dụng cho khu vực Biển hồ nước mặn nhân tạo thuộc Khu đô thị mô phỏng OCP1, phục vụ cư dân tắm và thư giãn tại khu vực bãi cát ven hồ.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-SALT-LAKE"
+    ]
+  },
+  {
+    "section_id": "LAKE-SAFETY-02",
+    "ordinal": 2,
+    "heading_vi": "An toàn khi tắm tại Biển hồ",
+    "body_vi": "Cư dân chỉ tắm trong khu vực có phao giới hạn và có nhân viên cứu hộ quan sát, không bơi ra ngoài khu vực phao dù thời tiết thuận lợi hay khi hồ vắng người.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-SALT-LAKE"
+    ]
+  },
+  {
+    "section_id": "LAKE-HOURS-03",
+    "ordinal": 3,
+    "heading_vi": "Giờ mở cửa Biển hồ nước mặn",
+    "body_vi": "Biển hồ nước mặn mở cửa từ 06:00 đến 19:00 hằng ngày, đóng cửa sớm hơn vào những ngày thời tiết xấu theo thông báo của Ban Quản lý dán tại khu vực bãi cát.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-SALT-LAKE"
+    ]
+  },
+  {
+    "section_id": "LAKE-BAN-04",
+    "ordinal": 4,
+    "heading_vi": "Các hành vi bị cấm tại Biển hồ",
+    "body_vi": "Nghiêm cấm mang chất tẩy rửa, dầu gội xuống hồ, câu cá trong khu vực tắm và neo đậu phương tiện cá nhân tại bãi cát dành cho người tắm.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-SALT-LAKE"
+    ]
+  }
+]

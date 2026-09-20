@@ -1,6 +1,6 @@
 # 📅 Nhật Ký Làm Việc Ngày 2026-09-19 (Session Memory Log)
 
-> Cập nhật lúc: `2026-09-19T18:47:14.352Z` | Phiên bản: `v1.0.0`
+> Cập nhật lúc: `2026-09-20T02:55:00.000Z` | Phiên bản: `v1.0.0-p00`
 
 ---
 
@@ -44,3 +44,54 @@
   (Knowledge Pack mô phỏng + Golden Dataset, tầng 🔴, D1–D2).
 - Repo hiện chỉ có 1 commit local, chưa push, chưa có remote (đúng theo phạm vi
   được cấp — CẤM push/tạo remote ở phiên này).
+---
+
+## 🏁 Phiên 2026-09-20 (chiều) — Chốt C-01…C-04, thi công và nghiệm thu gói P00
+
+### 🎯 Đã làm:
+- **Đo key do chủ tịch cấp, không dùng được như chỉ định (Đ13).** `stealth/union-alpha`
+  qua TokenRouter: `GET api.tokenrouter.io/v1/models` trả `401` — *"Pass
+  `Authorization: Bearer tr_...`"*; docs TokenRouter chỉ có `/v1/chat/completions`,
+  **không có endpoint embeddings**; quy ước tên model của họ là `openai:`/`anthropic:`/
+  `gemini:`, không có dạng `stealth/…`. Tra ra `stealth/union-alpha` là slug của
+  **OpenRouter** (ra 2026-09-16, free preview có hạn). Phép đo cuối (bắn key lên
+  OpenRouter) **bị sandbox chặn** — đã đưa lệnh `curl` cho người chạy tay.
+  ⇒ **CHƯA đổi contract model**, A1/A2/A3 vẫn là Claude.
+- **Rút yêu cầu "key embedding" (Đ14).** Đọc kỹ `01-CONTRACTS.md` §4.3 thì architect
+  đã chốt `Xenova/multilingual-e5-small` chạy TẠI CHỖ lúc seed, 384 chiều — không
+  cần key của ai. Câu xin key hôm trước là do SO chưa đọc kỹ §4.3.
+- **Sửa một phát biểu SAI trong `plan.md`:** "Gói P00 chưa được phóng vì C-01 chưa
+  chốt". `SPEC-P00` §7 P00-C6 CẤM sinh Knowledge Pack bằng LLM ⇒ P00 không cần key
+  model nào. P00 chưa bao giờ bị C-01 chặn.
+- **C-02 GẬT** (HITL chỉ cho lượt escalate), **C-03 GẬT** (bỏ Metric 2 Efficiency —
+  căn cứ có sẵn ở `SPEC-P00` §6.1, gỡ trạng thái "chưa có căn cứ" ở Idea Vault),
+  **C-04 vẫn chờ người** (tài khoản Vercel).
+- **Phóng và nghiệm thu gói P00.** Viết `handoffs/H02` (63 dòng, tự chứa), giao
+  worker thi công. Kết quả trên đĩa: `knowledge/` 19 tài liệu / 98 section + 4
+  khuyết tật cài sẵn, `evals/golden/` 66 case, `scripts/` 3 script kiểm Node thuần,
+  `package.json` (ESM, 0 dependency).
+- **SO đo lại độc lập, không tin report worker** (Luật K.5): K-M1 `19 · 98 · 4/4`,
+  K-M2 `50 (40) · 16 · 10/10`, K-M3 rỗng, K-M4 `13 true / 1 false` — tất cả exit 0.
+  Tự thiết kế **2 phép phá khác worker**: bơm "pickleball" vào `SPORTS-SCOPE-01` ⇒
+  `DefectMissingError` exit 1; xoá dòng mang mã `source_conflict` ⇒ `GoldenCountError`
+  + `CoverageError` exit 1. Cả hai phục hồi tái xanh. ⇒ **✅ DUYỆT**.
+
+### 🎯 Quyết định của phiên:
+- Giữ Claude cho 3 agent cho tới khi có key đo được tận tay — không đặt đường găng
+  của bài bị chấm lên một model ẩn danh có thể bị rút giữa tuần demo.
+- `FAC-FISHING-DECK` vs `FAC-FISHING-LAKE`: thống nhất `FAC-FISHING-LAKE` (theo §3.4/§4
+  vì đó là nguồn tính số nghiệm thu K-M4), sửa `SPEC-P00` §3.2.
+- `evals/golden/rubric.md` chuyển sang gói P04.
+
+### ⚠️ Lỗi của SO trong phiên này, ghi để không lặp:
+- `handoffs/H02` cấp nhầm đường dẫn (`knowledge/expected_defects.json`, `golden/*.jsonl`)
+  lệch `SPEC-P00` §2 (`evals/golden/`) ⇒ cổng K-M3 đỏ GIẢ dù dữ liệu lành. Worker
+  làm đúng và báo lên thay vì tự sửa SPEC. Đã ghi thành gotcha **G03**.
+- Phép thử "đỏ" đầu tiên của SO dùng mã `out_of_scope` không tồn tại trong bộ ⇒
+  tưởng script bỏ sót. Ghi thành gotcha **G05**.
+
+### ⏳ Đang chờ:
+- **Người chạy `curl` lên OpenRouter** để biết key `sk-…` thuộc nhà nào (sandbox chặn SO).
+- **C-04 — tài khoản Vercel** (OPERATIONS §1 đòi deploy từ D2 = 2026-09-21).
+- K-M5 cần `DATABASE_URL` Neon; K-M6 cần P02.
+- Gói kế tiếp: **P01** (nền tảng, auth 2 vai, ingest, deploy 🟠 D2).

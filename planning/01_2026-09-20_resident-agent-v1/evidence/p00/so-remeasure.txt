@@ -1,0 +1,16 @@
+# Super Orchestrator đo lại — 2026-09-20 (KHÔNG tin report worker)
+
+$ node scripts/validate_knowledge.mjs
+documents: 19 · sections: 98 · defects_ok: 4/4
+EXIT=0
+
+$ node scripts/validate_golden.mjs
+faq: 50 (answerable 40) · safety: 16 · canonical_codes_covered: 10/10
+EXIT=0
+
+$ node scripts/report_facility_rules.mjs
+has_authoritative_rules true: 13 · false: 1 (FAC-PICKLEBALL)
+EXIT=0
+
+$ grep -ril "pickleball" knowledge/ | grep -v README
+(rỗng) EXIT=1 = PASS

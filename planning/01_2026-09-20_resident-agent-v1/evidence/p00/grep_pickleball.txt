@@ -1,0 +1,6 @@
+--- Lệnh literal theo handoff W5 ---
+knowledge/expected_defects.json
+EXIT=0
+
+--- Lệnh loại thêm expected_defects.json (hợp đồng máy đọc, không phải nội dung tri thức) — để chẩn đoán xung đột đường dẫn nêu trong report ---
+EXIT=1

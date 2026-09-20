@@ -1,0 +1,54 @@
+[
+  {
+    "section_id": "REQ-SCOPE-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi quy định xử lý khiếu nại",
+    "body_vi": "Quy định áp dụng cho toàn bộ khiếu nại, phản ánh và yêu cầu hỗ trợ của cư dân gửi đến Ban Quản lý Khu đô thị mô phỏng OCP1 liên quan đến vận hành, tiện ích và dịch vụ chung.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "REQ-CHANNEL-02",
+    "ordinal": 2,
+    "heading_vi": "Kênh tiếp nhận yêu cầu của cư dân",
+    "body_vi": "Cư dân gửi yêu cầu qua ứng dụng cư dân, email, hotline hoặc trực tiếp tại văn phòng Ban Quản lý; mỗi yêu cầu được cấp một mã số theo dõi để tra cứu tiến độ xử lý.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "REQ-SLA-03",
+    "ordinal": 3,
+    "heading_vi": "Thời hạn phản hồi và xử lý",
+    "body_vi": "Ban Quản lý phản hồi tiếp nhận trong vòng 24 giờ và hoàn tất xử lý khiếu nại thông thường trong vòng 5 ngày làm việc; sự cố khẩn cấp được ưu tiên xử lý ngay trong ngày.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "REQ-ESCALATE-04",
+    "ordinal": 4,
+    "heading_vi": "Quy trình chuyển cấp xử lý",
+    "body_vi": "Yêu cầu chưa xử lý xong trong thời hạn hoặc liên quan đến tranh chấp, bồi thường được chuyển cấp lên bộ phận pháp lý hoặc Ban Giám đốc vận hành để xem xét quyết định.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  }
+]

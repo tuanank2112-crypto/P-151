@@ -114,7 +114,7 @@ Cột **Số section** là **bắt buộc tối thiểu**, viết thêm được
 | `OCP1-BBQ-GARDEN-RULES-001` | Nội quy Vườn Nướng BBQ | Approved / Current | `FAC-BBQ` | 5 |
 | `OCP1-KAYAK-DOCK-RULES-001` | Nội quy Bến Thuyền Kayak | Approved / Current | `FAC-KAYAK` | 4 |
 | `OCP1-SALTWATER-LAKE-RULES-001` | Nội quy Biển hồ nước mặn | Approved / Current | `FAC-SALT-LAKE` | 4 |
-| `OCP1-FISHING-DECK-RULES-001` | Nội quy Sàn Câu cá | Approved / Current | `FAC-FISHING-DECK` | 4 |
+| `OCP1-FISHING-DECK-RULES-001` | Nội quy Sàn Câu cá | Approved / Current | `FAC-FISHING-LAKE` | 4 |
 | `OCP1-CHILDREN-PLAYGROUND-RULES-001` | Nội quy Sân chơi trẻ em | Approved / Current | `FAC-PLAYGROUND` | 4 |
 | `OCP1-OUTDOOR-GYM-RULES-001` | Nội quy Gym ngoài trời | Approved / Current | `FAC-OUTDOOR-GYM` | 4 |
 

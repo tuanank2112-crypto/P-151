@@ -1,0 +1,121 @@
+[
+  {
+    "section_id": "BLD-GEN-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi áp dụng nội quy",
+    "body_vi": "Nội quy này áp dụng cho toàn bộ cư dân, khách đến thăm và đơn vị thi công hoạt động trong phạm vi Tòa nhà thuộc Khu đô thị mô phỏng OCP1, bao gồm căn hộ, hành lang, sảnh, thang máy và khu kỹ thuật.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "BLD-QUIET-02",
+    "ordinal": 2,
+    "heading_vi": "Giờ yên tĩnh trong toà nhà",
+    "body_vi": "Từ 22:00 đến 06:00 hằng ngày là giờ yên tĩnh. Cư dân không gây tiếng ồn lớn (nhạc, khoan đục, cãi vã) ảnh hưởng đến căn hộ liền kề. Vi phạm lặp lại bị lập biên bản nhắc nhở.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "BLD-COMMON-03",
+    "ordinal": 3,
+    "heading_vi": "Sử dụng khu vực sinh hoạt chung",
+    "body_vi": "Sảnh, hành lang, cầu thang bộ và sân chơi chung không được dùng làm nơi để đồ cá nhân, phơi quần áo hoặc kinh doanh dưới mọi hình thức. Ban Quản lý có quyền di dời vật cản mà không cần báo trước.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "BLD-PET-04",
+    "ordinal": 4,
+    "heading_vi": "Quy định nuôi thú cưng",
+    "body_vi": "Cư dân được nuôi thú cưng trong căn hộ với điều kiện tiêm phòng đầy đủ, có dây xích/lồng khi di chuyển qua khu vực chung, và dọn vệ sinh ngay khi thú cưng phóng uế tại khu vực công cộng.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "BLD-WASTE-05",
+    "ordinal": 5,
+    "heading_vi": "Thu gom và phân loại rác thải",
+    "body_vi": "Rác sinh hoạt được thu gom hai lượt mỗi ngày tại phòng rác từng tầng. Cư dân phân loại rác hữu cơ và rác tái chế theo hướng dẫn dán tại phòng rác trước khi bỏ vào đúng thùng quy định.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "BLD-FIRE-06",
+    "ordinal": 6,
+    "heading_vi": "An toàn phòng cháy chữa cháy",
+    "body_vi": "Cư dân không để vật dụng dễ cháy tại hành lang thoát hiểm, không tự ý câu mắc điện vượt tải, và tham gia đầy đủ diễn tập phòng cháy chữa cháy định kỳ do Ban Quản lý tổ chức mỗi năm một lần.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "BLD-VISITOR-07",
+    "ordinal": 7,
+    "heading_vi": "Đăng ký khách đến thăm căn hộ",
+    "body_vi": "Khách đến thăm lưu trú quá 22:00 phải được cư dân đăng ký trước với bảo vệ sảnh, xuất trình giấy tờ tuỳ thân để đối chiếu. Khách đoàn từ năm người trở lên cần báo Ban Quản lý trước 24 giờ.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "BLD-AMEN-07",
+    "ordinal": 8,
+    "heading_vi": "Sử dụng tiện ích nướng BBQ trong khuôn viên",
+    "body_vi": "Khu vực nướng BBQ phục vụ tối đa 15 người cho mỗi lượt đăng ký. Cư dân đặt lịch qua Ban Quản lý và chịu trách nhiệm dọn dẹp sau khi sử dụng, tuân thủ các quy định an toàn phòng cháy chung của Tòa nhà.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": "CG-BBQ-CAPACITY",
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-BBQ"
+    ]
+  },
+  {
+    "section_id": "BLD-COMPLAINT-09",
+    "ordinal": 9,
+    "heading_vi": "Quy trình phản ánh và khiếu nại",
+    "body_vi": "Cư dân phản ánh sự cố hoặc khiếu nại về vận hành Tòa nhà qua ứng dụng cư dân, email hoặc trực tiếp tại văn phòng Ban Quản lý. Mọi phản ánh được ghi nhận và phản hồi theo quy định xử lý khiếu nại chung.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  }
+]

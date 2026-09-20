@@ -1,0 +1,62 @@
+[
+  {
+    "section_id": "KAYAK-SCOPE-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi Bến Thuyền Kayak",
+    "body_vi": "Nội quy áp dụng cho khu vực Bến Thuyền Kayak trên hồ cảnh quan thuộc Khu đô thị mô phỏng OCP1, dành cho cư dân từ 15 tuổi trở lên hoặc trẻ nhỏ hơn có phụ huynh chèo cùng.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-KAYAK"
+    ]
+  },
+  {
+    "section_id": "KAYAK-SAFETY-02",
+    "ordinal": 2,
+    "heading_vi": "An toàn khi chèo thuyền kayak",
+    "body_vi": "Người chèo thuyền bắt buộc mặc áo phao trong suốt thời gian ở trên thuyền, không đứng lên thuyền khi đang di chuyển và tuân theo hiệu lệnh của nhân viên trực bến.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-KAYAK"
+    ]
+  },
+  {
+    "section_id": "KAYAK-BOOK-03",
+    "ordinal": 3,
+    "heading_vi": "Đặt lịch sử dụng thuyền kayak",
+    "body_vi": "Mỗi lượt chèo kayak kéo dài tối đa 30 phút, đặt lịch trước qua ứng dụng cư dân hoặc đăng ký trực tiếp tại bến nếu còn thuyền trống trong khung giờ mở cửa.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-KAYAK"
+    ]
+  },
+  {
+    "section_id": "KAYAK-EQUIP-04",
+    "ordinal": 4,
+    "heading_vi": "Bảo quản trang thiết bị",
+    "body_vi": "Người sử dụng giữ gìn mái chèo và áo phao, trả lại đúng vị trí giá để sau khi kết thúc lượt chèo, báo ngay nhân viên trực nếu phát hiện thuyền hoặc thiết bị hư hỏng.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-KAYAK"
+    ]
+  }
+]

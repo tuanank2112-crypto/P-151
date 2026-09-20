@@ -7,10 +7,10 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 ## Mục tiêu hiện tại (Active) — hồ sơ `01_2026-09-20_resident-agent-v1`, deadline 2026-09-27
 
-**Chưa gói nào chạy hay có mã nguồn.** Thứ tự bắt buộc theo phụ thuộc (P05 khoá
-sau cổng P01–P04 xanh — Đ03):
+**P00 đã xong và được đo lại độc lập (2026-09-20).** Thứ tự bắt buộc theo phụ
+thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 
-- [ ] P00 — Knowledge Pack mô phỏng + Golden Dataset 🔴 (D1–D2)
+- [x] P00 — Knowledge Pack mô phỏng + Golden Dataset 🔴 (D1–D2) — ✅ DUYỆT, xem `Done`
 - [ ] P01 — Nền tảng, auth 2 vai, ingest, deploy 🟠 (D2) — phụ thuộc P00
 - [ ] P02 — RAG có trích dẫn, memory, 3 agent, cổng escalate 🔴🟠 (D3–D4) — phụ thuộc P00, P01
 - [ ] P03 — Console BQL: quản lý tài liệu + duyệt câu trả lời (HITL) 🟠 (D4–D5) — phụ thuộc P01, P02
@@ -49,6 +49,14 @@ sau cổng P01–P04 xanh — Đ03):
   Ai muốn lật phải trả lời được "lấy baseline ở đâu".
 
 ## Đã hoàn thành (Done)
+
+- [x] **P00 — Knowledge Pack mô phỏng + Golden Dataset (2026-09-20):** 19 tài liệu
+  / 98 section trong `knowledge/`, 4 khuyết tật cài sẵn DEF-01..04 (2 gap, 1 cặp
+  conflict, 1 expired), 66 case Golden trong `evals/golden/` (50 FAQ + 16 Safety,
+  phủ đủ 10 mã canonical), 3 script kiểm chạy Node thuần. Bốn cổng K-M1→K-M4 exit 0.
+  Super Orchestrator đo lại độc lập và tự thiết kế 2 phép phá (cả hai ĐỎ đúng rồi
+  tái xanh). Phán quyết ✅ DUYỆT tại `reports/R02_p00-knowledge-golden.md`.
+  Còn treo: K-M5 (cần `DATABASE_URL` Neon), K-M6 (cần P02).
 
 - [x] **Khởi tạo Bộ Nhớ Não Bộ Chuẩn (v1.0.0):** Thiết lập cấu trúc Đa Tầng brain4agent V5.2 và quy chuẩn quản trị AGENTS.md.
 - [x] **Khâu THIẾT KẾ hồ sơ `01_2026-09-20_resident-agent-v1` (2026-09-20):** đủ 9

@@ -1,0 +1,77 @@
+[
+  {
+    "section_id": "BBQ-SCOPE-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi Vườn Nướng BBQ",
+    "body_vi": "Nội quy áp dụng cho khu Vườn Nướng BBQ ngoài trời thuộc Khu đô thị mô phỏng OCP1, phục vụ cư dân đặt lịch theo lượt để tổ chức tiệc nướng ngoài trời cùng gia đình, bạn bè.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-BBQ"
+    ]
+  },
+  {
+    "section_id": "BBQ-CAP-01",
+    "ordinal": 2,
+    "heading_vi": "Sức chứa mỗi lượt sử dụng",
+    "body_vi": "Mỗi lượt sử dụng Vườn Nướng BBQ tối đa 10 người. Cư dân đăng ký số lượng khách chính xác khi đặt lịch để Ban Quản lý sắp xếp bàn ghế và dụng cụ nướng phù hợp.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": "CG-BBQ-CAPACITY",
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-BBQ"
+    ]
+  },
+  {
+    "section_id": "BBQ-BOOK-02",
+    "ordinal": 3,
+    "heading_vi": "Đặt lịch sử dụng Vườn Nướng BBQ",
+    "body_vi": "Cư dân đặt lịch trước tối thiểu 24 giờ qua ứng dụng cư dân, mỗi hộ được đặt tối đa hai lượt mỗi tuần để đảm bảo công bằng cho các hộ khác cùng có nhu cầu sử dụng.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-BBQ"
+    ]
+  },
+  {
+    "section_id": "BBQ-SAFETY-03",
+    "ordinal": 4,
+    "heading_vi": "An toàn phòng cháy khi nướng BBQ",
+    "body_vi": "Chỉ sử dụng bếp nướng do Ban Quản lý bố trí sẵn, không mang bình gas cá nhân vào khu vực, và luôn có người trông coi bếp than trong suốt thời gian nướng để tránh cháy lan.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-BBQ"
+    ]
+  },
+  {
+    "section_id": "BBQ-CLEAN-04",
+    "ordinal": 5,
+    "heading_vi": "Vệ sinh sau khi sử dụng",
+    "body_vi": "Cư dân dọn sạch bàn ghế, thu gom rác thải và tro than vào đúng nơi quy định trước khi rời khu vực Vườn Nướng BBQ; bỏ sót rác quá 30 phút sẽ bị trừ vào tiền cọc lượt sau.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-BBQ"
+    ]
+  }
+]

@@ -1,0 +1,80 @@
+[
+  {
+    "section_id": "CONS-SCOPE-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi nội quy thi công",
+    "body_vi": "Nội quy áp dụng cho mọi hoạt động sửa chữa, cải tạo nội thất bên trong căn hộ tại Khu Căn hộ thuộc Khu đô thị mô phỏng OCP1, không áp dụng cho thi công kết cấu chung của tòa nhà.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-04"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "CONS-PERMIT-02",
+    "ordinal": 2,
+    "heading_vi": "Xin phép thi công",
+    "body_vi": "Trước khi thi công, cư dân nộp bản vẽ hoặc mô tả hạng mục sửa chữa cho Ban Quản lý để được cấp phép thi công, đơn vị thi công phải đăng ký danh sách công nhân ra vào.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-04"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "CONS-TIME-03",
+    "ordinal": 3,
+    "heading_vi": "Khung giờ thi công",
+    "body_vi": "Thi công gây tiếng ồn chỉ được thực hiện từ 08:00 đến 17:00 các ngày trong tuần từ thứ Hai đến thứ Bảy, không thi công gây ồn vào Chủ nhật và ngày lễ.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-04"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "CONS-NOISE-04",
+    "ordinal": 4,
+    "heading_vi": "Kiểm soát tiếng ồn khi thi công",
+    "body_vi": "Đơn vị thi công sử dụng thiết bị giảm ồn khi khoan đục, không vận hành máy phát điện gây ồn tại hành lang chung, và tạm dừng thi công khi có yêu cầu của Ban Quản lý.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-04"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "CONS-WASTE-05",
+    "ordinal": 5,
+    "heading_vi": "Vận chuyển phế thải xây dựng",
+    "body_vi": "Phế thải xây dựng được đóng bao và vận chuyển ra ngoài bằng thang máy chở hàng trong khung giờ thi công, không để phế thải tồn đọng tại hành lang qua đêm.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-04"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "CONS-PENALTY-06",
+    "ordinal": 6,
+    "heading_vi": "Xử lý vi phạm nội quy thi công",
+    "body_vi": "Vi phạm khung giờ hoặc gây tiếng ồn quá mức bị lập biên bản nhắc nhở lần đầu; tái phạm có thể bị tạm ngừng cấp phép thi công cho đến khi cam kết khắc phục với Ban Quản lý.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-04"
+    ],
+    "facility_ids": []
+  }
+]

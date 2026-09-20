@@ -38,7 +38,20 @@ project-root/
 ├── AGENTS.md                         # [QUY TẮC TỐI THƯỢNG] Nguồn chân lý DUY NHẤT (Gemini/Codex đọc trực tiếp)
 ├── CLAUDE.md                         # [SHIM] Điểm nạp tự động của Claude Code — chỉ chứa @AGENTS.md
 ├── brain4agent-v1.7.1.md   # [MARKER] Phiên bản khung não — soi nhanh ở root
-├── README.md                         # Tài liệu giới thiệu và hướng dẫn build dự án
+├── package.json                      # [MỚI 2026-09-20] Node ESM ("type":"module") + script kiểm P00. CHƯA có dependency nào
+├── knowledge/                        # [MỚI - P00] Knowledge Pack MÔ PHỎNG, 19 tài liệu / 98 section
+│   ├── manifest.json                 #   siêu dữ liệu 19 tài liệu
+│   ├── sections/<document_id>.json   #   19 file, tên trùng document_id
+│   └── README.md                     #   revision: SIM-1.0.0 + lịch sử đổi
+├── evals/golden/                     # [MỚI - P00] Bộ đo, KHÔNG nằm trong knowledge/ (SPEC-P00 §2)
+│   ├── golden_faq.jsonl              #   50 case (40 answerable) — Metric 1
+│   ├── golden_safety.jsonl           #   16 case, phủ đủ 10 mã canonical — Metric 3
+│   ├── expected_defects.json         #   hợp đồng máy đọc của 4 khuyết tật (DEF-01..04)
+│   └── rubric.md                     #   CHƯA CÓ — chuyển sang gói P04
+├── scripts/                          # [MỚI - P00] Script kiểm, Node thuần, không cần DB
+│   ├── validate_knowledge.mjs        #   K-M1: documents 19 · sections 98 · defects_ok 4/4
+│   ├── validate_golden.mjs           #   K-M2: faq 50 (answerable 40) · safety 16 · canonical 10/10
+│   └── report_facility_rules.mjs     #   K-M4: has_authoritative_rules true 13 · false 1 (FAC-PICKLEBALL)
 ├── brain4agent/                      # [BỘ NHỚ DỰ ÁN] Single Source of Truth
 │   ├── memory/hot/                   # [HOT MEMORY] Ký ức nóng phiên (today.md, state.json)
 │   ├── memory-distill.txt            # [KERNEL] Bản cô đọng tối thượng (< 100 dòng)
@@ -50,10 +63,12 @@ project-root/
 │   └── project-intro.md              # [INTRO] Tổng quan dự án & Tech stack
 ├── planning/                          # [QUẢN LÝ KẾ HOẠCH NÂNG CẤP] Chứa các bản kế hoạch RFCs
 │   └── 01_2026-09-20_resident-agent-v1/  # Hồ sơ đang mở — thiết kế ĐANG HIỆU LỰC
-│       ├── plan.md                   # Metadata + Nhật ký quyết định Đ01–Đ12 + Work Packages + checklist
+│       ├── plan.md                   # Metadata + Nhật ký quyết định Đ01–Đ14 + Work Packages + checklist
 │       ├── specs/                    # 9 file SPEC (3711 dòng): 00-ARCHITECTURE (router riêng),
 │       │                             #   01-CONTRACTS, SPEC-P00/P02/P03/P04/P05, OPERATIONS, TESTING-ACCEPTANCE
-│       └── reports/                  # R01_specs-design.md — phán quyết nghiệm thu khâu thiết kế
+│       ├── handoffs/                 # H02_p00-knowledge-golden.md — bàn giao tự chứa cho worker
+│       ├── reports/                  # R01 (thiết kế SPEC) · R02 (P00) — mỗi H đúng một R
+│       └── evidence/p00/             # output máy nguyên văn, CẤM sửa tay (report chỉ trỏ)
 ├── .agents/skills/                   # [WORKSPACE SKILLS] Kỹ năng chuyên dụng cục bộ dự án
 └── docs/                             # [ĐẶC TẢ CŨ ĐÃ HẠ CẤP] 6 tài liệu v0.2 (sản phẩm khác) + assets/ (3 ảnh tham chiếu)
 ```

@@ -1,0 +1,50 @@
+[
+  {
+    "section_id": "POOL24-SCOPE-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi áp dụng (bản 2024)",
+    "body_vi": "Bản nội quy năm 2024 áp dụng cho hai bể bơi thuộc Khu đô thị mô phỏng OCP1 trong giai đoạn vận hành 2024–2025, trước khi bản nội quy 2.0 được ban hành thay thế.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-POOL-KTP",
+      "FAC-POOL-TP"
+    ]
+  },
+  {
+    "section_id": "POOL24-HOURS-01",
+    "ordinal": 2,
+    "heading_vi": "Giờ mở cửa bể bơi",
+    "body_vi": "Bể bơi mở cửa từ 06:00 đến 21:00 hằng ngày, riêng ngày lễ Tết có thể điều chỉnh giờ đóng cửa sớm hơn theo thông báo dán tại quầy lễ tân khu vực bể bơi.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-POOL-KTP",
+      "FAC-POOL-TP"
+    ]
+  },
+  {
+    "section_id": "POOL24-BAN-02",
+    "ordinal": 3,
+    "heading_vi": "Các hành vi bị cấm (bản 2024)",
+    "body_vi": "Bản 2024 nghiêm cấm chạy nhảy quanh thành bể, mang thức ăn xuống khu vực hồ bơi và sử dụng loa đài công suất lớn trong khung giờ mở cửa nêu tại mục Giờ mở cửa bể bơi.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-POOL-KTP",
+      "FAC-POOL-TP"
+    ]
+  }
+]

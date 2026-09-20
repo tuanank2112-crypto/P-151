@@ -1,0 +1,80 @@
+[
+  {
+    "section_id": "VIL-SCOPE-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi Khu biệt thự / Khu nhà ở thấp tầng",
+    "body_vi": "Nội quy áp dụng cho toàn bộ căn biệt thự, nhà liền kề và khuôn viên riêng thuộc Khu Biệt thự của Khu đô thị mô phỏng OCP1, không áp dụng cho các toà căn hộ cao tầng.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "VIL-FENCE-02",
+    "ordinal": 2,
+    "heading_vi": "Quy định hàng rào, sân vườn riêng",
+    "body_vi": "Chủ nhà được trồng cây, lắp hàng rào trong khuôn viên riêng nhưng chiều cao hàng rào mặt tiền không vượt quá 1,2 mét và không lấn ra vỉa hè, lối đi chung của khu.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "VIL-RENOVATE-03",
+    "ordinal": 3,
+    "heading_vi": "Sửa chữa, cải tạo trong khuôn viên biệt thự",
+    "body_vi": "Mọi hoạt động sửa chữa làm thay đổi kết cấu, mặt tiền căn biệt thự phải đăng ký với Ban Quản lý và tuân thủ khung giờ thi công chung như quy định tại nội quy thi công Khu Căn hộ.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-04"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "VIL-PET-04",
+    "ordinal": 4,
+    "heading_vi": "Nuôi thú cưng ngoài trời",
+    "body_vi": "Thú cưng nuôi trong khuôn viên biệt thự cần được rào chắn hoặc xích an toàn khi ở khu vực sân trước tiếp giáp đường nội bộ, tránh gây nguy hiểm cho người đi bộ và trẻ em qua lại.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "VIL-SECURITY-05",
+    "ordinal": 5,
+    "heading_vi": "An ninh khu biệt thự",
+    "body_vi": "Khu Biệt thự có tuần tra an ninh riêng 24/24. Chủ nhà đăng ký danh sách người giúp việc, người thân ở cùng với Ban Quản lý để thuận tiện kiểm soát ra vào cổng khu.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "VIL-VEHICLE-06",
+    "ordinal": 6,
+    "heading_vi": "Đỗ xe trong khuôn viên biệt thự",
+    "body_vi": "Xe của chủ nhà và khách đỗ trong khuôn viên riêng hoặc vị trí được kẻ vạch trên đường nội bộ, không đỗ chắn lối đi chung hoặc trước cổng nhà liền kề quá 30 phút.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-02"
+    ],
+    "facility_ids": []
+  }
+]

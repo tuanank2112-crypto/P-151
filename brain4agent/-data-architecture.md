@@ -2,9 +2,16 @@
 
 Tài liệu thiết kế về cấu trúc dữ liệu, cơ chế lưu trữ bền vững (Persistence Layer) và luồng luân chuyển dữ liệu đa tầng.
 
-> **Trạng thái: THIẾT KẾ, CHƯA THI CÔNG.** Không có bảng, migration hay dòng mã
-> nào dưới đây đã tồn tại thật trong hạ tầng — repo hiện chưa có dòng mã sản phẩm
-> nào (2026-09-20). Nguồn chân lý chi tiết là
+> **Trạng thái 2026-09-20: TẦNG DB CHƯA THI CÔNG, TẦNG FILE ĐÃ CÓ.**
+> Chưa có bảng, migration hay kết nối Neon nào tồn tại thật. **Nhưng dữ liệu nguồn
+> đã nằm trên đĩa dưới dạng file** sau gói P00:
+> `knowledge/manifest.json` + `knowledge/sections/<document_id>.json` (19 tài liệu /
+> 98 section) là nguồn sẽ được `scripts/seed_knowledge.mjs` (gói P01) nạp vào bảng
+> `documents`/`sections`/`chunks`; `evals/golden/expected_defects.json` là hợp đồng
+> máy đọc để kiểm 4 khuyết tật sau khi seed. Nghĩa là **file trên đĩa đang là nguồn
+> chân lý của tri thức, DB sẽ là bản dẫn xuất** — sửa tri thức thì sửa file rồi tăng
+> `revision` ở `knowledge/README.md` (hiện `SIM-1.0.0`) và seed lại, CẤM sửa thẳng DB.
+> Nguồn chân lý chi tiết là
 > `planning/01_2026-09-20_resident-agent-v1/specs/01-CONTRACTS.md` (DDL, schema,
 > enum reason code) — file này chỉ tóm tắt điều hướng, không thay thế nó.
 

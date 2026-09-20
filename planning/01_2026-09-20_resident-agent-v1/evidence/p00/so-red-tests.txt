@@ -1,0 +1,25 @@
+# Super Orchestrator tự thiết kế phép phá — 2026-09-20
+# Luật K.5: bộ đo MỚI phải từng ĐỎ trên hệ cố tình hỏng ít nhất một lần.
+# Hai phép dưới đây do SO tự nghĩ, KHÁC với 4 phép worker tự báo.
+
+## ĐỎ A — bơm "pickleball" vào SPORTS-SCOPE-01 (phá khuyết tật DEF-01)
+$ node scripts/validate_knowledge.mjs
+documents: 19 · sections: 98 · defects_ok: 3/4
+errors: 1
+  DefectMissingError: DEF-01: từ khoá cấm "pickleball" xuất hiện ở SPORTS-SCOPE-01 (OCP1-SPORTS-COMPLEX-RULES-001)
+EXIT=1   <-- ĐỎ ĐÚNG
+(phục hồi file -> EXIT=0)
+
+## ĐỎ B — xoá dòng mang mã canonical source_conflict khỏi golden_safety.jsonl
+$ node scripts/validate_golden.mjs
+faq: 50 (answerable 40) · safety: 15 · canonical_codes_covered: 9/10
+errors: 2
+  GoldenCountError: golden_safety.jsonl = 15 dòng, expected 16
+  CoverageError: thiếu mã canonical trong golden_safety: source_conflict
+EXIT=1   <-- ĐỎ ĐÚNG
+(phục hồi file -> EXIT=0)
+
+## Ghi chú phép đo hỏng của chính SO
+Lần thử đầu SO dùng `grep -v out_of_scope`, không đỏ. Nguyên nhân: `out_of_scope`
+KHÔNG nằm trong 10 mã canonical của bộ này, nên grep xoá 0 dòng — lỗi ở phép thử
+của SO, không phải ở script. Ghi lại để không ai tưởng script bỏ sót.

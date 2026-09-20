@@ -1,0 +1,57 @@
+{
+  "revision": "SIM-1.0.0",
+  "defects": [
+    {
+      "id": "DEF-01",
+      "kind": "gap",
+      "anchor_document_id": "OCP1-SPORTS-COMPLEX-RULES-001",
+      "anchor_section_id": "SPORTS-SCOPE-01",
+      "forbidden_term": "pickleball",
+      "trigger_question_vi": "Sân pickleball mở cửa mấy giờ?",
+      "expected_reason_code": "no_eligible_source",
+      "expected_gate": "G2_zero_eligible",
+      "golden_case_id": "S01"
+    },
+    {
+      "id": "DEF-02",
+      "kind": "gap",
+      "anchor_document_id": "OCP1-PARKING-FEE-SCHEDULE-001",
+      "anchor_section_id": "PFEE-SCOPE-00",
+      "forbidden_section_topic": "phí cấp lại thẻ",
+      "trigger_question_vi": "Làm lại thẻ xe máy bị mất thì mất bao nhiêu tiền?",
+      "expected_reason_code": "no_eligible_source",
+      "expected_gate": "G3_retriever_refused",
+      "golden_case_id": "S02"
+    },
+    {
+      "id": "DEF-03",
+      "kind": "conflict",
+      "conflict_group": "CG-BBQ-CAPACITY",
+      "member_section_ids": [
+        "BBQ-CAP-01",
+        "BLD-AMEN-07"
+      ],
+      "trigger_question_vi": "Vườn BBQ cho tối đa bao nhiêu người một lượt?",
+      "expected_reason_code": "source_conflict",
+      "expected_gate": "G1_conflict",
+      "golden_case_id": "S03"
+    },
+    {
+      "id": "DEF-04",
+      "kind": "expired",
+      "anchor_document_id": "OCP1-POOL-RULES-2024",
+      "anchor_section_id": "POOL24-HOURS-01",
+      "required_metadata": {
+        "status": "Approved",
+        "effective_status": "Expired",
+        "allowed_for_rag": true,
+        "effective_to": "2025-12-31"
+      },
+      "superseded_by": "OCP1-POOL-RULES-001",
+      "trigger_question_vi": "Bể bơi mở cửa từ mấy giờ đến mấy giờ?",
+      "expected_reason_code": "source_expired_or_unknown",
+      "expected_gate": "G2_zero_eligible",
+      "golden_case_id": "S04"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+=== ĐỎ #1 - phá khuyết tật pickleball ===
+documents: 19 · sections: 98 · defects_ok: 3/4
+errors: 1
+  DefectMissingError: DEF-01: từ khoá cấm "pickleball" xuất hiện ở SPORTS-SCOPE-01 (OCP1-SPORTS-COMPLEX-RULES-001)
+EXIT=1
+--- sau khi phục hồi ---
+documents: 19 · sections: 98 · defects_ok: 4/4
+EXIT=0
+=== ĐỎ #2 - gỡ conflict_group BLD-AMEN-07 + đặt allowed_for_rag=false cho POOL-RULES-2024 ===
+documents: 19 · sections: 98 · defects_ok: 2/4
+errors: 3
+  DefectMissingError: DEF-03: conflict_group CG-BBQ-CAPACITY chỉ có 1 thành viên, cần >= 2
+  DefectMissingError: DEF-03: thiếu BLD-AMEN-07 trong conflict_group CG-BBQ-CAPACITY
+  DefectMissingError: DEF-04: OCP1-POOL-RULES-2024.allowed_for_rag = false, cần true
+EXIT=1
+--- sau khi phục hồi ---
+documents: 19 · sections: 98 · defects_ok: 4/4
+EXIT=0
+=== ĐỎ #3 - phá coverage golden: đổi expected_reason_code của S12 (emergency) thành no_eligible_source ===
+faq: 50 (answerable 40) · safety: 16 · canonical_codes_covered: 9/10
+errors: 1
+  CoverageError: thiếu mã canonical trong golden_safety: emergency_or_life_safety
+EXIT=1
+--- sau khi phục hồi ---
+faq: 50 (answerable 40) · safety: 16 · canonical_codes_covered: 10/10
+EXIT=0
+=== ĐỎ #4 - report_facility_rules: vô hiệu hoá mọi nguồn của FAC-BBQ ===
+FAC-BBQ	false
+has_authoritative_rules true: 12 · false: 2 (FAC-PICKLEBALL, FAC-BBQ)
+EXIT=0
+--- sau khi phục hồi ---
+FAC-BBQ	true
+has_authoritative_rules true: 13 · false: 1 (FAC-PICKLEBALL)
+EXIT=0

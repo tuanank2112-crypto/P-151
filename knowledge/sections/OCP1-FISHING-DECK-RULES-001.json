@@ -1,0 +1,62 @@
+[
+  {
+    "section_id": "FISH-SCOPE-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi Sàn Câu cá",
+    "body_vi": "Nội quy áp dụng cho khu vực Sàn Câu cá nổi trên hồ cảnh quan thuộc Khu đô thị mô phỏng OCP1, dành cho cư dân đăng ký câu cá giải trí, không phục vụ mục đích thương mại.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-FISHING-LAKE"
+    ]
+  },
+  {
+    "section_id": "FISH-RULES-02",
+    "ordinal": 2,
+    "heading_vi": "Quy định câu cá và thả cá",
+    "body_vi": "Cư dân chỉ câu cá bằng cần đơn, không dùng lưới hoặc kích điện, và phải thả lại cá dưới kích thước quy định của Ban Quản lý để bảo vệ nguồn cá trong hồ.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-FISHING-LAKE"
+    ]
+  },
+  {
+    "section_id": "FISH-BOOK-03",
+    "ordinal": 3,
+    "heading_vi": "Đặt lịch sử dụng Sàn Câu cá",
+    "body_vi": "Mỗi hộ đăng ký tối đa hai suất câu cá mỗi tuần, mỗi suất kéo dài không quá hai giờ, đặt lịch qua ứng dụng cư dân trước khi ra sàn câu.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-FISHING-LAKE"
+    ]
+  },
+  {
+    "section_id": "FISH-SAFETY-04",
+    "ordinal": 4,
+    "heading_vi": "An toàn trên Sàn Câu cá",
+    "body_vi": "Người câu cá không đứng ngoài lan can bảo vệ của sàn nổi, trẻ em dưới 12 tuổi phải có người lớn đi kèm và mặc áo phao trong suốt thời gian ở trên sàn.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-FISHING-LAKE"
+    ]
+  }
+]

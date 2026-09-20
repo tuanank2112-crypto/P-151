@@ -1,0 +1,41 @@
+[
+  {
+    "section_id": "BQL-ADDR-01",
+    "ordinal": 1,
+    "heading_vi": "Địa chỉ văn phòng BQL",
+    "body_vi": "Văn phòng Ban Quản lý Khu đô thị mô phỏng OCP1 đặt tại tầng trệt Tòa nhà trung tâm, cạnh sảnh chính, là nơi tiếp nhận mọi thủ tục hành chính của cư dân.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "BQL-HOURS-02",
+    "ordinal": 2,
+    "heading_vi": "Giờ làm việc Văn phòng BQL",
+    "body_vi": "Văn phòng BQL làm việc từ 08:00 đến 17:30 các ngày từ thứ Hai đến thứ Bảy, nghỉ trưa từ 12:00 đến 13:30, đóng cửa Chủ nhật và các ngày lễ theo quy định chung.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "BQL-CONTACT-03",
+    "ordinal": 3,
+    "heading_vi": "Kênh liên hệ và tiếp nhận phản ánh",
+    "body_vi": "Cư dân liên hệ Văn phòng BQL qua hotline nội bộ, email hoặc ứng dụng cư dân để đặt lịch làm việc, tra cứu thủ tục hoặc gửi phản ánh về vận hành khu đô thị.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  }
+]

@@ -1,0 +1,120 @@
+[
+  {
+    "section_id": "SPORTS-SCOPE-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi Khu phức hợp Thể thao",
+    "body_vi": "Khu phức hợp Thể thao gồm: Sân tennis, Sân cầu lông, Sân bóng rổ, Sân bóng chuyền, Sân bóng bàn. Nội quy này áp dụng cho toàn bộ cư dân và khách đăng ký sử dụng năm sân nêu trên.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-TENNIS",
+      "FAC-BADMINTON",
+      "FAC-BASKETBALL",
+      "FAC-VOLLEYBALL",
+      "FAC-PINGPONG"
+    ]
+  },
+  {
+    "section_id": "SPORTS-BOOK-02",
+    "ordinal": 2,
+    "heading_vi": "Đặt lịch sử dụng sân",
+    "body_vi": "Cư dân đặt lịch sử dụng một trong năm sân qua ứng dụng cư dân hoặc tại quầy lễ tân, mỗi lượt tối đa 90 phút, không đặt trùng khung giờ với người đã đăng ký trước.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-TENNIS",
+      "FAC-BADMINTON",
+      "FAC-BASKETBALL",
+      "FAC-VOLLEYBALL",
+      "FAC-PINGPONG"
+    ]
+  },
+  {
+    "section_id": "SPORTS-TENNIS-03",
+    "ordinal": 3,
+    "heading_vi": "Quy định riêng Sân tennis",
+    "body_vi": "Sân tennis yêu cầu người chơi mang giày đế bằng chuyên dụng cho mặt sân cứng, không dùng giày đinh, và không mang thức uống có ga vào khu vực sát đường biên sân.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-TENNIS"
+    ]
+  },
+  {
+    "section_id": "SPORTS-BADMINTON-04",
+    "ordinal": 4,
+    "heading_vi": "Quy định riêng Sân cầu lông",
+    "body_vi": "Sân cầu lông trong nhà yêu cầu giày đế êm không để lại vệt đen trên mặt sàn, tắt quạt trần trong lúc thi đấu để tránh ảnh hưởng đường bay của cầu.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-BADMINTON"
+    ]
+  },
+  {
+    "section_id": "SPORTS-BALL-05",
+    "ordinal": 5,
+    "heading_vi": "Quy định riêng Sân bóng rổ và bóng chuyền",
+    "body_vi": "Sân bóng rổ và sân bóng chuyền dùng chung khu vực ngoài trời, người chơi tự sắp xếp lượt sử dụng luân phiên vào giờ cao điểm và không mang giày đinh lên mặt sân.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-BASKETBALL",
+      "FAC-VOLLEYBALL"
+    ]
+  },
+  {
+    "section_id": "SPORTS-PINGPONG-06",
+    "ordinal": 6,
+    "heading_vi": "Quy định riêng Sân bóng bàn",
+    "body_vi": "Khu vực bóng bàn có bốn bàn thi đấu trong nhà, người chơi giữ trật tự, không kê thêm bàn ghế cá nhân và nhường bàn cho người đặt lịch đúng khung giờ kế tiếp.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-PINGPONG"
+    ]
+  },
+  {
+    "section_id": "SPORTS-ATTIRE-07",
+    "ordinal": 7,
+    "heading_vi": "Trang phục và giày thi đấu",
+    "body_vi": "Người sử dụng cả năm sân trong Khu phức hợp Thể thao mặc trang phục thể thao phù hợp, mang giày thể thao sạch, không mặc trang phục hở phản cảm khi thi đấu.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-TENNIS",
+      "FAC-BADMINTON",
+      "FAC-BASKETBALL",
+      "FAC-VOLLEYBALL",
+      "FAC-PINGPONG"
+    ]
+  }
+]

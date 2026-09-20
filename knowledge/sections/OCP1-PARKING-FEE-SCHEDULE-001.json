@@ -1,0 +1,67 @@
+[
+  {
+    "section_id": "PFEE-SCOPE-00",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi Biểu phí trông giữ xe",
+    "body_vi": "Biểu phí này quy định phí dịch vụ trông giữ xe. Phí cấp, cấp lại hoặc đổi Thẻ gửi xe không thuộc phạm vi tài liệu này. Biểu phí áp dụng cho ô tô, xe máy và xe điện hai bánh gửi tại bãi đỗ.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-02"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "PFEE-CAR-MONTH-01",
+    "ordinal": 2,
+    "heading_vi": "Phí trông giữ ô tô theo tháng",
+    "body_vi": "Phí trông giữ ô tô gửi tháng tại tầng hầm là 1.200.000 đồng một xe một tháng, thanh toán trước ngày mùng 5 hằng tháng tại văn phòng Ban Quản lý hoặc qua ứng dụng cư dân.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-02"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "PFEE-CAR-CASUAL-02",
+    "ordinal": 3,
+    "heading_vi": "Phí trông giữ ô tô vãng lai",
+    "body_vi": "Ô tô vãng lai của khách tính phí 20.000 đồng cho 2 giờ đầu, cộng thêm 10.000 đồng cho mỗi giờ tiếp theo, thanh toán tại quầy khi ra khỏi bãi đỗ.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-02"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "PFEE-MOTOR-MONTH-03",
+    "ordinal": 4,
+    "heading_vi": "Phí trông giữ xe máy theo tháng",
+    "body_vi": "Phí trông giữ xe máy gửi tháng là 100.000 đồng một xe một tháng, áp dụng cho xe máy đăng ký gửi thường xuyên tại khu vực bãi xe máy của tầng hầm.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-02"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "PFEE-EV-CHARGE-04",
+    "ordinal": 5,
+    "heading_vi": "Phí sạc xe điện hai bánh",
+    "body_vi": "Xe đạp điện, xe máy điện gửi tại khu vực có trạm sạc chịu thêm phí sạc điện 50.000 đồng một tháng ngoài phí trông giữ xe máy theo tháng đã nêu.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-02"
+    ],
+    "facility_ids": []
+  }
+]

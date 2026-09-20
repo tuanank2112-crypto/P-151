@@ -1,0 +1,12 @@
+{
+  "name": "resident-agent-v1",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Resident Agent v1.0 — demo mô phỏng cho ban giám khảo (rubric C104/VHR-01/G104). Xem planning/01_2026-09-20_resident-agent-v1/.",
+  "scripts": {
+    "validate:knowledge": "node scripts/validate_knowledge.mjs",
+    "validate:golden": "node scripts/validate_golden.mjs",
+    "report:facility-rules": "node scripts/report_facility_rules.mjs"
+  }
+}

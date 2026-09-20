@@ -2,6 +2,34 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.0.0-p00] - 2026-09-20: Gói P00 — Knowledge Pack mô phỏng + Golden Dataset
+### Added
+- **Mã sản phẩm đầu tiên của repo.** Ba thư mục top-level mới: `knowledge/`
+  (19 tài liệu mô phỏng / 98 section), `evals/golden/` (66 case đo), `scripts/`
+  (3 script kiểm chạy Node thuần), cộng `package.json` khai `"type": "module"`.
+- Bốn khuyết tật CỐ Ý cài sẵn theo Đ05 / `SPEC-P00` §5: DEF-01 và DEF-02 (khoảng
+  trống tri thức), DEF-03 (cặp tài liệu mâu thuẫn sức chứa Vườn BBQ), DEF-04 (tài
+  liệu hết hiệu lực). Hợp đồng máy đọc tại `evals/golden/expected_defects.json`.
+- Cổng đo: K-M1 `documents: 19 · sections: 98 · defects_ok: 4/4`; K-M2 `faq: 50
+  (answerable 40) · safety: 16 · canonical_codes_covered: 10/10`; K-M3 rỗng;
+  K-M4 `true: 13 · false: 1 (FAC-PICKLEBALL)` — tất cả exit 0.
+
+### Decisions
+- **Đ13** — Đo key `stealth/union-alpha` + TokenRouter do chủ tịch cấp: TokenRouter
+  trả `401` đòi tiền tố `tr_`, và `stealth/union-alpha` là slug của OpenRouter chứ
+  không phải model TokenRouter. **Chưa đổi contract model** — A1/A2/A3 vẫn là Claude
+  theo `01-CONTRACTS.md` §8 cho tới khi có key đo được tận tay.
+- **Đ14** — Rút yêu cầu "key embedding": `01-CONTRACTS.md` §4.3 đã chốt dùng
+  `Xenova/multilingual-e5-small` chạy tại chỗ lúc seed (384 chiều), không cần key.
+- C-02 (HITL chỉ cho lượt escalate) và C-03 (bỏ Metric 2 Efficiency) được duyệt.
+
+### Fixed
+- `SPEC-P00` §3.2 ghi `FAC-FISHING-DECK` trong khi §3.4/§4 (nguồn nghiệm thu K-M4)
+  dùng `FAC-FISHING-LAKE` — thống nhất về `FAC-FISHING-LAKE`.
+- `handoffs/H02` của Super Orchestrator cấp nhầm đường dẫn `knowledge/expected_defects.json`
+  và `golden/*.jsonl`, lệch `SPEC-P00` §2 (`evals/golden/`) và làm K-M3 đỏ. Đã
+  chuyển file về đúng chỗ và sửa hằng đường dẫn trong 2 script.
+
 ## [v1.0.0-design] - 2026-09-20: Thiết kế hồ sơ Resident Agent v1.0 (demo)
 ### Added
 - Khởi tạo bộ nhớ não `brain4agent/` cho dự án Resident Agent (repo trước đó là

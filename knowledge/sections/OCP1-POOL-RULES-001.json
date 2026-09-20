@@ -1,0 +1,82 @@
+[
+  {
+    "section_id": "POOL-SCOPE-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi áp dụng và đối tượng sử dụng bể bơi",
+    "body_vi": "Nội quy áp dụng cho hai bể bơi thuộc Khu đô thị mô phỏng OCP1, dành cho cư dân và khách đăng ký cùng cư dân. Mỗi cư dân xuất trình thẻ cư dân hợp lệ khi vào khu vực bể bơi.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-POOL-KTP",
+      "FAC-POOL-TP"
+    ]
+  },
+  {
+    "section_id": "POOL-ENTRY-02",
+    "ordinal": 2,
+    "heading_vi": "Điều kiện ra vào khu vực bể bơi",
+    "body_vi": "Người sử dụng mặc trang phục bơi phù hợp, không mặc quần áo thường xuống bể. Trẻ em dưới 6 tuổi phải có phụ huynh đi kèm ở khoảng cách gần trong suốt thời gian ở khu vực bể bơi.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-POOL-KTP",
+      "FAC-POOL-TP"
+    ]
+  },
+  {
+    "section_id": "POOL-SAFE-03",
+    "ordinal": 3,
+    "heading_vi": "An toàn cho trẻ em",
+    "body_vi": "Trẻ em dưới 12 tuổi bắt buộc phải có người lớn đi kèm khi xuống bể bơi, không được để trẻ tự bơi một mình dù khu vực có nhân viên cứu hộ trực. Vi phạm sẽ được nhắc nhở tại chỗ.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-POOL-KTP",
+      "FAC-POOL-TP"
+    ]
+  },
+  {
+    "section_id": "POOL-HYG-04",
+    "ordinal": 4,
+    "heading_vi": "Vệ sinh trước khi xuống bể bơi",
+    "body_vi": "Người sử dụng tắm tráng tại vòi sen trước khi xuống bể, không mang đồ ăn, thức uống có ga vào khu vực hồ bơi, và không bôi kem chống nắng ngay trước khi xuống nước.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-POOL-KTP",
+      "FAC-POOL-TP"
+    ]
+  },
+  {
+    "section_id": "POOL-BAN-05",
+    "ordinal": 5,
+    "heading_vi": "Các hành vi bị cấm trong khu vực bể bơi",
+    "body_vi": "Nghiêm cấm chạy nhảy quanh thành bể, lặn ở khu vực nước nông, mang vật sắc nhọn xuống bể và sử dụng loa đài công suất lớn làm ảnh hưởng người xung quanh trong khu vực bể bơi.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-03"
+    ],
+    "facility_ids": [
+      "FAC-POOL-KTP",
+      "FAC-POOL-TP"
+    ]
+  }
+]

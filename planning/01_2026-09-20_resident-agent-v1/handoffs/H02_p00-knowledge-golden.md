@@ -13,8 +13,9 @@ Bạn KHÔNG có lịch sử hội thoại — mọi căn cứ phải lấy từ
 ## 2. Phạm vi
 
 **Được tạo / ghi** (và chỉ những đường dẫn này):
-- `knowledge/manifest.json`, `knowledge/sections/<document_id>.json`, `knowledge/expected_defects.json`, `knowledge/README.md`
-- `golden/golden_faq.jsonl`, `golden/golden_safety.jsonl`
+- `knowledge/manifest.json`, `knowledge/sections/<document_id>.json`, `knowledge/README.md`
+- `evals/golden/golden_faq.jsonl`, `evals/golden/golden_safety.jsonl`, `evals/golden/expected_defects.json`
+- *(sửa 2026-09-20 sau R02: bản đầu ghi nhầm `knowledge/expected_defects.json` và `golden/*.jsonl`, lệch `SPEC-P00` §2 và làm W5 đỏ. Lỗi của SO, không phải worker.)*
 - `scripts/validate_knowledge.mjs`, `scripts/validate_golden.mjs`, `scripts/report_facility_rules.mjs`
 - `package.json` (chỉ để khai `"type": "module"` + script chạy; CHƯA thêm dependency nào)
 - `planning/01_2026-09-20_resident-agent-v1/reports/R02_p00-knowledge-golden.md`

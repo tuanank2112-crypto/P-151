@@ -1,0 +1,93 @@
+[
+  {
+    "section_id": "PARK-SCOPE-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi và đối tượng áp dụng",
+    "body_vi": "Nội quy áp dụng cho toàn bộ ô tô, xe máy, xe đạp của cư dân và khách gửi tại các tầng hầm và bãi đỗ mặt đất thuộc Khu đô thị mô phỏng OCP1. Xe không đăng ký gửi thường xuyên coi là xe vãng lai.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-02"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "PARK-CARD-02",
+    "ordinal": 2,
+    "heading_vi": "Thẻ xe và thẻ ra vào bãi đỗ",
+    "body_vi": "Mỗi phương tiện gửi tháng được cấp một thẻ xe gắn với biển số cụ thể. Thẻ chỉ dùng cho đúng phương tiện đã đăng ký, không được cho mượn hoặc chuyển nhượng cho phương tiện khác.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-02"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "PARK-SPEED-03",
+    "ordinal": 3,
+    "heading_vi": "Tốc độ và luồng di chuyển trong hầm",
+    "body_vi": "Tốc độ tối đa trong hầm đỗ xe là 10 km/h. Phương tiện di chuyển đúng chiều mũi tên chỉ dẫn, nhường đường cho người đi bộ tại các vạch kẻ và không bấm còi trong khu vực hầm kín.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-02"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "PARK-RESERVE-04",
+    "ordinal": 4,
+    "heading_vi": "Chỗ đỗ cố định và chỗ đỗ vãng lai",
+    "body_vi": "Ô tô gửi tháng được bố trí vị trí cố định theo sơ đồ tầng hầm. Xe vãng lai đỗ tại khu vực riêng gần lối ra, tính phí theo giờ và không được đỗ quá 24 giờ liên tục nếu không đăng ký gửi tháng.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-02"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "PARK-EV-05",
+    "ordinal": 5,
+    "heading_vi": "Khu vực sạc xe điện",
+    "body_vi": "Trạm sạc xe hai bánh chạy điện được bố trí tại khu vực riêng có biển báo. Cư dân chỉ sạc xe tại đúng vị trí trạm, không kéo dây sạc qua lối đi chung để tránh nguy cơ vấp ngã và chập điện.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-02"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "PARK-LOST-06",
+    "ordinal": 6,
+    "heading_vi": "Xử lý mất thẻ xe",
+    "body_vi": "Khi làm mất thẻ xe, cư dân báo ngay cho văn phòng Ban Quản lý để khoá thẻ cũ, tránh bị người khác sử dụng trái phép, đồng thời làm thủ tục xin cấp lại thẻ theo hướng dẫn cấp phát thẻ hiện hành.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-02"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "PARK-VIOLATION-07",
+    "ordinal": 7,
+    "heading_vi": "Xử lý vi phạm đỗ xe sai quy định",
+    "body_vi": "Xe đỗ sai vị trí, chắn lối thoát hiểm hoặc chiếm dụng chỗ của phương tiện khác sẽ bị nhắc nhở lần đầu và có thể bị khoá bánh hoặc cẩu đi nếu tái phạm, chi phí xử lý do chủ phương tiện chi trả.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-02"
+    ],
+    "facility_ids": []
+  }
+]

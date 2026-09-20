@@ -1,0 +1,67 @@
+[
+  {
+    "section_id": "MOVE-SCOPE-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi hướng dẫn chuyển đồ",
+    "body_vi": "Hướng dẫn áp dụng cho mọi hoạt động chuyển đồ đạc, nội thất ra hoặc vào căn hộ tại Tòa nhà thuộc Khu đô thị mô phỏng OCP1, kể cả chuyển đồ khi thuê đơn vị vận chuyển ngoài.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-04"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "MOVE-REGISTER-02",
+    "ordinal": 2,
+    "heading_vi": "Đăng ký lịch chuyển đồ",
+    "body_vi": "Cư dân đăng ký lịch chuyển đồ với Ban Quản lý trước tối thiểu 24 giờ, nêu rõ ngày giờ, số lượng người và phương tiện vận chuyển dự kiến sử dụng.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-04"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "MOVE-TIME-03",
+    "ordinal": 3,
+    "heading_vi": "Khung giờ được phép chuyển đồ",
+    "body_vi": "Hoạt động chuyển đồ chỉ được thực hiện từ 08:00 đến 17:00 các ngày trong tuần, không thực hiện vào Chủ nhật và ngày lễ trừ khi có thoả thuận riêng với Ban Quản lý.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-04"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "MOVE-ELEVATOR-04",
+    "ordinal": 4,
+    "heading_vi": "Sử dụng thang máy chở hàng khi chuyển đồ",
+    "body_vi": "Đồ đạc cồng kềnh phải vận chuyển bằng thang máy chở hàng riêng, không dùng thang máy khách. Cư dân đặt lịch giữ thang máy chở hàng cùng lúc đăng ký lịch chuyển đồ.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-04"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "MOVE-DEPOSIT-05",
+    "ordinal": 5,
+    "heading_vi": "Đặt cọc bảo vệ khu vực chung",
+    "body_vi": "Cư dân đóng khoản đặt cọc bảo vệ khu vực chung trước khi chuyển đồ, được hoàn trả sau khi Ban Quản lý kiểm tra không phát sinh hư hỏng hành lang, thang máy trong quá trình vận chuyển.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-04"
+    ],
+    "facility_ids": []
+  }
+]

@@ -1,0 +1,80 @@
+[
+  {
+    "section_id": "COM-SCOPE-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi Khu thương mại dịch vụ",
+    "body_vi": "Nội quy áp dụng cho toàn bộ gian hàng, cửa hàng và ki-ốt thuộc Khu Thương mại dịch vụ của Khu đô thị mô phỏng OCP1, bao gồm chủ gian hàng, nhân viên và khách hàng ra vào khu vực này.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "COM-HOURS-02",
+    "ordinal": 2,
+    "heading_vi": "Giờ hoạt động kinh doanh",
+    "body_vi": "Khu Thương mại dịch vụ hoạt động từ 07:00 đến 22:00 hằng ngày. Gian hàng muốn hoạt động ngoài khung giờ này phải xin phép Ban Quản lý và chịu thêm phụ phí vận hành ngoài giờ.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "COM-SIGN-03",
+    "ordinal": 3,
+    "heading_vi": "Quy định biển hiệu, quảng cáo",
+    "body_vi": "Biển hiệu, băng rôn quảng cáo phải được Ban Quản lý duyệt mẫu trước khi lắp đặt, kích thước không vượt quá khung mặt tiền gian hàng và không che khuất lối thoát hiểm chung.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "COM-DELIVERY-04",
+    "ordinal": 4,
+    "heading_vi": "Giao nhận hàng hoá",
+    "body_vi": "Xe giao hàng chỉ được vào khu vực hậu cần trong khung giờ 06:00–09:00 và 14:00–16:00 để tránh ùn tắc lối đi chung. Hàng hoá bốc dỡ phải gọn gàng, không lấn chiếm lối đi của khách.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "COM-FIREEXIT-05",
+    "ordinal": 5,
+    "heading_vi": "Lối thoát hiểm khu thương mại",
+    "body_vi": "Mọi gian hàng phải để trống hoàn toàn lối thoát hiểm và không được đặt hàng hoá, kệ trưng bày che chắn cửa thoát hiểm dưới bất kỳ hình thức nào, kể cả tạm thời trong giờ cao điểm.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "COM-NOISE-06",
+    "ordinal": 6,
+    "heading_vi": "Kiểm soát tiếng ồn khu thương mại",
+    "body_vi": "Âm thanh quảng cáo, nhạc nền của gian hàng không vượt quá mức cho phép theo quy định chung và phải tắt hẳn sau 22:00 để không ảnh hưởng đến khu dân cư liền kề phía trên.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-05"
+    ],
+    "facility_ids": []
+  }
+]

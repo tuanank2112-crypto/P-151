@@ -19,7 +19,7 @@ tri thức, giọng văn, một số ràng buộc vẫn còn hợp lệ sau khi 
 tư liệu tham chiếu để dựng giao diện và danh mục tiện ích, không phải hợp đồng.
 
 Nguồn chân lý về **thiết kế đang hiệu lực**: `planning/01_2026-09-20_resident-agent-v1/`
-— `plan.md` (nhật ký quyết định Đ01–Đ12) rồi tới `specs/00-ARCHITECTURE.md` rồi
+— `plan.md` (nhật ký quyết định Đ01–Đ14) rồi tới `specs/00-ARCHITECTURE.md` rồi
 mới tới `docs/`. Khi mâu thuẫn, thứ tự ưu tiên này thắng.
 
 ## 1. Mục tiêu (Goals & Objectives)
@@ -43,13 +43,24 @@ Trợ lý AI cho cư dân khu đô thị, mô phỏng toàn phần, 2 vai trò (
   RAG (embeddings), state ứng dụng (hội thoại, tài liệu, user) và sổ biên nhận
   (P05, nếu còn trong scope).
 - **Auth:** credential 2 vai trò (Cư dân / BQL), seed sẵn tài khoản demo.
-- **LLM:** Claude cho cả 3 agent (retrieval/answer, verify, escalate).
+- **LLM:** Claude cho cả 3 agent (retrieval/answer, verify, escalate) — contract tại
+  `specs/01-CONTRACTS.md` §8. Chủ tịch có đề xuất chuyển sang nhà cung cấp free
+  (`stealth/union-alpha` / Gemini); **chưa đổi**, xem Đ13.
+- **Embedding:** `Xenova/multilingual-e5-small` chạy tại chỗ lúc seed, 384 chiều —
+  **không cần API key** (Đ14). Trên Vercel `RETRIEVAL_MODE=lexical`.
+- **Runtime script:** Node ESM thuần (`package.json` → `"type": "module"`). Bộ script
+  kiểm của P00 cố ý không có dependency để chạy được ở máy trắng.
 - **Thời điểm deploy:** D2 — "web đã deploy" là gạch đầu dòng đầu tiên của rubric,
   phải xanh sớm rồi bồi tính năng lên, không để dồn cuối.
 
 ## 3. Trạng thái hiện tại
 
-Tính đến 2026-09-20: **mới hoàn tất khâu thiết kế** — 9 file SPEC trong
-`planning/01_2026-09-20_resident-agent-v1/specs/` (3711 dòng), Super Orchestrator
-đã duyệt (`reports/R01_specs-design.md`). **Chưa có dòng mã sản phẩm nào.** Không
-gói P00–P06 nào được coi là "đã hoàn thành" cho tới khi có bằng chứng máy chạy thật.
+Tính đến 2026-09-20: thiết kế xong (9 file SPEC, 3711 dòng, `reports/R01`) **và
+gói P00 đã thi công xong, đo lại độc lập, ✅ DUYỆT** (`reports/R02`).
+
+Trên đĩa đã có: `knowledge/` (19 tài liệu mô phỏng / 98 section, 4 khuyết tật cài
+sẵn), `evals/golden/` (66 case đo), `scripts/` (3 script kiểm chạy **Node thuần,
+không cần DB, không gọi LLM**), `package.json` (Node ESM, chưa có dependency nào).
+
+**P01–P06 chưa bắt đầu.** Chưa có Next.js, chưa có DB, chưa deploy. Không gói nào
+được coi là "đã hoàn thành" cho tới khi có bằng chứng máy chạy thật.

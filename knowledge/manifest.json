@@ -1,0 +1,325 @@
+{
+  "revision": "SIM-1.0.0",
+  "documents": [
+    {
+      "document_id": "OCP1-BUILDING-RULES-001",
+      "title_vi": "Nội quy quản lý sử dụng Tòa nhà",
+      "doc_kind": "rules",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-PARKING-RULES-001",
+      "title_vi": "Nội quy trông giữ xe",
+      "doc_kind": "rules",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment",
+        "villa"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-COMMERCIAL-AREA-RULES-001",
+      "title_vi": "Nội quy Khu Thương mại dịch vụ",
+      "doc_kind": "rules",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "commercial"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-VILLA-HOUSING-RULES-001",
+      "title_vi": "Nội quy Khu Biệt thự / Khu Nhà ở",
+      "doc_kind": "rules",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "villa"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-POOL-RULES-001",
+      "title_vi": "Nội quy sử dụng Bể bơi",
+      "doc_kind": "rules",
+      "version": "2.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment",
+        "villa"
+      ],
+      "supersedes": "OCP1-POOL-RULES-2024",
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-POOL-RULES-2024",
+      "title_vi": "Nội quy sử dụng Bể bơi (bản 2024)",
+      "doc_kind": "rules",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Expired",
+      "effective_from": "2024-01-01",
+      "effective_to": "2025-12-31",
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment",
+        "villa"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-SPORTS-COMPLEX-RULES-001",
+      "title_vi": "Nội quy Khu phức hợp Thể thao",
+      "doc_kind": "rules",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment",
+        "villa"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-BBQ-GARDEN-RULES-001",
+      "title_vi": "Nội quy Vườn Nướng BBQ",
+      "doc_kind": "rules",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment",
+        "villa"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-KAYAK-DOCK-RULES-001",
+      "title_vi": "Nội quy Bến Thuyền Kayak",
+      "doc_kind": "rules",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment",
+        "villa"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-SALTWATER-LAKE-RULES-001",
+      "title_vi": "Nội quy Biển hồ nước mặn",
+      "doc_kind": "rules",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment",
+        "villa"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-FISHING-DECK-RULES-001",
+      "title_vi": "Nội quy Sàn Câu cá",
+      "doc_kind": "rules",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment",
+        "villa"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-CHILDREN-PLAYGROUND-RULES-001",
+      "title_vi": "Nội quy Sân chơi trẻ em",
+      "doc_kind": "rules",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment",
+        "villa"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-OUTDOOR-GYM-RULES-001",
+      "title_vi": "Nội quy Gym ngoài trời",
+      "doc_kind": "rules",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment",
+        "villa"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-RESIDENT-CARD-ISSUANCE-GUIDE-001",
+      "title_vi": "Hướng dẫn cấp phát thẻ cho Cư dân",
+      "doc_kind": "guide",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment",
+        "villa"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-MOVE-IN-OUT-GUIDE-001",
+      "title_vi": "Hướng dẫn đăng ký chuyển đồ ra/vào Tòa nhà",
+      "doc_kind": "guide",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment",
+        "villa"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-APARTMENT-CONSTRUCTION-RULES-001",
+      "title_vi": "Nội quy thi công Khu Căn hộ",
+      "doc_kind": "rules",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment",
+        "villa"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-PARKING-FEE-SCHEDULE-001",
+      "title_vi": "Biểu phí trông giữ xe",
+      "doc_kind": "fee_schedule",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment",
+        "villa"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "OCP1-BQL-OFFICE-DIRECTORY-001",
+      "title_vi": "Địa chỉ và giờ làm việc Văn phòng BQL",
+      "doc_kind": "directory",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment",
+        "villa"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    },
+    {
+      "document_id": "VINHOMES-CUSTOMER-REQUEST-HANDLING-001",
+      "title_vi": "Quy định xử lý khiếu nại / yêu cầu",
+      "doc_kind": "rules",
+      "version": "1.0",
+      "status": "Approved",
+      "effective_status": "Current",
+      "effective_from": "2026-01-01",
+      "effective_to": null,
+      "allowed_for_rag": true,
+      "scope_property": [
+        "apartment",
+        "villa"
+      ],
+      "supersedes": null,
+      "source_note_vi": "Tài liệu mô phỏng phục vụ demo. Không phải văn bản pháp lý, không phải nội quy thật của bất kỳ khu đô thị nào."
+    }
+  ]
+}

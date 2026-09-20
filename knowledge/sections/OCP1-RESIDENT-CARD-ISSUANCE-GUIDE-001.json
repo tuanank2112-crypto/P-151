@@ -1,0 +1,93 @@
+[
+  {
+    "section_id": "CARD-SCOPE-01",
+    "ordinal": 1,
+    "heading_vi": "Phạm vi hướng dẫn cấp thẻ",
+    "body_vi": "Hướng dẫn áp dụng cho việc cấp mới, cấp lại và đổi thẻ cư dân dùng để ra vào Tòa nhà và xác thực danh tính khi sử dụng các tiện ích chung tại Khu đô thị mô phỏng OCP1.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-01"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "CARD-NEW-02",
+    "ordinal": 2,
+    "heading_vi": "Thủ tục cấp thẻ cư dân mới",
+    "body_vi": "Cư dân mới chuyển đến nộp hồ sơ tại văn phòng Ban Quản lý kèm hợp đồng mua bán/thuê căn hộ, thẻ được cấp trong vòng 3 ngày làm việc kể từ khi nộp đủ hồ sơ hợp lệ.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-01"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "CARD-REISSUE-03",
+    "ordinal": 3,
+    "heading_vi": "Thủ tục cấp lại thẻ cư dân bị mất",
+    "body_vi": "Khi làm mất thẻ cư dân, chủ thẻ khai báo mất tại văn phòng Ban Quản lý để khoá thẻ cũ ngay lập tức, sau đó làm đơn xin cấp lại kèm giấy tờ tuỳ thân đối chiếu.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-01"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "CARD-DOCS-04",
+    "ordinal": 4,
+    "heading_vi": "Hồ sơ cần chuẩn bị",
+    "body_vi": "Hồ sơ cấp mới hoặc cấp lại thẻ cư dân gồm: đơn đề nghị theo mẫu, bản sao giấy tờ tuỳ thân, và giấy xác nhận cư trú hoặc hợp đồng sở hữu/thuê căn hộ hiện hành.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-01"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "CARD-FEE-05",
+    "ordinal": 5,
+    "heading_vi": "Phí cấp thẻ cư dân",
+    "body_vi": "Cấp thẻ cư dân lần đầu không thu phí. Cấp lại thẻ cư dân do làm mất hoặc hư hỏng thu phí 50.000 đồng một thẻ, nộp trực tiếp tại văn phòng Ban Quản lý khi nhận thẻ mới.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-01"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "CARD-TIME-06",
+    "ordinal": 6,
+    "heading_vi": "Thời gian xử lý và nhận thẻ",
+    "body_vi": "Thời gian xử lý cấp mới hoặc cấp lại thẻ cư dân là 3 ngày làm việc. Cư dân nhận thẻ trực tiếp tại văn phòng Ban Quản lý trong giờ hành chính, xuất trình biên nhận khi nhận thẻ.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-01"
+    ],
+    "facility_ids": []
+  },
+  {
+    "section_id": "CARD-CONTACT-07",
+    "ordinal": 7,
+    "heading_vi": "Kênh liên hệ hỗ trợ về thẻ cư dân",
+    "body_vi": "Mọi thắc mắc về cấp phát thẻ cư dân được hỗ trợ qua ứng dụng cư dân, hotline nội bộ hoặc trực tiếp tại văn phòng Ban Quản lý trong giờ làm việc hành chính.",
+    "is_excluded": false,
+    "exclusion_note_vi": null,
+    "conflict_group": null,
+    "intents": [
+      "I-01"
+    ],
+    "facility_ids": []
+  }
+]

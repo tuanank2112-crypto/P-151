@@ -147,9 +147,9 @@ Câu "Gói P00 chưa được phóng vì C-01 chưa chốt" ghi ngày 2026-09-20
 
 ## 4. Checklist thực thi
 
-- [ ] P00 — Knowledge Pack mô phỏng đủ phủ 12 tiện ích và 5 intent
-- [ ] P00 — Khuyết tật cài sẵn: 2 gap + 1 cặp conflict + 1 expired
-- [ ] P00 — Golden Dataset và rubric chấm
+- [x] P00 — Knowledge Pack mô phỏng đủ phủ 12 tiện ích và 5 intent — `19 tài liệu · 98 section`, exit 0 (2026-09-20)
+- [x] P00 — Khuyết tật cài sẵn: 2 gap + 1 cặp conflict + 1 expired — `defects_ok: 4/4`, exit 0 (2026-09-20)
+- [x] P00 — Golden Dataset — `faq: 50 (answerable 40) · safety: 16 · canonical 10/10`, exit 0 (2026-09-20). `rubric.md` chuyển sang P04.
 - [ ] P01 — Deploy được URL công khai
 - [ ] P01 — Đăng nhập 2 vai trò Cư dân / BQL
 - [ ] P02 — Trả lời có trích dẫn tới `document_id` và `section_id`
