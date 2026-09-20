@@ -2,6 +2,44 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.0.0-gemini] - 2026-09-20: Đổi nhà cung cấp model sang Google Gemini
+### Changed
+- **A1/A2/A3 chuyển từ Claude sang Gemini** (Đ17): `gemini-3.5-flash-lite` /
+  `gemini-3.5-flash` / `gemini-2.5-flash`. Tham số API đổi từ dạng Anthropic
+  (`thinking`, `output_config`, `zodOutputFormat`) sang `generationConfig` +
+  `responseMimeType` + `responseSchema`. Token đọc từ `usageMetadata`.
+- **Adapter đổi tên** `lib/adapters/anthropic.ts` → `lib/adapters/model.ts` (BB-07.a).
+  Bất biến vẫn là *thư mục* `lib/adapters/`, nên P01a giữ nguyên nghiệm thu.
+- **Embedding** chuyển từ `Xenova/multilingual-e5-small` tại chỗ sang
+  `gemini-embedding-001` + `outputDimensionality: 384` (Đ18). Bỏ `@xenova/transformers`.
+  Giữ nguyên DDL `vector(384)`.
+- Biến môi trường `ANTHROPIC_API_KEY` → `GEMINI_API_KEY`.
+
+### Added
+- Bất biến BB-07.a/BB-07.b; vùng cấm mới C-09..C-13, OP-C11..OP-C14, P02-C13..P02-C15,
+  P04-C9/C10, T-C10..T-C13; phép đo G27–G31 và R10–R12 trong `TESTING-ACCEPTANCE.md`.
+- Seed tri thức tách **Pha A (mạng, có file đệm, chạy lại chỉ bù thiếu)** / **Pha B (DB,
+  một transaction)** — vì seed nay tốn ≥97 lời gọi embedding, va thẳng vào trần hạn mức.
+- Kill switch nay **ép `lexical`**: bật kill switch vì nhà cung cấp hỏng mà `hybrid` vẫn
+  gọi embedding tới đúng nhà cung cấp đó thì phao cứu sinh thủng.
+
+### Removed
+- **Vùng cấm `OP-C8`** ("CẤM đặt `hybrid` trên Vercel") — mất căn cứ vì embedding nay là
+  một lời gọi HTTP, chạy được trên serverless. Số hiệu để trống, không tái dùng.
+
+### Fixed
+- **`scripts/check_adapter_boundary.sh` từng XANH GIẢ** (Đ21): bản cũ chỉ bắt tên gói và
+  `fetch("https://…")` chuỗi nguyên văn, bỏ lọt hoàn toàn việc gán host vào biến và đọc
+  `process.env.GEMINI_API_KEY` ngoài adapter. Viết lại theo 4 trục, mỗi trục đã chứng
+  minh đỏ độc lập.
+
+### Measured
+- Model: burst 15 song song qua 15/15; burst 40 thì 39 dính 429. Mọi bậc Pro trả 429.
+  `gemini-3.7/3.8-flash` trả 503 ngay lần gọi đơn.
+- `responseSchema` được chấp nhận trên cả ba model, tôn trọng `enum` (C-M11, hết nợ).
+- `gemini-embedding-001` **chưa chuẩn hoá** khi ép chiều: |v|=1.000 ở 3072, **0.594** ở
+  768, **0.435** ở 384 (C-M9, hết nợ) ⇒ bắt buộc tự `l2normalize` cho cả seed lẫn query.
+
 ## [v1.0.0-p01a] - 2026-09-20: P01a — nền tảng chạy được không cần key
 ### Added
 - Khung Next.js + TypeScript strict (App Router). Route 2 vai: `app/login`,

@@ -43,11 +43,13 @@ Trợ lý AI cho cư dân khu đô thị, mô phỏng toàn phần, 2 vai trò (
   RAG (embeddings), state ứng dụng (hội thoại, tài liệu, user) và sổ biên nhận
   (P05, nếu còn trong scope).
 - **Auth:** credential 2 vai trò (Cư dân / BQL), seed sẵn tài khoản demo.
-- **LLM:** Claude cho cả 3 agent (retrieval/answer, verify, escalate) — contract tại
-  `specs/01-CONTRACTS.md` §8. Chủ tịch có đề xuất chuyển sang nhà cung cấp free
-  (`stealth/union-alpha` / Gemini); **chưa đổi**, xem Đ13.
-- **Embedding:** `Xenova/multilingual-e5-small` chạy tại chỗ lúc seed, 384 chiều —
-  **không cần API key** (Đ14). Trên Vercel `RETRIEVAL_MODE=lexical`.
+- **LLM:** **Google Gemini** cho cả 3 agent (Đ17) — A1 `gemini-3.5-flash-lite`,
+  A2 `gemini-3.5-flash`, A3 `gemini-2.5-flash`. Biến `GEMINI_API_KEY`. Contract tại
+  `specs/01-CONTRACTS.md` §8. **Không có bậc Pro** (429 — sau cổng thanh toán), nên A2
+  chạy bậc Flash: hạ cấp chất lượng có chủ ý, đánh vào `faithfulness`.
+- **Embedding:** `gemini-embedding-001` với `outputDimensionality: 384` (Đ18) — khớp
+  nguyên `vector(384)`, nên `RETRIEVAL_MODE=hybrid` chạy được **cả trên Vercel**.
+  Bắt buộc tự chuẩn hoá L2 (Đ20): API trả vector chưa chuẩn hoá khi ép chiều.
 - **Runtime script:** Node ESM thuần (`package.json` → `"type": "module"`). Bộ script
   kiểm của P00 cố ý không có dependency để chạy được ở máy trắng.
 - **Thời điểm deploy:** D2 — "web đã deploy" là gạch đầu dòng đầu tiên của rubric,

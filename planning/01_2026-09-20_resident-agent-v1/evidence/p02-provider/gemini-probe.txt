@@ -1,0 +1,65 @@
+# Đo nhà cung cấp model — Gemini API, 2026-09-20
+# Key do chủ tịch cấp (dạng AQ.<phan con lai da luoc>..., 53 ký tự — KHÔNG phải dạng AIzaSy quen thuộc,
+# nhưng Google chấp nhận như API key: GET /v1beta/models?key=... trả HTTP 200).
+# Key nằm ở .env.local (bị .gitignore chặn). CẤM chép giá trị key vào bất kỳ file nào trong repo.
+
+## 1. Model sinh chữ — thử thật bằng generateContent, responseMimeType=application/json
+
+model                      kết quả
+gemini-2.5-flash           HTTP 200 · 2009ms · in=52 out=23 · JSON hợp lệ
+gemini-2.5-flash-lite      HTTP 404 · "no longer available to new users, use gemini-3.5-flash-lite"
+gemini-2.5-pro             HTTP 404 · "no longer available to new users, use gemini-3.1-pro-preview"
+gemini-3.5-flash-lite      HTTP 200 · 1415ms · in=30 out=23
+gemini-3.1-flash-lite      HTTP 200 · 3568ms
+gemini-3.5-flash           HTTP 200 · 9789ms
+gemini-3.6-flash           HTTP 200 · 3275ms
+gemini-3.7-flash           HTTP 200 · 8436ms · CẦN 2 LẦN THỬ (lần 1 trả 503)
+gemini-3.8-flash           HTTP 200 · 14574ms · CẦN 3 LẦN THỬ (503 hai lần)
+gemini-3.1-pro-preview     HTTP 429 · "exceeded your current quota, check your plan and billing"
+gemini-pro-latest          HTTP 429 · cùng lỗi
+
+=> KẾT LUẬN 1: KHÔNG có model Pro nào dùng được với key này. Toàn bộ bậc Pro nằm sau
+   cổng thanh toán. A2 `retriever` (SPEC giao claude-opus-5, model mạnh nhất) buộc phải
+   xuống một model bậc Flash. Đây là rủi ro chất lượng đã biết, ghi tường minh ở Đ17.
+
+=> KẾT LUẬN 2: gemini-3.7-flash và gemini-3.8-flash trả 503 "high demand" ngay ở lần gọi
+   đơn lẻ. CẤM dùng chúng cho đường găng của một bài bị chấm.
+
+## 2. Trần hạn mức — đo bằng cách bắn song song
+
+$ node ratelimit.mjs gemini-3.5-flash-lite 15
+  15 request SONG SONG trong 2543ms · thành công 15/15 · thất bại 0
+  latency ms: min=1601 p50=2043 max=2459
+
+$ node ratelimit.mjs gemini-3.5-flash-lite 40      (chạy NGAY SAU lượt 15 ở trên)
+  40 request SONG SONG trong 1233ms · thành công 1/40 · thất bại 39
+  toàn bộ 39 lỗi là HTTP 429 "You exceeded your current quota"
+
+$ node ratelimit.mjs gemini-3.6-flash 20
+  thành công 4/20 · thất bại 16 (lẫn cả 429 và 503 "high demand")
+
+=> KẾT LUẬN 3: trần nằm giữa 15 và 40 request/phút, và lượt 40 còn bị trừ bởi quota mà
+   lượt 15 vừa tiêu. Hệ quả BẮT BUỘC cho bộ chạy Golden (66 case × 3 agent = 198 lời gọi):
+   phải giới hạn song song ở mức 3-5 và có backoff cho CẢ 429 lẫn 503. Ước lượng một lượt
+   Golden đầy đủ mất khoảng 13-15 phút. Khớp với khuyến cáo OPERATIONS.md §9:
+   chạy Golden đầy đủ 1-2 lần/ngày, sửa nhỏ thì chạy --set=safety (16 case).
+
+## 3. Embedding — phát hiện quan trọng nhất của lượt đo
+
+$ embedContent gemini-embedding-001  (không truyền outputDimensionality)
+  HTTP 200 · 469ms · 3072 chiều
+$ embedContent gemini-embedding-2
+  HTTP 200 · 461ms · 3072 chiều
+
+$ embedContent gemini-embedding-001 outputDimensionality=384
+  HTTP 200 · trả ĐÚNG 384 chiều
+$ embedContent gemini-embedding-001 outputDimensionality=768
+  HTTP 200 · trả ĐÚNG 768 chiều
+
+=> KẾT LUẬN 4: Gemini ÉP ĐƯỢC về đúng 384 chiều, tức KHỚP NGUYÊN DDL `vector(384)` ở
+   01-CONTRACTS.md §3.3 — KHÔNG phải sửa schema, KHÔNG phải re-embed theo số chiều khác.
+   Hệ quả: bỏ được phụ thuộc @xenova/transformers, và `RETRIEVAL_MODE=hybrid` chạy được
+   CẢ TRÊN VERCEL. Vùng cấm OP-C8 ("cấm đặt hybrid trên Vercel vì không có embedding")
+   mất căn cứ. Đây đúng là "mắt xích yếu nhất của một bài demo RAG" nêu ở C-01, nay gỡ được.
+   Lưu ý kỹ thuật: pgvector chỉ đánh chỉ mục HNSW tới 2000 chiều, nên 3072 dùng không được
+   dù có muốn — 384 vừa khớp vừa nằm trong giới hạn index.

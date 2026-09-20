@@ -144,3 +144,53 @@ Cả bốn gỡ xong đều xanh lại, không sót file thăm dò. **BB-05, BB-
 **Việc chưa làm, SO xác nhận đúng phạm vi:** `OPERATIONS.md` §4 bước 2/3/5/6/7/10 (cần Neon/Vercel/key); `lib/pipeline/` (P02); `npm run eval:golden`; UI thật của P02–P04; ESLint.
 
 ✅ **DUYỆT**
+
+---
+
+## ĐÍNH CHÍNH phán quyết P01a — 2026-09-20, sau khi architect phản biện
+
+**Phán quyết ✅ DUYỆT ở trên GIỮ NGUYÊN, nhưng một kết luận trong đó SAI và phải rút.**
+
+Tôi đã viết: *"BB-05, BB-07, BB-10 có mã nguồn và đã chứng minh bắt được vi phạm thật."*
+Vế về **BB-07 là sai**. Bốn phép phá tôi tự thiết kế đều rò bằng **import tên gói**
+(`@anthropic-ai/sdk`, `@neondatabase/serverless`). Chúng chỉ chứng minh script bắt được
+**tên gói**, không chứng minh nó canh được bất biến BB-07.
+
+Architect gói R04 phản biện rằng script **xanh giả**. Tôi tự dựng lại phép phá để kiểm:
+
+```text
+$ cat lib/so_leak_probe.ts          # NẰM NGOÀI lib/adapters/
+const HOST = "https://generativelanguage.googleapis.com/v1beta";
+const KEY  = process.env.GEMINI_API_KEY;
+export async function leak(model, body) {
+  const url = `${HOST}/models/${model}:generateContent?key=${KEY}`;
+  return fetch(url, { method: "POST", body: JSON.stringify(body) });
+}
+
+$ bash scripts/check_adapter_boundary.sh
+violations: 0
+EXIT=0          <-- XANH GIẢ. Rò cả host lẫn khoá mà không báo gì.
+```
+
+**Architect đúng, tôi sai.** Nguyên nhân: bản cũ chỉ bắt `fetch("https://…")` dạng **chuỗi
+nguyên văn**; gán host vào biến rồi dùng template literal là lọt. Và nó **không hề canh
+việc đọc bí mật** (`process.env.*`) ngoài adapter — trục đó bị bỏ trống hoàn toàn.
+
+### Đã sửa và đã chứng minh lại
+
+`scripts/check_adapter_boundary.sh` viết lại theo **bốn trục**, mỗi trục một mình đủ chặn:
+
+| # | Trục | Phép phá của SO | Kết quả |
+| :-- | :-- | :-- | :-- |
+| 1 | import SDK nhà cung cấp | `import { GoogleGenAI } from "@google/genai"` | `violations: 1` · exit 1 ✅ |
+| 2 | host nhà cung cấp ở bất kỳ dạng chuỗi nào | `const HOST = "https://generativelanguage.googleapis.com/v1beta"` | `violations: 1` · exit 1 ✅ |
+| 3 | đọc bí mật ngoài adapter | `process.env.DATABASE_URL` | `violations: 1` · exit 1 ✅ |
+| 4 | `fetch()` tới URL tuyệt đối, kể cả template | ``fetch(`${B}/v1/models`)`` | `violations: 1` · exit 1 ✅ |
+
+Cây rò ban đầu (host + khoá) nay ra `violations: 2`, exit 1. Cây sạch ra `violations: 0`, exit 0.
+
+### Bài học, đã ghi thành gotcha
+
+Một bộ đo "đã từng đỏ" **chưa đủ**. Bốn phép phá của tôi đều **cùng một hình dạng** (import
+tên gói) nên chỉ chứng minh được đúng một trục. Luật K.5 đòi bộ đo mới phải từng đỏ — nay
+bổ sung: **phép phá phải khác nhau về HÌNH DẠNG, không chỉ khác về nội dung.** Xem `G12`.

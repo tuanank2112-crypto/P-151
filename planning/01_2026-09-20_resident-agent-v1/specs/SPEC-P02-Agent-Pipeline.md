@@ -18,7 +18,9 @@ export async function runTurn(args: {
   question_vi: string;
   principal: Principal;
   now?: Date;                       // tiêm được để test tất định
-  forceUpstreamError?: boolean;     // CHỈ dùng cho golden case S14
+  /** CHỈ dùng để bơm lỗi khi test. Golden case S14 dùng "429".
+   *  `true` giữ lại cho tương thích, nghĩa là "429". Xem TESTING §4.4. */
+  forceUpstreamError?: "429" | "503" | "blocked" | true;
 }): Promise<TurnResult>;
 ```
 
@@ -105,7 +107,12 @@ Validation mục 6 đã chấp nhận tiếp cận này.
 Hợp đồng kiểu và tham số gọi: `01-CONTRACTS.md` §8. Đây là phần **nội dung prompt**
 và **ràng buộc hành vi**.
 
-### 5.1 — A2 `retriever` — `claude-opus-5`
+### 5.1 — A2 `retriever` — `gemini-3.5-flash` ⚠
+
+> **⚠ A2 không còn chạy model mạnh nhất.** Mọi bậc Pro của nhà cung cấp đều nằm sau
+> cổng thanh toán (429). Đọc khối cảnh báo ở `00-ARCHITECTURE.md` §10.1 **trước khi
+> viết một dòng nào của A2**. Prompt dưới đây vì vậy càng phải giữ nguyên độ chặt —
+> **CẤM** nới nó ra cho model "dễ thở". `[Đ17]`
 
 Khung system prompt (viết tiếng Việt, worker giữ nguyên ý, được chỉnh câu chữ):
 
@@ -140,7 +147,7 @@ for (const cit of out.citations) {
 
 CẤM lọc im lặng citation lạ. Lọc im lặng che mất việc model đang bịa nguồn.
 
-### 5.2 — A3 `verifier` — `claude-sonnet-5`
+### 5.2 — A3 `verifier` — `gemini-2.5-flash`
 
 ```text
 Bạn kiểm chứng một bản nháp dựa trên các đoạn trích kèm theo.
@@ -165,13 +172,17 @@ cảm" — nó suy ra ý định của A2 và cho qua claim không neo. Việc c
 `claim ⟷ evidence`, không phải đánh giá "có trả lời trúng câu hỏi không".
 Relevance được đo bằng cơ chế khác (`SPEC-P04` §3.3).
 
-**Khác họ model là cố ý:** A2 dùng Opus 5, A3 dùng Sonnet 5. Người chấm không nên là
-người viết. CẤM đổi A3 sang `claude-opus-5` cho "chất lượng hơn".
+**Khác thế hệ model là cố ý:** A2 chạy họ **3.x** (`gemini-3.5-flash`), A3 chạy họ
+**2.x** (`gemini-2.5-flash`). Người chấm không nên là người viết. **CẤM đổi A3 sang
+cùng ID model với A2** cho "chất lượng hơn" — gộp về một model là mất ý nghĩa của
+`faithfulness` (VC-02 / BB-06).
 
 ### 5.3 — Ba chặng phải log tách bạch `[R6]`
 
 Mỗi lời gọi model ghi một `PipelineStep` với `model`, `ms`, `input_tokens`,
-`output_tokens` (lấy từ `response.usage`). Trang trace (§8) đọc thẳng
+`output_tokens` — lấy từ **`usageMetadata.promptTokenCount`** và
+**`usageMetadata.candidatesTokenCount`**, **không** phải `response.usage` của nhà cung
+cấp cũ (`01-CONTRACTS.md` §8.0.2). Trang trace (§8) đọc thẳng
 `answer_turns.pipeline_steps`.
 
 **VC-02 — CẤM gộp A2 và A3 vào một lời gọi.** Gộp thì model tự chấm bản nháp nó vừa
@@ -360,8 +371,12 @@ phải giao diện cư dân. Ghi rõ chú thích *"số nội bộ, chưa hiệu
 | Lỗi | Khi nào | Retry | Caller BẮT BUỘC làm gì | `reason_code` ghi |
 | :-- | :-- | :-- | :-- | :-- |
 | `PipelineInvariantError` | A2 trích `section_id` lạ · `decision=answer` mà `citations=[]` · `steps` sai thứ tự | ❌ | Ném lên. HTTP 500. `audit_log` mức `error`. **CẤM** hạ cấp thành câu trả lời | `system_error` |
-| `UpstreamModelError` (429/5xx/timeout) | Claude API | ✅ ≤2, backoff 1s → 3s | Hết retry → UI hiện nút *Thử lại* + *Chuyển BQL* | `system_error` |
-| `ContractDriftError` | `response.parsed_output` là `null` | ✅ đúng 1 lần | **CẤM** vá JSON bằng regex hay `eval`. Hỏng lần 2 → dừng | `system_error` |
+| `UpstreamRateLimited` (**429**) | Gemini API — hết hạn mức | ✅ ≤2, backoff **2s → 8s + jitter** | Hết retry → UI hiện nút *Thử lại* + *Chuyển BQL* | `system_error` |
+| `UpstreamOverloaded` (**503**) | Gemini API — *"high demand"*, quá tải phía họ | ✅ ≤2, backoff **2s → 8s + jitter** | Y như 429. **CẤM gộp vào "5xx chung"** retry nhanh `[Đ19]` | `system_error` |
+| `UpstreamModelError` (5xx khác 503 / timeout) | Gemini API | ✅ ≤2, backoff 1s → 3s | Như trên | `system_error` |
+| `UpstreamAuthError` (**401/403**) | Khoá sai hoặc hết hạn | ❌ | Retry vô ích. **CẤM in khoá vào thông báo lỗi** | `system_error` |
+| `UpstreamContentBlocked` | 200 kèm `promptFeedback.blockReason`, hoặc 0 candidate | ❌ | Cùng đầu vào cho cùng kết quả ⇒ escalate thẳng | `system_error` |
+| `ContractDriftError` | `JSON.parse` hỏng · Zod hỏng · `finishReason ≠ "STOP"` | ✅ đúng 1 lần | **CẤM** vá JSON bằng regex hay `eval`. Hỏng lần 2 → dừng. **CẤM đọc `response.parsed_output`** — ở Gemini luôn `undefined` (`01-CONTRACTS.md` §8.0.2) | `system_error` |
 | `RetrievalError` | pgvector/FTS index thiếu | ❌ | Lỗi cấu hình. Retry vô ích. Ghi `audit_log` mức `error` | `system_error` |
 | `OwnershipViolation` | `checkOwnership` fail | ❌ | Chặn ở chặng 2, **trước** khi chạm bảng tri thức | `pii_or_account_specific` |
 | `EmptyQuestionError` | chặng 1 | ❌ | HTTP 400. **KHÔNG** tạo `answer_turns` — câu rỗng không phải một lượt | — |
@@ -382,12 +397,15 @@ lỗi đều để lại cho cư dân ít nhất một nút bấm.
 | P02-C4 | CẤM dùng LLM quyết định eligibility hoặc phát hiện mâu thuẫn | VC-04. Luật phải tất định và giải thích được bằng SQL |
 | P02-C5 | CẤM hiển thị `confidence` ở giao diện cư dân | BB-05, Đ07 |
 | P02-C6 | CẤM để A2 lọc im lặng citation lạ | Che mất việc model bịa nguồn |
-| P02-C7 | CẤM đổi A3 sang `claude-opus-5` | Người chấm không nên cùng họ với người viết (§5.2) |
+| P02-C7 | CẤM đổi A3 sang **cùng ID model với A2** | Người chấm không nên cùng họ với người viết (§5.2) |
 | P02-C8 | CẤM cache kết quả `runTurn` theo câu hỏi | BQL đổi tài liệu phải đổi hành vi **ngay** (R7). Cache giết đúng cảnh demo đó |
 | P02-C9 | CẤM streaming token ra UI | NG-10, VC-05 |
 | P02-C10 | CẤM bỏ qua ghi `answer_turns` ở nhánh lỗi | BB-11. Mẫu số dashboard sai |
 | P02-C11 | CẤM đưa lịch sử hội thoại vào A2 | §7, mở đường vi phạm BB-04 ngầm |
-| P02-C12 | CẤM dùng `temperature`/`top_p`/`budget_tokens` với Opus 5 / Sonnet 5 | Lỗi 400 (`00-ARCHITECTURE` §10.1) |
+| P02-C12 | CẤM dùng `temperature` / `topP` / `topK` / `thinkingConfig` với bất kỳ agent nào | Mọi latency đã đo đều đo trên **đường mặc định** (`01-CONTRACTS.md` §8.0, `C-11`) |
+| P02-C13 | CẤM dùng `gemini-3.7-flash` / `gemini-3.8-flash` | 503 ngay ở lời gọi đơn lẻ (`C-09`) |
+| P02-C14 | CẤM bỏ `responseSchema`, chỉ dùng `responseMimeType` | Mất lớp ràng buộc phía nhà cung cấp — JSON đúng cú pháp nhưng sai hợp đồng (`01-CONTRACTS.md` §8.0) |
+| P02-C15 | CẤM để chặng `retrieval` gọi embedding khi `KILL_SWITCH_AGENTS=1` | Phao cứu sinh sẽ gọi đúng nhà cung cấp đang hỏng (`OPERATIONS.md` §7, `OP-C14`) |
 
 ---
 

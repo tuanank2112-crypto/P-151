@@ -100,6 +100,8 @@ Giữ nguyên 10 mã canonical của v0.2. Bổ sung nhóm hành động: vượ
 
 ### Đ13 — 2026-09-20 · Nhà cung cấp model — đo trước, chưa đổi contract
 
+> **⚠ ĐÃ BỊ THAY THẾ bởi Đ17 (cùng ngày).** Giữ nguyên văn làm lịch sử: đây là lý do ta KHÔNG chọn TokenRouter/Union Alpha. Kết luận đo ở đây vẫn đúng, chỉ là nhà cung cấp cuối cùng đã khác.
+
 Chủ tịch chỉ định `stealth/union-alpha` qua TokenRouter, kèm key `sk-LaNk…`. **Đã đo, không dùng được như chỉ định:**
 
 | # | Phép đo | Kết quả nguyên văn |
@@ -115,6 +117,8 @@ Kết luận: key `sk-…` không phải key TokenRouter (phải là `tr_…`), 
 **Rủi ro nếu chọn Union Alpha làm chính:** là model ẩn danh, free *preview có hạn* công bố ngày 2026-09-16; nhà phát hành nói free "trong một tuần" — hạn đó rơi đúng vào tuần demo (deadline 2026-09-27). Một bài demo bị chấm không nên đặt đường găng lên một model có thể bị rút không báo trước. **Lật được:** dùng làm dự phòng rẻ thì tốt. **Chi phí lật:** thấp, vì `lib/adapters/anthropic.ts` (BB-07) đã là adapter DUY NHẤT — thêm một adapter OpenAI-compatible cạnh nó không đụng lõi.
 
 ### Đ14 — 2026-09-20 · Câu hỏi "key embedding" của C-01 đã hết đối tượng
+
+> **⚠ ĐÃ BỊ THAY THẾ bởi Đ18 (cùng ngày).** Lúc viết Đ14 chưa có key Gemini nên kết luận "không cần endpoint embedding" là đúng với dữ kiện khi đó. Nay có key và đo được 384 chiều ⇒ đường tốt hơn, xem Đ18.
 
 `01-CONTRACTS.md` §4.3 đã chốt từ lúc thiết kế: embedding chạy **`Xenova/multilingual-e5-small` ngay trên máy dev** trong `scripts/seed_knowledge.mjs`, 384 chiều, ghi sẵn vào DB — **không cần key, không gọi API ai cả**. Trên Vercel `RETRIEVAL_MODE=lexical`. Vậy mục "xin thêm một key embedding" trong C-01 là thừa; nó được nêu khi SO chưa đọc kỹ §4.3. **Rút lại.**
 
@@ -133,6 +137,94 @@ Worker viết `scripts/migrate.mjs --down` in cảnh báo rồi **exit 2** thay 
 ### Đ16 — 2026-09-20 · `.gitignore` phải chừa `.env.example`
 
 Pattern `.env*` nuốt luôn file mẫu biến môi trường, nên `.env.example` (bảng `OPERATIONS.md` §3) không bao giờ commit được — người clone repo sẽ không biết cần biến gì. Thêm `!.env.example` và `*.tsbuildinfo`. Kiểm: `git add --dry-run .env.example` phải in `add '.env.example'`, còn `.env.local` vẫn phải bị chặn.
+
+### Đ17 — 2026-09-20 · Nhà cung cấp model: chuyển sang Gemini, A2 mất model mạnh
+
+Chủ tịch cấp key Gemini và chỉ đạo dùng nó. **Đã đo thật trước khi chốt** — bằng chứng nguyên văn: [`evidence/p02-provider/gemini-probe.txt`](../evidence/p02-provider/gemini-probe.txt).
+
+Lưu ý về chính key: chuỗi có dạng `AQ.<phan con lai da luoc>…` (53 ký tự), **không phải** dạng `AIzaSy…` quen thuộc. SO ban đầu kết luận nhầm là token phiên OAuth; đo lại thì `GET /v1beta/models?key=…` trả **HTTP 200**. Google có định dạng key mới. Ghi ra đây để không ai loại nhầm một key hợp lệ lần nữa.
+
+| Vai | SPEC cũ | Nay | Số đo làm căn cứ |
+| :-- | :-- | :-- | :-- |
+| A1 `classifier` | `claude-haiku-4-5` | `gemini-3.5-flash-lite` | 1415ms; 15/15 qua ở burst 15 — ổn định nhất |
+| A2 `retriever` | `claude-opus-5` | `gemini-3.5-flash` | HTTP 200, 1M ctx |
+| A3 `verifier` | `claude-sonnet-5` | `gemini-2.5-flash` | 2009ms, sạch ngay lần đầu; khác thế hệ A2 nên vẫn là hai lời gọi tách bạch (VC-02/BB-06) |
+| Embedding | `Xenova/multilingual-e5-small` tại chỗ | `gemini-embedding-001`, `outputDimensionality: 384` | trả đúng 384 chiều |
+
+**Rủi ro phải nói thẳng:** **không có model Pro nào dùng được.** `gemini-2.5-pro`, `gemini-3.1-pro-preview`, `gemini-pro-latest` đều trả **HTTP 429 "exceeded your current quota, check your plan and billing"** — toàn bộ bậc Pro nằm sau cổng thanh toán. SPEC cũ giao A2 cho model **mạnh nhất** vì đó là việc nặng nhất (truy hồi + soạn nháp có trích dẫn). Nay A2 phải chạy bậc Flash. Đây là **hạ cấp chất lượng có chủ ý, đánh thẳng vào `faithfulness`** — đúng con số rubric chấm. Ghi ra để không ai tưởng là tương đương.
+
+**Vùng cấm mới:** CẤM `gemini-3.7-flash` và `gemini-3.8-flash`. Chúng trả **503 "high demand" ngay ở lần gọi đơn lẻ** (3.7 cần 2 lần thử, 3.8 cần 3 lần). Không đặt đường găng của một bài bị chấm lên model đang quá tải.
+
+**Lật được:** nạp tiền vào project Google Cloud ⇒ A2 lên Pro ngay, chỉ đổi một chuỗi ID. **Chi phí lật:** rất thấp — đó là lý do giữ ranh giới adapter một file (BB-07).
+
+### Đ18 — 2026-09-20 · Đ14 bị thay thế: embedding nay chạy được trên Vercel
+
+Đ14 nói embedding chạy `Xenova/multilingual-e5-small` tại chỗ lúc seed, và chấp nhận `RETRIEVAL_MODE=lexical` trên Vercel. **Đo lại thì có đường tốt hơn hẳn:** `gemini-embedding-001` nhận tham số `outputDimensionality` và trả **đúng 384 chiều** — khớp nguyên `vector(384)` ở `01-CONTRACTS.md` §3.3.
+
+Ba cái lợi cùng lúc, không mất gì:
+1. **Không phải đổi schema.** 384 vẫn là 384. (Mặc định model trả 3072 chiều — số đó vô dụng với ta vì pgvector chỉ đánh chỉ mục HNSW tới 2000 chiều.)
+2. **Bỏ được `@xenova/transformers`** — một dependency nặng phải tải model về máy.
+3. **`hybrid` chạy được TRÊN VERCEL**, vì query embedding nay chỉ là một lời gọi HTTP. Trước đây phải ép `lexical` vì serverless không tải nổi model.
+
+⇒ **Vùng cấm `OP-C8`** ("CẤM đổi `RETRIEVAL_MODE` trên Vercel sang `hybrid` vì không có embedding trên đó") **mất căn cứ, gỡ bỏ.**
+
+Đây chính là "mắt xích yếu nhất của một bài demo RAG" mà C-01 nêu và Đ14 đành chấp nhận — nay gỡ được thật, bằng đo chứ không bằng suy đoán.
+
+**Lật được:** nếu hạn mức embedding thành nút thắt. **Chi phí lật:** thấp — quay về lexical là đổi một biến môi trường, và §4.1 đã quy định embedding `NULL` thì tự rơi về lexical chứ không ném lỗi.
+
+### Đ19 — 2026-09-20 · Hạn mức là ràng buộc thiết kế, không phải chi tiết vận hành
+
+Đo trần thật: **15 request song song qua hết** (15/15, 2543ms). **40 song song thì 39 cái dính HTTP 429.** `gemini-3.6-flash` ở 20 song song chỉ qua 4/20, lẫn cả 429 lẫn 503.
+
+Một lượt Golden đầy đủ = 66 case × 3 agent = **198 lời gọi**. Bắn ồ ạt là chết ngay.
+
+**BẮT BUỘC:** bộ chạy Golden giới hạn song song **3–5**, có backoff cho **cả 429 lẫn 503** (SPEC cũ chỉ tính 429/5xx chung ở E2). Ước lượng một lượt đầy đủ **13–15 phút**. Khớp khuyến cáo `OPERATIONS.md` §9: chạy đầy đủ 1–2 lần/ngày, sửa nhỏ thì `--set=safety` (16 case).
+
+Bối cảnh: `OPERATIONS.md` §9 ghi **lượt phóng trước của dự án này chết vì hết hạn mức model.** Nay đã có số đo thật thay cho lời cảnh báo suông.
+
+### Đ20 — 2026-09-20 · Hai phép đo còn nợ đã đóng, và một số làm đổi luật
+
+Architect gói R04 bị cấm gọi API (sợ đốt hạn mức chung) nên để ngỏ hai phép đo. SO đo tay. Bằng chứng: [`evidence/p02-provider/so-cm9-cm11.txt`](../evidence/p02-provider/so-cm9-cm11.txt).
+
+**C-M11 — `responseSchema`: ĐƯỢC CHẤP NHẬN, hết nợ.** Cả ba model đã chọn đều trả HTTP 200, JSON parse được, đủ trường bắt buộc, và **tôn trọng `enum`**. Nghĩa là hợp đồng 3 agent dùng `generationConfig.responseSchema` chạy được như đặc tả, không phải dựng lớp vá JSON bằng regex (vốn bị cấm ở E7).
+
+**C-M9 — vector ép chiều CHƯA chuẩn hoá. Đây là số đổi luật.**
+
+| `outputDimensionality` | `\|v\|` đo được |
+| :-- | --: |
+| 3072 (mặc định) | **1.000000** |
+| 768 | **0.594145** |
+| **384** (ta dùng) | **0.434527** |
+
+Gemini chỉ chuẩn hoá ở **số chiều đầy đủ**. Ép chiều trả về một **lát cắt**, nên độ dài không còn bằng 1 — ở 384 chiều chỉ còn 0.4345.
+
+Architect viết luật "BẮT BUỘC chuẩn hoá L2 trong adapter, cho cả seed lẫn query" khi **chưa đo**, và tự ghi rõ là chưa đo, chọn vế an toàn. Số này xác nhận architect chọn đúng: luật đó **không phải phòng xa, là bắt buộc thật**.
+
+Hậu quả nếu bỏ sót: `cosine_sim` mất miền `(0,1)` mà công thức `S1` giả định ⇒ ngưỡng confidence và cổng escalate lệch **âm thầm**. Không crash, không test nào đỏ, chỉ ra điểm sai. Loại hỏng tệ nhất trong cả hồ sơ này.
+
+### Đ21 — 2026-09-20 · `check_adapter_boundary.sh` từng XANH GIẢ; phép phá phải khác HÌNH DẠNG
+
+Khi nghiệm thu P01a, SO kết luận *"BB-07 đã chứng minh bắt được vi phạm thật"*. **Kết luận đó sai.** Architect R04 phản biện, SO kiểm lại và xác nhận architect đúng:
+
+```text
+lib/so_leak_probe.ts   (NGOÀI lib/adapters/)
+  const HOST = "https://generativelanguage.googleapis.com/v1beta";
+  const KEY  = process.env.GEMINI_API_KEY;
+  fetch(`${HOST}/models/${m}:generateContent?key=${KEY}`)
+
+$ bash scripts/check_adapter_boundary.sh
+violations: 0 · EXIT=0      <-- rò cả host lẫn khoá mà không báo gì
+```
+
+Nguyên nhân: bản cũ chỉ bắt `fetch("https://…")` dạng **chuỗi nguyên văn**, và **không hề canh** việc đọc `process.env.*` ngoài adapter.
+
+**Nguyên nhân gốc nằm ở phép phá, không nằm ở script.** Bốn phép phá SO tự thiết kế lúc nghiệm thu P01a đều **cùng một hình dạng** — rò bằng import tên gói. Chúng chỉ chứng minh được đúng một trục, nhưng SO đọc thành "bất biến đã được canh".
+
+**Luật bổ sung cho Luật K.5:** bộ đo mới phải từng đỏ, **và các phép phá phải khác nhau về HÌNH DẠNG, không chỉ khác về nội dung**. Bốn lần rò bằng `import X from "pkg"` chỉ là một phép thử lặp lại bốn lần.
+
+Script đã viết lại theo **bốn trục** (import SDK · host ở bất kỳ dạng chuỗi nào · đọc bí mật · `fetch` URL tuyệt đối kể cả template), mỗi trục đã chứng minh đỏ **độc lập**, cây sạch xanh.
+
+**P01a giữ nguyên ✅ DUYỆT** — bất biến *cấu trúc thư mục* không đổi, chỉ mẫu grep cũ là thiếu. Đính chính ghi ở cuối `reports/R03`.
 
 ### Quyết định của chủ tịch — 2026-09-20
 

@@ -60,5 +60,19 @@
       "P06"
     ]
   },
-  "deadline": "2026-09-27"
+  "deadline": "2026-09-27",
+  "model_provider": {
+    "provider": "google-gemini",
+    "env": "GEMINI_API_KEY",
+    "A1_classifier": "gemini-3.5-flash-lite",
+    "A2_retriever": "gemini-3.5-flash",
+    "A3_verifier": "gemini-2.5-flash",
+    "embedding": "gemini-embedding-001 @ outputDimensionality=384, PHAI tu l2normalize",
+    "forbidden": [
+      "gemini-3.7-flash",
+      "gemini-3.8-flash",
+      "moi bac Pro (429 - sau cong thanh toan)"
+    ],
+    "rate_limit_measured": "15 song song qua het; 40 song song thi 39 dinh 429"
+  }
 }

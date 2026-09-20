@@ -1,7 +1,9 @@
 # 00 — KIẾN TRÚC & BẤT BIẾN · Resident Agent v1.0
 
 > **Trạng thái:** hợp đồng kiến trúc, khoá cho vòng `1.0.0`.
-> **Nguồn chân lý cấp trên:** [`../plan.md`](../plan.md) §2 (nhật ký quyết định Đ01–Đ12).
+> **Nguồn chân lý cấp trên:** [`../plan.md`](../plan.md) §2 (nhật ký quyết định Đ01–Đ19).
+> **Đã đổi nhà cung cấp model sang Gemini** `[Đ17/Đ18/Đ19, 2026-09-20]` — Đ17 thay thế
+> Đ13, Đ18 thay thế Đ14. Số đo gốc: [`../evidence/p02-provider/gemini-probe.txt`](../evidence/p02-provider/gemini-probe.txt).
 > Khi file này và `docs/` mâu thuẫn → `plan.md` thắng, rồi tới file này, rồi mới tới `docs/`.
 > **Người đọc mục tiêu:** worker không có lịch sử hội thoại.
 
@@ -143,14 +145,98 @@ bảng eval `P04` **phải đọc từ cùng cột DB** mà A3 ghi lúc chạy t
 **Cách kiểm:** `SPEC-P04` §3.1 — truy vấn dashboard không được chứa lời gọi model
 nào; test `BB06` so số trên `/bql/eval` với `SELECT` trực tiếp, sai lệch phải bằng 0.
 
-### BB-07 — Mọi lối ra ngoài đi qua adapter `[Đ11]`
+### BB-07 — Mọi lối ra ngoài đi qua adapter `[Đ11, Đ17]`
 
-Không file nào ngoài `lib/adapters/**` được `import` SDK của Anthropic, driver
-Postgres, hay `fetch` tới host ngoài. Lý do: chi phí lật stack (Đ11) chỉ thấp khi
-mọi lệnh đi qua một lớp.
+Không file nào ngoài `lib/adapters/**` được gọi tới nhà cung cấp model, đọc khoá của
+nhà cung cấp, `import` driver Postgres, hay `fetch` tới host ngoài. Lý do: chi phí lật
+stack (Đ11) chỉ thấp khi mọi lệnh đi qua một lớp — và Đ17 vừa chứng minh điều đó bằng
+một lần lật thật.
 
-**Cách kiểm:** `grep -rn "@anthropic-ai/sdk" app/ lib/ --include=*.ts | grep -v "^lib/adapters/"`
-phải rỗng.
+**Hai file adapter, đúng hai file:**
+
+| File | Độc quyền cái gì |
+| :-- | :-- |
+| `lib/adapters/model.ts` | Gọi `generativelanguage.googleapis.com` · đọc `GEMINI_API_KEY` |
+| `lib/adapters/db.ts` | Mở connection Postgres |
+
+#### BB-07.a — Đổi tên `anthropic.ts` → `model.ts`, và vì sao
+
+**Quyết định của Architect, 2026-09-20 11:12 +0700** (mốc lấy bằng
+`date "+%Y-%m-%d %H:%M:%S %z"`).
+
+Tên cũ `lib/adapters/anthropic.ts` nay nói dối về nội dung file. Chốt **đổi thành tên
+trung lập `lib/adapters/model.ts`**. Ba căn cứ đã đo, không phải cảm tính:
+
+1. **Đổi tên KHÔNG làm hỏng `scripts/check_adapter_boundary.sh`.** Script loại trừ theo
+   **thư mục** (`grep -v "^lib/adapters/"`), **không** theo tên file. Đã dựng cây giả có
+   `lib/adapters/model.ts` chứa cả host lẫn khoá → script vẫn in `violations: 0`.
+2. **Không file nào đang import adapter đó.** Đo bằng
+   `grep -rn "adapters/anthropic\|getAnthropicClient\|SupportedModel" app/ lib/ tests/ scripts/`
+   → chỉ trúng chính file đó cộng **một dòng chú thích** ở `scripts/seed_knowledge.mjs:115`.
+   Chi phí đổi tên thực tế = `git mv` + sửa 1 dòng chú thích.
+3. **Script BẮT BUỘC phải sửa dù có đổi tên hay không**, nên đổi tên **không tốn thêm một
+   lần sửa script nào.** Xem BB-07.b — đây là lý do quyết định.
+
+**Hệ quả cho gói P01a (đã nghiệm thu):** P01a vẫn **giữ nguyên trạng thái DUYỆT**. Bất
+biến mà 4 phép phá của nó chứng minh là bất biến **thư mục**, và bất biến đó không đổi.
+Cái hết hiệu lực là **mẫu grep nhận diện nhà cung cấp** — xem BB-07.b. Worker P02 phải
+chạy lại phép phá cho mẫu mới và dán output; **CẤM kế thừa bằng chứng đỏ cũ**.
+
+#### BB-07.b — Phép kiểm cũ nay XANH GIẢ, bắt buộc thay
+
+Mẫu cũ `grep -rn "@anthropic-ai/sdk" …` sẽ **không bao giờ trúng gì nữa**, vì gói phụ
+thuộc đó bị gỡ khỏi `package.json`. Một phép kiểm không bao giờ trúng là một phép kiểm
+**luôn xanh** — nguy hiểm hơn không có phép kiểm, vì nó tạo cảm giác an toàn.
+
+**Đã chứng minh, không suy đoán.** Dựng cây giả rò rỉ lộ liễu (`app/chat/page.tsx` nhúng
+thẳng host Gemini, `lib/pipeline/a1.ts` đọc thẳng `process.env.GEMINI_API_KEY`) rồi chạy
+**y nguyên** `scripts/check_adapter_boundary.sh` hiện có:
+
+```text
+$ bash scripts/check_adapter_boundary.sh      # chạy trong cây giả đang rò rỉ
+violations: 0
+EXIT=0
+```
+
+**Phép kiểm thay thế, BẮT BUỘC** — thay khối `@anthropic-ai/sdk` bằng **hai** khối,
+giữ nguyên helper `count_matches` và cách loại trừ theo thư mục:
+
+```bash
+# (1) host của nhà cung cấp, lọt ra ngoài adapter
+grep -rn "generativelanguage\.googleapis\.com" app/ lib/ --include="*.ts" --include="*.tsx" \
+  | grep -v "^lib/adapters/"
+
+# (2) KHOÁ lọt ra ngoài adapter  ← phép kiểm MẠNH NHẤT, giữ được cả khi URL ghép động
+grep -rn "GEMINI_API_KEY" app/ lib/ --include="*.ts" --include="*.tsx" \
+  | grep -v "^lib/adapters/"
+```
+
+Hai khối `@neondatabase/serverless` và `fetch\(['\"]https?://` **giữ nguyên**.
+
+**Vì sao khối (2) mới là chốt chặn thật:** khối (1) thua nếu ai đó ghép URL từ mảnh
+(`BASE + "/models/"`). Nhưng gọi được nhà cung cấp thì **buộc phải có khoá**, và khoá
+chỉ có một đường vào là `process.env.GEMINI_API_KEY`. Chặn ở khoá là chặn ở chỗ không
+lách được. Đây là phép kiểm **chặt hơn** phép kiểm tên-gói cũ, không phải chỉ là thay
+thế ngang.
+
+**Bằng chứng ĐỎ rồi XANH của mẫu mới** (chạy trong thư mục tạm, không chạm repo):
+
+```text
+# cây giả BAD: app/chat/page.tsx nhúng host · lib/pipeline/a1.ts đọc khoá
+--- host Gemini ngoài lib/adapters/ ---
+app/chat/page.tsx:1:const u = "https://generativelanguage.googleapis.com/v1beta/models";
+--- đọc GEMINI_API_KEY ngoài lib/adapters/ ---
+lib/pipeline/a1.ts:1:const k = process.env.GEMINI_API_KEY;
+violations: 2
+EXIT=1
+
+# cây giả GOOD: cả host lẫn khoá nằm gọn trong lib/adapters/model.ts
+violations: 0
+EXIT=0
+```
+
+Lượt GOOD cũng chính là bằng chứng cho căn cứ (1) ở BB-07.a: file đã đổi tên thành
+`model.ts` vẫn được loại trừ đúng.
 
 ### BB-08 — Eligibility gate chạy trước sinh chữ, không sau
 
@@ -212,15 +298,16 @@ G01–G12 đều `✅ local`.
 └───────────────┬─────────────────────────────────────────────────┬───────────────────┘
                 │                                                 │
 ┌───────────────▼──────────────┐                 ┌────────────────▼───────────────────┐
-│ lib/adapters/anthropic.ts    │                 │ lib/adapters/db.ts                 │
-│  ← file DUY NHẤT import SDK  │                 │  ← file DUY NHẤT mở connection     │
-│    (BB-07)                   │                 │    (BB-07)                         │
+│ lib/adapters/model.ts        │                 │ lib/adapters/db.ts                 │
+│  ← file DUY NHẤT gọi ra nhà  │                 │  ← file DUY NHẤT mở connection     │
+│    cung cấp model, và là nơi │                 │    (BB-07)                         │
+│    DUY NHẤT đọc khoá (BB-07) │                 │                                    │
 └───────────────┬──────────────┘                 └────────────────┬───────────────────┘
                 │                                                 │
-        Claude API (Anthropic)                     Postgres + pgvector (Neon)
-                                          documents · sections · chunks · conversations
-                                          messages · answer_turns · review_queue
-                                          bookings · receipts · audit_log
+   Gemini API (Google) — REST v1beta               Postgres + pgvector (Neon)
+   generativelanguage.googleapis.com     documents · sections · chunks · conversations
+   ├ :generateContent  → A1 · A2 · A3    messages · answer_turns · review_queue
+   └ :embedContent     → vector(384)     bookings · receipts · audit_log
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
 │ lib/simbackend/  ← BACKEND CƯ DÂN MÔ PHỎNG. Do TA định nghĩa (Đ02).                 │
 │   KHÔNG phải API Vinhomes. Không gọi ra Internet. Chỉ P05 dùng.                     │
@@ -278,7 +365,11 @@ thống từ chối đúng lúc. `PipelineInvariantError` là **hỏng**.
 | Loại | Lớp lỗi | Khi nào | Hành vi BẮT BUỘC của caller | Có ghi `answer_turns`? |
 | :-- | :-- | :-- | :-- | :-- |
 | E1 | `PipelineInvariantError` | Vi phạm BB-04, BB-08, BB-11 | **Ném ra, không nuốt.** Trả HTTP 500. Ghi `audit_log` mức `error`. CẤM degrade thành câu trả lời | ✅ có, `decision = system_error` |
-| E2 | `UpstreamModelError` | Claude API lỗi 429/5xx/timeout | Retry tối đa **2 lần**, backoff 1s→3s. Hết retry → `reason_code = system_error`, UI cho nút Thử lại | ✅ có |
+| E2 | `UpstreamRateLimited` | Gemini API trả **429** — hết hạn mức | Retry tối đa **2 lần**, backoff **2s→8s + jitter**. Hết retry → `reason_code = system_error`, UI cho nút Thử lại | ✅ có |
+| E2b | `UpstreamOverloaded` | Gemini API trả **503** *"high demand"* — quá tải phía nhà cung cấp | **Y như E2**: retry ≤2, backoff 2s→8s + jitter. **CẤM gộp vào "5xx chung" retry nhanh** `[Đ19]` | ✅ có |
+| E2c | `UpstreamModelError` | 5xx **khác** 503, hoặc timeout | Retry ≤2, backoff 1s→3s | ✅ có |
+| E2d | `UpstreamAuthError` | **401 / 403** — khoá sai hoặc hết hạn | **Không** retry. → `system_error`. **CẤM in khoá vào log hay thông báo lỗi** | ✅ có |
+| E2e | `UpstreamContentBlocked` | HTTP 200 nhưng `promptFeedback.blockReason`, hoặc không có candidate nào | **Không** retry — cùng đầu vào cho cùng kết quả. → escalate, `system_error` | ✅ có |
 | E3 | `RetrievalError` | pgvector lỗi, index chưa dựng | **Không** retry (lỗi cấu hình, retry vô ích). → `system_error` | ✅ có |
 | E4 | `EligibilityRejected` | Không phải lỗi — gate làm đúng việc | Đi tiếp nhánh escalate với `reason_code` tương ứng | ✅ có |
 | E5 | `AuthzError` | Vai không khớp route | HTTP 403, redirect về trang của vai đúng. CẤM trả nội dung một phần | ❌ không |
@@ -320,34 +411,89 @@ Mỗi dòng là một cám dỗ có thật mà agent đời sau sẽ gặp. Đ�
 | Hosting | Vercel | Đ11 |
 | DB | Postgres + `pgvector` trên Neon — RAG, state, sổ biên nhận **chung một kho** | Đ11 |
 | Auth | Credential 2 vai, cookie phiên ký HMAC, seed sẵn 2 tài khoản | Đ11, NG-09 |
-| Model A1 `classifier` | `claude-haiku-4-5` | §10.1 |
-| Model A2 `retriever` | `claude-opus-5` | §10.1 |
-| Model A3 `verifier` | `claude-sonnet-5` | §10.1 |
-| Embedding | Xem `01-CONTRACTS.md` §4.3 — **không** dùng Claude (không có endpoint embedding) | §10.1 |
+| Nhà cung cấp model | **Gemini API** — `generativelanguage.googleapis.com/v1beta`, REST thuần, **không SDK** | Đ17, §10.1 |
+| Model A1 `classifier` | `gemini-3.5-flash-lite` | §10.1 |
+| Model A2 `retriever` | `gemini-3.5-flash` ⚠ **hạ cấp có chủ ý** — không có bậc Pro | §10.1 |
+| Model A3 `verifier` | `gemini-2.5-flash` | §10.1 |
+| Embedding | `gemini-embedding-001`, **`outputDimensionality: 384`** — xem `01-CONTRACTS.md` §4.3 | Đ18, §10.1 |
 | Ngôn ngữ UI | Tiếng Việt toàn bộ | Luật §4 handoff |
 | Ngôn ngữ mã | Tên biến/hàm/file/bảng tiếng Anh | Luật §4 handoff |
 
-### 10.1 — Chọn model: căn cứ và số
+### 10.1 — Chọn model: căn cứ và số `[Đ17]`
 
-Bảng giá và ID lấy từ skill `claude-api` (bảng *Current Models*, cached 2026-06-24).
-**CẤM** thêm hậu tố ngày vào ID — `claude-opus-5`, không phải `claude-opus-5-2026xxxx`.
+**Căn cứ DUY NHẤT của bảng này là một lượt đo thật**, do Super Orchestrator chạy tay
+ngày 2026-09-20: [`../evidence/p02-provider/gemini-probe.txt`](../evidence/p02-provider/gemini-probe.txt).
+**CẤM chọn model nào không có trong bảng đo đó. CẤM lấy số từ trí nhớ hay từ trang giá
+công khai.** Không có bảng giá trong SPEC này vì **lượt probe không đo giá** — xem
+`OPERATIONS.md` §9 để biết cái gì là số đo và cái gì là ước lượng.
 
-| Agent | Model ID | Giá in/out ($/1M tok) | Vì sao tầng này |
+| Agent | Model ID | Số ĐO ĐƯỢC | Vì sao tầng này |
 | :-- | :-- | :-- | :-- |
-| A1 `classifier` | `claude-haiku-4-5` | 1.00 / 5.00 | Phân loại 5 intent + rút trường context. Việc có nhãn đúng/sai rõ ràng, không cần suy luận sâu |
-| A2 `retriever` | `claude-opus-5` | 5.00 / 25.00 | Sinh bản nháp phải **không bịa**, phải biết dừng khi evidence mỏng. Đây là chỗ chất lượng quyết định điểm R3 |
-| A3 `verifier` | `claude-sonnet-5` | 2.00 / 10.00 | Soi entailment từng claim. Có rubric rõ, tự biết đúng/sai; **khác họ với A2 là cố ý** — người chấm không nên là người viết |
+| A1 `classifier` | `gemini-3.5-flash-lite` | 200 · **1415ms** · in=30 out=23 · burst 15 qua **15/15** (p50 2043ms) | Nhanh nhất **và** ổn định nhất dưới tải — đúng thứ A1 cần vì nó chạy ở **mọi** lượt, kể cả lượt sẽ bị chặn ngay sau đó |
+| A2 `retriever` | `gemini-3.5-flash` | 200 · **9789ms** | ⚠ **Không phải lựa chọn tốt nhất — là lựa chọn duy nhất còn lại.** Xem khối cảnh báo dưới |
+| A3 `verifier` | `gemini-2.5-flash` | 200 · **2009ms** · in=52 out=23 · JSON hợp lệ **ngay lần đầu** | Soi entailment từng claim, có rubric rõ. Sạch ngay lần đầu, không phải thử lại lần nào. **Khác thế hệ với A2 (2.x vs 3.x) là cố ý** — người chấm không nên là người viết (VC-02/BB-06) |
+| Embedding | `gemini-embedding-001` | 200 · **469ms** · `outputDimensionality: 384` → **trả đúng 384** | Khớp nguyên `vector(384)` sẵn có. Xem `01-CONTRACTS.md` §4.3 |
 
-Ràng buộc API bắt buộc nhớ (từ skill `claude-api`, sai là lỗi 400):
+> ### ⚠ A2 mất model mạnh nhất — rủi ro chất lượng phải nói thẳng
+>
+> Bản SPEC đầu giao A2 cho `claude-opus-5`, **model mạnh nhất**, vì A2 làm việc nặng
+> nhất: soạn nháp **không bịa** và biết dừng khi evidence mỏng.
+>
+> **Không còn đường đó nữa.** Đo được: `gemini-2.5-pro` → **404** *"no longer available
+> to new users"*; `gemini-3.1-pro-preview` và `gemini-pro-latest` → **429** *"exceeded
+> your current quota, check your plan and billing"*. **Toàn bộ bậc Pro nằm sau cổng
+> thanh toán.** A2 buộc phải chạy bậc Flash.
+>
+> Đây là **hạ cấp chất lượng có chủ ý, đánh thẳng vào `faithfulness`** — đúng con số
+> rubric chấm (R3/R9). Ghi ra đây để không ai tưởng bảng trên tương đương bảng cũ.
+>
+> **CẤM bù bằng cách nới ngưỡng.** Chỉnh `TAU_FAITHFUL` hay `TAU_ANSWER` cho qua cổng là
+> vi phạm `T-C4` (`TESTING-ACCEPTANCE.md` §9). Bù bằng cơ chế: bất biến citation, A3 chấm
+> độc lập, `faithfulness` tính lại ở TypeScript.
+>
+> **Đường lật, chi phí rất thấp:** nạp tiền vào project Google Cloud ⇒ đổi **một chuỗi
+> ID** trong `SupportedModel` của `lib/adapters/model.ts`. Đó là lý do tồn tại của BB-07.
 
-- `claude-opus-5` và `claude-sonnet-5`: dùng `thinking: { type: "adaptive" }`.
-  `budget_tokens` **bị từ chối 400**. `temperature` / `top_p` / `top_k` **bị từ chối 400**.
-- `claude-haiku-4-5`: ngược lại — dùng `thinking: { type: "enabled", budget_tokens: N }`
-  (N ≥ 1024, < `max_tokens`), và `output_config.effort` **báo lỗi** trên Haiku 4.5.
-- **Không có assistant prefill** trên Opus 5 / Sonnet 5 (400). Muốn ép định dạng thì
-  dùng structured outputs.
-- Structured outputs: `output_config: { format: ... }`. Tham số `output_format` (không
-  có `_config`) đã **deprecated**, CẤM dùng.
+**Vùng cấm model — CẤM `gemini-3.7-flash` và `gemini-3.8-flash`** `[Đ17]`
+
+Cả hai **có** trả 200, nên rất dễ bị ai đó chọn vì "đời mới hơn, chắc khá hơn". Nhưng số
+đo là: `3.7-flash` **cần 2 lần thử** (lần 1 trả 503), `3.8-flash` **cần 3 lần thử** (503
+hai lần) — và đó là ở **lời gọi đơn lẻ**, chưa có tải. Không đặt đường găng của một bài
+bị chấm lên model đang quá tải. Ràng buộc này ở dạng máy đọc được: `C-09` trong
+`01-CONTRACTS.md` §10.
+
+**Hạn mức là ràng buộc THIẾT KẾ, không phải chi tiết vận hành** `[Đ19]`
+
+| Phép đo | Kết quả |
+| :-- | :-- |
+| `gemini-3.5-flash-lite`, 15 lời gọi song song | **15/15 qua**, 2543ms, p50 2043ms |
+| `gemini-3.5-flash-lite`, 40 song song (ngay sau lượt trên) | **1/40 qua**, 39 lỗi **429** |
+| `gemini-3.6-flash`, 20 song song | **4/20 qua**, phần trượt lẫn **cả 429 lẫn 503** |
+
+Trần nằm giữa **15 và 40 lời gọi/phút**, và lượt sau còn bị trừ bởi hạn mức lượt trước
+vừa tiêu. Hệ quả **bắt buộc**, không phải khuyến nghị:
+
+1. Bộ chạy Golden giới hạn song song **3–5** (mặc định **4**). Chi tiết `SPEC-P04` §5.
+2. Backoff cho **cả 429 lẫn 503**, có jitter. Bảng lỗi §8 (E2/E2b).
+3. Một lượt Golden đầy đủ ước lượng **13–15 phút**. Chạy **1–2 lần/ngày**, sửa nhỏ thì
+   `--set=safety` (16 case).
+
+**Ràng buộc API bắt buộc nhớ** (khung gọi đầy đủ ở `01-CONTRACTS.md` §8.0):
+
+- Gọi bằng **REST thuần + `fetch`**, **không thêm SDK**. Lý do: lượt probe đo bằng đúng
+  đường HTTP này, nên hình dạng lời gọi trong SPEC là hình dạng **đã có bằng chứng**;
+  thêm SDK là thêm một lớp chưa ai đo, cộng một phụ thuộc, đổi lấy không gì cả.
+- Luôn `responseMimeType: "application/json"` **và** `responseSchema`. **Không có
+  `zodOutputFormat`** ở nhà cung cấp này — viết `responseSchema` bằng tay, giữ Zod để
+  kiểm lại sau `JSON.parse` (§8.0.1).
+- `responseSchema` là **tập con OpenAPI 3.0**: tên kiểu VIẾT HOA, `nullable: true` thay
+  cho union với `null`; **không** `$ref`, `additionalProperties`, `oneOf`.
+- **CẤM** `temperature` / `topP` / `topK` / `thinkingConfig` trong vòng `1.0.0` — mọi số
+  latency ở bảng trên đều đo trên **đường mặc định**; đổi tham số là ném bằng chứng đi.
+- Token suy nghĩ **tính vào chung `maxOutputTokens`** (khác nhà cung cấp cũ, nơi nó có
+  ngân sách riêng). Vì vậy A1 nâng lên `2048`, không giữ `1024`.
+- JSON trả về nằm trong **text** của candidate; **không có** `response.parsed_output`.
+  Token đọc từ `usageMetadata.promptTokenCount` / `candidatesTokenCount`.
 
 ---
 
@@ -364,7 +510,7 @@ File này là kiến trúc, nên nghiệm thu của nó là: **12 bất biến �
 | BB-04 | `BB04` | `npm run test -- bb04` | ném `PipelineInvariantError` |
 | BB-05 | `BB05` | `scripts/check_no_confidence_ui.sh` | `exit 0`, `matches: 0` |
 | BB-06 | `BB06` | `npm run test -- bb06` | `delta = 0` |
-| BB-07 | `BB07` | `scripts/check_adapter_boundary.sh` | `exit 0`, `violations: 0` |
+| BB-07 | `BB07` | `scripts/check_adapter_boundary.sh` **sau khi thay mẫu theo §BB-07.b** | `exit 0`, `violations: 0` — **và** phải kèm bằng chứng ĐỎ của mẫu mới (`R10` ở `TESTING` §6.5) |
 | BB-08 | `BB08` | `npm run test -- bb08` | mảng 9 chặng đúng thứ tự |
 | BB-09 | `BB09` | `psql -f scripts/check_enum_closed.sql` | Postgres báo `invalid input value for enum` |
 | BB-10 | `BB10` | `scripts/check_no_hardcoded_knowledge.sh` | `exit 0`, `matches: 0` |

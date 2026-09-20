@@ -225,12 +225,25 @@ CREATE INDEX chunks_vec_idx  ON chunks USING hnsw (embedding vector_cosine_ops);
 
 ### 4.1 — Hai chế độ
 
-Biến môi trường `RETRIEVAL_MODE` ∈ `lexical` | `hybrid`. **Mặc định `lexical`.**
+Biến môi trường `RETRIEVAL_MODE` ∈ `lexical` | `hybrid`. **Mặc định `hybrid` — cả local
+lẫn Vercel** `[Đ18]`.
 
-Lý do mặc định lexical: Postgres không có cấu hình full-text tiếng Việt, nhưng
-`to_tsvector('simple', unaccent(...))` vẫn tách từ theo khoảng trắng và bỏ dấu — với
-corpus ~19 tài liệu thì đủ, **và nó chạy được trên Vercel không cần tải model**.
+Lý do `lexical` vẫn là đường lùi hợp lệ: Postgres không có cấu hình full-text tiếng
+Việt, nhưng `to_tsvector('simple', unaccent(...))` vẫn tách từ theo khoảng trắng và bỏ
+dấu — với corpus ~19 tài liệu thì đủ, và nó **không tốn một lời gọi API nào**.
+
 `hybrid` bật thêm vector; nếu embedding `NULL` thì tự rơi về lexical, **không ném lỗi**.
+
+> **Đổi so với bản SPEC đầu (Đ18 thay thế Đ14).** Bản đầu ép `lexical` trên Vercel vì
+> embedding chạy bằng model tải-tại-chỗ mà serverless không kham nổi. Nay embedding là
+> **một lời gọi HTTP** (§4.3) nên `hybrid` chạy được cả trên Vercel. Vùng cấm `OP-C8`
+> của `OPERATIONS.md` đã **bị gỡ** vì mất căn cứ.
+
+**Cái giá của `hybrid`, phải biết trước:** mỗi câu hỏi tốn **thêm 1 lời gọi embedding**
+cho query. Một lượt Golden đầy đủ vì vậy là `66 × 3 = 198` lời gọi sinh chữ `[Đ19]`
+**cộng** `66` lời gọi embedding = **264 lời gọi HTTP**. Nếu hạn mức embedding thành nút
+thắt, đổi `RETRIEVAL_MODE=lexical` là hạ ngay về 198 — **không cần deploy lại, không
+cần re-embed, không cần sửa schema**. Đây chính là lý do giữ hai chế độ.
 
 ### 4.2 — Truy vấn chuẩn (lexical)
 
@@ -249,17 +262,58 @@ LIMIT $2;
 (`SPEC-P02` §6.1) có miền giá trị xác định. Bỏ cờ 32 ⇒ `score` không chặn trên ⇒
 công thức confidence vô nghĩa.
 
-### 4.3 — Embedding (chỉ khi `hybrid`)
+### 4.3 — Embedding (chỉ khi `hybrid`) `[Đ18]`
 
-| Hạng mục | Chốt |
-| :-- | :-- |
-| Model | `Xenova/multilingual-e5-small` qua `@xenova/transformers` |
-| Số chiều | **384** (khớp `vector(384)` ở §3.3) |
-| Chạy ở đâu | **Chỉ trong `scripts/seed_knowledge.mjs` trên máy dev**, ghi sẵn vào DB |
-| Query embedding | Cũng chỉ ở local (`npm run dev`). Trên Vercel: `RETRIEVAL_MODE=lexical` |
+| Hạng mục | Chốt | Đã đo chưa |
+| :-- | :-- | :-- |
+| Model | `gemini-embedding-001` | ✅ HTTP 200, 469ms |
+| Endpoint | `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=$GEMINI_API_KEY` | ✅ |
+| Số chiều | **384** — ép bằng `outputDimensionality: 384` | ✅ **trả đúng 384** |
+| Nếu **không** truyền `outputDimensionality` | Trả **3072** chiều — **CẤM dùng** | ✅ đo được 3072 |
+| Chạy ở đâu | **Cả hai**: `scripts/seed_knowledge.mjs` (lúc seed) **và** runtime khi truy vấn (kể cả trên Vercel) | — |
+| `taskType` | **KHÔNG truyền** trong vòng `1.0.0` — xem vùng cấm C-10 | ❌ chưa đo |
 
-**CẤM dùng Claude để tạo embedding** — Anthropic không có endpoint embedding. Đây là
-lỗi hay gặp, ghi ra đây để khỏi mất một buổi.
+Bằng chứng nguyên văn: [`../evidence/p02-provider/gemini-probe.txt`](../evidence/p02-provider/gemini-probe.txt) §3.
+
+**384 khớp NGUYÊN DDL `vector(384)` ở §3.3.** CẤM đổi schema, CẤM re-embed theo số
+chiều khác. Đây là lý do duy nhất khiến việc đổi nhà cung cấp không kéo theo migration.
+
+**Vì sao không dùng 3072 dù model mặc định trả ra nó:** `pgvector` chỉ đánh chỉ mục
+HNSW tới **2000 chiều**. 3072 không index được, tra cứu sẽ quét tuần tự toàn bảng. 384
+vừa khớp DDL sẵn có, vừa nằm trong giới hạn index.
+
+**BẮT BUỘC chuẩn hoá L2 trong adapter, cho CẢ seed lẫn query:**
+
+```ts
+function l2normalize(v: number[]): number[] {
+  const n = Math.sqrt(v.reduce((s, x) => s + x * x, 0));
+  return n === 0 ? v : v.map(x => x / n);
+}
+// CẤM viết `Math.hypot(...v)` — trải mảng vào tham số hàm sẽ vỡ khi số chiều lớn.
+```
+
+**ĐÃ ĐO, 2026-09-20 — không còn là phòng xa, là bắt buộc có căn cứ.** Super Orchestrator
+đo cùng một câu, chỉ đổi `outputDimensionality`; `|v|` là căn bậc hai tổng bình phương:
+
+| `outputDimensionality` | `|v|` đo được | Kết luận |
+| :-- | --: | :-- |
+| 3072 (mặc định) | **1.000000** | đã chuẩn hoá sẵn |
+| 768 | **0.594145** | **CHƯA** chuẩn hoá |
+| **384** (ta dùng) | **0.434527** | **CHƯA** chuẩn hoá |
+
+Gemini rút chiều kiểu Matryoshka: ép chiều trả về một **lát cắt** của vector đầy đủ, nên
+độ dài không còn bằng 1. Ở 384 chiều chỉ còn **0.4345**. Vì vậy `l2normalize` ở trên là
+**bắt buộc thật**, không phải đề phòng.
+
+Bỏ sót thì `cosine_sim` mất miền giá trị `(0,1)` mà công thức `S1` (`SPEC-P02` §6.1) giả
+định ⇒ ngưỡng confidence và cổng escalate lệch **âm thầm**: không crash, không test nào
+đỏ, chỉ ra điểm sai. Đây là loại hỏng tệ nhất.
+
+Bằng chứng nguyên văn: [`evidence/p02-provider/so-cm9-cm11.txt`](../evidence/p02-provider/so-cm9-cm11.txt).
+
+**CẤM trộn hai không gian vector.** Vector lúc seed và vector lúc truy vấn phải sinh ra
+bằng **cùng model, cùng `outputDimensionality`, cùng quy tắc chuẩn hoá**. Đổi bất kỳ
+yếu tố nào trong ba yếu tố đó ⇒ **bắt buộc re-embed toàn corpus**, không có đường tắt.
 
 Điểm hybrid: `S1 = max(0.5 × score_lexical + 0.5 × cosine_sim)` trên tập hợp nhất
 top-8 của mỗi nhánh. Cả hai số hạng đều ∈ (0,1) nên `S1 ∈ (0,1)`.
@@ -446,7 +500,7 @@ export interface PipelineStep {
   step: "validate" | "safety" | "intent" | "context" | "risk"
       | "retrieval" | "eligibility" | "draft" | "verify";
   ok: boolean; ms: number;
-  model?: "claude-haiku-4-5" | "claude-opus-5" | "claude-sonnet-5";
+  model?: SupportedModel;                      // xem §8, union 3 ID Gemini
   input_tokens?: number; output_tokens?: number;
   note?: string;
 }
@@ -470,12 +524,131 @@ props thì không lọt ra màn hình được, khỏi trông chờ kỷ luật 
 
 ---
 
-## 8. Hợp đồng 3 agent
+## 8. Hợp đồng 3 agent `[Đ17]`
 
-Adapter duy nhất: `lib/adapters/anthropic.ts` (BB-07). Ràng buộc API theo model đã
-chốt ở `00-ARCHITECTURE.md` §10.1 — đọc lại trước khi gọi, sai là 400.
+Adapter duy nhất: **`lib/adapters/model.ts`** (BB-07). Ràng buộc API theo model đã
+chốt ở `00-ARCHITECTURE.md` §10.1 — đọc lại trước khi gọi.
 
-### 8.1 — A1 `classifier` — `claude-haiku-4-5`
+> **Đổi tên file adapter (quyết định của Architect, 2026-09-20 11:12 +0700).**
+> Tên cũ là `lib/adapters/anthropic.ts`. Nhà cung cấp nay là Gemini, nên tên cũ nói dối
+> về nội dung file. Tên mới **trung lập theo nhà cung cấp** để lần đổi sau (ví dụ nạp
+> tiền rồi lên bậc Pro) không phải đổi tên file lần nữa — đúng tinh thần "chi phí lật
+> stack thấp" của Đ11 mà BB-07 sinh ra để phục vụ. Hệ quả đầy đủ: `00-ARCHITECTURE.md`
+> §9 BB-07.
+
+### 8.0 — Khung gọi chung, áp cho CẢ BA agent
+
+**Union ID model — tập đóng, khai trong `lib/adapters/model.ts`:**
+
+```ts
+/** Ba ID đã chốt ở 00-ARCHITECTURE.md §10.1, có bằng chứng đo. CẤM thêm ID không
+ *  có trong evidence/p02-provider/gemini-probe.txt. CẤM thêm hậu tố ngày. */
+export type SupportedModel =
+  | "gemini-3.5-flash-lite"   // A1 classifier
+  | "gemini-3.5-flash"        // A2 retriever
+  | "gemini-2.5-flash";       // A3 verifier
+
+export const EMBEDDING_MODEL = "gemini-embedding-001" as const;
+export const EMBEDDING_DIMS = 384 as const;          // khớp vector(384) §3.3
+export const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta" as const;
+```
+
+`PipelineStep.model` (§7) dùng đúng union này. Đổi nhà cung cấp lần sau ⇒ sửa **đúng
+khối này**, không sửa chỗ nào khác — đó là toàn bộ mục đích của BB-07.
+
+```http
+POST https://generativelanguage.googleapis.com/v1beta/models/{MODEL_ID}:generateContent?key=$GEMINI_API_KEY
+Content-Type: application/json
+```
+
+```jsonc
+{
+  "systemInstruction": { "parts": [{ "text": "<system prompt tiếng Việt>" }] },
+  "contents": [{ "role": "user", "parts": [{ "text": "<payload JSON của agent>" }] }],
+  "generationConfig": {
+    "responseMimeType": "application/json",
+    "responseSchema": { /* §8.1 / §8.2 / §8.3 */ },
+    "maxOutputTokens": 2048
+  }
+}
+```
+
+**BẮT BUỘC:**
+
+1. `responseMimeType: "application/json"` — **luôn luôn**. Đã đo: có nó thì cả ba model
+   trả JSON hợp lệ (`gemini-probe.txt` §1).
+2. `responseSchema` **bắt buộc có**, ngay cả khi đã có `responseMimeType`. Chỉ đặt MIME
+   type thì model được tự do chọn hình dạng JSON — hợp lệ về cú pháp nhưng sai hợp đồng.
+3. Khoá `key` truyền ở **query string**, đọc từ `process.env.GEMINI_API_KEY`, **chỉ ở
+   trong `lib/adapters/model.ts`** (BB-07). CẤM in ra log kể cả một phần.
+
+**CẤM tường minh — những tham số KHÔNG được truyền trong vòng `1.0.0`:**
+
+| Tham số | Vì sao CẤM |
+| :-- | :-- |
+| `temperature`, `topP`, `topK` | Lượt probe đo cả ba model ở **đường mặc định** và chúng trả JSON hợp lệ. Mọi số latency ở §10.1 `00-ARCHITECTURE.md` cũng đo trên đường đó. Hạ `temperature` trên họ Gemini 3.x là vùng **chưa đo** và có tiếng làm suy luận kém đi. Tính tất định của hệ này đến từ `responseSchema` + tầng TypeScript (cổng eligibility §5, tính lại `faithfulness` §8.3), **không** đến từ `temperature` |
+| `thinkingConfig` (`thinkingBudget` / `thinkingLevel`) | Cùng lý do: chưa đo. Thêm vào là ném latency đã đo đi |
+| `candidateCount` > 1 | Nhân đôi số token tiêu thụ trong khi hạn mức đang là ràng buộc thiết kế (Đ19) |
+| `responseSchema` có `$ref` / `additionalProperties` / `oneOf` | `responseSchema` của Gemini là **tập con OpenAPI 3.0**, không phải JSON Schema đầy đủ. Ba thứ này không thuộc tập con đó |
+
+**Muốn gỡ một dòng trong bảng trên:** đo trước bằng một lượt probe riêng, ghi kết quả
+vào `evidence/`, rồi mới sửa SPEC. CẤM gỡ bằng suy đoán.
+
+#### 8.0.1 — Viết `responseSchema`: luật hình dạng
+
+`responseSchema` dùng **tên kiểu VIẾT HOA**: `"STRING"`, `"NUMBER"`, `"INTEGER"`,
+`"BOOLEAN"`, `"ARRAY"`, `"OBJECT"`. Trường có thể `null` dùng `"nullable": true`,
+**không** dùng `type: ["string","null"]`. Trường tập đóng dùng `"enum": [...]`.
+
+**Không có `zodOutputFormat` ở Gemini.** Đây là tiện ích của SDK Anthropic, không có
+bản tương đương. Chốt cách làm:
+
+1. Viết `responseSchema` **bằng tay**, dạng hằng số cạnh schema Zod tương ứng.
+2. Giữ Zod để **kiểm lại sau khi `JSON.parse`** — `responseSchema` ràng ở phía nhà cung
+   cấp, Zod ràng ở phía ta. Hai lớp, không bỏ lớp nào.
+3. `propertyOrdering` liệt kê **đúng thứ tự** như `required`, để đầu ra ổn định giữa
+   các lượt chạy.
+
+**Rủi ro của cách này, và cách chặn:** hai bản mô tả (Zod và `responseSchema`) có thể
+trôi lệch nhau. Chặn bằng một test bắt buộc, không phải bằng kỷ luật:
+
+```ts
+// tests/schema-parity.test.ts — BẮT BUỘC có, mỗi agent một ca
+assert.deepStrictEqual(
+  [...CLASSIFIER_RESPONSE_SCHEMA.required].sort(),
+  Object.keys(ClassifierOutputSchema.shape).sort()
+);
+```
+
+#### 8.0.2 — Đọc phản hồi: chặng bắt buộc, đúng thứ tự
+
+```ts
+// 1. Bị chặn ở tầng an toàn của nhà cung cấp — KHÔNG phải lỗi mạng
+if (body.promptFeedback?.blockReason) throw new UpstreamContentBlocked(...);
+const cand = body.candidates?.[0];
+if (!cand) throw new UpstreamContentBlocked("no candidate");
+
+// 2. Cắt giữa chừng ⇒ JSON vỡ. Bắt Ở ĐÂY, đừng để JSON.parse báo một lỗi khó hiểu
+if (cand.finishReason && cand.finishReason !== "STOP") {
+  throw new ContractDriftError(`finishReason=${cand.finishReason}`);
+}
+
+// 3. JSON nằm trong TEXT, không có trường 'parsed_output' như SDK cũ
+const raw = cand.content?.parts?.map(p => p.text ?? "").join("") ?? "";
+const parsed = SomeZodSchema.parse(JSON.parse(raw));   // hỏng ⇒ ContractDriftError
+
+// 4. Token: tên trường KHÁC hẳn nhà cung cấp cũ
+const input_tokens  = body.usageMetadata?.promptTokenCount     ?? 0;
+const output_tokens = body.usageMetadata?.candidatesTokenCount ?? 0;
+```
+
+**CẤM đọc `response.parsed_output`** — trường đó là của SDK cũ, ở đây luôn `undefined`,
+và đọc nó sẽ tạo ra lỗi `ContractDriftError` giả ở mọi lượt.
+
+**CẤM vá JSON hỏng bằng regex** (giữ nguyên luật cũ). `finishReason=MAX_TOKENS` không
+sửa được bằng cách cắt dán chuỗi — phải nâng `maxOutputTokens` hoặc rút ngắn đầu vào.
+
+### 8.1 — A1 `classifier` — `gemini-3.5-flash-lite`
 
 ```ts
 export interface ClassifierInput {
@@ -497,17 +670,53 @@ export interface ClassifierOutput {
 export async function runClassifier(i: ClassifierInput): Promise<ClassifierOutput>;
 ```
 
-Tham số gọi bắt buộc:
+Tham số gọi bắt buộc — `MODEL_ID = "gemini-3.5-flash-lite"`, khung chung ở §8.0:
 
-```ts
-{
-  model: "claude-haiku-4-5",
-  max_tokens: 1024,
-  thinking: { type: "enabled", budget_tokens: 1024 },   // Haiku 4.5 KHÔNG nhận 'adaptive'
-  output_config: { format: zodOutputFormat(ClassifierOutputSchema) },
-  // CẤM đặt output_config.effort — Haiku 4.5 báo lỗi
+```jsonc
+"generationConfig": {
+  "responseMimeType": "application/json",
+  "responseSchema": CLASSIFIER_RESPONSE_SCHEMA,   // ngay dưới
+  "maxOutputTokens": 2048
 }
 ```
+
+> **Vì sao `2048` chứ không phải `1024` như bản SPEC cũ.** Ở nhà cung cấp cũ, token suy
+> nghĩ có ngân sách riêng, ngoài `max_tokens`. Ở Gemini, token suy nghĩ **tính vào chung
+> `maxOutputTokens`**. Giữ `1024` là mời `finishReason=MAX_TOKENS`, tức JSON cụt, tức
+> `ContractDriftError` ở một chặng lẽ ra rẻ nhất pipeline. Đây là hệ quả trực tiếp của
+> việc đổi nhà cung cấp, không phải nới tay cho sướng.
+
+```ts
+export const CLASSIFIER_RESPONSE_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    intent: { type: "STRING",
+      enum: ["I-01","I-02","I-03","I-04","I-05","unsupported","unresolved"] },
+    is_emergency:             { type: "BOOLEAN" },
+    is_legal_or_compensation: { type: "BOOLEAN" },
+    target_subjects: {
+      type: "OBJECT",
+      properties: {
+        resident_ids: { type: "ARRAY", items: { type: "STRING" } },
+        property_ids: { type: "ARRAY", items: { type: "STRING" } },
+      },
+      required: ["resident_ids", "property_ids"],
+      propertyOrdering: ["resident_ids", "property_ids"],
+    },
+    missing_required_fields: { type: "ARRAY", items: { type: "STRING" } },
+    clarify_question_vi:     { type: "STRING", nullable: true },
+    normalized_query_vi:     { type: "STRING" },
+  },
+  required: ["intent","is_emergency","is_legal_or_compensation","target_subjects",
+             "missing_required_fields","clarify_question_vi","normalized_query_vi"],
+  propertyOrdering: ["intent","is_emergency","is_legal_or_compensation","target_subjects",
+             "missing_required_fields","clarify_question_vi","normalized_query_vi"],
+} as const;
+```
+
+**`enum` của `intent` là tập đóng 7 giá trị.** Nó phải khớp `IntentId` (§7) cộng đúng
+hai giá trị `unsupported` / `unresolved`. Thêm giá trị thứ 8 ⇒ phá bảng ánh xạ
+`reason_code` ở §2.1 và phá Golden.
 
 #### 8.1.1 — Bảng `required_context` theo intent
 
@@ -525,7 +734,27 @@ breaking change kéo theo Golden.
 Trường có hậu tố `_when_*` là **có điều kiện** — chỉ bắt buộc khi câu hỏi/nguồn cần
 phân biệt đó. CẤM dùng clarification để moi thêm dữ liệu cá nhân không cần thiết.
 
-### 8.2 — A2 `retriever` — `claude-opus-5`
+### 8.2 — A2 `retriever` — `gemini-3.5-flash` ⚠ **có rủi ro chất lượng đã biết**
+
+> **ĐỌC TRƯỚC KHI VIẾT MỘT DÒNG NÀO CỦA A2.** Bản SPEC đầu giao A2 cho model **mạnh
+> nhất** (`claude-opus-5`) vì đây là việc nặng nhất của cả pipeline: truy hồi xong phải
+> soạn nháp **không bịa** và phải biết dừng khi evidence mỏng. Với nhà cung cấp mới,
+> **không có model bậc Pro nào dùng được** — `gemini-2.5-pro`, `gemini-3.1-pro-preview`,
+> `gemini-pro-latest` đều trả **HTTP 429 "exceeded your current quota, check your plan
+> and billing"**, tức nằm sau cổng thanh toán (`gemini-probe.txt` §1). A2 vì vậy phải
+> chạy bậc **Flash**.
+>
+> **Đây là hạ cấp chất lượng có chủ ý, đánh thẳng vào `faithfulness`** — đúng con số mà
+> rubric chấm (R3/R9). CẤM ai đọc bảng §10.1 rồi tưởng ba model này tương đương ba model
+> cũ. `[Đ17]`
+>
+> **Bù lại bằng cơ chế, không bằng hy vọng.** Ba chốt chặn sau **không được nới** với lý
+> do "model yếu hơn nên khó đạt": (a) bất biến citation ⊆ `eligible_chunks` ngay dưới
+> đây; (b) A3 chấm độc lập và `faithfulness` tính lại ở TypeScript (§8.3); (c) sàn
+> `TAU_FAITHFUL` (`SPEC-P02` §6). Nới ngưỡng để qua cổng là vi phạm `T-C4`.
+>
+> **Đường lật, chi phí thấp:** nạp tiền vào project Google Cloud ⇒ đổi **đúng một chuỗi
+> ID** trong `SupportedModel` là A2 lên bậc Pro. Đó là lý do tồn tại của BB-07.
 
 ```ts
 export interface RetrieverInput {
@@ -542,21 +771,48 @@ export interface RetrieverOutput {
 }
 ```
 
-```ts
-{
-  model: "claude-opus-5",
-  max_tokens: 4096,
-  thinking: { type: "adaptive" },              // budget_tokens ⇒ 400
-  output_config: { format: zodOutputFormat(RetrieverOutputSchema) },
-  // CẤM temperature / top_p / top_k ⇒ 400
+Tham số gọi — `MODEL_ID = "gemini-3.5-flash"`, khung chung ở §8.0:
+
+```jsonc
+"generationConfig": {
+  "responseMimeType": "application/json",
+  "responseSchema": RETRIEVER_RESPONSE_SCHEMA,
+  "maxOutputTokens": 4096
 }
+```
+
+```ts
+const CITATION_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    document_id:       { type: "STRING" },
+    section_id:        { type: "STRING" },
+    document_title_vi: { type: "STRING" },
+    heading_vi:        { type: "STRING" },
+    snippet_vi:        { type: "STRING" },   // ≤ 300 ký tự, cắt theo câu (§7)
+  },
+  required: ["document_id","section_id","document_title_vi","heading_vi","snippet_vi"],
+  propertyOrdering: ["document_id","section_id","document_title_vi","heading_vi","snippet_vi"],
+} as const;
+
+export const RETRIEVER_RESPONSE_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    draft_vi:        { type: "STRING" },
+    citations:       { type: "ARRAY", items: CITATION_SCHEMA },
+    refused:         { type: "BOOLEAN" },
+    refusal_note_vi: { type: "STRING", nullable: true },
+  },
+  required: ["draft_vi","citations","refused","refusal_note_vi"],
+  propertyOrdering: ["draft_vi","citations","refused","refusal_note_vi"],
+} as const;
 ```
 
 **Bất biến A2:** mọi `citations[i].section_id` phải tồn tại trong `eligible_chunks`.
 Vi phạm ⇒ ném `PipelineInvariantError` (E1), **không** im lặng lọc bỏ — lọc im lặng
 che mất việc model đang bịa nguồn.
 
-### 8.3 — A3 `verifier` — `claude-sonnet-5`
+### 8.3 — A3 `verifier` — `gemini-2.5-flash`
 
 ```ts
 export interface VerifierInput {
@@ -571,14 +827,44 @@ export interface VerifierOutput {
 }
 ```
 
-```ts
-{
-  model: "claude-sonnet-5",
-  max_tokens: 4096,
-  thinking: { type: "adaptive" },
-  output_config: { format: zodOutputFormat(VerifierOutputSchema) },
+Tham số gọi — `MODEL_ID = "gemini-2.5-flash"`, khung chung ở §8.0:
+
+```jsonc
+"generationConfig": {
+  "responseMimeType": "application/json",
+  "responseSchema": VERIFIER_RESPONSE_SCHEMA,
+  "maxOutputTokens": 4096
 }
 ```
+
+```ts
+export const VERIFIER_RESPONSE_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    claims: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          claim_vi: { type: "STRING" },
+          verdict:  { type: "STRING", enum: ["supported","unsupported","contradicted"] },
+          supporting_section_id: { type: "STRING", nullable: true },
+        },
+        required: ["claim_vi","verdict","supporting_section_id"],
+        propertyOrdering: ["claim_vi","verdict","supporting_section_id"],
+      },
+    },
+    faithfulness: { type: "NUMBER" },   // NHẬN nhưng KHÔNG DÙNG — xem ngay dưới
+  },
+  required: ["claims","faithfulness"],
+  propertyOrdering: ["claims","faithfulness"],
+} as const;
+```
+
+**Vì sao `gemini-2.5-flash` cho A3, không phải một model 3.x.** A2 chạy họ **3.x**, A3
+chạy họ **2.x** — **khác thế hệ là cố ý**, giữ nguyên tinh thần "người chấm không nên là
+người viết" của VC-02/BB-06. Số đo: `gemini-2.5-flash` trả 200 trong **2009ms**, JSON
+sạch **ngay lần đầu**, không phải thử lại lần nào (`gemini-probe.txt` §1). `[Đ17]`
 
 Quy tắc tính, bắt buộc tính **ở TypeScript, không tin số model tự báo**:
 
@@ -639,15 +925,34 @@ export interface CapabilitySpec {
 
 ## 9. Bảng phân loại lỗi & hành vi caller
 
-| Lỗi | Ném ở đâu | Retry? | Caller BẮT BUỘC làm gì | Ghi `answer_turns` |
-| :-- | :-- | :-- | :-- | :-- |
-| `PipelineInvariantError` | `assertCitedOrEscalate`, `assertStepOrder`, kiểm citation A2 | ❌ | Ném lên, HTTP 500, `audit_log` mức `error`. **CẤM nuốt** | ✅ `decision=escalate`, `reason_code=system_error` |
-| `UpstreamModelError` | `lib/adapters/anthropic.ts` | ✅ ≤2, backoff 1s→3s | Hết retry → `system_error`, UI hiện nút Thử lại | ✅ |
-| `ContractDriftError` | parse structured output thất bại | ✅ đúng 1 lần | **CẤM sửa JSON bằng regex.** Hỏng lần 2 → `system_error` | ✅ |
-| `RetrievalError` | `lib/adapters/db.ts` | ❌ | Lỗi cấu hình, retry vô ích → `system_error` | ✅ |
-| `OwnershipViolation` | `checkOwnership` | ❌ | Chặn **trước** khi chạm DB → `pii_or_account_specific` | ✅ |
-| `AuthzError` | middleware | ❌ | HTTP 403, redirect. CẤM trả nội dung một phần | ❌ |
-| `EnumViolation` | Postgres | ❌ | Bug lập trình. Để lỗi nổ, đừng bắt | ❌ |
+| Lỗi | Ném ở đâu | Mã HTTP kích hoạt | Retry? | Caller BẮT BUỘC làm gì | Ghi `answer_turns` |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| `PipelineInvariantError` | `assertCitedOrEscalate`, `assertStepOrder`, kiểm citation A2 | — | ❌ | Ném lên, HTTP 500, `audit_log` mức `error`. **CẤM nuốt** | ✅ `decision=escalate`, `reason_code=system_error` |
+| `UpstreamRateLimited` | `lib/adapters/model.ts` | **429** | ✅ ≤2, backoff **2s→8s** + jitter | Hết retry → `system_error`, UI hiện nút Thử lại | ✅ |
+| `UpstreamOverloaded` | `lib/adapters/model.ts` | **503** | ✅ ≤2, backoff **2s→8s** + jitter | Hết retry → `system_error`, UI hiện nút Thử lại | ✅ |
+| `UpstreamModelError` | `lib/adapters/model.ts` | 5xx khác 503, timeout | ✅ ≤2, backoff 1s→3s | Hết retry → `system_error`, UI hiện nút Thử lại | ✅ |
+| `UpstreamAuthError` | `lib/adapters/model.ts` | **401 / 403** | ❌ | Key sai/hết hạn. Retry vô ích → `system_error`. **CẤM in key vào thông báo lỗi** | ✅ |
+| `UpstreamContentBlocked` | `lib/adapters/model.ts` | 200 kèm `promptFeedback.blockReason`, hoặc 0 candidate | ❌ | Bộ lọc an toàn của nhà cung cấp chặn. Retry cùng đầu vào cho cùng kết quả → **escalate**, `reason_code=system_error` | ✅ |
+| `ContractDriftError` | `JSON.parse` hỏng · Zod hỏng · `finishReason ≠ "STOP"` | 200 | ✅ đúng 1 lần | **CẤM sửa JSON bằng regex.** Hỏng lần 2 → `system_error` | ✅ |
+| `RetrievalError` | `lib/adapters/db.ts` | — | ❌ | Lỗi cấu hình, retry vô ích → `system_error` | ✅ |
+| `OwnershipViolation` | `checkOwnership` | — | ❌ | Chặn **trước** khi chạm DB → `pii_or_account_specific` | ✅ |
+| `AuthzError` | middleware | — | ❌ | HTTP 403, redirect. CẤM trả nội dung một phần | ❌ |
+| `EnumViolation` | Postgres | — | ❌ | Bug lập trình. Để lỗi nổ, đừng bắt | ❌ |
+
+**`503` là lớp lỗi MỚI, tách riêng — không gộp vào "5xx chung" như bản SPEC cũ.** `[Đ19]`
+Lý do đo được: `gemini-3.6-flash` ở 20 lời gọi song song chỉ qua 4/20, phần trượt **lẫn
+cả 429 lẫn 503 "high demand"**; `gemini-3.7-flash` và `gemini-3.8-flash` trả 503 **ngay
+ở lần gọi đơn lẻ**. 503 ở nhà cung cấp này là *quá tải phía họ*, hết sức thường, và
+**phải có backoff** — khác hẳn 5xx "máy chủ hỏng" mà retry nhanh là hợp lý.
+
+**Vì sao backoff của 429/503 là `2s→8s` chứ không phải `1s→3s`:** đo được trần nằm giữa
+**15 và 40 lời gọi/phút**, và lượt 40 còn bị trừ bởi hạn mức mà lượt 15 vừa tiêu — tức
+cửa sổ hồi phục tính bằng **chục giây**, không phải bằng giây. Lùi 1s→3s là bắn tiếp vào
+lúc hạn mức chưa kịp hồi. Bắt buộc có **jitter ngẫu nhiên** (±25%) để nhiều lời gọi
+trượt cùng lúc không cùng quay lại một thời điểm.
+
+**CẤM retry `UpstreamAuthError` và `UpstreamContentBlocked`.** Cả hai cho cùng kết quả ở
+lần thử sau và chỉ tiêu thêm hạn mức đang khan.
 
 ---
 
@@ -662,7 +967,12 @@ export interface CapabilitySpec {
 | C-05 | CẤM bỏ cờ `32` trong `ts_rank_cd` | Mất chặn trên ⇒ công thức confidence vô nghĩa (§4.2) |
 | C-06 | CẤM tin `faithfulness` do model tự báo | Tính lại ở TS (§8.3) |
 | C-07 | CẤM thêm capability ngoài 9 dòng ở §8.4 | 37 capability còn lại đã bị loại **có lý do**, không phải quên |
-| C-08 | CẤM dùng Claude làm embedding | Không có endpoint đó (§4.3) |
+| C-08 | CẤM gọi `embedContent` mà **không** truyền `outputDimensionality: 384` | Bỏ tham số ⇒ trả **3072** chiều ⇒ vỡ `vector(384)` ở §3.3, và `pgvector` không index nổi quá 2000 chiều (§4.3) |
+| C-09 | CẤM dùng `gemini-3.7-flash` / `gemini-3.8-flash` cho bất kỳ agent nào | Trả **503 "high demand" ngay ở lần gọi đơn lẻ** (3.7 cần 2 lần thử, 3.8 cần 3). Không đặt đường găng của một bài bị chấm lên model đang quá tải `[Đ17]` |
+| C-10 | CẤM truyền `taskType` cho `embedContent` trong vòng `1.0.0` | **Chưa đo.** Dùng `RETRIEVAL_DOCUMENT` lúc seed mà `RETRIEVAL_QUERY` lúc truy vấn là tính năng có thật, nhưng nếu lệch thì `cosine_sim` tụt **mà không ném lỗi nào** — hỏng im lặng. Muốn bật: đo trước, ghi `evidence/`, rồi **re-embed toàn corpus** |
+| C-11 | CẤM đặt `temperature` / `topP` / `topK` / `thinkingConfig` | §8.0 — mọi số latency đã đo đều đo trên đường mặc định |
+| C-12 | CẤM đọc `response.parsed_output` | Trường của SDK cũ, ở Gemini luôn `undefined` ⇒ sinh `ContractDriftError` giả ở **mọi** lượt (§8.0.2) |
+| C-13 | CẤM đọc `GEMINI_API_KEY` ở bất kỳ file nào ngoài `lib/adapters/model.ts` | BB-07. Đây là **phép kiểm chính** của ranh giới adapter sau khi bỏ SDK — xem `00-ARCHITECTURE.md` §9 BB-07 |
 
 ---
 
@@ -677,6 +987,17 @@ export interface CapabilitySpec {
 | C-M5 | `npm run test -- ownership` | 5/5 pass — đúng 5 dòng bảng §2.2 |
 | C-M6 | `node scripts/check_rank_flag.mjs` | In `ts_rank_cd normalization flag 32: present`; exit 0 |
 | C-M7 | `grep -c "confidence" lib/types.ts` và kiểm props React | `TurnResult` có `confidence`; không component nào nhận nó (VC-07) |
+| C-M8 | `node scripts/probe_embedding.mjs` | In `dims: 384`; exit 0. Sai số chiều ⇒ FAIL, **CẤM sửa DDL cho khớp** |
+| C-M9 | `node scripts/probe_embedding.mjs --raw-norm` | In `norm_before_l2: <số>` và `norm_after_l2: 1.0000`. **SO đã đo trước 2026-09-20: `norm_before_l2 = 0.434527` ở 384 chiều** (§4.3). Worker P02 chạy lại để xác nhận adapter của mình thật sự chuẩn hoá; số `norm_after_l2` phải là `1.0000` |
+| C-M10 | `npm run test -- schema-parity` | 3/3 pass — `required` của mỗi `responseSchema` khớp đúng khoá của schema Zod tương ứng (§8.0.1) |
+| C-M11 | `node scripts/probe_model.mjs --model=gemini-3.5-flash-lite --schema=classifier` | HTTP 200, `finishReason: STOP`, JSON parse được và qua Zod. **SO ĐÃ ĐO 2026-09-20, hết nợ:** `responseSchema` được chấp nhận trên **cả ba** model đã chọn, JSON parse được, đủ trường bắt buộc, và mô hình **tôn trọng `enum`**. Bằng chứng: `evidence/p02-provider/so-cm9-cm11.txt` |
+
+**Hai số đo trên là nợ kỹ thuật có tên, không phải thủ tục.** `gemini-probe.txt` chứng
+minh `responseMimeType: "application/json"` cho JSON hợp lệ, nhưng **không** chứng minh
+`responseSchema` được chấp nhận, cũng **không** đo chuẩn hoá L2. Worker P02 phải đưa
+C-M9 và C-M11 lên xanh **trước** khi viết A1/A2/A3, và dán output vào report. Nếu
+`responseSchema` bị từ chối, **dừng và báo người** — đừng tự bỏ `responseSchema` rồi
+chạy tiếp bằng mỗi `responseMimeType`, vì đó là bỏ mất lớp ràng buộc phía nhà cung cấp.
 
 `scripts/validate_capabilities.mjs` đã được chạy thử trên dữ liệu giả — mã nguồn và
 output nguyên văn ở [`TESTING-ACCEPTANCE.md`](TESTING-ACCEPTANCE.md) §3.2.

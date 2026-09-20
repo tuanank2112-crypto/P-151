@@ -42,6 +42,9 @@
 | `T-2339` | Đọc chính sách trước khi ghi | tích hợp | P05 | `node scripts/demo_2339.mjs` |
 | `T-GREP` | BB-05 / BB-07 / BB-10 | grep | mọi gói | §4.5 |
 | `T-BUILD` | Biên dịch & build | build | mọi gói | `npx tsc --noEmit && npm run build` |
+| `T-EMBED` | Embedding đúng **384** chiều + chuẩn hoá L2 | script | P02 | `node scripts/probe_embedding.mjs [--raw-norm]` |
+| `T-SCHEMA` | `responseSchema` được chấp nhận, qua Zod | script | P02 | `node scripts/probe_model.mjs --model=… --schema=…` |
+| `T-PARITY` | `responseSchema.required` khớp khoá schema Zod | unit | P02 | `npm run test -- schema-parity` |
 
 ---
 
@@ -288,11 +291,23 @@ git log --oneline --diff-filter=A -- lib/simbackend/ | tail -1
 
 ### 4.4 — Bơm lỗi cho case `S14`
 
-`runTurn({ forceUpstreamError: true })` ném `UpstreamModelError` **ở lời gọi A2**, sau
-khi eligibility đã chạy. Kỳ vọng: retry đúng 2 lần → `system_error`, UI có nút *Thử
-lại*, `answer_turns` vẫn có đúng một dòng (BB-11).
+`runTurn({ forceUpstreamError: true })` ném `UpstreamRateLimited` (**429**) **ở lời gọi
+A2**, sau khi eligibility đã chạy. Kỳ vọng: retry đúng 2 lần với backoff **2s→8s** →
+`system_error`, UI có nút *Thử lại*, `answer_turns` vẫn có đúng một dòng (BB-11).
+
+**Ba biến thể BẮT BUỘC có, không chỉ một** — vì bảng lỗi nay phân biệt chúng và mỗi
+loại có hành vi khác nhau (`01-CONTRACTS.md` §9):
+
+| Bơm lỗi | Lớp lỗi ném ra | Kỳ vọng |
+| :-- | :-- | :-- |
+| `forceUpstreamError: "429"` | `UpstreamRateLimited` | retry 2 lần, backoff 2s→8s → `system_error` |
+| `forceUpstreamError: "503"` | `UpstreamOverloaded` | **y như 429** — nếu nó retry nhanh 1s→3s thì mã đang gộp nhầm vào "5xx chung", **FAIL** |
+| `forceUpstreamError: "blocked"` | `UpstreamContentBlocked` | **0 lần retry**, escalate ngay. Có retry ⇒ **FAIL** |
+
+Case Golden `S14` dùng biến thể `"429"` để giữ nguyên kỳ vọng cũ của nó.
 
 **CẤM** mô phỏng lỗi bằng cách ngắt mạng thủ công — không tái lập được.
+**CẤM** mô phỏng bằng cách gọi thật cho tới khi dính 429 — đốt hạn mức chung (`OP-C12`).
 
 ### 4.5 — Nhóm grep (BB-05, BB-07, BB-10)
 
@@ -301,8 +316,11 @@ lại*, `answer_turns` vẫn có đúng một dòng (BB-11).
 grep -rniE "confidence|độ tin cậy|% tin cậy" "app/(resident)" --include=*.tsx \
   && echo "VI PHẠM BB-05" && exit 1 || echo "matches: 0"
 
-# BB-07 — chỉ adapter được import SDK / mở kết nối DB
-grep -rn "@anthropic-ai/sdk\|@neondatabase/serverless" app/ lib/ --include=*.ts \
+# BB-07 — chỉ adapter được gọi ra nhà cung cấp model / đọc khoá / mở kết nối DB
+# LƯU Ý: mẫu cũ "@anthropic-ai/sdk" đã BỎ — gói đó không còn trong repo nên mẫu ấy
+# không bao giờ trúng gì, tức XANH GIẢ. Xem 00-ARCHITECTURE.md §BB-07.b.
+grep -rnE "generativelanguage\.googleapis\.com|GEMINI_API_KEY|@neondatabase/serverless" \
+  app/ lib/ --include=*.ts --include=*.tsx \
   | grep -v "^lib/adapters/" && echo "VI PHẠM BB-07" && exit 1 || echo "violations: 0"
 
 # BB-10 — tri thức không hardcode trong mã
@@ -417,7 +435,10 @@ W10 A3 không tách được claim nào | 0.71 | 0.7500 | 0.00 | 0 | 0.292 | esc
 evidence sẽ được nói ra với giọng chắc chắn. Đây là bằng chứng máy cho luật
 `SPEC-P02` §6.5: **CẤM đặt `TAU_FAITHFUL = 0`.**
 
-### 6.5 — Bốn lần đỏ CÒN NỢ, worker phải chạy khi có mã nguồn
+### 6.5 — Bảy lần đỏ CÒN NỢ, worker phải chạy khi có mã nguồn
+
+*(Bốn lần đỏ gốc `R6`–`R9`, cộng ba lần đỏ mới `R10`–`R12` do đổi nhà cung cấp model
+`[Đ17/Đ18]`.)*
 
 | # | Bộ đo | Cách cố tình phá | Kỳ vọng ĐỎ |
 | :-- | :-- | :-- | :-- |
@@ -425,8 +446,23 @@ evidence sẽ được nói ra với giọng chắc chắn. Đây là bằng ch�
 | R7 | `T-STEP` | Gọi `retrieval` trước `safety` | `assertStepOrder` ném |
 | R8 | `T-IDEM` | Gỡ ràng buộc `bookings_idem_uniq` rồi gọi 2 lần | 2 dòng `bookings` ⇒ test fail |
 | R9 | `T-BB06` | Sửa tay 1 dòng `s3_faithfulness` trong DB | `delta ≠ 0` |
+| **R10** | `check_adapter_boundary.sh` **mẫu MỚI** | Thêm `const k = process.env.GEMINI_API_KEY;` vào một file trong `lib/pipeline/`, và một chuỗi `"https://generativelanguage.googleapis.com/..."` vào một file trong `app/` | `violations: 2`, **exit 1** |
+| **R11** | `T-EMBED-DIM` | Gọi `embedContent` **bỏ** `outputDimensionality` | Trả **3072** chiều ⇒ ghi vào `vector(384)` phải **ném lỗi**, KHÔNG được cắt bớt im lặng |
+| **R12** | `T-SCHEMA-PARITY` | Xoá một khoá khỏi `required` của một `responseSchema` | `npm run test -- schema-parity` **fail** |
 
-Report của worker **bắt buộc** dán output 4 lần đỏ này. Thiếu ⇒ report bị trả lại.
+Report của worker **bắt buộc** dán output các lần đỏ này. Thiếu ⇒ report bị trả lại.
+
+> **R10 là bắt buộc, KHÔNG được kế thừa bằng chứng đỏ của gói P01a.** P01a đã chứng
+> minh mẫu **cũ** (`@anthropic-ai/sdk`) đỏ đúng, và bằng chứng đó vẫn hợp lệ **cho mẫu
+> cũ**. Nhưng mẫu cũ nay không kiểm gì nữa (`00-ARCHITECTURE.md` §BB-07.b đã chạy thật
+> và chứng minh nó in `violations: 0` trên một cây đang rò rỉ lộ liễu). **Bộ đo mới phải
+> tự đỏ ít nhất một lần** — đúng luật §6 và luật K.5 của `AGENTS.md`.
+>
+> **R11 chặn đúng cái sai nguy hiểm nhất của cả lần chuyển nhà cung cấp này:** số chiều
+> mặc định của `gemini-embedding-001` là **3072**, không phải 384. Sai chỗ này thì hoặc
+> vỡ DDL (to tiếng, dễ thấy), hoặc — nếu ai đó "sửa cho chạy" bằng cách cắt bớt vector —
+> **hỏng im lặng**: retrieval vẫn chạy, vẫn trả kết quả, chỉ là xếp hạng sai. **CẤM cắt
+> bớt vector. CẤM sửa DDL cho khớp 3072** (`C-08`).
 
 ---
 
@@ -456,14 +492,19 @@ Kế hoạch **chỉ được đóng khi cột deploy cũng xanh**.
 
 | Gate | Nội dung | Lệnh | local | deploy |
 | :-- | :-- | :-- | :-- | :-- |
-| G13 | Công tắc ngắt đã thử thật | Bật `KILL_SWITCH_AGENTS=1`, hỏi 1 câu, còn citation, 0 lời gọi model | ⬜ | ⬜ |
+| G13 | Công tắc ngắt đã thử thật | Bật `KILL_SWITCH_AGENTS=1` **trong khi `RETRIEVAL_MODE=hybrid`**, hỏi 1 câu ⇒ còn citation, **0** lời gọi ra `generativelanguage.googleapis.com` **kể cả embedding** (`OPERATIONS` §7, `OP-M8`) | ⬜ | ⬜ |
 | G14 | BB-05 · không hiện confidence cho cư dân | §4.5 grep ⇒ `matches: 0` | ⬜ | ⬜ |
-| G15 | BB-07 · ranh giới adapter | §4.5 grep ⇒ `violations: 0` | ⬜ | ⬜ |
+| G15 | BB-07 · ranh giới adapter | §4.5 grep **mẫu MỚI** ⇒ `violations: 0`, **kèm** bằng chứng đỏ `R10` (§6.5). Xanh mà không có `R10` ⇒ **gate KHÔNG được tick** | ⬜ | ⬜ |
 | G16 | BB-09 · enum đóng | `node scripts/check_enum_closed.mjs` | ⬜ | ⬜ |
 | G17 | BB-11 · mọi lượt đều có log | `select count(*) … is_golden_run=true` = **65** | ⬜ | ⬜ |
-| G18 | Bốn lần đỏ còn nợ (§6.5) đã chạy | Output 4 lần đỏ dán vào report | ⬜ | ⬜ |
+| G18 | Các lần đỏ còn nợ (§6.5) đã chạy | Output **R6–R12** dán vào report | ⬜ | ⬜ |
+| **G27** | Embedding đúng **384** chiều, khớp DDL | `node scripts/probe_embedding.mjs` ⇒ `dims: 384`, exit 0 (`C-M8`) | ⬜ | ⬜ |
+| **G28** | Chuẩn hoá L2 đã đo, có số | `node scripts/probe_embedding.mjs --raw-norm` ⇒ in `norm_before_l2` **và** `norm_after_l2: 1.0000` (`C-M9`) | ⬜ | ⬜ |
+| **G29** | `responseSchema` được nhà cung cấp chấp nhận | `node scripts/probe_model.mjs --model=gemini-3.5-flash-lite --schema=classifier` ⇒ 200, `finishReason: STOP`, qua Zod (`C-M11`) | ⬜ | ⬜ |
+| **G30** | Không còn vết nhà cung cấp cũ | `grep -rn "ANTHROPIC\|@anthropic-ai/sdk\|claude-" app/ lib/ scripts/ tests/ package.json` ⇒ **rỗng** (`OP-M10`) | ⬜ | ⬜ |
+| **G31** | Chặn cứng song song Golden 3–5 | `node scripts/check_env.mjs --reject-out-of-range GOLDEN_CONCURRENCY=9` ⇒ **exit 1** (`OP-M11`, `P04-C9`) | ⬜ | ⬜ |
 
-### 7.3 — Cổng tầng 2 (P05) — CHỈ mở khi G01–G18 đều ✅ local `[Đ03 / BB-12]`
+### 7.3 — Cổng tầng 2 (P05) — CHỈ mở khi G01–G18 **và G27–G31** đều ✅ local `[Đ03 / BB-12]`
 
 | Gate | Nội dung | Lệnh | local | deploy |
 | :-- | :-- | :-- | :-- | :-- |
@@ -484,6 +525,13 @@ Kế hoạch **chỉ được đóng khi cột deploy cũng xanh**.
 **Trạng thái lúc viết SPEC (2026-09-20 02:19 +0700):** 0/26 gate xanh — repo chưa có
 dòng mã nào. Đây là mốc gốc.
 
+**Cập nhật 2026-09-20 11:12 +0700** (mốc lấy bằng `date "+%Y-%m-%d %H:%M:%S %z"`), sau
+khi đổi nhà cung cấp model sang Gemini `[Đ17/Đ18/Đ19]`: **tổng cổng nay là 31**, thêm
+**G27–G31** ở §7.2. Năm cổng mới đều nhắm vào đúng chỗ việc đổi nhà cung cấp có thể hỏng
+**im lặng** — số chiều embedding, chuẩn hoá vector, `responseSchema` bị từ chối, vết nhà
+cung cấp cũ còn sót, và chặn hạn mức. **CẤM đóng kế hoạch khi còn cổng `⬜` ở cột
+`deploy`** (`T-C7`).
+
 ---
 
 ## 8. Bảng phân loại lỗi khi chạy test
@@ -494,8 +542,11 @@ dòng mã nào. Đây là mốc gốc.
 | `T-EVAL` fail vì 1 case | Có thể là dữ liệu Golden sai, không phải sản phẩm sai | Mở `/bql/trace`, đọc checkpoint nào fail, rồi mới kết luận |
 | `T-EVAL` fail vì > 6 case answerable | Hỏng hệ thống | Dừng, không sửa Golden cho khớp sản phẩm |
 | **Sửa Golden để test xanh** | Gian lận | **CẤM tuyệt đối.** Sửa Golden phải tăng revision + ghi `plan.md` §2 |
-| `429` khi chạy Golden | Chạy song song hoặc chạy quá dày | Chạy tuần tự, giảm tần suất (`OPERATIONS` §9) |
-| Gate xanh local, đỏ deploy | Lệch môi trường (thường là `RETRIEVAL_MODE`) | Sửa env. **CẤM** tick cột deploy bằng bằng chứng local |
+| `429` khi chạy Golden | Hết hạn mức — song song quá cao hoặc chạy quá dày | Giảm `GOLDEN_CONCURRENCY` về **3**, nghỉ ≥60s (`OPERATIONS` §9.3). **CẤM** hạ về tuần tự rồi coi là đã sửa — tuần tự chỉ giấu triệu chứng |
+| **`503` *"high demand"* khi chạy Golden** | Quá tải phía nhà cung cấp | Để backoff xử. Dày đặc ⇒ dừng lượt chạy, **CẤM** tick gate bằng lượt chạy dở |
+| **Gate model xanh nhưng chưa từng đỏ** | Rất có thể mẫu grep đã lỗi thời (xanh giả) | Chạy bằng chứng đỏ `R10` (§6.5). Xem `00-ARCHITECTURE.md` §BB-07.b |
+| **Retrieval trả kết quả "hơi sai" mà không lỗi gì** | Trộn hai không gian vector (lệch model / lệch số chiều / quên chuẩn hoá L2) | Chạy `G27`+`G28`. **CẤM** chỉnh trọng số `S1` để che (`01-CONTRACTS.md` §4.3) |
+| Gate xanh local, đỏ deploy | Lệch môi trường (thường là `RETRIEVAL_MODE` hoặc thiếu `GEMINI_API_KEY` trên Vercel) | Sửa env. **CẤM** tick cột deploy bằng bằng chứng local |
 | `probe_defects` in `MISMATCH` | P00 hoặc P02 sai | Đọc `SPEC-P00` §5.4 ba bẫy trước khi đổ lỗi cho pipeline |
 
 ---
@@ -511,8 +562,12 @@ dòng mã nào. Đây là mốc gốc.
 | T-C5 | CẤM dùng `KILL_SWITCH_AGENTS` để qua gate | `OPERATIONS` §7 |
 | T-C6 | CẤM bỏ `npm run build` vì "chạy dev được rồi" | Vercel build khác dev build |
 | T-C7 | CẤM đóng kế hoạch khi còn gate `⬜` ở cột deploy | `AGENTS.md` §3 mục 2.4 |
-| T-C8 | CẤM chạy Golden song song | `OPERATIONS` OP-C5 |
+| T-C8 | CẤM chạy Golden với song song **ngoài khoảng 3–5** | `OPERATIONS` `OP-C5`, `[Đ19]`. *(Luật cũ ghi "CẤM chạy song song" — đã thay, vì đo được 15 song song qua hết 15/15; cái phải cấm là **thả không giới hạn**, không phải song song)* |
 | T-C9 | CẤM thêm gate mới mà không cập nhật `plan.md` §4 | Checklist và gate phải khớp |
+| T-C10 | CẤM tick `G15` bằng một lượt XANH mà không có lượt ĐỎ `R10` đi kèm | Mẫu grep lỗi thời vẫn in `violations: 0`. Đã chứng minh (`00-ARCHITECTURE.md` §BB-07.b) |
+| T-C11 | CẤM sửa DDL `vector(384)`, hoặc cắt bớt vector, để "cho khớp" đầu ra embedding | `C-08`. Đúng cách là truyền `outputDimensionality: 384` |
+| T-C12 | CẤM bỏ `responseSchema` để qua `G29` | Bỏ nó thì `G29` mất đối tượng đo. `responseSchema` bị từ chối ⇒ **dừng và hỏi người** (`01-CONTRACTS.md` §11) |
+| T-C13 | CẤM gọi API Gemini ngoài lúc chạy gate | `OP-C12` — hạn mức là tài nguyên chung và đang khan |
 
 ---
 
@@ -524,7 +579,7 @@ Dòng 2: Lệnh đã chạy + exit code nguyên văn (dán, không tóm tắt)
 Dòng 3: test tổng/pass/fail/skip
 Dòng 4: `git diff --stat` + SHA
 Dòng 5: Bảng gate: mã gate → local ✅/⬜ → deploy ✅/⬜ → lệnh + output làm bằng chứng
-Dòng 6: Output 4 lần ĐỎ ở §6.5
+Dòng 6: Output **7** lần ĐỎ ở §6.5 (`R6`–`R12`) — thiếu `R10` ⇒ `G15` không được tick
 Dòng 7: Bảng phân công thực tế (gói → tầng yêu cầu → họ/model đã dùng)
 Dòng 8: Việc KHÔNG làm + lý do
 Dòng 9: Câu hỏi cần người

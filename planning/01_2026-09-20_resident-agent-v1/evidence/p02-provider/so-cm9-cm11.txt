@@ -1,0 +1,41 @@
+# Super Orchestrator đo hai phép CÒN NỢ mà architect bị cấm đo — 2026-09-20
+# Architect không được gọi API (sợ đốt quota chung), nên để ngỏ C-M9 và C-M11.
+# SO đo tay. Đây là số thật, không phải ước lượng.
+
+## C-M11 — `responseSchema` có được chấp nhận không?
+# Lượt probe đầu chỉ đo `responseMimeType: application/json`. Chưa đo responseSchema.
+# Schema thử: OBJECT{ intent: STRING+enum[4 giá trị], needs_source: BOOLEAN,
+#                     citations: ARRAY<STRING> }, cả ba trường đều required.
+
+gemini-3.5-flash-lite : HTTP 200 | JSON.parse OK | đủ 3 trường | intent nằm trong enum
+gemini-3.5-flash      : HTTP 200 | JSON.parse OK | đủ 3 trường | intent nằm trong enum
+gemini-2.5-flash      : HTTP 200 | JSON.parse OK | đủ 3 trường | intent nằm trong enum
+
+Ví dụ trả về: {"intent":"facility_hours","needs_source":true,"citations":[]}
+
+=> KẾT LUẬN C-M11: `responseSchema` được chấp nhận trên CẢ BA model đã chọn, và mô hình
+   TÔN TRỌNG enum. Không còn nợ. Hợp đồng 3 agent ở 01-CONTRACTS.md §8 dùng được
+   generationConfig.responseSchema như đã đặc tả. KHÔNG cần dựng lớp sửa JSON bằng regex
+   (vốn bị cấm ở E7 của 00-ARCHITECTURE.md §10).
+
+## C-M9 — vector sau khi ép chiều đã chuẩn hoá L2 sẵn chưa?
+# Cùng một câu, chỉ đổi outputDimensionality. |v| = căn bậc hai tổng bình phương.
+
+outputDimensionality=3072 (mặc định)  |v| = 1.000000   => ĐÃ chuẩn hoá L2
+outputDimensionality=768              |v| = 0.594145   => CHƯA chuẩn hoá
+outputDimensionality=384              |v| = 0.434527   => CHƯA chuẩn hoá
+
+=> KẾT LUẬN C-M9, QUAN TRỌNG: Gemini CHỈ chuẩn hoá vector ở SỐ CHIỀU ĐẦY ĐỦ (3072).
+   Khi ép xuống bằng `outputDimensionality`, API trả về một LÁT CẮT của vector đầy đủ
+   nên độ dài KHÔNG còn bằng 1 — ở 384 chiều chỉ còn 0.4345.
+
+   Nghĩa là luật "BẮT BUỘC chuẩn hoá L2 trong adapter, cho CẢ seed lẫn query" ở
+   01-CONTRACTS.md §4.3 KHÔNG phải phòng xa — nó là BẮT BUỘC THẬT. Architect viết luật đó
+   khi chưa đo và tự nhận là chưa đo; số này xác nhận architect chọn đúng vế.
+
+   Hậu quả nếu bỏ chuẩn hoá: `cosine_sim` trong công thức S1 (SPEC-P02 §6.1) mất miền
+   giá trị (0,1) đã giả định, nên ngưỡng confidence và cổng escalate sai lệch âm thầm —
+   không crash, không test nào đỏ, chỉ ra điểm sai. Đây đúng kiểu lỗi tệ nhất.
+
+   Lưu ý phụ: seed và query BẮT BUỘC dùng cùng số chiều VÀ cùng quy tắc chuẩn hoá.
+   Trộn một bên chuẩn hoá một bên không thì khoảng cách vô nghĩa.

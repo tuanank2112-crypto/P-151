@@ -104,3 +104,67 @@ thấy tên file là ngày HÔM NAY nghĩa là vừa archive nhầm).
 Không sửa engine — engine nằm ở hub dùng chung, sửa thứ tự file phía repo là đúng
 chỗ. Nếu đã lỡ archive nhầm: xoá file archive vừa sinh (nó chưa commit, không mất
 lịch sử), dựng lại `today.md` cho đúng thứ tự, rồi chạy lại lệnh xoay.
+
+## Bộ đo & nghiệm thu
+
+### G12 — Bộ đo "đã từng đỏ" vẫn có thể XANH GIẢ nếu các phép phá cùng một HÌNH DẠNG
+`scripts/check_adapter_boundary.sh` (BB-07) được nghiệm thu ở gói P01a với **bốn phép
+phá đều đỏ**. Nhưng cả bốn đều rò bằng **import tên gói** (`import X from "@pkg/sdk"`).
+Chúng chỉ chứng minh script bắt được **tên gói** — trong khi một file ngoài adapter gán
+host vào biến rồi `fetch(\`${HOST}/...\`)` và đọc `process.env.GEMINI_API_KEY` vẫn cho
+`violations: 0`, `EXIT=0`. Bất biến coi như **không được canh**, mà cổng vẫn xanh.
+
+**Luật rút ra, bổ sung cho Luật K.5:** phép phá phải khác nhau về **HÌNH DẠNG**, không
+chỉ khác về nội dung. Bốn lần rò bằng cùng một cơ chế chỉ là một phép thử lặp bốn lần.
+Trước khi tick một cổng bất biến, liệt kê các **đường rò khả dĩ** (import · chuỗi rời ·
+template literal · biến môi trường · URL tương đối) rồi phá theo TỪNG đường một.
+
+**Cách kiểm nhanh một script grep có xanh giả không:** viết một file vi phạm **lộ liễu
+nhất có thể** rồi chạy script. Xanh là script hỏng, không phải code sạch.
+
+### G13 — `grep` mẫu chuỗi nguyên văn không bắt được template literal
+Hệ quả cụ thể của G12, gặp ở `check_adapter_boundary.sh`. Mẫu `fetch\(['\"]https?://`
+bỏ lọt cả `fetch(\`${HOST}/x\`)` lẫn `const H = "https://..."; fetch(H)`. Khi canh một
+bất biến kiểu "không được gọi ra ngoài", phải bắt **nhiều trục**: tên gói · tên miền ở
+bất kỳ dạng chuỗi nào · đọc bí mật `process.env.*` · `fetch(` tới URL tuyệt đối gồm cả
+dạng template. Một trục dễ lách; bốn trục thì phải cố tình mới lách nổi.
+
+## Nhà cung cấp model
+
+### G14 — Gemini KHÔNG chuẩn hoá vector khi ép `outputDimensionality`
+`gemini-embedding-001` trả vector **đã chuẩn hoá L2 ở số chiều đầy đủ 3072** (`|v| = 1.0`),
+nhưng khi ép chiều thì trả về một **lát cắt** nên độ dài tụt: đo được `|v| = 0.594` ở 768
+chiều và **`|v| = 0.435` ở 384 chiều**. Phải tự `l2normalize` trong adapter cho **CẢ seed
+lẫn query**. Bỏ sót thì `cosine_sim` xếp hạng sai **mà không ném lỗi nào** — ngưỡng
+confidence lệch âm thầm, không test nào đỏ. Ngoài ra pgvector chỉ index HNSW tới 2000
+chiều nên 3072 dùng không được dù đã chuẩn hoá sẵn.
+
+### G15 — Key Gemini không phải lúc nào cũng có dạng `AIzaSy…`
+Key chủ tịch cấp có dạng `AQ.<phan con lai da luoc>…` (53 ký tự). SO ban đầu kết luận đó là token phiên
+OAuth chứ không phải API key — **sai**. Đo thật: `GET /v1beta/models?key=…` trả **HTTP 200**.
+Google có định dạng key mới. **Đừng loại một key bằng hình dạng chuỗi; gọi thử một
+endpoint rẻ (`/v1beta/models`) rồi hãy kết luận.**
+
+### G16 — Bậc Pro của Gemini trả 429 chứ không phải 403
+Khi project chưa bật thanh toán, `gemini-2.5-pro` / `gemini-3.1-pro-preview` /
+`gemini-pro-latest` trả **HTTP 429 "exceeded your current quota, check your plan and
+billing"** — dễ tưởng là chạm rate limit tạm thời rồi ngồi retry vô ích. Thực ra là
+**cổng thanh toán**, retry bao nhiêu cũng không qua. Phân biệt: 429 do rate limit sẽ hết
+sau một phút; 429 do billing thì lặp lại y nguyên. Một số model cũ còn trả **404 "no
+longer available to new users"** kèm tên model thay thế — đọc kỹ thông điệp lỗi.
+
+### G17 — open(p, 'w') TRUNCATE file trước, nên đọc-sau-khi-mở luôn ra rỗng
+Vừa dẫm 2026-09-20, xoá sạch G01-G11 mà lệnh vẫn exit 0.
+
+    # SAI - mat sach noi dung cu:
+    io.open(p, 'w').write( io.open(p).read() + them )
+    # Python mo 'w' la truncate NGAY, nen read() ben trong tra ve chuoi rong.
+
+    # DUNG - doc het TRUOC, roi moi mo 'w':
+    old = io.open(p, encoding='utf-8').read()
+    io.open(p, 'w', encoding='utf-8', newline='
+').write(old + them)
+
+Nguy hiem vi KHONG bao loi: file bi thay bang phan them, exit 0, trong nhu thanh cong.
+Kiem ngay sau khi noi them vao file tich luy: dem lai so muc (vd grep -c '^### G')
+phai TANG chu khong duoc giam. Phuc hoi: git checkout <file> neu da commit truoc do.

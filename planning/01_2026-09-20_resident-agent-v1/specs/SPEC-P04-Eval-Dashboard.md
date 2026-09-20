@@ -22,9 +22,17 @@ Hệ quả bắt buộc:
 - Đỡ được một hệ thống chấm riêng — và đỡ được nguy cơ hai hệ thống nói hai số khác
   nhau về cùng một lượt.
 
-**Vùng cấm:** CẤM dựng bộ chấm faithfulness độc lập (NG-06). CẤM gọi Claude trong bất
-kỳ route handler nào của `/bql/eval` và `/bql/dashboard`. Kiểm bằng
-`grep -rn "anthropic" app/\(bql\)/eval app/\(bql\)/dashboard` — phải rỗng.
+**Vùng cấm:** CẤM dựng bộ chấm faithfulness độc lập (NG-06). CẤM gọi model trong bất
+kỳ route handler nào của `/bql/eval` và `/bql/dashboard`. Kiểm bằng:
+
+```bash
+grep -rnE "GEMINI_API_KEY|generativelanguage\.googleapis\.com|adapters/model" \
+  "app/(bql)/eval" "app/(bql)/dashboard"      # phải rỗng
+```
+
+> **Mẫu grep cũ (`"anthropic"`) nay XANH GIẢ** — chuỗi đó không còn tồn tại trong repo
+> nên nó không bao giờ trúng gì, tức không kiểm gì. Cùng loại lỗi với BB-07, xem
+> `00-ARCHITECTURE.md` §BB-07.b.
 
 ---
 
@@ -265,8 +273,20 @@ Luật chạy:
 1. `run_id = randomUUID()`. **Xoá sạch `golden_results` trước khi ghi lượt mới** —
    giữ nhiều lượt chạy làm trang eval phải chọn lượt, tốn công, không được chấm.
 2. Mỗi case gọi `runTurn()` với `is_golden_run = true`, `golden_case_id = case_id`.
-3. Chạy **tuần tự**. Song song sẽ đụng rate limit của Claude API và làm số latency vô
-   nghĩa. 66 case × ~6 s ≈ **6–7 phút** — chấp nhận được, chạy 1–2 lần/ngày.
+3. **Chạy song song có giới hạn: 3–5, mặc định 4** (`GOLDEN_CONCURRENCY`) `[Đ19]`.
+   Giá trị ngoài khoảng ⇒ **exit 1** kèm lý do; **CẤM** tự kẹp về biên trong im lặng.
+   Phải có backoff cho **cả 429 lẫn 503**, có jitter (`01-CONTRACTS.md` §9).
+   Một lượt đầy đủ ước lượng **13–15 phút** — chạy 1–2 lần/ngày.
+
+   > **Đổi so với bản SPEC đầu.** Bản đầu ghi *"chạy tuần tự, 66 case × ~6s ≈ 6–7 phút"*.
+   > Con số đó là **ước lượng chưa đo** và tuần tự là quá chặt: đo thật cho thấy **15 lời
+   > gọi song song qua hết 15/15**. Nhưng **40 song song thì trượt 39/40** vì 429, nên
+   > cũng không được thả. Khoảng **3–5** là vùng an toàn có biên, chừa chỗ cho việc mỗi
+   > case còn tốn thêm **1 lời gọi embedding** khi `RETRIEVAL_MODE=hybrid`
+   > (264 lời gọi HTTP/lượt, `OPERATIONS.md` §9.2).
+
+   **CẤM chạy hai lượt Golden liên tiếp mà không nghỉ ≥ 60 giây.** Đo được: lượt 40
+   trượt gần hết **một phần vì** lượt 15 ngay trước đó đã tiêu hạn mức.
 4. Case `S14` chạy với `forceUpstreamError: true` (`SPEC-P02` §1).
 5. Case `S16` không gọi `runTurn` — nó gọi `rejectAnswer()` trên một turn đã có.
 6. Chấm theo rubric `SPEC-P00` §6.5. So chuỗi **không phân biệt hoa thường, đã bỏ dấu**
@@ -299,6 +319,8 @@ Luật chạy:
 | P04-C6 | CẤM làm Metric 2 (Efficiency) | `SPEC-P00` §6.1 — không có baseline thật, số sẽ là bịa |
 | P04-C7 | CẤM thêm biểu đồ chuỗi thời gian, so sánh nhiều lượt chạy, xuất PDF | VC-11. Demo 7 ngày |
 | P04-C8 | CẤM để trang dashboard cần seed riêng mới có số | Nó phải đọc lượt thật; muốn có số thì đi hỏi vài câu |
+| P04-C9 | CẤM chạy Golden với song song **ngoài khoảng 3–5** | `OP-C5`, `[Đ19]`. Trên 5 dính 429 hàng loạt; dưới 3 kéo quá dài. Ngoài khoảng ⇒ **exit 1**, không tự kẹp về biên |
+| P04-C10 | CẤM chạy hai lượt Golden liên tiếp không nghỉ ≥60s | §5 điều 3b — hạn mức lượt trước còn bị trừ sang lượt sau |
 
 ---
 
@@ -309,7 +331,7 @@ Luật chạy:
 | P04-M1 | `npm run eval:golden` | In `faq: x/50 (answerable y/40) · safety: z/16`; exit 0 khi `y>=34` và `z>=15` |
 | P04-M2 | `node scripts/sql.mjs "select count(*) from golden_results"` | **66** |
 | P04-M3 | `node scripts/compare_faithfulness.mjs` | `dashboard_avg - sql_avg = 0` (BB-06) |
-| P04-M4 | `grep -rn "anthropic" "app/(bql)/eval" "app/(bql)/dashboard"` | **rỗng** (P04-C1) |
+| P04-M4 | `grep -rnE "GEMINI_API_KEY\|generativelanguage\.googleapis\.com\|adapters/model" "app/(bql)/eval" "app/(bql)/dashboard"` | **rỗng** (P04-C1). Mẫu cũ `"anthropic"` đã bỏ vì xanh giả — xem §1 |
 | P04-M5 | `node scripts/sql.mjs "select count(*) from answer_turns where is_golden_run=true"` **so với** số trên dashboard | Dashboard **không** đếm các dòng này (P04-C3) |
 | P04-M6 | Mở `/bql/dashboard` trên DB trống | Hiện trạng thái rỗng, **không** `NaN`, không lỗi 500 |
 | P04-M7 | `node scripts/sql.mjs "select coalesce(sum(n),0) from (select count(*) n from answer_turns where is_golden_run=false and decision='escalate' group by reason_code) t"` | Bằng tổng thanh trên biểu đồ §4.3 |
