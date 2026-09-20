@@ -12,7 +12,7 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 
 - [x] P00 — Knowledge Pack mô phỏng + Golden Dataset 🔴 (D1–D2) — ✅ DUYỆT, xem `Done`
 - [ ] P01 — Nền tảng, auth 2 vai, ingest, deploy 🟠 (D2) — **P01a (phần không cần key) ĐÃ XONG, ✅ DUYỆT**; còn lại chặn ở Neon + Vercel
-- [ ] P02 — RAG có trích dẫn, memory, 3 agent, cổng escalate 🔴🟠 (D3–D4) — phụ thuộc P00, P01
+- [ ] P02 — RAG có trích dẫn, memory, 3 agent, cổng escalate 🔴🟠 (D3–D4) — **P02a ĐANG THI CÔNG** trên kho mock (Đ24), không chờ Neon. Mở khoá được G05/G06/G08; **G11 vẫn khoá** vì số mock không phải số nghiệm thu
 - [ ] P03 — Console BQL: quản lý tài liệu + duyệt câu trả lời (HITL) 🟠 (D4–D5) — phụ thuộc P01, P02
 - [ ] P04 — Bảng eval faithfulness/relevance + dashboard 🟠 (D5) — phụ thuộc P00, P02
 - [ ] P05 — Lớp hành động: đọc chính sách, đặt chỗ, biên nhận, hoàn tác 🟠 (D6) — **cổng: P01–P04 xanh**, gói duy nhất được cắt khi trễ

@@ -45,6 +45,18 @@ chiếu nội dung/giọng văn cũ).
   lech am tham, khong test nao do.
 - Han muc (D19): 15 request song song qua het, 40 thi 39 dinh 429. Golden = 198 loi goi
   => gioi han song song 3-5, backoff cho CA 429 lan 503, mot luot ~13-15 phut.
+- Nha cung cap KHAC da do va BAC (D22): Vyce (`https://vyceai.com/v1`) co
+  claude-sonnet-4-6 nhung `json_schema` BI BO QUA AM THAM (HTTP 200 + van xuoi),
+  free chi 4 luong song song (Gemini 15), KHONG co embedding. Key van o .env.local
+  lam duong lui. Nang cap A2 dung duong: nap tien Google Cloud de mo bac Pro.
+- Vercel (D23): CLI 59.23.2 DA DANG NHAP san (`tuanank2112-5635`) — C-04 chua bao gio
+  la vat can. CAM chay `vercel link` khong co `--scope`: no tu chon team dau tien tim
+  thay, tung lo tao project vao team `n-listen-ai` cua du an khac. CHO chu tich chon scope.
+- Kho du lieu local (D24): `DATA_BACKEND` in `mock`|`postgres`, mac dinh `mock`.
+  Mock doc thang `knowledge/` + `evals/golden/`, nam trong `lib/adapters/` nen BB-07 giu.
+  **VUNG CAM: cam tick Exit Gate G11 (M1/M3) bang so chay tren mock, cam chinh nguong
+  confidence theo so mock** — mock khong co `ts_rank_cd(...,32)` nen score_lexical va S1
+  KHONG chuyen sang Postgres. cosine_sim tu embedding Gemini thi chuyen duoc nguyen.
 - Adapter (BB-07): `lib/adapters/model.ts` (doi ten tu anthropic.ts) la file DUY NHAT goi
   nha cung cap; `lib/adapters/db.ts` la file DUY NHAT mo connection.
 - Cổng chạy được ngay, KHÔNG cần DB/LLM/biến môi trường: `npx tsc --noEmit` · `npm run build` · `npm test` (13) · `bash scripts/check_{adapter_boundary,no_hardcoded_knowledge,no_confidence_ui}.sh` · `node scripts/validate_{knowledge,golden}.mjs` — tất cả exit 0. BB-07: CHỈ `lib/adapters/db.ts` mở connection, CHỈ `lib/adapters/anthropic.ts` import SDK.

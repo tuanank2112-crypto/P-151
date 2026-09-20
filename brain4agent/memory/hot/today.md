@@ -4,6 +4,54 @@
 
 ---
 
+## 🏁 Phiên 2026-09-20 (đêm) — Bác Vyce, đính chính Vercel, chốt chạy local trên mock
+
+### 🎯 Đã làm:
+- **Đo Vyce, BÁC.** Base `https://vyceai.com/v1`, key chạy, có `claude-sonnet-4-6` 270K ctx —
+  đúng hạng A2 đang thiếu. Nhưng thua Gemini cả ba thứ quyết định: `json_schema` **bị bỏ
+  qua âm thầm** (HTTP 200 + văn xuôi, đúng ca `E7 ContractDriftError`), free chỉ **4 luồng
+  song song** (Gemini 15), **không có embedding**. Chất lượng đáng ngờ: hỏi thủ đô Việt Nam
+  → *"Thành phố đầu tiên của Việt Nam là Hà Nội"*. Giữ Gemini (Đ22).
+- **Đính chính Vercel (Đ23):** `vercel whoami` → `tuanank2112-5635`, CLI đã đăng nhập sẵn.
+  **C-04 chưa bao giờ là vật cản** — SO báo sai nhiều lượt vì chưa từng gõ lệnh kiểm.
+- **Chốt chạy local trên kho mock (Đ24)** theo chỉ đạo chủ tịch. `DATA_BACKEND` ∈
+  `mock`|`postgres`. Mock đọc thẳng `knowledge/` + `evals/golden/` (dữ liệu mô phỏng đã có
+  từ P00, **không sinh thêm dữ liệu giả nào**), nằm trong `lib/adapters/` nên BB-07 giữ.
+  Không dùng SQLite vì `OPERATIONS.md` §8.1 đã cân nhắc và bác.
+- Viết `handoffs/H04_p02a-pipeline-mock.md` (73 dòng), phóng worker. Ưu tiên cao nhất đặt
+  vào **W8 `probe_defects.mjs`** = số đo K-M6, thứ `SPEC-P00` §9 gọi là quan trọng nhất của
+  cả gói P00, treo từ lúc P00 nghiệm thu vì chưa có pipeline.
+
+### ⚠️ Sai của SO trong phiên:
+- **Chạy `vercel link` không truyền `--scope`** ⇒ nó tự chọn team đầu tiên tìm thấy và tạo
+  project vào `n-listen-ai`, nơi chứa dự án khác của chủ tịch. Chủ tịch bắt gỡ. Đã xoá sạch
+  `resident-agent-v1` khỏi team đó; `listena` không bị đụng; link cục bộ đã bỏ.
+- **Truncate `plan.md` lần thứ hai** (292 dòng → 0) vì `python -c` có emoji viết bằng hai
+  escape surrogate rời: shell băm chuỗi, `write()` ném lỗi **sau khi** `open('w')` đã
+  truncate. `git checkout` khôi phục. Siết G17: bắt buộc `.encode('utf-8')` kiểm **trước**
+  khi mở `'w'` — luật này cứu được `-known-gotchas.md` ngay lượt sau, cùng lỗi mà không mất gì.
+- Vercel CLI nối thêm `.env*` vào cuối `.gitignore` khi `vercel link`, đè mất `!.env.example`.
+  Đã sắp lại thứ tự và ghi chú ngay trong file.
+
+### 🎯 Vùng cấm mới, quan trọng:
+**CẤM tick Exit Gate `G11` (`M1 ≥ 34/40`, `M3 ≥ 15/16`) bằng số chạy trên mock. CẤM chỉnh
+ngưỡng confidence theo số mock.** Mock không có `ts_rank_cd(..., 32)` của Postgres nên
+`score_lexical` và `S1` **không chuyển được**. Riêng `cosine_sim` từ embedding Gemini thì
+chuyển nguyên. Rào trước để vài ngày nữa không ai nhìn số mock tưởng đã đạt.
+
+### ⏳ Đang chờ:
+- **Worker P02a đang chạy** — xong thì SO đo lại độc lập, không tin số worker.
+- Chủ tịch chọn **scope Vercel** thì deploy được ngay (build đã xanh không cần DB).
+- `DATABASE_URL` (Neon) — **không còn chặn P02a** nhờ kho mock, nhưng cần để tick G11 thật.
+- Câu hỏi treo từ Đ17: A2 mất bậc Pro. Nếu Golden ra `M1 < 34/40` thì nạp tiền Google Cloud
+  hay chấp nhận điểm thấp? Cần quyết trước khi chạy Golden trên Neon.
+
+### 📌 Nợ đồng bộ:
+`index.md` **chưa cập nhật bản đồ `lib/`** vì worker P02a đang dựng dở — map sai còn tệ hơn
+map thiếu. Cập nhật ngay sau khi nghiệm thu P02a.
+
+---
+
 ## 🏁 Phiên 2026-09-20 (tối) — Chuyển sang Gemini, và bắt được một cổng XANH GIẢ
 
 ### 🎯 Bối cảnh chỉ đạo:
@@ -77,19 +125,3 @@ thoả mãn, phải thêm bảng `schema_migrations` khi có Neon. **Đ16** `.gi
 ⚠️ **Phán quyết BB-07 của phiên này về sau lộ ra là sai** — xem phiên tối và `Đ21`.
 
 ---
-
-## 🏁 Phiên 2026-09-20 (chiều) — Chốt C-01…C-04, thi công và nghiệm thu gói P00
-
-**✅ DUYỆT** — chi tiết đầy đủ: `reports/R02_p00-knowledge-golden.md`, changelog `v1.0.0-p00`.
-
-Mã sản phẩm đầu tiên của repo: `knowledge/` 19 tài liệu / 98 section + 4 khuyết tật cài
-sẵn DEF-01..04, `evals/golden/` 66 case (50 FAQ + 16 Safety, phủ 10 mã canonical),
-`scripts/` 3 script kiểm Node thuần. Bốn cổng K-M1→K-M4 exit 0; SO tự thiết kế 2 phép
-phá, cả hai đỏ đúng rồi tái xanh.
-
-Chốt: **C-02 GẬT** (HITL chỉ cho lượt escalate) · **C-03 GẬT** (bỏ Metric 2) ·
-**C-04 chờ người** (Vercel). Sửa một phát biểu sai: P00 chưa bao giờ bị C-01 chặn, vì
-`SPEC-P00` §7 P00-C6 CẤM sinh Knowledge Pack bằng LLM.
-
-Lỗi của SO: `H02` cấp nhầm đường dẫn (`knowledge/` thay vì `evals/golden/`) làm K-M3 đỏ
-giả — gotcha G03. Worker báo lên thay vì tự sửa SPEC, xử lý đúng.

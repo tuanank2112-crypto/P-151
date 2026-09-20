@@ -258,6 +258,30 @@ SO liệt "cần tài khoản Vercel" vào danh sách chặn suốt nhiều lư�
 
 **Còn treo:** chủ tịch chọn scope nào cho `resident-agent-v1`. Chưa deploy lại cho tới khi có câu trả lời.
 
+### Đ24 — 2026-09-20 · Chạy local bằng kho mock, nhưng số Golden từ mock KHÔNG phải số nghiệm thu
+
+Chủ tịch: *"cứ local trước đã. mock-data luôn nhé"*. Chưa có `DATABASE_URL`, mà P02 là gói nặng nhất và lịch đã sang D2. Chốt: dựng **kho mock đọc thẳng file** để pipeline 3 agent chạy được ngay, không chờ Neon.
+
+**Hình dạng:** biến `DATA_BACKEND` ∈ `mock` | `postgres`, mặc định `mock` ở local. Kho mock nằm **trong `lib/adapters/`** (`store-mock.ts`) nên BB-07 giữ nguyên — vẫn đúng một thư mục là cửa ra ngoài. Nguồn dữ liệu là `knowledge/` và `evals/golden/` đã có sẵn từ P00, **không sinh thêm dữ liệu giả nào**.
+
+**Vì sao không phải SQLite:** `OPERATIONS.md` §8.1 đã cân nhắc và bác bản sao SQLite — nó nhân đôi tầng truy cập dữ liệu và phá BB-07. Kho mock ở đây khác: nó **không phải một cơ sở dữ liệu thứ hai**, chỉ là bộ đọc file nằm sau đúng cái interface mà `db.ts` phơi ra. Đổi sang Neon là đổi một biến môi trường, không viết lại lời gọi nào.
+
+**Điều BẮT BUỘC phải nói rõ — chỗ số liệu không chuyển được:**
+
+| Thành phần | Chuyển sang Postgres được không? |
+| :-- | :-- |
+| `cosine_sim` từ embedding Gemini | **CHUYỂN ĐƯỢC NGUYÊN** — cùng vector, cùng công thức, JS hay pgvector cũng ra một số |
+| Lời gọi 3 agent, trích dẫn, mã `reason_code` | **CHUYỂN ĐƯỢC** — không dính gì tới tầng lưu trữ |
+| 4 khuyết tật cài sẵn kích hoạt đúng mã | **CHUYỂN ĐƯỢC** — quyết định bằng metadata, không bằng xếp hạng |
+| `score_lexical` | **KHÔNG** — mock không có `ts_rank_cd(..., 32)` của Postgres |
+| `S1`, do đó `confidence` và cổng escalate ở chế độ `lexical` | **KHÔNG** |
+
+⇒ **VÙNG CẤM:** cấm tick Exit Gate `G11` (`M1 ≥ 34/40` và `M3 ≥ 15/16`) bằng số chạy trên mock. Cấm chỉnh ngưỡng confidence theo số mock. Mọi kết quả Golden từ mock phải in kèm chữ `BACKEND=mock — số định hướng, KHÔNG phải số nghiệm thu`. Gate G11 chỉ được tick khi chạy trên Neon thật.
+
+**Cái được ngay, không phải chờ Neon:** `G05` — bốn khuyết tật cài sẵn kích hoạt đúng `reason_code` qua pipeline thật. Đây chính là `K-M6`, số đo mà `SPEC-P00` §9 gọi là **quan trọng nhất của cả gói P00**, và nó đã treo từ lúc P00 nghiệm thu vì thiếu P02. Kèm theo: `G06` (trích dẫn), `G08` (ba agent log tách bạch).
+
+**Lật được:** có `DATABASE_URL` thì đặt `DATA_BACKEND=postgres` và chạy lại. **Chi phí lật:** thấp nếu mock nằm sau đúng interface; cao nếu ai đó gọi thẳng vào mock từ `lib/pipeline/` — cấm điều đó tường minh trong bàn giao.
+
 ### Quyết định của chủ tịch — 2026-09-20
 
 | Mã | Phán quyết | Ghi chú |

@@ -1,7 +1,7 @@
 {
   "current_version": "1.0.0",
   "brain_template_version": "1.7.1",
-  "system_status": "p01a_accepted",
+  "system_status": "p02a_in_progress",
   "last_verification": {
     "timestamp": "2026-09-20T03:35:00.000Z",
     "grade": "P01a ✅ DUYỆT — Super Orchestrator đo lại độc lập",
@@ -74,5 +74,26 @@
       "moi bac Pro (429 - sau cong thanh toan)"
     ],
     "rate_limit_measured": "15 song song qua het; 40 song song thi 39 dinh 429"
+  },
+  "data_backend": {
+    "current": "mock",
+    "env": "DATA_BACKEND in mock|postgres",
+    "source": "doc thang knowledge/ + evals/golden/",
+    "CAM": "cam tick Exit Gate G11 bang so mock; cam chinh nguong confidence theo so mock",
+    "ly_do": "mock khong co ts_rank_cd(...,32) => score_lexical va S1 khong chuyen sang Postgres"
+  },
+  "providers_rejected": {
+    "vyce": "D22 - json_schema bi bo qua am tham, free 4 luong song song, khong co embedding",
+    "tokenrouter_union_alpha": "D13 - key sai dinh dang, slug thuoc OpenRouter"
+  },
+  "vercel": {
+    "cli": "59.23.2",
+    "whoami": "tuanank2112-5635",
+    "trang_thai": "da dang nhap, CHO chon scope",
+    "canh_bao": "luon truyen --scope; mac dinh no chon team dau tien (n-listen-ai)"
+  },
+  "blocked_needs_human": {
+    "DATABASE_URL": "Neon - chua co, nhung KHONG con chan P02a nho kho mock",
+    "vercel_scope": "chu tich chon scope truoc khi deploy"
   }
 }

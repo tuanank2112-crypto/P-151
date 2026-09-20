@@ -2,6 +2,32 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-20: Bác Vyce, chốt chạy local trên kho mock
+
+### Decisions
+- **Đ22 — đo Vyce rồi BÁC, giữ Gemini.** Base URL `https://vyceai.com/v1`, key chạy, có
+  `claude-sonnet-4-6` (270K ctx). Nhưng thua Gemini cả ba thứ quyết định: `json_schema`
+  **bị bỏ qua âm thầm** (HTTP 200 kèm văn xuôi — đúng ca `E7 ContractDriftError`), gói
+  free chỉ **4 luồng song song** (Gemini 15), và **không có endpoint embedding**. Chất
+  lượng cũng đáng ngờ: hỏi thủ đô Việt Nam thì trả "thành phố đầu tiên của Việt Nam là
+  Hà Nội". Đường nâng cấp A2 vẫn là nạp tiền Google Cloud — đổi một chuỗi ID, cùng API.
+- **Đ23 — Vercel chưa bao giờ là vật cản.** `vercel whoami` → `tuanank2112-5635`, CLI
+  59.23.2 đã đăng nhập. SO báo sai nhiều lượt vì chưa kiểm. Kèm một lỗi thao tác:
+  `vercel link` không truyền `--scope` nên tạo project vào team `n-listen-ai` của dự án
+  khác; đã xoá sạch, `listena` không bị đụng. Chờ chủ tịch chọn scope.
+- **Đ24 — chạy local trên kho mock.** `DATA_BACKEND` ∈ `mock`|`postgres`, mặc định
+  `mock`. Kho mock đọc thẳng `knowledge/` + `evals/golden/`, nằm trong `lib/adapters/`
+  nên BB-07 giữ nguyên. Không dùng SQLite vì `OPERATIONS.md` §8.1 đã bác.
+  **Vùng cấm:** CẤM tick `G11` bằng số mock, CẤM chỉnh ngưỡng confidence theo số mock —
+  mock không có `ts_rank_cd(...,32)` nên `score_lexical` và `S1` không chuyển được.
+
+### Fixed
+- `.gitignore`: Vercel CLI nối thêm `.env*` vào cuối khi chạy `vercel link`, đè mất dòng
+  `!.env.example`. Sắp lại thứ tự và ghi chú ngay trong file để lần sau nhận ra.
+- Gotcha **G17** siết thêm sau khi truncate `plan.md` lần thứ hai: bắt buộc gọi
+  `.encode('utf-8')` kiểm **trước** khi mở `'w'`. Luật này cứu được `-known-gotchas.md`
+  ngay lượt sau đó, cùng lỗi nhưng không mất gì.
+
 ## [v1.0.0-gemini] - 2026-09-20: Đổi nhà cung cấp model sang Google Gemini
 ### Changed
 - **A1/A2/A3 chuyển từ Claude sang Gemini** (Đ17): `gemini-3.5-flash-lite` /
