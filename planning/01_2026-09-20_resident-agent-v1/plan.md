@@ -9,7 +9,7 @@
 | Mã hồ sơ | `01_2026-09-20_resident-agent-v1` |
 | Ngày mở | 2026-09-20 |
 | Chủ trì | Super Orchestrator (cửa sổ này) |
-| Trạng thái | 🟡 ĐANG LẬP KẾ HOẠCH |
+| Trạng thái | 🟢 ĐANG THI CÔNG — P00 phóng 2026-09-20 |
 | Deadline | **2026-09-27** (7 ngày) |
 | Nguồn yêu cầu | AI20K Build Phase Cohort 4 — ngân hàng đề `C104 / VHR-01 / G104` |
 | Mục đích | Sản phẩm demo cho doanh nghiệp + ban giám khảo. Không phải hệ thống chạy thật. |
@@ -97,6 +97,41 @@ Giữ nguyên 10 mã canonical của v0.2. Bổ sung nhóm hành động: vượ
 - **2026-09-20 — "Lật actor sang cư dân, agent tự chủ thanh toán hoá đơn và đặt chỗ"** → thay bởi **Đ01 + Đ03**. Lý do: suy ra từ 3 ảnh và 6 tài liệu trước khi biết rubric. Rubric đòi **cả hai vai** (Cư dân *và* BQL) và không có dòng nào về thanh toán. Giữ hướng cũ sẽ đốt deadline vào thứ không được chấm.
 - **2026-09-20 — "Cần chủ tịch quyết trần thanh toán và rủi ro điều khoản dịch vụ"** → **rút lại**, không còn đối tượng. Đ02 làm hai câu hỏi này mất căn cứ: không có tiền thật, không có API thật.
 - **2026-09-20 — "Lấy modal từ chối đăng ký ngoài giờ làm cảnh demo trung tâm, kèm ý định bền và bộ lập lịch"** → **rút lại** theo chỉ đạo của chủ tịch: ảnh đó chỉ là ví dụ minh hoạ. Hệ quả: P05 bỏ hẳn phần lập lịch và ý định sống qua phiên, chỉ giữ đọc-chính-sách-trước-khi-ghi (Đ10). Tiết kiệm khoảng một ngày công và bỏ được một hạ tầng khó (scheduler bền qua restart).
+
+### Đ13 — 2026-09-20 · Nhà cung cấp model — đo trước, chưa đổi contract
+
+Chủ tịch chỉ định `stealth/union-alpha` qua TokenRouter, kèm key `sk-LaNk…`. **Đã đo, không dùng được như chỉ định:**
+
+| # | Phép đo | Kết quả nguyên văn |
+| :-- | :-- | :-- |
+| M-01 | `GET https://api.tokenrouter.io/v1/models` + key | `http=401` · `{"error":{"message":"Missing or malformed API key. Pass 'Authorization: Bearer tr_...'"}}` |
+| M-02 | `docs.tokenrouter.io/getting-started/openai-compatibility` | Chỉ hỗ trợ `POST /v1/chat/completions`. **Không có endpoint embeddings.** |
+| M-03 | Quy ước tên model của TokenRouter | `auto:*`, `openai:`, `anthropic:`, `gemini:`, `mistral:`, `deepseek:` — **không có dạng `stealth/…`** |
+| M-04 | Tra `stealth/union-alpha` | Slug của **OpenRouter** (và Cloudflare), ra mắt 2026-09-16, free preview 256K ctx, có tool calling |
+| M-05 | `POST https://openrouter.ai/api/v1/chat/completions` + key | **KHÔNG ĐO ĐƯỢC** — sandbox chặn (data-exfiltration classifier). Cần người chạy. |
+
+Kết luận: key `sk-…` không phải key TokenRouter (phải là `tr_…`), và `stealth/union-alpha` không phải model TokenRouter. Hai thứ này thuộc hai nơi khác nhau. **Chưa đổi `01-CONTRACTS.md` §8 và `00-ARCHITECTURE.md` §10.1** — contract vẫn là Claude cho A1/A2/A3 cho tới khi có một key chạy được đo tận tay.
+
+**Rủi ro nếu chọn Union Alpha làm chính:** là model ẩn danh, free *preview có hạn* công bố ngày 2026-09-16; nhà phát hành nói free "trong một tuần" — hạn đó rơi đúng vào tuần demo (deadline 2026-09-27). Một bài demo bị chấm không nên đặt đường găng lên một model có thể bị rút không báo trước. **Lật được:** dùng làm dự phòng rẻ thì tốt. **Chi phí lật:** thấp, vì `lib/adapters/anthropic.ts` (BB-07) đã là adapter DUY NHẤT — thêm một adapter OpenAI-compatible cạnh nó không đụng lõi.
+
+### Đ14 — 2026-09-20 · Câu hỏi "key embedding" của C-01 đã hết đối tượng
+
+`01-CONTRACTS.md` §4.3 đã chốt từ lúc thiết kế: embedding chạy **`Xenova/multilingual-e5-small` ngay trên máy dev** trong `scripts/seed_knowledge.mjs`, 384 chiều, ghi sẵn vào DB — **không cần key, không gọi API ai cả**. Trên Vercel `RETRIEVAL_MODE=lexical`. Vậy mục "xin thêm một key embedding" trong C-01 là thừa; nó được nêu khi SO chưa đọc kỹ §4.3. **Rút lại.**
+
+Nếu sau này muốn `hybrid` chạy cả trên Vercel thì mới cần một endpoint embedding thật (Gemini có, Claude và TokenRouter không) — nhưng khi đó phải **re-embed toàn corpus** vì số chiều khác 384, tức sửa DDL `vector(384)` ở §3.3. Không làm trong vòng 1.0.0.
+
+### Quyết định của chủ tịch — 2026-09-20
+
+| Mã | Phán quyết | Ghi chú |
+| :-- | :-- | :-- |
+| C-01 | 🟡 **MỘT PHẦN** | Phần embedding: rút (Đ14). Phần nhà cung cấp model: chưa chốt được, xem Đ13 M-05. Phần ngân sách: chủ tịch muốn phương án free. |
+| C-02 | ✅ **GẬT** | HITL chỉ áp cho lượt bị escalate. Lệch có chủ ý so với `docs/PRD_ResidentGPT_MVP.md` §8 SR-09, đã ghi lý do. |
+| C-03 | ✅ **GẬT** | Bỏ Metric 2 (Efficiency). `specs/SPEC-P00-Knowledge-Golden.md` §6.1 đã ghi sẵn vùng cấm này; nay có căn cứ chính thức. Gỡ trạng thái "chưa có căn cứ" ở Idea Vault. |
+| C-04 | ⬜ **CHỜ NGƯỜI** | Cần tài khoản Vercel. Không chặn P00. |
+
+### Sửa sai — P00 KHÔNG bị C-01 chặn
+
+Câu "Gói P00 chưa được phóng vì C-01 chưa chốt" ghi ngày 2026-09-20 là **SAI**, nay gỡ. Căn cứ: `SPEC-P00-Knowledge-Golden.md` §7 **P00-C6 CẤM sinh Knowledge Pack bằng LLM**; toàn bộ P00 là viết tay 19 tài liệu + 66 case Golden + script kiểm tra. Số đo K-M1→K-M4 chỉ cần Node, K-M5 cần Neon, K-M6 thuộc gate của P02. **Không dòng nào của P00 cần key model.** P00 được phóng ngay.
 
 ## 3. Work Packages và Tầng model
 

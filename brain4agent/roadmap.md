@@ -39,11 +39,14 @@ sau cổng P01–P04 xanh — Đ03):
 - **Trần thanh toán và rủi ro điều khoản dịch vụ cần chủ tịch quyết** — rút,
   không còn đối tượng sau Đ02 (mô phỏng toàn phần: không tiền thật, không API
   thật).
-- **Metric 2 "Efficiency"** — không thấy trong `plan.md`/`specs/` hiện tại;
-  handoff yêu cầu ghi vào Idea Vault nếu đã bị rút nhưng worker này không tìm
-  thấy quyết định rút tường minh nào cho mục này trong `plan.md` hay
-  `specs/TESTING-ACCEPTANCE.md`. Ghi "chưa đo được" — xem Câu hỏi mở trong
-  `reports/R01_specs-design.md`/report của phiên này thay vì tự suy diễn.
+- **Metric 2 "Efficiency"** — ✅ **ĐÃ GIẢI QUYẾT 2026-09-20**, gỡ trạng thái
+  "chưa đo được". Căn cứ tường minh mà worker R01 không tìm ra thực ra có sẵn ở
+  `specs/SPEC-P00-Knowledge-Golden.md` §6.1, khối *"Vùng cấm — KHÔNG làm Metric 2
+  (Efficiency)"*: `PRD` §9 Metric 2 đòi một manual controlled time study với BQL
+  thật xử lý 30 case theo quy trình cũ để lấy baseline; không có BQL thật, không
+  có quy trình cũ, rubric C104/VHR-01 không hỏi năng suất ⇒ làm số đó ra là bịa.
+  Chủ tịch GẬT C-03 ngày 2026-09-20 (`plan.md` §2, bảng *Quyết định của chủ tịch*).
+  Ai muốn lật phải trả lời được "lấy baseline ở đâu".
 
 ## Đã hoàn thành (Done)
 
