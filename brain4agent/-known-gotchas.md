@@ -168,3 +168,21 @@ Vừa dẫm 2026-09-20, xoá sạch G01-G11 mà lệnh vẫn exit 0.
 Nguy hiem vi KHONG bao loi: file bi thay bang phan them, exit 0, trong nhu thanh cong.
 Kiem ngay sau khi noi them vao file tich luy: dem lai so muc (vd grep -c '^### G')
 phai TANG chu khong duoc giam. Phuc hoi: git checkout <file> neu da commit truoc do.
+
+**Dẫm lần hai cùng ngày, kiểu khác — và lần này phép kiểm đã cứu được file.**
+`python -c` chạy qua Bash với emoji viết bằng hai escape surrogate rời (`\ud83d` +
+`\udfe1`): shell băm chuỗi, Python nhận lone surrogate, `.write()` ném
+`UnicodeEncodeError` — **nhưng `open(p,'w')` đã truncate xong từ trước**. File
+`plan.md` 292 dòng còn **0 dòng**. Phải `git checkout` khôi phục.
+
+**Quy trình bắt buộc khi ghi đè file tích luỹ:**
+
+1. Đọc **hết** nội dung cũ vào biến trước.
+2. Dựng xong chuỗi kết quả.
+3. Gọi `t.encode('utf-8')` để **kiểm trước** — nếu hỏng thì ném lỗi ở đây, khi file
+   vẫn còn nguyên. Bước này đã cứu lần thứ hai: `-known-gotchas.md` không mất gì.
+4. Xong ba bước trên mới được mở `'w'`.
+
+**Và:** nội dung có emoji hoặc tiếng Việt thì viết ra **file script** bằng công cụ ghi
+file, **đừng nhúng vào `python -c`** qua shell — shell sẽ băm escape (xem thêm G10).
+Kiểm ngay sau khi ghi: đếm lại số mục phải TĂNG, không được giảm.

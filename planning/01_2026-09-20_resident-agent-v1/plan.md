@@ -226,6 +226,38 @@ Script đã viết lại theo **bốn trục** (import SDK · host ở bất k�
 
 **P01a giữ nguyên ✅ DUYỆT** — bất biến *cấu trúc thư mục* không đổi, chỉ mẫu grep cũ là thiếu. Đính chính ghi ở cuối `reports/R03`.
 
+### Đ22 — 2026-09-20 · Vyce đã đo: KHÔNG dùng. Giữ Gemini.
+
+Chủ tịch cấp key Vyce làm đường nâng cấp cho A2 (Đ17 ghi A2 mất bậc Pro). SO đo trước khi đổi. Bằng chứng: [`evidence/p02-provider/vyce-probe.txt`](../evidence/p02-provider/vyce-probe.txt).
+
+Base URL đúng là `https://vyceai.com/v1`. Key chạy. Có `claude-sonnet-4-6` (270K ctx), đúng hạng model A2 đang thiếu. **Nhưng thua Gemini ở cả ba thứ quyết định:**
+
+| | Gemini (đang dùng) | Vyce |
+| :-- | :-- | :-- |
+| Schema chặt | `responseSchema` **chạy**, tôn trọng enum | `json_schema` **bị bỏ qua âm thầm** — HTTP 200 kèm văn xuôi |
+| Song song (gói free) | **15** | **4** (thông điệp lỗi nói thẳng) |
+| Embedding | có, ép được 384 chiều | **không có** |
+
+**Điểm chí mạng là dòng đầu.** Vyce nhận `response_format.json_schema` rồi không áp dụng và **không báo lỗi**. Đó đúng là kiểu hỏng mà `00-ARCHITECTURE.md` §10 `E7 ContractDriftError` dựng ra để phòng: contract vỡ nhưng mọi tầng đều xanh. Dùng nó thì phải tự tả schema trong prompt rồi tự validate — tức tự tay làm lại đúng thứ Gemini cho sẵn, đổi lấy 4 luồng song song thay vì 15.
+
+**Chất lượng cũng đáng ngờ.** Hỏi "Thủ đô của Việt Nam là thành phố nào?" → *"Thành phố đầu tiên của Việt Nam là Hà Nội."* Nêu đúng Hà Nội nhưng diễn đạt sai hẳn. Không chứng minh được đằng sau cái tên `claude-sonnet-4-6` là model gì; chỉ kết luận được điều đo thấy: **nó hành xử yếu hơn hẳn cái tên gợi ý.** Một phép thử không đủ để kết tội, nhưng đủ để không đặt đường găng của một bài bị chấm lên nó.
+
+**Quyết định:** giữ Gemini cho cả A1/A2/A3 và embedding. **Không** thêm nhánh Vyce vào adapter — thêm một nhà cung cấp là thêm một đường lỗi, mà đổi lại không được gì đo được.
+
+**Đường nâng cấp cho A2 vẫn là nạp tiền Google Cloud** để mở bậc Pro: đổi đúng một chuỗi ID, cùng API, cùng schema, cùng adapter. Rẻ hơn hẳn việc gắn nhà cung cấp thứ hai.
+
+**Lật được:** nếu Vyce sửa `json_schema` và nâng trần song song. **Chi phí lật:** thấp — key vẫn giữ trong `.env.local`, và file bằng chứng ghi sẵn base URL cùng tên model để khỏi phải dò lại.
+
+### Đ23 — 2026-09-20 · Vercel: C-04 vốn đã xong từ đầu, SO báo sai
+
+SO liệt "cần tài khoản Vercel" vào danh sách chặn suốt nhiều lượt **mà chưa từng kiểm tra**. Chạy `npx vercel whoami` thì ra ngay `tuanank2112-5635` — CLI 59.23.2 đã cài, đã đăng nhập. **C-04 chưa bao giờ là vật cản.** Suy từ "`OPERATIONS.md` đòi Vercel mà chủ tịch chưa đưa gì" thành "chưa có tài khoản" là giả định, không phải đo.
+
+**Sai thứ hai, trong cùng lượt:** SO chạy `vercel link` mà không hỏi scope, nên project rơi vào team `n-listen-ai` — team đang chứa dự án khác của chủ tịch (`listena`). Chủ tịch bắt gỡ. Đã xoá `resident-agent-v1` khỏi team đó (project rỗng, mới tạo vài phút, `listena` không bị đụng) và gỡ link cục bộ.
+
+**Luật rút ra:** `vercel link` mặc định chọn team đầu tiên tìm thấy, không phải scope cá nhân. Với tài khoản có nhiều team, **luôn truyền `--scope` tường minh** và hỏi chủ tịch muốn đặt ở đâu trước khi tạo project.
+
+**Còn treo:** chủ tịch chọn scope nào cho `resident-agent-v1`. Chưa deploy lại cho tới khi có câu trả lời.
+
 ### Quyết định của chủ tịch — 2026-09-20
 
 | Mã | Phán quyết | Ghi chú |
@@ -233,7 +265,7 @@ Script đã viết lại theo **bốn trục** (import SDK · host ở bất k�
 | C-01 | 🟡 **MỘT PHẦN** | Phần embedding: rút (Đ14). Phần nhà cung cấp model: chưa chốt được, xem Đ13 M-05. Phần ngân sách: chủ tịch muốn phương án free. |
 | C-02 | ✅ **GẬT** | HITL chỉ áp cho lượt bị escalate. Lệch có chủ ý so với `docs/PRD_ResidentGPT_MVP.md` §8 SR-09, đã ghi lý do. |
 | C-03 | ✅ **GẬT** | Bỏ Metric 2 (Efficiency). `specs/SPEC-P00-Knowledge-Golden.md` §6.1 đã ghi sẵn vùng cấm này; nay có căn cứ chính thức. Gỡ trạng thái "chưa có căn cứ" ở Idea Vault. |
-| C-04 | ⬜ **CHỜ NGƯỜI** | Cần tài khoản Vercel. Không chặn P00. |
+| C-04 | ✅ **VỐN ĐÃ XONG** | Đo lại 2026-09-20: `vercel whoami` → `tuanank2112-5635`, CLI 59.23.2 đã đăng nhập. SO báo sai suốt nhiều lượt vì chưa kiểm — xem Đ23. Còn treo: chủ tịch chọn scope. |
 
 ### Sửa sai — P00 KHÔNG bị C-01 chặn
 
@@ -256,7 +288,7 @@ Câu "Gói P00 chưa được phóng vì C-01 chưa chốt" ghi ngày 2026-09-20
 - [x] P00 — Knowledge Pack mô phỏng đủ phủ 12 tiện ích và 5 intent — `19 tài liệu · 98 section`, exit 0 (2026-09-20)
 - [x] P00 — Khuyết tật cài sẵn: 2 gap + 1 cặp conflict + 1 expired — `defects_ok: 4/4`, exit 0 (2026-09-20)
 - [x] P00 — Golden Dataset — `faq: 50 (answerable 40) · safety: 16 · canonical 10/10`, exit 0 (2026-09-20). `rubric.md` chuyển sang P04.
-- [ ] P01 — Deploy được URL công khai — ⛔ chặn: chưa có tài khoản Vercel (C-04)
+- [ ] P01 — Deploy được URL công khai — 🟡 **không còn bị chặn kỹ thuật**: Vercel CLI đã đăng nhập (Đ23), `npm run build` xanh không cần `DATABASE_URL`. Chờ chủ tịch chọn **scope** — lần trước SO lỡ tạo project vào team `n-listen-ai`, đã gỡ sạch
 - [ ] P01 — Đăng nhập 2 vai trò Cư dân / BQL — 🟡 mã xong và có test (`scrypt` + cookie HMAC, sửa 1 byte ⇒ verify false); **chưa tick** vì tài khoản nằm trong DB, cần `DATABASE_URL` mới chứng minh được đăng nhập thật
 - [x] P01a — Nền tảng chạy được không cần key: `tsc --noEmit` exit 0 · `npm run build` KHÔNG có `DATABASE_URL` exit 0 (8/9 route dynamic) · `npm test` 13/13 · **BB-05, BB-07, BB-10 xanh và đã chứng minh đỏ được** (2026-09-20)
 - [ ] P02 — Trả lời có trích dẫn tới `document_id` và `section_id`

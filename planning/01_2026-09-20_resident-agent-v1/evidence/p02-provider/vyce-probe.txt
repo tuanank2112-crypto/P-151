@@ -1,0 +1,73 @@
+# Đo Vyce AI — 2026-09-20. Chủ tịch cấp key làm đường nâng cấp cho A2.
+# Key ở .env.local (biến VYCE_API_KEY), bị .gitignore chặn. CẤM chép giá trị vào repo.
+# Base URL đúng: https://vyceai.com/v1  (api.vyceai.com và api.vyce.ai đều không phân giải)
+
+## 1. Model có sẵn
+
+id                      context_window   requires_verification
+claude-sonnet-4-6            270000            true
+deepseek-v4-flash            270000            true
+deepseek-v4.1                270000            true
+agnes-3.0-flash              512000            true
+deepseek-v4-flash-lr         270000            true
+grok-imagine-2                    ?            true     (model ảnh, không dùng được)
+
+## 2. `response_format: json_schema` — BỊ BỎ QUA ÂM THẦM
+
+Chạy ĐÚNG bài toán đã dùng cho Gemini (C-M11): schema strict, enum 4 giá trị, 3 trường required.
+
+claude-sonnet-4-6     HTTP 200 · 4039ms · trả VĂN XUÔI, không parse được JSON
+deepseek-v4.1         HTTP 200 · 7278ms · trả VĂN XUÔI
+deepseek-v4-flash-lr  HTTP 200 · 6999ms · trả VĂN XUÔI
+
+=> KẾT LUẬN 1, NẶNG NHẤT: Vyce nhận `response_format.json_schema` mà **không áp dụng**,
+   và **không báo lỗi** — HTTP 200 kèm văn xuôi. Đây đúng kiểu hỏng im lặng mà
+   00-ARCHITECTURE.md §10 E7 (`ContractDriftError`) đặt ra để phòng.
+   Đối chiếu: Gemini `responseSchema` chạy đúng trên cả ba model, tôn trọng cả enum.
+
+   `response_format: {type:"json_object"}` thì CÓ chạy — nhưng nó chỉ ép "phải là JSON",
+   không ép được hình dạng. Muốn dùng phải tự tả schema trong prompt rồi tự validate,
+   tức tự tay làm lại đúng thứ Gemini cho sẵn.
+
+## 3. Trần hạn mức — NÓI THẲNG TRONG THÔNG ĐIỆP LỖI
+
+$ 10 request song song, claude-sonnet-4-6
+  thành công 4/10 · 6 lỗi HTTP 429
+  nguyên văn: "Too many concurrent requests. Free plan allows up to 4 simultaneous
+               requests. Upgrade for unlimited concurrency"
+  latency min=1741 p50=2413 max=8667
+
+=> KẾT LUẬN 2: gói free của Vyce cho **ĐÚNG 4 request đồng thời**. Gemini đo được 15.
+   Với 198 lời gọi của một lượt Golden, Vyce chậm hơn Gemini khoảng 4 lần.
+
+## 4. Chất lượng model đằng sau cái tên — ĐÁNG NGỜ
+
+Hỏi thường, không ràng buộc gì:
+  Hỏi : "Thủ đô của Việt Nam là thành phố nào? Trả lời ngắn gọn một câu."
+  Đáp : "Thành phố đầu tiên của Việt Nam là Hà Nội."
+
+Nêu đúng Hà Nội nhưng diễn đạt sai hẳn — "thành phố đầu tiên" không phải "thủ đô".
+Claude Sonnet 4.6 thật không viết câu tiếng Việt như vậy.
+
+Các lượt phân loại ý định trước đó cũng lệch: cùng câu "Bể bơi mở cửa mấy giờ?" mà
+claude-sonnet-4-6 trả `intent: "xin_phep_ngoai_hang"`, agnes-3.0-flash trả `"horoscope"`,
+deepseek-v4.1 trả `"play"`. Chỉ khi prompt tự tả enum thật rõ thì mới ra `"facility_hours"`.
+
+=> KẾT LUẬN 3: KHÔNG chứng minh được đằng sau tên `claude-sonnet-4-6` là model gì.
+   Chỉ kết luận được điều đo thấy: nó hành xử yếu hơn hẳn cái tên gợi ý. Một phép thử
+   không đủ để kết tội, nhưng đủ để KHÔNG đặt đường găng của bài bị chấm lên nó.
+
+## 5. Embedding — KHÔNG CÓ
+
+$ POST https://vyceai.com/v1/embeddings
+  HTTP 200 nhưng trả về trang HTML, không phải API.
+=> Gemini vẫn giữ phần embedding dù có đổi gì đi nữa.
+
+## TỔNG KẾT — so với Gemini, trên đúng ba thứ quyết định
+
+                      Gemini (đang dùng)        Vyce
+schema chặt           responseSchema CHẠY       json_schema BỊ BỎ QUA ÂM THẦM
+song song (free)      15                        4
+embedding             có, ép được 384 chiều     không có
+
+Vyce thua cả ba. KHÔNG đổi A2 sang Vyce. Xem Đ22.
