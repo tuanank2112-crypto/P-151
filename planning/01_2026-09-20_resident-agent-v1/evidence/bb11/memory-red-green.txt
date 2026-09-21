@@ -1,0 +1,73 @@
+H06 W4 — bằng chứng ĐỎ→XANH cho tests/memory.test.ts (BB-11)
+Ngày đo: 2026-09-21 23:52:37 +0700
+
+Cách tạo ĐỎ: tạm sửa lib/pipeline/index.ts, bỏ lời gọi store.insertAnswerTurn()
+  đúng cho nhánh decision === 'escalate' (giữ nguyên các nhánh khác), chạy
+  'node --test tests/memory.test.ts', rồi HOÀN NGUYÊN nguyên văn (diff = 0 dòng
+  so với trước khi bơm lỗi — đã kiểm bằng git diff, xem report).
+
+=== ĐỎ (bơm lỗi: bỏ ghi answer_turns ở nhánh escalate) ===
+✖ BB-11: nhánh escalate (risk gate ở chặng 5, KHÔNG ném lỗi, KHÔNG chạm A2/A3) ghi đúng MỘT answer_turns (6353.7261ms)
+✖ BB-11: nhánh NÉM LỖI (429 hết retry ở A2) vẫn ghi đúng MỘT answer_turns, lifecycle_state=failed (7135.1803ms)
+✔ R4/W3: hai messages mỗi lượt (hỏi + đáp) khi decision=answer, user_message_id khớp answer_turns (5172.0112ms)
+✔ W3: conversation_id do route tạo (createConversation) và hội thoại đọc lại được nguyên vẹn (getConversationOwner + listMessages) (2042.465ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 31216.7439
+
+✖ failing tests:
+
+test at tests\memory.test.ts:102:1
+✖ BB-11: nhánh escalate (risk gate ở chặng 5, KHÔNG ném lỗi, KHÔNG chạm A2/A3) ghi đúng MỘT answer_turns (6353.7261ms)
+  AssertionError [ERR_ASSERTION]: escalate phải ghi đúng 1 answer_turns (BB-11, P02-C10)
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/memory.test.ts:126:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\memory.test.ts:140:1
+✖ BB-11: nhánh NÉM LỖI (429 hết retry ở A2) vẫn ghi đúng MỘT answer_turns, lifecycle_state=failed (7135.1803ms)
+  AssertionError [ERR_ASSERTION]: nhánh ném lỗi vẫn phải ghi đúng 1 answer_turns (BB-11, P02-C10)
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/memory.test.ts:169:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+=== XANH (đã hoàn nguyên) ===
+✔ BB-11: nhánh escalate (risk gate ở chặng 5, KHÔNG ném lỗi, KHÔNG chạm A2/A3) ghi đúng MỘT answer_turns (7250.5341ms)
+✔ BB-11: nhánh NÉM LỖI (429 hết retry ở A2) vẫn ghi đúng MỘT answer_turns, lifecycle_state=failed (7664.0411ms)
+✔ R4/W3: hai messages mỗi lượt (hỏi + đáp) khi decision=answer, user_message_id khớp answer_turns (5229.1617ms)
+✔ W3: conversation_id do route tạo (createConversation) và hội thoại đọc lại được nguyên vẹn (getConversationOwner + listMessages) (2061.8679ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 32788.0808

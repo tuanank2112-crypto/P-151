@@ -10,7 +10,15 @@
 
 import pg from "pg";
 import { buildLexicalQuery } from "../retrieval/query.ts";
-import type { RetrievedChunk, UserRole } from "../types.ts";
+import type {
+  Citation,
+  ClaimVerdict,
+  Decision,
+  LifecycleState,
+  ReasonCode,
+  RetrievedChunk,
+  UserRole,
+} from "../types.ts";
 
 /**
  * Chữ ký DUY NHẤT mà mọi call site trong file này dùng: `sql(text, params)`
@@ -128,6 +136,38 @@ export interface UserRecord {
   property_type: PropertyType[];
 }
 
+/** Một dòng `messages` (01-CONTRACTS §6). */
+export interface MessageRecord {
+  id: string;
+  conversation_id: string;
+  role: "user" | "assistant";
+  content_vi: string;
+  created_at: string;
+}
+
+/**
+ * Đầu vào ghi một dòng `answer_turns` (BB-11, SPEC-P02 §1). Chỉ liệt kê các
+ * trường `runTurn` có đủ dữ liệu để điền — mọi cột khác của bảng
+ * (`s1_retrieval_top1`, `rejection_histogram`, `pipeline_steps`, …) dùng
+ * `DEFAULT` sẵn có ở `004_operational.sql`, KHÔNG bịa thêm giá trị.
+ */
+export interface AnswerTurnInput {
+  conversation_id: string;
+  user_message_id: string;
+  assistant_message_id: string | null;
+  question_vi: string;
+  detected_intent: string | null;
+  lifecycle_state: LifecycleState;
+  decision: Decision;
+  reason_code: ReasonCode | null;
+  confidence: number;
+  gate_triggered: string | null;
+  citations: Citation[];
+  claims: ClaimVerdict[];
+  latency_ms: number;
+  is_golden_run: boolean;
+}
+
 export interface DataStore {
   readonly backend: "mock" | "postgres";
   /** Tra người dùng theo email cho luồng đăng nhập. `null` khi không có.
@@ -140,6 +180,28 @@ export interface DataStore {
   searchLexical(queryVi: string, topK: number): Promise<RetrievedChunk[]>;
   getDocumentMeta(documentIds: string[]): Promise<Map<string, DocumentMeta>>;
   getSectionMeta(sectionIds: string[]): Promise<Map<string, SectionMeta>>;
+
+  // ── Vận hành: hội thoại + lượt trả lời (BB-11, R4, H06 W1) ──────────────
+  /** Tạo một hội thoại mới cho `userId`, trả `id`. */
+  createConversation(userId: string): Promise<{ id: string }>;
+  /** Ghi một dòng `messages`, trả `id` — dùng làm `user_message_id` /
+   *  `assistant_message_id` của `answer_turns`. */
+  appendMessage(
+    conversationId: string,
+    role: "user" | "assistant",
+    contentVi: string
+  ): Promise<{ id: string }>;
+  /** Đọc lại lịch sử hội thoại, cũ → mới (R4). */
+  listMessages(conversationId: string): Promise<MessageRecord[]>;
+  /** Ghi đúng một dòng `answer_turns` (BB-11). */
+  insertAnswerTurn(input: AnswerTurnInput): Promise<{ id: string }>;
+  /** Chủ sở hữu (`user_id`) của một hội thoại, `null` nếu không có — dùng để
+   *  quyết `ConversationNotOwned` (SPEC-P02 §9) ở `app/api/chat/route.ts`.
+   *  Bổ sung ngoài 4 hàm được liệt kê tường minh ở handoff H06 §3 W1 — cần
+   *  thiết để W3 (403 khi `conversation_id` không thuộc principal) khả thi
+   *  mà không mở connection ngoài `lib/adapters/db.ts` (BB-07). Ghi vào report
+   *  làm rõ đây là mở rộng có chủ đích, không phải bịa schema. */
+  getConversationOwner(conversationId: string): Promise<string | null>;
 }
 
 function backendName(): "mock" | "postgres" {
@@ -207,6 +269,75 @@ class PostgresDataStore implements DataStore {
       [sectionIds]
     );
     return new Map(rows.map((r) => [r.section_id, r]));
+  }
+
+  async createConversation(userId: string): Promise<{ id: string }> {
+    const sql = getSql();
+    const rows = await sql<{ id: string }>(
+      `INSERT INTO conversations (user_id) VALUES ($1) RETURNING id`,
+      [userId]
+    );
+    return { id: rows[0]!.id };
+  }
+
+  async appendMessage(
+    conversationId: string,
+    role: "user" | "assistant",
+    contentVi: string
+  ): Promise<{ id: string }> {
+    const sql = getSql();
+    const rows = await sql<{ id: string }>(
+      `INSERT INTO messages (conversation_id, role, content_vi) VALUES ($1, $2, $3) RETURNING id`,
+      [conversationId, role, contentVi]
+    );
+    return { id: rows[0]!.id };
+  }
+
+  async listMessages(conversationId: string): Promise<MessageRecord[]> {
+    const sql = getSql();
+    return sql<MessageRecord>(
+      `SELECT id, conversation_id, role, content_vi, created_at
+       FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC`,
+      [conversationId]
+    );
+  }
+
+  async insertAnswerTurn(input: AnswerTurnInput): Promise<{ id: string }> {
+    const sql = getSql();
+    const rows = await sql<{ id: string }>(
+      `INSERT INTO answer_turns (
+         conversation_id, user_message_id, assistant_message_id, question_vi,
+         detected_intent, lifecycle_state, decision, reason_code, confidence,
+         gate_triggered, citations, claims, latency_ms, is_golden_run
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+       RETURNING id`,
+      [
+        input.conversation_id,
+        input.user_message_id,
+        input.assistant_message_id,
+        input.question_vi,
+        input.detected_intent,
+        input.lifecycle_state,
+        input.decision,
+        input.reason_code,
+        input.confidence,
+        input.gate_triggered,
+        JSON.stringify(input.citations),
+        JSON.stringify(input.claims),
+        input.latency_ms,
+        input.is_golden_run,
+      ]
+    );
+    return { id: rows[0]!.id };
+  }
+
+  async getConversationOwner(conversationId: string): Promise<string | null> {
+    const sql = getSql();
+    const rows = await sql<{ user_id: string }>(
+      `SELECT user_id FROM conversations WHERE id = $1`,
+      [conversationId]
+    );
+    return rows[0]?.user_id ?? null;
   }
 }
 

@@ -1,11 +1,19 @@
 // lib/pipeline/index.ts — điểm vào DUY NHẤT của pipeline 3 agent
 // (SPEC-P02-Agent-Pipeline.md §1, §2, BB-08). Chín chặng, thứ tự tất định.
 //
-// GIỚI HẠN GÓI P02a (mock, H04): KHÔNG có bảng `answer_turns`/`conversations`
-// trong kho mock (Đ24 chỉ định nghĩa tri thức + Golden, không định nghĩa
-// bảng vận hành cho mock). BB-11 ("ghi đúng một dòng answer_turns, kể cả khi
-// lỗi") vì vậy CHƯA thi công ở gói này — cần `DATABASE_URL` thật. `runTurn`
-// trả về `TurnResult` thuần, không side-effect ghi DB. Ghi rõ trong báo cáo.
+// BB-11 (H06 W2) — `runTurn` ghi đúng MỘT dòng `answer_turns` mỗi lượt, kể cả
+// nhánh escalate và nhánh ném lỗi. Cài bằng `try/finally`: chặng `validate`
+// chạy TRƯỚC mọi lần chạm DataStore (câu hỏi rỗng KHÔNG tạo answer_turns —
+// SPEC-P02 §9, `EmptyQuestionError`); sau khi qua `validate`, câu hỏi được
+// ghi thành một dòng `messages` (vai `user`) NGAY, để có `user_message_id`
+// cho FK bắt buộc của `answer_turns`. Từ đó, `finally` LUÔN ghi một dòng
+// `answer_turns` dù hàm trả về bình thường hay ném lỗi giữa chừng.
+//
+// Trên `DATA_BACKEND=mock`, các hàm ghi của `DataStore` là NO-OP có ghi chú
+// (Đ24, `lib/adapters/store-mock.ts`) — không ném lỗi, để không phá các test
+// hiện có gọi thẳng `runTurn` với backend mock (`tests/pipeline-order.test.ts`,
+// `tests/citations.test.ts`). Số liệu ghi được coi là THẬT chỉ khi chạy trên
+// Postgres — xem `TESTING-ACCEPTANCE.md`.
 
 import { getDataStore } from "../adapters/db.ts";
 import {
@@ -18,7 +26,9 @@ import {
 import type {
   Citation,
   ClaimVerdict,
+  Decision,
   IntentId,
+  LifecycleState,
   PipelineStep,
   Principal,
   ReasonCode,
@@ -164,6 +174,13 @@ function escalateResult(
   };
 }
 
+/** `answer_turns.lifecycle_state` theo `decision` (01-CONTRACTS §2.1). */
+function lifecycleForDecision(decision: Decision): LifecycleState {
+  if (decision === "answer") return "answered";
+  if (decision === "clarify") return "clarification_required";
+  return "escalated";
+}
+
 export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
   const now = args.now ?? new Date();
   const steps: PipelineStep[] = [];
@@ -181,6 +198,72 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
   }
   steps.push({ step: "validate", ok: true, ms: 0 });
 
+  // Từ đây, mọi lượt hợp lệ PHẢI ghi đúng một answer_turns (BB-11), kể cả khi
+  // ném lỗi bên dưới — xem khối try/finally quanh chặng 2–9.
+  const store = await getDataStore();
+  const userMessage = await store.appendMessage(args.conversation_id, "user", trimmed);
+  const turnStart = Date.now();
+  let outcome: TurnResult | undefined;
+  let detectedIntent: IntentId | null = null;
+
+  /** Ghi nhớ kết quả cuối cùng để `finally` đọc được, rồi trả nguyên nó. */
+  function finish(result: TurnResult): TurnResult {
+    outcome = result;
+    return result;
+  }
+
+  try {
+    return await runPipelineBody();
+  } finally {
+    const finalResult: TurnResult =
+      outcome ?? {
+        decision: "escalate",
+        reason_code: "system_error",
+        answer_vi: null,
+        clarify_question_vi: null,
+        citations: [],
+        claims: [],
+        confidence: 0,
+        gate_triggered: null,
+        steps,
+      };
+    let assistantMessageId: string | null = null;
+    if (finalResult.decision === "answer" && finalResult.answer_vi) {
+      const assistantMsg = await store.appendMessage(
+        args.conversation_id,
+        "assistant",
+        finalResult.answer_vi
+      );
+      assistantMessageId = assistantMsg.id;
+    } else if (finalResult.decision === "clarify" && finalResult.clarify_question_vi) {
+      const assistantMsg = await store.appendMessage(
+        args.conversation_id,
+        "assistant",
+        finalResult.clarify_question_vi
+      );
+      assistantMessageId = assistantMsg.id;
+    }
+    await store.insertAnswerTurn({
+      conversation_id: args.conversation_id,
+      user_message_id: userMessage.id,
+      assistant_message_id: assistantMessageId,
+      question_vi: questionVi,
+      detected_intent: detectedIntent,
+      lifecycle_state: outcome ? lifecycleForDecision(finalResult.decision) : "failed",
+      decision: finalResult.decision,
+      reason_code: finalResult.reason_code,
+      confidence: finalResult.confidence,
+      gate_triggered: finalResult.gate_triggered,
+      citations: finalResult.citations,
+      claims: finalResult.claims,
+      latency_ms: Date.now() - turnStart,
+      is_golden_run: false,
+    });
+  }
+
+  // ── Chín chặng còn lại, đóng gói trong hàm nội bộ để try/finally ở trên
+  //    bọc được TOÀN BỘ đường thoát (return sớm lẫn throw) — BB-11.
+  async function runPipelineBody(): Promise<TurnResult> {
   // ── Chặng 2+3 — safety & intent (cùng một lời gọi A1) ────────────────
   const classifierStart = Date.now();
   const { output: a1, input_tokens: a1In, output_tokens: a1Out } = await runClassifier({
@@ -204,16 +287,16 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
 
   // Ưu tiên TUYỆT ĐỐI: khẩn cấp trước mọi thứ khác, kể cả ownership.
   if (a1.is_emergency) {
-    return escalateResult("emergency_or_life_safety", null, steps);
+    return finish(escalateResult("emergency_or_life_safety", null, steps));
   }
 
   const ownership = checkOwnership(a1.target_subjects, principal);
   if (!ownership.ok) {
-    return escalateResult("pii_or_account_specific", null, steps);
+    return finish(escalateResult("pii_or_account_specific", null, steps));
   }
 
   if (a1.is_legal_or_compensation) {
-    return escalateResult("legal_or_compensation_escalation", null, steps);
+    return finish(escalateResult("legal_or_compensation_escalation", null, steps));
   }
 
   steps.push({
@@ -225,17 +308,18 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
   });
 
   if (a1.intent === "unsupported") {
-    return escalateResult("unsupported_intent", null, steps);
+    return finish(escalateResult("unsupported_intent", null, steps));
   }
   if (a1.intent === "unresolved") {
-    return escalateResult("intent_unresolved", null, steps);
+    return finish(escalateResult("intent_unresolved", null, steps));
   }
   const intent = a1.intent as IntentId;
+  detectedIntent = intent;
 
   // ── Chặng 4 — context (missing_required_fields do A1 chấm) ───────────
   if (a1.missing_required_fields.length > 0) {
     steps.push({ step: "context", ok: false, ms: 0, note: a1.missing_required_fields.join(",") });
-    return {
+    return finish({
       decision: "clarify",
       reason_code: null,
       answer_vi: null,
@@ -245,14 +329,14 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
       confidence: 0,
       gate_triggered: null,
       steps,
-    };
+    });
   }
   steps.push({ step: "context", ok: true, ms: 0 });
 
   // ── Chặng 5 — risk (danh mục hard-block bổ sung) ─────────────────────
   if (hitsRiskKeyword(a1.normalized_query_vi) || hitsRiskKeyword(questionVi)) {
     steps.push({ step: "risk", ok: false, ms: 0 });
-    return escalateResult("legal_or_compensation_escalation", null, steps);
+    return finish(escalateResult("legal_or_compensation_escalation", null, steps));
   }
   steps.push({ step: "risk", ok: true, ms: 0 });
 
@@ -282,7 +366,7 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
       rejection_histogram: elig.rejection_histogram,
       top_rejected_reason: elig.top_rejected_reason,
     });
-    return escalateResult(dec.reason_code as ReasonCode, dec.gate, steps);
+    return finish(escalateResult(dec.reason_code as ReasonCode, dec.gate, steps));
   }
 
   // ── Chặng 8 — draft (A2) ──────────────────────────────────────────────
@@ -330,7 +414,7 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
       rejection_histogram: elig.rejection_histogram,
       top_rejected_reason: elig.top_rejected_reason,
     });
-    return escalateResult(dec.reason_code as ReasonCode, dec.gate, steps);
+    return finish(escalateResult(dec.reason_code as ReasonCode, dec.gate, steps));
   }
 
   // ── Chặng 9 — verify (A3) ─────────────────────────────────────────────
@@ -366,7 +450,7 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
   assertStepOrder(steps);
 
   if (dec.decision !== "answer") {
-    return escalateResult(dec.reason_code as ReasonCode, dec.gate, steps);
+    return finish(escalateResult(dec.reason_code as ReasonCode, dec.gate, steps));
   }
 
   const citations: Citation[] = a2.citations;
@@ -377,7 +461,7 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
     throw new PipelineInvariantError("decision=answer nhưng citations=[] (BB-04)");
   }
 
-  return {
+  return finish({
     decision: "answer",
     reason_code: null,
     answer_vi: a2.draft_vi,
@@ -387,7 +471,8 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
     confidence: dec.confidence,
     gate_triggered: null,
     steps,
-  };
+  });
+  }
 }
 
 export { getDataStore };

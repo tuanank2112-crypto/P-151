@@ -15,7 +15,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { RetrievedChunk } from "../types.ts";
 import { hashPassword } from "../auth/password.ts";
-import type { DataStore, DocumentMeta, SectionMeta, UserRecord } from "./db.ts";
+import type {
+  AnswerTurnInput,
+  DataStore,
+  DocumentMeta,
+  MessageRecord,
+  SectionMeta,
+  UserRecord,
+} from "./db.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
@@ -227,8 +234,50 @@ const DEMO_USERS: Array<Omit<UserRecord, "password_hash"> & { email: string; pas
 /** Băm scrypt tốn ~100ms nên nhớ lại theo email; không cache mật khẩu thô. */
 const hashCache = new Map<string, string>();
 
+/**
+ * H06 W1 — kho mock KHÔNG có bảng vận hành thật (Đ24: `conversations` /
+ * `messages` / `answer_turns` chỉ tồn tại ở Postgres). CẤM giả vờ ghi được
+ * bằng cách chấm điểm số dòng lên số liệu nghiệm thu — Đ24 đã cấm tick G11
+ * hay bất kỳ số nào bằng dữ liệu mock.
+ *
+ * Chọn **no-op có ghi chú**, KHÔNG ném lỗi: nhiều test hiện có
+ * (`tests/pipeline-order.test.ts`, `tests/citations.test.ts`) gọi `runTurn`
+ * thẳng với `DATA_BACKEND=mock` (mặc định) và không hề tạo hội thoại thật —
+ * ném lỗi ở đây sẽ làm vỡ toàn bộ các test đó dù chúng không liên quan gì
+ * tới BB-11. Id trả về là ngẫu nhiên, chỉ sống trong bộ nhớ tiến trình hiện
+ * tại — KHÔNG bền qua restart, KHÔNG phải bằng chứng nghiệm thu BB-11
+ * (chỉ Postgres thật mới được dùng cho việc đó, xem `TESTING-ACCEPTANCE.md`).
+ */
+const mockConversationOwners = new Map<string, string>();
+
 class MockDataStore implements DataStore {
   readonly backend = "mock" as const;
+
+  async createConversation(userId: string): Promise<{ id: string }> {
+    const id = crypto.randomUUID();
+    mockConversationOwners.set(id, userId);
+    return { id };
+  }
+
+  async appendMessage(
+    _conversationId: string,
+    _role: "user" | "assistant",
+    _contentVi: string
+  ): Promise<{ id: string }> {
+    return { id: crypto.randomUUID() };
+  }
+
+  async listMessages(_conversationId: string): Promise<MessageRecord[]> {
+    return [];
+  }
+
+  async insertAnswerTurn(_input: AnswerTurnInput): Promise<{ id: string }> {
+    return { id: crypto.randomUUID() };
+  }
+
+  async getConversationOwner(conversationId: string): Promise<string | null> {
+    return mockConversationOwners.get(conversationId) ?? null;
+  }
 
   async findUserByEmail(email: string): Promise<UserRecord | null> {
     const found = DEMO_USERS.find((u) => u.email === email.trim().toLowerCase());

@@ -29,10 +29,25 @@ import {
   UpstreamRateLimited,
 } from "../../../lib/adapters/model.ts";
 import { reasonMessageVi } from "../../../lib/reason-messages.ts";
+import { getDataStore } from "../../../lib/adapters/db.ts";
 import type { PublicTurnResult, ReasonCode, TurnResult } from "../../../lib/types.ts";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+/**
+ * `conversation_id` gửi lên KHÔNG thuộc `principal` đang đăng nhập (SPEC-P02
+ * §9). Định nghĩa CỤC BỘ ở route này — `lib/pipeline/errors.ts` nằm ngoài
+ * phạm vi được đụng của handoff H06 W3, và việc xác định chủ sở hữu hội
+ * thoại là một quyết định ở TẦNG HTTP (trước khi gọi `runTurn`), không phải
+ * một chặng của 9-bước pipeline.
+ */
+class ConversationNotOwned extends Error {
+  constructor(detail: string) {
+    super(`ConversationNotOwned: ${detail}`);
+    this.name = "ConversationNotOwned";
+  }
+}
 
 /** Cắt các trường chỉ dành cho vận hành trước khi ra khỏi máy chủ. */
 function toPublic(result: TurnResult): PublicTurnResult {
@@ -45,6 +60,10 @@ interface ChatResponseBody {
   result: PublicTurnResult;
   message_vi: string;
   can_retry: boolean;
+  /** `id` hội thoại đã dùng (mới tạo hoặc tái dùng) — client cần lưu lại để
+   *  gửi kèm ở lượt kế tiếp (R4). Vắng mặt ở các nhánh lỗi trước khi hội
+   *  thoại được xác định (401/400 sai payload). */
+  conversation_id?: string;
 }
 
 function escalateBody(reason_code: ReasonCode, can_retry: boolean): ChatResponseBody {
@@ -92,6 +111,9 @@ function mapError(err: unknown): { status: number; body: ChatResponseBody } {
   if (err instanceof OwnershipViolation) {
     return { status: 403, body: escalateBody("pii_or_account_specific", false) };
   }
+  if (err instanceof ConversationNotOwned) {
+    return { status: 403, body: escalateBody("action_authorization_missing", false) };
+  }
   if (
     err instanceof UpstreamRateLimited ||
     err instanceof UpstreamOverloaded ||
@@ -138,8 +160,24 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   try {
+    const store = await getDataStore();
+    let resolvedConversationId = conversationId;
+    if (resolvedConversationId) {
+      // R4/W3: conversation_id có sẵn thì DÙNG LẠI — nhưng phải thuộc chính
+      // principal đang đăng nhập, không thì 403 (SPEC-P02 §9).
+      const owner = await store.getConversationOwner(resolvedConversationId);
+      if (owner !== session.user_id) {
+        throw new ConversationNotOwned(
+          `conversation_id=${resolvedConversationId} không thuộc user_id đang đăng nhập`
+        );
+      }
+    } else {
+      const created = await store.createConversation(session.user_id);
+      resolvedConversationId = created.id;
+    }
+
     const result = await runTurn({
-      conversation_id: conversationId || crypto.randomUUID(),
+      conversation_id: resolvedConversationId,
       question_vi: questionVi,
       principal: {
         user_id: session.user_id,
@@ -158,6 +196,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           ? ""
           : result.clarify_question_vi ?? reasonMessageVi(result.reason_code),
       can_retry: false,
+      conversation_id: resolvedConversationId,
     };
     return NextResponse.json(body, { status: 200 });
   } catch (err) {

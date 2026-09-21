@@ -1,0 +1,28 @@
+H06 W2 — bằng chứng runTurn ghi đúng 1 answer_turns khi CHẠY THẬT trên Postgres
+Ngày đo: 2026-09-21 23:52:50 +0700
+
+Lệnh (rút gọn — script thật gọi createConversation rồi runTurn một lượt thật
+qua Gemini API, KHÔNG mock transport):
+  DATA_BACKEND=postgres node --env-file=.env.local -e "<gọi runTurn 1 lượt>"
+
+Trước: node --env-file=.env.local scripts/sql.mjs "select count(*) from answer_turns"
+count
+0
+
+Lượt chạy thật (Gemini API trả 429 — hạn mức chung của đội đang cạn, đúng như
+plan.md Đ19/Đ26 đã ghi — pipeline VẪN ném UpstreamRateLimited ra ngoài,
+KHÔNG nuốt lỗi):
+conversation_id: 5826fc50-15b8-43b0-80d3-d6663f9d8a3d
+UpstreamRateLimited: UpstreamRateLimited: HTTP 429 — {"error":{"code":429,"message":"You exceeded your current quota..."}}
+
+Sau: node --env-file=.env.local scripts/sql.mjs "select count(*) from answer_turns"
+count
+1
+
+node --env-file=.env.local scripts/sql.mjs "select decision, reason_code, lifecycle_state, confidence from answer_turns"
+decision | reason_code | lifecycle_state | confidence
+escalate | system_error | failed | 0.0000
+
+Kết luận: count TĂNG ĐÚNG 1 kể cả khi runTurn ném lỗi giữa chừng (BB-11, P02-C10).
+conversations tăng 1, messages tăng 1 (chỉ user message — không có assistant
+message vì decision=escalate, đúng thiết kế).
