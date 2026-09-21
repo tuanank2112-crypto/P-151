@@ -164,3 +164,13 @@ $ git diff --stat -- "app/(bql)/documents/page.tsx" "app/(bql)/review/page.tsx" 
 🤖 Agent làm được ngay: nối UI `uploadDocument`/`newDocumentVersion`/`setSectionExcluded` (SPEC-P03 §2.2/§2.3) nếu được giao handoff riêng; chạy lại `w2_r7_demo.mjs` khi hạn mức Gemini hồi mà không cần sửa gì thêm.
 ⭐ Nên làm trước: vá bug `conversation_id` ở `trace_sample.mjs`/pipeline — vì nó chặn MỌI script đo qua pipeline thật trên Postgres, không riêng gói P03 (worker P04/eval cũng sẽ cần đường này).
 ⏸ Chưa làm: W2 chưa có bằng chứng đầy đủ qua pipeline 3 agent thật (chỉ có bằng chứng SQL-level + 2 lần 429 nguyên văn), vì hạn mức Gemini của đội đã cạn lúc chạy phiên này; `uploadDocument`/`newDocumentVersion`/UI loại section chưa làm vì ngoài "xong khi" được giao.
+
+---
+
+**Phán quyết của Super Orchestrator (2026-09-22, sau khi tự đo lại và sau thẩm định đối kháng `R09`):**
+
+✅ DUYỆT. Cổng xanh, phạm vi sạch, và thẩm định độc lập xác nhận hai bộ đo của gói canh đúng nhóm của chúng: phá `checkBqlAuthz` → đỏ đúng 2/2 ca authz; phá `assertPendingTransition` → đỏ đúng 3/3 ca review; không ca nào lem sang nhóm khác.
+
+Hai điểm ghi nhận, KHÔNG phải lỗi của worker: (1) `app/globals.css` chứa CSS của cả gói này lẫn P04 nhưng bị gom vào commit P04 — lỗi gom commit của SO, đã ghi để người đọc lịch sử không hiểu nhầm; (2) gate `R7` **CHƯA được tick** — mới có nửa bằng chứng ở tầng SQL, nửa "agent thôi trích dẫn tài liệu đã hạ cấp" còn chờ hạn mức Gemini (Đ35c).
+
+Việc còn thiếu so với rubric (upload / đổi version tài liệu) là do bàn giao H07 cắt thiếu — xem Đ35a, giao gói nối.

@@ -141,3 +141,11 @@ Bằng chứng thứ hai, THẬT trên Postgres, KHÔNG mock transport (chạy t
 🤖 Agent làm được ngay: chờ lệnh — không còn việc độc lập nào trong phạm mà chưa làm.
 ⭐ Nên làm trước: super orchestrator đo lại 4 file trong phạm vi (đã liệt kê ở trên) rồi commit riêng gói này, vì 2 worker khác đang chạm file khác trên cùng cây — vì cây đang lẫn 3 gói việc, càng để lâu càng khó tách diff sạch.
 ⏸ Chưa làm: nối `is_golden_run` thật với `eval_golden.mjs` (ngoài phạm vi + cấm chạy trong nhiệm vụ này); không có việc nào khác trong phạm vi W1–W5 bị bỏ lại.
+
+---
+
+**Phán quyết của Super Orchestrator (2026-09-22, sau khi tự đo lại và sau thẩm định đối kháng `R09`):**
+
+🔁 SỬA: mục C của `R09` — phép phá "bọc `insertAnswerTurn` trong `if (decision !== \"clarify\")`" **LỌT QUA**, toàn bộ 113 test vẫn xanh. Bất biến P02-C10 nói "mọi lượt", nhưng không ca nào chạm nhánh `clarify`. Cần thêm ca canh nhánh đó, và phải chứng minh nó ĐỎ với đúng phép phá trên.
+
+Phần còn lại đạt: cổng xanh, phạm vi sạch, và SO tự phá lệnh ghi `answer_turns` → 3/4 đỏ, hoàn nguyên → xanh (`evidence/so-gate-wave1/red_bb11_so_kiem.txt`). Ghi nhận: bàn giao H06 tự mâu thuẫn — W1 yêu cầu cài kho mock trong khi §2 liệt `store-mock.ts` vào danh sách cấm. Lỗi của SO, không tính là vi phạm phạm vi.

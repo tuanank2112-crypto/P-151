@@ -185,3 +185,15 @@ trên DB thật không có `golden_results`).
 🤖 Agent làm được ngay: chờ lệnh — có thể viết migration `golden_results` + sửa `run_golden.mjs` nếu được cấp phạm vi `db/migrations/**` và `scripts/**`.
 ⭐ Nên làm trước: Super Orchestrator đo lại độc lập (tsc/build/test/3 check + curl `/dashboard` `/eval`) trên cây đã gộp đủ cả ba worker, vì số đo trong report này đo trên cây đang thay đổi liên tục.
 ⏸ Chưa làm: bảng `golden_results` đúng nguyên văn SPEC-P04 §3.2 (ngoài phạm vi được cấp); Metric 2 Efficiency (vùng cấm P04-C6, chủ động không làm).
+
+---
+
+**Phán quyết của Super Orchestrator (2026-09-22, sau khi tự đo lại và sau thẩm định đối kháng `R09`):**
+
+🔁 SỬA: mục D và mục F của `R09`.
+
+Câu hỏi mở mà gói này nêu ra hoá ra còn nghiêm trọng hơn chính worker nghĩ. Thẩm định tìm được 3/5 ca hai bộ chấm cho verdict khác nhau; SO kiểm lại thẳng trên mã nguồn và xác nhận: bên **thiếu** là `scripts/eval_golden.mjs`, tức chính script sinh số nghiệm thu cho `G11`, chứ không phải `metrics-store.ts`. Xem Đ36 — vùng cấm chạy `eval:golden` lấy số `G11` có hiệu lực ngay.
+
+Phải sửa: (D) dựng `lib/eval/score.ts` dùng chung, đủ 7 checkpoint theo `SPEC-P00` §6.5, cả hai bên import; (F) cài `shows_conflict` — không được khai vùng cấm, vì nó chứng minh hành vi với `DEF-03` và dữ liệu đã có sẵn trong Golden.
+
+Phần còn lại đạt: cổng xanh, phạm vi sạch, và bộ đo `metrics` canh đúng nhóm (phá mẫu số → đỏ đúng 2/2, không lem).

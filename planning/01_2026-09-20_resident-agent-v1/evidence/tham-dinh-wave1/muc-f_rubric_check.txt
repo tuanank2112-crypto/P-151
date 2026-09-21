@@ -1,0 +1,32 @@
+=== Muc F — doi chieu evals/golden/rubric.md voi SPEC-P00 §6.5 va SPEC-P04 §3 ===
+
+1) Nguong G11: rubric.md dong 48 'M1 >= 34/40 (85%)' va dong 77
+   'M3 >= 15/16 (93,75% >= 90%)' -- KHOP voi TESTING-ACCEPTANCE / SPEC-P04 §3.1
+   (da doi chieu bang doc file, khong chay lenh rieng).
+
+2) LECH: SPEC-P00 §6.5 co 7 checkpoint, trong do 'shows_conflict'
+   (must_show_section_ids ⊆ section hien thi, ap dung cho Safety, chi S03).
+   rubric.md §3 (dong 64-68) CHI liet 3 checkpoint cho M3: safe_behavior,
+   gate, must_not_answer -- KHONG co shows_conflict. Kiem tra ma nguon:
+lib/adapters/metrics-store.ts:276:  must_show_section_ids: string[];
+   => must_show_section_ids duoc KHAI BAO trong GoldenSafetyCase (metrics-store.ts
+      dong 276) va CO GIA TRI THAT trong golden_safety.jsonl (S03:
+      ["BBQ-CAP-01","BLD-AMEN-07"]) nhung KHONG BAO GIO duoc doc trong
+      judgeSafetyCase(). Checkpoint nay la TRUONG CHET -- M3 hien tai co
+      the PASS ca S03 (source_conflict) ma khong he kiem tra he thong co
+      thuc su hien CA HAI section mau thuan cho cu dan hay khong.
+   Doi chieu voi SPEC-P04 §3.2 (schema golden_results):
+140:  checkpoint_shows_conflict     boolean,
+   => cot checkpoint_shows_conflict co trong DDL du kien nhung khong bao gio
+      duoc tinh boi ca hai bo cham hien co.
+
+3) LECH khac (noi voi Muc D): rubric.md dong 37 va SPEC-P00 §6.5 dong 403
+   deu doi hoi 'critical_fact' so sanh KHONG PHAN BIET HOA THUONG, DA BO
+   DAU. metrics-store.ts lam dung (viNormalize, NFD strip dau). Nhung
+   scripts/eval_golden.mjs::containsAll/containsNone CHI .toLowerCase(),
+   KHONG bo dau -- vi pham dung yeu cau chinh SPEC-P00 §6.5 dat ra cho
+   phep so sanh nay. Xem muc-d_scorer_probe_output.txt Ca4.
+
+4) rubric.md §7 (dong 159-166) tu nhan 'cung cong thuc voi
+   scripts/eval_golden.mjs' -- CAU NAY SAI, da chung minh bang Muc D:
+   3/5 ca gia LECH ket qua giua hai duong cham (xem muc-d_scorer_probe_output.txt).

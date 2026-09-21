@@ -1,0 +1,61 @@
+MUC C — 3 phep pha KHAC HINH DANG cho P02-C10 (bat bien: moi luot ghi DUNG MOT
+dong answer_turns, ke ca nhanh escalate va nhanh nem loi), chay tren
+tests/memory.test.ts (Postgres that). File goc lib/pipeline/index.ts duoc
+backup .bak_audit truoc khi sua, khoi phuc + `git diff --stat` rong sau moi
+lan.
+
+Phep pha A — "escalate khong duoc ghi": boc insertAnswerTurn trong
+`if (finalResult.decision !== "escalate")`.
+  KET QUA: DO. Ca 2 test cua memory.test.ts fail (0 !== 1) vi ca hai deu ket
+  thuc o decision=escalate (risk-gate va 429-upstream deu la "escalate").
+
+Phep pha B — "ghi hai lan": them mot loi goi insertAnswerTurn thu hai khi
+`finalResult.decision === "escalate"`.
+  KET QUA: DO. Ca 2 test fail (2 !== 1).
+
+Phep pha C — "nhanh clarify khong duoc ghi" (KHAC HINH DANG voi A/B: nham
+dung vao nhanh decision=clarify, khong phai escalate): boc insertAnswerTurn
+trong `if (finalResult.decision !== "clarify")`.
+  KET QUA: **LOT QUA**. Chay TOAN BO 113 test (khong chi memory.test.ts):
+  113 pass / 0 fail. KHONG MOT TEST NAO trong tests/ tao ra mot luot voi
+  decision=clarify roi dem hang answer_turns tren Postgres — chang han
+  memory.test.ts chi test nhanh escalate (risk-gate) va nhanh throw (429),
+  khong test nhanh clarify (khi A1 tra ve missing_required_fields). Bang
+  chung: `grep -rn "clarify" tests/*.test.ts` chi thay clarify_question_vi
+  duoc dat null trong fixture cua pipeline-order.test.ts / citations.test.ts,
+  khong co assertion nao dem answer_turns cho nhanh nay.
+  ==> Neu mot bug tuong lai lam nhanh clarify khong ghi answer_turns, TOAN
+  BO 113 test hien tai van xanh. Day la lo hong that trong do phu test cua
+  BB-11/P02-C10.
+
+MUC E — moi bo test canh dung nhom cua no, khong lem sang nhom khac.
+Da phá 3 ham thuan (KHONG dung DB that cho phep phai nay), chay TOAN BO 113
+test moi lan, dem chinh xac so fail va ten test fail.
+
+1) lib/adapters/bql-store.ts::checkBqlAuthz — bo hai dieu kien chan (session
+   null / role != "bql"), luon tra {ok:true}.
+   KET QUA: 113 -> 111 pass / 2 fail. CA HAI fail deu la
+   tests/bql-authz.test.ts ("khong co phien" va "vai resident"). Khong test
+   nao khac (memory/metrics/bql-review) bi anh huong.
+
+2) lib/adapters/bql-store.ts::assertPendingTransition — thay dieu kien
+   `current !== "pending"` bang `false` (khong bao gio nem loi).
+   KET QUA: 113 -> 110 pass / 3 fail. CA BA fail deu la
+   tests/bql-review.test.ts (approved/edited_approved/rejected). Khong lem
+   sang nhom khac.
+
+3) lib/adapters/metrics-store.ts::computeAutoResolutionSummary — doi dieu
+   kien `r.decision === "answer"` thanh `r.decision === "clarify"` (tu so
+   auto_resolved sai).
+   KET QUA: 113 -> 111 pass / 2 fail. CA HAI fail deu la tests/metrics.test.ts
+   (ca 10-luot va ca "DO khi doi mau so"). Khong lem sang nhom khac.
+
+KET LUAN MUC E: ba bo test bql-authz / bql-review / metrics deu chung minh
+DO dung nhom, KHONG lem nhom khac — dung nhu handoff yeu cau. Rieng
+memory.test.ts (BB-11) CHUA phu nhanh clarify — xem Phep pha C o tren, day
+la bo do CO LO HONG (khong phai "bo do gia" theo nghia hoan toan vo dung,
+nhung do phu KHONG day du nhu Đ07/SPEC-P02 §9 doi hoi cho MOI nhanh quyet
+dinh).
+
+Sau moi phep pha: da khoi phuc file goc va `git diff --stat <file>` cho ket
+qua RONG (xac nhan qua evidence output cua phien lam viec).

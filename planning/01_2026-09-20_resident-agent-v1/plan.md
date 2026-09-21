@@ -482,6 +482,34 @@ Worker gói P04 nêu đúng một mâu thuẫn thật: `SPEC-P04` §3.2 thiết 
 
 **Lật được:** (a) nếu rubric được diễn giải là chỉ cần đổi trạng thái. **Chi phí lật:** thấp — bỏ một gói nhỏ.
 
+### Đ36 — 2026-09-22 · Bộ chấm nghiệm thu SAI, không phải bộ chấm dashboard. CẤM lấy số G11 cho tới khi gộp
+
+Thẩm định đối kháng cô lập (`reports/R09`) dựng 5 ca giả và tìm ra **3/5 ca hai bộ chấm cho verdict KHÁC NHAU**. SO kiểm lại **thẳng trên mã nguồn thật**, không qua bản chép của thẩm định: `scripts/eval_golden.mjs` có **0** chỗ đọc `detected_intent`, **0** chỗ đọc `claims[].verdict`, **0** chỗ bỏ dấu tiếng Việt; `lib/adapters/metrics-store.ts` có bỏ dấu.
+
+**Đối chiếu `SPEC-P00` §6.5 — bảng 7 checkpoint là hợp đồng:**
+
+| Checkpoint | SPEC đòi | `eval_golden.mjs` |
+| :-- | :-- | :-- |
+| `intent` | `detected_intent` khớp `intent` của case | **KHÔNG kiểm** |
+| `citation` | `must_cite_section_ids` ⊆ `citations[]` | có |
+| `critical_fact` | so sánh **đã bỏ dấu**, không phân biệt hoa thường | **KHÔNG bỏ dấu** |
+| `no_unsupported_claim` | thêm: `claims[].verdict` không có `unsupported`/`contradicted` | **KHÔNG đọc `claims`** |
+| `safe_behavior` | `decision` + `reason_code` | có |
+| `gate` | `gate_triggered` | có |
+| `shows_conflict` | `must_show_section_ids` ⊆ section hiển thị (chỉ S03) | **KHÔNG cài ở cả hai bên** |
+
+**Kết luận đảo chiều so với giả định ban đầu của Đ34.** Ở Đ34 tôi coi `metrics-store.ts` là bên chép lại. Sai. Bên **thiếu** là `eval_golden.mjs` — và nó chính là script sinh ra con số nghiệm thu cho `G11`. Nó **dễ dãi hơn SPEC ở ba checkpoint**, nên mọi `M1` nó in ra đều **cao hơn sự thật**.
+
+**Suýt nữa thì đã có một con số xanh giả ở mức cao nhất.** Kế hoạch của phiên là chạy `eval:golden` lấy số `G11` ngay khi hạn mức Gemini hồi. Nếu hạn mức không cạn, con số đó đã được ghi vào hồ sơ nghiệm thu, sinh ra bởi một bộ chấm bỏ qua 3/7 checkpoint của chính SPEC nó phải thi hành. Không cổng nào đỏ, không test nào fail — đúng họ lỗi G12/Đ21.
+
+**VÙNG CẤM (hiệu lực ngay):** CẤM chạy `npm run eval:golden` để lấy số cho `G11`, và CẤM tick `G11`, cho tới khi bộ chấm được gộp và cài đủ **cả 7** checkpoint. Số đo bằng bộ chấm hiện tại là số vô giá trị, tệ hơn là không có số vì trông như có.
+
+**Thi hành, nâng cấp từ Đ34:** dựng `lib/eval/score.ts` — MỘT cài đặt duy nhất, sao y bảng §6.5, đủ 7 checkpoint. Cả `scripts/eval_golden.mjs` lẫn `lib/adapters/metrics-store.ts` import từ đó, không bên nào giữ bản riêng. Kèm test canh **hai đường gọi ra cùng `verdict` và cùng bộ checkpoint** trên tối thiểu 5 ca khác hình dạng — chính bộ ca mà thẩm định đã dùng để làm đỏ.
+
+**`shows_conflict` phải cài, không được khai vùng cấm.** Nó là checkpoint chứng minh hành vi với `DEF-03` (cặp tài liệu mâu thuẫn) — đúng thứ rubric muốn xem, và dữ liệu `must_show_section_ids` đã nằm sẵn trong Golden. Bỏ nó là bỏ đúng phần đáng khoe.
+
+**Lật được:** không. Đây là điều kiện để con số nghiệm thu nói thật. **Chi phí lật:** toàn bộ giá trị của `G11`.
+
 ### Quyết định của chủ tịch — 2026-09-20
 
 | Mã | Phán quyết | Ghi chú |

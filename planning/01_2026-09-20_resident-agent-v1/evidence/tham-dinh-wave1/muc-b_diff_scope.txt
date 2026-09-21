@@ -1,0 +1,51 @@
+=== git diff --stat 7956ccc..31338ed ===
+ app/(bql)/dashboard/page.tsx                       | 158 ++++++-
+ app/(bql)/documents/DocumentsTable.tsx             | 128 +++++
+ app/(bql)/documents/actions.ts                     |  45 ++
+ app/(bql)/documents/page.tsx                       |  35 +-
+ app/(bql)/eval/labels.ts                           |  35 ++
+ app/(bql)/eval/page.tsx                            | 128 ++++-
+ app/(bql)/review/ReviewQueueList.tsx               | 145 ++++++
+ app/(bql)/review/actions.ts                        |  64 +++
+ app/(bql)/review/page.tsx                          |  29 +-
+ app/api/chat/route.ts                              |  41 +-
+ app/globals.css                                    | 158 +++++++
+ evals/golden/rubric.md                             | 170 +++++++
+ lib/adapters/bql-store.ts                          | 289 ++++++++++++
+ lib/adapters/db.ts                                 | 133 +++++-
+ lib/adapters/metrics-store.ts                      | 520 +++++++++++++++++++++
+ lib/adapters/store-mock.ts                         |  51 +-
+ lib/pipeline/index.ts                              | 121 ++++-
+ .../evidence/bb11/memory-red-green.txt             |  73 +++
+ .../evidence/bb11/w2-real-postgres-turn.txt        |  28 ++
+ .../evidence/p03/w1-documents-200.txt              |  26 ++
+ .../evidence/p03/w2-attempt1-fk-bug-found.txt      |   2 +
+ .../evidence/p03/w2-attempt2-rate-limited-429.txt  |   6 +
+ .../evidence/p03/w2-attempt3-rate-limited-429.txt  |   6 +
+ .../evidence/p03/w2-sql-level-proof-exit0.txt      |   5 +
+ .../evidence/p03/w2_r7_demo.mjs                    | 111 +++++
+ .../evidence/p03/w2_r7_sql_evidence.mjs            |  89 ++++
+ .../evidence/p03/w4-authz-green.txt                |  11 +
+ .../evidence/p03/w4-authz-red.txt                  |  53 +++
+ .../evidence/p04/metrics-red-w5.txt                |  70 +++
+ .../evidence/p04/w2-w3-curl-note.txt               |   4 +
+ .../evidence/p04/w6-gate-final.txt                 |  53 +++
+ planning/01_2026-09-20_resident-agent-v1/plan.md   |  26 ++
+ .../reports/R06_thi-cong_bb11-memory.md            | 143 ++++++
+ .../reports/R07_thi-cong_p03-console-bql.md        | 166 +++++++
+ .../reports/R08_thi-cong_p04-eval-dashboard.md     | 187 ++++++++
+ tests/bql-authz.test.ts                            |  41 ++
+ tests/bql-review.test.ts                           |  27 ++
+ tests/memory.test.ts                               | 271 +++++++++++
+ tests/metrics.test.ts                              | 324 +++++++++++++
+ 39 files changed, 3922 insertions(+), 50 deletions(-)
+
+=== File ngoai 3 pham vi khai bao ===
+app/globals.css: THAY DOI boi commit ed326c4 (khai la P04) nhung KHONG nam trong pham vi P04 da khai (app/(bql)/{eval,dashboard}/** + lib/adapters/metrics-store.ts + evals/golden/rubric.md + tests/metrics.test.ts).
+
+=== git log app/globals.css ===
+ed326c4 feat(p04): add the evaluation table, the dashboard and the scoring rubric
+
+=== Noi dung css them vao co ca comment P03 lan P04 ===
+28:+/* ── P03 · Console BQL (documents + review) ── */
+103:+/* ── P04 · Eval & Dashboard ── */

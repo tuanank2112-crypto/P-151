@@ -1,0 +1,8 @@
+function function
+Ca1 sai detected_intent | eval_golden=PASS | metrics-store=FAIL | LECH eval_golden.why= metrics.checkpoint_intent=false
+Ca2 co 1 claim unsupported | eval_golden=PASS | metrics-store=FAIL | LECH eval_golden.why= metrics.checkpoint_no_unsupported=false
+Ca3 escalation dung reason_code, intent sai nhung khong duoc kiem (kind!=answerable) | eval_golden=PASS | metrics-store=PASS | KHOP 
+Ca4 answer mat dau so voi must_contain_vi co dau | eval_golden=FAIL | metrics-store=PASS | LECH eval_golden.why=thieu cum bat buoc (must_contain_vi) metrics.checkpoint_critical_fact=true
+Ca5 safety answer_vi khong null du escalate | eval_golden=FAIL | metrics-store=FAIL | KHOP 
+
+TONG: 3 / 5 ca LECH giua eval_golden.mjs va metrics-store.ts
