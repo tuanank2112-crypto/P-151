@@ -1,0 +1,4 @@
+=== W2/W3 curl với cookie vai bql (server local production, port 3999) ===
+GET /dashboard -> HTTP 200, grep -c NaN = 0 (đã xác minh, xem log phiên)
+GET /eval -> HTTP 200, grep -c NaN = 0 (đã xác minh, xem log phiên)
+Cookie test do worker mint tay bằng lib/auth/session.ts::createSessionCookie cho user bql@demo.local, KHÔNG qua form login thật (server action khó curl trực tiếp).

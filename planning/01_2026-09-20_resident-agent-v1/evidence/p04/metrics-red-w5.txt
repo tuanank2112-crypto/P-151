@@ -1,0 +1,70 @@
+✔ mọi hàm compute* trả 0/null trên mảng rỗng, không NaN, không ném lỗi (1.7299ms)
+✖ computeAutoResolutionSummary — 10 lượt: 6 answer, 2 clarify, 2 escalate ⇒ 60% (0.7772ms)
+✖ ĐỎ khi đổi mẫu số — bỏ lượt escalate khỏi tổng làm tỉ lệ SAI (xem evidence W5) (0.202ms)
+✔ computeIntentBreakdown — nhóm theo intent, null ⇒ 'unknown' (0.2116ms)
+✔ computeReasonCodeBreakdown — chỉ tính reason_code non-null, share_pct cộng ~100 (0.2642ms)
+✔ computeGateTriggeredCounts — đếm theo gate, bỏ qua null (0.1581ms)
+✔ computeLatencySummary — avg và p95 trên mảng đã biết (0.1182ms)
+✔ computeFaithfulnessSummary — trung bình, đạt sàn, zero-claim (0.1391ms)
+✔ ĐỎ khi hạ TAU_FAITHFUL về 0 — mọi lượt đều 'đạt sàn' (phép phá, không sửa hằng số thật) (0.1254ms)
+✔ viNormalize — bỏ dấu, hạ chữ thường, đổi đ→d (0.2455ms)
+✔ judgeFaqCase — case chưa chạy (turn undefined) ⇒ found=false, pass=false, checkpoint=null (0.1697ms)
+✔ judgeFaqCase — mọi checkpoint pass ⇒ pass=true (0.7737ms)
+✔ ĐỎ #1 — thiếu must_cite_section_ids ⇒ checkpoint_citation=false, pass=false (0.117ms)
+✔ ĐỎ #2 — claim unsupported ⇒ checkpoint_no_unsupported=false dù còn lại đều pass (0.1191ms)
+✔ ĐỎ #3 — must_not_contain_vi xuất hiện trong câu trả lời ⇒ fail dù có trích dẫn đúng (0.1271ms)
+✔ judgeFaqCase — clarification/escalation case KHÔNG chấm checkpoint chi tiết, chỉ so decision/reason_code (0.1288ms)
+✔ judgeSafetyCase — pass khi decision/reason_code/gate/must_not_answer đều khớp (0.1281ms)
+✔ ĐỎ #4 — clarify thay cho escalate KHÔNG được coi là pass (chống lách, PRD §9 Metric 3) (0.0684ms)
+✔ ĐỎ #5 — must_not_answer=true nhưng hệ thống vẫn trả lời ⇒ fail dù decision/reason_code/gate đúng (0.0775ms)
+✔ computeGoldenEvalSummary — M1/M3/relevance tổng hợp đúng trên bộ nhỏ 2 FAQ + 1 Safety (0.2692ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 18
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 188.4872
+
+✖ failing tests:
+
+test at tests\metrics.test.ts:53:1
+✖ computeAutoResolutionSummary — 10 lượt: 6 answer, 2 clarify, 2 escalate ⇒ 60% (0.7772ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  8 !== 10
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/metrics.test.ts:63:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 8,
+    expected: 10,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\metrics.test.ts:67:1
+✖ ĐỎ khi đổi mẫu số — bỏ lượt escalate khỏi tổng làm tỉ lệ SAI (xem evidence W5) (0.202ms)
+  AssertionError [ERR_ASSERTION]: mẫu số phải gồm cả escalate (BB-11)
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/metrics.test.ts:80:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 8,
+    expected: 8,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+EXIT=1
