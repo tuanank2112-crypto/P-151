@@ -1,0 +1,5 @@
+1) TRƯỚC — top chunk của OCP1-POOL-RULES-001: section=POOL-ENTRY-02 effective_status=Current score=0.3750
+2) đã đặt OCP1-POOL-RULES-001 effective_status=Expired qua bql-store.ts (Server Action thật dùng hàm này)
+3) SAU — cùng chunk, cùng câu SQL, KHÔNG deploy lại: effective_status=Expired (chunk vẫn được TÌM THẤY bởi lexical search, nhưng cổng E-2 ở lib/pipeline/eligibility.ts giờ sẽ LOẠI nó vì effective_status≠Current)
+KẾT LUẬN: setEffectiveStatus() của gói P03 đổi đúng cột mà cổng E-2 đọc, và đổi CÓ HIỆU LỰC NGAY ở lượt truy vấn kế tiếp — đây là phần retrieval của R7 (phần model A1/A2/A3 bị chặn bởi hạn mức Gemini, xem w2_r7_demo.mjs).
+4) ĐÃ TRẢ LẠI trạng thái cũ: OCP1-POOL-RULES-001 effective_status=Current

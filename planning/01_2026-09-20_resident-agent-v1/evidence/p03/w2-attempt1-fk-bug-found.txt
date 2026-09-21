@@ -1,0 +1,2 @@
+LỖI: insert or update on table "messages" violates foreign key constraint "messages_conversation_id_fkey"
+4) ĐÃ TRẢ LẠI trạng thái cũ: OCP1-POOL-RULES-001 effective_status=Current

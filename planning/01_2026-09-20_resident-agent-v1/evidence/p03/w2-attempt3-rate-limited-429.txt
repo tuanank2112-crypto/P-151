@@ -1,0 +1,6 @@
+LỖI: UpstreamRateLimited: HTTP 429 — {
+  "error": {
+    "code": 429,
+    "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-a
+4) ĐÃ TRẢ LẠI trạng thái cũ: OCP1-POOL-RULES-001 effective_status=Current
+5) ĐÃ DỌN SẠCH dữ liệu tạm của lượt demo (conversation + messages + answer_turns).
