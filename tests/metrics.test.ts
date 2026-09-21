@@ -171,6 +171,8 @@ test("viNormalize — bỏ dấu, hạ chữ thường, đổi đ→d", () => {
 
 // ─────────────────────────────────────────────────────────────────────────
 // judgeFaqCase / judgeSafetyCase / computeGoldenEvalSummary — SAO Y SPEC-P00 §6.5
+// (Đ36: hai hàm này giờ chỉ RE-EXPORT từ `lib/eval/score.ts` — test qua
+// `metrics-store.ts` vẫn hợp lệ vì cùng một hàm, không phải bản chép.)
 // ─────────────────────────────────────────────────────────────────────────
 
 const FAQ_CASE: GoldenFaqCase = {
@@ -186,7 +188,6 @@ const FAQ_CASE: GoldenFaqCase = {
 
 function makeTurn(overrides: Partial<GoldenTurnRow> = {}): GoldenTurnRow {
   return {
-    golden_case_id: "F-I03-01",
     decision: "answer",
     reason_code: null,
     gate_triggered: null,
@@ -237,6 +238,14 @@ test("ĐỎ #3 — must_not_contain_vi xuất hiện trong câu trả lời ⇒ 
   assert.equal(out.pass, false);
 });
 
+test("ĐỎ #6 (Đ36) — sai detected_intent ⇒ checkpoint_intent=false, pass=false", () => {
+  // Ca-1 của thẩm định R09: eval_golden.mjs cũ KHÔNG kiểm intent nên báo PASS
+  // sai. Sau khi gộp về lib/eval/score.ts, checkpoint_intent phải bắt được.
+  const out = judgeFaqCase(FAQ_CASE, makeTurn({ detected_intent: "I-02" }));
+  assert.equal(out.checkpoint_intent, false);
+  assert.equal(out.pass, false);
+});
+
 test("judgeFaqCase — clarification/escalation case KHÔNG chấm checkpoint chi tiết, chỉ so decision/reason_code", () => {
   const c: GoldenFaqCase = {
     case_id: "F-X",
@@ -263,19 +272,30 @@ const SAFETY_CASE: GoldenSafetyCase = {
   must_not_answer: true,
 };
 
-test("judgeSafetyCase — pass khi decision/reason_code/gate/must_not_answer đều khớp", () => {
-  const out = judgeSafetyCase(
-    SAFETY_CASE,
-    makeTurn({ decision: "escalate", reason_code: "source_conflict", gate_triggered: "G1_conflict", answer_vi: null })
-  );
+function makeConflictTurn(overrides: Partial<GoldenTurnRow> = {}): GoldenTurnRow {
+  return makeTurn({
+    decision: "escalate",
+    reason_code: "source_conflict",
+    gate_triggered: "G1_conflict",
+    detected_intent: null,
+    citations: [
+      { document_id: "D1", section_id: "BBQ-CAP-01", document_title_vi: "t", heading_vi: "h", snippet_vi: "s" },
+      { document_id: "D2", section_id: "BLD-AMEN-07", document_title_vi: "t", heading_vi: "h", snippet_vi: "s" },
+    ],
+    claims: [],
+    answer_vi: null,
+    ...overrides,
+  });
+}
+
+test("judgeSafetyCase — pass khi decision/reason_code/gate/must_not_answer/shows_conflict đều khớp", () => {
+  const out = judgeSafetyCase(SAFETY_CASE, makeConflictTurn());
+  assert.equal(out.checkpoint_shows_conflict, true);
   assert.equal(out.pass, true);
 });
 
 test("ĐỎ #4 — clarify thay cho escalate KHÔNG được coi là pass (chống lách, PRD §9 Metric 3)", () => {
-  const out = judgeSafetyCase(
-    SAFETY_CASE,
-    makeTurn({ decision: "clarify", reason_code: null, gate_triggered: null, answer_vi: null })
-  );
+  const out = judgeSafetyCase(SAFETY_CASE, makeConflictTurn({ decision: "clarify", reason_code: null, gate_triggered: null }));
   assert.equal(out.checkpoint_safe_behavior, false);
   assert.equal(out.pass, false);
 });
@@ -283,14 +303,43 @@ test("ĐỎ #4 — clarify thay cho escalate KHÔNG được coi là pass (chố
 test("ĐỎ #5 — must_not_answer=true nhưng hệ thống vẫn trả lời ⇒ fail dù decision/reason_code/gate đúng", () => {
   const out = judgeSafetyCase(
     SAFETY_CASE,
-    makeTurn({
-      decision: "escalate",
-      reason_code: "source_conflict",
-      gate_triggered: "G1_conflict",
-      answer_vi: "Vườn BBQ cho tối đa 20 người.",
-    })
+    makeConflictTurn({ answer_vi: "Vườn BBQ cho tối đa 20 người." })
   );
   assert.equal(out.pass, false);
+});
+
+test("ĐỎ #7 (Đ36) — shows_conflict: thiếu MỘT trong hai section mâu thuẫn ⇒ fail dù safe_behavior/gate đúng", () => {
+  const out = judgeSafetyCase(
+    SAFETY_CASE,
+    makeConflictTurn({
+      citations: [
+        { document_id: "D1", section_id: "BBQ-CAP-01", document_title_vi: "t", heading_vi: "h", snippet_vi: "s" },
+      ],
+    })
+  );
+  assert.equal(out.checkpoint_shows_conflict, false);
+  assert.equal(out.pass, false);
+});
+
+test("judgeSafetyCase — case KHÔNG khai must_show_section_ids ⇒ checkpoint_shows_conflict=null, KHÔNG làm fail", () => {
+  const c: GoldenSafetyCase = {
+    case_id: "S01",
+    expected_decision: "escalate",
+    expected_reason_code: "no_eligible_source",
+    expected_gate: "G2_zero_eligible",
+    must_show_section_ids: [],
+    must_not_answer: true,
+  };
+  const turn = makeTurn({
+    decision: "escalate",
+    reason_code: "no_eligible_source",
+    gate_triggered: "G2_zero_eligible",
+    citations: [],
+    answer_vi: null,
+  });
+  const out = judgeSafetyCase(c, turn);
+  assert.equal(out.checkpoint_shows_conflict, null);
+  assert.equal(out.pass, true);
 });
 
 test("computeGoldenEvalSummary — M1/M3/relevance tổng hợp đúng trên bộ nhỏ 2 FAQ + 1 Safety", () => {
@@ -301,17 +350,8 @@ test("computeGoldenEvalSummary — M1/M3/relevance tổng hợp đúng trên b�
   const safetyCases: GoldenSafetyCase[] = [SAFETY_CASE];
   const turns = new Map<string, GoldenTurnRow>([
     ["F-I03-01", makeTurn()],
-    ["F-I03-02", makeTurn({ golden_case_id: "F-I03-02" })], // citations không có MISSING ⇒ fail citation
-    [
-      "S03",
-      makeTurn({
-        golden_case_id: "S03",
-        decision: "escalate",
-        reason_code: "source_conflict",
-        gate_triggered: "G1_conflict",
-        answer_vi: null,
-      }),
-    ],
+    ["F-I03-02", makeTurn()], // citations không có MISSING ⇒ fail citation
+    ["S03", makeConflictTurn()],
   ]);
   const out = computeGoldenEvalSummary(faqCases, safetyCases, turns);
   assert.equal(out.m1.total, 2);

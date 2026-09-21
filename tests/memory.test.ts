@@ -269,3 +269,67 @@ test("W3: conversation_id do route tạo (createConversation) và hội thoại 
     await sql.end();
   }
 });
+
+// ── R11 (H09 thẩm định đối kháng, mục C của R09) ────────────────────────────
+// Phép phá LỌT QUA ở lượt trước: bọc `store.insertAnswerTurn(...)` trong
+// `if (finalResult.decision !== "clarify")` — toàn bộ 113 test khi đó VẪN
+// XANH, vì không ca nào trong cả repo đi tới nhánh `clarify` (chặng 4 —
+// thiếu `required_context`) rồi kiểm tra DB. `decision='clarify'` là MỘT
+// TRONG BA giá trị hợp lệ của cột `answer_turns.decision` (`turn_decision`
+// enum: 'answer'|'clarify'|'escalate') — BB-11 nói "mọi lượt", không loại
+// trừ giá trị nào. Ca này đóng nốt tổ hợp còn thiếu.
+test("BB-11 (R11): nhánh clarify (chặng 4 — thiếu required_context) vẫn ghi đúng MỘT answer_turns, decision='clarify', lifecycle_state='clarification_required'", async () => {
+  const sql = makeSql(process.env.DATABASE_URL!);
+  try {
+    const store = await getDataStore();
+    const conv = await store.createConversation(RESIDENT.user_id);
+    const before = await countAnswerTurns(sql, conv.id);
+
+    // Chặng 4 chỉ đối chiếu `missing_required_fields` do CHÍNH A1 trả về
+    // (lib/pipeline/index.ts không tự suy thêm) — nên chỉ cần đúng MỘT lời
+    // gọi A1, không chạm retrieval/A2/A3. Tất định trên cả mock lẫn Postgres.
+    __setTransportForTesting({
+      fetch: sequentialFetch([
+        geminiText(
+          classifierBody({
+            missing_required_fields: ["card_type"],
+            clarify_question_vi: "Anh/chị cần loại thẻ gì — thẻ cư dân hay thẻ xe?",
+          })
+        ),
+      ]),
+      sleep: async () => {},
+    });
+
+    const result = await runTurn({
+      conversation_id: conv.id,
+      question_vi: "Tôi cần làm thẻ.",
+      principal: RESIDENT,
+    });
+    assert.equal(result.decision, "clarify");
+    assert.equal(result.clarify_question_vi, "Anh/chị cần loại thẻ gì — thẻ cư dân hay thẻ xe?");
+
+    const after = await countAnswerTurns(sql, conv.id);
+    assert.equal(after - before, 1, "clarify phải ghi đúng 1 answer_turns (BB-11, P02-C10, R11)");
+
+    const rows = (await sql(
+      "select decision, reason_code, lifecycle_state from answer_turns where conversation_id = $1",
+      [conv.id]
+    )) as unknown as Array<{ decision: string; reason_code: string | null; lifecycle_state: string }>;
+    assert.equal(rows[0]!.decision, "clarify");
+    assert.equal(rows[0]!.lifecycle_state, "clarification_required");
+    assert.equal(rows[0]!.reason_code, null, "reason_code phải NULL khi decision='clarify' (01-CONTRACTS §6)");
+
+    // Assistant message = clarify_question_vi (thiết kế đã ghi trong R06 —
+    // "NULL khi escalate" của DDL không nhắc tới clarify, và nội dung hỏi
+    // lại có giá trị thật để giữ lịch sử hội thoại — SPEC-P02 §7).
+    const messages = (await sql(
+      "select role, content_vi from messages where conversation_id = $1 order by created_at asc",
+      [conv.id]
+    )) as unknown as Array<{ role: string; content_vi: string }>;
+    assert.equal(messages.length, 2);
+    assert.equal(messages[1]!.role, "assistant");
+    assert.equal(messages[1]!.content_vi, "Anh/chị cần loại thẻ gì — thẻ cư dân hay thẻ xe?");
+  } finally {
+    await sql.end();
+  }
+});

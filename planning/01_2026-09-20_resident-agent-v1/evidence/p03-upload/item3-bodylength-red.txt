@@ -1,0 +1,63 @@
+✔ validateUploadDocumentShape: đúng hình dạng knowledge/ ⇒ ok:true (1.4099ms)
+✔ validateUploadDocumentShape: thiếu document_id ⇒ ok:false, code=MissingField (0.1964ms)
+✔ validateUploadDocumentShape: doc_kind lạ (ngoài 4 giá trị) ⇒ ok:false (0.15ms)
+✔ validateUploadDocumentShape: scope_property chứa giá trị lạ ⇒ ok:false (0.1526ms)
+✔ validateUploadDocumentShape: effective_from sai định dạng ⇒ ok:false (0.1988ms)
+✔ validateUploadDocumentShape: sections rỗng ⇒ ok:false (0.1641ms)
+✖ validateUploadDocumentShape: body_vi ngắn hơn 60 ký tự ⇒ ok:false, code=BodyLength (1.1629ms)
+✖ validateUploadDocumentShape: body_vi dài hơn 900 ký tự ⇒ ok:false, code=BodyLength (0.2786ms)
+✔ validateUploadDocumentShape: section_id trùng trong cùng lượt gửi ⇒ ok:false, code=DuplicateSectionId (0.3612ms)
+✔ validateUploadDocumentShape: ordinal không phải số nguyên ⇒ ok:false (0.3599ms)
+✔ validateUploadDocumentShape: input gốc không phải object ⇒ ok:false (0.2021ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 9
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 235.4606
+
+✖ failing tests:
+
+test at tests\bql-upload-shape.test.ts:69:1
+✖ validateUploadDocumentShape: body_vi ngắn hơn 60 ký tự ⇒ ok:false, code=BodyLength (1.1629ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/bql-upload-shape.test.ts:74:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\bql-upload-shape.test.ts:78:1
+✖ validateUploadDocumentShape: body_vi dài hơn 900 ký tự ⇒ ok:false, code=BodyLength (0.2786ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/bql-upload-shape.test.ts:83:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

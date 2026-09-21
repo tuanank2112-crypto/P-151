@@ -1,0 +1,106 @@
+=== npx tsc --noEmit ===
+EXIT=0
+
+=== node scripts/run_tests.mjs (full) ===
+✔ REASON_CODES chứa đúng mã pii_or_account_specific đã đảo nội hàm (Đ06) (0.4242ms)
+✔ LIFECYCLE_STATES có đúng 4 phần tử và KHÔNG chứa clarification_required như reason_code (0.2488ms)
+ℹ tests 134
+ℹ suites 0
+ℹ pass 134
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 37055.8169
+
+=== node scripts/run_tests.mjs scorer-consensus ===
+✔ hai đường gọi khớp verdict + checkpoint — FAKE-02 — 1 claim unsupported (R09 ca 2: eval_golden.mjs cũ không đọc claims[].verdict) (0.1065ms)
+✔ hai đường gọi khớp verdict + checkpoint — FAKE-03 — escalation đúng reason_code, intent sai nhưng KHÔNG áp dụng (kind≠answerable) (0.082ms)
+✔ hai đường gọi khớp verdict + checkpoint — FAKE-04 — answer mất dấu so với must_contain_vi có dấu (R09 ca 4: eval_golden.mjs cũ không unaccent) (0.1689ms)
+✔ hai đường gọi khớp verdict + checkpoint — FAKE-S01 — safety answer_vi khác null dù escalate (cả hai bộ chấm cũ đều bắt được) (0.1884ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 162.6463
+
+=== node scripts/run_tests.mjs metrics ===
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 173.7474
+
+=== npm run build (tail) ===
+Route (app)                                 Size  First Load JS
+┌ ƒ /                                      143 B         103 kB
+├ ○ /_not-found                            993 B         104 kB
+├ ƒ /api/auth/logout                       143 B         103 kB
+├ ƒ /api/chat                              143 B         103 kB
+├ ƒ /chat                                1.91 kB         104 kB
+├ ƒ /dashboard                             143 B         103 kB
+├ ƒ /documents                           1.92 kB         105 kB
+├ ƒ /eval                                  143 B         103 kB
+├ ƒ /login                                 143 B         103 kB
+└ ƒ /review                              2.14 kB         105 kB
++ First Load JS shared by all             103 kB
+  ├ chunks/255-37e0f0325134c4d7.js       46.4 kB
+  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+  └ other shared chunks (total)          1.97 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+=== bash scripts/check_no_confidence_ui.sh ===
+matches: 0
+EXIT=0
+
+=== bash scripts/check_no_hardcoded_knowledge.sh ===
+matches: 0
+EXIT=0
+
+=== bash scripts/check_adapter_boundary.sh ===
+violations: 0
+EXIT=0
+
+=== node scripts/validate_golden.mjs ===
+faq: 50 (answerable 40) · safety: 16 · canonical_codes_covered: 10/10
+EXIT=0
+
+=== grep item2 (no local verdict logic) ===
+scripts/eval_golden.mjs:34:import { judgeFaqCase, judgeSafetyCase } from "../lib/eval/score.ts";
+scripts/eval_golden.mjs:101:  if (scored.checkpoint_intent === false) fails.push("intent");
+scripts/eval_golden.mjs:102:  if (scored.checkpoint_citation === false) fails.push("citation");
+scripts/eval_golden.mjs:103:  if (scored.checkpoint_critical_fact === false) fails.push("critical_fact");
+scripts/eval_golden.mjs:104:  if (scored.checkpoint_no_unsupported === false) fails.push("no_unsupported_claim");
+scripts/eval_golden.mjs:111:  if (scored.checkpoint_safe_behavior === false) fails.push("safe_behavior");
+scripts/eval_golden.mjs:112:  if (scored.checkpoint_gate === false) fails.push("gate");
+scripts/eval_golden.mjs:113:  if (scored.checkpoint_shows_conflict === false) fails.push("shows_conflict");
+scripts/eval_golden.mjs:119:async function judgeFaq(c) {
+scripts/eval_golden.mjs:127:  const scored = judgeFaqCase(c, {
+scripts/eval_golden.mjs:144:      checkpoint_intent: scored.checkpoint_intent,
+scripts/eval_golden.mjs:145:      checkpoint_citation: scored.checkpoint_citation,
+scripts/eval_golden.mjs:146:      checkpoint_critical_fact: scored.checkpoint_critical_fact,
+scripts/eval_golden.mjs:147:      checkpoint_no_unsupported: scored.checkpoint_no_unsupported,
+scripts/eval_golden.mjs:154:async function judgeSafety(c) {
+scripts/eval_golden.mjs:163:  const scored = judgeSafetyCase(c, {
+scripts/eval_golden.mjs:180:      checkpoint_safe_behavior: scored.checkpoint_safe_behavior,
+scripts/eval_golden.mjs:181:      checkpoint_gate: scored.checkpoint_gate,
+scripts/eval_golden.mjs:182:      checkpoint_shows_conflict: scored.checkpoint_shows_conflict,
+scripts/eval_golden.mjs:272:  summaries.push(await runSet("faq", path.join(GDIR, "golden_faq.jsonl"), judgeFaq));
+scripts/eval_golden.mjs:276:    await runSet("safety", path.join(GDIR, "golden_safety.jsonl"), judgeSafety)
+lib/adapters/metrics-store.ts:259:  judgeFaqCase,
+lib/adapters/metrics-store.ts:260:  judgeSafetyCase,
+lib/adapters/metrics-store.ts:269:export { judgeFaqCase, judgeSafetyCase, viNormalize } from "../eval/score.ts";
+lib/adapters/metrics-store.ts:284:  const faq_results = faqCases.map((c) => judgeFaqCase(c, turnsByCaseId.get(c.case_id)));
+lib/adapters/metrics-store.ts:285:  const safety_results = safetyCases.map((c) => judgeSafetyCase(c, turnsByCaseId.get(c.case_id)));
+lib/adapters/metrics-store.ts:294:  const citationTrue = answerable.filter((r) => r.checkpoint_citation === true).length;
+lib/adapters/metrics-store.ts:295:  const factTrue = answerable.filter((r) => r.checkpoint_critical_fact === true).length;

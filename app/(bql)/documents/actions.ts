@@ -10,7 +10,10 @@ import {
   checkBqlAuthz,
   setDocumentStatus as storeSetDocumentStatus,
   setEffectiveStatus as storeSetEffectiveStatus,
+  uploadDocument as storeUploadDocument,
+  newDocumentVersion as storeNewDocumentVersion,
   type DocumentError,
+  type UploadSectionInput,
 } from "../../../lib/adapters/bql-store.ts";
 import type { DocStatus, EffectiveStatus } from "../../../lib/types.ts";
 
@@ -40,6 +43,33 @@ export async function setEffectiveStatus(input: {
   const session = await getSessionPayload();
   if (!checkBqlAuthz(session).ok) return authzErrorResult();
   const result = await storeSetEffectiveStatus(input);
+  if (result.ok) revalidatePath("/documents");
+  return result;
+}
+
+/** SPEC-P03 §2.2 `uploadDocument`. Nhận `unknown` (JSON dán từ textarea,
+ * P03-C7: CẤM trình soạn thảo giàu định dạng — ô textarea + JSON là đủ) —
+ * `bql-store.ts` tự kiểm hình dạng trước khi chạm DB. */
+export async function uploadDocument(
+  rawInput: unknown
+): Promise<{ ok: true; document_id: string; chunks_created: number } | { ok: false; error: DocumentError }> {
+  const session = await getSessionPayload();
+  if (!checkBqlAuthz(session).ok) return authzErrorResult();
+  const result = await storeUploadDocument(rawInput);
+  if (result.ok) revalidatePath("/documents");
+  return result;
+}
+
+/** SPEC-P03 §2.3 `newDocumentVersion`. */
+export async function newDocumentVersion(input: {
+  base_document_id: string;
+  new_document_id: string;
+  version: string;
+  sections: UploadSectionInput[];
+}): Promise<{ ok: true; superseded: string } | { ok: false; error: DocumentError }> {
+  const session = await getSessionPayload();
+  if (!checkBqlAuthz(session).ok || !session) return authzErrorResult();
+  const result = await storeNewDocumentVersion({ ...input, actor_id: session.user_id });
   if (result.ok) revalidatePath("/documents");
   return result;
 }

@@ -510,6 +510,43 @@ Thẩm định đối kháng cô lập (`reports/R09`) dựng 5 ca giả và tì
 
 **Lật được:** không. Đây là điều kiện để con số nghiệm thu nói thật. **Chi phí lật:** toàn bộ giá trị của `G11`.
 
+### Đ37 — 2026-09-22 · `conversation_id` phải là uuid: BB-11 biến một bug ngủ thành bug sống
+
+Worker gói bộ chấm đọc mã và nghi `scripts/eval_golden.mjs` truyền `conversation_id: "golden-faq-<case_id>"` vào cột kiểu `uuid`. SO đo lại trên DB thật:
+
+```
+select 'golden-faq-S03'::uuid
+→ ERROR: invalid input syntax for type uuid: "golden-faq-S03"
+```
+
+**Xác nhận. Và nó không chỉ là một script.** Trước wave này `runTurn()` là hàm thuần, không ghi DB, nên một `conversation_id` không phải uuid hoàn toàn vô hại — đó là lý do nó sống sót suốt nhiều phiên mà không ai thấy. Gói BB-11 nối đường ghi `answer_turns` vào, và **ngay lập tức mọi script truyền nhãn dạng chữ đều vỡ ở lệnh ghi đầu tiên**: `trace_sample.mjs` (gói P03 phát hiện), `eval_golden.mjs` (gói bộ chấm phát hiện), nhiều khả năng cả `probe_defects.mjs`.
+
+Đây là lớp lỗi đáng ghi nhớ: **một thay đổi đúng đắn ở chỗ A kích hoạt một lỗi vốn đã nằm sẵn ở chỗ B.** Không gói nào sai; cái sai là hợp đồng `runTurn()` nay đòi uuid mà không nói ra, và không cổng nào canh.
+
+**Chốt:** thêm một hàm sinh `conversation_id` **tất định** từ một nhãn người đọc được (băm nhãn thành uuid). Mọi script đo truyền nhãn như cũ, hàm trả về uuid hợp lệ. Chọn tất định chứ không phải `randomUUID()` vì bộ chạy Golden có `--resume`: cùng một ca phải nối lại đúng cuộc hội thoại cũ giữa hai lượt chạy, nếu không mỗi lượt đẻ một hội thoại mới và `messages` phình ra vô nghĩa.
+
+**Kèm một cổng canh:** một test khẳng định mọi `conversation_id` đi vào tầng ghi đều parse được thành uuid. Không có cổng thì lỗi này quay lại y hệt ở script thứ tư.
+
+**Hệ quả với `G11`:** cộng với Đ36, nay có **hai** lý do độc lập khiến chưa từng có con số `M1` nào đáng tin — bộ chấm thiếu 3/7 checkpoint, và bộ chạy vỡ ngay ở lệnh ghi đầu tiên trên Postgres. Vùng cấm Đ36 giữ nguyên, mở rộng: `G11` chỉ được tick sau khi CẢ HAI thứ này xong và có một lượt chạy thật exit 0.
+
+**Lật được:** không. **Chi phí lật:** toàn bộ giá trị của bộ đo.
+
+### Đ38 — 2026-09-22 · Lượt `source_conflict` hứa hai nguồn rồi không đưa nguồn nào
+
+Worker gói bộ chấm báo `checkpoint_shows_conflict` sẽ **luôn** đọc `false` trên dữ liệu thật, vì `escalateResult()` trả `citations: []` cho mọi lượt escalate. SO kiểm: đúng, `citations: []` xuất hiện ở cả ba đường escalate của `lib/pipeline/index.ts`.
+
+**Nhưng hậu quả lớn hơn một checkpoint hỏng.** `SPEC-P02` §6.4 quy định đúng câu mà cư dân nhìn thấy khi gặp mâu thuẫn nguồn:
+
+> *"Tôi tìm thấy hai tài liệu đang có hiệu lực nhưng nói khác nhau về việc này. Tôi không tự chọn một bên — **đây là hai nguồn để anh/chị đối chiếu**, và tôi đã chuyển sang Ban quản lý."*
+
+Sản phẩm đang nói "đây là hai nguồn" rồi đưa ra **không nguồn nào**. Đó không phải chi tiết kỹ thuật — đó là sản phẩm hứa một thứ trên màn hình rồi không giao. Và nó rơi đúng vào cảnh demo đáng khoe nhất: `DEF-03` là khuyết tật cài sẵn duy nhất chứng minh agent biết *không chọn bên* khi hai tài liệu còn hiệu lực nói ngược nhau.
+
+**Chốt:** lượt escalate với `G1_conflict` PHẢI trả các section thuộc `conflict_group` đã phát hiện dưới dạng `citations`. Các đường escalate khác giữ `citations: []` — chúng không hứa nguồn nào nên không nợ gì.
+
+**Không mâu thuẫn với BB-04.** BB-04 nói `decision='answer'` mà `citations=[]` là vi phạm; nó không cấm lượt escalate KÈM nguồn. Hai luật đi cùng hướng: cả hai đòi mọi phát biểu phải có neo.
+
+**Lật được:** có, nếu chủ tịch muốn màn hình cư dân không hiện nguồn lúc escalate. Khi đó phải sửa câu chữ ở §6.4 cho khỏi hứa suông. **Chi phí lật:** thấp, nhưng mất đúng cảnh demo mạnh nhất.
+
 ### Quyết định của chủ tịch — 2026-09-20
 
 | Mã | Phán quyết | Ghi chú |

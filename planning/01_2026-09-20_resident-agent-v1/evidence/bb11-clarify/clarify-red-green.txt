@@ -1,0 +1,66 @@
+H09/R11 — bằng chứng ĐỎ→XANH cho ca mới (nhánh clarify), tests/memory.test.ts
+Ngày đo: 2026-09-22 00:34:30 +0700
+
+Bối cảnh: thẩm định đối kháng R09 mục C phát hiện phép phá 'bọc
+  store.insertAnswerTurn(...) trong if (decision !== "clarify")' LỌT QUA
+  toàn bộ 113 test cũ — không ca nào chạm nhánh clarify (chặng 4,
+  thiếu required_context) rồi kiểm tra DB. Đã thêm đúng 1 ca canh
+  ('BB-11 (R11): nhánh clarify ...') vào tests/memory.test.ts.
+
+Cách tạo ĐỎ: tạm chèn ĐÚNG phép phá đã lọt qua vào lib/pipeline/index.ts
+  (if (finalResult.decision !== "clarify") trước lời gọi insertAnswerTurn),
+  chạy 'node scripts/run_tests.mjs memory', rồi HOÀN NGUYÊN nguyên văn —
+  xác nhận bằng 'git diff --stat -- lib/pipeline/index.ts' rỗng (0 dòng khác HEAD).
+
+=== ĐỎ (bơm lại đúng phép phá của R09 mục C) ===
+✔ BB-11: nhánh escalate (risk gate ở chặng 5, KHÔNG ném lỗi, KHÔNG chạm A2/A3) ghi đúng MỘT answer_turns (7053.5775ms)
+✔ BB-11: nhánh NÉM LỖI (429 hết retry ở A2) vẫn ghi đúng MỘT answer_turns, lifecycle_state=failed (7659.8951ms)
+✔ R4/W3: hai messages mỗi lượt (hỏi + đáp) khi decision=answer, user_message_id khớp answer_turns (5309.5448ms)
+✔ W3: conversation_id do route tạo (createConversation) và hội thoại đọc lại được nguyên vẹn (getConversationOwner + listMessages) (1970.4994ms)
+✖ BB-11 (R11): nhánh clarify (chặng 4 — thiếu required_context) vẫn ghi đúng MỘT answer_turns, decision='clarify', lifecycle_state='clarification_required' (4207.6181ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 36468.8669
+
+✖ failing tests:
+
+test at tests\memory.test.ts:281:1
+✖ BB-11 (R11): nhánh clarify (chặng 4 — thiếu required_context) vẫn ghi đúng MỘT answer_turns, decision='clarify', lifecycle_state='clarification_required' (4207.6181ms)
+  AssertionError [ERR_ASSERTION]: clarify phải ghi đúng 1 answer_turns (BB-11, P02-C10, R11)
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/memory.test.ts:312:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+=== git diff --stat -- lib/pipeline/index.ts (sau khi hoàn nguyên, PHẢI RỖNG) ===
+(rỗng ⇒ đúng nguyên văn, không sai khác)
+
+=== XANH (đã hoàn nguyên) ===
+✔ BB-11: nhánh escalate (risk gate ở chặng 5, KHÔNG ném lỗi, KHÔNG chạm A2/A3) ghi đúng MỘT answer_turns (7150.0919ms)
+✔ BB-11: nhánh NÉM LỖI (429 hết retry ở A2) vẫn ghi đúng MỘT answer_turns, lifecycle_state=failed (7698.5798ms)
+✔ R4/W3: hai messages mỗi lượt (hỏi + đáp) khi decision=answer, user_message_id khớp answer_turns (5148.5832ms)
+✔ W3: conversation_id do route tạo (createConversation) và hội thoại đọc lại được nguyên vẹn (getConversationOwner + listMessages) (1968.9737ms)
+✔ BB-11 (R11): nhánh clarify (chặng 4 — thiếu required_context) vẫn ghi đúng MỘT answer_turns, decision='clarify', lifecycle_state='clarification_required' (5158.6003ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 36650.7723

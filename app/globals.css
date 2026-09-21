@@ -370,3 +370,36 @@ main {
   color: #5b6070;
   white-space: nowrap;
 }
+
+/* ── P03 · Upload / đổi version tài liệu (gói nối tiếp H07) ── */
+.bql-upload-panel {
+  margin-top: 1.5rem;
+  border: 1px solid #d3d6de;
+  border-radius: 12px;
+  padding: 1rem;
+}
+.bql-upload-panel summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.bql-upload-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.bql-upload-panel__grid h2 {
+  font-size: 0.9rem;
+  margin: 0 0 0.4rem;
+}
+.bql-upload-panel__grid textarea {
+  width: 100%;
+  min-height: 220px;
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.78rem;
+  border: 1px solid #d3d6de;
+  border-radius: 8px;
+  padding: 0.5rem;
+  resize: vertical;
+  margin-bottom: 0.5rem;
+}

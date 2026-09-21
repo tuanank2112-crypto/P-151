@@ -1,0 +1,19 @@
+✔ validateUploadDocumentShape: đúng hình dạng knowledge/ ⇒ ok:true (1.3496ms)
+✔ validateUploadDocumentShape: thiếu document_id ⇒ ok:false, code=MissingField (0.1755ms)
+✔ validateUploadDocumentShape: doc_kind lạ (ngoài 4 giá trị) ⇒ ok:false (0.1411ms)
+✔ validateUploadDocumentShape: scope_property chứa giá trị lạ ⇒ ok:false (0.1433ms)
+✔ validateUploadDocumentShape: effective_from sai định dạng ⇒ ok:false (0.1986ms)
+✔ validateUploadDocumentShape: sections rỗng ⇒ ok:false (0.1919ms)
+✔ validateUploadDocumentShape: body_vi ngắn hơn 60 ký tự ⇒ ok:false, code=BodyLength (0.1617ms)
+✔ validateUploadDocumentShape: body_vi dài hơn 900 ký tự ⇒ ok:false, code=BodyLength (0.1415ms)
+✔ validateUploadDocumentShape: section_id trùng trong cùng lượt gửi ⇒ ok:false, code=DuplicateSectionId (0.1866ms)
+✔ validateUploadDocumentShape: ordinal không phải số nguyên ⇒ ok:false (0.239ms)
+✔ validateUploadDocumentShape: input gốc không phải object ⇒ ok:false (0.128ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 200.0865

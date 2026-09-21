@@ -1,0 +1,7 @@
+1) Đã tạo tài liệu BASE thử: EVIDENCE-TEST-VERSION-BASE-001
+2) TRƯỚC đổi version — truy vấn "BASEMARKERTOKEN" trả về document_id=EVIDENCE-TEST-VERSION-BASE-001
+3) newDocumentVersion() OK — superseded=EVIDENCE-TEST-VERSION-BASE-001
+4) SAU đổi version — truy vấn "NEXTMARKERTOKEN" trả về document_id=EVIDENCE-TEST-VERSION-NEXT-001 (kỳ vọng EVIDENCE-TEST-VERSION-NEXT-001); truy vấn "BASEMARKERTOKEN" vẫn còn TÌM THẤY ở bản cũ document_id=EVIDENCE-TEST-VERSION-BASE-001 nhưng effective_status=Expired (kỳ vọng Expired, nên KHÔNG eligible nữa)
+5) Kiểm P03-C2 (CẤM allowed_for_rag=false cho bản cũ): base.status=Approved base.allowed_for_rag=true · new.supersedes=EVIDENCE-TEST-VERSION-BASE-001 (kỳ vọng EVIDENCE-TEST-VERSION-BASE-001)
+KẾT LUẬN: đổi version — truy hồi lấy bản MỚI, bản CŨ chuyển Expired (không eligible ở cổng E-2), P03-C2 giữ nguyên (bản cũ vẫn Approved + allowed_for_rag=true).
+6) ĐÃ DỌN SẠCH — còn lại trong DB: []

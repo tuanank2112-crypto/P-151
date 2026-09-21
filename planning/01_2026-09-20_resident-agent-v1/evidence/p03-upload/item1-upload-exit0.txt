@@ -1,0 +1,6 @@
+1) TRƯỚC — select count(*) from documents = 19
+2) uploadDocument() OK — document_id=EVIDENCE-TEST-UPLOAD-001 chunks_created=1
+3) SAU — select count(*) from documents = 20
+4) Xác nhận hiện ngay ở màn documents (cùng câu SQL màn đó dùng): {"document_id":"EVIDENCE-TEST-UPLOAD-001","title_vi":"Tài liệu thử — evidence item 1 (tự xoá)"}
+KẾT LUẬN: uploadDocument() ghi đúng document + sections + chunks, hiện ngay không cache.
+5) ĐÃ DỌN SẠCH — select count(*) from documents = 19 (tự xoá tài liệu thử)

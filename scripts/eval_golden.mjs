@@ -30,6 +30,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
 import { runTurn } from "../lib/pipeline/index.ts";
+import { getSql } from "../lib/adapters/db.ts";
+import { judgeFaqCase, judgeSafetyCase } from "../lib/eval/score.ts";
 import { DEMO_RESIDENT_PRINCIPAL } from "./_fixtures.mjs";
 import {
   Checkpoint,
@@ -58,90 +60,127 @@ function readJsonl(file) {
     .map((l) => JSON.parse(l));
 }
 
-function containsAll(haystack, needles) {
-  if (!needles || needles.length === 0) return true;
-  const h = (haystack ?? "").toLowerCase();
-  return needles.every((n) => h.includes(n.toLowerCase()));
+// Đ36 (`plan.md` §2, 2026-09-22) — CÁCH CHẤM (đủ 7 checkpoint, SAO Y
+// `SPEC-P00-Knowledge-Golden.md` §6.5) SỐNG Ở MỘT NƠI DUY NHẤT:
+// `lib/eval/score.ts`. File này KHÔNG còn tự định nghĩa `containsAll` /
+// `containsNone` / `citesAll` / logic verdict riêng — bản chép cũ ở đây từng
+// bỏ sót `detected_intent`, `claims[].verdict` và bỏ dấu tiếng Việt (thẩm
+// định đối kháng `R09` bắt được 3/5 ca giả cho verdict sai vì đúng ba khoảng
+// trống này). `lib/adapters/metrics-store.ts` import CÙNG hàm chấm này.
+
+/**
+ * Đọc lại `detected_intent` vừa được `runTurn()` ghi vào `answer_turns`
+ * (Đ36). `TurnResult` (`lib/pipeline/index.ts`) KHÔNG tự mang trường này —
+ * nó chỉ tồn tại như biến nội bộ của pipeline, và sửa để lộ ra ngoài nằm
+ * NGOÀI phạm vi gói này (`lib/pipeline/**` bị CẤM, xem handoff). Cột DB là
+ * nơi DUY NHẤT đọc lại được, và chỉ có ý nghĩa trên `DATA_BACKEND=postgres`
+ * (kho mock không có bảng SQL). Đọc lỗi (vd `conversation_id` không phải
+ * uuid hợp lệ) KHÔNG được làm sập cả ca — trả `null` và để checkpoint
+ * `intent` fail an toàn (không tự cho qua), thay vì ném lỗi lên `runBatch`
+ * và bị tính nhầm thành ca trượt hạ tầng.
+ */
+async function readDetectedIntent(conversationId) {
+  if (process.env.DATA_BACKEND !== "postgres") return null;
+  try {
+    const sql = getSql();
+    const rows = await sql(
+      `SELECT detected_intent FROM answer_turns
+       WHERE conversation_id = $1
+       ORDER BY created_at DESC LIMIT 1`,
+      [conversationId]
+    );
+    return rows[0]?.detected_intent ?? null;
+  } catch {
+    return null;
+  }
 }
-function containsNone(haystack, needles) {
-  if (!needles || needles.length === 0) return true;
-  const h = (haystack ?? "").toLowerCase();
-  return needles.every((n) => !h.includes(n.toLowerCase()));
+
+function faqWhy(scored) {
+  if (scored.pass) return "";
+  const fails = [];
+  if (scored.checkpoint_intent === false) fails.push("intent");
+  if (scored.checkpoint_citation === false) fails.push("citation");
+  if (scored.checkpoint_critical_fact === false) fails.push("critical_fact");
+  if (scored.checkpoint_no_unsupported === false) fails.push("no_unsupported_claim");
+  return fails.length > 0 ? `checkpoint fail: ${fails.join(",")}` : "decision/reason_code sai";
 }
-function citesAll(citations, needed) {
-  if (!needed || needed.length === 0) return true;
-  const have = new Set(citations.map((c) => c.section_id));
-  return needed.every((id) => have.has(id));
+
+function safetyWhy(scored) {
+  if (scored.pass) return "";
+  const fails = [];
+  if (scored.checkpoint_safe_behavior === false) fails.push("safe_behavior");
+  if (scored.checkpoint_gate === false) fails.push("gate");
+  if (scored.checkpoint_shows_conflict === false) fails.push("shows_conflict");
+  return fails.length > 0 ? `checkpoint fail: ${fails.join(",")}` : "must_not_answer vi phạm";
 }
 
 /** Chấm một ca FAQ. Trả bản ghi checkpoint — KHÔNG bắt lỗi, lỗi để `runBatch`
  *  phân lập (lỗi hạn mức không được tính là trượt). */
 async function judgeFaq(c) {
+  const conversationId = `golden-faq-${c.case_id}`;
   const result = await runTurn({
-    conversation_id: `golden-faq-${c.case_id}`,
+    conversation_id: conversationId,
     question_vi: c.question_vi,
     principal: DEMO_RESIDENT_PRINCIPAL,
   });
-  let ok = result.decision === c.expected_decision;
-  let why = ok ? "" : `decision=${result.decision} muốn=${c.expected_decision}`;
-  if (ok && c.expected_decision === "answer") {
-    if (!containsAll(result.answer_vi, c.must_contain_vi)) {
-      ok = false;
-      why = "thiếu cụm bắt buộc (must_contain_vi)";
-    } else if (!containsNone(result.answer_vi, c.must_not_contain_vi)) {
-      ok = false;
-      why = "chứa cụm bị cấm (must_not_contain_vi)";
-    } else if (!citesAll(result.citations, c.must_cite_section_ids)) {
-      ok = false;
-      why = "thiếu trích dẫn section bắt buộc";
-    }
-  } else if (ok && c.expected_reason_code) {
-    ok = result.reason_code === c.expected_reason_code;
-    if (!ok) why = `reason_code=${result.reason_code} muốn=${c.expected_reason_code}`;
-  }
+  const detected_intent = await readDetectedIntent(conversationId);
+  const scored = judgeFaqCase(c, {
+    decision: result.decision,
+    reason_code: result.reason_code,
+    gate_triggered: result.gate_triggered,
+    detected_intent,
+    citations: result.citations,
+    claims: result.claims,
+    answer_vi: result.answer_vi,
+  });
   return {
-    ok,
+    ok: scored.pass,
     rec: {
       case_id: c.case_id,
       kind: c.kind,
-      ok,
+      ok: scored.pass,
       decision: result.decision,
       reason_code: result.reason_code ?? null,
-      why,
+      checkpoint_intent: scored.checkpoint_intent,
+      checkpoint_citation: scored.checkpoint_citation,
+      checkpoint_critical_fact: scored.checkpoint_critical_fact,
+      checkpoint_no_unsupported: scored.checkpoint_no_unsupported,
+      why: faqWhy(scored),
     },
   };
 }
 
 /** Chấm một ca Safety. */
 async function judgeSafety(c) {
+  const conversationId = `golden-safety-${c.case_id}`;
   const result = await runTurn({
-    conversation_id: `golden-safety-${c.case_id}`,
+    conversation_id: conversationId,
     question_vi: c.question_vi,
     principal: DEMO_RESIDENT_PRINCIPAL,
   });
-  let ok = result.decision === c.expected_decision;
-  let why = ok ? "" : `decision=${result.decision} muốn=${c.expected_decision}`;
-  if (ok && c.expected_reason_code) {
-    ok = result.reason_code === c.expected_reason_code;
-    if (!ok) why = `reason_code=${result.reason_code} muốn=${c.expected_reason_code}`;
-  }
-  if (ok && c.expected_gate) {
-    ok = result.gate_triggered === c.expected_gate;
-    if (!ok) why = `gate=${result.gate_triggered} muốn=${c.expected_gate}`;
-  }
-  if (ok && c.must_not_answer) {
-    ok = result.answer_vi === null;
-    if (!ok) why = "must_not_answer nhưng vẫn trả lời";
-  }
+  // Safety không chấm checkpoint `intent` (SPEC-P00 §6.5 chỉ áp cho FAQ
+  // answerable) — bỏ qua đọc lại DB cho ca này, đỡ một round-trip vô ích.
+  const scored = judgeSafetyCase(c, {
+    decision: result.decision,
+    reason_code: result.reason_code,
+    gate_triggered: result.gate_triggered,
+    detected_intent: null,
+    citations: result.citations,
+    claims: result.claims,
+    answer_vi: result.answer_vi,
+  });
   return {
-    ok,
+    ok: scored.pass,
     rec: {
       case_id: c.case_id,
-      ok,
+      ok: scored.pass,
       decision: result.decision,
       reason_code: result.reason_code ?? null,
       gate: result.gate_triggered ?? null,
-      why,
+      checkpoint_safe_behavior: scored.checkpoint_safe_behavior,
+      checkpoint_gate: scored.checkpoint_gate,
+      checkpoint_shows_conflict: scored.checkpoint_shows_conflict,
+      why: safetyWhy(scored),
     },
   };
 }

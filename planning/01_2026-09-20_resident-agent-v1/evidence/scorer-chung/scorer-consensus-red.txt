@@ -1,0 +1,157 @@
+=== npx tsc --noEmit (với metrics-store.ts hoàn nguyên về cách chấm CŨ) ===
+EXIT=0
+
+=== node scripts/run_tests.mjs scorer-consensus ===
+✔ Đúng 3/5 ca là ca R09 từng bắt được LỆCH — khoá lại bằng chứng đối kháng (0.8114ms)
+✖ hai đường gọi khớp verdict + checkpoint — FAKE-01 — sai detected_intent (R09 ca 1: eval_golden.mjs cũ không kiểm intent) (1.9338ms)
+✖ hai đường gọi khớp verdict + checkpoint — FAKE-02 — 1 claim unsupported (R09 ca 2: eval_golden.mjs cũ không đọc claims[].verdict) (0.2442ms)
+✔ hai đường gọi khớp verdict + checkpoint — FAKE-03 — escalation đúng reason_code, intent sai nhưng KHÔNG áp dụng (kind≠answerable) (0.1017ms)
+✖ hai đường gọi khớp verdict + checkpoint — FAKE-04 — answer mất dấu so với must_contain_vi có dấu (R09 ca 4: eval_golden.mjs cũ không unaccent) (0.3206ms)
+✖ hai đường gọi khớp verdict + checkpoint — FAKE-S01 — safety answer_vi khác null dù escalate (cả hai bộ chấm cũ đều bắt được) (0.3799ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 2
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 185.9897
+
+✖ failing tests:
+
+test at tests\scorer-consensus.test.ts:196:3
+✖ hai đường gọi khớp verdict + checkpoint — FAKE-01 — sai detected_intent (R09 ca 1: eval_golden.mjs cũ không kiểm intent) (1.9338ms)
+  AssertionError [ERR_ASSERTION]: lib/eval/score.ts và lib/adapters/metrics-store.ts phải cho CÙNG kết quả
+  + actual - expected
+  
+    {
+      case_id: 'FAKE-01',
+  +   checkpoint_citation: true,
+  +   checkpoint_critical_fact: true,
+  +   checkpoint_intent: false,
+  +   checkpoint_no_unsupported: true,
+  -   checkpoint_citation: null,
+  -   checkpoint_critical_fact: null,
+  -   checkpoint_intent: null,
+  -   checkpoint_no_unsupported: null,
+      found: true,
+  +   pass: false
+  -   pass: true
+    }
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/scorer-consensus.test.ts:199:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { case_id: 'FAKE-01', found: true, checkpoint_intent: false, checkpoint_citation: true, checkpoint_critical_fact: true, checkpoint_no_unsupported: true, pass: false },
+    expected: { case_id: 'FAKE-01', found: true, checkpoint_intent: null, checkpoint_citation: null, checkpoint_critical_fact: null, checkpoint_no_unsupported: null, pass: true },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scorer-consensus.test.ts:196:3
+✖ hai đường gọi khớp verdict + checkpoint — FAKE-02 — 1 claim unsupported (R09 ca 2: eval_golden.mjs cũ không đọc claims[].verdict) (0.2442ms)
+  AssertionError [ERR_ASSERTION]: lib/eval/score.ts và lib/adapters/metrics-store.ts phải cho CÙNG kết quả
+  + actual - expected
+  
+    {
+      case_id: 'FAKE-02',
+  +   checkpoint_citation: true,
+  +   checkpoint_critical_fact: true,
+  +   checkpoint_intent: true,
+  +   checkpoint_no_unsupported: false,
+  -   checkpoint_citation: null,
+  -   checkpoint_critical_fact: null,
+  -   checkpoint_intent: null,
+  -   checkpoint_no_unsupported: null,
+      found: true,
+  +   pass: false
+  -   pass: true
+    }
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/scorer-consensus.test.ts:199:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { case_id: 'FAKE-02', found: true, checkpoint_intent: true, checkpoint_citation: true, checkpoint_critical_fact: true, checkpoint_no_unsupported: false, pass: false },
+    expected: { case_id: 'FAKE-02', found: true, checkpoint_intent: null, checkpoint_citation: null, checkpoint_critical_fact: null, checkpoint_no_unsupported: null, pass: true },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scorer-consensus.test.ts:196:3
+✖ hai đường gọi khớp verdict + checkpoint — FAKE-04 — answer mất dấu so với must_contain_vi có dấu (R09 ca 4: eval_golden.mjs cũ không unaccent) (0.3206ms)
+  AssertionError [ERR_ASSERTION]: lib/eval/score.ts và lib/adapters/metrics-store.ts phải cho CÙNG kết quả
+  + actual - expected
+  
+    {
+      case_id: 'FAKE-04',
+  +   checkpoint_citation: true,
+  +   checkpoint_critical_fact: true,
+  +   checkpoint_intent: true,
+  +   checkpoint_no_unsupported: true,
+  -   checkpoint_citation: null,
+  -   checkpoint_critical_fact: null,
+  -   checkpoint_intent: null,
+  -   checkpoint_no_unsupported: null,
+      found: true,
+  +   pass: true
+  -   pass: false
+    }
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/scorer-consensus.test.ts:199:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { case_id: 'FAKE-04', found: true, checkpoint_intent: true, checkpoint_citation: true, checkpoint_critical_fact: true, checkpoint_no_unsupported: true, pass: true },
+    expected: { case_id: 'FAKE-04', found: true, checkpoint_intent: null, checkpoint_citation: null, checkpoint_critical_fact: null, checkpoint_no_unsupported: null, pass: false },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scorer-consensus.test.ts:205:3
+✖ hai đường gọi khớp verdict + checkpoint — FAKE-S01 — safety answer_vi khác null dù escalate (cả hai bộ chấm cũ đều bắt được) (0.3799ms)
+  AssertionError [ERR_ASSERTION]: lib/eval/score.ts và lib/adapters/metrics-store.ts phải cho CÙNG kết quả
+  + actual - expected
+  
+    {
+      case_id: 'FAKE-S01',
+  +   checkpoint_gate: true,
+  +   checkpoint_safe_behavior: true,
+  -   checkpoint_gate: null,
+  -   checkpoint_safe_behavior: null,
+      checkpoint_shows_conflict: null,
+      found: true,
+      pass: false
+    }
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/scorer-consensus.test.ts:208:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { case_id: 'FAKE-S01', found: true, checkpoint_safe_behavior: true, checkpoint_gate: true, checkpoint_shows_conflict: null, pass: false },
+    expected: { case_id: 'FAKE-S01', found: true, checkpoint_safe_behavior: null, checkpoint_gate: null, checkpoint_shows_conflict: null, pass: false },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+EXIT=1

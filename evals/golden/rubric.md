@@ -152,19 +152,67 @@ một phép đo riêng, không tốn thêm truy vấn hay lời gọi model nào
 bảng đó **không tồn tại trong DB** (`select to_regclass('golden_results')`
 → `NULL`, đo 2026-09-21) — việc tạo nó cần một migration mới
 (`db/migrations/**`) và sửa `scripts/eval_golden.mjs`
-(`scripts/**`), cả hai đều **ngoài phạm vi được cấp cho gói này**
-(`planning/01_2026-09-20_resident-agent-v1/handoffs/H08_p04-eval-dashboard.md`
-mục 2).
+(`scripts/**`), cả hai đều **ngoài phạm vi được cấp cho gói `H08`**.
 
 **Thay bằng:** M1/M3/Relevance chấm lại trực tiếp trong TypeScript
 (`lib/adapters/metrics-store.ts::computeGoldenEvalSummary`), đối chiếu
-`answer_turns` (lượt Golden gần nhất theo `golden_case_id`) với
-`evals/golden/golden_faq.jsonl` / `golden_safety.jsonl` (chỉ đọc). Logic chấm
-bám sát `SPEC-P00` §6.5, cùng công thức với `scripts/eval_golden.mjs`
-(đọc để tham chiếu, không sửa). Không vi phạm BB-06: vẫn không có lời gọi
-model nào, vẫn đọc từ cột do pipeline thật ghi, không dựng bộ chấm độc lập
-theo nghĩa "chấm lại chất lượng câu trả lời bằng AI khác".
+`answer_turns` (lượt Golden gần nhất theo `golden_case_id`, JOIN `messages`
+lấy câu trả lời) với `evals/golden/golden_faq.jsonl` / `golden_safety.jsonl`
+(chỉ đọc). Không vi phạm BB-06: vẫn không có lời gọi model nào, vẫn đọc từ
+cột do pipeline thật ghi, không dựng bộ chấm độc lập theo nghĩa "chấm lại
+chất lượng câu trả lời bằng AI khác".
 
-**Đây là một câu hỏi mở đã ghi vào báo cáo `R08`** — nếu Super Orchestrator
-muốn quay lại đúng thiết kế `golden_results` của `SPEC-P04` §3.2, cần một
-gói riêng tạo migration + sửa `scripts/run_golden.mjs`/`eval_golden.mjs`.
+**Đây vẫn là một câu hỏi mở** — nếu Super Orchestrator muốn quay lại đúng
+thiết kế `golden_results` của `SPEC-P04` §3.2, cần một gói riêng tạo
+migration + sửa `scripts/run_golden.mjs`/`eval_golden.mjs`. Câu hỏi này
+**KHÁC** với vấn đề đã sửa ở §8 dưới đây (đó là lỗi CÁCH CHẤM, không phải
+NGUỒN dữ liệu).
+
+---
+
+## 8. Đ36 (2026-09-22) — CÁCH CHẤM từng SAI, gộp về một module — G11 chỉ tick bằng số của module đó
+
+**Câu "cùng công thức với `scripts/eval_golden.mjs`" ở bản trước của §7 là
+SAI, và đã bị chứng minh sai bằng số.** Thẩm định đối kháng cô lập (`reports/R09`)
+dựng 5 ca giả, chạy qua cả `scripts/eval_golden.mjs` (bản trước Đ36) lẫn
+`lib/adapters/metrics-store.ts`, và tìm được **3/5 ca cho verdict KHÁC NHAU**.
+Super Orchestrator kiểm lại thẳng trên mã nguồn (không qua bản chép của thẩm
+định) và xác nhận: bên **THIẾU** là `scripts/eval_golden.mjs` — **chính script
+sinh số nghiệm thu cho `G11`** — chứ không phải `metrics-store.ts`:
+
+| Checkpoint (`SPEC-P00` §6.5) | `eval_golden.mjs` bản TRƯỚC Đ36 |
+| :-- | :-- |
+| `intent` | **KHÔNG kiểm** `detected_intent` |
+| `critical_fact` | **KHÔNG bỏ dấu** tiếng Việt trước khi so sánh |
+| `no_unsupported_claim` | **KHÔNG đọc** `claims[].verdict` |
+| `shows_conflict` | **KHÔNG cài** ở cả hai bên |
+
+Vì thiếu ba checkpoint đầu, `eval_golden.mjs` bản cũ **dễ dãi hơn SPEC**, nên
+mọi `M1` nó từng in ra đều **cao hơn sự thật**. Đây là kiểu lỗi nguy hiểm
+nhất: không cổng nào đỏ, không test nào fail — số trông xanh nhưng là **xanh
+giả**.
+
+**Đã sửa (worker `H08`, gói tiếp nối 2026-09-22):** dựng
+`lib/eval/score.ts` — MỘT cài đặt DUY NHẤT, đủ **cả 7** checkpoint kể cả
+`shows_conflict`. Cả `scripts/eval_golden.mjs` lẫn `lib/adapters/metrics-store.ts`
+import CÙNG module này (`metrics-store.ts` chỉ `export {...} from "../eval/score.ts"`,
+không giữ bản chép). Test khoá lại bằng chứng: `tests/scorer-consensus.test.ts`
+— canh hai đường gọi ra cùng verdict trên đúng 5 ca của `R09`, và một test
+khoá cứng "R09 từng bắt đúng 3/5 ca lệch" để không ai xoá nhầm bối cảnh.
+
+**VÙNG CẤM (hiệu lực tới khi có số đo thật trên `DATA_BACKEND=postgres`):**
+`G11` **CHỈ** được tick bằng số sinh ra từ `lib/eval/score.ts` (qua
+`scripts/eval_golden.mjs` chạy `DATA_BACKEND=postgres`, hoặc trang `/bql/eval`
+đọc `metrics-store.ts`) — **CẤM** dùng số từ bất kỳ bản chấm nào khác, kể cả
+số đã lưu trong `evals/runs/*.jsonl` từ TRƯỚC 2026-09-22 (những file đó được
+sinh bởi cách chấm CŨ, dễ dãi hơn — xem bảng trên).
+
+**Hạn chế còn lại của checkpoint `shows_conflict`, ghi rõ để không ai tưởng
+nó "chấm sai" khi thấy `false`:** `lib/pipeline/index.ts::escalateResult()`
+hiện trả `citations: []` cho MỌI lượt escalate, kể cả lượt `source_conflict`
+— nghĩa là hệ thống hiện tại **không hiển thị** hai section mâu thuẫn cho
+người dùng khi từ chối câu S03. `checkpoint_shows_conflict` vì vậy sẽ đọc
+**`false`** trên dữ liệu thật hôm nay — đây là phản ánh ĐÚNG hành vi hiện tại
+của pipeline, không phải lỗi của bộ chấm. Sửa hành vi đó (để `citations` mang
+theo section mâu thuẫn khi escalate vì conflict) cần sửa `lib/pipeline/index.ts`,
+nằm **ngoài phạm vi** gói chấm điểm này. Ghi vào đây làm câu hỏi mở thứ hai.
