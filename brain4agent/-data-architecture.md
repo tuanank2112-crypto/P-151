@@ -2,17 +2,30 @@
 
 Tài liệu thiết kế về cấu trúc dữ liệu, cơ chế lưu trữ bền vững (Persistence Layer) và luồng luân chuyển dữ liệu đa tầng.
 
-> **Trạng thái 2026-09-20: TẦNG DB CHƯA THI CÔNG, TẦNG FILE ĐÃ CÓ.**
-> Chưa có bảng, migration hay kết nối Postgres nào tồn tại thật (nhà cung cấp đã
-> chốt là **Supabase**, Đ25 — chưa có `DATABASE_URL`). **Nhưng dữ liệu nguồn
-> đã nằm trên đĩa dưới dạng file** sau gói P00:
+> **Trạng thái 2026-09-22: DB SUPABASE THẬT, NAY ĐANG ĐƯỢC GHI CHỨ KHÔNG CHỈ ĐỌC.**
+> DB đã migrate + đã seed (19 documents / 98 sections / 98 chunks / 2 users), migration
+> theo dõi bằng bảng `schema_migrations` (Đ30). Ba đường ghi mới đã thi công so với
+> mốc trước:
+> 1. **Mỗi lượt hỏi–đáp (BB-11)** ghi ĐÚNG MỘT dòng `answer_turns`, kể cả nhánh
+>    escalate, nhánh clarify và nhánh ném lỗi; `conversations`/`messages` giữ lịch sử
+>    hội thoại bền qua phiên. `conversation_id` của người khác trả HTTP 403.
+>    **G26 — `conversation_id` PHẢI là uuid thật** (đang vá, Đ37) — chuỗi tuỳ ý như
+>    `"golden-faq-S03"` vỡ ngay ở lệnh ghi đầu tiên (`invalid input syntax for type uuid`).
+> 2. **Console BQL (P03)** ghi `documents.status`/`effective_status`/`allowed_for_rag`
+>    qua Server Action, và có đường **upload tài liệu mới** + **đổi version** — mỗi
+>    thao tác ghi trong ĐÚNG MỘT câu SQL. `lib/adapters/bql-store.ts` là nơi DUY NHẤT
+>    truy vấn của gói P03 (giữ BB-07).
+> 3. **`users.property_type`** (cột mảng ENUM, Đ29) — driver `pg` trả mảng ENUM về
+>    dạng CHUỖI thô, phải chuẩn hoá tại `lib/adapters/db.ts` (G23).
+>
 > `knowledge/manifest.json` + `knowledge/sections/<document_id>.json` (19 tài liệu /
-> 98 section) là nguồn sẽ được `scripts/seed_knowledge.mjs` (gói P01) nạp vào bảng
-> `documents`/`sections`/`chunks`; `evals/golden/expected_defects.json` là hợp đồng
-> máy đọc để kiểm 4 khuyết tật sau khi seed. Nghĩa là **file trên đĩa đang là nguồn
-> chân lý của tri thức, DB sẽ là bản dẫn xuất** — sửa tri thức thì sửa file rồi tăng
-> `revision` ở `knowledge/README.md` (hiện `SIM-1.0.0`) và seed lại, CẤM sửa thẳng DB.
-> Nguồn chân lý chi tiết là
+> 98 section) vẫn là nguồn chân lý của TRI THỨC, DB là bản dẫn xuất — sửa tri thức
+> thì sửa file rồi tăng `revision` ở `knowledge/README.md` (hiện `SIM-1.0.0`) và seed
+> lại, CẤM sửa thẳng DB. Ngoại lệ: đường upload/đổi version của P03 là ghi trực tiếp
+> vào DB qua Console BQL — đó là dữ liệu VẬN HÀNH (tài liệu BQL tự nạp), không phải
+> tri thức mô phỏng gốc của P00.
+> `DATABASE_URL` hiện trỏ cổng 5432 — PHẢI đổi sang pooler 6543 trước khi deploy
+> serverless (Đ25). Nguồn chân lý chi tiết là
 > `planning/01_2026-09-20_resident-agent-v1/specs/01-CONTRACTS.md` (DDL, schema,
 > enum reason code) — file này chỉ tóm tắt điều hướng, không thay thế nó.
 
@@ -50,16 +63,26 @@ Chi tiết DDL, contract 3 agent, enum reason code (10 mã canonical + nhóm hà
 động theo Đ12) nằm trong `specs/01-CONTRACTS.md` — **đọc file đó trước khi viết
 bất kỳ type/DDL/API nào** (bắt buộc theo router `specs/00-ARCHITECTURE.md` §1).
 
-Luồng tổng quát (chưa thi công, mô tả dự kiến theo SPEC):
-1. Câu hỏi cư dân → agent retrieval/answer truy hồi từ pgvector → sinh nháp trả
-   lời có trích dẫn `document_id`/`section_id`.
+Luồng tổng quát — retrieval lexical (`ts_rank_cd`) + hai đường ghi (BB-11, P03) ĐÃ THI CÔNG và đo được trên Postgres thật; retrieval hybrid/embedding và P05 vẫn dự kiến theo SPEC:
+1. Câu hỏi cư dân → `POST /api/chat` → 9 chặng pipeline, retrieval lexical qua
+   `to_tsquery` OR (`buildTsQueryExpr()`, Đ32) → sinh nháp trả lời có trích dẫn
+   `document_id`/`section_id`. *(dự kiến: pgvector/hybrid chưa nối dây, chunks chưa
+   có embedding nào.)*
 2. Agent verify soi từng mệnh đề của nháp có neo vào evidence không → vừa là
    chốt an toàn lúc chạy, vừa sinh điểm faithfulness cho bảng eval (Đ08).
 3. Cổng escalate hợp 4 tín hiệu đo được (điểm truy hồi, eligibility, faithfulness,
    cờ mâu thuẫn nguồn — Đ07) → quyết định trả lời hay escalate, kèm lý do
    (không hiện % ra UI).
-4. BQL đổi `status`/version tài liệu → ảnh hưởng retrieval ngay trong cùng phiên
-   (R7) — không cần rebuild offline.
-5. (P05, có điều kiện) Trước một lệnh ghi mô phỏng, đọc điều kiện từ dữ liệu
-   chính sách read-only (còn chỗ trống, đủ điều kiện, hạn) rồi mới ghi — cấm
+4. **[THI CÔNG] Mỗi lượt hỏi–đáp ghi một dòng `answer_turns`** (BB-11) kể cả nhánh
+   escalate/clarify/lỗi; `conversations`/`messages` giữ lịch sử bền qua phiên; đây
+   là mẫu số của dashboard P04 (`lib/adapters/metrics-store.ts`).
+5. **[THI CÔNG] BQL đổi `status`/`effective_status`/`allowed_for_rag`, upload tài
+   liệu mới, đổi version** qua `lib/adapters/bql-store.ts` (Server Action, mỗi thao
+   tác một câu SQL) → ảnh hưởng retrieval ngay trong cùng phiên (R7) — không cần
+   rebuild offline. `setSectionExcluded` chưa có UI.
+6. **[THI CÔNG] Bộ chấm Golden (`lib/eval/score.ts`)** đọc `answer_turns` +
+   `golden_faq.jsonl`/`golden_safety.jsonl` để sinh M1/M3 cho dashboard/eval — nhưng
+   CHƯA có số nghiệm thu thật, CẤM tick `G11` (Đ36, chờ vá Đ37).
+7. (P05, có điều kiện, CHƯA thi công) Trước một lệnh ghi mô phỏng, đọc điều kiện từ
+   dữ liệu chính sách read-only (còn chỗ trống, đủ điều kiện, hạn) rồi mới ghi — cấm
    agent "thử và hỏng" bằng lệnh ghi thật (Đ10).

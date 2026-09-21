@@ -363,3 +363,33 @@ Tiếng Việt viết **rời từng âm tiết**, nên chuỗi con `kiện` n�
 **Cách vá:** tách câu thành âm tiết rồi khớp **cụm âm tiết liền nhau**. Với âm tiết đơn `kiện` (nghĩa pháp lý chỉ đúng khi nó đứng một mình) thì thêm ngữ cảnh: bỏ qua nếu đứng sau `điều/sự/linh/bưu/vụ` hoặc đứng trước `hàng/tướng/toàn`. Giữ được ca Safety *"tôi **kiện** được không"*.
 
 **Luật cho mọi danh mục chặn tiếng Việt về sau:** CẤM `includes()` trên âm tiết đơn. Và bộ test phải chạy trên **toàn bộ 66 câu hỏi Golden thật** — bản cũ xanh trên vài ví dụ tự chọn mà vẫn chặn oan một ca Golden. Ví dụ tự nghĩ ra chỉ chứng minh được điều người viết đã nghĩ tới.
+
+### G25 — Hai cài đặt cùng chấm một thứ thì sẽ lệch, và không cổng nào đỏ
+
+Thẩm định dựng 5 ca giả chạy qua hai bộ chấm Golden: **3/5 ca cho verdict KHÁC NHAU**. Bên thiếu lại chính là `scripts/eval_golden.mjs` — script sinh ra con số nghiệm thu `G11` — nó bỏ qua 3 trong 7 checkpoint của `SPEC-P00` §6.5 (không đọc `detected_intent`, không đọc `claims[].verdict`, không bỏ dấu tiếng Việt khi so `must_contain_vi`), nên mọi `M1` nó in ra đều CAO HƠN sự thật.
+
+**Đã vá (Đ36):** `lib/eval/score.ts` là bộ chấm Golden DUY NHẤT, đủ cả 7 checkpoint; cả `scripts/eval_golden.mjs` lẫn `lib/adapters/metrics-store.ts` import từ đó. `tests/scorer-consensus.test.ts` canh hai đường gọi ra cùng verdict.
+
+**Luật rút ra:** định nghĩa "thế nào là đạt" chỉ được sống ở MỘT nơi; ai thêm nơi thứ hai phải trả lời được "khi hai nơi lệch thì tin nơi nào".
+
+### G26 — Một thay đổi đúng ở chỗ A kích hoạt một lỗi ngủ ở chỗ B
+
+`conversation_id` dạng chữ (`"golden-faq-S03"`, `"trace-sample"`) vô hại suốt nhiều phiên vì `runTurn()` là hàm thuần không ghi DB. Gói BB-11 nối đường ghi vào và lập tức ba script vỡ ở lệnh ghi đầu tiên. Đo: `select 'golden-faq-S03'::uuid` → `ERROR: invalid input syntax for type uuid`.
+
+**Đang vá (Đ37, ĐANG CHẠY lúc phiên 2026-09-22 kết thúc):** `conversation_id` phải là uuid thật.
+
+**Luật rút ra:** khi một hàm mọc thêm side-effect, hợp đồng đầu vào của nó đổi theo — phải nói thành lời và phải có cổng canh.
+
+### G27 — Bộ đo có thể xanh vì không ca nào chạm nhánh đó
+
+Thẩm định phá bất biến P02-C10 theo ba hình dạng; hai hình dạng làm test đỏ, hình dạng thứ ba — bọc lệnh ghi trong `if (decision !== "clarify")` — **LỌT QUA toàn bộ 113 test**. Không phải bộ đo giả, mà là lỗ hổng độ phủ ở một nhánh không ai nghĩ tới.
+
+**Luật rút ra:** liệt kê ĐỦ các đường thoát của hàm rồi đối chiếu từng đường với một ca canh, đừng suy từ "test xanh" ra "đã phủ".
+
+### G28 — Sản phẩm hứa trên màn hình rồi không giao
+
+`SPEC-P02` §6.4 bắt câu trả lời khi mâu thuẫn nguồn phải nói *"đây là hai nguồn để anh/chị đối chiếu"*, nhưng `escalateResult()` trả `citations: []` cho mọi đường escalate. Không test nào đỏ vì không ai viết test đối chiếu câu chữ hiển thị với dữ liệu kèm theo.
+
+**Đang vá (Đ38, ĐANG CHẠY lúc phiên 2026-09-22 kết thúc).**
+
+**Luật rút ra:** mỗi câu mà giao diện hứa một thứ cụ thể đều phải có một cổng canh thứ đó có thật.

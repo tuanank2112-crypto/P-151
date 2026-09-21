@@ -2,6 +2,30 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-22: P03 Console BQL, P04 Eval/Dashboard, bộ nhớ hội thoại, một bộ chấm Golden duy nhất
+
+**Ba gói rubric bắt buộc chốt trong một phiên: P03, P04, và bộ nhớ hội thoại (BB-11).** Kèm một phát hiện quan trọng của thẩm định đối kháng: hai cài đặt khác nhau từng cùng chấm Golden, và chúng lệch nhau.
+
+### Decisions
+- **Đ34 — MỘT bộ chấm duy nhất; hoãn bảng `golden_results`.** Giả định ban đầu về bên nào chép lại của ai SAI (xem Đ36).
+- **Đ35 — Phán ba câu hỏi của gói P03; nhận lỗi cắt phạm vi thiếu.** Upload tài liệu mới và đổi version là việc BẮT BUỘC — bàn giao ban đầu cắt thiếu. Kèm theo: bug `conversation_id`; bằng chứng gate `R7` do Super Orchestrator tự chạy.
+- **Đ36 — Bộ chấm nghiệm thu SAI, không phải bộ chấm dashboard. CẤM lấy số `G11` cho tới khi gộp.** Đảo chiều so với giả định của Đ34: bên **thiếu** là `scripts/eval_golden.mjs` — chính script sinh con số nghiệm thu `G11` — bỏ qua 3/7 checkpoint `SPEC-P00` §6.5 nên mọi `M1` nó in ra đều CAO HƠN sự thật. Thi hành: `lib/eval/score.ts` là cài đặt DUY NHẤT, cả hai đường gọi import từ đó, có `tests/scorer-consensus.test.ts` canh cùng verdict trên tối thiểu 5 ca khác hình dạng.
+- **Đ37 — `conversation_id` phải là uuid: BB-11 biến một bug ngủ thành bug sống.** `runTurn()` từng là hàm thuần không ghi DB nên `conversation_id` dạng chữ vô hại; nối đường ghi vào thì ba script vỡ ngay ở lệnh ghi đầu tiên (`invalid input syntax for type uuid`). Cộng với Đ36: nay có HAI lý do độc lập khiến chưa từng có `M1` nào đáng tin. Vùng cấm `G11` mở rộng: chỉ tick sau khi CẢ HAI xong và có một lượt chạy thật exit 0. **ĐANG VÁ, chưa xong lúc chốt phiên.**
+- **Đ38 — Lượt `source_conflict` hứa hai nguồn rồi không đưa nguồn nào.** `SPEC-P02` §6.4 bắt câu trả lời khi mâu thuẫn nguồn phải nói "đây là hai nguồn để anh/chị đối chiếu", nhưng `escalateResult()` trả `citations: []` cho mọi đường escalate. Không test nào đỏ vì không ai viết test đối chiếu câu chữ hiển thị với dữ liệu kèm theo. **ĐANG VÁ, chưa xong lúc chốt phiên.**
+
+### Added
+- **P03 — Console BQL:** màn `documents` đọc 19 tài liệu thật; Server Action đổi `status`/`effective_status`/`allowed_for_rag`; hàng đợi duyệt HITL (`pending → approved | edited_approved | rejected`); upload tài liệu mới + đổi version, mỗi thứ ĐÚNG MỘT câu SQL. `lib/adapters/bql-store.ts` là nơi duy nhất truy vấn của gói.
+- **P04 — Eval + Dashboard:** `lib/adapters/metrics-store.ts`, màn `dashboard` (tỉ lệ tự động giải quyết tách theo intent và lý do escalate), màn `eval`, `evals/golden/rubric.md`.
+- **BB-11 — Bộ nhớ hội thoại:** mỗi lượt ghi ĐÚNG MỘT dòng `answer_turns` kể cả nhánh escalate/clarify/lỗi; lịch sử bền qua phiên; `conversation_id` của người khác trả HTTP 403.
+- **`lib/eval/score.ts` (MỚI):** bộ chấm Golden DUY NHẤT, đủ cả 7 checkpoint kể cả `shows_conflict`.
+- Bốn gotcha mới `G25`–`G28` (xem `-known-gotchas.md`): hai bộ chấm lệch nhau · side-effect mới làm lộ hợp đồng cũ · độ phủ nhánh giả (bọc trong `if` lọt qua 113 test) · giao diện hứa trích dẫn rồi không giao.
+
+### Đo được (SO tự đo tại commit `1ab937d`)
+`npx tsc --noEmit` exit 0 · `npm run build` exit 0 · `node scripts/run_tests.mjs` **134 pass / 0 fail / 0 skip** (trước phiên: 82) · `check_adapter_boundary.sh` `violations: 0` · `check_no_confidence_ui.sh` và `check_no_hardcoded_knowledge.sh` `matches: 0` · `validate_knowledge.mjs` `documents: 19 · sections: 98 · defects_ok: 4/4` · `validate_golden.mjs` `faq: 50 (answerable 40) · safety: 16 · canonical 10/10`.
+
+### Còn treo
+**CẤM tick `G11`** (chưa từng có số M1/M3 đáng tin — chờ Đ37) · gate `R7` mới có nửa bằng chứng · `expected_gate` DEF-04 chờ chủ tịch · Đ32 chờ phê chuẩn · scope Vercel chờ chọn · `DATABASE_URL` phải đổi sang pooler 6543 trước khi deploy · `setSectionExcluded` chưa có UI · `RETRIEVAL_MODE=hybrid` chưa nối, chưa chunk nào có embedding · P05/P06 chưa động · chưa push commit nào · Đ37 + Đ38 đang vá (gói riêng, chạy song song phiên này).
+
 ## [Chưa phát hành] - 2026-09-21: Pipeline nối vào web, chạy end-to-end THẬT trên Supabase
 
 **Mốc lớn nhất từ đầu dự án: lượt hỏi–đáp đầu tiên chạy trọn 9 chặng qua HTTP, trên DB thật, trả lời có trích dẫn.** Trước phiên này repo có pipeline chạy bằng script nhưng KHÔNG có màn hình nào gọi được nó.

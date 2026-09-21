@@ -12,20 +12,22 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 
 - [x] P00 — Knowledge Pack mô phỏng + Golden Dataset 🔴 (D1–D2) — ✅ DUYỆT, xem `Done`
 - [ ] P01 — Nền tảng, auth 2 vai, ingest, deploy 🟠 (D2) — **DB Supabase đã migrate + seed thật** (19 doc / 98 chunk / 2 user); **đăng nhập 2 vai đo được trên DB thật**; chỉ còn **deploy** chờ chủ tịch chọn scope Vercel (Đ23)
-- [ ] P02 — RAG có trích dẫn, memory, 3 agent, cổng escalate 🔴🟠 (D3–D4) — **ĐÃ CHẠY END-TO-END THẬT qua `POST /api/chat` trên Postgres 2026-09-21**: trích dẫn ✅, 3 agent tách bạch ✅, `DEF-04` ra đúng `reason_code` ✅. Còn: bộ nhớ hội thoại (BB-11), nhãn `gate` của DEF-04 chờ chủ tịch, `DEF-01`/`DEF-02` chưa đo xong (cạn hạn mức)
-- [ ] P03 — Console BQL: quản lý tài liệu + duyệt câu trả lời (HITL) 🟠 (D4–D5) — phụ thuộc P01, P02
-- [ ] P04 — Bảng eval faithfulness/relevance + dashboard 🟠 (D5) — phụ thuộc P00, P02
+- [ ] P02 — RAG có trích dẫn, memory, 3 agent, cổng escalate 🔴🟠 (D3–D4) — **ĐÃ CHẠY END-TO-END THẬT qua `POST /api/chat` trên Postgres 2026-09-21**; bộ nhớ hội thoại (BB-11) **nay đã nối** (xem `Done`). Còn: nhãn `gate` của DEF-04 chờ chủ tịch, `DEF-01`/`DEF-02` chưa đo xong (cạn hạn mức), lượt `source_conflict` hứa hai nguồn rồi không đưa nguồn nào (Đ38, đang vá)
+- [x] P03 — Console BQL: quản lý tài liệu + duyệt câu trả lời (HITL) 🟠 (D4–D5) — ✅ DUYỆT, xem `Done`
+- [x] P04 — Bảng eval faithfulness/relevance + dashboard 🟠 (D5) — ✅ DUYỆT, xem `Done`
 - [ ] P05 — Lớp hành động: đọc chính sách, đặt chỗ, biên nhận, hoàn tác 🟠 (D6) — **cổng: P01–P04 xanh**, gói duy nhất được cắt khi trễ
 - [ ] P06 — Kịch bản demo, dữ liệu mồi, dự phòng 🟢 (D7) — phụ thuộc tất cả
 
-### Việc phải làm ngay, theo thứ tự (cập nhật 2026-09-21)
+### Việc phải làm ngay, theo thứ tự (cập nhật 2026-09-22)
 
-1. **🖐 Chủ tịch quyết `expected_gate` của DEF-04** (`expected_defects.json` + `golden_safety.jsonl` ca `S04`): `reason_code` nay đúng, nhưng nhãn gate là `G3_retriever_refused` chứ không phải `G2_zero_eligible` — nhãn cũ mã hoá một giả định về tầng truy hồi mà phép đo đã bác. Chặn `K-M6` đạt 4/4.
-2. **🖐 Chủ tịch phê chuẩn Đ32** (đổi `01-CONTRACTS` §4.2 sang `to_tsquery` OR). Đã áp vì không áp thì demo không chạy được dòng nào; đảo lại bằng một commit revert.
-3. **Chạy `eval:golden` theo lô trên Postgres** để lấy **số nghiệm thu thật** cho `G11` (M1/M3). Cần hạn mức Gemini hồi; một lượt đầy đủ ~13–15 phút, 198 lời gọi.
-4. **Nối bộ nhớ hội thoại (BB-11)** — bảng `conversations`/`messages`/`answer_turns` ĐÃ có trên Supabase, pipeline chưa ghi dòng nào. Đây là mẫu số của dashboard P04.
-5. **P03 + P04** — hai gói rubric bắt buộc, chưa bắt đầu, 5 màn BQL vẫn là khung rỗng.
-6. **Deploy Vercel** (chờ scope) · **thẩm định độc lập tầng 🔴** cho `lib/confidence.ts` + `lib/pipeline/index.ts` · nối `RETRIEVAL_MODE=hybrid` + `embed_cache.mjs` cho 98 chunk (Đ27).
+1. **Đang chạy lúc chốt phiên: vá Đ37 (`conversation_id` phải là uuid, G26) + Đ38 (lượt `source_conflict` phải trả `citations` đúng như câu chữ hứa, G28)** — CẢ HAI phải xong và có một lượt chạy thật exit 0 trước khi tick `G11`.
+2. **CẤM tick `G11`** cho tới khi việc 1 xong (Đ36 + Đ37) — bộ chấm cũ (`eval_golden.mjs` bản trước Đ36) sai vì thiếu 3/7 checkpoint SPEC-P00 §6.5, và bộ chạy vỡ ở lệnh ghi DB đầu tiên với `conversation_id` không phải uuid.
+3. **🖐 Chủ tịch quyết `expected_gate` của DEF-04** (`expected_defects.json` + `golden_safety.jsonl` ca `S04`): `reason_code` nay đúng, nhưng nhãn gate là `G3_retriever_refused` chứ không phải `G2_zero_eligible`. Chặn `K-M6` đạt 4/4.
+4. **🖐 Chủ tịch phê chuẩn Đ32** (đổi `01-CONTRACTS` §4.2 sang `to_tsquery` OR). Đã áp vì không áp thì demo không chạy được dòng nào; đảo lại bằng một commit revert.
+5. **Chạy `eval:golden` theo lô trên Postgres** để lấy **số nghiệm thu thật** cho `G11` (M1/M3), SAU khi việc 1–2 xong. Cần hạn mức Gemini hồi; một lượt đầy đủ ~13–15 phút, 198 lời gọi.
+6. **Gate `R7` (BQL đổi status ảnh hưởng retrieval cùng phiên)** mới có nửa bằng chứng (tầng SQL) — nửa "agent thôi trích dẫn tài liệu đã hạ cấp" chờ hạn mức Gemini.
+7. **`setSectionExcluded` chưa có UI.**
+8. **Deploy Vercel** (chờ scope; `DATABASE_URL` phải đổi sang pooler 6543 trước) · **thẩm định độc lập tầng 🔴** cho `lib/confidence.ts` + `lib/pipeline/index.ts` · nối `RETRIEVAL_MODE=hybrid` + `embed_cache.mjs` cho 98 chunk (Đ27) · P05/P06 chưa động · chưa push commit nào.
 
 ## Tương lai (Upcoming)
 
@@ -58,6 +60,34 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
   Ai muốn lật phải trả lời được "lấy baseline ở đâu".
 
 ## Đã hoàn thành (Done)
+
+- [x] **P03 — Console BQL (2026-09-22):** màn `documents` đọc 19 tài liệu thật từ DB;
+  Server Action đổi `status`/`effective_status`/`allowed_for_rag`; hàng đợi duyệt
+  HITL với máy trạng thái `pending → approved | edited_approved | rejected`; **upload
+  tài liệu mới** và **đổi version** (mỗi thứ ĐÚNG MỘT câu SQL); `lib/adapters/bql-store.ts`
+  là nơi duy nhất truy vấn của gói. Phán quyết ✅ DUYỆT ở `reports/R07` và `R12`. Còn
+  treo: `setSectionExcluded` chưa có UI; gate `R7` mới có nửa bằng chứng.
+
+- [x] **P04 — Eval + Dashboard (2026-09-22):** `lib/adapters/metrics-store.ts`, màn
+  `dashboard` (tỉ lệ tự động giải quyết tách theo intent và theo lý do escalate) và
+  màn `eval`; `evals/golden/rubric.md` (mới). Phán quyết ✅ DUYỆT ở `reports/R08`
+  (sau một vòng 🔁 SỬA) và `R10`. **Chưa có số nghiệm thu M1/M3** — CẤM tick `G11`
+  cho tới khi Đ37 vá xong (Đ36).
+
+- [x] **BB-11 — Bộ nhớ hội thoại (2026-09-22):** mỗi lượt ghi ĐÚNG MỘT dòng
+  `answer_turns` kể cả nhánh escalate, nhánh clarify và nhánh ném lỗi; lịch sử hội
+  thoại bền qua phiên; `conversation_id` của người khác trả HTTP 403. Phán quyết
+  ✅ DUYỆT ở `reports/R06` (sau 🔁) và `R11`. Kích hoạt bug ngủ **G26**
+  (`conversation_id` phải là uuid) — đang vá (Đ37).
+
+- [x] **`lib/eval/score.ts` — bộ chấm Golden DUY NHẤT (2026-09-22):** sao y
+  `SPEC-P00` §6.5, đủ cả 7 checkpoint kể cả `shows_conflict`. Cả `scripts/eval_golden.mjs`
+  lẫn `lib/adapters/metrics-store.ts` import từ đó. `tests/scorer-consensus.test.ts`
+  canh hai đường gọi ra cùng verdict. Ra đời từ **G25** (hai bộ chấm cũ lệch nhau
+  3/5 ca giả, Đ36).
+
+- [x] **Thẩm định đối kháng cô lập (`reports/R09`, 2026-09-22):** phán quyết
+  ✅ DUYỆT — gói đắt giá nhất của phiên. Tìm ra G25/G27/G28.
 
 - [x] **P02b — Pipeline nối vào web, chạy end-to-end thật (2026-09-21):**
   `app/api/chat/route.ts` (cửa HTTP duy nhất, chỉ vai `resident`, cắt `confidence` +

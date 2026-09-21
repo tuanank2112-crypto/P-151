@@ -48,7 +48,15 @@ project-root/
 │   │                                 #   chỉ vai resident; cắt confidence + gate_triggered (BB-05);
 │   │                                 #   bảng lỗi SPEC-P02 §9 → mã HTTP; CẤM cache (P02-C8)
 │   ├── (resident)/chat/              #   [P02b] màn hỏi–đáp THẬT: trích dẫn, lý do từ chối, 9 chặng
-│   └── (bql)/documents|review|eval|dashboard/   # giao diện BQL (KHUNG — nội dung do P03/P04 bồi)
+│   └── (bql)/                        #   [P03/P04] Console BQL — nội dung THẬT, không còn khung rỗng
+│       ├── documents/{page.tsx,actions.ts,DocumentsTable.tsx,UploadPanel.tsx}
+│       │                             #     đọc 19 tài liệu thật; Server Action đổi status/
+│       │                             #     effective_status/allowed_for_rag; upload + đổi version
+│       │                             #     (mỗi thứ ĐÚNG MỘT câu SQL). setSectionExcluded CHƯA có UI
+│       ├── review/{page.tsx,actions.ts,ReviewQueueList.tsx}   # hàng đợi duyệt HITL: máy trạng thái
+│       │                             #     pending → approved | edited_approved | rejected
+│       ├── eval/{page.tsx,labels.ts}  #   màn eval — đọc lib/eval/score.ts, CHƯA có số nghiệm thu G11
+│       └── dashboard/page.tsx        #   tỉ lệ tự động giải quyết tách theo intent và lý do escalate
 ├── lib/                              # lõi dùng chung
 │   ├── types.ts                      #   NGUỒN CHÂN LÝ kiểu (01-CONTRACTS §7); enum 15 reason_code
 │   ├── adapters/db.ts                #   *** FILE DUY NHẤT mở connection (BB-07) ***; định tuyến
@@ -62,15 +70,24 @@ project-root/
 │   ├── reason-messages.ts            #   [P02b] reason_code → câu tiếng Việt (SPEC-P02 §6.4).
 │   │                                 #   Ở .ts để .tsx không chứa chữ cấm của BB-05
 │   ├── auth/                         #   password (scrypt) · session (cookie HMAC) · guard
-│   └── retrieval/query.ts            #   truy vấn lexical: buildTsQueryExpr() nối OR (Đ32/G22),
-│                                     #   to_tsquery + cờ chuẩn hoá 32 (C-05). CẤM plainto_tsquery
+│   ├── retrieval/query.ts            #   truy vấn lexical: buildTsQueryExpr() nối OR (Đ32/G22),
+│   │                                 #   to_tsquery + cờ chuẩn hoá 32 (C-05). CẤM plainto_tsquery
+│   ├── eval/score.ts                 #   [MỚI] bộ chấm Golden DUY NHẤT, sao y SPEC-P00 §6.5, đủ
+│   │                                 #   cả 7 checkpoint (kể cả shows_conflict). eval_golden.mjs
+│   │                                 #   và metrics-store.ts đều import từ đây (Đ36/G25)
+│   └── adapters/{bql-store,metrics-store}.ts   # [P03/P04] bql-store: nơi DUY NHẤT truy vấn của
+│                                     #   Console BQL. metrics-store: đọc answer_turns + score.ts
+│                                     #   cho dashboard/eval
 ├── db/migrations/                    # **ĐÃ CHẠY THẬT trên Supabase 2026-09-21**, theo dõi bằng
 │   │                                 #   bảng `schema_migrations` (Đ30)
 │   └── 001_enums → 002_users → 003_knowledge → 004_operational → 005_user_property_type
 │                                     #   003 có immutable_unaccent — CẤM dùng unaccent() trần
 │                                     #   trong cột GENERATED (G18)
 │                                     #   005 idempotent: thêm users.property_type (Đ29)
-├── tests/                            # node:test — **82 ca**, không cần DB, không cần key
+├── tests/                            # node:test — **134 ca** (trước: 82), không cần DB, không cần key
+│   ├── conflict-citations.test.ts    #   [MỚI] canh escalateResult() trả citations khi source_conflict
+│   ├── conversation-id.test.ts       #   [MỚI] canh conversation_id phải là uuid (Đ37/G26)
+│   └── scorer-consensus.test.ts      #   [MỚI] canh eval_golden.mjs và metrics-store.ts cùng verdict
 ├── knowledge/                        # [MỚI - P00] Knowledge Pack MÔ PHỎNG, 19 tài liệu / 98 section
 │   ├── manifest.json                 #   siêu dữ liệu 19 tài liệu
 │   ├── sections/<document_id>.json   #   19 file, tên trùng document_id
@@ -79,7 +96,7 @@ project-root/
 │   ├── golden_faq.jsonl              #   50 case (40 answerable) — Metric 1
 │   ├── golden_safety.jsonl           #   16 case, phủ đủ 10 mã canonical — Metric 3
 │   ├── expected_defects.json         #   hợp đồng máy đọc của 4 khuyết tật (DEF-01..04)
-│   └── rubric.md                     #   CHƯA CÓ — chuyển sang gói P04
+│   └── rubric.md                     #   [MỚI - P04] thang điểm faithfulness/relevance cho màn eval
 ├── evals/runs/                       # [Đ26] checkpoint các lô đo (`.gitignore`) — TRẠNG THÁI
 │                                     #   CHẠY DỞ, KHÔNG phải bằng chứng nghiệm thu
 ├── scripts/                          # Script kiểm + vận hành, Node thuần
@@ -90,7 +107,9 @@ project-root/
 │   ├── _fixtures.mjs                 #   [P02a] principal demo dùng trong script đo
 │   ├── probe_defects.mjs             #   K-M6/G05 — DEF-04 nay ra ĐÚNG reason_code (Đ28); nhãn
 │   │                                 #   gate còn chờ chủ tịch. Trên postgres: cạn hạn mức, 1/4
-│   ├── eval_golden.mjs               #   M1/M3 — chạy theo lô; CẤM tick G11 bằng số mock (Đ24)
+│   ├── eval_golden.mjs               #   M1/M3 — chạy theo lô, chấm bằng lib/eval/score.ts (Đ36);
+│   │                                 #   CẤM tick G11 bằng số mock (Đ24), và CẤM tick G11 cho tới
+│   │                                 #   khi vá xong Đ37 (conversation_id uuid — G26)
 │   ├── embed_cache.mjs               #   --probe đo L2 (0.4356 → 1.0000); đợt 98 chunk CHƯA chạy
 │   ├── trace_sample.mjs              #   in 3 khối agent — CHƯA có lượt trọn vẹn qua Gemini thật
 │   ├── run_tests.mjs                 #   `npm test -- <chuỗi>` lọc theo tên file (node --test coi

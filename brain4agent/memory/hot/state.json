@@ -1,26 +1,22 @@
 {
   "current_version": "1.0.0",
   "brain_template_version": "1.7.1",
-  "system_status": "p02b_e2e_chay_that_tren_postgres",
+  "system_status": "p03_p04_bb11_xong_cho_va_d37_d38",
   "last_verification": {
-    "timestamp": "2026-09-21T16:30:00.000Z",
-    "grade": "P02b — pipeline noi vao web, luot e2e dau tien tra loi duoc tren Supabase that",
+    "timestamp": "2026-09-22T00:00:00.000Z",
+    "grade": "P03 + P04 + BB-11 DUYET; thi cong D37 (uuid) + D38 (citations conflict) dang chay",
     "gates_no_key_needed": {
       "tsc": "npx tsc --noEmit · exit 0",
-      "build": "npm run build KHONG co DATABASE_URL · exit 0 (co /api/chat)",
-      "test": "npm test · tests 82 · pass 82 · fail 0 · skipped 0 (truoc: 53)",
+      "build": "npm run build KHONG co DATABASE_URL · exit 0",
+      "test": "node scripts/run_tests.mjs · tests 134 · pass 134 · fail 0 · skipped 0 (truoc: 82)",
       "BB-07": "check_adapter_boundary.sh · violations: 0",
       "BB-10": "check_no_hardcoded_knowledge.sh · matches: 0",
-      "BB-05": "check_no_confidence_ui.sh · matches: 0 (da co app/(resident)/chat/page.tsx that)",
-      "red_tests_moi": "4 truc KHAC HINH DANG: (1) logic cong G3 (2) duong dan du lieu eligibility (3) chuoi con am tiet tieng Viet (4) plainto_tsquery. Evidence: evidence/d28-def04/"
+      "BB-05": "check_no_confidence_ui.sh · matches: 0",
+      "K-M1": "validate_knowledge.mjs · documents: 19 · sections: 98 · defects_ok: 4/4",
+      "K-M2": "validate_golden.mjs · faq: 50 (answerable 40) · safety: 16 · canonical: 10/10",
+      "do_tai": "SO tu do tai commit 1ab937d, dung chay lai"
     },
-    "e2e": {
-      "duong": "POST /api/chat -> runTurn -> 9 chang",
-      "backend": "postgres (Supabase that)",
-      "ket_qua": "decision=answer · 1 citation OCP1-POOL-RULES-001/POOL-SAFE-03 · claims 3/3 supported",
-      "ba_agent": "safety+intent=gemini-3.5-flash-lite · draft=gemini-3.5-flash · verify=gemini-2.5-flash",
-      "evidence": "planning/01_2026-09-20_resident-agent-v1/evidence/d28-def04/e2e_api_chat_postgres.txt"
-    }
+    "G11": "CAM TICK — chua tung co so M1/M3 dang tin (Đ36 bo cham cu sai + Đ37 conversation_id chua phai uuid dang va)"
   },
   "active_plans_completed": 0,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
@@ -50,14 +46,17 @@
     "done": [
       "P00",
       "P01a",
-      "P02b (noi web + e2e that)"
+      "P02b (noi web + e2e that)",
+      "BB-11 (bo nho hoi thoai)",
+      "P03 (console BQL)",
+      "P04 (eval + dashboard)",
+      "lib/eval/score.ts (bo cham Golden duy nhat)"
     ],
-    "next": "lay so nghiem thu G11 tren postgres; noi BB-11; P03/P04",
+    "next": "va xong D37 (conversation_id uuid) + D38 (citations source_conflict) dang chay song song; roi lay so nghiem thu G11 that",
     "remaining": [
       "P01 deploy",
-      "P02 memory",
-      "P03",
-      "P04",
+      "va D37/D38 (dang chay)",
+      "G11 (chan boi D37)",
       "P05",
       "P06"
     ]
@@ -104,7 +103,7 @@
     "provider": "supabase",
     "decision": "Đ25",
     "driver": "pg (TCP)",
-    "trang_thai": "DA MIGRATE + DA SEED THAT — 19 documents / 98 sections / 98 chunks / 2 users",
+    "trang_thai": "DA MIGRATE + DA SEED THAT — 19 documents / 98 sections / 98 chunks / 2 users. NAY DANG DUOC GHI, khong chi doc: answer_turns/conversations/messages (BB-11) va documents/sections/chunks qua Console BQL (upload + doi version, P03)",
     "migrations": "theo doi bang schema_migrations (Đ30). 001..004 baseline, 005 ap dung that exit 0",
     "chunks_co_embedding": 0,
     "cong_ket_noi": "DATABASE_URL hien tai tro cong 5432 — BAT BUOC doi sang pooler 6543 truoc khi deploy serverless (Đ25)",
@@ -135,11 +134,13 @@
   },
   "open_issues": {
     "expected_gate_DEF04": "xem blocked_needs_human",
-    "BB_11": "bo nho hoi thoai CHUA noi — bang conversations/messages/answer_turns DA co tren Supabase",
     "hybrid": "RETRIEVAL_MODE=hybrid CHUA noi day; chunks chua co embedding nao",
-    "G11": "eval:golden CHUA chay tren postgres — chua co so nghiem thu M1/M3",
+    "G11": "CAM TICK (Đ36) — chua tung co so nghiem thu M1/M3 dang tin; cho va xong Đ37",
+    "D37_dang_chay": "conversation_id phai la uuid that (G26) — BB-11 lam lo bug ngu, dang va",
+    "D38_dang_chay": "escalateResult() tra citations:[] cho moi duong escalate, du SPEC-P02 §6.4 hua 'hai nguon de doi chieu' (G28) — dang va",
     "tang_do_P02a": "lib/confidence.ts + lib/pipeline/index.ts van can tham dinh doc lap tang 🔴",
-    "P03_P04": "chua bat dau — 5 man BQL van la khung rong"
+    "R7_nua_bang_chung": "gate R7 (BQL doi status anh huong retrieval cung phien) moi co nua bang chung tang SQL, nua kia cho han muc Gemini",
+    "setSectionExcluded_chua_co_UI": "P03 con thieu man hinh nay"
   },
   "km6": {
     "value": "1/4 tren postgres (DEF-03 OK) · 3 ca blocked vi can han muc Gemini — KHONG phai truot",

@@ -5,34 +5,29 @@
 Resident Agent v1.0 — SẢN PHẨM DEMO mô phỏng cho ban giám khảo (AI20K Build
 Phase Cohort 4, rubric C104/VHR-01/G104), KHÔNG PHẢI hệ thống chạy thật. Không
 API Vinhomes, không dữ liệu cư dân thật. Deadline 2026-09-27.
-Giai đoạn (2026-09-21): 9 SPEC + P00 ✅ + P01a ✅ + **P02b ✅ — lượt hỏi–đáp
-END-TO-END đầu tiên chạy được**: POST /api/chat → 9 chặng → decision=answer, 1
-citation thật, 3/3 claim supported, 3 model tách bạch, TRÊN SUPABASE THẬT.
-DB ĐÃ MIGRATE + ĐÃ SEED (19 doc / 98 section / 98 chunk / 2 user); migration theo
-dõi bằng `schema_migrations` (Đ30) — migration đã chạy thì CẤM sửa, thêm file mới.
-DATABASE_URL hiện trỏ cổng 5432; PHẢI đổi sang pooler 6543 trước khi deploy.
-Trên đĩa: knowledge/ (19 tài liệu / 98 section, 4 khuyết tật DEF-01..04), evals/golden/
-(50 FAQ + 16 Safety), app/ (có api/chat + màn chat THẬT; 5 màn BQL vẫn KHUNG RỖNG),
-lib/{types,confidence,auth,retrieval,reason-messages}, lib/adapters/{db,model,store-mock},
-lib/pipeline/ (3 agent, 9 chặng). Cổng: tsc 0 · build 0 · npm test **82** · BB-05/07/10 = 0.
-BỐN LỖI THẬT vá 2026-09-21, đều chỉ lộ khi chạy end-to-end trên DB thật:
- · Đ28/G20 DEF-04 — G3 phân biệt bằng `top_rejected_reason` (chunk hạng 1), CẤM dùng
-   rejection_histogram cho G3 (P02-C16). reason_code nay ĐÚNG; nhãn gate ra G3 chứ
-   không phải G2 như expected_defects.json ghi ⇒ CHỜ CHỦ TỊCH QUYẾT.
- · Đ32/G22 — `plainto_tsquery` là AND ⇒ truy vấn 10 từ của A1 trả 0 dòng ⇒ MỌI câu hỏi
-   thành no_eligible_source. Đổi sang to_tsquery OR (buildTsQueryExpr). ĐỔI HỢP ĐỒNG
-   §4.2, CHƯA ĐƯỢC PHÊ CHUẨN — đảo lại bằng một commit revert.
- · Đ31/G24 — CẤM chặn tiếng Việt bằng chuỗi con: "điều kiện".includes("kiện") đẩy một
-   ca Golden FAQ sang escalate pháp lý ngay chặng 5 (P02-C17). Khớp theo ÂM TIẾT.
- · Đ29/G23 — `pg` trả mảng ENUM về dạng CHUỖI; và `users` thiếu cột property_type ⇒
-   19/19 tài liệu bị loại vì scope_mismatch. Chuẩn hoá tại adapter.
-CÒN LẠI: BB-11 bộ nhớ hội thoại chưa nối (bảng đã có) · eval:golden chưa chạy ⇒ CHƯA
-có số nghiệm thu G11 · RETRIEVAL_MODE=hybrid chưa nối, chunks chưa có embedding nào ·
-P03/P04 (rubric bắt buộc) CHƯA BẮT ĐẦU · deploy chờ chủ tịch chọn scope Vercel.
+Giai đoạn (2026-09-22): P00/P01a/P02b ✅ + **P03 (Console BQL) ✅ + P04 (Eval/
+Dashboard) ✅ + BB-11 (bộ nhớ hội thoại) ✅ — cả ba gói rubric bắt buộc đã DUYỆT**.
+`lib/eval/score.ts` (MỚI) là bộ chấm Golden DUY NHẤT, đủ 7 checkpoint SPEC-P00
+§6.5; cả `eval_golden.mjs` lẫn `metrics-store.ts` import từ đó, không giữ bản riêng.
+DB Supabase THẬT, ĐÃ MIGRATE + ĐÃ SEED (19 doc/98 section/98 chunk/2 user), NAY
+ĐANG ĐƯỢC GHI (không chỉ đọc): answer_turns/conversations/messages (BB-11) và
+documents/sections/chunks qua Console BQL (upload + đổi version, P03).
+DATABASE_URL trỏ cổng 5432; PHẢI đổi sang pooler 6543 trước khi deploy.
+Cổng: tsc 0 · build 0 · npm test **134** (trước 82) · BB-05/07/10 = 0.
+Thẩm định đối kháng cô lập (`reports/R09`) tìm 4 phát hiện thật, xem chi tiết
+`-known-gotchas.md` G25–G28: G25 hai bộ chấm Golden cũ lệch 3/5 ca (vá:
+`lib/eval/score.ts`, Đ36) · G26 `conversation_id` không phải uuid làm BB-11 vỡ
+lệnh ghi đầu (ĐANG VÁ, Đ37) · G27 `if (decision !== "clarify")` lọt qua 113
+test cũ · G28 `escalateResult()` trả `citations: []` trái lời hứa SPEC-P02 §6.4
+(ĐANG VÁ, Đ38). **CẤM TUYỆT ĐỐI tick G11** cho tới khi Đ37 xong + một lượt
+chạy thật exit 0 (Đ36+Đ37).
+CÒN TREO: `expected_gate` DEF-04 · Đ32 chờ phê chuẩn · scope Vercel ·
+`setSectionExcluded` chưa có UI · gate `R7` nửa bằng chứng · hybrid chưa nối ·
+P05/P06 chưa động · chưa push commit nào.
 Cấm nói đã hoàn thành trước khi có bằng chứng máy chạy thật.
 `docs/` mô tả SẢN PHẨM CŨ đã hạ cấp (v0.2, actor khác) — chỉ còn là nguồn tham
 chiếu. Nguồn chân lý thiết kế đang hiệu lực, đọc theo thứ tự:
-`planning/01_2026-09-20_resident-agent-v1/plan.md` §2 (Đ01–Đ33) → `specs/00-ARCHITECTURE.md`
+`planning/01_2026-09-20_resident-agent-v1/plan.md` §2 (Đ01–Đ38) → `specs/00-ARCHITECTURE.md`
 → 8 file SPEC còn lại → `docs/` (chỉ khi cần tham chiếu nội dung/giọng văn cũ).
 </repo_nature>
 
@@ -49,9 +44,11 @@ chiếu. Nguồn chân lý thiết kế đang hiệu lực, đọc theo thứ t�
 - Tech Stack (Đ11+Đ25): Next.js + TypeScript trên Vercel · Postgres + pgvector trên
   SUPABASE, driver `pg` (Turso/SQLite đã BÁC — thiếu ts_rank_cd(...,32) của C-05) ·
   auth credential 2 vai · Gemini cho 3 agent. Serverless BẮT BUỘC pooler cổng 6543.
-- Data/State: `knowledge/` dạng FILE là nguồn chân lý, DB là bản dẫn xuất (đã seed).
-  Sửa tri thức ⇒ sửa file + tăng `revision` ở `knowledge/README.md` (`SIM-1.0.0`),
-  CẤM sửa thẳng DB. DDL/contract: `specs/01-CONTRACTS.md`.
+- Data/State: `knowledge/` dạng FILE là nguồn chân lý TRI THỨC, DB là bản dẫn xuất
+  (đã seed). Sửa tri thức ⇒ sửa file + tăng `revision` ở `knowledge/README.md`
+  (`SIM-1.0.0`), CẤM sửa thẳng DB. Ngoại lệ: upload/đổi version qua Console BQL là
+  ghi trực tiếp DB — đó là dữ liệu VẬN HÀNH, không phải tri thức mô phỏng gốc.
+  DDL/contract: `specs/01-CONTRACTS.md`.
 - Model (D17, GEMINI_API_KEY o .env.local): A1 `gemini-3.5-flash-lite` · A2
   `gemini-3.5-flash` · A3 `gemini-2.5-flash`. CAM `3.7`/`3.8-flash` (503) va moi bac Pro
   (429 — sau cong thanh toan) => A2 mat model manh, rui ro vao faithfulness.
@@ -61,18 +58,20 @@ chiếu. Nguồn chân lý thiết kế đang hiệu lực, đọc theo thứ t�
   song 3-5, backoff cho CA 429 lan 503, mot luot ~13-15 phut. Vyce da do va BAC (D22).
 - Vercel (D23): CLI da dang nhap. CAM `vercel link` khong co `--scope`. CHO chon scope.
 - Backend (D24/Đ27): `DATA_BACKEND` in `mock`|`postgres`. MOT nguon du lieu = MO PHONG,
-  CAM crawl. **CAM tick G11 bang so mock** (mock khong co ts_rank_cd(...,32)); so chay
-  tren Postgres LA so nghiem thu (Đ33).
+  CAM crawl. **CAM tick G11 bang so mock lan so bo cham cu** — so chay tren Postgres
+  qua `lib/eval/score.ts` (Đ36) SAU khi va xong Đ37 moi la so nghiem thu (Đ33/Đ36/Đ37).
 - Do theo LO (Đ26): moi script do qua scripts/_batch.mjs —
   --limit/--offset/--only/--resume/--fresh/--delay-ms, checkpoint JSONL o evals/runs/.
   Loi TANG 1 (429/503/401/dut mang) KHONG tinh la truot, vao cot blocked.
   MA THOAT 3 = CHUA KET LUAN DUOC (khac 0 dat va 1 truot).
 - G18: CAM unaccent() tran trong cot GENERATED — dung public.immutable_unaccent().
-- Adapter (BB-07): `lib/adapters/model.ts` la file DUY NHAT goi nha cung cap;
-  `lib/adapters/db.ts` la file DUY NHAT mo connection.
-- Cổng chạy được ngay, KHÔNG cần DB/LLM/biến môi trường: `npx tsc --noEmit` · `npm run build` · `npm test` (**53**) · `bash scripts/check_{adapter_boundary,no_hardcoded_knowledge,no_confidence_ui}.sh` · `node scripts/validate_{knowledge,golden}.mjs` — tất cả exit 0. BB-07: CHỈ `lib/adapters/db.ts` mở connection, CHỈ `lib/adapters/model.ts` gọi nhà cung cấp model.
+- Adapter (BB-07): `lib/adapters/db.ts` la file DUY NHAT mo connection; `model.ts`
+  la file DUY NHAT goi nha cung cap; `bql-store.ts` la noi DUY NHAT truy van P03.
+- Cổng chạy được ngay, KHÔNG cần DB/LLM/biến môi trường: `npx tsc --noEmit` · `npm run build` ·
+  `node scripts/run_tests.mjs` (**134**) · `bash scripts/check_{adapter_boundary,no_hardcoded_knowledge,no_confidence_ui}.sh` ·
+  `node scripts/validate_{knowledge,golden}.mjs` — tất cả exit 0.
 - Planning: `planning/[STT]_[YYYY-MM-DD]_[Ten-Ngan]`, cố định path. Hồ sơ đang mở:
-  `01_2026-09-20_resident-agent-v1/` (Đ01–Đ33; `handoffs/` ↔ `reports/` ↔ `evidence/`).
+  `01_2026-09-20_resident-agent-v1/` (Đ01–Đ38; `handoffs/` ↔ `reports/` ↔ `evidence/`).
 </project_foundation>
 
 <brain_file_roles>
