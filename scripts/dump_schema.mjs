@@ -5,14 +5,14 @@
 //
 // CẤM chạy script này trong gói P01a: cần DATABASE_URL, chủ tịch chưa cấp.
 
-import { neon } from "@neondatabase/serverless";
+import { makeSql } from "./_pg.mjs";
 
 if (!process.env.DATABASE_URL) {
   console.error("DATABASE_URL chưa được cấu hình. Xem specs/OPERATIONS.md §3.");
   process.exit(2);
 }
 
-const sql = neon(process.env.DATABASE_URL);
+const sql = makeSql(process.env.DATABASE_URL);
 
 try {
   const reasonCodes = await sql(

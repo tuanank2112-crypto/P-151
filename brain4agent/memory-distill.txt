@@ -5,21 +5,35 @@
 Resident Agent v1.0 — SẢN PHẨM DEMO mô phỏng cho ban giám khảo (AI20K Build
 Phase Cohort 4, rubric C104/VHR-01/G104), KHÔNG PHẢI hệ thống chạy thật. Không
 API Vinhomes, không dữ liệu cư dân thật. Deadline 2026-09-27.
-Giai đoạn (2026-09-20): thiết kế xong (9 SPEC, 3711 dòng) + **gói P00 XONG, đã
-đo lại độc lập, DUYỆT**. Trên đĩa: knowledge/ (19 tài liệu / 98 section, 4 khuyết
-tật cài sẵn DEF-01..04), evals/golden/ (50 FAQ + 16 Safety, phủ 10 mã canonical),
-scripts/ (3 script kiểm Node thuần), package.json (ESM, 0 dependency).
-P01a XONG (DUYỆT): app/ + lib/types.ts + lib/adapters/{db,anthropic}.ts (BB-07) +
-lib/auth/ (scrypt, cookie HMAC) + lib/retrieval/query.ts (cờ 32) + db/migrations/
-(4 file, SOẠN MÃ CHƯA CHẠY) + tests/ 13 ca. build xanh KHÔNG cần DATABASE_URL.
-CHẶN NGOÀI TẦM AGENT: thiếu DATABASE_URL (Neon), ANTHROPIC_API_KEY, tài khoản Vercel
-⇒ chưa migrate/seed/deploy/eval. P02–P06 chưa bắt đầu. Cấm nói đã hoàn thành
-trước khi có bằng chứng máy chạy thật.
+Giai đoạn (2026-09-21): 9 SPEC + P00 ✅ + P01a ✅ + **P02b ✅ — lượt hỏi–đáp
+END-TO-END đầu tiên chạy được**: POST /api/chat → 9 chặng → decision=answer, 1
+citation thật, 3/3 claim supported, 3 model tách bạch, TRÊN SUPABASE THẬT.
+DB ĐÃ MIGRATE + ĐÃ SEED (19 doc / 98 section / 98 chunk / 2 user); migration theo
+dõi bằng `schema_migrations` (Đ30) — migration đã chạy thì CẤM sửa, thêm file mới.
+DATABASE_URL hiện trỏ cổng 5432; PHẢI đổi sang pooler 6543 trước khi deploy.
+Trên đĩa: knowledge/ (19 tài liệu / 98 section, 4 khuyết tật DEF-01..04), evals/golden/
+(50 FAQ + 16 Safety), app/ (có api/chat + màn chat THẬT; 5 màn BQL vẫn KHUNG RỖNG),
+lib/{types,confidence,auth,retrieval,reason-messages}, lib/adapters/{db,model,store-mock},
+lib/pipeline/ (3 agent, 9 chặng). Cổng: tsc 0 · build 0 · npm test **82** · BB-05/07/10 = 0.
+BỐN LỖI THẬT vá 2026-09-21, đều chỉ lộ khi chạy end-to-end trên DB thật:
+ · Đ28/G20 DEF-04 — G3 phân biệt bằng `top_rejected_reason` (chunk hạng 1), CẤM dùng
+   rejection_histogram cho G3 (P02-C16). reason_code nay ĐÚNG; nhãn gate ra G3 chứ
+   không phải G2 như expected_defects.json ghi ⇒ CHỜ CHỦ TỊCH QUYẾT.
+ · Đ32/G22 — `plainto_tsquery` là AND ⇒ truy vấn 10 từ của A1 trả 0 dòng ⇒ MỌI câu hỏi
+   thành no_eligible_source. Đổi sang to_tsquery OR (buildTsQueryExpr). ĐỔI HỢP ĐỒNG
+   §4.2, CHƯA ĐƯỢC PHÊ CHUẨN — đảo lại bằng một commit revert.
+ · Đ31/G24 — CẤM chặn tiếng Việt bằng chuỗi con: "điều kiện".includes("kiện") đẩy một
+   ca Golden FAQ sang escalate pháp lý ngay chặng 5 (P02-C17). Khớp theo ÂM TIẾT.
+ · Đ29/G23 — `pg` trả mảng ENUM về dạng CHUỖI; và `users` thiếu cột property_type ⇒
+   19/19 tài liệu bị loại vì scope_mismatch. Chuẩn hoá tại adapter.
+CÒN LẠI: BB-11 bộ nhớ hội thoại chưa nối (bảng đã có) · eval:golden chưa chạy ⇒ CHƯA
+có số nghiệm thu G11 · RETRIEVAL_MODE=hybrid chưa nối, chunks chưa có embedding nào ·
+P03/P04 (rubric bắt buộc) CHƯA BẮT ĐẦU · deploy chờ chủ tịch chọn scope Vercel.
+Cấm nói đã hoàn thành trước khi có bằng chứng máy chạy thật.
 `docs/` mô tả SẢN PHẨM CŨ đã hạ cấp (v0.2, actor khác) — chỉ còn là nguồn tham
 chiếu. Nguồn chân lý thiết kế đang hiệu lực, đọc theo thứ tự:
-`planning/01_2026-09-20_resident-agent-v1/plan.md` §2 → `specs/00-ARCHITECTURE.md`
-(có router riêng của bộ SPEC) → 8 file SPEC còn lại → `docs/` (chỉ khi cần tham
-chiếu nội dung/giọng văn cũ).
+`planning/01_2026-09-20_resident-agent-v1/plan.md` §2 (Đ01–Đ33) → `specs/00-ARCHITECTURE.md`
+→ 8 file SPEC còn lại → `docs/` (chỉ khi cần tham chiếu nội dung/giọng văn cũ).
 </repo_nature>
 
 <agent_startup_protocol>
@@ -32,35 +46,33 @@ chiếu nội dung/giọng văn cũ).
 </agent_startup_protocol>
 
 <project_foundation>
-- Tech Stack (Đ11): Next.js + TypeScript trên Vercel · Postgres + pgvector trên Neon (RAG + state + sổ biên nhận, một kho chung) · auth credential 2 vai trò (Cư dân/BQL) · Claude cho 3 agent.
-- Data/State: DB chưa thi công. Tri thức đã có dạng FILE: `knowledge/` là nguồn chân lý, DB sẽ là bản dẫn xuất (seed ở P01). Sửa tri thức ⇒ sửa file + tăng `revision` ở `knowledge/README.md` (`SIM-1.0.0`), CẤM sửa thẳng DB. DDL/contract: `specs/01-CONTRACTS.md`.
-- Model (D17, DA DOI sang Gemini - key o .env.local, bien GEMINI_API_KEY):
-  A1 `gemini-3.5-flash-lite` . A2 `gemini-3.5-flash` . A3 `gemini-2.5-flash`.
-  CAM `gemini-3.7-flash`/`3.8-flash` (503 ngay lan goi don). KHONG co model Pro nao dung
-  duoc (moi bac Pro tra 429 - sau cong thanh toan) => A2 mat model manh, rui ro vao
-  faithfulness; nap tien la go duoc bang cach doi 1 chuoi ID.
-- Embedding (D18): `gemini-embedding-001` + `outputDimensionality: 384` => khop nguyen
-  `vector(384)`, KHONG doi schema, va `hybrid` chay duoc CA tren Vercel (go OP-C8).
-  BAT BUOC tu chuan hoa L2 - do duoc |v|=0.4345 o 384 chieu (D20); bo sot thi cosine_sim
-  lech am tham, khong test nao do.
-- Han muc (D19): 15 request song song qua het, 40 thi 39 dinh 429. Golden = 198 loi goi
-  => gioi han song song 3-5, backoff cho CA 429 lan 503, mot luot ~13-15 phut.
-- Nha cung cap KHAC da do va BAC (D22): Vyce (`https://vyceai.com/v1`) co
-  claude-sonnet-4-6 nhung `json_schema` BI BO QUA AM THAM (HTTP 200 + van xuoi),
-  free chi 4 luong song song (Gemini 15), KHONG co embedding. Key van o .env.local
-  lam duong lui. Nang cap A2 dung duong: nap tien Google Cloud de mo bac Pro.
-- Vercel (D23): CLI 59.23.2 DA DANG NHAP san (`tuanank2112-5635`) — C-04 chua bao gio
-  la vat can. CAM chay `vercel link` khong co `--scope`: no tu chon team dau tien tim
-  thay, tung lo tao project vao team `n-listen-ai` cua du an khac. CHO chu tich chon scope.
-- Kho du lieu local (D24): `DATA_BACKEND` in `mock`|`postgres`, mac dinh `mock`.
-  Mock doc thang `knowledge/` + `evals/golden/`, nam trong `lib/adapters/` nen BB-07 giu.
-  **VUNG CAM: cam tick Exit Gate G11 (M1/M3) bang so chay tren mock, cam chinh nguong
-  confidence theo so mock** — mock khong co `ts_rank_cd(...,32)` nen score_lexical va S1
-  KHONG chuyen sang Postgres. cosine_sim tu embedding Gemini thi chuyen duoc nguyen.
-- Adapter (BB-07): `lib/adapters/model.ts` (doi ten tu anthropic.ts) la file DUY NHAT goi
-  nha cung cap; `lib/adapters/db.ts` la file DUY NHAT mo connection.
-- Cổng chạy được ngay, KHÔNG cần DB/LLM/biến môi trường: `npx tsc --noEmit` · `npm run build` · `npm test` (13) · `bash scripts/check_{adapter_boundary,no_hardcoded_knowledge,no_confidence_ui}.sh` · `node scripts/validate_{knowledge,golden}.mjs` — tất cả exit 0. BB-07: CHỈ `lib/adapters/db.ts` mở connection, CHỈ `lib/adapters/anthropic.ts` import SDK.
-- Planning & RFCs: Thư mục `planning/` lưu trữ các bản kế hoạch theo định dạng `[STT]_[YYYY-MM-DD]_[Ten-Ngan]` (25-35 ký tự, cố định path). Hồ sơ đang mở: `01_2026-09-20_resident-agent-v1/` (quyết định Đ01–Đ14; hồ sơ trọn vòng đời `handoffs/` ↔ `reports/` ↔ `evidence/`).
+- Tech Stack (Đ11+Đ25): Next.js + TypeScript trên Vercel · Postgres + pgvector trên
+  SUPABASE, driver `pg` (Turso/SQLite đã BÁC — thiếu ts_rank_cd(...,32) của C-05) ·
+  auth credential 2 vai · Gemini cho 3 agent. Serverless BẮT BUỘC pooler cổng 6543.
+- Data/State: `knowledge/` dạng FILE là nguồn chân lý, DB là bản dẫn xuất (đã seed).
+  Sửa tri thức ⇒ sửa file + tăng `revision` ở `knowledge/README.md` (`SIM-1.0.0`),
+  CẤM sửa thẳng DB. DDL/contract: `specs/01-CONTRACTS.md`.
+- Model (D17, GEMINI_API_KEY o .env.local): A1 `gemini-3.5-flash-lite` · A2
+  `gemini-3.5-flash` · A3 `gemini-2.5-flash`. CAM `3.7`/`3.8-flash` (503) va moi bac Pro
+  (429 — sau cong thanh toan) => A2 mat model manh, rui ro vao faithfulness.
+- Embedding (D18): `gemini-embedding-001` @ 384 chieu khop `vector(384)`; BAT BUOC tu
+  chuan hoa L2 (|v|=0.4345 — D20), bo sot thi cosine_sim lech AM THAM, khong test nao do.
+- Han muc (D19): 15 song song qua het, 40 thi 39 dinh 429. Golden = 198 loi goi => song
+  song 3-5, backoff cho CA 429 lan 503, mot luot ~13-15 phut. Vyce da do va BAC (D22).
+- Vercel (D23): CLI da dang nhap. CAM `vercel link` khong co `--scope`. CHO chon scope.
+- Backend (D24/Đ27): `DATA_BACKEND` in `mock`|`postgres`. MOT nguon du lieu = MO PHONG,
+  CAM crawl. **CAM tick G11 bang so mock** (mock khong co ts_rank_cd(...,32)); so chay
+  tren Postgres LA so nghiem thu (Đ33).
+- Do theo LO (Đ26): moi script do qua scripts/_batch.mjs —
+  --limit/--offset/--only/--resume/--fresh/--delay-ms, checkpoint JSONL o evals/runs/.
+  Loi TANG 1 (429/503/401/dut mang) KHONG tinh la truot, vao cot blocked.
+  MA THOAT 3 = CHUA KET LUAN DUOC (khac 0 dat va 1 truot).
+- G18: CAM unaccent() tran trong cot GENERATED — dung public.immutable_unaccent().
+- Adapter (BB-07): `lib/adapters/model.ts` la file DUY NHAT goi nha cung cap;
+  `lib/adapters/db.ts` la file DUY NHAT mo connection.
+- Cổng chạy được ngay, KHÔNG cần DB/LLM/biến môi trường: `npx tsc --noEmit` · `npm run build` · `npm test` (**53**) · `bash scripts/check_{adapter_boundary,no_hardcoded_knowledge,no_confidence_ui}.sh` · `node scripts/validate_{knowledge,golden}.mjs` — tất cả exit 0. BB-07: CHỈ `lib/adapters/db.ts` mở connection, CHỈ `lib/adapters/model.ts` gọi nhà cung cấp model.
+- Planning: `planning/[STT]_[YYYY-MM-DD]_[Ten-Ngan]`, cố định path. Hồ sơ đang mở:
+  `01_2026-09-20_resident-agent-v1/` (Đ01–Đ33; `handoffs/` ↔ `reports/` ↔ `evidence/`).
 </project_foundation>
 
 <brain_file_roles>

@@ -3,7 +3,7 @@
 // Bản thay thế `psql -c` (OPERATIONS.md §6) — máy dev không có psql.
 //
 // CẤM chạy script này trong gói P01a: cần DATABASE_URL, chủ tịch chưa cấp.
-import { neon } from "@neondatabase/serverless";
+import { makeSql } from "./_pg.mjs";
 
 const q = process.argv[2];
 if (!q) {
@@ -15,7 +15,7 @@ if (!process.env.DATABASE_URL) {
   process.exit(2);
 }
 
-const sql = neon(process.env.DATABASE_URL);
+const sql = makeSql(process.env.DATABASE_URL);
 try {
   const rows = await sql(q);
   if (rows.length === 0) {

@@ -1,0 +1,15 @@
+# R10 — bằng chứng ĐỎ, check_adapter_boundary.sh mẫu MỚI (TESTING-ACCEPTANCE §6.5)
+# Cách phá: thêm `const k = process.env.GEMINI_API_KEY;` vào lib/pipeline/eligibility.ts
+# (tạm thời) và tạo app/_r10probe/leak.ts chứa chuỗi host Gemini tuyệt đối.
+# Chạy: bash scripts/check_adapter_boundary.sh
+
+--- host nha cung cap ngoai lib/adapters/ ---
+app/_r10probe/leak.ts:1:export const HOST = "https://generativelanguage.googleapis.com/v1beta";
+--- doc bi mat ngoai lib/adapters/ ---
+lib/pipeline/eligibility.ts:144:const k = process.env.GEMINI_API_KEY;
+violations: 2
+EXIT=1
+
+# Sau khi gỡ hai chỗ phá, chạy lại XANH:
+violations: 0
+EXIT=0

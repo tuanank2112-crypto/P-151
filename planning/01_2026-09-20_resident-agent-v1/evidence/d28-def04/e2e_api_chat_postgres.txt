@@ -1,0 +1,95 @@
+# Luot hoi-dap END-TO-END qua HTTP POST /api/chat
+# DATA_BACKEND=postgres (Supabase that) · next dev :3100 · 2026-09-21
+# Phien: cookie HMAC vai resident, property_type=[apartment]
+# HTTP=200
+
+{
+  "ok": true,
+  "result": {
+    "decision": "answer",
+    "reason_code": null,
+    "answer_vi": "Trẻ em dưới 12 tuổi bắt buộc phải có người lớn đi kèm khi xuống bể bơi và không được để trẻ tự bơi một mình, ngay cả khi khu vực có nhân viên cứu hộ trực.",
+    "clarify_question_vi": null,
+    "citations": [
+      {
+        "document_id": "OCP1-POOL-RULES-001",
+        "section_id": "POOL-SAFE-03",
+        "document_title_vi": "Nội quy bể bơi OCP1",
+        "heading_vi": "An toàn bể bơi",
+        "snippet_vi": "Trẻ em dưới 12 tuổi bắt buộc phải có người lớn đi kèm khi xuống bể bơi, không được để trẻ tự bơi một mình dù khu vực có nhân viên cứu hộ trực. Vi phạm sẽ được nhắc nhở tại chỗ."
+      }
+    ],
+    "claims": [
+      {
+        "claim_vi": "Trẻ em dưới 12 tuổi bắt buộc phải có người lớn đi kèm khi xuống bể bơi.",
+        "verdict": "supported",
+        "supporting_section_id": "POOL-SAFE-03"
+      },
+      {
+        "claim_vi": "Không được để trẻ tự bơi một mình, ngay cả khi khu vực có nhân viên cứu hộ trực.",
+        "verdict": "supported",
+        "supporting_section_id": "POOL-SAFE-03"
+      }
+    ],
+    "steps": [
+      {
+        "step": "validate",
+        "ok": true,
+        "ms": 0
+      },
+      {
+        "step": "safety",
+        "ok": true,
+        "ms": 8034,
+        "model": "gemini-3.5-flash-lite",
+        "input_tokens": 462,
+        "output_tokens": 111
+      },
+      {
+        "step": "intent",
+        "ok": true,
+        "ms": 0,
+        "model": "gemini-3.5-flash-lite",
+        "note": "cùng lời gọi chặng 2"
+      },
+      {
+        "step": "context",
+        "ok": true,
+        "ms": 0
+      },
+      {
+        "step": "risk",
+        "ok": true,
+        "ms": 0
+      },
+      {
+        "step": "retrieval",
+        "ok": true,
+        "ms": 2932
+      },
+      {
+        "step": "eligibility",
+        "ok": true,
+        "ms": 2863
+      },
+      {
+        "step": "draft",
+        "ok": true,
+        "ms": 13964,
+        "model": "gemini-3.5-flash",
+        "input_tokens": 1002,
+        "output_tokens": 217
+      },
+      {
+        "step": "verify",
+        "ok": true,
+        "ms": 3393,
+        "model": "gemini-2.5-flash",
+        "input_tokens": 599,
+        "output_tokens": 144
+      }
+    ]
+  },
+  "message_vi": "",
+  "can_retry": false
+}

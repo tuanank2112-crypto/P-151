@@ -1,0 +1,25 @@
+
+> resident-agent-v1@1.0.0 test
+> node scripts/run_tests.mjs confidence
+
+✔ hằng số công thức khớp SPEC-P02 §6.2 (0.9175ms)
+✔ decideTurn — W1 D5 bể bơi trẻ em (đối chứng xanh) (0.2292ms)
+✔ decideTurn — W2 D6 giờ BQL (đối chứng xanh) (0.1ms)
+✔ decideTurn — W3 sát ngưỡng dưới (0.0847ms)
+✔ decideTurn — W4 sát ngưỡng trên nhưng trượt (0.1091ms)
+✔ decideTurn — W5 faithfulness thấp, raw vẫn cao (0.1088ms)
+✔ decideTurn — W6 S03 conflict BBQ (DEF-03) (0.0957ms)
+✔ decideTurn — W7 S01 pickleball (DEF-01) (0.0799ms)
+✔ decideTurn — W8 S04 bể bơi expired (DEF-04) (0.1138ms)
+✔ decideTurn — W9 S02 phí thẻ xe máy (DEF-02) (0.1444ms)
+✔ decideTurn — W10 A3 không tách được claim nào (0.131ms)
+✔ ĐỎ #5 (đã chạy tay, xem report/TESTING §6.4): TAU_FAITHFUL=0 lật W5 từ escalate sang answer — CẤM đặt = 0 (0.1437ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 136.2669
+EXIT=0

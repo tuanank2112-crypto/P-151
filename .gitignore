@@ -12,3 +12,8 @@ dist/
 # git status thi kiem lai cuoi file nay truoc tien.
 .env*
 !.env.example
+
+# Checkpoint cua cac lo do chay theo dot (Đ26, scripts/_batch.mjs).
+# Day la trang thai chay do, KHONG phai bang chung nghiem thu — bang chung
+# dat trong planning/**/evidence/ va duoc commit.
+evals/runs/

@@ -1,0 +1,3 @@
+# bash scripts/check_adapter_boundary.sh  (BB-07 sau khi doi driver sang pg)
+violations: 0
+EXIT=0

@@ -1,0 +1,12 @@
+BACKEND=mock — số định hướng, KHÔNG phải số nghiệm thu (Đ24)
+DEF-01 OK no_eligible_source G2_zero_eligible
+DEF-02 MISMATCH exception:UpstreamRateLimited:UpstreamRateLimited: HTTP 429 — {
+  "error": {
+    "code": 429,
+    "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-a
+DEF-03 OK source_conflict G1_conflict
+DEF-04 MISMATCH exception:UpstreamRateLimited:UpstreamRateLimited: HTTP 429 — {
+  "error": {
+    "code": 429,
+    "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-a
+EXIT=1

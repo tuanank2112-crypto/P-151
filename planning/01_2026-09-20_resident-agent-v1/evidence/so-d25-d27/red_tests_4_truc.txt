@@ -1,0 +1,74 @@
+# PHEP DO — BA TRUC KHAC HINH DANG (Luat K.5 + D21/G12)
+# Moi truc phai do DUOC doc lap: do dung nhom cua no, KHONG do nhom khac.
+
+=== TRUC 1 — bang phan loai loi luc chay: bo 429 khoi tang 1 ===
+✖ classifyError tách lỗi hạ tầng (tầng 1) khỏi lỗi logic — §5.E (2.2879ms)
+✔ ĐỎ #3 — đứt mạng giữa đường là tầng 1, nhưng TypeError của code thì KHÔNG (0.3545ms)
+✖ ĐỎ #1 — ca dính hạn mức KHÔNG vào checkpoint và KHÔNG bị tính là trượt (2.9959ms)
+✔ ĐỎ #2 — lỗi logic thật thì PHẢI vào checkpoint, đánh dấu trượt (2.7197ms)
+✖ dừng sớm sau 3 lần dính hạn mức LIÊN TIẾP, giữ nguyên checkpoint (9.2132ms)
+✖ một ca đi trọn thì reset chuỗi hạn mức — 429 rải rác không làm dừng oan (4.4684ms)
+✔ Checkpoint nạp lại được từ đĩa — nền tảng của --resume (4.5583ms)
+✔ Checkpoint bỏ qua dòng hỏng do bị ngắt giữa chừng, không ném (3.2525ms)
+✔ sliceCases cắt lô theo --limit/--offset và lọc theo --only (1.7922ms)
+ℹ tests 9
+ℹ pass 5
+ℹ fail 4
+✖ failing tests:
+✖ classifyError tách lỗi hạ tầng (tầng 1) khỏi lỗi logic — §5.E (2.2879ms)
+✖ ĐỎ #1 — ca dính hạn mức KHÔNG vào checkpoint và KHÔNG bị tính là trượt (2.9959ms)
+✖ dừng sớm sau 3 lần dính hạn mức LIÊN TIẾP, giữ nguyên checkpoint (9.2132ms)
+✖ một ca đi trọn thì reset chuỗi hạn mức — 429 rải rác không làm dừng oan (4.4684ms)
+EXIT=1
+
+=== TRUC 2 — du lieu tren dia: Checkpoint khong doc lai file ===
+✔ classifyError tách lỗi hạ tầng (tầng 1) khỏi lỗi logic — §5.E (2.1134ms)
+✔ ĐỎ #3 — đứt mạng giữa đường là tầng 1, nhưng TypeError của code thì KHÔNG (0.531ms)
+✔ ĐỎ #1 — ca dính hạn mức KHÔNG vào checkpoint và KHÔNG bị tính là trượt (3.8943ms)
+✔ ĐỎ #2 — lỗi logic thật thì PHẢI vào checkpoint, đánh dấu trượt (5.1219ms)
+✔ dừng sớm sau 3 lần dính hạn mức LIÊN TIẾP, giữ nguyên checkpoint (2.9711ms)
+✔ một ca đi trọn thì reset chuỗi hạn mức — 429 rải rác không làm dừng oan (2.5734ms)
+✖ Checkpoint nạp lại được từ đĩa — nền tảng của --resume (3.6986ms)
+✖ Checkpoint bỏ qua dòng hỏng do bị ngắt giữa chừng, không ném (6.1231ms)
+✔ sliceCases cắt lô theo --limit/--offset và lọc theo --only (1.986ms)
+ℹ tests 9
+ℹ pass 7
+ℹ fail 2
+✖ failing tests:
+✖ Checkpoint nạp lại được từ đĩa — nền tảng của --resume (3.6986ms)
+✖ Checkpoint bỏ qua dòng hỏng do bị ngắt giữa chừng, không ném (6.1231ms)
+EXIT=1
+
+=== TRUC 3 — doi so CLI: --only khong con uu tien ===
+✔ classifyError tách lỗi hạ tầng (tầng 1) khỏi lỗi logic — §5.E (1.2312ms)
+✔ ĐỎ #3 — đứt mạng giữa đường là tầng 1, nhưng TypeError của code thì KHÔNG (0.4267ms)
+✔ ĐỎ #1 — ca dính hạn mức KHÔNG vào checkpoint và KHÔNG bị tính là trượt (3.7422ms)
+✔ ĐỎ #2 — lỗi logic thật thì PHẢI vào checkpoint, đánh dấu trượt (1.9069ms)
+✔ dừng sớm sau 3 lần dính hạn mức LIÊN TIẾP, giữ nguyên checkpoint (3.0506ms)
+✔ một ca đi trọn thì reset chuỗi hạn mức — 429 rải rác không làm dừng oan (2.8601ms)
+✔ Checkpoint nạp lại được từ đĩa — nền tảng của --resume (5.7247ms)
+✔ Checkpoint bỏ qua dòng hỏng do bị ngắt giữa chừng, không ném (4.1644ms)
+✖ sliceCases cắt lô theo --limit/--offset và lọc theo --only (4.6869ms)
+ℹ tests 9
+ℹ pass 8
+ℹ fail 1
+✖ failing tests:
+✖ sliceCases cắt lô theo --limit/--offset và lọc theo --only (4.6869ms)
+EXIT=1
+
+=== TRUC 4 (D25) — tra ve unaccent() tran trong query.ts ===
+✖ buildLexicalQuery sinh chuỗi SQL có ts_rank_cd(..., 32) — cờ chuẩn hoá bắt buộc (C-05) (2.0765ms)
+✔ buildLexicalQuery nhận topK tuỳ chỉnh (0.4586ms)
+ℹ tests 2
+ℹ pass 1
+ℹ fail 1
+✖ failing tests:
+✖ buildLexicalQuery sinh chuỗi SQL có ts_rank_cd(..., 32) — cờ chuẩn hoá bắt buộc (C-05) (2.0765ms)
+EXIT=1
+
+=== TAI XANH sau khi khoi phuc ca 4 truc ===
+ℹ tests 53
+ℹ pass 53
+ℹ fail 0
+ℹ skipped 0
+EXIT=0

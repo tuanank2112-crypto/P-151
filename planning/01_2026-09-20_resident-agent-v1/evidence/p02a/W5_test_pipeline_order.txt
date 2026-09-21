@@ -1,0 +1,18 @@
+
+> resident-agent-v1@1.0.0 test
+> node scripts/run_tests.mjs pipeline-order
+
+✔ step-order (BB-08, T-STEP): đường trả lời đầy đủ đi qua ĐÚNG 9 chặng, đúng thứ tự (16.7563ms)
+✔ step-order: thoát sớm ở chặng 2 (emergency) chỉ có ĐÚNG 2 phần tử steps (0.5251ms)
+✔ step-order: thoát sớm ở chặng 7 (zero eligible) dừng đúng ở eligibility, KHÔNG có draft/verify (0.6013ms)
+✔ ĐỎ R7 (đã chạy tay, xem report): assertStepOrder ném khi steps nhảy cóc/sai thứ tự (0.4825ms)
+✔ EmptyQuestionError: câu hỏi rỗng không tạo bất kỳ step nào (chặng 1) (0.4695ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 180.8851
+EXIT=0

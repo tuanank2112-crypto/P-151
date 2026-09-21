@@ -1,127 +1,116 @@
-# 📅 Nhật Ký Làm Việc Ngày 2026-09-19 (Session Memory Log)
+# 📅 Nhật Ký Làm Việc Ngày 2026-09-21 (Session Memory Log)
 
-> Cập nhật lúc: `2026-09-20T02:55:00.000Z` | Phiên bản: `v1.0.0-p00`
-
----
-
-## 🏁 Phiên 2026-09-20 (đêm) — Bác Vyce, đính chính Vercel, chốt chạy local trên mock
-
-### 🎯 Đã làm:
-- **Đo Vyce, BÁC.** Base `https://vyceai.com/v1`, key chạy, có `claude-sonnet-4-6` 270K ctx —
-  đúng hạng A2 đang thiếu. Nhưng thua Gemini cả ba thứ quyết định: `json_schema` **bị bỏ
-  qua âm thầm** (HTTP 200 + văn xuôi, đúng ca `E7 ContractDriftError`), free chỉ **4 luồng
-  song song** (Gemini 15), **không có embedding**. Chất lượng đáng ngờ: hỏi thủ đô Việt Nam
-  → *"Thành phố đầu tiên của Việt Nam là Hà Nội"*. Giữ Gemini (Đ22).
-- **Đính chính Vercel (Đ23):** `vercel whoami` → `tuanank2112-5635`, CLI đã đăng nhập sẵn.
-  **C-04 chưa bao giờ là vật cản** — SO báo sai nhiều lượt vì chưa từng gõ lệnh kiểm.
-- **Chốt chạy local trên kho mock (Đ24)** theo chỉ đạo chủ tịch. `DATA_BACKEND` ∈
-  `mock`|`postgres`. Mock đọc thẳng `knowledge/` + `evals/golden/` (dữ liệu mô phỏng đã có
-  từ P00, **không sinh thêm dữ liệu giả nào**), nằm trong `lib/adapters/` nên BB-07 giữ.
-  Không dùng SQLite vì `OPERATIONS.md` §8.1 đã cân nhắc và bác.
-- Viết `handoffs/H04_p02a-pipeline-mock.md` (73 dòng), phóng worker. Ưu tiên cao nhất đặt
-  vào **W8 `probe_defects.mjs`** = số đo K-M6, thứ `SPEC-P00` §9 gọi là quan trọng nhất của
-  cả gói P00, treo từ lúc P00 nghiệm thu vì chưa có pipeline.
-
-### ⚠️ Sai của SO trong phiên:
-- **Chạy `vercel link` không truyền `--scope`** ⇒ nó tự chọn team đầu tiên tìm thấy và tạo
-  project vào `n-listen-ai`, nơi chứa dự án khác của chủ tịch. Chủ tịch bắt gỡ. Đã xoá sạch
-  `resident-agent-v1` khỏi team đó; `listena` không bị đụng; link cục bộ đã bỏ.
-- **Truncate `plan.md` lần thứ hai** (292 dòng → 0) vì `python -c` có emoji viết bằng hai
-  escape surrogate rời: shell băm chuỗi, `write()` ném lỗi **sau khi** `open('w')` đã
-  truncate. `git checkout` khôi phục. Siết G17: bắt buộc `.encode('utf-8')` kiểm **trước**
-  khi mở `'w'` — luật này cứu được `-known-gotchas.md` ngay lượt sau, cùng lỗi mà không mất gì.
-- Vercel CLI nối thêm `.env*` vào cuối `.gitignore` khi `vercel link`, đè mất `!.env.example`.
-  Đã sắp lại thứ tự và ghi chú ngay trong file.
-
-### 🎯 Vùng cấm mới, quan trọng:
-**CẤM tick Exit Gate `G11` (`M1 ≥ 34/40`, `M3 ≥ 15/16`) bằng số chạy trên mock. CẤM chỉnh
-ngưỡng confidence theo số mock.** Mock không có `ts_rank_cd(..., 32)` của Postgres nên
-`score_lexical` và `S1` **không chuyển được**. Riêng `cosine_sim` từ embedding Gemini thì
-chuyển nguyên. Rào trước để vài ngày nữa không ai nhìn số mock tưởng đã đạt.
-
-### ⏳ Đang chờ:
-- **Worker P02a đang chạy** — xong thì SO đo lại độc lập, không tin số worker.
-- Chủ tịch chọn **scope Vercel** thì deploy được ngay (build đã xanh không cần DB).
-- `DATABASE_URL` (Neon) — **không còn chặn P02a** nhờ kho mock, nhưng cần để tick G11 thật.
-- Câu hỏi treo từ Đ17: A2 mất bậc Pro. Nếu Golden ra `M1 < 34/40` thì nạp tiền Google Cloud
-  hay chấp nhận điểm thấp? Cần quyết trước khi chạy Golden trên Neon.
-
-### 📌 Nợ đồng bộ:
-`index.md` **chưa cập nhật bản đồ `lib/`** vì worker P02a đang dựng dở — map sai còn tệ hơn
-map thiếu. Cập nhật ngay sau khi nghiệm thu P02a.
+> Cập nhật lúc: `2026-09-21T16:30:00.000Z` | Phiên bản: `v1.0.0-p02b-e2e-that`
 
 ---
 
-## 🏁 Phiên 2026-09-20 (tối) — Chuyển sang Gemini, và bắt được một cổng XANH GIẢ
+## 🏁 Phiên 2026-09-21 — Nối pipeline vào web; lượt hỏi–đáp end-to-end ĐẦU TIÊN chạy được
 
 ### 🎯 Bối cảnh chỉ đạo:
-Chủ tịch cấp key Gemini dạng `AQ.<phan con lai da luoc>…` và bảo dùng. Trước đó cho quyền dùng Chrome.
+Chủ tịch: *"đọc não và cho tôi biết repo hiện tại đang được bao nhiêu phần trăm hoàn thiện?"* rồi *"tốt, bắt tay làm việc đi"*. Thứ tự tự chọn: vá DEF-04 (đầu việc số 1 của roadmap) → nối pipeline vào web (việc không bị chặn bởi bất cứ thứ gì chờ người).
 
 ### 🎯 Đã làm:
-- **Trình duyệt:** `ego-browser` chưa cài; Tabbit có cài nhưng app chưa chạy (exit 69).
-  Chủ tịch bảo bỏ Tabbit, dùng Chrome. Chrome 153 **chặn `--remote-debugging-port` trên
-  profile mặc định** (chốt bảo mật từ bản 136), nên phải dựng instance riêng có cổng
-  debug — điều khiển được qua CDP bằng **driver Node thuần tự viết**, không cài gì thêm.
-  Nhân bản profile `Default` (tài khoản `tuanank2112@gmail.com`) để giữ phiên đăng nhập
-  thì **sandbox chặn — "Credential Exploration"**, vì đụng `Cookies`/`Login Data`.
-  KHÔNG lách. Chờ chủ tịch đăng nhập tay hoặc tự cấp key.
-- **Đo key Gemini.** SO ban đầu kết luận `AQ.<phan con lai da luoc>…` không phải API key — **SAI**,
-  `GET /v1beta/models?key=…` trả HTTP 200. Ghi thành gotcha G15.
-- **Đo model và hạn mức thật** (`evidence/p02-provider/gemini-probe.txt`): dùng được
-  `3.5-flash-lite` / `3.5-flash` / `2.5-flash` / `3.6-flash`. CẤM `3.7`/`3.8-flash`
-  (503 ngay lần gọi đơn). **Mọi bậc Pro trả 429 — sau cổng thanh toán.**
-  Trần: **15 song song qua hết, 40 thì 39 dính 429**.
-- **Đo embedding:** `gemini-embedding-001` ép được về **đúng 384 chiều** ⇒ khớp nguyên
-  DDL `vector(384)`, bỏ được `@xenova/transformers`, và **`hybrid` chạy được trên Vercel**
-  ⇒ gỡ vùng cấm `OP-C8`. Đây đúng là "mắt xích yếu nhất" mà C-01 nêu, nay gỡ được thật.
-- **Architect (lượt 1, Fable) chết vì hết hạn mức** — đúng gotcha G01. Phóng lại trên
-  **Opus**, xong: sửa 6 file SPEC (+820/−160), tự phát hiện và vá 3 mâu thuẫn chéo
-  (phao cứu sinh thủng · seed đốt hạn mức nặng nhất dự án · `SPEC-P04` "tuần tự" đá Đ19).
-- **SO đo hai phép architect bị cấm đo:** `responseSchema` được chấp nhận cả ba model và
-  tôn trọng `enum` (C-M11 hết nợ). **`gemini-embedding-001` CHƯA chuẩn hoá khi ép chiều**
-  — |v|=1.000 ở 3072 nhưng **0.435 ở 384** (C-M9 hết nợ) ⇒ luật `l2normalize` của
-  architect từ "phòng xa" thành **bắt buộc có căn cứ**.
+- **Vá DEF-04 (Đ28).** Đo ra căn nguyên KHÁC giả thuyết ghi ở Đ26: `G2` vốn đã xét `rejection_histogram` đúng SPEC; chỗ hỏng là `G3` trả cứng `no_eligible_source`. Tín hiệu đúng là `top_rejected_reason` (chunk hạng 1), KHÔNG phải histogram — histogram đếm cả chunk hết hạn xếp hạng thấp ⇒ báo bịa "tài liệu hết hiệu lực" cho câu hỏi không liên quan. Hai trục đỏ độc lập.
+- **Phát hiện não ghi SAI hiện trạng:** `DATABASE_URL` ĐÃ có trong `.env.local`, DB Supabase ĐÃ migrate + ĐÃ seed (19 doc / 98 section / 98 chunk / 2 user), trong khi `state.json` vẫn ghi `blocked_needs_human`. Kiểm chứng trước khi tin ghi chép.
+- **Nối pipeline vào web (P02b):** `app/api/chat/route.ts` + màn `(resident)/chat` thật + `lib/reason-messages.ts` + CSS. Trước đó 5 màn đều là khung 13–16 dòng, không màn nào gọi được pipeline.
+- **Ba lỗi thật lộ ra khi chạy end-to-end, đều đã vá và có test:**
+  - `G24/Đ31` — `"điều kiện".includes("kiện")` đẩy câu hỏi thường sang escalate pháp lý ngay chặng 5. Cắn đúng một ca Golden FAQ.
+  - `G22/Đ32` — `plainto_tsquery` nối AND ⇒ truy vấn 10 từ của A1 trả **0 dòng** trên DB thật ⇒ mọi câu hỏi thành `no_eligible_source`. **Đổi hợp đồng §4.2, chưa được phê chuẩn.**
+  - `G23/Đ29` — `pg` trả mảng ENUM về dạng chuỗi; `users` lại không có cột `property_type` nào ⇒ 19/19 tài liệu bị loại vì `scope_mismatch`.
+- **`schema_migrations` (Đ30)** — trả nợ Đ15; baseline `001…004`, áp dụng `005`, exit 0.
 
-### ⚠️ Sai của SO, đã đính chính:
-- **Cổng BB-07 từng XANH GIẢ, và SO đã DUYỆT nó.** Architect phản biện, SO kiểm lại: file
-  ngoài adapter gán host vào biến rồi `fetch(\`${HOST}/…\`)` + đọc `process.env.GEMINI_API_KEY`
-  vẫn cho `violations: 0`, EXIT=0. **Nguyên nhân gốc: 4 phép phá của SO đều CÙNG MỘT HÌNH
-  DẠNG** (import tên gói) nên chỉ chứng minh được một trục. Đã viết lại script theo 4 trục,
-  mỗi trục chứng minh đỏ độc lập. Đính chính ghi ở cuối `reports/R03`. Gotcha G12/G13.
-- **Xoá nhầm G01–G11** vì `io.open(p,'w')` truncate file trước khi `read()` chạy — lệnh
-  vẫn exit 0, trông như thành công. `git checkout` khôi phục. Gotcha G17.
+### 📊 Số đo cuối phiên:
+`tsc` exit 0 · `build` exit 0 · `npm test` **82/82** (trước 53) · BB-05/07/10 = 0 vi phạm · lượt e2e: `decision=answer`, 1 citation, 3/3 claim `supported`, 9 chặng, 3 model khác nhau.
 
-### 🎯 Quyết định: Đ17 (đổi sang Gemini) · Đ18 (embedding lên Vercel, thay thế Đ14) ·
-Đ19 (hạn mức là ràng buộc thiết kế) · Đ20 (đóng C-M9/C-M11) · Đ21 (phép phá phải khác
-HÌNH DẠNG). Đ13/Đ14 giữ nguyên văn, đánh dấu "đã bị thay thế" — không xoá lịch sử.
-
-### ⏳ Đang chờ:
-- **`DATABASE_URL` (Neon)** và **tài khoản Vercel** — hai thứ duy nhất còn chặn.
-- **Câu hỏi cần chủ tịch quyết:** A2 mất bậc Pro là rủi ro thật vào `faithfulness`.
-  Nếu Golden đầu ra `M1 < 34/40` thì **nạp tiền Google Cloud để A2 lên Pro** (đổi 1 chuỗi
-  ID) hay chấp nhận điểm thấp? Cần quyết TRƯỚC khi P02 chạy Golden.
-- Gói kế tiếp: **P02** — viết `lib/adapters/model.ts` + pipeline 3 agent. Phần gọi model
-  KHÔNG cần DB, chạy được ngay; chỉ phần ghi `answer_turns` mới cần Neon.
+### ⏸ Chưa xong / chờ người:
+`expected_gate` DEF-04 chờ chủ tịch · Đ32 chờ phê chuẩn · `DEF-01`/`DEF-02` chưa đo xong trên Postgres (cạn hạn mức Gemini — blocked, KHÔNG phải trượt) · `eval:golden` chưa chạy để lấy `G11` · BB-11 bộ nhớ hội thoại chưa nối · P03/P04 chưa bắt đầu · deploy chờ scope Vercel.
 
 ---
 
-## 🏁 Phiên 2026-09-20 (tiếp) — Gói P01a: nền tảng chạy được không cần key
+## 🏁 Phiên 2026-09-20 (chiều) — Chốt Supabase, đo theo lô, và K-M6 lên 3/4
 
-**✅ DUYỆT** — chi tiết đầy đủ: `reports/R03_p01a-nen-tang-offline.md`, changelog `v1.0.0-p01a`.
+### 🎯 Bối cảnh chỉ đạo:
+Ba câu của chủ tịch, xử theo thứ tự: *"db thì có thể dùng turso mà? nếu không thì tôi hướng bạn qua supabase cũng được"* · *"nếu gemini tier free k đủ tải để test cùng lúc thì chia nhỏ các giai đoạn test ra nhé"* · *"tôi cần sự thống nhất ngay từ ban đầu... 1 là mock 2 là crawl"*.
 
-Dựng khung Next.js + TS strict: `app/` (login + route 2 vai), `lib/types.ts`,
-`lib/adapters/{db,anthropic}.ts`, `lib/auth/` (scrypt + cookie HMAC),
-`lib/retrieval/query.ts` (giữ cờ 32), `db/migrations/` 4 file theo thứ tự FK,
-5 script vận hành (soạn mã, chưa chạy), 3 script bất biến, `tests/` 13 ca.
+### 🎯 Đã làm:
+- **Đ25 — chốt SUPABASE, BÁC Turso.** Đọc schema thật trước khi trả lời, không trả lời
+  theo cảm tính. `003_knowledge.sql` + `query.ts` cần `vector(384)`/`hnsw`,
+  `tsvector GENERATED ... STORED`/`gin`/**`ts_rank_cd(..., 32)`**, `text[]`, `jsonb`,
+  `gen_random_uuid()` — SQLite không có thứ nào. Cờ `32` là **C-05** có test canh, và
+  Đ24 đã ghi `score_lexical`/`S1` không chuyển được từ mock *chính vì mock thiếu đúng
+  hàm đó* ⇒ **Turso chỉ là kho mock thứ hai có thêm độ trễ mạng**, đổi 1–2 ngày công để
+  nhận con số vẫn không tick được `G11`.
+- **Đổi driver `@neondatabase/serverless` → `pg`.** Driver Neon nói chuyện HTTP với
+  endpoint riêng của Neon, không dùng được nhà cung cấp khác. `getSql()` giữ **đúng chữ
+  ký cũ** `sql(text, params) -> rows` nên không call site nào ở tầng trên phải đổi.
+  Thêm `closePool()`; `scripts/_pg.mjs` gom driver cho 5 script vận hành. BB-07 vẫn
+  `violations: 0` — script đã cấm `from "pg"` ngoài `lib/adapters/` sẵn từ trước.
+  `npm run build` không có `DATABASE_URL`: vẫn exit 0.
+- **Bắt được một BUG THẬT trong DDL (G18).** `chunks.tsv GENERATED ALWAYS AS
+  (to_tsvector('simple', unaccent(content_vi))) STORED` sẽ **chết** với `ERROR: generation
+  expression is not immutable` trên MỌI Postgres — `unaccent()` là STABLE. Nằm trong repo
+  từ P01a mà không ai thấy, vì `db/migrations/` là soạn mã chưa chạy nên **không có exit
+  code nào phản đối**. Vá bằng `public.immutable_unaccent()`, đồng bộ cả ba chỗ dùng để
+  tsvector và tsquery chuẩn hoá bằng **cùng một hàm** (lệch nhau thì `WHERE` lặng lẽ
+  không khớp gì).
+- **Đ26 — mọi script đo chạy THEO LÔ.** `scripts/_batch.mjs`: checkpoint JSONL
+  append-only ở `evals/runs/` (gitignore), cờ
+  `--limit/--offset/--only/--resume/--fresh/--delay-ms`, dừng sớm sau 3 lần 429 liên
+  tiếp, **mã thoát 3 = CHƯA KẾT LUẬN ĐƯỢC** (khác hẳn 0 đạt và 1 trượt).
+- **Đ27 — MỘT nguồn dữ liệu: MÔ PHỎNG, không crawl.** `knowledge/` chứa 4 khuyết tật cài
+  sẵn có chủ ý + 66 case Golden neo theo `section_id`; crawl về là mất trắng `K-M6`/`G05`,
+  thứ vừa mới đo được. **Nhưng chủ tịch nói đúng một chỗ đang thật sự lẫn** — và nó không
+  ở nội dung mà ở **tầng truy hồi**: mock chấm bằng lexical xấp xỉ, Postgres bằng
+  `ts_rank_cd`. Lối ra đã có sẵn trong chính Đ24: cho cả hai chấm bằng **cùng một nguồn —
+  embedding** (`cosine_sim` chuyển được nguyên). Việc còn phải làm, đã xếp vào roadmap.
 
-Đo: `tsc --noEmit` exit 0 · `npm run build` KHÔNG có `DATABASE_URL` exit 0 (8/9 route
-dynamic) · `npm test` 13/13 · P00 không hồi quy.
+### 📈 Số đo, không kể chuyện:
+- `tsc --noEmit` exit 0 · `npm test` **53/53 pass, 0 fail, 0 skip** · `npm run build`
+  không có `DATABASE_URL` exit 0 · BB-05/BB-07/BB-10 exit 0 · P00 không hồi quy.
+- **`K-M6` từ `2/4` lên `3/4`, lặp lại được hai lượt.** Đây là số `SPEC-P00` §9 gọi là
+  quan trọng nhất của cả gói P00, treo từ lúc P00 nghiệm thu.
+- Bộ đo mới **đã chứng minh ĐỎ theo BỐN TRỤC KHÁC HÌNH DẠNG** (Đ21/G12): bảng phân loại
+  lỗi lúc chạy · dữ liệu checkpoint trên đĩa · đối số CLI · hàm chuẩn hoá trong SQL.
+  Mỗi trục đỏ đúng nhóm của nó, không đỏ nhóm khác. Bằng chứng: `evidence/so-d25-d27/`.
 
-Quyết định: **Đ15** `db:migrate:down` trả exit 2 thay vì giả vờ chạy được — không có DB
-thì không kiểm chứng được đường lùi. Nợ: dòng "Migration hỏng" ở `OPERATIONS.md` §8 chưa
-thoả mãn, phải thêm bảng `schema_migrations` khi có Neon. **Đ16** `.gitignore` chừa
-`.env.example`.
+### ⚠️ Ba lần suýt ghi số GIẢ, đều do hạ tầng bị đếm thành chất lượng (G19):
+1. `429` — chính là thứ làm P02a dừng ở `2/4` và không lặp lại được.
+2. **Đứt mạng** — `DEF-04` chết vì `TypeError: terminated` (undici) và bị ghi MISMATCH
+   oan. Bản đầu của `classifyError` do chính tôi viết xếp nó vào `logic`; phải vá thêm
+   nhận diện lỗi socket/mạng. **Vùng cấm đi kèm:** không được gộp cả họ `TypeError` vào
+   tầng 1, vì `Cannot read properties of undefined` cũng là `TypeError` — gộp là biến mọi
+   bug lập trình thành "hạ tầng, chạy lại sau", đúng XANH GIẢ kiểu G12.
+3. **Thiếu biến môi trường** — lượt chủ tịch tự chạy `probe_defects.mjs` mà không có
+   `--env-file=.env.local` đã ghi `DEF-01` thành **TRƯỢT** với lý do "GEMINI_API_KEY chưa
+   được cấu hình". Vá hai tầng: `loadLocalEnv()` tự nạp `.env.local` (biến từ shell vẫn
+   thắng file) và `requireEnv()` chặn **trước** khi chạm checkpoint → exit 2. Đã kiểm cả
+   hai chiều: không key thì exit 2 và checkpoint **không đổi một byte**; có key thì chạy
+   trọn, không cần cờ nào.
 
-⚠️ **Phán quyết BB-07 của phiên này về sau lộ ra là sai** — xem phiên tối và `Đ21`.
+### 🔴 Phát hiện chưa sửa, có chủ ý — `DEF-04` (G20):
+Được `escalate`/`no_eligible_source`/`G3_retriever_refused`, muốn
+`escalate`/`source_expired_or_unknown`/`G2_zero_eligible`. Đối chiếu `knowledge/`: bản
+hiện hành `OCP1-POOL-RULES-001` **không có** section giờ mở cửa; thông tin đó chỉ ở
+`POOL24-HOURS-01` thuộc bản 2024 đã `Expired`. Truy hồi kéo thêm các section khác của bản
+001 (chúng chứa chữ "bể bơi"), chúng hợp lệ ⇒ `eligible` không rỗng ⇒ không vào `G2`; A2
+đọc thấy không có giờ mở cửa ⇒ từ chối ⇒ `G3`. **Kỳ vọng SPEC ĐÚNG, pipeline SAI** —
+tầng escalate không xét `rejection_histogram` nên không phân biệt được "không có nguồn"
+với "nguồn duy nhất trả lời được câu này đã hết hiệu lực". Với rubric thì đúng chỗ phân
+biệt đó mới là phần đáng điểm. **KHÔNG tự sửa:** chạm Đ07 + `SPEC-P02` §4/§6 ⇒ tầng 🔴,
+và thuộc gói P02a chưa nghiệm thu. Đã xếp làm đầu việc đầu tiên của nghiệm thu.
+
+### ⏳ Đang chờ người:
+- **`DATABASE_URL` Supabase** — mọi thứ phía mã đã sẵn sàng; chỉ cần chuỗi **pooler cổng
+  6543** dán vào `.env.local`. Có nó thì `db:migrate` sẽ nói được G18 vá đúng hay chưa.
+- **Scope Vercel** (Đ23) — CLI đã đăng nhập, chỉ chờ chọn.
+- Câu hỏi treo từ Đ17 vẫn treo: A2 mất bậc Pro. Nếu Golden ra `M1 < 34/40` thì nạp tiền
+  Google Cloud hay chấp nhận điểm thấp?
+
+### 📌 Nợ đồng bộ đã trả:
+`index.md` **đã cập nhật bản đồ `lib/`** (nợ ghi từ phiên đêm) — thêm `lib/pipeline/`,
+`confidence.ts`, `adapters/{model,store-mock}.ts`, 6 script đo, `evals/runs/`, và bỏ
+`adapters/anthropic.ts` đã xoá. `project-intro.md` + `-data-architecture.md` đã rà theo
+§5.B.2 vì Đ25 đổi tầng lưu trữ (hai file này ngoài Ma Trận 6 Điểm nên dễ nói sai repo lâu
+dài mà mọi cổng tự động vẫn xanh).
 
 ---

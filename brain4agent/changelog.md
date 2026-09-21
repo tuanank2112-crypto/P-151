@@ -2,6 +2,95 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-21: Pipeline nối vào web, chạy end-to-end THẬT trên Supabase
+
+**Mốc lớn nhất từ đầu dự án: lượt hỏi–đáp đầu tiên chạy trọn 9 chặng qua HTTP, trên DB thật, trả lời có trích dẫn.** Trước phiên này repo có pipeline chạy bằng script nhưng KHÔNG có màn hình nào gọi được nó.
+
+### Phát hiện hiện trạng — não đang ghi SAI
+`DATABASE_URL` **đã có sẵn** trong `.env.local` và DB Supabase **đã migrate + đã seed** (19 documents · 98 sections · 98 chunks · 2 users) từ trước phiên này, trong khi `state.json` vẫn ghi `blocked_needs_human.DATABASE_URL`. Bài học: kiểm chứng trước khi tin ghi chép, kể cả ghi chép của chính mình (Bước 3 của giao thức khởi động).
+
+### Decisions
+- **Đ28 — DEF-04 vá bằng `top_rejected_reason`, KHÔNG bằng `rejection_histogram`.** Căn nguyên thật khác giả thuyết ghi ở Đ26: `G2` vốn đã xét histogram đúng SPEC; chỗ hỏng là `G3` trả cứng. Và histogram là tín hiệu SAI cho `G3` vì nó đếm cả chunk hết hạn xếp hạng thấp ⇒ báo "tài liệu hết hiệu lực" cho câu hỏi không liên quan (Đ09 cấm). Thêm vùng cấm `P02-C16`.
+- **Đ29 — `users.property_type`.** E-6 đối chiếu `scope_property` với `property_type` nhưng hợp đồng không cho `users` cột nào giữ nó; 19/19 tài liệu có `scope_property` khác rỗng ⇒ phiên rỗng `property_type` loại sạch mọi tài liệu. Lỗi im lặng, không test nào đỏ.
+- **Đ30 — `schema_migrations`, trả nợ Đ15.** `migrate.mjs` cũ chạy lại toàn bộ file mỗi lượt ⇒ lượt hai chết ở `already exists`, không có cách thêm migration vào DB đã chạy. Nay có bảng lịch sử + `--status` + `--baseline --to=<file>`.
+- **Đ31 — chặn theo âm tiết, không theo chuỗi con (G24).** `"điều kiện".includes("kiện")` đẩy một ca Golden FAQ sang escalate pháp lý ngay chặng 5. Thêm vùng cấm `P02-C17`.
+- **Đ32 — `plainto_tsquery` → `to_tsquery` OR (G22).** AND đòi chunk chứa đủ mọi từ ⇒ truy vấn 10 từ của A1 trả **0 dòng** trên DB thật ⇒ MỌI câu hỏi thành `no_eligible_source`. **Đây là đổi hợp đồng `01-CONTRACTS` §4.2, chưa được chủ tịch phê chuẩn** — áp vì không áp thì không có đường nào cho demo chạy; đảo lại bằng một commit revert.
+- **Đ33 — banner backend.** Số chạy trên Postgres LÀ số nghiệm thu; Đ24 chỉ cấm số mock.
+
+### Added
+- `app/api/chat/route.ts` — cửa HTTP duy nhất của luồng hỏi–đáp. Chỉ vai `resident`; cắt `confidence` + `gate_triggered` tại một chỗ (BB-05); ánh xạ bảng lỗi `SPEC-P02` §9 sang mã HTTP; mọi nhánh lỗi đều có câu tiếng Việt + nút bấm (NFR-02).
+- `app/(resident)/chat/page.tsx` — màn hỏi–đáp thật: câu hỏi gợi ý, trích dẫn `document_id`/`section_id` kèm trích đoạn, lý do từ chối, 9 chặng xử lý, nút Thử lại.
+- `lib/reason-messages.ts` — bảng `reason_code` → câu tiếng Việt (`SPEC-P02` §6.4), đặt ở `.ts` để `.tsx` không chứa chữ cấm của BB-05.
+- `db/migrations/005_user_property_type.sql` — idempotent, đã chạy thật (`exit 0`).
+- Đăng nhập chạy được ở backend `mock`: hai tài khoản demo, mật khẩu đọc từ CÙNG biến môi trường mà `seed_users.mjs` dùng — không hardcode, không cửa hậu không mật khẩu.
+
+### Fixed
+- `DEF-04` ra đúng `reason_code` (G20 đóng phần pipeline).
+- Truy hồi lexical trên Postgres: `"điều kiện trẻ em dưới 12 tuổi sử dụng bể bơi"` **0 → 8 dòng** (G22).
+- Chặn oan câu hỏi chứa "điều kiện" (G24).
+- Mảng ENUM từ `pg` về dạng chuỗi, chuẩn hoá tại adapter (G23).
+
+### Đo được
+`tsc --noEmit` exit 0 · `npm run build` exit 0 · `npm test` **82/82** (trước: 53) · BB-05/BB-07/BB-10 `0` vi phạm · lượt end-to-end `decision=answer`, 1 citation, 3/3 claim `supported`, 3 model khác nhau có log riêng.
+
+### Còn treo
+`expected_gate` của DEF-04 (`G2` vs `G3`) chờ chủ tịch · `DEF-01`/`DEF-02` chưa đo xong trên Postgres vì cạn hạn mức Gemini (blocked, KHÔNG phải trượt) · bộ nhớ hội thoại BB-11 chưa nối · deploy chờ chọn scope Vercel.
+
+## [Chưa phát hành] - 2026-09-20 (chiều): Chốt Supabase, chạy đo theo lô, thống nhất một nguồn dữ liệu
+
+### Decisions
+- **Đ25 — Postgres là SUPABASE; Turso/SQLite BỊ BÁC.** Đo schema thật trước khi trả lời:
+  `003_knowledge.sql` + `query.ts` phụ thuộc `CREATE EXTENSION vector`/`vector(384)`/
+  `hnsw`, `tsvector GENERATED ... STORED`/`gin`/**`ts_rank_cd(..., 32)`**, `text[]`,
+  `jsonb`, `gen_random_uuid()` — SQLite không có thứ nào. Cờ `32` là **C-05**, một bất
+  biến có test canh; và Đ24 đã ghi `score_lexical`/`S1` không chuyển được từ mock sang
+  Postgres *chính vì mock thiếu đúng hàm đó* ⇒ Turso chỉ là **một kho mock thứ hai có
+  thêm độ trễ mạng**, đổi 1–2 ngày công để nhận con số vẫn không tick được `G11`.
+- **Đổi driver `@neondatabase/serverless` → `pg`.** Driver Neon nói chuyện HTTP với
+  endpoint riêng của Neon, không dùng được với nhà cung cấp khác. `getSql()` giữ **đúng
+  chữ ký cũ** `sql(text, params) -> rows` nên không call site nào ở tầng trên phải đổi;
+  thêm `closePool()` cho script CLI; `scripts/_pg.mjs` gom driver cho 5 script vận hành.
+  BB-07 vẫn `violations: 0` — `check_adapter_boundary.sh` đã cấm `from "pg"` ngoài
+  `lib/adapters/` sẵn từ trước. `npm run build` không có `DATABASE_URL`: vẫn exit 0.
+- **Vá một BUG THẬT trong DDL (G18).** `chunks.tsv GENERATED ALWAYS AS (to_tsvector('simple',
+  unaccent(content_vi))) STORED` sẽ **chết** với `ERROR: generation expression is not
+  immutable` trên MỌI Postgres — `unaccent()` là STABLE, không IMMUTABLE. Chưa từng lộ
+  vì migration là soạn mã chưa chạy (Đ15). Vá bằng `public.immutable_unaccent()`, đồng
+  bộ cả ba chỗ dùng để tsvector và tsquery chuẩn hoá bằng **cùng một hàm**.
+- **Đ26 — mọi script đo chạy THEO LÔ, có checkpoint; hạn mức KHÔNG được biến thành số đo.**
+  `scripts/_batch.mjs` mới: phân lập lỗi tầng 1 (§5.E) khỏi lỗi chất lượng, checkpoint
+  JSONL append-only ở `evals/runs/` (đã `.gitignore`), cờ
+  `--limit/--offset/--only/--resume/--fresh/--delay-ms`, dừng sớm sau 3 lần 429 liên
+  tiếp, và **mã thoát 3 = CHƯA KẾT LUẬN ĐƯỢC** (khác hẳn 0 = đạt và 1 = trượt).
+  Tự nạp `.env.local` + `requireEnv()` chặn trước khi chạy lô, vì một lượt quên
+  `--env-file` đã từng ghi `DEF-01` thành TRƯỢT giả (G19).
+- **Đ27 — MỘT nguồn dữ liệu duy nhất: MÔ PHỎNG. Không crawl.** `knowledge/` chứa 4
+  khuyết tật cài sẵn có chủ ý và 66 case Golden neo theo `section_id`; crawl về là mất
+  trắng `K-M6`/`G05`. Chỗ *thật sự* đang lẫn không nằm ở nội dung mà ở **tầng truy hồi**
+  (mock chấm bằng lexical xấp xỉ, Postgres bằng `ts_rank_cd`); lối ra là cho cả hai
+  backend chấm bằng **cùng một nguồn: embedding** — việc còn phải làm, xem `roadmap.md`.
+
+### Measured
+- `npx tsc --noEmit` exit 0 · `npm test` **53/53 pass, 0 fail, 0 skip** · `npm run build`
+  không có `DATABASE_URL` exit 0 · BB-05/BB-07/BB-10 `violations/matches: 0` exit 0 ·
+  P00 không hồi quy (`defects_ok: 4/4`, `faq 50`/`safety 16`).
+- **`K-M6` từ `2/4` lên `3/4`, lặp lại được hai lượt** — số đo mà `SPEC-P00` §9 gọi là
+  quan trọng nhất của cả gói P00, treo từ lúc P00 nghiệm thu. `DEF-01`/`02`/`03` khớp
+  đúng `reason_code` + `gate`.
+- **Bộ đo mới chứng minh ĐỎ theo BỐN TRỤC KHÁC HÌNH DẠNG** (Đ21/G12): bảng phân loại lỗi
+  lúc chạy · dữ liệu checkpoint trên đĩa · đối số CLI · hàm chuẩn hoá trong SQL. Mỗi trục
+  đỏ đúng nhóm của nó và không đỏ nhóm khác. Bằng chứng:
+  `planning/01_2026-09-20_resident-agent-v1/evidence/so-d25-d27/`.
+
+### Known issues
+- **`DEF-04` lệch THẬT (G20), chưa sửa có chủ ý.** Cổng escalate không xét
+  `rejection_histogram` nên "nguồn đã hết hiệu lực" bị báo thành "không có nguồn".
+  Kỳ vọng SPEC đúng, pipeline sai. Tầng 🔴, thuộc nghiệm thu P02a.
+- **P02a CHƯA được nghiệm thu.** `R05` §7 tự khai W5/W6/W7 đòi tầng 🔴 nhưng làm bằng
+  Sonnet ⇒ cần thẩm định độc lập `lib/confidence.ts` + `lib/pipeline/index.ts`.
+- `RETRIEVAL_MODE=hybrid` **chưa nối dây** vào pipeline; `BB-11` (ghi `answer_turns`) và
+  bộ nhớ hội thoại chưa thi công (kho mock không có bảng vận hành).
+
 ## [Chưa phát hành] - 2026-09-20: Bác Vyce, chốt chạy local trên kho mock
 
 ### Decisions

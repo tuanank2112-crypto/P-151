@@ -248,14 +248,31 @@ cần re-embed, không cần sửa schema**. Đây chính là lý do giữ hai c
 ### 4.2 — Truy vấn chuẩn (lexical)
 
 ```sql
--- $1 = query tiếng Việt, $2 = TOP_K (mặc định 8)
+-- $1 = biểu thức tsquery dạng OR đã dựng sẵn ("bể | bơi | trẻ"), $2 = TOP_K (mặc định 8)
+-- $1 do buildTsQueryExpr() ở lib/retrieval/query.ts sinh ra — KHÔNG phải câu hỏi thô.
 SELECT c.id, c.section_id, c.document_id, c.content_vi,
-       ts_rank_cd(c.tsv, plainto_tsquery('simple', unaccent($1)), 32) AS score
+       ts_rank_cd(c.tsv, to_tsquery('simple', public.immutable_unaccent($1)), 32) AS score
 FROM chunks c
-WHERE c.tsv @@ plainto_tsquery('simple', unaccent($1))
+WHERE c.tsv @@ to_tsquery('simple', public.immutable_unaccent($1))
 ORDER BY score DESC
 LIMIT $2;
 ```
+
+**⚠ ĐỔI 2026-09-21 (Đ32 / G22) — trước đây là `plainto_tsquery`.** Hàm đó nối MỌI từ
+bằng **AND**, mà truy vấn đã chuẩn hoá của A1 dài 8–10 từ, nên nó đòi một chunk chứa
+đủ cả 10 từ. Đo trên Supabase thật: `"điều kiện trẻ em dưới 12 tuổi sử dụng bể bơi"`
+trả **0 dòng**, trong khi `"trẻ em bể bơi"` trả 2 dòng ⇒ **mọi câu hỏi đi qua A1 đều
+rơi vào `no_eligible_source`**, RAG trông như không có tài liệu trong khi tài liệu vẫn
+nằm nguyên trong DB. Lỗi này KHÔNG lộ ra ở backend mock (mock chấm điểm kiểu OR).
+
+**BẮT BUỘC:**
+- `$1` phải đi qua `buildTsQueryExpr()`: mọi ký tự không phải chữ/số bị loại TRƯỚC khi
+  nối bằng `|`. Đây là điều kiện để dùng `to_tsquery` mà không mở đường injection — CẤM
+  truyền câu hỏi thô vào `to_tsquery`.
+- Biểu thức rỗng (câu hỏi không còn từ nào) ⇒ **KHÔNG chạy SQL**, trả tập rỗng.
+  `to_tsquery('')` ném lỗi cú pháp.
+- Hàm bỏ dấu phải là `public.immutable_unaccent()` ở CẢ hai vế, trùng hàm sinh
+  `chunks.tsv` (G18) — lệch nhau thì `WHERE` lặng lẽ không khớp gì.
 
 **Cờ chuẩn hoá `32` là bắt buộc.** Postgres định nghĩa bit 32 = chia rank cho
 `rank + 1`, nên `score ∈ (0, 1)`. Đây là điều kiện để `S1` trong công thức confidence
@@ -374,6 +391,13 @@ CREATE TABLE users (
   display_name  text NOT NULL,
   resident_id   text,                               -- NULL với vai bql
   owned_property_ids text[] NOT NULL DEFAULT '{}',
+  -- Đ29 (2026-09-21): NGUỒN DUY NHẤT cho `principal.property_type` mà E-6 (§5)
+  -- đối chiếu với `documents.scope_property`. Bản đặc tả đầu KHÔNG có cột này,
+  -- nên phiên đăng nhập buộc phải để `property_type: []` — và vì 19/19 tài liệu
+  -- đều có `scope_property` khác rỗng, MỌI tài liệu bị loại ở E-6 với lý do
+  -- `scope_mismatch`. Lỗi im lặng: không crash, không test nào đỏ, chỉ là cư dân
+  -- không bao giờ nhận được câu trả lời nào.
+  property_type property_type[] NOT NULL DEFAULT '{}',
   created_at    timestamptz NOT NULL DEFAULT now()
 );
 
@@ -476,7 +500,7 @@ export interface Principal {
   role: "resident" | "bql";
   resident_id: string | null;
   owned_property_ids: string[];
-  property_type: Array<"apartment" | "villa" | "commercial">;
+  property_type: Array<"apartment" | "villa" | "commercial">; // Đ29 — nguồn: cột `users.property_type`
 }
 
 export interface RetrievedChunk {

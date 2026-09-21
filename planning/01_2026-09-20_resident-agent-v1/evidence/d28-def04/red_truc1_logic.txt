@@ -1,0 +1,9 @@
+=== TRUC 1 — LOGIC COMPARE: bo phan biet o cong G3 (confidence.ts) ===
+ℹ tests 16
+ℹ pass 15
+ℹ fail 1
+EXIT_TRUC1=1
+--- truc 2 (du lieu) van XANH khi truc 1 bi pha ---
+ℹ tests 10
+ℹ pass 10
+ℹ fail 0

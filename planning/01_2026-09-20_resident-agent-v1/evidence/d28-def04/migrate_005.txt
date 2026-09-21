@@ -1,0 +1,3 @@
+-- applying 005_user_property_type.sql
+migrations applied: 1 · skipped: 4
+EXIT=0

@@ -39,9 +39,15 @@ Trợ lý AI cho cư dân khu đô thị, mô phỏng toàn phần, 2 vai trò (
 ## 2. Công nghệ cốt lõi (Tech Stack) — quyết định Đ11
 
 - **Frontend/Backend:** Next.js + TypeScript, deploy trên **Vercel**.
-- **Data Persistence:** Postgres + **pgvector** trên **Neon** — một kho chung cho
-  RAG (embeddings), state ứng dụng (hội thoại, tài liệu, user) và sổ biên nhận
-  (P05, nếu còn trong scope).
+- **Data Persistence:** Postgres + **pgvector** trên **Supabase** (Đ25 — Turso/SQLite
+  đã cân nhắc và **BÁC**: không có `pgvector`, không có `ts_rank_cd(..., 32)` của C-05,
+  không có `text[]`/`jsonb`) — một kho chung cho RAG (embeddings), state ứng dụng
+  (hội thoại, tài liệu, user) và sổ biên nhận (P05, nếu còn trong scope).
+  Driver là `pg` (TCP), nói chuyện được với mọi Postgres chuẩn. Trên serverless BẮT
+  BUỘC trỏ `DATABASE_URL` vào connection pooler (Supabase cổng `6543`), không phải `5432`.
+- **Kho dữ liệu local (Đ24):** `DATA_BACKEND` ∈ `mock` | `postgres`, mặc định `mock`.
+  Mock đọc thẳng `knowledge/`, nằm trong `lib/adapters/` nên BB-07 giữ. **VÙNG CẤM:**
+  cấm tick Exit Gate `G11` bằng số chạy trên mock.
 - **Auth:** credential 2 vai trò (Cư dân / BQL), seed sẵn tài khoản demo.
 - **LLM:** **Google Gemini** cho cả 3 agent (Đ17) — A1 `gemini-3.5-flash-lite`,
   A2 `gemini-3.5-flash`, A3 `gemini-2.5-flash`. Biến `GEMINI_API_KEY`. Contract tại
@@ -67,8 +73,13 @@ không cần DB, không gọi LLM**), `package.json` (Node ESM, chưa có depend
 **P01a đã xong, ✅ DUYỆT** (`reports/R03`): khung Next.js + TS strict, route 2 vai,
 `lib/types.ts`, `lib/adapters/` (BB-07), `lib/auth/`, `lib/retrieval/`, `db/migrations/`
 (soạn mã, chưa chạy), 13 ca test. `npm run build` xanh **không cần `DATABASE_URL`**.
+P02a đã thêm `lib/pipeline/` (3 agent, 9 chặng), `lib/confidence.ts`,
+`lib/adapters/{model,store-mock}.ts` ⇒ **53 ca test**, vẫn xanh không cần key lẫn DB —
+nhưng gói P02a **CHƯA được nghiệm thu**.
 
-**Còn chặn ở ngoài tầm agent:** chưa có `DATABASE_URL` (Neon), chưa có `ANTHROPIC_API_KEY`,
-chưa có tài khoản Vercel ⇒ **chưa migrate, chưa seed, chưa deploy, chưa chạy Golden**.
+**Còn chặn ở ngoài tầm agent:** chưa có `DATABASE_URL` (Supabase — Đ25) ⇒ **chưa
+migrate, chưa seed, chưa chạy Golden trên số nghiệm thu**; Vercel CLI đã đăng nhập sẵn
+nhưng chờ chủ tịch **chọn scope** (Đ23). `GEMINI_API_KEY` đã có và chạy được (Đ17) —
+dòng "chưa có ANTHROPIC_API_KEY" là của giai đoạn trước Đ17, nay hết đối tượng.
 P02–P06 chưa bắt đầu. Không gói nào được coi là "đã hoàn thành" cho tới khi có bằng
 chứng máy chạy thật.

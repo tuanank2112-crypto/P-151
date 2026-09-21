@@ -108,7 +108,8 @@ export interface PipelineStep {
     | "verify";
   ok: boolean;
   ms: number;
-  model?: "claude-haiku-4-5" | "claude-opus-5" | "claude-sonnet-5";
+  /** Union 3 ID Gemini đã chốt — xem `lib/adapters/model.ts` (BB-07.a, Đ17). */
+  model?: "gemini-3.5-flash-lite" | "gemini-3.5-flash" | "gemini-2.5-flash";
   input_tokens?: number;
   output_tokens?: number;
   note?: string;

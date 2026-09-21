@@ -1,0 +1,7 @@
+# bash scripts/check_no_hardcoded_knowledge.sh
+matches: 0
+EXIT=0
+
+# bash scripts/check_no_confidence_ui.sh
+matches: 0
+EXIT=0

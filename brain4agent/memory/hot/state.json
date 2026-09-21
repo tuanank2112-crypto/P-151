@@ -1,24 +1,25 @@
 {
   "current_version": "1.0.0",
   "brain_template_version": "1.7.1",
-  "system_status": "p02a_in_progress",
+  "system_status": "p02b_e2e_chay_that_tren_postgres",
   "last_verification": {
-    "timestamp": "2026-09-20T03:35:00.000Z",
-    "grade": "P01a ✅ DUYỆT — Super Orchestrator đo lại độc lập",
+    "timestamp": "2026-09-21T16:30:00.000Z",
+    "grade": "P02b — pipeline noi vao web, luot e2e dau tien tra loi duoc tren Supabase that",
     "gates_no_key_needed": {
       "tsc": "npx tsc --noEmit · exit 0",
-      "build": "npm run build KHÔNG có DATABASE_URL · exit 0 · 8/9 route dynamic",
-      "test": "npm test · tests 13 · pass 13 · fail 0 · skipped 0",
-      "BB-07": "check_adapter_boundary.sh · violations: 0 · exit 0",
-      "BB-10": "check_no_hardcoded_knowledge.sh · matches: 0 · exit 0",
-      "BB-05": "check_no_confidence_ui.sh · matches: 0 · exit 0",
-      "P00_regression": "validate_knowledge + validate_golden · exit 0",
-      "red_tests_by_SO": "4 phép phá tự thiết kế (rò SDK, rò connection, hardcode document_id, confidence ra UI) — cả bốn exit 1 rồi tái xanh"
+      "build": "npm run build KHONG co DATABASE_URL · exit 0 (co /api/chat)",
+      "test": "npm test · tests 82 · pass 82 · fail 0 · skipped 0 (truoc: 53)",
+      "BB-07": "check_adapter_boundary.sh · violations: 0",
+      "BB-10": "check_no_hardcoded_knowledge.sh · matches: 0",
+      "BB-05": "check_no_confidence_ui.sh · matches: 0 (da co app/(resident)/chat/page.tsx that)",
+      "red_tests_moi": "4 truc KHAC HINH DANG: (1) logic cong G3 (2) duong dan du lieu eligibility (3) chuoi con am tiet tieng Viet (4) plainto_tsquery. Evidence: evidence/d28-def04/"
     },
-    "blocked_needs_human": {
-      "DATABASE_URL": "Neon — chặn migrate, seed, K-M5, và toàn bộ P02",
-      "ANTHROPIC_API_KEY": "chặn P02 và eval:golden. Key sk- chủ tịch cấp bị TokenRouter từ chối (đòi tr_)",
-      "VERCEL": "C-04 — chặn R1 deploy, OPERATIONS §4 bước 5"
+    "e2e": {
+      "duong": "POST /api/chat -> runTurn -> 9 chang",
+      "backend": "postgres (Supabase that)",
+      "ket_qua": "decision=answer · 1 citation OCP1-POOL-RULES-001/POOL-SAFE-03 · claims 3/3 supported",
+      "ba_agent": "safety+intent=gemini-3.5-flash-lite · draft=gemini-3.5-flash · verify=gemini-2.5-flash",
+      "evidence": "planning/01_2026-09-20_resident-agent-v1/evidence/d28-def04/e2e_api_chat_postgres.txt"
     }
   },
   "active_plans_completed": 0,
@@ -48,12 +49,13 @@
   "work_packages": {
     "done": [
       "P00",
-      "P01a"
+      "P01a",
+      "P02b (noi web + e2e that)"
     ],
-    "next": "P01b (cần Neon + Vercel) rồi P02",
+    "next": "lay so nghiem thu G11 tren postgres; noi BB-11; P03/P04",
     "remaining": [
-      "P01b",
-      "P02",
+      "P01 deploy",
+      "P02 memory",
       "P03",
       "P04",
       "P05",
@@ -93,7 +95,55 @@
     "canh_bao": "luon truyen --scope; mac dinh no chon team dau tien (n-listen-ai)"
   },
   "blocked_needs_human": {
-    "DATABASE_URL": "Neon - chua co, nhung KHONG con chan P02a nho kho mock",
-    "vercel_scope": "chu tich chon scope truoc khi deploy"
+    "vercel_scope": "chu tich chon scope truoc khi deploy (CLI da dang nhap san)",
+    "cau_hoi_D17": "A2 mat bac Pro. Neu Golden ra M1 < 34/40 thi nap tien Google Cloud hay chap nhan diem thap? Can quyet TRUOC khi chay Golden tren Postgres",
+    "expected_gate_DEF04": "Chu tich quyet: expected_defects.json + golden_safety S04 ghi G2_zero_eligible, do that ra G3_retriever_refused. reason_code da DUNG. Chan K-M6 dat 4/4",
+    "phe_chuan_D32": "Doi 01-CONTRACTS §4.2 plainto_tsquery -> to_tsquery OR. Da ap vi khong ap thi demo khong chay duoc dong nao; dao lai bang mot commit revert"
+  },
+  "db": {
+    "provider": "supabase",
+    "decision": "Đ25",
+    "driver": "pg (TCP)",
+    "trang_thai": "DA MIGRATE + DA SEED THAT — 19 documents / 98 sections / 98 chunks / 2 users",
+    "migrations": "theo doi bang schema_migrations (Đ30). 001..004 baseline, 005 ap dung that exit 0",
+    "chunks_co_embedding": 0,
+    "cong_ket_noi": "DATABASE_URL hien tai tro cong 5432 — BAT BUOC doi sang pooler 6543 truoc khi deploy serverless (Đ25)",
+    "CANH_BAO": "migration DA CHAY thi CAM sua file cu — them file moi (checksum lech se bi canh bao)"
+  },
+  "data_source": {
+    "decision": "Đ27",
+    "chon": "MOCK — mot nguon duy nhat, MO PHONG",
+    "crawl": "BAC — knowledge/ co 4 khuyet tat cai san + 66 case Golden neo theo section_id; crawl la mat trang K-M6/G05",
+    "cho_dang_lan_that": "TANG TRUY HOI, khong phai noi dung: mock cham bang lexical xap xi, Postgres bang ts_rank_cd",
+    "loi_ra": "cho ca hai backend cham bang CUNG embedding (cosine_sim chuyen duoc nguyen) — RETRIEVAL_MODE=hybrid CHUA noi day vao lib/pipeline/retrieval.ts"
+  },
+  "batch_runner": {
+    "decision": "Đ26",
+    "file": "scripts/_batch.mjs",
+    "co": "--limit --offset --only --resume --fresh --delay-ms",
+    "checkpoint": "evals/runs/*.jsonl append-only, da gitignore — TRANG THAI CHAY DO, khong phai bang chung nghiem thu",
+    "ma_thoat": {
+      "0": "xong sach",
+      "1": "co ca TRUOT THAT",
+      "2": "thieu bien moi truong / sai tham so",
+      "3": "CHUA KET LUAN DUOC — chay lai voi --resume"
+    },
+    "phan_lap": "loi TANG 1 (429/503/401/UpstreamModelError/socket/dut mang) KHONG tinh la truot, vao cot blocked va KHONG ghi checkpoint",
+    "VUNG_CAM": "khong duoc gop ca ho TypeError vao tang 1 — Cannot read properties of undefined cung la TypeError; gop la XANH GIA kieu G12",
+    "ContractDriftError": "la loi CHAT LUONG model, KHONG phai tang 1 — phai duoc ket luan va dem",
+    "tu_nap_env": "loadLocalEnv() + requireEnv() — khong con can --env-file=.env.local"
+  },
+  "open_issues": {
+    "expected_gate_DEF04": "xem blocked_needs_human",
+    "BB_11": "bo nho hoi thoai CHUA noi — bang conversations/messages/answer_turns DA co tren Supabase",
+    "hybrid": "RETRIEVAL_MODE=hybrid CHUA noi day; chunks chua co embedding nao",
+    "G11": "eval:golden CHUA chay tren postgres — chua co so nghiem thu M1/M3",
+    "tang_do_P02a": "lib/confidence.ts + lib/pipeline/index.ts van can tham dinh doc lap tang 🔴",
+    "P03_P04": "chua bat dau — 5 man BQL van la khung rong"
+  },
+  "km6": {
+    "value": "1/4 tren postgres (DEF-03 OK) · 3 ca blocked vi can han muc Gemini — KHONG phai truot",
+    "backend": "postgres",
+    "ghi_chu": "DEF-04 tren mock: reason_code DUNG, gate G3 (cho quyet)"
   }
 }

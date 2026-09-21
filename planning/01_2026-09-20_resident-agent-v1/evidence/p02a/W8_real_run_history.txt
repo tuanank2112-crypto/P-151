@@ -1,0 +1,79 @@
+# W8 (scripts/probe_defects.mjs) — LỊCH SỬ CÁC LƯỢT CHẠY THẬT trong phiên
+# thi công H04. Ghi trung thực CẢ THẤT BẠI, không chỉ lượt cuối, vì lượt cuối
+# bị chặn bởi HẠN MỨC PROVIDER (429 "exceeded current quota"), KHÔNG PHẢI vì
+# logic sai — hai điều này khác nhau và không được lẫn vào nhau.
+
+## Lượt 1 — COVERAGE_THRESHOLD (mock) = 0.55 (giá trị ban đầu)
+BACKEND=mock — số định hướng, KHÔNG phải số nghiệm thu (Đ24)
+DEF-01 OK no_eligible_source G2_zero_eligible
+DEF-02 MISMATCH got=(escalate,no_eligible_source,G2_zero_eligible) expected=(escalate,no_eligible_source,G3_retriever_refused)
+DEF-03 MISMATCH exception:UpstreamOverloaded:UpstreamOverloaded: HTTP 503 (gemini-3.5-flash quá tải)
+DEF-04 OK source_expired_or_unknown G2_zero_eligible
+EXIT=1
+
+## Lượt 2 (lặp lại, cùng threshold 0.55) — xác nhận DEF-01/DEF-04 ổn định, DEF-03 vẫn 503
+DEF-01 OK · DEF-02 MISMATCH (như lượt 1) · DEF-03 MISMATCH (503) · DEF-04 OK
+EXIT=1
+
+## Chẩn đoán DEF-03 (scripts/trace_sample.mjs "Vườn BBQ..."):
+# retrieval() ở threshold 0.55 CHỈ trả về BBQ-CAP-01 (thiếu BLD-AMEN-07, vì
+# BLD-AMEN-07 không có từ "vườn") ⇒ conflict_group KHÔNG được phát hiện
+# (cần >=2 section cùng nhóm) ⇒ pipeline đi tiếp tới A2 (gemini-3.5-flash) ⇒
+# 503 thật từ provider (model A2 đã biết là chậm/hay quá tải — Đ17, 9789ms
+# đo được). Đây là lỗi THIẾT KẾ NGƯỠNG KHỚP LEXICAL của mock, không phải lỗi
+# eligibility/conflict logic (detectConflict() đã có unit test riêng, xanh).
+
+## Sửa: hạ COVERAGE_THRESHOLD (lib/adapters/store-mock.ts) từ 0.55 -> 0.45,
+## đo bằng scripts debug riêng (không tính vào hạn mức — KHÔNG gọi model,
+## chỉ gọi retrieve() thuần dựa trên normalized_query_vi đã ghi lại từ các
+## lượt gọi A1 thật ở trên):
+#   threshold=0.45: DEF-03 trả về {BBQ-CAP-01, BLD-AMEN-07} — ĐÚNG cả hai
+#                   thành viên conflict_group CG-BBQ-CAPACITY.
+#   threshold=0.45: DEF-04 KHÔNG còn lẫn POOL-SCOPE-01 (chỉ POOL24-HOURS-01,
+#                   POOL24-BAN-02, GYM-HOURS-04 — không doc nào trong số này
+#                   là "Current" chứa giờ mở cửa bể bơi, nên vẫn G2 đúng).
+#   threshold=0.45: DEF-02 vẫn giữ được PARK-LOST-06 (không có giá) và có
+#                   thêm cơ hội bắt PFEE-SCOPE-00 tuỳ cách A1 viết lại câu.
+
+## Lượt 3 (threshold=0.45):
+DEF-01 OK no_eligible_source G2_zero_eligible
+DEF-02 MISMATCH exception:UpstreamOverloaded (503, gemini-3.5-flash)
+DEF-03 OK source_conflict G1_conflict   <-- ĐÃ SỬA ĐÚNG
+DEF-04 MISMATCH exception:UpstreamOverloaded (503, gemini-3.5-flash)
+EXIT=1
+
+## Lượt 4 (threshold=0.45, nghỉ 15s trước khi chạy lại):
+DEF-01 OK · DEF-03 OK (ổn định)
+DEF-02 MISMATCH exception:UpstreamRateLimited (429 — hết hạn mức)
+DEF-04 MISMATCH got=(escalate,no_eligible_source,G3_retriever_refused)
+         expected=(escalate,source_expired_or_unknown,G2_zero_eligible)
+  -> nguyên nhân: A1 (gemini-3.5-flash-lite) không tất định 100% giữa các
+     lượt gọi — normalized_query_vi đổi cách viết giữa hai lần hỏi CÙNG một
+     câu tiếng Việt, khiến tập retrieved khác nhau. Đây là rủi ro CÓ THẬT
+     của việc dùng LLM thật để chuẩn hoá câu hỏi trước khi truy hồi trên một
+     bộ khớp lexical xấp xỉ (mock) — không phải bug tất định trong code.
+
+## Lượt 5 (threshold=0.45, nghỉ 65s) — HẠN MỨC PROVIDER CẠN HẲN, không phải
+## do request dày mà do phiên thi công đã gọi generateContent/embedContent
+## khá nhiều lần cho việc chẩn đoán ở trên (OP-C12 — hạn mức chung đang khan):
+DEF-01 OK · DEF-03 OK
+DEF-02 MISMATCH exception:UpstreamRateLimited (429 "exceeded your current quota")
+DEF-04 MISMATCH exception:UpstreamRateLimited (429 "exceeded your current quota")
+EXIT=1
+
+## KẾT LUẬN TRUNG THỰC tại thời điểm nộp báo cáo:
+# - DEF-01 và DEF-03: XÁC NHẬN ỔN ĐỊNH qua pipeline thật (2 lượt liên tiếp).
+# - DEF-02 và DEF-04: logic decideTurn/eligibility ĐÚNG (xác nhận bằng unit
+#   test T-CONF W8/W9 — case DEF-04 và DEF-02 nguyên văn trong bảng §6.3, cả
+#   hai xanh 100%). Đường THẬT qua A1 thật + retrieval mock CHƯA được xác
+#   nhận ổn định 2 lượt liên tiếp — bị chặn bởi (a) 503 quá tải model A2 lúc
+#   đo threshold cũ, (b) sai khớp do LLM không tất định ở lượt kế, và (c)
+#   429 hết hạn mức chung ở lượt cuối cùng khi hạn mức đã cạn vì chính quá
+#   trình chẩn đoán này. CHƯA CHẠY LẠI được lượt sạch cho cả 4 dòng cùng lúc.
+# - Việc CÒN LẠI, cần người: chạy lại `node scripts/probe_defects.mjs` sau
+#   khi hạn mức Gemini hồi phục (không đo được thời điểm chính xác từ máy
+#   dev), xác nhận DEF-02/DEF-04 ổn định. Nếu DEF-02/DEF-04 tiếp tục lệch vì
+#   lý do (b) — LLM viết lại câu hỏi khác cách mỗi lần — cân nhắc nới
+#   COVERAGE_THRESHOLD thấp hơn nữa hoặc đổi thuật toán khớp mock sang OR có
+#   trọng số thay vì "AND mềm" hiện tại. Đây là vùng CHỈ ẢNH HƯỞNG kho mock
+#   (Đ24) — không đụng gì tới lib/pipeline/ hay lib/confidence.ts.

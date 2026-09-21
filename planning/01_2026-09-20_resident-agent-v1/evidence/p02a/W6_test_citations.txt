@@ -1,0 +1,15 @@
+
+> resident-agent-v1@1.0.0 test
+> node scripts/run_tests.mjs citations
+
+✔ citation (BB-04, P02-C6, T-CITE, R6): A2 bịa section_id lạ ⇒ PipelineInvariantError, KHÔNG lọc im lặng (15.1553ms)
+✔ citation: decision=answer nhưng A3 khiến citations rỗng KHÔNG THỂ xảy ra vì A2 citations giữ nguyên — kiểm bất biến BB-04 khi A2 trả citations=[] và vẫn không refuse (1.3847ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 186.5411
+EXIT=0

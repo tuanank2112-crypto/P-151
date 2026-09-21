@@ -1,0 +1,57 @@
+
+> resident-agent-v1@1.0.0 test
+> node scripts/run_tests.mjs
+
+✔ l2normalize: vector chưa chuẩn hoá (|v|≈0.4345 ở 384 chiều, Đ20) trở thành |v|=1 (8.0738ms)
+✔ l2normalize: vector 0 trả về nguyên vẹn, không chia cho 0 (0.7469ms)
+✔ hằng số embedding khớp 01-CONTRACTS §4.3 (Đ18) (0.2744ms)
+✔ MAX_CONCURRENCY giới hạn song song ra Gemini API (Đ19) (0.2029ms)
+✔ FORBIDDEN_MODELS liệt kê đúng hai model cấm (Đ17, C-09), KHÔNG nằm trong SupportedModel dùng thật (1.0509ms)
+✔ schema-parity (T-PARITY, R12): responseSchema.required khớp khoá Zod cho cả 3 agent (0.34ms)
+✔ ĐỎ R12 (đã chạy tay, xem report): xoá một khoá khỏi required phải làm test trên fail — kiểm ngược bằng mảng cố ý thiếu (0.3383ms)
+✔ hashPassword rồi verifyPassword: mật khẩu đúng ⇒ true (124.1968ms)
+✔ verifyPassword: mật khẩu sai ⇒ false (93.0171ms)
+✔ cookie phiên hợp lệ: ký rồi xác minh trả đúng payload (1.752ms)
+✔ cookie phiên bị sửa 1 byte ⇒ verify trả về null (false) (0.2468ms)
+✔ verifySessionCookie: thiếu cookie ⇒ null, không ném lỗi dù thiếu SESSION_SECRET (0.1731ms)
+✔ backoff: HTTP 429 retry rồi thành công (E2, backoff 2s→8s+jitter) (3.8367ms)
+✔ backoff: HTTP 503 retry rồi thành công — Y NHƯ 429, KHÔNG gộp vào 5xx retry nhanh (E2b, Đ19) (0.7071ms)
+✔ backoff: HTTP 401 KHÔNG retry (E2d, UpstreamAuthError, CẤM in khoá) (4.1317ms)
+✔ backoff: content blocked KHÔNG retry, escalate ngay (E2e) (1.1135ms)
+✔ backoff: finishReason khác STOP ⇒ ContractDriftError, retry ĐÚNG 1 lần (E7) (0.7241ms)
+✔ citation (BB-04, P02-C6, T-CITE, R6): A2 bịa section_id lạ ⇒ PipelineInvariantError, KHÔNG lọc im lặng (26.2477ms)
+✔ citation: decision=answer nhưng A3 khiến citations rỗng KHÔNG THỂ xảy ra vì A2 citations giữ nguyên — kiểm bất biến BB-04 khi A2 trả citations=[] và vẫn không refuse (3.3367ms)
+✔ hằng số công thức khớp SPEC-P02 §6.2 (1.5879ms)
+✔ decideTurn — W1 D5 bể bơi trẻ em (đối chứng xanh) (0.4435ms)
+✔ decideTurn — W2 D6 giờ BQL (đối chứng xanh) (0.2066ms)
+✔ decideTurn — W3 sát ngưỡng dưới (0.1527ms)
+✔ decideTurn — W4 sát ngưỡng trên nhưng trượt (0.1822ms)
+✔ decideTurn — W5 faithfulness thấp, raw vẫn cao (0.1956ms)
+✔ decideTurn — W6 S03 conflict BBQ (DEF-03) (0.1816ms)
+✔ decideTurn — W7 S01 pickleball (DEF-01) (0.137ms)
+✔ decideTurn — W8 S04 bể bơi expired (DEF-04) (0.2886ms)
+✔ decideTurn — W9 S02 phí thẻ xe máy (DEF-02) (0.3074ms)
+✔ decideTurn — W10 A3 không tách được claim nào (0.211ms)
+✔ ĐỎ #5 (đã chạy tay, xem report/TESTING §6.4): TAU_FAITHFUL=0 lật W5 từ escalate sang answer — CẤM đặt = 0 (0.2296ms)
+✔ db/migrations chứa đủ 8 bảng bắt buộc của 01-CONTRACTS.md §3, §6 (9.3418ms)
+✔ db/migrations không chứa bảng của P05 (bookings, receipts) — Đ03/VC-09 (2.9194ms)
+✔ db/migrations định nghĩa đủ enum reason_code (15 giá trị) và lifecycle_state (4 giá trị) (2.6535ms)
+✔ step-order (BB-08, T-STEP): đường trả lời đầy đủ đi qua ĐÚNG 9 chặng, đúng thứ tự (25.7673ms)
+✔ step-order: thoát sớm ở chặng 2 (emergency) chỉ có ĐÚNG 2 phần tử steps (0.6794ms)
+✔ step-order: thoát sớm ở chặng 7 (zero eligible) dừng đúng ở eligibility, KHÔNG có draft/verify (0.7206ms)
+✔ ĐỎ R7 (đã chạy tay, xem report): assertStepOrder ném khi steps nhảy cóc/sai thứ tự (0.7142ms)
+✔ EmptyQuestionError: câu hỏi rỗng không tạo bất kỳ step nào (chặng 1) (0.8011ms)
+✔ buildLexicalQuery sinh chuỗi SQL có ts_rank_cd(..., 32) — cờ chuẩn hoá bắt buộc (C-05) (1.4554ms)
+✔ buildLexicalQuery nhận topK tuỳ chỉnh (0.2769ms)
+✔ REASON_CODES có đúng 15 phần tử (Đ12, BB-09) (1.3119ms)
+✔ REASON_CODES chứa đúng mã pii_or_account_specific đã đảo nội hàm (Đ06) (0.351ms)
+✔ LIFECYCLE_STATES có đúng 4 phần tử và KHÔNG chứa clarification_required như reason_code (0.2638ms)
+ℹ tests 44
+ℹ suites 0
+ℹ pass 44
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 414.4463
+EXIT=0

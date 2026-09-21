@@ -224,7 +224,7 @@ dung câu trả lời sắp nói ra**; ba tín hiệu kia chỉ nhìn vào nguy�
 | :-- | :-- | :-- | :-- | :-- |
 | 1 | `G1_conflict` | `S4 === true` | escalate | `source_conflict` |
 | 2 | `G2_zero_eligible` | `eligible_count === 0` | escalate | `rejection_histogram.expired_or_unknown > 0` ? `source_expired_or_unknown` : `no_eligible_source` |
-| 3 | `G3_retriever_refused` | A2 trả `refused === true` | escalate | `no_eligible_source` |
+| 3 | `G3_retriever_refused` | A2 trả `refused === true` | escalate | `top_rejected_reason === 'expired_or_unknown'` ? `source_expired_or_unknown` : `no_eligible_source` **(Đ28)** |
 | 4 | `G4_faithfulness_floor` | `S3 < TAU_FAITHFUL` | escalate | `no_eligible_source` |
 | 5 | `G5_tau_answer` | `confidence < TAU_ANSWER` | escalate | `no_eligible_source` |
 | — | *(qua hết)* | | **answer** | `null` |
@@ -237,10 +237,13 @@ export function decideTurn(sig: {
   faithfulness: number; conflict_detected: boolean;
   retriever_refused?: boolean;
   rejection_histogram?: Partial<Record<RejectionReason, number>>;
+  /** Đ28 — lý do loại của chunk XẾP HẠNG 1, `null` nếu chunk đó hợp lệ. */
+  top_rejected_reason?: RejectionReason | null;
 }): { confidence: number; decision: Decision; reason_code: ReasonCode | null;
       gate: string | null; s1: number; s2: number; s3: number } {
   const { retrieval_top1: s1, eligible_count, retrieved_count, faithfulness: s3,
-          conflict_detected, retriever_refused = false, rejection_histogram = {} } = sig;
+          conflict_detected, retriever_refused = false, rejection_histogram = {},
+          top_rejected_reason = null } = sig;
   const s2 = retrieved_count === 0 ? 0 : eligible_count / retrieved_count;
   const confidence = round4(W_RETRIEVAL * s1 + W_ELIGIBILITY * s2 + W_FAITHFULNESS * s3);
 
@@ -251,8 +254,14 @@ export function decideTurn(sig: {
       ? "source_expired_or_unknown" : "no_eligible_source";
     return r(0, "escalate", code, "G2_zero_eligible", s1, s2, s3);
   }
-  if (retriever_refused)
-    return r(0, "escalate", "no_eligible_source", "G3_retriever_refused", s1, s2, s3);
+  if (retriever_refused) {
+    // Đ28 — A2 từ chối nghĩa là không nguồn HỢP LỆ nào trả lời được câu này.
+    // Nếu nguồn khớp NHẤT lại là tài liệu đã hết hiệu lực thì sự thật là
+    // "thông tin nằm trong tài liệu hết hạn", không phải "không có nguồn nào".
+    const code = top_rejected_reason === "expired_or_unknown"
+      ? "source_expired_or_unknown" : "no_eligible_source";
+    return r(0, "escalate", code, "G3_retriever_refused", s1, s2, s3);
+  }
   if (s3 < TAU_FAITHFUL)
     return r(confidence, "escalate", "no_eligible_source", "G4_faithfulness_floor", s1, s2, s3);
   if (confidence < TAU_ANSWER)
@@ -297,6 +306,14 @@ Ba dòng đáng đọc kỹ:
 - **W8 vs W7** chứng minh `rejection_histogram` là bắt buộc: cùng `eligible_count = 0`,
   cùng gate `G2_zero_eligible`, nhưng **hai mã khác nhau**. Bỏ histogram thì khuyết
   tật #4 ra sai mã và Golden case `S04` fail.
+- **⚠ ĐÍNH CHÍNH W8 — 2026-09-21 (Đ28).** Dòng W8 giả định truy hồi cho câu hỏi
+  DEF-04 CHỈ kéo về chunk hết hiệu lực (`S2 = 0`). Đo thật thì **sai**: pipeline
+  truy hồi bằng truy vấn đã chuẩn hoá của A1, không phải câu hỏi gốc, nên còn kéo
+  thêm section hợp lệ của bản nội quy hiện hành ⇒ `eligible_count = 5 > 0` ⇒ KHÔNG
+  rơi vào `G2` mà rơi vào `G3`. `reason_code` vẫn phải là `source_expired_or_unknown`
+  — đó là lý do cổng `G3` nay cũng phân biệt, bằng `top_rejected_reason` chứ KHÔNG
+  bằng histogram (histogram đếm cả chunk hết hạn xếp hạng thấp, không liên quan tới
+  câu hỏi). Ba ca `W11`/`W12`/`W13` trong `tests/confidence.test.ts` canh cả hai chiều.
 - **W10** là ca biên: A3 không tách được mệnh đề nào ⇒ `total = 0` ⇒ `S3 = 0` ⇒ chặn.
   Bản nháp không có gì kiểm được thì không phải câu trả lời có căn cứ.
 
@@ -406,6 +423,8 @@ lỗi đều để lại cho cư dân ít nhất một nút bấm.
 | P02-C13 | CẤM dùng `gemini-3.7-flash` / `gemini-3.8-flash` | 503 ngay ở lời gọi đơn lẻ (`C-09`) |
 | P02-C14 | CẤM bỏ `responseSchema`, chỉ dùng `responseMimeType` | Mất lớp ràng buộc phía nhà cung cấp — JSON đúng cú pháp nhưng sai hợp đồng (`01-CONTRACTS.md` §8.0) |
 | P02-C15 | CẤM để chặng `retrieval` gọi embedding khi `KILL_SWITCH_AGENTS=1` | Phao cứu sinh sẽ gọi đúng nhà cung cấp đang hỏng (`OPERATIONS.md` §7, `OP-C14`) |
+| P02-C16 | CẤM dùng `rejection_histogram` để chọn `reason_code` ở cổng `G3` | Đ28. Histogram đếm cả chunk hết hiệu lực xếp hạng THẤP, không liên quan câu hỏi ⇒ báo "tài liệu đã hết hiệu lực" cho một câu hỏi về việc khác. Đúng kiểu phát biểu bịa mà Đ09 cấm. Dùng `top_rejected_reason` |
+| P02-C17 | CẤM khớp danh mục hard-block chặng 5 bằng chuỗi con | Đ31/G24. Tiếng Việt viết rời âm tiết: `"điều kiện".includes("kiện")` ⇒ chặn oan câu hỏi thường. Khớp theo âm tiết |
 
 ---
 

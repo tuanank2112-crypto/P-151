@@ -26,6 +26,12 @@ CREATE TYPE lifecycle_state AS ENUM (
 
 CREATE TYPE turn_decision AS ENUM ('answer', 'clarify', 'escalate');
 CREATE TYPE user_role       AS ENUM ('resident', 'bql');
+-- Đ29 — E-6 (01-CONTRACTS §5) đối chiếu `documents.scope_property` với
+-- `principal.property_type`, nhưng §6 không cho bảng `users` chỗ nào giữ giá
+-- trị đó. Đo 2026-09-21: 19/19 tài liệu đều có `scope_property` khác rỗng ⇒
+-- phiên đăng nhập thiếu `property_type` sẽ làm MỌI tài liệu bị loại vì sai
+-- phạm vi. Bổ sung kiểu + cột (thêm, không đổi cột nào đang có).
+CREATE TYPE property_type   AS ENUM ('apartment', 'villa', 'commercial');
 CREATE TYPE doc_status      AS ENUM ('Draft', 'Approved', 'Deprecated');
 CREATE TYPE effective_status AS ENUM ('Current', 'Expired', 'Unknown');
 CREATE TYPE review_state    AS ENUM ('pending', 'approved', 'edited_approved', 'rejected');

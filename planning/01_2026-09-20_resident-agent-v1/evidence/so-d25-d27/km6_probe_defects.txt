@@ -1,0 +1,10 @@
+# node scripts/probe_defects.mjs --resume  (tu nap .env.local, khong can --env-file)
+BACKEND=mock — số định hướng, KHÔNG phải số nghiệm thu (Đ24)
+
+DEF-01 OK no_eligible_source G2_zero_eligible
+DEF-02 OK no_eligible_source G3_retriever_refused
+DEF-03 OK source_conflict G1_conflict
+DEF-04 MISMATCH got=(escalate,no_eligible_source,G3_retriever_refused)
+
+K-M6: 3/4 khuyết tật khớp · 1 mismatch · 0 chưa đo · blocked 0 · checkpoint=evals\runs\defects.jsonl
+EXIT=1

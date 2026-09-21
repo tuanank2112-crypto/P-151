@@ -1,0 +1,7 @@
+# node scripts/validate_knowledge.mjs
+documents: 19 · sections: 98 · defects_ok: 4/4
+EXIT=0
+
+# node scripts/validate_golden.mjs
+faq: 50 (answerable 40) · safety: 16 · canonical_codes_covered: 10/10
+EXIT=0

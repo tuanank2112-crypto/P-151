@@ -1,0 +1,31 @@
+# LAN DAU CHAY THAT TREN POSTGRES (Supabase) — 2026-09-20
+# Project: gppaltdgvwgbiyrazmhg | org Vin151 (free) | AWS ap-southeast-2
+# Ket noi qua POOLER session mode cong 5432 (db.<ref>.supabase.co CHI co IPv6 => ENOENT)
+# SSL: uselibpqcompat=true&sslmode=require (pg v8.16+ coi sslmode=require thanh verify-full)
+
+== migrate ==
+4 file ap dung, exit 0 — LAN DAU TIEN migration duoc chay that
+
+== G18 duoc chung minh bang metadata Postgres ==
+immutable_unaccent provolatile = i  (i = IMMUTABLE)
+chunks_tsv_idx -> gin (FTS) | chunks_vec_idx -> hnsw (pgvector 0.8.2)
+ext da cai: vector 0.8.2, unaccent 1.1
+9 bang: answer_turns, audit_log, chunks, conversations, documents, messages, review_queue, sections, users
+dump_schema: reason_code 15 | lifecycle_state 4 | exit 0
+
+== seed ==
+seed_users: 2 | exit 0
+seed_knowledge: documents=19 sections=98 chunks=98, supersedes noi 1 | exit 0
+  (lan dau THAT BAI: documents_supersedes_fkey — da va bang 2 pha, xem G23)
+
+== G22: plainto_tsquery la AND => truy hoi RONG ==
+tsquery sinh ra: 'be' & 'boi' & 'mo' & 'cua' & 'may' & 'gio'
+khop 'boi' (1 tu)      : 10 chunk
+khop 'be boi' (2 tu)   : 8 chunk
+khop ca cau hoi (6 tu) : 0 chunk
+tsv sinh DUNG: 'be':1 'boi':2 'cua':4 ... => loi o tsquery, KHONG o tsvector
+
+== K-M6 tren HAI backend, cung pipeline cung model ==
+mock     : 3/4  (chi DEF-04 lech — G20)
+postgres : 1/4  (DEF-02/03/04 deu ra G2_zero_eligible vi retrieval rong)
+=> BANG CHUNG CUNG cho D24/D27: hai kho KHONG tuong duong, so Postgres moi la so that

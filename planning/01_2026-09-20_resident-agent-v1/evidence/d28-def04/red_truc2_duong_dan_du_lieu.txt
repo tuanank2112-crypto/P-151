@@ -1,0 +1,8 @@
+=== TRUC 2 — DUONG DAN DU LIEU: eligibility khong doc chunk hang 1 nua ===
+ℹ tests 10
+ℹ pass 4
+ℹ fail 6
+--- truc 1 (logic thuan) van XANH khi truc 2 bi pha ---
+ℹ tests 16
+ℹ pass 16
+ℹ fail 0

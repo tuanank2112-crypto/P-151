@@ -3,7 +3,8 @@
 Tài liệu thiết kế về cấu trúc dữ liệu, cơ chế lưu trữ bền vững (Persistence Layer) và luồng luân chuyển dữ liệu đa tầng.
 
 > **Trạng thái 2026-09-20: TẦNG DB CHƯA THI CÔNG, TẦNG FILE ĐÃ CÓ.**
-> Chưa có bảng, migration hay kết nối Neon nào tồn tại thật. **Nhưng dữ liệu nguồn
+> Chưa có bảng, migration hay kết nối Postgres nào tồn tại thật (nhà cung cấp đã
+> chốt là **Supabase**, Đ25 — chưa có `DATABASE_URL`). **Nhưng dữ liệu nguồn
 > đã nằm trên đĩa dưới dạng file** sau gói P00:
 > `knowledge/manifest.json` + `knowledge/sections/<document_id>.json` (19 tài liệu /
 > 98 section) là nguồn sẽ được `scripts/seed_knowledge.mjs` (gói P01) nạp vào bảng
@@ -17,7 +18,7 @@ Tài liệu thiết kế về cấu trúc dữ liệu, cơ chế lưu trữ bề
 
 ## 1. Các Tầng Lưu Trữ (Data Persistence Stores) — dự kiến
 
-- **Postgres + pgvector trên Neon** (Đ11, `plan.md` §2): MỘT kho chung cho:
+- **Postgres + pgvector trên Supabase** (Đ11 + **Đ25**, `plan.md` §2): MỘT kho chung cho:
   - **RAG:** bảng tài liệu tri thức (Knowledge Pack mô phỏng, xem SPEC-P00) +
     embeddings pgvector cho retrieval.
   - **State ứng dụng:** user 2 vai trò, lịch sử hội thoại (bền qua phiên — R4),
@@ -25,8 +26,23 @@ Tài liệu thiết kế về cấu trúc dữ liệu, cơ chế lưu trữ bề
   - **Sổ biên nhận (P05, nếu còn trong scope sau cổng Đ03):** ghi lại thao tác ghi
     mô phỏng (đặt chỗ, huỷ...) kèm khả năng hoàn tác — theo Đ10, chính sách phải
     đọc được (read-only) *trước* khi gọi lệnh ghi.
+- **Kho mock (Đ24), đang là kho đang chạy:** `DATA_BACKEND=mock` đọc thẳng
+  `knowledge/` + `evals/golden/` qua `lib/adapters/store-mock.ts`. Nó **không phải
+  một cơ sở dữ liệu thứ hai**, chỉ là bộ đọc file nằm sau đúng interface `DataStore`
+  mà `db.ts` phơi ra. Đổi sang Postgres là đổi một biến môi trường.
+  **VÙNG CẤM (Đ24):** `score_lexical` và `S1` từ mock **KHÔNG chuyển được** sang
+  Postgres vì mock không có `ts_rank_cd(..., 32)` ⇒ cấm tick `G11` bằng số mock.
+  Riêng `cosine_sim` từ embedding Gemini thì chuyển được nguyên.
+- **MỘT nguồn dữ liệu duy nhất: MÔ PHỎNG (Đ27).** Cấm đưa nguồn thứ hai (crawl, API
+  ngoài, dataset tải về) vào `knowledge/`. Lý do: `knowledge/` chứa **4 khuyết tật
+  cài sẵn có chủ ý** (DEF-01..04) và 66 case Golden neo theo `section_id` — đổi nguồn
+  là mất trắng bộ đo `K-M6`/`G05`.
 - **Không có** kho dữ liệu cư dân thật, không gọi API Vinhomes (Đ02) — mọi "ghi"
   là mô phỏng nội bộ trong Postgres của chính app.
+- **Bẫy DDL đã vá (G18):** `chunks.tsv` phải sinh bằng `public.immutable_unaccent()`,
+  KHÔNG phải `unaccent()` trần — `unaccent` là STABLE nên cột `GENERATED ... STORED`
+  bị Postgres từ chối. Hàm chuẩn hoá lúc sinh `tsv` và lúc `plainto_tsquery` phải
+  TRÙNG nhau, lệch là `WHERE` lặng lẽ không khớp gì.
 
 ## 2. Schema & Data Flow
 

@@ -1,0 +1,11 @@
+$ node scripts/embed_cache.mjs --probe
+dims: 384
+norm_before_l2: 0.4356
+norm_after_l2: 1.0000
+EXIT=0
+
+# Ghi chú: norm_before_l2 đo được 0.4356 ở phiên này, gần khớp số đo tham
+# chiếu của Architect (0.4345, evidence/p02-provider/so-cm9-cm11.txt) — chênh
+# lệch nhỏ do câu thử khác nhau (embedding phụ thuộc nội dung câu). Điều quan
+# trọng nhất được xác nhận: |v| < 1 TRƯỚC chuẩn hoá, và ĐÚNG 1.0000 SAU
+# l2normalize() — đúng bất biến Đ20.

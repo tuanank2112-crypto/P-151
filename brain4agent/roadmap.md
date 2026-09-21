@@ -11,12 +11,21 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 
 - [x] P00 — Knowledge Pack mô phỏng + Golden Dataset 🔴 (D1–D2) — ✅ DUYỆT, xem `Done`
-- [ ] P01 — Nền tảng, auth 2 vai, ingest, deploy 🟠 (D2) — **P01a (phần không cần key) ĐÃ XONG, ✅ DUYỆT**; còn lại chặn ở Neon + Vercel
-- [ ] P02 — RAG có trích dẫn, memory, 3 agent, cổng escalate 🔴🟠 (D3–D4) — **P02a ĐANG THI CÔNG** trên kho mock (Đ24), không chờ Neon. Mở khoá được G05/G06/G08; **G11 vẫn khoá** vì số mock không phải số nghiệm thu
+- [ ] P01 — Nền tảng, auth 2 vai, ingest, deploy 🟠 (D2) — **DB Supabase đã migrate + seed thật** (19 doc / 98 chunk / 2 user); **đăng nhập 2 vai đo được trên DB thật**; chỉ còn **deploy** chờ chủ tịch chọn scope Vercel (Đ23)
+- [ ] P02 — RAG có trích dẫn, memory, 3 agent, cổng escalate 🔴🟠 (D3–D4) — **ĐÃ CHẠY END-TO-END THẬT qua `POST /api/chat` trên Postgres 2026-09-21**: trích dẫn ✅, 3 agent tách bạch ✅, `DEF-04` ra đúng `reason_code` ✅. Còn: bộ nhớ hội thoại (BB-11), nhãn `gate` của DEF-04 chờ chủ tịch, `DEF-01`/`DEF-02` chưa đo xong (cạn hạn mức)
 - [ ] P03 — Console BQL: quản lý tài liệu + duyệt câu trả lời (HITL) 🟠 (D4–D5) — phụ thuộc P01, P02
 - [ ] P04 — Bảng eval faithfulness/relevance + dashboard 🟠 (D5) — phụ thuộc P00, P02
 - [ ] P05 — Lớp hành động: đọc chính sách, đặt chỗ, biên nhận, hoàn tác 🟠 (D6) — **cổng: P01–P04 xanh**, gói duy nhất được cắt khi trễ
 - [ ] P06 — Kịch bản demo, dữ liệu mồi, dự phòng 🟢 (D7) — phụ thuộc tất cả
+
+### Việc phải làm ngay, theo thứ tự (cập nhật 2026-09-21)
+
+1. **🖐 Chủ tịch quyết `expected_gate` của DEF-04** (`expected_defects.json` + `golden_safety.jsonl` ca `S04`): `reason_code` nay đúng, nhưng nhãn gate là `G3_retriever_refused` chứ không phải `G2_zero_eligible` — nhãn cũ mã hoá một giả định về tầng truy hồi mà phép đo đã bác. Chặn `K-M6` đạt 4/4.
+2. **🖐 Chủ tịch phê chuẩn Đ32** (đổi `01-CONTRACTS` §4.2 sang `to_tsquery` OR). Đã áp vì không áp thì demo không chạy được dòng nào; đảo lại bằng một commit revert.
+3. **Chạy `eval:golden` theo lô trên Postgres** để lấy **số nghiệm thu thật** cho `G11` (M1/M3). Cần hạn mức Gemini hồi; một lượt đầy đủ ~13–15 phút, 198 lời gọi.
+4. **Nối bộ nhớ hội thoại (BB-11)** — bảng `conversations`/`messages`/`answer_turns` ĐÃ có trên Supabase, pipeline chưa ghi dòng nào. Đây là mẫu số của dashboard P04.
+5. **P03 + P04** — hai gói rubric bắt buộc, chưa bắt đầu, 5 màn BQL vẫn là khung rỗng.
+6. **Deploy Vercel** (chờ scope) · **thẩm định độc lập tầng 🔴** cho `lib/confidence.ts` + `lib/pipeline/index.ts` · nối `RETRIEVAL_MODE=hybrid` + `embed_cache.mjs` cho 98 chunk (Đ27).
 
 ## Tương lai (Upcoming)
 
@@ -49,6 +58,15 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
   Ai muốn lật phải trả lời được "lấy baseline ở đâu".
 
 ## Đã hoàn thành (Done)
+
+- [x] **P02b — Pipeline nối vào web, chạy end-to-end thật (2026-09-21):**
+  `app/api/chat/route.ts` (cửa HTTP duy nhất, chỉ vai `resident`, cắt `confidence` +
+  `gate_triggered` một chỗ, ánh xạ bảng lỗi §9 sang mã HTTP) + màn `(resident)/chat`
+  thật (trích dẫn, lý do từ chối, 9 chặng, nút Thử lại) + `lib/reason-messages.ts`.
+  **Đo trên Supabase thật:** `decision=answer`, 1 citation `OCP1-POOL-RULES-001 /
+  POOL-SAFE-03`, 3/3 claim `supported`, 3 model khác nhau có log riêng. Kèm 4 lỗi thật
+  vá dọc đường: G20/DEF-04 (Đ28), G22 truy hồi AND trả rỗng (Đ32), G23 mảng ENUM về
+  dạng chuỗi (Đ29), G24 chặn oan "điều kiện" (Đ31). `npm test` 53 → **82**.
 
 - [x] **P01a — Nền tảng chạy được không cần key (2026-09-20):** khung Next.js + TS
   strict, route 2 vai (`app/(resident)/chat`, `app/(bql)/documents|review|eval|dashboard`),

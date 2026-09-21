@@ -7,7 +7,7 @@
 // CẤM chạy script này trong gói P01a: cần DATABASE_URL, chủ tịch chưa cấp.
 // CHỈ ĐỌC `knowledge/` — không sửa, không ghi lại (CẤM chạm knowledge/**).
 
-import { neon } from "@neondatabase/serverless";
+import { makeSql } from "./_pg.mjs";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -41,13 +41,28 @@ async function resetTables(sql) {
   console.log("reset: documents, sections, chunks đã xoá sạch");
 }
 
+/**
+ * Pha 1 — nạp tài liệu với `supersedes = NULL`.
+ *
+ * `documents.supersedes` là khoá ngoại TỰ THAM CHIẾU (`003_knowledge.sql`), nên
+ * nạp kèm nó ngay sẽ chết nếu bản mới đứng trước bản cũ trong `manifest.json` —
+ * đúng ca `OCP1-POOL-RULES-001` (supersedes `OCP1-POOL-RULES-2024`) nằm trước
+ * bản 2024. Lỗi thật đã gặp ở lần seed đầu tiên:
+ * `insert or update on table "documents" violates foreign key constraint
+ * "documents_supersedes_fkey"`.
+ *
+ * CẤM "sửa" bằng cách sắp lại thứ tự trong `manifest.json` — thứ tự file là dữ
+ * liệu của P00, không phải chỗ để lách ràng buộc; và bất kỳ ai thêm tài liệu mới
+ * sau này cũng sẽ vấp lại. Nối quan hệ ở pha 2 (`linkSupersedes`) là cách đúng,
+ * không phụ thuộc thứ tự.
+ */
 async function upsertDocument(sql, doc) {
   await sql(
     `INSERT INTO documents (
        document_id, title_vi, doc_kind, version, status, effective_status,
        effective_from, effective_to, allowed_for_rag, scope_property,
        supersedes, source_note_vi
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NULL,$11)
      ON CONFLICT (document_id) DO UPDATE SET
        title_vi = EXCLUDED.title_vi,
        doc_kind = EXCLUDED.doc_kind,
@@ -58,7 +73,6 @@ async function upsertDocument(sql, doc) {
        effective_to = EXCLUDED.effective_to,
        allowed_for_rag = EXCLUDED.allowed_for_rag,
        scope_property = EXCLUDED.scope_property,
-       supersedes = EXCLUDED.supersedes,
        source_note_vi = EXCLUDED.source_note_vi,
        updated_at = now()`,
     [
@@ -72,10 +86,27 @@ async function upsertDocument(sql, doc) {
       doc.effective_to,
       doc.allowed_for_rag,
       doc.scope_property,
-      doc.supersedes,
       doc.source_note_vi,
     ]
   );
+}
+
+/**
+ * Pha 2 — nối `supersedes` sau khi MỌI tài liệu đã tồn tại. Chạy được vì lúc này
+ * cả hai đầu của khoá ngoại đều đã có hàng.
+ * @returns {Promise<number>} số quan hệ đã nối
+ */
+async function linkSupersedes(sql, documents) {
+  let linked = 0;
+  for (const doc of documents) {
+    if (!doc.supersedes) continue;
+    await sql(`UPDATE documents SET supersedes = $2, updated_at = now() WHERE document_id = $1`, [
+      doc.document_id,
+      doc.supersedes,
+    ]);
+    linked++;
+  }
+  return linked;
 }
 
 async function upsertSection(sql, documentId, section) {
@@ -147,7 +178,7 @@ async function main() {
   }
 
   const reset = process.argv.includes("--reset");
-  const sql = neon(process.env.DATABASE_URL);
+  const sql = makeSql(process.env.DATABASE_URL);
   const manifest = await loadManifest();
 
   if (reset) {
@@ -166,11 +197,15 @@ async function main() {
   }
 
   // documents phải commit trước khi sections/chunks tham chiếu (FK) — chạy
-  // tuần tự, không dùng sql.transaction() của neon (chỉ hỗ trợ tagged
+  // tuần tự, không dùng transaction helper của driver (chỉ hỗ trợ tagged
   // template, không hỗ trợ vòng lặp thân tuỳ ý).
   for (const step of statements) {
     await step();
   }
+
+  // Pha 2 — mọi tài liệu đã tồn tại, giờ mới nối được khoá ngoại tự tham chiếu.
+  const linked = await linkSupersedes(sql, manifest.documents);
+  console.log(`supersedes đã nối: ${linked}`);
 
   for (const doc of manifest.documents) {
     const sections = await loadSections(doc.document_id);

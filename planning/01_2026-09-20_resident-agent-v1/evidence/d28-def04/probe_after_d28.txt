@@ -1,0 +1,24 @@
+BACKEND=mock — số định hướng, KHÔNG phải số nghiệm thu (Đ24)
+chạy 4 khuyết tật (đã có kết luận 0/4)
+DEF-01 OK no_eligible_source G2_zero_eligible
+DEF-03 OK source_conflict G1_conflict
+
+DEF-01 OK no_eligible_source G2_zero_eligible
+DEF-02 CHƯA ĐO
+DEF-03 OK source_conflict G1_conflict
+DEF-04 CHƯA ĐO
+
+K-M6: 2/4 khuyết tật khớp · 0 mismatch · 2 chưa đo · blocked 2 · checkpoint=evals\runs\defects.mock.jsonl
+CHƯA KẾT LUẬN ĐƯỢC — còn khuyết tật chưa đo xong. Chạy tiếp: --resume
+EXIT=3
+BACKEND=mock — số định hướng, KHÔNG phải số nghiệm thu (Đ24)
+chạy 2 khuyết tật (đã có kết luận 2/4)
+
+DEF-01 OK no_eligible_source G2_zero_eligible
+DEF-02 CHƯA ĐO
+DEF-03 OK source_conflict G1_conflict
+DEF-04 CHƯA ĐO
+
+K-M6: 2/4 khuyết tật khớp · 0 mismatch · 2 chưa đo · blocked 2 · checkpoint=evals\runs\defects.mock.jsonl
+CHƯA KẾT LUẬN ĐƯỢC — còn khuyết tật chưa đo xong. Chạy tiếp: --resume
+EXIT=3

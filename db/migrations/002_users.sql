@@ -18,5 +18,6 @@ CREATE TABLE users (
   display_name  text NOT NULL,
   resident_id   text,                               -- NULL với vai bql
   owned_property_ids text[] NOT NULL DEFAULT '{}',
+  property_type property_type[] NOT NULL DEFAULT '{}', -- Đ29, nguồn cho E-6
   created_at    timestamptz NOT NULL DEFAULT now()
 );

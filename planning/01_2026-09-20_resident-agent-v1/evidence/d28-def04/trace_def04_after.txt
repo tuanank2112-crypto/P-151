@@ -1,0 +1,15 @@
+BACKEND=mock — số định hướng, KHÔNG phải số nghiệm thu (Đ24)
+question: Bể bơi mở cửa từ mấy giờ đến mấy giờ?
+--- A1 classifier (chặng safety+intent) ---
+  step=safety ok=true model=gemini-3.5-flash-lite ms=2313
+  input_tokens=458 output_tokens=104
+--- A2 retriever (chặng draft) ---
+  step=draft ok=true model=gemini-3.5-flash ms=72215
+  input_tokens=687 output_tokens=87
+--- A3 verifier (chặng verify) ---
+  (không chạy tới chặng này)
+--- kết quả ---
+decision=escalate reason_code=source_expired_or_unknown
+gate_triggered=G3_retriever_refused
+citations=[]
+steps=validate > safety > intent > context > risk > retrieval > eligibility > draft

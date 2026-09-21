@@ -1,0 +1,20 @@
+
+> resident-agent-v1@1.0.0 test
+> node scripts/run_tests.mjs adapter
+
+✔ l2normalize: vector chưa chuẩn hoá (|v|≈0.4345 ở 384 chiều, Đ20) trở thành |v|=1 (1.13ms)
+✔ l2normalize: vector 0 trả về nguyên vẹn, không chia cho 0 (0.3647ms)
+✔ hằng số embedding khớp 01-CONTRACTS §4.3 (Đ18) (0.1419ms)
+✔ MAX_CONCURRENCY giới hạn song song ra Gemini API (Đ19) (0.1114ms)
+✔ FORBIDDEN_MODELS liệt kê đúng hai model cấm (Đ17, C-09), KHÔNG nằm trong SupportedModel dùng thật (0.4527ms)
+✔ schema-parity (T-PARITY, R12): responseSchema.required khớp khoá Zod cho cả 3 agent (0.1679ms)
+✔ ĐỎ R12 (đã chạy tay, xem report): xoá một khoá khỏi required phải làm test trên fail — kiểm ngược bằng mảng cố ý thiếu (0.1691ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 151.9658
+EXIT=0

@@ -1,0 +1,18 @@
+
+> resident-agent-v1@1.0.0 test
+> node scripts/run_tests.mjs backoff
+
+✔ backoff: HTTP 429 retry rồi thành công (E2, backoff 2s→8s+jitter) (1.4037ms)
+✔ backoff: HTTP 503 retry rồi thành công — Y NHƯ 429, KHÔNG gộp vào 5xx retry nhanh (E2b, Đ19) (0.319ms)
+✔ backoff: HTTP 401 KHÔNG retry (E2d, UpstreamAuthError, CẤM in khoá) (0.5574ms)
+✔ backoff: content blocked KHÔNG retry, escalate ngay (E2e) (0.5321ms)
+✔ backoff: finishReason khác STOP ⇒ ContractDriftError, retry ĐÚNG 1 lần (E7) (0.3797ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 143.5179
+EXIT=0

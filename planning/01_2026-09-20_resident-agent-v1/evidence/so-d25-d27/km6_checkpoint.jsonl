@@ -1,0 +1,4 @@
+{"case_id":"DEF-01","ok":true,"decision":"escalate","reason_code":"no_eligible_source","gate":"G2_zero_eligible","expected_reason_code":"no_eligible_source","expected_gate":"G2_zero_eligible","at":"2026-09-20T09:45:50.524Z"}
+{"case_id":"DEF-02","ok":true,"decision":"escalate","reason_code":"no_eligible_source","gate":"G3_retriever_refused","expected_reason_code":"no_eligible_source","expected_gate":"G3_retriever_refused","at":"2026-09-20T09:45:59.392Z"}
+{"case_id":"DEF-03","ok":true,"decision":"escalate","reason_code":"source_conflict","gate":"G1_conflict","expected_reason_code":"source_conflict","expected_gate":"G1_conflict","at":"2026-09-20T09:46:00.797Z"}
+{"case_id":"DEF-04","ok":false,"decision":"escalate","reason_code":"no_eligible_source","gate":"G3_retriever_refused","expected_reason_code":"source_expired_or_unknown","expected_gate":"G2_zero_eligible","at":"2026-09-20T09:46:08.133Z"}

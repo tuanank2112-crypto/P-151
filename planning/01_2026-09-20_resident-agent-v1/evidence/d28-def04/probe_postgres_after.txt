@@ -1,0 +1,26 @@
+BACKEND=postgres — số định hướng, KHÔNG phải số nghiệm thu (Đ24)
+--fresh: đã xoá checkpoint cũ
+chạy 4 khuyết tật (đã có kết luận 0/4)
+DEF-03 OK source_conflict G1_conflict
+
+DEF-01 CHƯA ĐO
+DEF-02 CHƯA ĐO
+DEF-03 OK source_conflict G1_conflict
+DEF-04 CHƯA ĐO
+
+K-M6: 1/4 khuyết tật khớp · 0 mismatch · 3 chưa đo · blocked 3 · checkpoint=evals\runs\defects.postgres.jsonl
+CHƯA KẾT LUẬN ĐƯỢC — còn khuyết tật chưa đo xong. Chạy tiếp: --resume
+EXIT=3
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+chạy 3 khuyết tật (đã có kết luận 1/4)
+
+[DỪNG SỚM] 3 lần dính hạn mức liên tiếp. Giữ nguyên checkpoint, thoát mã 3. Chạy lại bằng --resume khi hạn mức hồi.
+
+DEF-01 CHƯA ĐO
+DEF-02 CHƯA ĐO
+DEF-03 OK source_conflict G1_conflict
+DEF-04 CHƯA ĐO
+
+K-M6: 1/4 khuyết tật khớp · 0 mismatch · 3 chưa đo · blocked 3 · checkpoint=evals\runs\defects.postgres.jsonl
+CHƯA KẾT LUẬN ĐƯỢC — còn khuyết tật chưa đo xong. Chạy tiếp: --resume
+EXIT=3

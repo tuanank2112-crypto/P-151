@@ -9,7 +9,7 @@
 | Mã hồ sơ | `01_2026-09-20_resident-agent-v1` |
 | Ngày mở | 2026-09-20 |
 | Chủ trì | Super Orchestrator (cửa sổ này) |
-| Trạng thái | 🟢 ĐANG THI CÔNG — P00 phóng 2026-09-20 |
+| Trạng thái | 🟢 ĐANG THI CÔNG — P02 chạy end-to-end thật trên Supabase 2026-09-21 |
 | Deadline | **2026-09-27** (7 ngày) |
 | Nguồn yêu cầu | AI20K Build Phase Cohort 4 — ngân hàng đề `C104 / VHR-01 / G104` |
 | Mục đích | Sản phẩm demo cho doanh nghiệp + ban giám khảo. Không phải hệ thống chạy thật. |
@@ -282,6 +282,180 @@ Chủ tịch: *"cứ local trước đã. mock-data luôn nhé"*. Chưa có `DAT
 
 **Lật được:** có `DATABASE_URL` thì đặt `DATA_BACKEND=postgres` và chạy lại. **Chi phí lật:** thấp nếu mock nằm sau đúng interface; cao nếu ai đó gọi thẳng vào mock từ `lib/pipeline/` — cấm điều đó tường minh trong bàn giao.
 
+### Đ25 — 2026-09-20 · Postgres là SUPABASE. Turso/SQLite bị BÁC vì lý do schema, không phải sở thích
+
+Chủ tịch: *"db thì có thể dùng turso mà? nếu không thì tôi hướng bạn qua supabase cũng được"*. Đã đo schema thật trong repo trước khi trả lời, không trả lời theo cảm tính.
+
+**Vì sao BÁC Turso (libSQL/SQLite).** `db/migrations/003_knowledge.sql` và `lib/retrieval/query.ts` phụ thuộc bốn thứ chỉ Postgres có, mỗi thứ đều là bất biến đã chốt:
+
+| Thứ đang dùng | Ở đâu | SQLite/Turso có? |
+| :-- | :-- | :-- |
+| `CREATE EXTENSION vector` · `vector(384)` · `USING hnsw (embedding vector_cosine_ops)` | `003` | Không. libSQL có vector riêng (`F32_BLOB`, `vector_distance_cos`) — cú pháp khác, phải viết lại DDL và index |
+| `tsvector GENERATED ALWAYS AS ... STORED` · `gin(tsv)` · **`ts_rank_cd(..., 32)`** | `003`, `query.ts` | Không. Chỉ có FTS5, xếp hạng BM25, **KHÔNG có cờ chuẩn hoá 32** |
+| `text[]` (`scope_property`, `intents`, `facility_ids`) · `jsonb` · `timestamptz` | `003`, `004` | Không có kiểu nào |
+| `gen_random_uuid()` | `002`, `003`, `004` | Không |
+
+**Lý do quyết định, gọn một câu:** cờ `32` của `ts_rank_cd` là **C-05**, một bất biến có test riêng canh; và Đ24 đã ghi rằng `score_lexical`/`S1` KHÔNG chuyển được từ mock sang Postgres *chính vì mock thiếu đúng hàm đó*. Turso cũng thiếu đúng hàm đó ⇒ **Turso = một kho mock thứ hai, có thêm độ trễ mạng**. Đổi sang nó là bỏ 1–2 ngày công để nhận lại con số vẫn không tick được `G11`, với deadline còn 7 ngày. Đây là **vùng cấm**: ai muốn lật phải trả lời được "lấy `ts_rank_cd(..., 32)` ở đâu ra".
+
+**Supabase được chọn** vì là Postgres thật: có `pgvector` (hnsw từ 0.5+), `unaccent`, `tsvector`/`ts_rank_cd`/`gin`, `text[]`, `jsonb`, `timestamptz`. DDL chạy gần như nguyên văn, gói free đủ cho 98 chunk.
+
+**Chi phí thật — KHÔNG phải "chỉ đổi `DATABASE_URL`".** `@neondatabase/serverless` nói chuyện HTTP với endpoint riêng của Neon, không dùng được với nhà cung cấp khác. Đã đổi driver sang **`pg`** (TCP, nói chuyện được với mọi Postgres chuẩn):
+
+- `lib/adapters/db.ts` — `getSql()` trả `SqlFn` giữ **đúng chữ ký cũ** `sql(text, params) -> rows`, nên không call site nào ở tầng trên phải đổi. BB-07 giữ nguyên: `violations: 0`. Thêm `closePool()` cho script CLI.
+- `scripts/_pg.mjs` (mới) — gom driver cho 5 script vận hành, thay vì rải `new pg.Pool` khắp nơi.
+- `scripts/check_adapter_boundary.sh` **đã lường trước**: trục 1 của nó cấm `from "pg"` ngoài `lib/adapters/` sẵn từ trước.
+- **BẮT BUỘC trên serverless:** `DATABASE_URL` phải trỏ **connection pooler** (Supabase cổng `6543`, transaction mode), không phải `5432`. Mỗi lời gọi hàm là một instance mới; nối thẳng sẽ cạn slot kết nối gói free trước khi Golden chạy xong. Cổng `5432` chỉ dùng cho script CLI chạy một lần.
+
+**Một BUG THẬT lộ ra khi đọc lại DDL, đã vá.** `chunks.tsv` viết `GENERATED ALWAYS AS (to_tsvector('simple', unaccent(content_vi))) STORED`. Postgres đòi biểu thức trong cột `GENERATED` phải **IMMUTABLE**, nhưng `unaccent(text)` được khai **STABLE** (nó tra dictionary). Migration này sẽ **chết ngay tại chỗ** với `ERROR: generation expression is not immutable` — trên **mọi** Postgres, kể cả Neon. Nó chưa từng lộ ra vì migration chưa được chạy lần nào (Đ15). Đã vá bằng wrapper `public.immutable_unaccent(text)` khai `IMMUTABLE STRICT PARALLEL SAFE` + `SET search_path = public, extensions, pg_catalog` (Supabase đặt extension ở schema `extensions`). Đã đồng bộ cả ba chỗ dùng — `003`, `db.ts`, `query.ts` — để tsvector và tsquery chuẩn hoá bằng **cùng một hàm**; lệch nhau thì `WHERE` lặng lẽ không khớp gì. Cờ `32` (C-05) giữ nguyên. Test `tests/retrieval.test.ts` đã siết thêm `assert.doesNotMatch(text, /[^.]\bunaccent\(/)` và **đã chứng minh ĐỎ** khi trả về `unaccent()` trần.
+
+**Còn chờ người:** chủ tịch tạo project Supabase và dán chuỗi pooler vào `.env.local`. Mọi thứ phía mã đã sẵn sàng. `db/migrations/` vẫn là **SOẠN MÃ CHƯA CHẠY** — không được nói đã migrate trước khi có exit code thật.
+
+### Đ26 — 2026-09-20 · Mọi script đo chạy THEO LÔ, có checkpoint; hạn mức KHÔNG được biến thành số đo
+
+Chủ tịch: *"nếu gemini tier free k đủ tải để test cùng lúc thì chia nhỏ các giai đoạn test ra nhé"*.
+
+**Ba khuyết tật của bản cũ, đã đo được chứ không suy đoán:**
+
+1. **`catch {}` nuốt lỗi** trong `eval_golden.mjs`. Một ca dính 429 được đếm y hệt một ca model trả SAI. Chạy lúc cạn hạn mức sẽ in ra `M1` thấp trông đúng như chất lượng kém — **số GIẢ, nguy hiểm hơn là không có số**.
+2. **Không có checkpoint.** Cạn hạn mức ở ca 180/198 là mất sạch. Đây đúng là vòng lặp đã làm gói P02a dừng ở `2/4` khuyết tật và không lặp lại được.
+3. **Không chạy được lô nhỏ.** Không có cách nói "làm 10 ca rồi nghỉ".
+
+**Hình dạng lời giải** — `scripts/_batch.mjs` (mới), dùng chung cho `eval_golden.mjs` và `probe_defects.mjs`:
+
+- **Phân lập căn nguyên theo §5.E.** Lỗi TẦNG 1 (429/503/401, `UpstreamModelError`, và lỗi socket/mạng: `ECONNRESET`, `UND_ERR_*`, `TypeError: terminated`, `fetch failed`) **không bao giờ** tính là ca trượt và **không** ghi checkpoint — lượt sau chạy lại đúng ca đó. Nó vào cột `blocked` riêng.
+- **`ContractDriftError` KHÔNG phải tầng 1** — model trả sai schema là lỗi CHẤT LƯỢNG, đúng thứ Golden đang đo, phải được kết luận và đếm.
+- **Checkpoint JSONL append-only** (`evals/runs/*.jsonl`, đã `.gitignore`). Append-only có chủ ý: ghi đè cả file thì một lần crash giữa chừng mất toàn bộ lịch sử lô — đúng lớp lỗi G17 đã cắn dự án này hai lần. Dòng ghi dở bị bỏ qua, ca đó chạy lại.
+- **Cờ cắt lô:** `--limit=N` · `--offset=N` · `--only=id,id` · `--resume` · `--fresh` · `--delay-ms=N`. `--limit` với `--resume` nghĩa là "N ca **chưa làm** tiếp theo", không phải N ca đầu danh sách.
+- **Dừng sớm:** 3 lần dính hạn mức LIÊN TIẾP ⇒ dừng ngay, giữ checkpoint, thoát mã 3. 429 rải rác xen kẽ **không** làm dừng oan (chuỗi reset mỗi khi một ca đi trọn).
+- **Mã thoát mới, thống nhất:** `0` xong sạch · `1` có ca trượt THẬT · `2` thiếu biến môi trường/sai tham số · **`3` CHƯA KẾT LUẬN ĐƯỢC**. Mã 3 là điểm cốt tử: nó nói "chưa đo xong", chứ không phát biểu sai về chất lượng sản phẩm theo cả hai hướng.
+
+**VÙNG CẤM của `classifyError`:** KHÔNG được xếp cả họ `TypeError` vào tầng 1. `TypeError` cũng là hình dạng của lỗi code thật (`Cannot read properties of undefined`); gộp cả họ là biến mọi bug lập trình thành "hạ tầng, chạy lại sau" — XANH GIẢ đúng kiểu Đ21. Chỉ khớp theo thông điệp, và có test canh cả hai chiều.
+
+**Lỗi cấu hình cũng không được làm bẩn số đo.** Đo được trong phiên: một lượt chạy `probe_defects.mjs` quên `--env-file=.env.local` đã ghi `DEF-01` thành **TRƯỢT** với lý do "GEMINI_API_KEY chưa được cấu hình". Người quên một cờ dòng lệnh không được biến thành "khuyết tật cài sẵn không kích hoạt đúng". Vá hai tầng: `loadLocalEnv()` tự nạp `.env.local` (Node `process.loadEnvFile`, biến từ shell vẫn thắng file), và `requireEnv()` chặn **trước** khi chạm checkpoint, thoát mã 2. Đã kiểm cả hai chiều — không key: exit 2 và checkpoint không đổi một byte; có key: chạy trọn không cần cờ nào.
+
+**Bộ đo mới đã chứng minh ĐỎ theo BA TRỤC KHÁC HÌNH DẠNG** (Đ21/G12 — bốn phép phá cùng hình dạng ở P01a từng cho xanh giả). `tests/batch.test.ts`, 9 ca:
+
+| Trục | Hình dạng phép phá | Kết quả |
+| :-- | :-- | :-- |
+| 1 | Bảng phân loại lỗi lúc chạy — bỏ 429 khỏi tầng 1 | 4 ca ĐỎ, 4 ca khác vẫn xanh |
+| 2 | Dữ liệu trên đĩa — Checkpoint không đọc lại file | 2 ca ĐỎ, các trục khác vẫn xanh |
+| 3 | Đối số CLI — `--only` không còn ưu tiên | 1 ca ĐỎ, các trục khác vẫn xanh |
+
+Mỗi trục đỏ đúng nhóm của nó và không đỏ nhóm khác ⇒ ba trục canh ba thứ độc lập, không phải ba biến thể một trục.
+
+**Kết quả thật, ngay trong phiên: `K-M6` từ `2/4` lên `3/4`, và lặp lại được hai lượt liên tiếp.** Đây là số đo mà `SPEC-P00` §9 gọi là quan trọng nhất của cả gói P00, treo từ lúc P00 nghiệm thu. `DEF-01`/`DEF-02`/`DEF-03` khớp đúng `reason_code` + `gate`. `DEF-04` lệch — xem khối dưới.
+
+**`DEF-04` lệch THẬT, không phải lỗi hạ tầng — căn nguyên đã xác định, CHƯA sửa.** Lượt đầu nó chết vì `TypeError: terminated` (đứt mạng) và bị ghi oan thành MISMATCH; sau khi vá phân loại, nó chạy trọn và cho lệch nhất quán:
+
+- **Được:** `escalate` / `no_eligible_source` / `G3_retriever_refused`
+- **Muốn:** `escalate` / `source_expired_or_unknown` / `G2_zero_eligible`
+
+Đã đối chiếu `knowledge/`: bản hiện hành `OCP1-POOL-RULES-001` (Approved/Current) **không có section giờ mở cửa**; thông tin đó chỉ nằm ở `POOL24-HOURS-01` thuộc `OCP1-POOL-RULES-2024` đã Expired. Nên **kỳ vọng của SPEC ĐÚNG, pipeline SAI**. Retrieval lexical kéo thêm các section khác của bản 001 (chúng chứa chữ "bể bơi"), những section đó hợp lệ ⇒ `eligible` không rỗng ⇒ không vào `G2`; A2 đọc chúng, thấy không có giờ mở cửa ⇒ từ chối ⇒ `G3`. Tầng escalate **không xét `rejection_histogram`**, nên nó không phân biệt được "không có nguồn nào" với "nguồn duy nhất trả lời được câu này đã hết hiệu lực".
+
+**CHƯA sửa, có chủ ý.** Sửa chỗ này là chạm bất biến escalate (Đ07, 4 tín hiệu) + `SPEC-P02` §4/§6 ⇒ tầng 🔴, và nó thuộc gói **P02a chưa nghiệm thu**. Ghi vào đây làm đầu việc đầu tiên của nghiệm thu P02a, không nhét vào một lượt đang làm việc khác.
+
+### Đ27 — 2026-09-20 · MỘT nguồn dữ liệu duy nhất: MÔ PHỎNG. Không crawl, và không trộn hai chế độ
+
+Chủ tịch: *"tôi cần sự thống nhất ngay từ ban đầu... 1 là mock 2 là crawl"*. Chốt: **MOCK, thống nhất 100%**.
+
+**Vì sao không crawl:**
+
+- **Đ02 đã chốt mô phỏng toàn phần**, và `project-intro.md` ghi đây là DEMO cho ban giám khảo, không phải hệ thống chạy thật. Không có API Vinhomes, không dữ liệu cư dân thật.
+- **Crawl phá bộ đo, không chỉ đổi dữ liệu.** `knowledge/` có **4 khuyết tật cài sẵn có chủ ý** (DEF-01 gap, DEF-02 gap, DEF-03 cặp conflict, DEF-04 expired). Đó là cốt lõi của rubric: chứng minh agent biết **từ chối** khi nguồn hết hiệu lực / mâu thuẫn / thiếu. Dữ liệu crawl về không có cặp mâu thuẫn được dàn dựng, không có tài liệu hết hiệu lực kèm bản thay thế ⇒ **mất trắng K-M6/G05**, thứ vừa mới đo được `3/4`.
+- **50 FAQ + 16 Safety của Golden neo vào đúng 19 tài liệu đó**, theo `section_id`. Đổi nguồn là phải viết lại toàn bộ Golden.
+- Tài liệu nội bộ BQL (nội quy bể bơi, phí thẻ xe, giờ mở cửa tiện ích) **không public** để crawl. Crawl được thì cũng là nội dung của toà nhà khác, tức vẫn là dữ liệu mô phỏng nhưng mất quyền kiểm soát.
+- Deadline còn 7 ngày.
+
+⇒ **VÙNG CẤM:** cấm đưa bất kỳ nguồn dữ liệu thứ hai nào (crawl, API ngoài, dataset tải về) vào `knowledge/`. Nguồn chân lý tri thức là **`knowledge/` dạng file**, sửa thì sửa file + tăng `revision` ở `knowledge/README.md`. Một nguồn, một `revision`, một bộ Golden.
+
+**Nhưng chủ tịch nói đúng một chỗ đang thật sự lẫn — và nó không nằm ở nội dung.** Nội dung đã thống nhất từ P00. Chỗ lẫn là **tầng truy hồi**: `DATA_BACKEND=mock` chấm điểm bằng thuật toán lexical xấp xỉ viết trong `store-mock.ts`, còn `postgres` chấm bằng `ts_rank_cd(..., 32)`. Hai công thức khác nhau ⇒ Đ24 đã phải cấm tick `G11` bằng số mock. Đó chính là "cái này chuẩn cái kia mock".
+
+**Lối ra đã có sẵn, và Đ24 đã tự ghi ra:** `cosine_sim` từ embedding Gemini **chuyển được nguyên** giữa hai backend — cùng vector, cùng công thức, JS hay pgvector cũng ra một số. Đ18 đã đo `gemini-embedding-001 @ 384` khớp nguyên `vector(384)`. Vậy **thống nhất thật sự = cho cả hai backend chấm điểm bằng cùng một nguồn: embedding**, thay vì mỗi bên một thuật toán lexical riêng.
+
+**Việc phải làm để đóng chỗ lẫn này** (gói riêng, chưa làm trong lượt này):
+
+1. Nối `RETRIEVAL_MODE=hybrid` vào `lib/pipeline/retrieval.ts` — `R05` §8 mục 7 ghi rõ nó **chưa được nối dây**, `store-mock.ts` hiện luôn dùng lexical xấp xỉ bất kể biến này.
+2. Chạy `scripts/embed_cache.mjs` (không cờ `--probe`) cho đủ 98 chunk, cache lại — chạy một lần, dùng mãi, không đốt hạn mức mỗi lượt.
+3. Khi đó `score_semantic` giống nhau ở cả hai backend ⇒ **gỡ được vùng cấm Đ24 cho phần `cosine_sim`**. Phần `score_lexical` vẫn chỉ Postgres mới có thật.
+
+**Vùng cấm giữ nguyên tới khi việc trên xong:** `G11` vẫn CHỈ được tick bằng số chạy trên Postgres thật. Không ai được tick nó bằng số mock, kể cả sau khi hybrid chạy.
+
+### Đ28 — 2026-09-21 · DEF-04: cổng G3 phân biệt bằng CHUNK HẠNG 1, không bằng histogram
+
+Vá đầu việc số 1 của nghiệm thu P02a. **Căn nguyên đo được, khác với giả thuyết ghi ở Đ26.**
+
+`decideTurn()` ở cổng `G2_zero_eligible` VỐN ĐÃ xét `rejection_histogram` đúng như SPEC §6.2. Chỗ hỏng nằm chỗ khác: pipeline truy hồi bằng **truy vấn đã chuẩn hoá của A1**, không phải câu hỏi gốc. Đo tay 2026-09-21:
+
+| Truy vấn | retrieved | eligible | cổng rơi vào |
+| :-- | --: | --: | :-- |
+| `"Bể bơi mở cửa từ mấy giờ đến mấy giờ?"` (gốc) | 2 | **0** | `G2` ⇒ ra đúng `source_expired_or_unknown` |
+| `"giờ mở cửa bể bơi"` (A1 chuẩn hoá) | 8 | **5** | `G3` ⇒ ra sai `no_eligible_source` |
+
+A1 bỏ bớt từ ⇒ truy hồi rộng ra ⇒ kéo thêm section HỢP LỆ của bản nội quy hiện hành ⇒ `eligible_count > 0` ⇒ **không thể** rơi vào `G2` (điều kiện của `G2` là `eligible_count === 0`; ép nó rơi vào đó là nói dối). A2 đọc các section đó, không thấy giờ mở cửa, từ chối ⇒ `G3`, mà `G3` trả cứng `no_eligible_source`.
+
+**Cách phân biệt đã chọn:** `top_rejected_reason` — lý do loại của chunk **xếp hạng 1**. Nghĩa đen: *"nguồn khớp nhất với câu hỏi này có dùng được không"*. A2 từ chối + nguồn khớp nhất đã hết hiệu lực ⇒ sự thật là "thông tin nằm trong tài liệu hết hạn", không phải "không có nguồn nào".
+
+**CẤM dùng `rejection_histogram` cho `G3`** (đã cân nhắc và loại): histogram đếm cả chunk hết hiệu lực xếp hạng THẤP, không liên quan tới câu hỏi ⇒ một câu hỏi về thẻ xe vô tình kéo về một chunk bể bơi hết hạn sẽ bị báo "tài liệu đã hết hiệu lực từ 31/12/2025" — đúng kiểu phát biểu bịa mà Đ09 cấm. Có test canh chiều này (`W13`).
+
+**Đo trên 10 biến thể truy vấn:** quy luật đúng 7/7 biến thể câu bể bơi, sai 0/3 biến thể câu thẻ xe ⇒ không đụng DEF-02. Hai trục đỏ độc lập: (1) logic thuần `lib/confidence.ts`, (2) đường dẫn dữ liệu thật `lib/pipeline/eligibility.ts`. Bằng chứng: [`evidence/d28-def04/`](../evidence/d28-def04/).
+
+**Kết quả đo qua Gemini thật:** `reason_code` nay = `source_expired_or_unknown` (đúng kỳ vọng), `gate` = `G3_retriever_refused` (kỳ vọng cũ ghi `G2_zero_eligible`).
+
+**CÒN TREO — cần chủ tịch quyết:** `expected_gate` của DEF-04 trong `evals/golden/expected_defects.json` và `golden_safety.jsonl` ca `S04`. Nhãn `gate` đó mã hoá một giả định về TẦNG TRUY HỒI mà phép đo đã bác; `reason_code` — thứ cư dân thực sự nhìn thấy và thứ rubric chấm — thì nay đúng. Sửa dữ liệu kỳ vọng là đụng hợp đồng P00 đã duyệt (Luật L.3) nên KHÔNG tự làm.
+
+**Lật được:** nếu sau này truy hồi đổi cách chuẩn hoá. **Chi phí lật:** thấp — một nhánh `if` trong `lib/confidence.ts`.
+
+### Đ29 — 2026-09-21 · `users.property_type`: lỗ hổng hợp đồng làm mọi tài liệu bị loại
+
+E-6 (`01-CONTRACTS` §5) đối chiếu `documents.scope_property` với `principal.property_type`, nhưng **§6 không cho bảng `users` cột nào giữ giá trị đó**. `app/login/actions.ts` vì vậy đặt `property_type: []` kèm chú thích "P02 bồi sau".
+
+**Đo 2026-09-21: 19/19 tài liệu đều có `scope_property` khác rỗng.** Nghĩa là phiên đăng nhập rỗng `property_type` làm **mọi tài liệu** bị loại ở E-6 với lý do `scope_mismatch`, và cư dân không bao giờ nhận được câu trả lời nào — một lỗi im lặng, không crash, không test nào đỏ.
+
+Vá: thêm ENUM `property_type` + cột `users.property_type property_type[]` (001/002 cho DB dựng mới, `005_user_property_type.sql` idempotent cho DB đã chạy), `seed_users.mjs` ghi giá trị, `getDataStore().findUserByEmail()` trả về, login đưa vào cookie phiên.
+
+**Lật được:** không. Không có cột này thì E-6 không có nguồn dữ liệu.
+
+### Đ30 — 2026-09-21 · `schema_migrations`: trả nợ Đ15, migration chạy được lần thứ hai
+
+`migrate.mjs` bản cũ chạy LẠI toàn bộ file mỗi lượt ⇒ lượt thứ hai chết ở `CREATE TYPE ... already exists`, và **không có cách nào thêm một migration mới vào DB đã chạy**. Đúng món nợ Đ15 đã ghi.
+
+Nay có bảng `schema_migrations (version, checksum, applied_at)`; mỗi file chạy trong MỘT transaction rồi mới ghi nhận; lượt sau bỏ qua. Thêm `--status` (chỉ đọc) và `--baseline --to=<file>` để **nhận một DB đã migrate sẵn** mà không chạy lại — từ chối chạy nếu DB chưa có bảng `users` (chống đánh dấu khống). Checksum lệch ⇒ in cảnh báo: migration đã chạy thì CẤM sửa, phải thêm file mới.
+
+Đã dùng thật: baseline `001…004`, rồi áp dụng `005`, `exit 0`.
+
+**Còn nợ:** `--down` vẫn `exit 2` (Đ15 giữ nguyên). Nay đã có bảng lịch sử nên làm được — chưa làm vì chưa cần.
+
+### Đ31 — 2026-09-21 · G24: chặn theo ÂM TIẾT, không theo chuỗi con
+
+Chặng 5 (hard-block pháp lý) bản cũ dùng `lower.includes("kiện")`. Tiếng Việt viết rời từng âm tiết nên phép đó bắt luôn **"điều kiện"**, "sự kiện", "linh kiện".
+
+**Đo được, và nó cắn đúng chỗ đau:** ca Golden FAQ *"Nuôi thú cưng trong căn hộ cần điều kiện gì?"* bị đẩy sang `legal_or_compensation_escalation` **ngay ở chặng 5**, không bao giờ tới retrieval ⇒ đếm thẳng vào cột trượt của `M1`, đúng con số rubric chấm. Lượt hỏi thật đầu tiên qua HTTP cũng chết vì lỗi này.
+
+Vá: tách câu thành âm tiết, khớp cụm nhiều âm tiết liền nhau; riêng âm tiết đơn `kiện` chỉ tính khi KHÔNG đứng sau `điều/sự/linh/bưu/vụ` và không đứng trước `hàng/tướng/toàn`. Giữ được ca Safety *"tôi kiện được không"*. Test chạy trên **toàn bộ 66 câu hỏi Golden thật**, không phải vài ví dụ tự nghĩ — bản cũ xanh trên ví dụ tự chọn mà vẫn chặn oan ca Golden. Đã chứng minh ĐỎ 2/5 ca khi hoàn nguyên về `includes`.
+
+### Đ32 — 2026-09-21 · G22: `plainto_tsquery` (AND) làm RAG luôn trả "không có tài liệu"
+
+`01-CONTRACTS` §4.2 dùng `plainto_tsquery`, hàm này nối MỌI từ bằng **AND**. Truy vấn đã chuẩn hoá của A1 dài 8–10 từ nên đòi một chunk chứa đủ cả 10 từ.
+
+Đo trên Supabase thật 2026-09-21:
+
+| Truy vấn | Số dòng |
+| :-- | --: |
+| `"điều kiện trẻ em dưới 12 tuổi sử dụng bể bơi"` (A1 sinh ra) | **0** |
+| `"trẻ em bể bơi"` | 2 |
+
+⇒ **mọi câu hỏi đi qua A1 đều rơi vào `no_eligible_source`**: RAG trông như "không có tài liệu" trong khi tài liệu vẫn nằm nguyên trong DB. Đây là lỗi nặng nhất tìm được trong phiên, và nó chỉ lộ ra khi chạy end-to-end trên DB thật — mock không dính vì mock chấm điểm kiểu OR.
+
+Vá: `buildTsQueryExpr()` nối các từ bằng `|`, SQL dùng `to_tsquery`. **Cờ chuẩn hoá `32` của `ts_rank_cd` giữ NGUYÊN (C-05)** — nay nó làm đúng việc của nó là XẾP HẠNG theo số từ khớp, thay vì để `WHERE` làm việc lọc tất-cả-hoặc-không.
+
+**An toàn injection:** mọi ký tự không phải chữ/số bị loại TRƯỚC khi nối, nên không toán tử `tsquery` nào (`&`, `|`, `!`, `<->`, ngoặc) lọt từ đầu vào người dùng. Có test canh cả chiều này lẫn chiều "hết từ ⇒ tập rỗng, KHÔNG gọi SQL" (`to_tsquery('')` ném lỗi cú pháp).
+
+**Hệ quả phải nhớ:** truy hồi rộng hơn ⇒ `eligible_count === 0` nay hiếm xảy ra, nên **DEF-01 nhiều khả năng cũng chuyển từ `G2` sang `G3`** với `reason_code` vẫn đúng là `no_eligible_source`. Cùng một câu hỏi hợp đồng với Đ28.
+
+### Đ33 — 2026-09-21 · Banner backend: số chạy trên Postgres LÀ số nghiệm thu
+
+`printBackendBanner()` dán chữ *"số định hướng, KHÔNG phải số nghiệm thu"* lên **cả** lượt chạy Postgres. Đ24 cấm tick `G11` bằng số **mock**; số chạy trên Postgres thật chính là số nghiệm thu. Dán nhầm nhãn lên số thật thì không ai dám dùng nó, và cái cấm mất ý nghĩa vì nó cấm tất cả. Banner nay đổi theo `DATA_BACKEND`.
+
 ### Quyết định của chủ tịch — 2026-09-20
 
 | Mã | Phán quyết | Ghi chú |
@@ -313,12 +487,12 @@ Câu "Gói P00 chưa được phóng vì C-01 chưa chốt" ghi ngày 2026-09-20
 - [x] P00 — Khuyết tật cài sẵn: 2 gap + 1 cặp conflict + 1 expired — `defects_ok: 4/4`, exit 0 (2026-09-20)
 - [x] P00 — Golden Dataset — `faq: 50 (answerable 40) · safety: 16 · canonical 10/10`, exit 0 (2026-09-20). `rubric.md` chuyển sang P04.
 - [ ] P01 — Deploy được URL công khai — 🟡 **không còn bị chặn kỹ thuật**: Vercel CLI đã đăng nhập (Đ23), `npm run build` xanh không cần `DATABASE_URL`. Chờ chủ tịch chọn **scope** — lần trước SO lỡ tạo project vào team `n-listen-ai`, đã gỡ sạch
-- [ ] P01 — Đăng nhập 2 vai trò Cư dân / BQL — 🟡 mã xong và có test (`scrypt` + cookie HMAC, sửa 1 byte ⇒ verify false); **chưa tick** vì tài khoản nằm trong DB, cần `DATABASE_URL` mới chứng minh được đăng nhập thật
+- [x] P01 — Đăng nhập 2 vai trò Cư dân / BQL — **đo thật trên Supabase 2026-09-21**: `findUserByEmail('resident@demo.local')` trả đúng vai + `property_type=["apartment"]` (mảng thật, không phải chuỗi — xem Đ29/G23), `verifyPassword` đúng mật khẩu = `true`, sai mật khẩu = `false`. Đăng nhập nay chạy được ở CẢ `DATA_BACKEND=mock` (hai tài khoản demo, mật khẩu từ biến môi trường) lẫn `postgres`
 - [x] P01a — Nền tảng chạy được không cần key: `tsc --noEmit` exit 0 · `npm run build` KHÔNG có `DATABASE_URL` exit 0 (8/9 route dynamic) · `npm test` 13/13 · **BB-05, BB-07, BB-10 xanh và đã chứng minh đỏ được** (2026-09-20)
-- [ ] P02 — Trả lời có trích dẫn tới `document_id` và `section_id`
-- [ ] P02 — Lịch sử hội thoại bền qua phiên
-- [ ] P02 — Ba agent chạy tách bạch, log được từng chặng
-- [ ] P02 — Escalate đúng theo 4 tín hiệu (Đ07)
+- [x] P02 — Trả lời có trích dẫn tới `document_id` và `section_id` — **lượt end-to-end thật qua `POST /api/chat`, backend Postgres, 2026-09-21**: `decision=answer`, 1 citation `OCP1-POOL-RULES-001 / POOL-SAFE-03`, 3/3 claim `supported`. Bằng chứng: [`evidence/d28-def04/e2e_api_chat_postgres.txt`](../evidence/d28-def04/e2e_api_chat_postgres.txt)
+- [ ] P02 — Lịch sử hội thoại bền qua phiên — chưa thi công (BB-11, cần bảng `answer_turns`/`conversations`; bảng ĐÃ có trên Supabase, chưa nối dây)
+- [x] P02 — Ba agent chạy tách bạch, log được từng chặng — cùng lượt trên: 9 chặng đúng thứ tự, ba model KHÁC NHAU có `ms` + tokens (`safety`/`intent` → `gemini-3.5-flash-lite` · `draft` → `gemini-3.5-flash` · `verify` → `gemini-2.5-flash`)
+- [ ] P02 — Escalate đúng theo 4 tín hiệu (Đ07) — 🟡 `DEF-03` OK trên Postgres; `DEF-04` nay ra ĐÚNG `reason_code` (Đ28) nhưng nhãn `gate` còn chờ chủ tịch quyết; `DEF-01`/`DEF-02` chưa đo xong vì cạn hạn mức Gemini (blocked, KHÔNG phải trượt — Đ26)
 - [ ] P03 — BQL upload / đổi version / đổi status tài liệu, ảnh hưởng ngay tới retrieval
 - [ ] P03 — Hàng đợi duyệt câu trả lời, có sửa và có từ chối
 - [ ] P04 — Bảng eval faithfulness và relevance trên Golden
