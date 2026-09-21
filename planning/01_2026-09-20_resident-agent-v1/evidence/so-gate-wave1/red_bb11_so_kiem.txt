@@ -1,0 +1,7 @@
+# SO tu do lai loi khai 'da tung do' cua goi BB-11 — KHONG tin report
+# Phep pha: bo lenh ghi answer_turns (P02-C10). Ky vong: tests/memory.test.ts DO.
+
+ℹ tests 4
+ℹ pass 1
+ℹ fail 3
+EXIT_KHI_PHA=1
