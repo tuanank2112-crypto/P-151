@@ -456,6 +456,32 @@ Vá: `buildTsQueryExpr()` nối các từ bằng `|`, SQL dùng `to_tsquery`. **
 
 `printBackendBanner()` dán chữ *"số định hướng, KHÔNG phải số nghiệm thu"* lên **cả** lượt chạy Postgres. Đ24 cấm tick `G11` bằng số **mock**; số chạy trên Postgres thật chính là số nghiệm thu. Dán nhầm nhãn lên số thật thì không ai dám dùng nó, và cái cấm mất ý nghĩa vì nó cấm tất cả. Banner nay đổi theo `DATA_BACKEND`.
 
+### Đ34 — 2026-09-21 · MỘT bộ chấm duy nhất; hoãn bảng `golden_results`
+
+Worker gói P04 nêu đúng một mâu thuẫn thật: `SPEC-P04` §3.2 thiết kế M1/M3/Relevance đọc từ bảng `golden_results` do `npm run eval:golden` ghi, nhưng **bảng đó không tồn tại** trên Supabase (`to_regclass('golden_results')` = NULL, đo 2026-09-21), và dựng nó thì phải chạm `db/migrations/**` + `scripts/**` — cả hai nằm ngoài phạm vi được cấp. Worker không tự mở rộng phạm vi, chấm lại trong TypeScript từ `answer_turns` ⋈ `evals/golden/*.jsonl`. Xử lý đúng luật.
+
+**Nhưng cách chấm đó đẻ ra một lỗi lớp khác, đo được:** `scripts/eval_golden.mjs` đã có hàm *"Chấm một ca FAQ"*, và `lib/adapters/metrics-store.ts` nay có hàm *"Chấm một ca FAQ, SAO Y checkpoint của SPEC-P00 §6.5"*. **Hai cài đặt của cùng một định nghĩa "đạt".** Sửa một bên quên bên kia thì dashboard và bộ đo nghiệm thu nói hai con số khác nhau về cùng một lượt chạy — và không cổng nào đỏ. Đúng họ lỗi đã cắn dự án này ở G18, G21, G22: sai lệch âm thầm giữa hai đường tính cùng một thứ.
+
+**Chốt:** tách bộ chấm ra **một module dùng chung**, cả `eval_golden.mjs` lẫn `metrics-store.ts` đều import từ đó. Không chép, không "sao y". Kèm một test canh: cùng một ca đầu vào, hai đường gọi phải ra **cùng** `verdict` và **cùng** bộ checkpoint.
+
+**Hoãn `golden_results`, có chủ ý.** Bảng đó cho thêm hai thứ: lưu lịch sử nhiều lượt, và biết fail ở checkpoint nào mà khỏi mò. Cả hai đều tốt, nhưng **không gate nào của `TESTING-ACCEPTANCE.md` đòi** — `G11` chỉ hỏi `M1 ≥ 34/40` và `M3 ≥ 15/16`, `G12` chỉ hỏi dashboard có số và không `NaN`. Deadline còn 6 ngày với P05/P06 chưa động. Thêm một bảng + một migration + sửa hai script để lấy thứ chưa ai chấm là đổi chỗ sai thời điểm.
+
+**Lật được:** có, và rẻ nếu làm sau khi đã tách module chung — khi đó `golden_results` chỉ là một chỗ *ghi xuống* kết quả của bộ chấm duy nhất, không phải một bộ chấm thứ hai. **Chi phí lật:** thấp bây giờ, cao nếu cứ để hai bộ chấm sống song song thêm vài ngày rồi mới gộp.
+
+**VÙNG CẤM:** CẤM để hai nơi cùng định nghĩa "một ca Golden thế nào là pass". Ai thêm nơi thứ ba phải trả lời được "khi hai nơi lệch nhau thì tin nơi nào".
+
+### Đ35 — 2026-09-21 · Phán ba câu hỏi của gói P03; nhận lỗi cắt phạm vi thiếu
+
+**(a) Upload / đổi version tài liệu LÀ việc bắt buộc — handoff H07 cắt thiếu, lỗi của SO.** Đ01 ghi rõ đầu ra được chấm gồm *"BQL upload tài liệu + duyệt câu trả lời"*, và checklist §4 ghi *"P03 — BQL upload / đổi version / đổi status tài liệu"*. H07 chỉ giao phần **đổi status**. Worker làm đúng phạm vi được giao và nêu ra chỗ thiếu — đúng luật. Mở một gói nối tiếp cho upload + đổi version, giao lại CHÍNH worker đó để giữ ngữ cảnh (bộ `bql-store.ts` đã là của họ).
+
+**(b) Bug `conversation_id` không phải uuid: giao cho gói BB-11, không mở gói mới.** `scripts/trace_sample.mjs` truyền chuỗi `"trace-sample"` vào cột `uuid`, nên **mọi** script đo đi qua pipeline đều vỡ trên Postgres. Nó nằm đúng giữa hai vùng: `lib/pipeline/index.ts` (BB-11 đang cầm) và `scripts/**` (không ai cầm). Giao trọn cho worker BB-11 vì họ đang sở hữu đường ghi `conversations`; mở gói thứ tư chỉ để sửa một dòng là tự tạo thêm một chỗ va chạm.
+
+**(c) Bằng chứng R7 qua pipeline thật: SO tự chạy, không giao worker.** Hai lượt thử của worker đều dính 429 — hạn mức Gemini là tài nguyên CHUNG của cả đội, không phải thứ để ba worker song song cùng tiêu. Luật giữ nguyên: worker CẤM chạy `eval_golden.mjs` / `probe_defects.mjs`; SO xếp hàng và chạy khi hạn mức hồi.
+
+**Bằng chứng nửa vời vẫn là bằng chứng, nhưng phải gọi đúng tên.** Worker chứng minh được bằng SQL rằng đổi `effective_status` có hiệu lực ngay ở cổng E-2 và không bị cache — đó là nửa "retrieval" của R7. Nửa còn lại (agent thôi trích dẫn tài liệu đó) **chưa có số**. CẤM tick gate R7 bằng nửa đã có.
+
+**Lật được:** (a) nếu rubric được diễn giải là chỉ cần đổi trạng thái. **Chi phí lật:** thấp — bỏ một gói nhỏ.
+
 ### Quyết định của chủ tịch — 2026-09-20
 
 | Mã | Phán quyết | Ghi chú |
