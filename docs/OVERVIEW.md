@@ -5,6 +5,11 @@
 > — bản v0.2 "ResidentGPT", actor khác, mục tiêu khác. Chúng chỉ còn là nguồn tham chiếu nội dung và
 > giọng văn. **File này mô tả sản phẩm ĐANG CHẠY, đo trực tiếp trên đĩa và trên DB thật.**
 >
+> **⚠️ Cập nhật 2026-09-23 (`ed8dfca`):** ba rủi ro §7 đã được xử lý và ba lỗi chặn KHÔNG có trong §7 đã lộ ra rồi vá
+> (UI `/chat` 403 mọi câu · A2 cạn hạn mức · 0 link điều hướng — gotcha G33–G38). Demo local đã chạy trọn
+> (`planning/01_.../evidence/so-demo-local/`). Số ở §4/§7 là số cũ; số mới xem `brain4agent/memory/hot/today.md`.
+> Còn treo cho người: dọn dữ liệu fixture, hook AI-log, scope Vercel, `origin/main`.
+>
 > **Mốc đo: 2026-09-22, tại commit `504b7a9`.** Deadline demo: **2026-09-27** (còn 5 ngày).
 > Nguồn chân lý thiết kế: [`planning/01_2026-09-20_resident-agent-v1/plan.md`](../planning/01_2026-09-20_resident-agent-v1/plan.md)
 > (nhật ký 46 quyết định Đ01–Đ46) → [`specs/`](../planning/01_2026-09-20_resident-agent-v1/specs/) → rồi mới tới `docs/`.

@@ -1,6 +1,28 @@
 # 📅 Nhật Ký Làm Việc Ngày 2026-09-23 (Session Memory Log)
 
-> Cập nhật lúc: `2026-09-23T00:00:00.000Z` | Phiên bản: `v1.0.0-audit-truoc-demo`
+> Cập nhật lúc: `2026-09-23T00:00:00.000Z` | Phiên bản: `v1.0.0-demo-local-chay-tron`
+
+---
+
+## 🏁 Phiên 2026-09-23 (tiếp) — Thi công đợt 1+2 sau audit, demo local chạy trọn
+
+### 🎯 Chỉ đạo: *"tôi cần demo local trước. và duyệt cho bạn làm các bước tiếp theo"*.
+SO phóng 4 worker song song (H15 chat UI · H16 nav+HITL · H17 demo_r7+test tự dọn · H18 deliverables BTC), tự làm chuỗi model dự phòng (🔴 adapter), tự đo lại từng gói.
+
+### ✅ Đã làm (commit `b195e54` → `ed8dfca` + đồng bộ não):
+- G33: `/chat` dùng `conversation_id` route trả về, nạp lại lịch sử qua `GET /api/conversations` (403 khi không phải chủ), panel chặng in token.
+- G35/G36: nav BQL 4 link + đăng xuất; `insertAnswerTurn` Postgres enqueue `review_queue` pending cho mọi escalate không-golden trong cùng câu SQL; nút khoá theo state.
+- G37: 4 test Postgres + golden-injection tự dọn; runner ghim `DATA_BACKEND=mock` (G39).
+- G34: `MODEL_A1/A2/A3` nhận chuỗi phẩy, nhảy model khi 429/503, steps ghi model thật; `gemini-3.6-flash` vào ALLOWED.
+- `scripts/demo_r7.mjs` (G09) — từng đỏ; chưa có exit 0 vì hạn mức.
+- Deliverables BTC: README, architecture_diagram, JOURNAL, WORKLOG, eval report, presentation + demo_script, 15 file hook AI-log.
+- Đ47 ghi vào `plan.md`; H15–H18, R18–R21, evidence h15/h16/h17/h18/so-demo-local.
+
+### 📊 Số đo cuối (HEAD `ed8dfca`):
+tsc 0 · build 0 · **184/184 test** · BB-05/07/10 = 0 · smoke demo local: Q1 answer+1 citation (55 s, A2 3.6→3.5-flash) · BBQ conflict 2 citations · PII đúng · pickleball `no_eligible_source` · history 5 · review pending 7 · 4 trang BQL 200/4 link/0 NaN.
+
+### ⛔ Bị chặn / chờ người:
+`delete from conversations` (dọn ~460 dòng fixture) bị classifier chặn — người chạy; `.claude/settings.json` (hook AI-log) worker bị chặn quyền — người tạo; hạn mức Gemini (3.5 và 3.6 đều cạn trong ngày); scope Vercel; `origin/main`.
 
 ---
 

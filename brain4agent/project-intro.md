@@ -83,3 +83,15 @@ nhưng chờ chủ tịch **chọn scope** (Đ23). `GEMINI_API_KEY` đã có và
 dòng "chưa có ANTHROPIC_API_KEY" là của giai đoạn trước Đ17, nay hết đối tượng.
 P02–P06 chưa bắt đầu. Không gói nào được coi là "đã hoàn thành" cho tới khi có bằng
 chứng máy chạy thật.
+
+## 4. Hồ sơ nộp bài BTC và bộ hook AI-log (2026-09-23, Đ47)
+
+Ngoài rubric R1–R10, BTC AI20K chấm **10 deliverables** và 5 tiêu chí (Product · System
+Design · UX/UI · DevOps · Code Quality) theo `origin/feature/truong:docs/guide/deliverables/checklist.md`.
+Repo nay có đủ hồ sơ ở đúng đường dẫn BTC đòi: `README.md`, `docs/architecture_diagram.md`,
+`JOURNAL.md`, `WORKLOG.md`, `eval/results/report.md`, `presentation/`. **Bộ hook AI-log là
+Python** (`scripts/log_hook.py`, `submit_log.py`, …, chép nguyên văn từ template BTC) — đây là
+ngôn ngữ thứ hai trong repo, CHỈ phục vụ ghi log dùng AI cho ban chấm, không thuộc sản phẩm;
+Node ESM vẫn là runtime duy nhất của app và script kiểm. Còn thiếu `.claude/settings.json`
+(người tạo tay) và `AI_LOG_API_KEY` từng thành viên (Phoenix). Nhánh `origin/main` trên GitHub
+vẫn là template Python rỗng — sản phẩm nằm ở `origin/feature/nhuy` (G38).

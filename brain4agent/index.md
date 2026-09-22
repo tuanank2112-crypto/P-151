@@ -12,6 +12,7 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | :--- | :--- | :--- |
 | **Ký ức nóng phiên gần nhất** | [`memory/hot/today.md`](memory/hot/today.md) & [`state.json`](memory/hot/state.json) | Trạng thái máy (JSON), nhật ký làm việc theo phiên và kết quả benchmark gần nhất. |
 | **Khởi động / Quy tắc chung** | [`memory-distill.txt`](memory-distill.txt) | Kernel hiện trạng, Startup Protocol, Tech stack cốt lõi. |
+| **Kịch bản demo + checklist 15 phút trước giờ diễn** | [`presentation/demo_script.md`](../presentation/demo_script.md) | 10 bước bấm tay, cột "nếu hỏng thì nói gì", probe hạn mức 3 model. Smoke thật: `planning/01_.../evidence/so-demo-local/`. |
 | **TỔNG QUAN HIỆN TRẠNG có sơ đồ (hỏi "dự án đang có gì / thiếu gì / làm gì tiếp", chuẩn bị demo)** | [`docs/OVERVIEW.md`](../docs/OVERVIEW.md) | Kiến trúc, luồng 9 chặng + 5 cổng thoát, tiến độ 7 gói, rủi ro demo và đường găng — vẽ bằng Mermaid, đo tại commit `504b7a9`. **Là NGOẠI LỆ trong `docs/`**: mô tả sản phẩm ĐANG CHẠY, khác 6 file v0.2 còn lại. Số liệu có mốc thời gian — đo lại trước khi tin. |
 | **Tổng quan dự án (bản chất repo, mục tiêu, tech stack)** | [`project-intro.md`](project-intro.md) | Đây là sản phẩm DEMO mô phỏng, không phải hệ thống chạy thật; `docs/` là sản phẩm cũ đã hạ cấp. |
 | **Thiết kế ĐANG HIỆU LỰC (hỏi "kiến trúc/contract/spec thế nào") — hồ sơ đang mở** | [`planning/01_2026-09-20_resident-agent-v1/`](../planning/01_2026-09-20_resident-agent-v1/) | `plan.md` (nhật ký quyết định Đ01–Đ41) → `specs/00-ARCHITECTURE.md` (router riêng của bộ SPEC) → 8 file SPEC còn lại → `reports/` (phán quyết nghiệm thu). Thứ tự ưu tiên khi mâu thuẫn với `docs/`: `plan.md` thắng, rồi `specs/`, rồi mới tới `docs/`. |
@@ -33,6 +34,15 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 ---
 
 ## 🗺️ 2. BẢN ĐỒ CẤU TRÚC MÃ NGUỒN (Codebase Directory Map)
+
+> **Cập nhật 2026-09-23 (HEAD `ed8dfca`)** — đường dẫn MỚI/ĐỔI so với cây bên dưới:
+> `app/api/conversations/route.ts` (GET lịch sử, 403 khi không phải chủ — R4) · `app/(bql)/layout.tsx` (nav 4 link + đăng xuất) ·
+> `app/(bql)/review/queue-logic.ts` (khoá nút theo state) · `lib/adapters/model.ts` (`agentModelChain`, chuỗi dự phòng `MODEL_A*`) ·
+> `lib/adapters/db.ts::insertAnswerTurn` (enqueue `review_queue` cùng câu SQL) · `scripts/demo_r7.mjs` (gate G09) ·
+> `scripts/run_tests.mjs` (ghim mock — G39) · `tests/_pg-cleanup.ts` + `tests/{chat-history,hitl-enqueue,model-fallback}.test.ts` (**184 ca**) ·
+> **Deliverables BTC ở root** (ngoại lệ Đ47): `README.md`, `JOURNAL.md`, `WORKLOG.md`, `docs/architecture_diagram.md`, `eval/results/report.md`,
+> `presentation/{README,demo_script}.md`, bộ hook AI-log `scripts/log_*.py`, `scripts/setup_hooks.*`, `.ai-log/`, `.codex/ .cursor/ .gemini/ .github/hooks/`.
+> Kịch bản demo và checklist trước giờ diễn: [`presentation/demo_script.md`](../presentation/demo_script.md).
 
 ```text
 project-root/
