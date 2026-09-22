@@ -21,3 +21,7 @@ evals/runs/
 # AI usage log hook (BTC AI20K, mau origin/feature/truong — G38). Giu .gitkeep.
 .ai-log/*.jsonl
 .ai-log/archive/
+
+# Video demo — nop qua YouTube/Drive theo checklist BTC, khong commit binary lon
+presentation/*.mp4
+presentation/*.webm
