@@ -7,14 +7,14 @@
 ## Checklist 15 phút trước demo
 
 - [ ] `DATA_BACKEND=postgres` trong `.env.local` (không phải `mock`)
-- [ ] Server đang chạy: `npm run dev`, mở thử `http://localhost:3000/login`
+- [ ] **Xoá cache trước khi chạy:** `rm -rf .next` rồi mới `npm run dev` — `.next` lẫn giữa `next build` và `next dev` làm `/chat` văng `__webpack_require__.n is not a function` trên trình duyệt dù curl vẫn 200 (G40)
+- [ ] Server đang chạy: `npm run dev`, mở thử `http://localhost:3000/login` **bằng trình duyệt thật** (không chỉ curl), bấm một câu ở `/chat` để chắc UI hydrate được
 - [ ] Probe 3 model bằng curl trước (A1/A2/A3) — tránh model đang `429`/`503`
-      giữa lúc demo. Nếu A2 (`gemini-3.5-flash`) lỗi, đặt sẵn
-      `MODEL_A2=gemini-3.6-flash` rồi khởi động lại `next dev`
-      (README.md §"Biến MODEL_A2")
-- [ ] Kiểm `review_queue` có ít nhất 1 dòng `pending` — nếu không, seed trước
-      (rủi ro demo #1 theo `docs/OVERVIEW.md` §7 — màn `/review` trống là
-      **chưa được vá tính tới lúc viết kịch bản này**, ghi rõ ở mục "Nếu hỏng")
+      giữa lúc demo. `.env.local` đã có CHUỖI dự phòng
+      `MODEL_A2=gemini-3.6-flash,gemini-3.5-flash,gemini-2.5-flash` — hệ thống tự
+      nhảy model khi 429/503; lượt trả lời đầu có thể mất 40–60 s, nói trước với giám khảo
+- [ ] Kiểm `review_queue` có ít nhất 1 dòng `pending` — từ 2026-09-23 mọi lượt escalate
+      TỰ vào hàng đợi (G36 đã vá); chỉ cần hỏi trước 1–2 câu bị từ chối ở `/chat`
 - [ ] Hai tài khoản demo đã seed: `resident@demo.local` / `bql@demo.local`
       (mật khẩu từ `SEED_RESIDENT_PASSWORD`/`SEED_BQL_PASSWORD`)
 
