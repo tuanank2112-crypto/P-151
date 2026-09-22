@@ -28,6 +28,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runTurn } from "../lib/pipeline/index.ts";
+import { conversationIdFromLabel } from "../lib/adapters/db.ts";
 import { DEMO_RESIDENT_PRINCIPAL } from "./_fixtures.mjs";
 import {
   Checkpoint,
@@ -82,8 +83,10 @@ let convCounter = ckpt.done.size;
  *  CẤM biến 429 thành MISMATCH như bản cũ. */
 async function probe(def) {
   convCounter++;
+  // Đ37 — nhãn dạng chữ băm thành uuid tất định (không `randomUUID()`) trước
+  // khi chạm lệnh ghi đầu tiên của `runTurn()` (BB-11).
   const result = await runTurn({
-    conversation_id: `probe-defects-${def.id}-${convCounter}`,
+    conversation_id: conversationIdFromLabel(`probe-defects-${def.id}-${convCounter}`),
     question_vi: def.trigger_question_vi,
     principal: DEMO_RESIDENT_PRINCIPAL,
   });

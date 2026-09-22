@@ -7,6 +7,7 @@
 // đọc `result.steps` ngay từ `runTurn()`.
 
 import { runTurn } from "../lib/pipeline/index.ts";
+import { conversationIdFromLabel } from "../lib/adapters/db.ts";
 import { DEMO_RESIDENT_PRINCIPAL } from "./_fixtures.mjs";
 
 function argValue(flag, fallback) {
@@ -26,8 +27,10 @@ console.log(
 );
 console.log(`question: ${question}`);
 
+// Đ37 — "trace-sample" không phải uuid hợp lệ; `runTurn()` nay ghi
+// `answer_turns` ở mọi lượt (BB-11) nên bắt buộc băm nhãn thành uuid tất định.
 const result = await runTurn({
-  conversation_id: "trace-sample",
+  conversation_id: conversationIdFromLabel("trace-sample"),
   question_vi: question,
   principal: DEMO_RESIDENT_PRINCIPAL,
 });

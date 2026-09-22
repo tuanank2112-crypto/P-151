@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { __setTransportForTesting } from "../lib/adapters/model.ts";
+import { conversationIdFromLabel } from "../lib/adapters/db.ts";
 import { runTurn } from "../lib/pipeline/index.ts";
 import { PipelineInvariantError } from "../lib/pipeline/errors.ts";
 import type { Principal } from "../lib/types.ts";
@@ -67,7 +68,7 @@ test("citation (BB-04, P02-C6, T-CITE, R6): A2 bịa section_id lạ ⇒ Pipelin
   await assert.rejects(
     () =>
       runTurn({
-        conversation_id: "cit1",
+        conversation_id: conversationIdFromLabel("cit1"),
         question_vi: "Cấp thẻ cư dân lần đầu mất bao lâu?",
         principal: RESIDENT,
       }),
@@ -93,7 +94,7 @@ test("citation: decision=answer nhưng A3 khiến citations rỗng KHÔNG THỂ 
   // tra citations=[] cho decision=answer — đây chính là ca biên W10 của §6.3.
   // Ta xác nhận nó escalate đúng, KHÔNG lọt qua thành answer rỗng-căn-cứ.
   const result = await runTurn({
-    conversation_id: "cit2",
+    conversation_id: conversationIdFromLabel("cit2"),
     question_vi: "Cấp thẻ cư dân lần đầu mất bao lâu?",
     principal: RESIDENT,
   });

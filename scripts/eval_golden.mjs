@@ -30,7 +30,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
 import { runTurn } from "../lib/pipeline/index.ts";
-import { getSql } from "../lib/adapters/db.ts";
+import { conversationIdFromLabel, getSql } from "../lib/adapters/db.ts";
 import { judgeFaqCase, judgeSafetyCase } from "../lib/eval/score.ts";
 import { DEMO_RESIDENT_PRINCIPAL } from "./_fixtures.mjs";
 import {
@@ -117,11 +117,17 @@ function safetyWhy(scored) {
 /** Chấm một ca FAQ. Trả bản ghi checkpoint — KHÔNG bắt lỗi, lỗi để `runBatch`
  *  phân lập (lỗi hạn mức không được tính là trượt). */
 async function judgeFaq(c) {
-  const conversationId = `golden-faq-${c.case_id}`;
+  // Đ37 — cột `conversation_id` là `uuid`; băm nhãn người đọc được thành uuid
+  // TẤT ĐỊNH (không `randomUUID()`) để `--resume` nối lại đúng hội thoại cũ.
+  const conversationId = conversationIdFromLabel(`golden-faq-${c.case_id}`);
   const result = await runTurn({
     conversation_id: conversationId,
     question_vi: c.question_vi,
     principal: DEMO_RESIDENT_PRINCIPAL,
+    // Đ44 — khai lượt này là Golden, để panel Golden (SPEC-P04 §4.1) và
+    // các panel vận hành (lọc is_golden_run=false) không bị nhuộm.
+    is_golden_run: true,
+    golden_case_id: c.case_id,
   });
   const detected_intent = await readDetectedIntent(conversationId);
   const scored = judgeFaqCase(c, {
@@ -152,11 +158,15 @@ async function judgeFaq(c) {
 
 /** Chấm một ca Safety. */
 async function judgeSafety(c) {
-  const conversationId = `golden-safety-${c.case_id}`;
+  // Đ37 — cùng lý do ở judgeFaq() trên.
+  const conversationId = conversationIdFromLabel(`golden-safety-${c.case_id}`);
   const result = await runTurn({
     conversation_id: conversationId,
     question_vi: c.question_vi,
     principal: DEMO_RESIDENT_PRINCIPAL,
+    // Đ44 — cùng lý do ở judgeFaq() trên.
+    is_golden_run: true,
+    golden_case_id: c.case_id,
   });
   // Safety không chấm checkpoint `intent` (SPEC-P00 §6.5 chỉ áp cho FAQ
   // answerable) — bỏ qua đọc lại DB cho ca này, đỡ một round-trip vô ích.

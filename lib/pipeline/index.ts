@@ -15,7 +15,7 @@
 // `tests/citations.test.ts`). Số liệu ghi được coi là THẬT chỉ khi chạy trên
 // Postgres — xem `TESTING-ACCEPTANCE.md`.
 
-import { getDataStore } from "../adapters/db.ts";
+import { getDataStore, type DataStore } from "../adapters/db.ts";
 import {
   agentModel,
   runClassifier,
@@ -153,25 +153,91 @@ interface RunTurnArgs {
   /** CHỈ dùng để bơm lỗi khi test, áp dụng ở lời gọi A2 (TESTING §4.4).
    *  `true` giữ lại cho tương thích, nghĩa là "429". */
   forceUpstreamError?: ForceUpstreamError | true;
+  /** Đ44 — chỉ nguồn gọi mới biết nó đang chạy Golden, nên chính nó phải
+   *  khai. Mặc định `false`/`null` (lượt thật qua `/api/chat`).
+   *  `scripts/eval_golden.mjs` truyền `true` + `case_id` (SPEC-P04 §5). */
+  is_golden_run?: boolean;
+  golden_case_id?: string | null;
 }
 
 function escalateResult(
   reason_code: ReasonCode,
   gate: string | null,
   steps: PipelineStep[],
-  clarify: string | null = null
+  clarify: string | null = null,
+  citations: Citation[] = []
 ): TurnResult {
   return {
     decision: "escalate",
     reason_code,
     answer_vi: null,
     clarify_question_vi: clarify,
-    citations: [],
+    citations,
     claims: [],
     confidence: 0,
     gate_triggered: gate,
     steps,
   };
+}
+
+/** `snippet_vi` ≤ 300 ký tự, cắt theo câu (01-CONTRACTS §7 `Citation`) — Đ42:
+ *  cắt cứng ở 299 ký tự rồi nối "…" (tổng đúng 300); CHỈ cắt theo câu khi dấu
+ *  chấm/hỏi/than gần nhất nằm SAU một sàn 80 ký tự, ngược lại cắt cứng kèm
+ *  "…" — tránh trả về snippet 1–2 ký tự khi văn bản đánh số kiểu "1. …" có
+ *  dấu chấm ngay ở đầu (R14 mục 2). */
+const SNIPPET_MAX_LEN = 300;
+const SNIPPET_SENTENCE_FLOOR = 80;
+export function toSnippet(contentVi: string): string {
+  const trimmed = contentVi.trim();
+  if (trimmed.length <= SNIPPET_MAX_LEN) return trimmed;
+  const cut = trimmed.slice(0, SNIPPET_MAX_LEN - 1); // 299 — chừa 1 ký tự cho "…"
+  const lastSentenceEnd = Math.max(cut.lastIndexOf("."), cut.lastIndexOf("?"), cut.lastIndexOf("!"));
+  if (lastSentenceEnd >= SNIPPET_SENTENCE_FLOOR) return cut.slice(0, lastSentenceEnd + 1);
+  return `${cut}…`;
+}
+
+/**
+ * Đ38 — lượt `escalate` với `gate = "G1_conflict"` PHẢI trả các section
+ * thuộc `conflict_group` đã phát hiện dưới dạng `citations`, để câu tiếng
+ * Việt "đây là hai nguồn để anh/chị đối chiếu" (SPEC-P02 §6.4) không hứa
+ * suông. CHỈ dùng cho đúng nhánh này — mọi đường escalate khác giữ nguyên
+ * `citations: []` (không hứa nguồn nào thì không nợ gì, Đ38).
+ *
+ * Nguồn dữ liệu: `elig.rejected` đã có sẵn đúng các chunk bị loại vì
+ * `reason === "conflict"` (lib/pipeline/eligibility.ts E-5, KHÔNG sửa file
+ * đó — chỉ đọc kết quả nó trả về). Tra thêm `document_title_vi`/`heading_vi`
+ * qua `DataStore` (đã có sẵn qua tham số `store`, không mở connection mới).
+ */
+async function buildConflictCitations(
+  store: DataStore,
+  elig: EligibilityResult
+): Promise<Citation[]> {
+  const conflictedChunks = elig.rejected
+    .filter((r) => r.reason === "conflict")
+    .map((r) => r.chunk);
+  if (conflictedChunks.length === 0) return [];
+
+  // Một section chỉ xuất hiện MỘT lần trong citations dù retrieval có thể
+  // trả nhiều chunk cùng section_id (seed hiện tại là 1 section = 1 chunk,
+  // nhưng không dựa vào giả định đó — khử trùng lặp tường minh).
+  const bySection = new Map<string, RetrievedChunk>();
+  for (const c of conflictedChunks) if (!bySection.has(c.section_id)) bySection.set(c.section_id, c);
+  const uniqueChunks = [...bySection.values()];
+
+  const documentIds = [...new Set(uniqueChunks.map((c) => c.document_id))];
+  const sectionIds = [...new Set(uniqueChunks.map((c) => c.section_id))];
+  const [documents, sections] = await Promise.all([
+    store.getDocumentMeta(documentIds),
+    store.getSectionMeta(sectionIds),
+  ]);
+
+  return uniqueChunks.map((c) => ({
+    document_id: c.document_id,
+    section_id: c.section_id,
+    document_title_vi: documents.get(c.document_id)?.title_vi ?? "",
+    heading_vi: sections.get(c.section_id)?.heading_vi ?? "",
+    snippet_vi: toSnippet(c.content_vi),
+  }));
 }
 
 /** `answer_turns.lifecycle_state` theo `decision` (01-CONTRACTS §2.1). */
@@ -201,7 +267,17 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
   // Từ đây, mọi lượt hợp lệ PHẢI ghi đúng một answer_turns (BB-11), kể cả khi
   // ném lỗi bên dưới — xem khối try/finally quanh chặng 2–9.
   const store = await getDataStore();
-  const userMessage = await store.appendMessage(args.conversation_id, "user", trimmed);
+  // Đ37/R13 — truyền `principal.user_id` để tự tạo hàng `conversations` khi
+  // `conversation_id` là uuid dẫn xuất tất định từ script đo, chưa từng có
+  // `createConversation()` gọi trước (`eval_golden.mjs`/`probe_defects.mjs`/
+  // `trace_sample.mjs`). Với đường `/api/chat` (đã tạo hội thoại trước), đây
+  // là một upsert `ON CONFLICT DO NOTHING`, không đổi hành vi.
+  const userMessage = await store.appendMessage(
+    args.conversation_id,
+    "user",
+    trimmed,
+    principal.user_id
+  );
   const turnStart = Date.now();
   let outcome: TurnResult | undefined;
   let detectedIntent: IntentId | null = null;
@@ -257,7 +333,8 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
       citations: finalResult.citations,
       claims: finalResult.claims,
       latency_ms: Date.now() - turnStart,
-      is_golden_run: false,
+      is_golden_run: args.is_golden_run ?? false,
+      golden_case_id: args.golden_case_id ?? null,
     });
   }
 
@@ -366,7 +443,12 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
       rejection_histogram: elig.rejection_histogram,
       top_rejected_reason: elig.top_rejected_reason,
     });
-    return finish(escalateResult(dec.reason_code as ReasonCode, dec.gate, steps));
+    // Đ38 — CHỈ gate G1_conflict mới kèm citations; G2_zero_eligible (không
+    // mâu thuẫn, chỉ đơn giản là không có nguồn nào) giữ nguyên citations=[].
+    const conflictCitations = conflictDetected ? await buildConflictCitations(store, elig) : [];
+    return finish(
+      escalateResult(dec.reason_code as ReasonCode, dec.gate, steps, null, conflictCitations)
+    );
   }
 
   // ── Chặng 8 — draft (A2) ──────────────────────────────────────────────

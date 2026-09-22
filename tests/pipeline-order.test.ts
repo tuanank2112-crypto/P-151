@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { __setTransportForTesting } from "../lib/adapters/model.ts";
+import { conversationIdFromLabel } from "../lib/adapters/db.ts";
 import { runTurn, assertStepOrder } from "../lib/pipeline/index.ts";
 import { PipelineInvariantError } from "../lib/pipeline/errors.ts";
 import type { Principal, PipelineStep } from "../lib/types.ts";
@@ -64,7 +65,7 @@ test("step-order (BB-08, T-STEP): đường trả lời đầy đủ đi qua Đ�
   });
 
   const result = await runTurn({
-    conversation_id: "c1",
+    conversation_id: conversationIdFromLabel("c1"),
     question_vi: "Cấp thẻ cư dân lần đầu mất bao lâu?",
     principal: RESIDENT,
   });
@@ -91,7 +92,7 @@ test("step-order: thoát sớm ở chặng 2 (emergency) chỉ có ĐÚNG 2 ph�
     sleep: async () => {},
   });
   const result = await runTurn({
-    conversation_id: "c2",
+    conversation_id: conversationIdFromLabel("c2"),
     question_vi: "Có người ngất xỉu ở sảnh, cần giúp gấp!",
     principal: RESIDENT,
   });
@@ -106,7 +107,7 @@ test("step-order: thoát sớm ở chặng 7 (zero eligible) dừng đúng ở e
     sleep: async () => {},
   });
   const result = await runTurn({
-    conversation_id: "c3",
+    conversation_id: conversationIdFromLabel("c3"),
     question_vi: "Sân pickleball mở cửa mấy giờ?",
     principal: RESIDENT,
   });
@@ -133,7 +134,7 @@ test("ĐỎ R7 (đã chạy tay, xem report): assertStepOrder ném khi steps nh�
 
 test("EmptyQuestionError: câu hỏi rỗng không tạo bất kỳ step nào (chặng 1)", async () => {
   await assert.rejects(
-    () => runTurn({ conversation_id: "c4", question_vi: "   ", principal: RESIDENT }),
+    () => runTurn({ conversation_id: conversationIdFromLabel("c4"), question_vi: "   ", principal: RESIDENT }),
     { name: "EmptyQuestionError" }
   );
 });

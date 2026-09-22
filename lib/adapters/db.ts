@@ -9,6 +9,7 @@
 // lời gọi nào ở tầng pipeline.
 
 import pg from "pg";
+import { createHash } from "node:crypto";
 import { buildLexicalQuery } from "../retrieval/query.ts";
 import type {
   Citation,
@@ -19,6 +20,43 @@ import type {
   RetrievedChunk,
   UserRole,
 } from "../types.ts";
+
+/**
+ * Đ37 (`plan.md` §2, 2026-09-22) — `conversations.id`/`answer_turns.conversation_id`
+ * là cột kiểu `uuid` (Postgres). Trước gói BB-11, `runTurn()` là hàm THUẦN
+ * (không ghi DB) nên một nhãn dạng chữ như `"golden-faq-S03"` hoàn toàn vô
+ * hại; nay `runTurn()` ghi `answer_turns` ở MỌI lượt (BB-11) nên bất kỳ script
+ * đo nào truyền nhãn dạng chữ đều vỡ ngay ở lệnh ghi đầu tiên (`ERROR: invalid
+ * input syntax for type uuid`).
+ *
+ * Hàm này băm một nhãn người đọc được thành một uuid HỢP LỆ, **TẤT ĐỊNH**
+ * (cùng nhãn ⇒ cùng uuid, mọi lần, mọi tiến trình) — KHÔNG dùng
+ * `crypto.randomUUID()`. Lý do tất định: bộ chạy Golden có `--resume`
+ * (`scripts/_batch.mjs`, Đ26); cùng một `case_id` phải nối lại ĐÚNG cuộc
+ * hội thoại cũ giữa hai lượt chạy cách nhau, nếu không mỗi lượt lại đẻ một
+ * hội thoại mới và `conversations`/`messages` phình ra vô nghĩa.
+ *
+ * Cách làm: SHA-256 nhãn, lấy 16 byte đầu, gán nibble version=5 (name-based)
+ * và 2 bit variant theo RFC 4122 — cho ra một chuỗi ĐÚNG hình dạng
+ * `8-4-4-4-12` hex mà Postgres `uuid` chấp nhận. CẤM thêm dependency ngoài
+ * `node:crypto` (đúng luật của handoff).
+ */
+export function conversationIdFromLabel(label: string): string {
+  const digest = createHash("sha256").update(label).digest();
+  const bytes = Buffer.from(digest.subarray(0, 16));
+  bytes[6] = (bytes[6]! & 0x0f) | 0x50; // version nibble = 5 (name-based)
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80; // variant = RFC 4122
+  const hex = bytes.toString("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+/** `true` khi `value` có ĐÚNG hình dạng uuid (8-4-4-4-12 hex) mà cột kiểu
+ *  `uuid` của Postgres chấp nhận — dùng để test canh Đ37, và để bất kỳ chỗ
+ *  nào cần từ chối sớm một `conversation_id` sai hình dạng trước khi chạm DB. */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export function isValidUuid(value: string): boolean {
+  return UUID_RE.test(value);
+}
 
 /**
  * Chữ ký DUY NHẤT mà mọi call site trong file này dùng: `sql(text, params)`
@@ -166,6 +204,10 @@ export interface AnswerTurnInput {
   claims: ClaimVerdict[];
   latency_ms: number;
   is_golden_run: boolean;
+  /** Đ44 — `NULL` cho lượt thật (`/api/chat`); mã ca Golden (`c.case_id`)
+   *  cho lượt qua `scripts/eval_golden.mjs`. Cột đã tồn tại từ
+   *  `004_operational.sql:47`, chỉ chưa từng được ghi (R14 mục 7). */
+  golden_case_id: string | null;
 }
 
 export interface DataStore {
@@ -184,12 +226,34 @@ export interface DataStore {
   // ── Vận hành: hội thoại + lượt trả lời (BB-11, R4, H06 W1) ──────────────
   /** Tạo một hội thoại mới cho `userId`, trả `id`. */
   createConversation(userId: string): Promise<{ id: string }>;
-  /** Ghi một dòng `messages`, trả `id` — dùng làm `user_message_id` /
-   *  `assistant_message_id` của `answer_turns`. */
+  /**
+   * Ghi một dòng `messages`, trả `id` — dùng làm `user_message_id` /
+   * `assistant_message_id` của `answer_turns`.
+   *
+   * `createConversationIfMissing` (Đ37, R13; đổi tên Đ44/R14 mục 5 — tên cũ
+   * `ensureConversationOwner` nói SAI việc hàm làm) — CHỈ truyền ở lời gọi có
+   * thể là LẦN ĐẦU chạm tới `conversationId` này (đúng ca của `runTurn()` với
+   * `conversation_id` dẫn xuất tất định từ nhãn script đo — `eval_golden.mjs`
+   * / `probe_defects.mjs` / `trace_sample.mjs` — KHÔNG đi qua
+   * `store.createConversation()` trước). Khi có giá trị, cài đặt Postgres
+   * PHẢI đảm bảo hàng `conversations` tồn tại (upsert idempotent, `ON
+   * CONFLICT DO NOTHING`) TRƯỚC khi ghi `messages`, để không vỡ FK
+   * `messages_conversation_id_fkey` khi `conversationId` là uuid hợp lệ
+   * nhưng chưa từng có hội thoại nào mang id đó. Đường `/api/chat` (đã tạo
+   * hội thoại qua `createConversation()` trước khi gọi `runTurn`) không cần
+   * truyền tham số này — cứ để trống, không có chi phí gì thêm.
+   *
+   * **KHÔNG kiểm chủ sở hữu.** `ON CONFLICT DO NOTHING` nghĩa là khi hàng đã
+   * tồn tại, hàm này không so `user_id` — ai gọi với một `conversationId` đã
+   * có chủ khác vẫn ghi `messages` được bình thường (R14 mục 5/P4). Authz
+   * (403 khi hội thoại không thuộc principal) nằm ở
+   * `app/api/chat/route.ts` qua `getConversationOwner()`, KHÔNG nằm ở đây.
+   */
   appendMessage(
     conversationId: string,
     role: "user" | "assistant",
-    contentVi: string
+    contentVi: string,
+    createConversationIfMissing?: string
   ): Promise<{ id: string }>;
   /** Đọc lại lịch sử hội thoại, cũ → mới (R4). */
   listMessages(conversationId: string): Promise<MessageRecord[]>;
@@ -283,9 +347,27 @@ class PostgresDataStore implements DataStore {
   async appendMessage(
     conversationId: string,
     role: "user" | "assistant",
-    contentVi: string
+    contentVi: string,
+    createConversationIfMissing?: string
   ): Promise<{ id: string }> {
+    if (!isValidUuid(conversationId)) {
+      throw new Error(
+        `appendMessage: conversation_id không phải uuid hợp lệ: "${conversationId}". ` +
+          `Dùng conversationIdFromLabel() trước khi gọi (Đ37/Đ43).`
+      );
+    }
     const sql = getSql();
+    if (createConversationIfMissing) {
+      // Đ37/R13 — upsert idempotent: nếu hội thoại này đã tồn tại (đường
+      // /api/chat qua createConversation()), KHÔNG làm gì; nếu chưa (nhãn
+      // script đo dẫn xuất tất định, chưa từng có createConversation() gọi
+      // trước), tạo hàng cho đủ FK trước khi INSERT messages bên dưới.
+      // KHÔNG kiểm chủ sở hữu (Đ44/R14 mục 5) — xem JSDoc ở `DataStore`.
+      await sql(
+        `INSERT INTO conversations (id, user_id) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
+        [conversationId, createConversationIfMissing]
+      );
+    }
     const rows = await sql<{ id: string }>(
       `INSERT INTO messages (conversation_id, role, content_vi) VALUES ($1, $2, $3) RETURNING id`,
       [conversationId, role, contentVi]
@@ -303,13 +385,19 @@ class PostgresDataStore implements DataStore {
   }
 
   async insertAnswerTurn(input: AnswerTurnInput): Promise<{ id: string }> {
+    if (!isValidUuid(input.conversation_id)) {
+      throw new Error(
+        `insertAnswerTurn: conversation_id không phải uuid hợp lệ: "${input.conversation_id}". ` +
+          `Dùng conversationIdFromLabel() trước khi gọi (Đ37/Đ43).`
+      );
+    }
     const sql = getSql();
     const rows = await sql<{ id: string }>(
       `INSERT INTO answer_turns (
          conversation_id, user_message_id, assistant_message_id, question_vi,
          detected_intent, lifecycle_state, decision, reason_code, confidence,
-         gate_triggered, citations, claims, latency_ms, is_golden_run
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+         gate_triggered, citations, claims, latency_ms, is_golden_run, golden_case_id
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
        RETURNING id`,
       [
         input.conversation_id,
@@ -326,6 +414,7 @@ class PostgresDataStore implements DataStore {
         JSON.stringify(input.claims),
         input.latency_ms,
         input.is_golden_run,
+        input.golden_case_id,
       ]
     );
     return { id: rows[0]!.id };

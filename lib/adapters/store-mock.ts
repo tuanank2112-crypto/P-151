@@ -15,6 +15,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { RetrievedChunk } from "../types.ts";
 import { hashPassword } from "../auth/password.ts";
+import { isValidUuid } from "./db.ts";
 import type {
   AnswerTurnInput,
   DataStore,
@@ -260,10 +261,19 @@ class MockDataStore implements DataStore {
   }
 
   async appendMessage(
-    _conversationId: string,
+    conversationId: string,
     _role: "user" | "assistant",
     _contentVi: string
   ): Promise<{ id: string }> {
+    // Đ43/R14 mục 4 — kho mock phải khó tính ĐÚNG BẰNG Postgres ở ràng buộc
+    // kiểu dữ liệu `conversation_id: uuid`; đây là cơ chế đã sinh ra G26 khi
+    // mock dễ tính hơn (xanh ở mock, vỡ ở Postgres).
+    if (!isValidUuid(conversationId)) {
+      throw new Error(
+        `appendMessage: conversation_id không phải uuid hợp lệ: "${conversationId}". ` +
+          `Dùng conversationIdFromLabel() trước khi gọi (Đ37/Đ43).`
+      );
+    }
     return { id: crypto.randomUUID() };
   }
 
@@ -271,7 +281,13 @@ class MockDataStore implements DataStore {
     return [];
   }
 
-  async insertAnswerTurn(_input: AnswerTurnInput): Promise<{ id: string }> {
+  async insertAnswerTurn(input: AnswerTurnInput): Promise<{ id: string }> {
+    if (!isValidUuid(input.conversation_id)) {
+      throw new Error(
+        `insertAnswerTurn: conversation_id không phải uuid hợp lệ: "${input.conversation_id}". ` +
+          `Dùng conversationIdFromLabel() trước khi gọi (Đ37/Đ43).`
+      );
+    }
     return { id: crypto.randomUUID() };
   }
 
