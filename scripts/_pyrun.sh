@@ -8,11 +8,13 @@
 # Exits 0 silently if no Python is found — hooks must never block the AI tool.
 set -u
 
-if command -v python3 >/dev/null 2>&1; then
+# Windows: python3/python co the la alias rong cua Microsoft Store ("Python was not
+# found") — phai kiem no THUC SU chay duoc, khong chi ton tai tren PATH.
+if command -v python3 >/dev/null 2>&1 && python3 -c "import sys" >/dev/null 2>&1; then
   PY=python3
-elif command -v python >/dev/null 2>&1; then
+elif command -v python >/dev/null 2>&1 && python -c "import sys" >/dev/null 2>&1; then
   PY=python
-elif command -v py >/dev/null 2>&1; then
+elif command -v py >/dev/null 2>&1 && py -3 -c "import sys" >/dev/null 2>&1; then
   PY="py -3"
 else
   # PATH lookup failed — probe standard Windows install locations.
