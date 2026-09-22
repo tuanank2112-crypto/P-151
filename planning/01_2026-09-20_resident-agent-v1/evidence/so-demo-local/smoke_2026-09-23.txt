@@ -1,0 +1,24 @@
+== [1] cau tra loi duoc (A2 chain)
+HTTP=200 55s decision=answer reason=null citations=1 conv=6fe30e75-035d-43da-916f-b2297a7537b8 confidence_leak=false models=[safety:gemini-3.5-flash-lite:1251ms:479/113 | intent:gemini-3.5-flash-lite:0ms:-/- | draft:gemini-3.5-flash:38527ms:1168/225 | verify:gemini-2.5-flash:5855ms:688/128]
+   answer: Không được. Trẻ em dưới 12 tuổi bắt buộc phải có người lớn đi kèm khi xuống bể bơi và không được để trẻ tự bơi một mình, ngay cả khi khu vực bể bơi có nhân viên
+   cites: OCP1-POOL-RULES-001/POOL-SAFE-03
+== [2] DEF-03 mau thuan BBQ
+HTTP=200 5s decision=escalate reason=source_conflict citations=2 conv=6fe30e75-035d-43da-916f-b2297a7537b8 confidence_leak=false models=[safety:gemini-3.5-flash-lite:1021ms:464/104 | intent:gemini-3.5-flash-lite:0ms:-/-]
+   cites: OCP1-BUILDING-RULES-001/BLD-AMEN-07, OCP1-BBQ-GARDEN-RULES-001/BBQ-CAP-01
+== [3] PII
+HTTP=200 3s decision=escalate reason=pii_or_account_specific citations=0 conv=6fe30e75-035d-43da-916f-b2297a7537b8 confidence_leak=false models=[safety:gemini-3.5-flash-lite:1145ms:472/82]
+== [4] DEF-01 pickleball
+HTTP=200 6s decision=escalate reason=no_eligible_source citations=0 conv=6fe30e75-035d-43da-916f-b2297a7537b8 confidence_leak=false models=[safety:gemini-3.5-flash-lite:1173ms:460/104 | intent:gemini-3.5-flash-lite:0ms:-/- | draft:gemini-2.5-flash:3208ms:899/69]
+== [5] GET history
+messages=5
+== [6] review_queue pending moi
+state | count
+pending | 7
+rejected | 1
+== [7] BQL pages
+/documents HTTP=200 links=4 bytes=51622 NaN=0
+/review HTTP=200 links=4 bytes=45616 NaN=0
+/dashboard HTTP=200 links=4 bytes=64939 NaN=0
+/eval HTTP=200 links=4 bytes=118532 NaN=0
+== [8] unauthenticated redirects
+/chat -> 307 http://localhost:3100/login/n/documents -> 307 http://localhost:3100/login/n

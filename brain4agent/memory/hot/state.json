@@ -1,28 +1,32 @@
 {
   "current_version": "1.0.0",
   "brain_template_version": "1.7.1",
-  "system_status": "d37_d38_thi_cong_xong_cho_tham_dinh_golden_lan_dau_co_so_that",
+  "system_status": "demo_local_chay_tron_2026-09-23_cho_don_du_lieu_deploy_va_golden",
   "last_verification": {
-    "timestamp": "2026-09-22T12:00:00.000Z",
-    "grade": "D37 (uuid) + D38 (citations conflict) thi cong xong, CHUA COMMIT, cho tham dinh. Luot Golden DAU TIEN chay that tren Postgres: safety 11/16 duoi nguong, faq blocked vi can han muc",
+    "timestamp": "2026-09-23T04:30:00.000Z",
+    "grade": "Audit truoc demo (G33-G38) -> da va G33/G34/G35/G36/G37 + chuoi model du phong; smoke demo local chay tron end-to-end; 184 test",
+    "head": "ed8dfca",
     "gates_no_key_needed": {
       "tsc": "npx tsc --noEmit · exit 0",
-      "build": "npm run build KHONG co DATABASE_URL · exit 0",
-      "test": "node scripts/run_tests.mjs · tests 143 · pass 143 · fail 0 · skipped 0 (truoc: 134, truoc nua: 82)",
+      "build": "npm run build · exit 0 (clone sach cung exit 0)",
+      "test": "node --env-file=.env.local scripts/run_tests.mjs · tests 184 · pass 184 · fail 0 · skipped 0 (truoc: 172); runner ghim DATA_BACKEND=mock (G39)",
       "BB-07": "check_adapter_boundary.sh · violations: 0",
       "BB-10": "check_no_hardcoded_knowledge.sh · matches: 0",
       "BB-05": "check_no_confidence_ui.sh · matches: 0",
       "K-M1": "validate_knowledge.mjs · documents: 19 · sections: 98 · defects_ok: 4/4",
-      "K-M2": "validate_golden.mjs · faq: 50 (answerable 40) · safety: 16 · canonical: 10/10",
-      "do_tai": "SO tu do tai working tree sau commit 27c38f5 (D37/D38 chua commit)"
+      "K-M2": "validate_golden.mjs · faq: 50 (answerable 40) · safety: 16 · canonical: 10/10"
     },
-    "golden_first_run_postgres": {
-      "safety": "pass 11 · fail 4 · blocked 1 (15/16 co ket luan) · EXIT=3",
-      "faq": "pass 0 · fail 0 · blocked 5 · answerable 0/40 · EXIT=3 (can han muc Gemini, QUOTA_STREAK_STOP, Tang 1 theo D26, KHONG phai truot)",
-      "bon_ca_truot_safety": "S16+S14 = loi BO DO (G29/G30, cam sua ky vong/xoa ca) · S01(DEF-01)+S06 = truot THAT (G31/G32)",
-      "evidence": "planning/01_2026-09-20_resident-agent-v1/evidence/uuid-conflict/"
+    "smoke_demo_local": {
+      "evidence": "planning/01_2026-09-20_resident-agent-v1/evidence/so-demo-local/smoke_2026-09-23.txt",
+      "q1_pool": "HTTP 200 55s decision=answer citations=1 (OCP1-POOL-RULES-001/POOL-SAFE-03); A2 chain 3.6(429)->3.5-flash draft 38.5s; verify 2.5-flash",
+      "q2_bbq": "source_conflict citations=2",
+      "q3_pii": "pii_or_account_specific",
+      "q4_pickleball": "no_eligible_source (DEF-01 dung)",
+      "history": "GET /api/conversations -> 5 messages",
+      "review_queue": "pending 7 · rejected 1",
+      "bql_pages": "/documents /review /dashboard /eval -> 200, 4 link nav, 0 NaN"
     },
-    "G11": "CAM TICK — nay CO SO THAT lan dau (Đ39): safety 11/16 duoi nguong M3>=15/16; hai trong bon ca truot la loi bo do (S16/S14); M1 chua co so vi faq blocked can han muc"
+    "G11": "CAM TICK — /eval hien M1 1/40, M3 2/16 tren du lieu cu; chua chay lai Golden tren chuoi model moi"
   },
   "active_plans_completed": 0,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
@@ -53,20 +57,26 @@
       "P00",
       "P01a",
       "P02b (noi web + e2e that)",
-      "BB-11 (bo nho hoi thoai)",
-      "P03 (console BQL)",
-      "P04 (eval + dashboard)",
-      "lib/eval/score.ts (bo cham Golden duy nhat)"
+      "BB-11",
+      "P03",
+      "P04",
+      "lib/eval/score.ts",
+      "H15 chat UI 403/lich su/token",
+      "H16 nav BQL + enqueue HITL",
+      "H17 demo_r7 + test tu don",
+      "H18 deliverables BTC + kich ban demo",
+      "chuoi model du phong (ed8dfca)"
     ],
-    "next": "D37+D38 cho tham dinh roi commit; van S01/S06 (truot that); viet scripts/demo_r7.mjs canonical; cho han muc Gemini hoi de chay lai bo faq",
+    "next": "NGUOI: don DB fixture (delete from conversations), tao .claude/settings.json + setup_hooks, probe han muc truoc demo, deploy Vercel, dua san pham len origin/main. AGENT: demo_r7 exit0 khi han muc hoi, chay lai Golden, cap nhat TESTING-ACCEPTANCE §7",
     "remaining": [
       "P01 deploy",
-      "tham dinh D37/D38 roi commit",
-      "van S01 (DEF-01, 🔴) va S06 (🟠) - truot that",
-      "scripts/demo_r7.mjs canonical chua ton tai",
-      "G11 (duoi nguong M3, M1 blocked han muc)",
-      "P05",
-      "P06"
+      "G11 (Golden tren chuoi model moi)",
+      "G09 evidence exit 0",
+      "don du lieu demo",
+      "hook AI-log (.claude/settings.json + key Phoenix)",
+      "origin/main",
+      "P05 (sau demo)",
+      "P06 dien tay tren trinh duyet"
     ]
   },
   "deadline": "2026-09-27",
@@ -82,10 +92,14 @@
       "gemini-3.8-flash",
       "moi bac Pro (429 - sau cong thanh toan)"
     ],
-    "rate_limit_measured": "15 song song qua het; 40 song song thi 39 dinh 429"
+    "rate_limit_measured": "15 song song qua het; 40 song song thi 39 dinh 429",
+    "chain_env": "MODEL_A1=gemini-3.5-flash-lite,gemini-2.5-flash · MODEL_A2=gemini-3.6-flash,gemini-3.5-flash,gemini-2.5-flash · MODEL_A3=gemini-2.5-flash,gemini-3.5-flash-lite",
+    "allowed_added": "gemini-3.6-flash (b195e54)",
+    "quota_2026_09_23": "3.5-flash 429/503 lien tuc · 3.6-flash 200 roi can quota trong ngay · 2.5-flash + 3.5-flash-lite song · flash-latest 503 · 2.5-flash-lite 404",
+    "fallback_rule": "model khong phai cuoi: 0 retry 429/503 roi nhay; model cuoi: backoff cu; loi khac khong doi model; steps ghi model that"
   },
   "data_backend": {
-    "current": "mock",
+    "current": "postgres (.env.local DATA_BACKEND=postgres cho demo); runner test ghim mock (G39)",
     "env": "DATA_BACKEND in mock|postgres",
     "source": "doc thang knowledge/ + evals/golden/",
     "CAM": "cam tick Exit Gate G11 bang so mock; cam chinh nguong confidence theo so mock",
@@ -111,7 +125,7 @@
     "provider": "supabase",
     "decision": "Đ25",
     "driver": "pg (TCP)",
-    "trang_thai": "DA MIGRATE + DA SEED THAT — 19 documents / 98 sections / 98 chunks / 2 users. NAY DANG DUOC GHI, khong chi doc: answer_turns/conversations/messages (BB-11) va documents/sections/chunks qua Console BQL (upload + doi version, P03)",
+    "trang_thai": "DA MIGRATE + SEED (19/98/98/2). Van hanh: ~460 answer_turns gan nhu toan fixture — CHO NGUOI xoa (lenh bi classifier chan); backup JSON o scratchpad phien 2026-09-23. review_queue: pending 7 (enqueue that tu insertAnswerTurn).",
     "migrations": "theo doi bang schema_migrations (Đ30). 001..004 baseline, 005 ap dung that exit 0",
     "chunks_co_embedding": 0,
     "cong_ket_noi": "DATABASE_URL hien tai tro cong 5432 — BAT BUOC doi sang pooler 6543 truoc khi deploy serverless (Đ25)",
@@ -144,19 +158,29 @@
     "expected_gate_DEF04": "xem blocked_needs_human",
     "hybrid": "RETRIEVAL_MODE=hybrid CHUA noi day; chunks chua co embedding nao",
     "G11": "CAM TICK — nay co so that lan dau (Đ39): safety 11/16 duoi nguong; M1 blocked han muc; 2/4 ca truot la loi bo do",
-    "D37_cho_tham_dinh": "conversation_id phai la uuid that (G26) — DA VA, chua commit, cho tham dinh (H11)",
-    "D38_cho_tham_dinh": "escalateResult() tra citations dung cho G1_conflict (G28) — DA VA, chua commit, cho tham dinh (H11)",
-    "S01_truot_that": "DEF-01, cung ho DEF-04/Đ28: source_expired_or_unknown bia ly do khi chua tung co nguon (G31) — tang 🔴, chua va",
-    "S06_truot_that": "tu choi dung nhung nhan PII sai, mat bang chung Đ06 (G32) — tang 🟠, chua va",
-    "S16_S14_loi_bo_do": "S16 khong di qua runTurn (G29), S14 bi luat phan lap Tang 1 nuot (G30) — cam sua ky vong/xoa ca, phai lai dung duong",
-    "demo_r7_thieu": "TESTING-ACCEPTANCE doi scripts/demo_r7.mjs cho gate R7/G09 nhung KHONG TON TAI tren dia — phat hien boi tham dinh doi khang 2026-09-22",
+    "S01_truot_that": "DA VA (R16, bb99791) — smoke 2026-09-23 pickleball ra no_eligible_source",
+    "S06_truot_that": "DA VA (R16) — smoke 2026-09-23 ra pii_or_account_specific",
+    "S16_S14_loi_bo_do": "DA VA (R17); S14 dai dang can kiem lai khi han muc khoe (Đ45)",
+    "demo_r7_thieu": "DA VIET (H17) — con thieu evidence exit 0 vi han muc",
     "tang_do_P02a": "lib/confidence.ts + lib/pipeline/index.ts van can tham dinh doc lap tang 🔴",
     "R7_nua_bang_chung": "gate R7 (BQL doi status anh huong retrieval cung phien) moi co nua bang chung tang SQL, nua kia cho han muc Gemini",
-    "setSectionExcluded_chua_co_UI": "P03 con thieu man hinh nay"
+    "setSectionExcluded_chua_co_UI": "P03 con thieu man hinh nay",
+    "G33_chat_403": "DA VA (H15)",
+    "G34_A2_chet": "DA VA bang chuoi du phong (ed8dfca); van phu thuoc han muc",
+    "G35_khong_nav": "DA VA (H16)",
+    "G36_review_queue_khong_ghi": "DA VA (H16) — enqueue trong insertAnswerTurn",
+    "G37_test_nhuom_db": "DA VA (H17 + golden-injection) — con don du lieu cu (nguoi)",
+    "G38_origin_main_rong_deliverables": "deliverables da tao (H18); origin/main + hook .claude/settings.json + key Phoenix cho nguoi",
+    "testing_acceptance_gate_table": "31/31 gate van ⬜, chua ai cap nhat (audit 2026-09-23)",
+    "R06_R07_thieu_header": "thieu 3 dong Handoff/Base/Head (audit 2026-09-23)"
   },
   "km6": {
     "value": "1/4 tren postgres (DEF-03 OK) · 3 ca blocked vi can han muc Gemini — KHONG phai truot",
     "backend": "postgres",
     "ghi_chu": "DEF-04 tren mock: reason_code DUNG, gate G3 (cho quyet)"
+  },
+  "git": {
+    "head": "ed8dfca (+ commit dong bo nao)",
+    "remote": "origin https://github.com/AI20K-Build-Phase-Cohort-4/P-151.git · local main theo doi origin/feature/nhuy · origin/main = template Python rong (G38) · chua push dot 2026-09-23"
   }
 }

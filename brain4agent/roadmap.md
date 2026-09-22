@@ -12,24 +12,26 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 
 - [x] P00 — Knowledge Pack mô phỏng + Golden Dataset 🔴 (D1–D2) — ✅ DUYỆT, xem `Done`
 - [ ] P01 — Nền tảng, auth 2 vai, ingest, deploy 🟠 (D2) — **DB Supabase đã migrate + seed thật** (19 doc / 98 chunk / 2 user); **đăng nhập 2 vai đo được trên DB thật**; chỉ còn **deploy** chờ chủ tịch chọn scope Vercel (Đ23)
-- [ ] P02 — RAG có trích dẫn, memory, 3 agent, cổng escalate 🔴🟠 (D3–D4) — **ĐÃ CHẠY END-TO-END THẬT qua `POST /api/chat` trên Postgres 2026-09-21**; bộ nhớ hội thoại (BB-11) **nay đã nối** (xem `Done`); lượt `source_conflict` nay TRẢ ĐÚNG `citations` (Đ38, đã vá, chờ thẩm định). Còn: nhãn `gate` của DEF-04 chờ chủ tịch, `DEF-01` đã đo và TRƯỢT thật (G31, gỡ nhãn "chưa đo xong"), `DEF-02` vẫn chưa đo xong (cạn hạn mức)
+- [ ] P02 — RAG có trích dẫn, memory, 3 agent, cổng escalate 🔴🟠 (D3–D4) — **chạy trọn từ UI thật 2026-09-23** (G33 đã vá: `/chat` hết 403, lịch sử nạp lại qua `GET /api/conversations`, panel 3 agent in token); Đ37/Đ38 đã thẩm định (R14) và commit; DEF-01 nay ra `no_eligible_source` đúng (Đ46). Còn: nhãn `gate` DEF-04/S04 chờ chủ tịch; A2 phụ thuộc hạn mức (chuỗi dự phòng đã có)
 - [x] P03 — Console BQL: quản lý tài liệu + duyệt câu trả lời (HITL) 🟠 (D4–D5) — ✅ DUYỆT, xem `Done`
 - [x] P04 — Bảng eval faithfulness/relevance + dashboard 🟠 (D5) — ✅ DUYỆT, xem `Done`
 - [ ] P05 — Lớp hành động: đọc chính sách, đặt chỗ, biên nhận, hoàn tác 🟠 (D6) — **cổng: P01–P04 xanh**, gói duy nhất được cắt khi trễ
-- [ ] P06 — Kịch bản demo, dữ liệu mồi, dự phòng 🟢 (D7) — phụ thuộc tất cả
+- [ ] P06 — Kịch bản demo, dữ liệu mồi, dự phòng 🟢 (D7) — 🟡 **kịch bản đã viết** (`presentation/demo_script.md`) và **đã diễn trọn bằng curl trên server local 2026-09-23**; còn dọn dữ liệu mồi (🖐) và diễn tay trên trình duyệt
 
-### Việc phải làm ngay, theo thứ tự (cập nhật phiên thứ hai 2026-09-22)
+### Việc phải làm ngay, theo thứ tự (cập nhật 2026-09-23 sau demo local chạy trọn)
 
-1. **Đ37 (`conversation_id` uuid, G26) và Đ38 (citations cho `G1_conflict`, G28) ĐÃ THI CÔNG XONG** — nằm trong working tree, CHƯA COMMIT, CHỜ THẨM ĐỊNH. `tsc` exit 0 · `node scripts/run_tests.mjs` **143 pass / 0 fail / 0 skip** (trước 134). Việc kế tiếp: chờ phán quyết thẩm định (`handoffs/H11_tham-dinh-d37-d38.md` đã mở) rồi mới commit.
-2. **`G11` VẪN CẤM TICK, nhưng NAY CÓ SỐ THẬT LẦN ĐẦU (Đ39).** Lượt Golden đầu tiên chạy thật trên Postgres: bộ `safety` **pass 11 · fail 4 · blocked 1** (15/16 có kết luận) — dưới ngưỡng `M3 ≥ 15/16`. Bằng chứng: `planning/01_2026-09-20_resident-agent-v1/evidence/uuid-conflict/golden_safety_postgres.txt` (+ `_resume.txt`, `_s04_s14.txt`).
-3. **`M1` vẫn BLOCKED, không phải trượt.** Bộ `faq`: **pass 0 · fail 0 · blocked 5**, `answerable 0/40` — cạn hạn mức Gemini giữa chừng (cầu dao `QUOTA_STREAK_STOP`), lỗi Tầng 1 theo Đ26. Bằng chứng: `evidence/uuid-conflict/golden_faq_postgres.txt`. Cần hạn mức Gemini hồi rồi chạy lại `eval:golden` bộ `faq`.
-4. **Bốn ca trượt `safety` đã phân loại (Đ40/Đ41, gotcha G29–G32):** `S16` và `S14` là **lỗi BỘ ĐO** (không sửa kỳ vọng, không xoá ca — xem vùng cấm ở G29/G30) · `S01` (`DEF-01`, cùng họ DEF-04/Đ28) và `S06` (nhãn PII sai dù từ chối đúng) là **trượt THẬT của sản phẩm**, cần vá thật (🔴 cho `S01`, 🟠 cho `S06`).
-5. **Viết `scripts/demo_r7.mjs` canonical** — `TESTING-ACCEPTANCE.md` đòi script này cho gate `R7`/`G09` nhưng nó KHÔNG TỒN TẠI trên đĩa (chỉ có script tạm trong `evidence/p03/`, phát hiện bởi thẩm định đối kháng 2026-09-22). Gate `R7` mới có nửa bằng chứng (tầng SQL).
-6. **🖐 Chủ tịch quyết `expected_gate` của DEF-04** (`expected_defects.json` + `golden_safety.jsonl` ca `S04`): `reason_code` nay đúng, nhưng nhãn gate là `G3_retriever_refused` chứ không phải `G2_zero_eligible`. Chặn `K-M6` đạt 4/4.
-7. **🖐 Chủ tịch phê chuẩn Đ32** (đổi `01-CONTRACTS` §4.2 sang `to_tsquery` OR). Đã áp vì không áp thì demo không chạy được dòng nào; đảo lại bằng một commit revert.
-8. **`setSectionExcluded` chưa có UI.**
-9. **Giấy tờ:** `reports/R11` và `reports/R12` thiếu ba dòng `Handoff:`/`Base:`/`Head:` ở dòng 2–4 (Luật K.4) — **ĐÃ VÁ 2026-09-22** (phiên thứ hai), phát hiện bởi thẩm định đối kháng.
-10. **Deploy Vercel** (chờ scope; `DATABASE_URL` phải đổi sang pooler 6543 trước) · **thẩm định độc lập tầng 🔴** cho `lib/confidence.ts` + `lib/pipeline/index.ts` · nối `RETRIEVAL_MODE=hybrid` + `embed_cache.mjs` cho 98 chunk (Đ27) · P05/P06 chưa động · chưa push commit nào.
+**Demo local ĐÃ chạy trọn end-to-end** (`evidence/so-demo-local/smoke_2026-09-23.txt`): trả lời có trích dẫn · 3 kiểu từ chối đúng mã · lịch sử bền · HITL có pending · 4 trang BQL có nav. Kịch bản bấm tay: `presentation/demo_script.md`.
+
+1. **🖐 Dọn dữ liệu fixture trong DB demo** (đã sao lưu ở scratchpad phiên 2026-09-23): lệnh `node --env-file=.env.local scripts/sql.mjs "delete from conversations"` (cascade messages/answer_turns/review_queue) — agent bị bộ phân loại chặn "mass delete", người chạy tay. Sau đó hỏi 3–4 câu qua UI để hàng đợi HITL có pending thật. Test nay tự dọn (G37) nên không nhuộm lại.
+2. **🖐 Tạo `.claude/settings.json`** (hook AI-log của BTC, nội dung trong `reports/R21`) rồi `bash scripts/setup_hooks.sh`; mỗi thành viên lấy `AI_LOG_API_KEY` ở Phoenix. Không có ⇒ phần "AI Usage" của BTC = 0 bằng chứng (G38).
+3. **🖐 Hạn mức Gemini trước demo:** probe 3 model bằng curl (checklist trong `presentation/demo_script.md`); `.env.local` đã có chuỗi `MODEL_A2=gemini-3.6-flash,gemini-3.5-flash,gemini-2.5-flash`. Lượt trả lời đầu có thể mất 40–60 s khi A2 rơi về 3.5-flash — nói trước với giám khảo. Cân nhắc nạp billing hoặc key thứ hai.
+4. **Chạy lại `node --env-file=.env.local scripts/demo_r7.mjs`** khi hạn mức hồi để lấy evidence exit 0 cho gate G09 (script đã có, đã chứng minh đỏ).
+5. **Chạy lại Golden** (`npm run eval:golden` theo lô, Đ26) trên chuỗi model mới để có số M1/M3 — G11 vẫn CẤM TICK (hiện M1 1/40, M3 2/16 trên `/eval`). Ghi rõ model thật trong report.
+6. **🖐 Deploy Vercel** (chọn scope; đổi `DATABASE_URL` sang pooler 6543; đặt `DATA_BACKEND=postgres`, `MODEL_A*`, `SESSION_SECRET`, `GEMINI_API_KEY`) — R1.
+7. **🖐 Đưa sản phẩm lên `origin/main`** (hiện là template Python rỗng — G38) và thống nhất với đồng đội câu chuyện demo (rubric C104 vs PRD v0.2 "không auto-send").
+8. Điền tên/vai trò thành viên vào `README.md`, `presentation/README.md` (đang `[điền]`).
+9. Giấy tờ: `TESTING-ACCEPTANCE.md` §7 31/31 gate vẫn ⬜ (chưa ai cập nhật); `reports/R06`/`R07` thiếu 3 dòng Handoff/Base/Head; `evidence/so-d25-d27` mồ côi; G30 chạy nguyên văn ra 2 dòng false-positive tự trỏ vào script kiểm.
+10. Treo cũ: `expected_gate` DEF-04/S04 chờ chủ tịch · Đ32 chờ phê chuẩn · `setSectionExcluded` chưa có UI · hybrid chưa nối · P05 không làm trước demo (Đ03).
 
 ## Tương lai (Upcoming)
 

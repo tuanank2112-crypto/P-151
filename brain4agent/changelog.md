@@ -2,6 +2,30 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-23: audit trước demo, bốn lỗi chặn cứng đã vá, demo local chạy trọn
+
+**Chưa tăng SemVer** — G11 chưa có số nghiệm thu, chưa deploy; mục này ghi quyết định và số đo, không phải release. Commit: `422a756` → `ed8dfca` (+ đợt này).
+
+### Decisions
+- **Đ47 — Audit trước demo** (`plan.md` §2): ba agent rà độc lập + SO đo lại ⇒ cổng máy xanh nhưng bấm thử thật chỉ đạt 2/10 gạch rubric. Bốn quyết định: (1) A2 chạy `gemini-3.6-flash` qua `MODEL_A2`; (2) enqueue `review_queue` nằm trong `insertAnswerTurn` Postgres, cùng câu SQL, chỉ escalate không-golden; (3) khôi phục hội thoại không thêm hàm adapter (localStorage + `GET /api/conversations`); (4) root được phép có bộ deliverables BTC (ngoại lệ tường minh §5.G).
+- **Chuỗi model dự phòng theo agent** (`lib/adapters/model.ts`, commit `ed8dfca`): `MODEL_A1/A2/A3` nhận danh sách phẩy; model không phải cuối 0 retry cho 429/503 rồi nhảy tiếp, model cuối giữ backoff cũ; lỗi không phải 429/503 không đổi model; pipeline ghi model THẬT đã dùng vào `steps`. Lý do: hạn mức free tính theo từng model, 3.5-flash rồi 3.6-flash lần lượt cạn trong một ngày.
+- **Runner test ghim `DATA_BACKEND=mock`** (`scripts/run_tests.mjs`, G39): 6 file test cần Postgres tự ép trong mã; bộ còn lại thiết kế cho mock.
+
+### Added
+- `app/api/conversations/route.ts` (GET lịch sử, 403 khi không phải chủ) · thanh nav + đăng xuất ở `app/(bql)/layout.tsx` · `app/(bql)/review/queue-logic.ts` (khoá nút theo state, pending trước) · panel chặng in token (R6).
+- `scripts/demo_r7.mjs` (gate G09, có `try/finally` khôi phục status, tự dọn hội thoại) · `tests/_pg-cleanup.ts` + 4 test Postgres tự dọn (G37) · `tests/hitl-enqueue.test.ts`, `tests/chat-history.test.ts`, `tests/model-fallback.test.ts` (đều từng ĐỎ).
+- Bộ deliverables BTC: `README.md`, `docs/architecture_diagram.md`, `JOURNAL.md`, `WORKLOG.md`, `eval/results/report.md`, `presentation/{README,demo_script}.md`, 15 file hook AI-log chép nguyên văn từ `origin/feature/truong` (thiếu `.claude/settings.json` — người tạo tay).
+- Hồ sơ: `handoffs/H15–H18`, `reports/R18–R21`, `evidence/{h15-chat-ui,h16-bql,h17-r7,h18-deliverables,so-demo-local}`.
+
+### Fixed
+- G33 UI `/chat` 403 mọi câu · G34 A2 chết (chuỗi dự phòng) · G35 0 link nav, · G36 `review_queue` không có đường ghi · G37 test nhuộm DB demo · rò 2 dòng ở `eval-golden-injection` · H17 ghi `evidence/` ra root (đã chuyển vào hồ sơ).
+
+### Đo được (SO tự đo, HEAD `ed8dfca`)
+`tsc` 0 · `build` 0 · `node scripts/run_tests.mjs` **184 pass / 0 fail / 0 skip** (trước phiên 172) · BB-05/07/10 = 0 · smoke demo local (`evidence/so-demo-local/smoke_2026-09-23.txt`): câu bể bơi `answer` + 1 citation, A2 tự nhảy 3.6→3.5-flash (draft 38 s) · BBQ `source_conflict` 2 citations · PII `pii_or_account_specific` · pickleball `no_eligible_source` · lịch sử 5 tin · `review_queue` pending 7 · 4 trang BQL 200, 4 link, 0 NaN.
+
+### Còn treo
+Dọn 430+ dòng traffic fixture (lệnh xoá bị bộ phân loại chặn — người chạy tay) · `demo_r7.mjs` chưa có evidence exit 0 (hạn mức) · Golden chưa chạy lại trên chuỗi model mới (G11) · deploy Vercel · `origin/main` vẫn là template · `.claude/settings.json` hook AI-log · `AI_LOG_API_KEY` · tên thành viên trong README.
+
 ## [Chưa phát hành] - 2026-09-22 (phiên thứ hai): vá Đ37/Đ38, lượt Golden ĐẦU TIÊN chạy thật trên Postgres
 
 **Chưa tăng SemVer** — Đ37/Đ38 chưa commit, chưa nghiệm thu (chờ thẩm định `handoffs/H11`); mục này ghi quyết định kiến trúc, không phải một release.
