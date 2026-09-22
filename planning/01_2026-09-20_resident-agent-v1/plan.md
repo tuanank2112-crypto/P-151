@@ -724,6 +724,21 @@ Gói `S01`+`S06` (`reports/R16`, tầng 🔴) đóng hai trượt thật của �
 
 **Lật được:** không ở nguyên tắc *"đúng chủ đề mới được nói hết hiệu lực"*. Có, ở cách đo "đúng chủ đề" — nhưng ai đổi phải chạy lại đúng ma trận 4 ứng viên × 14 biến thể ở trên, vì ba ứng viên kia đã được đo là vỡ. **Chi phí lật:** `DEF-01` hoặc `DEF-04` đỏ lại.
 
+### Đ47 — 2026-09-23 · Audit trước demo: bốn lỗi chặn cứng, một lỗ hổng nộp bài, và bốn quyết định đóng chúng
+
+Ba agent rà độc lập + SO đo lại (`brain4agent/memory/hot/today.md` phiên 2026-09-23, gotcha G33–G38). Cổng máy đều xanh (tsc 0 · build 0 · test 172/172) nhưng **bấm thử thật chỉ đạt 2/10 gạch rubric**. Chủ tịch duyệt bằng lời: *"tôi cần demo local trước. và duyệt cho bạn làm các bước tiếp theo"*.
+
+| # | Quyết định | Căn cứ | Vùng cấm |
+| :-- | :-- | :-- | :-- |
+| 1 | **A2 chạy `gemini-3.6-flash` qua `MODEL_A2`** (thêm vào `ALLOWED_MODELS`, commit `b195e54`) | `gemini-3.5-flash` 429/503 liên tục 2 ngày; 3.6-flash đo 200 và một lượt trọn qua `trace_sample.mjs` ra `decision=answer` + 1 citation | Không gắn cứng vào `fallback`; ghi model thật trong mọi report đo Golden (SPEC-P02 §6.5). Golden chạy trên 3.6 là **số của 3.6**, không so trực tiếp với lượt 11/16 cũ |
+| 2 | **Enqueue `review_queue` nằm trong `insertAnswerTurn` Postgres, cùng transaction, chỉ khi `decision='escalate'` và `is_golden_run=false`** (H16) | SPEC-P03 §3.1 đã đòi đúng thế; sản phẩm chưa từng có đường ghi (G36). Golden bị loại để 66 ca không nhuộm hàng đợi — script tự lo fixture của nó | CẤM enqueue `answer`/`clarify` (P03-C3). CẤM enqueue ở route hay pipeline — chỗ duy nhất là tầng ghi `answer_turns`, để không lệch transaction |
+| 3 | **Khôi phục hội thoại (R4) không thêm hàm vào `lib/adapters`** (H15): client giữ `conversation_id`, route GET mới kiểm chủ sở hữu bằng `getConversationOwner` + `listMessages` có sẵn | Tránh hai gói cùng sửa `db.ts` trong một đợt; hai hàm đủ dùng | CẤM bỏ kiểm 403 ở route mới |
+| 4 | **Root được phép có bộ deliverables BTC** (`README.md`, `JOURNAL.md`, `WORKLOG.md`, `presentation/`, `eval/results/`, bộ hook `.ai-log`) — ngoại lệ tường minh của §5.G Root Clean | BTC chấm 10 deliverables ở đúng các đường dẫn đó (`origin/feature/truong:docs/guide/deliverables/checklist.md`); thiếu là mất điểm ở 5 tiêu chí | Đây là hồ sơ nộp bài, KHÔNG phải file nháp; không dùng ngoại lệ này để đặt thêm thứ khác ở root |
+
+**Còn treo cho chủ tịch:** (a) đưa sản phẩm lên `origin/main` (hiện `main` trên GitHub là template rỗng — G38); (b) `AI_LOG_API_KEY` từng thành viên lấy ở Phoenix; (c) câu chuyện demo bám rubric C104 hay PRD v0.2 của đội — hai nhánh đang mâu thuẫn ở điểm "cư dân có nhận trả lời tự động không".
+
+**Lật được:** mục 1 khi 3.5-flash hồi (đổi lại một dòng env). Mục 2–4 không. **Chi phí lật mục 2:** hàng đợi HITL lại rỗng vĩnh viễn.
+
 ### Quyết định của chủ tịch — 2026-09-20
 
 | Mã | Phán quyết | Ghi chú |
