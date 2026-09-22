@@ -20,6 +20,7 @@ import type { Citation, ClaimVerdict, IntentId } from "../types.ts";
 export type SupportedModel =
   | "gemini-3.5-flash-lite" // A1 classifier
   | "gemini-3.5-flash" // A2 retriever
+  | "gemini-3.6-flash" // A2 dự phòng (G34, đo 2026-09-23: 3.5-flash 429/503 liên tục, 3.6-flash 200)
   | "gemini-2.5-flash"; // A3 verifier
 
 /** Vùng cấm model — CẤM dùng cho đường găng (P02-C13, C-09). Chỉ liệt kê để
@@ -30,6 +31,7 @@ export const FORBIDDEN_MODELS = ["gemini-3.7-flash", "gemini-3.8-flash"] as cons
 export const ALLOWED_MODELS: readonly SupportedModel[] = [
   "gemini-3.5-flash-lite",
   "gemini-3.5-flash",
+  "gemini-3.6-flash",
   "gemini-2.5-flash",
 ];
 

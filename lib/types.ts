@@ -109,7 +109,7 @@ export interface PipelineStep {
   ok: boolean;
   ms: number;
   /** Union 3 ID Gemini đã chốt — xem `lib/adapters/model.ts` (BB-07.a, Đ17). */
-  model?: "gemini-3.5-flash-lite" | "gemini-3.5-flash" | "gemini-2.5-flash";
+  model?: "gemini-3.5-flash-lite" | "gemini-3.5-flash" | "gemini-3.6-flash" | "gemini-2.5-flash";
   input_tokens?: number;
   output_tokens?: number;
   note?: string;
