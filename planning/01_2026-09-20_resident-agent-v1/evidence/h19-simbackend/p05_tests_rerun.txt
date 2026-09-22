@@ -1,0 +1,5 @@
+# Tái tạo bởi SO 2026-09-23 sau khi thư mục evidence gốc của H19 bị SO xoá nhầm khi dọn root (xem R22 phụ lục). Số đo chạy lại trên HEAD hiện tại.
+ℹ tests 52
+ℹ pass 52
+ℹ fail 0
+ℹ skipped 0

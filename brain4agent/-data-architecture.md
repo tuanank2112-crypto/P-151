@@ -29,6 +29,19 @@ Tài liệu thiết kế về cấu trúc dữ liệu, cơ chế lưu trữ bề
 > `planning/01_2026-09-20_resident-agent-v1/specs/01-CONTRACTS.md` (DDL, schema,
 > enum reason code) — file này chỉ tóm tắt điều hướng, không thay thế nó.
 
+> **Cập nhật 2026-09-23 (Đ48, P05 đã thi công xong):** migration
+> `006_p05_action_layer.sql` đã áp trên Supabase — `turn_decision` thêm giá trị
+> `'action'`; 3 bảng RIÊNG (`bookings`, `receipts`, `pending_actions` — VC-09, KHÔNG
+> đụng bảng P02) + seed 14 `facilities` (dữ liệu VẬN HÀNH mô phỏng, không phải tri
+> thức — vẫn giữ BB-10 `matches: 0`). Đường ghi thứ tư (sau BB-11/P03/Golden):
+> 4. **Đọc chính sách → precheck (`check_eligibility`) → ghi (`create_booking`/
+>    `cancel_booking`) → biên nhận** qua `lib/simbackend/` (interface `SimBackend`
+>    dùng chung cho `MemorySimBackend` và `PostgresSimBackend`, canh bởi
+>    `contract.ts`). Lệnh ghi thiếu dấu precheck ⇒ `action_authorization_missing`
+>    (BB-03). Trùng `idempotency_key`/`(facility_id, slot_start, property_id)` ⇒ trả
+>    lại biên nhận đã có, không tạo mới (B5). Đo được: `write_without_precheck: 0`
+>    (P05-M1), `236/236` test pass.
+
 ## 1. Các Tầng Lưu Trữ (Data Persistence Stores) — dự kiến
 
 - **Postgres + pgvector trên Supabase** (Đ11 + **Đ25**, `plan.md` §2): MỘT kho chung cho:
@@ -83,6 +96,10 @@ Luồng tổng quát — retrieval lexical (`ts_rank_cd`) + hai đường ghi (B
 6. **[THI CÔNG] Bộ chấm Golden (`lib/eval/score.ts`)** đọc `answer_turns` +
    `golden_faq.jsonl`/`golden_safety.jsonl` để sinh M1/M3 cho dashboard/eval — nhưng
    CHƯA có số nghiệm thu thật, CẤM tick `G11` (Đ36, chờ vá Đ37).
-7. (P05, có điều kiện, CHƯA thi công) Trước một lệnh ghi mô phỏng, đọc điều kiện từ
-   dữ liệu chính sách read-only (còn chỗ trống, đủ điều kiện, hạn) rồi mới ghi — cấm
-   agent "thử và hỏng" bằng lệnh ghi thật (Đ10).
+7. **[THI CÔNG, Đ48] Trước một lệnh ghi mô phỏng, agent đọc điều kiện** từ
+   `get_booking_policy` (read-only: giờ nhận đăng ký, giờ hoạt động, hạn mức) rồi mới
+   gọi `check_eligibility` (ghi dấu precheck) rồi mới `create_booking`/
+   `cancel_booking` — cấm "thử và hỏng" bằng lệnh ghi thật (Đ10, BB-03). Kịch bản
+   23:39 (`scripts/demo_2339.mjs`) đo đúng **1** lời gọi `get_booking_policy` và
+   **0** lệnh ghi khi bị chặn `intake_closed`. Còn treo: ghi `audit_log` thật khi
+   `WriteTimeout` (hiện chỉ có sink test-only).

@@ -371,3 +371,39 @@ Cảnh này cho thấy **không có lệnh ghi nào bị lãng phí** — điể
 | P05-M8 | `node scripts/demo_2339.mjs` | In đúng 6 bước §9; bước 2 có **đúng 1** lời gọi `get_booking_policy`, **0** lời gọi ghi |
 | P05-M9 | `node scripts/sql.mjs "select count(*) from receipts where action='cancel' and undo_capability_id is not null"` | **0** (§5.2) |
 | P05-M10 | `npm run test -- write-timeout` | `WriteTimeout` ⇒ `action_partial_execution_unknown`, **0** lần retry, có dòng `audit_log` mức `warn` |
+
+## 11. Sai lệch cài đặt so với SPEC (ghi nhận 2026-09-23)
+
+Thi công thật (`reports/R22`, gói H19) lệch khỏi văn bản SPEC ở 6 điểm sau. Mỗi điểm
+KHÔNG đổi hành vi quan sát được của P05-M1…M10; đây là ghi nhận để người sau không "sửa
+lại cho đúng SPEC" rồi phá hành vi đang đúng.
+
+1. **`bookings_slot_uniq` cài bằng `CREATE UNIQUE INDEX ... WHERE (state='confirmed')`**
+   thay vì `EXCLUDE USING btree (...)` như §4 viết nguyên văn — `EXCLUDE USING btree`
+   với toàn cờ `=` cần opclass qua extension `btree_gist`, không có sẵn trên Supabase
+   mặc định; UNIQUE INDEX riêng phần cho đúng cùng ngữ nghĩa mà không cần thêm extension.
+2. **`receipts.actor_user_id`** tra qua `SELECT id FROM users WHERE resident_id = $1`
+   thay vì nhận thẳng `users.id` — vì input của `createBooking`/`cancelBooking` chỉ có
+   `resident_id` (text, vd `"R-0001"`), không có `users.id` sẵn. Không thấy ⇒ ném lỗi rõ
+   ràng thay vì vỡ ràng buộc `NOT NULL` khó hiểu. Hệ quả: `PostgresSimBackend` chỉ tạo
+   được booking cho resident đã có trong `users` (đúng thực tế demo — chỉ có `R-0001`).
+3. **`blockingReasonsToReasonCode()`** ánh xạ `BlockingReason[]` không rỗng → một
+   `ReasonCode`: SPEC/contract chỉ ghim rõ ca `quota_exceeded → action_quota_exceeded`
+   (P05-M6). Các `BlockingCode` còn lại (`intake_closed`, `outside_operating_hours`,
+   `slot_full`, `too_early`, `too_late`, `not_bookable`, `maintenance`) dùng mặc định
+   `unsupported_intent` — nhánh này chỉ là lưới an toàn cho race condition vì đường
+   thường lệ đã bị `check_eligibility` chặn từ trước.
+4. **`too_early`/`too_late` định nghĩa tường minh** (SPEC không định nghĩa mức "sớm/muộn
+   so với cái gì"): `too_early` = khoảng cách từ `now()` tới `slot_start` NHỎ HƠN
+   `min_lead_time_minutes`; `too_late` = khoảng cách đó LỚN HƠN `max_advance_days`.
+5. **Mọi timestamp phát ra từ `lib/simbackend/` đều mang offset `+07:00`** (hàm
+   `toIctIso` ở `lib/simbackend/guard.ts`), không phải `Z` (UTC) như code ban đầu từng
+   làm — đây là chỗ vá G41 (`-known-gotchas.md`), không phải một lựa chọn tự do; SPEC §9
+   giả định sẵn giờ hiển thị là giờ Việt Nam.
+6. **`createBooking`/`cancelBooking` trả về biên nhận ĐÃ CÓ khi phát hiện trùng** (thay vì
+   chỉ báo lỗi `action_duplicate_suspected` suông) — khớp đúng B5 (§2.3, "Trả về biên
+   nhận đã có, không tạo mới"); `action.ts` đọc lại `receipts` bằng
+   `idempotency_key`/`(facility_id, slot_start, property_id)` trước khi trả lỗi.
+
+Nguồn: `reports/R22_thi-cong_p05-simbackend.md` mục "Quyết định thực thi KHÔNG có sẵn
+trong SPEC/contract".

@@ -1,20 +1,23 @@
 {
   "current_version": "1.0.0",
   "brain_template_version": "1.7.1",
-  "system_status": "demo_local_chay_tron_2026-09-23_cho_don_du_lieu_deploy_va_golden",
+  "system_status": "p05_thi_cong_xong_2026-09-23_cho_don_du_lieu_deploy_va_golden",
   "last_verification": {
-    "timestamp": "2026-09-23T04:30:00.000Z",
-    "grade": "Audit truoc demo (G33-G38) -> da va G33/G34/G35/G36/G37 + chuoi model du phong; smoke demo local chay tron end-to-end; 184 test",
-    "head": "ed8dfca",
+    "timestamp": "2026-09-23T23:39:00.000Z",
+    "grade": "P05 (Đ48) thi cong xong: lib/simbackend + nhanh action + UI bien nhan/hoan tac + demo_2339; 236 test; BB-05/07/10 = 0",
+    "head": "77fe901",
     "gates_no_key_needed": {
       "tsc": "npx tsc --noEmit · exit 0",
       "build": "npm run build · exit 0 (clone sach cung exit 0)",
-      "test": "node --env-file=.env.local scripts/run_tests.mjs · tests 184 · pass 184 · fail 0 · skipped 0 (truoc: 172); runner ghim DATA_BACKEND=mock (G39)",
+      "test": "node --env-file=.env.local scripts/run_tests.mjs · tests 236 · pass 236 · fail 0 · skipped 0 (truoc P05: 184); runner ghim DATA_BACKEND=mock (G39)",
       "BB-07": "check_adapter_boundary.sh · violations: 0",
       "BB-10": "check_no_hardcoded_knowledge.sh · matches: 0",
       "BB-05": "check_no_confidence_ui.sh · matches: 0",
       "K-M1": "validate_knowledge.mjs · documents: 19 · sections: 98 · defects_ok: 4/4",
-      "K-M2": "validate_golden.mjs · faq: 50 (answerable 40) · safety: 16 · canonical: 10/10"
+      "K-M2": "validate_golden.mjs · faq: 50 (answerable 40) · safety: 16 · canonical: 10/10",
+      "P05-M1": "validate_capabilities.mjs · capabilities: 9 · write: 2 · write_without_precheck: 0",
+      "P05-M2": "validate_policy.mjs · intake_windows: ok · operating_hours: ok · separated: true",
+      "P05-M8_G22": "demo_2339.mjs · exit 0 · 6 buoc · getBookingPolicy=1 · lenh_ghi=0 luc 23:39; dat duoc luc 09:00 (receipt_code); hoan tac giu undone_by"
     },
     "smoke_demo_local": {
       "evidence": "planning/01_2026-09-20_resident-agent-v1/evidence/so-demo-local/smoke_2026-09-23.txt",
@@ -65,9 +68,10 @@
       "H16 nav BQL + enqueue HITL",
       "H17 demo_r7 + test tu don",
       "H18 deliverables BTC + kich ban demo",
-      "chuoi model du phong (ed8dfca)"
+      "chuoi model du phong (ed8dfca)",
+      "P05 (Đ48): H19 simbackend + H20 pipeline action + H21 UI/demo_2339 (77fe901)"
     ],
-    "next": "NGUOI: don DB fixture (delete from conversations), tao .claude/settings.json + setup_hooks, probe han muc truoc demo, deploy Vercel, dua san pham len origin/main. AGENT: demo_r7 exit0 khi han muc hoi, chay lai Golden, cap nhat TESTING-ACCEPTANCE §7",
+    "next": "NGUOI: don DB fixture (delete from conversations), tao .claude/settings.json + setup_hooks, probe han muc truoc demo, deploy Vercel, dua san pham len origin/main. AGENT: demo_r7 exit0 khi han muc hoi, chay lai Golden, render cot actioned len dashboard, ghi audit_log that khi WriteTimeout, cap nhat TESTING-ACCEPTANCE §7 cot deploy",
     "remaining": [
       "P01 deploy",
       "G11 (Golden tren chuoi model moi)",
@@ -75,7 +79,8 @@
       "don du lieu demo",
       "hook AI-log (.claude/settings.json + key Phoenix)",
       "origin/main",
-      "P05 (sau demo)",
+      "P05: render actioned len JSX dashboard (viec treo, R23)",
+      "P05: ghi audit_log that khi WriteTimeout (viec treo, R23)",
       "P06 dien tay tren trinh duyet"
     ]
   },
@@ -171,8 +176,9 @@
     "G36_review_queue_khong_ghi": "DA VA (H16) — enqueue trong insertAnswerTurn",
     "G37_test_nhuom_db": "DA VA (H17 + golden-injection) — con don du lieu cu (nguoi)",
     "G38_origin_main_rong_deliverables": "deliverables da tao (H18); origin/main + hook .claude/settings.json + key Phoenix cho nguoi",
-    "testing_acceptance_gate_table": "31/31 gate van ⬜, chua ai cap nhat (audit 2026-09-23)",
-    "R06_R07_thieu_header": "thieu 3 dong Handoff/Base/Head (audit 2026-09-23)"
+    "testing_acceptance_gate_table": "cot local: G01/G04/G06/G07/G12/G14/G15/G19/G20/G21/G22 da tick ✅ (2026-09-23); cot deploy con ⬜ het (chua deploy)",
+    "R06_R07_thieu_header": "thieu 3 dong Handoff/Base/Head (audit 2026-09-23)",
+    "P05_viec_treo": "render actioned len JSX dashboard + ghi audit_log that khi WriteTimeout (R23)"
   },
   "km6": {
     "value": "1/4 tren postgres (DEF-03 OK) · 3 ca blocked vi can han muc Gemini — KHONG phai truot",
@@ -180,7 +186,7 @@
     "ghi_chu": "DEF-04 tren mock: reason_code DUNG, gate G3 (cho quyet)"
   },
   "git": {
-    "head": "ed8dfca (+ commit dong bo nao)",
+    "head": "77fe901 (feat(p05): agent executes on the resident's behalf)",
     "remote": "origin https://github.com/AI20K-Build-Phase-Cohort-4/P-151.git · local main theo doi origin/feature/nhuy · origin/main = template Python rong (G38) · chua push dot 2026-09-23"
   }
 }

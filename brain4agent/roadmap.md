@@ -15,12 +15,12 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 - [ ] P02 — RAG có trích dẫn, memory, 3 agent, cổng escalate 🔴🟠 (D3–D4) — **chạy trọn từ UI thật 2026-09-23** (G33 đã vá: `/chat` hết 403, lịch sử nạp lại qua `GET /api/conversations`, panel 3 agent in token); Đ37/Đ38 đã thẩm định (R14) và commit; DEF-01 nay ra `no_eligible_source` đúng (Đ46). Còn: nhãn `gate` DEF-04/S04 chờ chủ tịch; A2 phụ thuộc hạn mức (chuỗi dự phòng đã có)
 - [x] P03 — Console BQL: quản lý tài liệu + duyệt câu trả lời (HITL) 🟠 (D4–D5) — ✅ DUYỆT, xem `Done`
 - [x] P04 — Bảng eval faithfulness/relevance + dashboard 🟠 (D5) — ✅ DUYỆT, xem `Done`
-- [ ] P05 — Lớp hành động: đọc chính sách, đặt chỗ, biên nhận, hoàn tác 🟠 (D6) — **cổng: P01–P04 xanh**, gói duy nhất được cắt khi trễ
+- [x] P05 — Lớp hành động: đọc chính sách, đặt chỗ, biên nhận, hoàn tác 🟠 (D6) — **MỞ KHOÁ 2026-09-23 (Đ48), thi công xong**, xem `Done`
 - [ ] P06 — Kịch bản demo, dữ liệu mồi, dự phòng 🟢 (D7) — 🟡 **kịch bản đã viết** (`presentation/demo_script.md`) và **đã diễn trọn bằng curl trên server local 2026-09-23**; còn dọn dữ liệu mồi (🖐) và diễn tay trên trình duyệt
 
-### Việc phải làm ngay, theo thứ tự (cập nhật 2026-09-23 sau demo local chạy trọn)
+### Việc phải làm ngay, theo thứ tự (cập nhật 2026-09-23 — P05 đã thi công xong)
 
-**Demo local ĐÃ chạy trọn end-to-end** (`evidence/so-demo-local/smoke_2026-09-23.txt`): trả lời có trích dẫn · 3 kiểu từ chối đúng mã · lịch sử bền · HITL có pending · 4 trang BQL có nav. Kịch bản bấm tay: `presentation/demo_script.md`.
+**Demo local ĐÃ chạy trọn end-to-end** (`evidence/so-demo-local/smoke_2026-09-23.txt`): trả lời có trích dẫn · 3 kiểu từ chối đúng mã · lịch sử bền · HITL có pending · 4 trang BQL có nav. **P05 (agent thực thi thay cư dân) cũng đã chạy trọn**: `scripts/demo_2339.mjs` exit 0, 236/236 test, BB-05/07/10 = 0. Kịch bản bấm tay: `presentation/demo_script.md`.
 
 1. **🖐 Dọn dữ liệu fixture trong DB demo** (đã sao lưu ở scratchpad phiên 2026-09-23): lệnh `node --env-file=.env.local scripts/sql.mjs "delete from conversations"` (cascade messages/answer_turns/review_queue) — agent bị bộ phân loại chặn "mass delete", người chạy tay. Sau đó hỏi 3–4 câu qua UI để hàng đợi HITL có pending thật. Test nay tự dọn (G37) nên không nhuộm lại.
 2. **🖐 Tạo `.claude/settings.json`** (hook AI-log của BTC, nội dung trong `reports/R21`) rồi `bash scripts/setup_hooks.sh`; mỗi thành viên lấy `AI_LOG_API_KEY` ở Phoenix. Không có ⇒ phần "AI Usage" của BTC = 0 bằng chứng (G38).
@@ -30,8 +30,9 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 6. **🖐 Deploy Vercel** (chọn scope; đổi `DATABASE_URL` sang pooler 6543; đặt `DATA_BACKEND=postgres`, `MODEL_A*`, `SESSION_SECRET`, `GEMINI_API_KEY`) — R1.
 7. **🖐 Đưa sản phẩm lên `origin/main`** (hiện là template Python rỗng — G38) và thống nhất với đồng đội câu chuyện demo (rubric C104 vs PRD v0.2 "không auto-send").
 8. Điền tên/vai trò thành viên vào `README.md`, `presentation/README.md` (đang `[điền]`).
-9. Giấy tờ: `TESTING-ACCEPTANCE.md` §7 31/31 gate vẫn ⬜ (chưa ai cập nhật); `reports/R06`/`R07` thiếu 3 dòng Handoff/Base/Head; `evidence/so-d25-d27` mồ côi; G30 chạy nguyên văn ra 2 dòng false-positive tự trỏ vào script kiểm.
-10. Treo cũ: `expected_gate` DEF-04/S04 chờ chủ tịch · Đ32 chờ phê chuẩn · `setSectionExcluded` chưa có UI · hybrid chưa nối · P05 không làm trước demo (Đ03).
+9. Giấy tờ: `TESTING-ACCEPTANCE.md` §7 vẫn còn nhiều gate ⬜ ở cột `deploy` (chưa deploy được URL công khai); `reports/R06`/`R07` thiếu 3 dòng Handoff/Base/Head; `evidence/so-d25-d27` mồ côi; G30 chạy nguyên văn ra 2 dòng false-positive tự trỏ vào script kiểm.
+10. **Việc treo từ P05 (`reports/R23` mục "Việc KHÔNG làm"):** (a) **render cột `actioned`** (đã có sẵn ở `AutoResolutionSummary.actioned`/`IntentBreakdownEntry.actioned` trong `lib/adapters/metrics-store.ts`) lên JSX của `/bql/dashboard` — thuộc phạm vi `app/**`; (b) **ghi `audit_log` thật khi `WriteTimeout`** — hiện chỉ có sink test-only (`__setActionAuditSinkForTesting`), cần thêm hàm ghi `audit_log` vào `DataStore` rồi nối sink vào đó (`lib/adapters/db.ts`/`bql-store.ts`).
+11. Treo cũ: `expected_gate` DEF-04/S04 chờ chủ tịch · Đ32 chờ phê chuẩn · `setSectionExcluded` chưa có UI · hybrid chưa nối.
 
 ## Tương lai (Upcoming)
 
@@ -64,6 +65,24 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
   Ai muốn lật phải trả lời được "lấy baseline ở đâu".
 
 ## Đã hoàn thành (Done)
+
+- [x] **P05 — Lớp hành động: agent thực thi thay cư dân (2026-09-23, Đ48):**
+  `lib/simbackend/` (`MemorySimBackend` + `PostgresSimBackend`, 9 capability, 2 lệnh
+  ghi có precheck bắt buộc), nhánh `action` trong `runTurn()` (`lib/pipeline/action.ts`),
+  A1 trả thêm `action: ActionRequest` (Đ48, `01-CONTRACTS` §8.1.2), UI thẻ kết quả +
+  `/chat/receipts` + Hoàn tác (`app/(resident)/chat/**`, `app/api/actions/undo/**`),
+  `scripts/demo_2339.mjs`. Đo được: `tsc --noEmit` exit 0 · `npm test` **236/236 pass,
+  0 fail, 0 skip** · `check_no_hardcoded_knowledge.sh`/`check_adapter_boundary.sh`/
+  `check_no_confidence_ui.sh` đều **0** (BB-05/07/10) · `validate_capabilities.mjs`
+  ⇒ `capabilities: 9 · write: 2 · write_without_precheck: 0` (P05-M1) ·
+  `validate_policy.mjs` ⇒ `separated: true` (P05-M2) · `demo_2339.mjs` **exit 0**: 6
+  bước, 1 lời gọi `getBookingPolicy`, 0 lệnh ghi lúc 23:39; đặt được lúc 09:00
+  (`receipt_code=RC-…`); Hoàn tác giữ biên nhận gốc kèm `undone_by`. Phán quyết
+  ✅ DUYỆT trong phạm vi từng gói ở `reports/R22`, `R23` (🔁 W3 cần xác nhận múi giờ
+  — đã vá), `R24`. Bằng chứng: `evidence/so-p05/`. Sai lệch cài đặt so với văn bản
+  SPEC ghi ở `specs/SPEC-P05-Action-Layer.md` §11. Còn treo (không chặn demo): render
+  cột `actioned` lên dashboard, ghi `audit_log` thật khi `WriteTimeout` (mục "Việc
+  phải làm ngay" #10).
 
 - [x] **P03 — Console BQL (2026-09-22):** màn `documents` đọc 19 tài liệu thật từ DB;
   Server Action đổi `status`/`effective_status`/`allowed_for_rag`; hàng đợi duyệt

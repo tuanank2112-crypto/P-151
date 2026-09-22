@@ -1,0 +1,6 @@
+001_enums.sql                      đã áp dụng
+002_users.sql                      đã áp dụng
+003_knowledge.sql                  đã áp dụng
+004_operational.sql                đã áp dụng
+005_user_property_type.sql         đã áp dụng
+006_p05_action_layer.sql           đã áp dụng

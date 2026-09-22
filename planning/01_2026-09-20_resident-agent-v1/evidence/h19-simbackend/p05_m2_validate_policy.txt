@@ -1,0 +1,2 @@
+intake_windows: ok · operating_hours: ok · separated: true
+EXIT=0

@@ -114,6 +114,17 @@ Chỉ gói P05 sinh ra các mã này. Khoảng trống được chứng minh ở
 **Vùng cấm:** CẤM ánh xạ B1–B5 về `system_error` cho gọn. Mất phân biệt "chưa chạm"
 và "đã chạm một phần" là đúng lỗ hổng mà `H01` §b.2 chỉ ra ở `system_error`.
 
+#### 2.3.bis — `turn_decision` thêm `'action'` (Đ48, migration 006)
+
+**Hợp đồng sau Đ48; bản trước giữ nguyên bên trên để tra lịch sử.** Từ 2026-09-23,
+`CREATE TYPE turn_decision AS ENUM (...)` ở §2.4 dưới đây thêm giá trị thứ tư
+`'action'` bằng `ALTER TYPE turn_decision ADD VALUE 'action'` trong
+`db/migrations/006_p05_action_layer.sql` (không sửa lại DDL gốc — Postgres không cho
+`DROP VALUE`, chỉ `ADD VALUE`, nên bảng DDL ở §2.4 vẫn giữ 3 giá trị cũ để khớp mốc
+D3, và giá trị thứ 4 được ghi rõ ở đây). Khi `decision='action'`, `lifecycle_state`
+tương ứng là `'answered'` (P05 coi hành động đã thực thi/đã bị chặn là một lượt đã trả
+lời xong, không phải một trạng thái mới). Nguồn: `plan.md` Đ48 mục 3, `reports/R23`.
+
 ### 2.4 — DDL enum
 
 ```sql
@@ -757,6 +768,68 @@ breaking change kéo theo Golden.
 
 Trường có hậu tố `_when_*` là **có điều kiện** — chỉ bắt buộc khi câu hỏi/nguồn cần
 phân biệt đó. CẤM dùng clarification để moi thêm dữ liệu cá nhân không cần thiết.
+
+#### 8.1.2 — Đ48: trường `action: ActionRequest` của A1 (2026-09-23)
+
+**Hợp đồng sau Đ48; bản `ClassifierInput`/`ClassifierOutput`/`CLASSIFIER_RESPONSE_SCHEMA`
+ở trên là bản TRƯỚC Đ48, giữ nguyên để tra lịch sử.** Từ 2026-09-23 (Đ48, thi công ở
+`reports/R23`), năm điểm sau ĐỔI HỢP ĐỒNG A1 đã duyệt:
+
+**1. `ClassifierOutputSchema` (Zod) thêm đúng một khoá `action`:**
+
+```ts
+export const ActionRequestSchema = z.object({
+  capability: z
+    .enum(["amenity.create_booking", "amenity.cancel_booking", "amenity.list_my_bookings"])
+    .nullable(),
+  facility_hint_vi: z.string().nullable(),
+  slot_start: z.string().nullable(),
+  slot_end: z.string().nullable(),
+  party_size: z.number().nullable(),
+  booking_ref: z.string().nullable(),
+  confirmed: z.boolean(),
+});
+
+export const EMPTY_ACTION_REQUEST = {
+  capability: null, facility_hint_vi: null, slot_start: null, slot_end: null,
+  party_size: null, booking_ref: null, confirmed: false,
+} as const satisfies ActionRequest;
+
+// trong ClassifierOutputSchema:
+  action: ActionRequestSchema.default({ ...EMPTY_ACTION_REQUEST }),
+```
+
+**2. `CLASSIFIER_RESPONSE_SCHEMA`** thêm `action` vào `properties`, vào `required` và vào
+`propertyOrdering` (giữ parity với Zod — `tests/adapter.test.ts::schema-parity` vẫn xanh).
+`capability` là `STRING` + `enum` 3 giá trị + `nullable: true`; `party_size` là `INTEGER`
++ `nullable: true`.
+
+**3. `ClassifierInput` thêm một trường BẮT BUỘC `server_time`:**
+
+```ts
+export interface ClassifierInput {
+  question_vi: string;
+  conversation_tail: Array<{ role: "user" | "assistant"; content_vi: string }>;
+  principal_summary: { owned_property_ids: string[]; property_type: string[] };
+  server_time: string;   // MỚI — ISO-8601 CÓ offset "+07:00", tôn trọng SIM_NOW
+}
+```
+
+`runClassifier` chỉ có đúng một nơi gọi (`lib/pipeline/index.ts`), nên `server_time`
+BẮT BUỘC chứ không tuỳ chọn — tuỳ chọn thì quên truyền sẽ im lặng và cảnh 23:39 sai lệch
+7 tiếng mà không ai đỏ (đây chính là G41, xem `-known-gotchas.md`).
+
+**4. Prompt A1 thêm khối `TRƯỜNG "action"`** — 3 capability, quy tắc `capability = null`
+cho câu HỎI, quy tắc `confirmed = true` cho câu xác nhận trống, quy đổi `slot_start` từ
+`server_time`, `intent = I-03` cho câu yêu cầu tiện ích, và `party_size` mặc định 1 khi
+cư dân không nói số người.
+
+**5. Tương thích ngược:** A1 cũ (và mọi transport giả viết trước Đ48) không trả `action`
+⇒ Zod `.default()` điền `EMPTY_ACTION_REQUEST` ⇒ lượt hỏi–đáp thường đi y như cũ.
+Đã đo: `pipeline-order` 5/5, `g3-on-topic` 8/8, `pii-other-party` 6/6, `citations` 4/4 đều
+xanh (`reports/R23`).
+
+Nguồn nguyên văn: `reports/R23_thi-cong_p05-pipeline-action.md` mục "THAY ĐỔI HỢP ĐỒNG A1".
 
 ### 8.2 — A2 `retriever` — `gemini-3.5-flash` ⚠ **có rủi ro chất lượng đã biết**
 

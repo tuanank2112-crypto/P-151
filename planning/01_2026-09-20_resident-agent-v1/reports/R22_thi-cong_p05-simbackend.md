@@ -162,3 +162,7 @@ Base `9cd093c` → Head `71ce548` (không phải commit của gói này — xem 
 
 ---
 ✅ ĐÃ HOÀN THÀNH (đo được): migration 006 áp dụng + idempotent, 14 facilities đúng 13/1 `has_authoritative_rules`, `MemorySimBackend`+`PostgresSimBackend` cài đủ `SimBackend`, `tsc` 0, test mới 14/14 (2 backend × 7 kịch bản), `validate_capabilities.mjs`/`validate_policy.mjs` đúng số đo P05-M1/M2, toàn repo `236/236` hai lần liên tiếp, `check_adapter_boundary.sh`/BB-10 đều `0`, `bookings` count trước=sau=0, 3 phép đo "phải đỏ" đã chứng minh đỏ đúng chỗ rồi khôi phục sạch.
+
+
+## Phụ lục (SO, 2026-09-23) — evidence gốc bị mất
+Thư mục `evidence/h19-simbackend/` do worker tạo ở ROOT repo (sai chỗ) đã bị SO xoá nhầm khi dọn root theo Luật Root Clean; các file bằng chứng ĐỎ (tắt guard/UNIQUE) của gói này không khôi phục được. SO đã đo lại các số xanh và lưu ở `evidence/h19-simbackend/*` (đánh dấu "tái tạo"). Bằng chứng đỏ được thay bằng phép đỏ của H20 (`evidence/h20-pipeline-action/01_red_proofs.txt`, cùng trục BB-03) và test `tests/p05-precheck-guard.test.ts` chạy xanh trên cả hai backend.

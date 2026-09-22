@@ -4,6 +4,26 @@
 
 ---
 
+## 🏁 Phiên 2026-09-23 (tiếp 2) — P05: agent thực thi thay cư dân (Đ48)
+
+### 🎯 Chỉ đạo: chủ tịch xem video demo, chốt Đ48 — mở khoá P05 TRƯỚC cổng, agent phải THỰC THI (đặt chỗ/huỷ) thay vì chỉ trả lời.
+SO phóng 3 worker song song: H19 backend mô phỏng (`lib/simbackend/`), H20 hợp đồng A1 + nhánh `action` (🔴), H21 UI biên nhận + `demo_2339.mjs`.
+
+### ✅ Đã làm (commit `9cd093c` → `77fe901`):
+- H19: migration 006 (14 facilities, bảng `bookings`/`receipts`/`pending_actions`), `MemorySimBackend`+`PostgresSimBackend`, 6 quyết định thực thi lệch SPEC (ghi ở SPEC-P05 §11).
+- H20: A1 thêm `action: ActionRequest` (Đ48, `01-CONTRACTS` §8.1.2), nhánh `action` trong `runTurn()`, `turn_decision` += `'action'`.
+- H21: thẻ kết quả 5 `ActionStatus`, `/chat/receipts` + Hoàn tác, `scripts/demo_2339.mjs`.
+- Vá múi giờ (G41, backend trả `Z` thay vì `+07:00`) — `toIctIso()` + `simNow()` làm đồng hồ mặc định pipeline.
+- Đồng bộ não đợt P05 (R25): `01-CONTRACTS` §2.3.bis/§8.1.2, `SPEC-P04` §4.1/4.2, `SPEC-P05` §11, `TESTING-ACCEPTANCE` §7 (G01/G04/G06/G07/G12/G14/G15/G19–G22 ✅ local), `plan.md`/`roadmap.md`/`changelog.md`/`index.md`/`-data-architecture.md`/`-known-gotchas.md` (G41, G42).
+
+### 📊 Số đo cuối (HEAD `77fe901`):
+tsc 0 · **236/236 test** (trước P05: 184) · BB-05/07/10 = 0 · P05-M1 `write_without_precheck: 0` · P05-M2 `separated: true` · `demo_2339.mjs` exit 0 (6 bước, 1 policy call, 0 lệnh ghi lúc 23:39; đặt được lúc 09:00; Hoàn tác giữ `undone_by`).
+
+### ⛔ Việc treo (từ `reports/R23`):
+render cột `actioned` lên JSX dashboard (`app/**`) · ghi `audit_log` thật khi `WriteTimeout` (cần thêm hàm vào `DataStore`) · `G03`/`G10` KHÔNG tick được — lệnh gate thật không khớp số ghi trong SPEC (xem `TESTING-ACCEPTANCE.md`).
+
+---
+
 ## 🏁 Phiên 2026-09-23 (tiếp) — Thi công đợt 1+2 sau audit, demo local chạy trọn
 
 ### 🎯 Chỉ đạo: *"tôi cần demo local trước. và duyệt cho bạn làm các bước tiếp theo"*.

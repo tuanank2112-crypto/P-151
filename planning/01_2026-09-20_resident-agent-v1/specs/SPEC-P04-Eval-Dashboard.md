@@ -185,13 +185,22 @@ Ba khối, trên xuống:
 
 ### 4.1 — Số chính: tỉ lệ tự động giải quyết
 
+**Cập nhật Đ48 (2026-09-23, theo `reports/R23`):** `decision` nay có 4 giá trị
+(`answer`, `clarify`, `escalate`, `action` — §2.3.bis của `01-CONTRACTS`). Một lệnh
+hành động **thi hành xong** (`status='done'`) là tự động giải quyết y như một câu trả
+lời có trích dẫn; một lệnh hành động bị **chặn** (`status='blocked'`) không phải. Vì
+`answer_turns.decision='action'` không tự phân biệt done/blocked, công thức
+`auto_resolved` đổi từ so khớp một giá trị sang so khớp MỘT TẬP:
+
 ```sql
 SELECT
-  count(*) FILTER (WHERE decision = 'answer')                             AS auto_resolved,
-  count(*) FILTER (WHERE decision = 'clarify')                            AS clarified,
-  count(*) FILTER (WHERE decision = 'escalate')                           AS escalated,
+  count(*) FILTER (WHERE decision IN ('answer','action'))                  AS auto_resolved,
+  count(*) FILTER (WHERE decision = 'answer')                              AS answered,
+  count(*) FILTER (WHERE decision = 'action')                              AS actioned,
+  count(*) FILTER (WHERE decision = 'clarify')                             AS clarified,
+  count(*) FILTER (WHERE decision = 'escalate')                            AS escalated,
   count(*)                                                                 AS total_turns,
-  round(100.0 * count(*) FILTER (WHERE decision='answer') / NULLIF(count(*),0), 2)
+  round(100.0 * count(*) FILTER (WHERE decision IN ('answer','action')) / NULLIF(count(*),0), 2)
     AS auto_resolution_rate_pct
 FROM answer_turns
 WHERE is_golden_run = false;          -- CHỈ lượt thật, không trộn lượt chạy Golden
@@ -203,18 +212,28 @@ chiều ngược lại. Đây là lỗi hay gặp nhất của cả gói.
 
 Mẫu số là **mọi lượt**, kể cả lượt bị từ chối — đó là lý do BB-11 tồn tại.
 
+**Việc treo (chưa làm, ghi ở `reports/R23` mục "Việc KHÔNG làm"):** cột `actioned`
+đã có sẵn ở nguồn số liệu (`AutoResolutionSummary.actioned`,
+`IntentBreakdownEntry.actioned` trong `lib/adapters/metrics-store.ts`) nhưng **chưa
+được render lên JSX của `/bql/dashboard`** — đó là việc của gói giữ `app/**`, không
+phải của H20. Panel §4.5 dưới đây mô tả trạng thái ĐÍCH sau khi render xong.
+
 ### 4.2 — Tách theo intent
 
 ```sql
 SELECT coalesce(detected_intent, 'unknown') AS intent,
        count(*) FILTER (WHERE decision='answer')   AS answered,
+       count(*) FILTER (WHERE decision='action')    AS actioned,
        count(*) FILTER (WHERE decision='clarify')  AS clarified,
        count(*) FILTER (WHERE decision='escalate') AS escalated,
        count(*)                                     AS total,
-       round(100.0*count(*) FILTER (WHERE decision='answer')/count(*), 2) AS rate_pct
+       round(100.0*count(*) FILTER (WHERE decision IN ('answer','action'))/count(*), 2) AS rate_pct
 FROM answer_turns WHERE is_golden_run = false
 GROUP BY 1 ORDER BY total DESC;
 ```
+
+Panel theo `decision` (bảng ở §4.5 dưới) nay có thêm đúng một dòng `action` bên cạnh
+`answer`/`clarify`/`escalate`, cùng cột `actioned` để đối chiếu số dòng.
 
 ### 4.3 — Tách theo lý do escalate
 

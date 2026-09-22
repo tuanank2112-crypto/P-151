@@ -35,6 +35,15 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 
 ## 🗺️ 2. BẢN ĐỒ CẤU TRÚC MÃ NGUỒN (Codebase Directory Map)
 
+> **Cập nhật 2026-09-23 (HEAD `77fe901`, sau P05/Đ48)** — đường dẫn MỚI thêm vào cây bên dưới:
+> `lib/simbackend/{contract,index,guard}.ts` (backend cư dân mô phỏng — 9 capability, precheck bắt buộc trước lệnh ghi) ·
+> `lib/pipeline/action.ts` (nhánh `action` của `runTurn()`) · `app/(resident)/chat/{action-view.ts,receipts/**}` (thẻ kết quả +
+> trang biên nhận/Hoàn tác) · `app/api/actions/undo/{route,logic}.ts` · `scripts/{demo_2339,validate_capabilities,
+> validate_policy}.mjs` · `db/migrations/006_p05_action_layer.sql` (enum `turn_decision` thêm `'action'`, bảng `bookings`/
+> `receipts`/`pending_actions`, seed 14 `facilities`) · `db/seed/facilities.json` · `tests/p05-*.test.ts` (9 file) +
+> `tests/_p05-helpers.ts` + `tests/_fake-simbackend.ts`. Chi tiết: `reports/R22–R24`, `evidence/so-p05/`,
+> `specs/SPEC-P05-Action-Layer.md` §11 (sai lệch cài đặt so với SPEC).
+>
 > **Cập nhật 2026-09-23 (HEAD `ed8dfca`)** — đường dẫn MỚI/ĐỔI so với cây bên dưới:
 > `app/api/conversations/route.ts` (GET lịch sử, 403 khi không phải chủ — R4) · `app/(bql)/layout.tsx` (nav 4 link + đăng xuất) ·
 > `app/(bql)/review/queue-logic.ts` (khoá nút theo state) · `lib/adapters/model.ts` (`agentModelChain`, chuỗi dự phòng `MODEL_A*`) ·
@@ -59,6 +68,10 @@ project-root/
 │   │                                 #   chỉ vai resident; cắt confidence + gate_triggered (BB-05);
 │   │                                 #   bảng lỗi SPEC-P02 §9 → mã HTTP; CẤM cache (P02-C8)
 │   ├── (resident)/chat/              #   [P02b] màn hỏi–đáp THẬT: trích dẫn, lý do từ chối, 9 chặng
+│   │   ├── action-view.ts            #   [P05] map thuần ActionResult → 5 ActionStatus cho thẻ kết quả
+│   │   └── receipts/{page,ReceiptsTable,actions}.tsx  # [P05] trang biên nhận + nút Hoàn tác
+│   ├── api/actions/undo/{route,logic}.ts  # [P05] POST Hoàn tác — logic tách khỏi route vì
+│   │                                 #   next/server không resolve dưới `node --test`
 │   └── (bql)/                        #   [P03/P04] Console BQL — nội dung THẬT, không còn khung rỗng
 │       ├── documents/{page.tsx,actions.ts,DocumentsTable.tsx,UploadPanel.tsx}
 │       │                             #     đọc 19 tài liệu thật; Server Action đổi status/
@@ -86,19 +99,41 @@ project-root/
 │   ├── eval/score.ts                 #   [MỚI] bộ chấm Golden DUY NHẤT, sao y SPEC-P00 §6.5, đủ
 │   │                                 #   cả 7 checkpoint (kể cả shows_conflict). eval_golden.mjs
 │   │                                 #   và metrics-store.ts đều import từ đây (Đ36/G25)
-│   └── adapters/{bql-store,metrics-store}.ts   # [P03/P04] bql-store: nơi DUY NHẤT truy vấn của
-│                                     #   Console BQL. metrics-store: đọc answer_turns + score.ts
-│                                     #   cho dashboard/eval
+│   ├── adapters/{bql-store,metrics-store}.ts   # [P03/P04] bql-store: nơi DUY NHẤT truy vấn của
+│   │                                 #   Console BQL. metrics-store: đọc answer_turns + score.ts
+│   │                                 #   cho dashboard/eval; [P05] có sẵn AutoResolutionSummary
+│   │                                 #   .actioned / IntentBreakdownEntry.actioned, CHƯA render UI
+│   └── pipeline/action.ts            #   [P05, MỚI] nhánh `action` trong runTurn() — precheck →
+│                                     #   ghi → biên nhận; lấy kiểu từ contract.ts, getSimBackend
+│                                     #   từ index.ts (tách đôi import, xem SPEC-P05 §11)
+├── lib/simbackend/                   # [P05, MỚI] backend cư dân MÔ PHỎNG — 9 capability (2 ghi,
+│   │                                 #   7 đọc), precheck bắt buộc trước lệnh ghi (BB-03)
+│   ├── contract.ts                   #   Hợp đồng CẤM sửa/xoá export (chỉ được THÊM)
+│   ├── index.ts                      #   MemorySimBackend + PostgresSimBackend + simNow()
+│   │                                 #   (tôn trọng SIM_NOW) + __setSimBackendForTesting
+│   └── guard.ts                      #   THUẦN, không chạm DB: assertPrechecked, toIctIso
+│                                     #   (mọi timestamp ra khỏi simbackend mang +07:00 — G41)
 ├── db/migrations/                    # **ĐÃ CHẠY THẬT trên Supabase 2026-09-21**, theo dõi bằng
 │   │                                 #   bảng `schema_migrations` (Đ30)
-│   └── 001_enums → 002_users → 003_knowledge → 004_operational → 005_user_property_type
-│                                     #   003 có immutable_unaccent — CẤM dùng unaccent() trần
-│                                     #   trong cột GENERATED (G18)
-│                                     #   005 idempotent: thêm users.property_type (Đ29)
-├── tests/                            # node:test — **134 ca** (trước: 82), không cần DB, không cần key
+│   ├── 001_enums → 002_users → 003_knowledge → 004_operational → 005_user_property_type
+│   │                                 #   003 có immutable_unaccent — CẤM dùng unaccent() trần
+│   │                                 #   trong cột GENERATED (G18)
+│   │                                 #   005 idempotent: thêm users.property_type (Đ29)
+│   └── 006_p05_action_layer.sql      # [P05, MỚI] turn_decision += 'action'; bảng bookings/
+│                                     #   receipts/pending_actions (VC-09, KHÔNG đụng bảng P02);
+│                                     #   seed 14 facilities; bookings_slot_uniq = UNIQUE INDEX
+│                                     #   riêng phần (không phải EXCLUDE — SPEC-P05 §11)
+├── db/seed/facilities.json           # [P05, MỚI] nguồn dữ liệu 14 tiện ích cho MemorySimBackend
+│                                     #   đọc runtime (tránh hardcode document_id — giữ BB-10 = 0)
+├── tests/                            # node:test — **236 ca** (trước P05: 184), không cần key
 │   ├── conflict-citations.test.ts    #   [MỚI] canh escalateResult() trả citations khi source_conflict
 │   ├── conversation-id.test.ts       #   [MỚI] canh conversation_id phải là uuid (Đ37/G26)
-│   └── scorer-consensus.test.ts      #   [MỚI] canh eval_golden.mjs và metrics-store.ts cùng verdict
+│   ├── scorer-consensus.test.ts      #   [MỚI] canh eval_golden.mjs và metrics-store.ts cùng verdict
+│   ├── p05-{precheck-guard,idempotency,quota,bb01-pickleball,cancel,write-timeout,
+│   │   policy-time-axes,pipeline-action,pipeline-a1-action,ui-action-card,
+│   │   ui-undo-route}.test.ts        #   [P05, MỚI] 49 ca — canh BB-03, chống trùng, hạn mức,
+│   │                                 #   BB-02 (hai trục thời gian), WriteTimeout, thẻ UI, Hoàn tác
+│   └── _{p05-helpers,fake-simbackend}.ts  # [P05, MỚI] helper dùng chung, KHÔNG phải file test
 ├── knowledge/                        # [MỚI - P00] Knowledge Pack MÔ PHỎNG, 19 tài liệu / 98 section
 │   ├── manifest.json                 #   siêu dữ liệu 19 tài liệu
 │   ├── sections/<document_id>.json   #   19 file, tên trùng document_id
@@ -133,7 +168,11 @@ project-root/
 │   ├── check_no_confidence_ui.sh     #   BB-05
 │   ├── migrate.mjs                   #   [Đ30] schema_migrations; --status (chỉ đọc) ·
 │   │                                 #   --baseline --to=<file> nhận DB đã migrate sẵn
-│   └── sql/dump_schema/seed_users/seed_knowledge.mjs  # ĐÃ CHẠY THẬT (DB có 19 doc / 98 chunk / 2 user)
+│   ├── sql/dump_schema/seed_users/seed_knowledge.mjs  # ĐÃ CHẠY THẬT (DB có 19 doc / 98 chunk / 2 user)
+│   ├── validate_capabilities.mjs     #   [P05, MỚI] P05-M1 — capabilities/write/write_without_precheck
+│   ├── validate_policy.mjs           #   [P05, MỚI] P05-M2 — BB-02, hai trục thời gian tách rời
+│   └── demo_2339.mjs                 #   [P05, MỚI] P05-M8/G22 — kịch bản 23:39 (SPEC-P05 §9), có
+│                                     #   precheck trước huỷ + tự dọn
 ├── brain4agent/                      # [BỘ NHỚ DỰ ÁN] Single Source of Truth
 │   ├── memory/hot/                   # [HOT MEMORY] Ký ức nóng phiên (today.md, state.json)
 │   ├── memory-distill.txt            # [KERNEL] Bản cô đọng tối thượng (< 100 dòng)

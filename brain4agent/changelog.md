@@ -2,6 +2,57 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-23 (tiếp): P05 — agent thực thi thay cư dân
+
+**Chưa tăng SemVer** — chưa deploy, `G11` chưa có số nghiệm thu; mục này ghi P05 thi
+công xong (Đ48), không phải release. Commit: `9cd093c` → `77fe901`.
+
+### Decisions
+- **Đ48 chốt hình thái P05** (`plan.md` §2): cư dân chat mục đích, agent tự đọc chính
+  sách → kiểm điều kiện → ghi → trả biên nhận, không hiển thị từng bước; A1 thêm
+  `action: ActionRequest` (đổi hợp đồng đã duyệt, `01-CONTRACTS` §8.1.2); `turn_decision`
+  thêm `'action'` (§2.3.bis, migration 006).
+- **6 sai lệch cài đặt so với văn bản SPEC**, không đổi hành vi quan sát được — ghi đủ ở
+  `specs/SPEC-P05-Action-Layer.md` §11: UNIQUE INDEX riêng phần thay `EXCLUDE USING
+  btree` (thiếu extension `btree_gist` trên Supabase); `actor_user_id` tra qua
+  `users.resident_id`; `blockingReasonsToReasonCode()` mặc định `unsupported_intent`
+  ngoài ca `quota_exceeded`; định nghĩa tường minh `too_early`/`too_late`; mọi
+  timestamp simbackend phát ra mang `+07:00` (`toIctIso`, vá G41); `createBooking`/
+  `cancelBooking` trả biên nhận đã có khi trùng (đúng B5).
+
+### Added
+- `lib/simbackend/` (`contract.ts`, `index.ts` — `MemorySimBackend`+`PostgresSimBackend`,
+  `guard.ts`), `lib/pipeline/action.ts`, `db/migrations/006_p05_action_layer.sql`,
+  `db/seed/facilities.json` (14 tiện ích), `scripts/{validate_capabilities,
+  validate_policy,demo_2339}.mjs`, `app/(resident)/chat/receipts/**`,
+  `app/api/actions/undo/**`, 9 file `tests/p05-*` + `tests/_p05-helpers.ts` +
+  `tests/_fake-simbackend.ts` (49 test mới).
+- Hồ sơ: `handoffs/H19–H21`, `reports/R22–R24`, `evidence/{h20-pipeline-action,
+  h21-ui-demo2339,so-p05}`.
+
+### Fixed
+- Múi giờ backend trả `Z` (UTC) dù hợp đồng đòi `+07:00` ⇒ câu trả lời lệch 7 giờ ở
+  demo 23:39 — vá bằng `toIctIso` + `simNow()` làm đồng hồ mặc định của pipeline (G41).
+- Trùng idempotency key/slot ⇒ nay trả lại biên nhận đã có thay vì chỉ báo lỗi
+  (`action.ts`, đúng B5).
+
+### Đo được (HEAD `77fe901`)
+`tsc --noEmit` exit 0 · `node --env-file=.env.local scripts/run_tests.mjs` **236/236
+pass, 0 fail, 0 skip** · `check_no_hardcoded_knowledge.sh`/`check_adapter_boundary.sh`/
+`check_no_confidence_ui.sh` đều `matches/violations: 0` (BB-05/07/10) ·
+`validate_capabilities.mjs` ⇒ `capabilities: 9 · write: 2 · write_without_precheck: 0`
+(P05-M1) · `validate_policy.mjs` ⇒ `separated: true` (P05-M2) · `demo_2339.mjs` **exit
+0**: 6 bước, 1 lời gọi `getBookingPolicy`, 0 lệnh ghi lúc 23:39; đặt được lúc 09:00
+(`receipt_code=RC-…`); Hoàn tác giữ biên nhận gốc kèm `undone_by`. Bằng chứng:
+`evidence/so-p05/demo_2339_exit0.txt`, `evidence/so-p05/p05_m1.txt`,
+`evidence/so-p05/p05_m2.txt`, `evidence/so-p05/tests_236.txt`.
+
+### Còn treo
+Render cột `actioned` lên JSX `/bql/dashboard` (số liệu đã có ở
+`lib/adapters/metrics-store.ts`, chỉ thiếu phần `app/**`) · ghi `audit_log` thật khi
+`WriteTimeout` (hiện chỉ có sink test-only) · deploy Vercel · Golden trên chuỗi model
+mới (G11) · `demo_r7.mjs` chưa có evidence exit 0 (G09, hạn mức A2).
+
 ## [Chưa phát hành] - 2026-09-23: audit trước demo, bốn lỗi chặn cứng đã vá, demo local chạy trọn
 
 **Chưa tăng SemVer** — G11 chưa có số nghiệm thu, chưa deploy; mục này ghi quyết định và số đo, không phải release. Commit: `422a756` → `ed8dfca` (+ đợt này).
