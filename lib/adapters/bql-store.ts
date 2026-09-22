@@ -31,6 +31,16 @@ export function checkBqlAuthz(session: SessionPayload | null): AuthzVerdict {
   return { ok: true };
 }
 
+/** H16 W2 — email hiển thị trên thanh nav BQL. `SessionPayload` chỉ giữ
+ *  `user_id` (`lib/auth/session.ts`), nên tra ngược sang `email` ở đây thay
+ *  vì mở rộng payload cookie (ngoài phạm vi gói này). `null` khi không tìm
+ *  thấy — layout tự chọn cách hiển thị rỗng, không ném lỗi vỡ trang. */
+export async function getUserEmail(userId: string): Promise<string | null> {
+  const sql = getSql();
+  const rows = await sql<{ email: string }>(`SELECT email FROM users WHERE id = $1`, [userId]);
+  return rows[0]?.email ?? null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // 1. Vòng đời tài liệu [R7] — SPEC-P03 §2
 // ─────────────────────────────────────────────────────────────────────────
@@ -670,6 +680,9 @@ export async function listReviewQueue(
     conditions.push(`r.state = $${params.length}`);
   }
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  // H16 W3 — pending trước (còn việc phải làm), mới nhất trước trong mỗi
+  // nhóm. `(r.state = 'pending')` là boolean: `true` (pending) sắp trước
+  // `false` khi ORDER BY ... DESC.
   return sql<ReviewQueueRow>(
     `SELECT r.id AS review_id, r.answer_turn_id, r.state, a.question_vi,
             a.reason_code, r.original_draft_vi, r.edited_draft_vi, a.citations,
@@ -677,7 +690,7 @@ export async function listReviewQueue(
      FROM review_queue r
      JOIN answer_turns a ON a.id = r.answer_turn_id
      ${where}
-     ORDER BY r.created_at DESC`,
+     ORDER BY (r.state = 'pending') DESC, r.created_at DESC`,
     params
   );
 }

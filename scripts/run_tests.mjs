@@ -24,8 +24,16 @@ if (filter && matched.length === 0) {
 }
 
 const files = matched.map((f) => path.join("tests", f));
+// G39 (2026-09-23): bộ test lấy kho MOCK làm nền — test nào cần Postgres thật
+// tự ép `process.env.DATA_BACKEND = "postgres"` trong mã (memory, conversation-id,
+// conflict-citations, eval-golden-injection, chat-history, hitl-enqueue). Kể từ
+// khi `.env.local` có `DATA_BACKEND=postgres` cho demo, gọi runner kèm
+// `--env-file=.env.local` từng kéo cả các test thiết kế cho mock (vd
+// eligibility-top) lên Postgres và đỏ sai (`scope_mismatch`). Ghim mock ở đây,
+// KHÔNG sửa từng test.
 const result = spawnSync(process.execPath, ["--test", ...files], {
   stdio: "inherit",
   cwd: path.join(__dirname, ".."),
+  env: { ...process.env, DATA_BACKEND: "mock" },
 });
 process.exitCode = result.status ?? 1;

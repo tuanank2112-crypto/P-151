@@ -20,6 +20,8 @@ import { __setTransportForTesting } from "../lib/adapters/model.ts";
 import { __resetDataStoreForTesting, getDataStore } from "../lib/adapters/db.ts";
 import { runTurn } from "../lib/pipeline/index.ts";
 import type { Principal } from "../lib/types.ts";
+import { makeSql } from "../scripts/_pg.mjs";
+import { deleteConversations } from "./_pg-cleanup.ts";
 
 loadLocalEnv();
 requireEnv(["DATABASE_URL"]);
@@ -72,14 +74,29 @@ test.afterEach(() => {
   __setTransportForTesting(null);
 });
 
+// H17 W2 (G37): gom `conversation_id` mỗi test tạo ra (runTurn tự tạo hàng
+// `conversations` — createConversationIfMissing, Đ37), xoá hết ở cuối file.
+const createdConversationIds: string[] = [];
+test.after(async () => {
+  if (createdConversationIds.length === 0) return;
+  const sql = makeSql(process.env.DATABASE_URL!);
+  try {
+    await deleteConversations(sql, createdConversationIds);
+  } finally {
+    await sql.end();
+  }
+});
+
 test("Đ38 (thật, Postgres, DEF-03): G1_conflict trả >= 2 citations, mọi section_id thuộc đúng conflict_group CG-BBQ-CAPACITY", async () => {
   __setTransportForTesting({
     fetch: async () => geminiText(classifierBody()),
     sleep: async () => {},
   });
 
+  const conversationId = crypto.randomUUID();
+  createdConversationIds.push(conversationId);
   const result = await runTurn({
-    conversation_id: crypto.randomUUID(),
+    conversation_id: conversationId,
     question_vi: "Vườn BBQ cho tối đa bao nhiêu người một lượt?",
     principal: RESIDENT,
   });
@@ -118,8 +135,10 @@ test("Đ38 — đối chứng: escalate KHÁC gate (chặng 5 — risk/hard-bloc
     sleep: async () => {},
   });
 
+  const conversationId = crypto.randomUUID();
+  createdConversationIds.push(conversationId);
   const result = await runTurn({
-    conversation_id: crypto.randomUUID(),
+    conversation_id: conversationId,
     question_vi: "Tôi muốn khởi kiện đòi bồi thường vì căn hộ bị hư hỏng.",
     principal: RESIDENT,
   });

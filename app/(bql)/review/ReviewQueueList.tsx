@@ -7,6 +7,7 @@ import { useState, useTransition } from "react";
 import type { ReviewQueueRow, ReviewError } from "../../../lib/adapters/bql-store.ts";
 import type { Citation } from "../../../lib/types.ts";
 import { reasonMessageVi } from "../../../lib/reason-messages.ts";
+import { isReviewRowLocked, sortReviewQueueRows } from "./queue-logic.ts";
 
 type ReviewResult = { ok: true } | { ok: false; error: ReviewError };
 
@@ -24,8 +25,16 @@ function toCitations(raw: unknown): Citation[] {
   return Array.isArray(raw) ? (raw as Citation[]) : [];
 }
 
+/** H16 W3 — nhãn tiếng Việt cho `state` khi hàng đã khoá (không còn pending),
+ *  hiện thay vì 3 nút hành động (SPEC-P03 §3.3). */
+const STATE_LABEL_VI: Record<Exclude<ReviewQueueRow["state"], "pending">, string> = {
+  approved: "Đã duyệt",
+  edited_approved: "Đã duyệt (đã sửa)",
+  rejected: "Đã từ chối",
+};
+
 export function ReviewQueueList({ rows: initialRows, onApprove, onEditAndApprove, onReject }: Props) {
-  const [rows, setRows] = useState(initialRows);
+  const [rows, setRows] = useState(() => sortReviewQueueRows(initialRows));
   const [pending, startTransition] = useTransition();
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [reasons, setReasons] = useState<Record<string, string>>({});
@@ -70,6 +79,8 @@ export function ReviewQueueList({ rows: initialRows, onApprove, onEditAndApprove
       {rows.map((r) => {
         const citations = toCitations(r.citations);
         const err = errorById[r.review_id];
+        const locked = isReviewRowLocked(r.state);
+        const disabled = pending || locked;
         return (
           <li key={r.review_id} className="bql-review-item">
             <p className="bql-review-item__question">
@@ -94,48 +105,54 @@ export function ReviewQueueList({ rows: initialRows, onApprove, onEditAndApprove
                 ))}
               </ul>
             )}
-            <div className="bql-review-item__actions">
-              <button
-                type="button"
-                className="btn btn--primary"
-                disabled={pending}
-                onClick={() => handleApprove(r.review_id)}
-              >
-                Duyệt
-              </button>
-              <textarea
-                placeholder="Sửa bản trả lời rồi duyệt (≥10 ký tự)…"
-                disabled={pending}
-                value={drafts[r.review_id] ?? ""}
-                onChange={(e) =>
-                  setDrafts((prev) => ({ ...prev, [r.review_id]: e.target.value }))
-                }
-              />
-              <button
-                type="button"
-                className="btn"
-                disabled={pending}
-                onClick={() => handleEditAndApprove(r.review_id)}
-              >
-                Sửa rồi duyệt
-              </button>
-              <textarea
-                placeholder="Lý do từ chối (≥10 ký tự, bắt buộc)…"
-                disabled={pending}
-                value={reasons[r.review_id] ?? ""}
-                onChange={(e) =>
-                  setReasons((prev) => ({ ...prev, [r.review_id]: e.target.value }))
-                }
-              />
-              <button
-                type="button"
-                className="btn btn--ghost"
-                disabled={pending}
-                onClick={() => handleReject(r.review_id)}
-              >
-                Từ chối
-              </button>
-            </div>
+            {locked ? (
+              <p className="bql-review-item__state">
+                <strong>Trạng thái:</strong> {STATE_LABEL_VI[r.state as Exclude<ReviewQueueRow["state"], "pending">]}
+              </p>
+            ) : (
+              <div className="bql-review-item__actions">
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  disabled={disabled}
+                  onClick={() => handleApprove(r.review_id)}
+                >
+                  Duyệt
+                </button>
+                <textarea
+                  placeholder="Sửa bản trả lời rồi duyệt (≥10 ký tự)…"
+                  disabled={disabled}
+                  value={drafts[r.review_id] ?? ""}
+                  onChange={(e) =>
+                    setDrafts((prev) => ({ ...prev, [r.review_id]: e.target.value }))
+                  }
+                />
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={disabled}
+                  onClick={() => handleEditAndApprove(r.review_id)}
+                >
+                  Sửa rồi duyệt
+                </button>
+                <textarea
+                  placeholder="Lý do từ chối (≥10 ký tự, bắt buộc)…"
+                  disabled={disabled}
+                  value={reasons[r.review_id] ?? ""}
+                  onChange={(e) =>
+                    setReasons((prev) => ({ ...prev, [r.review_id]: e.target.value }))
+                  }
+                />
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  disabled={disabled}
+                  onClick={() => handleReject(r.review_id)}
+                >
+                  Từ chối
+                </button>
+              </div>
+            )}
             {err && <p className="bql-cell-error">{err}</p>}
           </li>
         );

@@ -1,0 +1,3 @@
+# W4 — bash scripts/check_adapter_boundary.sh
+violations: 0
+EXIT:0

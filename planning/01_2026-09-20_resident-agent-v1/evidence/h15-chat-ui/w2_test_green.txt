@@ -1,0 +1,12 @@
+✔ H15 W2 — id của người khác (bql) yêu cầu hội thoại của resident ⇒ 403 (1434.552ms)
+✔ H15 W2 — id không tồn tại ⇒ 403 (không phân biệt 'không có' với 'không thuộc bạn') (290.4929ms)
+✔ H15 W2 — id của chính mình ⇒ đúng số tin nhắn đã ghi (listMessages) (2303.2307ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 17676.5254
+EXIT:0

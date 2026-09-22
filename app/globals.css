@@ -213,6 +213,44 @@ main {
   margin-top: 0.75rem;
 }
 
+/* ── H16 W2 · Thanh điều hướng BQL (G35 — trước đây không có đường sang
+   /review, /dashboard, /eval, không có nút đăng xuất) ── */
+.bql-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #d3d6de;
+  background: #fff;
+}
+.bql-nav__links {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.bql-nav__links a {
+  color: #16181c;
+  text-decoration: none;
+  font-weight: 600;
+}
+.bql-nav__links a:hover {
+  text-decoration: underline;
+}
+.bql-nav__session {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.bql-nav__email {
+  color: #5b6070;
+  font-size: 0.85rem;
+}
+.bql-nav__session form {
+  margin: 0;
+}
+
 /* ── P03 · Console BQL (documents + review) ── */
 .bql-console {
   max-width: 960px;

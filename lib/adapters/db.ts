@@ -11,6 +11,7 @@
 import pg from "pg";
 import { createHash } from "node:crypto";
 import { buildLexicalQuery } from "../retrieval/query.ts";
+import { reasonMessageVi } from "../reason-messages.ts";
 import type {
   Citation,
   ClaimVerdict,
@@ -384,6 +385,16 @@ class PostgresDataStore implements DataStore {
     );
   }
 
+  /**
+   * Ghi `answer_turns`, và khi `decision === 'escalate'` **và**
+   * `is_golden_run === false`, ghi thêm đúng một dòng `review_queue` pending
+   * trong CÙNG câu SQL (một statement = một transaction ngầm định, giống
+   * `uploadDocument()` ở `bql-store.ts`) — SPEC-P03 §3.1, gói H16 W1. Golden
+   * run KHÔNG vào hàng đợi (quyết định chốt bởi SO 🔴, handoff H16 §3 W1):
+   * script đo tự lo fixture riêng, tránh nhuộm hàng đợi HITL thật.
+   * `original_draft_vi` = câu từ chối hiển thị cho cư dân
+   * (`reasonMessageVi`), tiền tố `[Từ chối tự động · <reason_code>] `.
+   */
   async insertAnswerTurn(input: AnswerTurnInput): Promise<{ id: string }> {
     if (!isValidUuid(input.conversation_id)) {
       throw new Error(
@@ -392,13 +403,27 @@ class PostgresDataStore implements DataStore {
       );
     }
     const sql = getSql();
+    const willEnqueue = input.decision === "escalate" && input.is_golden_run === false;
+    const originalDraftVi = willEnqueue
+      ? `[Từ chối tự động · ${input.reason_code ?? "system_error"}] ${reasonMessageVi(input.reason_code)}`
+      : "";
     const rows = await sql<{ id: string }>(
-      `INSERT INTO answer_turns (
-         conversation_id, user_message_id, assistant_message_id, question_vi,
-         detected_intent, lifecycle_state, decision, reason_code, confidence,
-         gate_triggered, citations, claims, latency_ms, is_golden_run, golden_case_id
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
-       RETURNING id`,
+      `WITH new_turn AS (
+         INSERT INTO answer_turns (
+           conversation_id, user_message_id, assistant_message_id, question_vi,
+           detected_intent, lifecycle_state, decision, reason_code, confidence,
+           gate_triggered, citations, claims, latency_ms, is_golden_run, golden_case_id
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+         RETURNING id
+       ),
+       new_review AS (
+         INSERT INTO review_queue (answer_turn_id, state, original_draft_vi)
+         SELECT id, 'pending', $16
+         FROM new_turn
+         WHERE $7 = 'escalate' AND $14 = false
+         RETURNING id
+       )
+       SELECT id FROM new_turn`,
       [
         input.conversation_id,
         input.user_message_id,
@@ -415,6 +440,7 @@ class PostgresDataStore implements DataStore {
         input.latency_ms,
         input.is_golden_run,
         input.golden_case_id,
+        originalDraftVi,
       ]
     );
     return { id: rows[0]!.id };

@@ -17,3 +17,7 @@ dist/
 # Day la trang thai chay do, KHONG phai bang chung nghiem thu — bang chung
 # dat trong planning/**/evidence/ va duoc commit.
 evals/runs/
+
+# AI usage log hook (BTC AI20K, mau origin/feature/truong — G38). Giu .gitkeep.
+.ai-log/*.jsonl
+.ai-log/archive/

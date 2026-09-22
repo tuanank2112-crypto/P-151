@@ -8,7 +8,7 @@
 // CẤM streaming token (P02-C9): một lượt hỏi = một lời đáp trọn vẹn.
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PublicTurnResult } from "../../../lib/types";
 
 interface ChatResponseBody {
@@ -16,6 +16,8 @@ interface ChatResponseBody {
   result: PublicTurnResult;
   message_vi: string;
   can_retry: boolean;
+  /** `id` hội thoại đã dùng — máy chủ luôn trả kèm ở nhánh 200 (G33). */
+  conversation_id?: string;
 }
 
 interface Turn {
@@ -23,6 +25,41 @@ interface Turn {
   question_vi: string;
   body: ChatResponseBody | null;
   failed_network: boolean;
+}
+
+/** Một dòng `messages` đọc lại từ `GET /api/conversations` (R4). Chỉ có
+ *  `role`/`content_vi` — không có citations/steps (bảng `messages` không
+ *  giữ, xem `app/api/conversations/route.ts`). */
+interface HistoryMessage {
+  id: string;
+  role: "user" | "assistant";
+  content_vi: string;
+}
+
+// Khoá lưu `conversation_id` ở trình duyệt (G33/R4). KHÔNG khoá theo user:
+// JS phía client không đọc được cookie phiên (`httpOnly`, `lib/auth/session.ts`)
+// nên không có id user để làm khoá riêng mà không thêm một lời gọi mạng nữa.
+// Phương án đơn giản nhất trong phạm vi cho phép (không đụng `lib/adapters/**`):
+// dùng một khoá chung; nếu trình duyệt dùng chung cho user khác, id cũ không
+// thuộc user mới ⇒ `GET /api/conversations` trả 403 ⇒ xử lý im lặng, bắt đầu
+// hội thoại mới (đúng hành vi handoff H15 W2 yêu cầu, không hiện lỗi đỏ).
+const STORAGE_KEY = "resident_agent_conversation_id";
+
+function loadStoredConversationId(): string {
+  try {
+    return window.localStorage.getItem(STORAGE_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function saveStoredConversationId(id: string): void {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, id);
+  } catch {
+    // localStorage có thể chặn (chế độ riêng tư) — mất tiện lợi nạp lại lịch
+    // sử, không phải lỗi chặn UI (NFR-02).
+  }
 }
 
 const GOI_Y = [
@@ -36,9 +73,31 @@ export default function ChatPage() {
   const [question, setQuestion] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busy, setBusy] = useState(false);
-  const conversationId = useRef<string>(
-    typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "conv-local"
-  );
+  const [history, setHistory] = useState<HistoryMessage[]>([]);
+  // "" ở lượt đầu ⇒ route tự tạo hội thoại và trả `conversation_id` (G33).
+  const conversationId = useRef<string>("");
+
+  useEffect(() => {
+    const stored = loadStoredConversationId();
+    if (!stored) return;
+    conversationId.current = stored;
+    (async () => {
+      try {
+        const res = await fetch(`/api/conversations?conversation_id=${encodeURIComponent(stored)}`);
+        if (!res.ok) {
+          // Id không hợp lệ/không thuộc user hiện tại (403) hoặc lỗi khác:
+          // bỏ qua, bắt đầu hội thoại mới, KHÔNG hiện lỗi đỏ (handoff H15 W2).
+          conversationId.current = "";
+          saveStoredConversationId("");
+          return;
+        }
+        const data = (await res.json()) as { messages: HistoryMessage[] };
+        setHistory(data.messages ?? []);
+      } catch {
+        // Tầng 1 (mạng) — im lặng, coi như chưa nạp được lịch sử cũ.
+      }
+    })();
+  }, []);
 
   async function ask(text: string) {
     const q = text.trim();
@@ -54,6 +113,10 @@ export default function ChatPage() {
         body: JSON.stringify({ question_vi: q, conversation_id: conversationId.current }),
       });
       const body = (await res.json()) as ChatResponseBody;
+      if (body.conversation_id) {
+        conversationId.current = body.conversation_id;
+        saveStoredConversationId(body.conversation_id);
+      }
       setTurns((prev) => prev.map((t) => (t.id === id ? { ...t, body } : t)));
     } catch {
       // Tầng 1 (mạng/hạ tầng) — không để màn hình trắng (NFR-02).
@@ -80,7 +143,7 @@ export default function ChatPage() {
         </form>
       </header>
 
-      {turns.length === 0 && (
+      {turns.length === 0 && history.length === 0 && (
         <section className="suggest">
           <p className="suggest__label">Thử một câu:</p>
           <ul>
@@ -93,6 +156,18 @@ export default function ChatPage() {
             ))}
           </ul>
         </section>
+      )}
+
+      {history.length > 0 && (
+        <ol className="thread thread--history">
+          {history.map((m) => (
+            <li key={m.id} className={m.role === "user" ? "turn" : "turn turn--history-bot"}>
+              <p className={m.role === "user" ? "bubble bubble--me" : "bubble bubble--bot"}>
+                {m.content_vi}
+              </p>
+            </li>
+          ))}
+        </ol>
       )}
 
       <ol className="thread">
@@ -177,6 +252,9 @@ function TurnView({ body, onRetry }: { body: ChatResponseBody; onRetry: () => vo
               <li key={`${s.step}-${i}`}>
                 {s.step}
                 {s.model ? ` · ${s.model}` : ""} · {s.ms}ms
+                {s.input_tokens != null || s.output_tokens != null
+                  ? ` · ${s.input_tokens ?? 0}/${s.output_tokens ?? 0} tokens`
+                  : ""}
               </li>
             ))}
           </ol>

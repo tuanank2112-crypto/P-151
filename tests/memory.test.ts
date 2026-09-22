@@ -23,6 +23,7 @@ import { __setTransportForTesting } from "../lib/adapters/model.ts";
 import { __resetDataStoreForTesting, getDataStore } from "../lib/adapters/db.ts";
 import { runTurn } from "../lib/pipeline/index.ts";
 import type { Principal } from "../lib/types.ts";
+import { deleteConversations } from "./_pg-cleanup.ts";
 
 loadLocalEnv();
 requireEnv(["DATABASE_URL"]);
@@ -99,11 +100,25 @@ test.afterEach(() => {
   __setTransportForTesting(null);
 });
 
+// H17 W2 (G37): gom `conversation_id` mỗi test tạo ra, xoá hết ở cuối file —
+// cascade tự xoá messages/answer_turns/review_queue (db/migrations/004).
+const createdConversationIds: string[] = [];
+test.after(async () => {
+  if (createdConversationIds.length === 0) return;
+  const sql = makeSql(process.env.DATABASE_URL!);
+  try {
+    await deleteConversations(sql, createdConversationIds);
+  } finally {
+    await sql.end();
+  }
+});
+
 test("BB-11: nhánh escalate (risk gate ở chặng 5, KHÔNG ném lỗi, KHÔNG chạm A2/A3) ghi đúng MỘT answer_turns", async () => {
   const sql = makeSql(process.env.DATABASE_URL!);
   try {
     const store = await getDataStore();
     const conv = await store.createConversation(RESIDENT.user_id);
+    createdConversationIds.push(conv.id);
     const before = await countAnswerTurns(sql, conv.id);
 
     // Chặng 5 (risk, `hitsRiskKeyword`) khớp trên CHÍNH VĂN BẢN câu hỏi gốc
@@ -142,6 +157,7 @@ test("BB-11: nhánh NÉM LỖI (429 hết retry ở A2) vẫn ghi đúng MỘT a
   try {
     const store = await getDataStore();
     const conv = await store.createConversation(RESIDENT.user_id);
+    createdConversationIds.push(conv.id);
     const before = await countAnswerTurns(sql, conv.id);
 
     // A1 trả bình thường (đi tới chặng draft), A2 luôn 429 — kể cả các lần
@@ -185,6 +201,7 @@ test("R4/W3: hai messages mỗi lượt (hỏi + đáp) khi decision=answer, use
   try {
     const store = await getDataStore();
     const conv = await store.createConversation(RESIDENT.user_id);
+    createdConversationIds.push(conv.id);
 
     __setTransportForTesting({
       fetch: sequentialFetch([
@@ -250,6 +267,7 @@ test("W3: conversation_id do route tạo (createConversation) và hội thoại 
   try {
     const store = await getDataStore();
     const conv = await store.createConversation(RESIDENT.user_id);
+    createdConversationIds.push(conv.id);
 
     const owner = await store.getConversationOwner(conv.id);
     assert.equal(owner, RESIDENT.user_id);
@@ -283,6 +301,7 @@ test("BB-11 (R11): nhánh clarify (chặng 4 — thiếu required_context) vẫn
   try {
     const store = await getDataStore();
     const conv = await store.createConversation(RESIDENT.user_id);
+    createdConversationIds.push(conv.id);
     const before = await countAnswerTurns(sql, conv.id);
 
     // Chặng 4 chỉ đối chiếu `missing_required_fields` do CHÍNH A1 trả về

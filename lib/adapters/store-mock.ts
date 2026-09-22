@@ -15,6 +15,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { RetrievedChunk } from "../types.ts";
 import { hashPassword } from "../auth/password.ts";
+import { reasonMessageVi } from "../reason-messages.ts";
 import { isValidUuid } from "./db.ts";
 import type {
   AnswerTurnInput,
@@ -251,6 +252,30 @@ const hashCache = new Map<string, string>();
  */
 const mockConversationOwners = new Map<string, string>();
 
+/**
+ * H16 W1 — mock KHÔNG có bảng `review_queue` thật (chỉ Postgres mới bền,
+ * xem ghi chú `insertAnswerTurn` ở trên), nhưng vẫn phải giữ ĐÚNG hình dạng
+ * điều kiện enqueue như Postgres (Đ43: mock không dễ tính hơn Postgres về
+ * hình dạng dữ liệu) — ghi vào mảng nội bộ này, chỉ `tests/` đọc được qua
+ * `__getMockReviewQueueForTesting()` / `__resetMockReviewQueueForTesting()`.
+ */
+interface MockReviewQueueRow {
+  answer_turn_id: string;
+  state: "pending";
+  original_draft_vi: string;
+}
+const mockReviewQueue: MockReviewQueueRow[] = [];
+
+/** CHỈ dùng trong tests/: đọc lại các dòng đã "enqueue" ở kho mock. */
+export function __getMockReviewQueueForTesting(): readonly MockReviewQueueRow[] {
+  return mockReviewQueue;
+}
+
+/** CHỈ dùng trong tests/: xoá mảng "hàng đợi" mock giữa các ca test. */
+export function __resetMockReviewQueueForTesting(): void {
+  mockReviewQueue.length = 0;
+}
+
 class MockDataStore implements DataStore {
   readonly backend = "mock" as const;
 
@@ -288,7 +313,15 @@ class MockDataStore implements DataStore {
           `Dùng conversationIdFromLabel() trước khi gọi (Đ37/Đ43).`
       );
     }
-    return { id: crypto.randomUUID() };
+    const id = crypto.randomUUID();
+    if (input.decision === "escalate" && input.is_golden_run === false) {
+      mockReviewQueue.push({
+        answer_turn_id: id,
+        state: "pending",
+        original_draft_vi: `[Từ chối tự động · ${input.reason_code ?? "system_error"}] ${reasonMessageVi(input.reason_code)}`,
+      });
+    }
+    return { id };
   }
 
   async getConversationOwner(conversationId: string): Promise<string | null> {

@@ -1,0 +1,20 @@
+
+> resident-agent-v1@1.0.0 build
+> next build
+
+   ▲ Next.js 15.5.25
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 10.6s
+   Linting and checking validity of types ...
+   Collecting page data ...
+[Error [PageNotFoundError]: Cannot find module for page: /api/auth/logout] {
+  code: 'ENOENT'
+}
+
+> Build error occurred
+[Error: Failed to collect page data for /api/auth/logout] {
+  type: 'Error'
+}
+build exit=1

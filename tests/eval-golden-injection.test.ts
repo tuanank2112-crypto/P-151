@@ -31,6 +31,18 @@ import type { Principal } from "../lib/types.ts";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { deleteConversations } from "./_pg-cleanup.ts";
+
+// H17 W2 (G37): gom `conversation_id` mỗi test tạo ra (appendMessage tự tạo
+// hàng `conversations` — createConversationIfMissing, Đ37 — kể cả khi lượt
+// đó ném lỗi 429), xoá hết ở cuối file.
+const createdConversationIds: string[] = [];
+test.after(async () => {
+  if (createdConversationIds.length === 0) return;
+  const { getSql } = await import("../lib/adapters/db.ts");
+  const sql = getSql();
+  await deleteConversations(sql, createdConversationIds);
+});
 
 loadLocalEnv();
 requireEnv(["DATABASE_URL"]);

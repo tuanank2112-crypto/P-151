@@ -17,6 +17,22 @@ import {
 } from "../lib/adapters/db.ts";
 import { runTurn } from "../lib/pipeline/index.ts";
 import type { Principal } from "../lib/types.ts";
+import { deleteConversations } from "./_pg-cleanup.ts";
+
+// H17 W2 (G37): gom `conversation_id` các test tích hợp tạo ra thật trên
+// Postgres, xoá hết ở cuối file — cascade tự xoá messages/answer_turns
+// (db/migrations/004). Phần "thuần" (conversationIdFromLabel/isValidUuid)
+// không chạm DB nên không cần gom.
+const createdConversationIds: string[] = [];
+test.after(async () => {
+  if (createdConversationIds.length === 0) return;
+  const sql = makeSql(process.env.DATABASE_URL!);
+  try {
+    await deleteConversations(sql, createdConversationIds);
+  } finally {
+    await sql.end();
+  }
+});
 
 loadLocalEnv();
 requireEnv(["DATABASE_URL"]);
@@ -167,6 +183,7 @@ test("Đ37 (thật, Postgres): runTurn() với conversation_id = conversationIdF
     const label = `golden-faq-uuid-e2e-${Date.now()}`; // nhãn mới tinh, chưa ai tạo hội thoại
     const conversationId = conversationIdFromLabel(label);
     assert.equal(isValidUuid(conversationId), true);
+    createdConversationIds.push(conversationId);
 
     __setTransportForTesting({
       fetch: async () =>
@@ -233,6 +250,7 @@ test("Đ37 (thật, Postgres) — TẤT ĐỊNH qua 'resume': gọi runTurn() HA
     const idFirstCall = conversationIdFromLabel(label);
     const idSecondCall = conversationIdFromLabel(label); // mô phỏng lượt --resume gọi lại
     assert.equal(idFirstCall, idSecondCall, "cùng nhãn phải ra cùng uuid giữa hai lượt chạy");
+    createdConversationIds.push(idFirstCall); // idSecondCall === idFirstCall, một id là đủ
 
     const unsupportedFetch = async () =>
       ({
