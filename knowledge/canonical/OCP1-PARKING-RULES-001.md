@@ -5,20 +5,20 @@ property_id: VINHOMES_OCEAN_PARK
 property_scope: Vinhomes Ocean Park
 category: parking_rules
 source_owner: Công Ty Cổ Phần Đầu Tư Và Phát Triển Sinh Thái
-source_type: Pasted text provided by resident
-source_channel: Unknown
-issued_at: 22/7/2026
-source_version: Unknown
+source_type: Official rules text transcribed by resident
+source_channel: Vinhomes app official rules channel
+issued_at: null
+source_version: Unversioned
 notice_number: null
 canonical_revision: "1.0"
-status: PendingReview
-effective_status: Unknown
+status: Approved
+effective_status: Current
 effective_from: 2025-10-01
 effective_to: null
-latest_confirmed: false
+latest_confirmed: true
 superseded_by: null
-approved_for_mvp: false
-allowed_for_rag: false
+approved_for_mvp: true
+allowed_for_rag: true
 contains_resident_pii: false
 contains_public_business_contact: true
 raw_source: ../raw/OCP1-PARKING-RULES-001.txt

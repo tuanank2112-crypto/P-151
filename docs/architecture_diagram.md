@@ -1,38 +1,58 @@
-# Architecture Diagram
+# ResidentGPT v0.3 — Architecture Diagram
 
 ## System Overview
 
 ```mermaid
-graph TB
-    User([User]) --> UI[Frontend<br/>React/Next.js]
-    UI -->|REST API| API[FastAPI Backend]
-    API --> Agent[LangGraph Agent]
-    Agent --> LLM[LLM Service<br/>GPT-4o / Gemini]
-    Agent --> Tools[Agent Tools]
-    Tools --> DB[(Database)]
-    Agent --> VS[Vector Store<br/>ChromaDB]
+flowchart TB
+    RES[Resident] --> WEB[Cloud Web App / Live URL]
+    BQL[BQL / CSKH] --> WEB
+    WEB --> AUTH[Authentication + RBAC]
+    AUTH -->|resident| CHAT[Resident Chat View]
+    AUTH -->|management| INBOX[BQL Escalation Inbox]
+
+    CHAT --> API[Backend API]
+    INBOX --> API
+    API --> MEM[(Conversation Memory)]
+    API --> GRAPH[ResidentGPT Agent Graph]
+    GRAPH --> REWRITE[Query Rewriter]
+    REWRITE --> RISK[High-risk / Required-context Gate]
+    RISK --> RETRIEVE[RAG Retrieval]
+    RETRIEVE --> VECTOR[(Vector Index: Knowledge Pack 1.18)]
+    RETRIEVE --> CONF[Similarity + Grader Node]
+    CONF -->|High confidence| ANSWER[Grounded Answer + Citations]
+    CONF -->|Low confidence / High risk| ESC[Escalation Service]
+    ESC --> TICKETS[(Escalation Tickets)]
+    TICKETS --> INBOX
+    ANSWER --> CHAT
 ```
 
-## Agent Flow
+## Decision Flow
 
 ```mermaid
-graph LR
-    START((Start)) --> Input[Parse Input]
-    Input --> Analyze[Analyze Query]
-    Analyze --> Decide{Need Tool?}
-    Decide -->|Yes| CallTool[Call Tool]
-    CallTool --> Analyze
-    Decide -->|No| Generate[Generate Response]
-    Generate --> END((End))
+flowchart LR
+    Q[Resident query + scoped memory] --> RW[Rewrite standalone query]
+    RW --> HR{High risk?}
+    HR -- Yes --> E[Escalation Card + BQL ticket]
+    HR -- No --> RC{Required context complete?}
+    RC -- No --> C[Clarification Card]
+    C --> Q
+    RC -- Yes --> R[RAG over 21 canonical docs]
+    R --> G{Eligible evidence and confidence high?}
+    G -- Yes --> A[Answered + document_id + section_id]
+    G -- No --> E
 ```
 
-## Component Details
+## Component Responsibilities
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| Frontend | React/Next.js | User interface |
-| Backend | FastAPI | API server |
-| Agent | LangGraph | AI agent orchestration |
-| LLM | OpenAI/Gemini | Language model |
-| Database | PostgreSQL/SQLite | Data persistence |
-| Vector Store | ChromaDB | RAG / embeddings |
+- **Cloud Web App:** dual-role UI, error boundary, responsive rendering and Live URL.
+- **Authentication + RBAC:** server-side role enforcement for `resident` and `management`.
+- **Conversation Memory:** isolated multi-turn history by user/conversation.
+- **Query Rewriter:** converts follow-up turns into standalone retrieval queries without inventing facts.
+- **RAG Retrieval:** searches only the 21 canonical documents in Knowledge Pack `1.18` and returns document/section identifiers.
+- **Risk & Confidence Gate:** combines high-risk policy, source eligibility, similarity score and Grader Node.
+- **Escalation Service:** shows the Resident handoff card and atomically creates the BQL Inbox ticket.
+- **Persistence/Audit:** stores conversations, citations, decisions, terminal state, reason code and management response.
+
+## Deployment Boundary
+
+The web/API stack must be containerizable and expose a health endpoint. A release is not considered BTC-ready until the deployment artifact records the public Live URL, build/commit, deployment timestamp and smoke-test result. Booking, payment and upsell are not architecture components in MVP v0.3.

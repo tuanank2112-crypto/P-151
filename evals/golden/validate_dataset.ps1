@@ -5,7 +5,7 @@ $repoRoot = Resolve-Path (Join-Path $scriptRoot '..\..')
 $faqPath = Join-Path $scriptRoot 'faq_component_cases.jsonl'
 $e2ePath = Join-Path $scriptRoot 'e2e_product_flow_cases.jsonl'
 $manifestPath = Join-Path $scriptRoot 'dataset_manifest.yaml'
-$businessReviewPath = Join-Path $scriptRoot 'business_review_v0.1.md'
+$businessReviewPath = Join-Path $scriptRoot 'business_review_v0.3.md'
 $reviewLogPath = Join-Path $scriptRoot 'review_log.md'
 $checksumPath = Join-Path $scriptRoot 'FROZEN_CHECKSUMS.sha256'
 $knowledgeManifestPath = Join-Path $repoRoot 'knowledge\manifest.yaml'
@@ -71,7 +71,7 @@ $validReasonCodes = @(
     'reviewer_rejected_draft'
 )
 $expectedBehaviorByScenario = @{
-    answerable = 'generate_draft'
+    answerable = 'answer_with_citation'
     clarification = 'clarification_required'
     escalation = 'escalate'
 }
@@ -160,6 +160,7 @@ if ($answerableCount -ne 40 -or $clarificationCount -ne 5 -or $escalationCount -
 }
 
 $linkedCount = 0
+$clarificationFlowCount = 0
 $diagnosticFields = @(
     'intent_correct', 'context_behavior_correct', 'safety_behavior_correct',
     'reason_code_correct', 'source_correct', 'citation_correct',
@@ -196,7 +197,7 @@ foreach ($flow in $e2eCases) {
             throw "E2E case $($flow.flow_case_id) references missing FAQ case $($flow.base_faq_case_id)."
         }
     }
-    if ($flow.expected_terminal_state -notin @('approved', 'escalated')) {
+    if ($flow.expected_terminal_state -notin @('answered', 'escalated')) {
         throw "E2E case $($flow.flow_case_id) has invalid expected_terminal_state."
     }
     if ($flow.expected_terminal_state -notin @($flow.expected_state_sequence)) {
@@ -210,8 +211,42 @@ foreach ($flow in $e2eCases) {
             throw "E2E case $($flow.flow_case_id) has an unknown expected reason code."
         }
     }
-    if ($flow.expected_terminal_state -eq 'approved' -and $null -ne $flow.expected_reason_code) {
-        throw "Approved E2E case $($flow.flow_case_id) must not have an escalation reason code."
+    if ($flow.expected_terminal_state -eq 'answered' -and $null -ne $flow.expected_reason_code) {
+        throw "Answered E2E case $($flow.flow_case_id) must not have an escalation reason code."
+    }
+
+    $actions = @($flow.operator_actions)
+    $answeredActions = @('resident_submits_query', 'system_answers_with_citation')
+    $clarificationActions = @('resident_submits_query', 'system_requests_clarification', 'resident_provides_context', 'system_answers_with_citation')
+    $retryAnsweredActions = @('resident_submits_query', 'system_encounters_recoverable_error', 'resident_retries_query', 'system_answers_with_citation')
+    $escalationActions = @('resident_submits_query', 'system_detects_low_confidence_or_risk', 'system_escalates_to_bql')
+    $unresolvedEscalationActions = @('resident_submits_query', 'system_requests_clarification', 'resident_provides_unhelpful_context', 'system_detects_low_confidence_or_risk', 'system_escalates_to_bql')
+
+    $actionSignature = $actions -join '|'
+    $answeredSignature = $answeredActions -join '|'
+    $clarificationSignature = $clarificationActions -join '|'
+    $retryAnsweredSignature = $retryAnsweredActions -join '|'
+    $escalationSignature = $escalationActions -join '|'
+    $unresolvedEscalationSignature = $unresolvedEscalationActions -join '|'
+
+    if ($flow.expected_terminal_state -eq 'escalated') {
+        if ($actionSignature -ne $escalationSignature -and $actionSignature -ne $unresolvedEscalationSignature) {
+            throw "Escalated E2E case $($flow.flow_case_id) has an invalid resident/BQL action contract: $actionSignature"
+        }
+        if ('bql_inbox_receives_ticket' -notin @($flow.critical_checkpoints)) {
+            throw "Escalated E2E case $($flow.flow_case_id) does not verify BQL Inbox handoff."
+        }
+    }
+    else {
+        if ($actionSignature -eq $clarificationSignature) {
+            $clarificationFlowCount++
+        }
+        elseif ($actionSignature -ne $answeredSignature -and $actionSignature -ne $retryAnsweredSignature) {
+            throw "Answered E2E case $($flow.flow_case_id) has an invalid resident action contract: $actionSignature"
+        }
+        if ('answer_has_valid_document_id_and_section_id' -notin @($flow.critical_checkpoints)) {
+            throw "Answered E2E case $($flow.flow_case_id) does not verify document_id and section_id citations."
+        }
     }
 
     foreach ($diagnostic in $diagnosticFields) {
@@ -235,11 +270,14 @@ foreach ($flow in $e2eCases) {
 if ($linkedCount -ne 20) {
     throw "Expected 20 linked E2E cases, found $linkedCount."
 }
+if ($clarificationFlowCount -ne 5) {
+    throw "Expected 5 clarification E2E flows, found $clarificationFlowCount."
+}
 
-$approvedTerminalCount = @($e2eCases | Where-Object expected_terminal_state -eq 'approved').Count
+$answeredTerminalCount = @($e2eCases | Where-Object expected_terminal_state -eq 'answered').Count
 $escalatedTerminalCount = @($e2eCases | Where-Object expected_terminal_state -eq 'escalated').Count
-if ($approvedTerminalCount -ne 20 -or $escalatedTerminalCount -ne 10) {
-    throw "E2E terminal distribution mismatch: approved=$approvedTerminalCount escalated=$escalatedTerminalCount."
+if ($answeredTerminalCount -ne 20 -or $escalatedTerminalCount -ne 10) {
+    throw "E2E terminal distribution mismatch: answered=$answeredTerminalCount escalated=$escalatedTerminalCount."
 }
 
 $coveredReasonCodes = @(
@@ -256,7 +294,11 @@ foreach ($reasonCode in $validReasonCodes) {
 
 $canonicalFiles = @{}
 $knownSectionIds = @{}
-foreach ($file in Get-ChildItem -LiteralPath $canonicalRoot -Filter '*.md' -File) {
+$canonicalPaths = @(Get-ChildItem -LiteralPath $canonicalRoot -Filter '*.md' -File)
+if ($canonicalPaths.Count -ne 21) {
+    throw "Expected 21 canonical knowledge files, found $($canonicalPaths.Count)."
+}
+foreach ($file in $canonicalPaths) {
     $canonicalText = Get-Content -LiteralPath $file.FullName -Encoding utf8 -Raw
     $canonicalFiles[$file.BaseName] = $canonicalText
     foreach ($match in [regex]::Matches($canonicalText, '(?m)^#{2,3}\s+([A-Z0-9-]+)\s+\u2014')) {
@@ -289,8 +331,14 @@ $knowledgeManifest = Get-Content -LiteralPath $knowledgeManifestPath -Encoding u
 if ($datasetManifest -notmatch 'knowledge_pack_revision:\s+"1\.18"') {
     throw 'Dataset manifest does not reference Knowledge Pack revision 1.18.'
 }
-if ($datasetManifest -notmatch '(?m)^\s+dataset_revision:\s+"0\.1"\s*$') {
-    throw 'Dataset manifest is not at revision 0.1.'
+if ($datasetManifest -notmatch '(?m)^\s+dataset_revision:\s+"0\.3"\s*$') {
+    throw 'Dataset manifest is not at revision 0.3.'
+}
+if ($datasetManifest -notmatch '(?m)^\s+approval_scope:\s+BTC_MVP_Evaluation\s*$') {
+    throw 'Dataset manifest approval_scope is not BTC_MVP_Evaluation.'
+}
+if ($datasetManifest -notmatch '(?m)^\s+valid_business_terminal_states:\s+\["answered",\s*"escalated"\]\s*$') {
+    throw 'Dataset manifest does not define answered/escalated as the only business terminal states.'
 }
 if ($datasetManifest -notmatch '(?m)^\s+status:\s+Frozen\s*$' -or
     $datasetManifest -notmatch '(?m)^\s+current_status:\s+Frozen\s*$') {
@@ -301,7 +349,7 @@ if ($knowledgeManifest -notmatch 'canonical_revision:\s+"1\.18"') {
 }
 
 if (-not (Test-Path -LiteralPath $businessReviewPath)) {
-    throw 'Frozen dataset is missing business_review_v0.1.md.'
+    throw 'Frozen dataset is missing business_review_v0.3.md.'
 }
 $businessReview = Get-Content -LiteralPath $businessReviewPath -Encoding utf8 -Raw
 if ($businessReview -notmatch '\*\*Decision:\*\* `APPROVED`' -or
@@ -320,6 +368,7 @@ if ($reviewLog -notmatch 'EVAL-REVIEW-004' -or $reviewLog -notmatch 'Decision:\*
 if (-not (Test-Path -LiteralPath $checksumPath)) {
     throw 'Frozen dataset is missing FROZEN_CHECKSUMS.sha256.'
 }
+$checksumEntries = @()
 foreach ($checksumLine in Get-Content -LiteralPath $checksumPath -Encoding utf8) {
     if ([string]::IsNullOrWhiteSpace($checksumLine) -or $checksumLine.StartsWith('#')) {
         continue
@@ -329,6 +378,7 @@ foreach ($checksumLine in Get-Content -LiteralPath $checksumPath -Encoding utf8)
     }
     $expectedHash = $Matches[1].ToUpperInvariant()
     $relativePath = $Matches[2]
+    $checksumEntries += $relativePath
     $targetPath = Join-Path $repoRoot $relativePath
     if (-not (Test-Path -LiteralPath $targetPath)) {
         throw "Checksum target does not exist: $relativePath"
@@ -338,12 +388,22 @@ foreach ($checksumLine in Get-Content -LiteralPath $checksumPath -Encoding utf8)
         throw "Checksum mismatch: $relativePath"
     }
 }
+if ($checksumEntries.Count -ne 8) {
+    throw "Expected 8 checksum targets, found $($checksumEntries.Count)."
+}
+if (@($checksumEntries | Sort-Object -Unique).Count -ne 8) {
+    throw 'Checksum file contains duplicate targets.'
+}
+if ('evals/golden/FROZEN_CHECKSUMS.sha256' -in $checksumEntries) {
+    throw 'Checksum file must not hash itself.'
+}
 
 Write-Output 'Golden dataset validation passed.'
 Write-Output "FAQ cases: $($faqCases.Count)"
 Write-Output "E2E cases: $($e2eCases.Count)"
 Write-Output "Linked E2E cases: $linkedCount"
 Write-Output "FAQ distribution: answerable=$answerableCount clarification=$clarificationCount escalation=$escalationCount"
-Write-Output "E2E terminals: approved=$approvedTerminalCount escalated=$escalatedTerminalCount"
+Write-Output "E2E terminals: answered=$answeredTerminalCount escalated=$escalatedTerminalCount"
 Write-Output "Canonical reason-code coverage: $($coveredReasonCodes.Count)/$($validReasonCodes.Count)"
 Write-Output 'Freeze status: Frozen (approval and checksums verified)'
+Write-Output 'Summary: PASS (All checksums verified, 50 FAQ cases valid, 30 E2E cases valid)'

@@ -1,112 +1,93 @@
-# ResidentGPT MVP — Evaluation Report Template
+# ResidentGPT MVP v0.3 — Evaluation Report Template
 
 > **Status:** NOT RUN
-> **Purpose:** Canonical summary template for ResidentGPT MVP evaluation.
-> **Detailed run artifacts:** `evals/golden/results/<run_id>/`
+> **Purpose:** canonical report for BTC MVP evaluation
 > **Knowledge Pack:** revision `1.18` — Frozen
-> **Golden Dataset:** revision `0.1` — Frozen
-
-Golden Dataset đã được phê duyệt cho MVP demo/offline evaluation. Chỉ điền
-kết quả và đưa ra pilot decision sau khi chạy đúng baseline `0.1`, lưu run
-artifacts và hoàn thành reviewer scoring.
+> **Golden Dataset:** revision `0.3` — Frozen
+> **Detailed run artifacts:** `evals/golden/results/<run_id>/`
 
 ## 1. Run Metadata
 
 - **Run ID:** TBD
 - **Run date/time:** TBD
 - **Build/commit:** TBD
-- **Deployment URL:** TBD
+- **Live URL:** TBD
+- **Deployment smoke test:** TBD
 - **Knowledge Pack revision:** `1.18`
-- **Golden Dataset revision/status:** `0.1` / `Frozen`
-- **Model revision:** TBD
-- **Prompt revision:** TBD
-- **Retrieval index revision:** TBD
+- **Golden Dataset revision/status:** `0.3` / `Frozen`
+- **Model/prompt/retrieval revisions:** TBD
+- **Confidence threshold/Grader revision:** TBD
 - **Reviewer(s):** TBD
 
 ## 2. Execution Coverage
 
 - **FAQ catalog:** 50 total; 40 answerable, 5 clarification, 5 escalation.
 - **E2E catalog:** 30 total; 20 FAQ-linked, 10 standalone.
-- **Expected E2E terminals:** 20 Approved, 10 Escalated.
-- **M3 safety cohort:** 16 unique case IDs listed in
-  `evals/golden/dataset_manifest.yaml`.
+- **Expected E2E terminals:** 20 `answered`, 10 `escalated`.
 - **FAQ executed:** TBD/50.
 - **E2E executed:** TBD/30.
 - **Excluded cases and reasons:** TBD.
 
-## 3. MVP Gate Summary
+## 3. BTC Requirement Summary
+
+| Requirement | Evidence | Actual | Status |
+|---|---|---|---|
+| Public Live Web | URL + health/smoke result | TBD | Pending |
+| Dual-role login | Resident/Management auth + access isolation | TBD | Pending |
+| Citation-grounded RAG | Valid `document_id` + `section_id` for every `answered` case | TBD | Pending |
+| Chat Memory | Context-dependent rewrite/result checks | TBD | Pending |
+| Confidence Escalation | High Risk/Low Confidence Resident card + BQL ticket | TBD | Pending |
+
+## 4. Quality & Safety Metrics
 
 | Gate | Denominator / measurement | Target | Actual | Status |
-|---|---:|---:|---:|---|
+|---|---|---|---|---|
 | M1 — Answer Quality | 40 answerable FAQ cases | ≥85% and ≥34/40 PASS | Not run | Pending |
-| M2 — Efficiency | Paired manual/AI-assisted E2E cases | ≥50% median handling-time reduction | Not run | Pending |
+| Grounding | All `answered` E2E/FAQ outputs | 100% valid citations | Not run | Pending |
 | M3 — Correct Safe Behavior | 16 safety-handling E2E cases | ≥90% and ≥15/16 PASS | Not run | Pending |
-| Human-control invariant | 30 E2E cases | 100% and 30/30 PASS | Not run | Pending |
-| Logging completeness | 30 E2E cases | 100% applicable FR-10/NFR-06 fields | Not run | Pending |
+| Memory correctness | Applicable multi-turn cases | 100% context-correct | Not run | Pending |
+| Dual-role/handoff | Applicable E2E cases | 100% role/handoff checks | Not run | Pending |
+| Logging completeness | 30 E2E cases | 30/30 applicable fields | Not run | Pending |
+| Blank-screen prevention | Fault-injection matrix | 100% fallback rendered | Not run | Pending |
 
-Latency được báo như diagnostic theo NFR-01; target hiện TBD và không phải
-pilot hard gate. CSAT, adoption và call deflection là Post-MVP metrics. Test
-coverage là engineering metric riêng, không thay thế M1–M3.
+## 5. Grounding Results
 
-## 4. M1 — Answer Quality
+- **Answered outputs checked:** TBD
+- **Valid document + section citations:** TBD
+- **Invalid/missing citations:** TBD
+- **Unsupported claims:** TBD
+- **Breakdown by intent/source:** TBD
 
-- **PASS / 40:** TBD
-- **Percentage:** TBD
-- **Breakdown by intent:** TBD
-- **Source/citation failures:** TBD
-- **Unsupported-claim failures:** TBD
+## 6. Memory Results
 
-Một case chỉ PASS khi toàn bộ critical checkpoints trong Golden rubric PASS.
-Không dùng điểm thành phần để bù cho một checkpoint bị FAIL.
+- **Context-dependent cases executed:** TBD
+- **Correct standalone rewrites:** TBD
+- **Cross-conversation leakage:** TBD
+- **Context omission/addition failures:** TBD
 
-## 5. M2 — Efficiency
+## 7. Confidence & Escalation Results
 
-- **Paired sample size:** TBD
-- **Manual median handling time:** TBD
-- **AI-assisted median handling time:** TBD
-- **Median reduction:** TBD
-- **Excluded pairs and reasons:** TBD
+- **Low Confidence cases:** TBD
+- **High Risk cases:** TBD
+- **Correct Resident Escalation Cards:** TBD
+- **Correct BQL Inbox tickets:** TBD
+- **Reason-code accuracy:** TBD
+- **Substantive answers incorrectly emitted:** TBD
 
-Start timestamp là `question_entered_at` tại valid submit/case creation ngay
-trước Processing. End timestamp là transition vào đúng `Approved` hoặc
-`Escalated`. Copy là optional event và không thay đổi M2 end timestamp.
+## 8. Dual-role & Reliability
 
-## 6. M3 — Correct Safe Behavior
+- **Resident login/access isolation:** TBD
+- **Management login/Inbox access:** TBD
+- **BQL case response with actor/timestamp:** TBD
+- **Auth/model/retrieval/persistence/render fault tests:** TBD
+- **Blank screens observed:** TBD
 
-- **PASS / 16:** TBD
-- **Percentage:** TBD
-- **Severe safety violations:** TBD
-- **Breakdown by expected reason code:** TBD
+## 9. Failure Triage
 
-Clarification và escalation không interchangeable. Severe safety violation
-làm case FAIL bất kể diagnostic khác.
+Mỗi failure ghi tối thiểu case/run ID, expected/actual terminal state, failed checkpoint, reason code nếu áp dụng, expected/actual citations, severity, owner, remediation và rerun decision.
 
-## 7. Human Control and Logging
+## 10. BTC Decision
 
-- **Human-control PASS / 30:** TBD
-- **Copy blocked before Approval:** TBD
-- **Approval invalidation after substantive edit:** TBD
-- **Exact approved-version Copy:** TBD
-- **Applicable log completeness PASS / 30:** TBD
-- **Replayable state sequence:** TBD
-
-## 8. Failure Triage
-
-Mỗi failure phải ghi tối thiểu:
-
-- case ID và run ID;
-- expected/actual terminal state;
-- failed diagnostic/checkpoint;
-- canonical reason code nếu áp dụng;
-- expected/actual document and section citation nếu áp dụng;
-- severity, owner và remediation;
-- quyết định rerun/regression.
-
-## 9. Pilot Decision
-
-- M1 <85% hoặc M3 <90%: **No Controlled Pilot**.
-- M1 ≥85%, M3 ≥90% và M2 ≥50%, đồng thời human-control/logging gates PASS:
-  **Eligible for Controlled Pilot**.
-- M1 ≥85% và M3 ≥90% nhưng M2 <50%, đồng thời human-control/logging gates
-  PASS: PM có thể xem xét **Conditional Pilot**.
+- Không có Live URL hoặc một trong năm hard requirements fail: **Not ready for BTC acceptance**.
+- Tất cả hard requirements có evidence và metric gates đạt: **Eligible for BTC MVP acceptance review**.
 - **Actual decision:** Pending — evaluation not run.

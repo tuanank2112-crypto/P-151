@@ -1,360 +1,248 @@
-# UI Flow — ResidentGPT MVP: AI-assisted Drafting cho BQL/CSKH
+# UI Flow — ResidentGPT MVP v0.3
 
-Status: FROZEN FOR LOW-FI WIREFRAME v0.2 — consistency alignment amendment; không mở rộng feature scope.
-
-Alignment log: `docs/MVP_CONSISTENCY_ALIGNMENT_v0.2.md`
-
-> **Primary user:** Nhân viên BQL/CSKH. **Affected user:** Cư dân. Hotline/Zalo chỉ là channel origin; BQL/CSKH nhập hoặc paste câu hỏi vào UI. Mọi AI output là draft, cần BQL/CSKH review và explicit approval trước khi copy/use. MVP không auto-send.
-
+> **Status:** FROZEN FOR MVP v0.3 — Dual-role & Confidence Escalation Alignment
+> **Freeze date:** 21/09/2026
+> **Deadline:** 27/10/2026
+> **Source of truth:** `docs/PRD_ResidentGPT_MVP.md`
 > **Scope contract:** `knowledge_coverage_scope = VINHOMES_OCEAN_PARK`;
-> `pilot_operator_scope = BQL/CSKH của một cụm/tòa được chọn tại Vinhomes
-> Ocean Park 1`. UI phải hỏi đúng building/area/property context khi source
-> có giới hạn phạm vi; MVP không hỗ trợ multi-site runtime.
+> `pilot_operator_scope = Cư dân Tòa S1.12, Cụm Sapphire 1 & Văn phòng BQL Tòa nhà (Tầng 1 S1.03, Hotline 1900 232 389 Nhánh 4) tại Vinhomes Ocean Park 1`.
+> Knowledge coverage rộng hơn pilot operator scope không đồng nghĩa hỗ trợ multi-site.
 
-> **Evaluation reference:** Knowledge Pack `1.18` và Golden Dataset `0.1` đã
-> Frozen. Golden gồm 50 FAQ và 30 E2E cases, được phê duyệt cho MVP demo và
-> offline evaluation ngày 19/09/2026.
+Release UI phải được truy cập qua **Live URL** công khai và vượt qua health/smoke test trước nghiệm thu BTC.
 
-## PM Decisions Applied
+Intent contract áp dụng xuyên suốt flow: `I-01` Thẻ cư dân/ra vào; `I-02` Phương tiện/thẻ xe; `I-03` Tiện ích chung; `I-04` Chuyển đồ/thi công; `I-05` Nội quy sinh hoạt.
 
-- Required-context contract dùng danh sách đã khóa trong PRD Mục 5.1 và
-  `evals/golden/dataset_manifest.yaml`; field `when_relevant` là conditional.
-- Reason code dùng duy nhất canonical enum trong PRD Mục 8/Golden manifest.
-- Explicit Approve do BQL/CSKH operator hiện tại thực hiện; MVP ghi
-  `operator_alias` hoặc `session_alias` và timestamp, không cần role model phức tạp.
-- Retry limit không được chấm trong Golden revision `0.1`; Retry, Edit question
-  và Manual handling vẫn là action bắt buộc ở failure surface.
+## 1. UX Principles
 
-## A. UI Flow Overview
+- Cư dân bắt đầu từ chat, không phải từ quy trình nghiệp vụ nội bộ.
+- Câu trả lời thành công luôn hiển thị citations dễ kiểm tra.
+- Hỏi lại chỉ khi thiếu required context và chỉ hỏi field cần thiết.
+- Low Confidence/High Risk không được che giấu bằng câu trả lời mơ hồ; phải tạo handoff rõ ràng.
+- BQL nhận case trong một Inbox tập trung với lý do và context đủ xử lý.
+- Loading, empty, unauthorized và error state đều có nội dung/action; không có màn hình trắng.
+- Booking, payment và upsell không xuất hiện trong navigation hoặc CTA của MVP.
 
-### Nguyên tắc tương tác
-
-- Tối ưu thao tác nhập/paste → review → approve → copy, nhưng không bỏ qua human control.
-- Hiển thị intent, trạng thái an toàn và evidence ngắn gọn; không dùng confidence score chưa calibrated.
-- Risk/fallback state phải khác rõ normal draft state bằng nhãn và action, không phụ thuộc visual styling cụ thể.
-- Early obvious-risk/PII check diễn ra trước intent; detailed risk check diễn ra sau required context và trước retrieval.
-- Nút **Copy response** chỉ khả dụng cho exact approved version; substantive edit sau Approval làm mất approval, khóa Copy và yêu cầu explicit re-approval.
-- **Approved** và **Escalated/Manual handling** là business completion states. Copy chỉ là optional action/event và không quyết định completion hoặc handling-time end timestamp.
-- Từ Approved hoặc Escalated, **New Case** reset toàn bộ working state về Empty; không carry query, intent, evidence, draft hoặc approval sang case mới.
-- Required clarification chặn drafting; optional clarification không chặn nếu context hiện tại đã đủ để tạo câu trả lời đúng và grounded.
-- Bồi thường, tranh chấp, xác định trách nhiệm/lỗi, xử phạt và diễn giải pháp lý là hard-block category: không tạo substantive answer draft, đề xuất chuyển BQL và log `legal_or_compensation_escalation`.
+## 2. End-to-End Mermaid Flow
 
 ```mermaid
 flowchart TD
-    A[Empty: Paste hoặc nhập câu hỏi cư dân] -- BQL paste/nhập --> Q[Question entered]
-    Q --> B{Input hợp lệ?}
-    B -- Không --> B1[Input error — giữ nội dung]
-    B1 --> Q
-    B -- Có --> C[Processing]
-    C --> ES{Early obvious-risk / PII?}
-    ES -- PII/account-specific --> PII[PII/account-specific — pii_or_account_specific]
-    ES -- Other obvious risk --> EB[Early safety blocked]
-    PII -- Edit/remove sensitive information --> Q
-    PII -- Manual handling --> MH[Manual handling / Escalation required]
-    EB --> MH
-    ES -- Safe --> D{Supported intent?}
-    D -- No --> OOS[Unsupported / out of answerable scope]
-    OOS --> MH
-    D -- Unresolved --> IU[Intent unresolved]
-    IU --> UC{Có clarification hữu ích?}
-    UC -- Có --> CL[Clarification required]
-    UC -- Không --> MH
-    D -- Yes --> E{Required context complete?}
-    E -- No --> CL
-    CL --> ADD[BQL bổ sung required context]
-    ADD --> C
-    E -- Yes --> RISK{Detailed risk check safe?}
-    RISK -- High-risk --> HR[High-risk / legal-compensation block]
-    HR --> MH
-    RISK -- Safe --> K[Retrieve Approved/current official sources]
-    K -- System error --> ERR[System error]
-    K -- Retrieval completed --> S{Eligible evidence?}
-    S -- No --> NS[No eligible source]
-    S -- Yes --> X{Conflict detected by system?}
-    X -- Yes --> CON[Source conflict — show sources and block approval]
-    X -- No --> EV[Evidence available]
-    EV --> DG[Generate grounded AI draft]
-    DG --> REV[BQL Reviewing]
-    REV -- Edit --> REV
-    REV -- BQL identifies conflict --> CON
-    REV -- Reject / Manual handling --> MH
-    REV -- Explicit approve --> AP[Approved / completed]
-    AP -- Copy exact approved version --> AP
-    AP -- Substantive edit / invalidate approval --> REV
-    AP -- New Case --> NC[Reset working state]
-    NS -- Retry --> C
-    NS -- Edit question --> Q
-    NS -- Manual handling --> MH
-    ERR -- Retry --> C
-    ERR -- Edit question --> Q
-    ERR -- Manual handling --> MH
-    CON --> MH
-    MH -- BQL confirms reason --> ESC[Escalated / completed]
-    ESC -- New Case --> NC
-    NC --> A
+    START([Mở ResidentGPT]) --> AUTH[Đăng nhập]
+    AUTH --> ROLE{Role hợp lệ?}
+    ROLE -- Resident --> RCHAT[Surface 1: Resident Chat View]
+    ROLE -- Management --> INBOX[Surface 4: BQL Escalation Inbox]
+    ROLE -- Không hợp lệ --> AUTHERR[Auth Error Card / Đăng nhập lại]
+
+    RCHAT --> MEMORY[Load Chat Memory đúng user/conversation]
+    MEMORY --> SUBMIT[Cư dân gửi câu hỏi]
+    SUBMIT --> REWRITE[Query Rewriter tạo standalone query]
+    REWRITE --> EARLY{High Risk / PII / Emergency?}
+    EARLY -- Có --> ESC[Thẻ Escalation cho Cư dân]
+    EARLY -- Không --> INTENT[Detect intent I-01 đến I-05]
+    INTENT --> CONTEXT{Đủ Required Context?}
+    CONTEXT -- Không --> CLARIFY[Surface 2: Clarification Card]
+    CLARIFY --> MORE[Cư dân bổ sung context]
+    MORE --> REWRITE
+    CONTEXT -- Có --> RAG[Retrieve từ 21 canonical documents]
+    RAG --> GATE{Risk & Confidence Gate}
+    GATE -- High Confidence + eligible evidence --> ANSWER[Surface 3: Answer Card + Citations]
+    GATE -- Low Confidence / High Risk / no eligible source --> ESC
+    GATE -- System error --> ERROR[Error/Fallback Card]
+    ERROR -- Retry --> REWRITE
+    ERROR -- Không phục hồi --> ESC
+
+    ANSWER --> MEMORYSAVE[Lưu message + citations vào Chat Memory]
+    MEMORYSAVE --> RCHAT
+
+    ESC --> TICKET[Tạo ticket với canonical reason code]
+    TICKET --> INBOX
+    INBOX --> CASE[BQL mở case detail]
+    CASE --> RESPONSE[BQL ghi phản hồi và cập nhật trạng thái]
+    RESPONSE --> INBOX
 ```
 
-Không có path nào từ AI draft tới Copy mà bỏ qua `BQL review/edit → Explicit approve`. Copy chỉ áp dụng cho exact approved version; substantive edit luôn quay về Reviewing và bắt buộc re-approval.
+## 3. Resident Flow
 
-## B. Detailed Flow Specification
+### 3.1. Login and session
 
-### Flow A — Happy Path — MUST-HAVE
+1. Cư dân đăng nhập.
+2. Backend xác thực `role = resident` và route đến Resident Chat View.
+3. App tải conversation list/history thuộc đúng tài khoản.
+4. Unauthorized, expired session hoặc network error hiển thị Error Card với CTA đăng nhập lại/retry.
 
-| Flow ID | Step | User Action | System Action | Decision | Next State |
-|---|---:|---|---|---|---|
-| A-01 | 1 | Mở màn hình xử lý case. | Hiển thị primary copy **“Paste hoặc nhập câu hỏi cư dân”**. Helper tùy chọn: “Có thể dán nội dung từ hotline/Zalo hoặc nhập thủ công.” | — | Empty |
-| A-02 | 2 | Paste hoặc nhập câu hỏi cư dân. | Giữ nội dung để BQL kiểm tra trước khi submit. | Input có nội dung hợp lệ? | Question entered |
-| A-03 | 3 | Chọn **Phân tích câu hỏi**. | Validate input; input invalid vẫn giữ nội dung và hiển thị lỗi. Input valid tạo case/timestamp và bắt đầu xử lý. | Input valid? | Question entered hoặc Processing |
-| A-04 | 4 | Chờ kết quả. | Chạy early obvious-risk/PII check trước intent. | Bị block sớm? | Flow C hoặc tiếp tục A-05 |
-| A-05 | 5 | Không cần thao tác. | Xác định supported intent; không hiển thị fake confidence percentage. | Supported, unresolved hay unsupported? | Intent detected, Flow F hoặc Flow C |
-| A-06 | 6 | Không cần thao tác. | Kiểm tra required context. | Required context complete? | Tiếp tục hoặc Flow B |
-| A-07 | 7 | Không cần thao tác. | Chạy detailed risk check sau khi đủ required context và trước retrieval. | High-risk? | Flow C hoặc tiếp tục |
-| A-08 | 8 | Không cần thao tác. | Retrieve source có Status = Approved, current/effective, traceable và thuộc allowed official source list. | Retrieval thành công và có eligible evidence? | Evidence available hoặc Flow D |
-| A-09 | 9 | Có thể mở evidence. | Kiểm tra source eligibility và conflict trước drafting; automatic semantic-conflict detection không cần hoàn hảo. | Conflict được system detect? | Flow E hoặc Evidence available |
-| A-10 | 10 | Đọc AI draft và evidence. | Tạo grounded AI draft; hiển thị nhãn **AI draft — chưa được duyệt**, intent và lightweight source metadata. | — | Draft generated → Reviewing |
-| A-11 | 11 | Review/edit hoặc kiểm tra evidence. | Lưu generated draft và edit; nếu BQL identify source conflict thì chuyển Flow E và block approval. | Approve, edit, reject/manual hay conflict? | A-12, Reviewing, Flow G hoặc Flow E |
-| A-12 | 12 | Chọn **Approve**. | Yêu cầu explicit action; khóa exact approved version. Không auto-send. Ghi M2 end timestamp khi vào Approved. | Explicit approval có xảy ra? | Approved — business completion |
-| A-13 | 13 | Có thể chọn **Copy response**. | Chỉ copy exact approved version; Copy là optional event, không đổi completion state hoặc M2 end timestamp. | Exact version vẫn Approved? | Approved |
+### 3.2. Multi-turn chat and rewrite
 
-### Flow B — Ambiguous / Missing Context — MUST-HAVE
+1. Cư dân nhập câu hỏi và chọn **Gửi**.
+2. UI tạo optimistic message/loading state nhưng không hiển thị kết luận tạm.
+3. Backend tải Chat Memory đúng conversation.
+4. Query Rewriter biến câu hỏi phụ thuộc thành standalone query, giữ đúng entity/context và không thêm fact.
+5. Rewritten query đi qua early risk gate, intent detection và Required Context check.
 
-| Flow ID | Step | User Action | System Action | Decision | Next State |
-|---|---:|---|---|---|---|
-| B-01 | 1 | Submit câu hỏi. | Xác định thông tin required theo intent/source bằng contract tại PRD Mục 5.1. Chỉ field liên quan đến claim/source selection mới blocking; field `when_relevant` là conditional. | Missing required context? | Clarification required; nếu đủ thì tiếp tục Flow A |
-| B-02 | 2 | Xem yêu cầu làm rõ. | Với **required clarification**, nêu ngắn gọn dữ liệu còn thiếu và không tạo draft. | Required context thiếu? | Clarification required |
-| B-03 | 3 | Hỏi cư dân ngoài MVP và nhập/paste required context bổ sung. | Không yêu cầu thêm PII/account-specific information; nếu input mới có obvious PII thì chạy Flow C trước khi tiếp tục. | Context đã đủ? | Processing hoặc Clarification required |
-| B-04 | 4 | Chọn xử lý lại. | Reprocess từ early safety/PII check, rồi intent → context → detailed risk → source. | Có thể đi tiếp an toàn? | Flow A, C, D hoặc F |
-| B-05 | 5 | Có thể bỏ qua hoặc bổ sung optional context. | Optional clarification chỉ là inline helper SHOULD-HAVE khi context hiện tại đã đủ; không tạo dedicated state/screen cho Wireframe v1. | Context required đã đủ? | Tiếp tục Flow A |
+### 3.3. Clarification
 
-**Phân biệt:** `Clarification required` chặn draft và phải nêu thông tin thiếu; `Optional clarification` không chặn draft, là SHOULD-HAVE và chỉ được dùng khi rule theo intent/source đã được PM/BA xác định.
+1. Nếu thiếu field bắt buộc theo PRD §5.1, trả `clarification_required`.
+2. Surface 2 nêu ngắn gọn thông tin còn thiếu; không hiển thị substantive answer/citation giả.
+3. Cư dân bổ sung context trong cùng conversation.
+4. Hệ thống rewrite/reprocess từ safety gate, không bỏ qua risk check.
 
-**Required-context reference:** I-01 dùng loại thẻ/yêu cầu/bất động sản và
-unit type khi hạn mức liên quan; I-02 dùng card-or-service/địa điểm/hình thức
-gửi/loại xe/khung giờ; I-03 dùng tiện ích/variant/tuổi hoặc chiều cao khi an
-toàn liên quan; I-04 dùng chuyển đồ-or-thi công/property/building/work type và
-ngày giờ khi lịch liên quan; I-05 dùng chủ đề/phạm vi bất động sản/general-or-
-case-specific. Tên field kỹ thuật đầy đủ lấy từ PRD Mục 5.1 và Golden manifest.
+### 3.4. High-confidence answer
 
-### Flow C — Early Safety / PII / High-Risk / Unsupported — MUST-HAVE
+1. Retrieval chỉ dùng eligible section thuộc Knowledge Pack `1.18`.
+2. Similarity Score và Grader Node xác nhận Confidence cao.
+3. Surface 3 hiển thị Answer Card và danh sách citation.
+4. Mỗi citation hiển thị tối thiểu `document_id`, `section_id`; có thể mở metadata/snippet.
+5. Message, rewritten query cần thiết và citations được lưu vào Chat Memory.
+6. Golden terminal state: `answered`.
 
-| Flow ID | Step | User Action | System Action | Decision | Next State |
-|---|---:|---|---|---|---|
-| C-01 | 1 | Submit input hợp lệ. | Trước intent, chặn obvious personal/account-specific, identity verification, personalized fee/payment, access credential/security, emergency/life-safety và obvious dispute/complaint. Biểu phí công khai hoặc hướng dẫn thanh toán chung không bị early-block chỉ vì có nội dung tài chính. | Early block category? | Early safety blocked, PII/account-specific hoặc tiếp tục Flow A |
-| C-02 | 2 | Đọc PII/account-specific warning. | Lưu event `pii_or_account_specific`; không tạo substantive personalized answer draft, không coi là normal FAQ, không yêu cầu thêm PII và không cố ý persist unnecessary raw PII. Hiển thị lựa chọn sửa/xóa sensitive information hoặc Manual handling. | Có thể loại bỏ sensitive information an toàn? | Question entered hoặc Escalation required |
-| C-03 | 3 | Chọn **Edit/remove sensitive information** nếu phù hợp. | Quay lại input; lần submit tiếp theo reprocess từ early check và không carry risk clearance từ input cũ. | — | Question entered |
-| C-04 | 4 | Hoặc chọn **Manual handling**. | Lưu escalation reason/state và ghi M2 end timestamp khi Escalated hợp lệ. | BQL xác nhận manual handling? | Escalated — business completion |
-| C-05 | 5 | Không cần thao tác. | Unsupported intent sau intent check → không tạo substantive answer draft; yêu cầu Manual handling. | Intent unsupported? | Unsupported / out-of-answerable-scope → Escalation required |
-| C-06 | 6 | Không cần thao tác. | Sau required context, chạy detailed risk check trước retrieval. Nếu câu hỏi liên quan bồi thường, tranh chấp, xác định trách nhiệm/lỗi, xử phạt hoặc diễn giải pháp lý: hard-block answer generation, không tạo substantive draft, hiển thị đề xuất chuyển BQL và gắn reason `legal_or_compensation_escalation`. | High-risk? | High-risk → Escalation required hoặc tiếp tục Flow A |
-| C-07 | 7 | Chọn **Chuyển BQL / Manual handling** cho nhóm legal/compensation; chọn Manual handling cho early-risk, unsupported hoặc high-risk khác. | Lưu category/reason/state. Đích của nhóm legal/compensation được khóa là BQL; tuyến nội bộ sau khi BQL tiếp nhận không thuộc MVP. Không tích hợp ticketing. Ghi M2 end timestamp khi Escalated hợp lệ. | Reason hợp lệ đã được ghi? | Escalated — business completion |
+### 3.5. Low-confidence/high-risk escalation
 
-Canonical reason cho Flow C: `pii_or_account_specific`,
-`legal_or_compensation_escalation`, `unsupported_intent` hoặc
-`emergency_or_life_safety` tùy category. Không dùng generic
-reason code cho mọi loại high-risk.
+1. Nếu Low Confidence, High Risk, no eligible source, source conflict, expired/unknown source hoặc lỗi không phục hồi, không sinh substantive answer.
+2. Cư dân thấy Thẻ Escalation gồm giải thích ngắn, Hotline/Văn phòng BQL và xác nhận đã chuyển case.
+3. Backend tạo ticket với exact canonical reason code, conversation/context cần thiết, intent nếu có, evidence đã thử và timestamps.
+4. Ticket xuất hiện trong BQL Escalation Inbox.
+5. Golden terminal state: `escalated` tại thời điểm handoff thành công.
 
-Production PII redaction/retention/access policy vẫn là TBD trước real-user pilot; behavior MVP tại input đã được chốt như trên.
+## 4. BQL Flow
 
-### Flow D — Error / No Source — MUST-HAVE
+1. BQL/CSKH đăng nhập với `role = management`.
+2. Backend route đến Surface 4 — Escalation Inbox; Resident route/API bị tách quyền phù hợp.
+3. Inbox hiển thị case theo thời gian, trạng thái, intent, reason code và ưu tiên.
+4. BQL lọc/search và mở case detail.
+5. Case detail hiển thị transcript tối thiểu cần thiết, required context đã thu thập, risk/confidence outcome và evidence/citations đã thử nếu có.
+6. BQL ghi phản hồi, chuyển `new` → `in_progress` → `responded`/`closed` theo workflow quản lý.
+7. Mọi thao tác ghi actor và timestamp; lỗi lưu phản hồi giữ nội dung đã nhập và cho retry.
 
-| Flow ID | Step | User Action | System Action | Decision | Next State |
-|---|---:|---|---|---|---|
-| D-01 | 1 | Submit câu hỏi đủ context. | Retrieval không có eligible Approved/current source → `no_eligible_source`; chỉ thấy Expired/Unknown hoặc không xác định được source current → `source_expired_or_unknown`; lỗi retrieval/model → `system_error`. | Loại failure nào? | No eligible source / Invalid source status / System error |
-| D-02 | 2 | Đọc safe fallback. | Hiển thị lý do có thể hành động được; không tạo substantive answer draft và không giả vờ chắc chắn. | BQL chọn action nào? | Fallback state |
-| D-03 | 3 | Chọn **Retry**. | Chạy lại Processing và log retry; retry policy/limit là **TBD**. | — | Processing |
-| D-04 | 4 | Hoặc chọn **Edit question**. | Quay lại nội dung input, giữ case context phù hợp. | — | Question entered |
-| D-05 | 5 | Hoặc chọn **Manual handling / Escalate**. | Lưu exact canonical reason code, chuyển Escalated và ghi M2 end timestamp. | Reason hợp lệ? | Escalated — business completion |
+## 5. Four MVP UI Surfaces
 
-### Flow E — Source Conflict — MUST-HAVE, là nhánh của Flow D
+### Surface 1 — Resident Chat View
 
-| Flow ID | Step | User Action | System Action | Decision | Next State |
-|---|---:|---|---|---|---|
-| E-01 | 1 | Không cần thao tác hoặc BQL review evidence. | Nhận conflict do system detect **hoặc BQL identify trong evidence review**. Không yêu cầu automatic semantic-conflict detection phải hoàn hảo. | Conflict vẫn unresolved? | Source conflict |
-| E-02 | 2 | Mở danh sách evidence. | Hiển thị các source và lightweight metadata; không tự chọn. Nếu trước draft thì block substantive draft; nếu đã có draft đang review thì block approval. | — | Source conflict |
-| E-03 | 3 | Chọn **Manual handling / Escalate**. | Ghi `source_conflict`, reason/state và yêu cầu knowledge owner/BQL xử lý thủ công; destination cụ thể TBD. | — | Escalated — business completion |
+**Purpose:** giao diện chat thân thiện, hỗ trợ hỏi nối tiếp.
 
-### Flow F — Unresolved Intent — MUST-HAVE
+**Required elements:**
 
-| Flow ID | Step | User Action | System Action | Decision | Next State |
-|---|---:|---|---|---|---|
-| F-01 | 1 | Submit câu hỏi. | Không ép classification và không hiển thị fake confidence percentage. | Có clarification hữu ích? | F-02 hoặc F-04 |
-| F-02 | 2 | Nếu có, xem câu hỏi làm rõ. | Nêu clarification hữu ích; không tạo draft. | — | Clarification required |
-| F-03 | 3 | Edit/bổ sung context rồi xử lý lại. | Reprocess từ early safety/PII check. | Intent đã supported và rõ? | Processing |
-| F-04 | 4 | Nếu không có clarification hữu ích, chọn **Manual handling**. | Log `intent_unresolved`, reason/state; không tạo draft. | — | Escalated — business completion |
+- Conversation history/list đúng tài khoản.
+- Message timeline và input composer.
+- Loading indicator cho rewrite/retrieval/grading.
+- Entry point rõ cho câu hỏi mới.
+- Inline Error/Fallback Card; không màn hình trắng.
 
-Candidate intent list/manual-select presentation là **SHOULD-HAVE/TBD**, không block Wireframe v1 và không được hiển thị fake confidence percentage.
+**States:** empty, ready, submitting, waiting, answered, clarification, escalated, recoverable error.
 
-### Flow G — Draft Edit / Reject / Approval Invalidation — MUST-HAVE; regenerate NOT IN MVP
+### Surface 2 — Clarification Card
 
-| Flow ID | Step | User Action | System Action | Decision | Next State |
-|---|---:|---|---|---|---|
-| G-01 | 1 | Đánh giá draft không phù hợp. | Giữ nhãn unapproved; Copy vẫn bị khóa. | BQL có thể sửa an toàn? | Reviewing |
-| G-02 | 2 | Edit thủ công dựa trên evidence. | Lưu bản edit; edit không tự approve. | BQL chấp nhận bản edit? | Reviewing |
-| G-03 | 3 | Chọn **Approve** bằng explicit action. | Khóa exact approved version và ghi M2 end timestamp. | — | Approved — business completion |
-| G-04 | 4 | Hoặc Reject bằng action **Manual handling / Escalate**. | Lưu `reviewer_rejected_draft`; không cho copy draft chưa duyệt. | — | Escalated — business completion |
-| G-05 | 5 | Từ Approved, thực hiện substantive edit. | Invalidate Approval ngay, chuyển Reviewing và disable Copy. | — | Reviewing |
-| G-06 | 6 | Review lại và explicit re-approve. | Tạo exact approved version mới; chỉ version mới này được Copy. | — | Approved — business completion |
+**Purpose:** hỏi lại thông tin còn thiếu theo Required Context Contract.
 
-`Regenerate with instruction` không có trong PRD/Product Brief và không cần cho MVP đầu tiên; chỉ xem xét sau khi có evidence rằng manual edit không đủ.
+**Required elements:**
 
-### Flow H — Source Review — MUST-HAVE, lightweight
+- Giải thích ngắn vì sao cần thêm thông tin.
+- Một hoặc nhiều field/question đúng contract, không yêu cầu PII dư thừa.
+- CTA gửi context trong cùng conversation.
+- Không hiển thị answer/citation như thể đã đủ context.
 
-| Flow ID | Step | User Action | System Action | Decision | Next State |
-|---|---:|---|---|---|---|
-| H-01 | 1 | Chọn/expand source trên draft. | Chỉ hiển thị **Title, Snippet, Owner, Version, Effective dates, Status** và **Last updated nếu có**. | Source vẫn Approved/current? | Source review hoặc Flow D |
-| H-02 | 2 | Đối chiếu claim với evidence. | Giữ draft và evidence cùng case; BQL có thể identify source conflict; không cần complex document viewer. | Evidence eligible/nhất quán? | Reviewing, Flow E hoặc Flow D |
-| H-03 | 3 | Quay lại review. | Việc chỉ xem source không đổi review state. Source ineligible/conflict mới được identify trong evidence review sẽ block approval và chuyển Flow D/E. | — | Reviewing, Flow D hoặc Flow E |
+### Surface 3 — Answer Card with Citations
 
-### Flow I — New Case — MUST-HAVE
+**Purpose:** hiển thị nội dung giải đáp grounded và nguồn quy định.
 
-| Flow ID | Step | User Action | System Action | Decision | Next State |
-|---|---:|---|---|---|---|
-| I-01 | 1 | Từ Approved hoặc Escalated, chọn **New Case**. | Tạo điểm bắt đầu cho case mới; Copy không phải điều kiện để action này khả dụng. | Case hiện tại đã ở completion state? | Reset working state |
-| I-02 | 2 | Không cần thao tác. | Reset query, context, intent, evidence, draft, review state, approval và safety/fallback state; không carry dữ liệu sang case mới. | Reset thành công? | Empty |
+**Required elements:**
 
-**Completion rule:** Business completion xảy ra khi case vào **Approved** hoặc **Escalated/Manual handling**. M2 end timestamp được ghi tại transition đó. Copy chỉ là optional action/event trên exact approved version.
+- Answer text.
+- Citation chips/cards chứa `document_id` và `section_id`.
+- Expandable source title/snippet/metadata nếu có.
+- Nút tiếp tục hỏi trong cùng conversation.
+- Nếu citation payload invalid, không render Answer Card như case thành công; chuyển safe fallback/escalation.
 
-## C. UI State Matrix
+### Surface 4 — BQL Escalation Inbox
 
-| State | What user sees | Primary action | Secondary action | System behavior | Draft allowed? | Approval allowed? |
-|---|---|---|---|---|---|---|
-| Empty | **Paste hoặc nhập câu hỏi cư dân**; helper hotline/Zalo là optional. | Nhập/paste câu hỏi | — | Chưa có working state của case mới. | No | No |
-| Question entered | Nội dung có thể sửa; validation error nếu có; CTA phân tích. | Phân tích câu hỏi | Xóa/sửa | Validate input; input invalid vẫn giữ nội dung. | No | No |
-| Processing | Loading/progress text ngắn; không hiển thị kết luận tạm. | — | Cancel: **TBD** | Chạy theo thứ tự early safety/PII → intent → required context → detailed risk → retrieval. | No | No |
-| Early safety blocked | Category/reason của obvious risk; không có substantive answer draft. Với emergency/life-safety, hiển thị hướng dẫn chuyển xử lý ngay. | Manual handling / chuyển đầu mối khẩn cấp phù hợp | — | Chặn intent/retrieval/draft; yêu cầu exact canonical reason/state. | No | No |
-| PII/account-specific | Cảnh báo identity verification/sensitive input; không yêu cầu thêm PII. | Edit/remove sensitive information | Manual handling | Không xử lý substantive content; log `pii_or_account_specific` mà không cố ý persist unnecessary raw PII. | No | No |
-| Intent detected | Intent label thuộc 5 Provisional MVP Intents; không có fake confidence %. | — | — | Giữ intent trong case log; tự động tiếp tục required-context check. | No | No |
-| Intent unresolved | Nhãn chưa xác định intent và clarification hữu ích nếu có; candidate list chỉ là SHOULD/TBD. | Clarify nếu hữu ích | Manual handling | Không ép intent; không hiển thị fake confidence percentage. | No | No |
-| Clarification required | Required context còn thiếu và câu hỏi làm rõ. | Bổ sung required context | — | Chặn retrieval/draft; không yêu cầu thêm PII; reprocess từ early check. | No | No |
-| Evidence available | Source cards/snippets và lightweight metadata. | Xem evidence | — | Eligibility đã pass; conflict vẫn có thể được BQL identify trước approval. | Yes — grounded generation may proceed | No |
-| Draft generated | Nhãn **AI draft — chưa được duyệt**, draft, intent và evidence. | Review draft | Xem source | Không auto-approve; Copy bị khóa. | Existing AI draft only | No — review first |
-| Reviewing | Editor, evidence và trạng thái chưa duyệt. | Edit hoặc explicit Approve | Manual handling / identify conflict | Lưu edit; approval chỉ cho exact current version nếu mọi safety/source check pass. | Existing/edit only | Yes — conditional on valid evidence and no unresolved risk/conflict |
-| Approved | Exact approved version, `operator_alias`/`session_alias` và approval timestamp; completion rõ. | Copy exact approved version | Substantive edit / New Case | Copy là event. Substantive edit invalidate Approval → Reviewing, disable Copy và require re-approval. | Exact approved version only | Already approved; edit invalidates |
-| Escalation required | Risk/failure reason; không có usable substantive answer draft. | Confirm Manual handling / Escalate | — | Chặn draft/approval/copy; yêu cầu valid reason. | No | No |
-| Escalated / Manual handling | Completed state và reason/category. | New Case | Xem reason/log | Ghi M2 end timestamp; không cần Copy để complete. | No | No |
-| Unsupported / out-of-answerable-scope | Unsupported label và giải thích ngắn. | Manual handling | — | Không tạo claim; log unsupported intent. | No | No |
-| High-risk | High-risk category và lý do handoff. Nhóm legal/compensation hiển thị rõ AI không thể trả lời và đề xuất chuyển BQL. | Chuyển BQL / Manual handling | — | Không tạo substantive answer draft; nhóm legal/compensation log `legal_or_compensation_escalation`. | No | No |
-| No eligible source | Không có relevant Approved/current source. | Retry | Edit question / Manual handling | Không dùng source không eligible, không đoán; log `no_eligible_source`. | No | No |
-| Source expired/unknown | Chỉ có source Expired/Unknown hoặc không xác định được source current. | Retry | Edit question / Manual handling | Không dùng source; log `source_expired_or_unknown`. | No | No |
-| Source conflict | Các source mâu thuẫn do system detect hoặc BQL identify trong evidence review. | Manual handling | Xem sources | Show sources; block substantive drafting/approval as applicable; log `source_conflict`. | No substantive draft | No |
-| System error | Safe fallback có thể hành động; không có output trống. | Retry | Edit question / Manual handling | Retry → Processing; Edit → Question entered; log lỗi. | No | No |
+**Purpose:** danh sách và chi tiết câu hỏi cần BQL can thiệp.
 
-Optional clarification là inline SHOULD-HAVE variant khi required context đã đủ; không phải lifecycle state hoặc dedicated screen bắt buộc trong Wireframe v1. `Copied` là event trên Approved, không phải lifecycle state.
+**Required elements:**
 
-## UI Surface Model
+- Inbox list: ticket ID, thời gian, intent, reason code, ưu tiên, trạng thái.
+- Filter/search theo trạng thái, intent, reason code và thời gian.
+- Case detail: transcript/context tối thiểu, confidence/risk outcome, evidence đã thử.
+- Response composer và state transition.
+- Empty/loading/error/unauthorized state có thông điệp và CTA; không màn hình trắng.
 
-`System states ≠ screens.` Low-Fi Wireframe v1 chỉ cần biểu diễn bốn surface chính và các state variants cần thiết:
+## 6. Cards and State Contracts
 
-1. **Surface 1 — Workbench**
-   - Empty
-   - Question entered
-   - Processing
-   - Input error và Intent detected là variants trong Workbench, không phải màn hình riêng.
-2. **Surface 2 — Needs Information**
-   - Clarification required
-   - Intent unresolved
-   - Optional clarification, nếu có, chỉ là inline helper SHOULD-HAVE; không cần dedicated state/screen.
-3. **Surface 3 — Draft Review**
-   - Evidence available
-   - Draft generated
-   - Reviewing
-   - Approved
-   - Source review là expand/detail nhẹ trong surface này, không phải complex document viewer.
-4. **Surface 4 — Manual Handling / Fallback**
-   - High-risk / Early safety blocked
-   - Emergency/life-safety handoff
-   - Legal/compensation hard block với CTA **Chuyển BQL**
-   - PII/account-specific
-   - Unsupported
-   - No eligible source
-   - Source expired/unknown
-   - Source conflict
-   - System error
-   - Escalation required và Escalated là action/completion variants trong cùng surface.
+### 6.1. Escalation Card for Resident
 
-## D. MVP Flow Priority
+- Tiêu đề: cần BQL hỗ trợ.
+- Lý do user-facing, không lộ chain-of-thought hoặc score nội bộ chưa calibrated.
+- Hotline và thông tin Văn phòng BQL lấy từ eligible directory source/config.
+- Xác nhận case đã chuyển thành công hoặc nêu lỗi + retry nếu tạo ticket thất bại.
+- Không hứa SLA/kết quả không có nguồn.
 
-### Must Have
+### 6.2. Error/Fallback Card
 
-- Bốn UI surfaces trong `UI Surface Model`; system states được biểu diễn bằng variants, không thành một screen cho mỗi state.
-- Deterministic order: input validation → early safety/PII → intent → required context → detailed risk → retrieval.
-- Required clarification; enough required context thì tiếp tục, missing required context thì Clarify và reprocess từ early check.
-- Explicit PII/account-specific state với Edit/remove sensitive information hoặc Manual handling; không yêu cầu thêm PII.
-- Unsupported, high-risk, no eligible evidence, expired/unknown evidence, source conflict và system error đều có actionable Manual handling/fallback path.
-- No eligible source/Source expired-or-unknown/System error có đúng ba action: Retry → Processing; Edit question → Question entered; Manual handling → Escalated.
-- Source eligibility trước draft; lightweight source review; conflict do system detect hoặc BQL identify đều block approval/substantive draft as appropriate.
-- Grounded AI draft → Reviewing → explicit Approval; không auto-approve, không auto-send.
-- Copy chỉ exact approved version; substantive edit invalidate Approval → Reviewing → Copy disabled → explicit re-approval.
-- Approved và Escalated là completion states; M2 end timestamp tại hai state này; Copy không phải completion.
-- New Case từ Approved/Escalated reset query, context, intent, evidence, draft, approval và safety state về Empty.
-- Logging đủ cho query → intent/status → evidence → draft/edit → approval/escalation/fallback, event reason và timestamps theo PRD.
-- Log `copy_attempted` cùng allowed/blocked và `draft_version`; Copy không đổi completion state hoặc M2 timestamp.
+- Không hiển thị output trống.
+- Nêu lỗi ở mức người dùng có thể hiểu, không lộ secret/stack trace.
+- Cho retry; nếu lỗi kéo dài, cho escalation với `system_error`.
+- Giữ message input hoặc response draft của BQL khi retry an toàn.
 
-### Should Have
+### 6.3. Citation Card
 
-- Optional clarification dạng inline helper, không blocking và không có dedicated screen/state trong Wireframe v1.
-- Candidate intent list/manual-select presentation cho Intent unresolved; rule là **TBD**, không block wireframe và không có fake confidence percentage.
-- Lưu/hiển thị draft gốc và bản BQL đã edit để evaluation.
-- Lightweight current-case event history nếu cần kiểm tra flow; không phải operations dashboard.
+- Bắt buộc `document_id` và `section_id`.
+- Không cho phép citation rỗng, section không tồn tại hoặc source ngoài 21 canonical documents.
+- Citation phải gắn với claim hỗ trợ trực tiếp.
 
-### Could Have
+## 7. Confidence & Risk UX
 
-- Cancel processing nếu việc hỗ trợ an toàn và effort thấp; behavior khi cancel là TBD.
-- Link mở full source bên ngoài UI nếu reference/link đã tồn tại và access phù hợp; không xây document viewer.
+- Không hiển thị fake confidence percentage.
+- UI có thể dùng nhãn user-facing như “Đã tìm thấy căn cứ phù hợp” hoặc “Cần BQL kiểm tra thêm”.
+- Internal log vẫn lưu similarity, grader outcome, threshold version và decision path.
+- High Risk luôn ưu tiên hơn similarity cao.
+- Missing required context ưu tiên Clarification khi có thể bổ sung an toàn; không dùng escalation thay thế tùy tiện.
 
-### Not in MVP
+## 8. Canonical Reason Codes in UI/Inbox
 
-- Resident-facing chatbot; direct Zalo/hotline/telephony/transcription integration; omnichannel inbox.
-- Auto-send, auto-approve hoặc autonomous response cho bất kỳ intent nào.
-- CRM/ticketing integration; routing workflow phức tạp; dashboard production.
-- Confidence percentage chưa calibrated.
-- Regenerate draft bằng free-form instruction; complex document viewer; authentication/role model phức tạp.
-- Dedicated `Copied` lifecycle screen/state; dedicated Optional clarification screen; một screen riêng cho mỗi system state.
-- Perfect automatic semantic-conflict detection; flow vẫn phải hỗ trợ conflict do BQL identify trong evidence review.
-- Production PII redaction/retention/access architecture.
+- `pii_or_account_specific`
+- `legal_or_compensation_escalation`
+- `unsupported_intent`
+- `intent_unresolved`
+- `no_eligible_source`
+- `source_conflict`
+- `source_expired_or_unknown`
+- `system_error`
+- `emergency_or_life_safety`
+- `reviewer_rejected_draft`
 
-## E. PM/UX Open Questions
+Inbox dùng exact enum cho filter/audit; UI có thể ánh xạ sang nhãn tiếng Việt nhưng không tạo alias backend mới. `clarification_required` là state/event.
 
-Các TBD dưới đây không block Low-Fi Wireframe v1 và không thay đổi Product Decisions đã chốt:
+## 9. Responsive & Accessibility Minimum
 
-1. Invalid input bao gồm những trường hợp nào ngoài empty/whitespace? Giới hạn độ dài là **TBD**.
-2. Candidate intent list/manual-select nên hiển thị thế nào nếu được làm ở SHOULD-HAVE? Không dùng fake confidence percentage.
-3. Source snippet cần dài đến mức nào; có cần link ra tài liệu gốc hay chỉ metadata/snippet?
-4. Timeout và latency target là gì? Retry limit không được chấm trong Golden revision `0.1`; UI vẫn phải có Retry/Edit/Manual handling.
-5. Demo nhận text gõ/paste; có cần trường nhập riêng cho context hay dùng một ô hội thoại?
-6. Trước real-user pilot, production PII redaction/retention/access policy cụ thể là gì?
+- Resident Chat và cards đọc được trên mobile và desktop.
+- Inbox ưu tiên desktop nhưng vẫn có layout tối thiểu trên màn hình hẹp.
+- Keyboard focus, label, contrast và error message không phụ thuộc duy nhất vào màu.
+- Loading có accessible status; citations có tên đọc được.
 
-## Traceability — PRD to UI Behavior
+## 10. Failure Matrix
 
-| UI Flow / State | Product Requirement / Safety Rule |
-|---|---|
-| Input / Question entered | US-01; FR-01; operator workflow; hotline/Zalo là documentation-only channel origin boundary |
-| Early Safety / PII | FR-09; NFR-05; AC-09; SR-08; safety/privacy boundary; event `pii_or_account_specific` |
-| Intent detected / Intent unresolved | US-02; FR-02; SR-03; M3; event `intent_unresolved` |
-| Clarification required | US-04; FR-03; AC-04–05; SR-02; Missing required context |
-| Manual handling / Escalated | US-06–07; FR-08–09; AC-06, AC-08–10; SR-01, SR-03–06; high-risk / unsupported / no evidence |
-| Approved/current source eligibility | US-03, US-08; FR-04, FR-06; NFR-03; grounding requirement |
-| Evidence available / Source review | US-08; FR-06; AC-03; NFR-03; lightweight metadata only |
-| Source conflict | AC-07; SR-05; system-detected hoặc BQL-identified conflict; event `source_conflict` |
-| Draft generated / Reviewing | US-03, US-05; FR-05, FR-07; AC-01–02; AI-assisted drafting |
-| Approval | US-05; FR-07; AC-02; SR-09; explicit human control; exact approved version |
-| Approval invalidation | Exact-version approval invariant; substantive edit → Reviewing → Copy disabled → explicit re-approval |
-| Completion / Copy | M2 end timestamp tại Approved hoặc valid Escalation; Copy là optional event, không phải lifecycle state |
-| New Case | Operator workflow / efficiency; Approved hoặc Escalated → reset working state → Empty |
-| System error | NFR-02; AC-11; SR-07; Safe fallback + Retry/Edit/Manual handling |
-| Case logging | US-09; FR-10; NFR-06; AC-12; M1–M3 |
+| Failure | Resident behavior | Management behavior | Terminal/state |
+|---|---|---|---|
+| Missing required context | Clarification Card | Chưa tạo ticket | `clarification_required` |
+| Low Confidence | Escalation Card | Ticket mới trong Inbox | `escalated` |
+| High Risk | Escalation Card/hướng dẫn khẩn nếu cần | Ticket có exact reason code | `escalated` |
+| No eligible source/conflict/expired | Không substantive answer | Ticket có evidence outcome | `escalated` |
+| Model/retrieval error tạm thời | Error Card + retry | Không tạo ticket nếu retry thành công | recoverable |
+| Lỗi kéo dài hoặc ticket creation failure | Error Card, retry/handoff phù hợp | Log `system_error`; ticket khi persistence phục hồi | `escalated` khi handoff thành công |
+| Unauthorized | Đăng nhập lại/403 Card | Đăng nhập lại/403 Card | non-terminal |
+| Render error | Error boundary có CTA | Error boundary có CTA | non-terminal; không màn hình trắng |
 
-## Final Validation
+## 11. E2E UI Acceptance
 
-1. **PASS — Core flow deterministic và không có dead-end ngoài completion.** Mọi decision có labeled outcome; Retry → Processing, Edit question → Question entered, Clarify → Reprocess, Manual handling → Escalated và New Case → Empty.
-2. **PASS — Safety triage đúng thứ tự.** Input valid → early safety/PII → intent → required context → detailed risk → retrieval; không có path bypass safety gate.
-3. **PASS — PII/account-specific behavior rõ.** Không tạo substantive personalized answer draft, không yêu cầu thêm PII; BQL chỉ Edit/remove sensitive information hoặc Manual handling; event `pii_or_account_specific` được log mà không cố ý persist unnecessary raw PII.
-4. **PASS — Missing context và unresolved intent có outcome đúng.** Missing required context → Clarify; unresolved intent chỉ Clarify khi hữu ích, nếu không → Manual handling. Candidate list là SHOULD/TBD và không có fake confidence percentage.
-5. **PASS — Source policy nhất quán.** Chỉ Approved/current eligible source được dùng; Draft/Deprecated/Expired/Unknown/no-current → không substantive draft và hiển thị safe fallback với Retry, Edit question hoặc Manual handling.
-6. **PASS — Source conflict được xử lý an toàn.** Conflict do system detect hoặc BQL identify trong evidence review đều show sources, không tự chọn, block substantive draft/approval as appropriate và log `source_conflict`; không yêu cầu automatic detection hoàn hảo.
-7. **PASS — Human control không có bypass.** Mọi substantive AI output là draft; không auto-approve, không auto-send; Copy chỉ khả dụng cho exact approved version.
-8. **PASS — Approval invalidation deterministic.** Approved + substantive edit → Approval invalidated → Reviewing → Copy disabled → explicit re-approval required.
-9. **PASS — Completion và Copy tách biệt.** Approved và Escalated/Manual handling là business completion states và M2 end timestamp; Copy là optional event, không bắt buộc để complete.
-10. **PASS — New Case reset đầy đủ.** Từ Approved/Escalated, New Case xóa working query, context, intent, evidence, draft, safety state và approval trước khi về Empty.
-11. **PASS — Error/fallback actionable.** No eligible source và System error đều có Retry, Edit question và Manual handling với transition rõ ràng.
-12. **PASS — Wireframe readiness.** Bốn surface Workbench, Needs Information, Draft Review và Manual Handling/Fallback đã có CTA/state variants; `System states ≠ screens`; Optional clarification không cần dedicated Wireframe v1 screen.
-13. **PASS — Scope control.** Không có resident chatbot, channel integration, auto-send/approve, CRM/ticketing, production dashboard, fake confidence score, regenerate workflow, complex viewer, production PII architecture hoặc autonomous agent behavior.
+- **Answered:** `resident_submits_query` → `system_answers_with_citation`.
+- **Clarification:** `resident_submits_query` → `system_requests_clarification` → `resident_provides_context` → `system_answers_with_citation`.
+- **Escalation:** `resident_submits_query` → `system_detects_low_confidence_or_risk` → `system_escalates_to_bql`.
+- **Retry:** `resident_submits_query` → `system_encounters_recoverable_error` → `resident_retries_query` → `system_answers_with_citation`.
+- **Unresolved Escalation:** `resident_submits_query` → `system_requests_clarification` → `resident_provides_unhelpful_context` → `system_detects_low_confidence_or_risk` → `system_escalates_to_bql`.
+- BQL login → Inbox list → case detail → response succeeds.
+- Resident cannot access Inbox; Management authorization is enforced server-side.
+- Fault injection for auth/retrieval/model/persistence/render never results in a blank page.
+
+## 12. Not in MVP
+
+- Booking/đặt lịch, payment và upsell.
+- Voice/call-center integration.
+- Auto-resolution of legal/dispute/compensation cases.
+- CRM/routing phức tạp ngoài Escalation Inbox tối thiểu.
+- Multi-site runtime ngoài OCP1 pilot.

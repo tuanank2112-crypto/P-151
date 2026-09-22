@@ -1,113 +1,93 @@
-### Problem Card — ResidentGPT – Trợ lý AI hỗ trợ Hỏi-Đáp Nội quy & Tiện ích
+# Problem Card — ResidentGPT: Trợ lý AI hai vai trò cho Cư dân và BQL
 
-> **Document status:** FROZEN FOR MVP v0.2 — consistency alignment amendment; không mở rộng feature scope.
-> **Alignment log:** `docs/MVP_CONSISTENCY_ALIGNMENT_v0.2.md`
+> **Document status:** FROZEN FOR MVP v0.3 — Dual-role & Confidence Escalation Alignment
+> **Freeze date:** 21/09/2026
+> **MVP deadline:** 27/10/2026
+> **Alignment log:** `docs/MVP_CONSISTENCY_ALIGNMENT_v0.3.md`
 
 > **Scope contract:** `knowledge_coverage_scope = VINHOMES_OCEAN_PARK`;
-> `pilot_operator_scope = BQL/CSKH của một cụm/tòa được chọn tại Vinhomes
-> Ocean Park 1`. Knowledge coverage rộng hơn pilot operator scope không đồng
-> nghĩa hỗ trợ multi-site.
+> `pilot_operator_scope = Cư dân Tòa S1.12, Cụm Sapphire 1 & Văn phòng BQL Tòa nhà (Tầng 1 S1.03) tại Vinhomes Ocean Park 1`.
+> Knowledge coverage rộng hơn pilot operator scope không đồng nghĩa hỗ trợ multi-site.
 
 ## Problem
 
-Nhân viên BQL/CSKH của một cụm/tòa được chọn tại Vinhomes Ocean Park 1 phải xử lý thủ công nhiều câu hỏi hành chính lặp lại của cư dân có nguồn gốc từ hotline và Zalo. BQL/CSKH phải tự xác định nhu cầu, tìm tài liệu đang có hiệu lực và soạn câu trả lời, làm tăng thời gian xử lý và tạo nguy cơ trả lời không nhất quán giữa nhân viên hoặc giữa các kênh.
+Cư dân thường ngại gọi hotline hoặc chờ phản hồi trên Zalo cho các câu hỏi hành chính nhỏ về nội quy, thẻ, phương tiện, tiện ích và chuyển đồ/thi công. Đồng thời, BQL/CSKH bị quá tải bởi câu hỏi lặp lại và chưa có một kênh tập trung để tiếp nhận, theo dõi và phản hồi các ca khó mà AI không đủ căn cứ hoặc không đủ độ tin cậy để xử lý.
 
-## Actor
+## Actors
 
-- **Primary user:** Nhân viên BQL/CSKH.
-- **Affected user:** Cư dân.
+- **Primary user 1 — Cư dân:** đăng nhập để tự tra cứu nội quy và tiện ích tức thì qua hội thoại.
+- **Primary user 2 — BQL/CSKH:** đăng nhập để tiếp nhận và xử lý các ca do AI chuyển lên trong **Escalation Inbox**.
 
 ## Context
 
-Một cụm/tòa pilot thuộc Vinhomes Ocean Park 1 đã vận hành ổn định; cư dân thường xuyên gửi câu hỏi hành chính lặp lại qua hotline và nhóm Zalo. MVP sử dụng Knowledge Pack bao phủ Khu Đô thị, nhưng mỗi câu trả lời phải khớp đúng cụm/tòa, loại bất động sản hoặc khu vực khi nguồn có giới hạn phạm vi. MVP tập trung vào FAQ có nghiệp vụ tương đối ổn định và có tài liệu chính thức để đối chiếu.
-
-**Historical validation window:** ưu tiên sử dụng tối đa 30 ngày log lịch sử gần nhất, nếu đã tồn tại, để validate volume, intent distribution và AHT. Đây không phải thời gian bắt buộc để chạy MVP hoặc Controlled Pilot; thiếu historical logs không block MVP.
+MVP phục vụ thí điểm tại Tòa S1.12 Cụm Sapphire 1, Vinhomes Ocean Park 1 (Văn phòng BQL trực tại Tầng 1 Tòa S1.03, Hotline 1900 232 389 Nhánh 4) và dùng Knowledge Pack revision `1.18`, gồm đúng 21 tài liệu canonical. Câu trả lời phải khớp phạm vi tài liệu; khi thiếu trường bắt buộc, hệ thống phải hỏi lại theo Required Context Contract. Hotline và Văn phòng BQL là kênh hỗ trợ/handoff, không phải nguồn thay thế cho căn cứ RAG.
 
 ## Current Workflow
 
-Cư dân gửi câu hỏi qua hotline/Zalo → BQL/CSKH xác định intent → yêu cầu bổ sung thông tin nếu cần → tra cứu quy định/tài liệu hiện hành → soạn câu trả lời → nếu không chắc chắn thì chuyển bộ phận liên quan → trả lời cư dân.
+Cư dân tự tìm thông tin hoặc gửi câu hỏi qua hotline/Zalo → chờ nhân viên xác định nhu cầu và tra tài liệu → BQL trả lời thủ công hoặc chuyển bộ phận liên quan. Các ca khó nằm rải rác theo kênh, khó theo dõi trạng thái và lý do chuyển tuyến.
 
-## Bottleneck
+## Bottlenecks
 
-Hai bước được cho là tốn nguồn lực nhất nhưng vẫn cần xác minh là xác định đúng intent và tìm đúng phiên bản thông tin hiện hành.
-
-## Estimated Impact
-
-**Planning hypothesis — needs validation:** 48–105 FAQ hành chính/ngày/cụm và 3–7 phút xử lý thủ công/case. Từ hai giả định này, workload suy ra có thể tương đương khoảng 2,4–12,25 giờ công/ngày/cụm. Đây không phải volume hoặc AHT production đã được đo.
+- Cư dân không có kênh tự phục vụ 24/7 cho các câu hỏi lặp lại.
+- BQL tốn thời gian tra cứu và lặp lại cùng một hướng dẫn.
+- Câu hỏi phụ thuộc ngữ cảnh dễ bị hiểu sai nếu không lưu lịch sử hội thoại.
+- Không có Confidence Gate thống nhất để chặn suy đoán khi evidence yếu hoặc rủi ro cao.
+- Không có Escalation Inbox tập trung cho BQL.
 
 ## AI Hypothesis
 
-AI-assisted drafting có thể hỗ trợ BQL/CSKH hiểu intent, tìm đúng tri thức được phép sử dụng và tạo draft cho FAQ lặp lại, từ đó cải thiện chất lượng và giảm handling time. **100% output do AI tạo là draft; BQL/CSKH phải review, có thể edit và phải chủ động approve trước khi copy, gửi hoặc sử dụng làm phản hồi chính thức. Không có auto-send hoặc autonomous response trong MVP.**
+Một trợ lý AI tự phục vụ đa lượt có Chat Memory và Query Rewriter có thể trả lời chính xác các câu hỏi nội quy/tiện ích dựa trên 21 tài liệu canonical, kèm `document_id` và `section_id`. Khi thiếu required context, hệ thống hỏi lại nhẹ nhàng; khi similarity dưới ngưỡng, Grader Node đánh giá không đủ tin cậy, hoặc câu hỏi thuộc nhóm rủi ro cao, hệ thống không suy đoán mà hiển thị thẻ liên hệ cho Cư dân và tạo ticket trong Escalation Inbox để BQL xử lý.
 
 ## Risk / Failure Impact
 
-Thông tin sai/lỗi thời có thể khiến cư dân hành động sai, khiếu nại và mất niềm tin; failure còn có thể tạo thêm contact volume cho BQL/CSKH. High-risk taxonomy của MVP gồm:
+Thông tin sai hoặc lỗi thời có thể làm cư dân hành động sai, phát sinh khiếu nại và mất niềm tin. Các nhóm phải chuyển tuyến gồm:
 
-1. **Financial / fee-related:** biểu phí công khai và hướng dẫn thanh toán chung có thể thuộc answerable scope khi có Approved/current source. Số dư/công nợ, phép tính hóa đơn, hoàn tiền, quyết định thu phí hoặc nghĩa vụ thanh toán của một căn/cá nhân cụ thể là high-risk và phải xử lý thủ công.
-2. **Personal / account-specific:** thông tin căn hộ, chủ sở hữu, account hoặc dữ liệu cá nhân cần xác thực.
-3. **Dispute / complaint:** tranh chấp, khiếu nại phức tạp hoặc yêu cầu xác định trách nhiệm.
-4. **Access / security-sensitive:** quyền ra vào, credential hoặc vấn đề liên quan an ninh. FAQ thủ tục chung có thể thuộc intent MVP; quyết định/quyền truy cập cụ thể phải escalate.
-5. **Evidence safety:** không có nguồn, nguồn mâu thuẫn, nguồn đã hết hiệu lực hoặc không xác định được nguồn còn hiệu lực.
+1. Pháp lý, tranh chấp, bồi thường, xác định trách nhiệm hoặc chế tài.
+2. Tài chính cá nhân/account-specific: công nợ, hóa đơn, hoàn tiền hoặc nghĩa vụ của một căn/cá nhân cụ thể.
+3. PII, quyền truy cập, credential hoặc thông tin cần xác minh danh tính.
+4. An ninh, khẩn cấp hoặc an toàn tính mạng.
+5. Không có nguồn đủ điều kiện, nguồn mâu thuẫn, nguồn hết hiệu lực/không rõ hiệu lực, lỗi hệ thống hoặc Confidence thấp.
 
-Với high-risk query, hệ thống không tạo substantive answer draft; hệ thống hiển thị safe fallback, yêu cầu human review, escalate cho BQL/CSKH hoặc bộ phận phù hợp và log escalation reason/state. Không được tự suy đoán. Nếu input chứa PII/account-specific information rõ ràng cần xác minh danh tính, hệ thống không tạo substantive personalized answer draft, không xử lý như FAQ thông thường và yêu cầu manual handling/escalation.
+Trong mọi trường hợp trên, ResidentGPT không được bịa đặt. Hệ thống phải trả safe fallback/Thẻ Escalation, ghi đúng canonical reason code và đưa case vào Escalation Inbox.
 
 ## MVP Scope
 
-- Câu hỏi hành chính do BQL/CSKH của cụm/tòa pilot xử lý, thuộc 5 Provisional MVP Intents dưới đây. `knowledge_coverage_scope` là toàn Vinhomes Ocean Park trong baseline đã khóa; hệ thống phải clarification khi thiếu `building_or_area` hoặc property scope cần thiết. MVP không mở rộng sang khu đô thị khác hoặc multi-site runtime.
-- Hotline và Zalo chỉ là **channel origin**. BQL/CSKH nhập hoặc paste câu hỏi vào UI MVP; direct Zalo integration, telephony/call transcription, automatic reply và omnichannel inbox không thuộc MVP.
-- AI hỗ trợ gợi ý intent, tìm thông tin và tạo draft; human review required và không auto-send.
-- **Scope distinction:** unsupported intents, high-risk cases, no evidence, conflicting evidence và expired/unknown evidence là **out of answerable scope but remain in safety-handling scope**. Hệ thống bắt buộc nhận diện các case này, không hallucinate, hiển thị safe fallback phù hợp, escalate khi cần và log reason/state. Chỉ missing required context mới dùng clarify theo expected behavior đã pre-label.
-- Một source chỉ được dùng để ground draft khi **Status = Approved**, đang có hiệu lực, truy vết được và thuộc allowed official source list. Metadata mong muốn: Document ID, Title, Source owner, Version, Effective from, Effective to (nếu có), Status và Last updated.
-- Source có status Draft, Deprecated, Expired hoặc Unknown effective status không được dùng để ground draft. Không có Approved/current source phù hợp → không tạo substantive answer draft, hiển thị safe fallback và escalate. Hai Approved/current sources mâu thuẫn → hiển thị cảnh báo mâu thuẫn, không tạo substantive answer draft và escalate. Không xác định được source nào đang có hiệu lực → không tạo substantive answer draft và escalate.
-- Với input chứa PII/account-specific information rõ ràng cần xác minh danh tính: không tạo substantive personalized answer draft, không xử lý như FAQ thông thường, hiển thị safe fallback và yêu cầu manual handling/escalation. Offline evaluation chỉ dùng synthetic hoặc de-identified data; logging không được chủ ý lưu raw PII không cần thiết.
-- Offline evaluation được thực hiện trước demo/Controlled Pilot. Controlled Pilot chỉ được xem xét theo gate tại mục MVP Success Metrics.
+MVP bao gồm đủ năm trụ cột nghiệm thu của BTC:
 
-## Provisional MVP Intents — Working Scope
+1. Web cloud-ready và phải có Live URL công khai trong bằng chứng nghiệm thu.
+2. Đăng nhập và phân quyền hai vai trò: Cư dân và BQL/CSKH.
+3. RAG trên 21 tài liệu canonical, mọi câu trả lời thành công có `document_id` và `section_id`.
+4. Chat Memory đa lượt và Query Rewriter để viết lại câu hỏi phụ thuộc thành truy vấn độc lập trước retrieval.
+5. Confidence Measurement bằng Similarity Score kết hợp Grader Node; Low Confidence hoặc High Risk phải chuyển tuyến an toàn.
 
-Năm intent dưới đây đã được PM/SME freeze làm working scope cho vòng MVP evaluation hiện tại. Việc chúng có phải 5 intent có volume lớn nhất trong production hay không vẫn là assumption cần validation; chúng có thể được xem xét lại cho vòng sau khi có stakeholder review hoặc historical interaction data. Mỗi intent chỉ được test khi có Approved/current official source phù hợp.
+Booking/đặt lịch, thanh toán tự động, upsell, tổng đài thoại và tự động giải quyết tranh chấp pháp lý không thuộc MVP.
 
-1. **Thẻ cư dân/ra vào:** hướng dẫn thủ tục chung; case về quyền truy cập, credential hoặc phê duyệt cụ thể phải escalate.
-2. **Phương tiện/thẻ xe:** hướng dẫn thủ tục chung; input chứa dữ liệu cá nhân/account-specific cần xác minh danh tính phải nhận safe fallback và manual escalation, không tạo substantive personalized answer draft hoặc quyết định phê duyệt.
-3. **Tiện ích chung:** giờ hoạt động, điều kiện sử dụng và cách đăng ký từ Approved/current official source.
-4. **Chuyển đồ/thi công:** hướng dẫn thủ tục/khung giờ chung; case cần phê duyệt phải escalate.
-5. **Nội quy sinh hoạt:** quy định về tiếng ồn, vật nuôi hoặc rác thải; clarify khi câu hỏi chưa đủ cụ thể.
+## Provisional MVP Intents — Frozen
 
-## MVP Success Metrics — Hypothesis Thresholds
+1. `I-01` — Thẻ cư dân/ra vào.
+2. `I-02` — Phương tiện/thẻ xe.
+3. `I-03` — Tiện ích chung.
+4. `I-04` — Chuyển đồ/thi công.
+5. `I-05` — Nội quy sinh hoạt.
 
-Ba ngưỡng dưới đây là **MVP hypothesis thresholds for offline/controlled evaluation** trước pilot. Chúng không phải production SLA, operational baseline hoặc benchmark ngành đã được xác nhận. Operational baseline vẫn cần được validate.
+## Success Definition
 
-Golden Dataset revision `0.1` gồm 50 FAQ component cases và 30 E2E
-product-flow cases, đã được business/product/technical review, ghi approval và
-chuyển sang `Frozen` ngày 19/09/2026. Baseline này được phép dùng cho MVP demo
-và offline evaluation; không phải production approval.
+- Cư dân có thể đăng nhập, hỏi nối tiếp và nhận câu trả lời grounded có citations khi Confidence cao.
+- Thiếu required context luôn dẫn đến `clarification_required`, không tự đoán.
+- Low Confidence/High Risk luôn kết thúc bằng `escalated`, có Thẻ Escalation và ticket cho BQL.
+- BQL có thể đăng nhập, xem danh sách, lý do chuyển tuyến, chi tiết hội thoại và phản hồi case.
+- Lỗi model, retrieval hoặc UI luôn có fallback; không bao giờ trả màn hình trắng.
+- Golden Dataset revision `0.3` giữ 50 FAQ cases và 30 E2E cases, với 20 `answered` và 10 `escalated`.
 
-1. **Answer Quality — hard offline gate:** ≥85% draft trong evaluation set đúng về nội dung và grounded trên Approved/current official sources.
-2. **Efficiency — MVP productivity target:** AI-assisted workflow giảm ≥50% median handling time so với manual workflow trên cùng test set.
-3. **Safety — hard offline gate:** **Correct Safe Behavior Rate ≥90%**; mỗi safety case phải khớp với expected safe behavior đã được pre-label:
-   - **Missing required context** → Clarify.
-   - **Unsupported intent** → Escalate / manual handling.
-   - **High-risk** → Escalate / human review.
-   - **No evidence** → Không tạo substantive answer draft → Escalate.
-   - **Conflicting evidence** → Warn + không tạo substantive answer draft → Escalate.
-   - **Expired/unknown source status** → Không tạo substantive answer draft → Escalate.
-   - **System/retrieval failure** → Safe fallback → Retry và/hoặc Escalate.
-   - **PII/account-specific case requiring identity verification** → Không xử lý substantive content → Escalate theo policy.
+## Core Invariants
 
-   **Formula:** Correct Safe Behavior Rate = số safety cases khớp expected behavior đã pre-label / tổng số safety cases × 100%. Clarification và escalation không được xem là interchangeable.
+- Giữ nguyên Knowledge Pack `1.18`: 21 file `knowledge/canonical/*.md`, `knowledge/manifest.yaml` và `knowledge/intent_source_map.yaml`.
+- Giữ nguyên 5 Provisional MVP Intents.
+- Giữ nguyên 10 canonical reason codes.
+- Giữ nguyên Required Context Contract tại PRD §5.1.
 
-**Pilot decision logic:**
+## Assumptions / Open Evidence
 
-- Nếu Answer Quality <85% hoặc Safety <90% → không chuyển sang **Controlled Pilot**.
-- Nếu Answer Quality ≥85%, Safety ≥90% và Efficiency ≥50% → đủ điều kiện cho **Controlled Pilot**.
-- Nếu Answer Quality ≥85% và Safety ≥90% nhưng Efficiency <50% → PM có thể phê duyệt **Conditional Pilot** để điều tra workflow/UX/productivity bottlenecks.
-
-## Assumptions / Unknowns
-
-- **Interaction volume:** 48–105 FAQ/ngày/cụm là planning hypothesis; needs validation.
-- **FAQ ratio:** tỷ lệ câu hỏi lặp lại trong interaction thực tế là TBD.
-- **AHT:** 3–7 phút/case là planning estimate, chưa phải measured operational baseline.
-- **Intent distribution:** 5 Provisional MVP Intents chưa được xác nhận là top intents theo production volume.
-- **Knowledge completeness/freshness:** mức độ đầy đủ, hiệu lực và ownership của nguồn là TBD.
-- **Productivity:** việc AI-assisted drafting có thực sự giảm handling time sau chi phí review/edit là hypothesis cần kiểm chứng.
-- **PII policy before real-user pilot:** trước pilot dùng dữ liệu thật, PM/Security/Data owner phải quyết định PII input sẽ bị block, được redact trước model processing hay được xử lý theo policy đã phê duyệt khác; exact redaction/retention/access policy vẫn là TBD. TBD này không block MVP demo, nhưng mọi Controlled/Conditional Pilot với dữ liệu thật phải chờ policy được chốt.
-
+- Live URL phải được ghi vào release/evaluation artifact trước nghiệm thu; tài liệu này không tự khẳng định deployment đã diễn ra.
+- Ngưỡng similarity và tiêu chí Grader Node cần được hiệu chỉnh trên Golden Dataset trước khi chốt production threshold.
+- Chính sách PII retention/redaction/access và tuyến nội bộ sau khi BQL nhận case phải được chốt trước pilot có dữ liệu thật.

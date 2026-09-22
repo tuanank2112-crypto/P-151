@@ -70,6 +70,12 @@ bash scripts/setup_hooks.sh                                      # Linux / macOS
 powershell -ExecutionPolicy Bypass -File scripts\setup_hooks.ps1 # Windows PowerShell
 ```
 
+On Windows, the Codex hook uses `commandWindows` and the repository Git root,
+so it also works when Codex starts in a subdirectory. If Codex reports that the
+hook is new or changed, open `/hooks` in Codex and review/trust the two logging
+hooks once. The Windows launcher first tries the project virtual environment,
+then installed Python interpreters, and finally a PowerShell fallback.
+
 Chạy một lần sau khi clone. Hook ghi lại prompt khi bạn dùng Claude Code, Cursor,
 Codex CLI, Gemini CLI, Antigravity hoặc GitHub Copilot, và cài pre-push hook để
 đẩy log lên server.

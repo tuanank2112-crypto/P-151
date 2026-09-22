@@ -1,19 +1,19 @@
 # ResidentGPT — MVP Data Scope Lock v1.0
 
-> **Status:** FROZEN  
-> **Knowledge Pack revision:** `1.18`  
-> **Baseline prepared:** 19/09/2026  
-> **Freeze effective date:** 20/09/2026  
-> **MVP deadline:** 27/09/2026  
-> **Property target:** Vinhomes Ocean Park  
-> **Intended use:** MVP demo và offline evaluation  
+> **Status:** FROZEN
+> **Knowledge Pack revision:** `1.18`
+> **Baseline prepared:** 19/09/2026
+> **Freeze effective date:** 20/09/2026
+> **MVP deadline:** 27/10/2026
+> **Property target:** Vinhomes Ocean Park
+> **Intended use:** MVP demo và offline evaluation
 > **Decision:** GO cho implementation và offline evaluation trong phạm vi
 > được khóa tại tài liệu này.
 
 ## 1. Mục đích khóa dữ liệu
 
 Tài liệu này chốt tập dữ liệu mà ResidentGPT được phép sử dụng trong MVP,
-phạm vi câu hỏi có thể tạo substantive answer draft, các khoảng trống bắt
+phạm vi câu hỏi có thể tạo câu trả lời grounded, các khoảng trống bắt
 buộc clarification/manual handling và quy trình thay đổi sau thời điểm
 freeze.
 
@@ -99,7 +99,7 @@ loại, section mâu thuẫn, scope constraint hoặc safety policy trong
 
 ### I-01 — Thẻ Cư dân/ra vào
 
-ResidentGPT có thể tạo draft có nguồn cho:
+ResidentGPT có thể trả lời có nguồn cho:
 
 - Chức năng và đối tượng được cấp Thẻ Cư dân, Thẻ Ra vào.
 - Hạn mức đã nêu rõ trong nguồn.
@@ -116,7 +116,7 @@ Phải clarification hoặc manual handling đối với:
 
 ### I-02 — Phương tiện/thẻ xe
 
-ResidentGPT có thể tạo draft có nguồn cho:
+ResidentGPT có thể trả lời có nguồn cho:
 
 - Nội quy trông giữ xe và nghĩa vụ chung của người gửi xe.
 - Mức phí tháng hoặc vãng lai đã công bố, sau khi xác định đúng địa điểm,
@@ -135,8 +135,8 @@ Phải clarification hoặc manual handling đối với:
 
 ### I-03 — Tiện ích chung
 
-ResidentGPT có thể tạo draft có nguồn cho tám tiện ích đã liệt kê tại Mục
-4.2, bao gồm giờ hoạt động, điều kiện sử dụng, đặt lịch/mua vé nếu có,
+ResidentGPT có thể trả lời có nguồn cho tám tiện ích đã liệt kê tại Mục
+4.2, bao gồm giờ hoạt động, điều kiện sử dụng và hướng dẫn truy cập nếu có,
 quy tắc an toàn và hành vi bị cấm.
 
 Phải clarification hoặc manual handling đối với:
@@ -149,7 +149,7 @@ Phải clarification hoặc manual handling đối với:
 
 ### I-04 — Chuyển đồ/thi công
 
-ResidentGPT có thể tạo draft có nguồn cho:
+ResidentGPT có thể trả lời có nguồn cho:
 
 - Đăng ký và vận chuyển đồ sinh hoạt ra/vào các Tòa nhà được nguồn liệt kê.
 - Khung giờ, tuyến vận chuyển, yêu cầu giấy/QR được duyệt và quy định về xe.
@@ -169,7 +169,7 @@ Phải clarification hoặc manual handling đối với:
 
 ### I-05 — Nội quy sinh hoạt
 
-ResidentGPT có thể tạo draft có nguồn cho:
+ResidentGPT có thể trả lời có nguồn cho:
 
 - Nội quy sinh hoạt và sử dụng Tòa nhà.
 - Quy định tiếng ồn, vệ sinh, vật nuôi, tài sản chung, an toàn và hành vi bị
@@ -203,7 +203,7 @@ không được phê duyệt.
 
 ## 7. Eligibility và retrieval rules bắt buộc
 
-Một section chỉ được dùng để tạo substantive answer draft khi đồng thời:
+Một section chỉ được dùng để tạo substantive answer khi đồng thời:
 
 1. Tài liệu có `status: Approved`.
 2. Tài liệu có `effective_status: Current` hoặc khoảng hiệu lực hợp lệ.
@@ -217,16 +217,16 @@ Khi không thỏa đủ điều kiện:
 
 - Thiếu required context → clarification, không đoán.
 - Intent ngoài năm intent → unsupported và manual handling.
-- Không có Approved/current source → safe fallback và manual handling.
+- Không có Approved/current source → safe fallback, Thẻ Escalation và ticket cho BQL.
 - Hai nguồn hợp lệ mâu thuẫn → `source_conflict`, không tự chọn nguồn.
 - Source hết hiệu lực hoặc không xác định được độ mới → không tạo
-  substantive answer draft.
+  substantive answer.
 - Input có obvious PII/account-specific data cần xác minh → không xử lý nội
   dung cá nhân hóa và không yêu cầu thêm PII.
 
 ## 8. Hard-block và safety routing
 
-ResidentGPT không được tạo substantive answer draft cho:
+ResidentGPT không được tạo substantive answer cho:
 
 - Bồi thường.
 - Tranh chấp.
@@ -244,7 +244,7 @@ phù hợp; không đi theo flow FAQ thông thường.
 
 ## 9. Section bị loại hoặc bị khóa do mâu thuẫn
 
-Các section sau không được tự động dùng để tạo draft:
+Các section sau không được tự động dùng để tạo câu trả lời:
 
 - `COMM-03C` — nội dung sai phạm vi tài liệu Khu Thương mại dịch vụ.
 - `KAYAK-II-05` — nội dung nhắc sai phạm vi Vườn Nướng.
@@ -315,9 +315,9 @@ Baseline `1.18` được phép dùng cho implementation và offline evaluation k
   answerable scope đã khóa.
 - Known gaps, source conflict, unsupported và high-risk case được pre-label
   clarification hoặc escalation đúng loại.
-- Mọi draft có citation đến source và section hợp lệ.
+- Mọi câu trả lời trạng thái `answered` có citation `document_id` và `section_id` hợp lệ.
 - Không sử dụng dữ liệu cư dân thật.
-- BQL/CSKH review và explicit Approve trước khi Copy hoặc sử dụng draft.
+- Low Confidence/High Risk phải hiển thị Thẻ Escalation cho Cư dân và tạo ticket trong BQL Escalation Inbox.
 
 ## 13. Freeze decision
 
