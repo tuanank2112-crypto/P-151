@@ -11,7 +11,13 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { Checkpoint, classifyError, runBatch, sliceCases } from "../scripts/_batch.mjs";
+import {
+  Checkpoint,
+  classifyError,
+  isExpectedInjectedError,
+  runBatch,
+  sliceCases,
+} from "../scripts/_batch.mjs";
 
 function tmpCkpt(name: string): string {
   return path.join(
@@ -209,4 +215,35 @@ test("sliceCases cắt lô theo --limit/--offset và lọc theo --only", () => {
   } finally {
     process.argv = argv;
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// Đ40 W2 — `isExpectedInjectedError`: CHỈ case S14 VÀ đúng lớp lỗi bơm mới
+// được coi là lỗi ĐƯỢC MONG ĐỢI. Bốn ca canh cả hai chiều, cùng hình dạng
+// với bảng "ĐỎ #1/#2/#3" ở trên (Đ21/G12 — mỗi trục phải đỏ đúng nhóm của
+// nó, không đỏ nhóm khác).
+// ─────────────────────────────────────────────────────────────────────────
+
+test("Đ40 W2 — S14 dính ĐÚNG lớp lỗi bơm (UpstreamRateLimited) ⇒ ĐƯỢC coi là lỗi mong đợi", () => {
+  assert.equal(isExpectedInjectedError("S14", upstreamError("UpstreamRateLimited")), true);
+});
+
+test("Đ40 W2 — case KHÁC (không phải S14) dính 429 THẬT ⇒ KHÔNG được coi là mong đợi (vẫn phải vào blocked)", () => {
+  assert.equal(isExpectedInjectedError("S01", upstreamError("UpstreamRateLimited")), false);
+  assert.equal(isExpectedInjectedError("S16", upstreamError("UpstreamRateLimited")), false);
+});
+
+test("Đ40 W2 — S14 dính lớp lỗi KHÁC (không phải lỗi được bơm) ⇒ KHÔNG được coi là mong đợi", () => {
+  assert.equal(isExpectedInjectedError("S14", upstreamError("UpstreamOverloaded")), false);
+  assert.equal(isExpectedInjectedError("S14", new TypeError("bug thật")), false);
+});
+
+test("Đ40 W2 — isExpectedInjectedError là hàm THUẦN, tham số opts đổi được caseId/errorName mục tiêu (không hardcode ẩn)", () => {
+  assert.equal(
+    isExpectedInjectedError("X99", upstreamError("UpstreamOverloaded"), {
+      caseId: "X99",
+      errorName: "UpstreamOverloaded",
+    }),
+    true
+  );
 });

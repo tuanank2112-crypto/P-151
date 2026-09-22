@@ -145,6 +145,88 @@ export function hitsRiskKeyword(text: string): boolean {
   return false;
 }
 
+/**
+ * Chặng 2 (Đ41 W2) — lưới TẤT ĐỊNH cho `pii_or_account_specific`.
+ *
+ * Căn nguyên đo được 2026-09-22 (ca Golden `S06`, "Cho tôi số điện thoại của
+ * chủ căn tầng 9 cùng tòa."): `checkOwnership()` so `a1.target_subjects` — mà
+ * A1 theo hợp đồng `01-CONTRACTS` §8.1 chỉ rút được `resident_id` /
+ * `property_id` dạng MÃ. Câu hỏi mô tả người khác bằng LỜI ("chủ căn tầng 9
+ * cùng tòa") không có mã nào, nên đi qua cổng ownership sạch trơn rồi rơi
+ * xuống nhánh intent ⇒ ra `unsupported_intent`. Sản phẩm vẫn từ chối, nhưng
+ * nói SAI LÝ DO: "không hỗ trợ yêu cầu này" thay vì "đây là dữ liệu cá nhân
+ * của người khác" (Đ06 — ranh giới là CHỦ SỞ HỮU dữ liệu, không phải LOẠI dữ
+ * liệu).
+ *
+ * Đây là lưới thứ hai đặt SAU phán đoán ngữ nghĩa của A1, đúng khuôn mẫu đã
+ * duyệt ở chặng 5 (`hitsRiskKeyword`, Đ31) — nên nó phải CHÍNH XÁC chứ không
+ * cần phủ rộng. Chặn khi và chỉ khi có ĐỦ HAI mảnh:
+ *   (1) một MỤC dữ liệu cá nhân được hỏi đích danh, và
+ *   (2) một CHỦ THỂ KHÁC người đang đăng nhập.
+ * Thiếu một mảnh thì KHÔNG chặn — "số điện thoại của tôi" (chính chủ, Đ06 cho
+ * qua) và ca Golden FAQ "Thẻ xe có được cho người khác mượn không?" (có chữ
+ * "người khác" nhưng không hỏi dữ liệu của ai) đều phải đi tiếp.
+ *
+ * Khớp theo ÂM TIẾT, KHÔNG theo chuỗi con (P02-C17).
+ */
+const PERSONAL_DATA_PHRASES_VI = [
+  "số điện thoại",
+  "số đt",
+  "sđt",
+  "số máy",
+  "email",
+  "thư điện tử",
+  "căn cước",
+  "chứng minh nhân dân",
+  "cmnd",
+  "số tài khoản",
+  "thông tin cá nhân",
+  "thông tin liên hệ",
+  "danh sách cư dân",
+];
+
+const OTHER_SUBJECT_PHRASES_VI = [
+  "chủ căn",
+  "chủ hộ",
+  "chủ nhà",
+  "hàng xóm",
+  "cư dân khác",
+  "người khác",
+  "hộ khác",
+  "căn khác",
+  "nhà bên",
+  "căn bên",
+];
+
+export function asksOtherPartyPersonalData(text: string): boolean {
+  const tokens = syllables(text);
+  if (!PERSONAL_DATA_PHRASES_VI.some((p) => hasPhrase(tokens, p))) return false;
+  return OTHER_SUBJECT_PHRASES_VI.some((p) => hasPhrase(tokens, p));
+}
+
+/** Bỏ dấu thanh + `đ` thành `d` để so từ không phụ thuộc cách gõ dấu. KHÔNG
+ *  sửa `syllables()` (nó cố ý GIỮ dấu cho lưới chặng 5, Đ31). */
+function foldDiacritics(word: string): string {
+  return word.normalize("NFD").replace(/\p{M}+/gu, "").replace(/đ/g, "d");
+}
+
+/**
+ * Đ41 W1 — câu hỏi có chia ÍT NHẤT MỘT từ với TIÊU ĐỀ tài liệu không.
+ *
+ * Dùng TIÊU ĐỀ tài liệu, KHÔNG dùng `heading_vi` của section và KHÔNG dùng
+ * thân chunk (vùng cấm ghi ở `topRejectedIsOnTopic`): tiêu đề là chỗ người
+ * soạn đặt CHỦ ĐỀ ("Nội quy sử dụng Bể bơi (bản 2024)"), còn thân chunk đầy từ
+ * chung chung ("giờ", "mở", "cửa") — chính mấy từ đó kéo chunk bể bơi hết hiệu
+ * lực lên hạng 1 cho một câu hỏi về sân pickleball.
+ */
+export function queryMentionsDocumentTitle(queryVi: string, titleVi: string): boolean {
+  const titleWords = new Set(syllables(titleVi).map(foldDiacritics));
+  if (titleWords.size === 0) return false;
+  return syllables(queryVi)
+    .map(foldDiacritics)
+    .some((w) => titleWords.has(w));
+}
+
 interface RunTurnArgs {
   conversation_id: string;
   question_vi: string;
@@ -238,6 +320,41 @@ async function buildConflictCitations(
     heading_vi: sections.get(c.section_id)?.heading_vi ?? "",
     snippet_vi: toSnippet(c.content_vi),
   }));
+}
+
+/**
+ * Đ41 W1 — chunk hạng 1 (đã bị loại vì HẾT HIỆU LỰC) có thật sự nói về chủ đề
+ * của câu hỏi này không. CHỈ gọi ở nhánh `a2.refused` và CHỈ khi
+ * `elig.top_rejected_reason === "expired_or_unknown"`, nên không thêm lời gọi
+ * DataStore nào cho các đường đi khác.
+ *
+ * Số đo trên Postgres thật 2026-09-22 (`evidence/s01-s06/`): chunk hạng 1 của
+ * 5 biến thể truy vấn "sân pickleball …" là `POOL24-BAN-02`/`POOL24-HOURS-01`
+ * thuộc bản nội quy BỂ BƠI đã hết hiệu lực, chung với câu hỏi đúng mấy từ
+ * "giờ/mở/cửa". Tiêu đề tài liệu đó không chia từ nào với câu hỏi ⇒ `false`.
+ * Cùng phép đo, 5 biến thể "bể bơi …" chia `bể`+`bơi` với tiêu đề ⇒ `true`.
+ *
+ * **Vùng cấm (đã cân nhắc và loại):**
+ * - CẤM dùng `heading_vi`: đo được là heading hạng 1 có thể là "Giờ mở cửa bể
+ *   bơi" — chia đúng mấy từ chung chung với câu hỏi pickleball; ngược lại
+ *   heading "Các hành vi bị cấm" KHÔNG chia từ nào với câu hỏi bể bơi thật ⇒
+ *   dùng heading thì đỏ CẢ HAI chiều.
+ * - CẤM dùng ngưỡng điểm `score`: Đ28 đã chọn hướng không-ngưỡng, và thêm một
+ *   hằng số ma thuật vào cổng escalate là đụng `SPEC-P02` §6.5.
+ * - CẤM suy ra `facility_id` / `has_authoritative_rules`: cần cột
+ *   `sections.facility_ids` mà `SectionMeta` không lộ ⇒ phải sửa
+ *   `lib/adapters/**`, ngoài phạm vi H13. Ghi lại làm việc treo.
+ */
+async function topRejectedIsOnTopic(
+  store: DataStore,
+  retrieved: RetrievedChunk[],
+  questionForms: string[]
+): Promise<boolean> {
+  const top = retrieved[0];
+  if (!top) return false;
+  const documents = await store.getDocumentMeta([top.document_id]);
+  const titleVi = documents.get(top.document_id)?.title_vi ?? "";
+  return questionForms.some((q) => queryMentionsDocumentTitle(q, titleVi));
 }
 
 /** `answer_turns.lifecycle_state` theo `decision` (01-CONTRACTS §2.1). */
@@ -372,6 +489,14 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
     return finish(escalateResult("pii_or_account_specific", null, steps));
   }
 
+  // Đ41 W2 — cùng cổng Đ06, nhưng bắt hình dạng mà A1 không rút được thành MÃ:
+  // hỏi một mục dữ liệu cá nhân CỦA NGƯỜI KHÁC bằng lời. Đặt ở chặng 2, TRƯỚC
+  // nhánh intent, vì `unsupported_intent` (chặng 3) đang che đúng ca này.
+  // `is_emergency` vẫn giữ ưu tiên tuyệt đối phía trên.
+  if (asksOtherPartyPersonalData(questionVi) || asksOtherPartyPersonalData(a1.normalized_query_vi)) {
+    return finish(escalateResult("pii_or_account_specific", null, steps));
+  }
+
   if (a1.is_legal_or_compensation) {
     return finish(escalateResult("legal_or_compensation_escalation", null, steps));
   }
@@ -486,6 +611,11 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
   }
 
   if (a2.refused) {
+    // Đ41 W1 — chỉ tra tiêu đề khi cổng G3 SẮP nói "tài liệu hết hiệu lực".
+    const topRejectedOnTopic =
+      elig.top_rejected_reason === "expired_or_unknown"
+        ? await topRejectedIsOnTopic(store, retrieved, [a1.normalized_query_vi, questionVi])
+        : true;
     const dec = decideTurn({
       retrieval_top1: s1,
       eligible_count: eligibleCount,
@@ -495,6 +625,7 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
       retriever_refused: true,
       rejection_histogram: elig.rejection_histogram,
       top_rejected_reason: elig.top_rejected_reason,
+      top_rejected_on_topic: topRejectedOnTopic,
     });
     return finish(escalateResult(dec.reason_code as ReasonCode, dec.gate, steps));
   }

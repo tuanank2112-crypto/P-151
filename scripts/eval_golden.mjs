@@ -30,13 +30,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
 import { runTurn } from "../lib/pipeline/index.ts";
-import { conversationIdFromLabel, getSql } from "../lib/adapters/db.ts";
+import { conversationIdFromLabel, getDataStore, getSql } from "../lib/adapters/db.ts";
+import { rejectAnswer } from "../lib/adapters/bql-store.ts";
 import { judgeFaqCase, judgeSafetyCase } from "../lib/eval/score.ts";
 import { DEMO_RESIDENT_PRINCIPAL } from "./_fixtures.mjs";
 import {
   Checkpoint,
   argFlag,
   argValue,
+  isExpectedInjectedError,
   loadLocalEnv,
   printBackendBanner,
   requireEnv,
@@ -93,6 +95,36 @@ async function readDetectedIntent(conversationId) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Đ40 W2 — đọc lại dòng `answer_turns` MỚI NHẤT của một hội thoại. Dùng khi
+ * `runTurn()` ném lỗi bơm có chủ đích (§4.4): khối `finally` của
+ * `lib/pipeline/index.ts` đã ghi dòng `system_error` TRƯỚC KHI ném lại lỗi
+ * (không sửa file đó — chỉ đọc lại kết quả nó đã ghi). `citations`/`claims`
+ * là `jsonb`, driver `pg` tự parse thành mảng/obj JS — không cần `JSON.parse`
+ * thêm (cùng cách `readDetectedIntent` ở trên đã tin tưởng driver).
+ */
+async function readLastTurn(conversationId) {
+  const sql = getSql();
+  const rows = await sql(
+    `SELECT decision, reason_code, gate_triggered, citations, claims
+     FROM answer_turns WHERE conversation_id = $1
+     ORDER BY created_at DESC LIMIT 1`,
+    [conversationId]
+  );
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    decision: row.decision,
+    reason_code: row.reason_code ?? null,
+    gate_triggered: row.gate_triggered ?? null,
+    citations: row.citations ?? [],
+    claims: row.claims ?? [],
+    // escalate/system_error KHÔNG có assistant_message — không đọc `messages`
+    // thêm một round-trip chỉ để xác nhận điều bảng `answer_turns` đã ngụ ý.
+    answer_vi: null,
+  };
 }
 
 function faqWhy(scored) {
@@ -156,18 +188,183 @@ async function judgeFaq(c) {
   };
 }
 
-/** Chấm một ca Safety. */
-async function judgeSafety(c) {
-  // Đ37 — cùng lý do ở judgeFaq() trên.
+// Đ40 W1 — `S16` mô phỏng sự kiện "BQL bấm Từ chối trong hàng đợi HITL",
+// KHÔNG phải một câu hỏi cư dân. `TESTING-ACCEPTANCE.md` §BB-11 (dòng 268)
+// đã chốt bằng số: "= 65" = "66 case trừ S16 không gọi runTurn". `question_vi`
+// của ca này chỉ là placeholder mô tả (chính Golden ghi vậy trong `note_vi`).
+const REVIEW_REJECT_CASE_ID = "S16";
+
+/**
+ * Đ40 W1 — lái `S16` qua ĐÚNG đường của nó: `rejectAnswer()` thật của
+ * `lib/adapters/bql-store.ts` (SPEC-P03 §3.3, mã A10), KHÔNG viết lại logic
+ * của hàm đó, KHÔNG đẩy `question_vi` vào `runTurn()`.
+ *
+ * `reason_code = reviewer_rejected_draft` chỉ sinh ra khi BQL bấm Từ chối
+ * trên một bản nháp ĐÃ CÓ trong hàng đợi duyệt — nên trước khi gọi
+ * `rejectAnswer()`, hàm này tự dựng "một lượt nháp" (Đ40): một dòng
+ * `answer_turns` (`decision='escalate'`, chưa có `reason_code` cuối cùng) +
+ * một dòng `review_queue` (`state='pending'`) tương ứng, dùng ĐÚNG các hàm
+ * ghi đã có sẵn của `DataStore` (`createConversation`/`appendMessage`/
+ * `insertAnswerTurn` — không tự viết INSERT cho ba bảng đó). Không có hàm
+ * `DataStore` nào tạo `review_queue` (đây LÀ khoảng trống đã đo được: không
+ * nơi nào trong sản phẩm hiện tại INSERT vào bảng đó — `grep -rn
+ * "INSERT INTO review_queue"` rỗng toàn repo; tạo nó ở `runTurn()` nằm NGOÀI
+ * phạm vi gói này vì đó là `lib/pipeline/**`, bị CẤM chạm), nên dòng đó được
+ * ghi bằng một câu SQL trực tiếp NGAY TRONG file này — vẫn là "dựng lượt
+ * nháp", không phải viết lại `rejectAnswer()`.
+ *
+ * CHỈ chạy được trên `DATA_BACKEND=postgres` — `rejectAnswer()` chỉ có ĐÚNG
+ * MỘT cài đặt, dùng thẳng `getSql()` của Postgres (không có nhánh mock).
+ * Trên backend khác, hàm này KHÔNG âm thầm bỏ qua ca (Đ40 VÙNG CẤM: "CẤM âm
+ * thầm bỏ qua ca để số đẹp lên") — nó trả về một bản ghi `fail` tường minh,
+ * nói rõ lý do trong `why`, và người đọc report thấy ngay S16 không đo được
+ * trên backend này thay vì đoán.
+ *
+ * KHÔNG gọi model nào — tốn 0 lời gọi Gemini (khớp hạn mức đã cạn).
+ */
+async function judgeS16ViaReject(c) {
+  if (process.env.DATA_BACKEND !== "postgres") {
+    return {
+      ok: false,
+      rec: {
+        case_id: c.case_id,
+        ok: false,
+        decision: null,
+        reason_code: null,
+        gate: null,
+        checkpoint_safe_behavior: null,
+        checkpoint_gate: null,
+        checkpoint_shows_conflict: null,
+        why:
+          `S16 CHƯA ĐO ĐƯỢC trên backend="${process.env.DATA_BACKEND}" — ` +
+          `rejectAnswer() (lib/adapters/bql-store.ts) chỉ có cài đặt Postgres. ` +
+          `Chạy DATA_BACKEND=postgres để đo ca này (Đ40 W1) — KHÔNG tính ca này vào mẫu số M3 ở backend khác.`,
+      },
+    };
+  }
+
+  const store = await getDataStore();
+  const bqlUser = await store.findUserByEmail("bql@demo.local");
+  if (!bqlUser) {
+    throw new Error(
+      "S16: không tìm thấy tài khoản demo bql@demo.local — chạy `npm run db:seed` trước (OPERATIONS.md §4.1)."
+    );
+  }
+
   const conversationId = conversationIdFromLabel(`golden-safety-${c.case_id}`);
-  const result = await runTurn({
+  const sql = getSql();
+  // Upsert idempotent — cùng lý do `createConversationIfMissing` của
+  // `appendMessage()` (Đ37): cùng nhãn phải nối lại đúng hội thoại cũ giữa
+  // các lượt `--resume`, không đẻ hội thoại mới mỗi lần chạy lại.
+  await sql(
+    `INSERT INTO conversations (id, user_id) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
+    [conversationId, DEMO_RESIDENT_PRINCIPAL.user_id]
+  );
+  const userMsg = await store.appendMessage(conversationId, "user", c.question_vi);
+  const draftText =
+    "[Fixture đo S16 — Đ40 W1] Bản nháp giả lập đang chờ Ban quản lý duyệt, " +
+    "dùng để mô phỏng sự kiện BQL bấm Từ chối trong hàng đợi HITL (SPEC-P03 §3.3).";
+  const turn = await store.insertAnswerTurn({
     conversation_id: conversationId,
+    user_message_id: userMsg.id,
+    assistant_message_id: null,
     question_vi: c.question_vi,
-    principal: DEMO_RESIDENT_PRINCIPAL,
-    // Đ44 — cùng lý do ở judgeFaq() trên.
+    detected_intent: null,
+    lifecycle_state: "escalated",
+    decision: "escalate",
+    reason_code: null,
+    confidence: 0,
+    gate_triggered: null,
+    citations: [],
+    claims: [],
+    latency_ms: 0,
     is_golden_run: true,
     golden_case_id: c.case_id,
   });
+  const rq = await sql(
+    `INSERT INTO review_queue (answer_turn_id, state, original_draft_vi)
+     VALUES ($1, 'pending', $2) RETURNING id`,
+    [turn.id, draftText]
+  );
+  const reviewId = rq[0].id;
+
+  const rejectResult = await rejectAnswer({
+    review_id: reviewId,
+    reviewer_id: bqlUser.id,
+    reject_reason_vi:
+      "Nội dung nháp chưa đủ căn cứ theo nội quy hiện hành — từ chối (fixture đo ca S16, Đ40 W1).",
+  });
+  if (!rejectResult.ok) {
+    throw new Error(
+      `S16: rejectAnswer() thất bại — ${rejectResult.error.code}: ${rejectResult.error.message_vi}`
+    );
+  }
+
+  const rows = await sql(`SELECT decision, reason_code FROM answer_turns WHERE id = $1`, [
+    turn.id,
+  ]);
+  const row = rows[0];
+  const scored = judgeSafetyCase(c, {
+    decision: row?.decision ?? null,
+    reason_code: row?.reason_code ?? null,
+    gate_triggered: null,
+    detected_intent: null,
+    citations: [],
+    claims: [],
+    answer_vi: null,
+  });
+  return {
+    ok: scored.pass,
+    rec: {
+      case_id: c.case_id,
+      ok: scored.pass,
+      decision: row?.decision ?? null,
+      reason_code: row?.reason_code ?? null,
+      gate: null,
+      checkpoint_safe_behavior: scored.checkpoint_safe_behavior,
+      checkpoint_gate: scored.checkpoint_gate,
+      checkpoint_shows_conflict: scored.checkpoint_shows_conflict,
+      why: `${safetyWhy(scored)} [đường: rejectAnswer() thật (SPEC-P03 §3.3), không qua runTurn — Đ40 W1]`,
+    },
+  };
+}
+
+/** Chấm một ca Safety. */
+async function judgeSafety(c) {
+  // Đ40 W1 — S16 đi đường riêng, không gọi runTurn().
+  if (c.case_id === REVIEW_REJECT_CASE_ID) return judgeS16ViaReject(c);
+
+  // Đ37 — cùng lý do ở judgeFaq() trên.
+  const conversationId = conversationIdFromLabel(`golden-safety-${c.case_id}`);
+  // Đ40 W2 — TESTING-ACCEPTANCE §4.4: S14 dùng cờ bơm lỗi 429 CÓ CHỦ ĐÍCH tại
+  // A2. Chỉ TRUYỀN cờ cho đúng case này; mọi case khác chạy y như cũ.
+  const injectUpstreamError = c.case_id === "S14";
+  let result;
+  try {
+    result = await runTurn({
+      conversation_id: conversationId,
+      question_vi: c.question_vi,
+      principal: DEMO_RESIDENT_PRINCIPAL,
+      // Đ44 — cùng lý do ở judgeFaq() trên.
+      is_golden_run: true,
+      golden_case_id: c.case_id,
+      ...(injectUpstreamError ? { forceUpstreamError: "429" } : {}),
+    });
+  } catch (err) {
+    // Đ40 W2 — CHỈ đúng case CÓ cờ bơm lỗi VÀ đúng lớp lỗi được bơm mới coi
+    // là lỗi ĐƯỢC MONG ĐỢI. Mọi trường hợp khác (kể cả S14 dính lỗi khác
+    // lớp) ném lại NGUYÊN VĂN để `runBatch` phân lập Tầng 1 như bình thường
+    // (Đ26) — một 429 THẬT ngoài ý muốn ở BẤT KỲ case nào vẫn phải vào cột
+    // `blocked`, không bị hàm này nuốt.
+    if (!isExpectedInjectedError(c.case_id, err)) throw err;
+    // `runTurn()` đã ghi dòng `answer_turns` (system_error) trong khối
+    // `finally` của nó TRƯỚC KHI ném lại lỗi (lib/pipeline/index.ts, không
+    // sửa file đó) — đọc lại dòng đó thay vì coi cú throw là ca trượt hạ
+    // tầng. Đọc thất bại (DB thật sự có vấn đề) ⇒ vẫn ném lại, không bịa.
+    const row = await readLastTurn(conversationId);
+    if (!row) throw err;
+    result = row;
+  }
   // Safety không chấm checkpoint `intent` (SPEC-P00 §6.5 chỉ áp cho FAQ
   // answerable) — bỏ qua đọc lại DB cho ca này, đỡ một round-trip vô ích.
   const scored = judgeSafetyCase(c, {
@@ -190,7 +387,7 @@ async function judgeSafety(c) {
       checkpoint_safe_behavior: scored.checkpoint_safe_behavior,
       checkpoint_gate: scored.checkpoint_gate,
       checkpoint_shows_conflict: scored.checkpoint_shows_conflict,
-      why: safetyWhy(scored),
+      why: injectUpstreamError ? `${safetyWhy(scored)} [cờ bơm lỗi 429 — Đ40 W2]` : safetyWhy(scored),
     },
   };
 }
@@ -297,6 +494,19 @@ for (const s of summaries) {
   );
 }
 console.log(`run_id=${runId}`);
+
+// Đ40 W1 — BẮT BUỘC nói rõ S16 được xử lý thế nào, không được âm thầm co
+// mẫu số M3. `M3` = tỉ lệ pass trên bộ safety, LUÔN có mẫu số = tổng số ca
+// safety trong Golden (16, K-M2) — S16 nay đi qua đường rejectAnswer() thật
+// (SPEC-P03 §3.3) thay vì bị loại khỏi phép đếm.
+const safetySummary = summaries.find((s) => s.name === "safety");
+if (safetySummary) {
+  console.log(
+    `\nS16 (Đ40 W1): đi qua rejectAnswer() thật (SPEC-P03 §3.3), KHÔNG gọi runTurn() ` +
+      `(TESTING-ACCEPTANCE §BB-11 dòng 268 — "66 case trừ S16 không gọi runTurn"). ` +
+      `Mẫu số M3 = ${safetySummary.total} (đủ 16 ca, KHÔNG loại S16 khỏi phép đếm).`
+  );
+}
 
 const anyStopped = summaries.some((s) => s.stoppedEarly);
 const anyBlocked = summaries.some((s) => s.blocked > 0);

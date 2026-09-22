@@ -25,6 +25,21 @@ export interface DecideTurnSignals {
   rejection_histogram?: Partial<Record<RejectionReason, number>>;
   /** Lý do loại của chunk xếp hạng 1 (Đ28). Chỉ dùng ở G3. */
   top_rejected_reason?: RejectionReason | null;
+  /**
+   * Đ41 — chunk xếp hạng 1 có NÓI VỀ chủ đề của câu hỏi này không (đo bằng
+   * `queryMentionsDocumentTitle()` ở `lib/pipeline/index.ts`). Chỉ dùng ở G3,
+   * và CHỈ để CHẶN mã `source_expired_or_unknown` khi nó sai — không bao giờ
+   * tạo ra mã mới.
+   *
+   * Mặc định `true` (giữ nguyên hành vi Đ28 cho mọi caller chưa truyền).
+   * Lý do cần thêm tín hiệu này: `top_rejected_reason` một mình trả lời
+   * "nguồn khớp NHẤT có dùng được không", nhưng sau Đ32 truy hồi nối từ bằng
+   * `|` nên "khớp nhất" có thể chỉ là khớp mấy từ chung chung ("giờ", "mở",
+   * "cửa"). Đo trên Postgres 2026-09-22: câu hỏi sân pickleball kéo chunk
+   * hạng 1 là bản nội quy BỂ BƠI đã hết hiệu lực ⇒ G3 báo "tài liệu hết hiệu
+   * lực" cho một tiện ích CHƯA BAO GIỜ có tài liệu (Đ41/DEF-01).
+   */
+  top_rejected_on_topic?: boolean;
 }
 
 export interface DecideTurnResult {
@@ -59,6 +74,7 @@ export function decideTurn(sig: DecideTurnSignals): DecideTurnResult {
     retriever_refused = false,
     rejection_histogram = {},
     top_rejected_reason = null,
+    top_rejected_on_topic = true,
   } = sig;
   const s2 = retrieved_count === 0 ? 0 : eligible_count / retrieved_count;
   const confidence = round4(W_RETRIEVAL * s1 + W_ELIGIBILITY * s2 + W_FAITHFULNESS * s3);
@@ -76,8 +92,12 @@ export function decideTurn(sig: DecideTurnSignals): DecideTurnResult {
     // chối nghĩa là không nguồn hợp lệ nào trả lời được câu này; nếu nguồn
     // khớp NHẤT lại là tài liệu đã hết hiệu lực thì sự thật là "thông tin
     // nằm trong tài liệu hết hạn", không phải "không có nguồn nào".
+    // Đ41 — thêm ĐÚNG MỘT điều kiện cần: chunk hạng 1 phải nói về chủ đề của
+    // câu hỏi. Thiếu nó thì "hết hiệu lực" là một lý do BỊA (Đ09) cho tiện
+    // ích chưa bao giờ có nguồn có thẩm quyền. Nhánh này chỉ HẠ cấp về mã
+    // chung `no_eligible_source`, nên không sinh phát biểu mới nào.
     const code: ReasonCode =
-      top_rejected_reason === "expired_or_unknown"
+      top_rejected_reason === "expired_or_unknown" && top_rejected_on_topic
         ? "source_expired_or_unknown"
         : "no_eligible_source";
     return r(0, "escalate", code, "G3_retriever_refused", s1, s2, s3);

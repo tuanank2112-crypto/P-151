@@ -98,6 +98,35 @@ export function classifyError(err) {
   return { tier: "logic", kind: name, quota: false };
 }
 
+/**
+ * Đ40 W2 (`plan.md` §2, 2026-09-22) — `TESTING-ACCEPTANCE.md` §4.4 quy định
+ * case Golden `S14` dùng cờ bơm lỗi `forceUpstreamError: "429"` CÓ CHỦ ĐÍCH
+ * tại lời gọi A2. Đây là lỗi ĐƯỢC MONG ĐỢI — phải đem kết luận (pass/fail
+ * theo `decision`/`reason_code` cuối cùng), KHÔNG được `runBatch` phân lập
+ * thành Tầng 1 (Đ26) rồi bỏ qua.
+ *
+ * Hàm này quyết định CHÍNH XÁC khi nào một lỗi ném ra từ `runTurn()` là lỗi
+ * bơm có chủ đích đó, để caller (`scripts/eval_golden.mjs::judgeSafety`)
+ * biết khi nào được phép ĐỌC LẠI dòng `answer_turns` vừa ghi thay vì ném lỗi
+ * tiếp cho `runBatch`.
+ *
+ * VÙNG CẤM (đối xứng với vùng cấm của `classifyError` ở trên): CHỈ khớp khi
+ * CẢ HAI điều kiện đúng — `caseId` là ca có cờ bơm lỗi (mặc định `S14`) VÀ
+ * `err.name` đúng lớp lỗi được bơm (mặc định `UpstreamRateLimited`). Một ca
+ * KHÁC dính 429 THẬT ngoài ý muốn, hoặc chính `S14` dính một lớp lỗi KHÁC
+ * (vd lỗi logic thật), đều phải trả `false` — để lỗi đó tiếp tục đi tới
+ * `runBatch`/`classifyError` như bình thường (429 thật ⇒ Tầng 1 ⇒ `blocked`;
+ * lỗi logic ⇒ tính là trượt thật). Nuốt nhầm một trong hai chiều này là biến
+ * bộ đo thành XANH GIẢ kiểu Đ21/G12.
+ *
+ * Hàm THUẦN — không chạm DB/model, test trực tiếp được không cần hạ tầng.
+ */
+export function isExpectedInjectedError(caseId, err, opts = {}) {
+  const targetCaseId = opts.caseId ?? "S14";
+  const targetErrorName = opts.errorName ?? "UpstreamRateLimited";
+  return caseId === targetCaseId && err?.name === targetErrorName;
+}
+
 /** Đọc cờ dạng `--ten=gia-tri`. */
 export function argValue(flag, fallback) {
   const found = process.argv.find((a) => a.startsWith(`${flag}=`));
