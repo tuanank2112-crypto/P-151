@@ -1,5 +1,7 @@
 # AI20K Agent Template
 
+> **ResidentGPT project docs:** [bản đồ tài liệu](docs/README.md) dẫn tới baseline MVP v0.3 và đặc tả mở rộng v0.4 cho demo 04/10/2026. Phần còn lại của README này là hướng dẫn template; trạng thái triển khai thực tế được ghi trong [ARCHITECTURE.md](ARCHITECTURE.md).
+
 Template chính thức cho học viên VinUni AI20K Build Phase: cấu trúc dự án, code
 mẫu và hướng dẫn kỹ thuật để xây dựng một AI Agent hoàn chỉnh — từ kiến trúc,
 code, test cho đến deploy và nộp bài Demo Day.
