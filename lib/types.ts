@@ -59,7 +59,10 @@ export const LIFECYCLE_STATES = [
 ] as const satisfies readonly LifecycleState[];
 
 export type IntentId = "I-01" | "I-02" | "I-03" | "I-04" | "I-05";
-export type Decision = "answer" | "clarify" | "escalate";
+/** Đ48 (2026-09-23): thêm `action` — lượt agent THỰC THI thay cư dân (P05).
+ *  Khác `answer`: không có citation tri thức, có `action_result` (biên nhận /
+ *  lý do chặn). Dashboard đếm `action.status='done'` là tự động giải quyết. */
+export type Decision = "answer" | "clarify" | "escalate" | "action";
 export type UserRole = "resident" | "bql";
 export type DocStatus = "Draft" | "Approved" | "Deprecated";
 export type EffectiveStatus = "Current" | "Expired" | "Unknown";
@@ -105,7 +108,8 @@ export interface PipelineStep {
     | "retrieval"
     | "eligibility"
     | "draft"
-    | "verify";
+    | "verify"
+    | "action"; // Đ48 — chặng thực thi P05, đứng SAU risk, thay cho retrieval→verify
   ok: boolean;
   ms: number;
   /** Union 3 ID Gemini đã chốt — xem `lib/adapters/model.ts` (BB-07.a, Đ17). */
@@ -125,6 +129,77 @@ export interface TurnResult {
   confidence: number; // CẤM truyền xuống React (VC-07)
   gate_triggered: string | null;
   steps: PipelineStep[];
+  /** Đ48 — chỉ non-null khi decision = 'action' (hoặc clarify chờ xác nhận hành động). */
+  action_result?: ActionResult | null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// P05 — Lớp hành động (Đ48). Hợp đồng giữa A1 → pipeline → lib/simbackend → UI.
+// Chi tiết backend: lib/simbackend/contract.ts (SPEC-P05 §3–§7).
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Capability agent được phép GỌI từ câu chat (01-CONTRACTS §8.4; đọc khác đi qua policy). */
+export type ActionCapability =
+  | "amenity.create_booking"
+  | "amenity.cancel_booking"
+  | "amenity.list_my_bookings";
+
+/** A1 trích từ câu nói của cư dân. `capability = null` ⇒ lượt hỏi–đáp thường.
+ *  `confirmed = true` khi cư dân nói "xác nhận/đồng ý/huỷ đi" cho hành động đang chờ. */
+export interface ActionRequest {
+  capability: ActionCapability | null;
+  facility_hint_vi: string | null; // "sân bóng bàn", "BBQ"… — backend resolve sang facility_id
+  slot_start: string | null; // ISO-8601 có offset, A1 tính từ server_time trong prompt
+  slot_end: string | null;
+  party_size: number | null;
+  booking_ref: string | null; // mã biên nhận RC-… hoặc booking_id khi huỷ
+  confirmed: boolean;
+}
+
+export type ActionStatus =
+  | "done" // đã ghi, có biên nhận
+  | "blocked" // policy chặn (intake_closed, slot_full, quota…) — KHÔNG ghi gì
+  | "needs_confirmation" // lệnh không hoàn tác được, chờ cư dân xác nhận (B2)
+  | "listed" // list_my_bookings
+  | "unknown"; // WriteTimeout — đã gửi, không rõ kết quả (B3), CẤM retry
+
+export interface ActionBlockingReason {
+  code: string; // BlockingCode của simbackend
+  human_message_vi: string;
+  is_permanent: boolean;
+  next_valid_at: string | null;
+  remediation_hint_vi: string;
+}
+
+export interface ActionBookingView {
+  booking_id: string;
+  facility_id: string;
+  facility_name_vi: string;
+  slot_start: string;
+  slot_end: string;
+  party_size: number;
+  state: "confirmed" | "cancelled";
+  receipt_code: string;
+}
+
+export interface ActionResult {
+  capability: ActionCapability;
+  status: ActionStatus;
+  facility_id: string | null;
+  facility_name_vi: string | null;
+  slot_start: string | null;
+  slot_end: string | null;
+  booking_id: string | null;
+  receipt_code: string | null;
+  undo_capability_id: "amenity.cancel_booking" | null;
+  blocking_reasons: ActionBlockingReason[];
+  next_intake_open_at: string | null;
+  /** Nguồn nội quy của tiện ích (nếu có) — CHỈ để hiển thị "theo nội quy…", KHÔNG
+   *  dùng kết quả hành động làm evidence cho phát biểu luật (BB-01). */
+  policy_source: { document_id: string; section_id: string } | null;
+  bookings: ActionBookingView[]; // chỉ dùng khi status = 'listed'
+  /** Bao nhiêu lời gọi ghi đã thực hiện trong lượt — 0 khi blocked (P05-M8). */
+  write_calls: number;
 }
 
 /**

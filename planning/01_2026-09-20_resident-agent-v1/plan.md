@@ -739,6 +739,24 @@ Ba agent rà độc lập + SO đo lại (`brain4agent/memory/hot/today.md` phi�
 
 **Lật được:** mục 1 khi 3.5-flash hồi (đổi lại một dòng env). Mục 2–4 không. **Chi phí lật mục 2:** hàng đợi HITL lại rỗng vĩnh viễn.
 
+### Đ48 — 2026-09-23 · Mở khoá P05 TRƯỚC cổng: agent phải THỰC THI thay cư dân, không chỉ trả lời
+
+Chủ tịch, sau khi xem video demo: *"mục tiêu nguyên thủy của tôi khi dựng project này là phải có agent"* · *"agent hoạt động thao tác ngầm theo mục đích người dùng, và có thể ra lệnh cho agent bằng cách chat trực tiếp mục đích"*. Đây là ý định gốc; Đ01/Đ03 (2026-09-20) đã xếp nó xuống tầng 2 "cắt được" và không phiên nào nhắc lại — lỗi điều phối, ghi nhận.
+
+**Chốt:**
+1. **Bỏ hàng rào BB-12/P05-C1 cho vòng này.** P05 thi công song song với deploy và Golden. Rủi ro chấp nhận: G11 có thể không kịp số đẹp. Lý do: thứ được nhớ sau demo là agent *hành động đúng luật*, không phải bảng eval.
+2. **Hình thái:** cư dân **chat mục đích** ("đặt giúp tôi sân bóng bàn 9h sáng mai") → agent tự lo hết ở dưới (đọc chính sách → kiểm điều kiện → ghi → biên nhận) → trả kết quả. **KHÔNG** có màn thao tác từng bước hiển thị (chủ tịch: "thế thì người dùng tự bấm còn nhanh hơn"). Chỉ hỏi lại khi: thiếu dữ kiện (clarify) hoặc lệnh không hoàn tác được (B2 — huỷ chỗ).
+3. **Hợp đồng tích hợp** (đã ghi vào `lib/types.ts`): `Decision` thêm `'action'` (DB: `ALTER TYPE turn_decision ADD VALUE 'action'` trong migration 006; `lifecycle_state` = `answered`); `PipelineStep.step` thêm `'action'` đứng SAU `risk`, THAY cho retrieval→verify; `TurnResult.action_result: ActionResult`; A1 trả thêm `action: ActionRequest` (schema `01-CONTRACTS` §8.1 mở rộng — đây là đổi hợp đồng đã duyệt, ghi tại đây). Dashboard đếm `decision='action' & status='done'` là **tự động giải quyết** (SPEC-P04 §3 cập nhật theo).
+4. **Precheck bắt buộc đúng SPEC-P05 §2.1:** `check_eligibility` ghi dấu precheck theo `(session_id = conversation_id, fingerprint)`; `create_booking` thiếu dấu ⇒ `action_authorization_missing`. Agent gọi `get_booking_policy` **một lần** để lập kế hoạch, `check_eligibility` một lần, rồi mới ghi. `write_calls` được đếm và in ra (P05-M8).
+5. **Xác nhận hành động không hoàn tác:** lượt 1 → `decision='clarify'`, `reason_code='action_irreversible_requires_confirmation'`, hành động chờ lưu ở bảng riêng `pending_actions` (P05, không đụng bảng P02 — VC-09), hết hạn 10 phút; lượt 2 cư dân xác nhận (`ActionRequest.confirmed=true`) ⇒ thực thi. Nút *Hoàn tác* trên biên nhận là xác nhận tường minh — gọi thẳng `cancel_booking` với `confirmed=true`.
+6. **Đồng hồ mô phỏng:** `SIM_NOW` (ISO) ghi đè `now()` của simbackend để diễn cảnh 23:39 (SPEC-P05 §9); A1 nhận `server_time` trong prompt để quy đổi "9 giờ sáng mai".
+7. **Dữ liệu tiện ích** (giờ nhận đăng ký, giờ hoạt động, slot, hạn mức) là **dữ liệu VẬN HÀNH mô phỏng** của backend, seed vào bảng `facilities` qua migration 006 — không phải tri thức trong `knowledge/`, BB-10 phải giữ `matches: 0`. Danh mục 12 tiện ích đặt được + 2 không đặt được theo SPEC-P00 §3.4; `FAC-PINGPONG` nhận đăng ký 08:30–17:30 (ref-01).
+8. **Phạm vi vòng này:** đúng 3 capability gọi được từ chat (`create_booking`, `cancel_booking`, `list_my_bookings`); 7 lệnh đọc còn lại là nội bộ backend. Vùng cấm P05-C2…C12 giữ nguyên (không billing, không partner, không scheduler, không retry WriteTimeout).
+
+**Gói:** H19 backend `lib/simbackend/` + migration 006 + test/script 🟠 · H20 A1 + pipeline nhánh action + confirm + dashboard 🔴 · H21 UI biên nhận/hoàn tác + `demo_2339.mjs` + kịch bản 🟠. Cả ba song song trên hợp đồng `lib/types.ts` + `lib/simbackend/contract.ts`.
+
+**Lật được:** mục 1 nếu tới 26/09 P05 chưa chạy trọn cảnh §9 — khi đó cắt khỏi demo, giữ code. **Chi phí lật mục 2–8:** phải viết lại hợp đồng.
+
 ### Quyết định của chủ tịch — 2026-09-20
 
 | Mã | Phán quyết | Ghi chú |
@@ -784,7 +802,7 @@ Câu "Gói P00 chưa được phóng vì C-01 chưa chốt" ghi ngày 2026-09-20
 - [x] P04 — Bảng eval faithfulness và relevance trên Golden, **phần MÀN HÌNH + CƠ CHẾ CHẤM** — ✅ DUYỆT ở [`reports/R08`](../reports/R08_thi-cong_p04-eval-dashboard.md) và [`reports/R10`](../reports/R10_thi-cong_scorer-chung.md); bộ chấm DUY NHẤT `lib/eval/score.ts` đủ 7/7 checkpoint `SPEC-P00` §6.5 (Đ36)
 - [ ] P04 — **`G11` — con SỐ NGHIỆM THU `M1`/`M3` thật trên Postgres** — dòng RIÊNG, CẤM gộp vào dòng trên: có màn hình không có nghĩa là có số đáng tin. 🟡 Đã chạy thật lần đầu 2026-09-22 (Đ39): bộ `safety` **pass 11 · fail 4 · blocked 1**, dưới ngưỡng `M3 ≥ 15/16`. Bốn ca trượt đã phân loại ở Đ39/Đ40/Đ41 — trong đó `S16` là lỗi BỘ ĐO, `S04` chờ chủ tịch
 - [x] P04 — Dashboard tỉ lệ tự động giải quyết, tách theo intent và lý do escalate — **✅ DUYỆT** ở [`reports/R08`](../reports/R08_thi-cong_p04-eval-dashboard.md); `lib/adapters/metrics-store.ts` + màn `dashboard`. Bằng chứng: [`evidence/p04/w6-gate-final.txt`](../evidence/p04/w6-gate-final.txt). ⏸ Chưa kiểm "không hiện NaN" bằng trình duyệt thật (cần thao tác tay, blocked kỹ thuật với vai CLI)
-- [ ] P05 — Đọc điều kiện trước khi ghi, không thử-và-hỏng
+- [ ] P05 — Đọc điều kiện trước khi ghi, không thử-và-hỏng — **MỞ KHOÁ 2026-09-23 (Đ48)**, thi công H19/H20/H21
 - [ ] P05 — Đặt chỗ có biên nhận và hoàn tác
 - [ ] P06 — Kịch bản demo diễn trọn không vấp — 🟡 kịch bản `presentation/demo_script.md` (H18/R21); **diễn trọn bằng curl trên server local 2026-09-23** ([`evidence/so-demo-local/smoke_2026-09-23.txt`](../evidence/so-demo-local/smoke_2026-09-23.txt)): answer+citation · conflict · PII · DEF-01 · lịch sử · HITL pending · 4 trang BQL. Còn: dọn dữ liệu mồi (🖐), diễn tay trên trình duyệt, hạn mức A2
 
