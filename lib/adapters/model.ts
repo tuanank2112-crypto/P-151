@@ -52,13 +52,31 @@ export const ALLOWED_MODELS: readonly SupportedModel[] = [
  * model thật trong report (SPEC-P02 §6.5, Đ24).
  */
 export function agentModel(agent: "A1" | "A2" | "A3"): SupportedModel {
+  return agentModelChain(agent)[0]!;
+}
+
+/**
+ * G34/Đ47 (2026-09-23): `MODEL_<agent>` nhận DANH SÁCH phẩy — phần tử đầu là
+ * model chính, các phần tử sau là dự phòng khi model trước trả 429/503.
+ * VÌ SAO: hạn mức free tính theo TỪNG model và cạn không báo trước; buổi demo
+ * không thể chờ. Model không phải cuối chỉ thử MỘT lần rồi nhảy tiếp; model
+ * cuối giữ nguyên backoff đầy đủ (§8, SPEC-P02 §9). Mỗi phần tử vẫn phải
+ * thuộc ALLOWED_MODELS và không thuộc FORBIDDEN_MODELS — không có đường tắt.
+ */
+export function agentModelChain(agent: "A1" | "A2" | "A3"): SupportedModel[] {
   const fallback: Record<typeof agent, SupportedModel> = {
     A1: "gemini-3.5-flash-lite",
     A2: "gemini-3.5-flash",
     A3: "gemini-2.5-flash",
   };
-  const raw = process.env[`MODEL_${agent}`]?.trim();
-  if (!raw) return fallback[agent];
+  const rawList = process.env[`MODEL_${agent}`]?.trim();
+  if (!rawList) return [fallback[agent]];
+  const items = rawList.split(",").map((s) => s.trim()).filter(Boolean);
+  if (items.length === 0) return [fallback[agent]];
+  return items.map((raw) => validateModelId(agent, raw));
+}
+
+function validateModelId(agent: "A1" | "A2" | "A3", raw: string): SupportedModel {
   if ((FORBIDDEN_MODELS as readonly string[]).includes(raw)) {
     throw new Error(
       `MODEL_${agent}="${raw}" nằm trong FORBIDDEN_MODELS (503 ngay lần gọi đơn). ` +
@@ -221,7 +239,16 @@ const MODEL_ERROR_BACKOFF_MS = [1000, 3000] as const;
  * theo lớp lỗi (01-CONTRACTS §8, SPEC-P02 §9). `attempt()` phải ném đúng một
  * trong các lớp lỗi Upstream... hoặc ContractDriftError khi hỏng.
  */
-async function withUpstreamRetry<T>(attempt: (attemptNo: number) => Promise<T>): Promise<T> {
+async function withUpstreamRetry<T>(
+  attempt: (attemptNo: number) => Promise<T>,
+  opts?: { rateLimitRetries?: number }
+): Promise<T> {
+  // Số lần retry cho 429/503: mặc định 2 (2s → 8s). Chuỗi dự phòng (G34)
+  // truyền 0 cho các model KHÔNG phải cuối để nhảy sang model kế ngay.
+  const rateLimitRetries = Math.min(
+    opts?.rateLimitRetries ?? RATE_LIMIT_BACKOFF_MS.length,
+    RATE_LIMIT_BACKOFF_MS.length
+  );
   let lastErr: unknown;
   for (let i = 0; i <= 2; i++) {
     try {
@@ -232,7 +259,7 @@ async function withUpstreamRetry<T>(attempt: (attemptNo: number) => Promise<T>):
         throw err; // CẤM retry (E2d, E2e)
       }
       if (err instanceof UpstreamRateLimited || err instanceof UpstreamOverloaded) {
-        if (i >= RATE_LIMIT_BACKOFF_MS.length) throw err;
+        if (i >= rateLimitRetries) throw err;
         await sleepImpl(jitter(RATE_LIMIT_BACKOFF_MS[i]));
         continue;
       }
@@ -358,22 +385,67 @@ async function callGemini(
   userPayload: unknown,
   responseSchema: unknown,
   maxOutputTokens: number,
-  forceUpstreamError?: ForceUpstreamError
+  forceUpstreamError?: ForceUpstreamError,
+  rateLimitRetries?: number
 ): Promise<GeminiCallResult> {
-  return withUpstreamRetry((attemptNo) =>
-    callGeminiOnce(
-      model,
-      systemPromptVi,
-      userPayload,
-      responseSchema,
-      maxOutputTokens,
-      // Bơm lỗi chỉ ở lần thử đầu để backoff/retry thật sự chạy rồi mới
-      // thành công — dùng cho `npm test -- backoff` (W3). Truyền
-      // `forceUpstreamError` bằng chuỗi cố định (không đổi theo attempt) để
-      // mô phỏng lỗi dai dẳng khi cần (ví dụ Golden S14).
-      forceUpstreamError && attemptNo === 0 ? forceUpstreamError : undefined
-    )
+  return withUpstreamRetry(
+    (attemptNo) =>
+      callGeminiOnce(
+        model,
+        systemPromptVi,
+        userPayload,
+        responseSchema,
+        maxOutputTokens,
+        // Bơm lỗi chỉ ở lần thử đầu để backoff/retry thật sự chạy rồi mới
+        // thành công — dùng cho `npm test -- backoff` (W3). Truyền
+        // `forceUpstreamError` bằng chuỗi cố định (không đổi theo attempt) để
+        // mô phỏng lỗi dai dẳng khi cần (ví dụ Golden S14).
+        forceUpstreamError && attemptNo === 0 ? forceUpstreamError : undefined
+      ),
+    { rateLimitRetries }
   );
+}
+
+/**
+ * Gọi lần lượt các model trong `agentModelChain(agent)` (G34/Đ47). Model
+ * không phải cuối: 0 retry cho 429/503 — dính là nhảy sang model kế. Model
+ * cuối: backoff đầy đủ như cũ. Lỗi KHÔNG phải 429/503 (auth, blocked, drift,
+ * 5xx khác) KHÔNG đổi model — đổi model không chữa được những lỗi đó và sẽ
+ * che mất nguyên nhân thật. Trả kèm `model` đã dùng để pipeline ghi đúng
+ * vào `steps` (R6).
+ */
+async function callGeminiChain(
+  agent: "A1" | "A2" | "A3",
+  systemPromptVi: string,
+  userPayload: unknown,
+  responseSchema: unknown,
+  maxOutputTokens: number,
+  forceUpstreamError?: ForceUpstreamError
+): Promise<GeminiCallResult & { model: SupportedModel }> {
+  const chain = agentModelChain(agent);
+  let lastErr: unknown;
+  for (let i = 0; i < chain.length; i++) {
+    const model = chain[i]!;
+    const isLast = i === chain.length - 1;
+    try {
+      const r = await callGemini(
+        model,
+        systemPromptVi,
+        userPayload,
+        responseSchema,
+        maxOutputTokens,
+        forceUpstreamError,
+        isLast ? undefined : 0
+      );
+      return { ...r, model };
+    } catch (err) {
+      lastErr = err;
+      const canFallOver =
+        !isLast && (err instanceof UpstreamRateLimited || err instanceof UpstreamOverloaded);
+      if (!canFallOver) throw err;
+    }
+  }
+  throw lastErr;
 }
 
 /** CHỈ dùng trong tests/: gọi thẳng một lần, không qua retry — để kiểm
@@ -544,9 +616,15 @@ CẤM suy diễn resident_id/property_id không được nêu trong câu hỏi h
 export async function runClassifier(
   i: ClassifierInput,
   opts?: { forceUpstreamError?: ForceUpstreamError }
-): Promise<{ output: ClassifierOutput; input_tokens: number; output_tokens: number; ms: number }> {
-  const { raw, input_tokens, output_tokens, ms } = await callGemini(
-    agentModel("A1"),
+): Promise<{
+  output: ClassifierOutput;
+  input_tokens: number;
+  output_tokens: number;
+  ms: number;
+  model: SupportedModel;
+}> {
+  const { raw, input_tokens, output_tokens, ms, model } = await callGeminiChain(
+    "A1",
     CLASSIFIER_SYSTEM_PROMPT_VI,
     i,
     CLASSIFIER_RESPONSE_SCHEMA,
@@ -563,7 +641,7 @@ export async function runClassifier(
   if (!result.success) {
     throw new ContractDriftError(`Zod hỏng (classifier): ${result.error.message}`);
   }
-  return { output: result.data, input_tokens, output_tokens, ms };
+  return { output: result.data, input_tokens, output_tokens, ms, model };
 }
 
 // ─── A2 retriever ───────────────────────────────────────────────────────
@@ -642,9 +720,15 @@ KHI KHÔNG ĐỦ CĂN CỨ:
 export async function runRetriever(
   i: RetrieverInput,
   opts?: { forceUpstreamError?: ForceUpstreamError }
-): Promise<{ output: RetrieverOutput; input_tokens: number; output_tokens: number; ms: number }> {
-  const { raw, input_tokens, output_tokens, ms } = await callGemini(
-    agentModel("A2"),
+): Promise<{
+  output: RetrieverOutput;
+  input_tokens: number;
+  output_tokens: number;
+  ms: number;
+  model: SupportedModel;
+}> {
+  const { raw, input_tokens, output_tokens, ms, model } = await callGeminiChain(
+    "A2",
     RETRIEVER_SYSTEM_PROMPT_VI,
     i,
     RETRIEVER_RESPONSE_SCHEMA,
@@ -661,7 +745,7 @@ export async function runRetriever(
   if (!result.success) {
     throw new ContractDriftError(`Zod hỏng (retriever): ${result.error.message}`);
   }
-  return { output: result.data, input_tokens, output_tokens, ms };
+  return { output: result.data, input_tokens, output_tokens, ms, model };
 }
 
 // ─── A3 verifier ────────────────────────────────────────────────────────
@@ -724,9 +808,15 @@ CẤM:
 export async function runVerifier(
   i: VerifierInput,
   opts?: { forceUpstreamError?: ForceUpstreamError }
-): Promise<{ output: VerifierOutput; input_tokens: number; output_tokens: number; ms: number }> {
-  const { raw, input_tokens, output_tokens, ms } = await callGemini(
-    agentModel("A3"),
+): Promise<{
+  output: VerifierOutput;
+  input_tokens: number;
+  output_tokens: number;
+  ms: number;
+  model: SupportedModel;
+}> {
+  const { raw, input_tokens, output_tokens, ms, model } = await callGeminiChain(
+    "A3",
     VERIFIER_SYSTEM_PROMPT_VI,
     i,
     VERIFIER_RESPONSE_SCHEMA,
@@ -743,7 +833,7 @@ export async function runVerifier(
   if (!result.success) {
     throw new ContractDriftError(`Zod hỏng (verifier): ${result.error.message}`);
   }
-  return { output: result.data, input_tokens, output_tokens, ms };
+  return { output: result.data, input_tokens, output_tokens, ms, model };
 }
 
 // Re-export cho tiện dùng ở lib/pipeline/ mà không phải import kiểu trùng tên.

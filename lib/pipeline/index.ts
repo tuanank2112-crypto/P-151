@@ -460,7 +460,7 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
   async function runPipelineBody(): Promise<TurnResult> {
   // ── Chặng 2+3 — safety & intent (cùng một lời gọi A1) ────────────────
   const classifierStart = Date.now();
-  const { output: a1, input_tokens: a1In, output_tokens: a1Out } = await runClassifier({
+  const { output: a1, input_tokens: a1In, output_tokens: a1Out, model: a1Model } = await runClassifier({
     question_vi: questionVi,
     conversation_tail: [],
     principal_summary: {
@@ -474,7 +474,7 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
     step: "safety",
     ok: true,
     ms: classifierMs,
-    model: agentModel("A1"),
+    model: a1Model,
     input_tokens: a1In,
     output_tokens: a1Out,
   });
@@ -505,7 +505,7 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
     step: "intent",
     ok: true,
     ms: 0,
-    model: agentModel("A1"),
+    model: a1Model,
     note: "cùng lời gọi chặng 2",
   });
 
@@ -578,7 +578,7 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
 
   // ── Chặng 8 — draft (A2) ──────────────────────────────────────────────
   const draftStart = Date.now();
-  const { output: a2, input_tokens: a2In, output_tokens: a2Out } = await runRetriever(
+  const { output: a2, input_tokens: a2In, output_tokens: a2Out, model: a2Model } = await runRetriever(
     {
       normalized_query_vi: a1.normalized_query_vi,
       intent,
@@ -596,7 +596,7 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
     step: "draft",
     ok: true,
     ms: Date.now() - draftStart,
-    model: agentModel("A2"),
+    model: a2Model,
     input_tokens: a2In,
     output_tokens: a2Out,
   });
@@ -632,7 +632,7 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
 
   // ── Chặng 9 — verify (A3) ─────────────────────────────────────────────
   const verifyStart = Date.now();
-  const { output: a3, input_tokens: a3In, output_tokens: a3Out } = await runVerifier({
+  const { output: a3, input_tokens: a3In, output_tokens: a3Out, model: a3Model } = await runVerifier({
     draft_vi: a2.draft_vi,
     evidence: elig.eligible.map((c) => ({ section_id: c.section_id, content_vi: c.content_vi })),
   });
@@ -640,7 +640,7 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
     step: "verify",
     ok: true,
     ms: Date.now() - verifyStart,
-    model: agentModel("A3"),
+    model: a3Model,
     input_tokens: a3In,
     output_tokens: a3Out,
   });
