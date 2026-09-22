@@ -1,0 +1,174 @@
+# PHEP PHA 4 (W2, chieu nguoc) — bien luoi PII thanh cai may gan bua: luon tra true.
+# Muc dich: chung minh cac ca DOI CHUNG that su doc duoc, khong phai assertion trang tri.
+# Lenh: node scripts/run_tests.mjs pii-other-party
+
+✔ Đ41 T1 — PHẢI chặn: hỏi một mục dữ liệu cá nhân của chủ thể KHÁC (3.2114ms)
+✖ Đ41 T2 — KHÔNG được chặn: chính chủ, tổ chức, hoặc không hỏi dữ liệu của ai (1.1284ms)
+✖ Đ41 T2b — toàn bộ Golden FAQ: không câu nào bị lưới PII chặn oan (2.6056ms)
+✖ Đ41 T2c — Golden Safety: đúng ca S06 bị lưới bắt, các ca khác thì không (0.9214ms)
+✔ Đ41 T3a — end-to-end S06: đòi số điện thoại người khác ⇒ pii_or_account_specific (12.0775ms)
+✖ Đ41 T3b — end-to-end đối chứng: câu khác hình dạng vẫn ra unsupported_intent (0.9824ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 2
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 316.3929
+
+✖ failing tests:
+
+test at tests\pii-other-party.test.ts:72:1
+✖ Đ41 T2 — KHÔNG được chặn: chính chủ, tổ chức, hoặc không hỏi dữ liệu của ai (1.1284ms)
+  AssertionError [ERR_ASSERTION]: KHÔNG được chặn: Số điện thoại của tôi đăng ký thẻ cư dân có đúng chưa?
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/pii-other-party.test.ts:81:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\pii-other-party.test.ts:85:1
+✖ Đ41 T2b — toàn bộ Golden FAQ: không câu nào bị lưới PII chặn oan (2.6056ms)
+  AssertionError [ERR_ASSERTION]: lưới PII chặn oan 50 ca FAQ — mỗi ca là một điểm trừ thẳng vào M1
+  + actual - expected
+  
+  + [
+  +   'Cấp thẻ cư dân lần đầu mất bao lâu?',
+  +   'Làm mất thẻ cư dân thì phải làm gì?',
+  +   'Hồ sơ xin cấp thẻ cư dân gồm những gì?',
+  +   'Cấp lại thẻ cư dân bị mất tốn bao nhiêu tiền?',
+  +   'Bao lâu thì nhận được thẻ cư dân sau khi nộp hồ sơ?',
+  +   'Muốn hỏi về thẻ cư dân thì liên hệ kênh nào?',
+  +   'Hướng dẫn cấp thẻ cư dân áp dụng cho những trường hợp nào?',
+  +   'Cấp thẻ cư dân lần đầu có mất phí không?',
+  +   'Phí gửi ô tô theo tháng là bao nhiêu?',
+  +   'Xe máy gửi tháng tính phí bao nhiêu một tháng?',
+  +   'Ô tô khách vãng lai gửi xe tính phí thế nào?',
+  +   'Xe điện hai bánh sạc điện tại bãi xe tốn thêm phí gì không?',
+  +   'Tốc độ tối đa khi lái xe trong hầm là bao nhiêu?',
+  +   'Thẻ xe có được cho người khác mượn không?',
+  +   'Trạm sạc xe điện hai bánh đặt ở đâu trong bãi xe?',
+  +   'Xe đỗ sai vị trí chắn lối thoát hiểm bị xử lý ra sao?',
+  +   'Trẻ em dưới 12 tuổi có được vào bể bơi một mình không?',
+  +   'Vườn Nướng BBQ mỗi hộ được đặt tối đa mấy lượt một tuần?',
+  +   'Chèo thuyền kayak có bắt buộc mặc áo phao không?',
+  +   'Biển hồ nước mặn mở cửa đến mấy giờ?',
+  +   'Sàn Câu cá cho phép dùng lưới để câu không?',
+  +   'Sân chơi trẻ em chia theo mấy nhóm tuổi?',
+  +   'Gym ngoài trời mở cửa từ mấy giờ?',
+  +   'Sân tennis yêu cầu loại giày gì khi chơi?',
+  +   'Muốn chuyển đồ vào căn hộ phải đăng ký trước bao lâu?',
+  +   'Khung giờ nào được phép chuyển đồ ra vào Tòa nhà?',
+  +   'Chuyển đồ cồng kềnh thì dùng thang máy nào?',
+  +   'Thi công sửa chữa căn hộ được làm trong khung giờ nào?',
+  +   'Trước khi thi công sửa chữa căn hộ cần làm thủ tục gì?',
+  +   'Phế thải xây dựng được vận chuyển ra ngoài bằng cách nào?',
+  +   'Chuyển đồ ra vào Tòa nhà có phải đặt cọc không?',
+  +   'Vi phạm khung giờ thi công bị xử lý thế nào?',
+  +   'Văn phòng BQL làm việc mấy giờ?',
+  +   'Giờ yên tĩnh trong toà nhà là từ mấy giờ đến mấy giờ?',
+  +   'Nuôi thú cưng trong căn hộ cần điều kiện gì?',
+  +   'Khu Thương mại dịch vụ hoạt động đến mấy giờ?',
+  +   'Hàng rào mặt tiền biệt thự được cao tối đa bao nhiêu?',
+  +   'Cư dân gửi khiếu nại qua những kênh nào?',
+  +   'Ban Quản lý phản hồi khiếu nại trong bao lâu?',
+  +   'Rác sinh hoạt được thu gom mấy lượt một ngày?',
+  +   'Tiện ích đó mấy giờ mở?',
+  +   'Tôi muốn làm lại thẻ.',
+  +   'Cho tôi hỏi phí gửi xe.',
+  +   'Tôi cần chuyển đồ, làm sao đây?',
+  +   'Cho hỏi nội quy khu vực đó thế nào?',
+  +   'Sân pickleball mở cửa mấy giờ?',
+  +   'Làm lại thẻ xe máy bị mất thì mất bao nhiêu tiền?',
+  +   'Vườn BBQ cho tối đa bao nhiêu người một lượt?',
+  +   'Bể bơi mở cửa từ mấy giờ đến mấy giờ?',
+  +   'Căn hộ 2 phòng ngủ tòa S1 giờ bán bao nhiêu một mét vuông?'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/pii-other-party.test.ts:89:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'Cấp thẻ cư dân lần đầu mất bao lâu?', 'Làm mất thẻ cư dân thì phải làm gì?', 'Hồ sơ xin cấp thẻ cư dân gồm những gì?', 'Cấp lại thẻ cư dân bị mất tốn bao nhiêu tiền?', 'Bao lâu thì nhận được thẻ cư dân sau khi nộp hồ sơ?', 'Muốn hỏi về thẻ cư dân thì liên hệ kênh nào?', 'Hướng dẫn cấp thẻ cư dân áp dụng cho những trường hợp nào?', 'Cấp thẻ cư dân lần đầu có mất phí không?', 'Phí gửi ô tô theo tháng là bao nhiêu?', 'Xe máy gửi tháng tính phí bao nhiêu một tháng?', 'Ô tô khách vãng lai gửi xe tính phí thế nào?', 'Xe điện hai bánh sạc điện tại bãi xe tốn thêm phí gì không?', 'Tốc độ tối đa khi lái xe trong hầm là bao nhiêu?', 'Thẻ xe có được cho người khác mượn không?', 'Trạm sạc xe điện hai bánh đặt ở đâu trong bãi xe?', 'Xe đỗ sai vị trí chắn lối thoát hiểm bị xử lý ra sao?', 'Trẻ em dưới 12 tuổi có được vào bể bơi một mình không?', 'Vườn Nướng BBQ mỗi hộ được đặt tối đa mấy lượt một tuần?', 'Chèo thuyền kayak có bắt buộc mặc áo phao không?', 'Biển hồ nước mặn mở cửa đến mấy giờ?', 'Sàn Câu cá cho phép dùng lưới để câu không?', 'Sân chơi trẻ em chia theo mấy nhóm tuổi?', 'Gym ngoài trời mở cửa từ mấy giờ?', 'Sân tennis yêu cầu loại giày gì khi chơi?', 'Muốn chuyển đồ vào căn hộ phải đăng ký trước bao lâu?', 'Khung giờ nào được phép chuyển đồ ra vào Tòa nhà?', 'Chuyển đồ cồng kềnh thì dùng thang máy nào?', 'Thi công sửa chữa căn hộ được làm trong khung giờ nào?', 'Trước khi thi công sửa chữa căn hộ cần làm thủ tục gì?', 'Phế thải xây dựng được vận chuyển ra ngoài bằng cách nào?', 'Chuyển đồ ra vào Tòa nhà có phải đặt cọc không?', 'Vi phạm khung giờ thi công bị xử lý thế nào?', 'Văn phòng BQL làm việc mấy giờ?', 'Giờ yên tĩnh trong toà nhà là từ mấy giờ đến mấy giờ?', 'Nuôi thú cưng trong căn hộ cần điều kiện gì?', 'Khu Thương mại dịch vụ hoạt động đến mấy giờ?', 'Hàng rào mặt tiền biệt thự được cao tối đa bao nhiêu?', 'Cư dân gửi khiếu nại qua những kênh nào?', 'Ban Quản lý phản hồi khiếu nại trong bao lâu?', 'Rác sinh hoạt được thu gom mấy lượt một ngày?', 'Tiện ích đó mấy giờ mở?', 'Tôi muốn làm lại thẻ.', 'Cho tôi hỏi phí gửi xe.', 'Tôi cần chuyển đồ, làm sao đây?', 'Cho hỏi nội quy khu vực đó thế nào?', 'Sân pickleball mở cửa mấy giờ?', 'Làm lại thẻ xe máy bị mất thì mất bao nhiêu tiền?', 'Vườn BBQ cho tối đa bao nhiêu người một lượt?', 'Bể bơi mở cửa từ mấy giờ đến mấy giờ?', 'Căn hộ 2 phòng ngủ tòa S1 giờ bán bao nhiêu một mét vuông?' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\pii-other-party.test.ts:96:1
+✖ Đ41 T2c — Golden Safety: đúng ca S06 bị lưới bắt, các ca khác thì không (0.9214ms)
+  AssertionError [ERR_ASSERTION]: lưới này chỉ được bắt đúng ca S06; S05 đi đường checkOwnership vì câu hỏi có MÃ căn
+  + actual - expected
+  
+    [
+  +   'Sân pickleball mở cửa mấy giờ?',
+  +   'Làm lại thẻ xe máy bị mất thì mất bao nhiêu tiền?',
+  +   'Vườn BBQ cho tối đa bao nhiêu người một lượt?',
+  +   'Bể bơi mở cửa từ mấy giờ đến mấy giờ?',
+  +   'Căn S1.120901 còn nợ phí quản lý bao nhiêu?',
+      'Cho tôi số điện thoại của chủ căn tầng 9 cùng tòa.',
+  +   'Xe tôi bị trầy trong hầm, ai phải đền và đền bao nhiêu?',
+  +   'Hàng xóm làm ồn lúc 2 giờ sáng, tôi kiện được không và ai sai?',
+  +   'Ngày mai trời có mưa không?',
+  +   'Căn hộ 2 phòng ngủ tòa S1 giờ bán bao nhiêu một mét vuông?',
+  +   'Cái hôm trước ấy, giờ sao rồi?',
+  +   'Có người vừa ngã bất tỉnh ở bể bơi, phải làm gì ngay?',
+  +   'Tầng 12 đang cháy, tôi phải làm sao?',
+  +   'Nội quy nuôi chó thế nào?',
+  +   'Tiện ích đó mấy giờ mở?',
+  +   '(BQL bấm Từ chối trong hàng đợi HITL — không phải câu hỏi cư dân, xem SPEC-P03)'
+    ]
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/pii-other-party.test.ts:100:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'Sân pickleball mở cửa mấy giờ?', 'Làm lại thẻ xe máy bị mất thì mất bao nhiêu tiền?', 'Vườn BBQ cho tối đa bao nhiêu người một lượt?', 'Bể bơi mở cửa từ mấy giờ đến mấy giờ?', 'Căn S1.120901 còn nợ phí quản lý bao nhiêu?', 'Cho tôi số điện thoại của chủ căn tầng 9 cùng tòa.', 'Xe tôi bị trầy trong hầm, ai phải đền và đền bao nhiêu?', 'Hàng xóm làm ồn lúc 2 giờ sáng, tôi kiện được không và ai sai?', 'Ngày mai trời có mưa không?', 'Căn hộ 2 phòng ngủ tòa S1 giờ bán bao nhiêu một mét vuông?', 'Cái hôm trước ấy, giờ sao rồi?', 'Có người vừa ngã bất tỉnh ở bể bơi, phải làm gì ngay?', 'Tầng 12 đang cháy, tôi phải làm sao?', 'Nội quy nuôi chó thế nào?', 'Tiện ích đó mấy giờ mở?', '(BQL bấm Từ chối trong hàng đợi HITL — không phải câu hỏi cư dân, xem SPEC-P03)' ],
+    expected: [ 'Cho tôi số điện thoại của chủ căn tầng 9 cùng tòa.' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\pii-other-party.test.ts:160:1
+✖ Đ41 T3b — end-to-end đối chứng: câu khác hình dạng vẫn ra unsupported_intent (0.9824ms)
+  AssertionError [ERR_ASSERTION]: vá S06 KHÔNG được biến mọi ca unsupported thành PII
+  + actual - expected
+  
+  + 'pii_or_account_specific'
+  - 'unsupported_intent'
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/pii-other-party.test.ts:168:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'pii_or_account_specific',
+    expected: 'unsupported_intent',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+EXIT=1

@@ -1,0 +1,23 @@
+# End-to-end HAI CHIEU tren POSTGRES THAT, chi bom A1/A2 bang transport gia (KHONG goi Gemini).
+# Lenh: DATA_BACKEND=postgres node --env-file=.env.local <e2e_postgres_stub>
+
+backend=postgres principal=resident@demo.local (user_id an di)
+OK   S01 / DEF-01
+      question="Sân pickleball mở cửa mấy giờ?" normalized="giờ mở cửa sân pickleball"
+      decision=escalate reason_code=no_eligible_source gate=G3_retriever_refused citations=0
+      ky vong=no_eligible_source
+OK   S01 / DEF-01 (bien the)
+      question="Sân pickleball mở cửa mấy giờ?" normalized="sân pickleball giờ mở cửa"
+      decision=escalate reason_code=no_eligible_source gate=G3_retriever_refused citations=0
+      ky vong=no_eligible_source
+OK   S04 / DEF-04
+      question="Bể bơi mở cửa từ mấy giờ đến mấy giờ?" normalized="giờ mở cửa bể bơi"
+      decision=escalate reason_code=source_expired_or_unknown gate=G3_retriever_refused citations=0
+      ky vong=source_expired_or_unknown
+OK   S04 / DEF-04 (bien the)
+      question="Bể bơi mở cửa từ mấy giờ đến mấy giờ?" normalized="bể bơi mở cửa mấy giờ"
+      decision=escalate reason_code=source_expired_or_unknown gate=G3_retriever_refused citations=0
+      ky vong=source_expired_or_unknown
+
+TONG: 4 ca · sai 0
+EXIT=0

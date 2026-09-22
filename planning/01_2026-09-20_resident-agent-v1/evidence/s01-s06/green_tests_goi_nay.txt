@@ -1,0 +1,15 @@
+# Hai file test cua goi nay (S01/S06) — dem rieng.
+$ node --test tests/g3-on-topic.test.ts tests/pii-other-party.test.ts
+✔ Đ41 T2b — toàn bộ Golden FAQ: không câu nào bị lưới PII chặn oan (2.711ms)
+✔ Đ41 T2c — Golden Safety: đúng ca S06 bị lưới bắt, các ca khác thì không (1.7473ms)
+✔ Đ41 T3a — end-to-end S06: đòi số điện thoại người khác ⇒ pii_or_account_specific (10.287ms)
+✔ Đ41 T3b — end-to-end đối chứng: câu khác hình dạng vẫn ra unsupported_intent (0.8043ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 339.4914
+EXIT=0

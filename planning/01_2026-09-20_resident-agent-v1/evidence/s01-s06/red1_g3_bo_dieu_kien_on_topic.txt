@@ -1,0 +1,63 @@
+# PHEP PHA 1 (W1) — go dieu kien on-topic o cong G3 trong lib/confidence.ts,
+# tuc quay ve dung ban va Đ28 truoc khi co Đ41. Bo test PHAI DO.
+# Lenh: node scripts/run_tests.mjs g3-on-topic
+
+✖ Đ41 T1a — DEF-01: chunk hạng 1 hết hiệu lực nhưng LỆCH chủ đề ⇒ no_eligible_source (2.4439ms)
+✔ Đ41 T1b — DEF-04 KHÔNG được đổi: chunk hạng 1 hết hiệu lực và ĐÚNG chủ đề ⇒ source_expired_or_unknown (0.2709ms)
+✔ Đ41 T1c — tương thích ngược: KHÔNG truyền top_rejected_on_topic thì giữ nguyên Đ28 (0.2405ms)
+✔ Đ41 T1d — tín hiệu mới KHÔNG được sinh mã: lệch chủ đề mà chunk hạng 1 hợp lệ vẫn là no_eligible_source (0.2578ms)
+✔ Đ41 T1e — G2 KHÔNG bị tín hiệu mới chạm tới (vùng cấm: Đ41 chỉ sửa G3) (0.325ms)
+✔ Đ41 T2 — tiêu đề tài liệu hết hiệu lực đọc từ kho: pickleball KHÔNG chung từ, bể bơi CÓ (18.9796ms)
+✖ Đ41 T3a — end-to-end DEF-01: A2 từ chối, chunk hạng 1 hết hiệu lực LỆCH chủ đề ⇒ no_eligible_source (5.528ms)
+✔ Đ41 T3b — end-to-end DEF-04 vẫn XANH: cùng cổng G3, đúng chủ đề ⇒ source_expired_or_unknown (1.4744ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 6
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 291.6528
+
+✖ failing tests:
+
+test at tests\g3-on-topic.test.ts:51:1
+✖ Đ41 T1a — DEF-01: chunk hạng 1 hết hiệu lực nhưng LỆCH chủ đề ⇒ no_eligible_source (2.4439ms)
+  AssertionError [ERR_ASSERTION]: nói 'tài liệu hết hiệu lực' cho tiện ích chưa bao giờ có tài liệu là bịa lý do (Đ09)
+  + actual - expected
+  
+  + 'source_expired_or_unknown'
+  - 'no_eligible_source'
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/g3-on-topic.test.ts:63:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'source_expired_or_unknown',
+    expected: 'no_eligible_source',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\g3-on-topic.test.ts:235:1
+✖ Đ41 T3a — end-to-end DEF-01: A2 từ chối, chunk hạng 1 hết hiệu lực LỆCH chủ đề ⇒ no_eligible_source (5.528ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'source_expired_or_unknown'
+  - 'no_eligible_source'
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/g3-on-topic.test.ts:247:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'source_expired_or_unknown',
+    expected: 'no_eligible_source',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+EXIT=1

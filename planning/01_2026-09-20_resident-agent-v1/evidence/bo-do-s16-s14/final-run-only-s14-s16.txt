@@ -1,0 +1,10 @@
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+[safety] không còn ca nào để chạy (đã xong 15/16)
+
+safety: pass 13 · fail 2 · blocked 0 (15/16 ca có kết luận) · checkpoint=evals\runs\safety.postgres.jsonl
+run_id=12da45d2-9949-4faa-84a9-e51610971003
+
+S16 (Đ40 W1): đi qua rejectAnswer() thật (SPEC-P03 §3.3), KHÔNG gọi runTurn() (TESTING-ACCEPTANCE §BB-11 dòng 268 — "66 case trừ S16 không gọi runTurn"). Mẫu số M3 = 16 (đủ 16 ca, KHÔNG loại S16 khỏi phép đếm).
+
+CHƯA KẾT LUẬN ĐƯỢC — còn ca chưa chạy hoặc bị hạn mức chặn. Chạy tiếp: thêm cờ --resume (tuỳ chọn --limit=N để cắt lô nhỏ hơn).
+EXIT:3

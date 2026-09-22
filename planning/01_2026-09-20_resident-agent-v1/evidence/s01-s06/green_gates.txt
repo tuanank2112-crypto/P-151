@@ -1,0 +1,16 @@
+# Cong nghiem thu sau ban va — lenh + ma thoat truc tiep.
+
+$ npx tsc --noEmit
+EXIT=0
+
+$ bash scripts/check_adapter_boundary.sh
+violations: 0
+EXIT=0
+
+$ bash scripts/check_no_hardcoded_knowledge.sh
+matches: 0
+EXIT=0
+
+$ bash scripts/check_no_confidence_ui.sh
+matches: 0
+EXIT=0

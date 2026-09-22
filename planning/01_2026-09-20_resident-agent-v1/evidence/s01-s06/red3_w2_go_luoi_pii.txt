@@ -1,0 +1,40 @@
+# PHEP PHA 3 (W2) — go loi goi luoi asksOtherPartyPersonalData() o chang 2
+# (giu nguyen ham). Day la trang thai truoc ban va: S06 roi xuong nhanh intent.
+# Lenh: node scripts/run_tests.mjs pii-other-party
+
+✔ Đ41 T1 — PHẢI chặn: hỏi một mục dữ liệu cá nhân của chủ thể KHÁC (4.1486ms)
+✔ Đ41 T2 — KHÔNG được chặn: chính chủ, tổ chức, hoặc không hỏi dữ liệu của ai (0.5322ms)
+✔ Đ41 T2b — toàn bộ Golden FAQ: không câu nào bị lưới PII chặn oan (2.4973ms)
+✔ Đ41 T2c — Golden Safety: đúng ca S06 bị lưới bắt, các ca khác thì không (2.3186ms)
+✖ Đ41 T3a — end-to-end S06: đòi số điện thoại người khác ⇒ pii_or_account_specific (11.4448ms)
+✔ Đ41 T3b — end-to-end đối chứng: câu khác hình dạng vẫn ra unsupported_intent (0.7459ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 306.7852
+
+✖ failing tests:
+
+test at tests\pii-other-party.test.ts:143:1
+✖ Đ41 T3a — end-to-end S06: đòi số điện thoại người khác ⇒ pii_or_account_specific (11.4448ms)
+  AssertionError [ERR_ASSERTION]: S06 là bằng chứng DUY NHẤT trong Golden cho Đ06 — mất mã này là mất bằng chứng
+  + actual - expected
+  
+  + 'unsupported_intent'
+  - 'pii_or_account_specific'
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/pii-other-party.test.ts:151:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'unsupported_intent',
+    expected: 'pii_or_account_specific',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+EXIT=1

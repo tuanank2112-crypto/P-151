@@ -1,0 +1,109 @@
+# Do tay tren Postgres that 2026-09-22 — tieu de tai lieu cua chunk hang 1 (tin hieu [E] da chon).
+# Lenh: DATA_BACKEND=postgres node --env-file=.env.local <probe_titles>
+
+
+DEF-01 | Q="Sân pickleball mở cửa mấy giờ?"
+  rank1=POOL24-BAN-02 doc=OCP1-POOL-RULES-2024 top_rejected_reason=expired_or_unknown
+  title_vi="Nội quy sử dụng Bể bơi (bản 2024)"
+  heading_vi="Các hành vi bị cấm (bản 2024)"
+  [E] chung voi TIEU DE: [] => false
+  [E2] chung voi HEADING: [] => false
+
+DEF-01 | Q="giờ mở cửa sân pickleball"
+  rank1=POOL24-BAN-02 doc=OCP1-POOL-RULES-2024 top_rejected_reason=expired_or_unknown
+  title_vi="Nội quy sử dụng Bể bơi (bản 2024)"
+  heading_vi="Các hành vi bị cấm (bản 2024)"
+  [E] chung voi TIEU DE: [] => false
+  [E2] chung voi HEADING: [] => false
+
+DEF-01 | Q="sân pickleball giờ mở cửa"
+  rank1=POOL24-BAN-02 doc=OCP1-POOL-RULES-2024 top_rejected_reason=expired_or_unknown
+  title_vi="Nội quy sử dụng Bể bơi (bản 2024)"
+  heading_vi="Các hành vi bị cấm (bản 2024)"
+  [E] chung voi TIEU DE: [] => false
+  [E2] chung voi HEADING: [] => false
+
+DEF-01 | Q="thời gian mở cửa sân pickleball"
+  rank1=SPORTS-SCOPE-01 doc=OCP1-SPORTS-COMPLEX-RULES-001 top_rejected_reason=null
+  title_vi="Nội quy Khu phức hợp Thể thao"
+  heading_vi="Phạm vi Khu phức hợp Thể thao"
+  [E] chung voi TIEU DE: [] => false
+  [E2] chung voi HEADING: [] => false
+
+DEF-01 | Q="giờ hoạt động sân pickleball"
+  rank1=SPORTS-SCOPE-01 doc=OCP1-SPORTS-COMPLEX-RULES-001 top_rejected_reason=null
+  title_vi="Nội quy Khu phức hợp Thể thao"
+  heading_vi="Phạm vi Khu phức hợp Thể thao"
+  [E] chung voi TIEU DE: [] => false
+  [E2] chung voi HEADING: [] => false
+
+DEF-01 | Q="sân pickleball mở cửa mấy giờ"
+  rank1=POOL24-BAN-02 doc=OCP1-POOL-RULES-2024 top_rejected_reason=expired_or_unknown
+  title_vi="Nội quy sử dụng Bể bơi (bản 2024)"
+  heading_vi="Các hành vi bị cấm (bản 2024)"
+  [E] chung voi TIEU DE: [] => false
+  [E2] chung voi HEADING: [] => false
+
+DEF-01 | Q="pickleball mở cửa mấy giờ"
+  rank1=POOL24-BAN-02 doc=OCP1-POOL-RULES-2024 top_rejected_reason=expired_or_unknown
+  title_vi="Nội quy sử dụng Bể bơi (bản 2024)"
+  heading_vi="Các hành vi bị cấm (bản 2024)"
+  [E] chung voi TIEU DE: [] => false
+  [E2] chung voi HEADING: [] => false
+
+DEF-04 | Q="Bể bơi mở cửa từ mấy giờ đến mấy giờ?"
+  rank1=POOL24-HOURS-01 doc=OCP1-POOL-RULES-2024 top_rejected_reason=expired_or_unknown
+  title_vi="Nội quy sử dụng Bể bơi (bản 2024)"
+  heading_vi="Giờ mở cửa bể bơi"
+  [E] chung voi TIEU DE: [be,boi] => true
+  [E2] chung voi HEADING: [gio,mo,cua,be,boi] => true
+
+DEF-04 | Q="giờ mở cửa bể bơi"
+  rank1=POOL24-BAN-02 doc=OCP1-POOL-RULES-2024 top_rejected_reason=expired_or_unknown
+  title_vi="Nội quy sử dụng Bể bơi (bản 2024)"
+  heading_vi="Các hành vi bị cấm (bản 2024)"
+  [E] chung voi TIEU DE: [be,boi] => true
+  [E2] chung voi HEADING: [] => false
+
+DEF-04 | Q="bể bơi giờ mở cửa"
+  rank1=POOL24-BAN-02 doc=OCP1-POOL-RULES-2024 top_rejected_reason=expired_or_unknown
+  title_vi="Nội quy sử dụng Bể bơi (bản 2024)"
+  heading_vi="Các hành vi bị cấm (bản 2024)"
+  [E] chung voi TIEU DE: [be,boi] => true
+  [E2] chung voi HEADING: [] => false
+
+DEF-04 | Q="thời gian mở cửa bể bơi"
+  rank1=POOL24-BAN-02 doc=OCP1-POOL-RULES-2024 top_rejected_reason=expired_or_unknown
+  title_vi="Nội quy sử dụng Bể bơi (bản 2024)"
+  heading_vi="Các hành vi bị cấm (bản 2024)"
+  [E] chung voi TIEU DE: [be,boi] => true
+  [E2] chung voi HEADING: [] => false
+
+DEF-04 | Q="giờ hoạt động bể bơi"
+  rank1=COM-HOURS-02 doc=OCP1-COMMERCIAL-AREA-RULES-001 top_rejected_reason=scope_mismatch
+  title_vi="Nội quy Khu Thương mại dịch vụ"
+  heading_vi="Giờ hoạt động kinh doanh"
+  [E] chung voi TIEU DE: [] => false
+  [E2] chung voi HEADING: [gio,hoat,dong] => true
+
+DEF-04 | Q="bể bơi mở cửa mấy giờ"
+  rank1=POOL24-BAN-02 doc=OCP1-POOL-RULES-2024 top_rejected_reason=expired_or_unknown
+  title_vi="Nội quy sử dụng Bể bơi (bản 2024)"
+  heading_vi="Các hành vi bị cấm (bản 2024)"
+  [E] chung voi TIEU DE: [be,boi] => true
+  [E2] chung voi HEADING: [] => false
+
+DEF-02 | Q="phí cấp lại thẻ xe máy"
+  rank1=PFEE-SCOPE-00 doc=OCP1-PARKING-FEE-SCHEDULE-001 top_rejected_reason=null
+  title_vi="Biểu phí trông giữ xe"
+  heading_vi="Phạm vi Biểu phí trông giữ xe"
+  [E] chung voi TIEU DE: [phi,xe] => true
+  [E2] chung voi HEADING: [phi,xe] => true
+
+DEF-02 | Q="Làm lại thẻ xe máy bị mất thì mất bao nhiêu tiền?"
+  rank1=PARK-LOST-06 doc=OCP1-PARKING-RULES-001 top_rejected_reason=null
+  title_vi="Nội quy trông giữ xe"
+  heading_vi="Xử lý mất thẻ xe"
+  [E] chung voi TIEU DE: [xe] => true
+  [E2] chung voi HEADING: [mat,the,xe] => true
+EXIT=0

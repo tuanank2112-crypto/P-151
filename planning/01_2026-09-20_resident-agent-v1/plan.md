@@ -669,6 +669,61 @@ answer_turns TONG = 239 · is_golden_run = true: 0 · golden_case_id NOT NULL: 0
 
 **Lật được:** không. **Chi phí lật:** toàn bộ giá trị của màn `eval` và `dashboard` — hai trong số năm màn hình đem chấm.
 
+### Đ45 — 2026-09-22 · `S14` pass nhưng pass "nhờ may": bơm lỗi chỉ ở lần thử đầu, phần còn lại do hạn mức thật
+
+Gói bộ đo (`reports/R17`) đóng xong `S16` và `S14` theo Đ40 — `S16` nay đi qua đường `rejectAnswer()` thật của `SPEC-P03` §3.3 (không gọi `runTurn`, đúng dòng 268 của `TESTING-ACCEPTANCE`) và ra `reviewer_rejected_draft`; `S14` ra `system_error`. Mẫu số `M3` in tường minh mỗi lượt và **vẫn là 16** — không ca nào bị loại để số đẹp lên, đúng vùng cấm Đ40.
+
+**Nhưng worker tự báo lên một chỗ hở, và chỗ đó quan trọng hơn cả hai ca vừa đóng.** `lib/adapters/model.ts::callGemini()` chỉ bơm lỗi giả ở **lần thử thứ nhất** — thiết kế ban đầu là để kiểm *backoff rồi phục hồi*, không phải để kiểm *thất bại dai dẳng*. Trong khi `TESTING-ACCEPTANCE` §4.4 mô tả `S14` là lỗi **dai dẳng suốt cả chuỗi retry** rồi mới kết luận `system_error`.
+
+**Nghĩa là hôm nay `S14` xanh vì hai nguyên nhân cộng lại:** cờ bơm lỗi làm đỏ lần thử 1, và **hạn mức Gemini thật đang cạn** làm đỏ lần thử 2 và 3. Bỏ một trong hai đi thì chuỗi retry phục hồi và ca ra `answer` — tức **`S14` sẽ blocked hoặc trượt lại đúng lúc hạn mức hồi**, là lúc ta cần nó nhất.
+
+**Đây là họ lỗi G12 ở dạng tinh vi nhất gặp trong dự án này.** Bốn lần trước, xanh giả đến từ *bộ đo không canh gì* (`check_adapter_boundary` §Đ21, `eval_golden` thiếu 3/7 checkpoint §Đ36, assertion `≤300` không bao giờ đọc được §Đ42, `isValidUuid` là mã chết §Đ43). Lần này bộ đo **canh đúng thứ cần canh**, nhưng **điều kiện môi trường** lại là một nửa nguyên nhân của màu xanh. Không cổng nào đỏ, không test nào fail, và số `M3` trông như đã ổn định. Nếu không có dòng khai báo tự giác của worker thì phải tới buổi demo mới biết.
+
+**Ghi nhận về hành vi đúng:** worker **không tự vá** `lib/adapters/model.ts` vì file đó nằm ngoài phạm vi handoff, mà báo lên. Đó là xử đúng — và nó chứng minh giá trị của luật "thấy việc ngoài phạm vi thì GHI LẠI, không tự làm". Một worker tự ý sửa sang file khác để "cho nó chạy" sẽ vừa phá phép đo của gói song song, vừa chôn luôn phát hiện này.
+
+**Chốt (SO tự quyết, Luật L.2):** `callGemini()` phải hỗ trợ bơm lỗi **dai dẳng** — một biến thể làm đỏ **mọi** lần thử, tách rời khỏi biến thể "chỉ lần đầu" đang có. **GIỮ CẢ HAI:** biến thể cũ là thứ duy nhất kiểm được *backoff rồi phục hồi*, xoá nó là mất một phép đo khác. `S14` chuyển sang dùng biến thể dai dẳng.
+**Xong khi:** `S14` ra `system_error` **với `GEMINI_API_KEY` hoàn toàn khoẻ** — tức số không phụ thuộc trạng thái hạn mức. Kèm một test khẳng định biến thể "chỉ lần đầu" vẫn phục hồi được, để bản vá không âm thầm biến mọi bơm lỗi thành dai dẳng.
+
+**VÙNG CẤM:** CẤM để `S14` xanh bằng cách nới luật phân lập Tầng 1 (Đ26). Ranh giới mà `R17` dựng — lỗi bơm CÓ CỜ thì kết luận, 429 THẬT không cờ thì `blocked` — là đúng và đã có bằng chứng hai chiều trong cùng một lượt chạy; đừng đụng vào nó.
+
+**Và một luật chung rút ra, áp cho mọi số đo sau này:** một con số chỉ được coi là số nghiệm thu khi nó **không đổi theo điều kiện môi trường**. Cụ thể: trước khi tick bất kỳ Exit Gate nào dựa trên một ca bơm lỗi hoặc một ca phụ thuộc hạn mức, phải trả lời được câu *"số này có giữ nguyên khi hạn mức khoẻ không?"*. Không trả lời được thì ghi là **chưa kết luận**, không phải xanh.
+
+**Lật được:** không. **Chi phí lật:** `S14` thành một ca xanh vô nghĩa, và `M3` mất tính ổn định đúng lúc đem chấm.
+
+### Đ46 — 2026-09-22 · Hai bất biến mới: `G3` phải ĐÚNG CHỦ ĐỀ mới được nói "hết hiệu lực", và một lưới PII tất định trước nhánh intent
+
+Gói `S01`+`S06` (`reports/R16`, tầng 🔴) đóng hai trượt thật của Đ41. Cả hai bản vá đều **chọn tín hiệu bằng số đo, không bằng trực giác** — phần đáng giữ lại nằm ở cách chọn, không chỉ ở cái được chọn.
+
+**Căn nguyên `S01`, đo tay trên Postgres thật (không gọi model):** câu hỏi *"Sân pickleball mở cửa mấy giờ?"* kéo 8 chunk, eligible 6, và **chunk hạng 1 là `POOL24-BAN-02` thuộc bản nội quy BỂ BƠI đã hết hiệu lực** — điểm 0.375, **bằng đúng** điểm của `SPORTS-SCOPE-01` hợp lệ. Từ `pickleball` khớp **0/8 chunk**; chunk hạng 1 chỉ chung với câu hỏi mấy từ `giờ/mở/cửa`.
+
+**Và đây là chỗ phải hiểu cho đúng: Đ28 không sai, nhưng Đ32 đã thay đổi mặt đất dưới chân nó.** `top_rejected_reason` (chunk hạng 1) vẫn đúng theo định nghĩa. Nhưng sau Đ32 (nối từ bằng `|` thay vì AND), **"khớp nhất" có thể chỉ là khớp mấy từ chung chung**. Một bản vá đúng ở thời điểm của nó bị bào mòn bởi một bản vá khác, đúng ở thời điểm của nó. Không ai sai; cái thiếu là **không có phép đo nào canh sự tương tác giữa hai quyết định**.
+
+**Chốt W1:** thêm tín hiệu `top_rejected_on_topic` làm **điều kiện cần THỨ HAI** ở cổng `G3`. `top_rejected_reason` giữ nguyên vai trò chính (Đ28 nguyên vẹn, `P02-C16` nguyên vẹn). Nhánh mới **chỉ hạ cấp** `source_expired_or_unknown` → `no_eligible_source`, **không sinh mã mới**; mặc định `true` nên tương thích ngược. Nói ngắn: *muốn nói "tài liệu hết hiệu lực" thì tài liệu đó phải ĐÚNG CHỦ ĐỀ đã.*
+
+**Tín hiệu được chọn bằng số, 4 ứng viên đo trên 14 biến thể truy vấn thật:**
+
+| Ứng viên | Kết quả đo |
+| :-- | :-- |
+| [A] điểm vượt chunk eligible | **vỡ 1/5 `DEF-01`** |
+| [B] phủ hết từ khớp được | **vỡ 2/5 `DEF-04`** |
+| [D] từ 0-hit | **vỡ** ngay ở câu hỏi gốc (`mấy` cũng 0 hit) |
+| **[E] chung từ với TIÊU ĐỀ tài liệu** | **tách sạch 5/5 và 5/5** → chọn |
+
+**VÙNG CẤM ghi thẳng vào code:** CẤM dùng `heading_vi` thay `title_vi` — đã đo, **vỡ 3/5 `DEF-04`**. CẤM thêm ngưỡng số cho tín hiệu này (đụng `SPEC-P02` §6.5). CẤM lộ `sections.facility_ids` qua `SectionMeta` để làm "sạch hơn" trong vòng này — đó là đổi `lib/adapters/**`, một quyết định riêng.
+
+**Điểm yếu đã biết, ghi ra chứ không giấu:** câu hỏi chứa cụm rất phổ biến trong tiêu đề (vd *"nội quy"*) sẽ được cho qua. Cố ý không vá thêm: chiều hỏng **y như hôm nay, không tệ hơn**, và mọi cách sạch hơn đều vượt phạm vi. Cổng `G2` vẫn chọn mã bằng `rejection_histogram` (`SPEC` §6.2) nên vẫn có thể bịa "hết hiệu lực" ở một đường khác — hành vi hiện tại đã bị **ghim bằng test** để lần sau ai sửa thì thấy ngay.
+
+**Căn nguyên `S06`:** `checkOwnership()` chỉ so `target_subjects` dạng **MÃ** (`01-CONTRACTS` §8.1). *"Chủ căn tầng 9 cùng tòa"* không có mã ⇒ lọt qua ownership ⇒ rơi xuống nhánh intent ⇒ `unsupported_intent`. Sản phẩm vẫn từ chối, nhưng bằng lý do sai.
+**Chốt W2:** một **lưới tất định** ở chặng 2, **trước** nhánh intent, chặn khi có đủ **HAI** mảnh — một mục dữ liệu cá nhân **và** một chủ thể khác — khớp theo **âm tiết** đúng `P02-C17` (không khớp chuỗi con, đúng bài học G24/Đ31). Đòi hai mảnh chứ không một là có chủ đích: một mảnh thì mọi câu hỏi có chữ "số điện thoại" đều thành PII, kể cả hỏi số hotline BQL.
+
+**Bộ đo TỪNG ĐỎ — 4 phép phá độc lập, đều `EXIT=1`:** gỡ điều kiện mới ở `G3` (quay về bản Đ28) ⇒ fail 2/8 · giữ `confidence.ts` đã vá nhưng gỡ dòng truyền tín hiệu ở `index.ts` ⇒ fail 1/8 (**chứng minh hai trục độc lập thật**, không phải một assertion đếm hai lần) · gỡ lưới PII ⇒ tái lập nguyên văn `actual: 'unsupported_intent'` · bắt lưới PII luôn `true` ⇒ fail 4/6 (**ca đối chứng không phải trang trí**).
+
+**Cổng chính đã qua:** `DEF-04` vẫn xanh sau khi vá `DEF-01` — end-to-end qua `runTurn()` trên Postgres thật, 4 ca, **sai 0**, cùng một lượt chạy. Chấm lại bằng chính `lib/eval/score.ts`: `S06` pass, `S02`/`S03`/`S05`/`S09` không hồi quy.
+
+**Nói thẳng một điều dễ hiểu nhầm:** `S01` **vẫn bị bộ chấm tính là fail**. `safe_behavior` đã chuyển `false → true`, nhưng `checkpoint_gate` còn `false` vì nhãn `gate` rơi đúng vào tranh chấp `expected_gate` đang treo chờ chủ tịch — cùng tranh chấp với `S04`. **Đừng kỳ vọng `M3` tự tăng sau gói này.** Một phán quyết của chủ tịch đóng được cả hai ca cùng lúc; đó là điều kiện duy nhất còn lại.
+
+**Lật được:** không ở nguyên tắc *"đúng chủ đề mới được nói hết hiệu lực"*. Có, ở cách đo "đúng chủ đề" — nhưng ai đổi phải chạy lại đúng ma trận 4 ứng viên × 14 biến thể ở trên, vì ba ứng viên kia đã được đo là vỡ. **Chi phí lật:** `DEF-01` hoặc `DEF-04` đỏ lại.
+
 ### Quyết định của chủ tịch — 2026-09-20
 
 | Mã | Phán quyết | Ghi chú |

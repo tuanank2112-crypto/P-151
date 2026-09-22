@@ -1,0 +1,68 @@
+=== ĐỎ #1 — isExpectedInjectedError bị làm hỏng (return true luôn) ===
+(bản sao tạm scratchpad, KHÔNG sửa repo gốc)
+
+✖ Đ40 W2 — case KHÁC (không phải S14) dính 429 THẬT vẫn phải KHÔNG được coi là mong đợi (1.6879ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 110.6612
+
+✖ failing tests:
+
+test at red_test.mjs:13:1
+✖ Đ40 W2 — case KHÁC (không phải S14) dính 429 THẬT vẫn phải KHÔNG được coi là mong đợi (1.6879ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///C:/Users/lenku/AppData/Local/Temp/claude/d--build-phase/c2ad4b59-b5be-4ecd-b84b-b027270fff7a/scratchpad/red-proof/red_test.mjs:14:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+EXIT:1
+
+=== ĐỎ #2 — test tích hợp thật (Postgres), _batch.mjs bản sao tạm bị làm hỏng (isExpectedInjectedError return false luôn) ===
+(bản sao tạm scripts/_batch_redproof_tmp.mjs + tests/_redproof_tmp.test.ts, TẠO trong repo rồi XOÁ NGAY sau khi lấy bằng chứng — không còn trong git status)
+
+✖ Đ40 W2 (1/2, thật, Postgres) — S14 CÓ cờ bơm lỗi 429 dai dẳng ⇒ runTurn() ném UpstreamRateLimited, nhưng đọc lại DB cho ra KẾT LUẬN escalate/system_error (không phải blocked) (1005.9272ms)
+✔ Đ40 W2 (2/2, thật, Postgres) — case KHÁC (không có cờ) dính ĐÚNG kiểu lỗi 429 dai dẳng ⇒ PHẢI vào cột blocked của runBatch, KHÔNG bị tính là trượt, KHÔNG ghi checkpoint (998.7394ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15537.7313
+
+✖ failing tests:
+
+test at tests\_redproof_tmp.test.ts:77:1
+✖ Đ40 W2 (1/2, thật, Postgres) — S14 CÓ cờ bơm lỗi 429 dai dẳng ⇒ runTurn() ném UpstreamRateLimited, nhưng đọc lại DB cho ra KẾT LUẬN escalate/system_error (không phải blocked) (1005.9272ms)
+  AssertionError [ERR_ASSERTION]: case S14 + đúng lớp lỗi bơm ⇒ PHẢI được coi là lỗi mong đợi
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/_redproof_tmp.test.ts:102:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

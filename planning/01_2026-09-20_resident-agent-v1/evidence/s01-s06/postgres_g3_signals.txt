@@ -1,0 +1,120 @@
+# Do tay tren Postgres that 2026-09-22 — retrieval + eligibility, KHONG goi model.
+# Lenh: DATA_BACKEND=postgres node --env-file=.env.local <probe>
+
+
+########## DEF-01 pickleball (PHAI ra no_eligible_source) ##########
+
+Q: Sân pickleball mở cửa mấy giờ?
+  top_rejected_reason=expired_or_unknown retrieved=8 eligible=6
+  rank1=POOL24-BAN-02 score=0.3750 | best_eligible=SPORTS-SCOPE-01 score=0.3750
+  [A] rank1 score > moi chunk eligible? false
+  [B] matchable=[san,mo,cua,may,gio] rank1 THIEU=[san,may] => phu du? false
+  [C] cover(rank1)=3 maxCover=3 => rank1 la phu nhieu nhat? true
+  [D] co tu truy van 0 hit? true (pickleball)
+
+Q: giờ mở cửa sân pickleball
+  top_rejected_reason=expired_or_unknown retrieved=8 eligible=6
+  rank1=POOL24-BAN-02 score=0.3750 | best_eligible=SPORTS-SCOPE-01 score=0.3750
+  [A] rank1 score > moi chunk eligible? false
+  [B] matchable=[gio,mo,cua,san] rank1 THIEU=[san] => phu du? false
+  [C] cover(rank1)=3 maxCover=3 => rank1 la phu nhieu nhat? true
+  [D] co tu truy van 0 hit? true (pickleball)
+
+Q: sân pickleball giờ mở cửa
+  top_rejected_reason=expired_or_unknown retrieved=8 eligible=6
+  rank1=POOL24-BAN-02 score=0.3750 | best_eligible=SPORTS-SCOPE-01 score=0.3750
+  [A] rank1 score > moi chunk eligible? false
+  [B] matchable=[san,gio,mo,cua] rank1 THIEU=[san] => phu du? false
+  [C] cover(rank1)=3 maxCover=3 => rank1 la phu nhieu nhat? true
+  [D] co tu truy van 0 hit? true (pickleball)
+
+Q: thời gian mở cửa sân pickleball
+  top_rejected_reason=null retrieved=8 eligible=5
+  rank1=SPORTS-SCOPE-01 score=0.3750 | best_eligible=SPORTS-SCOPE-01 score=0.3750
+  [A] rank1 score > moi chunk eligible? false
+  [B] matchable=[thoi,gian,mo,cua,san] rank1 THIEU=[thoi,gian,mo,cua] => phu du? false
+  [C] cover(rank1)=1 maxCover=4 => rank1 la phu nhieu nhat? false
+  [D] co tu truy van 0 hit? true (pickleball)
+
+Q: giờ hoạt động sân pickleball
+  top_rejected_reason=null retrieved=8 eligible=6
+  rank1=SPORTS-SCOPE-01 score=0.3750 | best_eligible=SPORTS-SCOPE-01 score=0.3750
+  [A] rank1 score > moi chunk eligible? false
+  [B] matchable=[gio,hoat,dong,san] rank1 THIEU=[gio,hoat,dong] => phu du? false
+  [C] cover(rank1)=1 maxCover=4 => rank1 la phu nhieu nhat? false
+  [D] co tu truy van 0 hit? true (pickleball)
+
+Q: sân pickleball mở cửa mấy giờ
+  top_rejected_reason=expired_or_unknown retrieved=8 eligible=6
+  rank1=POOL24-BAN-02 score=0.3750 | best_eligible=SPORTS-SCOPE-01 score=0.3750
+  [A] rank1 score > moi chunk eligible? false
+  [B] matchable=[san,mo,cua,may,gio] rank1 THIEU=[san,may] => phu du? false
+  [C] cover(rank1)=3 maxCover=3 => rank1 la phu nhieu nhat? true
+  [D] co tu truy van 0 hit? true (pickleball)
+
+Q: pickleball mở cửa mấy giờ
+  top_rejected_reason=expired_or_unknown retrieved=8 eligible=5
+  rank1=POOL24-BAN-02 score=0.3750 | best_eligible=LAKE-HOURS-03 score=0.2857
+  [A] rank1 score > moi chunk eligible? true
+  [B] matchable=[mo,cua,may,gio] rank1 THIEU=[may] => phu du? false
+  [C] cover(rank1)=3 maxCover=3 => rank1 la phu nhieu nhat? true
+  [D] co tu truy van 0 hit? true (pickleball)
+
+Q: sân pickleball
+  top_rejected_reason=null retrieved=8 eligible=8
+  rank1=SPORTS-SCOPE-01 score=0.3750 | best_eligible=SPORTS-SCOPE-01 score=0.3750
+  [A] rank1 score > moi chunk eligible? false
+  [B] matchable=[san] rank1 THIEU=[] => phu du? true
+  [C] cover(rank1)=1 maxCover=1 => rank1 la phu nhieu nhat? true
+  [D] co tu truy van 0 hit? true (pickleball)
+
+########## DEF-04 be boi (PHAI giu source_expired_or_unknown) ##########
+
+Q: Bể bơi mở cửa từ mấy giờ đến mấy giờ?
+  top_rejected_reason=expired_or_unknown retrieved=8 eligible=6
+  rank1=POOL24-HOURS-01 score=0.5000 | best_eligible=BQL-HOURS-02 score=0.4118
+  [A] rank1 score > moi chunk eligible? true
+  [B] matchable=[be,boi,mo,cua,tu,gio,den] rank1 THIEU=[] => phu du? true
+  [C] cover(rank1)=7 maxCover=7 => rank1 la phu nhieu nhat? true
+  [D] co tu truy van 0 hit? true (may)
+
+Q: giờ mở cửa bể bơi
+  top_rejected_reason=expired_or_unknown retrieved=8 eligible=5
+  rank1=POOL24-BAN-02 score=0.5000 | best_eligible=POOL-SCOPE-01 score=0.3333
+  [A] rank1 score > moi chunk eligible? true
+  [B] matchable=[gio,mo,cua,be,boi] rank1 THIEU=[] => phu du? true
+  [C] cover(rank1)=5 maxCover=5 => rank1 la phu nhieu nhat? true
+  [D] co tu truy van 0 hit? false ()
+
+Q: bể bơi giờ mở cửa
+  top_rejected_reason=expired_or_unknown retrieved=8 eligible=5
+  rank1=POOL24-BAN-02 score=0.5000 | best_eligible=POOL-SCOPE-01 score=0.3333
+  [A] rank1 score > moi chunk eligible? true
+  [B] matchable=[be,boi,gio,mo,cua] rank1 THIEU=[] => phu du? true
+  [C] cover(rank1)=5 maxCover=5 => rank1 la phu nhieu nhat? true
+  [D] co tu truy van 0 hit? false ()
+
+Q: thời gian mở cửa bể bơi
+  top_rejected_reason=expired_or_unknown retrieved=8 eligible=5
+  rank1=POOL24-BAN-02 score=0.4444 | best_eligible=POOL-ENTRY-02 score=0.3750
+  [A] rank1 score > moi chunk eligible? true
+  [B] matchable=[thoi,gian,mo,cua,be,boi] rank1 THIEU=[thoi,gian] => phu du? false
+  [C] cover(rank1)=4 maxCover=4 => rank1 la phu nhieu nhat? true
+  [D] co tu truy van 0 hit? false ()
+
+Q: giờ hoạt động bể bơi
+  top_rejected_reason=scope_mismatch retrieved=8 eligible=5
+  rank1=COM-HOURS-02 score=0.3750 | best_eligible=PFEE-CAR-CASUAL-02 score=0.2857
+  [A] rank1 score > moi chunk eligible? true
+  [B] matchable=[gio,hoat,dong,be,boi] rank1 THIEU=[be,boi] => phu du? false
+  [C] cover(rank1)=3 maxCover=4 => rank1 la phu nhieu nhat? false
+  [D] co tu truy van 0 hit? false ()
+
+Q: bể bơi mở cửa mấy giờ
+  top_rejected_reason=expired_or_unknown retrieved=8 eligible=6
+  rank1=POOL24-BAN-02 score=0.5000 | best_eligible=POOL-SCOPE-01 score=0.3333
+  [A] rank1 score > moi chunk eligible? true
+  [B] matchable=[be,boi,mo,cua,may,gio] rank1 THIEU=[may] => phu du? false
+  [C] cover(rank1)=5 maxCover=5 => rank1 la phu nhieu nhat? true
+  [D] co tu truy van 0 hit? false ()
+EXIT=0

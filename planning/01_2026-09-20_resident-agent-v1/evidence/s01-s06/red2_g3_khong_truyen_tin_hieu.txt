@@ -1,0 +1,43 @@
+# PHEP PHA 2 (W1) — GIU nguyen lib/confidence.ts da va, chi go dong truyen tin hieu
+# top_rejected_on_topic tu lib/pipeline/index.ts (loi DAY DAY: va dung cho nhung khong noi day).
+# Muc dich: chung minh truc end-to-end bat duoc loi DAY DAY, khong chi truc logic thuan.
+# Lenh: node scripts/run_tests.mjs g3-on-topic
+
+✔ Đ41 T1a — DEF-01: chunk hạng 1 hết hiệu lực nhưng LỆCH chủ đề ⇒ no_eligible_source (1.5061ms)
+✔ Đ41 T1b — DEF-04 KHÔNG được đổi: chunk hạng 1 hết hiệu lực và ĐÚNG chủ đề ⇒ source_expired_or_unknown (0.2636ms)
+✔ Đ41 T1c — tương thích ngược: KHÔNG truyền top_rejected_on_topic thì giữ nguyên Đ28 (0.2468ms)
+✔ Đ41 T1d — tín hiệu mới KHÔNG được sinh mã: lệch chủ đề mà chunk hạng 1 hợp lệ vẫn là no_eligible_source (0.2886ms)
+✔ Đ41 T1e — G2 KHÔNG bị tín hiệu mới chạm tới (vùng cấm: Đ41 chỉ sửa G3) (0.3311ms)
+✔ Đ41 T2 — tiêu đề tài liệu hết hiệu lực đọc từ kho: pickleball KHÔNG chung từ, bể bơi CÓ (19.5852ms)
+✖ Đ41 T3a — end-to-end DEF-01: A2 từ chối, chunk hạng 1 hết hiệu lực LỆCH chủ đề ⇒ no_eligible_source (6.9914ms)
+✔ Đ41 T3b — end-to-end DEF-04 vẫn XANH: cùng cổng G3, đúng chủ đề ⇒ source_expired_or_unknown (1.6492ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 7
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 312.7144
+
+✖ failing tests:
+
+test at tests\g3-on-topic.test.ts:235:1
+✖ Đ41 T3a — end-to-end DEF-01: A2 từ chối, chunk hạng 1 hết hiệu lực LỆCH chủ đề ⇒ no_eligible_source (6.9914ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'source_expired_or_unknown'
+  - 'no_eligible_source'
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/g3-on-topic.test.ts:247:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'source_expired_or_unknown',
+    expected: 'no_eligible_source',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+EXIT=1
