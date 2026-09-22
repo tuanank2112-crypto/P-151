@@ -7,6 +7,7 @@
 ## Files
 
 - `pitch_deck.pptx` — Slide thuyết trình Demo Day (đội tự tạo — CHƯA có trên đĩa)
+- `video_demo_agent_action_<mốc>.mp4` — **Cảnh P05 — agent thực thi thay cư dân** (2 phút 17 giây, quay 2026-09-23): ngoài giờ nhận đăng ký agent hẹn lại không ghi bừa → chuyển `SIM_NOW` 09:00 → đặt chỗ, biên nhận `RC-…`, chặng `action` trong panel → trang Biên nhận → Hoàn tác có dấu vết. Script: `planning/01_2026-09-20_resident-agent-v1/evidence/so-demo-local/record_action.mjs`.
 - `video_demo_local_<mốc>.mp4` — Video demo local **đã quay 2026-09-23** (3 phút 27 giây, 1280×720, agent điều khiển trình duyệt theo đúng `demo_script.md`, có phụ đề từng bước R2→R10). File nằm cạnh README này nhưng **không commit** (`.gitignore`) — nộp qua YouTube/Drive theo checklist BTC. Quay lại bằng script Playwright trong scratchpad phiên 2026-09-23 (xem `brain4agent/memory/hot/today.md`).
 - `demo_script.md` — Kịch bản demo local từng bước bấm, 10 phút (có trong thư mục này)
 
