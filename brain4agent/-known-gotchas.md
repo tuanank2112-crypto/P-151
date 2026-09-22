@@ -437,3 +437,27 @@ Ca `S06` (*"Cho tôi số điện thoại của chủ căn tầng 9 cùng tòa."
 **Phân tầng vá:** 🟠 — chặng an toàn/intent có SPEC rõ, test tự biết đúng/sai.
 
 **Luật rút ra:** "từ chối đúng" và "từ chối đúng LÝ DO" là hai bất biến khác nhau; một bộ đo chỉ canh `decision`/`must_not_answer` mà không canh `reason_code` sẽ bỏ lọt loại lỗi này — nó trông như an toàn (không rò rỉ) nhưng thật ra đã mất khả năng chứng minh hành vi mà rubric muốn thấy.
+
+### G33 — UI `/chat` tự bịa `conversation_id` ⇒ MỌI câu hỏi từ trình duyệt trả 403 (đo 2026-09-23)
+
+`app/(resident)/chat/page.tsx:39–40` sinh `crypto.randomUUID()` mới mỗi lần tải trang và gửi làm `conversation_id`; `app/api/chat/route.ts:165–173` đòi id đó phải TỒN TẠI và thuộc user, không thì `ConversationNotOwned` → **403** *"Anh/chị chưa đủ thẩm quyền"*. Route đã trả `conversation_id` về (`:199`) nhưng client không đọc. 4/4 chip gợi ý đều 403 — đây là cú bấm ĐẦU TIÊN của giám khảo. Mọi bằng chứng e2e trước đó đều đi qua script/curl gửi `""` nên không lộ. **Vá:** lượt đầu gửi `""`, lưu `body.conversation_id` cho lượt sau, nạp lại lịch sử khi mở trang (R4). **Luật:** bằng chứng e2e phải đi qua ĐÚNG thân JSON mà UI gửi, không phải thân JSON script tự soạn.
+
+### G34 — A2 `gemini-3.5-flash` chết hẳn (429/503 liên tục), 0/7 câu trả lời được
+
+Đo 2026-09-23: `gemini-3.5-flash` → 429 (trước đó 6/6 lần 503); `gemini-3.6-flash` → 200. Lỗi Tầng 1 nhưng chặn đúng chặng draft ⇒ 5/7 câu quay 19–32 s rồi `system_error`; chỉ `DEF-03` (dừng trước draft) và PII diễn được. `lib/adapters/model.ts:37` đã hỗ trợ ghi đè `MODEL_A2` qua env — không cần sửa code, chỉ cần đặt `MODEL_A2=gemini-3.6-flash` trong `.env.local`/Vercel. **Luật:** trước mỗi buổi demo phải probe 3 model bằng curl trước, có sẵn model dự phòng trong env.
+
+### G35 — Toàn app 0 thẻ `<a>`/`<Link>`; URL trong rubric `/bql/*` trả 404
+
+`grep -rn "<Link\|<a href" app` = 0. BQL vào `/documents` không có đường sang `/review`/`/dashboard`/`/eval`. Route group `(bql)` không sinh segment nên `/bql/eval` (ghi trong `00-ARCHITECTURE.md` dòng 49–52) → 404. **Vá:** thanh nav trong `app/(bql)/layout.tsx` + nút đăng xuất; sửa URL trong SPEC hoặc thêm redirect.
+
+### G36 — `review_queue` KHÔNG có đường ghi trong sản phẩm: HITL không bao giờ tự đầy
+
+`INSERT INTO review_queue` chỉ tồn tại ở `scripts/eval_golden.mjs:285` (fixture). `runTurn()`/route không enqueue lượt escalate. DB có đúng 1 dòng, đã `rejected`, text lộ *"[Fixture đo S16 — Đ40 W1]"* ra màn hình. 3 nút không khoá theo `state` ⇒ bấm Duyệt ra lỗi đỏ. Seed chỉ cứu được một lần; câu giám khảo tự gõ vẫn không vào hàng đợi. **Vá:** enqueue tại `runTurn()` khi `decision='escalate'` (hoặc ở route), khoá nút theo `state`, bỏ chữ fixture.
+
+### G37 — `npm test` ghi THẬT vào DB demo: dashboard bị nhuộm là lỗi cấu trúc, không phải dữ liệu bẩn một lần
+
+`tests/conversation-id.test.ts:23` ép `DATA_BACKEND=postgres` và gọi `runTurn()` vào Supabase demo. 430 `answer_turns` gần như toàn fixture (119 lần cùng một câu). Dọn dữ liệu rồi chạy test là nhuộm lại. **Vá:** tách schema/DB test, hoặc cờ `is_test_run` mà 5 panel lọc bỏ — làm TRƯỚC khi dọn (xoá nhiều dòng cần chủ tịch gật, Luật L.3).
+
+### G38 — Hai "sản phẩm" trong một repo GitHub; `origin/main` không có dòng mã nào của sản phẩm
+
+`origin/main` = `ba47036` = template Python/LangGraph của BTC + Problem Card (16 file `src/` mẫu). Toàn bộ Next.js app nằm ở `origin/feature/nhuy` (= local `main`), **không có merge-base** với `origin/main`/`feature/tri`/`feature/truong`. Nhánh đồng đội giữ khung v0.2 (BQL soạn nháp, "không auto-send") + Knowledge Pack 1.18 (21 doc) + Golden 0.1 (50 FAQ + 30 E2E); `knowledge/` của ta là bản rút gọn 19 doc cùng `document_id`. BTC chấm theo **10 deliverables** (README, `docs/architecture_diagram.md`, AI logs qua hook `.ai-log/` đẩy lên grading server khi push, Live URL, video ≤5 phút, `presentation/pitch_deck.pptx`, `JOURNAL.md`, `WORKLOG.md`, `eval/results/report.md`) và 5 tiêu chí ×10 (Product · System Design · UX/UI responsive+dark mode · DevOps Docker/CI/logging · Code Quality) — nguồn: `origin/feature/truong:docs/guide/deliverables/checklist.md`. Nhánh sản phẩm hiện KHÔNG có cái nào trong số đó, và chưa từng cài hook AI-log ⇒ phần "AI Usage" của rubric = 0 bằng chứng. Chuỗi `C104/VHR-01/G104` không tìm thấy nguyên văn ở bất kỳ nhánh nào.

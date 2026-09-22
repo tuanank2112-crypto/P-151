@@ -1,0 +1,10 @@
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+[faq] chạy 50 ca (tổng bộ 50, đã có kết luận 0), song song 4
+
+[DỪNG SỚM] 3 lần dính hạn mức liên tiếp. Giữ nguyên checkpoint, thoát mã 3. Chạy lại bằng --resume khi hạn mức hồi.
+
+faq: pass 1 · fail 0 · blocked 5 (1/50 ca có kết luận) · answerable 1/40 · checkpoint=evals\runs\faq.postgres.jsonl
+run_id=330b750d-1722-4054-89b4-77b27b2171a9
+
+CHƯA KẾT LUẬN ĐƯỢC — còn ca chưa chạy hoặc bị hạn mức chặn. Chạy tiếp: thêm cờ --resume (tuỳ chọn --limit=N để cắt lô nhỏ hơn).
+EXIT=3
