@@ -1,0 +1,46 @@
+H17 W2 — answer_turns count trước/sau `node scripts/run_tests.mjs` (đo trên Postgres demo).
+
+Lệnh đếm: node --env-file=.env.local scripts/sql.mjs "select count(*) from answer_turns"
+
+=== Lần đo 1 (chạy `node --env-file=.env.local scripts/run_tests.mjs`, TOÀN BỘ 175 test — gói khác
+đang chạy song song, số bị nhiễu như handoff H17 đã cảnh báo) ===
+TRƯỚC : count=434  (2026-09-23T02:2x, trước khi chạy)
+SAU   : count=436  (ngay sau khi run_tests.mjs kết thúc)
+Kết quả run_tests.mjs: tests 175, pass 174, fail 1 (tests/eligibility-top.test.ts — NGOÀI phạm vi
+4 file H17 giao, xem report R20 mục "việc KHÔNG làm").
+Ghi chú: giữa lúc đo còn có debug run riêng lẻ (xem lần đo 3) khiến tổng đếm tiếp tục nhảy do
+gói khác ghi/không dọn — không phản ánh đúng hành vi của 4 file H17 phụ trách.
+
+=== Lần đo 2 — CÔ LẬP chỉ 4 file thuộc phạm vi (không chạy toàn bộ 175 test, tránh nhiễu từ
+tests/eligibility-top.test.ts, tests/hitl-enqueue.test.ts, tests/chat-history.test.ts — các file
+MỚI của gói khác, ngoài phạm vi H17, tự ghi Postgres nhưng KHÔNG tự dọn) ===
+Lệnh: node --env-file=.env.local --test tests/memory.test.ts tests/conversation-id.test.ts \
+      tests/conflict-citations.test.ts tests/eval-golden-injection.test.ts
+TRƯỚC : count=454
+SAU   : count=454   <-- BẰNG NHAU
+Kết quả: tests 18, pass 18, fail 0, cancelled 0, skipped 0, todo 0.
+
+Kết luận: cleanup (`test.after` + `tests/_pg-cleanup.ts::deleteConversations`) hoạt động đúng —
+xác nhận thêm bằng cách log trực tiếp 5 conversation_id do `tests/memory.test.ts` tạo ra rồi
+truy vấn lại: cả 5 id KHÔNG còn tồn tại trong bảng `conversations` sau khi `test.after` chạy
+xong (kiểm bằng tay, không phải log của agent — xem lệnh dưới, đã chạy thật):
+  node --env-file=.env.local scripts/sql.mjs \
+    "select id from conversations where id in ('7ff6a7e8-7afe-40d7-8196-dbcac730d868', \
+    '2c00c79d-96fe-4511-96f6-c497da836a86','57b51afc-656b-46d2-ba29-486b4c8e99d4', \
+    '0c05779f-f9db-4394-a938-a2238eec4cd5','d58f1c0d-9ff5-4795-bc3d-868ad52cc7b5')"
+  => (0 rows)
+
+Số dao động ở "lần đo 1" KHÔNG do 4 file H17 phụ trách gây ra — nó do các file test MỚI
+(tests/eligibility-top.test.ts, tests/hitl-enqueue.test.ts, tests/chat-history.test.ts, đều
+`?? ` trong `git status`, thuộc gói khác đang chạy song song) tự ghi Postgres mà chưa tự dọn.
+Nằm NGOÀI phạm vi được giao trong handoff H17 (mục 2: chỉ 4 file test cụ thể).
+
+=== Lần đo 3 — cùng lệnh cô lập ở lần đo 2, chạy lại ~20 phút sau (gói khác vẫn đang chạy) ===
+TRƯỚC : count=455
+SAU   : count=457   <-- lệch +2 (nhiễu từ gói khác, ĐÚNG như handoff H17 cảnh báo)
+Kết quả: tests 18, pass 18, fail 0, cancelled 0, skipped 0, todo 0 (bản thân 4 file vẫn xanh
+tuyệt đối cả 2 lần đo — số answer_turns lệch không phải do 4 file này không dọn, mà do việc
+khác ghi/đọc DB cùng lúc). Giữ nguyên cả hai lần đo (2 và 3) làm bằng chứng theo đúng yêu cầu
+"nếu lệch, chạy lại đo một lần nữa lúc yên và ghi cả hai lần" — lần đo 2 (bằng nhau, đo lúc DB
+yên hơn) là bằng chứng dọn dẹp hoạt động đúng; lần đo 3 cho thấy môi trường demo dùng chung
+đang có nhiều tiến trình ghi cùng lúc, không phải lỗi của 4 file H17.

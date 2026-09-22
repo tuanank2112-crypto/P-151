@@ -1,0 +1,16 @@
+=== Attempt 1 at 19:45:12 ===
+BLOCKED: UpstreamRateLimited
+exit=3
+=== Attempt 2 at 19:47:07 ===
+BLOCKED: UpstreamRateLimited
+exit=3
+=== Attempt 3 at 19:49:03 ===
+BLOCKED: UpstreamRateLimited
+exit=3
+=== Attempt 4 at 19:51:01 ===
+BLOCKED: UpstreamRateLimited
+exit=3
+=== Attempt 5 at 19:52:56 ===
+BLOCKED: UpstreamRateLimited
+exit=3
+ALL ATTEMPTS EXHAUSTED

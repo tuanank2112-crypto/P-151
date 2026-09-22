@@ -1,0 +1,35 @@
+=== Attempt 1 at 19:34:27 ===
+BLOCKED: UpstreamRateLimited
+exit=3
+=== Attempt 2 at 19:36:04 ===
+LỖI: error: insert or update on table "conversations" violates foreign key constraint "conversations_user_id_fkey"
+    at D:\build phase\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async cachedSql (file:///D:/build%20phase/lib/adapters/db.ts:103:17)
+    at async PostgresDataStore.appendMessage (file:///D:/build%20phase/lib/adapters/db.ts:367:7)
+    at async runTurn (file:///D:/build%20phase/lib/pipeline/index.ts:392:23)
+    at async file:///D:/build%20phase/scripts/demo_r7.mjs:83:18
+exit=1
+=== Attempt 3 at 19:37:23 ===
+[1] TRƯỚC: decision=answer citations=["POOL-SAFE-03"]
+BLOCKED: UpstreamRateLimited
+exit=3
+=== Attempt 4 at 19:39:11 ===
+BLOCKED: UpstreamRateLimited
+exit=3
+=== Attempt 5 at 19:40:36 ===
+LỖI: error: (EMAXCONNSESSION) max clients reached in session mode - max clients are limited to pool_size: 15
+    at D:\build phase\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async cachedSql (file:///D:/build%20phase/lib/adapters/db.ts:103:17)
+    at async PostgresDataStore.getSectionMeta (file:///D:/build%20phase/lib/adapters/db.ts:331:18)
+    at async Promise.all (index 1)
+    at async applyEligibility (file:///D:/build%20phase/lib/pipeline/eligibility.ts:93:33)
+    at async runPipelineBody (file:///D:/build%20phase/lib/pipeline/index.ts:555:35)
+    at async runTurn (file:///D:/build%20phase/lib/pipeline/index.ts:409:12)
+    at async file:///D:/build%20phase/scripts/demo_r7.mjs:83:18
+exit=1
+=== Attempt 6 at 19:41:46 ===
+BLOCKED: UpstreamRateLimited
+exit=3
+ALL ATTEMPTS EXHAUSTED

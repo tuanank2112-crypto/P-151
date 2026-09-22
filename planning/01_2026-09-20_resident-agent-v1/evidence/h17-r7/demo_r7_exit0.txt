@@ -1,0 +1,7 @@
+CHƯA CÓ BẰNG CHỨNG exit=0 THẬT. File này giữ nguyên output của LẦN CHẠY GẦN NHẤT (không
+phải bằng chứng "xong khi" của W1) — xem `W1_STATUS.txt` trong cùng thư mục để biết đầy đủ
+số lần thử, lý do (quota A2 cạn thật, xác minh độc lập), và bằng chứng từng bước đã chạy
+được (attempt 3 của `demo_r7_retry_log.txt`: bước [1] ra đúng decision=answer).
+
+Output lần chạy gần nhất (BLOCKED, exit=3 — Tầng 1, KHÔNG phải trượt sản phẩm, Đ26):
+BLOCKED: UpstreamRateLimited

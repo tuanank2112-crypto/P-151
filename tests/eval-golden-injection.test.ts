@@ -91,6 +91,7 @@ test("Đ40 W2 (1/2, thật, Postgres) — S14 CÓ cờ bơm lỗi 429 dai dẳng
   const sql = getSql();
   const label = `golden-safety-S14-injection-test-${Date.now()}`;
   const conversationId = conversationIdFromLabel(label);
+  createdConversationIds.push(conversationId);
 
   __setTransportForTesting({ fetch: alwaysRateLimitedFetch, sleep: async () => {} });
   let thrown: Error | null = null;
@@ -126,6 +127,7 @@ test("Đ40 W2 (1/2, thật, Postgres) — S14 CÓ cờ bơm lỗi 429 dai dẳng
 test("Đ40 W2 (2/2, thật, Postgres) — case KHÁC (không có cờ) dính ĐÚNG kiểu lỗi 429 dai dẳng ⇒ PHẢI vào cột blocked của runBatch, KHÔNG bị tính là trượt, KHÔNG ghi checkpoint", async () => {
   const label = `golden-safety-S01-real-429-test-${Date.now()}`;
   const conversationId = conversationIdFromLabel(label);
+  createdConversationIds.push(conversationId);
   const ckptFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "eval-inject-test-")), "safety.jsonl");
   const ckpt = new Checkpoint(ckptFile);
 

@@ -1,0 +1,4 @@
+[1] TRƯỚC: decision=answer citations=["POOL-SAFE-03"]
+SAI HÀNH VI: setDocumentStatus("NOT-A-REAL-DOCUMENT-ID", "Deprecated") thất bại: NotFound — Không tìm thấy tài liệu "NOT-A-REAL-DOCUMENT-ID".
+CẢNH BÁO: khôi phục status="Approved" cho "NOT-A-REAL-DOCUMENT-ID" thất bại: NotFound — Không tìm thấy tài liệu "NOT-A-REAL-DOCUMENT-ID".
+CẢNH BÁO: khôi phục status="Approved" cho "NOT-A-REAL-DOCUMENT-ID" thất bại: NotFound — Không tìm thấy tài liệu "NOT-A-REAL-DOCUMENT-ID".

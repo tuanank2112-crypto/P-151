@@ -71,7 +71,7 @@ tests/memory.test.ts                | 19 +++++++++++++++++++
 4 files changed, 70 insertions(+), 2 deletions(-)
 ```
 File MỚI (không nằm trong `git diff --stat`, `git status` báo `??`):
-`scripts/demo_r7.mjs`, `tests/_pg-cleanup.ts`, `evidence/h17-r7/**`.
+`scripts/demo_r7.mjs`, `tests/_pg-cleanup.ts`, `planning/01_2026-09-20_resident-agent-v1/evidence/h17-r7/**`.
 HEAD tại thời điểm viết report: `4037c27` (gói khác đã commit song song trong lúc tôi làm —
 không phải commit của tôi; tôi KHÔNG `git add/commit/push` theo đúng CẤM của handoff).
 
@@ -85,7 +85,7 @@ không phải commit của tôi; tôi KHÔNG `git add/commit/push` theo đúng C
 
 ## 5. Việc KHÔNG làm + lý do
 
-1. **W1 "xong khi" (exit=0, `evidence/h17-r7/demo_r7_exit0.txt`) CHƯA đạt.** Đã thử 13 lần
+1. **W1 "xong khi" (exit=0, `planning/01_2026-09-20_resident-agent-v1/evidence/h17-r7/demo_r7_exit0.txt`) CHƯA đạt.** Đã thử 13 lần
    trong ~25 phút (2 đợt lặp nền + vài lần tay, cách nhau 60–90s). 12/13 lần `BLOCKED:
    UpstreamRateLimited` — model A2 (`MODEL_A2=gemini-3.6-flash`) trả 429 "You exceeded your
    current quota" (xác minh ĐỘC LẬP bằng `scripts/trace_sample.mjs`, không liên quan gì tới
@@ -93,8 +93,8 @@ không phải commit của tôi; tôi KHÔNG `git add/commit/push` theo đúng C
    phân lập đúng (`BLOCKED`, exit=3, không tính là trượt). 1 lần lọt qua được bước [1] (ra
    đúng `decision=answer citations=["POOL-SAFE-03"]`) rồi vẫn dính BLOCKED ở bước [2] — đủ để
    xác nhận LOGIC bước [1] đúng, nhưng KHÔNG đủ điều kiện "xong khi" (cần đủ 3 dòng, exit=0).
-   Chi tiết đầy đủ + bằng chứng: `evidence/h17-r7/W1_STATUS.txt`,
-   `evidence/h17-r7/demo_r7_retry_log.txt`, `evidence/h17-r7/demo_r7_retry_log2.txt`.
+   Chi tiết đầy đủ + bằng chứng: `planning/01_2026-09-20_resident-agent-v1/evidence/h17-r7/W1_STATUS.txt`,
+   `planning/01_2026-09-20_resident-agent-v1/evidence/h17-r7/demo_r7_retry_log.txt`, `planning/01_2026-09-20_resident-agent-v1/evidence/h17-r7/demo_r7_retry_log2.txt`.
    Trạng thái tài liệu demo vẫn đúng `Approved` sau mọi lần thử (script luôn khôi phục ở
    `finally`, kể cả khi BLOCKED) — xác minh bằng `scripts/sql.mjs`.
 2. **`tests/eligibility-top.test.ts` fail khi chạy `run_tests.mjs` toàn bộ.** File này NẰM
@@ -111,7 +111,7 @@ không phải commit của tôi; tôi KHÔNG `git add/commit/push` theo đúng C
    khác vẫn đang chạy) 455→457 (lệch do việc khác, không phải 4 file này — đã xác minh bằng
    cách log trực tiếp 5 `conversation_id` do `tests/memory.test.ts` tạo rồi truy vấn lại: cả 5
    đều KHÔNG còn tồn tại sau `test.after`). Cả hai lần đo lưu trong
-   `evidence/h17-r7/w2_count_before_after.txt` theo đúng yêu cầu "nếu lệch, chạy lại đo một
+   `planning/01_2026-09-20_resident-agent-v1/evidence/h17-r7/w2_count_before_after.txt` theo đúng yêu cầu "nếu lệch, chạy lại đo một
    lần nữa lúc yên và ghi cả hai lần".
 
 ## 6. Câu hỏi cần người

@@ -1,0 +1,43 @@
+H17 W1 — trạng thái thật, KHÔNG đạt "xong khi" đầy đủ (exit=0 với 3 dòng đúng thứ tự).
+
+TÓM TẮT: đã thử `node --env-file=.env.local scripts/demo_r7.mjs` (đúng document, không cờ)
+TỔNG CỘNG 13 lần trong ~25 phút (2 đợt lặp nền + vài lần tay), luôn dính
+`BLOCKED: UpstreamRateLimited` (exit=3) ở MỘT trong ba lượt hỏi model A2 (gemini-3.6-flash),
+TRỪ đúng MỘT lần lọt qua bước [1] (xem `demo_r7_retry_log.txt` attempt 3, 19:37:23) rồi vẫn
+dính BLOCKED ở bước [2].
+
+BẰNG CHỨNG ĐÂY LÀ TẦNG 1 THẬT (không phải bug demo_r7.mjs), xác minh ĐỘC LẬP bằng
+`scripts/trace_sample.mjs` (không liên quan gì tới demo_r7.mjs, cùng model A2):
+  node --env-file=.env.local scripts/trace_sample.mjs --q "..."
+  => UpstreamRateLimited: HTTP 429 — {"error":{"code":429,"message":"You exceeded your
+     current quota, please check your plan and billing details...
+Đây là quota CẠN THẬT (không phải rate-limit thoáng qua) — cửa sổ khả dụng rất hẹp và
+không đều (đóng lại ngay sau vài chục giây).
+
+BẰNG CHỨNG demo_r7.mjs LÀM ĐÚNG PHẦN VIỆC CỦA NÓ khi model trả lời được:
+  - Bước [1] đúng: `[1] TRƯỚC: decision=answer citations=["POOL-SAFE-03"]`
+    (demo_r7_retry_log.txt, attempt 3 — VÀ demo_r7_wrong_document_red.txt, lần chạy sau đó)
+  - BLOCKED (429) được phân lập đúng Tầng 1 (Đ26) — in `BLOCKED: ...`, exit=3, KHÔNG bị
+    tính là trượt sản phẩm, KHÔNG làm hỏng dữ liệu (status tài liệu vẫn được khôi phục
+    Approved ở `finally` — xác nhận bằng SQL trực tiếp, xem cuối file này).
+  - Lỗi THẬT khác (không phải Tầng 1) như FK violation ở `_fixtures.mjs` khi pool DB bị
+    tranh chấp bởi gói khác (`EMAXCONNSESSION`, xem retry_log attempt 2 & 5) được báo đúng
+    là `LỖI:` + exit=1, KHÔNG bị nuốt.
+
+BỘ ĐO MỚI (--document= sai) ĐÃ ĐỎ ĐÚNG — xem `demo_r7_wrong_document_red.txt`:
+  [1] TRƯỚC: decision=answer citations=["POOL-SAFE-03"]
+  SAI HÀNH VI: setDocumentStatus("NOT-A-REAL-DOCUMENT-ID", "Deprecated") thất bại: NotFound...
+  exit=1
+
+TRẠNG THÁI TÀI LIỆU DEMO sau tất cả các lần thử — vẫn đúng, không bị kẹt:
+  node --env-file=.env.local scripts/sql.mjs \
+    "select status from documents where document_id='OCP1-POOL-RULES-001'"
+  => Approved
+
+KẾT LUẬN / CÂU HỎI CẦN NGƯỜI: KHÔNG có bằng chứng `exit=0` đầy đủ 3 dòng cho `demo_r7.mjs`
+(document đúng) tại thời điểm nộp report — quota A2 (gemini-3.6-flash) cạn kéo dài, không
+phải lỗi logic của script. Đề nghị: (a) chạy lại `node --env-file=.env.local scripts/demo_r7.mjs`
+khi quota Gemini hồi (kiểm bằng `trace_sample.mjs` trước cho rẻ), hoặc (b) nếu demo ngày mai
+cần chắc chắn, xin một API key/billing plan khác cho phiên demo. Logic 3 bước đã được soát kỹ
+theo SPEC-P03 §2.5 và đã thấy chạy đúng ở bước [1] và ở nhánh lỗi NotFound — rủi ro còn lại
+nằm ở HẠ TẦNG (quota), không phải ở code.
