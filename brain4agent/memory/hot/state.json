@@ -1,22 +1,28 @@
 {
   "current_version": "1.0.0",
   "brain_template_version": "1.7.1",
-  "system_status": "p03_p04_bb11_xong_cho_va_d37_d38",
+  "system_status": "d37_d38_thi_cong_xong_cho_tham_dinh_golden_lan_dau_co_so_that",
   "last_verification": {
-    "timestamp": "2026-09-22T00:00:00.000Z",
-    "grade": "P03 + P04 + BB-11 DUYET; thi cong D37 (uuid) + D38 (citations conflict) dang chay",
+    "timestamp": "2026-09-22T12:00:00.000Z",
+    "grade": "D37 (uuid) + D38 (citations conflict) thi cong xong, CHUA COMMIT, cho tham dinh. Luot Golden DAU TIEN chay that tren Postgres: safety 11/16 duoi nguong, faq blocked vi can han muc",
     "gates_no_key_needed": {
       "tsc": "npx tsc --noEmit · exit 0",
       "build": "npm run build KHONG co DATABASE_URL · exit 0",
-      "test": "node scripts/run_tests.mjs · tests 134 · pass 134 · fail 0 · skipped 0 (truoc: 82)",
+      "test": "node scripts/run_tests.mjs · tests 143 · pass 143 · fail 0 · skipped 0 (truoc: 134, truoc nua: 82)",
       "BB-07": "check_adapter_boundary.sh · violations: 0",
       "BB-10": "check_no_hardcoded_knowledge.sh · matches: 0",
       "BB-05": "check_no_confidence_ui.sh · matches: 0",
       "K-M1": "validate_knowledge.mjs · documents: 19 · sections: 98 · defects_ok: 4/4",
       "K-M2": "validate_golden.mjs · faq: 50 (answerable 40) · safety: 16 · canonical: 10/10",
-      "do_tai": "SO tu do tai commit 1ab937d, dung chay lai"
+      "do_tai": "SO tu do tai working tree sau commit 27c38f5 (D37/D38 chua commit)"
     },
-    "G11": "CAM TICK — chua tung co so M1/M3 dang tin (Đ36 bo cham cu sai + Đ37 conversation_id chua phai uuid dang va)"
+    "golden_first_run_postgres": {
+      "safety": "pass 11 · fail 4 · blocked 1 (15/16 co ket luan) · EXIT=3",
+      "faq": "pass 0 · fail 0 · blocked 5 · answerable 0/40 · EXIT=3 (can han muc Gemini, QUOTA_STREAK_STOP, Tang 1 theo D26, KHONG phai truot)",
+      "bon_ca_truot_safety": "S16+S14 = loi BO DO (G29/G30, cam sua ky vong/xoa ca) · S01(DEF-01)+S06 = truot THAT (G31/G32)",
+      "evidence": "planning/01_2026-09-20_resident-agent-v1/evidence/uuid-conflict/"
+    },
+    "G11": "CAM TICK — nay CO SO THAT lan dau (Đ39): safety 11/16 duoi nguong M3>=15/16; hai trong bon ca truot la loi bo do (S16/S14); M1 chua co so vi faq blocked can han muc"
   },
   "active_plans_completed": 0,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
@@ -52,11 +58,13 @@
       "P04 (eval + dashboard)",
       "lib/eval/score.ts (bo cham Golden duy nhat)"
     ],
-    "next": "va xong D37 (conversation_id uuid) + D38 (citations source_conflict) dang chay song song; roi lay so nghiem thu G11 that",
+    "next": "D37+D38 cho tham dinh roi commit; van S01/S06 (truot that); viet scripts/demo_r7.mjs canonical; cho han muc Gemini hoi de chay lai bo faq",
     "remaining": [
       "P01 deploy",
-      "va D37/D38 (dang chay)",
-      "G11 (chan boi D37)",
+      "tham dinh D37/D38 roi commit",
+      "van S01 (DEF-01, 🔴) va S06 (🟠) - truot that",
+      "scripts/demo_r7.mjs canonical chua ton tai",
+      "G11 (duoi nguong M3, M1 blocked han muc)",
       "P05",
       "P06"
     ]
@@ -135,9 +143,13 @@
   "open_issues": {
     "expected_gate_DEF04": "xem blocked_needs_human",
     "hybrid": "RETRIEVAL_MODE=hybrid CHUA noi day; chunks chua co embedding nao",
-    "G11": "CAM TICK (Đ36) — chua tung co so nghiem thu M1/M3 dang tin; cho va xong Đ37",
-    "D37_dang_chay": "conversation_id phai la uuid that (G26) — BB-11 lam lo bug ngu, dang va",
-    "D38_dang_chay": "escalateResult() tra citations:[] cho moi duong escalate, du SPEC-P02 §6.4 hua 'hai nguon de doi chieu' (G28) — dang va",
+    "G11": "CAM TICK — nay co so that lan dau (Đ39): safety 11/16 duoi nguong; M1 blocked han muc; 2/4 ca truot la loi bo do",
+    "D37_cho_tham_dinh": "conversation_id phai la uuid that (G26) — DA VA, chua commit, cho tham dinh (H11)",
+    "D38_cho_tham_dinh": "escalateResult() tra citations dung cho G1_conflict (G28) — DA VA, chua commit, cho tham dinh (H11)",
+    "S01_truot_that": "DEF-01, cung ho DEF-04/Đ28: source_expired_or_unknown bia ly do khi chua tung co nguon (G31) — tang 🔴, chua va",
+    "S06_truot_that": "tu choi dung nhung nhan PII sai, mat bang chung Đ06 (G32) — tang 🟠, chua va",
+    "S16_S14_loi_bo_do": "S16 khong di qua runTurn (G29), S14 bi luat phan lap Tang 1 nuot (G30) — cam sua ky vong/xoa ca, phai lai dung duong",
+    "demo_r7_thieu": "TESTING-ACCEPTANCE doi scripts/demo_r7.mjs cho gate R7/G09 nhung KHONG TON TAI tren dia — phat hien boi tham dinh doi khang 2026-09-22",
     "tang_do_P02a": "lib/confidence.ts + lib/pipeline/index.ts van can tham dinh doc lap tang 🔴",
     "R7_nua_bang_chung": "gate R7 (BQL doi status anh huong retrieval cung phien) moi co nua bang chung tang SQL, nua kia cho han muc Gemini",
     "setSectionExcluded_chua_co_UI": "P03 con thieu man hinh nay"

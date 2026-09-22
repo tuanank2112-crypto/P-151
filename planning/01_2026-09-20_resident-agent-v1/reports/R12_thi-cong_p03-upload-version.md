@@ -1,3 +1,7 @@
+Handoff: (bàn giao bằng lời từ SO, tiếp nối gói `handoffs/H07_p03-console-bql.md` cùng phiên, không có file riêng)
+Base: `main` tại `b28c3f6224dde71f7d92796a15362181654ca3b4` (cây sạch lúc nhận gói — chuyển từ dòng 105 cũ)
+Head: `1ab937de714540d52dc99133389b12980fd8d6e8` (commit gộp cả gói này và R11, xem `git show --stat 1ab937d`)
+
 Vai: worker (vai-thi-cong) · loại: thi công · họ/model: Claude Sonnet 5 · Bước 0: không chạy lại trong gói này (đã đo `exit 0` ở đầu phiên, cây `brain4agent/` không đổi giữa hai gói) · hiểu việc: phạm vi = `app/(bql)/documents/**`, `lib/adapters/bql-store.ts`, `tests/bql-*.test.ts`, `app/globals.css` (chỉ thêm cuối) · xong khi = (1) script evidence tạo 1 tài liệu, `count(*)` tăng đúng 1, tự dọn, exit 0 · (2) script đo SQL đổi version, truy hồi lấy bản mới không lấy bản cũ, không gọi Gemini, exit 0 · (3) `node scripts/run_tests.mjs bql-` exit 0 có ca canh input hỏng, ca đó đã đo ĐỎ khi gỡ lớp kiểm · (4) cổng tổng (tsc/build/test/3 script check) exit 0, test không giảm dưới 113 · cấm = ngoài phạm vi, `git add/commit/push`, chạy `eval_golden.mjs`/`probe_defects.mjs`, sửa/xoá 19 tài liệu gốc, để lại rác trong DB.
 
 ## 1. Lệnh + exit code nguyên văn (chạy sau cùng, mã đã revert)
@@ -100,9 +104,9 @@ Xem mục 1. Tất cả exit 0, test 134/134 (không giảm dưới 113), `fail 
 Thêm `app/(bql)/documents/UploadPanel.tsx` — panel gấp mở (`<details>`) với 2 ô `textarea` dán JSON (P03-C7: **CẤM** trình soạn thảo giàu định dạng, ô textarea + JSON là đủ, không được chấm gì thêm), gọi `uploadDocument`/`newDocumentVersion` qua Server Action. Đã build thành công (`DATA_BACKEND=postgres npm run build` exit 0), route `/documents` build ra 1.93 kB (tăng từ 1.02 kB gói trước).
 Sửa `app/(bql)/documents/actions.ts`: thêm 2 Server Action `uploadDocument`/`newDocumentVersion`, cùng pattern `checkBqlAuthz()` đã có (E5 AuthzError).
 
-## 4. `git diff --stat` (working tree, CHƯA commit theo luật giữ nguyên) + SHA nền
+## 4. `git diff --stat` (working tree, CHƯA commit theo luật giữ nguyên lúc viết report) + SHA nền
 
-Base: `main` tại `b28c3f6224dde71f7d92796a15362181654ca3b4` (cây sạch lúc nhận gói).
+Base/Head: xem 3 dòng đầu file (chuyển lên đúng vị trí dòng 2–4 theo Luật K.4 — 2026-09-22).
 
 ```
 $ git status --porcelain -- lib/adapters/bql-store.ts app/(bql)/documents \

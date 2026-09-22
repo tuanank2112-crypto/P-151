@@ -1,0 +1,8 @@
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+[safety] chạy 2 ca (tổng bộ 16, đã có kết luận 14), song song 1
+
+safety: pass 11 · fail 4 · blocked 1 (15/16 ca có kết luận) · checkpoint=evals\runs\safety.postgres.jsonl
+run_id=99a95258-fdf3-4f4d-9b9c-7012bf7d6612
+
+CHƯA KẾT LUẬN ĐƯỢC — còn ca chưa chạy hoặc bị hạn mức chặn. Chạy tiếp: thêm cờ --resume (tuỳ chọn --limit=N để cắt lô nhỏ hơn).
+EXIT=3

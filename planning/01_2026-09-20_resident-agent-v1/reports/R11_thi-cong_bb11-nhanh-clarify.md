@@ -1,5 +1,9 @@
 # R11 — Thi công: vá lỗ hổng độ phủ P02-C10 (nhánh `clarify`)
 
+Handoff: (bàn giao bằng lời từ SO, tiếp nối gói `handoffs/H06_bb11-memory-answer-turns.md` cùng phiên, không có file riêng)
+Base: `main` tại `b28c3f6224dde71f7d92796a15362181654ca3b4` (đo lại 2026-09-22 từ `git log -- tests/memory.test.ts`)
+Head: `1ab937de714540d52dc99133389b12980fd8d6e8` (commit sau đó gộp cả gói này và R12, xem `git show --stat 1ab937d`)
+
 Vai: worker (vai-thi-cong) · loại: THI CÔNG · họ/model: Claude, Sonnet 5 (claude-sonnet-5) · Bước 0: không chạy lại trong gói nối tiếp này (đã xác nhận exit 0 ở R06 cùng phiên, cây không đổi cấu trúc não) · hiểu việc: thêm ca canh nhánh `clarify` của `runTurn` vào `tests/memory.test.ts` (một lượt kết thúc ở chặng 4 vẫn phải ghi đúng 1 `answer_turns`, `decision='clarify'`, `lifecycle_state='clarification_required'`), chứng minh ca đó từng ĐỎ đúng bằng phép phá đã lọt qua ở `R09` mục C, rà đủ các đường thoát sớm khác của `runTurn` và nêu đường nào có ca canh. Phạm vi CHỈ `tests/memory.test.ts` và `lib/pipeline/index.ts` (chỉ nếu thật sự thiếu ghi — kết luận: KHÔNG thiếu, mã đã ghi đúng, chỉ thiếu test); CẤM đụng `lib/adapters/metrics-store.ts`, `scripts/eval_golden.mjs`, `lib/eval/**`, `app/(bql)/**`, `lib/adapters/bql-store.ts`.
 
 ## Lệnh + exit code (nguyên văn)

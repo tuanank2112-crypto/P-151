@@ -1,0 +1,124 @@
+✔ toSnippet: ≤300 ký tự giữ nguyên, không đổi (1.0139ms)
+✖ toSnippet: >300 ký tự, KHÔNG có dấu câu ⇒ cắt cứng kèm '…', đúng 300 ký tự (không phải 301) (0.8668ms)
+✖ toSnippet: dấu câu nằm SAU sàn 80 ⇒ cắt theo câu tại dấu câu đó (0.4165ms)
+✖ toSnippet: dấu câu nằm TRƯỚC sàn 80 (vd văn bản đánh số '1. ...') ⇒ KHÔNG cắt theo câu, cắt cứng kèm '…' — không được trả về '1.' (2 ký tự) (0.3114ms)
+✖ toSnippet: chỉ MỘT dấu chấm ở vị trí 0 ('.' + 500 ký tự) ⇒ KHÔNG được trả về '.' (1 ký tự) (0.2044ms)
+✔ toSnippet: đúng 300 ký tự ⇒ giữ nguyên (biên dưới của nhánh cắt) (0.1356ms)
+✖ toSnippet: đúng 301 ký tự, không dấu câu ⇒ cắt cứng còn đúng 300 ký tự (KHÔNG phải 301 — bug đã vá) (0.182ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 2
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 259.1156
+
+✖ failing tests:
+
+test at tests\to-snippet.test.ts:22:1
+✖ toSnippet: >300 ký tự, KHÔNG có dấu câu ⇒ cắt cứng kèm '…', đúng 300 ký tự (không phải 301) (0.8668ms)
+  AssertionError [ERR_ASSERTION]: phải đúng 300 ký tự, được 330
+  
+  330 !== 300
+  
+      at TestContext.<anonymous> (file:///C:/Users/lenku/AppData/Local/Temp/claude/d--build-phase/c2ad4b59-b5be-4ecd-b84b-b027270fff7a/scratchpad/va-r14-mutant/tests/to-snippet.test.ts:25:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 330,
+    expected: 300,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\to-snippet.test.ts:29:1
+✖ toSnippet: dấu câu nằm SAU sàn 80 ⇒ cắt theo câu tại dấu câu đó (0.4165ms)
+  AssertionError [ERR_ASSERTION]: phải cắt đúng tại dấu chấm của câu đầu
+  + actual - expected
+  
+  + 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+  - 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.'
+  
+      at TestContext.<anonymous> (file:///C:/Users/lenku/AppData/Local/Temp/claude/d--build-phase/c2ad4b59-b5be-4ecd-b84b-b027270fff7a/scratchpad/va-r14-mutant/tests/to-snippet.test.ts:35:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+    expected: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\to-snippet.test.ts:39:1
+✖ toSnippet: dấu câu nằm TRƯỚC sàn 80 (vd văn bản đánh số '1. ...') ⇒ KHÔNG cắt theo câu, cắt cứng kèm '…' — không được trả về '1.' (2 ký tự) (0.3114ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  402 !== 300
+  
+      at TestContext.<anonymous> (file:///C:/Users/lenku/AppData/Local/Temp/claude/d--build-phase/c2ad4b59-b5be-4ecd-b84b-b027270fff7a/scratchpad/va-r14-mutant/tests/to-snippet.test.ts:44:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 402,
+    expected: 300,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\to-snippet.test.ts:48:1
+✖ toSnippet: chỉ MỘT dấu chấm ở vị trí 0 ('.' + 500 ký tự) ⇒ KHÔNG được trả về '.' (1 ký tự) (0.2044ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  501 !== 300
+  
+      at TestContext.<anonymous> (file:///C:/Users/lenku/AppData/Local/Temp/claude/d--build-phase/c2ad4b59-b5be-4ecd-b84b-b027270fff7a/scratchpad/va-r14-mutant/tests/to-snippet.test.ts:52:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 501,
+    expected: 300,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\to-snippet.test.ts:62:1
+✖ toSnippet: đúng 301 ký tự, không dấu câu ⇒ cắt cứng còn đúng 300 ký tự (KHÔNG phải 301 — bug đã vá) (0.182ms)
+  AssertionError [ERR_ASSERTION]: phải đúng 300 ký tự, được 301 (bug cũ trả 301)
+  
+  301 !== 300
+  
+      at TestContext.<anonymous> (file:///C:/Users/lenku/AppData/Local/Temp/claude/d--build-phase/c2ad4b59-b5be-4ecd-b84b-b027270fff7a/scratchpad/va-r14-mutant/tests/to-snippet.test.ts:65:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 301,
+    expected: 300,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

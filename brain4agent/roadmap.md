@@ -12,22 +12,24 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 
 - [x] P00 — Knowledge Pack mô phỏng + Golden Dataset 🔴 (D1–D2) — ✅ DUYỆT, xem `Done`
 - [ ] P01 — Nền tảng, auth 2 vai, ingest, deploy 🟠 (D2) — **DB Supabase đã migrate + seed thật** (19 doc / 98 chunk / 2 user); **đăng nhập 2 vai đo được trên DB thật**; chỉ còn **deploy** chờ chủ tịch chọn scope Vercel (Đ23)
-- [ ] P02 — RAG có trích dẫn, memory, 3 agent, cổng escalate 🔴🟠 (D3–D4) — **ĐÃ CHẠY END-TO-END THẬT qua `POST /api/chat` trên Postgres 2026-09-21**; bộ nhớ hội thoại (BB-11) **nay đã nối** (xem `Done`). Còn: nhãn `gate` của DEF-04 chờ chủ tịch, `DEF-01`/`DEF-02` chưa đo xong (cạn hạn mức), lượt `source_conflict` hứa hai nguồn rồi không đưa nguồn nào (Đ38, đang vá)
+- [ ] P02 — RAG có trích dẫn, memory, 3 agent, cổng escalate 🔴🟠 (D3–D4) — **ĐÃ CHẠY END-TO-END THẬT qua `POST /api/chat` trên Postgres 2026-09-21**; bộ nhớ hội thoại (BB-11) **nay đã nối** (xem `Done`); lượt `source_conflict` nay TRẢ ĐÚNG `citations` (Đ38, đã vá, chờ thẩm định). Còn: nhãn `gate` của DEF-04 chờ chủ tịch, `DEF-01` đã đo và TRƯỢT thật (G31, gỡ nhãn "chưa đo xong"), `DEF-02` vẫn chưa đo xong (cạn hạn mức)
 - [x] P03 — Console BQL: quản lý tài liệu + duyệt câu trả lời (HITL) 🟠 (D4–D5) — ✅ DUYỆT, xem `Done`
 - [x] P04 — Bảng eval faithfulness/relevance + dashboard 🟠 (D5) — ✅ DUYỆT, xem `Done`
 - [ ] P05 — Lớp hành động: đọc chính sách, đặt chỗ, biên nhận, hoàn tác 🟠 (D6) — **cổng: P01–P04 xanh**, gói duy nhất được cắt khi trễ
 - [ ] P06 — Kịch bản demo, dữ liệu mồi, dự phòng 🟢 (D7) — phụ thuộc tất cả
 
-### Việc phải làm ngay, theo thứ tự (cập nhật 2026-09-22)
+### Việc phải làm ngay, theo thứ tự (cập nhật phiên thứ hai 2026-09-22)
 
-1. **Đang chạy lúc chốt phiên: vá Đ37 (`conversation_id` phải là uuid, G26) + Đ38 (lượt `source_conflict` phải trả `citations` đúng như câu chữ hứa, G28)** — CẢ HAI phải xong và có một lượt chạy thật exit 0 trước khi tick `G11`.
-2. **CẤM tick `G11`** cho tới khi việc 1 xong (Đ36 + Đ37) — bộ chấm cũ (`eval_golden.mjs` bản trước Đ36) sai vì thiếu 3/7 checkpoint SPEC-P00 §6.5, và bộ chạy vỡ ở lệnh ghi DB đầu tiên với `conversation_id` không phải uuid.
-3. **🖐 Chủ tịch quyết `expected_gate` của DEF-04** (`expected_defects.json` + `golden_safety.jsonl` ca `S04`): `reason_code` nay đúng, nhưng nhãn gate là `G3_retriever_refused` chứ không phải `G2_zero_eligible`. Chặn `K-M6` đạt 4/4.
-4. **🖐 Chủ tịch phê chuẩn Đ32** (đổi `01-CONTRACTS` §4.2 sang `to_tsquery` OR). Đã áp vì không áp thì demo không chạy được dòng nào; đảo lại bằng một commit revert.
-5. **Chạy `eval:golden` theo lô trên Postgres** để lấy **số nghiệm thu thật** cho `G11` (M1/M3), SAU khi việc 1–2 xong. Cần hạn mức Gemini hồi; một lượt đầy đủ ~13–15 phút, 198 lời gọi.
-6. **Gate `R7` (BQL đổi status ảnh hưởng retrieval cùng phiên)** mới có nửa bằng chứng (tầng SQL) — nửa "agent thôi trích dẫn tài liệu đã hạ cấp" chờ hạn mức Gemini.
-7. **`setSectionExcluded` chưa có UI.**
-8. **Deploy Vercel** (chờ scope; `DATABASE_URL` phải đổi sang pooler 6543 trước) · **thẩm định độc lập tầng 🔴** cho `lib/confidence.ts` + `lib/pipeline/index.ts` · nối `RETRIEVAL_MODE=hybrid` + `embed_cache.mjs` cho 98 chunk (Đ27) · P05/P06 chưa động · chưa push commit nào.
+1. **Đ37 (`conversation_id` uuid, G26) và Đ38 (citations cho `G1_conflict`, G28) ĐÃ THI CÔNG XONG** — nằm trong working tree, CHƯA COMMIT, CHỜ THẨM ĐỊNH. `tsc` exit 0 · `node scripts/run_tests.mjs` **143 pass / 0 fail / 0 skip** (trước 134). Việc kế tiếp: chờ phán quyết thẩm định (`handoffs/H11_tham-dinh-d37-d38.md` đã mở) rồi mới commit.
+2. **`G11` VẪN CẤM TICK, nhưng NAY CÓ SỐ THẬT LẦN ĐẦU (Đ39).** Lượt Golden đầu tiên chạy thật trên Postgres: bộ `safety` **pass 11 · fail 4 · blocked 1** (15/16 có kết luận) — dưới ngưỡng `M3 ≥ 15/16`. Bằng chứng: `planning/01_2026-09-20_resident-agent-v1/evidence/uuid-conflict/golden_safety_postgres.txt` (+ `_resume.txt`, `_s04_s14.txt`).
+3. **`M1` vẫn BLOCKED, không phải trượt.** Bộ `faq`: **pass 0 · fail 0 · blocked 5**, `answerable 0/40` — cạn hạn mức Gemini giữa chừng (cầu dao `QUOTA_STREAK_STOP`), lỗi Tầng 1 theo Đ26. Bằng chứng: `evidence/uuid-conflict/golden_faq_postgres.txt`. Cần hạn mức Gemini hồi rồi chạy lại `eval:golden` bộ `faq`.
+4. **Bốn ca trượt `safety` đã phân loại (Đ40/Đ41, gotcha G29–G32):** `S16` và `S14` là **lỗi BỘ ĐO** (không sửa kỳ vọng, không xoá ca — xem vùng cấm ở G29/G30) · `S01` (`DEF-01`, cùng họ DEF-04/Đ28) và `S06` (nhãn PII sai dù từ chối đúng) là **trượt THẬT của sản phẩm**, cần vá thật (🔴 cho `S01`, 🟠 cho `S06`).
+5. **Viết `scripts/demo_r7.mjs` canonical** — `TESTING-ACCEPTANCE.md` đòi script này cho gate `R7`/`G09` nhưng nó KHÔNG TỒN TẠI trên đĩa (chỉ có script tạm trong `evidence/p03/`, phát hiện bởi thẩm định đối kháng 2026-09-22). Gate `R7` mới có nửa bằng chứng (tầng SQL).
+6. **🖐 Chủ tịch quyết `expected_gate` của DEF-04** (`expected_defects.json` + `golden_safety.jsonl` ca `S04`): `reason_code` nay đúng, nhưng nhãn gate là `G3_retriever_refused` chứ không phải `G2_zero_eligible`. Chặn `K-M6` đạt 4/4.
+7. **🖐 Chủ tịch phê chuẩn Đ32** (đổi `01-CONTRACTS` §4.2 sang `to_tsquery` OR). Đã áp vì không áp thì demo không chạy được dòng nào; đảo lại bằng một commit revert.
+8. **`setSectionExcluded` chưa có UI.**
+9. **Giấy tờ:** `reports/R11` và `reports/R12` thiếu ba dòng `Handoff:`/`Base:`/`Head:` ở dòng 2–4 (Luật K.4) — **ĐÃ VÁ 2026-09-22** (phiên thứ hai), phát hiện bởi thẩm định đối kháng.
+10. **Deploy Vercel** (chờ scope; `DATABASE_URL` phải đổi sang pooler 6543 trước) · **thẩm định độc lập tầng 🔴** cho `lib/confidence.ts` + `lib/pipeline/index.ts` · nối `RETRIEVAL_MODE=hybrid` + `embed_cache.mjs` cho 98 chunk (Đ27) · P05/P06 chưa động · chưa push commit nào.
 
 ## Tương lai (Upcoming)
 
@@ -71,14 +73,16 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 - [x] **P04 — Eval + Dashboard (2026-09-22):** `lib/adapters/metrics-store.ts`, màn
   `dashboard` (tỉ lệ tự động giải quyết tách theo intent và theo lý do escalate) và
   màn `eval`; `evals/golden/rubric.md` (mới). Phán quyết ✅ DUYỆT ở `reports/R08`
-  (sau một vòng 🔁 SỬA) và `R10`. **Chưa có số nghiệm thu M1/M3** — CẤM tick `G11`
-  cho tới khi Đ37 vá xong (Đ36).
+  (sau một vòng 🔁 SỬA) và `R10`. **Nay CÓ số nghiệm thu thật lần đầu (Đ39, phiên
+  thứ hai 2026-09-22):** bộ `safety` pass 11/16 (dưới ngưỡng `M3 ≥ 15/16`); bộ `faq`
+  BLOCKED vì cạn hạn mức Gemini (`M1` chưa có số). **VẪN CẤM tick `G11`** — dưới
+  ngưỡng + hai ca trượt là lỗi bộ đo (G29/G30) + `M1` blocked.
 
 - [x] **BB-11 — Bộ nhớ hội thoại (2026-09-22):** mỗi lượt ghi ĐÚNG MỘT dòng
   `answer_turns` kể cả nhánh escalate, nhánh clarify và nhánh ném lỗi; lịch sử hội
   thoại bền qua phiên; `conversation_id` của người khác trả HTTP 403. Phán quyết
   ✅ DUYỆT ở `reports/R06` (sau 🔁) và `R11`. Kích hoạt bug ngủ **G26**
-  (`conversation_id` phải là uuid) — đang vá (Đ37).
+  (`conversation_id` phải là uuid) — đã vá (Đ37, phiên thứ hai 2026-09-22, chờ thẩm định).
 
 - [x] **`lib/eval/score.ts` — bộ chấm Golden DUY NHẤT (2026-09-22):** sao y
   `SPEC-P00` §6.5, đủ cả 7 checkpoint kể cả `shows_conflict`. Cả `scripts/eval_golden.mjs`

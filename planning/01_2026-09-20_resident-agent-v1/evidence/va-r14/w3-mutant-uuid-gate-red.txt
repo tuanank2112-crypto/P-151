@@ -1,0 +1,77 @@
+✔ conversationIdFromLabel: TẤT ĐỊNH — cùng nhãn luôn ra cùng uuid (mọi lần gọi) (4.29ms)
+✔ conversationIdFromLabel: khác nhãn ra khác uuid (0.5907ms)
+✔ conversationIdFromLabel: output đúng hình dạng uuid Postgres chấp nhận (isValidUuid) (0.9538ms)
+✔ Đ37 — nhãn dạng chữ THÔ (đúng lớp lỗi từng làm insert vỡ trên Postgres thật) KHÔNG phải uuid hợp lệ (0.3004ms)
+✖ Đ37/Đ43 (thật, Postgres): appendMessage với conversation_id dạng chữ THÔ ném đúng lỗi uuid TRƯỚC khi chạm DB — mọi lệnh ghi phải qua conversationIdFromLabel() trước (343.6389ms)
+✖ Đ37/Đ43 (thật, Postgres): insertAnswerTurn với conversation_id dạng chữ THÔ cũng ném — cổng canh KHÔNG chỉ ở appendMessage (2966.5828ms)
+✖ Đ43 (thật, mock): appendMessage/insertAnswerTurn với conversation_id dạng chữ THÔ cũng ném ở kho MOCK — mock phải khó tính đúng bằng Postgres, đây là cơ chế đã sinh ra G26 (R14 mục 4) (25.1217ms)
+✔ Đ37 (thật, Postgres): runTurn() với conversation_id = conversationIdFromLabel(nhãn) — CHƯA từng có createConversation() — vẫn ghi được trọn vẹn (createConversationIfMissing tự tạo hàng conversations) (6948.5283ms)
+✔ Đ37 (thật, Postgres) — TẤT ĐỊNH qua 'resume': gọi runTurn() HAI LẦN với CÙNG nhãn ⇒ CÙNG conversation_id, messages nối tiếp (không đẻ hội thoại mới) (5260.9172ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 6
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 26015.4592
+
+✖ failing tests:
+
+test at tests\conversation-id.test.ts:81:1
+✖ Đ37/Đ43 (thật, Postgres): appendMessage với conversation_id dạng chữ THÔ ném đúng lỗi uuid TRƯỚC khi chạm DB — mọi lệnh ghi phải qua conversationIdFromLabel() trước (343.6389ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /không phải uuid hợp lệ/i. Input:
+  
+  'invalid input syntax for type uuid: "golden-faq-uuid-red-test"'
+  
+      at Object.<anonymous> (file:///C:/Users/lenku/AppData/Local/Temp/claude/d--build-phase/c2ad4b59-b5be-4ecd-b84b-b027270fff7a/scratchpad/va-r14-mutant/tests/conversation-id.test.ts:86:14)
+      at expectedException (node:assert:578:17)
+      at expectsError (node:assert:703:21)
+      at strict.rejects (node:assert:769:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async TestContext.<anonymous> (file:///C:/Users/lenku/AppData/Local/Temp/claude/d--build-phase/c2ad4b59-b5be-4ecd-b84b-b027270fff7a/scratchpad/va-r14-mutant/tests/conversation-id.test.ts:83:3)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'invalid input syntax for type uuid: "golden-faq-uuid-red-test"',
+    expected: /không phải uuid hợp lệ/i,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests\conversation-id.test.ts:92:1
+✖ Đ37/Đ43 (thật, Postgres): insertAnswerTurn với conversation_id dạng chữ THÔ cũng ném — cổng canh KHÔNG chỉ ở appendMessage (2966.5828ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /không phải uuid hợp lệ/i. Input:
+  
+  'invalid input syntax for type uuid: "golden-faq-uuid-red-test-2"'
+  
+      at Object.<anonymous> (file:///C:/Users/lenku/AppData/Local/Temp/claude/d--build-phase/c2ad4b59-b5be-4ecd-b84b-b027270fff7a/scratchpad/va-r14-mutant/tests/conversation-id.test.ts:114:14)
+      at expectedException (node:assert:578:17)
+      at expectsError (node:assert:703:21)
+      at strict.rejects (node:assert:769:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async TestContext.<anonymous> (file:///C:/Users/lenku/AppData/Local/Temp/claude/d--build-phase/c2ad4b59-b5be-4ecd-b84b-b027270fff7a/scratchpad/va-r14-mutant/tests/conversation-id.test.ts:94:3)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'invalid input syntax for type uuid: "golden-faq-uuid-red-test-2"',
+    expected: /không phải uuid hợp lệ/i,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests\conversation-id.test.ts:120:1
+✖ Đ43 (thật, mock): appendMessage/insertAnswerTurn với conversation_id dạng chữ THÔ cũng ném ở kho MOCK — mock phải khó tính đúng bằng Postgres, đây là cơ chế đã sinh ra G26 (R14 mục 4) (25.1217ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async TestContext.<anonymous> (file:///C:/Users/lenku/AppData/Local/Temp/claude/d--build-phase/c2ad4b59-b5be-4ecd-b84b-b027270fff7a/scratchpad/va-r14-mutant/tests/conversation-id.test.ts:127:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }

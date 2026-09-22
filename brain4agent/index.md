@@ -13,7 +13,7 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | **Ký ức nóng phiên gần nhất** | [`memory/hot/today.md`](memory/hot/today.md) & [`state.json`](memory/hot/state.json) | Trạng thái máy (JSON), nhật ký làm việc theo phiên và kết quả benchmark gần nhất. |
 | **Khởi động / Quy tắc chung** | [`memory-distill.txt`](memory-distill.txt) | Kernel hiện trạng, Startup Protocol, Tech stack cốt lõi. |
 | **Tổng quan dự án (bản chất repo, mục tiêu, tech stack)** | [`project-intro.md`](project-intro.md) | Đây là sản phẩm DEMO mô phỏng, không phải hệ thống chạy thật; `docs/` là sản phẩm cũ đã hạ cấp. |
-| **Thiết kế ĐANG HIỆU LỰC (hỏi "kiến trúc/contract/spec thế nào") — hồ sơ đang mở** | [`planning/01_2026-09-20_resident-agent-v1/`](../planning/01_2026-09-20_resident-agent-v1/) | `plan.md` (nhật ký quyết định Đ01–Đ12) → `specs/00-ARCHITECTURE.md` (router riêng của bộ SPEC) → 8 file SPEC còn lại → `reports/` (phán quyết nghiệm thu). Thứ tự ưu tiên khi mâu thuẫn với `docs/`: `plan.md` thắng, rồi `specs/`, rồi mới tới `docs/`. |
+| **Thiết kế ĐANG HIỆU LỰC (hỏi "kiến trúc/contract/spec thế nào") — hồ sơ đang mở** | [`planning/01_2026-09-20_resident-agent-v1/`](../planning/01_2026-09-20_resident-agent-v1/) | `plan.md` (nhật ký quyết định Đ01–Đ41) → `specs/00-ARCHITECTURE.md` (router riêng của bộ SPEC) → 8 file SPEC còn lại → `reports/` (phán quyết nghiệm thu). Thứ tự ưu tiên khi mâu thuẫn với `docs/`: `plan.md` thắng, rồi `specs/`, rồi mới tới `docs/`. |
 | **Kế hoạch nâng cấp & RFCs (nói chung)** | [`planning/`](../planning/) | Thư mục chứa các bản kế hoạch theo chuẩn `[STT]_[YYYY-MM-DD]_[Ten-Ngan]`. |
 | **Đặc tả CŨ đã hạ cấp (hỏi "sản phẩm v0.2 mô tả gì", tham chiếu nội dung/giọng văn)** | [`docs/`](../docs/) | 6 tài liệu PRD/Product Brief/UI Flow v0.2 mô tả một sản phẩm khác (công cụ soạn nháp cho BQL) — KHÔNG còn là định nghĩa sản phẩm, chỉ là nguồn tham chiếu cho lõi trả lời. `docs/assets/` có 3 ảnh (`ref-01/02/03.jpg`) tư liệu dựng UI/danh mục tiện ích. |
 | **Lỗi khó / Cạm bẫy / Gotchas** | [`-known-gotchas.md`](-known-gotchas.md) | Tổng hợp các bẫy kỹ thuật và lỗi dị biệt đã gặp. |
@@ -134,14 +134,16 @@ project-root/
 │   └── project-intro.md              # [INTRO] Tổng quan dự án & Tech stack
 ├── planning/                          # [QUẢN LÝ KẾ HOẠCH NÂNG CẤP] Chứa các bản kế hoạch RFCs
 │   └── 01_2026-09-20_resident-agent-v1/  # Hồ sơ đang mở — thiết kế ĐANG HIỆU LỰC
-│       ├── plan.md                   # Metadata + Nhật ký quyết định Đ01–Đ14 + Work Packages + checklist
+│       ├── plan.md                   # Metadata + Nhật ký quyết định Đ01–Đ41 + Work Packages + checklist
 │       ├── specs/                    # 9 file SPEC (3711 dòng): 00-ARCHITECTURE (router riêng),
 │       │                             #   01-CONTRACTS, SPEC-P00/P02/P03/P04/P05, OPERATIONS, TESTING-ACCEPTANCE
-│       ├── handoffs/                 # bàn giao tự chứa cho worker
-│       ├── reports/                  # R01 (SPEC) · R02 (P00) · R03 (P01a) · R05 (P02a)
+│       ├── handoffs/                 # bàn giao tự chứa cho worker, gồm H11 (thẩm định D37/D38)
+│       ├── reports/                  # R01..R12 — phán quyết nghiệm thu từng gói
 │       └── evidence/                 # output máy nguyên văn, CẤM sửa tay (report chỉ trỏ)
-│           └── d28-def04/            #   [2026-09-21] 2 trục đỏ Đ28, trục đỏ G22, migrate 005,
-│                                     #   lượt end-to-end THẬT qua /api/chat trên Postgres
+│           ├── d28-def04/            #   [2026-09-21] 2 trục đỏ Đ28, trục đỏ G22, migrate 005,
+│           │                         #   lượt end-to-end THẬT qua /api/chat trên Postgres
+│           └── uuid-conflict/        #   [2026-09-22, MỚI] tsc/tests + lượt Golden ĐẦU TIÊN chạy
+│                                     #   thật trên Postgres (safety 11/16, faq blocked hạn mức)
 ├── .agents/skills/                   # [WORKSPACE SKILLS] Kỹ năng chuyên dụng cục bộ dự án
 └── docs/                             # [ĐẶC TẢ CŨ ĐÃ HẠ CẤP] 6 tài liệu v0.2 (sản phẩm khác) + assets/ (3 ảnh tham chiếu)
 ```
