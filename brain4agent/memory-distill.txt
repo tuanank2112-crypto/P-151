@@ -77,12 +77,10 @@ plan.md` §2 (Đ01–Đ41) → `specs/00-ARCHITECTURE.md` → 8 file SPEC còn l
 </project_foundation>
 
 <brain_file_roles>
-- `memory-distill.txt`: kernel hiện trạng, đọc đầu tiên.
-- `memory/hot/`: `today.md` (nhật ký phiên) & `state.json` (máy trạng thái).
+- `memory-distill.txt`: kernel, đọc đầu tiên · `memory/hot/`: `today.md` + `state.json`.
 - `index.md`: router tài liệu, codebase map & entry points toàn diện.
 - `project-intro.md`: tổng quan chung về dự án.
-- `roadmap.md`: To-do list, định hướng tính năng và Kho Ý Tưởng (Idea Vault).
-- `changelog.md`: decision/history, ghi nhận các mốc Semantic Releases.
+- `roadmap.md`: to-do + Idea Vault · `changelog.md`: quyết định + Semantic Releases.
 - `-known-gotchas.md`: Tổng hợp các lỗi khó, lưu ý dị biệt.
 - `-data-architecture.md`: Kiến trúc Database và Flow dữ liệu.
 </brain_file_roles>
