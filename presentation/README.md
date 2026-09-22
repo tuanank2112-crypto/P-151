@@ -7,7 +7,7 @@
 ## Files
 
 - `pitch_deck.pptx` — Slide thuyết trình Demo Day (đội tự tạo — CHƯA có trên đĩa)
-- `video_demo.mp4` — Video demo sản phẩm, tối đa 5 phút (đội tự làm — CHƯA có trên đĩa)
+- `video_demo_local_<mốc>.mp4` — Video demo local **đã quay 2026-09-23** (3 phút 27 giây, 1280×720, agent điều khiển trình duyệt theo đúng `demo_script.md`, có phụ đề từng bước R2→R10). File nằm cạnh README này nhưng **không commit** (`.gitignore`) — nộp qua YouTube/Drive theo checklist BTC. Quay lại bằng script Playwright trong scratchpad phiên 2026-09-23 (xem `brain4agent/memory/hot/today.md`).
 - `demo_script.md` — Kịch bản demo local từng bước bấm, 10 phút (có trong thư mục này)
 
 ## Pitch Deck Structure (10 slides)
