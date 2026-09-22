@@ -8,7 +8,7 @@
 // bằng đúng đường HTTP này.
 
 import { z } from "zod";
-import type { Citation, ClaimVerdict, IntentId } from "../types.ts";
+import type { ActionRequest, Citation, ClaimVerdict, IntentId } from "../types.ts";
 
 // ─────────────────────────────────────────────────────────────────────────
 // §8.0 — Khung gọi chung
@@ -532,6 +532,39 @@ export const TargetSubjectsSchema = z.object({
   property_ids: z.array(z.string()),
 });
 
+/**
+ * Đ48 / H20 W1 — ý định HÀNH ĐỘNG mà A1 trích từ câu nói của cư dân.
+ * Hình dạng SAO Y `ActionRequest` của `lib/types.ts` (hợp đồng chung với
+ * pipeline và UI) — `satisfies` bên dưới giữ hai bên không trôi khỏi nhau.
+ */
+export const ActionRequestSchema = z.object({
+  capability: z
+    .enum(["amenity.create_booking", "amenity.cancel_booking", "amenity.list_my_bookings"])
+    .nullable(),
+  facility_hint_vi: z.string().nullable(),
+  slot_start: z.string().nullable(),
+  slot_end: z.string().nullable(),
+  party_size: z.number().nullable(),
+  booking_ref: z.string().nullable(),
+  confirmed: z.boolean(),
+});
+
+/**
+ * TƯƠNG THÍCH NGƯỢC (H20 W1): A1 của các vòng trước — và mọi transport giả
+ * trong `tests/` đã viết trước Đ48 — KHÔNG trả trường `action`. `.default()`
+ * dưới đây điền đúng giá trị "không có hành động nào", nên một lượt hỏi–đáp
+ * thường vẫn đi hệt như cũ. CẤM đổi giá trị mặc định này thành một capability.
+ */
+export const EMPTY_ACTION_REQUEST = {
+  capability: null,
+  facility_hint_vi: null,
+  slot_start: null,
+  slot_end: null,
+  party_size: null,
+  booking_ref: null,
+  confirmed: false,
+} as const satisfies ActionRequest;
+
 export const ClassifierOutputSchema = z.object({
   intent: z.enum(["I-01", "I-02", "I-03", "I-04", "I-05", "unsupported", "unresolved"]),
   is_emergency: z.boolean(),
@@ -540,8 +573,13 @@ export const ClassifierOutputSchema = z.object({
   missing_required_fields: z.array(z.string()),
   clarify_question_vi: z.string().nullable(),
   normalized_query_vi: z.string(),
+  action: ActionRequestSchema.default({ ...EMPTY_ACTION_REQUEST }),
 });
 export type ClassifierOutput = z.infer<typeof ClassifierOutputSchema>;
+
+/** Kiểm bằng compiler: `action` của A1 đúng là `ActionRequest` của contract. */
+const _actionShapeParity: ActionRequest = EMPTY_ACTION_REQUEST;
+void _actionShapeParity;
 
 export const CLASSIFIER_RESPONSE_SCHEMA = {
   type: "OBJECT",
@@ -564,6 +602,40 @@ export const CLASSIFIER_RESPONSE_SCHEMA = {
     missing_required_fields: { type: "ARRAY", items: { type: "STRING" } },
     clarify_question_vi: { type: "STRING", nullable: true },
     normalized_query_vi: { type: "STRING" },
+    action: {
+      type: "OBJECT",
+      properties: {
+        capability: {
+          type: "STRING",
+          enum: ["amenity.create_booking", "amenity.cancel_booking", "amenity.list_my_bookings"],
+          nullable: true,
+        },
+        facility_hint_vi: { type: "STRING", nullable: true },
+        slot_start: { type: "STRING", nullable: true },
+        slot_end: { type: "STRING", nullable: true },
+        party_size: { type: "INTEGER", nullable: true },
+        booking_ref: { type: "STRING", nullable: true },
+        confirmed: { type: "BOOLEAN" },
+      },
+      required: [
+        "capability",
+        "facility_hint_vi",
+        "slot_start",
+        "slot_end",
+        "party_size",
+        "booking_ref",
+        "confirmed",
+      ],
+      propertyOrdering: [
+        "capability",
+        "facility_hint_vi",
+        "slot_start",
+        "slot_end",
+        "party_size",
+        "booking_ref",
+        "confirmed",
+      ],
+    },
   },
   required: [
     "intent",
@@ -573,6 +645,7 @@ export const CLASSIFIER_RESPONSE_SCHEMA = {
     "missing_required_fields",
     "clarify_question_vi",
     "normalized_query_vi",
+    "action",
   ],
   propertyOrdering: [
     "intent",
@@ -582,6 +655,7 @@ export const CLASSIFIER_RESPONSE_SCHEMA = {
     "missing_required_fields",
     "clarify_question_vi",
     "normalized_query_vi",
+    "action",
   ],
 } as const;
 
@@ -589,6 +663,10 @@ export interface ClassifierInput {
   question_vi: string;
   conversation_tail: Array<{ role: "user" | "assistant"; content_vi: string }>; // ≤ 6 lượt
   principal_summary: { owned_property_ids: string[]; property_type: string[] };
+  /** Đ48 mục 6 — giờ máy chủ dạng ISO-8601 CÓ offset (`…+07:00`), tôn trọng
+   *  `SIM_NOW`. A1 cần nó để quy "9 giờ sáng mai" ra `slot_start` tuyệt đối;
+   *  không có nó thì mọi mốc tương đối đều là phỏng đoán. */
+  server_time: string;
 }
 
 const CLASSIFIER_SYSTEM_PROMPT_VI = `Bạn phân loại câu hỏi của cư dân một khu đô thị.
@@ -611,7 +689,28 @@ BẮT BUỘC:
 - clarify_question_vi: null nếu không cần hỏi lại; một câu hỏi làm rõ ngắn gọn
   nếu missing_required_fields không rỗng.
 
-CẤM suy diễn resident_id/property_id không được nêu trong câu hỏi hoặc ngữ cảnh.`;
+CẤM suy diễn resident_id/property_id không được nêu trong câu hỏi hoặc ngữ cảnh.
+
+TRƯỜNG "action" — ý định HÀNH ĐỘNG (Đ48). Trường "server_time" trong dữ liệu vào
+là giờ máy chủ dạng ISO-8601 có offset; mọi mốc thời gian tương đối phải quy ra từ nó.
+- action.capability chỉ khác null khi cư dân YÊU CẦU LÀM một việc:
+  "amenity.create_booking" (đặt/book/giữ chỗ một tiện ích),
+  "amenity.cancel_booking" (huỷ/bỏ một chỗ đã đặt),
+  "amenity.list_my_bookings" (xem/liệt kê các chỗ tôi đã đặt).
+- Câu HỎI về nội quy, giờ giấc, điều kiện, thủ tục ⇒ action.capability = null.
+  "Sân bóng bàn mở cửa mấy giờ?" là câu hỏi, KHÔNG phải yêu cầu đặt chỗ.
+- Câu xác nhận trống ("xác nhận", "đồng ý", "ừ huỷ đi", "ok làm đi") ⇒
+  action.confirmed = true và action.capability = null.
+- action.facility_hint_vi: cụm tiếng Việt cư dân dùng để gọi tiện ích, giữ NGUYÊN
+  văn ("sân bóng bàn", "BBQ"). Không có ⇒ null.
+- action.slot_start / action.slot_end: ISO-8601 CÓ offset, quy đổi từ server_time.
+  "9 giờ sáng mai" với server_time "2026-09-20T23:39:00+07:00" ⇒ slot_start
+  "2026-09-21T09:00:00+07:00". Không biết giờ kết thúc ⇒ slot_end = null.
+- action.party_size: số người. Cư dân KHÔNG nói số người ⇒ 1 (chính cư dân đó).
+- action.booking_ref: mã biên nhận "RC-…" hoặc mã chỗ đã đặt khi huỷ; không có ⇒ null.
+- intent của một câu yêu cầu đặt/huỷ/xem chỗ tiện ích là I-03.
+- CẤM tự điền capability cho một câu chỉ hỏi thông tin. CẤM tự đặt confirmed = true
+  khi cư dân chưa nói lời xác nhận.`;
 
 export async function runClassifier(
   i: ClassifierInput,

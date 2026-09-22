@@ -1,0 +1,81 @@
+BẰNG CHỨNG BỘ ĐO TỪNG ĐỎ — H20 (Luật §4 của handoff)
+Mỗi khối: pha hỏng cài đặt SẢN PHẨM (không sửa test), chạy lại, rồi phục hồi.
+exit != 0 nghĩa là bộ đo đã bắt được.
+
+### red-a-dao-thu-tu
+PHA: gọi checkEligibility TRƯỚC getBookingPolicy (agent dò luật bằng precheck)
+file pha: lib/pipeline/action.ts
+lệnh: node scripts/run_tests.mjs p05-pipeline-action
+exit: 1
+ℹ tests 15
+ℹ pass 13
+ℹ fail 2
+✖ (a) đặt thành công ⇒ decision=action, status=done, write_calls=1, thứ tự backend ĐÚNG (13.1288ms)
+✖ (b) SIM_NOW=23:39 + policy intake_closed ⇒ blocked, write_calls=0, nêu 08:30, CẤM nói giờ hoạt động (1.2459ms)
+✖ failing tests:
+✖ (a) đặt thành công ⇒ decision=action, status=done, write_calls=1, thứ tự backend ĐÚNG (13.1288ms)
+✖ (b) SIM_NOW=23:39 + policy intake_closed ⇒ blocked, write_calls=0, nêu 08:30, CẤM nói giờ hoạt động (1.2459ms)
+
+### red-b-lo-gio-hoat-dong
+PHA: nới IntakeFacts cho lọt operating_hours rồi nói giờ mở cửa (vi phạm BB-02)
+file pha: lib/pipeline/action.ts
+lệnh: node scripts/run_tests.mjs p05-pipeline-action
+exit: 1
+ℹ tests 15
+ℹ pass 13
+ℹ fail 2
+✖ (b) SIM_NOW=23:39 + policy intake_closed ⇒ blocked, write_calls=0, nêu 08:30, CẤM nói giờ hoạt động (1.3723ms)
+✖ (b') blockedMessageVi dựng từ IntakeFacts — kiểu KHÔNG chứa operating_hours (3.6533ms)
+✖ failing tests:
+✖ (b) SIM_NOW=23:39 + policy intake_closed ⇒ blocked, write_calls=0, nêu 08:30, CẤM nói giờ hoạt động (1.3723ms)
+✖ (b') blockedMessageVi dựng từ IntakeFacts — kiểu KHÔNG chứa operating_hours (3.6533ms)
+
+### red-d-retry-write-timeout
+PHA: retry lệnh ghi khi WriteTimeout (vi phạm P05-C10)
+file pha: lib/pipeline/action.ts
+lệnh: node scripts/run_tests.mjs p05-pipeline-action
+exit: 1
+ℹ tests 15
+ℹ pass 13
+ℹ fail 2
+✖ (d) WriteTimeout ⇒ status=unknown, createBooking gọi ĐÚNG 1 lần, có audit warn (1.4297ms)
+✖ (d') QuotaExceeded ⇒ blocked mã B1, KHÔNG thử lại lệnh ghi (0.6929ms)
+✖ failing tests:
+✖ (d) WriteTimeout ⇒ status=unknown, createBooking gọi ĐÚNG 1 lần, có audit warn (1.4297ms)
+✖ (d') QuotaExceeded ⇒ blocked mã B1, KHÔNG thử lại lệnh ghi (0.6929ms)
+
+### red-c-tu-xac-nhan-ho
+PHA: huỷ luôn ở lượt 1, không hỏi xác nhận (vi phạm B2 / §7 IrreversibleUnconfirmed)
+file pha: lib/pipeline/action.ts
+lệnh: node scripts/run_tests.mjs p05-pipeline-action
+exit: 1
+ℹ tests 15
+ℹ pass 14
+ℹ fail 1
+✖ (c) huỷ: lượt 1 clarify B2 + savePendingAction, lượt 2 confirmed ⇒ done (2.4006ms)
+✖ failing tests:
+✖ (c) huỷ: lượt 1 clarify B2 + savePendingAction, lượt 2 confirmed ⇒ done (2.4006ms)
+
+### red-w1-mat-truong-action
+PHA: bỏ `action` khỏi responseSchema.required (lệch Zod — schema-parity)
+file pha: lib/adapters/model.ts
+lệnh: node scripts/run_tests.mjs p05-pipeline-a1-action
+exit: 1
+ℹ tests 7
+ℹ pass 6
+ℹ fail 1
+✖ W1 schema-parity: `action` có mặt ở CẢ Zod lẫn responseSchema.required (7.2157ms)
+✖ failing tests:
+✖ W1 schema-parity: `action` có mặt ở CẢ Zod lẫn responseSchema.required (7.2157ms)
+
+### red-e-forbidden-sai-nhanh
+PHA: ánh xạ Forbidden thành decision='action' thay vì escalate (sai cổng Đ06)
+file pha: lib/pipeline/action.ts
+lệnh: node scripts/run_tests.mjs p05-pipeline-action
+exit: 1
+ℹ tests 15
+ℹ pass 14
+ℹ fail 1
+✖ (d'') Forbidden ⇒ escalate pii_or_account_specific, KHÔNG phải lỗi hành động (1.5421ms)
+(ca này cũng là phép đỏ cho khẳng định BB-11 "đúng MỘT dòng answer_turns":
+ decision đổi khỏi escalate ⇒ hàng đợi mock còn 0 dòng thay vì 1)

@@ -29,7 +29,12 @@ export interface AutoResolutionRow {
 }
 
 export interface AutoResolutionSummary {
+  /** Đ48 — GỒM CẢ `decision='action'`: một lượt agent tự đặt xong chỗ và trả
+   *  biên nhận là tự động giải quyết y như một lượt trả lời có trích dẫn
+   *  (SPEC-P04 §3 cập nhật theo). Tách riêng con số đó ở `actioned`. */
   auto_resolved: number;
+  /** Phần của `auto_resolved` đến từ lượt hành động (Đ48). */
+  actioned: number;
   clarified: number;
   escalated: number;
   total_turns: number;
@@ -44,14 +49,17 @@ function pct(numerator: number, denominator: number): number | null {
 
 export function computeAutoResolutionSummary(rows: AutoResolutionRow[]): AutoResolutionSummary {
   const total_turns = rows.length;
-  const auto_resolved = rows.filter((r) => r.decision === "answer").length;
+  const actioned = rows.filter((r) => r.decision === "action").length;
+  const auto_resolved = rows.filter((r) => r.decision === "answer").length + actioned;
   const clarified = rows.filter((r) => r.decision === "clarify").length;
   const escalated = rows.filter((r) => r.decision === "escalate").length;
   return {
     auto_resolved,
+    actioned,
     clarified,
     escalated,
     total_turns,
+    // Mẫu số vẫn là MỌI lượt, kể cả escalate (SPEC-P04 §4.1, BB-11).
     auto_resolution_rate_pct: pct(auto_resolved, total_turns),
   };
 }
@@ -76,6 +84,9 @@ export interface IntentRow {
 export interface IntentBreakdownEntry {
   intent: string; // 'I-01'..'I-05' hoặc 'unknown'
   answered: number;
+  /** Đ48 — lượt agent THỰC THI thay cư dân, tách khỏi `answered` để nhìn được
+   *  bao nhiêu phần của I-03 (tiện ích) là hành động chứ không phải trả lời. */
+  actioned: number;
   clarified: number;
   escalated: number;
   total: number;
@@ -93,10 +104,20 @@ export function computeIntentBreakdown(rows: IntentRow[]): IntentBreakdownEntry[
   const out: IntentBreakdownEntry[] = [];
   for (const [intent, group] of groups) {
     const answered = group.filter((r) => r.decision === "answer").length;
+    const actioned = group.filter((r) => r.decision === "action").length;
     const clarified = group.filter((r) => r.decision === "clarify").length;
     const escalated = group.filter((r) => r.decision === "escalate").length;
     const total = group.length;
-    out.push({ intent, answered, clarified, escalated, total, rate_pct: pct(answered, total) });
+    out.push({
+      intent,
+      answered,
+      actioned,
+      clarified,
+      escalated,
+      total,
+      // Cùng định nghĩa "tự động giải quyết" với §4.1: answer HOẶC action.
+      rate_pct: pct(answered + actioned, total),
+    });
   }
   out.sort((a, b) => b.total - a.total);
   return out;

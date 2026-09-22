@@ -1,0 +1,11 @@
+=== Toàn bộ bộ test TRỪ 2 file H19 đang thi công dở (p05-idempotency, p05-precheck-guard) ===
+lệnh: DATA_BACKEND=mock node --env-file=.env.local --test <danh sách>
+ℹ tests 222
+ℹ suites 0
+ℹ pass 222
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 40277.5937
+EXIT=0

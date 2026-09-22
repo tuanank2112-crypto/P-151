@@ -1,0 +1,2 @@
+=== tsc CHỈ trên cây phụ thuộc của 4 file H20 (cùng cờ tsconfig, bỏ 2 file test đang dở của H19) ===
+EXIT=0

@@ -1,0 +1,4 @@
+CHƯA KẾT LUẬN: lib/simbackend chưa được gói H19 cài đặt thật.
+Chi tiết lỗi: lib/simbackend chưa được cài đặt (gói H19 đang thi công). Test dùng __setSimBackendForTesting().
+Đây KHÔNG phải lỗi sản phẩm — script không được chạy tiếp với backend nửa vời rồi kết luận SAI HÀNH VI (Đ26). Chạy lại script này sau khi H19+H20 xong.
+EXIT:3

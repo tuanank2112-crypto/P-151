@@ -10,6 +10,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { PublicTurnResult } from "../../../lib/types";
+import { toActionView, formatViDateTime, type ActionView } from "./action-view";
 
 interface ChatResponseBody {
   ok: boolean;
@@ -136,11 +137,16 @@ export default function ChatPage() {
             Không đủ căn cứ thì trợ lý nói rõ lý do và chuyển sang Ban quản lý.
           </p>
         </div>
-        <form action="/api/auth/logout" method="post">
-          <button type="submit" className="btn btn--ghost">
-            Đăng xuất
-          </button>
-        </form>
+        <div className="chat__head-actions">
+          <a href="/chat/receipts" className="btn btn--ghost">
+            Biên nhận
+          </a>
+          <form action="/api/auth/logout" method="post">
+            <button type="submit" className="btn btn--ghost">
+              Đăng xuất
+            </button>
+          </form>
+        </div>
       </header>
 
       {turns.length === 0 && history.length === 0 && (
@@ -184,7 +190,11 @@ export default function ChatPage() {
             ) : t.body === null ? (
               <p className="bubble bubble--bot bubble--wait">Đang tra tài liệu…</p>
             ) : (
-              <TurnView body={t.body} onRetry={() => ask(t.question_vi)} />
+              <TurnView
+                body={t.body}
+                onRetry={() => ask(t.question_vi)}
+                onConfirm={() => ask("Xác nhận")}
+              />
             )}
           </li>
         ))}
@@ -213,13 +223,24 @@ export default function ChatPage() {
   );
 }
 
-function TurnView({ body, onRetry }: { body: ChatResponseBody; onRetry: () => void }) {
+function TurnView({
+  body,
+  onRetry,
+  onConfirm,
+}: {
+  body: ChatResponseBody;
+  onRetry: () => void;
+  onConfirm: () => void;
+}) {
   const { result } = body;
+  const actionView = toActionView(result);
   const isAnswer = result.decision === "answer" && result.answer_vi;
 
   return (
     <div className="bubble bubble--bot">
-      {isAnswer ? (
+      {actionView ? (
+        <ActionCard view={actionView} onConfirm={onConfirm} />
+      ) : isAnswer ? (
         <p className="answer">{result.answer_vi}</p>
       ) : (
         <p className="refuse">{body.message_vi}</p>
@@ -268,6 +289,155 @@ function TurnView({ body, onRetry }: { body: ChatResponseBody; onRetry: () => vo
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+/** W1 (H21, Đ48) — card kết quả hành động, một nhánh render riêng cho mỗi
+ *  `ActionStatus` (`app/(resident)/chat/action-view.ts::toActionView`). Nút
+ *  *Hoàn tác* gọi thẳng `POST /api/actions/undo` (W2) — đây là lệnh ghi DUY
+ *  NHẤT UI được tự gọi, và chỉ khi cư dân bấm (xác nhận tường minh, luật §4). */
+function ActionCard({ view, onConfirm }: { view: ActionView; onConfirm: () => void }) {
+  const [undoState, setUndoState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const [undoError, setUndoError] = useState("");
+
+  async function handleUndo(receiptCode: string) {
+    setUndoState("busy");
+    setUndoError("");
+    try {
+      const res = await fetch("/api/actions/undo", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ receipt_code: receiptCode }),
+      });
+      const data = (await res.json()) as { ok: boolean; message_vi?: string };
+      if (res.ok && data.ok) {
+        setUndoState("done");
+      } else {
+        setUndoState("error");
+        setUndoError(data.message_vi ?? "Không hoàn tác được. Anh/chị thử lại giúp.");
+      }
+    } catch {
+      setUndoState("error");
+      setUndoError("Không gửi được yêu cầu hoàn tác. Anh/chị kiểm tra kết nối rồi thử lại.");
+    }
+  }
+
+  if (view.kind === "done") {
+    return (
+      <div className="action-card action-card--done">
+        <p className="action-card__title">Đã thực hiện xong.</p>
+        <dl className="action-card__facts">
+          <div>
+            <dt>Tiện ích</dt>
+            <dd>{view.facility_name_vi || "—"}</dd>
+          </div>
+          <div>
+            <dt>Khung giờ</dt>
+            <dd>
+              {view.slot_start_vi ?? "—"}
+              {view.slot_end_vi ? ` – ${view.slot_end_vi}` : ""}
+            </dd>
+          </div>
+          <div>
+            <dt>Mã biên nhận</dt>
+            <dd>
+              <code>{view.receipt_code}</code>
+            </dd>
+          </div>
+        </dl>
+        {view.can_undo && undoState !== "done" && (
+          <div className="actions">
+            <button
+              type="button"
+              className="btn"
+              disabled={undoState === "busy"}
+              onClick={() => handleUndo(view.receipt_code)}
+            >
+              {undoState === "busy" ? "Đang hoàn tác…" : "Hoàn tác"}
+            </button>
+            {undoState === "error" && <p className="bql-cell-error">{undoError}</p>}
+          </div>
+        )}
+        {undoState === "done" && <p className="action-card__undone">Đã hoàn tác.</p>}
+      </div>
+    );
+  }
+
+  if (view.kind === "blocked") {
+    return (
+      <div className="action-card action-card--blocked">
+        <p className="action-card__title">Không thực hiện được.</p>
+        <ul className="action-card__reasons">
+          {view.reasons.map((r, i) => (
+            <li key={i}>
+              <p>{r.message_vi}</p>
+              {r.remediation_vi && <p className="action-card__remediation">{r.remediation_vi}</p>}
+            </li>
+          ))}
+        </ul>
+        {view.next_intake_open_at_vi && (
+          <p className="action-card__next">
+            Mở lại nhận đăng ký lúc: <strong>{view.next_intake_open_at_vi}</strong>
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (view.kind === "needs_confirmation") {
+    return (
+      <div className="action-card action-card--confirm">
+        <p className="action-card__title">{view.question_vi}</p>
+        <div className="actions">
+          <button type="button" className="chip" onClick={onConfirm}>
+            Xác nhận
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (view.kind === "listed") {
+    return (
+      <div className="action-card action-card--listed">
+        {view.bookings.length === 0 ? (
+          <p>Anh/chị chưa có chỗ nào đã đặt.</p>
+        ) : (
+          <table className="bql-table">
+            <thead>
+              <tr>
+                <th>Tiện ích</th>
+                <th>Khung giờ</th>
+                <th>Trạng thái</th>
+                <th>Mã biên nhận</th>
+              </tr>
+            </thead>
+            <tbody>
+              {view.bookings.map((b) => (
+                <tr key={b.booking_id}>
+                  <td>{b.facility_name_vi}</td>
+                  <td>
+                    {formatViDateTime(b.slot_start) ?? "—"}
+                    {b.slot_end ? ` – ${formatViDateTime(b.slot_end)}` : ""}
+                  </td>
+                  <td>{b.state === "confirmed" ? "Đã xác nhận" : "Đã huỷ"}</td>
+                  <td>
+                    <code>{b.receipt_code}</code>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    );
+  }
+
+  // view.kind === "unknown"
+  return (
+    <div className="action-card action-card--unknown">
+      <p className="refuse">{view.message_vi}</p>
     </div>
   );
 }

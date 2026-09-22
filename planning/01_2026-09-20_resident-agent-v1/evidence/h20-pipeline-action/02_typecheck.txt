@@ -1,0 +1,11 @@
+=== npx tsc --noEmit (chạy lại cuối phiên H20) ===
+tests/p05-idempotency.test.ts(89,19): error TS2352: Conversion of type 'any[][]' to type '{ n: number; }[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'n' is missing in type 'any[]' but required in type '{ n: number; }'.
+tests/p05-idempotency.test.ts(95,19): error TS2352: Conversion of type 'any[][]' to type '{ n: number; }[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'n' is missing in type 'any[]' but required in type '{ n: number; }'.
+tests/p05-precheck-guard.test.ts(83,19): error TS2352: Conversion of type 'any[][]' to type '{ n: number; }[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'n' is missing in type 'any[]' but required in type '{ n: number; }'.
+EXIT=2
+
+=== lọc lỗi thuộc PHẠM VI H20 ===
+(không có lỗi nào thuộc phạm vi H20)

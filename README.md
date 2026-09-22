@@ -24,6 +24,22 @@ Kho tri thức mô phỏng (`knowledge/`, 19 tài liệu · 98 mục) được *
 phát hiện đúng từng loại thay vì bịa câu trả lời trôi chảy. Chi tiết đầy đủ,
 số đo thật và sơ đồ kiến trúc: **[`docs/OVERVIEW.md`](docs/OVERVIEW.md)**.
 
+## Agent hành động (P05)
+
+Ngoài hỏi–đáp, agent **THỰC THI thay cư dân** một số việc qua chính khung chat
+(Đ48) — không có màn thao tác từng bước riêng, UI chỉ hiện kết quả: cư dân nêu
+mục đích ("Đặt giúp tôi sân bóng bàn 9 giờ sáng mai") → agent đọc chính sách
+đặt chỗ của tiện ích đó → **kiểm** đủ điều kiện (giờ nhận đăng ký, hạn mức, tuổi…)
+→ nếu đạt thì mới **ghi** (tạo booking) → trả **biên nhận** `RC-…` cho cư dân →
+biên nhận có thể **hoàn tác** (nút *Hoàn tác* ở thẻ kết quả hoặc trang
+`/chat/receipts`, xem `app/(resident)/chat/receipts/page.tsx`). Hợp đồng: `lib/types.ts`
+(`ActionRequest`/`ActionResult`) và `lib/simbackend/contract.ts` (SPEC-P05 §3–§7).
+
+Ba bất biến chi phối cả gói (chi tiết: `specs/SPEC-P05-Action-Layer.md` §2):
+- **BB-03** — luôn đọc chính sách (`get_booking_policy`) trước khi thử một lệnh ghi bất kỳ.
+- **BB-02** — cửa NHẬN ĐĂNG KÝ (`intake_window`) và giờ HOẠT ĐỘNG (`operating_hours`) là hai trục tách rời, không được gộp.
+- **BB-01** — đặt được chỗ của một tiện ích khác với việc có đủ căn cứ để giải thích nội quy của nó; kết quả một lệnh hành động không bao giờ dùng làm bằng chứng cho một phát biểu về luật.
+
 ## Target User
 
 - **Primary:** Cư dân khu đô thị — hỏi–đáp có trích dẫn, lịch sử hội thoại bền

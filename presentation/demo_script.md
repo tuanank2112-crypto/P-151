@@ -45,6 +45,25 @@ Tổng: ~7-8 phút thao tác + đệm hỏi đáp.
 | M1/M3 bị hỏi tại sao thấp | "Cạn hạn mức Gemini giữa lượt chạy Golden — blocked Tầng 1, không phải trượt logic (Đ26). Chi tiết và bốn lý do trong `eval/results/report.md` §4." |
 | Chưa có Live URL (R1) | "Đang chờ chọn scope Vercel — CLI đã đăng nhập sẵn, `npm run build` xanh không cần DB, chỉ còn một lựa chọn." |
 
+## Cảnh 6 — Agent thực thi thay cư dân (P05, Đ48)
+
+> Chuẩn bị riêng: đổi `SIM_NOW`/đồng hồ hệ thống về **23:39** cho bước đầu (script
+> `scripts/demo_2339.mjs` diễn kịch bản này bằng máy — dùng khi cần chứng minh số
+> đo, không phải bước bấm tay trong demo trực tiếp).
+
+| # | Bước | Thao tác | Kỳ vọng | Câu thoại |
+| :-- | :-- | :-- | :-- | :-- |
+| 6.1 | 23:39 — chặn đúng luật | Ở `/chat`, gõ: *"Đặt giúp tôi sân bóng bàn 9 giờ sáng mai."* | Thẻ kết quả hành động hiện **"Không thực hiện được"**, lý do "Ban quản lý chỉ nhận đăng ký từ 08:30 đến 17:30", gợi ý gửi lại sau 08:30 | *"Agent đọc chính sách đặt chỗ TRƯỚC (BB-03) — không thử ghi mù. Cửa NHẬN ĐĂNG KÝ đóng lúc 23:39, khác với giờ HOẠT ĐỘNG của sân (BB-02) — agent không lẫn hai cái, và không bịa giờ sân mở cửa."* |
+| 6.2 | 09:00 hôm sau — đặt được | Cùng câu hỏi, sau 08:30 sáng hôm sau | Thẻ hiện **"Đã thực hiện xong"** — tiện ích, khung giờ, mã biên nhận `RC-…`, nút *Hoàn tác* | *"Cùng một chính sách, đủ điều kiện thì agent GHI thật và trả biên nhận — không có bước giả lập nào ở giữa."* |
+| 6.3 | Hoàn tác | Bấm *Hoàn tác* ở thẻ (hoặc trang `/chat/receipts`) | Biên nhận huỷ mới xuất hiện; biên nhận gốc **vẫn còn**, nay hiện đã hoàn tác | *"Huỷ không xoá lịch sử — biên nhận gốc còn nguyên, chỉ thêm một dòng biên nhận huỷ trỏ ngược lại nó."* |
+
+**Nếu hỏng thì nói gì:** backend hành động (`lib/simbackend`) và tầng thực thi
+trong pipeline là hai gói đang thi công gần deadline — nếu demo tại chỗ chưa lên
+được, nói: *"Hợp đồng dữ liệu (`lib/types.ts`, `lib/simbackend/contract.ts`) và
+UI đã sẵn sàng, canh bằng `scripts/demo_2339.mjs` (thoát mã 3 rõ ràng khi backend
+chưa cài, không kết luận giả) — xem `tests/p05-ui-action-card.test.ts` và
+`tests/p05-ui-undo-route.test.ts` cho bằng chứng phần đã xong."*
+
 ## Sau demo — nếu giám khảo hỏi thêm
 
 - Kiến trúc chi tiết: `docs/architecture_diagram.md`

@@ -19,7 +19,9 @@ Nội dung thật của dự án, không phải khung mẫu:
    BQL trả lời thủ công, dễ không nhất quán khi nội quy cập nhật lệch nhau
 3. **Solution** — Trợ lý AI có trích dẫn, 9 chặng / 5 lối thoát, biết khi nào
    KHÔNG được trả lời (4 khuyết tật cài sẵn: thiếu nguồn, mâu thuẫn, hết hiệu lực)
-4. **Demo** — Screenshot `/chat` (câu trả lời có citation) + `/review` (hàng đợi HITL)
+4. **Demo** — Screenshot `/chat` (câu trả lời có citation) + `/review` (hàng đợi
+   HITL) + Cảnh 6 P05 (`demo_script.md`): thẻ "Đã thực hiện xong" kèm mã biên
+   nhận `RC-…` và nút *Hoàn tác*, trang `/chat/receipts`
 5. **Architecture** — Sơ đồ hệ thống từ `docs/architecture_diagram.md` §1 (2 biên
    giới adapter: `lib/adapters/db.ts`, `lib/adapters/model.ts`)
 6. **Tech Stack** — Next.js 15 + TypeScript · Postgres/Supabase (`pgvector`,

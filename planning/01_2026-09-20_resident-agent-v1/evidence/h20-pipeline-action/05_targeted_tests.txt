@@ -1,0 +1,48 @@
+=== node scripts/run_tests.mjs p05-pipeline ===
+ℹ tests 22
+ℹ pass 22
+ℹ fail 0
+ℹ skipped 0
+EXIT=0
+=== node scripts/run_tests.mjs pipeline-order ===
+ℹ tests 5
+ℹ pass 5
+ℹ fail 0
+ℹ skipped 0
+EXIT=0
+=== node scripts/run_tests.mjs g3-on-topic ===
+ℹ tests 8
+ℹ pass 8
+ℹ fail 0
+ℹ skipped 0
+EXIT=0
+=== node scripts/run_tests.mjs pii-other-party ===
+ℹ tests 6
+ℹ pass 6
+ℹ fail 0
+ℹ skipped 0
+EXIT=0
+=== node scripts/run_tests.mjs metrics ===
+ℹ tests 23
+ℹ pass 23
+ℹ fail 0
+ℹ skipped 0
+EXIT=0
+=== node scripts/run_tests.mjs adapter ===
+ℹ tests 12
+ℹ pass 12
+ℹ fail 0
+ℹ skipped 0
+EXIT=0
+=== node scripts/run_tests.mjs citations ===
+ℹ tests 4
+ℹ pass 4
+ℹ fail 0
+ℹ skipped 0
+EXIT=0
+=== node scripts/run_tests.mjs risk-gate ===
+ℹ tests 5
+ℹ pass 5
+ℹ fail 0
+ℹ skipped 0
+EXIT=0

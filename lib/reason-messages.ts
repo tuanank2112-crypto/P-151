@@ -27,15 +27,23 @@ export const REASON_MESSAGE_VI: Record<ReasonCode, string> = {
   system_error:
     "Hệ thống đang gặp sự cố. Anh/chị thử lại giúp, hoặc tôi chuyển sang Ban quản lý.",
   reviewer_rejected_draft: "Ban quản lý đã xem và chưa đồng ý với câu trả lời này.",
+  // ── 5 mã nhóm hành động (Đ48 / SPEC-P05 §7) ─────────────────────────────
+  // Rà lại 2026-09-23 (H20 W3): bản cũ viết theo giả định "mọi mã action đều
+  // dẫn tới Ban quản lý", sai với P05 — cư dân tự làm tiếp được ở 3/5 mã.
   action_quota_exceeded:
-    "Yêu cầu này vượt hạn mức được phép nên tôi không thực hiện được.",
+    "Anh/chị đã dùng hết hạn mức đặt chỗ của kỳ này nên tôi không đặt thêm được.",
+  // B2 — câu này là CÂU HỎI gửi thẳng cho cư dân, không phải lời từ chối:
+  // người xác nhận một lệnh không hoàn tác được là CHỦ chỗ đặt, không phải BQL
+  // (SPEC-P05 §5.2, Đ48 mục 5). Bản cũ nói "Cần Ban quản lý xác nhận" — sai vai.
   action_irreversible_requires_confirmation:
-    "Thao tác này không thể hoàn tác nên tôi không tự thực hiện. Cần Ban quản lý xác nhận.",
+    "Thao tác này không hoàn tác được. Anh/chị xác nhận huỷ chứ?",
+  // B3 — CẤM hứa đã làm xong một phần: đúng nghĩa là KHÔNG RÕ đã ghi hay chưa.
   action_partial_execution_unknown:
-    "Tôi mới thực hiện được một phần yêu cầu. Phần còn lại đã chuyển sang Ban quản lý.",
-  action_authorization_missing: "Anh/chị chưa đủ thẩm quyền cho thao tác này.",
+    "Tôi đã gửi yêu cầu nhưng chưa rõ hệ thống ghi nhận chưa. Tôi không gửi lại để tránh đặt trùng — anh/chị xem lại mục chỗ đã đặt sau ít phút giúp.",
+  action_authorization_missing:
+    "Tôi chưa đọc được điều kiện cho thao tác này nên không thực hiện lệnh ghi nào.",
   action_duplicate_suspected:
-    "Yêu cầu này trùng với một yêu cầu đã được ghi nhận trước đó.",
+    "Yêu cầu này trùng với một yêu cầu đã được ghi nhận trước đó — tôi giữ nguyên chỗ cũ, không tạo thêm.",
 };
 
 /** Câu hiển thị an toàn cho một `reason_code` bất kỳ. Không bao giờ trả chuỗi

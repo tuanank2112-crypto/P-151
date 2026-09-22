@@ -15,6 +15,7 @@
 // `tests/citations.test.ts`). Số liệu ghi được coi là THẬT chỉ khi chạy trên
 // Postgres — xem `TESTING-ACCEPTANCE.md`.
 
+import { simNow } from "../simbackend/index.ts";
 import { getDataStore, type DataStore } from "../adapters/db.ts";
 import {
   agentModel,
@@ -36,17 +37,25 @@ import type {
   TurnResult,
 } from "../types.ts";
 import { decideTurn, round4 } from "../confidence.ts";
+import { runActionBranch, toVnIso } from "./action.ts";
 import { applyEligibility, type EligibilityResult } from "./eligibility.ts";
 import { checkOwnership } from "./ownership.ts";
 import { retrieve, TOP_K } from "./retrieval.ts";
 import { EmptyQuestionError, PipelineInvariantError } from "./errors.ts";
 
+/**
+ * Đ48 — `action` nằm NGAY SAU `risk` và TRƯỚC `retrieval`: một lượt hành động
+ * THAY nhánh retrieval→verify chứ không nối thêm vào cuối nó. Xếp đúng chỗ này
+ * giữ `assertStepOrder` vừa chấp nhận `[… risk, action]` vừa tiếp tục bắt lỗi
+ * nhảy cóc trên đường hỏi–đáp thường `[… risk, retrieval, …]`.
+ */
 const STEP_ORDER: PipelineStep["step"][] = [
   "validate",
   "safety",
   "intent",
   "context",
   "risk",
+  "action",
   "retrieval",
   "eligibility",
   "draft",
@@ -357,15 +366,19 @@ async function topRejectedIsOnTopic(
   return questionForms.some((q) => queryMentionsDocumentTitle(q, titleVi));
 }
 
-/** `answer_turns.lifecycle_state` theo `decision` (01-CONTRACTS §2.1). */
+/** `answer_turns.lifecycle_state` theo `decision` (01-CONTRACTS §2.1).
+ *  Đ48 — `action` là lượt đã giải quyết xong việc cho cư dân ⇒ `answered`,
+ *  cùng ô với `answer` trên dashboard (SPEC-P04 §3). */
 function lifecycleForDecision(decision: Decision): LifecycleState {
-  if (decision === "answer") return "answered";
+  if (decision === "answer" || decision === "action") return "answered";
   if (decision === "clarify") return "clarification_required";
   return "escalated";
 }
 
 export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
-  const now = args.now ?? new Date();
+  // Đ48 mục 6: MỘT đồng hồ cho cả A1 (server_time) lẫn backend — `SIM_NOW` ghi đè
+  // khi diễn cảnh 23:39; script không truyền `now` vẫn phải khớp backend.
+  const now = args.now ?? simNow();
   const steps: PipelineStep[] = [];
   const questionVi = args.question_vi;
   const principal = args.principal;
@@ -421,7 +434,13 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
         steps,
       };
     let assistantMessageId: string | null = null;
-    if (finalResult.decision === "answer" && finalResult.answer_vi) {
+    // Đ48 — lượt `action` cũng nói ra một câu (biên nhận / lý do chặn), nên nó
+    // phải để lại dòng `messages` vai `assistant` như lượt `answer`; thiếu dòng
+    // này thì lịch sử hội thoại (R4) mất hẳn nửa lượt hành động.
+    if (
+      (finalResult.decision === "answer" || finalResult.decision === "action") &&
+      finalResult.answer_vi
+    ) {
       const assistantMsg = await store.appendMessage(
         args.conversation_id,
         "assistant",
@@ -467,6 +486,9 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
       owned_property_ids: principal.owned_property_ids,
       property_type: principal.property_type,
     },
+    // Đ48 mục 6 — A1 quy "9 giờ sáng mai" ra mốc tuyệt đối từ đây. ISO CÓ
+    // offset `+07:00`, KHÔNG phải `Z` (xem `toVnIso`).
+    server_time: toVnIso(now),
   });
   const classifierMs = Date.now() - classifierStart;
 
@@ -541,6 +563,48 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
     return finish(escalateResult("legal_or_compensation_escalation", null, steps));
   }
   steps.push({ step: "risk", ok: true, ms: 0 });
+
+  // ── Chặng 6' — action (Đ48, SPEC-P05) ─────────────────────────────────
+  // Cư dân YÊU CẦU LÀM một việc (hoặc xác nhận một việc đang chờ) ⇒ nhánh này
+  // THAY retrieval→verify. Lý do tách hẳn: một lượt hành động không trả lời
+  // bằng tài liệu, nó ghi một bản ghi và trả biên nhận. Trộn hai đường là mời
+  // agent dùng kết quả hành động làm căn cứ cho phát biểu nội quy (BB-01).
+  //
+  // Cổng vào đặt SAU chặng 5 nên mọi lưới an toàn phía trên (khẩn cấp,
+  // ownership, PII người khác, pháp lý/bồi thường, hard-block rủi ro) vẫn chạy
+  // TRƯỚC — CẤM đưa cổng này lên sớm hơn để "đỡ tốn một lời gọi".
+  if (a1.action.capability !== null || a1.action.confirmed) {
+    const actionStart = Date.now();
+    const out = await runActionBranch({
+      conversation_id: args.conversation_id,
+      principal,
+      action: a1.action,
+      now,
+    });
+    steps.push({
+      step: "action",
+      ok: out.step_ok,
+      ms: Date.now() - actionStart,
+      note: out.step_note,
+    });
+    assertStepOrder(steps);
+    // BB-04 CHỈ ràng buộc `decision='answer'` (kiểm ở cuối hàm). `decision =
+    // 'action'` cố ý đi ra với `citations: []`: một biên nhận không phải phát
+    // biểu quy định, nên nó không nợ nguồn nào (BB-01 / SPEC-P05 §2.3). Hứa
+    // suông một citation ở đây mới là vi phạm.
+    return finish({
+      decision: out.decision,
+      reason_code: out.reason_code,
+      answer_vi: out.answer_vi,
+      clarify_question_vi: out.clarify_question_vi,
+      citations: [],
+      claims: [],
+      confidence: out.confidence,
+      gate_triggered: null,
+      steps,
+      action_result: out.action_result,
+    });
+  }
 
   // ── Chặng 6 — retrieval ───────────────────────────────────────────────
   const retrievalStart = Date.now();
@@ -670,6 +734,9 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
   const claims: ClaimVerdict[] = a3.claims;
 
   // BB-04 (E1): decision='answer' PHẢI có >= 1 citation. CẤM trả lời không căn cứ.
+  // Đ48 — bất biến này cố ý KHÔNG áp cho `decision='action'`: nhánh đó thoát ở
+  // chặng 6' phía trên, và nó trả biên nhận chứ không phát biểu quy định nào
+  // (BB-01). Nới bất biến cho `answer` mới là lỗi; bỏ qua cho `action` là đúng.
   if (citations.length === 0) {
     throw new PipelineInvariantError("decision=answer nhưng citations=[] (BB-04)");
   }

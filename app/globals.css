@@ -46,6 +46,64 @@ main {
   line-height: 1.5;
   max-width: 54ch;
 }
+.chat__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* ── P05 · Card kết quả hành động trong chat (H21 W1, Đ48) ── */
+.action-card {
+  border-radius: 10px;
+  padding: 0.1rem 0;
+}
+.action-card__title {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+.action-card__facts {
+  margin: 0 0 0.5rem;
+  display: grid;
+  gap: 0.35rem;
+}
+.action-card__facts div {
+  display: flex;
+  gap: 0.4rem;
+}
+.action-card__facts dt {
+  color: #5b6070;
+  min-width: 6.5rem;
+}
+.action-card__facts dd {
+  margin: 0;
+}
+.action-card__undone {
+  color: #1a7f37;
+  margin: 0.5rem 0 0;
+}
+.action-card--blocked .action-card__title {
+  color: #8a4b00;
+}
+.action-card__reasons {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+.action-card__reasons li {
+  margin-bottom: 0.5rem;
+}
+.action-card__remediation {
+  color: #5b6070;
+  font-size: 0.85rem;
+  margin: 0.15rem 0 0;
+}
+.action-card__next {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+}
+.action-card--confirm .action-card__title {
+  margin-bottom: 0.75rem;
+}
 
 .suggest {
   margin: 1.25rem 0 0;

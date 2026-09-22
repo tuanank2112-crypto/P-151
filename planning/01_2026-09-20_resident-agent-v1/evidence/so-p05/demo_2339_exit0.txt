@@ -1,0 +1,9 @@
+[1] Cư dân (SIM_NOW=2026-09-23T23:39:00+07:00): "Đặt giúp tôi sân bóng bàn 9 giờ sáng mai."
+[2] Lời gọi backend trong lượt: getBookingPolicy=1 lệnh_ghi=0
+[3] decision=action status=blocked blocking_reasons=["intake_closed"] next_intake_open_at=2026-09-24T08:30:00+07:00
+[4] Agent trả lời: Bây giờ 23:39. Ban quản lý chỉ nhận đăng ký Sân bóng bàn từ 08:30 đến 17:30. Anh/chị gửi lại sau 08:30 ngày 24/09 là đặt được.
+[5] Agent KHÔNG được nói giờ HOẠT ĐỘNG của sân (BB-02) — kiểm bằng regex thô: nhắc "giờ mở cửa/hoạt động"=false
+[6a] Sau 08:30 (SIM_NOW=2026-09-24T09:00:00+07:00): decision=action status=done receipt_code=RC-LHVWN55G slot_start=2026-09-25T09:00:00+07:00 blocking=[] reason_code=— clarify=—
+[6b] Hoàn tác: ok=true receipt_code=RC-BBHV40Z2
+[6c] Biên nhận gốc vẫn còn: receipt_code=RC-LHVWN55G undone_by=RC-BBHV40Z2
+EXIT=0

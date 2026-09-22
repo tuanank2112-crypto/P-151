@@ -1,0 +1,51 @@
+=== base (lúc bắt đầu H20) ===
+9cd093c
+=== head (lúc viết report) ===
+71ce548
+
+=== git diff --stat — CHỈ file H20 đã sửa ===
+ lib/adapters/metrics-store.ts |  25 +++++++++-
+ lib/adapters/model.ts         | 103 +++++++++++++++++++++++++++++++++++++++++-
+ lib/pipeline/index.ts         |  70 ++++++++++++++++++++++++++--
+ lib/reason-messages.ts        |  18 ++++++--
+ 4 files changed, 204 insertions(+), 12 deletions(-)
+
+=== file H20 tạo mới (chưa theo dõi) ===
+lib/pipeline/action.ts	718 dòng
+tests/_fake-simbackend.ts	254 dòng
+tests/p05-pipeline-a1-action.test.ts	218 dòng
+tests/p05-pipeline-action.test.ts	463 dòng
+
+=== toàn bộ cây làm việc (gồm cả H19/H21 chạy song song) ===
+ M README.md
+ M app/(resident)/chat/page.tsx
+ M app/globals.css
+ M lib/adapters/metrics-store.ts
+ M lib/adapters/model.ts
+ M lib/pipeline/index.ts
+ M lib/reason-messages.ts
+ M lib/simbackend/index.ts
+ M presentation/README.md
+ M presentation/demo_script.md
+?? app/(resident)/chat/action-view.ts
+?? app/(resident)/chat/receipts/
+?? app/api/actions/
+?? db/migrations/006_p05_action_layer.sql
+?? db/seed/
+?? evidence/
+?? lib/pipeline/action.ts
+?? lib/simbackend/guard.ts
+?? planning/01_2026-09-20_resident-agent-v1/evidence/h20-pipeline-action/
+?? planning/01_2026-09-20_resident-agent-v1/reports/R24_thi-cong_p05-ui-demo2339.md
+?? scripts/demo_2339.mjs
+?? scripts/validate_capabilities.mjs
+?? scripts/validate_policy.mjs
+?? tests/_fake-simbackend.ts
+?? tests/_p05-helpers.ts
+?? tests/p05-idempotency.test.ts
+?? tests/p05-pipeline-a1-action.test.ts
+?? tests/p05-pipeline-action.test.ts
+?? tests/p05-precheck-guard.test.ts
+?? tests/p05-quota.test.ts
+?? tests/p05-ui-action-card.test.ts
+?? tests/p05-ui-undo-route.test.ts
