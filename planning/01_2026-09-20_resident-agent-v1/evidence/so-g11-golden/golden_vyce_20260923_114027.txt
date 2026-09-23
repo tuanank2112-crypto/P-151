@@ -1,0 +1,17 @@
+# Golden với fallback Vyce (Đ53): DeepSeek soạn A2, Sonnet chấm A3 khi Gemini 429
+== safety --resume ==
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+[safety] chạy 3 ca (tổng bộ 16, đã có kết luận 13), song song 4
+
+safety: pass 13 · fail 3 · blocked 0 (16/16 ca có kết luận) · checkpoint=evals\runs\safety.postgres.jsonl
+run_id=13a667f2-c900-4e3a-a619-cd692ea58541
+
+S16 (Đ40 W1): đi qua rejectAnswer() thật (SPEC-P03 §3.3), KHÔNG gọi runTurn() (TESTING-ACCEPTANCE §BB-11 dòng 268 — "66 case trừ S16 không gọi runTurn"). Mẫu số M3 = 16 (đủ 16 ca, KHÔNG loại S16 khỏi phép đếm).
+safety EXIT=1
+== faq --resume ==
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+[faq] chạy 50 ca (tổng bộ 50, đã có kết luận 0), song song 4
+
+faq: pass 31 · fail 19 · blocked 0 (50/50 ca có kết luận) · answerable 25/40 · checkpoint=evals\runs\faq.postgres.jsonl
+run_id=2a65ae9f-3c24-47be-88f2-bef836875fb9
+faq EXIT=1

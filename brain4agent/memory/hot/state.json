@@ -33,7 +33,7 @@
       "review_queue": "pending 7 · rejected 1",
       "bql_pages": "/documents /review /dashboard /eval -> 200, 4 link nav, 0 NaN"
     },
-    "G11": "CAM TICK — 2026-09-23 --fresh + --resume: safety pass 13 · fail 0 · blocked 3 (0 truot that); faq 0/50 (A2/A3 429 trong ngay) — EXIT=3, --resume tiep khi han muc hoi"
+    "G11": "TRUOT — lan tron dau 2026-09-23 11:40: M1 25/40, M3 13/16 (66/66 ket luan, fallback Vyce)"
   },
   "active_plans_completed": 0,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
@@ -83,10 +83,9 @@
       "P01 deploy (Đ51)",
       "G08 xanh tren production (Đ50+Đ52)"
     ],
-    "next": "NGUOI: don DB fixture, deploy Vercel (scope + pooler 6543), quyet origin/main, git stash drop (stash du). AGENT: eval:golden --resume khi han muc hoi (sau H25 moi co s3_faithfulness that), trace_sample.mjs tra nguoc theo id de tick G08, P06 dien tay",
+    "next": "AGENT: va Golden theo phan loai (C nguy hiem truoc, roi B, E); A1 phan loai PII. NGUOI: quyet DEF-04 gate (S01/S02/S04), origin/main, git stash drop",
     "remaining": [
       "G11 (Golden tren chuoi model moi)",
-      "don du lieu demo",
       "AI_LOG_API_KEY trong (hook da cai)",
       "origin/main",
       "P06 dien tay tren trinh duyet",
@@ -147,7 +146,7 @@
     "provider": "supabase",
     "decision": "Đ25",
     "driver": "pg (TCP)",
-    "trang_thai": "DA MIGRATE + SEED (19/98/98/2). Van hanh: ~460 answer_turns gan nhu toan fixture — CHO NGUOI xoa (lenh bi classifier chan); backup JSON o scratchpad phien 2026-09-23. review_queue: pending 7 (enqueue that tu insertAnswerTurn).",
+    "trang_thai": "DA DON fixture 2026-09-23 11:47: con 121 conv/234 msg/191 turns (golden 160)/rq 5 (pending 3). Backup: evals/runs/backup_fixture_1790138807178.json (gitignore)",
     "migrations": "theo doi bang schema_migrations (Đ30). 001..004 baseline, 005 ap dung that exit 0",
     "chunks_co_embedding": 0,
     "cong_ket_noi": "local .env.local :5432 (session); Vercel production :6543 (transaction) — da do 19 doc/2 user qua 6543",
@@ -179,7 +178,7 @@
   "open_issues": {
     "expected_gate_DEF04": "xem blocked_needs_human",
     "hybrid": "RETRIEVAL_MODE=hybrid CHUA noi day; chunks chua co embedding nao",
-    "G11": "CAM TICK — safety 13/16 (0 fail, 3 blocked), faq 0/50: han muc free hoi vai loi goi roi 429 (11:20-11:24) => can billing/key thu hai (D17)",
+    "G11": "TRUOT so that: M1 25/40, M3 13/16 — xem evidence/so-g11-golden/phan_loai_truot_20260923_1140.txt",
     "S01_truot_that": "DA VA (R16, bb99791) — smoke 2026-09-23 pickleball ra no_eligible_source",
     "S06_truot_that": "DA VA (R16) — smoke 2026-09-23 ra pii_or_account_specific",
     "S16_S14_loi_bo_do": "DA VA (R17); S14 dai dang can kiem lai khi han muc khoe (Đ45)",
@@ -198,8 +197,7 @@
     "P05_viec_treo": "DA DONG (H22/R26 + H23/R27, 2026-09-23); audit sink fire-and-forget (G44)",
     "G46_answer_turns_rong": "DA VA (H25/R29, Đ50) — so faithfulness truoc 23/09 la 0.0 gia; can luot moi de co so that",
     "G47_worker_stash": "luat AGENTS §5.D.5: worker CAM git stash/checkout/reset tren cay chung; stash@{0} du con trong kho (nguoi drop)",
-    "A1_pii_phan_loai": "prod: 'so dien thoai cu dan can A-1203' => unsupported_intent (A1 3.5-flash-lite), ky vong pii_or_account_specific",
-    "billing_team_pro": "team resident-agent-demo tao o goi pro — chu tich kiem han dung thu/billing truoc 27/09"
+    "A1_pii_phan_loai": "prod: 'so dien thoai cu dan can A-1203' => unsupported_intent (A1 3.5-flash-lite), ky vong pii_or_account_specific"
   },
   "km6": {
     "value": "1/4 tren postgres (DEF-03 OK) · 3 ca blocked vi can han muc Gemini — KHONG phai truot",
@@ -207,7 +205,7 @@
     "ghi_chu": "DEF-04 tren mock: reason_code DUNG, gate G3 (cho quyet)"
   },
   "git": {
-    "head": "sau 8998a01 — Đ53 fallback Vyce",
+    "head": "sau 82842c6 — don DB + Golden tron",
     "remote": "origin https://github.com/AI20K-Build-Phase-Cohort-4/P-151.git · local main theo doi origin/feature/nhuy (DA PUSH 9ac796c) · origin/main = template Python rong (G38)"
   },
   "rules_added": {
@@ -232,6 +230,7 @@
     "smoke": "planning/01_2026-09-20_resident-agent-v1/evidence/so-deploy/smoke_prod.txt",
     "at": "2026-09-23T11:06:00+07:00",
     "moved_at": "2026-09-23T11:22:00+07:00",
-    "g08": "planning/01_2026-09-20_resident-agent-v1/evidence/so-deploy/g08_prod_answer_turn.txt"
+    "g08": "planning/01_2026-09-20_resident-agent-v1/evidence/so-deploy/g08_prod_answer_turn.txt",
+    "billing": "team resident-agent-demo: pro trialing, khong co payment method, het ~2026-10-07 — khong tinh tien"
   }
 }
