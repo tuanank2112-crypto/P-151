@@ -91,7 +91,10 @@ async function probe(def) {
     principal: DEMO_RESIDENT_PRINCIPAL,
   });
   const okReason = result.reason_code === def.expected_reason_code;
-  const okGate = result.gate_triggered === def.expected_gate;
+  // Đ55: expected_gate có thể là mảng các cổng được chấp nhận
+  const okGate = Array.isArray(def.expected_gate)
+    ? def.expected_gate.includes(result.gate_triggered)
+    : result.gate_triggered === def.expected_gate;
   const ok = okReason && okGate;
 
   if (ok) {

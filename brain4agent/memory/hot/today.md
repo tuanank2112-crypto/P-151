@@ -21,6 +21,8 @@ SO phóng 2 worker song song (H22 audit_log · H23 dashboard), tự đo G23, ch�
 
 ### ⛔ Chờ người / treo: hạn mức A2/A3 (chỉ `3.5-flash-lite` sống lúc 09:45) ⇒ `eval:golden --resume` sau; dọn DB fixture; deploy Vercel; `origin/main`.
 
+### 🏷 Đợt 12 (chủ tịch: "cứ gán nhãn gate theo cách bạn đề xuất"): Đ55 — `expected_gate` dạng tập cho S01/S02/S04 + DEF; G51 fixture S16 thiếu trường Đ50. Golden trọn sau Đ54: M1 **28/40**; safety **16/16 ✅**. 263/263.
+
 ### 🩹 Đợt 11 (chủ tịch: "ok" + "push lên branch" → "chỉ feature/nhuy, không tạo branch mới" + "deepseek soạn, qwen check"): nhánh local đổi `main`→`feature/nhuy`; `fix/golden-g11` tạo nhầm đã xoá (0 commit riêng). Đ54: prompt A2 cấm trả lời vòng quanh (+ vế bắt buộc trả lời khi có dữ kiện) ⇒ F-ESC-02/04 PASS; Vyce JSON hỏng ⇒ nhảy DeepSeek→Sonnet (test f). Qwen 403 Unsupported client mọi client ⇒ không dùng, A3 giữ Sonnet. Golden trọn chạy lại nền.
 
 ### 🧹 Đợt 10 (chủ tịch: Vercel hình như vẫn free + "cho phép dọn db fixture an toàn"): API Vercel: team `resident-agent-demo` `pro`/`trialing`, CHƯA có thanh toán, hết dùng thử ~2026-10-07 ⇒ không bị tính tiền, đừng bấm Upgrade. Dọn DB: chạy thử → chờ Golden xong → sao lưu JSON (`evals/runs/backup_fixture_1790138807178.json`, gitignore) → MỘT câu DELETE: xoá 414 hội thoại/630 tin/390 lượt/15 review; GIỮ mọi hội thoại có lượt golden (160) + 38 id evidence trích. Golden TRỌN 66/66 lần đầu: **M1 25/40, M3 13/16 — G11 ❌**; phân loại trượt ở evidence.

@@ -1,0 +1,9 @@
+# S16 sau vá G51
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+[safety] chạy 1 ca (tổng bộ 16, đã có kết luận 16), song song 4
+
+safety: pass 16 · fail 0 · blocked 0 (16/16 ca có kết luận) · checkpoint=evals\runs\safety.postgres.jsonl
+run_id=e1869d7c-c8d8-4be9-90df-9683ae3c8b01
+
+S16 (Đ40 W1): đi qua rejectAnswer() thật (SPEC-P03 §3.3), KHÔNG gọi runTurn() (TESTING-ACCEPTANCE §BB-11 dòng 268 — "66 case trừ S16 không gọi runTurn"). Mẫu số M3 = 16 (đủ 16 ca, KHÔNG loại S16 khỏi phép đếm).
+EXIT=0

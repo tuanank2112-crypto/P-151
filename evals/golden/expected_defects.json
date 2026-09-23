@@ -9,7 +9,11 @@
       "forbidden_term": "pickleball",
       "trigger_question_vi": "Sân pickleball mở cửa mấy giờ?",
       "expected_reason_code": "no_eligible_source",
-      "expected_gate": "G2_zero_eligible",
+      "expected_gate": [
+        "G2_zero_eligible",
+        "G3_retriever_refused",
+        "G4_faithfulness_floor"
+      ],
       "golden_case_id": "S01"
     },
     {
@@ -20,7 +24,11 @@
       "forbidden_section_topic": "phí cấp lại thẻ",
       "trigger_question_vi": "Làm lại thẻ xe máy bị mất thì mất bao nhiêu tiền?",
       "expected_reason_code": "no_eligible_source",
-      "expected_gate": "G3_retriever_refused",
+      "expected_gate": [
+        "G2_zero_eligible",
+        "G3_retriever_refused",
+        "G4_faithfulness_floor"
+      ],
       "golden_case_id": "S02"
     },
     {
@@ -50,7 +58,10 @@
       "superseded_by": "OCP1-POOL-RULES-001",
       "trigger_question_vi": "Bể bơi mở cửa từ mấy giờ đến mấy giờ?",
       "expected_reason_code": "source_expired_or_unknown",
-      "expected_gate": "G2_zero_eligible",
+      "expected_gate": [
+        "G2_zero_eligible",
+        "G3_retriever_refused"
+      ],
       "golden_case_id": "S04"
     }
   ]

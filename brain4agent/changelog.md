@@ -2,6 +2,17 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-23 (tiếp 11): nhãn gate dạng tập (Đ55), M3 đạt
+
+### Decisions
+- **Đ55**: `expected_gate` nhận mảng; S01/S02/S04 + DEF-01/02/04 dùng tập cổng từ chối.
+
+### Fixed
+- G51: fixture S16 trong `eval_golden.mjs` thiếu 6 trường Đ50 ⇒ NOT NULL.
+
+### Đo được
+Golden trọn sau Đ54: faq 34/50, **M1 28/40**; safety chấm lại **16/16 (M3 ✅)**; test **263/263** (DB rảnh; khi Golden chạy song song, 4 test Postgres đỏ giả vì tranh kết nối — G43).
+
 ## [Chưa phát hành] - 2026-09-23 (tiếp 10): vá Golden đợt 1 (Đ54)
 
 ### Fixed

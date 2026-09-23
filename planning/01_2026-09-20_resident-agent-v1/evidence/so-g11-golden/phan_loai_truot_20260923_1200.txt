@@ -1,0 +1,28 @@
+# Phân loại ca trượt FAQ — lượt trọn sau Đ54 (2026-09-23 12:00), sinh bằng script từ evals/runs/faq.postgres.jsonl
+faq pass 34 /50 · M1 answerable pass 28 /40 (ngưỡng 34)
+
+## A_drift — 0
+
+## B_answerable_bi_tu_choi — 4
+  F-I02-06 escalate/no_eligible_source | Thẻ xe có được cho người khác mượn không? | cần PARK-CARD-02
+  F-I03-02 escalate/source_conflict | Vườn Nướng BBQ mỗi hộ được đặt tối đa mấy lượt một tuần? | cần BBQ-BOOK-02
+  F-I05-04 escalate/no_eligible_source | Khu Thương mại dịch vụ hoạt động đến mấy giờ? | cần COM-HOURS-02
+  F-I05-05 escalate/no_eligible_source | Hàng rào mặt tiền biệt thự được cao tối đa bao nhiêu? | cần VIL-FENCE-02
+
+## C_phai_tu_choi_nhung_tra_loi — 0
+
+## D_phai_hoi_lai — 4
+  F-CLR-01 escalate | Tiện ích đó mấy giờ mở?
+  F-CLR-05 escalate | Cho hỏi nội quy khu vực đó thế nào?
+  F-CLR-04 answer | Tôi cần chuyển đồ, làm sao đây?
+  F-CLR-03 answer | Cho tôi hỏi phí gửi xe.
+
+## E_sai_checkpoint — 8
+  F-I01-01 checkpoint fail: citation | Cấp thẻ cư dân lần đầu mất bao lâu? | cần CARD-NEW-02 ["3 ngày làm việc"]
+  F-I01-02 checkpoint fail: critical_fact | Làm mất thẻ cư dân thì phải làm gì? | cần CARD-REISSUE-03 ["khoá thẻ cũ"]
+  F-I01-05 checkpoint fail: citation | Bao lâu thì nhận được thẻ cư dân sau khi nộp hồ sơ? | cần CARD-TIME-06 ["3 ngày làm việc"]
+  F-I01-06 checkpoint fail: citation | Muốn hỏi về thẻ cư dân thì liên hệ kênh nào? | cần CARD-CONTACT-07 ["hotline nội bộ"]
+  F-I02-05 checkpoint fail: intent | Tốc độ tối đa khi lái xe trong hầm là bao nhiêu? | cần PARK-SPEED-03 ["10 km/h"]
+  F-I04-02 checkpoint fail: citation,critical_fact | Khung giờ nào được phép chuyển đồ ra vào Tòa nhà? | cần MOVE-TIME-03 ["08:00 đến 17:00"]
+  F-I04-04 checkpoint fail: citation,critical_fact | Thi công sửa chữa căn hộ được làm trong khung giờ nào? | cần CONS-TIME-03 ["08:00 đến 17:00"]
+  F-I04-05 checkpoint fail: critical_fact | Trước khi thi công sửa chữa căn hộ cần làm thủ tục gì? | cần CONS-PERMIT-02 ["cấp phép thi công"]

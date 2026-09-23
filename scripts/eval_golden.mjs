@@ -286,6 +286,14 @@ async function judgeS16ViaReject(c) {
     gate_triggered: null,
     citations: [],
     claims: [],
+    // Đ50/H25 bắt buộc 6 trường này; file .mjs KHÔNG qua tsc nên phải ghi tay
+    // (thiếu ⇒ NULL vào cột NOT NULL — G51). S16 không qua truy hồi ⇒ mặc định tường minh.
+    pipeline_steps: [],
+    s1_retrieval_top1: 0,
+    s2_eligible_ratio: 0,
+    s3_faithfulness: 0,
+    s4_conflict: false,
+    rejection_histogram: {},
     latency_ms: 0,
     is_golden_run: true,
     golden_case_id: c.case_id,

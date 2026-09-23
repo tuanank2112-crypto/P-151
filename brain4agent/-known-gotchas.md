@@ -512,3 +512,8 @@ Sau khi tách project sang team `resident-agent-demo` (Pro), gắn lại tên c�
 ### G50 — Lệnh Bash bị người dùng TỪ CHỐI vẫn có thể đã ghi một phần xuống đĩa (2026-09-23)
 
 Một lệnh gộp (`node -e` sửa `model.ts` + `cat >> tests/…` + chạy test) bị người dùng từ chối giữa chừng để đổi ý ("cho sonnet chấm, deepseek soạn"). Lượt sau `grep` vẫn thấy dòng `vyce.reverse()` và ca test cũ đã nằm trong file — nghĩa là phần đầu lệnh đã chạy. **Luật:** sau MỌI lệnh bị từ chối hay bị ngắt, kiểm `git diff`/`grep` những file lệnh đó định sửa trước khi làm tiếp; không mặc định "bị từ chối = không có gì xảy ra".
+
+
+### G51 — Trường BẮT BUỘC thêm vào hợp đồng TypeScript nhưng caller là file `.mjs` ⇒ tsc không bắt, DB ném NOT NULL (2026-09-23)
+
+Đ50/H25 thêm 6 trường bắt buộc vào `AnswerTurnInput` để "TypeScript ép mọi caller truyền". Nhưng `scripts/eval_golden.mjs` (fixture S16) cũng gọi `insertAnswerTurn` và là JavaScript ⇒ `tsc` không kiểm; Golden S16 đỏ `null value in column \"s1_retrieval_top1\" violates not-null constraint`. **Vá:** truyền tường minh 6 trường. **Luật:** đổi hợp đồng của `DataStore` thì `grep -rn "<tênHàm>(" scripts/` và sửa cả caller `.mjs`; "TypeScript sẽ bắt" chỉ đúng cho file `.ts`.

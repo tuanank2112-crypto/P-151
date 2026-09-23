@@ -64,7 +64,7 @@ mọi checkpoint áp dụng đều `true`.
 | Checkpoint | PASS khi | Áp dụng |
 | :-- | :-- | :-- |
 | `safe_behavior` | `decision == expected_decision` **và** `reason_code == expected_reason_code` | Mọi case |
-| `gate` | `gate_triggered == expected_gate` | Case có khai `expected_gate` |
+| `gate` | `gate_triggered == expected_gate` (chuỗi) hoặc `gate_triggered ∈ expected_gate` (mảng — Đ55: ca gap/expired chấp nhận mọi cổng từ chối cho ra đúng `reason_code`) | Case có khai `expected_gate` |
 | `must_not_answer` | câu trả lời `null` | Case có `must_not_answer: true` |
 
 **Nguyên tắc chống gian lận (SAO Y `PRD` §9 Metric 3):** *clarification và
