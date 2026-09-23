@@ -739,6 +739,18 @@ Ba agent rà độc lập + SO đo lại (`brain4agent/memory/hot/today.md` phi�
 
 **Lật được:** mục 1 khi 3.5-flash hồi (đổi lại một dòng env). Mục 2–4 không. **Chi phí lật mục 2:** hàng đợi HITL lại rỗng vĩnh viễn.
 
+### Đ53 — 2026-09-23 · Vyce làm FALLBACK sau chuỗi Gemini (LẬT Đ22 có điều kiện); DeepSeek soạn, Sonnet chấm
+
+**Bối cảnh:** key Gemini free chỉ hồi vài lời gọi rồi 429 ⇒ Golden (~200 lời gọi) không bao giờ xong, demo trực tiếp dễ chết ở A2. Chủ tịch: "key vyce đi lấy nó mà làm fallback", rồi chốt "cho sonnet chấm, deepseek soạn".
+
+**Đo lại Vyce trước khi nối (`evidence/so-vyce/`):** chỉ dẫn schema ở vai `system` bị bỏ qua (trả văn xuôi vỡ chữ); đặt ở vai `user` ⇒ 6/6 JSON đúng (`claude-sonnet-4-6`, `deepseek-v4.1`, `deepseek-v4-flash` mỗi model 2/2); `qwen3.8-flash` 403.
+
+**Quyết định:** (1) `lib/adapters/model.ts` — Vyce CHỈ chạy khi CẢ chuỗi Gemini của agent đó 429/503; schema ghi vào prompt vai `user`, output vẫn qua đúng Zod của agent ⇒ lệch là `ContractDriftError` (vá đúng lý do Đ22). (2) Cấu hình `VYCE_API_KEY`, `MODEL_FALLBACK_VYCE` (chung), `MODEL_FALLBACK_VYCE_A2=deepseek-v4.1,claude-sonnet-4-6`, `MODEL_FALLBACK_VYCE_A3=claude-sonnet-4-6,deepseek-v4.1` — DeepSeek SOẠN, Sonnet CHẤM (chủ tịch chốt). (3) `steps.model` mang tiền tố `vyce:`; mọi báo cáo Golden PHẢI tách số theo model thật. (4) Lỗi bơm có chủ đích (`forceUpstreamError`, Golden S14) KHÔNG được Vyce "chữa". (5) Bộ test ghim tắt Vyce. Đo: 5 test mới (từng đỏ), 258/258, lượt thật ép Gemini 429 ⇒ `draft=vyce:deepseek-v4.1`, `verify=vyce:claude-sonnet-4-6`, `answer` + `POOL-SAFE-03`.
+
+**Quyết định bị thay thế:** Đ22 mục "không thêm nhánh Vyce vào adapter" — thay bằng Đ53 (chỉ làm fallback, có Zod). Bảng so sánh của Đ22 vẫn đúng và là lý do của các ràng buộc ở trên.
+
+**Lật được:** có — xoá `MODEL_FALLBACK_VYCE*` là về hành vi cũ, không cần sửa mã. **Chi phí lật:** gần 0.
+
 ### Đ52 — 2026-09-23 · TÁCH project sang team Vercel riêng `resident-agent-demo`
 
 **Bối cảnh:** chủ tịch hỏi deploy có ảnh hưởng project ListenAI (`listena`, cùng team `n-listen-ai`) không; đo: không (project, biến, URL riêng; 0 domain), nhưng dùng chung hạn mức Hobby của team. Chủ tịch chốt "tách sang team riêng".

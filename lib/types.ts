@@ -113,7 +113,16 @@ export interface PipelineStep {
   ok: boolean;
   ms: number;
   /** Union 3 ID Gemini đã chốt — xem `lib/adapters/model.ts` (BB-07.a, Đ17). */
-  model?: "gemini-3.5-flash-lite" | "gemini-3.5-flash" | "gemini-3.6-flash" | "gemini-2.5-flash";
+  model?:
+    | "gemini-3.5-flash-lite"
+    | "gemini-3.5-flash"
+    | "gemini-3.6-flash"
+    | "gemini-2.5-flash"
+    // Đ53 — fallback Vyce khi cả chuỗi Gemini 429/503; tiền tố `vyce:` để
+    // báo cáo/Golden luôn biết lượt nào KHÔNG chạy bằng Gemini.
+    | "vyce:claude-sonnet-4-6"
+    | "vyce:deepseek-v4.1"
+    | "vyce:deepseek-v4-flash";
   input_tokens?: number;
   output_tokens?: number;
   note?: string;

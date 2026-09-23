@@ -34,6 +34,9 @@ const files = matched.map((f) => path.join("tests", f));
 const result = spawnSync(process.execPath, ["--test", ...files], {
   stdio: "inherit",
   cwd: path.join(__dirname, ".."),
-  env: { ...process.env, DATA_BACKEND: "mock" },
+  // Đ53: tắt fallback Vyce trong bộ test — `.env.local` có thể bật nó cho
+  // demo; test chuỗi dự phòng Gemini đếm số lời gọi transport và sẽ lệch nếu
+  // Vyce chen vào. Test riêng của Vyce tự đặt biến trong mã.
+  env: { ...process.env, DATA_BACKEND: "mock", MODEL_FALLBACK_VYCE: "", MODEL_FALLBACK_VYCE_A1: "", MODEL_FALLBACK_VYCE_A2: "", MODEL_FALLBACK_VYCE_A3: "" },
 });
 process.exitCode = result.status ?? 1;

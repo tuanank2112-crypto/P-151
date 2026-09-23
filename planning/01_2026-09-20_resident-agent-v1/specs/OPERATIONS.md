@@ -48,6 +48,8 @@ ngày liền không deploy được là tín hiệu đỏ, dừng viết tính n
 | `RETRIEVAL_MODE` | ✅ | **Vercel = `hybrid`; local = `hybrid`** | `01-CONTRACTS.md` §4.1. Đặt `lexical` là đường lùi tức thì khi hạn mức embedding căng `[Đ18]` |
 | `SEED_RESIDENT_PASSWORD` | ✅ | chỉ khi seed | Mật khẩu demo |
 | `SEED_BQL_PASSWORD` | ✅ | chỉ khi seed | Mật khẩu demo |
+| `VYCE_API_KEY` | ❌ | Vercel + `.env.local` | Đ53 — chỉ dùng khi bật fallback Vyce. Đọc DUY NHẤT ở `lib/adapters/model.ts` |
+| `MODEL_FALLBACK_VYCE` / `_A1` / `_A2` / `_A3` | ❌ | Vercel + `.env.local` | Đ53 — chuỗi model Vyce (id không tiền tố) chạy SAU khi cả chuỗi Gemini 429/503. Chủ tịch chốt: `_A2=deepseek-v4.1,claude-sonnet-4-6` (soạn), `_A3=claude-sonnet-4-6,deepseek-v4.1` (chấm). Trống ⇒ tắt |
 | `GOLDEN_CONCURRENCY` | ❌ | chỉ local | Số lời gọi song song của bộ chạy Golden. Mặc định **4**, **chặn cứng trong khoảng 3–5** `[Đ19]` |
 | `KILL_SWITCH_AGENTS` | ❌ | Vercel | `1` ⇒ bật chế độ dự phòng, xem §7 |
 | `DEMO_CLOCK_ISO` | ❌ | chỉ local | Ghi đè `now()` cho kịch bản 23:39 (`SPEC-P05` §9). **CẤM đặt trên Vercel** |

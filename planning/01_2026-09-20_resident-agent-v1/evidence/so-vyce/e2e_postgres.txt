@@ -1,0 +1,21 @@
+# probe trực tiếp Vyce 2026-09-23 (xem lượt thử ở phiên): system-role bỏ qua schema; user-role 6/6 JSON đúng (sonnet-4-6 2/2, deepseek-v4.1 2/2, deepseek-v4-flash 2/2); qwen3.8-flash 403 unsupported_client
+
+$ DATA_BACKEND=postgres node --env-file=.env.local scripts/trace_sample.mjs --q '<câu bể bơi>'
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+question: Trẻ em dưới 12 tuổi có được vào bể bơi một mình không?
+--- A1 classifier (chặng safety+intent) ---
+  step=safety ok=true model=gemini-3.5-flash-lite ms=1374
+  input_tokens=1015 output_tokens=118
+--- A2 retriever (chặng draft) ---
+  step=draft ok=true model=gemini-2.5-flash ms=4779
+  input_tokens=1151 output_tokens=242
+--- A3 verifier (chặng verify) ---
+  step=verify ok=true model=gemini-3.5-flash-lite ms=1767
+  input_tokens=680 output_tokens=124
+--- kết quả ---
+decision=answer reason_code=—
+gate_triggered=—
+citations=["POOL-SAFE-03"]
+steps=validate > safety > intent > context > risk > retrieval > eligibility > draft > verify
+G08: 3/3 khối có model+ms
+EXIT=0

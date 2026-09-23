@@ -51,6 +51,8 @@ plan.md` §2 (Đ01–Đ50) → `specs/00-ARCHITECTURE.md` → 8 file SPEC còn l
   (`SIM-1.0.0`), CẤM sửa thẳng DB. Ngoại lệ: upload/đổi version qua Console BQL
   là ghi trực tiếp DB — dữ liệu VẬN HÀNH, không phải tri thức gốc. DDL/contract:
   `specs/01-CONTRACTS.md`.
+- Fallback (Đ53): cả chuỗi Gemini 429/503 ⇒ Vyce (schema trong prompt + Zod); DeepSeek
+  SOẠN A2, Sonnet CHẤM A3 (chủ tịch chốt); steps ghi `vyce:<model>`; test ghim tắt.
 - Model (D17, GEMINI_API_KEY o .env.local): A1 `gemini-3.5-flash-lite` · A2
   `gemini-3.5-flash` · A3 `gemini-2.5-flash`. CAM `3.7`/`3.8-flash` (503) va moi bac Pro
   (429 — sau cong thanh toan) => A2 mat model manh, rui ro vao faithfulness.
@@ -82,7 +84,6 @@ plan.md` §2 (Đ01–Đ50) → `specs/00-ARCHITECTURE.md` → 8 file SPEC còn l
 - `-known-gotchas.md`: Tổng hợp các lỗi khó, lưu ý dị biệt.
 - `-data-architecture.md`: Kiến trúc Database và Flow dữ liệu.
 </brain_file_roles>
-
 <memory_management>
 - Source of Truth: 1. Code hiện tại -> 2. Docs commit -> 3. `memory-distill.txt` -> 4. `changelog.md`.
 - SemVer 2.0.0: Tự động phân loại MAJOR (vX.0.0), MINOR (vx.Y.0), PATCH (vx.y.Z) và đồng bộ file cấu hình.

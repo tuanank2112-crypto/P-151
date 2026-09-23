@@ -1,0 +1,20 @@
+# Ép nhánh Vyce trên mạng thật: A2/A3 chỉ dùng model đang 429 (gemini-3.5-flash, gemini-2.5-flash — probe ngay trước: 429/429)
+$ MODEL_A2=gemini-3.5-flash MODEL_A3=gemini-2.5-flash DATA_BACKEND=postgres node --env-file=.env.local scripts/trace_sample.mjs --q '<câu bể bơi>'
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+question: Trẻ em dưới 12 tuổi có được vào bể bơi một mình không?
+--- A1 classifier (chặng safety+intent) ---
+  step=safety ok=true model=gemini-3.5-flash-lite ms=1505
+  input_tokens=1015 output_tokens=118
+--- A2 retriever (chặng draft) ---
+  step=draft ok=true model=vyce:claude-sonnet-4-6 ms=10790
+  input_tokens=1498 output_tokens=302
+--- A3 verifier (chặng verify) ---
+  step=verify ok=true model=vyce:claude-sonnet-4-6 ms=10817
+  input_tokens=1276 output_tokens=263
+--- kết quả ---
+decision=answer reason_code=—
+gate_triggered=—
+citations=["POOL-SAFE-03"]
+steps=validate > safety > intent > context > risk > retrieval > eligibility > draft > verify
+G08: 3/3 khối có model+ms
+EXIT=0

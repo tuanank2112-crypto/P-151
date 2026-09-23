@@ -1,0 +1,20 @@
+# Chủ tịch chốt: DeepSeek soạn (A2), Sonnet chấm (A3). Ép A2/A3 vào model Gemini đang 429.
+$ MODEL_A2=gemini-3.5-flash MODEL_A3=gemini-2.5-flash DATA_BACKEND=postgres node … scripts/trace_sample.mjs --q '<câu bể bơi>'
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+question: Trẻ em dưới 12 tuổi có được vào bể bơi một mình không?
+--- A1 classifier (chặng safety+intent) ---
+  step=safety ok=true model=gemini-3.5-flash-lite ms=1450
+  input_tokens=1015 output_tokens=179
+--- A2 retriever (chặng draft) ---
+  step=draft ok=true model=vyce:deepseek-v4.1 ms=17409
+  input_tokens=1498 output_tokens=237
+--- A3 verifier (chặng verify) ---
+  step=verify ok=true model=vyce:claude-sonnet-4-6 ms=7706
+  input_tokens=1222 output_tokens=105
+--- kết quả ---
+decision=answer reason_code=—
+gate_triggered=—
+citations=["POOL-SAFE-03"]
+steps=validate > safety > intent > context > risk > retrieval > eligibility > draft > verify
+G08: 3/3 khối có model+ms
+EXIT=0

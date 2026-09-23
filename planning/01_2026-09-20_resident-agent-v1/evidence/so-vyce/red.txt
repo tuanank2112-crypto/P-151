@@ -1,0 +1,11 @@
+# PHÁ TẠM: vyce = [] (tắt fallback)
+✖ Đ53 (a) cả chuỗi Gemini 429 ⇒ gọi Vyce, trả model có tiền tố vyce:, JSON bóc khỏi rào ``` (26.2479ms)
+✖ Đ53 (b) Vyce trả văn xuôi ⇒ ContractDriftError qua Zod (không xanh giả — Đ22) (1.9112ms)
+✔ Đ53 (c) thiếu VYCE_API_KEY ⇒ KHÔNG gọi Vyce, ném 429 như cũ (1.727ms)
+✔ Đ53 (d) lỗi bơm có chủ đích (forceUpstreamError) KHÔNG được Vyce chữa (0.7228ms)
+ℹ tests 4
+ℹ pass 2
+ℹ fail 2
+✖ failing tests:
+✖ Đ53 (a) cả chuỗi Gemini 429 ⇒ gọi Vyce, trả model có tiền tố vyce:, JSON bóc khỏi rào ``` (26.2479ms)
+✖ Đ53 (b) Vyce trả văn xuôi ⇒ ContractDriftError qua Zod (không xanh giả — Đ22) (1.9112ms)

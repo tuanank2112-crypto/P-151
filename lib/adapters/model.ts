@@ -23,6 +23,50 @@ export type SupportedModel =
   | "gemini-3.6-flash" // A2 dự phòng (G34, đo 2026-09-23: 3.5-flash 429/503 liên tục, 3.6-flash 200)
   | "gemini-2.5-flash"; // A3 verifier
 
+/**
+ * Đ53 (2026-09-23, chủ tịch chốt "lấy key Vyce làm fallback"): model Vyce
+ * CHỈ được gọi khi CẢ chuỗi Gemini của agent đó đều 429/503. Đ22 từng bác
+ * Vyce vì `response_format.json_schema` bị bỏ qua âm thầm — nên ở đây KHÔNG
+ * dựa vào tham số đó: schema ghi thẳng vào prompt (vai `user` — đo
+ * 2026-09-23: chỉ dẫn ở vai `system` bị bỏ qua, ở vai `user` 6/6 lần ra JSON
+ * đúng), và output vẫn đi qua đúng Zod của từng agent ⇒ lệch schema là
+ * `ContractDriftError`, không bao giờ xanh giả. Bằng chứng đo:
+ * `evidence/so-vyce/probe.txt`.
+ */
+export type VyceModel = "vyce:claude-sonnet-4-6" | "vyce:deepseek-v4.1" | "vyce:deepseek-v4-flash";
+export const ALLOWED_VYCE_MODELS: readonly VyceModel[] = [
+  "vyce:claude-sonnet-4-6",
+  "vyce:deepseek-v4.1",
+  "vyce:deepseek-v4-flash",
+];
+export const VYCE_BASE = "https://vyceai.com/v1" as const;
+/** Trần song song gói free của Vyce (Đ22: thông điệp lỗi nói thẳng 4). */
+export const VYCE_MAX_CONCURRENCY = 4;
+export type AnyModel = SupportedModel | VyceModel;
+
+/**
+ * Chuỗi fallback Vyce từ `MODEL_FALLBACK_VYCE` (phẩy, id KHÔNG có tiền tố,
+ * vd `claude-sonnet-4-6,deepseek-v4.1`). Rỗng khi biến trống HOẶC thiếu
+ * `VYCE_API_KEY` — fallback là tuỳ chọn, thiếu key thì hành vi y như cũ.
+ */
+export function vyceFallbackChain(agent?: "A1" | "A2" | "A3"): VyceModel[] {
+  // Chủ tịch chốt 2026-09-23: DeepSeek SOẠN (A2), Sonnet CHẤM (A3) — cấu hình
+  // bằng `MODEL_FALLBACK_VYCE_A2` / `_A3`; thiếu thì dùng chuỗi chung.
+  const perAgent = agent ? process.env[`MODEL_FALLBACK_VYCE_${agent}`]?.trim() : "";
+  const raw = perAgent || process.env.MODEL_FALLBACK_VYCE?.trim();
+  if (!raw || !process.env.VYCE_API_KEY) return [];
+  return raw.split(",").map((s) => s.trim()).filter(Boolean).map((id) => {
+    const m = `vyce:${id}` as VyceModel;
+    if (!(ALLOWED_VYCE_MODELS as readonly string[]).includes(m)) {
+      throw new Error(
+        `MODEL_FALLBACK_VYCE chứa "${id}" không nằm trong ALLOWED_VYCE_MODELS ` +
+          `(${ALLOWED_VYCE_MODELS.join(", ")}). CẤM dùng model chưa có bằng chứng đo.`
+      );
+    }
+    return m;
+  });
+}
+
 /** Vùng cấm model — CẤM dùng cho đường găng (P02-C13, C-09). Chỉ liệt kê để
  *  các script probe/kiểm tra được đối chiếu; KHÔNG có ở trong SupportedModel. */
 export const FORBIDDEN_MODELS = ["gemini-3.7-flash", "gemini-3.8-flash"] as const;
@@ -216,6 +260,7 @@ class Semaphore {
   }
 }
 const semaphore = new Semaphore(MAX_CONCURRENCY);
+const vyceSemaphore = new Semaphore(VYCE_MAX_CONCURRENCY);
 
 function getApiKey(): string {
   const key = process.env.GEMINI_API_KEY;
@@ -379,6 +424,74 @@ async function callGeminiOnce(
   return { raw, input_tokens, output_tokens, ms };
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// Đ53 — Vyce (OpenAI-compatible), CHỈ làm fallback
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Bóc JSON khỏi rào \`\`\`json … \`\`\` hoặc văn bản bao quanh; KHÔNG sửa nội dung. */
+function extractJsonText(content: string): string {
+  const t = content.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
+  const a = t.indexOf("{");
+  const b = t.lastIndexOf("}");
+  return a >= 0 && b > a ? t.slice(a, b + 1) : t;
+}
+
+async function callVyceOnce(
+  model: VyceModel,
+  systemPromptVi: string,
+  userPayload: unknown,
+  responseSchema: unknown,
+  maxOutputTokens: number
+): Promise<GeminiCallResult> {
+  const started = Date.now();
+  const key = process.env.VYCE_API_KEY;
+  if (!key) throw new UpstreamAuthError();
+  const prompt =
+    `${systemPromptVi}\n\n## ĐỊNH DẠNG TRẢ LỜI — BẮT BUỘC\n` +
+    `Trả về DUY NHẤT một object JSON hợp lệ (không văn xuôi, không markdown, không rào code), ` +
+    `đúng schema OpenAPI sau (kiểu viết HOA = kiểu JSON tương ứng; mọi trường trong "required" phải có; ` +
+    `giá trị enum phải lấy ĐÚNG một trong danh sách):\n${JSON.stringify(responseSchema)}\n\n` +
+    `## DỮ LIỆU VÀO\n${JSON.stringify(userPayload)}`;
+  const body = {
+    model: model.slice("vyce:".length),
+    temperature: 0,
+    max_tokens: maxOutputTokens,
+    messages: [{ role: "user", content: prompt }],
+  };
+  let res: Response;
+  try {
+    res = await vyceSemaphore.run(() =>
+      fetchImpl(`${VYCE_BASE}/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+        body: JSON.stringify(body),
+      })
+    );
+  } catch (e) {
+    throw new UpstreamModelError(`fetch Vyce thất bại: ${(e as Error).message}`);
+  }
+  const ms = Date.now() - started;
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw classifyHttpError(res.status, text);
+  }
+  const json = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  };
+  const choice = json.choices?.[0];
+  if (!choice) throw new ContractDriftError("Vyce: không có choices[0]");
+  if (choice.finish_reason && choice.finish_reason !== "stop") {
+    throw new ContractDriftError(`Vyce finish_reason=${choice.finish_reason}`);
+  }
+  return {
+    raw: extractJsonText(choice.message?.content ?? ""),
+    input_tokens: json.usage?.prompt_tokens ?? 0,
+    output_tokens: json.usage?.completion_tokens ?? 0,
+    ms,
+  };
+}
+
 async function callGemini(
   model: SupportedModel,
   systemPromptVi: string,
@@ -421,12 +534,15 @@ async function callGeminiChain(
   responseSchema: unknown,
   maxOutputTokens: number,
   forceUpstreamError?: ForceUpstreamError
-): Promise<GeminiCallResult & { model: SupportedModel }> {
+): Promise<GeminiCallResult & { model: AnyModel }> {
   const chain = agentModelChain(agent);
+  // Đ53: bơm lỗi giả (test/Golden S14) KHÔNG được "chữa" bằng Vyce — ca đó
+  // kiểm hành vi khi nhà cung cấp hỏng, fallback sẽ nuốt mất nó (cùng họ G30).
+  const vyce = forceUpstreamError ? [] : vyceFallbackChain(agent);
   let lastErr: unknown;
   for (let i = 0; i < chain.length; i++) {
     const model = chain[i]!;
-    const isLast = i === chain.length - 1;
+    const isLast = i === chain.length - 1 && vyce.length === 0;
     try {
       const r = await callGemini(
         model,
@@ -445,12 +561,28 @@ async function callGeminiChain(
       if (!canFallOver) throw err;
     }
   }
+  for (let j = 0; j < vyce.length; j++) {
+    const model = vyce[j]!;
+    const isLast = j === vyce.length - 1;
+    try {
+      const r = await withUpstreamRetry(
+        () => callVyceOnce(model, systemPromptVi, userPayload, responseSchema, maxOutputTokens),
+        { rateLimitRetries: isLast ? undefined : 0 }
+      );
+      return { ...r, model };
+    } catch (err) {
+      lastErr = err;
+      const canFallOver =
+        !isLast && (err instanceof UpstreamRateLimited || err instanceof UpstreamOverloaded);
+      if (!canFallOver) throw err;
+    }
+  }
   throw lastErr;
 }
 
 /** CHỈ dùng trong tests/: gọi thẳng một lần, không qua retry — để kiểm
  *  classifyHttpError và lớp lỗi ném ra ứng với từng mã HTTP. */
-export const __internal = { callGeminiOnce, callGemini, withUpstreamRetry, classifyHttpError };
+export const __internal = { callGeminiOnce, callGemini, withUpstreamRetry, classifyHttpError, callGeminiChain, callVyceOnce, extractJsonText };
 
 // ─────────────────────────────────────────────────────────────────────────
 // Embedding — 01-CONTRACTS.md §4.3
@@ -720,7 +852,7 @@ export async function runClassifier(
   input_tokens: number;
   output_tokens: number;
   ms: number;
-  model: SupportedModel;
+  model: AnyModel;
 }> {
   const { raw, input_tokens, output_tokens, ms, model } = await callGeminiChain(
     "A1",
@@ -824,7 +956,7 @@ export async function runRetriever(
   input_tokens: number;
   output_tokens: number;
   ms: number;
-  model: SupportedModel;
+  model: AnyModel;
 }> {
   const { raw, input_tokens, output_tokens, ms, model } = await callGeminiChain(
     "A2",
@@ -912,7 +1044,7 @@ export async function runVerifier(
   input_tokens: number;
   output_tokens: number;
   ms: number;
-  model: SupportedModel;
+  model: AnyModel;
 }> {
   const { raw, input_tokens, output_tokens, ms, model } = await callGeminiChain(
     "A3",

@@ -507,3 +507,8 @@ Worker H24 muốn đo baseline `tsc` trên HEAD sạch nên chạy `git stash` t
 ### G49 — `vercel alias set` gán tay một `*.vercel.app` cho team Pro ⇒ URL bị SSO chặn (302 → vercel.com/sso-api), trong khi alias production vẫn 200 (2026-09-23)
 
 Sau khi tách project sang team `resident-agent-demo` (Pro), gắn lại tên cũ bằng `vercel alias set <deployment> resident-agent-p151.vercel.app` ⇒ `/login` 404/302, `/api/chat` 401: Vercel coi alias gán tay là tên miền KHÔNG phải production nên áp "Vercel Authentication" mặc định của team Pro. **Vá:** `vercel domains add resident-agent-p151.vercel.app resident-agent-p151 --scope resident-agent-demo` (gắn làm tên miền của project) ⇒ 200. **Luật:** đo URL công khai bằng `curl -sI` và nhìn `Location`; 302 sang `sso-api` nghĩa là giám khảo không mở được, dù deploy "Success".
+
+
+### G50 — Lệnh Bash bị người dùng TỪ CHỐI vẫn có thể đã ghi một phần xuống đĩa (2026-09-23)
+
+Một lệnh gộp (`node -e` sửa `model.ts` + `cat >> tests/…` + chạy test) bị người dùng từ chối giữa chừng để đổi ý ("cho sonnet chấm, deepseek soạn"). Lượt sau `grep` vẫn thấy dòng `vyce.reverse()` và ca test cũ đã nằm trong file — nghĩa là phần đầu lệnh đã chạy. **Luật:** sau MỌI lệnh bị từ chối hay bị ngắt, kiểm `git diff`/`grep` những file lệnh đó định sửa trước khi làm tiếp; không mặc định "bị từ chối = không có gì xảy ra".

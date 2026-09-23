@@ -67,6 +67,10 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 
 ## Đã hoàn thành (Done)
 
+- [x] **Fallback Vyce (2026-09-23, Đ53):** Gemini 429/503 ⇒ Vyce; DeepSeek soạn, Sonnet chấm;
+  Zod giữ nguyên nên lệch schema là lỗi rõ. 258/258; lượt thật + production. Golden chạy lại với
+  fallback (xem G11). Mọi báo cáo Golden phải tách số theo model thật (`steps.model`).
+
 - [x] **P03 — màn loại mục khỏi trả lời (2026-09-23, H26/R30):** `/documents` có panel chọn
   tài liệu → liệt kê mục → "Loại khỏi trả lời" (bắt buộc lý do) / "Đưa lại"; `listSectionsForConsole`
   trong `bql-store.ts`, 2 action mới đều qua `checkBqlAuthz` (6/6). SO đo lại: tsc 0 · **253/253** · BB 0.

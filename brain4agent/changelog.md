@@ -2,6 +2,17 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-23 (tiếp 9): fallback Vyce (Đ53)
+
+### Decisions
+- **Đ53** lật Đ22 có điều kiện: Vyce chỉ làm fallback sau chuỗi Gemini, schema trong prompt vai `user`, output qua Zod; DeepSeek soạn (A2), Sonnet chấm (A3).
+
+### Added
+- `lib/adapters/model.ts`: `VyceModel`, `vyceFallbackChain(agent)`, `callVyceOnce` (semaphore 4), `extractJsonText`; `lib/types.ts` `PipelineStep.model` thêm 3 id `vyce:*`; `tests/vyce-fallback.test.ts` (5 ca, từng đỏ); biến `VYCE_API_KEY`, `MODEL_FALLBACK_VYCE[_A1|_A2|_A3]` (OPERATIONS §3) — đã nạp lên Vercel team `resident-agent-demo`.
+
+### Đo được
+tsc 0 · **258/258** · BB 0/0/0 · lượt thật ép Gemini 429 ⇒ `draft=vyce:deepseek-v4.1` 17,4 s, `verify=vyce:claude-sonnet-4-6` 7,7 s, `answer` + `POOL-SAFE-03` · production deploy lại, `/login` 200, `listena` không đổi.
+
 ## [Chưa phát hành] - 2026-09-23 (tiếp 8): tách team Vercel + G08 xanh
 
 ### Decisions
