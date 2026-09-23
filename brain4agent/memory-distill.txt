@@ -89,9 +89,8 @@ plan.md` §2 (Đ01–Đ50) → `specs/00-ARCHITECTURE.md` → 8 file SPEC còn l
 - Source of Truth: 1. Code hiện tại -> 2. Docs commit -> 3. `memory-distill.txt` -> 4. `changelog.md`.
 - SemVer 2.0.0: Tự động phân loại MAJOR (vX.0.0), MINOR (vx.Y.0), PATCH (vx.y.Z) và đồng bộ file cấu hình.
 - `memory-distill.txt` là kernel hiện trạng, luôn < 100 dòng, ghi đè thay vì append.
-- MỖI COMMIT = MỘT LẦN CẬP NHẬT NÃO (AGENTS.md §5.D.4; hook pre-commit CHẶN — `scripts/setup_brain_hook.sh`): commit nào cũng kèm
-  `today.md` + `state.json` (+ kernel/roadmap/changelog/index/gotchas khi chạm) — không có
-  commit "code trước, não sau". Hook AI-log của BTC GIỮ NGUYÊN (chủ tịch chốt 23/09).
+- MỖI COMMIT = MỘT LẦN CẬP NHẬT NÃO (AGENTS §5.D.4; hook pre-commit CHẶN, `scripts/setup_brain_hook.sh`):
+  kèm `today.md`+`state.json` (+ file não khác khi chạm). Hook AI-log BTC GIỮ NGUYÊN (23/09).
 - Không dùng file nháp task.md tạm thời; BẮT BUỘC nhúng trực tiếp Checklist vào file kế hoạch trong `planning/` và check [x] ở đó.
 - Toàn bộ skill dự án bắt buộc 100% nằm trong `.agents/skills/<name>/` (Single Skill Vault Invariant).
 - Đề xuất commit bằng lời tiếng Việt (KHÔNG thẻ hỏi — Luật L.2); commit message 100% Tiếng Anh (Conventional Commits).
