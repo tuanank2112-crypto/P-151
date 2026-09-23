@@ -830,9 +830,19 @@ export interface ClassifierInput {
 const CLASSIFIER_SYSTEM_PROMPT_VI = `Bạn phân loại câu hỏi của cư dân một khu đô thị.
 
 BẮT BUỘC:
-- Gán intent đúng MỘT trong: I-01 (thẻ cư dân/ra vào), I-02 (phương tiện/thẻ xe),
-  I-03 (tiện ích chung), I-04 (chuyển đồ/thi công), I-05 (nội quy sinh hoạt),
+- Gán intent đúng MỘT trong (Đ57 — khớp bảng tài liệu SPEC-P00 §3):
+  I-01 thẻ cư dân: cấp mới, cấp lại, phí thẻ, thời gian nhận thẻ, liên hệ về thẻ, ra vào.
+  I-02 xe và bãi xe: MỌI câu về xe — nội quy trông giữ xe (tốc độ trong hầm, đỗ sai chỗ,
+       chắn lối thoát hiểm, cho mượn/mất thẻ xe, trạm sạc), biểu phí gửi xe.
+  I-03 tiện ích có tên: bể bơi, khu thể thao, BBQ, kayak, biển hồ, sàn câu cá, sân chơi
+       trẻ em, gym ngoài trời — nội quy, giờ, đặt/huỷ/xem chỗ.
+  I-04 chuyển đồ ra/vào tòa nhà; thi công sửa chữa căn hộ (khung giờ, thủ tục, phế thải).
+  I-05 nội quy tòa nhà và khu vực khác: sinh hoạt chung, thú cưng, Khu Thương mại dịch vụ,
+       Khu Biệt thự/Nhà ở (hàng rào, cải tạo), Văn phòng BQL (giờ làm việc, địa chỉ),
+       khiếu nại/yêu cầu.
   "unsupported" (ngoài phạm vi hỗ trợ), "unresolved" (chưa hiểu câu hỏi).
+- Câu hợp nhiều nhóm ⇒ chọn theo CHỦ THỂ được hỏi: có xe/bãi xe ⇒ I-02 dù là nội quy;
+  có tên tiện ích ở I-03 ⇒ I-03; nhắc Khu Thương mại/Biệt thự/Văn phòng BQL ⇒ I-05.
 - is_emergency = true CHỈ khi có dấu hiệu khẩn cấp/nguy hiểm tính mạng.
 - is_legal_or_compensation = true khi câu hỏi liên quan trách nhiệm pháp lý/bồi thường.
 - target_subjects: liệt kê resident_id/property_id CỤ THỂ mà câu hỏi nhắc tới,

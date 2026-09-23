@@ -2,6 +2,15 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-23 (tiếp 13): Đ57 intent A1 + G4 hết hạn
+
+### Fixed
+- A1 gán sai intent (5 ca Golden): prompt định nghĩa intent theo bảng tài liệu SPEC-P00 §3 + luật chủ thể.
+- S04: G4 giờ ra `source_expired_or_unknown` khi nguồn hạng 1 hết hạn đúng chủ đề (SPEC-P02 bảng cổng).
+
+### Đo được
+11/11 ca kiểm + S04 PASS · test **285/285**.
+
 ## [Chưa phát hành] - 2026-09-23 (tiếp 12): Đ56 — ba thay đổi hợp đồng cho M1
 
 ### Decisions

@@ -1,0 +1,14 @@
+# ĐỎ: confidence.ts bản HEAD (trước Đ57)
+✖ Đ57 G4 + hạng 1 hết hạn đúng chủ đề ⇒ source_expired_or_unknown (2.6949ms)
+✔ Đ57 G4 + hạng 1 hết hạn nhưng LẠC chủ đề ⇒ no_eligible_source (Đ41, không bịa lý do) (0.2564ms)
+✔ Đ57 G4 + hạng 1 hợp lệ ⇒ no_eligible_source như cũ (0.1938ms)
+ℹ pass 2
+ℹ fail 1
+✖ failing tests:
+✖ Đ57 G4 + hạng 1 hết hạn đúng chủ đề ⇒ source_expired_or_unknown (2.6949ms)
+# XANH: sau Đ57
+✔ Đ57 G4 + hạng 1 hết hạn đúng chủ đề ⇒ source_expired_or_unknown (1.6445ms)
+✔ Đ57 G4 + hạng 1 hết hạn nhưng LẠC chủ đề ⇒ no_eligible_source (Đ41, không bịa lý do) (0.1784ms)
+✔ Đ57 G4 + hạng 1 hợp lệ ⇒ no_eligible_source như cũ (0.1906ms)
+ℹ pass 3
+ℹ fail 0

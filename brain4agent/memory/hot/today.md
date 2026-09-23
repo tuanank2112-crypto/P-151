@@ -21,6 +21,8 @@ SO phóng 2 worker song song (H22 audit_log · H23 dashboard), tự đo G23, ch�
 
 ### ⛔ Chờ người / treo: hạn mức A2/A3 (chỉ `3.5-flash-lite` sống lúc 09:45) ⇒ `eval:golden --resume` sau; dọn DB fixture; deploy Vercel; `origin/main`.
 
+### 🎯 Đợt 14: Golden sau Đ56 M1 vẫn 28/40 — nguyên nhân chính đổi sang A1 sai intent (5 ca) + S04 ra G4 sai lý do. Đ57: prompt A1 theo SPEC-P00 §3 + G4 dùng luật hết hạn như G3 ⇒ 11/11 ca + S04 PASS. Golden trọn chạy nền.
+
 ### 🧩 Đợt 13 (chủ tịch "duyệt cả 3"): Đ56 — E-6 theo loại BĐS câu hỏi nêu thẳng, E-5 chỉ báo khi nguồn điểm cao nhất bị tranh chấp (Đ56b: so theo ĐIỂM vì đồng điểm), Golden chấp nhận biến thể cho 3 ca. H27 (R31) + H28 (R32) song song; SO tự vá Đ56b; câu hỏi mở của H28 (K-M2 kiểm section tồn tại) ⇒ Idea Vault. 282/282. Golden trọn chạy nền.
 
 ### 🏷 Đợt 12 (chủ tịch: "cứ gán nhãn gate theo cách bạn đề xuất"): Đ55 — `expected_gate` dạng tập cho S01/S02/S04 + DEF; G51 fixture S16 thiếu trường Đ50. Golden trọn sau Đ54: M1 **28/40**; safety **16/16 ✅**. 263/263.

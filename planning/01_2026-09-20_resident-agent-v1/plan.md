@@ -739,6 +739,16 @@ Ba agent rà độc lập + SO đo lại (`brain4agent/memory/hot/today.md` phi�
 
 **Lật được:** mục 1 khi 3.5-flash hồi (đổi lại một dòng env). Mục 2–4 không. **Chi phí lật mục 2:** hàng đợi HITL lại rỗng vĩnh viễn.
 
+### Đ57 — 2026-09-23 · Prompt A1 định nghĩa intent theo bảng tài liệu SPEC-P00 §3; G4 dùng cùng luật "hết hạn đúng chủ đề" như G3
+
+**Bối cảnh:** Golden trọn sau Đ56 (13:32): M1 vẫn 28/40 — 5 ca trượt vì A1 gán sai intent (xe/bãi xe ⇒ I-05; Văn phòng BQL/Khu Thương mại/Biệt thự ⇒ I-03/I-04) do prompt định nghĩa intent quá mơ hồ ("I-05 nội quy sinh hoạt"); S04 ra G4 + `no_eligible_source` thay vì `source_expired_or_unknown`.
+
+**Quyết định (SO, theo L.2 — prompt A1 KHÔNG bị ghim trong SPEC; nguồn chân lý phân loại là SPEC-P00 §3):** (1) prompt A1 liệt kê từng intent theo nhóm tài liệu + luật chọn theo CHỦ THỂ được hỏi. (2) SPEC-P02 bảng cổng: G4 cùng luật Đ28/Đ41 của G3; `index.ts` chỉ tra tiêu đề khi dưới sàn và hạng 1 hết hạn. Test `confidence-g4-expired` (3 ca, từng đỏ).
+
+**Đo:** 11/11 ca (5 intent + 6 đối chứng) PASS; S04 PASS; 285/285.
+
+**Lật được:** có. **Chi phí lật:** thấp.
+
 ### Đ56 — 2026-09-23 · Ba thay đổi hợp đồng để M1 chạm ngưỡng (chủ tịch "duyệt cả 3")
 
 **Bối cảnh:** sau Đ54/Đ55 M1 = 28/40 (ngưỡng 34). Truy căn nguyên từng ca FAQ trượt (`evidence/so-g11-golden/phan_loai_truot_20260923_1200.txt`); ba nhóm chỉ vá được bằng đổi hợp đồng đã duyệt / nới chấm Golden ⇒ hỏi chủ tịch (L.3), được duyệt cả ba.

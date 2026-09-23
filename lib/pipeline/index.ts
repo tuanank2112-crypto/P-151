@@ -36,7 +36,7 @@ import type {
   RetrievedChunk,
   TurnResult,
 } from "../types.ts";
-import { decideTurn, round4 } from "../confidence.ts";
+import { decideTurn, round4, TAU_FAITHFUL } from "../confidence.ts";
 import { runActionBranch, toVnIso } from "./action.ts";
 import { applyEligibility, type EligibilityResult } from "./eligibility.ts";
 import { checkOwnership } from "./ownership.ts";
@@ -741,6 +741,12 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
   const supported = a3.claims.filter((c) => c.verdict === "supported").length;
   const faithfulness = total === 0 ? 0 : round4(supported / total);
 
+  // Đ57 — G4 dùng cùng luật "hết hạn đúng chủ đề" như G3; chỉ tra tiêu đề khi
+  // có thể cần (dưới sàn faithfulness VÀ hạng 1 bị loại vì hết hạn).
+  const g4OnTopic =
+    faithfulness < TAU_FAITHFUL && elig.top_rejected_reason === "expired_or_unknown"
+      ? await topRejectedIsOnTopic(store, retrieved, [a1.normalized_query_vi, questionVi])
+      : true;
   const dec = decideTurn({
     retrieval_top1: s1,
     eligible_count: eligibleCount,
@@ -749,6 +755,7 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
     conflict_detected: false,
     rejection_histogram: elig.rejection_histogram,
     top_rejected_reason: elig.top_rejected_reason,
+    top_rejected_on_topic: g4OnTopic,
   });
   s1RetrievalTop1 = dec.s1;
   s2EligibleRatio = dec.s2;

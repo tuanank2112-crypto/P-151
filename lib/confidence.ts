@@ -102,8 +102,16 @@ export function decideTurn(sig: DecideTurnSignals): DecideTurnResult {
         : "no_eligible_source";
     return r(0, "escalate", code, "G3_retriever_refused", s1, s2, s3);
   }
-  if (s3 < TAU_FAITHFUL)
-    return r(confidence, "escalate", "no_eligible_source", "G4_faithfulness_floor", s1, s2, s3);
+  if (s3 < TAU_FAITHFUL) {
+    // Đ57 — cùng luật Đ28/Đ41 của G3: A3 bác bản nháp VÀ nguồn khớp nhất là
+    // tài liệu hết hiệu lực đúng chủ đề ⇒ sự thật là "thông tin nằm trong tài
+    // liệu hết hạn" (S04, 2026-09-23 13:32 ra G4 + no_eligible_source).
+    const code: ReasonCode =
+      top_rejected_reason === "expired_or_unknown" && top_rejected_on_topic
+        ? "source_expired_or_unknown"
+        : "no_eligible_source";
+    return r(confidence, "escalate", code, "G4_faithfulness_floor", s1, s2, s3);
+  }
   if (confidence < TAU_ANSWER)
     return r(confidence, "escalate", "no_eligible_source", "G5_tau_answer", s1, s2, s3);
   return r(confidence, "answer", null, null, s1, s2, s3);
