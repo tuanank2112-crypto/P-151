@@ -1,7 +1,7 @@
 ### Problem Card — ResidentGPT – Trợ lý AI hỗ trợ Hỏi-Đáp Nội quy & Tiện ích
 
 > **Document status:** FROZEN FOR MVP v0.2 — consistency alignment amendment; không mở rộng feature scope.
-> **Alignment log:** `docs/MVP_CONSISTENCY_ALIGNMENT_v0.2.md`
+> **Alignment log:** `docs/_legacy-v0.2/MVP_CONSISTENCY_ALIGNMENT_v0.2.md`
 
 > **Scope contract:** `knowledge_coverage_scope = VINHOMES_OCEAN_PARK`;
 > `pilot_operator_scope = BQL/CSKH của một cụm/tòa được chọn tại Vinhomes

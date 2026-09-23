@@ -30,9 +30,9 @@ Vercel + đổi `DATABASE_URL` sang pooler 6543 · `origin/main` đang là templ
 `TESTING-ACCEPTANCE` §7 cột `deploy` toàn ⬜  · hybrid chưa nối. Đã push tới
 `origin/feature/nhuy` (= local `main`, `9ac796c`); `origin/main` vẫn là template rỗng.
 Cấm nói đã hoàn thành trước khi có bằng chứng máy chạy thật.
-`docs/` mô tả SẢN PHẨM CŨ đã hạ cấp — chỉ còn nguồn tham chiếu. Nguồn chân lý
+`docs/_legacy-v0.2/` = 6 đặc tả SẢN PHẨM CŨ (dời 23/09), chỉ tham chiếu; `docs/` còn OVERVIEW + sơ đồ BTC + assets. Nguồn chân lý
 thiết kế đang hiệu lực, đọc theo thứ tự: `planning/01_2026-09-20_resident-agent-v1/
-plan.md` §2 (Đ01–Đ50) → `specs/00-ARCHITECTURE.md` → 8 file SPEC còn lại → `docs/`.
+plan.md` §2 (Đ01–Đ50) → `specs/00-ARCHITECTURE.md` → 8 file SPEC còn lại → `docs/OVERVIEW.md`.
 </repo_nature>
 <agent_startup_protocol>
 0. [BẮT BUỘC TIÊN QUYẾT] Chạy `node ../brain4agent.release/.agents/skills/.xay-dung-nao-bo/scripts/init_brain.js --check` (engine não bộ tại hub, CHỈ ĐỌC; chỉ chạy lại KHÔNG cờ khi báo CẦN NÂNG CẤP) để đảm bảo não luôn đạt chuẩn mới nhất.

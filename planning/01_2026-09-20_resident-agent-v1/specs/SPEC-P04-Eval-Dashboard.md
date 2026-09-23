@@ -53,7 +53,7 @@ Chạy trên tập Golden (`is_golden_run = true`). Mọi công thức là SQL t
 
 #### M1 — Correct & Grounded Answer Rate
 
-Giữ nguyên hợp đồng đo của `docs/PRD_ResidentGPT_MVP.md` §9 Metric 1.
+Giữ nguyên hợp đồng đo của `docs/_legacy-v0.2/PRD_ResidentGPT_MVP.md` §9 Metric 1.
 
 ```sql
 -- Mẫu số: 40 case answerable. Tử số: case pass TOÀN BỘ critical checkpoint.

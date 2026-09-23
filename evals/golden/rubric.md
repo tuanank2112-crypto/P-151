@@ -1,6 +1,6 @@
 # Rubric chấm Golden — nguồn chân lý cho M1 / M3 / Relevance
 
-> Sao y cách chấm của `docs/PRD_ResidentGPT_MVP.md` §9 (Metric 1, Metric 2,
+> Sao y cách chấm của `docs/_legacy-v0.2/PRD_ResidentGPT_MVP.md` §9 (Metric 1, Metric 2,
 > Metric 3), đã được `planning/01_2026-09-20_resident-agent-v1/specs/SPEC-P00-Knowledge-Golden.md`
 > §6 và `SPEC-P04-Eval-Dashboard.md` §3 xác nhận lại cho vòng `1.0.0`.
 > File này thuộc gói P04 (di dời từ P00 — xem `SPEC-P00` §6.1 dòng cuối và

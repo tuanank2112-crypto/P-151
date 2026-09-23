@@ -2,7 +2,7 @@
 
 Status: FROZEN FOR LOW-FI WIREFRAME v0.2 — consistency alignment amendment; không mở rộng feature scope.
 
-Alignment log: `docs/MVP_CONSISTENCY_ALIGNMENT_v0.2.md`
+Alignment log: `docs/_legacy-v0.2/MVP_CONSISTENCY_ALIGNMENT_v0.2.md`
 
 > **Primary user:** Nhân viên BQL/CSKH. **Affected user:** Cư dân. Hotline/Zalo chỉ là channel origin; BQL/CSKH nhập hoặc paste câu hỏi vào UI. Mọi AI output là draft, cần BQL/CSKH review và explicit approval trước khi copy/use. MVP không auto-send.
 

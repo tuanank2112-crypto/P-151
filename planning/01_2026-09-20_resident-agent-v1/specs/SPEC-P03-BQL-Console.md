@@ -85,7 +85,7 @@ export async function newDocumentVersion(input: {
 4. Ghi `audit_log` sự kiện `document.version_created`.
 
 **Vùng cấm:** CẤM `DELETE` tài liệu cũ, CẤM ghi đè bản cũ. Kế thừa
-`docs/MVP_DATA_SCOPE_LOCK.md` §11 điều 1 (*"Không ghi đè hoặc xóa bản raw cũ"*).
+`docs/_legacy-v0.2/MVP_DATA_SCOPE_LOCK.md` §11 điều 1 (*"Không ghi đè hoặc xóa bản raw cũ"*).
 Xoá bản cũ làm mọi `citations` lịch sử trỏ vào hư vô và dashboard mất khả năng truy vết.
 
 ### 2.4 — Chunk hoá

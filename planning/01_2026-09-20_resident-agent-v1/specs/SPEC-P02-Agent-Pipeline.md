@@ -31,7 +31,7 @@ lỗi (BB-11). Cách cài: `try / finally`, ghi trong `finally`.
 
 ## 2. Chín chặng, thứ tự tất định `[BB-08]`
 
-Kế thừa `docs/UI_Flow_ResidentGPT_MVP.md` §D Must Have (*"Deterministic order:
+Kế thừa `docs/_legacy-v0.2/UI_Flow_ResidentGPT_MVP.md` §D Must Have (*"Deterministic order:
 input validation → early safety/PII → intent → required context → detailed risk →
 retrieval"*), mở rộng thêm 3 chặng của v1.0.
 

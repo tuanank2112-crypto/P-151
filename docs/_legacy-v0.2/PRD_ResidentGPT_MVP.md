@@ -1,7 +1,7 @@
 # PRD — ResidentGPT MVP: Trợ lý soạn thảo FAQ cư dân
 
 > **Document status:** FROZEN FOR MVP v0.2 — consistency alignment amendment; không mở rộng feature scope. **Nguồn:** `Problem_Card.md`, `Product_Brief_ResidentGPT_MVP.md`. **Nhãn:** FACT = đã có trong nguồn; HYPOTHESIS = cần MVP kiểm chứng; ASSUMPTION/TBD = chưa xác thực.
-> **Alignment log:** `docs/MVP_CONSISTENCY_ALIGNMENT_v0.2.md`
+> **Alignment log:** `docs/_legacy-v0.2/MVP_CONSISTENCY_ALIGNMENT_v0.2.md`
 
 **Intent reference (5 Provisional MVP Intents — PM/SME-frozen cho vòng MVP evaluation này):** I-01 Thẻ cư dân/ra vào; I-02 Phương tiện/thẻ xe; I-03 Tiện ích chung; I-04 Chuyển đồ/thi công; I-05 Nội quy sinh hoạt. Việc đây có phải top production intents theo volume hay không vẫn là assumption cần validation.
 
@@ -19,8 +19,8 @@ MVP Scope Freeze `v0.1`.
 
 **Frozen date:** 20/09/2026  
 **MVP deadline:** 27/09/2026  
-**Source of truth:** `docs/PRD_ResidentGPT_MVP.md`  
-**Knowledge baseline:** `docs/MVP_DATA_SCOPE_LOCK.md`, revision `1.18`
+**Source of truth:** `docs/_legacy-v0.2/PRD_ResidentGPT_MVP.md`  
+**Knowledge baseline:** `docs/_legacy-v0.2/MVP_DATA_SCOPE_LOCK.md`, revision `1.18`
 
 ### Mục tiêu MVP
 

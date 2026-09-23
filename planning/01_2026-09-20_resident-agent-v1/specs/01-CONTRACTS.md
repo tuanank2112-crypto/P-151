@@ -3,7 +3,7 @@
 > Phụ thuộc: đọc [`00-ARCHITECTURE.md`](00-ARCHITECTURE.md) trước.
 > File này là **hợp đồng bất biến**. Đổi bất cứ gì ở đây là breaking change: phải
 > tăng revision Knowledge Pack, chạy lại toàn bộ Golden, và ghi vào `plan.md` §2.
-> Kế thừa kỷ luật từ `docs/MVP_DATA_SCOPE_LOCK.md` §11.
+> Kế thừa kỷ luật từ `docs/_legacy-v0.2/MVP_DATA_SCOPE_LOCK.md` §11.
 
 ---
 
@@ -25,7 +25,7 @@
 
 ### 2.1 — Nhóm A: 10 mã canonical giữ nguyên từ v0.2
 
-Nguồn: [`../../../docs/PRD_ResidentGPT_MVP.md`](../../../docs/PRD_ResidentGPT_MVP.md)
+Nguồn: [`../../../docs/_legacy-v0.2/PRD_ResidentGPT_MVP.md`](../../../docs/_legacy-v0.2/PRD_ResidentGPT_MVP.md)
 §8 "Canonical reason-code enum". **CẤM đổi tên, CẤM tạo alias, CẤM đổi nghĩa** — trừ
 đúng một mã đã nêu ở §2.2.
 
@@ -350,7 +350,7 @@ top-8 của mỗi nhánh. Cả hai số hạng đều ∈ (0,1) nên `S1 ∈ (0,
 
 ## 5. Cổng eligibility — 7 điều kiện, tất định `[VC-04]`
 
-Kế thừa nguyên văn `docs/MVP_DATA_SCOPE_LOCK.md` §7. Một chunk chỉ được dùng để sinh
+Kế thừa nguyên văn `docs/_legacy-v0.2/MVP_DATA_SCOPE_LOCK.md` §7. Một chunk chỉ được dùng để sinh
 câu trả lời thực chất khi **đồng thời**:
 
 | # | Điều kiện | SQL / kiểm |
@@ -755,7 +755,7 @@ hai giá trị `unsupported` / `unresolved`. Thêm giá trị thứ 8 ⇒ phá b
 
 #### 8.1.1 — Bảng `required_context` theo intent
 
-Giữ **nguyên văn** `docs/PRD_ResidentGPT_MVP.md` §5.1. CẤM sửa danh sách; sửa là
+Giữ **nguyên văn** `docs/_legacy-v0.2/PRD_ResidentGPT_MVP.md` §5.1. CẤM sửa danh sách; sửa là
 breaking change kéo theo Golden.
 
 | Intent | Trường bắt buộc |

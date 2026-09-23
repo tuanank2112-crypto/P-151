@@ -2,6 +2,11 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-23 (tiếp 6): dời đặc tả cũ
+
+### Changed
+- `git mv` 6 tài liệu ResidentGPT v0.2 (`PRD_*`, `Product_Brief_*`, `Problem_Card`, `UI_Flow_*`, `MVP_DATA_SCOPE_LOCK`, `MVP_CONSISTENCY_ALIGNMENT_v0.2`) → `docs/_legacy-v0.2/` kèm README cách khôi phục; đường dẫn ở file sống đã sửa; mục changelog cũ phía dưới giữ đường dẫn gốc.
+
 ## [Chưa phát hành] - 2026-09-23 (tiếp 5): UI loại mục khỏi trả lời + trace theo id
 
 ### Added

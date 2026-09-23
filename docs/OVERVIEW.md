@@ -1,6 +1,6 @@
 # TỔNG QUAN HIỆN TRẠNG — Resident Agent v1.0
 
-> **File này là NGOẠI LỆ trong thư mục `docs/`.** Sáu tài liệu còn lại ở đây (`PRD_ResidentGPT_MVP.md`,
+> **Sáu tài liệu của sản phẩm cũ đã dời vào [`docs/_legacy-v0.2/`](_legacy-v0.2/README.md) (2026-09-23).** Chúng (`PRD_ResidentGPT_MVP.md`,
 > `Product_Brief_*`, `UI_Flow_*`, `MVP_*`, `Problem_Card.md`) mô tả một **sản phẩm CŨ đã bị hạ cấp**
 > — bản v0.2 "ResidentGPT", actor khác, mục tiêu khác. Chúng chỉ còn là nguồn tham chiếu nội dung và
 > giọng văn. **File này mô tả sản phẩm ĐANG CHẠY, đo trực tiếp trên đĩa và trên DB thật.**

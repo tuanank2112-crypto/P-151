@@ -14,7 +14,7 @@
 | Nguồn yêu cầu | AI20K Build Phase Cohort 4 — ngân hàng đề `C104 / VHR-01 / G104` |
 | Mục đích | Sản phẩm demo cho doanh nghiệp + ban giám khảo. Không phải hệ thống chạy thật. |
 | SemVer dự kiến | `1.0.0` (MAJOR — dựng mới, chưa có mã nguồn) |
-| Đặc tả kế thừa | `docs/PRD_ResidentGPT_MVP.md` và 5 tài liệu v0.2 khác — hạ cấp thành **nguồn đặc tả cho lõi trả lời**, không còn là định nghĩa sản phẩm |
+| Đặc tả kế thừa | `docs/_legacy-v0.2/PRD_ResidentGPT_MVP.md` và 5 tài liệu v0.2 khác — hạ cấp thành **nguồn đặc tả cho lõi trả lời**, không còn là định nghĩa sản phẩm |
 
 ## 2. Nhật ký quyết định
 
@@ -778,7 +778,7 @@ Chủ tịch, sau khi xem video demo: *"mục tiêu nguyên thủy của tôi kh
 | Mã | Phán quyết | Ghi chú |
 | :-- | :-- | :-- |
 | C-01 | 🟡 **MỘT PHẦN** | Phần embedding: rút (Đ14). Phần nhà cung cấp model: chưa chốt được, xem Đ13 M-05. Phần ngân sách: chủ tịch muốn phương án free. |
-| C-02 | ✅ **GẬT** | HITL chỉ áp cho lượt bị escalate. Lệch có chủ ý so với `docs/PRD_ResidentGPT_MVP.md` §8 SR-09, đã ghi lý do. |
+| C-02 | ✅ **GẬT** | HITL chỉ áp cho lượt bị escalate. Lệch có chủ ý so với `docs/_legacy-v0.2/PRD_ResidentGPT_MVP.md` §8 SR-09, đã ghi lý do. |
 | C-03 | ✅ **GẬT** | Bỏ Metric 2 (Efficiency). `specs/SPEC-P00-Knowledge-Golden.md` §6.1 đã ghi sẵn vùng cấm này; nay có căn cứ chính thức. Gỡ trạng thái "chưa có căn cứ" ở Idea Vault. |
 | C-04 | ✅ **VỐN ĐÃ XONG** | Đo lại 2026-09-20: `vercel whoami` → `tuanank2112-5635`, CLI 59.23.2 đã đăng nhập. SO báo sai suốt nhiều lượt vì chưa kiểm — xem Đ23. Còn treo: chủ tịch chọn scope. |
 

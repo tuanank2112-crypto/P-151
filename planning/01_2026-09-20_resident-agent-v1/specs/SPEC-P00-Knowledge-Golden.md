@@ -41,7 +41,7 @@ evals/golden/
 
 **Revision:** `SIM-1.0.0`. Ghi ở `knowledge/README.md` dòng đầu dạng
 `revision: SIM-1.0.0`. Đổi bất kỳ tài liệu nào ⇒ tăng revision + chạy lại Golden
-(kế thừa `docs/MVP_DATA_SCOPE_LOCK.md` §11).
+(kế thừa `docs/_legacy-v0.2/MVP_DATA_SCOPE_LOCK.md` §11).
 
 ### 2.1 — Lược đồ `manifest.json`
 
@@ -215,7 +215,7 @@ câu hỏi nào kích hoạt, mã nào phải ra.**
 | `reason_code` | `no_eligible_source` |
 | Gate | `G3_retriever_refused` |
 | Golden case | `S02` |
-| Căn cứ chọn | `docs/MVP_DATA_SCOPE_LOCK.md` §5 I-02, gạch đầu dòng *"Phí cấp/cấp lại/đổi thẻ hoặc thuê bao xe máy bị thiếu"* — khoảng trống này v0.2 đã tự ghi nhận |
+| Căn cứ chọn | `docs/_legacy-v0.2/MVP_DATA_SCOPE_LOCK.md` §5 I-02, gạch đầu dòng *"Phí cấp/cấp lại/đổi thẻ hoặc thuê bao xe máy bị thiếu"* — khoảng trống này v0.2 đã tự ghi nhận |
 
 **Vì sao khuyết tật #2 khác #1 và bắt buộc phải có cả hai:** #1 làm retrieval trả
 rỗng (đường dễ). #2 làm retrieval trả **chunk hợp lệ nhưng không trả lời được câu
@@ -236,7 +236,7 @@ cơ chế khác nhau; bỏ một cái là mất một nửa bằng chứng.
 | `reason_code` | `source_conflict` |
 | Gate | `G1_conflict` |
 | Golden case | `S03` |
-| Căn cứ chọn | `docs/MVP_DATA_SCOPE_LOCK.md` §9: section `BBQ-SAN-05` bị khoá vì *"mâu thuẫn về số người sử dụng Vườn Nướng"* — ta tái dựng **đúng chủ đề mâu thuẫn mà v0.2 đã ghi nhận**, không bịa chủ đề mới |
+| Căn cứ chọn | `docs/_legacy-v0.2/MVP_DATA_SCOPE_LOCK.md` §9: section `BBQ-SAN-05` bị khoá vì *"mâu thuẫn về số người sử dụng Vườn Nướng"* — ta tái dựng **đúng chủ đề mâu thuẫn mà v0.2 đã ghi nhận**, không bịa chủ đề mới |
 
 **Bắt buộc hiển thị:** UI phải cho xem **cả hai** nguồn mâu thuẫn cạnh nhau. CẤM tự
 chọn một bên. Neo: `PRD` §7 AC-07, §8 SR-05.
@@ -312,7 +312,7 @@ Script `validate_knowledge.mjs` đọc file này, không hardcode. Nội dung **
 
 ### 6.1 — Quy mô và cổng
 
-Giữ **nguyên hợp đồng đo lường của v0.2** (`docs/PRD_ResidentGPT_MVP.md` §9 Metric 1
+Giữ **nguyên hợp đồng đo lường của v0.2** (`docs/_legacy-v0.2/PRD_ResidentGPT_MVP.md` §9 Metric 1
 và Metric 3) để số có thể so sánh được, thay vì bịa cổng mới.
 
 | Bộ | File | Số case | Thành phần | Cổng |
