@@ -144,7 +144,8 @@
   },
   "blocked_needs_human": {
     "cau_hoi_D17": "A2 mat bac Pro. Neu Golden ra M1 < 34/40 thi nap tien Google Cloud hay chap nhan diem thap? Can quyet TRUOC khi chay Golden tren Postgres",
-    "phe_chuan_D32": "Doi 01-CONTRACTS §4.2 plainto_tsquery -> to_tsquery OR. Da ap vi khong ap thi demo khong chay duoc dong nao; dao lai bang mot commit revert"
+    "phe_chuan_D32": "Doi 01-CONTRACTS §4.2 plainto_tsquery -> to_tsquery OR. Da ap vi khong ap thi demo khong chay duoc dong nao; dao lai bang mot commit revert",
+    "tsv_heading": "Migration 007: dua heading_vi vao chunks.tsv (trong so A) — cham DB Supabase that + DDL 01-CONTRACTS §3 (G53)"
   },
   "db": {
     "provider": "supabase",

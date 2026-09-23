@@ -1,0 +1,8 @@
+# THỬ NGHIỆM TOP_K=16 (không commit), so với lượt 14:21 TOP_K=8
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+[faq] --fresh: đã xoá checkpoint cũ
+[faq] chạy 50 ca (tổng bộ 50, đã có kết luận 0), song song 4
+
+faq: pass 38 · fail 12 · blocked 0 (50/50 ca có kết luận) · answerable 33/40 · checkpoint=evals\runs\faq.postgres.jsonl
+run_id=73a4495d-9cf9-4904-b911-ccae31801751
+EXIT=1
