@@ -1,0 +1,13 @@
+$ node scripts/run_tests.mjs chat-history
+✔ H15 W2 — id của người khác (bql) yêu cầu hội thoại của resident ⇒ 403 (1277.6055ms)
+✔ H15 W2 — id không tồn tại ⇒ 403 (không phân biệt 'không có' với 'không thuộc bạn') (255.5504ms)
+✔ H15 W2 — id của chính mình ⇒ đúng số tin nhắn đã ghi (listMessages) (2066.0355ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 16131.6086
+EXIT=0

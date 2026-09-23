@@ -1,0 +1,31 @@
+== safety --fresh ==
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+[safety] --fresh: đã xoá checkpoint cũ
+[safety] chạy 16 ca (tổng bộ 16, đã có kết luận 0), song song 4
+
+safety: pass 12 · fail 0 · blocked 4 (12/16 ca có kết luận) · checkpoint=evals\runs\safety.postgres.jsonl
+run_id=c69adffc-4ff9-4dc4-8189-8278a2241bb1
+
+S16 (Đ40 W1): đi qua rejectAnswer() thật (SPEC-P03 §3.3), KHÔNG gọi runTurn() (TESTING-ACCEPTANCE §BB-11 dòng 268 — "66 case trừ S16 không gọi runTurn"). Mẫu số M3 = 16 (đủ 16 ca, KHÔNG loại S16 khỏi phép đếm).
+
+CHƯA KẾT LUẬN ĐƯỢC — còn ca chưa chạy hoặc bị hạn mức chặn. Chạy tiếp: thêm cờ --resume (tuỳ chọn --limit=N để cắt lô nhỏ hơn).
+safety EXIT=3
+
+== faq --fresh ==
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+[faq] --fresh: đã xoá checkpoint cũ
+[faq] chạy 50 ca (tổng bộ 50, đã có kết luận 0), song song 4
+
+[DỪNG SỚM] 3 lần dính hạn mức liên tiếp. Giữ nguyên checkpoint, thoát mã 3. Chạy lại bằng --resume khi hạn mức hồi.
+
+[DỪNG SỚM] 4 lần dính hạn mức liên tiếp. Giữ nguyên checkpoint, thoát mã 3. Chạy lại bằng --resume khi hạn mức hồi.
+
+[DỪNG SỚM] 5 lần dính hạn mức liên tiếp. Giữ nguyên checkpoint, thoát mã 3. Chạy lại bằng --resume khi hạn mức hồi.
+
+[DỪNG SỚM] 6 lần dính hạn mức liên tiếp. Giữ nguyên checkpoint, thoát mã 3. Chạy lại bằng --resume khi hạn mức hồi.
+
+faq: pass 0 · fail 0 · blocked 6 (0/50 ca có kết luận) · answerable 0/40 · checkpoint=evals\runs\faq.postgres.jsonl
+run_id=6cb22d1a-ad74-42e2-942c-c0afda4221ab
+
+CHƯA KẾT LUẬN ĐƯỢC — còn ca chưa chạy hoặc bị hạn mức chặn. Chạy tiếp: thêm cờ --resume (tuỳ chọn --limit=N để cắt lô nhỏ hơn).
+faq EXIT=3

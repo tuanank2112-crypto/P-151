@@ -276,6 +276,31 @@ export function __resetMockReviewQueueForTesting(): void {
   mockReviewQueue.length = 0;
 }
 
+/**
+ * H22 — mock KHÔNG có bảng `audit_log` thật (chỉ Postgres mới bền). Cùng mẫu
+ * `mockReviewQueue` ở trên: đẩy vào mảng nội bộ, chỉ `tests/` đọc được qua
+ * `__getMockAuditLogForTesting()` / `__resetMockAuditLogForTesting()`.
+ */
+interface MockAuditLogRow {
+  id: string;
+  level: "info" | "warn" | "error";
+  actor_id: string | null;
+  actor_role: "resident" | "bql" | "system";
+  event: string;
+  payload: Record<string, unknown>;
+}
+const mockAuditLog: MockAuditLogRow[] = [];
+
+/** CHỈ dùng trong tests/: đọc lại các dòng "audit_log" đã ghi ở kho mock. */
+export function __getMockAuditLogForTesting(): readonly MockAuditLogRow[] {
+  return mockAuditLog;
+}
+
+/** CHỈ dùng trong tests/: xoá mảng "audit_log" mock giữa các ca test. */
+export function __resetMockAuditLogForTesting(): void {
+  mockAuditLog.length = 0;
+}
+
 class MockDataStore implements DataStore {
   readonly backend = "mock" as const;
 
@@ -326,6 +351,18 @@ class MockDataStore implements DataStore {
 
   async getConversationOwner(conversationId: string): Promise<string | null> {
     return mockConversationOwners.get(conversationId) ?? null;
+  }
+
+  async insertAuditLog(input: {
+    level: "info" | "warn" | "error";
+    actor_id: string | null;
+    actor_role: "resident" | "bql" | "system";
+    event: string;
+    payload: Record<string, unknown>;
+  }): Promise<{ id: string }> {
+    const id = crypto.randomUUID();
+    mockAuditLog.push({ id, ...input });
+    return { id };
   }
 
   async findUserByEmail(email: string): Promise<UserRecord | null> {

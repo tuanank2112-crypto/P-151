@@ -48,9 +48,10 @@ export default async function DashboardPage() {
           <h2>Tỉ lệ tự động giải quyết</h2>
           <p className="metrics-card__big">{fmtPct(auto.auto_resolution_rate_pct)}</p>
           <p className="metrics-card__sub">
-            {auto.auto_resolved}/{auto.total_turns} lượt · clarify {auto.clarified} ·
-            escalate {auto.escalated}
+            {auto.auto_resolved}/{auto.total_turns} lượt · hành động {auto.actioned} ·
+            clarify {auto.clarified} · escalate {auto.escalated}
           </p>
+          <p className="metrics-card__note">Tự động = trả lời + hành động.</p>
         </article>
         <article className="metrics-card">
           <h2>Độ trễ</h2>
@@ -70,6 +71,7 @@ export default async function DashboardPage() {
             <tr>
               <th>intent</th>
               <th>answer</th>
+              <th>action</th>
               <th>clarify</th>
               <th>escalate</th>
               <th>tổng</th>
@@ -81,6 +83,7 @@ export default async function DashboardPage() {
               <tr key={row.intent}>
                 <td>{row.intent}</td>
                 <td>{row.answered}</td>
+                <td>{row.actioned}</td>
                 <td>{row.clarified}</td>
                 <td>{row.escalated}</td>
                 <td>{row.total}</td>

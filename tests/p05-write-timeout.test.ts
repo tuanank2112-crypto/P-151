@@ -4,9 +4,18 @@
 // đồng, xem ghi chú trong `lib/simbackend/index.ts::createBooking`) ⇒
 // `SimBackendError('WriteTimeout')` (`action_partial_execution_unknown`),
 // KHÔNG có dòng `bookings` nào được tạo (0 retry — backend không tự gọi
-// lại), và có đúng 1 dòng `audit_log` mức `warn` (postgres; mock không có
-// audit_log thật — SPEC-P05 §7 chỉ đòi hỏi ở đường Postgres, nơi bảng đó
-// tồn tại, xem `db/migrations/004_operational.sql`).
+// lại).
+//
+// H22 W3 — dòng `audit_log` mức `warn` mà §7 đòi hỏi giờ được PIPELINE ghi
+// (`lib/pipeline/action.ts::mapBackendError` → `DataStore.insertAuditLog`),
+// KHÔNG PHẢI backend mô phỏng: file này chỉ gọi thẳng
+// `PostgresSimBackend.createBooking()`, không đi qua pipeline, nên không còn
+// chỗ để đếm `audit_log` ở đây nữa (trước gói H22, backend TỰ ghi một dòng
+// trùng — đã gỡ). Phần đếm `audit_log` chuyển sang test mock
+// "(d''') WriteTimeout, sink MẶC ĐỊNH ⇒ DataStore.insertAuditLog ghi đúng 1
+// dòng warn" ở `tests/p05-pipeline-action.test.ts` (đi qua `runTurn()` thật,
+// nơi có sẵn máy giả A1 + `DATA_BACKEND=mock`). Test Postgres dưới đây giữ
+// nguyên vai trò kiểm hành vi CỦA BACKEND: `0` retry, `0` booking mồ côi.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -62,7 +71,7 @@ test("P05-M10 (mock): __forceWriteTimeout ⇒ WriteTimeout, 0 retry, 0 dòng boo
   assert.equal(bookings.length, 0, "WriteTimeout KHÔNG được để lại booking mồ côi");
 });
 
-test("P05-M10 (postgres): __forceWriteTimeout ⇒ WriteTimeout, 0 dòng bookings, 1 dòng audit_log mức warn", async () => {
+test("P05-M10 (postgres): __forceWriteTimeout ⇒ WriteTimeout, 0 retry, 0 dòng bookings", async () => {
   const sql = getSql();
   const backend = new PostgresSimBackend();
   const session_id = randomSessionId("wt-pg");
@@ -82,9 +91,6 @@ test("P05-M10 (postgres): __forceWriteTimeout ⇒ WriteTimeout, 0 dòng bookings
       __forceWriteTimeout: true,
     };
     await backend.checkEligibility(input);
-
-    const auditBefore = await sql(`select count(*)::int as n from audit_log where event = 'action.write_timeout'`);
-    const nBefore = (auditBefore as unknown as Array<{ n: number }>)[0]!.n;
 
     let calls = 0;
     const realCreate = backend.createBooking.bind(backend);
@@ -106,20 +112,7 @@ test("P05-M10 (postgres): __forceWriteTimeout ⇒ WriteTimeout, 0 dòng bookings
 
     const bookingRows = await sql(`select count(*)::int as n from bookings where idempotency_key = $1`, [idempotency_key]);
     assert.equal((bookingRows as unknown as Array<{ n: number }>)[0]!.n, 0, "WriteTimeout KHÔNG để lại booking mồ côi (postgres)");
-
-    const auditAfter = await sql(
-      `select level, event from audit_log where event = 'action.write_timeout' order by created_at desc limit 1`
-    );
-    const typedAfter = auditAfter as unknown as Array<{ level: string; event: string }>;
-    const nAfter = (
-      await sql(`select count(*)::int as n from audit_log where event = 'action.write_timeout'`)
-    )[0] as unknown as { n: number };
-    assert.equal(nAfter.n, nBefore + 1, "đúng 1 dòng audit_log mới cho lần WriteTimeout này");
-    assert.equal(typedAfter[0]!.level, "warn", "audit_log phải ở mức warn (§7)");
   } finally {
-    await sql(`delete from audit_log where event = 'action.write_timeout' and payload->>'idempotency_key' = $1`, [
-      idempotency_key,
-    ]);
     await cleanupFacility(sql, FACILITY_ID, [session_id]);
     await closePool();
   }

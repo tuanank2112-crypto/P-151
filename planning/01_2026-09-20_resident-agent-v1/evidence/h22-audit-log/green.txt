@@ -1,0 +1,24 @@
+✔ (a) đặt thành công ⇒ decision=action, status=done, write_calls=1, thứ tự backend ĐÚNG (8.2967ms)
+✔ (b) SIM_NOW=23:39 + policy intake_closed ⇒ blocked, write_calls=0, nêu 08:30, CẤM nói giờ hoạt động (0.9419ms)
+✔ (b') blockedMessageVi dựng từ IntakeFacts — kiểu KHÔNG chứa operating_hours (0.2393ms)
+✔ (c) huỷ: lượt 1 clarify B2 + savePendingAction, lượt 2 confirmed ⇒ done (1.5418ms)
+✔ (c') xác nhận khi KHÔNG còn hành động chờ ⇒ hỏi lại, KHÔNG gọi lệnh ghi nào (1.3443ms)
+✔ (d) WriteTimeout ⇒ status=unknown, createBooking gọi ĐÚNG 1 lần, có audit warn (0.7635ms)
+✔ (d''') WriteTimeout, sink MẶC ĐỊNH ⇒ DataStore.insertAuditLog ghi đúng 1 dòng warn (4.8445ms)
+✔ (d') QuotaExceeded ⇒ blocked mã B1, KHÔNG thử lại lệnh ghi (0.6066ms)
+✔ (d'') Forbidden ⇒ escalate pii_or_account_specific, KHÔNG phải lỗi hành động (0.7429ms)
+✔ (e) câu hỏi nội quy thường vẫn đi retrieval, KHÔNG chạm backend hành động (6.1343ms)
+✔ thiếu tiện ích (resolveFacility null) ⇒ clarify, KHÔNG đọc chính sách, KHÔNG ghi (0.4562ms)
+✔ thiếu slot_start ⇒ clarify TRƯỚC khi đọc chính sách (0.3329ms)
+✔ list_my_bookings ⇒ status=listed, write_calls=0 (0.4511ms)
+✔ khẩn cấp thắng tuyệt đối: có capability vẫn KHÔNG vào nhánh hành động (0.2655ms)
+✔ toVnIso trả offset +07:00, KHÔNG phải 'Z' — nếu là Z thì A1 lệch 7 tiếng (0.1027ms)
+✔ clockVi đọc giờ ĐÃ ở múi của chuỗi, không quy về UTC (0.0836ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 245.3556

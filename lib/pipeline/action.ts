@@ -27,6 +27,7 @@
 // là hàm lấy backend. `lib/simbackend/index.ts` là file gói H19 đang viết; gom
 // cả hai vào đó thì mỗi lần H19 đổi danh sách re-export là nhánh này gãy theo.
 import { getSimBackend } from "../simbackend/index.ts";
+import { getDataStore } from "../adapters/db.ts";
 import {
   idempotencyKeyFor,
   SimBackendError,
@@ -58,17 +59,32 @@ export interface ActionAuditRecord {
 
 /**
  * SPEC-P05 §7 buộc `WriteTimeout` phải để lại một dòng `audit_log` mức `warn`.
- * Ở vòng này pipeline KHÔNG có đường ghi `audit_log` nào dùng lại được: mọi
- * `INSERT INTO audit_log` hiện nằm trong các CTE của `lib/adapters/bql-store.ts`,
- * và cả `bql-store.ts` lẫn `db.ts` đều NGOÀI phạm vi gói H20. Nên ở đây cảnh báo
- * được đẩy qua một sink đổi được: mặc định in ra stderr theo đúng hình dạng một
- * dòng audit, test tiêm sink giả để đếm. Việc nối sink này vào bảng `audit_log`
- * thật cần mở `DataStore` — đã ghi làm việc treo trong report R23.
+ * Sink đổi được: mặc định nối vào `DataStore.insertAuditLog()` (gói H22, đóng
+ * việc treo ở report R23), test tiêm sink giả để đếm mà không chạm DB.
+ *
+ * `defaultAuditSink` là **fire-and-forget**: gọi `getDataStore()` rồi
+ * `insertAuditLog()` KHÔNG `await` — ghi audit là việc phụ, KHÔNG được phép
+ * làm chậm hay làm vỡ lượt trả lời cho cư dân (Đ48). Ghi thất bại ⇒ `.catch`
+ * in ra stderr đúng hình dạng dòng audit cũ (không ném lên `runTurn`).
  */
 type ActionAuditSink = (record: ActionAuditRecord) => void;
 
 const defaultAuditSink: ActionAuditSink = (record) => {
-  process.stderr.write(`audit_log ${JSON.stringify(record)}\n`);
+  getDataStore()
+    .then((store) =>
+      store.insertAuditLog({
+        level: record.level,
+        actor_id: null,
+        actor_role: "system",
+        event: record.event,
+        payload: record.payload,
+      })
+    )
+    .catch((err) => {
+      process.stderr.write(
+        `audit_log ${JSON.stringify(record)} (ghi audit_log thất bại, xem lỗi sau): ${String(err)}\n`
+      );
+    });
 };
 let auditSink: ActionAuditSink = defaultAuditSink;
 
@@ -313,7 +329,7 @@ export async function runActionBranch(a: ActionBranchArgs): Promise<ActionBranch
   try {
     return await dispatch(backend, a);
   } catch (err) {
-    if (err instanceof SimBackendError) return mapBackendError(err, a.action.capability);
+    if (err instanceof SimBackendError) return mapBackendError(err, a.action.capability, a.conversation_id);
     throw err;
   }
 }
@@ -733,7 +749,15 @@ async function executePending(
 
 function mapBackendError(
   err: SimBackendError,
-  capability: ActionCapability | null
+  capability: ActionCapability | null,
+  // Tham số nội bộ (H22) — KHÔNG phải hợp đồng công khai của module, hàm này
+  // không được export. Dùng để làm giàu payload `audit_log` khi trong tầm
+  // tay: `session_id` của pipeline CHÍNH LÀ `conversation_id` (xem các lời
+  // gọi `backend.*({ session_id: a.conversation_id, ... })` phía trên).
+  // `facility_id`/`idempotency_key` KHÔNG trong tầm tay ở đây: lỗi bắt tại
+  // một điểm catch DÙNG CHUNG cho mọi capability, còn hai giá trị đó chỉ tồn
+  // tại bên trong từng nhánh dispatch (create/cancel) đã resolve facility.
+  conversation_id?: string
 ): ActionBranchOutcome {
   const cap: ActionCapability = capability ?? "amenity.create_booking";
   const blocking = toActionBlocking(err.blocking_reasons);
@@ -756,7 +780,11 @@ function mapBackendError(
   if (err.kind === "WriteTimeout") {
     // CẤM RETRY (P05-C10). Lệnh đã gửi đi; gọi lại là đặt hai lần. Chỉ ghi
     // cảnh báo và nói thật với cư dân là chưa rõ kết quả.
-    auditWarn("action.write_timeout", { capability: cap, message: err.message });
+    auditWarn("action.write_timeout", {
+      capability: cap,
+      message: err.message,
+      ...(conversation_id ? { conversation_id, session_id: conversation_id } : {}),
+    });
     return actioned(
       { ...emptyResult(cap), status: "unknown", write_calls: 1, blocking_reasons: blocking },
       "Tôi đã gửi yêu cầu nhưng hệ thống chưa phản hồi kịp nên chưa rõ chỗ đã được ghi nhận chưa. " +

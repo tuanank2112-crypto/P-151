@@ -212,11 +212,13 @@ chiều ngược lại. Đây là lỗi hay gặp nhất của cả gói.
 
 Mẫu số là **mọi lượt**, kể cả lượt bị từ chối — đó là lý do BB-11 tồn tại.
 
-**Việc treo (chưa làm, ghi ở `reports/R23` mục "Việc KHÔNG làm"):** cột `actioned`
-đã có sẵn ở nguồn số liệu (`AutoResolutionSummary.actioned`,
-`IntentBreakdownEntry.actioned` trong `lib/adapters/metrics-store.ts`) nhưng **chưa
-được render lên JSX của `/bql/dashboard`** — đó là việc của gói giữ `app/**`, không
-phải của H20. Panel §4.5 dưới đây mô tả trạng thái ĐÍCH sau khi render xong.
+**Việc treo ở `reports/R23` ĐÃ ĐÓNG (H23 / `reports/R27`, 2026-09-23):** cột `actioned`
+(`AutoResolutionSummary.actioned`, `IntentBreakdownEntry.actioned` trong
+`lib/adapters/metrics-store.ts`) nay **được render** ở `app/(bql)/dashboard/page.tsx`:
+thẻ "Tỉ lệ tự động giải quyết" hiện `hành động {actioned}` kèm chú thích "Tự động =
+trả lời + hành động"; bảng "Theo intent" có cột `action` giữa `answer` và `clarify`.
+JSX KHÔNG tính lại tổng/tỉ lệ — chỉ hiện số store trả. Đo thật: `/dashboard` HTTP 200,
+"hành động 6", 0 `NaN` (`evidence/h23-dashboard-actioned/`).
 
 ### 4.2 — Tách theo intent
 

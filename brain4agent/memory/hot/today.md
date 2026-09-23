@@ -4,6 +4,25 @@
 
 ---
 
+## 🏁 Phiên 2026-09-23 (tiếp 3) — Đóng hai việc treo P05, tick G03/G09/G10/G23, Golden lượt mới
+
+### 🎯 Chỉ đạo: *"tiếp tục cái công việc xây dựng agent trong repo đi. đọc não rồi làm"* + đọc thêm hai commit mới nhất (`fa9adae` đồng bộ não sau P05, `d9e1a5e` video 2:17 cảnh agent hành động + `record_action.mjs`).
+SO phóng 2 worker song song (H22 audit_log · H23 dashboard), tự đo G23, chạy `demo_r7.mjs` và Golden khi hạn mức hồi, tự đo lại cây gộp.
+
+### ✅ Đã làm:
+- **H22 (R26):** `DataStore.insertAuditLog()` (Postgres + mock có getter test); sink của `lib/pipeline/action.ts` nối vào đó, fire-and-forget có `.catch` (G44); gỡ INSERT trùng trong `PostgresSimBackend.createBooking`; 2 test mới, chứng minh đỏ→xanh.
+- **H23 (R27):** `/bql/dashboard` hiện `hành động N` + chú thích, cột `action` theo intent; curl thật HTTP 200 "hành động 6", 0 NaN; ca test 10 lượt (5/2/1/2 ⇒ 70%).
+- **SO đo lại cây gộp:** `tsc` 0 · **238/238** · BB-05/07/10 = 0 · P05-M1 0 (`evidence/so-p05-treo/`).
+- **G09:** `demo_r7.mjs` `EXIT=0` (lượt đầu exit 1 vì tài liệu còn `Deprecated` từ lượt đứt hạn mức — G43). **G23:** `count = 0`. **G03/G10:** tick theo lệnh test thật (Đ49: `bql-authz` 3/3 + guard 7/7 action + `chat-history` 403; `bql-review` 4/4).
+- **Golden `--fresh` chuỗi model mới:** `safety` **12 pass · 0 fail · 4 blocked** (lần đầu 0 trượt thật); `faq` 0/50 — A2/A3 cạn hạn mức ngay sau đó. G11 vẫn CẤM TICK.
+- Đồng bộ: SPEC-P04 §3, SPEC-P05 §11 mục 7, TESTING-ACCEPTANCE §7 (G03/G09/G10/G11/G23), plan.md (Đ49 + checklist), roadmap, changelog, index, gotchas G43/G44, kernel, state.json.
+
+### 📊 Số đo cuối: tsc 0 · 238/238 · BB 0/0/0 · demo_r7 exit 0 · G23 0 · safety 12/0/4 · faq blocked.
+
+### ⛔ Chờ người / treo: hạn mức A2/A3 (chỉ `3.5-flash-lite` sống lúc 09:45) ⇒ `eval:golden --resume` sau; dọn DB fixture; `.claude/settings.json` + key Phoenix; deploy Vercel; `origin/main`; push.
+
+---
+
 ## 🏁 Phiên 2026-09-23 (tiếp 2) — P05: agent thực thi thay cư dân (Đ48)
 
 ### 🎯 Chỉ đạo: chủ tịch xem video demo, chốt Đ48 — mở khoá P05 TRƯỚC cổng, agent phải THỰC THI (đặt chỗ/huỷ) thay vì chỉ trả lời.

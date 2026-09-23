@@ -405,5 +405,19 @@ lại cho đúng SPEC" rồi phá hành vi đang đúng.
    nhận đã có, không tạo mới"); `action.ts` đọc lại `receipts` bằng
    `idempotency_key`/`(facility_id, slot_start, property_id)` trước khi trả lỗi.
 
+7. **Dòng `audit_log` mức `warn` khi `WriteTimeout` (§7, P05-M10) được ghi ĐÚNG MỘT nơi:**
+   `lib/pipeline/action.ts::mapBackendError` → sink mặc định → `DataStore.insertAuditLog()`
+   (`lib/adapters/db.ts`, thêm ở gói H22 / `reports/R26`, 2026-09-23). Backend mô phỏng
+   **KHÔNG** tự ghi `audit_log` nữa (câu `INSERT` trong khối `__forceWriteTimeout` của
+   `PostgresSimBackend.createBooking` đã gỡ — trước đó nó ghi trùng với pipeline). Sink là
+   **fire-and-forget có `.catch`**: ghi thất bại ⇒ in stderr, KHÔNG làm vỡ lượt trả lời;
+   hệ quả là trên serverless dòng audit có thể chưa kịp ghi khi response đã đóng — chấp
+   nhận cho vòng demo, ghi lại để không ai coi đó là bug lạ. Payload có `capability`,
+   `message`, `conversation_id`/`session_id`; KHÔNG có `facility_id`/`idempotency_key`
+   (điểm catch dùng chung cho mọi capability, hai giá trị đó chỉ tồn tại trong từng nhánh
+   dispatch). P05-M10 nay đếm dòng audit trên **mock** (`__getMockAuditLogForTesting`,
+   `tests/p05-pipeline-action.test.ts`); test Postgres `p05-write-timeout.test.ts` chỉ còn
+   kiểm 0 booking mồ côi + 0 retry.
+
 Nguồn: `reports/R22_thi-cong_p05-simbackend.md` mục "Quyết định thực thi KHÔNG có sẵn
-trong SPEC/contract".
+trong SPEC/contract"; mục 7 từ `reports/R26_thi-cong_p05-audit-log.md`.

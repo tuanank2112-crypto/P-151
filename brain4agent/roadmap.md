@@ -25,13 +25,13 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 1. **🖐 Dọn dữ liệu fixture trong DB demo** (đã sao lưu ở scratchpad phiên 2026-09-23): lệnh `node --env-file=.env.local scripts/sql.mjs "delete from conversations"` (cascade messages/answer_turns/review_queue) — agent bị bộ phân loại chặn "mass delete", người chạy tay. Sau đó hỏi 3–4 câu qua UI để hàng đợi HITL có pending thật. Test nay tự dọn (G37) nên không nhuộm lại.
 2. **🖐 Tạo `.claude/settings.json`** (hook AI-log của BTC, nội dung trong `reports/R21`) rồi `bash scripts/setup_hooks.sh`; mỗi thành viên lấy `AI_LOG_API_KEY` ở Phoenix. Không có ⇒ phần "AI Usage" của BTC = 0 bằng chứng (G38).
 3. **🖐 Hạn mức Gemini trước demo:** probe 3 model bằng curl (checklist trong `presentation/demo_script.md`); `.env.local` đã có chuỗi `MODEL_A2=gemini-3.6-flash,gemini-3.5-flash,gemini-2.5-flash`. Lượt trả lời đầu có thể mất 40–60 s khi A2 rơi về 3.5-flash — nói trước với giám khảo. Cân nhắc nạp billing hoặc key thứ hai.
-4. **Chạy lại `node --env-file=.env.local scripts/demo_r7.mjs`** khi hạn mức hồi để lấy evidence exit 0 cho gate G09 (script đã có, đã chứng minh đỏ).
+4. ~~Chạy lại `demo_r7.mjs` cho G09~~ — **✅ xong 2026-09-23** (`EXIT=0`, `evidence/h17-demo-r7/demo_r7_20260923_093246.txt`, G09 tick local). Trước demo thật vẫn kiểm `documents.status` của `OCP1-POOL-RULES-001` = `Approved` (G43).
 5. **Chạy lại Golden** (`npm run eval:golden` theo lô, Đ26) trên chuỗi model mới để có số M1/M3 — G11 vẫn CẤM TICK (hiện M1 1/40, M3 2/16 trên `/eval`). Ghi rõ model thật trong report.
 6. **🖐 Deploy Vercel** (chọn scope; đổi `DATABASE_URL` sang pooler 6543; đặt `DATA_BACKEND=postgres`, `MODEL_A*`, `SESSION_SECRET`, `GEMINI_API_KEY`) — R1.
 7. **🖐 Đưa sản phẩm lên `origin/main`** (hiện là template Python rỗng — G38) và thống nhất với đồng đội câu chuyện demo (rubric C104 vs PRD v0.2 "không auto-send").
 8. Điền tên/vai trò thành viên vào `README.md`, `presentation/README.md` (đang `[điền]`).
-9. Giấy tờ: `TESTING-ACCEPTANCE.md` §7 vẫn còn nhiều gate ⬜ ở cột `deploy` (chưa deploy được URL công khai); `reports/R06`/`R07` thiếu 3 dòng Handoff/Base/Head; `evidence/so-d25-d27` mồ côi; G30 chạy nguyên văn ra 2 dòng false-positive tự trỏ vào script kiểm.
-10. **Việc treo từ P05 (`reports/R23` mục "Việc KHÔNG làm"):** (a) **render cột `actioned`** (đã có sẵn ở `AutoResolutionSummary.actioned`/`IntentBreakdownEntry.actioned` trong `lib/adapters/metrics-store.ts`) lên JSX của `/bql/dashboard` — thuộc phạm vi `app/**`; (b) **ghi `audit_log` thật khi `WriteTimeout`** — hiện chỉ có sink test-only (`__setActionAuditSinkForTesting`), cần thêm hàm ghi `audit_log` vào `DataStore` rồi nối sink vào đó (`lib/adapters/db.ts`/`bql-store.ts`).
+9. Giấy tờ: `TESTING-ACCEPTANCE.md` §7 — cột `local` đã tick thêm G03/G09/G10/G23 (2026-09-23, Đ49); còn ⬜ local: G02/G05/G08/G11/G13/G16/G17/G18/G27–G31/G24–G26; cột `deploy` ⬜ hết (chưa deploy được URL công khai); `reports/R06`/`R07` thiếu 3 dòng Handoff/Base/Head; `evidence/so-d25-d27` mồ côi; G30 chạy nguyên văn ra 2 dòng false-positive tự trỏ vào script kiểm.
+10. ~~Việc treo từ P05 (`reports/R23`)~~ — **✅ đóng 2026-09-23:** (a) cột `actioned` đã render lên `/bql/dashboard` (H23/R27); (b) `audit_log` thật khi `WriteTimeout` qua `DataStore.insertAuditLog` (H22/R26). Cây gộp: `tsc` 0 · 238/238 · BB-05/07/10 = 0.
 11. Treo cũ: `expected_gate` DEF-04/S04 chờ chủ tịch · Đ32 chờ phê chuẩn · `setSectionExcluded` chưa có UI · hybrid chưa nối.
 
 ## Tương lai (Upcoming)
@@ -65,6 +65,14 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
   Ai muốn lật phải trả lời được "lấy baseline ở đâu".
 
 ## Đã hoàn thành (Done)
+
+- [x] **P05 — đóng hai việc treo (2026-09-23, H22/H23):** `DataStore.insertAuditLog()` +
+  sink của `lib/pipeline/action.ts` ghi `audit_log` mức `warn` thật khi `WriteTimeout`
+  (fire-and-forget, backend không còn ghi trùng); `/bql/dashboard` hiện `hành động N`
+  và cột `action` theo intent. Đo lại độc lập trên cây gộp: `tsc` 0 · **238/238** ·
+  BB-05/07/10 = 0 · P05-M1 `write_without_precheck: 0`. Report `R26`, `R27`; evidence
+  `evidence/h22-audit-log/`, `evidence/h23-dashboard-actioned/`, `evidence/so-p05-treo/`.
+  Cùng đợt: G09 exit 0 (`demo_r7.mjs`), G23 = 0, G03/G10 tick theo Đ49.
 
 - [x] **P05 — Lớp hành động: agent thực thi thay cư dân (2026-09-23, Đ48):**
   `lib/simbackend/` (`MemorySimBackend` + `PostgresSimBackend`, 9 capability, 2 lệnh

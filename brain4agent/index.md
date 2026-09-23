@@ -103,7 +103,8 @@ project-root/
 │   │                                 #   Console BQL. metrics-store: đọc answer_turns + score.ts
 │   │                                 #   cho dashboard/eval; [P05] có sẵn AutoResolutionSummary
 │   │                                 #   .actioned / IntentBreakdownEntry.actioned, CHƯA render UI
-│   └── pipeline/action.ts            #   [P05, MỚI] nhánh `action` trong runTurn() — precheck →
+│   └── pipeline/action.ts            #   [P05] nhánh `action` trong runTurn() — precheck →
+│   │                                 #   sink audit → DataStore.insertAuditLog (H22, fire-and-forget G44) →
 │                                     #   ghi → biên nhận; lấy kiểu từ contract.ts, getSimBackend
 │                                     #   từ index.ts (tách đôi import, xem SPEC-P05 §11)
 ├── lib/simbackend/                   # [P05, MỚI] backend cư dân MÔ PHỎNG — 9 capability (2 ghi,

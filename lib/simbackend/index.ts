@@ -1022,10 +1022,11 @@ export class PostgresSimBackend implements SimBackend {
     if (!f) throw new SimBackendError("NotFound", `facility_id không tồn tại: ${input.facility_id}`);
 
     if ((input as { __forceWriteTimeout?: boolean }).__forceWriteTimeout) {
-      await sql(
-        `INSERT INTO audit_log (level, actor_id, actor_role, event, payload) VALUES ('warn', NULL, 'system', 'action.write_timeout', $1::jsonb)`,
-        [JSON.stringify({ capability_id: "amenity.create_booking", facility_id: input.facility_id, idempotency_key: input.idempotency_key })]
-      );
+      // H22 W3 — backend CHỈ ném lỗi. Dòng `audit_log` mức `warn` (SPEC-P05
+      // §7) giờ được ghi đúng MỘT nơi: `lib/pipeline/action.ts::mapBackendError`
+      // (qua `DataStore.insertAuditLog`, gói H22 W1/W2). Trước đây file này
+      // TỰ ghi thêm một dòng `audit_log` ở đây — trùng với dòng pipeline ghi,
+      // vì backend mô phỏng không có quyền quyết "đã cảnh báo cư dân chưa".
       throw new SimBackendError("WriteTimeout", "Mô phỏng WriteTimeout (cờ test __forceWriteTimeout).");
     }
 

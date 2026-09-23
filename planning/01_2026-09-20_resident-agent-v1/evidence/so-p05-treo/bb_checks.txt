@@ -1,0 +1,8 @@
+violations: 0
+EXIT=0
+matches: 0
+EXIT=0
+matches: 0
+EXIT=0
+capabilities: 9 · write: 2 · write_without_precheck: 0
+EXIT=0

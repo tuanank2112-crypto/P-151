@@ -85,6 +85,42 @@ test("ĐỎ khi đổi mẫu số — bỏ lượt escalate khỏi tổng làm t
 // computeIntentBreakdown / computeReasonCodeBreakdown / computeGateTriggeredCounts
 // ─────────────────────────────────────────────────────────────────────────
 
+test("computeAutoResolutionSummary/computeIntentBreakdown — 10 lượt gồm action (Đ48, handoff H23): 5 answer, 2 action, 1 clarify, 2 escalate", () => {
+  const rows: AutoResolutionRow[] = [
+    ...Array(5).fill({ decision: "answer" as const }),
+    ...Array(2).fill({ decision: "action" as const }),
+    ...Array(1).fill({ decision: "clarify" as const }),
+    ...Array(2).fill({ decision: "escalate" as const }),
+  ];
+  const out = computeAutoResolutionSummary(rows);
+  assert.equal(out.actioned, 2);
+  assert.equal(out.auto_resolved, 7);
+  assert.equal(out.total_turns, 10);
+  assert.equal(out.auto_resolution_rate_pct, 70);
+
+  const byIntent = computeIntentBreakdown([
+    { detected_intent: "I-03", decision: "answer" },
+    { detected_intent: "I-03", decision: "answer" },
+    { detected_intent: "I-03", decision: "action" },
+    { detected_intent: "I-03", decision: "action" },
+    { detected_intent: "I-03", decision: "clarify" },
+    { detected_intent: "I-03", decision: "escalate" },
+    { detected_intent: "I-03", decision: "escalate" },
+    { detected_intent: "I-03", decision: "answer" },
+    { detected_intent: "I-03", decision: "answer" },
+    { detected_intent: "I-03", decision: "answer" },
+  ]);
+  const i03 = byIntent.find((r) => r.intent === "I-03");
+  assert.ok(i03);
+  assert.equal(i03!.answered, 5);
+  assert.equal(i03!.actioned, 2);
+  assert.equal(i03!.clarified, 1);
+  assert.equal(i03!.escalated, 2);
+  assert.equal(i03!.total, 10);
+  // rate_pct gồm cả action: (5+2)/10 = 70%
+  assert.equal(i03!.rate_pct, 70);
+});
+
 test("computeIntentBreakdown — nhóm theo intent, null ⇒ 'unknown'", () => {
   const out = computeIntentBreakdown([
     { detected_intent: "I-03", decision: "answer" },

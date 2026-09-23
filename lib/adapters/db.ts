@@ -267,6 +267,20 @@ export interface DataStore {
    *  mà không mở connection ngoài `lib/adapters/db.ts` (BB-07). Ghi vào report
    *  làm rõ đây là mở rộng có chủ đích, không phải bịa schema. */
   getConversationOwner(conversationId: string): Promise<string | null>;
+
+  /**
+   * Ghi đúng một dòng `audit_log` (SPEC-P05 §7, gói H22 — trước đó là việc
+   * treo ở R23 mục "Việc KHÔNG làm"). CHỈ chạm bảng `audit_log`, không đọc/ghi
+   * bảng nào khác. Trả `id` (kiểu `bigserial` ở Postgres, ép về chuỗi để khớp
+   * kiểu trả về đồng nhất giữa hai backend).
+   */
+  insertAuditLog(input: {
+    level: "info" | "warn" | "error";
+    actor_id: string | null;
+    actor_role: "resident" | "bql" | "system";
+    event: string;
+    payload: Record<string, unknown>;
+  }): Promise<{ id: string }>;
 }
 
 function backendName(): "mock" | "postgres" {
@@ -453,6 +467,22 @@ class PostgresDataStore implements DataStore {
       [conversationId]
     );
     return rows[0]?.user_id ?? null;
+  }
+
+  async insertAuditLog(input: {
+    level: "info" | "warn" | "error";
+    actor_id: string | null;
+    actor_role: "resident" | "bql" | "system";
+    event: string;
+    payload: Record<string, unknown>;
+  }): Promise<{ id: string }> {
+    const sql = getSql();
+    const rows = await sql<{ id: string }>(
+      `INSERT INTO audit_log (level, actor_id, actor_role, event, payload)
+       VALUES ($1,$2,$3,$4,$5::jsonb) RETURNING id::text`,
+      [input.level, input.actor_id, input.actor_role, input.event, JSON.stringify(input.payload)]
+    );
+    return { id: rows[0]!.id };
   }
 }
 

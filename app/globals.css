@@ -413,6 +413,11 @@ main {
   color: #5b6070;
   margin: 0;
 }
+.metrics-card__note {
+  font-size: 0.72rem;
+  color: #8a8f9c;
+  margin: 0.25rem 0 0;
+}
 .metrics-empty {
   color: #5b6070;
   border: 1px dashed #d3d6de;

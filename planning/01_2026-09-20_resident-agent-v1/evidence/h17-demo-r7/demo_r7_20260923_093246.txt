@@ -1,0 +1,4 @@
+[1] TRƯỚC: decision=answer citations=["POOL-SAFE-03"]
+[2] SAU KHI HẠ STATUS: decision=escalate reason_code=no_eligible_source
+[3] KHÔI PHỤC: decision=answer citations=["POOL-SAFE-03"]
+EXIT=0

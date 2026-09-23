@@ -2,6 +2,25 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-23 (tiếp 3): đóng hai việc treo P05 + gate G03/G09/G10/G23
+
+**Chưa tăng SemVer** — chưa deploy. Commit: sau `d9e1a5e`.
+
+### Decisions
+- **Đ49** (`plan.md` §2): lệnh gate G03/G10 sửa theo tên file test thật (`bql-authz`, `bql-review`); G03 thêm phép đếm mọi Server Action BQL đều qua `checkBqlAuthz` (7/7); số `8/8` của SPEC-P03 P03-M6 là ước lượng.
+
+### Added
+- `DataStore.insertAuditLog()` (`lib/adapters/db.ts` Postgres + `store-mock.ts` in-memory với `__getMockAuditLogForTesting`/`__resetMockAuditLogForTesting`); sink audit của `lib/pipeline/action.ts` nối vào đó (fire-and-forget, G44). 2 test mới (238 tổng).
+- `/bql/dashboard`: `hành động N` trên thẻ tỉ lệ tự động + cột `action` theo intent (`app/(bql)/dashboard/page.tsx`, `.metrics-card__note`), ca test 10 lượt trong `tests/metrics.test.ts`.
+- Hồ sơ: `handoffs/H22–H23`, `reports/R26–R27`, `evidence/{h22-audit-log,h23-dashboard-actioned,so-p05-treo,so-gates,h17-demo-r7,so-g11-golden}`.
+
+### Changed
+- `PostgresSimBackend.createBooking` không còn tự `INSERT INTO audit_log` ở nhánh `__forceWriteTimeout` (ghi trùng với pipeline); `tests/p05-write-timeout.test.ts` phần Postgres chỉ kiểm 0 booking mồ côi + 0 retry.
+- `TESTING-ACCEPTANCE` §7: G03/G09/G10/G23 ✅ local kèm evidence; SPEC-P04 §3 việc treo đóng; SPEC-P05 §11 thêm mục 7.
+
+### Đo được (cây gộp H22+H23, base `d9e1a5e`)
+`tsc --noEmit` exit 0 · `run_tests.mjs` **238/238, 0 fail, 0 skip** · BB-05/07/10 = 0 · P05-M1 `write_without_precheck: 0` · `demo_r7.mjs` exit 0 · G23 `count = 0`.
+
 ## [Chưa phát hành] - 2026-09-23 (tiếp): P05 — agent thực thi thay cư dân
 
 **Chưa tăng SemVer** — chưa deploy, `G11` chưa có số nghiệm thu; mục này ghi P05 thi

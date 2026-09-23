@@ -24,7 +24,9 @@ import {
 import { __setSimBackendForTesting } from "../lib/simbackend/index.ts";
 import { SimBackendError } from "../lib/simbackend/contract.ts";
 import {
+  __getMockAuditLogForTesting,
   __getMockReviewQueueForTesting,
+  __resetMockAuditLogForTesting,
   __resetMockReviewQueueForTesting,
 } from "../lib/adapters/store-mock.ts";
 import {
@@ -294,6 +296,40 @@ test("(d) WriteTimeout ⇒ status=unknown, createBooking gọi ĐÚNG 1 lần, c
   assert.equal(audits[0]!.level, "warn");
   assert.equal(audits[0]!.event, "action.write_timeout");
   assert.ok(r.answer_vi?.includes("không") || r.answer_vi?.includes("chưa"), "phải nói thật là chưa rõ");
+});
+
+// H22 W2 — sink MẶC ĐỊNH (KHÔNG override qua __setActionAuditSinkForTesting)
+// phải tự nối vào DataStore.insertAuditLog() thật (ở đây là kho mock, vì
+// DATA_BACKEND=mock ở đầu file này).
+test("(d''') WriteTimeout, sink MẶC ĐỊNH ⇒ DataStore.insertAuditLog ghi đúng 1 dòng warn", async () => {
+  __resetMockAuditLogForTesting();
+  const backend = new FakeSimBackend({
+    createThrows: new SimBackendError("WriteTimeout", "backend không phản hồi kịp"),
+  });
+  __setSimBackendForTesting(backend);
+  useA1(CREATE_ACTION);
+
+  const r = await runTurn({
+    conversation_id: conversationIdFromLabel("p05-d3"),
+    question_vi: "Đặt giúp tôi sân bóng bàn 9 giờ sáng mai.",
+    principal: RESIDENT,
+    now: SIM_NOW_2339,
+  });
+
+  assert.equal(r.action_result?.status, "unknown");
+  assert.equal(backend.countOf("createBooking"), 1, "CẤM RETRY WriteTimeout");
+
+  // Sink mặc định là fire-and-forget (KHÔNG await ở call site, đúng luật W2)
+  // — xả hết hàng đợi microtask trước khi đọc lại kho mock.
+  await new Promise((resolve) => setImmediate(resolve));
+
+  const rows = __getMockAuditLogForTesting();
+  assert.equal(rows.length, 1, "đúng 1 dòng audit_log được DataStore ghi");
+  assert.equal(rows[0]!.level, "warn");
+  assert.equal(rows[0]!.event, "action.write_timeout");
+  assert.equal(rows[0]!.actor_role, "system");
+  assert.equal(rows[0]!.payload.capability, "amenity.create_booking");
+  __resetMockAuditLogForTesting();
 });
 
 test("(d') QuotaExceeded ⇒ blocked mã B1, KHÔNG thử lại lệnh ghi", async () => {

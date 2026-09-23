@@ -1,0 +1,60 @@
+✔ (a) đặt thành công ⇒ decision=action, status=done, write_calls=1, thứ tự backend ĐÚNG (8.3575ms)
+✔ (b) SIM_NOW=23:39 + policy intake_closed ⇒ blocked, write_calls=0, nêu 08:30, CẤM nói giờ hoạt động (0.9249ms)
+✔ (b') blockedMessageVi dựng từ IntakeFacts — kiểu KHÔNG chứa operating_hours (0.207ms)
+✔ (c) huỷ: lượt 1 clarify B2 + savePendingAction, lượt 2 confirmed ⇒ done (1.5316ms)
+✔ (c') xác nhận khi KHÔNG còn hành động chờ ⇒ hỏi lại, KHÔNG gọi lệnh ghi nào (1.4059ms)
+✖ (d) WriteTimeout ⇒ status=unknown, createBooking gọi ĐÚNG 1 lần, có audit warn (1.3001ms)
+✖ (d''') WriteTimeout, sink MẶC ĐỊNH ⇒ DataStore.insertAuditLog ghi đúng 1 dòng warn (5.7772ms)
+✔ (d') QuotaExceeded ⇒ blocked mã B1, KHÔNG thử lại lệnh ghi (0.6725ms)
+✔ (d'') Forbidden ⇒ escalate pii_or_account_specific, KHÔNG phải lỗi hành động (0.6195ms)
+✔ (e) câu hỏi nội quy thường vẫn đi retrieval, KHÔNG chạm backend hành động (6.6226ms)
+✔ thiếu tiện ích (resolveFacility null) ⇒ clarify, KHÔNG đọc chính sách, KHÔNG ghi (0.4284ms)
+✔ thiếu slot_start ⇒ clarify TRƯỚC khi đọc chính sách (0.3353ms)
+✔ list_my_bookings ⇒ status=listed, write_calls=0 (0.4608ms)
+✔ khẩn cấp thắng tuyệt đối: có capability vẫn KHÔNG vào nhánh hành động (0.2491ms)
+✔ toVnIso trả offset +07:00, KHÔNG phải 'Z' — nếu là Z thì A1 lệch 7 tiếng (0.0962ms)
+✔ clockVi đọc giờ ĐÃ ở múi của chuỗi, không quy về UTC (0.8012ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 14
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 247.7453
+
+✖ failing tests:
+
+test at tests\p05-pipeline-action.test.ts:274:1
+✖ (d) WriteTimeout ⇒ status=unknown, createBooking gọi ĐÚNG 1 lần, có audit warn (1.3001ms)
+  AssertionError [ERR_ASSERTION]: phải để lại đúng một dòng audit mức warn (§7)
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/p05-pipeline-action.test.ts:295:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\p05-pipeline-action.test.ts:304:1
+✖ (d''') WriteTimeout, sink MẶC ĐỊNH ⇒ DataStore.insertAuditLog ghi đúng 1 dòng warn (5.7772ms)
+  AssertionError [ERR_ASSERTION]: đúng 1 dòng audit_log được DataStore ghi
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/p05-pipeline-action.test.ts:327:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

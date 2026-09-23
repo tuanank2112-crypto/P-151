@@ -1,0 +1,5 @@
+[1] TRƯỚC: decision=escalate citations=[]
+SAI HÀNH VI: bước [1] kỳ vọng decision=answer, được "escalate" (reason_code=no_eligible_source). Kiểm tra document_id/status seed trước khi demo.
+[2] SAU KHI HẠ STATUS: decision=escalate reason_code=no_eligible_source
+[3] KHÔI PHỤC: decision=answer citations=["POOL-SAFE-03"]
+CẢNH BÁO: dọn hội thoại demo thất bại: (EMAXCONNSESSION) max clients reached in session mode - max clients are limited to pool_size: 15
