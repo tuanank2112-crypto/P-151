@@ -1,4 +1,7 @@
 Vai: worker (vai-thi-cong) · loại: thi công · họ/model: Claude Sonnet 5 · Bước 0: exit 0 (`NÃO ĐÃ OK — KHÔNG CẦN NÂNG CẤP`) · hiểu việc: phạm vi = `app/(bql)/documents/**`, `app/(bql)/review/**`, `app/(bql)/layout.tsx`, `app/api/bql/**` (mới, không dùng tới), `lib/adapters/bql-store.ts` (mới), `app/globals.css` (chỉ thêm cuối), `tests/bql-*.test.ts` (mới) · xong khi = W1 build+curl 19 mã tài liệu · W2 script evidence chứng minh đổi tài liệu → đổi hành vi retrieval ngay, tự trả lại trạng thái cũ · W3 test máy trạng thái `review_queue.state` exit 0 · W4 test authz exit 0 và đã đo ĐỎ khi tạm gỡ chặn · W5 cổng tổng (tsc/build/test/3 script check) đều exit 0, test không giảm dưới 82 · cấm = ngoài phạm vi, `git add/commit/push` (theo 3 điều bổ sung của phiên, ưu tiên hơn handoff), chạy `eval_golden.mjs`/`probe_defects.mjs`, hardcode tri thức, cache theo câu hỏi.
+Handoff: `planning/01_2026-09-20_resident-agent-v1/handoffs/H07_p03-console-bql.md`
+Base: `c27015f` (dựng lại 2026-09-23 từ git: cha của commit thi công)
+Head: `345b647` (commit đưa gói vào `main`; worker không tự commit)
 
 ## 1. Lệnh + exit code nguyên văn (chạy sau cùng, trên mã đã revert)
 

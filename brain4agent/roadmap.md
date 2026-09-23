@@ -31,7 +31,7 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 6. **🖐 Deploy Vercel** (chọn scope; đổi `DATABASE_URL` sang pooler 6543; đặt `DATA_BACKEND=postgres`, `MODEL_A*`, `SESSION_SECRET`, `GEMINI_API_KEY`) — R1.
 7. **🖐 Đưa sản phẩm lên `origin/main`** (hiện là template Python rỗng — G38; sản phẩm ĐÃ ở `origin/feature/nhuy` = `9ac796c`, push 2026-09-23) và thống nhất với đồng đội câu chuyện demo (rubric C104 vs PRD v0.2 "không auto-send").
 8. Điền tên/vai trò thành viên vào `README.md`, `presentation/README.md` (đang `[điền]`).
-9. Giấy tờ: `TESTING-ACCEPTANCE.md` §7 — cột `local` đã tick thêm G03/G09/G10/G23 (2026-09-23, Đ49); còn ⬜ local: G02/G05/G08/G11/G13/G16/G17/G18/G27–G31/G24–G26; cột `deploy` ⬜ hết (chưa deploy được URL công khai); `reports/R06`/`R07` thiếu 3 dòng Handoff/Base/Head; `evidence/so-d25-d27` mồ côi; G30 chạy nguyên văn ra 2 dòng false-positive tự trỏ vào script kiểm.
+9. Giấy tờ: `TESTING-ACCEPTANCE.md` §7 — cột `local` đã tick thêm G03/G09/G10/G23 (2026-09-23, Đ49); còn ⬜ local: G02/G05/G08/G11/G13/G16/G17/G18/G27–G31/G24–G26; cột `deploy` ⬜ hết (chưa deploy được URL công khai); ~~`reports/R06`/`R07` thiếu header~~ (đã bổ sung 2026-09-23, Base/Head dựng lại từ git); `evidence/so-d25-d27` mồ côi; G30 chạy nguyên văn ra 2 dòng false-positive tự trỏ vào script kiểm.
 10. ~~Việc treo từ P05 (`reports/R23`)~~ — **✅ đóng 2026-09-23:** (a) cột `actioned` đã render lên `/bql/dashboard` (H23/R27); (b) `audit_log` thật khi `WriteTimeout` qua `DataStore.insertAuditLog` (H22/R26). Cây gộp: `tsc` 0 · 238/238 · BB-05/07/10 = 0.
 11. Treo cũ: `expected_gate` DEF-04/S04 chờ chủ tịch · Đ32 chờ phê chuẩn · `setSectionExcluded` chưa có UI · hybrid chưa nối.
 

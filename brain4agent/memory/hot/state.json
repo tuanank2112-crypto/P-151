@@ -185,7 +185,7 @@
     "G37_test_nhuom_db": "DA VA (H17 + golden-injection) — con don du lieu cu (nguoi)",
     "G38_origin_main_rong_deliverables": "deliverables da tao (H18); hook AI-log DA CAI va GIU NGUYEN theo chu tich (23/09); AI_LOG_API_KEY nguoi dung giu ngoai repo; origin/main van rong",
     "testing_acceptance_gate_table": "cot local: G01/G04/G06/G07/G12/G14/G15/G19/G20/G21/G22 da tick ✅ (2026-09-23); cot deploy con ⬜ het (chua deploy)",
-    "R06_R07_thieu_header": "thieu 3 dong Handoff/Base/Head (audit 2026-09-23)",
+    "R06_R07_thieu_header": "DA VA 2026-09-23 (Base/Head dung lai tu git: 7956ccc..c27015f, c27015f..345b647)",
     "P05_viec_treo": "DA DONG (H22/R26 + H23/R27, 2026-09-23); audit sink fire-and-forget (G44)",
     "G46_answer_turns_rong": "DA VA (H25/R29, Đ50) — so faithfulness truoc 23/09 la 0.0 gia; can luot moi de co so that",
     "G47_worker_stash": "luat AGENTS §5.D.5: worker CAM git stash/checkout/reset tren cay chung; stash@{0} du con trong kho (nguoi drop)"
@@ -196,7 +196,7 @@
     "ghi_chu": "DEF-04 tren mock: reason_code DUNG, gate G3 (cho quyet)"
   },
   "git": {
-    "head": "sau 075c285 — trace_sample --id",
+    "head": "sau 4588e4c — R06/R07 header",
     "remote": "origin https://github.com/AI20K-Build-Phase-Cohort-4/P-151.git · local main theo doi origin/feature/nhuy (DA PUSH 9ac796c) · origin/main = template Python rong (G38)"
   },
   "rules_added": {

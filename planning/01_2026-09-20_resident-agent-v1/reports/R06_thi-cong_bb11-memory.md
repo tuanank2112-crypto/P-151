@@ -1,4 +1,7 @@
 # R06 — Thi công BB-11 / Memory / Answer Turns
+Handoff: `planning/01_2026-09-20_resident-agent-v1/handoffs/H06_bb11-memory-answer-turns.md`
+Base: `7956ccc` (dựng lại 2026-09-23 từ git: cha của commit thi công)
+Head: `c27015f` (commit đưa gói vào `main`; worker không tự commit)
 
 Vai: worker (vai-thi-cong) · loại: THI CÔNG · họ/model: Claude, Sonnet 5 (claude-sonnet-5) · Bước 0: exit 0 (não đã OK, không cần nâng cấp) · hiểu việc: cài `DataStore` mọc thêm 4 hàm vận hành (W1); `runTurn()` ghi đúng MỘT `answer_turns` mỗi lượt kể cả escalate/ném lỗi qua `try/finally` (W2, BB-11/P02-C10); `/api/chat` tái dùng-hoặc-tạo `conversation_id` có kiểm chủ sở hữu, 403 khi lệch (W3); `tests/memory.test.ts` mới, phải từng ĐỎ (W4); cổng tổng W5. Phạm vi CHỈ 4 file `lib/adapters/db.ts` · `lib/pipeline/index.ts` · `app/api/chat/route.ts` · `lib/types.ts` (không đụng) cộng `tests/memory.test.ts` mới; CẤM đụng `app/(bql)/**`, `lib/adapters/{bql-store,metrics-store}.ts`, `lib/pipeline/{eligibility,retrieval,ownership,errors}.ts`, `evals/golden/rubric.md`; CẤM `git add/commit/stash/checkout`; CẤM chạy `eval_golden.mjs`/`probe_defects.mjs`.
 

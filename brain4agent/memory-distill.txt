@@ -27,8 +27,7 @@ scratchpad) · đặt `AI_LOG_API_KEY` (hook AI-log ĐÃ cài ở `.claude/setti
 nộp 202 nhưng KHÔNG Authorization vì biến trống cả 3 mức — kiểm bằng PowerShell) · scope
 Vercel + đổi `DATABASE_URL` sang pooler 6543 · `origin/main` đang là template rỗng (G38)
 · `expected_gate` DEF-04/S04 · Đ32. **CÒN TREO:** Golden `--resume` (4 ca safety + faq) ·
-`TESTING-ACCEPTANCE` §7 cột `deploy` toàn ⬜ · R06/R07 thiếu
-header · `setSectionExcluded` chưa UI · hybrid chưa nối. Đã push tới
+`TESTING-ACCEPTANCE` §7 cột `deploy` toàn ⬜ · `setSectionExcluded` chưa UI · hybrid chưa nối. Đã push tới
 `origin/feature/nhuy` (= local `main`, `9ac796c`); `origin/main` vẫn là template rỗng.
 Cấm nói đã hoàn thành trước khi có bằng chứng máy chạy thật.
 `docs/` mô tả SẢN PHẨM CŨ đã hạ cấp — chỉ còn nguồn tham chiếu. Nguồn chân lý
