@@ -55,6 +55,9 @@ interface MockChunk {
   content_vi: string;
   tokens: Set<string>;
   termFreq: Map<string, number>;
+  /** Đ59: tần suất từ trong `heading_vi` của section (khớp `chunks.heading_vi`
+   *  trọng số A của migration 007). KHÔNG góp vào idf. */
+  headingFreq: Map<string, number>;
 }
 
 interface KnowledgeIndex {
@@ -127,6 +130,8 @@ function buildIndex(): KnowledgeIndex {
       const termFreq = new Map<string, number>();
       for (const t of tokens) termFreq.set(t, (termFreq.get(t) ?? 0) + 1);
       for (const t of termFreq.keys()) df.set(t, (df.get(t) ?? 0) + 1);
+      const headingFreq = new Map<string, number>();
+      for (const t of tokenize(s.heading_vi)) headingFreq.set(t, (headingFreq.get(t) ?? 0) + 1);
       chunks.push({
         chunk_id: s.section_id,
         section_id: s.section_id,
@@ -134,6 +139,7 @@ function buildIndex(): KnowledgeIndex {
         content_vi: contentVi,
         tokens: new Set(tokens),
         termFreq,
+        headingFreq,
       });
     }
   }
@@ -170,7 +176,20 @@ export function __invalidateMockIndexForTesting(): void {
  */
 const COVERAGE_THRESHOLD = Number(process.env.MOCK_COVERAGE_THRESHOLD ?? 0.45);
 
-function scoreChunk(queryTerms: string[], idf: Map<string, number>, chunk: MockChunk): number | null {
+/**
+ * Đ59 (migration 007): hệ số cho một lần khớp từ trong TIÊU ĐỀ so với một lần
+ * khớp trong nội dung — cùng tinh thần tỉ lệ trọng số A/D mặc định của
+ * `ts_rank_cd` (1.0 / 0.1). Chunk không khớp từ nào của tiêu đề ⇒ điểm y như
+ * trước Đ59 (headingFreq không đóng góp gì).
+ */
+const HEADING_WEIGHT = 10;
+
+function scoreChunk(
+  queryTerms: string[],
+  idf: Map<string, number>,
+  chunk: MockChunk,
+  headingWeight: number = HEADING_WEIGHT
+): number | null {
   if (queryTerms.length === 0) return null;
   const uniqueQueryTerms = [...new Set(queryTerms)];
   let matchedWeight = 0;
@@ -180,9 +199,10 @@ function scoreChunk(queryTerms: string[], idf: Map<string, number>, chunk: MockC
     const w = idf.get(t) ?? Math.log((getIndex().chunks.length + 1) / 0.5); // termkhông có trong corpus -> idf cao (hiếm tuyệt đối)
     totalWeight += w;
     const tf = chunk.termFreq.get(t) ?? 0;
-    if (tf > 0) {
+    const htf = chunk.headingFreq.get(t) ?? 0;
+    if (tf > 0 || htf > 0) {
       matchedWeight += w;
-      rawRank += tf * w;
+      rawRank += (tf + headingWeight * htf) * w;
     }
   }
   // Khi câu hỏi có từ 3 từ phân biệt trở lên, đòi hỏi chunk phải khớp ít nhất
@@ -194,7 +214,9 @@ function scoreChunk(queryTerms: string[], idf: Map<string, number>, chunk: MockC
         (idf.get(a) ?? Math.log((getIndex().chunks.length + 1) / 0.5))
     );
     const topKeywords = sortedByIdf.slice(0, Math.ceil(uniqueQueryTerms.length * 0.35));
-    const hasTopKeyword = topKeywords.some((t) => (chunk.termFreq.get(t) ?? 0) > 0);
+    const hasTopKeyword = topKeywords.some(
+      (t) => (chunk.termFreq.get(t) ?? 0) > 0 || (chunk.headingFreq.get(t) ?? 0) > 0
+    );
     if (!hasTopKeyword) return null;
   }
 
@@ -433,6 +455,8 @@ class MockDataStore implements DataStore {
         document_id: chunk.document_id,
         content_vi: chunk.content_vi,
         score,
+        // Đ59b — điểm chỉ nội dung (headingWeight = 0), như Postgres `score_content`
+        score_content: scoreChunk(queryTerms, idf, chunk, 0) ?? 0,
       });
     }
     scored.sort((a, b) => b.score - a.score);

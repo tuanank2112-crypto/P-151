@@ -628,7 +628,9 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
   const retrieved: RetrievedChunk[] = await retrieve(a1.normalized_query_vi, TOP_K);
   steps.push({ step: "retrieval", ok: true, ms: Date.now() - retrievalStart });
 
-  const s1 = retrieved[0]?.score ?? 0;
+  // Đ59b — s1 trên thang điểm CHỈ nội dung (như trước migration 007) để trọng số
+  // tiêu đề không xô lệch `confidence`/TAU_ANSWER.
+  const s1 = retrieved.length > 0 ? Math.max(...retrieved.map((c) => c.score_content ?? c.score)) : 0;
   const retrievedCount = retrieved.length;
 
   // ── Chặng 7 — eligibility ─────────────────────────────────────────────

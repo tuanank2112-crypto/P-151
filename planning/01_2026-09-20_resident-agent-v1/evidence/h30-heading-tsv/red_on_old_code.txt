@@ -1,0 +1,64 @@
+# tests/heading-tsv.test.ts chạy trên bản sao git archive HEAD 445a424 (mã cũ) + file test mới
+EXIT=1
+✖ Đ59 mock: 'Khung giờ nào được phép chuyển đồ ra vào Tòa nhà?' ⇒ MOVE-TIME-03 trong top 8 (128.4438ms)
+✖ Đ59 migration 007: tsv = heading (A) || content (mặc định), dùng immutable_unaccent (0.2337ms)
+✖ Đ59: mọi INSERT INTO chunks trong lib/ và scripts/ đều ghi heading_vi (19.714ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 429.9998
+
+✖ failing tests:
+
+test at tests\heading-tsv.test.ts:22:1
+✖ Đ59 mock: 'Khung giờ nào được phép chuyển đồ ra vào Tòa nhà?' ⇒ MOVE-TIME-03 trong top 8 (128.4438ms)
+  AssertionError [ERR_ASSERTION]: MOVE-TIME-03 không có trong top 8: MOVE-SCOPE-01
+      at TestContext.<anonymous> (file:///C:/Users/lenku/AppData/Local/Temp/claude/d--build-phase/41cafb14-9a39-43db-b66e-1c01e81a0125/scratchpad/h30-old/tests/heading-tsv.test.ts:26:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\heading-tsv.test.ts:34:1
+✖ Đ59 migration 007: tsv = heading (A) || content (mặc định), dùng immutable_unaccent (0.2337ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\lenku\AppData\Local\Temp\claude\d--build-phase\41cafb14-9a39-43db-b66e-1c01e81a0125\scratchpad\h30-old\db\migrations\007_chunk_heading_tsv.sql'
+      at readFileSync (node:fs:440:20)
+      at TestContext.<anonymous> (file:///C:/Users/lenku/AppData/Local/Temp/claude/d--build-phase/41cafb14-9a39-43db-b66e-1c01e81a0125/scratchpad/h30-old/tests/heading-tsv.test.ts:35:15)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\lenku\\AppData\\Local\\Temp\\claude\\d--build-phase\\41cafb14-9a39-43db-b66e-1c01e81a0125\\scratchpad\\h30-old\\db\\migrations\\007_chunk_heading_tsv.sql'
+  }
+
+test at tests\heading-tsv.test.ts:57:1
+✖ Đ59: mọi INSERT INTO chunks trong lib/ và scripts/ đều ghi heading_vi (19.714ms)
+  AssertionError [ERR_ASSERTION]: lib\adapters\bql-store.ts: INSERT INTO chunks thiếu heading_vi
+      at TestContext.<anonymous> (file:///C:/Users/lenku/AppData/Local/Temp/claude/d--build-phase/41cafb14-9a39-43db-b66e-1c01e81a0125/scratchpad/h30-old/tests/heading-tsv.test.ts:64:14)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'section_id, document_id, chunk_index, content_vi, token_count',
+    expected: /\bheading_vi\b/,
+    operator: 'match',
+    diff: 'simple'
+  }

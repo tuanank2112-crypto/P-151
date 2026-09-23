@@ -107,7 +107,7 @@ test("step-order: thoát sớm ở chặng 2 (emergency) chỉ có ĐÚNG 2 ph�
 
 test("step-order: thoát sớm ở chặng 7 (zero eligible) dừng đúng ở eligibility, KHÔNG có draft/verify", async () => {
   __setTransportForTesting({
-    fetch: sequentialFetch([classifierBody({ normalized_query_vi: "sân pickleball giờ mở cửa" })]),
+    fetch: sequentialFetch([classifierBody({ normalized_query_vi: "pickleball" /* Đ59b: "sân"/"giờ" nay khớp TIÊU ĐỀ "Giờ hoạt động Sân chơi trẻ em" ở mock — dùng từ chắc chắn vắng trong kho để giữ ca zero-eligible */ })]),
     sleep: async () => {},
   });
   const result = await runTurn({

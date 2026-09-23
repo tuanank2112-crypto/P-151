@@ -9,7 +9,7 @@
     "gates_no_key_needed": {
       "tsc": "npx tsc --noEmit · exit 0",
       "build": "npm run build · exit 0 (clone sach cung exit 0)",
-      "test": "289/289",
+      "test": "292/292",
       "BB-07": "check_adapter_boundary.sh · violations: 0",
       "BB-10": "check_no_hardcoded_knowledge.sh · matches: 0",
       "BB-05": "check_no_confidence_ui.sh · matches: 0",
@@ -84,7 +84,8 @@
       "G08 xanh tren production (Đ50+Đ52)",
       "H27 E-5/E-6 (Đ56/Đ56b)",
       "H28 golden any-of (Đ56)",
-      "H29 Đ58 relevance"
+      "H29 Đ58 relevance",
+      "H30 migration 007 + Đ59b score_content"
     ],
     "next": "AGENT: va Golden theo phan loai (C nguy hiem truoc, roi B, E); A1 phan loai PII. NGUOI: quyet DEF-04 gate (S01/S02/S04), origin/main, git stash drop",
     "remaining": [
@@ -144,15 +145,14 @@
   },
   "blocked_needs_human": {
     "cau_hoi_D17": "A2 mat bac Pro. Neu Golden ra M1 < 34/40 thi nap tien Google Cloud hay chap nhan diem thap? Can quyet TRUOC khi chay Golden tren Postgres",
-    "phe_chuan_D32": "Doi 01-CONTRACTS §4.2 plainto_tsquery -> to_tsquery OR. Da ap vi khong ap thi demo khong chay duoc dong nao; dao lai bang mot commit revert",
-    "tsv_heading": "Migration 007: dua heading_vi vao chunks.tsv (trong so A) — cham DB Supabase that + DDL 01-CONTRACTS §3 (G53)"
+    "phe_chuan_D32": "Doi 01-CONTRACTS §4.2 plainto_tsquery -> to_tsquery OR. Da ap vi khong ap thi demo khong chay duoc dong nao; dao lai bang mot commit revert"
   },
   "db": {
     "provider": "supabase",
     "decision": "Đ25",
     "driver": "pg (TCP)",
     "trang_thai": "DA DON fixture 2026-09-23 11:47: con 121 conv/234 msg/191 turns (golden 160)/rq 5 (pending 3). Backup: evals/runs/backup_fixture_1790138807178.json (gitignore)",
-    "migrations": "theo doi bang schema_migrations (Đ30). 001..004 baseline, 005 ap dung that exit 0",
+    "migrations": "001..007 (007 = heading_vi vao tsv, Đ59; E-5/s1 dung score_content — Đ59b)",
     "chunks_co_embedding": 0,
     "cong_ket_noi": "local .env.local :5432 (session); Vercel production :6543 (transaction) — da do 19 doc/2 user qua 6543",
     "CANH_BAO": "migration DA CHAY thi CAM sua file cu — them file moi (checksum lech se bi canh bao)"

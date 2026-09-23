@@ -1,0 +1,2 @@
+dryrun_007 ok inside txn: chunks=98 heading_empty=0
+ROLLBACK done

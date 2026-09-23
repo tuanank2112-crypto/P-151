@@ -50,7 +50,10 @@ export function buildLexicalQuery(
 ): LexicalQuery {
   const text = [
     "SELECT c.id, c.section_id, c.document_id, c.content_vi,",
-    "       ts_rank_cd(c.tsv, to_tsquery('simple', public.immutable_unaccent($1)), 32) AS score",
+    "       ts_rank_cd(c.tsv, to_tsquery('simple', public.immutable_unaccent($1)), 32) AS score,",
+    // Đ59b — điểm CHỈ trên nội dung, tính tại chỗ (không cần cột/index mới):
+    // E-5 và s1 dùng thang đo này, như trước migration 007.
+    "       ts_rank_cd(to_tsvector('simple', public.immutable_unaccent(c.content_vi)), to_tsquery('simple', public.immutable_unaccent($1)), 32) AS score_content",
     "FROM chunks c",
     "WHERE c.tsv @@ to_tsquery('simple', public.immutable_unaccent($1))",
     "ORDER BY score DESC",

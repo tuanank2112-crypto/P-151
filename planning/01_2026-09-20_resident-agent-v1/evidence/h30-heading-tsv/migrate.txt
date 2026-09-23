@@ -1,0 +1,20 @@
+$ node --env-file=.env.local scripts/migrate.mjs  (lần 1)
+-- applying 007_chunk_heading_tsv.sql
+migrations applied: 1 · skipped: 6
+EXIT=0
+$ node --env-file=.env.local scripts/migrate.mjs  (lần 2)
+migrations applied: 0 · skipped: 7
+EXIT=0
+$ node --env-file=.env.local scripts/migrate.mjs --status
+001_enums.sql                      đã áp dụng
+002_users.sql                      đã áp dụng
+003_knowledge.sql                  đã áp dụng
+004_operational.sql                đã áp dụng
+005_user_property_type.sql         đã áp dụng
+006_p05_action_layer.sql           đã áp dụng
+007_chunk_heading_tsv.sql          đã áp dụng
+EXIT=0
+$ dryrun_007.mjs (chạy lại nội dung 007 trên DB đã có 007, BEGIN…ROLLBACK)
+dryrun_007 ok inside txn: chunks=98 heading_empty=0
+ROLLBACK done
+EXIT=0

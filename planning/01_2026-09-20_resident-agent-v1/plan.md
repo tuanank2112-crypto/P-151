@@ -739,6 +739,18 @@ Ba agent rà độc lập + SO đo lại (`brain4agent/memory/hot/today.md` phi�
 
 **Lật được:** mục 1 khi 3.5-flash hồi (đổi lại một dòng env). Mục 2–4 không. **Chi phí lật mục 2:** hàng đợi HITL lại rỗng vĩnh viễn.
 
+### Đ59 — 2026-09-23 · Migration 007: tiêu đề mục vào chỉ mục tìm kiếm (G53)
+
+**Bối cảnh:** `chunks.tsv` chỉ dựng từ `content_vi` ⇒ "Khung giờ được phép chuyển đồ" (MOVE-TIME-03) hạng 13, "Khung giờ thi công" (CONS-TIME-03) hạng 9 dù tiêu đề khớp gần nguyên văn; TOP_K = 8 ⇒ trượt ở MỌI lượt Golden. Thử TOP_K 16 không giúp (`evidence/so-topk/`). Chủ tịch duyệt migration.
+
+**Quyết định:** `db/migrations/007_*.sql` thêm `chunks.heading_vi text NOT NULL DEFAULT ''`, backfill từ `sections`, dựng lại `tsv` = heading (A) || content (D, như cũ), dựng lại GIN; mọi `INSERT INTO chunks` ghi `heading_vi`; kho mock cộng điểm tiêu đề tương ứng. CẤM sửa file migration 001–006 (Đ30 checksum). Thi công H30.
+
+**Thi công H30 (`reports/R34`, ⛔ đúng luật):** migration 007 chạy thật (98→98 chunk, idempotent), 2 câu khung giờ lên hạng 1 — NHƯNG mọi mức trọng số tiêu đề đẩy BBQ-BOOK-02 lên trên cặp mâu thuẫn của S03 ⇒ mất G1 (production dính ~30 phút). SO đo 5 mức (NONE/D/C/B/A) trên DB thật: không mức nào giữ được S03 ⇒ hạ trọng số KHÔNG phải cách vá.
+
+**Đ59b (SO, theo L.2 — tinh chỉnh trong Đ59 đã duyệt, KHÔNG thêm migration):** SQL trả thêm `score_content` (ts_rank_cd trên riêng nội dung, tính tại chỗ); `score` có tiêu đề CHỈ để xếp hạng/lấy top 8; E-5 (nguồn điểm cao nhất bị tranh chấp) và `s1` dùng `score_content` ⇒ S03 G1 và thang `confidence` y như trước 007. Mock tương ứng; 3 test hình-dạng-luồng đổi câu chuẩn hoá sang "pickleball" (vắng hẳn trong kho). Đo DB thật 5/5 (S03 G1, F-I03-02, F-I04-02, F-I04-04, F-I03-01), s1 trùng số trước 007; 292/292.
+
+**Lật được:** có — migration ngược (bỏ trọng số tiêu đề). **Chi phí:** thấp.
+
 ### Đ58 — 2026-09-23 · Kiểm LIÊN QUAN tách riêng (câu hỏi + bản nháp) — chặn trả lời "vòng quanh"; VC-03 giữ nguyên
 
 **Bối cảnh:** Golden 13:46: S02/F-ESC-02 "phí làm lại thẻ xe máy" — DeepSeek đáp phí thẻ CƯ DÂN / thủ tục, A3 chấm 1.0 vì đúng nguồn. Chủ tịch duyệt "thêm answers_question vào A3". Khi thiết kế, SO đọc VC-03 (00-ARCHITECTURE: "CẤM để A3 thấy câu hỏi — nó sẽ thông cảm cho claim không neo") ⇒ đổi CƠ CHẾ, giữ MỤC ĐÍCH đã duyệt: lời gọi riêng `relevance` chỉ thấy câu hỏi + bản nháp, không thấy evidence.

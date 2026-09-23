@@ -526,3 +526,8 @@ Project `resident-agent-p151` (team `resident-agent-demo`, Pro dùng thử) có 
 ### G53 — Chỉ mục tìm kiếm `chunks.tsv` KHÔNG chứa tiêu đề mục ⇒ câu hỏi khớp nguyên văn tiêu đề vẫn truy hồi hụt (đo 2026-09-23)
 
 `003_knowledge.sql`: `tsv = to_tsvector(simple, immutable_unaccent(content_vi))` — không có `heading_vi`. Câu "Khung giờ nào được phép chuyển đồ…" có mục `MOVE-TIME-03` tiêu đề "Khung giờ được phép chuyển đồ" nhưng chỉ xếp **hạng 13** (TOP_K = 8); `CONS-TIME-03` hạng 9. Thử nâng `TOP_K` 8→16 (không commit, `evidence/so-topk/`): M1 vẫn 33/40, 3 ca lên 3 ca xuống, 2 câu khung giờ vẫn trượt ⇒ KHÔNG phải cách vá. Vá đúng gốc: đưa `heading_vi` vào `tsv` với trọng số cao (migration mới + DDL `01-CONTRACTS` §3 + kho mock) — chờ chủ tịch duyệt vì chạm DB thật.
+
+
+### G54 — Thêm trọng số tiêu đề vào chỉ mục làm MẤT báo mâu thuẫn S03, dù chunk không khớp tiêu đề giữ nguyên điểm (2026-09-23)
+
+Migration 007 (Đ59) cộng tiêu đề trọng số A vào `tsv`. Giả định "chỉ chunk khớp tiêu đề mới đổi điểm" đúng, nhưng TOP1 của gần như mọi câu đều khớp ít nhất một từ tiêu đề chung ("giờ", "lượt", "sân") ⇒ điểm top1 tăng 0.18–0.40 và thứ tự đổi. S03 trước đó ra G1 CHỈ nhờ 4 chunk đồng điểm 0.375; sau 007, BBQ-BOOK-02 (tiêu đề có "lượt") vượt lên một mình ⇒ luật E-5 (Đ56b) không báo ⇒ production mất G1 ~30 phút. Đo 5 mức trọng số: KHÔNG mức nào giữ S03. **Vá (Đ59b):** tách hai điểm — `score` (có tiêu đề) để xếp hạng, `score_content` (chỉ nội dung) cho E-5 và `s1`. **Luật:** đổi công thức xếp hạng thì chạy probe S03 + các câu gate TRƯỚC khi chạy migration trên DB thật; tín hiệu dùng cho quyết định an toàn không được dùng chung thang đo với tín hiệu xếp hạng.

@@ -194,7 +194,7 @@ test("W1 câu HỎI NỘI QUY ⇒ capability=null, pipeline đi retrieval như c
     fetch: async () =>
       geminiText(
         classifierBody({
-          normalized_query_vi: "sân pickleball giờ mở cửa",
+          normalized_query_vi: "pickleball" /* Đ59b: "sân"/"giờ" nay khớp TIÊU ĐỀ "Giờ hoạt động Sân chơi trẻ em" ở mock — dùng từ chắc chắn vắng trong kho để giữ ca zero-eligible */,
           action: actionBody(), // capability = null
         })
       ),

@@ -21,6 +21,8 @@ SO phóng 2 worker song song (H22 audit_log · H23 dashboard), tự đo G23, ch�
 
 ### ⛔ Chờ người / treo: hạn mức A2/A3 (chỉ `3.5-flash-lite` sống lúc 09:45) ⇒ `eval:golden --resume` sau; dọn DB fixture; deploy Vercel; `origin/main`.
 
+### 🗃 Đợt 16 (chủ tịch "duyệt migration" + "chuyển thông tin cho teammate"): H30 chạy 007 thật ⇒ khung giờ hạng 1 nhưng S03 mất G1 (G54, production ~30 phút). Đ59b: `score_content` cho E-5/s1 ⇒ 5/5 probe, 292/292, deploy lại. Soạn tin nhắn cho đội (URL + tài khoản + test nhanh, không đăng web vì có mật khẩu).
+
 ### 🔬 Thử TOP_K 16 (không commit): M1 vẫn 33/40, xáo 6 ca, khung giờ vẫn trượt ⇒ bỏ. Căn nguyên G53: `chunks.tsv` không có tiêu đề. Chờ duyệt migration đưa tiêu đề vào chỉ mục.
 
 ### 📊 Golden 14:21 sau Đ58: M3 16/16 ✅, M1 33/40 (13:46 là 35) — dao động ±2; relevance gọi 41 lượt, chặn 1. Chưa lượt nào đạt cả hai ngưỡng.

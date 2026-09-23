@@ -196,11 +196,16 @@ export async function applyEligibility(
   // điểm có thể đổi chỗ sau seed/reindex; S03 có 4 chunk đồng điểm ở đầu. Nhóm
   // mâu thuẫn nào có thành viên ĐỒNG ĐIỂM với điểm cao nhất ⇒ vẫn báo (nghiêng
   // về an toàn: nghi ngờ thì báo mâu thuẫn, không trả lời).
-  const topScore = passedFirstPass.length > 0 ? passedFirstPass[0]!.score : null;
+  // Đ59b — so trên `score_content` (điểm CHỈ nội dung, thang đo trước
+  // migration 007): trọng số tiêu đề chỉ để xếp hạng, KHÔNG được quyết định
+  // nguồn nào "khớp nhất" cho luật mâu thuẫn (đo 2026-09-23: mọi mức trọng số
+  // tiêu đề đều đẩy BBQ-BOOK-02 lên trên cặp mâu thuẫn của S03 ⇒ mất G1).
+  const contentScore = (c: RetrievedChunk): number => c.score_content ?? c.score;
+  const topScore = passedFirstPass.length > 0 ? Math.max(...passedFirstPass.map(contentScore)) : null;
   const topGroups = new Set<string>();
   if (topScore !== null) {
     for (const c of passedFirstPass) {
-      if (c.score < topScore) break;
+      if (contentScore(c) < topScore) continue;
       const g = sectionConflictGroup.get(c.section_id) ?? null;
       if (g) topGroups.add(g);
     }

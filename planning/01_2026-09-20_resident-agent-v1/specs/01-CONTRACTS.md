@@ -227,6 +227,17 @@ CREATE TABLE chunks (
   UNIQUE (section_id, chunk_index)
 );
 CREATE INDEX chunks_tsv_idx  ON chunks USING gin(tsv);
+
+-- Đ59 (2026-09-23, migration 007 — chủ tịch duyệt): tiêu đề mục vào chỉ mục.
+-- Cột mới chunks.heading_vi (sao từ sections.heading_vi — cột GENERATED không JOIN
+-- được bảng khác), tsv dựng lại:
+--   setweight(to_tsvector('simple', immutable_unaccent(heading_vi)), 'A')
+--   || to_tsvector('simple', immutable_unaccent(content_vi))      -- trọng số D như cũ
+-- Nội dung GIỮ trọng số D (mặc định) ⇒ câu hỏi không khớp tiêu đề có điểm y như trước
+-- (không xô lệch s1 / TAU_ANSWER); khớp tiêu đề được cộng thêm ở trọng số A.
+-- MỌI câu INSERT INTO chunks BẮT BUỘC ghi heading_vi (seed, upload, đổi version).
+-- Đ59b: truy vấn §4.2 trả THÊM score_content = ts_rank_cd(to_tsvector(content), q, 32);
+-- `score` (có tiêu đề) CHỈ để xếp hạng; E-5 và s1 BẮT BUỘC dùng score_content.
 CREATE INDEX chunks_vec_idx  ON chunks USING hnsw (embedding vector_cosine_ops);
 ```
 

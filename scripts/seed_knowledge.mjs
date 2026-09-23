@@ -161,13 +161,15 @@ async function upsertChunk(sql, section, documentId, chunkIndex, contentVi) {
   const tokenCount = estimateTokenCount(contentVi);
   const embedding = await embedIfHybrid(contentVi);
   await sql(
-    `INSERT INTO chunks (section_id, document_id, chunk_index, content_vi, embedding, token_count)
-     VALUES ($1,$2,$3,$4,$5,$6)
+    `INSERT INTO chunks (section_id, document_id, chunk_index, content_vi, embedding, token_count, heading_vi)
+     VALUES ($1,$2,$3,$4,$5,$6,$7)
      ON CONFLICT (section_id, chunk_index) DO UPDATE SET
        content_vi = EXCLUDED.content_vi,
        embedding = EXCLUDED.embedding,
-       token_count = EXCLUDED.token_count`,
-    [section.section_id, documentId, chunkIndex, contentVi, embedding, tokenCount]
+       token_count = EXCLUDED.token_count,
+       heading_vi = EXCLUDED.heading_vi`,
+    // Đ59 (migration 007): heading_vi vào chunks.tsv trọng số A — BẮT BUỘC ghi.
+    [section.section_id, documentId, chunkIndex, contentVi, embedding, tokenCount, section.heading_vi]
   );
 }
 

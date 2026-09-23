@@ -1,0 +1,12 @@
+$ bash scripts/check_adapter_boundary.sh
+violations: 0
+EXIT=0
+$ bash scripts/check_no_hardcoded_knowledge.sh
+matches: 0
+EXIT=0
+$ node scripts/validate_knowledge.mjs
+documents: 19 · sections: 98 · defects_ok: 4/4
+EXIT=0
+$ node scripts/check_enum_closed.mjs
+rejected: invalid input value for enum reason_code · enum_ts=15 · enum_db=15 · match: true
+EXIT=0

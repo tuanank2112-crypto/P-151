@@ -462,13 +462,16 @@ export async function uploadDocument(
        RETURNING section_id
      ),
      new_chunks AS (
-       INSERT INTO chunks (section_id, document_id, chunk_index, content_vi, token_count)
+       INSERT INTO chunks (section_id, document_id, chunk_index, content_vi, token_count, heading_vi)
        SELECT
          elem->>'section_id',
          (SELECT document_id FROM new_doc),
          (elem->>'chunk_index')::int,
          elem->>'content_vi',
-         (elem->>'token_count')::int
+         (elem->>'token_count')::int,
+         -- Đ59 (migration 007): tiêu đề của section tương ứng, lấy từ $8.
+         COALESCE((SELECT s->>'heading_vi' FROM jsonb_array_elements($8::jsonb) s
+                   WHERE s->>'section_id' = elem->>'section_id' LIMIT 1), '')
        FROM jsonb_array_elements($9::jsonb) elem
        RETURNING id
      )
@@ -615,13 +618,16 @@ export async function newDocumentVersion(input: {
          RETURNING section_id
        ),
        new_chunks AS (
-         INSERT INTO chunks (section_id, document_id, chunk_index, content_vi, token_count)
+         INSERT INTO chunks (section_id, document_id, chunk_index, content_vi, token_count, heading_vi)
          SELECT
            elem->>'section_id',
            (SELECT document_id FROM new_doc),
            (elem->>'chunk_index')::int,
            elem->>'content_vi',
-           (elem->>'token_count')::int
+           (elem->>'token_count')::int,
+           -- Đ59 (migration 007): tiêu đề của section tương ứng, lấy từ $9.
+           COALESCE((SELECT s->>'heading_vi' FROM jsonb_array_elements($9::jsonb) s
+                     WHERE s->>'section_id' = elem->>'section_id' LIMIT 1), '')
          FROM jsonb_array_elements($10::jsonb) elem
          RETURNING id
        ),

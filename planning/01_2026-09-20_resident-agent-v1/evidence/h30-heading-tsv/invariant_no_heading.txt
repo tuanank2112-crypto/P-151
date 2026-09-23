@@ -1,0 +1,9 @@
+question | chunks_matched | heading_hit | no_heading_hit | max_abs_diff_no_heading | top1_old_formula_section | top1_old_formula_score
+Khung giờ nào được phép chuyển đồ ra vào Tòa nhà? | 86 | 25 | 61 | 0.000e+0 | MOVE-SCOPE-01 | 0.500000
+Thi công sửa chữa căn hộ được làm trong khung giờ nào? | 91 | 31 | 60 | 0.000e+0 | VIL-RENOVATE-03 | 0.545455
+Trẻ em dưới 12 tuổi có được vào bể bơi một mình không? | 79 | 13 | 66 | 0.000e+0 | POOL-SAFE-03 | 0.615385
+Cấp lại thẻ cư dân bị mất tốn bao nhiêu tiền? | 79 | 24 | 55 | 0.000e+0 | PARK-LOST-06 | 0.583333
+Tốc độ tối đa khi lái xe trong hầm là bao nhiêu? | 89 | 33 | 56 | 0.000e+0 | PARK-SPEED-03 | 0.523810
+Vườn Nướng BBQ mỗi hộ được đặt tối đa mấy lượt một tuần? | 82 | 21 | 61 | 0.000e+0 | BBQ-BOOK-02 | 0.545455
+Hàng rào mặt tiền biệt thự được cao tối đa bao nhiêu? | 73 | 19 | 54 | 0.000e+0 | VIL-FENCE-02 | 0.444444
+Sân pickleball mở cửa mấy giờ? | 69 | 22 | 47 | 0.000e+0 | POOL24-BAN-02 | 0.375000

@@ -1,0 +1,15 @@
+# after · 2026-09-23T07:43:21.415Z · TOP_K=8
+chunks_count=98
+schema_migrations=001_enums.sql,002_users.sql,003_knowledge.sql,004_operational.sql,005_user_property_type.sql,006_p05_action_layer.sql,007_chunk_heading_tsv.sql
+column heading_vi: (plain)
+column tsv: (setweight(to_tsvector('simple'::regconfig, immutable_unaccent(heading_vi)), 'A'::"char") || to_tsvector('simple'::regconfig, immutable_unaccent(content_vi)))
+chunks_heading_empty=0
+case_id | expected | rank | score_expected | in_top8 | top1_section | top1_score | top3
+F-I04-02 | MOVE-TIME-03 | 1 | 0.864865 | yes | MOVE-TIME-03 | 0.864865 | MOVE-TIME-03,PARK-CARD-02,BLD-QUIET-02
+F-I04-04 | CONS-TIME-03 | 1 | 0.821429 | yes | CONS-TIME-03 | 0.821429 | CONS-TIME-03,VIL-RENOVATE-03,MOVE-TIME-03
+F-I03-01 | POOL-SAFE-03 | 2 | 0.782609 | yes | POOL-ENTRY-02 | 0.800000 | POOL-ENTRY-02,POOL-SAFE-03,POOL-HYG-04
+F-I01-04 | CARD-FEE-05 | 2 | 0.838710 | yes | CARD-REISSUE-03 | 0.890110 | CARD-REISSUE-03,CARD-FEE-05,CARD-NEW-02
+F-I02-05 | PARK-SPEED-03 | 1 | 0.836066 | yes | PARK-SPEED-03 | 0.836066 | PARK-SPEED-03,PARK-RESERVE-04,VIL-VEHICLE-06
+F-I03-02 | BBQ-BOOK-02 | 1 | 0.838710 | yes | BBQ-BOOK-02 | 0.838710 | BBQ-BOOK-02,BBQ-SCOPE-01,BBQ-CAP-01
+F-I05-05 | VIL-FENCE-02 | 1 | 0.736842 | yes | VIL-FENCE-02 | 0.736842 | VIL-FENCE-02,VIL-RENOVATE-03,VIL-SCOPE-01
+F-ESC-01 | - | - | - | - | POOL24-HOURS-01 | 0.772727 | POOL24-HOURS-01,LAKE-HOURS-03,PLAY-HOURS-04

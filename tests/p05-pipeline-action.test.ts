@@ -388,7 +388,7 @@ test("(d'') Forbidden ⇒ escalate pii_or_account_specific, KHÔNG phải lỗi 
 test("(e) câu hỏi nội quy thường vẫn đi retrieval, KHÔNG chạm backend hành động", async () => {
   const backend = new FakeSimBackend();
   __setSimBackendForTesting(backend);
-  useA1({}, { normalized_query_vi: "sân pickleball giờ mở cửa" });
+  useA1({}, { normalized_query_vi: "pickleball" /* Đ59b: "sân"/"giờ" nay khớp TIÊU ĐỀ "Giờ hoạt động Sân chơi trẻ em" ở mock — dùng từ chắc chắn vắng trong kho để giữ ca zero-eligible */ });
 
   const r = await runTurn({
     conversation_id: conversationIdFromLabel("p05-e"),

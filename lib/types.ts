@@ -81,7 +81,11 @@ export interface RetrievedChunk {
   section_id: string;
   document_id: string;
   content_vi: string;
-  score: number; // ∈ (0,1) — xem 01-CONTRACTS.md §4.2
+  score: number; // ∈ (0,1) — xem 01-CONTRACTS.md §4.2 — Đ59: có cộng trọng số TIÊU ĐỀ, chỉ dùng để XẾP HẠNG
+  /** Đ59b — điểm CHỈ trên nội dung (như trước migration 007). Dùng cho E-5
+   *  (nguồn điểm cao nhất có bị tranh chấp) và `s1` — giữ nguyên thang đo cũ
+   *  để trọng số tiêu đề không xô lệch luật mâu thuẫn và `confidence`. */
+  score_content?: number;
 }
 
 export interface Citation {

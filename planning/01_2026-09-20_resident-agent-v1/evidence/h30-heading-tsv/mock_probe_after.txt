@@ -1,0 +1,4 @@
+Khung giờ nào được phép chuyển đồ ra vào Tòa nhà? | MOVE-TIME-03:0.991 MOVE-SCOPE-01:0.978
+sân pickleball giờ mở cửa | PLAY-HOURS-04:0.974
+Sân pickleball mở cửa mấy giờ? | (rỗng)
+Vườn BBQ cho tối đa bao nhiêu người một lượt? | BBQ-BOOK-02:0.987 BLD-AMEN-07:0.977 BBQ-CAP-01:0.974

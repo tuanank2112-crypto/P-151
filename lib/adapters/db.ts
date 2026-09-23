@@ -334,6 +334,7 @@ class PostgresDataStore implements DataStore {
       document_id: string;
       content_vi: string;
       score: number;
+      score_content: number;
     }>(text, [params[0], params[1]]);
     return rows.map((r) => ({
       chunk_id: r.id,
@@ -341,6 +342,7 @@ class PostgresDataStore implements DataStore {
       document_id: r.document_id,
       content_vi: r.content_vi,
       score: Number(r.score),
+      score_content: Number(r.score_content),
     }));
   }
 

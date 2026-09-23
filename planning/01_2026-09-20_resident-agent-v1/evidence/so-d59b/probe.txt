@@ -1,0 +1,8 @@
+# Đ59b — DB thật sau migration 007, luật E-5/s1 theo score_content
+S03       OK  conflict=["CG-BBQ-CAPACITY"] (kỳ vọng ["CG-BBQ-CAPACITY"]) · - trong eligible=true · top(score)=BBQ-BOOK-02 · s1(content max)=0.375
+F-I03-02  OK  conflict=[] (kỳ vọng []) · BBQ-BOOK-02 trong eligible=true · top(score)=BBQ-BOOK-02 · s1(content max)=0.545
+F-I04-02  OK  conflict=[] (kỳ vọng []) · MOVE-TIME-03 trong eligible=true · top(score)=MOVE-TIME-03 · s1(content max)=0.500
+F-I04-04  OK  conflict=[] (kỳ vọng []) · CONS-TIME-03 trong eligible=true · top(score)=CONS-TIME-03 · s1(content max)=0.545
+F-I03-01  OK  conflict=[] (kỳ vọng []) · POOL-SAFE-03 trong eligible=true · top(score)=POOL-ENTRY-02 · s1(content max)=0.615
+TỔNG 5/5
+EXIT=0

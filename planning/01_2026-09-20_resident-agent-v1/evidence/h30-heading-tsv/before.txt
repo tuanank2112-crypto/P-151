@@ -1,0 +1,13 @@
+# before · 2026-09-23T07:41:37.333Z · TOP_K=8
+chunks_count=98
+schema_migrations=001_enums.sql,002_users.sql,003_knowledge.sql,004_operational.sql,005_user_property_type.sql,006_p05_action_layer.sql
+column tsv: to_tsvector('simple'::regconfig, immutable_unaccent(content_vi))
+case_id | expected | rank | score_expected | in_top8 | top1_section | top1_score | top3
+F-I04-02 | MOVE-TIME-03 | 13 | 0.285714 | no | MOVE-SCOPE-01 | 0.500000 | MOVE-SCOPE-01,PARK-RESERVE-04,CARD-SCOPE-01
+F-I04-04 | CONS-TIME-03 | 5 | 0.375000 | yes | VIL-RENOVATE-03 | 0.545455 | VIL-RENOVATE-03,CONS-SCOPE-01,CONS-PERMIT-02
+F-I03-01 | POOL-SAFE-03 | 1 | 0.615385 | yes | POOL-SAFE-03 | 0.615385 | POOL-SAFE-03,POOL-ENTRY-02,POOL-HYG-04
+F-I01-04 | CARD-FEE-05 | 2 | 0.545455 | yes | PARK-LOST-06 | 0.583333 | PARK-LOST-06,CARD-FEE-05,CARD-REISSUE-03
+F-I02-05 | PARK-SPEED-03 | 1 | 0.523810 | yes | PARK-SPEED-03 | 0.523810 | PARK-SPEED-03,PARK-SCOPE-01,PFEE-MOTOR-MONTH-03
+F-I03-02 | BBQ-BOOK-02 | 1 | 0.545455 | yes | BBQ-BOOK-02 | 0.545455 | BBQ-BOOK-02,BBQ-CAP-01,FISH-BOOK-03
+F-I05-05 | VIL-FENCE-02 | 1 | 0.444444 | yes | VIL-FENCE-02 | 0.444444 | VIL-FENCE-02,PARK-CARD-02,COM-SIGN-03
+F-ESC-01 | - | - | - | - | POOL24-BAN-02 | 0.375000 | POOL24-BAN-02,SPORTS-SCOPE-01,PLAY-SCOPE-01
