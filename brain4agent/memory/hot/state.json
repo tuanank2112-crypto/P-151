@@ -80,7 +80,8 @@
       "H24 script gate G16/G31 + eval_golden khong kep",
       "H25 (Đ50) ghi pipeline_steps + s1..s4 + rejection_histogram",
       "H26 UI setSectionExcluded",
-      "P01 deploy (Đ51)"
+      "P01 deploy (Đ51)",
+      "G08 xanh tren production (Đ50+Đ52)"
     ],
     "next": "NGUOI: don DB fixture, deploy Vercel (scope + pooler 6543), quyet origin/main, git stash drop (stash du). AGENT: eval:golden --resume khi han muc hoi (sau H25 moi co s3_faithfulness that), trace_sample.mjs tra nguoc theo id de tick G08, P06 dien tay",
     "remaining": [
@@ -89,8 +90,7 @@
       "AI_LOG_API_KEY trong (hook da cai)",
       "origin/main",
       "P06 dien tay tren trinh duyet",
-      "G11: safety --resume 4 ca blocked + faq 50 ca (han muc)",
-      "G08: trace_sample --id DA CO; con 1 luot answer that sau Đ50 (cho A2 het 429)"
+      "G11: safety --resume 4 ca blocked + faq 50 ca (han muc)"
     ]
   },
   "deadline": "2026-09-27",
@@ -126,8 +126,8 @@
   "vercel": {
     "cli": "59.23.2",
     "whoami": "tuanank2112-5635",
-    "trang_thai": "DA DEPLOY https://resident-agent-p151.vercel.app",
-    "canh_bao": "luon truyen --scope; mac dinh no chon team dau tien (n-listen-ai)"
+    "trang_thai": "DA DEPLOY https://resident-agent-p151.vercel.app — team resident-agent-demo",
+    "canh_bao": "luon --scope resident-agent-demo; n-listen-ai chua listena cua chu tich — CAM cham"
   },
   "blocked_needs_human": {
     "cau_hoi_D17": "A2 mat bac Pro. Neu Golden ra M1 < 34/40 thi nap tien Google Cloud hay chap nhan diem thap? Can quyet TRUOC khi chay Golden tren Postgres",
@@ -189,7 +189,8 @@
     "P05_viec_treo": "DA DONG (H22/R26 + H23/R27, 2026-09-23); audit sink fire-and-forget (G44)",
     "G46_answer_turns_rong": "DA VA (H25/R29, Đ50) — so faithfulness truoc 23/09 la 0.0 gia; can luot moi de co so that",
     "G47_worker_stash": "luat AGENTS §5.D.5: worker CAM git stash/checkout/reset tren cay chung; stash@{0} du con trong kho (nguoi drop)",
-    "A1_pii_phan_loai": "prod: 'so dien thoai cu dan can A-1203' => unsupported_intent (A1 3.5-flash-lite), ky vong pii_or_account_specific"
+    "A1_pii_phan_loai": "prod: 'so dien thoai cu dan can A-1203' => unsupported_intent (A1 3.5-flash-lite), ky vong pii_or_account_specific",
+    "billing_team_pro": "team resident-agent-demo tao o goi pro — chu tich kiem han dung thu/billing truoc 27/09"
   },
   "km6": {
     "value": "1/4 tren postgres (DEF-03 OK) · 3 ca blocked vi can han muc Gemini — KHONG phai truot",
@@ -197,7 +198,7 @@
     "ghi_chu": "DEF-04 tren mock: reason_code DUNG, gate G3 (cho quyet)"
   },
   "git": {
-    "head": "sau 1e05559 — deploy + G48",
+    "head": "sau 61a61cd — tach team + G08",
     "remote": "origin https://github.com/AI20K-Build-Phase-Cohort-4/P-151.git · local main theo doi origin/feature/nhuy (DA PUSH 9ac796c) · origin/main = template Python rong (G38)"
   },
   "rules_added": {
@@ -206,7 +207,7 @@
   "docs_legacy": "docs/_legacy-v0.2/ (6 dac ta v0.2, doi 2026-09-23 bang git mv)",
   "deploy": {
     "url": "https://resident-agent-p151.vercel.app",
-    "scope": "n-listen-ai (duy nhat, hobby)",
+    "scope": "resident-agent-demo (team RIENG, goi pro — co the la dung thu; Đ52). KHONG dung n-listen-ai (chua listena)",
     "project": "resident-agent-p151",
     "database_url": "pooler transaction :6543",
     "env_production": [
@@ -220,6 +221,8 @@
       "MODEL_A3"
     ],
     "smoke": "planning/01_2026-09-20_resident-agent-v1/evidence/so-deploy/smoke_prod.txt",
-    "at": "2026-09-23T11:06:00+07:00"
+    "at": "2026-09-23T11:06:00+07:00",
+    "moved_at": "2026-09-23T11:22:00+07:00",
+    "g08": "planning/01_2026-09-20_resident-agent-v1/evidence/so-deploy/g08_prod_answer_turn.txt"
   }
 }

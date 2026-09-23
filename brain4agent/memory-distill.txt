@@ -4,7 +4,7 @@
 Resident Agent v1.0 — SẢN PHẨM DEMO mô phỏng cho ban giám khảo (AI20K Build
 Phase Cohort 4, rubric C104/VHR-01/G104), KHÔNG PHẢI hệ thống chạy thật. Không
 API Vinhomes, không dữ liệu cư dân thật. Deadline 2026-09-27.
-**DEPLOY ✅ https://resident-agent-p151.vercel.app** (Đ51, scope n-listen-ai, pooler 6543, G48). Giai đoạn (2026-09-23): P00/P01a/P02b/P03/P04/BB-11/**P05** ✅ DUYỆT;
+**DEPLOY ✅ https://resident-agent-p151.vercel.app** (Đ51/Đ52: team RIÊNG `resident-agent-demo`, KHÔNG chạm `listena`/n-listen-ai; pooler 6543; G48/G49; G08 ✅ prod). Giai đoạn (2026-09-23): P00/P01a/P02b/P03/P04/BB-11/**P05** ✅ DUYỆT;
 Đ37–Đ50 đã vá + commit. Audit trước demo (Đ47, G33–G39) đã vá: `/chat` hết 403 +
 lịch sử + panel 3 agent · nav BQL · `review_queue` có đường ghi · test tự dọn, runner
 ghim mock · `MODEL_A*` là CHUỖI dự phòng phẩy. **P05 (Đ48) xong + hai việc treo đã

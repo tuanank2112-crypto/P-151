@@ -2,6 +2,14 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-23 (tiếp 8): tách team Vercel + G08 xanh
+
+### Decisions
+- **Đ52**: project chuyển sang team riêng `resident-agent-demo`; bản ở `n-listen-ai` đã gỡ sau khi bản mới đo xanh; `listena` không đổi. URL giữ nguyên (`vercel domains add`, G49).
+
+### Đo được
+- G08 ✅ local + deploy: lượt `answer` thật trên production, 3 chặng A1/A2/A3 có model/ms/token trong `answer_turns.pipeline_steps`; `s3_faithfulness=1.0` — số faithfulness THẬT đầu tiên sau Đ50.
+
 ## [Chưa phát hành] - 2026-09-23 (tiếp 7): DEPLOY production
 
 ### Decisions

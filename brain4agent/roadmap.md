@@ -11,7 +11,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 
 - [x] P00 — Knowledge Pack mô phỏng + Golden Dataset 🔴 (D1–D2) — ✅ DUYỆT, xem `Done`
-- [x] P01 — Nền tảng, auth 2 vai, ingest, deploy 🟠 (D2) — **DEPLOY ✅ 2026-09-23 `https://resident-agent-p151.vercel.app`** (Đ51) — **DB Supabase đã migrate + seed thật** (19 doc / 98 chunk / 2 user); **đăng nhập 2 vai đo được trên DB thật**; chỉ còn **deploy** chờ chủ tịch chọn scope Vercel (Đ23)
+- [x] P01 — Nền tảng, auth 2 vai, ingest, deploy 🟠 (D2) — **DEPLOY ✅ 2026-09-23 `https://resident-agent-p151.vercel.app`** (Đ51; Đ52 tách sang team riêng `resident-agent-demo`; G08 ✅ trên production) — **DB Supabase đã migrate + seed thật** (19 doc / 98 chunk / 2 user); **đăng nhập 2 vai đo được trên DB thật**; chỉ còn **deploy** chờ chủ tịch chọn scope Vercel (Đ23)
 - [ ] P02 — RAG có trích dẫn, memory, 3 agent, cổng escalate 🔴🟠 (D3–D4) — **chạy trọn từ UI thật 2026-09-23** (G33 đã vá: `/chat` hết 403, lịch sử nạp lại qua `GET /api/conversations`, panel 3 agent in token); Đ37/Đ38 đã thẩm định (R14) và commit; DEF-01 nay ra `no_eligible_source` đúng (Đ46). Còn: nhãn `gate` DEF-04/S04 chờ chủ tịch; A2 phụ thuộc hạn mức (chuỗi dự phòng đã có)
 - [x] P03 — Console BQL: quản lý tài liệu + duyệt câu trả lời (HITL) 🟠 (D4–D5) — ✅ DUYỆT, xem `Done`
 - [x] P04 — Bảng eval faithfulness/relevance + dashboard 🟠 (D5) — ✅ DUYỆT, xem `Done`

@@ -21,6 +21,8 @@ SO phóng 2 worker song song (H22 audit_log · H23 dashboard), tự đo G23, ch�
 
 ### ⛔ Chờ người / treo: hạn mức A2/A3 (chỉ `3.5-flash-lite` sống lúc 09:45) ⇒ `eval:golden --resume` sau; dọn DB fixture; deploy Vercel; `origin/main`.
 
+### 🔀 Đợt 8 (chủ tịch hỏi có ảnh hưởng ListenAI không ⇒ "tách sang team riêng"): đo `listena` không đổi; tạo team `resident-agent-demo` (Pro), deploy + 8 biến, đo 9 route, rồi `project rm` bản ở `n-listen-ai`; URL cũ gắn lại bằng `domains add` (alias tay bị SSO chặn — G49). A2 hồi 11:20 ⇒ lượt `answer` thật trên production, **G08 ✅** (3/3 chặng, `s3=1.0`); Golden `--resume` chạy nền.
+
 ### 🚀 Đợt 7 (chủ tịch: "deploy lên vercel đi"): `https://resident-agent-p151.vercel.app` — scope `n-listen-ai` (duy nhất), pooler :6543, 8 biến production. Lần 1 `/chat/receipts` 500 ENOENT seed (G48) ⇒ vá nạp lười + tracing includes ⇒ deploy lại, 9 route đúng mã, `/api/chat` ghi `pipeline_steps` thật trên production. Lưu ý: A1 lite xếp câu hỏi số điện thoại hàng xóm là `unsupported_intent` (không phải `pii_or_account_specific`) — chất lượng A1, chưa xử.
 
 ### 🗂 Đợt 6 (chủ tịch: "tạm thời di chuyển những file lỗi thời một cách an toàn"): `git mv` 6 đặc tả ResidentGPT v0.2 → `docs/_legacy-v0.2/` (+ README khôi phục); sửa đường dẫn ở 11 file sống (SPEC ×5, plan, rubric, 4 file trong chính thư mục); GIỮ `OVERVIEW.md`, `architecture_diagram.md` (deliverable BTC), `docs/assets/` (code P05 trỏ tới); report/handoff/evidence/archive/changelog giữ đường dẫn gốc (lịch sử). 0 link gãy.
