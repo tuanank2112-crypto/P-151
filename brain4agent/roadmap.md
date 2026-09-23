@@ -11,7 +11,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 
 - [x] P00 — Knowledge Pack mô phỏng + Golden Dataset 🔴 (D1–D2) — ✅ DUYỆT, xem `Done`
-- [ ] P01 — Nền tảng, auth 2 vai, ingest, deploy 🟠 (D2) — **DB Supabase đã migrate + seed thật** (19 doc / 98 chunk / 2 user); **đăng nhập 2 vai đo được trên DB thật**; chỉ còn **deploy** chờ chủ tịch chọn scope Vercel (Đ23)
+- [x] P01 — Nền tảng, auth 2 vai, ingest, deploy 🟠 (D2) — **DEPLOY ✅ 2026-09-23 `https://resident-agent-p151.vercel.app`** (Đ51) — **DB Supabase đã migrate + seed thật** (19 doc / 98 chunk / 2 user); **đăng nhập 2 vai đo được trên DB thật**; chỉ còn **deploy** chờ chủ tịch chọn scope Vercel (Đ23)
 - [ ] P02 — RAG có trích dẫn, memory, 3 agent, cổng escalate 🔴🟠 (D3–D4) — **chạy trọn từ UI thật 2026-09-23** (G33 đã vá: `/chat` hết 403, lịch sử nạp lại qua `GET /api/conversations`, panel 3 agent in token); Đ37/Đ38 đã thẩm định (R14) và commit; DEF-01 nay ra `no_eligible_source` đúng (Đ46). Còn: nhãn `gate` DEF-04/S04 chờ chủ tịch; A2 phụ thuộc hạn mức (chuỗi dự phòng đã có)
 - [x] P03 — Console BQL: quản lý tài liệu + duyệt câu trả lời (HITL) 🟠 (D4–D5) — ✅ DUYỆT, xem `Done`
 - [x] P04 — Bảng eval faithfulness/relevance + dashboard 🟠 (D5) — ✅ DUYỆT, xem `Done`
@@ -28,7 +28,7 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 4. ~~Chạy lại `demo_r7.mjs` cho G09~~ — **✅ xong 2026-09-23** (`EXIT=0`, `evidence/h17-demo-r7/demo_r7_20260923_093246.txt`, G09 tick local). Trước demo thật vẫn kiểm `documents.status` của `OCP1-POOL-RULES-001` = `Approved` (G43).
 5. **Chạy tiếp Golden `--resume`** (Đ26) — 23/09: `safety` **13/16 pass, 0 fail, 3 blocked** (429), `faq` 0/50 blocked; hạn mức ngày của `3.5-flash` cạn sau ~1–16 ca mỗi lần hồi. G11 vẫn CẤM TICK. **Lưu ý Đ50:** lượt Golden/lượt thật sau H25 mới có `s3_faithfulness` thật ⇒ `/eval` mới có faithfulness đáng tin; số trước đó là 0.0 giả.
 5b. **G08:** `scripts/trace_sample.mjs --id <answer_turn_id>` ĐÃ có (tra ngược bằng SQL, không gọi model; đỏ đúng trên lượt trước Đ50 — `evidence/so-gates/g08_red_before_d50.txt`). Còn: một lượt `answer` thật sau Đ50 (cần A2 hết 429) rồi chạy `--id` ⇒ `G08: 3/3` là tick.
-6. **🖐 Deploy Vercel** (chọn scope; đổi `DATABASE_URL` sang pooler 6543; đặt `DATA_BACKEND=postgres`, `MODEL_A*`, `SESSION_SECRET`, `GEMINI_API_KEY`) — R1.
+6. ~~Deploy Vercel~~ ✅ 2026-09-23 (Đ51, G48). Cũ: **🖐 Deploy Vercel** (chọn scope; đổi `DATABASE_URL` sang pooler 6543; đặt `DATA_BACKEND=postgres`, `MODEL_A*`, `SESSION_SECRET`, `GEMINI_API_KEY`) — R1.
 7. **🖐 Đưa sản phẩm lên `origin/main`** (hiện là template Python rỗng — G38; sản phẩm ĐÃ ở `origin/feature/nhuy` = `9ac796c`, push 2026-09-23) và thống nhất với đồng đội câu chuyện demo (rubric C104 vs PRD v0.2 "không auto-send").
 8. Điền tên/vai trò thành viên vào `README.md`, `presentation/README.md` (đang `[điền]`).
 9. Giấy tờ: `TESTING-ACCEPTANCE.md` §7 — cột `local` đã tick thêm G03/G09/G10/G23 (2026-09-23, Đ49); còn ⬜ local: G02/G05/G08/G11/G13/G16/G17/G18/G27–G31/G24–G26; cột `deploy` ⬜ hết (chưa deploy được URL công khai); ~~`reports/R06`/`R07` thiếu header~~ (đã bổ sung 2026-09-23, Base/Head dựng lại từ git); `evidence/so-d25-d27` mồ côi; G30 chạy nguyên văn ra 2 dòng false-positive tự trỏ vào script kiểm.

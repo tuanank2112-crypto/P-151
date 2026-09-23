@@ -1,0 +1,18 @@
+# đo 2026-09-23T11:06:07+07:00 · https://resident-agent-p151.vercel.app · deploy dpl từ HEAD 1e05559+G48 · scope n-listen-ai · DATABASE_URL pooler :6543
+## G02 — không cookie
+/login => 200
+/ => 307
+/chat => 307
+/documents => 307
+## G03 — cookie resident vào trang BQL
+/documents => 307
+## trang BQL (cookie bql) — mã, số NaN
+/documents => 200 NaN=0
+/review => 200 NaN=0
+/dashboard => 200 NaN=0
+/eval => 200 NaN=0
+## cư dân
+/chat => 200
+/chat/receipts => 200
+## /api/chat (UTF-8)
+"decision":"escalate","reason_code":"unsupported_intent" "model":"gemini-3.5-flash-lite" "model":"gemini-3.5-flash-lite" HTTP 200 

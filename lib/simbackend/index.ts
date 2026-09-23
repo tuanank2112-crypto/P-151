@@ -13,7 +13,6 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { getSql, isValidUuid } from "../adapters/db.ts";
 import type { ReasonCode } from "../types.ts";
 import {
@@ -280,10 +279,21 @@ function nextMondayMidnightIct(now: Date): string {
 // `db/migrations/006_p05_action_layer.sql` §6 — hai bản đối chiếu bằng mắt
 // khi sửa; script `scripts/validate_capabilities.mjs`/`validate_policy.mjs`
 // chạy được trên CẢ HAI backend qua `DATA_BACKEND` để bắt lệch.
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FACILITY_SEED: FacilityRow[] = JSON.parse(
-  readFileSync(path.join(__dirname, "..", "..", "db", "seed", "facilities.json"), "utf8")
-) as FacilityRow[];
+//
+// G48 (2026-09-23, deploy Vercel): nạp LƯỜI và theo `process.cwd()`, KHÔNG nạp
+// lúc import theo `import.meta.url`. Nạp lúc import khiến MỌI route import
+// module này (cả khi chạy backend Postgres, không cần seed) chết ENOENT trên
+// serverless vì file không nằm trong bundle; `next.config.mjs` khai báo
+// `outputFileTracingIncludes` để Vercel đóng gói kèm `db/seed/**`.
+let facilitySeedCache: FacilityRow[] | null = null;
+function facilitySeed(): FacilityRow[] {
+  if (!facilitySeedCache) {
+    facilitySeedCache = JSON.parse(
+      readFileSync(path.join(process.cwd(), "db", "seed", "facilities.json"), "utf8")
+    ) as FacilityRow[];
+  }
+  return facilitySeedCache;
+}
 
 interface MemBooking extends BookingRecord {}
 interface MemReceipt extends ReceiptRecord {}
@@ -296,7 +306,7 @@ export class MemorySimBackend implements SimBackend {
   private precheckLog: Array<{ session_id: string; capability_id: string; params_fingerprint: string }> = [];
   private pendingActions = new Map<string, PendingAction>();
 
-  constructor(seed: FacilityRow[] = FACILITY_SEED) {
+  constructor(seed: FacilityRow[] = facilitySeed()) {
     this.facilities = new Map(seed.map((f) => [f.facility_id, f]));
   }
 

@@ -21,6 +21,8 @@ SO phóng 2 worker song song (H22 audit_log · H23 dashboard), tự đo G23, ch�
 
 ### ⛔ Chờ người / treo: hạn mức A2/A3 (chỉ `3.5-flash-lite` sống lúc 09:45) ⇒ `eval:golden --resume` sau; dọn DB fixture; deploy Vercel; `origin/main`.
 
+### 🚀 Đợt 7 (chủ tịch: "deploy lên vercel đi"): `https://resident-agent-p151.vercel.app` — scope `n-listen-ai` (duy nhất), pooler :6543, 8 biến production. Lần 1 `/chat/receipts` 500 ENOENT seed (G48) ⇒ vá nạp lười + tracing includes ⇒ deploy lại, 9 route đúng mã, `/api/chat` ghi `pipeline_steps` thật trên production. Lưu ý: A1 lite xếp câu hỏi số điện thoại hàng xóm là `unsupported_intent` (không phải `pii_or_account_specific`) — chất lượng A1, chưa xử.
+
 ### 🗂 Đợt 6 (chủ tịch: "tạm thời di chuyển những file lỗi thời một cách an toàn"): `git mv` 6 đặc tả ResidentGPT v0.2 → `docs/_legacy-v0.2/` (+ README khôi phục); sửa đường dẫn ở 11 file sống (SPEC ×5, plan, rubric, 4 file trong chính thư mục); GIỮ `OVERVIEW.md`, `architecture_diagram.md` (deliverable BTC), `docs/assets/` (code P05 trỏ tới); report/handoff/evidence/archive/changelog giữ đường dẫn gốc (lịch sử). 0 link gãy.
 
 ### ✅ Đợt 5 (chủ tịch: "cứ làm những gì bạn muốn"): `trace_sample.mjs --id` tra ngược `pipeline_steps` bằng SQL (không gọi model), exit 0/1/2; đỏ đúng trên lượt trước Đ50. Hạn mức: chỉ `3.5-flash-lite` sống ⇒ A2 chết cả chuỗi, chờ hồi để có lượt answer thật (G08 xanh, faithfulness thật, Golden faq); tiến trình nền dò hạn mức 10 phút/lần. Vá nợ giấy tờ: R06/R07 thêm Handoff/Base/Head. H26: UI loại mục khỏi trả lời trên `/documents` (253/253, guard 6/6).

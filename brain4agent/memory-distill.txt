@@ -4,7 +4,7 @@
 Resident Agent v1.0 — SẢN PHẨM DEMO mô phỏng cho ban giám khảo (AI20K Build
 Phase Cohort 4, rubric C104/VHR-01/G104), KHÔNG PHẢI hệ thống chạy thật. Không
 API Vinhomes, không dữ liệu cư dân thật. Deadline 2026-09-27.
-Giai đoạn (2026-09-23, sau `d9e1a5e`): P00/P01a/P02b/P03/P04/BB-11/**P05** ✅ DUYỆT;
+**DEPLOY ✅ https://resident-agent-p151.vercel.app** (Đ51, scope n-listen-ai, pooler 6543, G48). Giai đoạn (2026-09-23): P00/P01a/P02b/P03/P04/BB-11/**P05** ✅ DUYỆT;
 Đ37–Đ50 đã vá + commit. Audit trước demo (Đ47, G33–G39) đã vá: `/chat` hết 403 +
 lịch sử + panel 3 agent · nav BQL · `review_queue` có đường ghi · test tự dọn, runner
 ghim mock · `MODEL_A*` là CHUỖI dự phòng phẩy. **P05 (Đ48) xong + hai việc treo đã
@@ -25,7 +25,7 @@ test Postgres/dev server song song (pooler session-mode trần 15 kết nối).
 **CHỜ NGƯỜI:** dọn DB (`delete from conversations` — classifier chặn agent, backup ở
 scratchpad) · đặt `AI_LOG_API_KEY` (hook AI-log ĐÃ cài ở `.claude/settings.json` + pre-push,
 nộp 202 nhưng KHÔNG Authorization vì biến trống cả 3 mức — kiểm bằng PowerShell) · scope
-Vercel + đổi `DATABASE_URL` sang pooler 6543 · `origin/main` đang là template rỗng (G38)
+ `origin/main` đang là template rỗng (G38)
 · `expected_gate` DEF-04/S04 · Đ32. **CÒN TREO:** Golden `--resume` (4 ca safety + faq) ·
 `TESTING-ACCEPTANCE` §7 cột `deploy` toàn ⬜  · hybrid chưa nối. Đã push tới
 `origin/feature/nhuy` (= local `main`, `9ac796c`); `origin/main` vẫn là template rỗng.

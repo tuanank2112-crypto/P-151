@@ -739,6 +739,14 @@ Ba agent rà độc lập + SO đo lại (`brain4agent/memory/hot/today.md` phi�
 
 **Lật được:** mục 1 khi 3.5-flash hồi (đổi lại một dòng env). Mục 2–4 không. **Chi phí lật mục 2:** hàng đợi HITL lại rỗng vĩnh viễn.
 
+### Đ51 — 2026-09-23 · Deploy vào scope `n-listen-ai`; seed đọc lười qua `process.cwd()` + `outputFileTracingIncludes`
+
+**Bối cảnh:** chủ tịch lệnh "deploy lên vercel". `vercel teams ls` chỉ có MỘT scope `n-listen-ai` (hobby); Vercel báo "You cannot set your Personal Account as the scope" ⇒ lo ngại cũ (Đ23: "lỡ tạo vào n-listen-ai") không còn phương án khác. Deploy lần 1: `/chat/receipts` 500 ENOENT `db/seed/facilities.json` (G48).
+
+**Quyết định:** (1) project `resident-agent-p151` trong `n-listen-ai`, alias `https://resident-agent-p151.vercel.app`, `DATABASE_URL` production = pooler transaction :6543 (đo local trước: 19 doc/2 user); `.env.local` giữ :5432 cho script local. (2) `lib/simbackend` nạp seed LƯỜI qua `process.cwd()`; `next.config.mjs` `outputFileTracingIncludes` gồm `db/seed/**`, `evals/golden/**`. (3) `.gitignore` (`vercel link` tự thêm `.env*`) thêm ngoại lệ `!.env.example`.
+
+**Lật được:** có — chuyển scope bằng `vercel project rm` + link lại. **Chi phí lật:** thấp.
+
 ### Đ50 — 2026-09-23 · `answer_turns` phải được GHI đủ cột quan sát (`pipeline_steps`, `s1..s4`, `rejection_histogram`), không dựa vào DEFAULT
 
 **Bối cảnh:** SO đo trên Supabase: 0/512 lượt có `pipeline_steps`, 0/512 có `s1..s4`/`rejection_histogram` khác mặc định — trong khi `metrics-store.ts` đọc thẳng `s3_faithfulness` cho `/eval` (SPEC-P04 §1, P04-C1) ⇒ faithfulness 0.0 hiển thị từ trước tới nay là số giả do DEFAULT (gotcha G46). `runTurn()` đã có đủ giá trị lúc ghi.
@@ -803,7 +811,7 @@ Câu "Gói P00 chưa được phóng vì C-01 chưa chốt" ghi ngày 2026-09-20
 - [x] P00 — Knowledge Pack mô phỏng đủ phủ 12 tiện ích và 5 intent — `19 tài liệu · 98 section`, exit 0 (2026-09-20)
 - [x] P00 — Khuyết tật cài sẵn: 2 gap + 1 cặp conflict + 1 expired — `defects_ok: 4/4`, exit 0 (2026-09-20)
 - [x] P00 — Golden Dataset — `faq: 50 (answerable 40) · safety: 16 · canonical 10/10`, exit 0 (2026-09-20). `rubric.md` chuyển sang P04.
-- [ ] P01 — Deploy được URL công khai — 🟡 **không còn bị chặn kỹ thuật**: Vercel CLI đã đăng nhập (Đ23), `npm run build` xanh không cần `DATABASE_URL`. Chờ chủ tịch chọn **scope** — lần trước SO lỡ tạo project vào team `n-listen-ai`, đã gỡ sạch
+- [x] P01 — Deploy được URL công khai — ✅ **2026-09-23: `https://resident-agent-p151.vercel.app`** (scope `n-listen-ai` — scope DUY NHẤT của tài khoản, hobby; project `resident-agent-p151`; `DATABASE_URL` pooler :6543; 8 biến production). Lần 1 `/chat/receipts` 500 vì `lib/simbackend` đọc `db/seed/facilities.json` lúc import (G48) — vá + deploy lại, 9 route đúng mã ([`evidence/so-deploy/smoke_prod.txt`](evidence/so-deploy/smoke_prod.txt)). Ghi chú cũ: 🟡 **không còn bị chặn kỹ thuật**: Vercel CLI đã đăng nhập (Đ23), `npm run build` xanh không cần `DATABASE_URL`. Chờ chủ tịch chọn **scope** — lần trước SO lỡ tạo project vào team `n-listen-ai`, đã gỡ sạch
 - [x] P01 — Đăng nhập 2 vai trò Cư dân / BQL — **đo thật trên Supabase 2026-09-21**: `findUserByEmail('resident@demo.local')` trả đúng vai + `property_type=["apartment"]` (mảng thật, không phải chuỗi — xem Đ29/G23), `verifyPassword` đúng mật khẩu = `true`, sai mật khẩu = `false`. Đăng nhập nay chạy được ở CẢ `DATA_BACKEND=mock` (hai tài khoản demo, mật khẩu từ biến môi trường) lẫn `postgres`
 - [x] P01a — Nền tảng chạy được không cần key: `tsc --noEmit` exit 0 · `npm run build` KHÔNG có `DATABASE_URL` exit 0 (8/9 route dynamic) · `npm test` 13/13 · **BB-05, BB-07, BB-10 xanh và đã chứng minh đỏ được** (2026-09-20)
 - [x] P02 — Trả lời có trích dẫn tới `document_id` và `section_id` — **lượt end-to-end thật qua `POST /api/chat`, backend Postgres, 2026-09-21**: `decision=answer`, 1 citation `OCP1-POOL-RULES-001 / POOL-SAFE-03`, 3/3 claim `supported`. Bằng chứng: [`evidence/d28-def04/e2e_api_chat_postgres.txt`](../evidence/d28-def04/e2e_api_chat_postgres.txt)

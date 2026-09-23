@@ -2,6 +2,20 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-23 (tiếp 7): DEPLOY production
+
+### Decisions
+- **Đ51**: deploy `https://resident-agent-p151.vercel.app` (scope `n-listen-ai`, project `resident-agent-p151`, `DATABASE_URL` pooler :6543, 8 biến production).
+
+### Fixed
+- G48: `lib/simbackend` nạp seed lười qua `process.cwd()` + `outputFileTracingIncludes` (trước: `/chat/receipts` 500 ENOENT trên Vercel).
+
+### Changed
+- `.gitignore`: `.vercel`, `.env*` (do `vercel link`) + `!.env.example`.
+
+### Đo được
+Production: `/login` 200 · 4 trang BQL 200, 0 NaN · `/chat`, `/chat/receipts` 200 · resident vào `/documents` ⇒ 307 · `/api/chat` 200 ghi `answer_turns` có `pipeline_steps` 3 chặng. Local: tsc 0 · 253/253 · build 0.
+
 ## [Chưa phát hành] - 2026-09-23 (tiếp 6): dời đặc tả cũ
 
 ### Changed

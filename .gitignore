@@ -25,3 +25,7 @@ evals/runs/
 # Video demo — nop qua YouTube/Drive theo checklist BTC, khong commit binary lon
 presentation/*.mp4
 presentation/*.webm
+
+.vercel
+.env*
+!.env.example
