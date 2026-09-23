@@ -1,0 +1,115 @@
+# RED 1 — trước W2 (adapter có runRelevance, pipeline CHƯA gọi) — 2026-09-23T14:11:49+07:00
+$ node scripts/run_tests.mjs relevance-d58
+✖ Đ58 (a): A3 1.0 + relevance false ⇒ escalate G3/no_eligible_source, s3_faithfulness giữ 1, step relevance sau verify (27.7908ms)
+✖ Đ58 (b): relevance true ⇒ answer như cũ, có step relevance (7.7219ms)
+✔ Đ58 (c): lượt escalate ở G4 ⇒ KHÔNG gọi relevance (4.0821ms)
+✖ Đ58 (d): VC-03 — runVerifier KHÔNG nhận question_vi; relevance KHÔNG nhận evidence (4.8859ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 1
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 366.5341
+
+✖ failing tests:
+
+test at tests\relevance-d58.test.ts:114:1
+✖ Đ58 (a): A3 1.0 + relevance false ⇒ escalate G3/no_eligible_source, s3_faithfulness giữ 1, step relevance sau verify (27.7908ms)
+  AssertionError [ERR_ASSERTION]: relevance phải được gọi đúng 1 lần
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/relevance-d58.test.ts:125:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\relevance-d58.test.ts:147:1
+✖ Đ58 (b): relevance true ⇒ answer như cũ, có step relevance (7.7219ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/relevance-d58.test.ts:157:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\relevance-d58.test.ts:177:1
+✖ Đ58 (d): VC-03 — runVerifier KHÔNG nhận question_vi; relevance KHÔNG nhận evidence (4.8859ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/relevance-d58.test.ts:189:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+EXIT=1
+
+# RED 2 — sabotage S1: relevance gọi cả khi G4 đã escalate (kỳ vọng (c) đỏ) — 2026-09-23T14:12:36+07:00
+$ node scripts/run_tests.mjs relevance-d58
+✔ Đ58 (a): A3 1.0 + relevance false ⇒ escalate G3/no_eligible_source, s3_faithfulness giữ 1, step relevance sau verify (28.0588ms)
+✔ Đ58 (b): relevance true ⇒ answer như cũ, có step relevance (6.9887ms)
+✖ Đ58 (c): lượt escalate ở G4 ⇒ KHÔNG gọi relevance (3.0233ms)
+✔ Đ58 (d): VC-03 — runVerifier KHÔNG nhận question_vi; relevance KHÔNG nhận evidence (1.7944ms)
+ℹ tests 4
+ℹ pass 3
+ℹ fail 1
+ℹ skipped 0
+✖ failing tests:
+✖ Đ58 (c): lượt escalate ở G4 ⇒ KHÔNG gọi relevance (3.0233ms)
+  AssertionError [ERR_ASSERTION]: lượt đã escalate không được tốn lời gọi relevance
+  1 !== 0
+EXIT=1
+
+# RED 3 — sabotage S2: question_vi truyền vào runVerifier (kỳ vọng (d) đỏ) — 2026-09-23T14:12:37+07:00
+$ node scripts/run_tests.mjs relevance-d58
+✔ Đ58 (a): A3 1.0 + relevance false ⇒ escalate G3/no_eligible_source, s3_faithfulness giữ 1, step relevance sau verify (23.0619ms)
+✔ Đ58 (b): relevance true ⇒ answer như cũ, có step relevance (6.9956ms)
+✔ Đ58 (c): lượt escalate ở G4 ⇒ KHÔNG gọi relevance (2.1108ms)
+✖ Đ58 (d): VC-03 — runVerifier KHÔNG nhận question_vi; relevance KHÔNG nhận evidence (3.299ms)
+ℹ tests 4
+ℹ pass 3
+ℹ fail 1
+ℹ skipped 0
+✖ failing tests:
+✖ Đ58 (d): VC-03 — runVerifier KHÔNG nhận question_vi; relevance KHÔNG nhận evidence (3.299ms)
+  AssertionError [ERR_ASSERTION]: A3 chỉ được thấy draft_vi + evidence (VC-03)
+EXIT=1
+
+# RED 4 — sabotage S3: s3 ép về 0 khi relevance false (kỳ vọng (a) đỏ) — 2026-09-23T14:12:37+07:00
+$ node scripts/run_tests.mjs relevance-d58
+✖ Đ58 (a): A3 1.0 + relevance false ⇒ escalate G3/no_eligible_source, s3_faithfulness giữ 1, step relevance sau verify (24.1817ms)
+✔ Đ58 (b): relevance true ⇒ answer như cũ, có step relevance (6.8227ms)
+✔ Đ58 (c): lượt escalate ở G4 ⇒ KHÔNG gọi relevance (1.8766ms)
+✔ Đ58 (d): VC-03 — runVerifier KHÔNG nhận question_vi; relevance KHÔNG nhận evidence (2.1117ms)
+ℹ tests 4
+ℹ pass 3
+ℹ fail 1
+ℹ skipped 0
+✖ failing tests:
+✖ Đ58 (a): A3 1.0 + relevance false ⇒ escalate G3/no_eligible_source, s3_faithfulness giữ 1, step relevance sau verify (24.1817ms)
+  AssertionError [ERR_ASSERTION]: faithfulness giữ số thật của A3 (§8.3b, BB-06)
+  0 !== 1
+EXIT=1

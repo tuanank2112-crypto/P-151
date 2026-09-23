@@ -1,0 +1,59 @@
+MODEL_A1=gemini-3.5-flash-lite,gemini-2.5-flash | MODEL_A2=gemini-3.5-flash | MODEL_A3=gemini-2.5-flash,gemini-3.5-flash-lite
+
+### "Làm lại thẻ xe máy bị mất thì mất bao nhiêu tiền?" · lần 1 · kỳ vọng escalate/no_eligible_source · 11822ms
+decision=escalate reason=no_eligible_source gate=G3_retriever_refused
+steps=validate → safety[gemini-3.5-flash-lite] → intent[gemini-3.5-flash-lite] → context → risk → retrieval → eligibility → draft[gemini-3.5-flash]
+relevance=(không gọi)
+s3_faithfulness(db)=0.0000
+answer_vi=
+
+### "Làm lại thẻ xe máy bị mất thì mất bao nhiêu tiền?" · lần 2 · kỳ vọng escalate/no_eligible_source · 15414ms
+decision=escalate reason=no_eligible_source gate=G3_retriever_refused
+steps=validate → safety[gemini-3.5-flash-lite] → intent[gemini-3.5-flash-lite] → context → risk → retrieval → eligibility → draft[gemini-3.5-flash]
+relevance=(không gọi)
+s3_faithfulness(db)=0.0000
+answer_vi=
+
+### "Cấp lại thẻ cư dân bị mất tốn bao nhiêu tiền?" · lần 1 · kỳ vọng answer · 21894ms
+decision=answer reason=null gate=null
+steps=validate → safety[gemini-3.5-flash-lite] → intent[gemini-3.5-flash-lite] → context → risk → retrieval → eligibility → draft[gemini-3.5-flash] → verify[gemini-2.5-flash] → relevance[gemini-3.5-flash-lite]
+relevance=ok=true model=gemini-3.5-flash-lite ms=923 in=317 out=20 note=-
+s3_faithfulness(db)=1.0000
+answer_vi=Phí cấp lại thẻ cư dân do làm mất hoặc hư hỏng là 50.000 đồng/thẻ. Bạn sẽ nộp khoản phí này trực tiếp tại văn phòng Ban Quản lý khi nhận thẻ mới.
+
+### "Cấp lại thẻ cư dân bị mất tốn bao nhiêu tiền?" · lần 2 · kỳ vọng answer · 15024ms
+decision=answer reason=null gate=null
+steps=validate → safety[gemini-3.5-flash-lite] → intent[gemini-3.5-flash-lite] → context → risk → retrieval → eligibility → draft[gemini-3.5-flash] → verify[gemini-2.5-flash] → relevance[gemini-3.5-flash-lite]
+relevance=ok=true model=gemini-3.5-flash-lite ms=879 in=319 out=20 note=-
+s3_faithfulness(db)=1.0000
+answer_vi=Phí cấp lại thẻ cư dân do bị mất (hoặc hư hỏng) là 50.000 đồng một thẻ. Bạn sẽ nộp trực tiếp khoản phí này tại văn phòng Ban Quản lý khi nhận thẻ mới.
+
+### "Tốc độ tối đa khi lái xe trong hầm là bao nhiêu?" · lần 1 · kỳ vọng answer · 21735ms
+decision=answer reason=null gate=null
+steps=validate → safety[gemini-3.5-flash-lite] → intent[gemini-3.5-flash-lite] → context → risk → retrieval → eligibility → draft[gemini-3.5-flash] → verify[gemini-2.5-flash] → relevance[gemini-3.5-flash-lite]
+relevance=ok=true model=gemini-3.5-flash-lite ms=876 in=291 out=20 note=-
+s3_faithfulness(db)=1.0000
+answer_vi=Tốc độ tối đa khi di chuyển trong hầm đỗ xe là 10 km/h.
+
+### "Tốc độ tối đa khi lái xe trong hầm là bao nhiêu?" · lần 2 · kỳ vọng answer · 12613ms
+decision=answer reason=null gate=null
+steps=validate → safety[gemini-3.5-flash-lite] → intent[gemini-3.5-flash-lite] → context → risk → retrieval → eligibility → draft[gemini-3.5-flash] → verify[gemini-2.5-flash] → relevance[gemini-3.5-flash-lite]
+relevance=ok=true model=gemini-3.5-flash-lite ms=1007 in=291 out=20 note=-
+s3_faithfulness(db)=1.0000
+answer_vi=Tốc độ tối đa khi di chuyển trong hầm đỗ xe là 10 km/h.
+
+### "Trước khi thi công sửa chữa căn hộ cần làm thủ tục gì?" · lần 1 · kỳ vọng answer · 19581ms
+decision=answer reason=null gate=null
+steps=validate → safety[gemini-3.5-flash-lite] → intent[gemini-3.5-flash-lite] → context → risk → retrieval → eligibility → draft[gemini-3.5-flash] → verify[gemini-2.5-flash] → relevance[gemini-3.5-flash-lite]
+relevance=ok=true model=gemini-3.5-flash-lite ms=1055 in=334 out=20 note=-
+s3_faithfulness(db)=1.0000
+answer_vi=Trước khi thi công sửa chữa căn hộ, quý cư dân cần thực hiện các thủ tục sau: 1. Nộp bản vẽ hoặc mô tả hạng mục sửa chữa cho Ban Quản lý để được cấp phép thi công. 2. Đơn vị thi công phải đăng ký danh sách công nhân ra v
+
+### "Trước khi thi công sửa chữa căn hộ cần làm thủ tục gì?" · lần 2 · kỳ vọng answer · 13405ms
+decision=answer reason=null gate=null
+steps=validate → safety[gemini-3.5-flash-lite] → intent[gemini-3.5-flash-lite] → context → risk → retrieval → eligibility → draft[gemini-3.5-flash] → verify[gemini-2.5-flash] → relevance[gemini-3.5-flash-lite]
+relevance=ok=true model=gemini-3.5-flash-lite ms=1054 in=322 out=20 note=-
+s3_faithfulness(db)=1.0000
+answer_vi=Trước khi thi công sửa chữa căn hộ, cư dân cần nộp bản vẽ hoặc mô tả hạng mục sửa chữa cho Ban Quản lý để được cấp phép thi công. Đồng thời, đơn vị thi công phải đăng ký danh sách công nhân ra vào.
+
+cleanup: tạo 8 hội thoại, còn lại sau dọn = 0

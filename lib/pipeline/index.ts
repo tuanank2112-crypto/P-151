@@ -20,6 +20,7 @@ import { getDataStore, type DataStore } from "../adapters/db.ts";
 import {
   agentModel,
   runClassifier,
+  runRelevance,
   runRetriever,
   runVerifier,
   type ForceUpstreamError,
@@ -60,6 +61,7 @@ const STEP_ORDER: PipelineStep["step"][] = [
   "eligibility",
   "draft",
   "verify",
+  "relevance", // Đ58 — ngay sau verify (01-CONTRACTS §8.3b, BB-08)
 ];
 
 /**
@@ -767,6 +769,54 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
 
   if (dec.decision !== "answer") {
     return finish(escalateResult(dec.reason_code as ReasonCode, dec.gate, steps));
+  }
+
+  // ── Chặng 9b — relevance (Đ58, 01-CONTRACTS §8.3b) ───────────────────
+  // A3 chỉ phán "mệnh đề có nguồn không"; bản nháp đúng nguồn mà SAI câu hỏi
+  // (S02: hỏi thẻ xe máy, đáp thẻ cư dân) vẫn được 1.0. Lời gọi riêng này CHỈ
+  // thấy câu hỏi + bản nháp (VC-03 giữ nguyên — A3 vẫn không thấy câu hỏi;
+  // CẤM đưa evidence vào đây). CHỈ chạy khi lượt SẮP `answer` (đã qua G4/G5).
+  const relevanceStart = Date.now();
+  const {
+    output: rel,
+    input_tokens: relIn,
+    output_tokens: relOut,
+    model: relModel,
+  } = await runRelevance({ question_vi: a1.normalized_query_vi, draft_vi: a2.draft_vi });
+  steps.push({
+    step: "relevance",
+    ok: rel.answers_question,
+    ms: Date.now() - relevanceStart,
+    model: relModel,
+    input_tokens: relIn,
+    output_tokens: relOut,
+    ...(rel.answers_question ? {} : { note: rel.missing_vi ?? "bản nháp không đáp đúng câu hỏi" }),
+  });
+  assertStepOrder(steps);
+
+  if (!rel.answers_question) {
+    // Đ58 — đi đường G3 (`retriever_refused`) với luật mã Đ28/Đ41, giống hệt
+    // nhánh `a2.refused`. `faithfulness` truyền SỐ THẬT của A3 để
+    // `s3_faithfulness` giữ nguyên (BB-06 — `/eval` đọc cột này; CẤM ép về 0).
+    const relOnTopic =
+      elig.top_rejected_reason === "expired_or_unknown"
+        ? await topRejectedIsOnTopic(store, retrieved, [a1.normalized_query_vi, questionVi])
+        : true;
+    const relDec = decideTurn({
+      retrieval_top1: s1,
+      eligible_count: eligibleCount,
+      retrieved_count: retrievedCount,
+      faithfulness,
+      conflict_detected: false,
+      retriever_refused: true,
+      rejection_histogram: elig.rejection_histogram,
+      top_rejected_reason: elig.top_rejected_reason,
+      top_rejected_on_topic: relOnTopic,
+    });
+    s1RetrievalTop1 = relDec.s1;
+    s2EligibleRatio = relDec.s2;
+    s3Faithfulness = relDec.s3;
+    return finish(escalateResult(relDec.reason_code as ReasonCode, relDec.gate, steps));
   }
 
   const citations: Citation[] = a2.citations;

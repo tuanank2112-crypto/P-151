@@ -52,7 +52,9 @@ test.afterEach(() => {
   __setTransportForTesting(null);
 });
 
-test("step-order (BB-08, T-STEP): đường trả lời đầy đủ đi qua ĐÚNG 9 chặng, đúng thứ tự", async () => {
+// Đ58 (01-CONTRACTS §8.3b): đường trả lời đầy đủ nay có thêm chặng `relevance`
+// ngay sau `verify` ⇒ 10 chặng, transport giả cần thêm 1 phản hồi.
+test("step-order (BB-08, T-STEP): đường trả lời đầy đủ đi qua ĐÚNG 10 chặng, đúng thứ tự", async () => {
   __setTransportForTesting({
     fetch: sequentialFetch([
       classifierBody(),
@@ -60,6 +62,7 @@ test("step-order (BB-08, T-STEP): đường trả lời đầy đủ đi qua Đ�
         { document_id: "OCP1-RESIDENT-CARD-ISSUANCE-GUIDE-001", section_id: "CARD-NEW-02", document_title_vi: "x", heading_vi: "x", snippet_vi: "x" },
       ], refused: false, refusal_note_vi: null },
       { claims: [{ claim_vi: "Thẻ cấp trong 3 ngày làm việc", verdict: "supported", supporting_section_id: "CARD-NEW-02" }], faithfulness: 1 },
+      { answers_question: true, missing_vi: null }, // Đ58 — relevance
     ]),
     sleep: async () => {},
   });
@@ -82,6 +85,7 @@ test("step-order (BB-08, T-STEP): đường trả lời đầy đủ đi qua Đ�
     "eligibility",
     "draft",
     "verify",
+    "relevance",
   ]);
   assertStepOrder(result.steps); // không ném
 });

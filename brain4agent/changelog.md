@@ -2,6 +2,17 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-23 (tiếp 14): Đ58 kiểm liên quan
+
+### Decisions
+- **Đ58**: lời gọi `relevance` riêng (câu hỏi + bản nháp, KHÔNG evidence), chỉ khi sắp `answer`; `answers_question=false` ⇒ G3 + luật Đ28/Đ41; faithfulness giữ số thật. VC-03 giữ nguyên (A3 vẫn không thấy câu hỏi).
+
+### Added
+- `runRelevance`, `RELEVANCE_RESPONSE_SCHEMA`, chặng `relevance` sau `verify`; `tests/relevance-d58.test.ts` (4, từng đỏ + 3 phép phá).
+
+### Đo được
+tsc 0 · **289/289** · build 0 · BB 0 · đo thật 8/8.
+
 ## [Chưa phát hành] - 2026-09-23 (tiếp 13): Đ57 intent A1 + G4 hết hạn
 
 ### Fixed

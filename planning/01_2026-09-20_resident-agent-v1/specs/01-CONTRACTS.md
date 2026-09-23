@@ -974,6 +974,30 @@ const faithfulness = total === 0 ? 0 : round4(supported / total);
 `total === 0` ⇒ `faithfulness = 0` ⇒ escalate. Bản nháp không có mệnh đề nào kiểm
 được thì không phải câu trả lời có căn cứ. Đây là trường hợp biên hay bị bỏ sót.
 
+### 8.3b — Kiểm LIÊN QUAN `relevance` (Đ58) — tách khỏi A3, giữ VC-03
+
+A3 chỉ trả lời "mệnh đề có nguồn không", KHÔNG trả lời "bản nháp có đáp đúng điều được
+hỏi không". Đo 2026-09-23: hỏi "phí làm lại thẻ xe máy", A2 (DeepSeek) đáp "phí cấp lại
+thẻ CƯ DÂN 50.000đ", A3 chấm faithfulness 1.0 — đúng nguồn, sai câu hỏi (nguy hiểm).
+Không đưa câu hỏi vào A3 (VC-03 giữ nguyên); thêm MỘT lời gọi riêng:
+
+```ts
+export interface RelevanceInput {
+  question_vi: string;                         // câu hỏi đã chuẩn hoá của A1
+  draft_vi: string;                            // CHỈ bản nháp — KHÔNG có evidence
+}
+export interface RelevanceOutput {
+  answers_question: boolean;                   // bản nháp đáp ĐÚNG dữ kiện được hỏi cho ĐÚNG đối tượng
+  missing_vi: string | null;                   // khi false: câu hỏi hỏi gì mà bản nháp không đáp
+}
+```
+
+- Model: dùng chuỗi `MODEL_A1` (nhanh, khác họ A2 khi Gemini sống); fallback Vyce theo `MODEL_FALLBACK_VYCE_A1`/chung (Đ53).
+- CHỈ gọi khi lượt SẮP ra `answer` (đã qua G4/G5) — không tốn lời gọi cho lượt đã escalate.
+- `answers_question = false` ⇒ đi đường G3 (`retriever_refused`) với luật mã Đ28/Đ41; `s3_faithfulness` GIỮ số thật của A3 (không ép về 0 — `/eval` đọc cột này).
+- Ghi `PipelineStep` mới `"relevance"` ngay SAU `"verify"` (BB-08 cập nhật thứ tự).
+- CẤM đưa `evidence` vào lời gọi này (nó chỉ phán liên quan, không phán có nguồn — tránh chồng vai với A3). CẤM để kết quả này đổi `claims`/`faithfulness`.
+
 **BB-06:** `faithfulness` ghi vào `answer_turns.s3_faithfulness` và đó là **cột duy
 nhất** mà bảng eval `P04` đọc. CẤM chạy A3 lần hai để "chấm lại".
 

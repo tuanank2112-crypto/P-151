@@ -739,6 +739,14 @@ Ba agent rà độc lập + SO đo lại (`brain4agent/memory/hot/today.md` phi�
 
 **Lật được:** mục 1 khi 3.5-flash hồi (đổi lại một dòng env). Mục 2–4 không. **Chi phí lật mục 2:** hàng đợi HITL lại rỗng vĩnh viễn.
 
+### Đ58 — 2026-09-23 · Kiểm LIÊN QUAN tách riêng (câu hỏi + bản nháp) — chặn trả lời "vòng quanh"; VC-03 giữ nguyên
+
+**Bối cảnh:** Golden 13:46: S02/F-ESC-02 "phí làm lại thẻ xe máy" — DeepSeek đáp phí thẻ CƯ DÂN / thủ tục, A3 chấm 1.0 vì đúng nguồn. Chủ tịch duyệt "thêm answers_question vào A3". Khi thiết kế, SO đọc VC-03 (00-ARCHITECTURE: "CẤM để A3 thấy câu hỏi — nó sẽ thông cảm cho claim không neo") ⇒ đổi CƠ CHẾ, giữ MỤC ĐÍCH đã duyệt: lời gọi riêng `relevance` chỉ thấy câu hỏi + bản nháp, không thấy evidence.
+
+**Quyết định:** `01-CONTRACTS` §8.3b; SPEC-P02 bảng cổng G3 mở rộng; chặng mới `relevance` sau `verify`; chỉ gọi khi sắp `answer`; false ⇒ G3 + luật Đ28/Đ41; faithfulness giữ số thật. Thi công: H29.
+
+**Lật được:** có (tắt bước là về hành vi Đ57). **Chi phí:** +1 lời gọi model nhanh cho mỗi lượt `answer`.
+
 ### Đ57 — 2026-09-23 · Prompt A1 định nghĩa intent theo bảng tài liệu SPEC-P00 §3; G4 dùng cùng luật "hết hạn đúng chủ đề" như G3
 
 **Bối cảnh:** Golden trọn sau Đ56 (13:32): M1 vẫn 28/40 — 5 ca trượt vì A1 gán sai intent (xe/bãi xe ⇒ I-05; Văn phòng BQL/Khu Thương mại/Biệt thự ⇒ I-03/I-04) do prompt định nghĩa intent quá mơ hồ ("I-05 nội quy sinh hoạt"); S04 ra G4 + `no_eligible_source` thay vì `source_expired_or_unknown`.

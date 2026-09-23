@@ -1,0 +1,9 @@
+tsc EXIT=0
+ℹ tests 289
+ℹ pass 289
+ℹ fail 0
+ℹ skipped 0
+violations: 0
+matches: 0
+matches: 0
+VC-03 grep xong

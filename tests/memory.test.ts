@@ -230,6 +230,7 @@ test("R4/W3: hai messages mỗi lượt (hỏi + đáp) khi decision=answer, use
           ],
           faithfulness: 1,
         }),
+        geminiText({ answers_question: true, missing_vi: null }), // Đ58 — relevance
       ]),
       sleep: async () => {},
     });

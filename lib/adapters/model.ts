@@ -1112,5 +1112,78 @@ export async function runVerifier(
   return { output: result.data, input_tokens, output_tokens, ms, model };
 }
 
+// ─── Kiểm LIÊN QUAN `relevance` (Đ58, 01-CONTRACTS §8.3b) ───────────────
+// Tách khỏi A3 để giữ VC-03 (A3 KHÔNG thấy câu hỏi). Lời gọi này CHỈ thấy câu
+// hỏi + bản nháp — CẤM đưa evidence vào (nó phán "đáp đúng điều được hỏi",
+// không phán "có nguồn"; chồng vai với A3 là sai). Chạy trên chuỗi `MODEL_A1`
+// (nhanh, khác họ A2 khi Gemini sống) + fallback Vyce A1 (Đ53).
+
+export const RELEVANCE_RESPONSE_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    answers_question: { type: "BOOLEAN" },
+    missing_vi: { type: "STRING", nullable: true },
+  },
+  required: ["answers_question", "missing_vi"],
+  propertyOrdering: ["answers_question", "missing_vi"],
+} as const;
+
+export const RelevanceOutputSchema = z.object({
+  answers_question: z.boolean(),
+  missing_vi: z.string().nullable(),
+});
+export type RelevanceOutput = z.infer<typeof RelevanceOutputSchema>;
+
+export interface RelevanceInput {
+  question_vi: string; // câu hỏi đã chuẩn hoá của A1
+  draft_vi: string; // CHỈ bản nháp — CỐ Ý KHÔNG CÓ evidence (§8.3b)
+}
+
+const RELEVANCE_SYSTEM_PROMPT_VI = `Bạn nhận một câu hỏi của cư dân và một bản nháp trả lời. Bạn KHÔNG kiểm bản nháp có đúng sự thật hay không — chỉ kiểm bản nháp có đáp ĐÚNG điều được hỏi hay không.
+
+answers_question = true khi bản nháp đáp đúng DỮ KIỆN được hỏi (giờ, phí, con số, điều kiện, thủ tục) cho ĐÚNG đối tượng được hỏi.
+answers_question = false khi bản nháp chỉ đáp thông tin lân cận, hoặc đáp cho một đối tượng KHÁC (vd hỏi thẻ xe máy mà đáp thẻ cư dân; hỏi phí mà chỉ nêu thủ tục).
+Câu hỏi mở (vd "làm gì", "thủ tục gì", "cần những gì") mà bản nháp nêu các bước / yêu cầu ⇒ true.
+
+missing_vi: khi false, ghi ngắn gọn câu hỏi hỏi gì mà bản nháp không đáp; khi true, ghi null.
+
+CẤM:
+- CẤM coi là true chỉ vì bản nháp cùng chủ đề chung với câu hỏi.
+- CẤM coi là true khi đối tượng trong bản nháp khác đối tượng trong câu hỏi.`;
+
+export async function runRelevance(
+  i: RelevanceInput,
+  opts?: { forceUpstreamError?: ForceUpstreamError }
+): Promise<{
+  output: RelevanceOutput;
+  input_tokens: number;
+  output_tokens: number;
+  ms: number;
+  model: AnyModel;
+}> {
+  // Chỉ chuyển ĐÚNG hai trường — không để caller lỡ nhét evidence vào payload.
+  const payload: RelevanceInput = { question_vi: i.question_vi, draft_vi: i.draft_vi };
+  const { raw, input_tokens, output_tokens, ms, model } = await callGeminiChain(
+    "A1",
+    RELEVANCE_SYSTEM_PROMPT_VI,
+    payload,
+    RELEVANCE_RESPONSE_SCHEMA,
+    1024,
+    opts?.forceUpstreamError,
+    zodValidator(RelevanceOutputSchema, "relevance")
+  );
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    throw new ContractDriftError(`JSON.parse hỏng (relevance): ${(e as Error).message}`);
+  }
+  const result = RelevanceOutputSchema.safeParse(parsed);
+  if (!result.success) {
+    throw new ContractDriftError(`Zod hỏng (relevance): ${result.error.message}`);
+  }
+  return { output: result.data, input_tokens, output_tokens, ms, model };
+}
+
 // Re-export cho tiện dùng ở lib/pipeline/ mà không phải import kiểu trùng tên.
 export type { Citation, ClaimVerdict };

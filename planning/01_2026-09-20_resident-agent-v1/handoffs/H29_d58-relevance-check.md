@@ -1,0 +1,26 @@
+1. Bạn là worker của repo này. Vai + luật hành xử: đọc `.agents/skills/vai-thi-cong/SKILL.md`. Loại handoff: **THI CÔNG**.
+2. Bước 0: `node ../brain4agent.release/.agents/skills/.xay-dung-nao-bo/scripts/init_brain.js --check`. Ghi mã thoát vào report. DỪNG Ở `--check`. Mã 2 ⇒ dừng, báo lên.
+3. Đọc theo thứ tự: `plan.md` §2 **Đ58** → `specs/01-CONTRACTS.md` §8.3 + **§8.3b** (mới) → `specs/00-ARCHITECTURE.md` VC-02, VC-03 → `specs/SPEC-P02-Agent-Pipeline.md` bảng cổng (dòng G3 mở rộng), §5.3 (log chặng) → `lib/adapters/model.ts` (`runClassifier`/`runVerifier`, `callGeminiChain(agent,…, validate)`, `zodValidator`, Vyce fallback Đ53) → `lib/types.ts` (`PipelineStep`) → `lib/pipeline/index.ts` (`STEP_ORDER` dòng ~52, chặng verify ~dòng 720–775, nhánh `a2.refused`, `topRejectedIsOnTopic`) → `lib/confidence.ts` (`decideTurn`, `retriever_refused`) → `app/(resident)/chat/page.tsx` (panel "Các chặng xử lý") → test pipeline có model giả (tìm `__setTransportForTesting` trong `tests/`).
+
+## 1. BỐI CẢNH
+Repo `D:\build phase`, nhánh `feature/nhuy`, base = `git rev-parse --short HEAD`. Golden 13:46: M1 35/40 ✅, M3 14/16 ❌. Ca nguy hiểm S02/F-ESC-02 "Làm lại thẻ xe máy bị mất thì mất bao nhiêu tiền?": A2 đáp phí thẻ CƯ DÂN / thủ tục; A3 chấm faithfulness 1.0 (đúng nguồn, sai câu hỏi). Chủ tịch duyệt thêm kiểm "đáp đúng câu hỏi"; VC-03 cấm đưa câu hỏi vào A3 ⇒ Đ58: lời gọi RIÊNG `relevance`. Số nền: tsc 0 · test 285/285 · BB 0.
+
+## 2. PHẠM VI
+**Được ghi:** `lib/adapters/model.ts` (thêm `RelevanceInput/Output`, schema, Zod, prompt, `runRelevance`) · `lib/types.ts` (CHỈ thêm `"relevance"` vào `PipelineStep.step`) · `lib/pipeline/index.ts` (STEP_ORDER + chặng relevance sau verify) · `app/(resident)/chat/**` (CHỈ nếu panel cần nhãn cho chặng mới) · test mới `tests/relevance-d58.test.ts` + sửa test cũ nếu số lời gọi model giả đổi · `planning/01_2026-09-20_resident-agent-v1/evidence/h29-relevance/**` · `reports/R33_thi-cong_d58-relevance.md`.
+**CẤM chạm:** `lib/confidence.ts` (dùng `retriever_refused: true` sẵn có), `lib/pipeline/eligibility.ts`, `lib/eval/**`, `evals/**`, `db/**`, `planning/**/specs/**`, `brain4agent/**`, `package.json`.
+**CẤM** `git add/commit/push`. **CẤM `git stash` / `git checkout -- <file>` / `git reset` / `git clean`** (AGENTS.md §5.D.5). **CẤM** truyền `question_vi` vào `runVerifier` (VC-03). **CẤM** truyền evidence vào `runRelevance`. **CẤM** để relevance đổi `claims`/`faithfulness`. **CẤM** chạy Golden (SO chạy).
+
+## 3. VIỆC PHẢI LÀM
+**W1 — Adapter.** Theo §8.3b: `RELEVANCE_RESPONSE_SCHEMA` (Gemini OpenAPI, `answers_question` BOOLEAN, `missing_vi` STRING nullable, cả hai required), `RelevanceOutputSchema` (Zod), prompt tiếng Việt: "đáp đúng DỮ KIỆN được hỏi (giờ, phí, con số, điều kiện, thủ tục) cho ĐÚNG đối tượng được hỏi? đáp thông tin lân cận/đối tượng khác ⇒ false; câu hỏi mở (vd 'làm gì', 'thủ tục gì') mà bản nháp nêu các bước ⇒ true"; `runRelevance(i)` gọi `callGeminiChain("A1", …, zodValidator(RelevanceOutputSchema,"relevance"))`, trả kèm `model`/tokens/ms. **Xong khi:** tsc 0.
+**W2 — Pipeline.** Sau verify, CHỈ khi `dec.decision === "answer"`: gọi `runRelevance({question_vi: a1.normalized_query_vi, draft_vi: a2.draft_vi})`, push step `relevance` (model/ms/tokens, `note` = `missing_vi` khi false). `answers_question === false` ⇒ tính lại `decideTurn({... retriever_refused: true, top_rejected_on_topic: <như nhánh a2.refused>})`, giữ `s3Faithfulness` = số A3 thật, escalate. Thêm `"relevance"` vào `STEP_ORDER` ngay sau `"verify"`. **Xong khi:** `tests/relevance-d58.test.ts` (transport/model giả): (a) A3 1.0 + relevance false ⇒ `decision=escalate`, `gate=G3_retriever_refused`, `reason_code=no_eligible_source`, `s3_faithfulness` lưu = 1; step `relevance` có mặt, đúng thứ tự; (b) relevance true ⇒ `answer` như cũ; (c) lượt escalate ở G4 ⇒ KHÔNG gọi relevance (đếm lời gọi); (d) kiểm `runVerifier` KHÔNG nhận `question_vi` (VC-03). Mỗi ca từng ĐỎ (`red.txt`/`green.txt`).
+**W3 — Đo thật (được gọi model, tối đa ~10 lượt):** `MODEL_A2=gemini-3.5-flash` (ép DeepSeek soạn) chạy `runTurn` trên Postgres cho: "Làm lại thẻ xe máy bị mất thì mất bao nhiêu tiền?" (kỳ vọng escalate `no_eligible_source`), "Cấp lại thẻ cư dân bị mất tốn bao nhiêu tiền?" (kỳ vọng answer), "Tốc độ tối đa khi lái xe trong hầm là bao nhiêu?" (answer), "Trước khi thi công sửa chữa căn hộ cần làm thủ tục gì?" (answer). Mỗi câu chạy 2 lần; in decision/reason/steps. Script tạm trong `evidence/h29-relevance/` (KHÔNG trong `scripts/`), tự dọn hội thoại mình tạo. Lưu `live.txt`.
+**W4 — Cổng:** `npx tsc --noEmit` 0 · `node scripts/run_tests.mjs` ≥ 285 + mới, 0 fail, 0 skip (DB rảnh; đỏ vì tranh kết nối ⇒ chạy lại riêng, ghi rõ) · `check_adapter_boundary.sh` 0 · `check_no_confidence_ui.sh` 0 · `npm run build` 0.
+
+## 4. LUẬT
+Sửa tối thiểu, comment tiếng Việt trỏ Đ58/§8.3b. Không để lại dữ liệu/tiến trình nền. Thấy việc ngoài phạm vi ⇒ GHI report.
+
+## 5. TẦNG
+W1 🟠 · W2 🔴 (đổi đường quyết định trả lời) · W3 🟠 · W4 🟢.
+
+## 6. REPORT
+`reports/R33_thi-cong_d58-relevance.md` đúng mẫu K.4 (dòng 1 khai vai; dòng 2–4 `Handoff:`/`Base:`/`Head:`; lệnh + exit; test tổng/pass/fail/skip; `git diff --stat`; bảng phân công; việc KHÔNG làm; câu hỏi cần người; dòng cuối ✅/🔁/⛔).

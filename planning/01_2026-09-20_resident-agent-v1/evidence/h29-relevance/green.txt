@@ -1,0 +1,15 @@
+# GREEN — sau W2 — 2026-09-23T14:12:44+07:00
+$ node scripts/run_tests.mjs relevance-d58
+✔ Đ58 (a): A3 1.0 + relevance false ⇒ escalate G3/no_eligible_source, s3_faithfulness giữ 1, step relevance sau verify (27.446ms)
+✔ Đ58 (b): relevance true ⇒ answer như cũ, có step relevance (8.6562ms)
+✔ Đ58 (c): lượt escalate ở G4 ⇒ KHÔNG gọi relevance (2.7792ms)
+✔ Đ58 (d): VC-03 — runVerifier KHÔNG nhận question_vi; relevance KHÔNG nhận evidence (2.3513ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 326.9979
+EXIT=0

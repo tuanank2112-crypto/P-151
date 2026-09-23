@@ -230,7 +230,7 @@ dung câu trả lời sắp nói ra**; ba tín hiệu kia chỉ nhìn vào nguy�
 | :-- | :-- | :-- | :-- | :-- |
 | 1 | `G1_conflict` | `S4 === true` | escalate | `source_conflict` |
 | 2 | `G2_zero_eligible` | `eligible_count === 0` | escalate | `rejection_histogram.expired_or_unknown > 0` ? `source_expired_or_unknown` : `no_eligible_source` |
-| 3 | `G3_retriever_refused` | A2 trả `refused === true` | escalate | `top_rejected_reason === 'expired_or_unknown'` ? `source_expired_or_unknown` : `no_eligible_source` **(Đ28)** |
+| 3 | `G3_retriever_refused` | A2 trả `refused === true` **hoặc** kiểm liên quan trả `answers_question === false` (Đ58, `01-CONTRACTS` §8.3b — xét SAU G4/G5, chỉ khi sắp `answer`) | escalate | `top_rejected_reason === 'expired_or_unknown'` ? `source_expired_or_unknown` : `no_eligible_source` **(Đ28)** |
 | 4 | `G4_faithfulness_floor` | `S3 < TAU_FAITHFUL` | escalate | cùng luật G3: `top_rejected_reason === 'expired_or_unknown'` **và** chunk hạng 1 đúng chủ đề ? `source_expired_or_unknown` : `no_eligible_source` **(Đ57)** |
 | 5 | `G5_tau_answer` | `confidence < TAU_ANSWER` | escalate | `no_eligible_source` |
 | — | *(qua hết)* | | **answer** | `null` |

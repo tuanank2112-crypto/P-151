@@ -129,6 +129,7 @@ test("H25 W2/W6 (b): answer đầy đủ ⇒ mock answer_turns có draft+verify 
         claims: [{ claim_vi: "Thẻ cấp trong 3 ngày làm việc", verdict: "supported", supporting_section_id: "CARD-NEW-02" }],
         faithfulness: 1,
       },
+      { answers_question: true, missing_vi: null }, // Đ58 — relevance
     ]),
     sleep: async () => {},
   });

@@ -9,7 +9,7 @@
     "gates_no_key_needed": {
       "tsc": "npx tsc --noEmit · exit 0",
       "build": "npm run build · exit 0 (clone sach cung exit 0)",
-      "test": "282/282 (DB ranh)",
+      "test": "289/289",
       "BB-07": "check_adapter_boundary.sh · violations: 0",
       "BB-10": "check_no_hardcoded_knowledge.sh · matches: 0",
       "BB-05": "check_no_confidence_ui.sh · matches: 0",
@@ -83,7 +83,8 @@
       "P01 deploy (Đ51)",
       "G08 xanh tren production (Đ50+Đ52)",
       "H27 E-5/E-6 (Đ56/Đ56b)",
-      "H28 golden any-of (Đ56)"
+      "H28 golden any-of (Đ56)",
+      "H29 Đ58 relevance"
     ],
     "next": "AGENT: va Golden theo phan loai (C nguy hiem truoc, roi B, E); A1 phan loai PII. NGUOI: quyet DEF-04 gate (S01/S02/S04), origin/main, git stash drop",
     "remaining": [
@@ -143,8 +144,7 @@
   },
   "blocked_needs_human": {
     "cau_hoi_D17": "A2 mat bac Pro. Neu Golden ra M1 < 34/40 thi nap tien Google Cloud hay chap nhan diem thap? Can quyet TRUOC khi chay Golden tren Postgres",
-    "phe_chuan_D32": "Doi 01-CONTRACTS §4.2 plainto_tsquery -> to_tsquery OR. Da ap vi khong ap thi demo khong chay duoc dong nao; dao lai bang mot commit revert",
-    "A3_answers_question": "Them truong answers_question vao hop dong A3 (01-CONTRACTS §8) de chan tra loi vong quanh — can chu tich duyet (L.3)"
+    "phe_chuan_D32": "Doi 01-CONTRACTS §4.2 plainto_tsquery -> to_tsquery OR. Da ap vi khong ap thi demo khong chay duoc dong nao; dao lai bang mot commit revert"
   },
   "db": {
     "provider": "supabase",
@@ -209,7 +209,7 @@
     "ghi_chu": "DEF-04 tren mock: reason_code DUNG, gate G3 (cho quyet)"
   },
   "git": {
-    "head": "feature/nhuy — Đ56",
+    "head": "feature/nhuy — Đ58",
     "remote": "origin P-151 · CHI push feature/nhuy (chu tich chot 23/09, khong tao branch moi, khong dung origin/main)"
   },
   "rules_added": {
@@ -235,6 +235,7 @@
     "at": "2026-09-23T11:06:00+07:00",
     "moved_at": "2026-09-23T11:22:00+07:00",
     "g08": "planning/01_2026-09-20_resident-agent-v1/evidence/so-deploy/g08_prod_answer_turn.txt",
-    "billing": "team resident-agent-demo: pro trialing, khong co payment method, het ~2026-10-07 — khong tinh tien"
+    "billing": "team resident-agent-demo: pro trialing, khong co payment method, het ~2026-10-07 — khong tinh tien",
+    "access": "chi resident-agent-p151.vercel.app va -beryl mo cong khai; URL -resident-agent-demo va tung ban deploy bi Vercel SSO (G52); mat khau demo o .env.local"
   }
 }

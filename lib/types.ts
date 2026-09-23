@@ -109,6 +109,7 @@ export interface PipelineStep {
     | "eligibility"
     | "draft"
     | "verify"
+    | "relevance" // Đ58 — kiểm "đáp đúng câu hỏi" (01-CONTRACTS §8.3b), NGAY sau verify
     | "action"; // Đ48 — chặng thực thi P05, đứng SAU risk, thay cho retrieval→verify
   ok: boolean;
   ms: number;
