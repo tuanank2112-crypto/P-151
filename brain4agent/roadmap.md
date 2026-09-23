@@ -18,7 +18,9 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 - [x] P05 — Lớp hành động: đọc chính sách, đặt chỗ, biên nhận, hoàn tác 🟠 (D6) — **MỞ KHOÁ 2026-09-23 (Đ48), thi công xong**, xem `Done`
 - [ ] P06 — Kịch bản demo, dữ liệu mồi, dự phòng 🟢 (D7) — 🟡 **kịch bản đã viết** (`presentation/demo_script.md`) và **đã diễn trọn bằng curl trên server local 2026-09-23**; còn dọn dữ liệu mồi (🖐) và diễn tay trên trình duyệt
 
-### Việc phải làm ngay, theo thứ tự (cập nhật 2026-09-23 — P05 đã thi công xong)
+### Việc phải làm ngay, theo thứ tự
+
+0. **🖐 P05 thiếu kiểm soát đặt chỗ (chủ tịch chỉ ra 2026-09-23):** không ai xác nhận, không bằng chứng, BQL không thấy lượt đặt. Chờ chủ tịch chọn A/B/C rồi thi công: đặt 2 bước + màn BQL `/bookings` + trang chi tiết biên nhận (migration 008). KHÔNG được viện dẫn vùng cấm "Nhóm 11" của SPEC-P05 để gạt việc này. (cập nhật 2026-09-23 — P05 đã thi công xong)
 
 **Demo local ĐÃ chạy trọn end-to-end** (`evidence/so-demo-local/smoke_2026-09-23.txt`): trả lời có trích dẫn · 3 kiểu từ chối đúng mã · lịch sử bền · HITL có pending · 4 trang BQL có nav. **P05 (agent thực thi thay cư dân) cũng đã chạy trọn**: `scripts/demo_2339.mjs` exit 0, 236/236 test, BB-05/07/10 = 0. Kịch bản bấm tay: `presentation/demo_script.md`.
 

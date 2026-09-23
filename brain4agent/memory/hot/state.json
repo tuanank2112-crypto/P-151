@@ -145,7 +145,8 @@
   },
   "blocked_needs_human": {
     "cau_hoi_D17": "A2 mat bac Pro. Neu Golden ra M1 < 34/40 thi nap tien Google Cloud hay chap nhan diem thap? Can quyet TRUOC khi chay Golden tren Postgres",
-    "phe_chuan_D32": "Doi 01-CONTRACTS §4.2 plainto_tsquery -> to_tsquery OR. Da ap vi khong ap thi demo khong chay duoc dong nao; dao lai bang mot commit revert"
+    "phe_chuan_D32": "Doi 01-CONTRACTS §4.2 plainto_tsquery -> to_tsquery OR. Da ap vi khong ap thi demo khong chay duoc dong nao; dao lai bang mot commit revert",
+    "p05_kiem_soat_dat_cho": "Chon A (BQL duyet moi luot) / B (tu xac nhan + BQL huy duoc) / C (theo tien ich) cho dat cho 2 buoc + man /bookings + chi tiet bien nhan"
   },
   "db": {
     "provider": "supabase",
@@ -203,7 +204,8 @@
     "G46_answer_turns_rong": "DA VA (H25/R29, Đ50) — so faithfulness truoc 23/09 la 0.0 gia; can luot moi de co so that",
     "G47_worker_stash": "luat AGENTS §5.D.5: worker CAM git stash/checkout/reset tren cay chung; stash@{0} du con trong kho (nguoi drop)",
     "A1_pii_phan_loai": "prod: 'so dien thoai cu dan can A-1203' => unsupported_intent (A1 3.5-flash-lite), ky vong pii_or_account_specific",
-    "A1_cham": "safety A1 3.5-flash-lite 27-40 s tren production (23/09 chieu)"
+    "A1_cham": "safety A1 3.5-flash-lite 27-40 s tren production (23/09 chieu)",
+    "p05_khong_xac_nhan": "confirmation_mode auto; BQL khong co man bookings; bien nhan mong; RC-XFBL1D2V (pickleball 16:00 23/09) khong ai thay"
   },
   "km6": {
     "value": "1/4 tren postgres (DEF-03 OK) · 3 ca blocked vi can han muc Gemini — KHONG phai truot",
