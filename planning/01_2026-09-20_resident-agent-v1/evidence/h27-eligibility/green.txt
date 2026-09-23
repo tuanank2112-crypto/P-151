@@ -1,0 +1,18 @@
+✔ Đ56 W1 — 'Hàng rào mặt tiền biệt thự…' ⇒ ['villa'] (10.6319ms)
+✔ Đ56 W1 — 'Khu Thương mại dịch vụ…' ⇒ ['commercial'] (2.2391ms)
+✔ Đ56 W1 — 'Nuôi thú cưng trong căn hộ…' ⇒ ['apartment'] (1.6451ms)
+✔ Đ56 W1 — 'Nuôi thú cưng cần điều kiện gì?' (không nêu loại) ⇒ [] (0.177ms)
+✔ Đ56 W1 — so khớp không dấu, không phân biệt hoa thường; shophouse/ki-ốt/kiot/chung cư (2.4345ms)
+✔ Đ56 W1 — principal apartment + chunk scope {villa} + câu có 'biệt thự' ⇒ eligible (25.779ms)
+✔ Đ56 W1 — cùng chunk {villa}, câu KHÔNG nêu loại ⇒ vẫn scope_mismatch (theo principal) (0.353ms)
+✔ Đ56 W2 — [BOOK, CAP-01, AMEN-07]: nhóm đi ngang ⇒ conflict_groups=[], thành viên nhóm bị loại 'conflict', BOOK eligible (0.3669ms)
+✔ Đ56 W2 — [CAP-01, BOOK, AMEN-07]: nguồn hạng 1 bị tranh chấp ⇒ conflict_groups=['CG-BBQ-CAPACITY'] (0.3838ms)
+✔ Đ56 W2 — hạng 1 bị loại ở E-6 thì 'cao nhất' tính trên tập ĐÃ QUA E-1..E-4/E-6 (0.4251ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 242.961

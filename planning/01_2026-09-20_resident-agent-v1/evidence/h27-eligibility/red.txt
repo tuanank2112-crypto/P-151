@@ -1,0 +1,181 @@
+✖ Đ56 W1 — 'Hàng rào mặt tiền biệt thự…' ⇒ ['villa'] (2.7125ms)
+✖ Đ56 W1 — 'Khu Thương mại dịch vụ…' ⇒ ['commercial'] (0.318ms)
+✖ Đ56 W1 — 'Nuôi thú cưng trong căn hộ…' ⇒ ['apartment'] (0.2874ms)
+✖ Đ56 W1 — 'Nuôi thú cưng cần điều kiện gì?' (không nêu loại) ⇒ [] (0.2508ms)
+✖ Đ56 W1 — so khớp không dấu, không phân biệt hoa thường; shophouse/ki-ốt/kiot/chung cư (0.2407ms)
+✖ Đ56 W1 — principal apartment + chunk scope {villa} + câu có 'biệt thự' ⇒ eligible (22.5939ms)
+✔ Đ56 W1 — cùng chunk {villa}, câu KHÔNG nêu loại ⇒ vẫn scope_mismatch (theo principal) (0.5159ms)
+✖ Đ56 W2 — [BOOK, CAP-01, AMEN-07]: nhóm đi ngang ⇒ conflict_groups=[], thành viên nhóm bị loại 'conflict', BOOK eligible (0.4327ms)
+✔ Đ56 W2 — [CAP-01, BOOK, AMEN-07]: nguồn hạng 1 bị tranh chấp ⇒ conflict_groups=['CG-BBQ-CAPACITY'] (0.3063ms)
+✔ Đ56 W2 — hạng 1 bị loại ở E-6 thì 'cao nhất' tính trên tập ĐÃ QUA E-1..E-4/E-6 (0.3495ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 3
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 256.5772
+
+✖ failing tests:
+
+test at tests\eligibility-d56.test.ts:47:1
+✖ Đ56 W1 — 'Hàng rào mặt tiền biệt thự…' ⇒ ['villa'] (2.7125ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - [
+  -   'villa'
+  - ]
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/eligibility-d56.test.ts:48:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: [ 'villa' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\eligibility-d56.test.ts:51:1
+✖ Đ56 W1 — 'Khu Thương mại dịch vụ…' ⇒ ['commercial'] (0.318ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - [
+  -   'commercial'
+  - ]
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/eligibility-d56.test.ts:52:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: [ 'commercial' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\eligibility-d56.test.ts:55:1
+✖ Đ56 W1 — 'Nuôi thú cưng trong căn hộ…' ⇒ ['apartment'] (0.2874ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - [
+  -   'apartment'
+  - ]
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/eligibility-d56.test.ts:56:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: [ 'apartment' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\eligibility-d56.test.ts:59:1
+✖ Đ56 W1 — 'Nuôi thú cưng cần điều kiện gì?' (không nêu loại) ⇒ [] (0.2508ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  
+  undefined !== []
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/eligibility-d56.test.ts:60:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\eligibility-d56.test.ts:63:1
+✖ Đ56 W1 — so khớp không dấu, không phân biệt hoa thường; shophouse/ki-ốt/kiot/chung cư (0.2407ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - [
+  -   'villa'
+  - ]
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/eligibility-d56.test.ts:64:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: [ 'villa' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\eligibility-d56.test.ts:73:1
+✖ Đ56 W1 — principal apartment + chunk scope {villa} + câu có 'biệt thự' ⇒ eligible (22.5939ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   'VIL-FENCE-02'
+  - ]
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/eligibility-d56.test.ts:80:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ 'VIL-FENCE-02' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\eligibility-d56.test.ts:97:1
+✖ Đ56 W2 — [BOOK, CAP-01, AMEN-07]: nhóm đi ngang ⇒ conflict_groups=[], thành viên nhóm bị loại 'conflict', BOOK eligible (0.4327ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   'CG-BBQ-CAPACITY'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/eligibility-d56.test.ts:108:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'CG-BBQ-CAPACITY' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

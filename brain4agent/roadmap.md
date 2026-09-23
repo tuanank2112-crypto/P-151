@@ -41,6 +41,8 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 
 ## 💡 Kho Ý Tưởng & Backlog (Idea Vault)
 
+- **K-M2 kiểm `must_cite_section_ids` tồn tại trong `knowledge/`** (nảy ra ở H28/R32, 2026-09-23): hiện `validate_golden.mjs` không đọc trường này, nên Golden trỏ section không tồn tại sẽ không bị bắt tới khi chạy. Chưa làm vì cần thêm error class vào SPEC-P00 §8/§9; 66 ca hiện tại đã đo xanh.
+
 *Những thứ đã cân nhắc và CHỦ ĐỘNG RÚT khỏi vòng 1.0.0 — không phải "chưa nghĩ tới", ghi kèm lý do để không lật lại mà không có căn cứ mới. Nguồn: `plan.md` §2 "Quyết định bị thay thế".*
 
 - **Lớp hành động đầy đủ (agent tự chủ thanh toán hoá đơn, đặt chỗ không cần điều

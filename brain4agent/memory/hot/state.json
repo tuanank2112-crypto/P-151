@@ -9,7 +9,7 @@
     "gates_no_key_needed": {
       "tsc": "npx tsc --noEmit · exit 0",
       "build": "npm run build · exit 0 (clone sach cung exit 0)",
-      "test": "263/263 (DB ranh)",
+      "test": "282/282 (DB ranh)",
       "BB-07": "check_adapter_boundary.sh · violations: 0",
       "BB-10": "check_no_hardcoded_knowledge.sh · matches: 0",
       "BB-05": "check_no_confidence_ui.sh · matches: 0",
@@ -81,7 +81,9 @@
       "H25 (Đ50) ghi pipeline_steps + s1..s4 + rejection_histogram",
       "H26 UI setSectionExcluded",
       "P01 deploy (Đ51)",
-      "G08 xanh tren production (Đ50+Đ52)"
+      "G08 xanh tren production (Đ50+Đ52)",
+      "H27 E-5/E-6 (Đ56/Đ56b)",
+      "H28 golden any-of (Đ56)"
     ],
     "next": "AGENT: va Golden theo phan loai (C nguy hiem truoc, roi B, E); A1 phan loai PII. NGUOI: quyet DEF-04 gate (S01/S02/S04), origin/main, git stash drop",
     "remaining": [
@@ -206,7 +208,7 @@
     "ghi_chu": "DEF-04 tren mock: reason_code DUNG, gate G3 (cho quyet)"
   },
   "git": {
-    "head": "feature/nhuy (local doi ten tu main) — Đ54",
+    "head": "feature/nhuy — Đ56",
     "remote": "origin P-151 · CHI push feature/nhuy (chu tich chot 23/09, khong tao branch moi, khong dung origin/main)"
   },
   "rules_added": {

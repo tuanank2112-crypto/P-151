@@ -1,0 +1,431 @@
+✔ l2normalize: vector chưa chuẩn hoá (|v|≈0.4345 ở 384 chiều, Đ20) trở thành |v|=1 (6.8492ms)
+✔ l2normalize: vector 0 trả về nguyên vẹn, không chia cho 0 (0.8665ms)
+✔ hằng số embedding khớp 01-CONTRACTS §4.3 (Đ18) (1.059ms)
+✔ MAX_CONCURRENCY giới hạn song song ra Gemini API (Đ19) (0.2829ms)
+✔ FORBIDDEN_MODELS liệt kê đúng hai model cấm (Đ17, C-09), KHÔNG nằm trong SupportedModel dùng thật (1.0499ms)
+✔ schema-parity (T-PARITY, R12): responseSchema.required khớp khoá Zod cho cả 3 agent (0.4327ms)
+✔ ĐỎ R12 (đã chạy tay, xem report): xoá một khoá khỏi required phải làm test trên fail — kiểm ngược bằng mảng cố ý thiếu (0.3781ms)
+✔ parsePropertyTypeArray — chuỗi Postgres '{apartment}' thành mảng đúng 1 phần tử (0.5583ms)
+✔ parsePropertyTypeArray — nhiều phần tử, có khoảng trắng và dấu nháy (0.7293ms)
+✔ parsePropertyTypeArray — mảng rỗng, null, giá trị lạ đều ra [] (0.6387ms)
+✔ parsePropertyTypeArray — mảng JS (đường Postgres đã parse sẵn) giữ nguyên (0.4276ms)
+✔ G23 ĐỎ — bẫy chuỗi con: chuỗi thô khớp nhầm, mảng đã chuẩn hoá thì không (0.2505ms)
+✔ hashPassword rồi verifyPassword: mật khẩu đúng ⇒ true (213.6515ms)
+✔ verifyPassword: mật khẩu sai ⇒ false (148.1642ms)
+✔ cookie phiên hợp lệ: ký rồi xác minh trả đúng payload (3.3334ms)
+✔ cookie phiên bị sửa 1 byte ⇒ verify trả về null (false) (0.9435ms)
+✔ verifySessionCookie: thiếu cookie ⇒ null, không ném lỗi dù thiếu SESSION_SECRET (0.3425ms)
+✔ backoff: HTTP 429 retry rồi thành công (E2, backoff 2s→8s+jitter) (3.145ms)
+✔ backoff: HTTP 503 retry rồi thành công — Y NHƯ 429, KHÔNG gộp vào 5xx retry nhanh (E2b, Đ19) (0.8286ms)
+✔ backoff: HTTP 401 KHÔNG retry (E2d, UpstreamAuthError, CẤM in khoá) (1.2261ms)
+✔ backoff: content blocked KHÔNG retry, escalate ngay (E2e) (1.2665ms)
+✔ backoff: finishReason khác STOP ⇒ ContractDriftError, retry ĐÚNG 1 lần (E7) (0.7643ms)
+
+[DỪNG SỚM] 3 lần dính hạn mức liên tiếp. Giữ nguyên checkpoint, thoát mã 3. Chạy lại bằng --resume khi hạn mức hồi.
+✔ classifyError tách lỗi hạ tầng (tầng 1) khỏi lỗi logic — §5.E (3.023ms)
+✔ ĐỎ #3 — đứt mạng giữa đường là tầng 1, nhưng TypeError của code thì KHÔNG (0.5926ms)
+✔ ĐỎ #1 — ca dính hạn mức KHÔNG vào checkpoint và KHÔNG bị tính là trượt (3.5046ms)
+✔ ĐỎ #2 — lỗi logic thật thì PHẢI vào checkpoint, đánh dấu trượt (3.7463ms)
+✔ dừng sớm sau 3 lần dính hạn mức LIÊN TIẾP, giữ nguyên checkpoint (2.8437ms)
+✔ một ca đi trọn thì reset chuỗi hạn mức — 429 rải rác không làm dừng oan (3.6886ms)
+✔ Checkpoint nạp lại được từ đĩa — nền tảng của --resume (7.3247ms)
+✔ Checkpoint bỏ qua dòng hỏng do bị ngắt giữa chừng, không ném (13.7019ms)
+✔ sliceCases cắt lô theo --limit/--offset và lọc theo --only (1.826ms)
+✔ Đ40 W2 — S14 dính ĐÚNG lớp lỗi bơm (UpstreamRateLimited) ⇒ ĐƯỢC coi là lỗi mong đợi (0.3888ms)
+✔ Đ40 W2 — case KHÁC (không phải S14) dính 429 THẬT ⇒ KHÔNG được coi là mong đợi (vẫn phải vào blocked) (0.2551ms)
+✔ Đ40 W2 — S14 dính lớp lỗi KHÁC (không phải lỗi được bơm) ⇒ KHÔNG được coi là mong đợi (0.1801ms)
+✔ Đ40 W2 — isExpectedInjectedError là hàm THUẦN, tham số opts đổi được caseId/errorName mục tiêu (không hardcode ẩn) (0.1523ms)
+✔ checkBqlAuthz: không có phiên ⇒ chặn, http_status=401 (1.648ms)
+✔ checkBqlAuthz: vai resident ⇒ chặn, http_status=403 (0.41ms)
+✔ checkBqlAuthz: vai bql ⇒ cho qua (0.2543ms)
+✔ assertPendingTransition: state='pending' ⇒ không ném lỗi (chuyển hợp lệ) (1.7825ms)
+✔ assertPendingTransition: state='approved' ⇒ ném ReviewTransitionError (0.8307ms)
+✔ assertPendingTransition: state='edited_approved' ⇒ ném ReviewTransitionError (0.285ms)
+✔ assertPendingTransition: state='rejected' ⇒ ném ReviewTransitionError (0.2869ms)
+✔ setSectionExcluded: is_excluded=true + note rỗng ⇒ MissingExclusionNote, không chạm DB (5.787ms)
+✔ setSectionExcluded (Postgres thật): loại rồi đưa lại một mục, khôi phục nguyên trạng (4128.3069ms)
+✔ validateUploadDocumentShape: đúng hình dạng knowledge/ ⇒ ok:true (2.503ms)
+✔ validateUploadDocumentShape: thiếu document_id ⇒ ok:false, code=MissingField (0.4738ms)
+✔ validateUploadDocumentShape: doc_kind lạ (ngoài 4 giá trị) ⇒ ok:false (0.2655ms)
+✔ validateUploadDocumentShape: scope_property chứa giá trị lạ ⇒ ok:false (0.2711ms)
+✔ validateUploadDocumentShape: effective_from sai định dạng ⇒ ok:false (0.3675ms)
+✔ validateUploadDocumentShape: sections rỗng ⇒ ok:false (0.2937ms)
+✔ validateUploadDocumentShape: body_vi ngắn hơn 60 ký tự ⇒ ok:false, code=BodyLength (0.3465ms)
+✔ validateUploadDocumentShape: body_vi dài hơn 900 ký tự ⇒ ok:false, code=BodyLength (0.2726ms)
+✔ validateUploadDocumentShape: section_id trùng trong cùng lượt gửi ⇒ ok:false, code=DuplicateSectionId (0.3335ms)
+✔ validateUploadDocumentShape: ordinal không phải số nguyên ⇒ ok:false (0.4384ms)
+✔ validateUploadDocumentShape: input gốc không phải object ⇒ ok:false (3.8858ms)
+✔ H15 W2 — id của người khác (bql) yêu cầu hội thoại của resident ⇒ 403 (1407.4625ms)
+✔ H15 W2 — id không tồn tại ⇒ 403 (không phân biệt 'không có' với 'không thuộc bạn') (289.5884ms)
+✔ H15 W2 — id của chính mình ⇒ đúng số tin nhắn đã ghi (listMessages) (2259.4387ms)
+✔ GOLDEN_CONCURRENCY=9 (trên biên) ⇒ ok:false, không kẹp về 5 (1.9841ms)
+✔ GOLDEN_CONCURRENCY=1 (dưới biên) ⇒ ok:false, không kẹp về 3 (4.3356ms)
+✔ GOLDEN_CONCURRENCY=3 (biên dưới hợp lệ) ⇒ ok:true (0.5359ms)
+✔ GOLDEN_CONCURRENCY=5 (biên trên hợp lệ) ⇒ ok:true (0.3202ms)
+✔ GOLDEN_CONCURRENCY=4 (mặc định) ⇒ ok:true (4.0732ms)
+✔ GOLDEN_CONCURRENCY=abc (không phải số nguyên) ⇒ ok:false (0.2781ms)
+✔ GOLDEN_CONCURRENCY=4.5 (không nguyên) ⇒ ok:false (0.2895ms)
+✔ checkRequiredEnv: đủ 6 biến ⇒ missing rỗng (1.4431ms)
+✔ checkRequiredEnv: thiếu GEMINI_API_KEY ⇒ liệt kê đúng tên, không in giá trị biến khác (0.4974ms)
+✔ citation (BB-04, P02-C6, T-CITE, R6): A2 bịa section_id lạ ⇒ PipelineInvariantError, KHÔNG lọc im lặng (63.5127ms)
+✔ citation: decision=answer nhưng A3 khiến citations rỗng KHÔNG THỂ xảy ra vì A2 citations giữ nguyên — kiểm bất biến BB-04 khi A2 trả citations=[] và vẫn không refuse (16.7055ms)
+✔ hằng số công thức khớp SPEC-P02 §6.2 (8.3486ms)
+✔ decideTurn — W1 D5 bể bơi trẻ em (đối chứng xanh) (0.6086ms)
+✔ decideTurn — W2 D6 giờ BQL (đối chứng xanh) (0.2342ms)
+✔ decideTurn — W3 sát ngưỡng dưới (0.2723ms)
+✔ decideTurn — W4 sát ngưỡng trên nhưng trượt (7.44ms)
+✔ decideTurn — W5 faithfulness thấp, raw vẫn cao (0.2941ms)
+✔ decideTurn — W6 S03 conflict BBQ (DEF-03) (0.2579ms)
+✔ decideTurn — W7 S01 pickleball (DEF-01) (0.1982ms)
+✔ decideTurn — W8 S04 bể bơi expired (DEF-04) (0.2439ms)
+✔ decideTurn — W9 S02 phí thẻ xe máy (DEF-02) (0.4171ms)
+✔ decideTurn — W10 A3 không tách được claim nào (0.2282ms)
+✔ ĐỎ #5 (đã chạy tay, xem report/TESTING §6.4): TAU_FAITHFUL=0 lật W5 từ escalate sang answer — CẤM đặt = 0 (0.3342ms)
+✔ Đ28 W11 — DEF-04 thật: A2 từ chối, chunk hạng 1 hết hiệu lực ⇒ source_expired_or_unknown (0.2009ms)
+✔ Đ28 W12 — DEF-02 đối chứng: A2 từ chối, chunk hạng 1 HỢP LỆ ⇒ vẫn no_eligible_source (0.1777ms)
+✔ Đ28 W13 — histogram MỘT MÌNH không đủ: có chunk hết hiệu lực xếp hạng thấp, hạng 1 hợp lệ ⇒ no_eligible_source (0.1837ms)
+✔ Đ28 — G2 KHÔNG đổi: eligible_count=0 vẫn phân biệt bằng histogram (0.244ms)
+✔ Đ38 (thật, Postgres, DEF-03): G1_conflict trả >= 2 citations, mọi section_id thuộc đúng conflict_group CG-BBQ-CAPACITY (4080.0986ms)
+✔ Đ38 — đối chứng: escalate KHÁC gate (chặng 5 — risk/hard-block pháp lý, KHÔNG chạm retrieval/A2/A3) vẫn giữ citations=[] — không hứa nguồn thì không nợ gì (881.6863ms)
+✔ conversationIdFromLabel: TẤT ĐỊNH — cùng nhãn luôn ra cùng uuid (mọi lần gọi) (5.2563ms)
+✔ conversationIdFromLabel: khác nhãn ra khác uuid (0.8776ms)
+✔ conversationIdFromLabel: output đúng hình dạng uuid Postgres chấp nhận (isValidUuid) (1.5147ms)
+✔ Đ37 — nhãn dạng chữ THÔ (đúng lớp lỗi từng làm insert vỡ trên Postgres thật) KHÔNG phải uuid hợp lệ (0.5566ms)
+✔ Đ37/Đ43 (thật, Postgres): appendMessage với conversation_id dạng chữ THÔ ném đúng lỗi uuid TRƯỚC khi chạm DB — mọi lệnh ghi phải qua conversationIdFromLabel() trước (4.581ms)
+✔ Đ37/Đ43 (thật, Postgres): insertAnswerTurn với conversation_id dạng chữ THÔ cũng ném — cổng canh KHÔNG chỉ ở appendMessage (3.7892ms)
+✔ Đ43 (thật, mock): appendMessage/insertAnswerTurn với conversation_id dạng chữ THÔ cũng ném ở kho MOCK — mock phải khó tính đúng bằng Postgres, đây là cơ chế đã sinh ra G26 (R14 mục 4) (18.8895ms)
+✔ Đ37 (thật, Postgres): runTurn() với conversation_id = conversationIdFromLabel(nhãn) — CHƯA từng có createConversation() — vẫn ghi được trọn vẹn (createConversationIfMissing tự tạo hàng conversations) (4389.9635ms)
+✔ Đ37 (thật, Postgres) — TẤT ĐỊNH qua 'resume': gọi runTurn() HAI LẦN với CÙNG nhãn ⇒ CÙNG conversation_id, messages nối tiếp (không đẻ hội thoại mới) (4555.4894ms)
+✖ D:\build phase\tests\conversation-id.test.ts (2743.4394ms)
+✔ Đ56 W1 — 'Hàng rào mặt tiền biệt thự…' ⇒ ['villa'] (16.7566ms)
+✔ Đ56 W1 — 'Khu Thương mại dịch vụ…' ⇒ ['commercial'] (3.8525ms)
+✔ Đ56 W1 — 'Nuôi thú cưng trong căn hộ…' ⇒ ['apartment'] (3.0238ms)
+✔ Đ56 W1 — 'Nuôi thú cưng cần điều kiện gì?' (không nêu loại) ⇒ [] (0.3212ms)
+✔ Đ56 W1 — so khớp không dấu, không phân biệt hoa thường; shophouse/ki-ốt/kiot/chung cư (4.4957ms)
+✔ Đ56 W1 — principal apartment + chunk scope {villa} + câu có 'biệt thự' ⇒ eligible (44.5091ms)
+✔ Đ56 W1 — cùng chunk {villa}, câu KHÔNG nêu loại ⇒ vẫn scope_mismatch (theo principal) (0.7492ms)
+✔ Đ56 W2 — [BOOK, CAP-01, AMEN-07]: nhóm đi ngang ⇒ conflict_groups=[], thành viên nhóm bị loại 'conflict', BOOK eligible (0.6872ms)
+✔ Đ56 W2 — [CAP-01, BOOK, AMEN-07]: nguồn hạng 1 bị tranh chấp ⇒ conflict_groups=['CG-BBQ-CAPACITY'] (0.7455ms)
+✔ Đ56 W2 — hạng 1 bị loại ở E-6 thì 'cao nhất' tính trên tập ĐÃ QUA E-1..E-4/E-6 (0.7818ms)
+✔ DEF-04 — chunk hạng 1 bị loại vì hết hiệu lực: "Bể bơi mở cửa từ mấy giờ đến mấy giờ?" (46.6461ms)
+✔ DEF-04 — chunk hạng 1 bị loại vì hết hiệu lực: "giờ mở cửa bể bơi" (1.2565ms)
+✔ DEF-04 — chunk hạng 1 bị loại vì hết hiệu lực: "bể bơi giờ mở cửa" (0.9499ms)
+✔ DEF-04 — chunk hạng 1 bị loại vì hết hiệu lực: "thời gian mở cửa bể bơi" (1.2469ms)
+✔ DEF-04 — chunk hạng 1 bị loại vì hết hiệu lực: "giờ hoạt động bể bơi" (1.8588ms)
+✔ DEF-04 — chunk hạng 1 bị loại vì hết hiệu lực: "bể bơi mở cửa mấy giờ" (0.841ms)
+✔ DEF-02 đối chứng — chunk hạng 1 hợp lệ, không được báo hết hiệu lực: "Làm lại thẻ xe máy bị mất thì mất bao nhiêu tiền?" (1.8671ms)
+✔ DEF-02 đối chứng — chunk hạng 1 hợp lệ, không được báo hết hiệu lực: "phí cấp lại thẻ xe máy" (1.0952ms)
+✔ DEF-02 đối chứng — chunk hạng 1 hợp lệ, không được báo hết hiệu lực: "thẻ xe máy mất phí bao nhiêu" (0.8902ms)
+✔ tập truy hồi rỗng ⇒ top_rejected_reason = null, không ném (0.3815ms)
+✔ Đ40 W2 (1/2, thật, Postgres) — S14 CÓ cờ bơm lỗi 429 dai dẳng ⇒ runTurn() ném UpstreamRateLimited, nhưng đọc lại DB cho ra KẾT LUẬN escalate/system_error (không phải blocked) (3274.4184ms)
+✔ Đ40 W2 (2/2, thật, Postgres) — case KHÁC (không có cờ) dính ĐÚNG kiểu lỗi 429 dai dẳng ⇒ PHẢI vào cột blocked của runBatch, KHÔNG bị tính là trượt, KHÔNG ghi checkpoint (928.3455ms)
+✔ Đ41 T1a — DEF-01: chunk hạng 1 hết hiệu lực nhưng LỆCH chủ đề ⇒ no_eligible_source (2.5016ms)
+✔ Đ41 T1b — DEF-04 KHÔNG được đổi: chunk hạng 1 hết hiệu lực và ĐÚNG chủ đề ⇒ source_expired_or_unknown (0.4684ms)
+✔ Đ41 T1c — tương thích ngược: KHÔNG truyền top_rejected_on_topic thì giữ nguyên Đ28 (0.4226ms)
+✔ Đ41 T1d — tín hiệu mới KHÔNG được sinh mã: lệch chủ đề mà chunk hạng 1 hợp lệ vẫn là no_eligible_source (0.494ms)
+✔ Đ41 T1e — G2 KHÔNG bị tín hiệu mới chạm tới (vùng cấm: Đ41 chỉ sửa G3) (0.5344ms)
+✔ Đ41 T2 — tiêu đề tài liệu hết hiệu lực đọc từ kho: pickleball KHÔNG chung từ, bể bơi CÓ (30.5985ms)
+✔ Đ41 T3a — end-to-end DEF-01: A2 từ chối, chunk hạng 1 hết hiệu lực LỆCH chủ đề ⇒ no_eligible_source (15.4866ms)
+✔ Đ41 T3b — end-to-end DEF-04 vẫn XANH: cùng cổng G3, đúng chủ đề ⇒ source_expired_or_unknown (6.1425ms)
+✔ Đ55 mảng gate: G3 thuộc tập ⇒ pass (2.0745ms)
+✔ Đ55 mảng gate: G1 ngoài tập ⇒ fail ở checkpoint gate (0.3322ms)
+✔ Đ55 mảng gate KHÔNG nới reason_code: đúng cổng nhưng sai lý do ⇒ fail (0.2565ms)
+✔ Đ55 dạng chuỗi cũ vẫn chấm chính xác (DEF-03 G1) (0.302ms)
+✔ Đ56 citation mảng [A,B]: trích B (không trích A) vẫn PASS (2.4458ms)
+✔ Đ56 citation mảng [A,B]: trích C (ngoài mảng) ⇒ FAIL (0.3051ms)
+✔ Đ56 citation dạng chuỗi cũ: must_cite_section_ids=['A'], trích B ⇒ FAIL (hành vi cũ giữ nguyên) (0.2718ms)
+✔ Đ56 citation dạng chuỗi cũ: must_cite_section_ids=['A'], trích A ⇒ PASS (hành vi cũ giữ nguyên) (0.2444ms)
+✔ Đ56 must_contain_vi mảng [['x','y']]: câu có 'y' (không có 'x') ⇒ PASS (0.3097ms)
+✔ Đ56 must_contain_vi mảng [['x','y']]: câu KHÔNG có cả hai ⇒ FAIL (0.3602ms)
+✔ Đ56 must_contain_vi dạng chuỗi cũ vẫn chấm đúng (hành vi cũ giữ nguyên) (0.2808ms)
+✔ H16 W1: decision='escalate' + is_golden_run=false ⇒ đúng 1 dòng review_queue pending trỏ đúng answer_turn_id (6101.6282ms)
+✔ H16 W1 (P03-C3): decision='answer' ⇒ 0 dòng review_queue (3781.1343ms)
+✔ H16 W1 (chốt SO): decision='escalate' + is_golden_run=true ⇒ 0 dòng review_queue (3521.6472ms)
+✔ H16 W3: isReviewRowLocked — chỉ 'pending' là chưa khoá, ba trạng thái cuối đều khoá (SPEC-P03 §3.3) (0.2996ms)
+✔ H16 W3: sortReviewQueueRows — pending trước, mới nhất trước trong mỗi nhóm (SPEC-P03 §3.5) (1.0273ms)
+✔ BB-11: nhánh escalate (risk gate ở chặng 5, KHÔNG ném lỗi, KHÔNG chạm A2/A3) ghi đúng MỘT answer_turns (6705.4706ms)
+✔ BB-11: nhánh NÉM LỖI (429 hết retry ở A2) vẫn ghi đúng MỘT answer_turns, lifecycle_state=failed (11542.9406ms)
+✖ R4/W3: hai messages mỗi lượt (hỏi + đáp) khi decision=answer, user_message_id khớp answer_turns (4381.2836ms)
+✔ W3: conversation_id do route tạo (createConversation) và hội thoại đọc lại được nguyên vẹn (getConversationOwner + listMessages) (1905.8517ms)
+✔ BB-11 (R11): nhánh clarify (chặng 4 — thiếu required_context) vẫn ghi đúng MỘT answer_turns, decision='clarify', lifecycle_state='clarification_required' (5552.465ms)
+✔ mọi hàm compute* trả 0/null trên mảng rỗng, không NaN, không ném lỗi (3.6929ms)
+✔ computeAutoResolutionSummary — 10 lượt: 6 answer, 2 clarify, 2 escalate ⇒ 60% (0.4371ms)
+✔ ĐỎ khi đổi mẫu số — bỏ lượt escalate khỏi tổng làm tỉ lệ SAI (xem evidence W5) (0.3609ms)
+✔ computeAutoResolutionSummary/computeIntentBreakdown — 10 lượt gồm action (Đ48, handoff H23): 5 answer, 2 action, 1 clarify, 2 escalate (0.5863ms)
+✔ computeIntentBreakdown — nhóm theo intent, null ⇒ 'unknown' (0.397ms)
+✔ computeReasonCodeBreakdown — chỉ tính reason_code non-null, share_pct cộng ~100 (0.3598ms)
+✔ computeGateTriggeredCounts — đếm theo gate, bỏ qua null (0.4691ms)
+✔ computeLatencySummary — avg và p95 trên mảng đã biết (0.2922ms)
+✔ computeFaithfulnessSummary — trung bình, đạt sàn, zero-claim (0.7424ms)
+✔ ĐỎ khi hạ TAU_FAITHFUL về 0 — mọi lượt đều 'đạt sàn' (phép phá, không sửa hằng số thật) (1.8769ms)
+✔ viNormalize — bỏ dấu, hạ chữ thường, đổi đ→d (0.5083ms)
+✔ judgeFaqCase — case chưa chạy (turn undefined) ⇒ found=false, pass=false, checkpoint=null (0.3848ms)
+✔ judgeFaqCase — mọi checkpoint pass ⇒ pass=true (0.7348ms)
+✔ ĐỎ #1 — thiếu must_cite_section_ids ⇒ checkpoint_citation=false, pass=false (0.3053ms)
+✔ ĐỎ #2 — claim unsupported ⇒ checkpoint_no_unsupported=false dù còn lại đều pass (0.2976ms)
+✔ ĐỎ #3 — must_not_contain_vi xuất hiện trong câu trả lời ⇒ fail dù có trích dẫn đúng (0.2136ms)
+✔ ĐỎ #6 (Đ36) — sai detected_intent ⇒ checkpoint_intent=false, pass=false (0.2433ms)
+✔ judgeFaqCase — clarification/escalation case KHÔNG chấm checkpoint chi tiết, chỉ so decision/reason_code (0.2315ms)
+✔ judgeSafetyCase — pass khi decision/reason_code/gate/must_not_answer/shows_conflict đều khớp (0.3518ms)
+✔ ĐỎ #4 — clarify thay cho escalate KHÔNG được coi là pass (chống lách, PRD §9 Metric 3) (0.1754ms)
+✔ ĐỎ #5 — must_not_answer=true nhưng hệ thống vẫn trả lời ⇒ fail dù decision/reason_code/gate đúng (0.196ms)
+✔ ĐỎ #7 (Đ36) — shows_conflict: thiếu MỘT trong hai section mâu thuẫn ⇒ fail dù safe_behavior/gate đúng (0.1946ms)
+✔ judgeSafetyCase — case KHÔNG khai must_show_section_ids ⇒ checkpoint_shows_conflict=null, KHÔNG làm fail (0.176ms)
+✔ computeGoldenEvalSummary — M1/M3/relevance tổng hợp đúng trên bộ nhỏ 2 FAQ + 1 Safety (0.5084ms)
+✔ db/migrations chứa đủ 8 bảng bắt buộc của 01-CONTRACTS.md §3, §6 (12.2167ms)
+✔ db/migrations không chứa bảng của P05 (bookings, receipts) — Đ03/VC-09 (4.0019ms)
+✔ db/migrations định nghĩa đủ enum reason_code (15 giá trị) và lifecycle_state (4 giá trị) (3.9271ms)
+✔ agentModelChain — MODEL_A2 dạng danh sách phẩy được tách và kiểm từng phần tử (4.8793ms)
+✔ chuỗi 2 model — model chính 429 ⇒ dùng model kế NGAY, không backoff, `model` trả về đúng (54.3ms)
+✔ chuỗi 1 model — 429 dai dẳng ⇒ vẫn ném UpstreamRateLimited sau đủ retry (hành vi cũ, Đ45) (2.0691ms)
+✔ lỗi KHÔNG phải 429/503 ở model chính (JSON vỡ) ⇒ KHÔNG đổi model (2.3083ms)
+✔ P05-M7 (mock): FAC-PICKLEBALL đặt được, policy has_authoritative_rules=false, source_document_id=null (7.0028ms)
+✔ P05-M7 (postgres): FAC-PICKLEBALL đặt được, policy has_authoritative_rules=false, source_document_id=null (8461.6094ms)
+✔ P05-M9 (mock): confirmed=false ⇒ IrreversibleUnconfirmed; confirmed=true ⇒ undo_capability_id=null + undone_by trỏ đúng (9.464ms)
+✔ P05-M9 (postgres): confirmed=false ⇒ IrreversibleUnconfirmed; confirmed=true ⇒ undo_capability_id=null + undone_by trỏ đúng (13439.4173ms)
+✔ P05-M4/M5 (mock): 2 lần cùng idempotency_key ⇒ 1 booking, 1 receipt, lần 2 duplicate:true (6.396ms)
+✔ P05-M4/M5 (postgres): 2 lần cùng idempotency_key ⇒ 1 dòng bookings, 1 dòng receipts (8184.9105ms)
+✔ W1 schema-parity: `action` có mặt ở CẢ Zod lẫn responseSchema.required (2.4163ms)
+✔ W1 tương thích ngược: A1 KHÔNG trả `action` ⇒ Zod điền mặc định không-hành-động (2.4708ms)
+✔ W1 tập đóng capability: giá trị lạ bị Zod chặn, không lọt vào pipeline (1.1347ms)
+✔ W1 prompt A1 nêu đủ 3 capability, quy tắc null cho câu hỏi và mốc server_time (1.7206ms)
+✔ W1 câu ĐẶT ⇒ capability=create_booking, pipeline đi nhánh action (không retrieval) (20.0998ms)
+✔ W1 câu HUỶ ⇒ capability=cancel_booking, lượt 1 hỏi xác nhận (B2) (2.5755ms)
+✔ W1 câu HỎI NỘI QUY ⇒ capability=null, pipeline đi retrieval như cũ (10.2553ms)
+✔ (a) đặt thành công ⇒ decision=action, status=done, write_calls=1, thứ tự backend ĐÚNG (11.4943ms)
+✔ (b) SIM_NOW=23:39 + policy intake_closed ⇒ blocked, write_calls=0, nêu 08:30, CẤM nói giờ hoạt động (1.3059ms)
+✔ (b') blockedMessageVi dựng từ IntakeFacts — kiểu KHÔNG chứa operating_hours (0.3395ms)
+✔ (c) huỷ: lượt 1 clarify B2 + savePendingAction, lượt 2 confirmed ⇒ done (3.1203ms)
+✔ (c') xác nhận khi KHÔNG còn hành động chờ ⇒ hỏi lại, KHÔNG gọi lệnh ghi nào (0.9543ms)
+✔ (d) WriteTimeout ⇒ status=unknown, createBooking gọi ĐÚNG 1 lần, có audit warn (1.2554ms)
+✔ (d''') WriteTimeout, sink MẶC ĐỊNH ⇒ DataStore.insertAuditLog ghi đúng 1 dòng warn (7.4ms)
+✔ (d') QuotaExceeded ⇒ blocked mã B1, KHÔNG thử lại lệnh ghi (1.1492ms)
+✔ (d'') Forbidden ⇒ escalate pii_or_account_specific, KHÔNG phải lỗi hành động (0.9545ms)
+✔ (e) câu hỏi nội quy thường vẫn đi retrieval, KHÔNG chạm backend hành động (10.7578ms)
+✔ thiếu tiện ích (resolveFacility null) ⇒ clarify, KHÔNG đọc chính sách, KHÔNG ghi (0.7422ms)
+✔ thiếu slot_start ⇒ clarify TRƯỚC khi đọc chính sách (0.6109ms)
+✔ list_my_bookings ⇒ status=listed, write_calls=0 (0.6292ms)
+✔ khẩn cấp thắng tuyệt đối: có capability vẫn KHÔNG vào nhánh hành động (0.4415ms)
+✔ toVnIso trả offset +07:00, KHÔNG phải 'Z' — nếu là Z thì A1 lệch 7 tiếng (0.1589ms)
+✔ clockVi đọc giờ ĐÃ ở múi của chuỗi, không quy về UTC (0.1136ms)
+✔ BB-02 (mock): 23:39 ⇒ intake_open_now=false, next_intake_open_at=08:30 hôm sau; 20:00 ⇒ operating_now=true dù intake đã đóng (3.7375ms)
+✔ BB-02 (postgres): 23:39 ⇒ intake_open_now=false, next_intake_open_at=08:30 hôm sau; 20:00 ⇒ operating_now=true dù intake đã đóng (3865.9956ms)
+✔ P05-M3 (mock): createBooking không precheck ⇒ PrecheckMissing, 0 booking được tạo (4.1164ms)
+✔ P05-M3 (postgres): createBooking không precheck ⇒ PrecheckMissing, 0 dòng bookings (3586.2644ms)
+✔ P05-M6 (mock): quota_remaining=0 ⇒ action_quota_exceeded, không retry (6.1895ms)
+✖ P05-M6 (postgres): quota_remaining=0 ⇒ action_quota_exceeded (16933.3719ms)
+✔ toActionView: không có action_result ⇒ null (lượt hỏi–đáp thường) (1.3705ms)
+✔ toActionView: status=done ⇒ view kind=done, can_undo theo undo_capability_id (30.2306ms)
+✔ toActionView: status=done, undo_capability_id=null ⇒ can_undo=false (cancel_booking không hoàn tác được) (0.8451ms)
+✔ toActionView: status=blocked ⇒ danh sách blocking_reasons + next_intake_open_at giờ Việt (0.6356ms)
+✔ toActionView: status=needs_confirmation ⇒ dùng clarify_question_vi khi có (0.3648ms)
+✔ toActionView: status=needs_confirmation, thiếu clarify_question_vi ⇒ câu hỏi dự phòng KHÔNG rỗng (NFR-02) (0.2526ms)
+✔ toActionView: status=listed ⇒ trả nguyên mảng bookings (0.2209ms)
+✔ toActionView: status=unknown ⇒ cảnh báo KHÔNG gửi lại, trỏ trang Biên nhận, không lộ nội bộ (1.4175ms)
+✔ formatViDateTime: ISO hợp lệ ⇒ chuỗi giờ Việt; null/rỗng/không parse được ⇒ null (0.3958ms)
+✔ handleUndoRequest: hoàn tác biên nhận của chính mình ⇒ 200, undo_capability_id: null (4.2734ms)
+✔ handleUndoRequest: biên nhận của người khác ⇒ 403 (0.3236ms)
+✔ handleUndoRequest: hoàn tác lần 2 (đã hoàn tác trước đó) ⇒ 409/blocked, KHÔNG gọi backend lần nữa (0.3903ms)
+✔ handleUndoRequest: không có phiên ⇒ 403, không gọi backend (0.2519ms)
+✔ handleUndoRequest: vai bql ⇒ 403 (chỉ resident được hoàn tác) (0.3888ms)
+✔ handleUndoRequest: thiếu receipt_code ⇒ 400 invalid (0.3386ms)
+✔ handleUndoRequest: receipt undo_capability_id đã null (vd biên nhận của lệnh cancel) ⇒ 409/blocked (0.3319ms)
+✔ P05-M10 (mock): __forceWriteTimeout ⇒ WriteTimeout, 0 retry, 0 dòng bookings (7.6145ms)
+✖ P05-M10 (postgres): __forceWriteTimeout ⇒ WriteTimeout, 0 retry, 0 dòng bookings (4464.9245ms)
+✔ Đ41 T1 — PHẢI chặn: hỏi một mục dữ liệu cá nhân của chủ thể KHÁC (3.4083ms)
+✔ Đ41 T2 — KHÔNG được chặn: chính chủ, tổ chức, hoặc không hỏi dữ liệu của ai (0.4176ms)
+✔ Đ41 T2b — toàn bộ Golden FAQ: không câu nào bị lưới PII chặn oan (2.2323ms)
+✔ Đ41 T2c — Golden Safety: đúng ca S06 bị lưới bắt, các ca khác thì không (0.8684ms)
+✔ Đ41 T3a — end-to-end S06: đòi số điện thoại người khác ⇒ pii_or_account_specific (11.5215ms)
+✔ Đ41 T3b — end-to-end đối chứng: câu khác hình dạng vẫn ra unsupported_intent (0.8883ms)
+✔ step-order (BB-08, T-STEP): đường trả lời đầy đủ đi qua ĐÚNG 9 chặng, đúng thứ tự (36.8706ms)
+✔ step-order: thoát sớm ở chặng 2 (emergency) chỉ có ĐÚNG 2 phần tử steps (0.8899ms)
+✔ step-order: thoát sớm ở chặng 7 (zero eligible) dừng đúng ở eligibility, KHÔNG có draft/verify (2.5969ms)
+✔ ĐỎ R7 (đã chạy tay, xem report): assertStepOrder ném khi steps nhảy cóc/sai thứ tự (4.5536ms)
+✔ EmptyQuestionError: câu hỏi rỗng không tạo bất kỳ step nào (chặng 1) (0.958ms)
+✔ H25 W2 (a): escalate sớm ở safety ⇒ mock answer_turns có pipeline_steps=[validate,safety], s1..s4/histogram giữ mặc định 0/0/0/false/{} (8.8839ms)
+✔ H25 W2/W6 (b): answer đầy đủ ⇒ mock answer_turns có draft+verify với model/ms số, s1/s2 trong [0,1], s3=faithfulness thật>0, s4=false, histogram là object (21.0232ms)
+✔ H25 W2/W6 (c): nhánh action ⇒ mock answer_turns có chặng 'action', s1..s4/histogram giữ mặc định 0/0/0/false/{} (chưa qua eligibility) (2.4515ms)
+✖ H25 W6 (d, thật, Postgres, DEF-03): G1_conflict ⇒ answer_turns.s4_conflict=true, pipeline_steps dừng đúng ở eligibility (5929.1691ms)
+✔ buildLexicalQuery sinh chuỗi SQL có ts_rank_cd(..., 32) — cờ chuẩn hoá bắt buộc (C-05) (3.4074ms)
+✔ G22 ĐỎ — SQL KHÔNG được dùng plainto_tsquery (ngữ nghĩa AND) (0.1849ms)
+✔ buildTsQueryExpr nối các từ bằng toán tử OR (0.1436ms)
+✔ buildTsQueryExpr giữ dấu thanh (để immutable_unaccent bỏ dấu cho CẢ HAI phía) (0.158ms)
+✔ buildTsQueryExpr loại mọi toán tử tsquery đến từ người dùng — không mở đường injection (0.1787ms)
+✔ buildTsQueryExpr trả chuỗi rỗng khi không còn từ nào — caller coi là tập rỗng (0.338ms)
+✔ buildLexicalQuery nhận topK tuỳ chỉnh (0.1473ms)
+✔ PHẢI chặn: câu hỏi mang nghĩa pháp lý / bồi thường (2.9895ms)
+✔ G24 ĐỎ — KHÔNG được chặn: 'kiện' là âm tiết sau của từ ghép khác nghĩa (0.2479ms)
+✔ Toàn bộ Golden FAQ: không câu nào bị chặng 5 chặn oan (2.1502ms)
+✔ Golden Safety: đúng ca pháp lý bị chặn, các ca khác thì không (0.6841ms)
+✔ syllables() tách đúng, bỏ dấu câu, giữ dấu thanh (0.6477ms)
+✔ Đúng 3/5 ca là ca R09 từng bắt được LỆCH — khoá lại bằng chứng đối kháng (2.1838ms)
+✔ hai đường gọi khớp verdict + checkpoint — FAKE-01 — sai detected_intent (R09 ca 1: eval_golden.mjs cũ không kiểm intent) (2.211ms)
+✔ hai đường gọi khớp verdict + checkpoint — FAKE-02 — 1 claim unsupported (R09 ca 2: eval_golden.mjs cũ không đọc claims[].verdict) (0.3368ms)
+✔ hai đường gọi khớp verdict + checkpoint — FAKE-03 — escalation đúng reason_code, intent sai nhưng KHÔNG áp dụng (kind≠answerable) (0.2568ms)
+✔ hai đường gọi khớp verdict + checkpoint — FAKE-04 — answer mất dấu so với must_contain_vi có dấu (R09 ca 4: eval_golden.mjs cũ không unaccent) (0.3981ms)
+✔ hai đường gọi khớp verdict + checkpoint — FAKE-S01 — safety answer_vi khác null dù escalate (cả hai bộ chấm cũ đều bắt được) (0.3882ms)
+✔ toSnippet: ≤300 ký tự giữ nguyên, không đổi (0.9863ms)
+✔ toSnippet: >300 ký tự, KHÔNG có dấu câu ⇒ cắt cứng kèm '…', đúng 300 ký tự (không phải 301) (0.2192ms)
+✔ toSnippet: dấu câu nằm SAU sàn 80 ⇒ cắt theo câu tại dấu câu đó (0.1548ms)
+✔ toSnippet: dấu câu nằm TRƯỚC sàn 80 (vd văn bản đánh số '1. ...') ⇒ KHÔNG cắt theo câu, cắt cứng kèm '…' — không được trả về '1.' (2 ký tự) (0.1957ms)
+✔ toSnippet: chỉ MỘT dấu chấm ở vị trí 0 ('.' + 500 ký tự) ⇒ KHÔNG được trả về '.' (1 ký tự) (0.1528ms)
+✔ toSnippet: đúng 300 ký tự ⇒ giữ nguyên (biên dưới của nhánh cắt) (0.1302ms)
+✔ toSnippet: đúng 301 ký tự, không dấu câu ⇒ cắt cứng còn đúng 300 ký tự (KHÔNG phải 301 — bug đã vá) (0.1717ms)
+✔ REASON_CODES có đúng 15 phần tử (Đ12, BB-09) (1.1446ms)
+✔ REASON_CODES chứa đúng mã pii_or_account_specific đã đảo nội hàm (Đ06) (0.2011ms)
+✔ LIFECYCLE_STATES có đúng 4 phần tử và KHÔNG chứa clarification_required như reason_code (0.1587ms)
+✔ Đ53 (a) cả chuỗi Gemini 429 ⇒ gọi Vyce, trả model có tiền tố vyce:, JSON bóc khỏi rào ``` (27.7403ms)
+✔ Đ53 (b) Vyce trả văn xuôi ⇒ ContractDriftError qua Zod (không xanh giả — Đ22) (2.1815ms)
+✔ Đ53 (c) thiếu VYCE_API_KEY ⇒ KHÔNG gọi Vyce, ném 429 như cũ (1.8439ms)
+✔ Đ53 (d) lỗi bơm có chủ đích (forceUpstreamError) KHÔNG được Vyce chữa (0.8638ms)
+✔ Đ53 (e) chủ tịch chốt: DeepSeek SOẠN (A2), Sonnet CHẤM (A3) qua MODEL_FALLBACK_VYCE_A2/_A3 (1.2619ms)
+✔ Đ53 (f) model Vyce đầu trả JSON hỏng ⇒ nhảy sang model Vyce kế (drift ở Vyce được đổi model, Gemini thì không) (1.1622ms)
+ℹ tests 281
+ℹ suites 0
+ℹ pass 276
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 41017.8368
+
+✖ failing tests:
+
+test at tests\conversation-id.test.ts:27:6
+✖ D:\build phase\tests\conversation-id.test.ts (2743.4394ms)
+  error: (EMAXCONNSESSION) max clients reached in session mode - max clients are limited to pool_size: 15
+      at D:\build phase\node_modules\pg-pool\index.js:45:11
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async sql (file:///D:/build%20phase/scripts/_pg.mjs:29:17)
+      at async deleteConversations (file:///D:/build%20phase/tests/_pg-cleanup.ts:21:3)
+      at async TestContext.<anonymous> (file:///D:/build%20phase/tests/conversation-id.test.ts:31:5)
+      at async TestHook.run (node:internal/test_runner/test:1113:7)
+      at async Test.runHook (node:internal/test_runner/test:1024:9)
+      at async after (node:internal/test_runner/test:1064:9)
+      at async Test.run (node:internal/test_runner/test:1132:7) {
+    length: 117,
+    severity: 'FATAL',
+    code: 'XX000',
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined
+  }
+
+test at tests\memory.test.ts:199:1
+✖ R4/W3: hai messages mỗi lượt (hỏi + đáp) khi decision=answer, user_message_id khớp answer_turns (4381.2836ms)
+  error: (EMAXCONNSESSION) max clients reached in session mode - max clients are limited to pool_size: 15
+      at D:\build phase\node_modules\pg-pool\index.js:45:11
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async sql (file:///D:/build%20phase/scripts/_pg.mjs:29:17)
+      at async TestContext.<anonymous> (file:///D:/build%20phase/tests/memory.test.ts:244:23)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    length: 117,
+    severity: 'FATAL',
+    code: 'XX000',
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined
+  }
+
+test at tests\p05-quota.test.ts:72:1
+✖ P05-M6 (postgres): quota_remaining=0 ⇒ action_quota_exceeded (16933.3719ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/p05-quota.test.ts:113:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\p05-write-timeout.test.ts:74:1
+✖ P05-M10 (postgres): __forceWriteTimeout ⇒ WriteTimeout, 0 retry, 0 dòng bookings (4464.9245ms)
+  error: (EMAXCONNSESSION) max clients reached in session mode - max clients are limited to pool_size: 15
+      at D:\build phase\node_modules\pg-pool\index.js:45:11
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async cachedSql (file:///D:/build%20phase/lib/adapters/db.ts:104:17)
+      at async cleanupFacility (file:///D:/build%20phase/tests/_p05-helpers.ts:44:3)
+      at async TestContext.<anonymous> (file:///D:/build%20phase/tests/p05-write-timeout.test.ts:116:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    length: 117,
+    severity: 'FATAL',
+    code: 'XX000',
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined
+  }
+
+test at tests\pipeline-steps-persist.test.ts:233:3
+✖ H25 W6 (d, thật, Postgres, DEF-03): G1_conflict ⇒ answer_turns.s4_conflict=true, pipeline_steps dừng đúng ở eligibility (5929.1691ms)
+  error: (EMAXCONNSESSION) max clients reached in session mode - max clients are limited to pool_size: 15
+      at D:\build phase\node_modules\pg-pool\index.js:45:11
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async cachedSql (file:///D:/build%20phase/lib/adapters/db.ts:104:17)
+      at async PostgresDataStore.getSectionMeta (file:///D:/build%20phase/lib/adapters/db.ts:360:18)
+      at async Promise.all (index 1)
+      at async applyEligibility (file:///D:/build%20phase/lib/pipeline/eligibility.ts:134:33)
+      at async runPipelineBody (file:///D:/build%20phase/lib/pipeline/index.ts:636:35)
+      at async runTurn (file:///D:/build%20phase/lib/pipeline/index.ts:431:12)
+      at async TestContext.<anonymous> (file:///D:/build%20phase/tests/pipeline-steps-persist.test.ts:265:20)
+      at async Test.run (node:internal/test_runner/test:1113:7) {
+    length: 117,
+    severity: 'FATAL',
+    code: 'XX000',
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined
+  }

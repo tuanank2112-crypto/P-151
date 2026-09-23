@@ -631,7 +631,9 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
 
   // ── Chặng 7 — eligibility ─────────────────────────────────────────────
   const eligStart = Date.now();
-  const elig: EligibilityResult = await applyEligibility(retrieved, principal, now);
+  // Đ56 mục 1 (01-CONTRACTS §5 E-6): truyền câu hỏi đã chuẩn hoá để E-6 lọc
+  // theo loại BĐS câu hỏi nêu thẳng.
+  const elig: EligibilityResult = await applyEligibility(retrieved, principal, now, a1.normalized_query_vi);
   steps.push({ step: "eligibility", ok: true, ms: Date.now() - eligStart });
 
   const conflictDetected = elig.conflict_groups.length > 0;

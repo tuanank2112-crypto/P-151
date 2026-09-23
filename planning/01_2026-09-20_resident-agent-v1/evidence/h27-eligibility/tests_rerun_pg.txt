@@ -1,0 +1,54 @@
+=== node scripts/run_tests.mjs conflict-citations
+ℹ tests 2
+ℹ pass 2
+ℹ fail 0
+ℹ skipped 0
+EXIT=0
+=== node scripts/run_tests.mjs conversation-id
+ℹ tests 9
+ℹ pass 9
+ℹ fail 0
+ℹ skipped 0
+EXIT=0
+=== node scripts/run_tests.mjs memory
+ℹ tests 5
+ℹ pass 5
+ℹ fail 0
+ℹ skipped 0
+EXIT=0
+=== node scripts/run_tests.mjs eval-golden-injection
+ℹ tests 2
+ℹ pass 2
+ℹ fail 0
+ℹ skipped 0
+EXIT=0
+=== node scripts/run_tests.mjs hitl-enqueue
+ℹ tests 5
+ℹ pass 5
+ℹ fail 0
+ℹ skipped 0
+EXIT=0
+=== node scripts/run_tests.mjs pipeline-steps-persist
+ℹ tests 4
+ℹ pass 4
+ℹ fail 0
+ℹ skipped 0
+EXIT=0
+=== node scripts/run_tests.mjs p05-bb01-pickleball
+ℹ tests 2
+ℹ pass 2
+ℹ fail 0
+ℹ skipped 0
+EXIT=0
+=== node scripts/run_tests.mjs p05-precheck-guard
+ℹ tests 2
+ℹ pass 2
+ℹ fail 0
+ℹ skipped 0
+EXIT=0
+=== node scripts/run_tests.mjs p05-quota
+ℹ tests 2
+ℹ pass 2
+ℹ fail 0
+ℹ skipped 0
+EXIT=0

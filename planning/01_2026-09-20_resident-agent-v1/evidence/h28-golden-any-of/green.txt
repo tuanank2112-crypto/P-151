@@ -1,0 +1,15 @@
+✔ Đ56 citation mảng [A,B]: trích B (không trích A) vẫn PASS (1.5774ms)
+✔ Đ56 citation mảng [A,B]: trích C (ngoài mảng) ⇒ FAIL (0.1771ms)
+✔ Đ56 citation dạng chuỗi cũ: must_cite_section_ids=['A'], trích B ⇒ FAIL (hành vi cũ giữ nguyên) (0.163ms)
+✔ Đ56 citation dạng chuỗi cũ: must_cite_section_ids=['A'], trích A ⇒ PASS (hành vi cũ giữ nguyên) (0.1511ms)
+✔ Đ56 must_contain_vi mảng [['x','y']]: câu có 'y' (không có 'x') ⇒ PASS (0.1901ms)
+✔ Đ56 must_contain_vi mảng [['x','y']]: câu KHÔNG có cả hai ⇒ FAIL (0.1696ms)
+✔ Đ56 must_contain_vi dạng chuỗi cũ vẫn chấm đúng (hành vi cũ giữ nguyên) (0.1518ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 144.0232

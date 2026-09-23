@@ -2,6 +2,17 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-23 (tiếp 12): Đ56 — ba thay đổi hợp đồng cho M1
+
+### Decisions
+- **Đ56** (chủ tịch duyệt): E-6 theo loại BĐS câu hỏi nêu thẳng (từ điển tất định); E-5 chỉ báo xung đột khi nguồn điểm cao nhất bị tranh chấp (**Đ56b**: so theo điểm); Golden `must_cite_section_ids`/`must_contain_vi` nhận phần tử mảng = một trong các (chỉ 3 ca).
+
+### Added
+- `lib/pipeline/eligibility.ts`: `PROPERTY_MENTIONS`, `mentionedPropertyTypes()`, tham số `queryVi`; `tests/eligibility-d56.test.ts` (12), `tests/golden-any-of.test.ts` (7).
+
+### Đo được
+tsc 0 · **282/282** · BB 0 · probe Postgres 4/4 (F-I05-04, F-I05-05, F-I03-02 eligible; S03 vẫn G1).
+
 ## [Chưa phát hành] - 2026-09-23 (tiếp 11): nhãn gate dạng tập (Đ55), M3 đạt
 
 ### Decisions

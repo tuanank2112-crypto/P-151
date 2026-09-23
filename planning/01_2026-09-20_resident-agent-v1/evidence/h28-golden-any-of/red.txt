@@ -1,0 +1,64 @@
+✖ Đ56 citation mảng [A,B]: trích B (không trích A) vẫn PASS (1.9364ms)
+✔ Đ56 citation mảng [A,B]: trích C (ngoài mảng) ⇒ FAIL (0.2031ms)
+✔ Đ56 citation dạng chuỗi cũ: must_cite_section_ids=['A'], trích B ⇒ FAIL (hành vi cũ giữ nguyên) (0.156ms)
+✔ Đ56 citation dạng chuỗi cũ: must_cite_section_ids=['A'], trích A ⇒ PASS (hành vi cũ giữ nguyên) (0.1537ms)
+✖ Đ56 must_contain_vi mảng [['x','y']]: câu có 'y' (không có 'x') ⇒ PASS (0.2072ms)
+✖ Đ56 must_contain_vi mảng [['x','y']]: câu KHÔNG có cả hai ⇒ FAIL (0.166ms)
+✔ Đ56 must_contain_vi dạng chuỗi cũ vẫn chấm đúng (hành vi cũ giữ nguyên) (0.1734ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 4
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 158.8319
+
+✖ failing tests:
+
+test at tests\golden-any-of.test.ts:30:1
+✖ Đ56 citation mảng [A,B]: trích B (không trích A) vẫn PASS (1.9364ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/golden-any-of.test.ts:32:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\golden-any-of.test.ts:55:1
+✖ Đ56 must_contain_vi mảng [['x','y']]: câu có 'y' (không có 'x') ⇒ PASS (0.2072ms)
+  TypeError: s.normalize is not a function
+      at viNormalize (file:///D:/build%20phase/lib/eval/score.ts:84:6)
+      at file:///D:/build%20phase/lib/eval/score.ts:94:42
+      at Array.every (<anonymous>)
+      at containsAllVi (file:///D:/build%20phase/lib/eval/score.ts:94:18)
+      at judgeFaqCase (file:///D:/build%20phase/lib/eval/score.ts:151:32)
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/golden-any-of.test.ts:61:13)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+
+test at tests\golden-any-of.test.ts:66:1
+✖ Đ56 must_contain_vi mảng [['x','y']]: câu KHÔNG có cả hai ⇒ FAIL (0.166ms)
+  TypeError: s.normalize is not a function
+      at viNormalize (file:///D:/build%20phase/lib/eval/score.ts:84:6)
+      at file:///D:/build%20phase/lib/eval/score.ts:94:42
+      at Array.every (<anonymous>)
+      at containsAllVi (file:///D:/build%20phase/lib/eval/score.ts:94:18)
+      at judgeFaqCase (file:///D:/build%20phase/lib/eval/score.ts:151:32)
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/golden-any-of.test.ts:72:13)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)

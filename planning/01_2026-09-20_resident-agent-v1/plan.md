@@ -739,6 +739,33 @@ Ba agent rà độc lập + SO đo lại (`brain4agent/memory/hot/today.md` phi�
 
 **Lật được:** mục 1 khi 3.5-flash hồi (đổi lại một dòng env). Mục 2–4 không. **Chi phí lật mục 2:** hàng đợi HITL lại rỗng vĩnh viễn.
 
+### Đ56 — 2026-09-23 · Ba thay đổi hợp đồng để M1 chạm ngưỡng (chủ tịch "duyệt cả 3")
+
+**Bối cảnh:** sau Đ54/Đ55 M1 = 28/40 (ngưỡng 34). Truy căn nguyên từng ca FAQ trượt (`evidence/so-g11-golden/phan_loai_truot_20260923_1200.txt`); ba nhóm chỉ vá được bằng đổi hợp đồng đã duyệt / nới chấm Golden ⇒ hỏi chủ tịch (L.3), được duyệt cả ba.
+
+**Quyết định:**
+1. **E-6 theo loại câu hỏi NÊU THẲNG** (`01-CONTRACTS` §5): cư dân căn hộ hỏi "hàng rào biệt thự"/"khu thương mại" không còn bị `scope_mismatch` oan; câu không nêu loại vẫn lọc theo `principal.property_type`. Từ điển tất định, không LLM. Ca: F-I05-04, F-I05-05.
+2. **E-5 chỉ BÁO xung đột khi nguồn hạng cao nhất bị tranh chấp**; nhóm mâu thuẫn "đi ngang" thì loại thành viên, đi tiếp. Ca: F-I03-02 (hỏi lượt đặt BBQ, bị chặn vì cặp mâu thuẫn về SỨC CHỨA). S03/DEF-03 PHẢI vẫn ra G1.
+3. **Golden chấp nhận biến thể** (`SPEC-P00` §6.5): phần tử mảng trong `must_cite_section_ids` / `must_contain_vi` = "một trong các". Chỉ áp cho ca dữ kiện thật sự có ở nhiều section / cùng nghĩa khác chữ: F-I01-05 (`[CARD-TIME-06, CARD-NEW-02]`), F-I01-06 (`[CARD-CONTACT-07, BQL-CONTACT-03]`), F-I04-05 (`["cấp phép thi công", "được cấp phép"]`). CẤM dùng cơ chế này để nới ca trả lời SAI.
+
+**Thi công:** H27 (E-5/E-6, `reports/R31`), H28 (bộ chấm + dữ liệu Golden, `reports/R32`) — song song, không chồng file. **Đ56b (SO, theo L.2, rủi ro R31):** "hạng cao nhất" của E-5 tính theo ĐIỂM — nhóm mâu thuẫn có thành viên đồng điểm với điểm cao nhất vẫn báo G1 (SQL `ORDER BY score DESC` không khoá phụ; S03 có 4 chunk đồng điểm 0.375). Probe Postgres 4/4; test Đ56b từng đỏ khi so theo vị trí. Cây gộp: tsc 0 · **282/282** · BB 0 · K-M1/K-M2 exit 0.
+
+**Lật được:** có, từng mục độc lập. **Chi phí lật:** thấp.
+
+**ĐÃ QUYẾT (SO, 2026-09-23, theo L.2):** KHÔNG thêm luật kiểm `section_id` tồn tại trong vòng này — handoff H28 W3 giả định sai (luật đó chưa từng có); 5 section_id của Đ56 đã xác minh tồn tại bằng đọc trực tiếp `knowledge/` (`reports/R32`). Nạp vào Idea Vault (`roadmap.md`). Câu hỏi gốc giữ dưới đây làm lịch sử.
+
+**Câu hỏi mở (H28, 2026-09-23):** handoff `H28` mục W3 giả định `validate_golden.mjs`
+đã có sẵn "luật hiện có với chuỗi" kiểm mỗi `section_id` trong `must_cite_section_ids`
+tồn tại trong `knowledge/` — kiểm tra thực tế cho thấy KHÔNG có luật này ở bất kỳ
+đâu trong mã nguồn (`validate_golden.mjs` không đọc trường `must_cite_section_ids`;
+`SPEC-P00` §8/§9 không khai `error class` nào cho việc này; `K-M2` chỉ kiểm số
+lượng/độ phủ, xem `SPEC-P00-Knowledge-Golden.md` §9 dòng K-M2). Vì đây là quyết
+định kiến trúc mới (thêm một luật kiểm tra + error class chưa có trong SPEC),
+worker H28 KHÔNG tự thêm — giữ nguyên `validate_golden.mjs`, chỉ xác nhận nó vẫn
+`exit 0` với dữ liệu mảng mới (đã đúng, vì trường này chưa từng được đọc). Nếu
+Super Orchestrator muốn có luật cross-check `must_cite_section_ids` ⊆ section
+thật trong `knowledge/`, cần một gói riêng sửa `SPEC-P00` §8/§9 trước.
+
 ### Đ55 — 2026-09-23 · Nhãn `gate` của ca gap/expired là TẬP cổng từ chối; `decision`+`reason_code` vẫn chấm chặt
 
 **Bối cảnh:** S01/S02/S04 ra đúng `reason_code` nhưng khác cổng (thực tế G3/G4/G3, Golden ghi G2/G3/G2) — cổng nào bắn phụ thuộc truy hồi có kéo đoạn "gần đúng" còn hợp lệ hay không, không phải tính đúng/sai an toàn. Treo từ Đ28 (câu hỏi DEF-04). Chủ tịch: "cứ gán nhãn gate theo cách bạn đề xuất".

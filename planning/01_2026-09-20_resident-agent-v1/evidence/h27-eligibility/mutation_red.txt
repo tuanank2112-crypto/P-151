@@ -1,0 +1,45 @@
+=== MUTATION M1: E-6 nới hẳn: bỏ lọc theo principal
+✔ Đ56 W1 — 'Hàng rào mặt tiền biệt thự…' ⇒ ['villa'] (10.6422ms)
+✔ Đ56 W1 — 'Khu Thương mại dịch vụ…' ⇒ ['commercial'] (2.283ms)
+✔ Đ56 W1 — 'Nuôi thú cưng trong căn hộ…' ⇒ ['apartment'] (1.8023ms)
+✔ Đ56 W1 — 'Nuôi thú cưng cần điều kiện gì?' (không nêu loại) ⇒ [] (0.2058ms)
+✔ Đ56 W1 — so khớp không dấu, không phân biệt hoa thường; shophouse/ki-ốt/kiot/chung cư (2.8829ms)
+✔ Đ56 W1 — principal apartment + chunk scope {villa} + câu có 'biệt thự' ⇒ eligible (24.0398ms)
+✖ Đ56 W1 — cùng chunk {villa}, câu KHÔNG nêu loại ⇒ vẫn scope_mismatch (theo principal) (1.2161ms)
+✔ Đ56 W2 — [BOOK, CAP-01, AMEN-07]: nhóm đi ngang ⇒ conflict_groups=[], thành viên nhóm bị loại 'conflict', BOOK eligible (0.4111ms)
+✔ Đ56 W2 — [CAP-01, BOOK, AMEN-07]: nguồn hạng 1 bị tranh chấp ⇒ conflict_groups=['CG-BBQ-CAPACITY'] (0.4049ms)
+✖ Đ56 W2 — hạng 1 bị loại ở E-6 thì 'cao nhất' tính trên tập ĐÃ QUA E-1..E-4/E-6 (1.0263ms)
+ℹ tests 10
+ℹ pass 8
+ℹ fail 2
+✖ failing tests:
+=== MUTATION M2: E-5 không bao giờ báo xung đột
+✔ Đ56 W1 — 'Hàng rào mặt tiền biệt thự…' ⇒ ['villa'] (10.6243ms)
+✔ Đ56 W1 — 'Khu Thương mại dịch vụ…' ⇒ ['commercial'] (2.2624ms)
+✔ Đ56 W1 — 'Nuôi thú cưng trong căn hộ…' ⇒ ['apartment'] (1.7499ms)
+✔ Đ56 W1 — 'Nuôi thú cưng cần điều kiện gì?' (không nêu loại) ⇒ [] (0.184ms)
+✔ Đ56 W1 — so khớp không dấu, không phân biệt hoa thường; shophouse/ki-ốt/kiot/chung cư (2.664ms)
+✔ Đ56 W1 — principal apartment + chunk scope {villa} + câu có 'biệt thự' ⇒ eligible (20.8053ms)
+✔ Đ56 W1 — cùng chunk {villa}, câu KHÔNG nêu loại ⇒ vẫn scope_mismatch (theo principal) (0.3471ms)
+✔ Đ56 W2 — [BOOK, CAP-01, AMEN-07]: nhóm đi ngang ⇒ conflict_groups=[], thành viên nhóm bị loại 'conflict', BOOK eligible (0.3762ms)
+✖ Đ56 W2 — [CAP-01, BOOK, AMEN-07]: nguồn hạng 1 bị tranh chấp ⇒ conflict_groups=['CG-BBQ-CAPACITY'] (1.6716ms)
+✖ Đ56 W2 — hạng 1 bị loại ở E-6 thì 'cao nhất' tính trên tập ĐÃ QUA E-1..E-4/E-6 (0.6139ms)
+ℹ tests 10
+ℹ pass 8
+ℹ fail 2
+✖ failing tests:
+=== MUTATION M3: hạng cao nhất lấy trên retrieved thay vì passedFirstPass
+✔ Đ56 W1 — 'Hàng rào mặt tiền biệt thự…' ⇒ ['villa'] (10.0646ms)
+✔ Đ56 W1 — 'Khu Thương mại dịch vụ…' ⇒ ['commercial'] (2.0889ms)
+✔ Đ56 W1 — 'Nuôi thú cưng trong căn hộ…' ⇒ ['apartment'] (1.5803ms)
+✔ Đ56 W1 — 'Nuôi thú cưng cần điều kiện gì?' (không nêu loại) ⇒ [] (0.1698ms)
+✔ Đ56 W1 — so khớp không dấu, không phân biệt hoa thường; shophouse/ki-ốt/kiot/chung cư (2.7338ms)
+✔ Đ56 W1 — principal apartment + chunk scope {villa} + câu có 'biệt thự' ⇒ eligible (31.8241ms)
+✔ Đ56 W1 — cùng chunk {villa}, câu KHÔNG nêu loại ⇒ vẫn scope_mismatch (theo principal) (0.6397ms)
+✔ Đ56 W2 — [BOOK, CAP-01, AMEN-07]: nhóm đi ngang ⇒ conflict_groups=[], thành viên nhóm bị loại 'conflict', BOOK eligible (0.6396ms)
+✔ Đ56 W2 — [CAP-01, BOOK, AMEN-07]: nguồn hạng 1 bị tranh chấp ⇒ conflict_groups=['CG-BBQ-CAPACITY'] (0.7736ms)
+✖ Đ56 W2 — hạng 1 bị loại ở E-6 thì 'cao nhất' tính trên tập ĐÃ QUA E-1..E-4/E-6 (3.2052ms)
+ℹ tests 10
+ℹ pass 9
+ℹ fail 1
+✖ failing tests:

@@ -359,8 +359,8 @@ câu trả lời thực chất khi **đồng thời**:
 | E-2 | `documents.effective_status = 'Current'` **và** (`effective_to IS NULL` hoặc `effective_to >= current_date`) | SQL |
 | E-3 | `documents.allowed_for_rag = true` | SQL |
 | E-4 | `sections.is_excluded = false` | SQL |
-| E-5 | Không có section khác cùng `conflict_group` cũng lọt vào tập eligible | SQL (`GROUP BY conflict_group HAVING count(*) > 1`) |
-| E-6 | Phạm vi khớp: `documents.scope_property` ∩ `principal.property_type ≠ ∅` **hoặc** `scope_property = '{}'` | SQL |
+| E-5 | Không có section khác cùng `conflict_group` cũng lọt vào tập eligible. **Đ56:** mọi section thuộc nhóm mâu thuẫn vẫn bị LOẠI (`conflict`), nhưng chỉ BÁO xung đột (`conflict_groups` ≠ ∅ ⇒ G1) khi có section thuộc nhóm mâu thuẫn mang ĐIỂM BẰNG điểm cao nhất của tập đã qua E-1..E-4/E-6 (Đ56b: so theo điểm, không theo vị trí — SQL không có khoá phụ nên chunk đồng điểm có thể đổi chỗ) — tức nguồn khớp nhất với câu hỏi đang bị tranh chấp. Nhóm mâu thuẫn chỉ "đi ngang" (xếp hạng thấp hơn) thì loại thành viên rồi đi tiếp với phần còn lại | TS (`detectConflict` + hạng) |
+| E-6 | Phạm vi khớp: `documents.scope_property` ∩ `loại_hiệu_lực ≠ ∅` **hoặc** `scope_property = '{}'`. **Đ56:** `loại_hiệu_lực` = các loại bất động sản câu hỏi NÊU THẲNG (từ điển tất định `PROPERTY_MENTIONS`: "biệt thự"→`villa`; "thương mại", "shophouse", "ki-ốt"/"kiot"→`commercial`; "căn hộ", "chung cư"→`apartment`; so khớp sau khi bỏ dấu, không phân biệt hoa thường); câu hỏi không nêu loại nào ⇒ `principal.property_type` như cũ. CẤM dùng LLM cho bước này | TS |
 | E-7 | `checkOwnership()` trả `ok: true` (§2.2) | TS, chạy **trước** truy vấn |
 
 Hàm bắt buộc:

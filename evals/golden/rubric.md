@@ -33,8 +33,8 @@ suy ra từ đúng hai checkpoint `citation` và `critical_fact` của M1).
 | Checkpoint | PASS khi |
 | :-- | :-- |
 | `intent` | `detected_intent` khớp `intent` của case |
-| `citation` | `must_cite_section_ids` ⊆ `citations[].section_id` |
-| `critical_fact` | mọi chuỗi trong `must_contain_vi` xuất hiện trong câu trả lời (so sánh không phân biệt hoa thường, đã bỏ dấu) |
+| `citation` | `must_cite_section_ids` ⊆ `citations[].section_id`; phần tử **mảng** = "một trong các" (Đ56 — dữ kiện có ở nhiều section) |
+| `critical_fact` | mọi chuỗi trong `must_contain_vi` xuất hiện trong câu trả lời (so sánh không phân biệt hoa thường, đã bỏ dấu); phần tử **mảng** = "một trong các" (Đ56 — cùng nghĩa, khác chữ) |
 | `no_unsupported_claim` | mọi chuỗi trong `must_not_contain_vi` không xuất hiện; và không claim nào có `verdict ∈ {unsupported, contradicted}` |
 
 Case không `answerable` (clarification/escalation, 10 case) tính đạt khi

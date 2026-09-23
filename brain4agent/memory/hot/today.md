@@ -21,6 +21,8 @@ SO phóng 2 worker song song (H22 audit_log · H23 dashboard), tự đo G23, ch�
 
 ### ⛔ Chờ người / treo: hạn mức A2/A3 (chỉ `3.5-flash-lite` sống lúc 09:45) ⇒ `eval:golden --resume` sau; dọn DB fixture; deploy Vercel; `origin/main`.
 
+### 🧩 Đợt 13 (chủ tịch "duyệt cả 3"): Đ56 — E-6 theo loại BĐS câu hỏi nêu thẳng, E-5 chỉ báo khi nguồn điểm cao nhất bị tranh chấp (Đ56b: so theo ĐIỂM vì đồng điểm), Golden chấp nhận biến thể cho 3 ca. H27 (R31) + H28 (R32) song song; SO tự vá Đ56b; câu hỏi mở của H28 (K-M2 kiểm section tồn tại) ⇒ Idea Vault. 282/282. Golden trọn chạy nền.
+
 ### 🏷 Đợt 12 (chủ tịch: "cứ gán nhãn gate theo cách bạn đề xuất"): Đ55 — `expected_gate` dạng tập cho S01/S02/S04 + DEF; G51 fixture S16 thiếu trường Đ50. Golden trọn sau Đ54: M1 **28/40**; safety **16/16 ✅**. 263/263.
 
 ### 🩹 Đợt 11 (chủ tịch: "ok" + "push lên branch" → "chỉ feature/nhuy, không tạo branch mới" + "deepseek soạn, qwen check"): nhánh local đổi `main`→`feature/nhuy`; `fix/golden-g11` tạo nhầm đã xoá (0 commit riêng). Đ54: prompt A2 cấm trả lời vòng quanh (+ vế bắt buộc trả lời khi có dữ kiện) ⇒ F-ESC-02/04 PASS; Vyce JSON hỏng ⇒ nhảy DeepSeek→Sonnet (test f). Qwen 403 Unsupported client mọi client ⇒ không dùng, A3 giữ Sonnet. Golden trọn chạy lại nền.

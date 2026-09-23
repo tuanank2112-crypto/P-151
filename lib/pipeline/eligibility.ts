@@ -3,7 +3,7 @@
 // (`lib/adapters/db.ts`) — CẤM import thẳng `store-mock.ts` (luật §4
 // handoff H04).
 
-import { getDataStore } from "../adapters/db.ts";
+import { getDataStore, type PropertyType } from "../adapters/db.ts";
 import type { Principal, RetrievedChunk } from "../types.ts";
 
 export type RejectionReason =
@@ -38,6 +38,46 @@ const EMPTY_HISTOGRAM: Record<RejectionReason, number> = {
   conflict: 0,
   scope_mismatch: 0,
 };
+
+/**
+ * Đ56 mục 1 (01-CONTRACTS §5, dòng E-6) — từ điển TẤT ĐỊNH loại bất động sản
+ * mà câu hỏi NÊU THẲNG. Khoá đã bỏ dấu + chữ thường; so khớp theo ranh giới
+ * từ trên câu đã bỏ dấu. CẤM thay bằng LLM (VC-04). Chỉ đúng các cụm §5 liệt
+ * kê — muốn thêm cụm thì sửa hợp đồng trước.
+ */
+export const PROPERTY_MENTIONS: ReadonlyArray<readonly [string, PropertyType]> = [
+  ["biet thu", "villa"],
+  ["thuong mai", "commercial"],
+  ["shophouse", "commercial"],
+  ["ki-ot", "commercial"],
+  ["kiot", "commercial"],
+  ["can ho", "apartment"],
+  ["chung cu", "apartment"],
+];
+
+/** Bỏ dấu thanh + `đ`→`d`, chữ thường (NFD thuần, không thư viện). */
+function foldVi(text: string): string {
+  return text.normalize("NFD").replace(/\p{M}+/gu, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
+}
+
+// Cụm trong từ điển chỉ gồm chữ thường a-z, dấu cách, `-` (không ký tự đặc
+// biệt regex) ⇒ ghép thẳng; ranh giới từ = không phải chữ/số Unicode.
+const MENTION_PATTERNS: ReadonlyArray<readonly [RegExp, PropertyType]> = PROPERTY_MENTIONS.map(
+  ([phrase, type]) => [new RegExp(`(?:^|[^\\p{L}\\p{N}])${phrase}(?=$|[^\\p{L}\\p{N}])`, "u"), type] as const
+);
+
+/**
+ * Đ56 mục 1 — các loại BĐS câu hỏi nêu thẳng, theo thứ tự xuất hiện trong
+ * `PROPERTY_MENTIONS`, không trùng. Rỗng ⇒ caller dùng `principal.property_type`.
+ */
+export function mentionedPropertyTypes(queryVi: string): PropertyType[] {
+  const folded = foldVi(queryVi);
+  const out: PropertyType[] = [];
+  for (const [re, type] of MENTION_PATTERNS) {
+    if (!out.includes(type) && re.test(folded)) out.push(type);
+  }
+  return out;
+}
 
 function scopeMatches(scopeProperty: string[], propertyType: string[]): boolean {
   if (scopeProperty.length === 0) return true; // scope rỗng = áp dụng mọi loại
@@ -75,7 +115,8 @@ export function detectConflict(
 export async function applyEligibility(
   retrieved: RetrievedChunk[],
   principal: Principal,
-  now: Date
+  now: Date,
+  queryVi?: string
 ): Promise<EligibilityResult> {
   if (retrieved.length === 0) {
     return {
@@ -100,6 +141,10 @@ export async function applyEligibility(
   const passedFirstPass: RetrievedChunk[] = [];
 
   const nowDateStr = now.toISOString().slice(0, 10);
+  // Đ56 mục 1 (§5 E-6): câu hỏi nêu thẳng loại BĐS ⇒ lọc theo loại đó; không
+  // nêu ⇒ theo `principal.property_type` như cũ.
+  const mentioned = queryVi ? mentionedPropertyTypes(queryVi) : [];
+  const effectiveTypes: string[] = mentioned.length > 0 ? mentioned : principal.property_type;
 
   for (const chunk of retrieved) {
     const doc = documents.get(chunk.document_id);
@@ -118,8 +163,8 @@ export async function applyEligibility(
     else if (!doc.allowed_for_rag) reason = "not_allowed_for_rag";
     // E-4
     else if (!sec || sec.is_excluded) reason = "section_excluded";
-    // E-6 — phạm vi khớp: scope_property ∩ principal.property_type ≠ ∅, hoặc scope_property = {}
-    else if (!scopeMatches(doc.scope_property, principal.property_type)) reason = "scope_mismatch";
+    // E-6 — phạm vi khớp: scope_property ∩ loại_hiệu_lực ≠ ∅, hoặc scope_property = {} (Đ56)
+    else if (!scopeMatches(doc.scope_property, effectiveTypes)) reason = "scope_mismatch";
 
     if (reason) {
       histogram[reason]++;
@@ -134,14 +179,33 @@ export async function applyEligibility(
   // eligible" (SPEC-P02 §4.2).
   const sectionConflictGroup = new Map<string, string | null>();
   for (const [id, meta] of sections) sectionConflictGroup.set(id, meta.conflict_group);
-  const conflictGroups = detectConflict(passedFirstPass, sectionConflictGroup);
+  const detectedGroups = detectConflict(passedFirstPass, sectionConflictGroup);
   const conflictedSectionIds = new Set<string>();
-  if (conflictGroups.length > 0) {
+  if (detectedGroups.length > 0) {
     for (const c of passedFirstPass) {
       const g = sectionConflictGroup.get(c.section_id);
-      if (g && conflictGroups.includes(g)) conflictedSectionIds.add(c.section_id);
+      if (g && detectedGroups.includes(g)) conflictedSectionIds.add(c.section_id);
     }
   }
+  // Đ56 mục 2 (§5 E-5): vẫn LOẠI mọi thành viên nhóm mâu thuẫn (ở trên), nhưng
+  // chỉ BÁO nhóm chứa section của chunk hạng cao nhất trong `passedFirstPass`
+  // (giữ thứ tự `retrieved`) — nguồn khớp nhất bị tranh chấp ⇒ G1. Nhóm chỉ
+  // "đi ngang" ⇒ không báo, pipeline đi tiếp với `eligible` còn lại.
+  // Đ56b (SO, 2026-09-23 — rủi ro R31): "hạng cao nhất" tính theo ĐIỂM, không
+  // theo vị trí. SQL chỉ `ORDER BY score DESC` không khoá phụ ⇒ các chunk đồng
+  // điểm có thể đổi chỗ sau seed/reindex; S03 có 4 chunk đồng điểm ở đầu. Nhóm
+  // mâu thuẫn nào có thành viên ĐỒNG ĐIỂM với điểm cao nhất ⇒ vẫn báo (nghiêng
+  // về an toàn: nghi ngờ thì báo mâu thuẫn, không trả lời).
+  const topScore = passedFirstPass.length > 0 ? passedFirstPass[0]!.score : null;
+  const topGroups = new Set<string>();
+  if (topScore !== null) {
+    for (const c of passedFirstPass) {
+      if (c.score < topScore) break;
+      const g = sectionConflictGroup.get(c.section_id) ?? null;
+      if (g) topGroups.add(g);
+    }
+  }
+  const conflictGroups = detectedGroups.filter((g) => topGroups.has(g));
 
   const eligible: RetrievedChunk[] = [];
   for (const chunk of passedFirstPass) {

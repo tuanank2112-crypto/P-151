@@ -31,8 +31,12 @@ export interface GoldenFaqCase {
   kind: "answerable" | "clarification" | "escalation";
   expected_decision: Decision;
   expected_reason_code: ReasonCode | null;
-  must_cite_section_ids: string[];
-  must_contain_vi: string[];
+  /** Đ56 (`plan.md` §2): phần tử chuỗi ⇒ đúng section đó; phần tử **mảng** ⇒
+   *  "một trong các" (dữ kiện thật sự có ở nhiều section). */
+  must_cite_section_ids: Array<string | string[]>;
+  /** Đ56: phần tử chuỗi ⇒ phải xuất hiện đúng chuỗi đó; phần tử **mảng** ⇒
+   *  chỉ cần MỘT biến thể xuất hiện (cùng nghĩa, khác chữ). */
+  must_contain_vi: Array<string | string[]>;
   must_not_contain_vi: string[];
 }
 
@@ -88,10 +92,14 @@ export function viNormalize(s: string): string {
     .toLowerCase();
 }
 
-function containsAllVi(haystack: string | null, needles: string[]): boolean {
+/** Đ56: phần tử `needles` là chuỗi ⇒ phải xuất hiện đúng chuỗi đó; phần tử là
+ *  **mảng** ⇒ chỉ cần MỘT biến thể trong mảng xuất hiện ("một trong các"). */
+function containsAllVi(haystack: string | null, needles: Array<string | string[]>): boolean {
   if (!needles || needles.length === 0) return true;
   const h = viNormalize(haystack ?? "");
-  return needles.every((n) => h.includes(viNormalize(n)));
+  return needles.every((n) =>
+    Array.isArray(n) ? n.some((alt) => h.includes(viNormalize(alt))) : h.includes(viNormalize(n))
+  );
 }
 
 function containsNoneVi(haystack: string | null, needles: string[]): boolean {
@@ -102,11 +110,15 @@ function containsNoneVi(haystack: string | null, needles: string[]): boolean {
 
 /** `needed ⊆ citations[].section_id`. Dùng chung cho checkpoint `citation`
  *  VÀ `shows_conflict` — cả hai đều là "tập section bắt buộc phải xuất hiện
- *  trong những gì hệ thống đưa ra cho người dùng". */
-export function citesAll(citations: Citation[], needed: string[]): boolean {
+ *  trong những gì hệ thống đưa ra cho người dùng".
+ *  Đ56: phần tử của `needed` là chuỗi ⇒ đúng section đó; phần tử là **mảng**
+ *  ⇒ chỉ cần trích ÍT NHẤT MỘT section trong mảng ("một trong các" — dữ kiện
+ *  có ở nhiều section). `shows_conflict` (Safety) chỉ truyền `string[]` nên
+ *  hành vi cũ giữ nguyên tuyệt đối cho nó. */
+export function citesAll(citations: Citation[], needed: Array<string | string[]>): boolean {
   if (!needed || needed.length === 0) return true;
   const have = new Set(citations.map((c) => c.section_id));
-  return needed.every((id) => have.has(id));
+  return needed.every((id) => (Array.isArray(id) ? id.some((alt) => have.has(alt)) : have.has(id)));
 }
 
 // ─────────────────────────────────────────────────────────────────────────

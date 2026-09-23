@@ -1,0 +1,48 @@
+# chạy lại sau Đ56b (so theo điểm) — SO 2026-09-23, từ root repo
+
+## F-I05-04 | Khu Thương mại dịch vụ hoạt động đến mấy giờ?
+  #1 COM-HOURS-02 (OCP1-COMMERCIAL-AREA-RULES-001) score=0.5455 -> eligible
+  #2 COM-SCOPE-01 (OCP1-COMMERCIAL-AREA-RULES-001) score=0.4118 -> eligible
+  #3 FISH-SCOPE-01 (OCP1-FISHING-DECK-RULES-001) score=0.3750 -> scope_mismatch
+  #4 PFEE-MOTOR-MONTH-03 (OCP1-PARKING-FEE-SCHEDULE-001) score=0.3750 -> scope_mismatch
+  #5 BLD-GEN-01 (OCP1-BUILDING-RULES-001) score=0.3750 -> scope_mismatch
+  #6 REQ-SCOPE-01 (VINHOMES-CUSTOMER-REQUEST-HANDLING-001) score=0.3333 -> scope_mismatch
+  #7 PLAY-SCOPE-01 (OCP1-CHILDREN-PLAYGROUND-RULES-001) score=0.3333 -> scope_mismatch
+  #8 VIL-RENOVATE-03 (OCP1-VILLA-HOUSING-RULES-001) score=0.2857 -> scope_mismatch
+  conflict_groups=[] (kỳ vọng []) · COM-HOURS-02 trong eligible=true · top_rejected_reason=null · OK
+
+## F-I05-05 | Hàng rào mặt tiền biệt thự được cao tối đa bao nhiêu?
+  #1 VIL-FENCE-02 (OCP1-VILLA-HOUSING-RULES-001) score=0.4444 -> eligible
+  #2 PARK-CARD-02 (OCP1-PARKING-RULES-001) score=0.3750 -> eligible
+  #3 VIL-RENOVATE-03 (OCP1-VILLA-HOUSING-RULES-001) score=0.3333 -> eligible
+  #4 VIL-SCOPE-01 (OCP1-VILLA-HOUSING-RULES-001) score=0.3333 -> eligible
+  #5 COM-SCOPE-01 (OCP1-COMMERCIAL-AREA-RULES-001) score=0.3333 -> scope_mismatch
+  #6 COM-SIGN-03 (OCP1-COMMERCIAL-AREA-RULES-001) score=0.3333 -> scope_mismatch
+  #7 VIL-PET-04 (OCP1-VILLA-HOUSING-RULES-001) score=0.3333 -> eligible
+  #8 BBQ-BOOK-02 (OCP1-BBQ-GARDEN-RULES-001) score=0.3333 -> eligible
+  conflict_groups=[] (kỳ vọng []) · VIL-FENCE-02 trong eligible=true · top_rejected_reason=null · OK
+
+## F-I03-02 | Vườn Nướng BBQ mỗi hộ được đặt tối đa mấy lượt một tuần?
+  #1 BBQ-BOOK-02 (OCP1-BBQ-GARDEN-RULES-001) score=0.5455 -> eligible
+  #2 BBQ-CAP-01 (OCP1-BBQ-GARDEN-RULES-001) score=0.4737 -> conflict
+  #3 SPORTS-BOOK-02 (OCP1-SPORTS-COMPLEX-RULES-001) score=0.4444 -> eligible
+  #4 FISH-BOOK-03 (OCP1-FISHING-DECK-RULES-001) score=0.4444 -> eligible
+  #5 BLD-AMEN-07 (OCP1-BUILDING-RULES-001) score=0.4444 -> conflict
+  #6 BBQ-SCOPE-01 (OCP1-BBQ-GARDEN-RULES-001) score=0.3750 -> eligible
+  #7 KAYAK-BOOK-03 (OCP1-KAYAK-DOCK-RULES-001) score=0.3333 -> eligible
+  #8 PARK-CARD-02 (OCP1-PARKING-RULES-001) score=0.3333 -> eligible
+  conflict_groups=[] (kỳ vọng []) · BBQ-BOOK-02 trong eligible=true · top_rejected_reason=null · OK
+
+## S03 | Vườn BBQ cho tối đa bao nhiêu người một lượt?
+  #1 BLD-AMEN-07 (OCP1-BUILDING-RULES-001) score=0.3750 -> conflict
+  #2 BBQ-BOOK-02 (OCP1-BBQ-GARDEN-RULES-001) score=0.3750 -> eligible
+  #3 SPORTS-BOOK-02 (OCP1-SPORTS-COMPLEX-RULES-001) score=0.3750 -> eligible
+  #4 BBQ-CAP-01 (OCP1-BBQ-GARDEN-RULES-001) score=0.3750 -> conflict
+  #5 PARK-CARD-02 (OCP1-PARKING-RULES-001) score=0.3333 -> eligible
+  #6 BBQ-SCOPE-01 (OCP1-BBQ-GARDEN-RULES-001) score=0.2857 -> eligible
+  #7 PARK-SPEED-03 (OCP1-PARKING-RULES-001) score=0.2857 -> eligible
+  #8 PARK-LOST-06 (OCP1-PARKING-RULES-001) score=0.2308 -> eligible
+  conflict_groups=["CG-BBQ-CAPACITY"] (kỳ vọng ["CG-BBQ-CAPACITY"]) · - trong eligible=true · top_rejected_reason=conflict · OK
+
+TỔNG: 4/4 OK
+EXIT=0

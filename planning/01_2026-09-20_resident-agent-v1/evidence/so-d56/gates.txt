@@ -1,0 +1,10 @@
+tsc EXIT=0
+ℹ tests 282
+ℹ pass 282
+ℹ fail 0
+ℹ skipped 0
+violations: 0
+matches: 0
+matches: 0
+faq: 50 (answerable 40) · safety: 16 · canonical_codes_covered: 10/10
+documents: 19 · sections: 98 · defects_ok: 4/4
