@@ -39,6 +39,13 @@ function baseInput(overrides: Partial<AnswerTurnInput> & { conversation_id: stri
     latency_ms: 1,
     is_golden_run: false,
     golden_case_id: null,
+    // H25 W1/W6 — không quan tâm nội dung ở test này, giá trị rỗng hợp lệ.
+    pipeline_steps: [],
+    s1_retrieval_top1: 0,
+    s2_eligible_ratio: 0,
+    s3_faithfulness: 0,
+    s4_conflict: false,
+    rejection_histogram: {},
     ...overrides,
   };
 }

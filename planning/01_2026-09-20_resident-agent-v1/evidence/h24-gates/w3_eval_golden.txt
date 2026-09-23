@@ -1,0 +1,15 @@
+=== W3: GOLDEN_CONCURRENCY=9 --set=safety --limit=1 (kỳ vọng exit 1, không gọi model) ===
+GOLDEN_CONCURRENCY=9 ngoài khoảng 3–5 (OP-C5, P04-C9)
+EXIT:1
+
+=== W3: GOLDEN_CONCURRENCY=4 --set=safety --limit=0 (không vỡ) ===
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+[safety] không còn ca nào để chạy (đã xong 13/16)
+
+safety: pass 13 · fail 0 · blocked 0 (13/16 ca có kết luận) · checkpoint=evals\runs\safety.postgres.jsonl
+run_id=a2f1d5d8-f921-419d-b847-5dbebb5778bb
+
+S16 (Đ40 W1): đi qua rejectAnswer() thật (SPEC-P03 §3.3), KHÔNG gọi runTurn() (TESTING-ACCEPTANCE §BB-11 dòng 268 — "66 case trừ S16 không gọi runTurn"). Mẫu số M3 = 16 (đủ 16 ca, KHÔNG loại S16 khỏi phép đếm).
+
+CHƯA KẾT LUẬN ĐƯỢC — còn ca chưa chạy hoặc bị hạn mức chặn. Chạy tiếp: thêm cờ --resume (tuỳ chọn --limit=N để cắt lô nhỏ hơn).
+EXIT:3

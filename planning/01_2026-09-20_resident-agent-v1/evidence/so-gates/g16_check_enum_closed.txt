@@ -1,0 +1,3 @@
+$ node scripts/check_enum_closed.mjs
+rejected: invalid input value for enum reason_code · enum_ts=15 · enum_db=15 · match: true
+EXIT=0

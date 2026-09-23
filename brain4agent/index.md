@@ -105,6 +105,7 @@ project-root/
 │   │                                 #   .actioned / IntentBreakdownEntry.actioned, CHƯA render UI
 │   └── pipeline/action.ts            #   [P05] nhánh `action` trong runTurn() — precheck →
 │   │                                 #   sink audit → DataStore.insertAuditLog (H22, fire-and-forget G44) →
+│   │                                 #   [Đ50/H25] ghi pipeline_steps + s1..s4 + rejection_histogram vào answer_turns
 │                                     #   ghi → biên nhận; lấy kiểu từ contract.ts, getSimBackend
 │                                     #   từ index.ts (tách đôi import, xem SPEC-P05 §11)
 ├── lib/simbackend/                   # [P05, MỚI] backend cư dân MÔ PHỎNG — 9 capability (2 ghi,

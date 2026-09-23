@@ -5,7 +5,7 @@ Resident Agent v1.0 — SẢN PHẨM DEMO mô phỏng cho ban giám khảo (AI20
 Phase Cohort 4, rubric C104/VHR-01/G104), KHÔNG PHẢI hệ thống chạy thật. Không
 API Vinhomes, không dữ liệu cư dân thật. Deadline 2026-09-27.
 Giai đoạn (2026-09-23, sau `d9e1a5e`): P00/P01a/P02b/P03/P04/BB-11/**P05** ✅ DUYỆT;
-Đ37–Đ49 đã vá + commit. Audit trước demo (Đ47, G33–G39) đã vá: `/chat` hết 403 +
+Đ37–Đ50 đã vá + commit. Audit trước demo (Đ47, G33–G39) đã vá: `/chat` hết 403 +
 lịch sử + panel 3 agent · nav BQL · `review_queue` có đường ghi · test tự dọn, runner
 ghim mock · `MODEL_A*` là CHUỖI dự phòng phẩy. **P05 (Đ48) xong + hai việc treo đã
 đóng (H22/H23)**: agent THỰC THI thay cư dân — `lib/simbackend/` (9 capability, precheck
@@ -15,9 +15,10 @@ ghi `audit_log` khi `WriteTimeout`; dashboard hiện `hành động N` + cột `
 lệch cài đặt vs SPEC: `SPEC-P05` §11. **DEMO LOCAL ĐÃ CHẠY TRỌN** (`evidence/so-demo-local/`,
 `so-p05/`) + video 2:17 cảnh agent hành động (`record_action.mjs`). Deliverables BTC
 đã tạo (H18). `lib/eval/score.ts` là bộ chấm Golden DUY NHẤT. DB Supabase THẬT migrate
-001→006 + seed. Cổng: tsc 0 · build 0 · npm test **238** · BB-05/07/10 = 0 · G03/G09/
-G10/G23 ✅ local (Đ49; G43: kiểm `OCP1-POOL-RULES-001`=Approved trước demo). **G11 VẪN
-CẤM TICK**: `--fresh` 23/09 `safety` 12 pass/0 fail/4 blocked (0 trượt thật lần đầu),
+001→006 + seed. **Đ50 (H25)**: `answer_turns` nay ghi `pipeline_steps` + `s1..s4` +
+`rejection_histogram` (trước 0/512 rỗng ⇒ faithfulness 0.0 trên `/eval` là giả, G46). Cổng:
+tsc 0 · build 0 · npm test **251** · BB-05/07/10 = 0 · G03/G09/G10/G16/G23/G31 ✅ local (Đ49; G43: kiểm `OCP1-POOL-RULES-001`=Approved trước demo). **G11 VẪN
+CẤM TICK**: `--fresh` 23/09 `safety` 13 pass/0 fail/3 blocked (0 trượt thật),
 `faq` 0/50 — `--resume` khi hạn mức hồi. Hạn mức cạn trong ngày sau ~16 ca (A2/A3
 429, chỉ 3.5-flash-lite sống): PROBE 4 model bằng curl trước demo; KHÔNG chạy Golden/
 test Postgres/dev server song song (pooler session-mode trần 15 kết nối).
@@ -32,7 +33,7 @@ header · `setSectionExcluded` chưa UI · hybrid chưa nối. Đã push tới
 Cấm nói đã hoàn thành trước khi có bằng chứng máy chạy thật.
 `docs/` mô tả SẢN PHẨM CŨ đã hạ cấp — chỉ còn nguồn tham chiếu. Nguồn chân lý
 thiết kế đang hiệu lực, đọc theo thứ tự: `planning/01_2026-09-20_resident-agent-v1/
-plan.md` §2 (Đ01–Đ49) → `specs/00-ARCHITECTURE.md` → 8 file SPEC còn lại → `docs/`.
+plan.md` §2 (Đ01–Đ50) → `specs/00-ARCHITECTURE.md` → 8 file SPEC còn lại → `docs/`.
 </repo_nature>
 <agent_startup_protocol>
 0. [BẮT BUỘC TIÊN QUYẾT] Chạy `node ../brain4agent.release/.agents/skills/.xay-dung-nao-bo/scripts/init_brain.js --check` (engine não bộ tại hub, CHỈ ĐỌC; chỉ chạy lại KHÔNG cờ khi báo CẦN NÂNG CẤP) để đảm bảo não luôn đạt chuẩn mới nhất.
@@ -68,11 +69,11 @@ plan.md` §2 (Đ01–Đ49) → `specs/00-ARCHITECTURE.md` → 8 file SPEC còn l
 - Adapter (BB-07): `lib/adapters/db.ts` la file DUY NHAT mo connection; `model.ts`
   la file DUY NHAT goi nha cung cap; `bql-store.ts` la noi DUY NHAT truy van P03.
 - Cổng chạy được ngay, KHÔNG cần DB/LLM/biến môi trường: `npx tsc --noEmit` ·
-  `npm run build` · `node scripts/run_tests.mjs` (**238**, runner ghim mock — G39) ·
+  `npm run build` · `node scripts/run_tests.mjs` (**251**, runner ghim mock — G39) ·
   `bash scripts/check_{adapter_boundary,no_hardcoded_knowledge,no_confidence_ui}.sh` ·
   `node scripts/validate_{knowledge,golden,capabilities,policy}.mjs` — tất cả exit 0.
 - Planning: `planning/[STT]_[YYYY-MM-DD]_[Ten-Ngan]`, cố định path. Hồ sơ đang
-  mở: `01_2026-09-20_resident-agent-v1/` (Đ01–Đ49; `handoffs/`↔`reports/`↔`evidence/`).
+  mở: `01_2026-09-20_resident-agent-v1/` (Đ01–Đ50; `handoffs/`↔`reports/`↔`evidence/`).
 </project_foundation>
 
 <brain_file_roles>

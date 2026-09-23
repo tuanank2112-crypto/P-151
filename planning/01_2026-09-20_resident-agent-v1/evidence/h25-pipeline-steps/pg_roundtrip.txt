@@ -1,0 +1,7 @@
+turnId: 8d8e8ee1-5e41-4401-8456-165ae7cfb0ce
+jsonb_array_length(pipeline_steps): 2
+s3_faithfulness: 0.7500
+CHECK len==2: true
+CHECK s3_faithfulness==0.7500: true
+CHECK cascade cleanup (answer_turns count==0): true
+PASS

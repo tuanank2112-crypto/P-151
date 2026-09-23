@@ -277,6 +277,36 @@ export function __resetMockReviewQueueForTesting(): void {
 }
 
 /**
+ * H25 (2026-09-23) — mock KHÔNG có bảng `answer_turns` thật (chỉ Postgres
+ * mới bền, xem ghi chú `insertAnswerTurn` ở trên), nhưng `pipeline_steps`
+ * (SPEC-P02 §5.3/§8, BB-08) và bốn tín hiệu Đ07 (§7/W6) cần soi được từ
+ * test trên mock mà không cần Postgres — cùng mẫu `mockReviewQueue`: đẩy
+ * vào mảng nội bộ, chỉ `tests/` đọc được qua `__getMockAnswerTurnsForTesting()`
+ * / `__resetMockAnswerTurnsForTesting()`.
+ */
+interface MockAnswerTurnRow {
+  id: string;
+  decision: AnswerTurnInput["decision"];
+  pipeline_steps: AnswerTurnInput["pipeline_steps"];
+  s1_retrieval_top1: number;
+  s2_eligible_ratio: number;
+  s3_faithfulness: number;
+  s4_conflict: boolean;
+  rejection_histogram: Record<string, number>;
+}
+const mockAnswerTurns: MockAnswerTurnRow[] = [];
+
+/** CHỈ dùng trong tests/: đọc lại các dòng "answer_turns" đã ghi ở kho mock. */
+export function __getMockAnswerTurnsForTesting(): readonly MockAnswerTurnRow[] {
+  return mockAnswerTurns;
+}
+
+/** CHỈ dùng trong tests/: xoá mảng "answer_turns" mock giữa các ca test. */
+export function __resetMockAnswerTurnsForTesting(): void {
+  mockAnswerTurns.length = 0;
+}
+
+/**
  * H22 — mock KHÔNG có bảng `audit_log` thật (chỉ Postgres mới bền). Cùng mẫu
  * `mockReviewQueue` ở trên: đẩy vào mảng nội bộ, chỉ `tests/` đọc được qua
  * `__getMockAuditLogForTesting()` / `__resetMockAuditLogForTesting()`.
@@ -346,6 +376,16 @@ class MockDataStore implements DataStore {
         original_draft_vi: `[Từ chối tự động · ${input.reason_code ?? "system_error"}] ${reasonMessageVi(input.reason_code)}`,
       });
     }
+    mockAnswerTurns.push({
+      id,
+      decision: input.decision,
+      pipeline_steps: input.pipeline_steps,
+      s1_retrieval_top1: input.s1_retrieval_top1,
+      s2_eligible_ratio: input.s2_eligible_ratio,
+      s3_faithfulness: input.s3_faithfulness,
+      s4_conflict: input.s4_conflict,
+      rejection_histogram: input.rejection_histogram,
+    });
     return { id };
   }
 

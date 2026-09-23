@@ -1,15 +1,15 @@
 {
   "current_version": "1.0.0",
   "brain_template_version": "1.7.1",
-  "system_status": "p05_treo_da_dong_2026-09-23_g03_g09_g10_g23_tick_cho_golden_faq_va_deploy",
+  "system_status": "d50_quan_sat_that_2026-09-23_g16_g31_tick_cho_golden_faq_va_deploy",
   "last_verification": {
-    "timestamp": "2026-09-23T10:00:00.000Z",
-    "grade": "H22 audit_log + H23 dashboard actioned da dong; 238 test; BB-05/07/10 = 0; demo_r7 exit 0; G23 = 0; safety 12/0/4",
+    "timestamp": "2026-09-23T11:00:00.000Z",
+    "grade": "H24 (G16/G31) + H25 (Đ50 pipeline_steps + s1..s4) xong; 251 test; BB 0; safety 13/16",
     "head": "sau d9e1a5e (commit dot 3 ngay 23/09)",
     "gates_no_key_needed": {
       "tsc": "npx tsc --noEmit · exit 0",
       "build": "npm run build · exit 0 (clone sach cung exit 0)",
-      "test": "node --env-file=.env.local scripts/run_tests.mjs · tests 238 · pass 238 · fail 0 · skipped 0 (truoc H22/H23: 236); runner ghim DATA_BACKEND=mock (G39)",
+      "test": "node --env-file=.env.local scripts/run_tests.mjs · tests 251 · pass 251 · fail 0 · skipped 0; runner ghim DATA_BACKEND=mock (G39)",
       "BB-07": "check_adapter_boundary.sh · violations: 0",
       "BB-10": "check_no_hardcoded_knowledge.sh · matches: 0",
       "BB-05": "check_no_confidence_ui.sh · matches: 0",
@@ -19,7 +19,9 @@
       "P05-M2": "validate_policy.mjs · intake_windows: ok · operating_hours: ok · separated: true",
       "P05-M8_G22": "demo_2339.mjs · exit 0 · 6 buoc · getBookingPolicy=1 · lenh_ghi=0 luc 23:39; dat duoc luc 09:00 (receipt_code); hoan tac giu undone_by",
       "G09": "demo_r7.mjs · EXIT=0 (2026-09-23 09:32) · [1] answer POOL-SAFE-03 · [2] escalate no_eligible_source · [3] answer",
-      "G23": "sql receipts cancel+undo_capability_id not null = 0"
+      "G23": "sql receipts cancel+undo_capability_id not null = 0",
+      "G16": "check_enum_closed.mjs · match: true · exit 0",
+      "G31": "check_env.mjs --reject-out-of-range GOLDEN_CONCURRENCY=9 · exit 1; khong co · required 6/6"
     },
     "smoke_demo_local": {
       "evidence": "planning/01_2026-09-20_resident-agent-v1/evidence/so-demo-local/smoke_2026-09-23.txt",
@@ -31,7 +33,7 @@
       "review_queue": "pending 7 · rejected 1",
       "bql_pages": "/documents /review /dashboard /eval -> 200, 4 link nav, 0 NaN"
     },
-    "G11": "CAM TICK — 2026-09-23 --fresh: safety pass 12 · fail 0 · blocked 4 (0 truot that lan dau); faq 0/50 (A2/A3 429 trong ngay) — EXIT=3, --resume khi han muc hoi"
+    "G11": "CAM TICK — 2026-09-23 --fresh + --resume: safety pass 13 · fail 0 · blocked 3 (0 truot that); faq 0/50 (A2/A3 429 trong ngay) — EXIT=3, --resume tiep khi han muc hoi"
   },
   "active_plans_completed": 0,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
@@ -74,9 +76,11 @@
       "P05 (Đ48): H19 simbackend + H20 pipeline action + H21 UI/demo_2339 (77fe901)",
       "H22 audit_log that khi WriteTimeout (DataStore.insertAuditLog)",
       "H23 dashboard cot actioned",
-      "G09 demo_r7 exit 0 · G03/G10/G23 tick local (Đ49)"
+      "G09 demo_r7 exit 0 · G03/G10/G23 tick local (Đ49)",
+      "H24 script gate G16/G31 + eval_golden khong kep",
+      "H25 (Đ50) ghi pipeline_steps + s1..s4 + rejection_histogram"
     ],
-    "next": "NGUOI: don DB fixture, dat AI_LOG_API_KEY (hook da cai), deploy Vercel (scope + pooler 6543), dua san pham len origin/main. AGENT: eval:golden --resume (safety 4 ca + faq 50 ca) khi han muc A2/A3 hoi; cap nhat TESTING-ACCEPTANCE §7 cot deploy sau deploy; P06 dien tay tren trinh duyet",
+    "next": "NGUOI: don DB fixture, deploy Vercel (scope + pooler 6543), quyet origin/main, git stash drop (stash du). AGENT: eval:golden --resume khi han muc hoi (sau H25 moi co s3_faithfulness that), trace_sample.mjs tra nguoc theo id de tick G08, P06 dien tay",
     "remaining": [
       "P01 deploy",
       "G11 (Golden tren chuoi model moi)",
@@ -84,7 +88,8 @@
       "AI_LOG_API_KEY trong (hook da cai)",
       "origin/main",
       "P06 dien tay tren trinh duyet",
-      "G11: safety --resume 4 ca blocked + faq 50 ca (han muc)"
+      "G11: safety --resume 4 ca blocked + faq 50 ca (han muc)",
+      "G08: luot that sau H25 + trace_sample tra nguoc theo id (Đ50)"
     ]
   },
   "deadline": "2026-09-27",
@@ -165,7 +170,7 @@
   "open_issues": {
     "expected_gate_DEF04": "xem blocked_needs_human",
     "hybrid": "RETRIEVAL_MODE=hybrid CHUA noi day; chunks chua co embedding nao",
-    "G11": "CAM TICK — safety 12/16 (0 fail); --resume dang chay 10:20 (3.5-flash song lai)",
+    "G11": "CAM TICK — safety 13/16 (0 fail, 3 blocked 429); faq 0/50 blocked; --resume khi han muc hoi (quota ngay cua 3.5-flash can nhanh, ~1-16 ca moi lan hoi)",
     "S01_truot_that": "DA VA (R16, bb99791) — smoke 2026-09-23 pickleball ra no_eligible_source",
     "S06_truot_that": "DA VA (R16) — smoke 2026-09-23 ra pii_or_account_specific",
     "S16_S14_loi_bo_do": "DA VA (R17); S14 dai dang can kiem lai khi han muc khoe (Đ45)",
@@ -181,7 +186,9 @@
     "G38_origin_main_rong_deliverables": "deliverables da tao (H18); hook AI-log DA CAI va GIU NGUYEN theo chu tich (23/09); AI_LOG_API_KEY nguoi dung giu ngoai repo; origin/main van rong",
     "testing_acceptance_gate_table": "cot local: G01/G04/G06/G07/G12/G14/G15/G19/G20/G21/G22 da tick ✅ (2026-09-23); cot deploy con ⬜ het (chua deploy)",
     "R06_R07_thieu_header": "thieu 3 dong Handoff/Base/Head (audit 2026-09-23)",
-    "P05_viec_treo": "DA DONG (H22/R26 + H23/R27, 2026-09-23); audit sink fire-and-forget (G44)"
+    "P05_viec_treo": "DA DONG (H22/R26 + H23/R27, 2026-09-23); audit sink fire-and-forget (G44)",
+    "G46_answer_turns_rong": "DA VA (H25/R29, Đ50) — so faithfulness truoc 23/09 la 0.0 gia; can luot moi de co so that",
+    "G47_worker_stash": "luat AGENTS §5.K.2: worker CAM git stash/checkout/reset tren cay chung; stash@{0} du con trong kho (nguoi drop)"
   },
   "km6": {
     "value": "1/4 tren postgres (DEF-03 OK) · 3 ca blocked vi can han muc Gemini — KHONG phai truot",
@@ -189,7 +196,7 @@
     "ghi_chu": "DEF-04 tren mock: reason_code DUNG, gate G3 (cho quyet)"
   },
   "git": {
-    "head": "sau ed66038 — commit luat §5.D.4",
+    "head": "sau 30a1ea4 — commit dot 4 (H24/H25/Đ50)",
     "remote": "origin https://github.com/AI20K-Build-Phase-Cohort-4/P-151.git · local main theo doi origin/feature/nhuy (DA PUSH 9ac796c) · origin/main = template Python rong (G38)"
   },
   "rules_added": {

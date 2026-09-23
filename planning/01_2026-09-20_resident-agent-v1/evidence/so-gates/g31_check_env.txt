@@ -1,0 +1,9 @@
+$ node scripts/check_env.mjs
+required: 6/6 present
+EXIT=0
+$ node scripts/check_env.mjs --reject-out-of-range GOLDEN_CONCURRENCY=9
+GOLDEN_CONCURRENCY=9 ngoài khoảng 3–5 (OP-C5, P04-C9)
+EXIT=1
+$ node scripts/check_env.mjs --reject-out-of-range GOLDEN_CONCURRENCY=4
+GOLDEN_CONCURRENCY=4 trong khoảng 3–5
+EXIT=0

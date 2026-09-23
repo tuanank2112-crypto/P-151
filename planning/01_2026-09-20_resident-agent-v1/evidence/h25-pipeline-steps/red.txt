@@ -1,0 +1,64 @@
+✖ H25 W2 (a): escalate sớm ở safety ⇒ mock answer_turns có pipeline_steps=[validate,safety], s1..s4/histogram giữ mặc định 0/0/0/false/{} (7.1521ms)
+✖ H25 W2/W6 (b): answer đầy đủ ⇒ mock answer_turns có draft+verify với model/ms số, s1/s2 trong [0,1], s3=faithfulness thật>0, s4=false, histogram là object (10.9932ms)
+✖ H25 W2/W6 (c): nhánh action ⇒ mock answer_turns có chặng 'action', s1..s4/histogram giữ mặc định 0/0/0/false/{} (chưa qua eligibility) (2.1272ms)
+✔ H25 W6 (d, thật, Postgres, DEF-03): G1_conflict ⇒ answer_turns.s4_conflict=true, pipeline_steps dừng đúng ở eligibility (7123.2086ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 1
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15818.2686
+
+✖ failing tests:
+
+test at tests\pipeline-steps-persist.test.ts:82:1
+✖ H25 W2 (a): escalate sớm ở safety ⇒ mock answer_turns có pipeline_steps=[validate,safety], s1..s4/histogram giữ mặc định 0/0/0/false/{} (7.1521ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   'validate',
+  -   'safety'
+  - ]
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/pipeline-steps-persist.test.ts:98:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ 'validate', 'safety' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\pipeline-steps-persist.test.ts:110:1
+✖ H25 W2/W6 (b): answer đầy đủ ⇒ mock answer_turns có draft+verify với model/ms số, s1/s2 trong [0,1], s3=faithfulness thật>0, s4=false, histogram là object (10.9932ms)
+  AssertionError [ERR_ASSERTION]: phải có chặng draft
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/pipeline-steps-persist.test.ts:148:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\pipeline-steps-persist.test.ts:165:1
+✖ H25 W2/W6 (c): nhánh action ⇒ mock answer_turns có chặng 'action', s1..s4/histogram giữ mặc định 0/0/0/false/{} (chưa qua eligibility) (2.1272ms)
+  AssertionError [ERR_ASSERTION]: phải có chặng action
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/pipeline-steps-persist.test.ts:200:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

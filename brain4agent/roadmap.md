@@ -26,7 +26,8 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 2. ~~Tạo `.claude/settings.json`~~ — **đã có** (commit `b00dfad`, hook `UserPromptSubmit` + pre-push `submit_log.py`; push 2026-09-23 nộp 13 entry → 202). **🖐 Còn thiếu `AI_LOG_API_KEY`**: trống ở Process/User/Machine trên máy này (đo bằng PowerShell 2026-09-23) ⇒ entry đi lên KHÔNG có `Authorization`; đặt biến ở mức User (`setx AI_LOG_API_KEY <key>`) rồi mở lại terminal, hoặc xác nhận với BTC rằng nộp ẩn danh vẫn được tính.
 3. **🖐 Hạn mức Gemini trước demo:** probe 3 model bằng curl (checklist trong `presentation/demo_script.md`); `.env.local` đã có chuỗi `MODEL_A2=gemini-3.6-flash,gemini-3.5-flash,gemini-2.5-flash`. Lượt trả lời đầu có thể mất 40–60 s khi A2 rơi về 3.5-flash — nói trước với giám khảo. Cân nhắc nạp billing hoặc key thứ hai.
 4. ~~Chạy lại `demo_r7.mjs` cho G09~~ — **✅ xong 2026-09-23** (`EXIT=0`, `evidence/h17-demo-r7/demo_r7_20260923_093246.txt`, G09 tick local). Trước demo thật vẫn kiểm `documents.status` của `OCP1-POOL-RULES-001` = `Approved` (G43).
-5. **Chạy lại Golden** (`npm run eval:golden` theo lô, Đ26) trên chuỗi model mới để có số M1/M3 — G11 vẫn CẤM TICK (hiện M1 1/40, M3 2/16 trên `/eval`). Ghi rõ model thật trong report.
+5. **Chạy tiếp Golden `--resume`** (Đ26) — 23/09: `safety` **13/16 pass, 0 fail, 3 blocked** (429), `faq` 0/50 blocked; hạn mức ngày của `3.5-flash` cạn sau ~1–16 ca mỗi lần hồi. G11 vẫn CẤM TICK. **Lưu ý Đ50:** lượt Golden/lượt thật sau H25 mới có `s3_faithfulness` thật ⇒ `/eval` mới có faithfulness đáng tin; số trước đó là 0.0 giả.
+5b. **Việc treo Đ50:** `scripts/trace_sample.mjs` tra ngược theo `answer_turn_id` đọc `pipeline_steps` (hiện chạy câu mới); tick G08 khi có lượt thật sau vá.
 6. **🖐 Deploy Vercel** (chọn scope; đổi `DATABASE_URL` sang pooler 6543; đặt `DATA_BACKEND=postgres`, `MODEL_A*`, `SESSION_SECRET`, `GEMINI_API_KEY`) — R1.
 7. **🖐 Đưa sản phẩm lên `origin/main`** (hiện là template Python rỗng — G38; sản phẩm ĐÃ ở `origin/feature/nhuy` = `9ac796c`, push 2026-09-23) và thống nhất với đồng đội câu chuyện demo (rubric C104 vs PRD v0.2 "không auto-send").
 8. Điền tên/vai trò thành viên vào `README.md`, `presentation/README.md` (đang `[điền]`).
@@ -65,6 +66,14 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
   Ai muốn lật phải trả lời được "lấy baseline ở đâu".
 
 ## Đã hoàn thành (Done)
+
+- [x] **Quan sát được thật + gate không cần model (2026-09-23, H24/H25, Đ50):** `answer_turns`
+  nay ghi `pipeline_steps` + `s1..s4` + `rejection_histogram` ở mọi nhánh (trước: 0/512, G46 —
+  faithfulness 0.0 trên `/eval` là số giả); `scripts/check_enum_closed.mjs` (G16 ✅),
+  `scripts/check_env.mjs` (G31 ✅, OP-M3 `6/6`), `eval_golden.mjs` ngoài 3–5 ⇒ exit 1. Đo lại
+  độc lập trên cây gộp: `tsc` 0 · **251/251** · BB-05/07/10 = 0. Report `R28`, `R29`;
+  evidence `evidence/{h24-gates,h25-pipeline-steps,so-h24-h25,so-gates}`. Sự cố G47 (worker
+  `git stash` trên cây chung) ⇒ luật mới ở AGENTS.md §5.K.2.
 
 - [x] **P05 — đóng hai việc treo (2026-09-23, H22/H23):** `DataStore.insertAuditLog()` +
   sink của `lib/pipeline/action.ts` ghi `audit_log` mức `warn` thật khi `WriteTimeout`

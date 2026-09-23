@@ -1,0 +1,19 @@
+=== G16: node scripts/check_enum_closed.mjs ===
+rejected: invalid input value for enum reason_code · enum_ts=15 · enum_db=15 · match: true
+EXIT:0
+
+=== G31: node scripts/check_env.mjs (no flag) ===
+required: 6/6 present
+EXIT:0
+
+=== G31: --reject-out-of-range GOLDEN_CONCURRENCY=9 ===
+GOLDEN_CONCURRENCY=9 ngoài khoảng 3–5 (OP-C5, P04-C9)
+EXIT:1
+
+=== --reject-out-of-range GOLDEN_CONCURRENCY=4 ===
+GOLDEN_CONCURRENCY=4 trong khoảng 3–5
+EXIT:0
+
+=== --reject-out-of-range GOLDEN_CONCURRENCY=abc ===
+GOLDEN_CONCURRENCY=abc không phải số nguyên (OP-C5, P04-C9)
+EXIT:1

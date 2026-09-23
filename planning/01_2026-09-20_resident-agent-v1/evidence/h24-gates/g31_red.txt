@@ -1,0 +1,39 @@
+✖ GOLDEN_CONCURRENCY=9 (trên biên) ⇒ ok:false, không kẹp về 5 (1.6641ms)
+✔ GOLDEN_CONCURRENCY=1 (dưới biên) ⇒ ok:false, không kẹp về 3 (0.1992ms)
+✔ GOLDEN_CONCURRENCY=3 (biên dưới hợp lệ) ⇒ ok:true (0.1155ms)
+✔ GOLDEN_CONCURRENCY=5 (biên trên hợp lệ) ⇒ ok:true (1.2701ms)
+✔ GOLDEN_CONCURRENCY=4 (mặc định) ⇒ ok:true (0.1585ms)
+✔ GOLDEN_CONCURRENCY=abc (không phải số nguyên) ⇒ ok:false (0.1134ms)
+✔ GOLDEN_CONCURRENCY=4.5 (không nguyên) ⇒ ok:false (0.1478ms)
+✔ checkRequiredEnv: đủ 6 biến ⇒ missing rỗng (0.7429ms)
+✔ checkRequiredEnv: thiếu GEMINI_API_KEY ⇒ liệt kê đúng tên, không in giá trị biến khác (0.2461ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 8
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 157.9199
+
+✖ failing tests:
+
+test at tests\check-env.test.ts:8:1
+✖ GOLDEN_CONCURRENCY=9 (trên biên) ⇒ ok:false, không kẹp về 5 (1.6641ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/check-env.test.ts:10:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+EXIT:1

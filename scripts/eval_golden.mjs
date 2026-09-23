@@ -19,7 +19,7 @@
 //
 // Cờ: --set=faq|safety|all · --limit=N · --offset=N · --only=id,id · --resume
 //     --fresh (xoá checkpoint của set rồi chạy lại từ đầu)
-// Biến: GOLDEN_CONCURRENCY (mặc định 4, khoảng hợp lệ 1–5, Đ19/OP-C5)
+// Biến: GOLDEN_CONCURRENCY (mặc định 4, khoảng hợp lệ 3–5, Đ19/OP-C5)
 //       QUOTA_STREAK_STOP (mặc định 3)
 //
 // Mã thoát: 0 xong sạch · 1 có ca trượt thật · 2 sai tham số · 3 chưa kết
@@ -45,13 +45,22 @@ import {
   runBatch,
   sliceCases,
 } from "./_batch.mjs";
+import { checkGoldenConcurrency } from "./check_env.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..");
 const GDIR = path.join(ROOT, "evals", "golden");
 const RUNS_DIR = path.join(ROOT, "evals", "runs");
 
-const CONCURRENCY = Math.min(5, Math.max(1, Number(process.env.GOLDEN_CONCURRENCY ?? 4)));
+// P04-C9/OP-C5: khoảng 3–5 là CHẶN CỨNG, không phải lời khuyên. Ngoài khoảng
+// ⇒ exit 1 kèm lý do NGAY LẬP TỨC, TRƯỚC khi chạm DB hay gọi model — KHÔNG
+// tự kẹp về biên (bản cũ dùng `Math.min(5, Math.max(1, …))`, trái P04-C9).
+const goldenConcurrencyCheck = checkGoldenConcurrency(process.env.GOLDEN_CONCURRENCY ?? 4);
+if (!goldenConcurrencyCheck.ok) {
+  console.error(goldenConcurrencyCheck.reason);
+  process.exit(1);
+}
+const CONCURRENCY = goldenConcurrencyCheck.value;
 
 function readJsonl(file) {
   return fs

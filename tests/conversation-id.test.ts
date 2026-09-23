@@ -125,6 +125,12 @@ test("Đ37/Đ43 (thật, Postgres): insertAnswerTurn với conversation_id dạn
         latency_ms: 0,
         is_golden_run: false,
         golden_case_id: null,
+        pipeline_steps: [],
+        s1_retrieval_top1: 0,
+        s2_eligible_ratio: 0,
+        s3_faithfulness: 0,
+        s4_conflict: false,
+        rejection_histogram: {},
       }),
     (err: Error) => {
       assert.match(err.message, /không phải uuid hợp lệ/i);
@@ -165,6 +171,12 @@ test("Đ43 (thật, mock): appendMessage/insertAnswerTurn với conversation_id 
           latency_ms: 0,
           is_golden_run: false,
           golden_case_id: null,
+          pipeline_steps: [],
+          s1_retrieval_top1: 0,
+          s2_eligible_ratio: 0,
+          s3_faithfulness: 0,
+          s4_conflict: false,
+          rejection_histogram: {},
         }),
       (err: Error) => {
         assert.match(err.message, /không phải uuid hợp lệ/i);

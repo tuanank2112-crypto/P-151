@@ -1,0 +1,2 @@
+rejected: false · enum_ts=15 · enum_db=15 · match: true · KHÔNG bị từ chối đúng cách (Postgres không ném lỗi)
+EXIT:1

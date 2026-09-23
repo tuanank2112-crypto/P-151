@@ -17,6 +17,7 @@ import type {
   ClaimVerdict,
   Decision,
   LifecycleState,
+  PipelineStep,
   ReasonCode,
   RetrievedChunk,
   UserRole,
@@ -186,8 +187,7 @@ export interface MessageRecord {
 
 /**
  * Đầu vào ghi một dòng `answer_turns` (BB-11, SPEC-P02 §1). Chỉ liệt kê các
- * trường `runTurn` có đủ dữ liệu để điền — mọi cột khác của bảng
- * (`s1_retrieval_top1`, `rejection_histogram`, `pipeline_steps`, …) dùng
+ * trường `runTurn` có đủ dữ liệu để điền — mọi cột khác của bảng dùng
  * `DEFAULT` sẵn có ở `004_operational.sql`, KHÔNG bịa thêm giá trị.
  */
 export interface AnswerTurnInput {
@@ -209,6 +209,21 @@ export interface AnswerTurnInput {
    *  cho lượt qua `scripts/eval_golden.mjs`. Cột đã tồn tại từ
    *  `004_operational.sql:47`, chỉ chưa từng được ghi (R14 mục 7). */
   golden_case_id: string | null;
+  /** SPEC-P02 §5.3/§8 (R6, BB-08) — ba chặng model tách bạch, phải sống trong
+   *  DB để trang trace `/bql/trace/[answer_turn_id]` đọc thẳng
+   *  `answer_turns.pipeline_steps`. Bắt buộc (không optional) để TypeScript
+   *  ép MỌI caller truyền — H25 (2026-09-23), trước gói này cột luôn `[]`. */
+  pipeline_steps: PipelineStep[];
+  /** H25 §7/W6 (2026-09-23) — bốn tín hiệu Đ07 (`SPEC-P02` §6) + histogram,
+   *  cần sống trong DB để `lib/adapters/metrics-store.ts` đọc thẳng
+   *  `s3_faithfulness` cho `/eval` (SPEC-P04 §1, P04-C1, BB-06). Bắt buộc:
+   *  nhánh escalate SỚM / action / clarify truyền `0/0/0/false/{}` tường
+   *  minh, KHÔNG dựa vào `DEFAULT` ngầm của cột. */
+  s1_retrieval_top1: number;
+  s2_eligible_ratio: number;
+  s3_faithfulness: number;
+  s4_conflict: boolean;
+  rejection_histogram: Record<string, number>;
 }
 
 export interface DataStore {
@@ -426,8 +441,11 @@ class PostgresDataStore implements DataStore {
          INSERT INTO answer_turns (
            conversation_id, user_message_id, assistant_message_id, question_vi,
            detected_intent, lifecycle_state, decision, reason_code, confidence,
-           gate_triggered, citations, claims, latency_ms, is_golden_run, golden_case_id
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+           gate_triggered, citations, claims, latency_ms, is_golden_run, golden_case_id,
+           pipeline_steps, s1_retrieval_top1, s2_eligible_ratio, s3_faithfulness,
+           s4_conflict, rejection_histogram
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$17::jsonb,
+           $18,$19,$20,$21,$22::jsonb)
          RETURNING id
        ),
        new_review AS (
@@ -455,6 +473,12 @@ class PostgresDataStore implements DataStore {
         input.is_golden_run,
         input.golden_case_id,
         originalDraftVi,
+        JSON.stringify(input.pipeline_steps),
+        input.s1_retrieval_top1,
+        input.s2_eligible_ratio,
+        input.s3_faithfulness,
+        input.s4_conflict,
+        JSON.stringify(input.rejection_histogram),
       ]
     );
     return { id: rows[0]!.id };

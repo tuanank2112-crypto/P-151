@@ -2,6 +2,25 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-23 (tiếp 4): ghi thật `pipeline_steps` + 4 tín hiệu (Đ50), script gate G16/G31, luật mỗi-commit-một-lần-não
+
+### Decisions
+- **Đ50**: `answer_turns` phải được ghi đủ `pipeline_steps`, `s1..s4`, `rejection_histogram` — 0/512 lượt trước đó rỗng, faithfulness trên `/eval` là 0.0 giả (G46).
+- **AGENTS.md §5.D.4**: mỗi commit = một lần cập nhật não. **§5.K.2**: worker CẤM `git stash/checkout/reset` trên cây chung (G47).
+- Hook AI-log của BTC giữ nguyên (chủ tịch chốt, không đổi sang chế độ tiêu đề).
+
+### Added
+- `scripts/check_enum_closed.mjs` (G16/C-M2), `scripts/check_env.mjs` (OP-M3/OP-M11, G31) + `tests/check-env.test.ts` (9 test); `tests/pipeline-steps-persist.test.ts` (4 test, có ca conflict thật trên Postgres).
+- `AnswerTurnInput` + INSERT: `pipeline_steps`, `s1_retrieval_top1`, `s2_eligible_ratio`, `s3_faithfulness`, `s4_conflict`, `rejection_histogram` (`$17…$22`); mock lưu cùng, `__getMockAnswerTurnsForTesting`.
+- Hồ sơ: `handoffs/H24–H25`, `reports/R28–R29`, `evidence/{h24-gates,h25-pipeline-steps,so-h24-h25,so-gates/g08_*,so-gates/g16_*,so-gates/g31_*}`.
+
+### Changed
+- `scripts/eval_golden.mjs`: `GOLDEN_CONCURRENCY` ngoài 3–5 ⇒ exit 1 trước khi chạm model (P04-C9), không kẹp về biên.
+- `TESTING-ACCEPTANCE` §7: G16/G31 ✅ local; G11 ghi safety 13/16; G08 ghi chú cơ chế đã vá.
+
+### Đo được (cây gộp H24+H25, base `30a1ea4`)
+`tsc --noEmit` exit 0 · `run_tests.mjs` **251/251, 0 fail, 0 skip** · BB-05/07/10 = 0 · G16 `match: true` · G31 `=9` ⇒ exit 1 · round-trip Postgres `jsonb_array_length=2`, `s3=0.7500`.
+
 ## [Chưa phát hành] - 2026-09-23 (tiếp 3): đóng hai việc treo P05 + gate G03/G09/G10/G23
 
 **Chưa tăng SemVer** — chưa deploy. Commit: sau `d9e1a5e`.

@@ -1,0 +1,12 @@
+✔ H25 W2 (a): escalate sớm ở safety ⇒ mock answer_turns có pipeline_steps=[validate,safety], s1..s4/histogram giữ mặc định 0/0/0/false/{} (5.7539ms)
+✔ H25 W2/W6 (b): answer đầy đủ ⇒ mock answer_turns có draft+verify với model/ms số, s1/s2 trong [0,1], s3=faithfulness thật>0, s4=false, histogram là object (10.2202ms)
+✔ H25 W2/W6 (c): nhánh action ⇒ mock answer_turns có chặng 'action', s1..s4/histogram giữ mặc định 0/0/0/false/{} (chưa qua eligibility) (1.8085ms)
+✔ H25 W6 (d, thật, Postgres, DEF-03): G1_conflict ⇒ answer_turns.s4_conflict=true, pipeline_steps dừng đúng ở eligibility (7699.0985ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 16089.0868

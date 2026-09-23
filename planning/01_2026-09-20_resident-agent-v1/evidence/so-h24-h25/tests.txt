@@ -1,0 +1,10 @@
+✔ LIFECYCLE_STATES có đúng 4 phần tử và KHÔNG chứa clarification_required như reason_code (0.1106ms)
+ℹ tests 251
+ℹ suites 0
+ℹ pass 251
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 30790.9652
+test EXIT=0

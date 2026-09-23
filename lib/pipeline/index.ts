@@ -384,6 +384,15 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
   const principal = args.principal;
   const forceA2Error: ForceUpstreamError | undefined =
     args.forceUpstreamError === true ? "429" : args.forceUpstreamError;
+  // H25 §7/W6 — bốn tín hiệu Đ07 + histogram, ghi tường minh ở MỌI nhánh
+  // (kể cả escalate sớm/action/clarify chưa qua eligibility ⇒ giữ mặc định
+  // 0/0/0/false/{} thay vì để cột DB tự DEFAULT). `finally` đọc closure này
+  // giống hệt cách nó đọc `steps`.
+  let s1RetrievalTop1 = 0;
+  let s2EligibleRatio = 0;
+  let s3Faithfulness = 0;
+  let s4Conflict = false;
+  let rejectionHistogram: Record<string, number> = {};
 
   // ── Chặng 1 — validate ──────────────────────────────────────────────
   const trimmed = questionVi.trim();
@@ -471,6 +480,12 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
       latency_ms: Date.now() - turnStart,
       is_golden_run: args.is_golden_run ?? false,
       golden_case_id: args.golden_case_id ?? null,
+      pipeline_steps: steps,
+      s1_retrieval_top1: s1RetrievalTop1,
+      s2_eligible_ratio: s2EligibleRatio,
+      s3_faithfulness: s3Faithfulness,
+      s4_conflict: s4Conflict,
+      rejection_histogram: rejectionHistogram,
     });
   }
 
@@ -632,6 +647,11 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
       rejection_histogram: elig.rejection_histogram,
       top_rejected_reason: elig.top_rejected_reason,
     });
+    s1RetrievalTop1 = dec.s1;
+    s2EligibleRatio = dec.s2;
+    s3Faithfulness = dec.s3;
+    s4Conflict = conflictDetected;
+    rejectionHistogram = elig.rejection_histogram;
     // Đ38 — CHỈ gate G1_conflict mới kèm citations; G2_zero_eligible (không
     // mâu thuẫn, chỉ đơn giản là không có nguồn nào) giữ nguyên citations=[].
     const conflictCitations = conflictDetected ? await buildConflictCitations(store, elig) : [];
@@ -691,6 +711,11 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
       top_rejected_reason: elig.top_rejected_reason,
       top_rejected_on_topic: topRejectedOnTopic,
     });
+    s1RetrievalTop1 = dec.s1;
+    s2EligibleRatio = dec.s2;
+    s3Faithfulness = dec.s3;
+    s4Conflict = false;
+    rejectionHistogram = elig.rejection_histogram;
     return finish(escalateResult(dec.reason_code as ReasonCode, dec.gate, steps));
   }
 
@@ -723,6 +748,11 @@ export async function runTurn(args: RunTurnArgs): Promise<TurnResult> {
     rejection_histogram: elig.rejection_histogram,
     top_rejected_reason: elig.top_rejected_reason,
   });
+  s1RetrievalTop1 = dec.s1;
+  s2EligibleRatio = dec.s2;
+  s3Faithfulness = dec.s3;
+  s4Conflict = false;
+  rejectionHistogram = elig.rejection_histogram;
 
   assertStepOrder(steps);
 

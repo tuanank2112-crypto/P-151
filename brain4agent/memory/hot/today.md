@@ -21,6 +21,8 @@ SO phóng 2 worker song song (H22 audit_log · H23 dashboard), tự đo G23, ch�
 
 ### ⛔ Chờ người / treo: hạn mức A2/A3 (chỉ `3.5-flash-lite` sống lúc 09:45) ⇒ `eval:golden --resume` sau; dọn DB fixture; deploy Vercel; `origin/main`.
 
+### ✅ Đợt 4 (10:20–11:00, H24/H25): phát hiện G46 (`pipeline_steps`/`s1..s4` = 0/512 ⇒ faithfulness `/eval` giả) ⇒ Đ50, H25 vá + test 4 ca + round-trip Postgres; H24 viết `check_enum_closed.mjs`/`check_env.mjs`, `eval_golden` không kẹp ⇒ G16/G31 ✅. Golden `--resume`: safety 13/16 (0 fail). Sự cố G47: H24 `git stash` trên cây chung làm H25 phải làm lại — luật mới AGENTS §5.K.2; `stash@{0}` dư còn trong kho (agent bị chặn `stash drop`, người xoá). SO đo lại cây gộp: tsc 0 · **251/251** · BB 0/0/0.
+
 ### 📜 Luật mới (chủ tịch chốt ~10:20): **mỗi commit = một lần cập nhật não** — ghi vào `AGENTS.md` §5.D.4 + kernel; không còn commit "code trước, não sau". Hook AI-log của BTC **giữ nguyên** (đề xuất chế độ `title` đã hoàn lại, không áp dụng). Hạn mức 10:20: `3.5-flash` + `3.5-flash-lite` sống ⇒ Golden `--resume` đang chạy nền.
 
 ### 🔁 Sửa não sai (người dùng chỉ ra): hook AI-log ĐÃ cài từ `b00dfad` (`.claude/settings.json` + pre-push), não vẫn ghi "chờ người tạo"; đã push `9ac796c` → `origin/feature/nhuy`, pre-push nộp 13 entry → 202. Đo thêm: `AI_LOG_API_KEY` trống ở Process/User/Machine ⇒ nộp không `Authorization` — cần người đặt key hoặc xác nhận với BTC.
