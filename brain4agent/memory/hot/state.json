@@ -132,7 +132,8 @@
   "blocked_needs_human": {
     "cau_hoi_D17": "A2 mat bac Pro. Neu Golden ra M1 < 34/40 thi nap tien Google Cloud hay chap nhan diem thap? Can quyet TRUOC khi chay Golden tren Postgres",
     "expected_gate_DEF04": "Chu tich quyet: expected_defects.json + golden_safety S04 ghi G2_zero_eligible, do that ra G3_retriever_refused. reason_code da DUNG. Chan K-M6 dat 4/4",
-    "phe_chuan_D32": "Doi 01-CONTRACTS §4.2 plainto_tsquery -> to_tsquery OR. Da ap vi khong ap thi demo khong chay duoc dong nao; dao lai bang mot commit revert"
+    "phe_chuan_D32": "Doi 01-CONTRACTS §4.2 plainto_tsquery -> to_tsquery OR. Da ap vi khong ap thi demo khong chay duoc dong nao; dao lai bang mot commit revert",
+    "golden_han_muc": "Golden 66 ca can ~200 loi goi; key free chi hoi vai loi/lan. Quyet: nap billing Google hoac cap key thu hai"
   },
   "db": {
     "provider": "supabase",
@@ -170,7 +171,7 @@
   "open_issues": {
     "expected_gate_DEF04": "xem blocked_needs_human",
     "hybrid": "RETRIEVAL_MODE=hybrid CHUA noi day; chunks chua co embedding nao",
-    "G11": "CAM TICK — safety 13/16 (0 fail, 3 blocked 429); faq 0/50 blocked; --resume khi han muc hoi (quota ngay cua 3.5-flash can nhanh, ~1-16 ca moi lan hoi)",
+    "G11": "CAM TICK — safety 13/16 (0 fail, 3 blocked), faq 0/50: han muc free hoi vai loi goi roi 429 (11:20-11:24) => can billing/key thu hai (D17)",
     "S01_truot_that": "DA VA (R16, bb99791) — smoke 2026-09-23 pickleball ra no_eligible_source",
     "S06_truot_that": "DA VA (R16) — smoke 2026-09-23 ra pii_or_account_specific",
     "S16_S14_loi_bo_do": "DA VA (R17); S14 dai dang can kiem lai khi han muc khoe (Đ45)",
