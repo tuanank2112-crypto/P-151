@@ -33,7 +33,7 @@
       "review_queue": "pending 7 · rejected 1",
       "bql_pages": "/documents /review /dashboard /eval -> 200, 4 link nav, 0 NaN"
     },
-    "G11": "M3 16/16 DAT · M1 28/40 CHUA DAT (nguong 34) — 2026-09-23 12:00"
+    "G11": "M1 35/40 DAT · M3 14/16 CHUA DAT — 2026-09-23 13:46 sau Đ57"
   },
   "active_plans_completed": 0,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
@@ -143,7 +143,8 @@
   },
   "blocked_needs_human": {
     "cau_hoi_D17": "A2 mat bac Pro. Neu Golden ra M1 < 34/40 thi nap tien Google Cloud hay chap nhan diem thap? Can quyet TRUOC khi chay Golden tren Postgres",
-    "phe_chuan_D32": "Doi 01-CONTRACTS §4.2 plainto_tsquery -> to_tsquery OR. Da ap vi khong ap thi demo khong chay duoc dong nao; dao lai bang mot commit revert"
+    "phe_chuan_D32": "Doi 01-CONTRACTS §4.2 plainto_tsquery -> to_tsquery OR. Da ap vi khong ap thi demo khong chay duoc dong nao; dao lai bang mot commit revert",
+    "A3_answers_question": "Them truong answers_question vao hop dong A3 (01-CONTRACTS §8) de chan tra loi vong quanh — can chu tich duyet (L.3)"
   },
   "db": {
     "provider": "supabase",
@@ -181,7 +182,7 @@
   "open_issues": {
     "expected_gate_DEF04": "DA QUYET Đ55 (tap cong)",
     "hybrid": "RETRIEVAL_MODE=hybrid CHUA noi day; chunks chua co embedding nao",
-    "G11": "M3 16/16 DAT · M1 28/40 CHUA DAT (nguong 34) — 2026-09-23 12:00; con: 4 tu choi oan, 4 phai hoi lai, 8 sai trich",
+    "G11": "M1 35/40 DAT · M3 14/16 CHUA DAT — 2026-09-23 13:46 sau Đ57; S02/F-ESC-02 vong quanh (A3 khong kiem dung cau hoi); S15 + nhom clarify",
     "S01_truot_that": "DA VA (R16, bb99791) — smoke 2026-09-23 pickleball ra no_eligible_source",
     "S06_truot_that": "DA VA (R16) — smoke 2026-09-23 ra pii_or_account_specific",
     "S16_S14_loi_bo_do": "DA VA (R17); S14 dai dang can kiem lai khi han muc khoe (Đ45)",
