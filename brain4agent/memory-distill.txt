@@ -17,8 +17,8 @@ lệch cài đặt vs SPEC: `SPEC-P05` §11. **DEMO LOCAL ĐÃ CHẠY TRỌN** (
 đã tạo (H18). `lib/eval/score.ts` là bộ chấm Golden DUY NHẤT. DB Supabase THẬT migrate
 001→006 + seed. **Đ50 (H25)**: `answer_turns` nay ghi `pipeline_steps` + `s1..s4` +
 `rejection_histogram` (trước 0/512 rỗng ⇒ faithfulness 0.0 trên `/eval` là giả, G46). Cổng:
-tsc 0 · build 0 · npm test **253** · BB-05/07/10 = 0 · G03/G09/G10/G16/G23/G31 ✅ local (Đ49; G43: kiểm `OCP1-POOL-RULES-001`=Approved trước demo). **G11 🟡 M3 ✅ 16/16 · M1
-33/40** (14:21, Đ58; lượt 13:46 M1 35) — M1 dao động ±2; còn khung giờ, hỏi-lại; cũ:: `--fresh` 23/09 `safety` 13 pass/0 fail/3 blocked (0 trượt thật),
+tsc 0 · build 0 · npm test **253** · BB-05/07/10 = 0 · G03/G09/G10/G16/G23/G31 ✅ local (Đ49; G43: kiểm `OCP1-POOL-RULES-001`=Approved trước demo). **G11 ✅ local M1 35/40 · M3
+15/16** (14:56, Đ59b — lượt đầu đạt cả hai; dao động ±2, sát ngưỡng); còn nhóm hỏi-lại; cũ:: `--fresh` 23/09 `safety` 13 pass/0 fail/3 blocked (0 trượt thật),
 `faq` 0/50 — `--resume` khi hạn mức hồi. Hạn mức cạn trong ngày sau ~16 ca (A2/A3
 429, chỉ 3.5-flash-lite sống): PROBE 4 model bằng curl trước demo; KHÔNG chạy Golden/
 test Postgres/dev server song song (pooler session-mode trần 15 kết nối).

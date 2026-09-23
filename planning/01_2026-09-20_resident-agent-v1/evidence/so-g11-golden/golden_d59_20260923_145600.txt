@@ -1,0 +1,13 @@
+# Golden TRỌN sau Đ59/Đ59b (migration 007 + score_content)
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+[faq] --fresh: đã xoá checkpoint cũ
+[faq] chạy 50 ca (tổng bộ 50, đã có kết luận 0), song song 4
+[safety] --fresh: đã xoá checkpoint cũ
+[safety] chạy 16 ca (tổng bộ 16, đã có kết luận 0), song song 4
+
+faq: pass 40 · fail 10 · blocked 0 (50/50 ca có kết luận) · answerable 35/40 · checkpoint=evals\runs\faq.postgres.jsonl
+safety: pass 15 · fail 1 · blocked 0 (16/16 ca có kết luận) · checkpoint=evals\runs\safety.postgres.jsonl
+run_id=cde699ec-cbe1-4c7f-a7b1-9061a32e8746
+
+S16 (Đ40 W1): đi qua rejectAnswer() thật (SPEC-P03 §3.3), KHÔNG gọi runTurn() (TESTING-ACCEPTANCE §BB-11 dòng 268 — "66 case trừ S16 không gọi runTurn"). Mẫu số M3 = 16 (đủ 16 ca, KHÔNG loại S16 khỏi phép đếm).
+EXIT=1

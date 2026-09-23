@@ -21,6 +21,8 @@ SO phóng 2 worker song song (H22 audit_log · H23 dashboard), tự đo G23, ch�
 
 ### ⛔ Chờ người / treo: hạn mức A2/A3 (chỉ `3.5-flash-lite` sống lúc 09:45) ⇒ `eval:golden --resume` sau; dọn DB fixture; deploy Vercel; `origin/main`.
 
+### ✅ Golden 14:56 sau Đ59/Đ59b: **M1 35/40 · M3 15/16 — G11 ✅ local lần đầu** (khung giờ đã đạt). Chủ tịch hỏi "đã có agent booking chưa, sao chỉ chat": đo production bằng Playwright lúc 15:03 — đặt sân bóng bàn qua chat ⇒ "Đã thực hiện xong", RC-203OLH23, nút Hoàn tác, chặng `action`, trang Biên nhận khớp; đã hoàn tác. Chặng safety (A1 lite) 39,8 s — chậm, dễ bị tưởng là "chỉ chat".
+
 ### 🗃 Đợt 16 (chủ tịch "duyệt migration" + "chuyển thông tin cho teammate"): H30 chạy 007 thật ⇒ khung giờ hạng 1 nhưng S03 mất G1 (G54, production ~30 phút). Đ59b: `score_content` cho E-5/s1 ⇒ 5/5 probe, 292/292, deploy lại. Soạn tin nhắn cho đội (URL + tài khoản + test nhanh, không đăng web vì có mật khẩu).
 
 ### 🔬 Thử TOP_K 16 (không commit): M1 vẫn 33/40, xáo 6 ca, khung giờ vẫn trượt ⇒ bỏ. Căn nguyên G53: `chunks.tsv` không có tiêu đề. Chờ duyệt migration đưa tiêu đề vào chỉ mục.
