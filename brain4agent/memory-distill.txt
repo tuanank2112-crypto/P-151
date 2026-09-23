@@ -53,6 +53,7 @@ plan.md` §2 (Đ01–Đ50) → `specs/00-ARCHITECTURE.md` → 8 file SPEC còn l
   `specs/01-CONTRACTS.md`.
 - Fallback (Đ53): cả chuỗi Gemini 429/503 ⇒ Vyce (schema trong prompt + Zod); DeepSeek
   SOẠN A2, Sonnet CHẤM A3 (chủ tịch chốt); steps ghi `vyce:<model>`; test ghim tắt.
+- BẤT BIẾN P05 (23/09): hành động agent PHẢI có người xác nhận + bằng chứng + màn BQL kiểm soát (CẤM viện Nhóm 11).
 - Model (D17, GEMINI_API_KEY o .env.local): A1 `gemini-3.5-flash-lite` · A2
   `gemini-3.5-flash` · A3 `gemini-2.5-flash`. CAM `3.7`/`3.8-flash` (503) va moi bac Pro
   (429 — sau cong thanh toan) => A2 mat model manh, rui ro vao faithfulness.
@@ -88,7 +89,7 @@ plan.md` §2 (Đ01–Đ50) → `specs/00-ARCHITECTURE.md` → 8 file SPEC còn l
 - Source of Truth: 1. Code hiện tại -> 2. Docs commit -> 3. `memory-distill.txt` -> 4. `changelog.md`.
 - SemVer 2.0.0: Tự động phân loại MAJOR (vX.0.0), MINOR (vx.Y.0), PATCH (vx.y.Z) và đồng bộ file cấu hình.
 - `memory-distill.txt` là kernel hiện trạng, luôn < 100 dòng, ghi đè thay vì append.
-- MỖI COMMIT = MỘT LẦN CẬP NHẬT NÃO (AGENTS.md §5.D.4, chốt 2026-09-23): commit nào cũng kèm
+- MỖI COMMIT = MỘT LẦN CẬP NHẬT NÃO (AGENTS.md §5.D.4; hook pre-commit CHẶN — `scripts/setup_brain_hook.sh`): commit nào cũng kèm
   `today.md` + `state.json` (+ kernel/roadmap/changelog/index/gotchas khi chạm) — không có
   commit "code trước, não sau". Hook AI-log của BTC GIỮ NGUYÊN (chủ tịch chốt 23/09).
 - Không dùng file nháp task.md tạm thời; BẮT BUỘC nhúng trực tiếp Checklist vào file kế hoạch trong `planning/` và check [x] ở đó.

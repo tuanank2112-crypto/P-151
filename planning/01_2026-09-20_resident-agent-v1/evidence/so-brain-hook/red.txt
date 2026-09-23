@@ -1,0 +1,5 @@
+# ĐỎ: stage 1 file ngoài não, không kèm memory/hot
+warning: in the working copy of 'tests/_hook_probe_tmp.ts', LF will be replaced by CRLF the next time Git touches it
+[brain] CHẶN COMMIT: có thay đổi ngoài brain4agent/ nhưng KHÔNG cập nhật brain4agent/memory/hot/ (today.md / state.json).
+[brain] Luật AGENTS.md §5.D.4 — mỗi commit = một lần cập nhật não. Cập nhật não rồi commit lại.
+commit EXIT=1

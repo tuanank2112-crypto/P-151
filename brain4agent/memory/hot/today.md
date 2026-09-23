@@ -21,6 +21,8 @@ SO phóng 2 worker song song (H22 audit_log · H23 dashboard), tự đo G23, ch�
 
 ### ⛔ Chờ người / treo: hạn mức A2/A3 (chỉ `3.5-flash-lite` sống lúc 09:45) ⇒ `eval:golden --resume` sau; dọn DB fixture; deploy Vercel; `origin/main`.
 
+### 🔒 Chủ tịch: "commit nhưng không cập nhật não à? thêm quy tắc này vào não" — commit `1f0a585` CÓ đổi 3 file não, nhưng luật mới chỉ dựa vào agent tự giác ⇒ thêm hook `pre-commit` (`scripts/check_brain_in_commit.sh`, cài qua `scripts/setup_brain_hook.sh`) chặn commit thiếu `brain4agent/memory/hot/`; chứng minh ĐỎ (exit 1, `evidence/so-brain-hook/red.txt`). Đưa bất biến P05 "hành động phải có xác nhận + bằng chứng + BQL kiểm soát" vào kernel và đánh dấu vùng cấm Nhóm 11 SPEC-P05 là bị thay thế.
+
 ### 🧾 Chủ tịch chỉ ra lỗ hổng P05 (15:1x): agent báo "đã đặt" nhưng KHÔNG ai xác nhận, KHÔNG bằng chứng chi tiết, BQL KHÔNG thấy/kiểm soát lượt đặt. Đo: `confirmation_mode="auto"` cố định (SPEC-P05 §3.2 lược Nhóm 11); console BQL không có màn nào đọc `bookings`; biên nhận chỉ lưu tham số + mã. Ví dụ thật: RC-XFBL1D2V (pickleball 16:00 23/09, tạo 15:04, không rõ ai) — BQL không thấy. Đề xuất chờ duyệt: đặt 2 bước (chờ BQL xác nhận, giữ chỗ) · màn BQL `/bookings` Duyệt/Từ chối/Huỷ + audit · trang chi tiết biên nhận có ảnh chụp chính sách + dòng thời gian; chọn A (BQL duyệt mọi lượt, khuyên) / B (tự xác nhận + BQL huỷ được) / C (theo tiện ích).
 
 ### ✅ Golden 14:56 sau Đ59/Đ59b: **M1 35/40 · M3 15/16 — G11 ✅ local lần đầu** (khung giờ đã đạt). Chủ tịch hỏi "đã có agent booking chưa, sao chỉ chat": đo production bằng Playwright lúc 15:03 — đặt sân bóng bàn qua chat ⇒ "Đã thực hiện xong", RC-203OLH23, nút Hoàn tác, chặng `action`, trang Biên nhận khớp; đã hoàn tác. Chặng safety (A1 lite) 39,8 s — chậm, dễ bị tưởng là "chỉ chat".
@@ -102,68 +104,5 @@ tsc 0 · build 0 · **184/184 test** · BB-05/07/10 = 0 · smoke demo local: Q1 
 
 ### ⛔ Bị chặn / chờ người:
 `delete from conversations` (dọn ~460 dòng fixture) bị classifier chặn — người chạy; `.claude/settings.json` (hook AI-log) worker bị chặn quyền — người tạo; hạn mức Gemini (3.5 và 3.6 đều cạn trong ngày); scope Vercel; `origin/main`.
-
----
-
-## 🏁 Phiên 2026-09-23 — Đọc não + rà toàn repo đối chiếu mục tiêu ban đầu (chuẩn bị demo)
-
-### 🎯 Chỉ đạo: *"đọc não. sau đó rà soát toàn bộ repo xem có đúng chuẩn mục tiêu ban đầu không? tôi cần demo"*.
-SO phóng 3 agent độc lập (rubric vs code · hồ sơ planning vs đĩa · bấm thử thật trên Supabase) và tự đo lại các điểm quyết định.
-
-### 📊 Số đo:
-tsc 0 · build 0 (clone sạch) · test **172/172** · BB-05/07/10 = 0 · K-M1/K-M2 exit 0 · HEAD `e8aa9f0` = `origin/feature/nhuy`.
-Rubric R1–R10 khi bấm thử thật: **2 ✅ (R2, R10) · 4 🟡 (R5, R7, R9, R10-số) · 4 ⛔ (R1, R3, R4, R6, R8)**.
-DB: 19/98/98 · users 2 · conversations 450 · answer_turns 430 (golden 40) · review_queue 1 (0 pending) · chunks có embedding 0.
-`/eval`: M1 2.5% (1/40) · M3 12.5% (2/16) · faithfulness 0.0 — bộ Golden mới chạy 10/56 ca.
-
-### 🔴 Phát hiện chặn demo (gotcha G33–G38):
-G33 UI 403 mọi câu · G34 A2 chết · G35 0 link nav + `/bql/*` 404 · G36 review_queue không có đường ghi · G37 test nhuộm DB demo · G38 `origin/main` rỗng sản phẩm + thiếu 10 deliverables BTC + chưa cài hook AI-log.
-
-### 📝 Hồ sơ/não lệch (đã sửa kernel; còn lại ghi nợ):
-Não ghi "Đ37/Đ38 chưa commit, test 143" trong khi đã commit 4 lần sau, test 172 (đã sửa `memory-distill.txt`). `TESTING-ACCEPTANCE.md` §7: 31/31 gate vẫn ⬜ chưa ai cập nhật. R06/R07 thiếu 3 dòng Handoff/Base/Head. `evidence/g11-golden/` (untracked) và `evidence/so-d25-d27/` mồ côi. G30 chạy nguyên văn ra 2 dòng false-positive.
-
-### ⏸ Chưa làm: chưa sửa dòng code nào (phiên chỉ rà soát); chưa cập nhật `state.json`/`roadmap.md` chi tiết — làm cùng đợt vá.
-
----
-
-# 📅 Nhật Ký Làm Việc Ngày 2026-09-22 (Session Memory Log)
-
-> Cập nhật lúc: `2026-09-22T12:00:00.000Z` | Phiên bản: `v1.0.0-d37-d38-golden-first-run`
-
----
-
-## 🏁 Phiên thứ hai 2026-09-22 — vá Đ37/Đ38, lượt Golden ĐẦU TIÊN chạy thật trên Postgres
-
-### 🎯 Đã làm:
-- **Đ37 (`conversation_id` phải là uuid, G26) và Đ38 (citations cho `G1_conflict`, G28)
-  ĐÃ THI CÔNG XONG** — nằm trong working tree, CHƯA COMMIT. `npx tsc --noEmit` exit 0 ·
-  `node scripts/run_tests.mjs` **143 pass / 0 fail / 0 skip** (trước 134; 9 test mới:
-  `tests/conversation-id.test.ts` + `tests/conflict-citations.test.ts`).
-- **Lượt `eval:golden` ĐẦU TIÊN trong đời dự án chạy thật trên Postgres.** Bộ `safety`:
-  **pass 11 · fail 4 · blocked 1** (15/16 có kết luận), `EXIT=3`, dưới ngưỡng
-  `M3 ≥ 15/16` ⇒ **CẤM tick `G11`**. Bộ `faq`: **pass 0 · fail 0 · blocked 5**,
-  `answerable 0/40`, `EXIT=3` — **cạn hạn mức Gemini**, cầu dao `QUOTA_STREAK_STOP`
-  dừng sớm; đây là **blocked Tầng 1 (Đ26), TUYỆT ĐỐI KHÔNG phải trượt**. `M1` chưa
-  có số. Bằng chứng: `planning/01_2026-09-20_resident-agent-v1/evidence/uuid-conflict/`
-  (`tsc.txt`, `tests.txt`, `trace_postgres_d37.txt`, `golden_safety_postgres.txt`,
-  `golden_safety_postgres_resume.txt`, `golden_safety_s04_s14.txt`,
-  `golden_faq_postgres.txt`).
-- **Bốn ca trượt `safety` đã phân loại** (chi tiết đầy đủ ở `plan.md` Đ40/Đ41, chưng
-  cất vào gotcha G29–G32): `S16` (không đi qua `runTurn`, `TESTING-ACCEPTANCE.md`
-  dòng 268) + `S14` (ca bơm lỗi có chủ đích, luật phân lập Tầng 1 nuốt luôn ca kiểm
-  thử) = **lỗi BỘ ĐO** · `S01` (DEF-01, cùng họ DEF-04/Đ28, nhãn
-  `source_expired_or_unknown` bịa lý do khi chưa từng có nguồn) + `S06` (từ chối
-  đúng nhưng nhãn PII sai, mất bằng chứng Đ06) = **trượt THẬT của sản phẩm**.
-- **Agent audit độc lập rà hồ sơ:** tìm ra `reports/R11` thiếu hoàn toàn ba dòng
-  `Handoff:`/`Base:`/`Head:`, `reports/R12` chỉ có `Base:` sai vị trí (dòng 105) —
-  **ĐÃ VÁ** cả hai, đưa đúng dòng 2–4 (Luật K.4). Cũng phát hiện `scripts/demo_r7.mjs`
-  mà `TESTING-ACCEPTANCE` đòi cho gate `R7`/`G09` KHÔNG TỒN TẠI trên đĩa — ghi vào
-  `roadmap.md`, CHƯA tự viết (ngoài phạm vi gói này).
-
-### ⏸ Chưa xong / chờ người:
-Đ37/Đ38 chờ thẩm định rồi mới commit · `G11` vẫn CẤM TICK (dưới ngưỡng + 2 lỗi bộ đo
-+ `M1` blocked) · `S01`/`S06` chưa được vá thật · `scripts/demo_r7.mjs` canonical
-chưa viết · hạn mức Gemini cần hồi để chạy lại bộ `faq` · các việc treo khác từ
-phiên trước (xem phiên dưới) không đổi.
 
 ---

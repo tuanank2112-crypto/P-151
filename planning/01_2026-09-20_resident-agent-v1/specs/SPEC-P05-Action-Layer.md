@@ -179,6 +179,8 @@ chuyển sang lệnh ghi. Mảng rỗng ⇒ gọi `create_booking` được.
 
 CẤM thêm lại các nhóm này "cho đầy đủ". Chúng bị lược **có lý do**, không phải quên.
 
+> **BỊ THAY THẾ một phần (chủ tịch, 2026-09-23):** dòng "Nhóm 11 — `confirmation_mode`… cố định `auto`" KHÔNG còn hiệu lực. Chủ tịch chỉ ra: agent báo "đã đặt" mà không ai xác nhận, không bằng chứng, BQL không kiểm soát là thiếu sót sản phẩm. Thiết kế thay thế (đặt 2 bước + màn BQL `/bookings` + chi tiết biên nhận) chờ chủ tịch chọn A/B/C — xem `plan.md` và `brain4agent/roadmap.md` mục 0. CẤM viện dẫn vùng cấm Nhóm 11 để gạt yêu cầu này.
+
 ---
 
 ## 4. Schema của gói — bảng RIÊNG `[VC-09]`

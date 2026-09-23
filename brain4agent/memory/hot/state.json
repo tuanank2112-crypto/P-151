@@ -217,7 +217,8 @@
     "remote": "origin P-151 · CHI push feature/nhuy (chu tich chot 23/09, khong tao branch moi, khong dung origin/main)"
   },
   "rules_added": {
-    "2026-09-23": "AGENTS.md §5.D.4 — moi commit = mot lan cap nhat nao; hook AI-log BTC giu nguyen (khong doi che do title)"
+    "2026-09-23": "AGENTS.md §5.D.4 — moi commit = mot lan cap nhat nao; hook AI-log BTC giu nguyen (khong doi che do title)",
+    "2026-09-23b": "hook pre-commit chan commit thieu brain4agent/memory/hot (scripts/check_brain_in_commit.sh); bat bien P05 xac nhan + bang chung + BQL kiem soat"
   },
   "docs_legacy": "docs/_legacy-v0.2/ (6 dac ta v0.2, doi 2026-09-23 bang git mv)",
   "deploy": {
