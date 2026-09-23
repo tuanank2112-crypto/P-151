@@ -76,12 +76,12 @@
       "H23 dashboard cot actioned",
       "G09 demo_r7 exit 0 · G03/G10/G23 tick local (Đ49)"
     ],
-    "next": "NGUOI: don DB fixture, tao .claude/settings.json + key Phoenix, deploy Vercel (scope + pooler 6543), dua san pham len origin/main, push. AGENT: eval:golden --resume (safety 4 ca + faq 50 ca) khi han muc A2/A3 hoi; cap nhat TESTING-ACCEPTANCE §7 cot deploy sau deploy; P06 dien tay tren trinh duyet",
+    "next": "NGUOI: don DB fixture, dat AI_LOG_API_KEY (hook da cai), deploy Vercel (scope + pooler 6543), dua san pham len origin/main. AGENT: eval:golden --resume (safety 4 ca + faq 50 ca) khi han muc A2/A3 hoi; cap nhat TESTING-ACCEPTANCE §7 cot deploy sau deploy; P06 dien tay tren trinh duyet",
     "remaining": [
       "P01 deploy",
       "G11 (Golden tren chuoi model moi)",
       "don du lieu demo",
-      "hook AI-log (.claude/settings.json + key Phoenix)",
+      "AI_LOG_API_KEY trong (hook da cai)",
       "origin/main",
       "P06 dien tay tren trinh duyet",
       "G11: safety --resume 4 ca blocked + faq 50 ca (han muc)"
@@ -178,7 +178,7 @@
     "G35_khong_nav": "DA VA (H16)",
     "G36_review_queue_khong_ghi": "DA VA (H16) — enqueue trong insertAnswerTurn",
     "G37_test_nhuom_db": "DA VA (H17 + golden-injection) — con don du lieu cu (nguoi)",
-    "G38_origin_main_rong_deliverables": "deliverables da tao (H18); origin/main + hook .claude/settings.json + key Phoenix cho nguoi",
+    "G38_origin_main_rong_deliverables": "deliverables da tao (H18); hook AI-log DA CAI (b00dfad, pre-push nop 202); AI_LOG_API_KEY TRONG ca 3 muc tren may nay => nop khong Authorization; origin/main van rong",
     "testing_acceptance_gate_table": "cot local: G01/G04/G06/G07/G12/G14/G15/G19/G20/G21/G22 da tick ✅ (2026-09-23); cot deploy con ⬜ het (chua deploy)",
     "R06_R07_thieu_header": "thieu 3 dong Handoff/Base/Head (audit 2026-09-23)",
     "P05_viec_treo": "DA DONG (H22/R26 + H23/R27, 2026-09-23); audit sink fire-and-forget (G44)"
@@ -189,7 +189,7 @@
     "ghi_chu": "DEF-04 tren mock: reason_code DUNG, gate G3 (cho quyet)"
   },
   "git": {
-    "head": "sau d9e1a5e — commit dot 3 ngay 23/09 (H22/H23/gates)",
-    "remote": "origin https://github.com/AI20K-Build-Phase-Cohort-4/P-151.git · local main theo doi origin/feature/nhuy · origin/main = template Python rong (G38) · chua push dot 2026-09-23"
+    "head": "9ac796c = origin/feature/nhuy (push 2026-09-23 ~10:05)",
+    "remote": "origin https://github.com/AI20K-Build-Phase-Cohort-4/P-151.git · local main theo doi origin/feature/nhuy (DA PUSH 9ac796c) · origin/main = template Python rong (G38)"
   }
 }

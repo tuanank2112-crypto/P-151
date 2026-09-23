@@ -19,7 +19,9 @@ SO phóng 2 worker song song (H22 audit_log · H23 dashboard), tự đo G23, ch�
 
 ### 📊 Số đo cuối: tsc 0 · 238/238 · BB 0/0/0 · demo_r7 exit 0 · G23 0 · safety 12/0/4 · faq blocked.
 
-### ⛔ Chờ người / treo: hạn mức A2/A3 (chỉ `3.5-flash-lite` sống lúc 09:45) ⇒ `eval:golden --resume` sau; dọn DB fixture; `.claude/settings.json` + key Phoenix; deploy Vercel; `origin/main`; push.
+### ⛔ Chờ người / treo: hạn mức A2/A3 (chỉ `3.5-flash-lite` sống lúc 09:45) ⇒ `eval:golden --resume` sau; dọn DB fixture; deploy Vercel; `origin/main`.
+
+### 🔁 Sửa não sai (người dùng chỉ ra): hook AI-log ĐÃ cài từ `b00dfad` (`.claude/settings.json` + pre-push), não vẫn ghi "chờ người tạo"; đã push `9ac796c` → `origin/feature/nhuy`, pre-push nộp 13 entry → 202. Đo thêm: `AI_LOG_API_KEY` trống ở Process/User/Machine ⇒ nộp không `Authorization` — cần người đặt key hoặc xác nhận với BTC.
 
 ---
 

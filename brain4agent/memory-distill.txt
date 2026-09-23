@@ -23,11 +23,13 @@ CẤM TICK**: `--fresh` 23/09 `safety` 12 pass/0 fail/4 blocked (0 trượt th�
 429, chỉ 3.5-flash-lite sống): PROBE 4 model bằng curl trước demo; KHÔNG chạy Golden/
 test Postgres/dev server song song (pooler session-mode trần 15 kết nối).
 **CHỜ NGƯỜI:** dọn DB (`delete from conversations` — classifier chặn agent, backup ở
-scratchpad) · tạo `.claude/settings.json` hook AI-log + `AI_LOG_API_KEY` Phoenix · scope
+scratchpad) · đặt `AI_LOG_API_KEY` (hook AI-log ĐÃ cài ở `.claude/settings.json` + pre-push,
+nộp 202 nhưng KHÔNG Authorization vì biến trống cả 3 mức — kiểm bằng PowerShell) · scope
 Vercel + đổi `DATABASE_URL` sang pooler 6543 · `origin/main` đang là template rỗng (G38)
 · `expected_gate` DEF-04/S04 · Đ32. **CÒN TREO:** Golden `--resume` (4 ca safety + faq) ·
 `TESTING-ACCEPTANCE` §7 cột `deploy` toàn ⬜ · R06/R07 thiếu
-header · `setSectionExcluded` chưa UI · hybrid chưa nối · chưa push đợt 23/09.
+header · `setSectionExcluded` chưa UI · hybrid chưa nối. Đã push tới
+`origin/feature/nhuy` (= local `main`, `9ac796c`); `origin/main` vẫn là template rỗng.
 Cấm nói đã hoàn thành trước khi có bằng chứng máy chạy thật.
 `docs/` mô tả SẢN PHẨM CŨ đã hạ cấp — chỉ còn nguồn tham chiếu. Nguồn chân lý
 thiết kế đang hiệu lực, đọc theo thứ tự: `planning/01_2026-09-20_resident-agent-v1/
