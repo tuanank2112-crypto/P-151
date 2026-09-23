@@ -130,6 +130,7 @@ Dự án áp dụng chuẩn **SemVer 2.0.0 (`MAJOR.MINOR.PATCH`)**:
 1. **Chủ động đề xuất Commit:** Sau khi hoàn thành một nhiệm vụ, Agent **không được âm thầm bỏ qua** việc lưu trữ mã nguồn.
 2. **Đề xuất commit bằng lời, tiếng Việt:** liệt kê file sẽ stage và message dự kiến; KHÔNG dùng thẻ hỏi (Luật L.2). Người dùng gật thì stage tường minh và commit.
 3. **Nội Dung Commit Bằng Tiếng Anh (Strict English Commit Messages):** Toàn bộ nội dung Git Commit Messages khi được tạo ra BẮT BUỘC 100% phải được soạn thảo hoàn toàn bằng **Tiếng Anh (English)** theo chuẩn Conventional Commits (ví dụ: `feat(module): description`, `fix(module): description`).
+4. **Mỗi commit = một lần cập nhật não (luật chốt 2026-09-23):** KHÔNG có commit nào chỉ chứa code/tài liệu mà thiếu cập nhật `brain4agent/`. Mỗi commit BẮT BUỘC kèm tối thiểu `memory/hot/today.md` + `memory/hot/state.json` (và kernel/roadmap/changelog/index/gotchas khi nội dung commit chạm tới) mô tả đúng trạng thái SAU commit đó, kể cả SHA/nhánh đã push. Lý do: commit code trước rồi "đồng bộ não sau" đã làm kernel ghi sai hiện trạng (não nói "chờ người tạo hook AI-log", "chưa push" trong khi cả hai đã xong từ commit trước). Luật này ĐI TRƯỚC skill `nao-commit`: skill đó chỉ là cách thực hiện, không phải điều kiện để áp luật.
 
 ### E. Tư Duy Phân Lập Lỗi & Tự Phục Hồi Thích Ứng (Fault Isolation & Recovery Mindset)
 1. **Phân lập căn nguyên 4 tầng (Root Cause Isolation):**

@@ -165,7 +165,7 @@
   "open_issues": {
     "expected_gate_DEF04": "xem blocked_needs_human",
     "hybrid": "RETRIEVAL_MODE=hybrid CHUA noi day; chunks chua co embedding nao",
-    "G11": "CAM TICK — safety 12/16 (0 fail, 4 blocked 429); faq 0/50 blocked; --resume khi han muc hoi",
+    "G11": "CAM TICK — safety 12/16 (0 fail); --resume dang chay 10:20 (3.5-flash song lai)",
     "S01_truot_that": "DA VA (R16, bb99791) — smoke 2026-09-23 pickleball ra no_eligible_source",
     "S06_truot_that": "DA VA (R16) — smoke 2026-09-23 ra pii_or_account_specific",
     "S16_S14_loi_bo_do": "DA VA (R17); S14 dai dang can kiem lai khi han muc khoe (Đ45)",
@@ -178,7 +178,7 @@
     "G35_khong_nav": "DA VA (H16)",
     "G36_review_queue_khong_ghi": "DA VA (H16) — enqueue trong insertAnswerTurn",
     "G37_test_nhuom_db": "DA VA (H17 + golden-injection) — con don du lieu cu (nguoi)",
-    "G38_origin_main_rong_deliverables": "deliverables da tao (H18); hook AI-log DA CAI (b00dfad, pre-push nop 202); AI_LOG_API_KEY TRONG ca 3 muc tren may nay => nop khong Authorization; origin/main van rong",
+    "G38_origin_main_rong_deliverables": "deliverables da tao (H18); hook AI-log DA CAI va GIU NGUYEN theo chu tich (23/09); AI_LOG_API_KEY nguoi dung giu ngoai repo; origin/main van rong",
     "testing_acceptance_gate_table": "cot local: G01/G04/G06/G07/G12/G14/G15/G19/G20/G21/G22 da tick ✅ (2026-09-23); cot deploy con ⬜ het (chua deploy)",
     "R06_R07_thieu_header": "thieu 3 dong Handoff/Base/Head (audit 2026-09-23)",
     "P05_viec_treo": "DA DONG (H22/R26 + H23/R27, 2026-09-23); audit sink fire-and-forget (G44)"
@@ -189,7 +189,10 @@
     "ghi_chu": "DEF-04 tren mock: reason_code DUNG, gate G3 (cho quyet)"
   },
   "git": {
-    "head": "9ac796c = origin/feature/nhuy (push 2026-09-23 ~10:05)",
+    "head": "sau ed66038 — commit luat §5.D.4",
     "remote": "origin https://github.com/AI20K-Build-Phase-Cohort-4/P-151.git · local main theo doi origin/feature/nhuy (DA PUSH 9ac796c) · origin/main = template Python rong (G38)"
+  },
+  "rules_added": {
+    "2026-09-23": "AGENTS.md §5.D.4 — moi commit = mot lan cap nhat nao; hook AI-log BTC giu nguyen (khong doi che do title)"
   }
 }

@@ -34,7 +34,6 @@ Cấm nói đã hoàn thành trước khi có bằng chứng máy chạy thật.
 thiết kế đang hiệu lực, đọc theo thứ tự: `planning/01_2026-09-20_resident-agent-v1/
 plan.md` §2 (Đ01–Đ49) → `specs/00-ARCHITECTURE.md` → 8 file SPEC còn lại → `docs/`.
 </repo_nature>
-
 <agent_startup_protocol>
 0. [BẮT BUỘC TIÊN QUYẾT] Chạy `node ../brain4agent.release/.agents/skills/.xay-dung-nao-bo/scripts/init_brain.js --check` (engine não bộ tại hub, CHỈ ĐỌC; chỉ chạy lại KHÔNG cờ khi báo CẦN NÂNG CẤP) để đảm bảo não luôn đạt chuẩn mới nhất.
 1. Đọc `brain4agent/memory-distill.txt` trước khi sửa code.
@@ -43,7 +42,6 @@ plan.md` §2 (Đ01–Đ49) → `specs/00-ARCHITECTURE.md` → 8 file SPEC còn l
 4. Sửa tối thiểu, đúng kiến trúc, tuân thủ nghiêm ngặt Spec-First.
 5. [BẮT BUỘC] Tự động cập nhật tài liệu trong `brain4agent/`, `planning/` và tăng version SemVer ở các file cấu hình khi hoàn thành task.
 </agent_startup_protocol>
-
 <project_foundation>
 - Tech Stack (Đ11+Đ25): Next.js + TypeScript trên Vercel · Postgres + pgvector trên
   SUPABASE, driver `pg` (Turso/SQLite đã BÁC — thiếu ts_rank_cd(...,32) của C-05) ·
@@ -90,7 +88,9 @@ plan.md` §2 (Đ01–Đ49) → `specs/00-ARCHITECTURE.md` → 8 file SPEC còn l
 - Source of Truth: 1. Code hiện tại -> 2. Docs commit -> 3. `memory-distill.txt` -> 4. `changelog.md`.
 - SemVer 2.0.0: Tự động phân loại MAJOR (vX.0.0), MINOR (vx.Y.0), PATCH (vx.y.Z) và đồng bộ file cấu hình.
 - `memory-distill.txt` là kernel hiện trạng, luôn < 100 dòng, ghi đè thay vì append.
-- Tự giác đồng bộ tài liệu ngay khi hoàn thành task, không đợi user nhắc.
+- MỖI COMMIT = MỘT LẦN CẬP NHẬT NÃO (AGENTS.md §5.D.4, chốt 2026-09-23): commit nào cũng kèm
+  `today.md` + `state.json` (+ kernel/roadmap/changelog/index/gotchas khi chạm) — không có
+  commit "code trước, não sau". Hook AI-log của BTC GIỮ NGUYÊN (chủ tịch chốt 23/09).
 - Không dùng file nháp task.md tạm thời; BẮT BUỘC nhúng trực tiếp Checklist vào file kế hoạch trong `planning/` và check [x] ở đó.
 - Toàn bộ skill dự án bắt buộc 100% nằm trong `.agents/skills/<name>/` (Single Skill Vault Invariant).
 - Đề xuất commit bằng lời tiếng Việt (KHÔNG thẻ hỏi — Luật L.2); commit message 100% Tiếng Anh (Conventional Commits).
