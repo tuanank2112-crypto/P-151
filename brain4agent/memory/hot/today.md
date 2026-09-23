@@ -21,6 +21,8 @@ SO phóng 2 worker song song (H22 audit_log · H23 dashboard), tự đo G23, ch�
 
 ### ⛔ Chờ người / treo: hạn mức A2/A3 (chỉ `3.5-flash-lite` sống lúc 09:45) ⇒ `eval:golden --resume` sau; dọn DB fixture; deploy Vercel; `origin/main`.
 
+### 🩹 Đợt 11 (chủ tịch: "ok" + "push lên branch" → "chỉ feature/nhuy, không tạo branch mới" + "deepseek soạn, qwen check"): nhánh local đổi `main`→`feature/nhuy`; `fix/golden-g11` tạo nhầm đã xoá (0 commit riêng). Đ54: prompt A2 cấm trả lời vòng quanh (+ vế bắt buộc trả lời khi có dữ kiện) ⇒ F-ESC-02/04 PASS; Vyce JSON hỏng ⇒ nhảy DeepSeek→Sonnet (test f). Qwen 403 Unsupported client mọi client ⇒ không dùng, A3 giữ Sonnet. Golden trọn chạy lại nền.
+
 ### 🧹 Đợt 10 (chủ tịch: Vercel hình như vẫn free + "cho phép dọn db fixture an toàn"): API Vercel: team `resident-agent-demo` `pro`/`trialing`, CHƯA có thanh toán, hết dùng thử ~2026-10-07 ⇒ không bị tính tiền, đừng bấm Upgrade. Dọn DB: chạy thử → chờ Golden xong → sao lưu JSON (`evals/runs/backup_fixture_1790138807178.json`, gitignore) → MỘT câu DELETE: xoá 414 hội thoại/630 tin/390 lượt/15 review; GIỮ mọi hội thoại có lượt golden (160) + 38 id evidence trích. Golden TRỌN 66/66 lần đầu: **M1 25/40, M3 13/16 — G11 ❌**; phân loại trượt ở evidence.
 
 ### 🔁 Đợt 9 (chủ tịch: "key vyce đi lấy nó mà làm fallback" → "cho sonnet chấm, deepseek soạn"): đo lại Vyce (system-role bỏ qua schema, user-role 6/6 JSON đúng) ⇒ Đ53: fallback sau chuỗi Gemini, schema trong prompt + Zod, `MODEL_FALLBACK_VYCE_A2/_A3`. 5 test (từng đỏ), 258/258; lượt thật ép 429 ⇒ DeepSeek soạn + Sonnet chấm, `answer` có trích dẫn. Nạp 4 biến lên Vercel, deploy lại. G50: lệnh bị từ chối vẫn đã ghi một phần (đảo chuỗi A3) — đã gỡ. Golden chạy nền với fallback.

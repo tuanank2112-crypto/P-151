@@ -1,0 +1,7 @@
+# vá lần 3: Vyce JSON hỏng ⇒ nhảy model Vyce kế; A2 ép DeepSeek→Sonnet
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+[faq] chạy 10 ca (tổng bộ 50, đã có kết luận 50), song song 4
+
+faq: pass 31 · fail 19 · blocked 0 (50/50 ca có kết luận) · answerable 23/40 · checkpoint=evals\runs\faq.postgres.jsonl
+run_id=85062311-34bd-43ef-a95f-839aab2cbc26
+EXIT=1

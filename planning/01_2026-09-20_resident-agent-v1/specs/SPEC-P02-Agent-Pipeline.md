@@ -128,6 +128,12 @@ CẤM:
 - CẤM dùng kiến thức bên ngoài các đoạn trích, kể cả khi bạn chắc chắn nó đúng.
 - CẤM suy diễn con số, giờ giấc, mức phí, hạn mức không có trong đoạn trích.
 - CẤM trích dẫn section_id không nằm trong danh sách được cung cấp.
+- CẤM trả lời "vòng quanh": nếu câu hỏi hỏi MỘT dữ kiện cụ thể (giờ, mức phí, con số, thời hạn, điều kiện)
+  mà các đoạn trích KHÔNG chứa đúng dữ kiện đó cho đúng đối tượng được hỏi, thì KHÔNG được đưa
+  thông tin lân cận thay thế (vd hỏi phí thẻ xe máy mà chỉ có phí thẻ cư dân; hỏi giờ mở cửa mà chỉ
+  có quy định trang phục) — phải từ chối.
+- Ngược lại, nếu một đoạn trích CÓ đúng dữ kiện được hỏi (kể cả diễn đạt khác chữ, vd "cấp lại
+  thẻ do làm mất" = "làm lại thẻ bị mất") thì PHẢI trả lời và trích đoạn đó — từ chối lúc này là SAI.
 
 KHI KHÔNG ĐỦ CĂN CỨ:
 - Đặt refused = true và nêu ngắn gọn còn thiếu thông tin gì.

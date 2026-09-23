@@ -2,6 +2,16 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-23 (tiếp 10): vá Golden đợt 1 (Đ54)
+
+### Fixed
+- A2 trả lời "vòng quanh" khi thiếu đúng dữ kiện (F-ESC-02, F-ESC-04 — nguy hiểm): prompt SPEC-P02 + `model.ts` thêm luật cấm + vế bắt buộc trả lời khi có dữ kiện.
+- Vyce trả JSON hỏng (6/50 ca lượt trọn đầu): kiểm JSON+Zod trong vòng Vyce, nhảy model Vyce kế; test (f).
+
+### Decisions
+- Qwen trên Vyce bị chặn 403 "Unsupported client" ⇒ không dùng; A3 giữ Sonnet.
+- Chỉ commit/push lên `feature/nhuy`, không tạo nhánh mới (chủ tịch).
+
 ## [Chưa phát hành] - 2026-09-23 (tiếp 9): fallback Vyce (Đ53)
 
 ### Decisions

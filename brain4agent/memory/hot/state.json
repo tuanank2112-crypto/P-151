@@ -117,7 +117,9 @@
       "A3_cham": "claude-sonnet-4-6,deepseek-v4.1",
       "chung": "claude-sonnet-4-6,deepseek-v4.1",
       "rang_buoc": "chi sau khi ca chuoi Gemini 429/503; schema trong prompt vai user; output qua Zod; forceUpstreamError khong duoc chua; steps.model tien to vyce:",
-      "vercel": "da nap 4 bien, deploy lai 2026-09-23"
+      "vercel": "da nap 4 bien, deploy lai 2026-09-23",
+      "qwen": "qwen3.8-flash 403 Unsupported client moi client — KHONG dung",
+      "drift": "Vyce JSON hong => thu lai 1 lan roi nhay model Vyce ke (Đ54)"
     }
   },
   "data_backend": {
@@ -205,8 +207,8 @@
     "ghi_chu": "DEF-04 tren mock: reason_code DUNG, gate G3 (cho quyet)"
   },
   "git": {
-    "head": "sau 82842c6 — don DB + Golden tron",
-    "remote": "origin https://github.com/AI20K-Build-Phase-Cohort-4/P-151.git · local main theo doi origin/feature/nhuy (DA PUSH 9ac796c) · origin/main = template Python rong (G38)"
+    "head": "feature/nhuy (local doi ten tu main) — Đ54",
+    "remote": "origin P-151 · CHI push feature/nhuy (chu tich chot 23/09, khong tao branch moi, khong dung origin/main)"
   },
   "rules_added": {
     "2026-09-23": "AGENTS.md §5.D.4 — moi commit = mot lan cap nhat nao; hook AI-log BTC giu nguyen (khong doi che do title)"

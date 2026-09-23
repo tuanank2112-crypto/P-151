@@ -1,0 +1,7 @@
+# vá prompt A2 lần 2 (thêm vế: có đúng dữ kiện thì PHẢI trả lời), A2 ép DeepSeek
+BACKEND=postgres — số NGHIỆM THU (chạy trên Postgres thật, Đ24)
+[faq] chạy 10 ca (tổng bộ 50, đã có kết luận 50), song song 4
+
+faq: pass 31 · fail 19 · blocked 0 (50/50 ca có kết luận) · answerable 23/40 · checkpoint=evals\runs\faq.postgres.jsonl
+run_id=85236865-737e-47d6-9fb7-d37952439e34
+EXIT=1

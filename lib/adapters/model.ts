@@ -527,13 +527,32 @@ async function callGemini(
  * che mất nguyên nhân thật. Trả kèm `model` đã dùng để pipeline ghi đúng
  * vào `steps` (R6).
  */
+/** Đ53 — validator JSON+Zod dùng cho vòng Vyce; ném ContractDriftError giống hệt đường parse cũ. */
+function zodValidator(schema: z.ZodTypeAny, label: string): (raw: string) => void {
+  return (raw) => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      throw new ContractDriftError(`JSON.parse hỏng (${label}): ${(e as Error).message}`);
+    }
+    const res = schema.safeParse(parsed);
+    if (!res.success) throw new ContractDriftError(`Zod hỏng (${label}): ${res.error.message}`);
+  };
+}
+
 async function callGeminiChain(
   agent: "A1" | "A2" | "A3",
   systemPromptVi: string,
   userPayload: unknown,
   responseSchema: unknown,
   maxOutputTokens: number,
-  forceUpstreamError?: ForceUpstreamError
+  forceUpstreamError?: ForceUpstreamError,
+  // Đ53 bổ sung (đo 2026-09-23: DeepSeek trả chuỗi rỗng / văn xuôi 6/50 ca):
+  // kiểm JSON+Zod NGAY trong vòng Vyce để model Vyce trả JSON hỏng thì NHẢY
+  // sang model Vyce kế (vd Sonnet). Gemini giữ nguyên hành vi cũ (drift không
+  // đổi model — G34), vì responseSchema của Gemini là ràng buộc thật.
+  validate?: (raw: string) => void
 ): Promise<GeminiCallResult & { model: AnyModel }> {
   const chain = agentModelChain(agent);
   // Đ53: bơm lỗi giả (test/Golden S14) KHÔNG được "chữa" bằng Vyce — ca đó
@@ -566,14 +585,21 @@ async function callGeminiChain(
     const isLast = j === vyce.length - 1;
     try {
       const r = await withUpstreamRetry(
-        () => callVyceOnce(model, systemPromptVi, userPayload, responseSchema, maxOutputTokens),
+        async () => {
+          const out = await callVyceOnce(model, systemPromptVi, userPayload, responseSchema, maxOutputTokens);
+          validate?.(out.raw); // ném ContractDriftError ⇒ withUpstreamRetry thử lại 1 lần cùng model
+          return out;
+        },
         { rateLimitRetries: isLast ? undefined : 0 }
       );
       return { ...r, model };
     } catch (err) {
       lastErr = err;
       const canFallOver =
-        !isLast && (err instanceof UpstreamRateLimited || err instanceof UpstreamOverloaded);
+        !isLast &&
+        (err instanceof UpstreamRateLimited ||
+          err instanceof UpstreamOverloaded ||
+          err instanceof ContractDriftError);
       if (!canFallOver) throw err;
     }
   }
@@ -860,7 +886,8 @@ export async function runClassifier(
     i,
     CLASSIFIER_RESPONSE_SCHEMA,
     2048,
-    opts?.forceUpstreamError
+    opts?.forceUpstreamError,
+    zodValidator(ClassifierOutputSchema, "classifier")
   );
   let parsed: unknown;
   try {
@@ -943,6 +970,12 @@ CẤM:
 - CẤM dùng kiến thức bên ngoài các đoạn trích, kể cả khi bạn chắc chắn nó đúng.
 - CẤM suy diễn con số, giờ giấc, mức phí, hạn mức không có trong đoạn trích.
 - CẤM trích dẫn section_id không nằm trong danh sách được cung cấp.
+- CẤM trả lời "vòng quanh": nếu câu hỏi hỏi MỘT dữ kiện cụ thể (giờ, mức phí, con số, thời hạn, điều kiện)
+  mà các đoạn trích KHÔNG chứa đúng dữ kiện đó cho đúng đối tượng được hỏi, thì KHÔNG được đưa
+  thông tin lân cận thay thế (vd hỏi phí thẻ xe máy mà chỉ có phí thẻ cư dân; hỏi giờ mở cửa mà chỉ
+  có quy định trang phục) — phải từ chối.
+- Ngược lại, nếu một đoạn trích CÓ đúng dữ kiện được hỏi (kể cả diễn đạt khác chữ, vd "cấp lại
+  thẻ do làm mất" = "làm lại thẻ bị mất") thì PHẢI trả lời và trích đoạn đó — từ chối lúc này là SAI.
 
 KHI KHÔNG ĐỦ CĂN CỨ:
 - Đặt refused = true và nêu ngắn gọn còn thiếu thông tin gì.
@@ -964,7 +997,8 @@ export async function runRetriever(
     i,
     RETRIEVER_RESPONSE_SCHEMA,
     4096,
-    opts?.forceUpstreamError
+    opts?.forceUpstreamError,
+    zodValidator(RetrieverOutputSchema, "retriever")
   );
   let parsed: unknown;
   try {
@@ -1052,7 +1086,8 @@ export async function runVerifier(
     i,
     VERIFIER_RESPONSE_SCHEMA,
     4096,
-    opts?.forceUpstreamError
+    opts?.forceUpstreamError,
+    zodValidator(VerifierOutputSchema, "verifier")
   );
   let parsed: unknown;
   try {

@@ -111,3 +111,29 @@ test("Đ53 (e) chủ tịch chốt: DeepSeek SOẠN (A2), Sonnet CHẤM (A3) qua
     delete process.env.MODEL_FALLBACK_VYCE_A3;
   }
 });
+
+test("Đ53 (f) model Vyce đầu trả JSON hỏng ⇒ nhảy sang model Vyce kế (drift ở Vyce được đổi model, Gemini thì không)", async () => {
+  process.env.GEMINI_API_KEY = "test-key";
+  process.env.MODEL_A2 = "gemini-3.5-flash";
+  process.env.VYCE_API_KEY = "test-vyce";
+  process.env.MODEL_FALLBACK_VYCE_A2 = "deepseek-v4.1,claude-sonnet-4-6";
+  const seen: string[] = [];
+  const f = (async (url: string | URL, init?: RequestInit) => {
+    if (String(url).includes("generativelanguage.googleapis.com")) return new Response("quota", { status: 429 });
+    const model = JSON.parse(String(init?.body)).model as string;
+    seen.push(model);
+    const content = model === "deepseek-v4.1" ? "Khi mất thẻ, cư dân cần..." : '{"ok": true}';
+    return new Response(JSON.stringify({ choices: [{ message: { content }, finish_reason: "stop" }], usage: {} }), { status: 200 });
+  }) as typeof fetch;
+  __setTransportForTesting({ fetch: f, sleep: async () => {} });
+  const validate = (raw: string) => {
+    try { JSON.parse(raw); } catch { throw new ContractDriftError("JSON.parse hỏng (test)"); }
+  };
+  try {
+    const r = await __internal.callGeminiChain("A2", "sys", {}, SCHEMA, 100, undefined, validate);
+    assert.equal(r.model, "vyce:claude-sonnet-4-6");
+    assert.equal(seen.filter((m) => m === "deepseek-v4.1").length, 2, "deepseek: 1 lần + 1 lần thử lại drift");
+  } finally {
+    delete process.env.MODEL_FALLBACK_VYCE_A2;
+  }
+});

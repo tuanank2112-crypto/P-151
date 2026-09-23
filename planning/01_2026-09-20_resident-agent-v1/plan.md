@@ -739,6 +739,16 @@ Ba agent rà độc lập + SO đo lại (`brain4agent/memory/hot/today.md` phi�
 
 **Lật được:** mục 1 khi 3.5-flash hồi (đổi lại một dòng env). Mục 2–4 không. **Chi phí lật mục 2:** hàng đợi HITL lại rỗng vĩnh viễn.
 
+### Đ54 — 2026-09-23 · Vá Golden đợt 1: A2 cấm trả lời "vòng quanh"; Vyce JSON hỏng ⇒ nhảy model Vyce kế; Qwen KHÔNG dùng được
+
+**Bối cảnh:** lượt Golden trọn đầu (M1 25/40, M3 13/16) có 2 ca NGUY HIỂM trả lời khi phải từ chối (F-ESC-02 phí thẻ xe máy → nêu phí thẻ cư dân; F-ESC-04 giờ bể bơi → nói về trang phục). Chủ tịch: "ok", rồi "deepseek soạn và qwen check".
+
+**Quyết định:** (1) Prompt A2 (SPEC-P02 §prompt + `model.ts`, chép y hệt): CẤM trả lời vòng quanh khi thiếu đúng dữ kiện được hỏi; vế ngược — CÓ đúng dữ kiện thì PHẢI trả lời (thêm sau khi vế đầu làm F-I01-04 từ chối oan). (2) `callGeminiChain` nhận `validate` (JSON+Zod) chạy TRONG vòng Vyce; JSON hỏng ⇒ thử lại 1 lần rồi nhảy model Vyce kế (DeepSeek → Sonnet); Gemini giữ nguyên (drift không đổi model). (3) **Qwen (`qwen3.8-flash`) bị Vyce chặn 403 "Unsupported client" với mọi client đã thử** (curl, UA OpenAI Python/JS, Node fetch) ⇒ KHÔNG dùng được; A3 giữ Sonnet (chủ tịch đã chốt trước), lựa chọn thay thế chạy được: `deepseek-v4-flash`, `agnes-3.0-flash`.
+
+**Đo (A2 ép DeepSeek):** 2 ca nguy hiểm PASS ở cả 3 lượt; 8 ca đối chứng dao động 6–8/8 giữa các lượt, ca trượt KHÁC nhau mỗi lượt ⇒ nhiễu của model soạn, cần lượt trọn để kết luận. 259/259, BB 0.
+
+**Lật được:** có. **Chi phí lật:** thấp.
+
 ### Đ53 — 2026-09-23 · Vyce làm FALLBACK sau chuỗi Gemini (LẬT Đ22 có điều kiện); DeepSeek soạn, Sonnet chấm
 
 **Bối cảnh:** key Gemini free chỉ hồi vài lời gọi rồi 429 ⇒ Golden (~200 lời gọi) không bao giờ xong, demo trực tiếp dễ chết ở A2. Chủ tịch: "key vyce đi lấy nó mà làm fallback", rồi chốt "cho sonnet chấm, deepseek soạn".
