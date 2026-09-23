@@ -1,0 +1,18 @@
+$ node --env-file=.env.local scripts/trace_sample.mjs --id 623dab77-6f3a-41dd-9fea-eaf5e866e535   # lượt TRƯỚC Đ50
+BACKEND=postgres (tra ngược theo id, không gọi model) · created_at=2026-09-23T02:32:13.019Z
+question: Trẻ em dưới 12 tuổi có được vào bể bơi một mình không?
+signals: s1=0.0000 s2=0.0000 s3=0.0000 s4=false
+pipeline_steps = [] — lượt ghi TRƯỚC Đ50/H25 (G46), không có log chặng.
+--- A1 classifier (chặng safety+intent) ---
+  (không chạy tới chặng này)
+--- A2 retriever (chặng draft) ---
+  (không chạy tới chặng này)
+--- A3 verifier (chặng verify) ---
+  (không chạy tới chặng này)
+--- kết quả ---
+decision=answer reason_code=—
+gate_triggered=—
+citations=["POOL-SAFE-03"]
+steps=
+G08: 0/3 khối có model
+EXIT=1
