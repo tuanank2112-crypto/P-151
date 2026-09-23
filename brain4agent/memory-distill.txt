@@ -75,7 +75,6 @@ plan.md` §2 (Đ01–Đ50) → `specs/00-ARCHITECTURE.md` → 8 file SPEC còn l
 - Planning: `planning/[STT]_[YYYY-MM-DD]_[Ten-Ngan]`, cố định path. Hồ sơ đang
   mở: `01_2026-09-20_resident-agent-v1/` (Đ01–Đ50; `handoffs/`↔`reports/`↔`evidence/`).
 </project_foundation>
-
 <brain_file_roles>
 - `memory-distill.txt`: kernel, đọc đầu tiên · `memory/hot/`: `today.md` + `state.json`.
 - `index.md`: router tài liệu, codebase map & entry points toàn diện.

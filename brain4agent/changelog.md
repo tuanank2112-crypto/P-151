@@ -6,7 +6,7 @@ Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên 
 
 ### Decisions
 - **Đ50**: `answer_turns` phải được ghi đủ `pipeline_steps`, `s1..s4`, `rejection_histogram` — 0/512 lượt trước đó rỗng, faithfulness trên `/eval` là 0.0 giả (G46).
-- **AGENTS.md §5.D.4**: mỗi commit = một lần cập nhật não. **§5.K.2**: worker CẤM `git stash/checkout/reset` trên cây chung (G47).
+- **AGENTS.md §5.D.4**: mỗi commit = một lần cập nhật não. **§5.D.5**: worker CẤM `git stash/checkout/reset` trên cây chung (G47).
 - Hook AI-log của BTC giữ nguyên (chủ tịch chốt, không đổi sang chế độ tiêu đề).
 
 ### Added

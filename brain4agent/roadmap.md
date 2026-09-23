@@ -73,7 +73,7 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
   `scripts/check_env.mjs` (G31 ✅, OP-M3 `6/6`), `eval_golden.mjs` ngoài 3–5 ⇒ exit 1. Đo lại
   độc lập trên cây gộp: `tsc` 0 · **251/251** · BB-05/07/10 = 0. Report `R28`, `R29`;
   evidence `evidence/{h24-gates,h25-pipeline-steps,so-h24-h25,so-gates}`. Sự cố G47 (worker
-  `git stash` trên cây chung) ⇒ luật mới ở AGENTS.md §5.K.2.
+  `git stash` trên cây chung) ⇒ luật mới ở AGENTS.md §5.D.5.
 
 - [x] **P05 — đóng hai việc treo (2026-09-23, H22/H23):** `DataStore.insertAuditLog()` +
   sink của `lib/pipeline/action.ts` ghi `audit_log` mức `warn` thật khi `WriteTimeout`

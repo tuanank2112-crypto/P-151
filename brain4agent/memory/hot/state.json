@@ -188,7 +188,7 @@
     "R06_R07_thieu_header": "thieu 3 dong Handoff/Base/Head (audit 2026-09-23)",
     "P05_viec_treo": "DA DONG (H22/R26 + H23/R27, 2026-09-23); audit sink fire-and-forget (G44)",
     "G46_answer_turns_rong": "DA VA (H25/R29, Đ50) — so faithfulness truoc 23/09 la 0.0 gia; can luot moi de co so that",
-    "G47_worker_stash": "luat AGENTS §5.K.2: worker CAM git stash/checkout/reset tren cay chung; stash@{0} du con trong kho (nguoi drop)"
+    "G47_worker_stash": "luat AGENTS §5.D.5: worker CAM git stash/checkout/reset tren cay chung; stash@{0} du con trong kho (nguoi drop)"
   },
   "km6": {
     "value": "1/4 tren postgres (DEF-03 OK) · 3 ca blocked vi can han muc Gemini — KHONG phai truot",
