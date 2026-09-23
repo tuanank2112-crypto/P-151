@@ -21,6 +21,8 @@ SO phóng 2 worker song song (H22 audit_log · H23 dashboard), tự đo G23, ch�
 
 ### ⛔ Chờ người / treo: hạn mức A2/A3 (chỉ `3.5-flash-lite` sống lúc 09:45) ⇒ `eval:golden --resume` sau; dọn DB fixture; deploy Vercel; `origin/main`.
 
+### 📊 Golden 14:21 sau Đ58: M3 16/16 ✅, M1 33/40 (13:46 là 35) — dao động ±2; relevance gọi 41 lượt, chặn 1. Chưa lượt nào đạt cả hai ngưỡng.
+
 ### 🧭 Đợt 15 (chủ tịch "duyệt" + "teammate không test được production"): G52 — team Vercel Pro bật Vercel Authentication `all_except_custom_domains`: chỉ `resident-agent-p151.vercel.app`/`-beryl` mở, URL `-resident-agent-demo`/từng bản deploy bị SSO; app chạy đúng (Playwright: đăng nhập → /chat → trả lời có trích dẫn); mật khẩu demo chỉ ở `.env.local`. Đ58: VC-03 cấm A3 thấy câu hỏi ⇒ kiểm LIÊN QUAN tách riêng (câu hỏi + bản nháp) chạy khi sắp answer, false ⇒ G3. H29/R33: 289/289, đo thật 8/8 + 2 lời gọi relevance thật bắt đúng nhầm xe máy↔cư dân. Golden trọn chạy nền.
 
 ### 📈 Golden trọn 13:46 sau Đ57: **M1 35/40 ✅ (lần đầu vượt ngưỡng)**, M3 14/16 ❌ — S02/F-ESC-02 DeepSeek trả lời vòng quanh mà Sonnet chấm 1.0 (A3 chỉ kiểm có nguồn, không kiểm đúng câu hỏi); S15 + 5 ca FAQ hỏi-lại ra từ chối/trả lời. Chờ chủ tịch: thêm kiểm "đúng câu hỏi" vào hợp đồng A3.
