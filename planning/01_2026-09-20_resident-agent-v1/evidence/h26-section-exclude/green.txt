@@ -1,0 +1,10 @@
+✔ setSectionExcluded: is_excluded=true + note rỗng ⇒ MissingExclusionNote, không chạm DB (0.9795ms)
+✔ setSectionExcluded (Postgres thật): loại rồi đưa lại một mục, khôi phục nguyên trạng (5142.2856ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15601.6123

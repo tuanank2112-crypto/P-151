@@ -835,6 +835,7 @@ Câu "Gói P00 chưa được phóng vì C-01 chưa chốt" ghi ngày 2026-09-20
 | `specs/SPEC-P04-Eval-Dashboard.md` | Phép đo, công thức, nguồn số liệu | ✅ |
 | `specs/SPEC-P05-Action-Layer.md` | Đọc chính sách, đặt chỗ, biên nhận, hoàn tác | ✅ |
 | `handoffs/H24` ↔ `reports/R28` | Script gate G16/G31 (`check_enum_closed.mjs`, `check_env.mjs`), `eval_golden.mjs` không kẹp | ✅ SO đo lại |
+| `handoffs/H26` ↔ `reports/R30` | UI loại mục khỏi trả lời (`setSectionExcluded`) | ✅ SO đo lại |
 | `handoffs/H25` ↔ `reports/R29` | Ghi `pipeline_steps` + `s1..s4` + `rejection_histogram` vào `answer_turns` (Đ50) | ✅ SO đo lại |
 | `specs/OPERATIONS.md` | Deploy, biến môi trường, seed, rollback, công tắc ngắt | ✅ |
 | `specs/TESTING-ACCEPTANCE.md` | Ma trận test, số đo, Exit Gates theo môi trường | ✅ |

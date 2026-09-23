@@ -1,14 +1,19 @@
 // app/(bql)/documents/page.tsx — URL /documents. Vòng đời tài liệu (R7,
 // SPEC-P03 §2): liệt kê tài liệu thật từ DB, upload tài liệu mới, đổi
-// version, đổi `status` / `effective_status` — tất cả có hiệu lực NGAY với
-// retrieval (P02-C8 cấm cache).
-//
-// CHƯA LÀM (ngoài "xong khi" được giao, xem report): `setSectionExcluded`
-// chưa có màn hình gọi tới (hàm ghi đã có ở bql-store.ts).
+// version, đổi `status` / `effective_status`, loại/đưa lại một mục khỏi RAG
+// (H26, cổng E-4) — tất cả có hiệu lực NGAY với retrieval (P02-C8 cấm cache).
 import { listDocumentsForConsole } from "../../../lib/adapters/bql-store.ts";
-import { setDocumentStatus, setEffectiveStatus, uploadDocument, newDocumentVersion } from "./actions.ts";
+import {
+  setDocumentStatus,
+  setEffectiveStatus,
+  uploadDocument,
+  newDocumentVersion,
+  listSections,
+  setSectionExcluded,
+} from "./actions.ts";
 import { DocumentsTable } from "./DocumentsTable.tsx";
 import { UploadPanel } from "./UploadPanel.tsx";
+import { SectionsPanel } from "./SectionsPanel.tsx";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +34,11 @@ export default async function DocumentsPage() {
         onSetEffectiveStatus={setEffectiveStatus}
       />
       <UploadPanel onUploadDocument={uploadDocument} onNewDocumentVersion={newDocumentVersion} />
+      <SectionsPanel
+        documents={documents}
+        onListSections={listSections}
+        onSetSectionExcluded={setSectionExcluded}
+      />
     </main>
   );
 }

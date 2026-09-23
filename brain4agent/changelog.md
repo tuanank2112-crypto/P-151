@@ -2,6 +2,18 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Chưa phát hành] - 2026-09-23 (tiếp 5): UI loại mục khỏi trả lời + trace theo id
+
+### Added
+- `/documents`: `SectionsPanel.tsx` gọi `setSectionExcluded` (lý do bắt buộc) và `listSections`; `bql-store.ts::listSectionsForConsole`; `tests/bql-section-exclude.test.ts` (H26/R30).
+- `scripts/trace_sample.mjs --id <answer_turn_id>` đọc `pipeline_steps` + 4 tín hiệu bằng SQL, không gọi model (G08).
+
+### Changed
+- `reports/R06`, `R07` có dòng Handoff/Base/Head (dựng lại từ git).
+
+### Đo được
+`tsc` 0 · **253/253** · BB-05/07/10 = 0 · `/documents` HTTP 200 có "Loại khỏi trả lời".
+
 ## [Chưa phát hành] - 2026-09-23 (tiếp 4): ghi thật `pipeline_steps` + 4 tín hiệu (Đ50), script gate G16/G31, luật mỗi-commit-một-lần-não
 
 ### Decisions

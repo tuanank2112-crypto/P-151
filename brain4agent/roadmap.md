@@ -33,7 +33,7 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
 8. Điền tên/vai trò thành viên vào `README.md`, `presentation/README.md` (đang `[điền]`).
 9. Giấy tờ: `TESTING-ACCEPTANCE.md` §7 — cột `local` đã tick thêm G03/G09/G10/G23 (2026-09-23, Đ49); còn ⬜ local: G02/G05/G08/G11/G13/G16/G17/G18/G27–G31/G24–G26; cột `deploy` ⬜ hết (chưa deploy được URL công khai); ~~`reports/R06`/`R07` thiếu header~~ (đã bổ sung 2026-09-23, Base/Head dựng lại từ git); `evidence/so-d25-d27` mồ côi; G30 chạy nguyên văn ra 2 dòng false-positive tự trỏ vào script kiểm.
 10. ~~Việc treo từ P05 (`reports/R23`)~~ — **✅ đóng 2026-09-23:** (a) cột `actioned` đã render lên `/bql/dashboard` (H23/R27); (b) `audit_log` thật khi `WriteTimeout` qua `DataStore.insertAuditLog` (H22/R26). Cây gộp: `tsc` 0 · 238/238 · BB-05/07/10 = 0.
-11. Treo cũ: `expected_gate` DEF-04/S04 chờ chủ tịch · Đ32 chờ phê chuẩn · `setSectionExcluded` chưa có UI · hybrid chưa nối.
+11. Treo cũ: `expected_gate` DEF-04/S04 chờ chủ tịch · Đ32 chờ phê chuẩn · hybrid chưa nối. (`setSectionExcluded` ĐÃ có UI — H26/R30, 2026-09-23.)
 
 ## Tương lai (Upcoming)
 
@@ -66,6 +66,10 @@ thuộc (P05 khoá sau cổng P01–P04 xanh — Đ03):
   Ai muốn lật phải trả lời được "lấy baseline ở đâu".
 
 ## Đã hoàn thành (Done)
+
+- [x] **P03 — màn loại mục khỏi trả lời (2026-09-23, H26/R30):** `/documents` có panel chọn
+  tài liệu → liệt kê mục → "Loại khỏi trả lời" (bắt buộc lý do) / "Đưa lại"; `listSectionsForConsole`
+  trong `bql-store.ts`, 2 action mới đều qua `checkBqlAuthz` (6/6). SO đo lại: tsc 0 · **253/253** · BB 0.
 
 - [x] **Quan sát được thật + gate không cần model (2026-09-23, H24/H25, Đ50):** `answer_turns`
   nay ghi `pipeline_steps` + `s1..s4` + `rejection_histogram` ở mọi nhánh (trước: 0/512, G46 —

@@ -1,0 +1,31 @@
+✖ setSectionExcluded: is_excluded=true + note rỗng ⇒ MissingExclusionNote, không chạm DB (2446.9403ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12906.8203
+
+✖ failing tests:
+
+test at tests\bql-section-exclude.test.ts:25:1
+✖ setSectionExcluded: is_excluded=true + note rỗng ⇒ MissingExclusionNote, không chạm DB (2446.9403ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'NotFound'
+  - 'MissingExclusionNote'
+  
+      at TestContext.<anonymous> (file:///D:/build%20phase/tests/bql-section-exclude.test.ts:33:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'NotFound',
+    expected: 'MissingExclusionNote',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

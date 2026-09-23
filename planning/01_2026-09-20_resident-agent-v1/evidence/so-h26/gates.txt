@@ -1,0 +1,10 @@
+tsc EXIT=0
+ℹ tests 253
+ℹ pass 253
+ℹ fail 0
+ℹ skipped 0
+violations: 0
+matches: 0
+guard:
+6
+6

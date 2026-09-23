@@ -504,3 +504,22 @@ main {
   resize: vertical;
   margin-bottom: 0.5rem;
 }
+
+/* ── H26 · Loại/đưa lại mục khỏi RAG trong /documents (cổng E-4) ── */
+.bql-sections-panel {
+  margin-top: 1.5rem;
+  border: 1px solid #d3d6de;
+  border-radius: 12px;
+  padding: 1rem;
+}
+.bql-sections-panel select {
+  display: block;
+  margin: 0.4rem 0 1rem;
+}
+.bql-sections-panel input[type="text"] {
+  width: 100%;
+  border: 1px solid #d3d6de;
+  border-radius: 8px;
+  padding: 0.4rem 0.5rem;
+  font: inherit;
+}

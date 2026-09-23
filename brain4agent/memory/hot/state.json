@@ -9,7 +9,7 @@
     "gates_no_key_needed": {
       "tsc": "npx tsc --noEmit · exit 0",
       "build": "npm run build · exit 0 (clone sach cung exit 0)",
-      "test": "node --env-file=.env.local scripts/run_tests.mjs · tests 251 · pass 251 · fail 0 · skipped 0; runner ghim DATA_BACKEND=mock (G39)",
+      "test": "run_tests.mjs · 253/253 · 0 fail · 0 skip",
       "BB-07": "check_adapter_boundary.sh · violations: 0",
       "BB-10": "check_no_hardcoded_knowledge.sh · matches: 0",
       "BB-05": "check_no_confidence_ui.sh · matches: 0",
@@ -78,7 +78,8 @@
       "H23 dashboard cot actioned",
       "G09 demo_r7 exit 0 · G03/G10/G23 tick local (Đ49)",
       "H24 script gate G16/G31 + eval_golden khong kep",
-      "H25 (Đ50) ghi pipeline_steps + s1..s4 + rejection_histogram"
+      "H25 (Đ50) ghi pipeline_steps + s1..s4 + rejection_histogram",
+      "H26 UI setSectionExcluded"
     ],
     "next": "NGUOI: don DB fixture, deploy Vercel (scope + pooler 6543), quyet origin/main, git stash drop (stash du). AGENT: eval:golden --resume khi han muc hoi (sau H25 moi co s3_faithfulness that), trace_sample.mjs tra nguoc theo id de tick G08, P06 dien tay",
     "remaining": [
@@ -177,7 +178,7 @@
     "demo_r7_thieu": "DA CO EXIT 0 (2026-09-23 09:32) — G09 tick local; truoc demo kiem status OCP1-POOL-RULES-001 = Approved (G43)",
     "tang_do_P02a": "lib/confidence.ts + lib/pipeline/index.ts van can tham dinh doc lap tang 🔴",
     "R7_nua_bang_chung": "gate R7 (BQL doi status anh huong retrieval cung phien) moi co nua bang chung tang SQL, nua kia cho han muc Gemini",
-    "setSectionExcluded_chua_co_UI": "P03 con thieu man hinh nay",
+    "setSectionExcluded_chua_co_UI": "DA CO (H26/R30)",
     "G33_chat_403": "DA VA (H15)",
     "G34_A2_chet": "DA VA bang chuoi du phong (ed8dfca); van phu thuoc han muc",
     "G35_khong_nav": "DA VA (H16)",
@@ -196,7 +197,7 @@
     "ghi_chu": "DEF-04 tren mock: reason_code DUNG, gate G3 (cho quyet)"
   },
   "git": {
-    "head": "sau 4588e4c — R06/R07 header",
+    "head": "sau f4374f4 — H26",
     "remote": "origin https://github.com/AI20K-Build-Phase-Cohort-4/P-151.git · local main theo doi origin/feature/nhuy (DA PUSH 9ac796c) · origin/main = template Python rong (G38)"
   },
   "rules_added": {

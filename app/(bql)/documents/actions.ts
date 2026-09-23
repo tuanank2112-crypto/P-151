@@ -12,7 +12,10 @@ import {
   setEffectiveStatus as storeSetEffectiveStatus,
   uploadDocument as storeUploadDocument,
   newDocumentVersion as storeNewDocumentVersion,
+  listSectionsForConsole as storeListSectionsForConsole,
+  setSectionExcluded as storeSetSectionExcluded,
   type DocumentError,
+  type SectionConsoleRow,
   type UploadSectionInput,
 } from "../../../lib/adapters/bql-store.ts";
 import type { DocStatus, EffectiveStatus } from "../../../lib/types.ts";
@@ -70,6 +73,29 @@ export async function newDocumentVersion(input: {
   const session = await getSessionPayload();
   if (!checkBqlAuthz(session).ok || !session) return authzErrorResult();
   const result = await storeNewDocumentVersion({ ...input, actor_id: session.user_id });
+  if (result.ok) revalidatePath("/documents");
+  return result;
+}
+
+/** H26 W1/W2 — đọc mục của MỘT tài liệu cho `SectionsPanel`. */
+export async function listSections(
+  document_id: string
+): Promise<{ ok: true; sections: SectionConsoleRow[] } | { ok: false; error: DocumentError }> {
+  const session = await getSessionPayload();
+  if (!checkBqlAuthz(session).ok) return authzErrorResult();
+  const sections = await storeListSectionsForConsole(document_id);
+  return { ok: true, sections };
+}
+
+/** H26 W2 — SPEC-P03 §2.2 `setSectionExcluded` (cổng E-4). */
+export async function setSectionExcluded(input: {
+  section_id: string;
+  is_excluded: boolean;
+  exclusion_note_vi: string | null;
+}): Promise<{ ok: true } | { ok: false; error: DocumentError }> {
+  const session = await getSessionPayload();
+  if (!checkBqlAuthz(session).ok) return authzErrorResult();
+  const result = await storeSetSectionExcluded(input);
   if (result.ok) revalidatePath("/documents");
   return result;
 }

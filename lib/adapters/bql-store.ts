@@ -143,6 +143,26 @@ export async function setEffectiveStatus(input: {
   return { ok: true };
 }
 
+export interface SectionConsoleRow {
+  section_id: string;
+  heading_vi: string;
+  is_excluded: boolean;
+  exclusion_note_vi: string | null;
+}
+
+/** H26 W1 — danh sách mục của MỘT tài liệu cho panel loại mục khỏi RAG
+ *  (SPEC-P03 §2.2 `setSectionExcluded`). Đúng một SELECT, theo `ordinal`. */
+export async function listSectionsForConsole(document_id: string): Promise<SectionConsoleRow[]> {
+  const sql = getSql();
+  return sql<SectionConsoleRow>(
+    `SELECT section_id, heading_vi, is_excluded, exclusion_note_vi
+     FROM sections
+     WHERE document_id = $1
+     ORDER BY ordinal`,
+    [document_id]
+  );
+}
+
 /** SPEC-P03 §2.2 `setSectionExcluded` — cổng E-4. */
 export async function setSectionExcluded(input: {
   section_id: string;
