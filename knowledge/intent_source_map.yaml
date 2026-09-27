@@ -1,0 +1,1202 @@
+mapping_revision: "1.18"
+mapping_status: Frozen
+freeze_effective_at: "2026-09-20"
+freeze_document: ../docs/MVP_DATA_SCOPE_LOCK.md
+property_id: VINHOMES_OCEAN_PARK
+
+hard_block_policy:
+  categories:
+    - compensation
+    - dispute
+    - legal_interpretation
+    - liability_or_fault_determination
+    - individual_penalty_decision
+  answer_behavior: do_not_generate_substantive_answer
+  next_action: escalate_to_bql
+  reason_code: legal_or_compensation_escalation
+
+document_scope_constraints:
+  OCP1-COMMERCIAL-AREA-RULES-001:
+    area_type: commercial_service
+    audience: commercial_lot_owner_or_user
+    require_scope_match: true
+    do_not_use_for:
+      - apartment_residential_question
+      - general_resident_question_without_commercial_context
+    misattributed_sections_excluded:
+      - COMM-03C
+  OCP1-VILLA-HOUSING-RULES-001:
+    area_type: villa_or_house
+    audience: resident_or_owner_of_villa_or_house
+    require_scope_match: true
+    do_not_use_for:
+      - apartment_residential_question
+      - commercial_service_question
+      - general_resident_question_without_villa_or_house_context
+  OCP1-VILLA-BUSINESS-RULES-001:
+    area_type: villa_or_house
+    activity_type: business_operation
+    audience: owner_or_authorized_business_operator
+    require_scope_match: true
+    do_not_use_for:
+      - apartment_residential_question
+      - commercial_service_question
+      - villa_or_house_question_without_business_context
+  OCP1-POOL-RULES-001:
+    property_id: VINHOMES_OCEAN_PARK_1
+    area_type: apartment_pool
+    amenity_type: pool
+    audience: pool_users
+    require_scope_match: true
+    do_not_use_for:
+      - pool_outside_vinhomes_ocean_park_1
+      - non_pool_amenity_question
+  OCP1-KAYAK-DOCK-RULES-001:
+    property_id: VINHOMES_OCEAN_PARK
+    area_type: kayak_dock
+    amenity_type: kayak
+    audience: residents_and_guests
+    require_scope_match: true
+    do_not_use_for:
+      - non_kayak_amenity_question
+      - bbq_garden_question
+    misattributed_sections_excluded:
+      - KAYAK-II-05
+  OCP1-SPORTS-COMPLEX-RULES-001:
+    property_id: VINHOMES_OCEAN_PARK
+    area_type: sports_complex
+    amenity_type: sports_complex
+    audience: residents_and_guests
+    require_scope_match: true
+    do_not_use_for:
+      - non_sports_complex_amenity_question
+  OCP1-CHILDREN-PLAYGROUND-RULES-001:
+    property_id: VINHOMES_OCEAN_PARK
+    area_type: children_playground
+    amenity_type: children_playground
+    audience: resident_children_and_guardians
+    require_scope_match: true
+    do_not_use_for:
+      - non_children_playground_amenity_question
+  OCP1-OUTDOOR-GYM-RULES-001:
+    property_id: VINHOMES_OCEAN_PARK
+    area_type: outdoor_gym
+    amenity_type: outdoor_gym
+    audience: residents
+    require_scope_match: true
+    do_not_use_for:
+      - indoor_gym_question
+      - sports_complex_question
+      - non_outdoor_gym_amenity_question
+  OCP1-SALTWATER-LAKE-RULES-001:
+    property_id: VINHOMES_OCEAN_PARK
+    area_type: saltwater_lake
+    amenity_type: saltwater_lake
+    audience: residents_and_guests
+    require_scope_match: true
+    do_not_use_for:
+      - kayak_dock_question
+      - swimming_pool_question
+      - non_saltwater_lake_amenity_question
+  OCP1-BBQ-GARDEN-RULES-001:
+    property_id: VINHOMES_OCEAN_PARK
+    area_type: bbq_garden
+    amenity_type: bbq_garden
+    audience: residents_and_accompanied_guests
+    require_scope_match: true
+    do_not_use_for:
+      - non_bbq_garden_amenity_question
+    conflicted_sections:
+      - BBQ-FEE-02
+      - BBQ-BOOK-04
+      - BBQ-SAN-05
+    excluded_sections:
+      - BBQ-SAN-05
+    conflict_behavior: escalate_to_bql_until_resolved
+  OCP1-FISHING-DECK-RULES-001:
+    property_id: VINHOMES_OCEAN_PARK
+    area_type: fishing_deck
+    amenity_type: fishing_deck
+    audience: residents_and_eligible_customers
+    require_scope_match: true
+    do_not_use_for:
+      - kayak_dock_question
+      - saltwater_lake_question
+      - non_fishing_deck_amenity_question
+  OCP1-APARTMENT-CONSTRUCTION-GUIDE-001:
+    property_id: VINHOMES_OCEAN_PARK
+    area_type: apartment
+    activity_type: construction_or_renovation
+    audience: apartment_owner_authorized_representative_and_contractor
+    require_scope_match: true
+    do_not_use_for:
+      - villa_construction_question
+      - townhouse_construction_question
+      - shop_or_shophouse_construction_question
+      - general_move_in_or_move_out_question
+    excluded_sections:
+      - ACON-II-01X
+      - ACON-NOTE-04X
+    clarification_behavior: ask_property_type_when_construction_scope_is_missing
+  OCP1-APARTMENT-CONSTRUCTION-RULES-001:
+    property_id: VINHOMES_OCEAN_PARK
+    area_type: apartment_complex
+    activity_type: construction_or_renovation
+    audience: apartment_owner_authorized_representative_contractor_and_worker
+    require_scope_match: true
+    do_not_use_for:
+      - villa_construction_question
+      - townhouse_construction_question
+      - general_question_unrelated_to_construction_or_moving
+    excluded_sections:
+      - APTC-PAY-02
+      - APTC-EFF-01
+    conflicted_sections:
+      - APTC-EFF-01
+      - APTC-FEE-02
+    conflict_behavior: escalate_to_bql_until_resolved
+    clarification_behavior: ask_property_type_and_handover_condition_when_needed
+  OCP1-RESIDENT-CARD-ISSUANCE-GUIDE-001:
+    property_id: VINHOMES_OCEAN_PARK
+    area_type: multi_property_resident_access
+    card_types:
+      - resident_card
+      - access_card
+      - resident_parking_card
+    require_scope_match: true
+    do_not_use_for:
+      - monthly_parking_service_fee_question
+      - parking_rule_unrelated_to_card_issuance
+      - amenity_rule_unrelated_to_card_function
+      - property_outside_vinhomes_ocean_park
+    ambiguous_sections:
+      - CARD-LIMIT-01A
+      - CARD-PARK-FEE-03
+    clarification_behavior: ask_card_type_property_type_and_unit_type_when_needed
+  OCP1-MOVE-IN-OUT-GUIDE-001:
+    property_id: VINHOMES_OCEAN_PARK
+    area_type: multi_property_move_in_out
+    activity_type: moving_belongings_in_or_out
+    audience: residents
+    require_scope_match: true
+    do_not_use_for:
+      - construction_material_transport_without_context_check
+      - construction_waste_schedule_without_context_check
+      - property_outside_vinhomes_ocean_park
+    related_scope_sections:
+      - APTC-TIME-05
+      - APTC-WORKER-07
+      - APTC-WORKER-08
+    ambiguous_sections:
+      - MOVE-VEH-01
+    clarification_behavior: distinguish_residential_moving_from_construction_transport
+  OCP1-BQL-OFFICE-DIRECTORY-001:
+    property_id: VINHOMES_OCEAN_PARK
+    area_type: multi_property_management_office
+    audience: residents
+    require_scope_match: true
+    do_not_use_for:
+      - property_outside_vinhomes_ocean_park
+      - building_or_cluster_not_listed_in_source
+      - holiday_schedule_without_current_bql_notice
+      - hotline_or_email_question
+    cross_validated_with:
+      - OCP1-MOVE-IN-OUT-GUIDE-001
+    clarification_behavior: ask_building_or_cluster_before_routing
+    preferred_for:
+      - management_office_address
+      - management_office_working_hours
+  OCP1-PARKING-FEE-SCHEDULE-001:
+    property_id: VINHOMES_OCEAN_PARK
+    area_type: parking_facilities
+    service_type: vehicle_parking_and_two_wheel_ev_charging
+    audience: residents_and_casual_parking_customers
+    require_scope_match: true
+    do_not_use_for:
+      - card_issuance_or_replacement_fee
+      - parking_facility_not_listed_in_source
+      - custom_invoice_calculation
+      - property_outside_vinhomes_ocean_park
+    clarification_behavior: ask_facility_parking_mode_vehicle_type_and_time_window
+    required_dimensions:
+      - facility_type
+      - monthly_or_casual
+      - vehicle_type
+      - time_window_when_casual
+  OCP1-MONTHLY-FEE-PAYMENT-GUIDE-001:
+    property_id: VINHOMES_OCEAN_PARK
+    area_type: multi_property_resident_billing
+    service_type: monthly_service_fee_payment
+    audience: owners_and_residents_responsible_for_payment
+    require_scope_match: true
+    do_not_use_for:
+      - determining_actual_debt_or_account_balance
+      - confirming_payment_receipt
+      - calculating_fees_not_shown_on_an_official_invoice
+      - resolving_billing_dispute
+      - property_outside_vinhomes_ocean_park
+    excluded_sections:
+      - MONTHPAY-BANK-02
+    clarification_behavior: distinguish_payment_guidance_from_debt_or_dispute_case
+  VINHOMES-CUSTOMER-REQUEST-HANDLING-001:
+    organization_scope: VINHOMES_ALL_PROJECTS
+    applicable_property_ids:
+      - VINHOMES_OCEAN_PARK
+    area_type: all_vinhomes_projects_and_departments
+    process_type: customer_request_and_complaint_handling
+    audience: customers_residents_and_internal_receiving_processing_units
+    require_scope_match: true
+    do_not_use_for:
+      - resolving_substantive_legal_dispute
+      - determining_liability_fault_or_compensation
+      - deciding_case_outcome_or_internal_approval
+      - promising_case_specific_sla
+      - collecting_case_evidence_or_sensitive_personal_data
+    clarification_behavior: distinguish_general_process_from_specific_case_decision
+
+intents:
+  I-01:
+    name: Thẻ cư dân/ra vào
+    allowed_documents:
+      - OCP1-BUILDING-RULES-001
+      - OCP1-VILLA-HOUSING-RULES-001
+      - OCP1-VILLA-BUSINESS-RULES-001
+      - OCP1-SPORTS-COMPLEX-RULES-001
+      - OCP1-BBQ-GARDEN-RULES-001
+      - OCP1-FISHING-DECK-RULES-001
+      - OCP1-RESIDENT-CARD-ISSUANCE-GUIDE-001
+      - OCP1-BQL-OFFICE-DIRECTORY-001
+      - VINHOMES-CUSTOMER-REQUEST-HANDLING-001
+    covered_sections:
+      - RULE-001
+      - VILLA-01F
+      - VBIZ-03A
+      - SPORT-01B
+      - SPORT-III-01B
+      - BBQ-ACCESS-01
+      - FISH-BOOK-03
+      - FISH-ACCESS-01
+      - CARD-PROCESS-01
+      - CARD-PROCESS-02
+      - CARD-PROCESS-03
+      - CARD-SECURITY-01
+    covered_section_prefixes:
+      - CARD-RES
+      - CARD-ACCESS
+      - CARD-LIMIT
+      - BQLOFF
+      - CASE
+    coverage_status: Partial
+    known_gaps:
+      - Hồ sơ chi tiết và các bước thao tác đăng ký trên ứng dụng.
+      - Thời gian xử lý, thời hạn sử dụng và quy trình gia hạn thẻ.
+      - Chính sách cấp Thẻ Cư dân vượt hạn mức.
+      - Cần BQL làm rõ câu chữ về hạn mức của Căn hộ 02 phòng ngủ thông thường.
+
+  I-02:
+    name: Phương tiện/thẻ xe
+    allowed_documents:
+      - OCP1-BUILDING-RULES-001
+      - OCP1-PARKING-RULES-001
+      - OCP1-COMMERCIAL-AREA-RULES-001
+      - OCP1-VILLA-HOUSING-RULES-001
+      - OCP1-VILLA-BUSINESS-RULES-001
+      - OCP1-RESIDENT-CARD-ISSUANCE-GUIDE-001
+      - OCP1-BQL-OFFICE-DIRECTORY-001
+      - OCP1-PARKING-FEE-SCHEDULE-001
+      - OCP1-MONTHLY-FEE-PAYMENT-GUIDE-001
+      - VINHOMES-CUSTOMER-REQUEST-HANDLING-001
+    covered_sections:
+      - RULE-002
+      - VBIZ-01F
+      - CARD-PROCESS-01
+      - CARD-SECURITY-01
+    covered_section_prefixes:
+      - PARK-I
+      - PARK-II
+      - PARK-III
+      - PARK-IV
+      - PARK-VI
+      - COMM-03
+      - VILLA-03
+      - CARD-PARK
+      - BQLOFF
+      - PARKFEE
+      - MONTHPAY
+      - CASE
+    coverage_status: Partial
+    known_gaps:
+      - Hồ sơ đăng ký mới Thẻ Xe tháng.
+      - Phí cấp mới, cấp lại hoặc đổi thẻ/thuê bao xe máy không có trong nguồn.
+      - Quy tắc làm tròn giờ hoặc tính tổng hóa đơn ô tô vãng lai chưa được cung cấp.
+      - Phí vãng lai riêng cho xe đạp/xe đạp điện và phí sạc ô tô điện chưa được cung cấp.
+      - Xác nhận các tham chiếu chéo có khả năng lỗi trong phần bồi thường.
+
+  I-03:
+    name: Tiện ích chung
+    allowed_documents:
+      - OCP1-BUILDING-RULES-001
+      - OCP1-POOL-RULES-001
+      - OCP1-KAYAK-DOCK-RULES-001
+      - OCP1-SPORTS-COMPLEX-RULES-001
+      - OCP1-CHILDREN-PLAYGROUND-RULES-001
+      - OCP1-OUTDOOR-GYM-RULES-001
+      - OCP1-SALTWATER-LAKE-RULES-001
+      - OCP1-BBQ-GARDEN-RULES-001
+      - OCP1-FISHING-DECK-RULES-001
+      - OCP1-RESIDENT-CARD-ISSUANCE-GUIDE-001
+      - OCP1-BQL-OFFICE-DIRECTORY-001
+      - VINHOMES-CUSTOMER-REQUEST-HANDLING-001
+    covered_sections:
+      - RULE-007A
+      - RULE-007B
+      - CARD-RES-FEATURE-02
+    covered_section_prefixes:
+      - POOL
+      - KAYAK
+      - SPORT
+      - PLAY
+      - GYM
+      - LAKE
+      - BBQ
+      - FISH
+      - BQLOFF
+      - CASE
+    coverage_status: Partial
+    known_gaps:
+      - Danh sách và giờ hoạt động của các tiện ích chưa có nguồn canonical.
+      - Mức phí hoặc quy trình đăng ký bể bơi nếu có.
+
+  I-04:
+    name: Chuyển đồ/thi công
+    allowed_documents:
+      - OCP1-VILLA-BUSINESS-RULES-001
+      - OCP1-APARTMENT-CONSTRUCTION-GUIDE-001
+      - OCP1-APARTMENT-CONSTRUCTION-RULES-001
+      - OCP1-MOVE-IN-OUT-GUIDE-001
+      - OCP1-BQL-OFFICE-DIRECTORY-001
+      - VINHOMES-CUSTOMER-REQUEST-HANDLING-001
+    covered_sections:
+      - VBIZ-05C
+    covered_section_prefixes:
+      - ACON
+      - APTC
+      - MOVE
+      - BQLOFF
+      - CASE
+    coverage_status: Partial
+    known_gaps:
+      - Quy trình chuyển đồ chưa nêu các trường trong mẫu, SLA phê duyệt, cách sửa hoặc hủy đăng ký và cách tính thời hạn trước 04 giờ.
+      - Đối với hồ sơ thi công, mẫu hồ sơ, kênh hoặc địa điểm nộp và giờ tiếp nhận chưa được cung cấp đầy đủ.
+      - Quy định thi công cho Biệt thự, Nhà liền kề, Shop và Shophouse cần source đúng phạm vi riêng.
+      - Cần BQL xác nhận quan hệ giữa ngày 22/07/2026 do người cung cấp xác nhận và ngày 21/04/2026 trong chính văn.
+      - Cần BQL làm rõ mức trọng tải cụ thể trong khoảng 3,5-5 tấn theo từng khu vực hoặc điều kiện.
+
+  I-05:
+    name: Nội quy sinh hoạt
+    allowed_documents:
+      - OCP1-BUILDING-RULES-001
+      - OCP1-COMMERCIAL-AREA-RULES-001
+      - OCP1-VILLA-HOUSING-RULES-001
+      - OCP1-VILLA-BUSINESS-RULES-001
+      - OCP1-BQL-OFFICE-DIRECTORY-001
+      - OCP1-MONTHLY-FEE-PAYMENT-GUIDE-001
+      - VINHOMES-CUSTOMER-REQUEST-HANDLING-001
+    covered_sections:
+      - RULE-003
+      - RULE-004
+      - RULE-005
+      - RULE-006
+      - RULE-008
+      - RULE-009
+      - RULE-010A
+      - RULE-010B
+      - RULE-011
+    covered_section_prefixes:
+      - COMM-01
+      - COMM-02
+      - COMM-04
+      - COMM-05
+      - VILLA-01
+      - VILLA-02
+      - VILLA-04
+      - VBIZ-01
+      - VBIZ-02
+      - VBIZ-03
+      - VBIZ-04
+      - VBIZ-05
+      - VBIZ-06
+      - VBIZ-07
+      - BQLOFF
+      - MONTHPAY
+      - CASE
+    coverage_status: Partial
+    known_gaps:
+      - Quy trình xử lý chi tiết và mức chế tài cho từng vi phạm.
+      - Các ngoại lệ hoặc hướng dẫn vận hành theo từng tòa nếu có.
+
+safety_sections:
+  RULE-006:
+    answer_policy: general_rule_then_escalate_for_incident
+  RULE-009:
+    answer_policy: emergency_guidance_and_manual_handling
+  RULE-010A:
+    answer_policy: security_escalation
+  RULE-010B:
+    answer_policy: verified_escalation_contact
+  RULE-011:
+    answer_policy: do_not_answer_escalate_to_bql
+  PARK-I-01:
+    answer_policy: do_not_answer_escalate_to_bql
+  PARK-I-02G:
+    answer_policy: general_rule_then_escalate_for_incident
+  PARK-I-03B:
+    answer_policy: do_not_answer_escalate_to_bql
+  PARK-II-03:
+    answer_policy: general_rule_then_escalate_for_payment_decision
+  PARK-II-04:
+    answer_policy: immediate_report_then_manual_handling
+  PARK-III-01:
+    answer_policy: do_not_answer_escalate_to_bql
+  PARK-III-02:
+    answer_policy: do_not_answer_escalate_to_bql
+  PARK-III-02A:
+    answer_policy: do_not_answer_escalate_to_bql
+  PARK-III-02B:
+    answer_policy: do_not_answer_escalate_to_bql
+  PARK-III-02C:
+    answer_policy: do_not_answer_escalate_to_bql
+  PARK-III-02D:
+    answer_policy: do_not_answer_escalate_to_bql
+  PARK-VI-01:
+    answer_policy: verified_escalation_contact
+  COMM-01F2:
+    answer_policy: do_not_answer_escalate_to_bql
+  COMM-01G:
+    answer_policy: do_not_answer_escalate_to_bql
+  COMM-02B:
+    answer_policy: general_rule_then_escalate_for_incident
+  COMM-02D:
+    answer_policy: do_not_answer_escalate_to_bql
+  COMM-02E:
+    answer_policy: general_rule_then_escalate_for_incident
+  COMM-02M2:
+    answer_policy: do_not_answer_escalate_to_bql
+  COMM-02N:
+    answer_policy: general_rule_then_escalate_for_incident
+  COMM-02P:
+    answer_policy: general_rule_without_collecting_pii
+  COMM-02Q:
+    answer_policy: do_not_answer_escalate_to_bql
+  COMM-03C:
+    answer_policy: excluded_from_rag
+  COMM-04A:
+    answer_policy: do_not_answer_escalate_to_bql
+  COMM-04B:
+    answer_policy: do_not_answer_escalate_to_bql
+  COMM-04C:
+    answer_policy: do_not_answer_escalate_to_bql
+  COMM-04D:
+    answer_policy: do_not_answer_escalate_to_bql
+  COMM-04E:
+    answer_policy: do_not_answer_escalate_to_bql
+  COMM-04F:
+    answer_policy: do_not_answer_escalate_to_bql
+  COMM-05A:
+    answer_policy: do_not_answer_escalate_to_bql
+  COMM-05B:
+    answer_policy: do_not_answer_escalate_to_bql
+  COMM-05C:
+    answer_policy: do_not_answer_escalate_to_bql
+  COMM-05D:
+    answer_policy: do_not_answer_escalate_to_bql
+  VILLA-01B:
+    answer_policy: general_rule_then_escalate_for_emergency
+  VILLA-01D:
+    answer_policy: general_rule_then_escalate_for_payment_decision
+  VILLA-01F:
+    answer_policy: general_rule_then_escalate_for_legal_procedure
+  VILLA-01G:
+    answer_policy: general_rule_then_escalate_for_emergency
+  VILLA-01J2:
+    answer_policy: do_not_answer_escalate_to_bql
+  VILLA-01K:
+    answer_policy: do_not_answer_escalate_to_bql
+  VILLA-02B:
+    answer_policy: general_rule_then_escalate_for_incident
+  VILLA-02D:
+    answer_policy: do_not_answer_escalate_to_bql
+  VILLA-02E:
+    answer_policy: general_rule_then_escalate_for_incident
+  VILLA-02F2:
+    answer_policy: do_not_answer_escalate_to_bql
+  VILLA-02G:
+    answer_policy: general_rule_then_escalate_for_payment_dispute
+  VILLA-02J2:
+    answer_policy: do_not_answer_escalate_to_bql
+  VILLA-02K:
+    answer_policy: general_rule_then_escalate_for_incident
+  VILLA-02M:
+    answer_policy: general_rule_without_collecting_pii
+  VILLA-02N:
+    answer_policy: do_not_answer_escalate_to_bql
+  VILLA-04A:
+    answer_policy: do_not_answer_escalate_to_bql
+  VILLA-04B:
+    answer_policy: do_not_answer_escalate_to_bql
+  VILLA-04C:
+    answer_policy: do_not_answer_escalate_to_bql
+  VILLA-04D:
+    answer_policy: do_not_answer_escalate_to_bql
+  VILLA-04E:
+    answer_policy: do_not_answer_escalate_to_bql
+  VILLA-04F:
+    answer_policy: do_not_answer_escalate_to_bql
+  VBIZ-01C:
+    answer_policy: general_rule_then_escalate_for_legal_procedure
+  VBIZ-01D:
+    answer_policy: general_rule_then_escalate_for_case_assessment
+  VBIZ-01G:
+    answer_policy: do_not_answer_escalate_to_bql
+  VBIZ-01H:
+    answer_policy: general_rule_then_escalate_for_legal_assessment
+  VBIZ-01I:
+    answer_policy: do_not_answer_escalate_to_bql
+  VBIZ-01K:
+    answer_policy: do_not_answer_escalate_to_bql
+  VBIZ-03A:
+    answer_policy: general_rule_without_collecting_pii
+  VBIZ-04A:
+    answer_policy: general_rule_then_escalate_for_emergency
+  VBIZ-04B:
+    answer_policy: emergency_guidance_and_manual_handling
+  VBIZ-04C:
+    answer_policy: general_rule_then_escalate_for_incident
+  VBIZ-06A:
+    answer_policy: general_rule_then_escalate_for_legal_procedure
+  VBIZ-06B:
+    answer_policy: do_not_answer_escalate_to_bql
+  VBIZ-06C:
+    answer_policy: do_not_answer_escalate_to_bql
+  VBIZ-06D:
+    answer_policy: do_not_answer_escalate_to_bql
+  VBIZ-06E:
+    answer_policy: do_not_answer_escalate_to_bql
+  VBIZ-06F:
+    answer_policy: do_not_answer_escalate_to_bql
+  VBIZ-07A:
+    answer_policy: do_not_answer_escalate_to_bql
+  POOL-03D2:
+    answer_policy: do_not_answer_escalate_to_bql
+  POOL-03F:
+    answer_policy: general_rule_then_escalate_for_incident
+  POOL-03H:
+    answer_policy: normal_faq_with_emergency_escalation
+  POOL-03I:
+    answer_policy: general_rule_only_no_liability_determination
+  POOL-03K3:
+    answer_policy: normal_faq_with_safety_warning
+  POOL-03L1:
+    answer_policy: normal_faq_with_safety_warning
+  POOL-03L2:
+    answer_policy: normal_faq_with_safety_warning
+  POOL-03M1:
+    answer_policy: source_based_rule_no_medical_assessment
+  POOL-03M2:
+    answer_policy: source_based_rule_no_medical_assessment
+  POOL-03M3:
+    answer_policy: source_based_rule_no_medical_assessment
+  POOL-03M4:
+    answer_policy: source_based_rule_no_medical_assessment
+  POOL-03M5:
+    answer_policy: source_based_rule_no_medical_assessment
+  POOL-03M6:
+    answer_policy: emergency_guidance_and_human_escalation
+  POOL-03M7:
+    answer_policy: emergency_guidance_and_human_escalation
+  POOL-03N:
+    answer_policy: normal_faq_without_collecting_biometric_data
+  POOL-03O:
+    answer_policy: do_not_answer_escalate_to_bql
+  POOL-03P:
+    answer_policy: general_rule_only_with_manual_decision
+  POOL-04A:
+    answer_policy: do_not_answer_escalate_to_bql
+  POOL-04B:
+    answer_policy: do_not_answer_escalate_to_bql
+  POOL-05A:
+    answer_policy: verified_escalation_contact
+  KAYAK-I-01B:
+    answer_policy: general_rule_with_manual_handling_for_exception_or_dispute
+  KAYAK-I-02:
+    answer_policy: normal_faq_with_safety_warning
+  KAYAK-I-03:
+    answer_policy: normal_faq_with_safety_warning
+  KAYAK-I-04:
+    answer_policy: emergency_guidance_and_human_escalation
+  KAYAK-I-06:
+    answer_policy: general_rule_then_escalate_for_incident
+  KAYAK-I-07B:
+    answer_policy: general_rule_then_escalate_for_incident
+  KAYAK-I-08:
+    answer_policy: normal_faq_with_safety_warning
+  KAYAK-I-09B:
+    answer_policy: do_not_answer_escalate_to_bql
+  KAYAK-I-10:
+    answer_policy: normal_faq_with_emergency_escalation
+  KAYAK-I-11:
+    answer_policy: do_not_answer_escalate_to_bql
+  KAYAK-I-12:
+    answer_policy: source_freshness_required
+  KAYAK-II-01:
+    answer_policy: general_rule_then_escalate_for_incident
+  KAYAK-II-02:
+    answer_policy: general_rule_then_escalate_for_incident
+  KAYAK-II-04:
+    answer_policy: general_rule_then_escalate_for_incident
+  KAYAK-II-05:
+    answer_policy: excluded_from_rag
+  KAYAK-ENF-01:
+    answer_policy: do_not_answer_escalate_to_bql
+  SPORT-01B:
+    answer_policy: normal_faq_without_collecting_identity_or_booking_data
+  SPORT-I-05:
+    answer_policy: general_rule_then_escalate_for_incident
+  SPORT-I-06:
+    answer_policy: normal_faq_with_safety_warning
+  SPORT-I-08B:
+    answer_policy: do_not_answer_escalate_to_bql
+  SPORT-I-09:
+    answer_policy: do_not_answer_escalate_to_bql
+  SPORT-II-01:
+    answer_policy: general_rule_then_escalate_for_incident
+  SPORT-II-02:
+    answer_policy: general_rule_then_escalate_for_incident
+  SPORT-II-04:
+    answer_policy: general_rule_then_escalate_for_incident
+  SPORT-III-01A:
+    answer_policy: general_rule_with_manual_case_assessment
+  SPORT-III-01B:
+    answer_policy: normal_faq_without_collecting_identity_or_booking_data
+  SPORT-III-02:
+    answer_policy: do_not_answer_escalate_to_bql
+  SPORT-ENF-01:
+    answer_policy: do_not_answer_escalate_to_bql
+  SPORT-CONTACT-01:
+    answer_policy: verified_escalation_contact
+  PLAY-00A:
+    answer_policy: normal_faq_with_operational_freshness_check
+  PLAY-I-02:
+    answer_policy: normal_faq_with_safety_warning
+  PLAY-I-03:
+    answer_policy: general_rule_then_escalate_for_incident
+  PLAY-I-07:
+    answer_policy: operational_update_required
+  PLAY-I-09:
+    answer_policy: source_freshness_required
+  PLAY-I-10:
+    answer_policy: do_not_answer_escalate_to_bql
+  PLAY-II-01:
+    answer_policy: general_rule_then_escalate_for_incident
+  PLAY-II-02:
+    answer_policy: general_rule_then_escalate_for_incident
+  PLAY-ENF-01:
+    answer_policy: do_not_answer_escalate_to_bql
+  GYM-I-05:
+    answer_policy: general_rule_then_escalate_for_incident
+  GYM-I-06:
+    answer_policy: normal_faq_with_safety_warning
+  GYM-I-08B:
+    answer_policy: do_not_answer_escalate_to_bql
+  GYM-I-09:
+    answer_policy: do_not_answer_escalate_to_bql
+  GYM-II-01:
+    answer_policy: general_rule_then_escalate_for_incident
+  GYM-II-02:
+    answer_policy: general_rule_then_escalate_for_incident
+  GYM-ENF-01:
+    answer_policy: do_not_answer_escalate_to_bql
+  LAKE-01B:
+    answer_policy: general_rule_with_manual_handling_for_exception_or_dispute
+  LAKE-02:
+    answer_policy: emergency_guidance_and_human_escalation
+  LAKE-03:
+    answer_policy: general_rule_then_escalate_for_incident
+  LAKE-04B:
+    answer_policy: general_rule_then_escalate_for_incident
+  LAKE-05A:
+    answer_policy: normal_faq_with_safety_warning
+  LAKE-05B:
+    answer_policy: normal_faq_with_safety_warning
+  LAKE-06B:
+    answer_policy: do_not_answer_escalate_to_bql
+  LAKE-07:
+    answer_policy: do_not_answer_escalate_to_bql
+  LAKE-08:
+    answer_policy: source_freshness_required
+  LAKE-ENF-01:
+    answer_policy: do_not_answer_escalate_to_bql
+  LAKE-ENF-02:
+    answer_policy: do_not_answer_escalate_to_bql
+  LAKE-CONTACT-01:
+    answer_policy: verified_escalation_contact
+  BBQ-FEE-02:
+    answer_policy: source_conflict_escalate_to_bql
+  BBQ-FEE-03:
+    answer_policy: source_ambiguity_escalate_to_bql
+  BBQ-FEE-04:
+    answer_policy: general_rule_with_manual_handling_for_exception_or_dispute
+  BBQ-BOOK-03:
+    answer_policy: normal_faq_without_collecting_booking_or_qr_data
+  BBQ-BOOK-04:
+    answer_policy: source_conflict_escalate_to_bql
+  BBQ-I-03:
+    answer_policy: normal_faq_with_safety_warning
+  BBQ-I-04:
+    answer_policy: normal_faq_with_fire_safety_warning
+  BBQ-I-05:
+    answer_policy: fire_safety_and_emergency_escalation
+  BBQ-I-07B:
+    answer_policy: do_not_answer_escalate_to_bql
+  BBQ-I-08A:
+    answer_policy: general_rule_only_no_health_or_liability_assessment
+  BBQ-I-08B:
+    answer_policy: do_not_answer_escalate_to_bql
+  BBQ-I-09:
+    answer_policy: do_not_answer_escalate_to_bql
+  BBQ-I-10:
+    answer_policy: emergency_guidance_and_manual_decision
+  BBQ-II-01:
+    answer_policy: general_rule_then_escalate_for_incident
+  BBQ-II-02:
+    answer_policy: general_rule_then_escalate_for_incident
+  BBQ-II-04:
+    answer_policy: general_rule_then_escalate_for_incident
+  BBQ-ACCESS-01:
+    answer_policy: normal_faq_without_collecting_identity_or_booking_data
+  BBQ-ENF-01:
+    answer_policy: do_not_answer_escalate_to_bql
+  BBQ-CONTACT-01:
+    answer_policy: verified_escalation_contact
+  BBQ-SAN-01:
+    answer_policy: do_not_answer_escalate_to_bql
+  BBQ-SAN-02:
+    answer_policy: do_not_answer_escalate_to_bql
+  BBQ-SAN-03:
+    answer_policy: do_not_answer_escalate_to_bql
+  BBQ-SAN-04:
+    answer_policy: do_not_answer_escalate_to_bql
+  BBQ-SAN-05:
+    answer_policy: excluded_from_rag
+  BBQ-SAN-06:
+    answer_policy: do_not_answer_escalate_to_bql
+  BBQ-SAN-07:
+    answer_policy: do_not_answer_escalate_to_bql
+  BBQ-SAN-08:
+    answer_policy: do_not_answer_escalate_to_bql
+  BBQ-SAN-09:
+    answer_policy: do_not_answer_escalate_to_bql
+  BBQ-SAN-10:
+    answer_policy: do_not_answer_escalate_to_bql
+  FISH-BOOK-02:
+    answer_policy: general_rule_only
+  FISH-BOOK-03:
+    answer_policy: normal_faq_without_collecting_identity_or_booking_data
+  FISH-BOOK-05:
+    answer_policy: general_rule_only_missing_procedure
+  FISH-I-03B:
+    answer_policy: normal_faq_with_environmental_warning
+  FISH-I-03C:
+    answer_policy: normal_faq_with_safety_warning
+  FISH-I-04:
+    answer_policy: emergency_guidance_and_human_escalation
+  FISH-I-05:
+    answer_policy: normal_faq_with_safety_warning
+  FISH-I-09:
+    answer_policy: general_rule_then_escalate_for_incident
+  FISH-I-11B:
+    answer_policy: do_not_answer_escalate_to_bql
+  FISH-I-12:
+    answer_policy: do_not_answer_escalate_to_bql
+  FISH-II-01:
+    answer_policy: general_rule_then_escalate_for_incident
+  FISH-II-02:
+    answer_policy: general_rule_then_escalate_for_incident
+  FISH-II-04:
+    answer_policy: general_rule_then_escalate_for_incident
+  FISH-ACCESS-01:
+    answer_policy: normal_faq_without_collecting_identity_or_booking_data
+  FISH-ENF-01:
+    answer_policy: do_not_answer_escalate_to_bql
+  FISH-CONTACT-01:
+    answer_policy: verified_escalation_contact
+  FISH-SAN-01:
+    answer_policy: do_not_answer_escalate_to_bql
+  FISH-SAN-02:
+    answer_policy: do_not_answer_escalate_to_bql
+  FISH-SAN-03:
+    answer_policy: do_not_answer_escalate_to_bql
+  FISH-SAN-04:
+    answer_policy: do_not_answer_escalate_to_bql
+  FISH-SAN-05:
+    answer_policy: do_not_answer_escalate_to_bql
+  FISH-SAN-06:
+    answer_policy: do_not_answer_escalate_to_bql
+  FISH-SAN-07:
+    answer_policy: do_not_answer_escalate_to_bql
+  FISH-SAN-08:
+    answer_policy: do_not_answer_escalate_to_bql
+  FISH-SAN-09:
+    answer_policy: do_not_answer_escalate_to_bql
+  FISH-SAN-10:
+    answer_policy: do_not_answer_escalate_to_bql
+  ACON-I-01B:
+    answer_policy: general_process_no_approval_prediction
+  ACON-I-01C:
+    answer_policy: general_process_no_case_status
+  ACON-PROHIBIT-01:
+    answer_policy: general_rule_with_bql_confirmation
+  ACON-PROHIBIT-02:
+    answer_policy: general_rule_with_bql_confirmation
+  ACON-PROHIBIT-03:
+    answer_policy: safety_rule_and_escalate_for_specific_work
+  ACON-PROHIBIT-04:
+    answer_policy: safety_rule_and_escalate_for_specific_work
+  ACON-PROHIBIT-05:
+    answer_policy: general_rule_with_bql_confirmation
+  ACON-PROHIBIT-06:
+    answer_policy: safety_rule_and_escalate_for_specific_work
+  ACON-I-02:
+    answer_policy: normal_faq_without_collecting_personal_data
+  ACON-I-06A:
+    answer_policy: normal_faq_without_collecting_personal_data
+  ACON-I-06B:
+    answer_policy: normal_faq_without_collecting_personal_data
+  ACON-II-01A:
+    answer_policy: published_fee_then_bql_for_payment
+  ACON-II-01B:
+    answer_policy: published_fee_then_bql_for_payment
+  ACON-II-01X:
+    answer_policy: excluded_from_rag
+  ACON-II-02:
+    answer_policy: general_process_then_bql_for_registration
+  ACON-II-03:
+    answer_policy: general_process_then_bql_for_registration
+  ACON-III-01:
+    answer_policy: general_process_then_bql_for_scheduling
+  ACON-III-02:
+    answer_policy: do_not_answer_escalate_to_bql
+  ACON-NOTE-02:
+    answer_policy: general_technical_rule_then_professional_review
+  ACON-NOTE-03:
+    answer_policy: general_technical_rule_then_professional_and_bql_review
+  ACON-NOTE-04X:
+    answer_policy: excluded_from_rag
+  ACON-ACOTEC-01:
+    answer_policy: general_technical_rule_then_professional_review
+  ACON-ACOTEC-02:
+    answer_policy: general_technical_rule_then_professional_review
+  ACON-ACOTEC-03:
+    answer_policy: general_technical_rule_then_professional_review
+  ACON-ACOTEC-04:
+    answer_policy: general_technical_rule_then_professional_review
+  ACON-ACOTEC-05:
+    answer_policy: general_technical_rule_then_professional_review
+  ACON-ACOTEC-06:
+    answer_policy: general_technical_rule_then_professional_review
+  ACON-CONTACT-01:
+    answer_policy: verified_escalation_contact
+  APTC-III-01:
+    answer_policy: general_rule_then_bql_for_approval
+  APTC-III-02:
+    answer_policy: general_rule_no_legal_determination
+  APTC-III-04:
+    answer_policy: professional_and_bql_review_required
+  APTC-III-06:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-III-08:
+    answer_policy: fire_safety_rule
+  APTC-III-11:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-III-12:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-DEPOSIT-04:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-DEPOSIT-05:
+    answer_policy: general_timeline_then_bql_for_refund_decision
+  APTC-DEPOSIT-06:
+    answer_policy: published_rate_with_freshness_warning
+  APTC-PAY-01:
+    answer_policy: payment_method_then_manual_verification
+  APTC-PAY-02:
+    answer_policy: excluded_from_rag
+  APTC-REG-02:
+    answer_policy: normal_faq_without_collecting_personal_data
+  APTC-REG-04:
+    answer_policy: general_timeline_no_approval_prediction
+  APTC-REG-05:
+    answer_policy: general_process_then_bql_for_case
+  APTC-REG-06:
+    answer_policy: general_process_then_bql_for_payment_and_access
+  APTC-REG-07:
+    answer_policy: general_process_then_bql_for_refund
+  APTC-TIME-02:
+    answer_policy: normal_faq_with_safety_warning
+  APTC-TIME-04:
+    answer_policy: general_rule_with_scope_clarification
+  APTC-TIME-06:
+    answer_policy: normal_faq_with_environmental_warning
+  APTC-TIME-07:
+    answer_policy: bql_written_approval_required
+  APTC-ENV-01:
+    answer_policy: bql_approval_required
+  APTC-ENV-03:
+    answer_policy: general_rule_then_bql_for_damage_incident
+  APTC-ENV-06:
+    answer_policy: environmental_safety_rule
+  APTC-ENV-08:
+    answer_policy: scope_specific_rule_then_escalate_for_enforcement
+  APTC-SAFE-01:
+    answer_policy: professional_and_bql_review_required
+  APTC-SAFE-02:
+    answer_policy: electrical_safety_rule_and_professional_escalation
+  APTC-SAFE-03:
+    answer_policy: occupational_safety_rule
+  APTC-SAFE-04:
+    answer_policy: professional_review_required
+  APTC-SAFE-05:
+    answer_policy: fire_safety_and_bql_registration_required
+  APTC-SAFE-06:
+    answer_policy: fire_safety_and_bql_approval_required
+  APTC-DESIGN-02:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-WORKER-01:
+    answer_policy: normal_faq_without_collecting_personal_data
+  APTC-WORKER-03:
+    answer_policy: general_rule_then_security_escalation
+  APTC-WORKER-04:
+    answer_policy: fire_safety_rule
+  APTC-WORKER-06:
+    answer_policy: general_safety_duty_no_liability_determination
+  APTC-TRANSPORT-02:
+    answer_policy: normal_faq_with_safety_warning
+  APTC-TRANSPORT-03:
+    answer_policy: normal_faq_with_safety_warning
+  APTC-MONITOR-02:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-LIABILITY-01:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-ENF-01:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-EFF-01:
+    answer_policy: excluded_from_rag
+  APTC-FEE-01:
+    answer_policy: published_rate_then_bql_confirmation
+  APTC-FEE-02:
+    answer_policy: do_not_answer_source_ambiguous_escalate_to_bql
+  APTC-FEE-03:
+    answer_policy: published_rate_then_bql_confirmation
+  APTC-FEE-04:
+    answer_policy: published_rate_then_bql_confirmation
+  APTC-FEE-05:
+    answer_policy: published_rate_then_bql_confirmation
+  APTC-FEE-06:
+    answer_policy: published_rate_then_bql_confirmation
+  APTC-SAN-01:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-02:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-03:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-04:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-05:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-06:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-07:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-08:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-09:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-10:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-11:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-12:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-13:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-14:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-15:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-16:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-17:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-18:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-19:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-20:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-21:
+    answer_policy: do_not_answer_escalate_to_bql
+  APTC-SAN-22:
+    answer_policy: do_not_answer_escalate_to_bql
+  CARD-RES-FEATURE-02:
+    answer_policy: normal_faq_with_sapphire_caveat
+  CARD-RES-ELIG-01:
+    answer_policy: general_eligibility_rule_no_personal_status_decision
+  CARD-RES-ELIG-02:
+    answer_policy: general_eligibility_rule_no_personal_status_decision
+  CARD-LIMIT-01A:
+    answer_policy: source_ambiguous_for_two_bedroom_escalate_when_needed
+  CARD-RES-FEE-01:
+    answer_policy: published_fee_with_limit_caveat
+  CARD-RES-FEE-02:
+    answer_policy: published_fee_then_bql_for_payment
+  CARD-ACCESS-ELIG-01:
+    answer_policy: general_eligibility_rule_no_personal_status_decision
+  CARD-ACCESS-FEE-01:
+    answer_policy: published_fee_then_bql_for_payment
+  CARD-ACCESS-FEE-02:
+    answer_policy: published_fee_then_bql_for_payment
+  CARD-PARK-ELIG-01:
+    answer_policy: general_eligibility_then_bql_approval
+  CARD-PARK-LIMIT-01:
+    answer_policy: bql_approval_required
+  CARD-PARK-FEE-01:
+    answer_policy: published_fee_then_bql_for_payment
+  CARD-PARK-FEE-02:
+    answer_policy: published_fee_then_bql_for_payment
+  CARD-PARK-FEE-03:
+    answer_policy: do_not_infer_missing_fee_escalate_to_bql
+  CARD-PROCESS-01:
+    answer_policy: official_app_registration_without_collecting_personal_data
+  CARD-PROCESS-02:
+    answer_policy: general_process_then_bql_for_handover
+  CARD-PROCESS-03:
+    answer_policy: published_fee_then_bql_for_payment
+  CARD-SECURITY-01:
+    answer_policy: immediate_report_to_bql_no_identity_collection
+  MOVE-REG-01:
+    answer_policy: official_app_registration_without_collecting_personal_data
+  MOVE-OFFICE-04:
+    answer_policy: normal_faq_with_holiday_notice_caveat
+  MOVE-TIME-01:
+    answer_policy: normal_faq_for_residential_moving_scope
+  MOVE-SCOPE-01:
+    answer_policy: clarification_required_when_context_is_ambiguous
+  MOVE-SECURITY-01:
+    answer_policy: approved_proof_required_without_collecting_qr_or_identity_data
+  MOVE-CONTACT-01:
+    answer_policy: verified_escalation_contact
+  MOVE-ROUTE-01:
+    answer_policy: normal_faq_with_safety_warning
+  MOVE-VEH-01:
+    answer_policy: source_ambiguous_vehicle_limit_escalate_to_security
+  MOVE-VEH-02:
+    answer_policy: normal_faq_with_safety_warning
+  MOVE-HAZARD-01:
+    answer_policy: fire_safety_registration_and_technical_approval_required
+  MOVE-WASTE-01:
+    answer_policy: normal_faq_with_environmental_warning
+  MOVE-COMMIT-04:
+    answer_policy: do_not_answer_escalate_to_bql
+  BQLOFF-04:
+    answer_policy: normal_faq_with_holiday_notice_caveat
+  PARKFEE-BSM-MONTH-01:
+    answer_policy: published_fee_then_bql_for_billing
+  PARKFEE-BSM-CASUAL-01:
+    answer_policy: published_fee_no_custom_billing_calculation
+  PARKFEE-BSM-CASUAL-02:
+    answer_policy: published_fee_no_custom_billing_calculation
+  PARKFEE-BSM-CASUAL-03:
+    answer_policy: published_fee_no_custom_billing_calculation
+  PARKFEE-FLT-MONTH-01:
+    answer_policy: published_fee_then_bql_for_billing
+  PARKFEE-TECHNO-MONTH-01:
+    answer_policy: published_fee_with_time_restriction_then_bql_confirmation
+  PARKFEE-HAIAU3-MONTH-01:
+    answer_policy: promotional_fee_then_bql_freshness_confirmation
+  PARKFEE-FLT-CASUAL-01:
+    answer_policy: published_fee_no_custom_billing_calculation
+  PARKFEE-FLT-CASUAL-02:
+    answer_policy: published_fee_no_custom_billing_calculation
+  PARKFEE-FLT-CASUAL-03:
+    answer_policy: published_fee_no_custom_billing_calculation
+  PARKFEE-REG-01:
+    answer_policy: official_channels_without_collecting_personal_data
+  PARKFEE-CASUAL-30D-01:
+    answer_policy: do_not_answer_escalate_to_bql
+  PARKFEE-MONTH-BILLING-01:
+    answer_policy: general_billing_rule_then_bql_for_case
+  MONTHPAY-APP-01:
+    answer_policy: official_app_payment_without_collecting_credentials
+  MONTHPAY-BANK-01:
+    answer_policy: payment_method_then_manual_verification
+  MONTHPAY-BANK-02:
+    answer_policy: excluded_from_rag
+  MONTHPAY-BANK-03:
+    answer_policy: general_payment_memo_without_collecting_unit_data
+  MONTHPAY-NOTICE-01:
+    answer_policy: normal_faq_with_holiday_caveat
+  MONTHPAY-NOTICE-02:
+    answer_policy: normal_faq_with_holiday_caveat
+  MONTHPAY-NOTICE-03:
+    answer_policy: general_notice_schedule_no_enforcement_decision
+  MONTHPAY-CONTACT-DATA-01:
+    answer_policy: general_rule_without_collecting_or_displaying_personal_data
+  MONTHPAY-HOLIDAY-01:
+    answer_policy: normal_faq_with_current_notice_required
+  MONTHPAY-ENF-01:
+    answer_policy: do_not_answer_escalate_to_bql
+  MONTHPAY-MISMATCH-01:
+    answer_policy: contact_bql_without_collecting_transaction_data
+  CASE-CHANNEL-01:
+    answer_policy: verified_escalation_contact
+  CASE-CHANNEL-02:
+    answer_policy: verified_escalation_contact
+  CASE-CHANNEL-03:
+    answer_policy: general_channel_then_clarify_missing_address
+  CASE-PHONE-01:
+    answer_policy: general_service_standard_no_case_promise
+  CASE-PHONE-03:
+    answer_policy: general_service_standard_no_case_status_decision
+  CASE-EMAIL-02:
+    answer_policy: general_service_standard_no_case_promise
+  CASE-EMAIL-03:
+    answer_policy: general_service_standard_no_case_promise
+  CASE-EMAIL-05:
+    answer_policy: general_service_standard_no_case_promise
+  CASE-HARDCOPY-01:
+    answer_policy: general_service_standard_no_case_promise
+  CASE-HARDCOPY-02:
+    answer_policy: general_service_standard_no_case_promise
+  CASE-INTERNAL-01:
+    answer_policy: describe_internal_process_no_case_outcome
+  CASE-INTERNAL-02:
+    answer_policy: general_process_then_escalate_to_bql
+  CASE-LEGAL-01:
+    answer_policy: do_not_answer_escalate_to_bql_and_legal
+  CASE-SLA-01:
+    answer_policy: general_sla_no_case_classification_or_guarantee
+  CASE-SLA-02:
+    answer_policy: general_sla_no_case_classification_or_guarantee
+  CASE-SLA-03:
+    answer_policy: immediate_emergency_escalation
+  CASE-SLA-04:
+    answer_policy: general_extension_process_no_case_status_decision
+  CASE-REVIEW-01:
+    answer_policy: describe_internal_process_no_fault_or_penalty_decision
+  CASE-VULN-01:
+    answer_policy: general_categories_no_legal_health_or_status_determination
+  CASE-VULN-02:
+    answer_policy: general_priority_rule_then_human_handling
+  CASE-VULN-03:
+    answer_policy: general_rule_then_escalate_no_legal_conclusion
+  CASE-VULN-04:
+    answer_policy: do_not_answer_escalate_to_bql_and_legal

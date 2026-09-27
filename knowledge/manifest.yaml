@@ -1,0 +1,948 @@
+knowledge_pack:
+  pack_id: RESIDENTGPT_OCP1_MVP_V1
+  name: ResidentGPT Vinhomes Ocean Park MVP Knowledge Source Pack
+  property_id: VINHOMES_OCEAN_PARK
+  canonical_revision: "1.18"
+  revision_status: Frozen
+  freeze_effective_at: "2026-09-20"
+  freeze_document: ../docs/MVP_DATA_SCOPE_LOCK.md
+  created_at: "2026-09-19"
+  intended_use: MVP demo and offline evaluation
+  contains_real_resident_data: false
+
+eligibility_policy:
+  required_status: Approved
+  required_effective_status: Current
+  require_traceable_section: true
+  require_allowed_for_rag: true
+  require_scope_match: true
+  allow_resident_pii: false
+  on_ineligible_source: safe_fallback_and_manual_handling
+
+documents:
+  - document_id: OCP1-BUILDING-RULES-001
+    title: Nội quy quản lý sử dụng tòa nhà
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Toàn bộ Vinhomes Ocean Park
+    category: building_management_rules
+    source_owner: Ban Quản lý Khu Đô thị Vinhomes Ocean Park
+    source_type: BQL-provided text
+    source_channel: Resident-provided transcription of BQL content
+    issued_at: "2026-07-22"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    hotlines_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    contains_resident_pii: false
+    contains_public_contact: true
+    raw_file: raw/OCP1-BUILDING-RULES-001.txt
+    canonical_file: canonical/OCP1-BUILDING-RULES-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the rules apply to all of Vinhomes Ocean Park.
+      - User confirmed the document was issued on 2026-07-22.
+      - User confirmed the document has no version or notice number.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed both published hotlines remain in use.
+      - User confirmed the content may be used for the MVP.
+
+  - document_id: OCP1-PARKING-RULES-001
+    title: Nội quy trông giữ xe
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Vinhomes Ocean Park
+    category: parking_rules
+    source_owner: Công Ty Cổ Phần Đầu Tư Và Phát Triển Sinh Thái
+    source_type: Official rules text transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: null
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: "2025-10-01"
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    contains_resident_pii: false
+    contains_public_business_contact: true
+    raw_file: raw/OCP1-PARKING-RULES-001.txt
+    canonical_file: canonical/OCP1-PARKING-RULES-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - The supplied text explicitly states an effective date of 2025-10-01.
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the published hotline and email remain current.
+
+  - document_id: OCP1-COMMERCIAL-AREA-RULES-001
+    title: Nội quy khu Thương mại dịch vụ
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Khu Thương mại dịch vụ, Vinhomes Ocean Park
+    area_type: commercial_service
+    audience: commercial_lot_owner_or_user
+    require_scope_match: true
+    category: commercial_area_rules
+    source_owner: Ban Quản Lý Khu Thương Mại Vinhomes Ocean Park
+    source_type: Official rules text transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: "2024-01-16"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    excluded_from_rag_sections:
+      - COMM-03C
+    contains_resident_pii: false
+    contains_public_business_contact: false
+    raw_file: raw/OCP1-COMMERCIAL-AREA-RULES-001.txt
+    canonical_file: canonical/OCP1-COMMERCIAL-AREA-RULES-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2024-01-16.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email remain current, although neither appears in the supplied excerpt.
+      - User confirmed the Khu Biệt Thự/Khu Nhà Ở paragraph belongs to another document and must be excluded from this document's RAG content.
+      - User later supplied the complete continuation of section 5; the former incomplete fragment was normalized in canonical revision 1.1.
+
+  - document_id: OCP1-VILLA-HOUSING-RULES-001
+    title: Nội quy Khu Biệt thự/Khu Nhà ở
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Khu Biệt Thự/Khu Nhà Ở, Vinhomes Ocean Park
+    area_type: villa_or_house
+    audience: resident_or_owner_of_villa_or_house
+    require_scope_match: true
+    category: villa_housing_rules
+    source_owner: Ban Quản Lý/Công Ty Quản Lý Vinhomes Ocean Park
+    source_type: Official rules text transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    contract_attachment: true
+    issued_at: "2024-01-16"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    contains_resident_pii: false
+    contains_public_business_contact: false
+    raw_file: raw/OCP1-VILLA-HOUSING-RULES-001.txt
+    canonical_file: canonical/OCP1-VILLA-HOUSING-RULES-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2024-01-16.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email remain current, although neither appears in the supplied excerpt.
+      - User supplied the complete content of section 4 on 2026-09-19; the former incomplete placeholder was replaced in canonical revision 1.1.
+
+  - document_id: OCP1-VILLA-BUSINESS-RULES-001
+    title: Quy định Kinh doanh tại Khu Biệt thự/Khu Nhà ở
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Khu Biệt Thự/Khu Nhà Ở, Vinhomes Ocean Park
+    area_type: villa_or_house
+    activity_type: business_operation
+    audience: owner_or_authorized_business_operator
+    require_scope_match: true
+    category: villa_business_rules
+    source_owner: Ban Quản Lý/Công Ty Quản Lý Vinhomes Ocean Park
+    source_type: Official rules text transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    parent_document: OCP1-VILLA-HOUSING-RULES-001
+    issued_at: "2024-07-06"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    contains_resident_pii: false
+    contains_public_emergency_contact: true
+    raw_file: raw/OCP1-VILLA-BUSINESS-RULES-001.txt
+    canonical_file: canonical/OCP1-VILLA-BUSINESS-RULES-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2024-07-06.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed hotline and email information remains current; only emergency number 114 appears in the supplied text.
+
+  - document_id: OCP1-POOL-RULES-001
+    title: Nội quy bể bơi Vinhomes Ocean Park
+    property_id: VINHOMES_OCEAN_PARK_1
+    property_scope: Khu Căn hộ Vinhomes Ocean Park 1
+    area_type: apartment_pool
+    audience: pool_users
+    require_scope_match: true
+    category: common_amenity_pool_rules
+    source_owner: Ban Quản lý Khu Căn hộ Vinhomes Ocean Park 1
+    source_type: Official rules text transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: "2026-08-15"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    contains_resident_pii: false
+    contains_health_safety_rules: true
+    contains_public_business_contact: true
+    raw_file: raw/OCP1-POOL-RULES-001.txt
+    canonical_file: canonical/OCP1-POOL-RULES-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2026-08-15.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email remain current; only the hotline appears in the supplied source.
+
+  - document_id: OCP1-KAYAK-DOCK-RULES-001
+    title: Nội quy tiện ích Bến Thuyền Kayak
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Bến Thuyền Kayak, Vinhomes Ocean Park
+    area_type: kayak_dock
+    amenity_type: kayak
+    audience: residents_and_guests
+    require_scope_match: true
+    category: common_amenity_kayak_dock_rules
+    source_owner: Ban Quản lý Vinhomes Ocean Park
+    source_type: Official rules text transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: "2026-08-15"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    excluded_from_rag_sections:
+      - KAYAK-II-05
+    contains_resident_pii: false
+    contains_health_safety_rules: true
+    contains_public_business_contact: false
+    raw_file: raw/OCP1-KAYAK-DOCK-RULES-001.txt
+    canonical_file: canonical/OCP1-KAYAK-DOCK-RULES-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2026-08-15.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email remain current, although neither appears in the supplied source.
+      - Section II.5 mentions Vườn Nướng and is excluded from RAG pending scope verification.
+
+  - document_id: OCP1-SPORTS-COMPLEX-RULES-001
+    title: Nội quy tiện ích Phức hợp Thể thao
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Khu phức hợp Thể thao, Vinhomes Ocean Park
+    area_type: sports_complex
+    amenity_type: sports_complex
+    audience: residents_and_guests
+    require_scope_match: true
+    category: common_amenity_sports_complex_rules
+    source_owner: Ban Quản lý Khu Đô thị Vinhomes Ocean Park
+    source_type: Official rules text transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: "2026-07-22"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    contains_resident_pii: false
+    contains_public_business_contact: true
+    raw_file: raw/OCP1-SPORTS-COMPLEX-RULES-001.txt
+    canonical_file: canonical/OCP1-SPORTS-COMPLEX-RULES-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2026-07-22.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email remain current; only the hotline appears in the supplied source.
+
+  - document_id: OCP1-CHILDREN-PLAYGROUND-RULES-001
+    title: Nội quy tiện ích Sân chơi trẻ em
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Sân chơi trẻ em, Khu Đô thị Vinhomes Ocean Park
+    area_type: children_playground
+    amenity_type: children_playground
+    audience: resident_children_and_guardians
+    require_scope_match: true
+    category: common_amenity_children_playground_rules
+    source_owner: Ban Quản lý Khu Đô thị Vinhomes Ocean Park
+    source_type: Official rules text transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: "2026-07-22"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    contains_resident_pii: false
+    contains_health_safety_rules: true
+    contains_public_business_contact: false
+    raw_file: raw/OCP1-CHILDREN-PLAYGROUND-RULES-001.txt
+    canonical_file: canonical/OCP1-CHILDREN-PLAYGROUND-RULES-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2026-07-22.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email remain current, although neither appears in the supplied source.
+
+  - document_id: OCP1-OUTDOOR-GYM-RULES-001
+    title: Nội quy tiện ích Gym ngoài trời
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Khu Gym ngoài trời, Khu Đô thị Vinhomes Ocean Park
+    area_type: outdoor_gym
+    amenity_type: outdoor_gym
+    audience: residents
+    require_scope_match: true
+    category: common_amenity_outdoor_gym_rules
+    source_owner: Ban Quản lý Khu Đô thị Vinhomes Ocean Park
+    source_type: Official rules text transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: "2026-02-27"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    contains_resident_pii: false
+    contains_health_safety_rules: true
+    contains_public_business_contact: false
+    raw_file: raw/OCP1-OUTDOOR-GYM-RULES-001.txt
+    canonical_file: canonical/OCP1-OUTDOOR-GYM-RULES-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2026-02-27.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email remain current, although neither appears in the supplied source.
+
+  - document_id: OCP1-SALTWATER-LAKE-RULES-001
+    title: Nội quy tiện ích Biển hồ nước mặn
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Biển hồ nước mặn, Vinhomes Ocean Park
+    area_type: saltwater_lake
+    amenity_type: saltwater_lake
+    audience: residents_and_guests
+    require_scope_match: true
+    category: common_amenity_saltwater_lake_rules
+    source_owner: Ban Quản lý Vinhomes Ocean Park
+    source_type: Official rules text transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: "2026-07-22"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    contains_resident_pii: false
+    contains_health_safety_rules: true
+    contains_public_business_contact: true
+    raw_file: raw/OCP1-SALTWATER-LAKE-RULES-001.txt
+    canonical_file: canonical/OCP1-SALTWATER-LAKE-RULES-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2026-07-22.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email remain current; only the hotline appears in the supplied source.
+
+  - document_id: OCP1-BBQ-GARDEN-RULES-001
+    title: Nội quy tiện ích Vườn Nướng BBQ
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Vườn Nướng BBQ, Khu Đô thị Vinhomes Ocean Park
+    area_type: bbq_garden
+    amenity_type: bbq_garden
+    audience: residents_and_accompanied_guests
+    require_scope_match: true
+    category: common_amenity_bbq_garden_rules
+    source_owner: Ban Quản lý Khu Đô thị Vinhomes Ocean Park
+    source_type: Official rules text transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: "2026-07-22"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    excluded_from_rag_sections:
+      - BBQ-SAN-05
+    source_conflicts:
+      - conflict_id: bbq_capacity_over_six
+        sections:
+          - BBQ-FEE-02
+          - BBQ-BOOK-04
+          - BBQ-SAN-05
+        required_action: escalate_to_bql_until_resolved
+    contains_resident_pii: false
+    contains_health_safety_rules: true
+    contains_financial_information: true
+    contains_public_business_contact: true
+    raw_file: raw/OCP1-BBQ-GARDEN-RULES-001.txt
+    canonical_file: canonical/OCP1-BBQ-GARDEN-RULES-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2026-07-22.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email remain current; only the hotline appears in the supplied source.
+      - The source contains an unresolved conflict between the stated maximum capacity and sanction number 5.
+
+  - document_id: OCP1-FISHING-DECK-RULES-001
+    title: Nội quy tiện ích Sàn Câu cá
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Sàn Câu cá, Khu Đô thị Vinhomes Ocean Park
+    area_type: fishing_deck
+    amenity_type: fishing_deck
+    audience: residents_and_eligible_customers
+    require_scope_match: true
+    category: common_amenity_fishing_deck_rules
+    source_owner: Ban Quản lý Khu Đô thị Vinhomes Ocean Park
+    source_type: Official rules text transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: "2026-02-27"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    contains_resident_pii: false
+    contains_health_safety_rules: true
+    contains_public_business_contact: true
+    raw_file: raw/OCP1-FISHING-DECK-RULES-001.txt
+    canonical_file: canonical/OCP1-FISHING-DECK-RULES-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2026-02-27.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email remain current; only the hotline appears in the supplied source.
+
+  - document_id: OCP1-APARTMENT-CONSTRUCTION-GUIDE-001
+    title: Hướng dẫn và hồ sơ đăng ký thi công Căn hộ
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Căn hộ, Khu Đô thị Vinhomes Ocean Park
+    area_type: apartment
+    activity_type: construction_or_renovation
+    audience: apartment_owner_authorized_representative_and_contractor
+    require_scope_match: true
+    category: apartment_construction_application_guide
+    source_owner: Ban Quản lý Khu Đô thị Vinhomes Ocean Park
+    source_type: Official guidance text transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: "2026-02-27"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    excluded_from_rag_sections:
+      - ACON-II-01X
+      - ACON-NOTE-04X
+    contains_resident_pii: false
+    contains_personal_data_requirements: true
+    contains_health_safety_rules: true
+    contains_financial_information: true
+    contains_public_business_contact: true
+    cross_scope_references_present: true
+    raw_file: raw/OCP1-APARTMENT-CONSTRUCTION-GUIDE-001.txt
+    canonical_file: canonical/OCP1-APARTMENT-CONSTRUCTION-GUIDE-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2026-02-27.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email in the source remain current.
+      - The document title specifies apartment scope; Shop and Shophouse references are excluded from RAG pending scope confirmation.
+
+  - document_id: OCP1-APARTMENT-CONSTRUCTION-RULES-001
+    title: Nội quy thi công Khu Căn hộ
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Khu Căn hộ và các đối tượng được định nghĩa trong nguồn, Khu Đô thị Vinhomes Ocean Park
+    area_type: apartment_complex
+    activity_type: construction_or_renovation
+    audience: apartment_owner_authorized_representative_contractor_and_worker
+    require_scope_match: true
+    category: apartment_construction_rules
+    source_owner: Ban Quản lý Khu Đô thị Vinhomes Ocean Park
+    source_type: Official rules text transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: "2026-07-22"
+    user_confirmed_issued_at: "2026-07-22"
+    embedded_issued_at: "2026-04-21"
+    embedded_penalty_effective_at: "2026-04-21"
+    date_discrepancy_requires_bql_confirmation: true
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    source_corrections:
+      - section: APTC-TIME-03
+        description: Người cung cấp sửa lịch Thứ Bảy, Chủ nhật và ngày lễ thành 08:30-11:30 và 14:00-17:30.
+    excluded_from_rag_sections:
+      - APTC-PAY-02
+      - APTC-EFF-01
+    conflicted_sections:
+      - APTC-EFF-01
+      - APTC-FEE-02
+    contains_resident_pii: false
+    contains_personal_data_requirements: true
+    contains_health_safety_rules: true
+    contains_financial_information: true
+    contains_public_business_bank_account: true
+    contains_public_business_contact: false
+    raw_file: raw/OCP1-APARTMENT-CONSTRUCTION-RULES-001.txt
+    canonical_file: canonical/OCP1-APARTMENT-CONSTRUCTION-RULES-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2026-07-22.
+      - The embedded text states 2026-04-21 as the issue date and penalty effective date; both dates are retained pending BQL confirmation.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email remain current; neither appears in the supplied source.
+      - User corrected the schedule for low-dust and low-noise work on Saturdays, Sundays and holidays after the initial source capture.
+
+  - document_id: OCP1-RESIDENT-CARD-ISSUANCE-GUIDE-001
+    title: Cấp phát thẻ cho Cư dân Khu Đô thị Vinhomes Ocean Park
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Căn hộ, Biệt thự, Shophouse và Thương mại dịch vụ tại Khu Đô thị Vinhomes Ocean Park
+    area_type: multi_property_resident_access
+    card_types:
+      - resident_card
+      - access_card
+      - resident_parking_card
+    audience: owners_eligible_relatives_tenants_authorized_users_and_approved_parking_subscribers
+    require_scope_match: true
+    category: resident_access_and_parking_card_issuance_guide
+    source_owner: Ban Quản lý Khu Đô thị Vinhomes Ocean Park
+    source_type: Official guidance text transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: "2026-08-16"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    source_ambiguities:
+      - CARD-LIMIT-01A
+      - CARD-PARK-FEE-03
+    contains_resident_pii: false
+    contains_personal_data_requirements: false
+    contains_financial_information: true
+    contains_public_business_contact: false
+    raw_file: raw/OCP1-RESIDENT-CARD-ISSUANCE-GUIDE-001.txt
+    canonical_file: canonical/OCP1-RESIDENT-CARD-ISSUANCE-GUIDE-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2026-08-16.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email remain current; neither appears in the supplied source.
+      - The source wording for the four-card apartment group is ambiguous and is retained without correction.
+      - The source does not provide issuance or replacement fees for motorbike cards.
+
+  - document_id: OCP1-MOVE-IN-OUT-GUIDE-001
+    title: Hướng dẫn đăng ký chuyển đồ ra/vào Tòa nhà
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Các cụm và Tòa nhà được liệt kê tại Khu Đô thị Vinhomes Ocean Park
+    area_type: multi_property_move_in_out
+    activity_type: moving_belongings_in_or_out
+    audience: residents
+    require_scope_match: true
+    category: move_in_out_registration_guide
+    source_owner: Ban Quản lý Khu Đô thị Vinhomes Ocean Park
+    source_type: Official guidance text transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: "2026-07-22"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    source_ambiguities:
+      - MOVE-VEH-01
+    related_scope_sections:
+      - APTC-TIME-05
+      - APTC-WORKER-07
+      - APTC-WORKER-08
+    contains_resident_pii: false
+    contains_personal_data_requirements: false
+    contains_health_safety_rules: true
+    contains_financial_information: false
+    contains_public_business_contact: true
+    raw_file: raw/OCP1-MOVE-IN-OUT-GUIDE-001.txt
+    canonical_file: canonical/OCP1-MOVE-IN-OUT-GUIDE-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2026-07-22.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email remain current; only the security hotline appears in the supplied source.
+      - The source does not map the stated 3.5-to-5-ton vehicle limit to specific areas or conditions.
+
+  - document_id: OCP1-BQL-OFFICE-DIRECTORY-001
+    title: Địa chỉ và giờ làm việc của Văn phòng Ban Quản lý
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Các cụm và Khối nhà được liệt kê tại Khu Đô thị Vinhomes Ocean Park
+    area_type: multi_property_management_office
+    audience: residents
+    require_scope_match: true
+    category: management_office_directory
+    source_owner: Ban Quản lý Khu Đô thị Vinhomes Ocean Park
+    source_type: Official contact information transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: "2026-07-22"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    cross_validated_with:
+      - OCP1-MOVE-IN-OUT-GUIDE-001
+    contains_resident_pii: false
+    contains_health_safety_rules: false
+    contains_financial_information: false
+    contains_public_business_contact: true
+    raw_file: raw/OCP1-BQL-OFFICE-DIRECTORY-001.txt
+    canonical_file: canonical/OCP1-BQL-OFFICE-DIRECTORY-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2026-07-22.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email remain current; neither appears in the supplied source.
+      - All five location and schedule entries match the corresponding entries in OCP1-MOVE-IN-OUT-GUIDE-001.
+
+  - document_id: OCP1-PARKING-FEE-SCHEDULE-001
+    title: Phí trông giữ xe tại Khu Đô thị Vinhomes Ocean Park
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Hầm gửi xe các Tòa nhà và các Nhà xe nổi được liệt kê tại Khu Đô thị Vinhomes Ocean Park
+    area_type: parking_facilities
+    service_type: vehicle_parking_and_two_wheel_ev_charging
+    audience: residents_and_casual_parking_customers
+    require_scope_match: true
+    category: parking_fee_schedule
+    source_owner: Ban Quản lý Khu Đô thị Vinhomes Ocean Park
+    source_type: Official fee schedule transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: "2026-07-22"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    related_documents:
+      - OCP1-PARKING-RULES-001
+      - OCP1-RESIDENT-CARD-ISSUANCE-GUIDE-001
+    contains_resident_pii: false
+    contains_health_safety_rules: false
+    contains_financial_information: true
+    contains_public_business_contact: false
+    raw_file: raw/OCP1-PARKING-FEE-SCHEDULE-001.txt
+    canonical_file: canonical/OCP1-PARKING-FEE-SCHEDULE-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2026-07-22.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email remain current; neither appears in the supplied source.
+      - All stated fees include VAT according to the source.
+
+  - document_id: OCP1-MONTHLY-FEE-PAYMENT-GUIDE-001
+    title: Hướng dẫn thanh toán các khoản phí hàng tháng
+    property_id: VINHOMES_OCEAN_PARK
+    property_scope: Căn hộ và Nhà ở tại Khu Đô thị Vinhomes Ocean Park
+    area_type: multi_property_resident_billing
+    service_type: monthly_service_fee_payment
+    audience: owners_and_residents_responsible_for_payment
+    require_scope_match: true
+    category: monthly_fee_payment_guide
+    source_owner: Ban Quản lý Khu Đô thị Vinhomes Ocean Park
+    source_type: Official payment guidance transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: "2026-02-27"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    excluded_from_rag_sections:
+      - MONTHPAY-BANK-02
+    related_sections:
+      - APTC-PAY-02
+    contains_resident_pii: false
+    contains_personal_data_requirements: false
+    contains_financial_information: true
+    contains_public_business_bank_account: true
+    contains_public_business_contact: false
+    raw_file: raw/OCP1-MONTHLY-FEE-PAYMENT-GUIDE-001.txt
+    canonical_file: canonical/OCP1-MONTHLY-FEE-PAYMENT-GUIDE-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed the document was issued on 2026-02-27.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the hotline and email remain current; no specific hotline or email address appears in the supplied source.
+      - The bank account is retained for audit but excluded from RAG pending direct payment verification.
+
+  - document_id: VINHOMES-CUSTOMER-REQUEST-HANDLING-001
+    title: Quy định xử lý khiếu nại/yêu cầu của Khách hàng
+    organization_scope: VINHOMES_ALL_PROJECTS
+    applicable_property_ids:
+      - VINHOMES_OCEAN_PARK
+    property_scope: Tất cả dự án và bộ phận thuộc Công ty Cổ phần Vinhomes
+    area_type: all_vinhomes_projects_and_departments
+    process_type: customer_request_and_complaint_handling
+    audience: customers_residents_and_internal_receiving_processing_units
+    require_scope_match: true
+    category: customer_request_complaint_handling_procedure
+    source_owner: Công ty Cổ phần Vinhomes
+    source_type: Official company procedure transcribed by resident
+    source_channel: Vinhomes app official rules channel
+    issued_at: null
+    last_updated_at: "2025-05-05"
+    source_version: Unversioned
+    notice_number: null
+    status: Approved
+    effective_status: Current
+    effective_from: null
+    effective_to: null
+    latest_confirmed: true
+    supersedes: null
+    superseded_by: null
+    contact_current_confirmed: true
+    approved_for_mvp: true
+    allowed_for_rag: true
+    source_capture_completeness: Complete
+    contains_resident_pii: false
+    contains_personal_data_requirements: false
+    contains_health_safety_rules: true
+    contains_legal_process: true
+    contains_public_business_contact: true
+    raw_file: raw/VINHOMES-CUSTOMER-REQUEST-HANDLING-001.txt
+    canonical_file: canonical/VINHOMES-CUSTOMER-REQUEST-HANDLING-001.md
+    review_log: review/review_log.md
+    validation_basis:
+      - The source states that it applies to all projects and departments of Công ty Cổ phần Vinhomes, including Vinhomes Ocean Park.
+      - The source states that its latest update was on 2025-05-05; no original issue date was supplied.
+      - User confirmed the source is the official rules channel in the Vinhomes app.
+      - User confirmed this is the latest version and remains effective.
+      - User confirmed no newer document supersedes it.
+      - User confirmed the document has no version number.
+      - User confirmed the content may be used for the MVP.
+      - User confirmed the published hotline and email remain current, and both appear in the supplied source.

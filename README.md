@@ -1,5 +1,7 @@
 # AI20K Agent Template
 
+> **ResidentGPT project docs:** [bản đồ tài liệu](docs/README.md) dẫn tới baseline MVP v0.3 và đặc tả mở rộng v0.4 cho demo 04/10/2026. Phần còn lại của README này là hướng dẫn template; trạng thái triển khai thực tế được ghi trong [ARCHITECTURE.md](ARCHITECTURE.md).
+
 Template chính thức cho học viên VinUni AI20K Build Phase: cấu trúc dự án, code
 mẫu và hướng dẫn kỹ thuật để xây dựng một AI Agent hoàn chỉnh — từ kiến trúc,
 code, test cho đến deploy và nộp bài Demo Day.
@@ -69,6 +71,12 @@ rồi thay vào chỗ `<get-your-api-key-from-dashboard-phoenix>` — giá trị
 bash scripts/setup_hooks.sh                                      # Linux / macOS / Git Bash
 powershell -ExecutionPolicy Bypass -File scripts\setup_hooks.ps1 # Windows PowerShell
 ```
+
+On Windows, the Codex hook uses `commandWindows` and the repository Git root,
+so it also works when Codex starts in a subdirectory. If Codex reports that the
+hook is new or changed, open `/hooks` in Codex and review/trust the two logging
+hooks once. The Windows launcher first tries the project virtual environment,
+then installed Python interpreters, and finally a PowerShell fallback.
 
 Chạy một lần sau khi clone. Hook ghi lại prompt khi bạn dùng Claude Code, Cursor,
 Codex CLI, Gemini CLI, Antigravity hoặc GitHub Copilot, và cài pre-push hook để

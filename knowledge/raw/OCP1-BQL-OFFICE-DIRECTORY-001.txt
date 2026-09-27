@@ -1,0 +1,32 @@
+SOURCE CAPTURE
+
+Document ID: OCP1-BQL-OFFICE-DIRECTORY-001
+Source title: Địa chỉ & giờ làm việc của Văn phòng Ban Quản lý
+Property scope: Các cụm và Khối nhà được liệt kê tại Khu Đô thị Vinhomes Ocean Park
+Source owner: Ban Quản lý Khu Đô thị Vinhomes Ocean Park
+Source type: Official contact information transcribed by resident
+Original source channel: Ứng dụng Vinhomes — kênh nội quy chính thức
+Issued at: 22/07/2026
+Effective status: Phiên bản mới nhất và đang có hiệu lực
+Source version: Không có số phiên bản
+Notice number: Không được cung cấp trong nội dung nguồn
+Superseded by: Hiện không có văn bản mới thay thế
+Approved for MVP use: Có
+Hotline and email confirmed current: Có; không xuất hiện trong nội dung nguồn
+Contains resident PII: Không
+Source capture completeness: Hoàn chỉnh theo nội dung được cung cấp
+Captured at: 19/09/2026
+
+ORIGINAL CONTENT
+
+# Địa chỉ & giờ làm việc của Văn phòng Ban Quản lý
+
+**Thông tin liên hệ Ban Quản lý Khu đô thị Vinhomes Ocean Park**
+
+| Phạm vi                                                                                                                               | Địa điểm Quầy lễ tân/Văn phòng Ban Quản lý (“BQL”)                         | Thời gian làm việc                                                                                                               |
+| :------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
+| **Cư dân Cụm Nhà chung cư S2 (Sapphire 2)**                                                                                           | Tầng 1, Khối nhà S2.18, Khu Đô thị Vinhomes Ocean Park, xã Gia Lâm, Hà Nội | Sáng: 08h30 - 12h30<br>Chiều: 13h30 – 17h30<br>Các ngày trong tuần *(trừ ngày Lễ, Tết)*                                          |
+| **Cư dân Cụm Nhà chung cư S1 (Sapphire 1)**<br>và **Cư dân Khu Biệt thự/Thương mại dịch vụ**                                          | Tầng 1, Khối nhà S1.03, Khu Đô thị Vinhomes Ocean Park, xã Gia Lâm, Hà Nội | Sáng: 08h30 - 12h30<br>Chiều: 13h30 – 17h30<br>Các ngày trong tuần *(trừ ngày Lễ, Tết)*                                          |
+| **Cư dân Khối nhà P1, P2, P4 (Tòa The Pavilion)**                                                                                     | Tầng 1, Nhà xe nổi Lý Thánh Tông                                           | Sáng: 08h30 - 12h30<br>Chiều: 13h30 – 17h30<br>Các ngày trong tuần *(trừ ngày Lễ, Tết)*                                          |
+| **Cư dân các Khối nhà:**<br>- R1.01, R1.02, R1.03, R1.05 (Tòa The Zen Park)<br>- P3 (Tòa The Pavilion)<br>- S2.10, S2.17 (Sapphire 2) | Sảnh Lễ tân tầng 1 từng Khối nhà                                           | Sáng: 08h30 - 12h30<br>Chiều: 13h30 – 17h30<br>Các ngày trong tuần<br>*(Dịp Lễ, Tết: theo thông báo của BQL tại từng thời điểm)* |
+| **Cư dân các Khối nhà:**<br>- ZR1, ZR2, ZR3 (Tòa The Zurich)<br>- BE1, BE2, BE3, BE4 (Tòa The Beverly)                                | Sảnh Lễ tân tầng 1 từng Khối nhà                                           | Sáng: 08h30 - 12h30<br>Chiều: 13h30 – 17h30<br>Thứ 2 đến thứ 7 *(trừ Chủ nhật và ngày Lễ, Tết)*                                  |
