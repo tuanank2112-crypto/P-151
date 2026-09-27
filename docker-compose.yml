@@ -1,19 +1,49 @@
-version: "3.8"
+name: p151
 
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-p151}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-p151}
+      POSTGRES_DB: ${POSTGRES_DB:-p151}
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      # Expose for local tools (psql, DBeaver) and running uvicorn outside Docker
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   backend:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "${APP_PORT:-8000}:8000"
     env_file:
       - .env
+    environment:
+      # Inside the compose network, Postgres is reachable at host "db"
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-p151}:${POSTGRES_PASSWORD:-p151}@db:5432/${POSTGRES_DB:-p151}
+      TZ: Asia/Ho_Chi_Minh
     volumes:
+      # Uploaded ticket photos and other local data
       - ./data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
+
+volumes:
+  pgdata:

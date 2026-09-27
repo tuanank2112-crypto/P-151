@@ -1,194 +1,269 @@
-# AI20K Agent Template
+# P-151 — Resident Ticket Routing Agent
 
-Template chính thức cho học viên VinUni AI20K Build Phase: cấu trúc dự án, code
-mẫu và hướng dẫn kỹ thuật để xây dựng một AI Agent hoàn chỉnh — từ kiến trúc,
-code, test cho đến deploy và nộp bài Demo Day.
+> Cư dân gửi phản ánh sự cố → AI phân loại ticket, kiểm tra ảnh bằng chứng → tự chuyển
+> việc cho kỹ thuật qua Zalo, ca khó/khẩn cấp chuyển Ban quản lý (BQL).
 
-Technical Guidebook: <https://phoenix.note.transformerlabs.ai/technical-book>
+## Vấn đề
 
-## Template có sẵn những gì
+BQL nhận phản ánh sự cố (đèn hỏng, thang máy, điện nước, ...) từ cư dân qua nhiều kênh và
+phải đọc, phân loại, xác minh rồi giao việc thủ công cho kỹ thuật. Việc này chậm, dễ sót
+và phụ thuộc vào người điều phối.
 
-- **Cấu trúc thư mục tách lớp** — `agents/`, `api/`, `services/`, `models/` đã
-  chia sẵn, không phải bàn lại từ đầu.
-- **Code mẫu chạy được** — LangGraph agent (state, node, tool), FastAPI routes,
-  Pydantic settings, schema.
-- **Docker và CI** — Dockerfile multi-stage, `docker-compose.yml`, workflow
-  GitHub Actions chạy `ruff` + `pytest` khi push lên `main`/`develop` và khi mở
-  pull request vào `main`.
-- **Technical Guidebook 10 chương** trong `docs/guide/`, đồng thời đọc được
-  online.
-- **Checklist 10 deliverables** của Demo Day.
-- **AI usage logging** — hook cài sẵn cho 6 công cụ AI, log tự động gửi lên
-  grading server mỗi lần `git push`.
+## Giải pháp
 
-## Yêu cầu
+- **Phân loại ticket**: loại sự cố, vị trí, mức khẩn cấp (LLM có vision).
+- **Kiểm tra bằng chứng**: ticket sửa chữa phải có ảnh khớp với mô tả.
+- **Chuyển tiếp tự động**: đủ điều kiện → tạo work order và báo kỹ thuật qua Zalo Bot.
+- **Chuyển BQL**: thiếu thông tin, mơ hồ, hoặc ca an toàn (kẹt thang máy, chập điện, ...).
 
-- Python 3.11 (phiên bản CI đang dùng)
-- Git
-- Docker — tuỳ chọn, chỉ cần nếu chạy `docker compose`
+## Tech Stack
 
-## Bắt đầu
+| Lớp | Công nghệ |
+|---|---|
+| AI Agent | LangGraph + LangChain, OpenAI `gpt-4o-mini` |
+| Backend | FastAPI + Python 3.11 |
+| Database | PostgreSQL 16 (SQLModel / SQLAlchemy) |
+| Thông báo kỹ thuật | Zalo Bot |
+| DevOps | Docker Compose + GitHub Actions |
 
-### 1. Clone repo của đội
+---
 
-Khi đội được chốt, hệ thống tự sinh repo cho đội từ template này, nằm trong org
-GitHub của khoá bạn đang học và đặt tên theo mã đội. Copy URL ở trang đội trên
-Phoenix rồi clone về:
+## Chạy dự án bằng Docker (khuyến nghị)
+
+Cả team chạy bằng Docker để có cùng phiên bản Python, PostgreSQL và thư viện, tránh lỗi
+"máy tôi chạy được".
+
+### Yêu cầu
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/macOS) hoặc
+  Docker Engine + Compose plugin (Linux). Kiểm tra: `docker compose version`.
+- Git.
+- Trên Windows: bật WSL 2 khi Docker Desktop hỏi.
+
+### 1. Clone repo
 
 ```bash
 git clone https://github.com/<ORG-CỦA-KHOÁ>/<MÃ-ĐỘI>.git
 cd <MÃ-ĐỘI>
 ```
 
-Không cần `rm -rf .git`, `git init` hay `git remote add`: repo sinh từ template
-đã bắt đầu bằng lịch sử riêng của đội và remote trỏ sẵn đúng chỗ. Chưa thấy repo
-của đội thì báo BTC — repo tự tạo nằm ngoài org sẽ không được chấm.
-
-### 2. Cài môi trường
+### 2. Tạo file `.env`
 
 ```bash
+cp .env.example .env              # Windows PowerShell: Copy-Item .env.example .env
+```
+
+Mở `.env` và điền:
+
+| Biến | Bắt buộc | Lấy ở đâu |
+|---|---|---|
+| `OPENAI_API_KEY` | Có | Key OpenAI của team |
+| `AI_LOG_API_KEY` | Có | Mỗi người tự tạo tại [dashboard Phoenix](https://phoenix.note.transformerlabs.ai/api-keys) |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Không | Để mặc định khi chạy local |
+| `ZALO_BOT_TOKEN`, `ZALO_WEBHOOK_SECRET`, `ZALO_TECH_CHAT_ID` | Khi làm phần Zalo | Hỏi người phụ trách Zalo Bot |
+| `LANGCHAIN_API_KEY` | Nên có | [LangSmith](https://smith.langchain.com) — dùng cho AI logs (deliverable #4) |
+
+> Không commit file `.env` (đã có trong `.gitignore`). Gửi key cho nhau qua kênh riêng,
+> không dán vào repo hay group chat công khai.
+
+### 3. Khởi động
+
+```bash
+docker compose up -d --build      # hoặc: make up
+```
+
+Lệnh này build image backend, tạo container PostgreSQL và chạy backend sau khi database
+đã sẵn sàng.
+
+Kiểm tra:
+
+- Health check: <http://localhost:8000/health> → `{"status":"ok",...}`
+- Swagger UI: <http://localhost:8000/docs>
+- Trạng thái container: `docker compose ps` (cả `db` và `backend` phải `healthy`)
+
+### 4. Các lệnh thường dùng
+
+| Việc cần làm | Lệnh | Make |
+|---|---|---|
+| Khởi động / build lại sau khi sửa code | `docker compose up -d --build` | `make up` |
+| Xem log backend | `docker compose logs -f backend` | `make logs` |
+| Dừng (giữ dữ liệu DB) | `docker compose down` | `make down` |
+| Mở psql | `docker compose exec db psql -U p151 -d p151` | `make db-shell` |
+| Chạy test trong container | `docker compose exec backend pytest tests/ -v` | |
+| Xoá sạch DB, làm lại từ đầu | `docker compose down -v` | |
+
+> ⚠️ `docker compose down -v` **xoá toàn bộ dữ liệu PostgreSQL** (volume `pgdata`).
+> Chỉ dùng khi muốn reset DB.
+
+Container backend **không** tự reload khi sửa code — chạy lại `make up` để build lại.
+Nếu cần hot reload, xem mục "Chạy backend ngoài Docker" bên dưới.
+
+### 5. Kết nối database từ máy
+
+PostgreSQL được mở ra cổng `5432` trên máy host, dùng được với DBeaver, pgAdmin, TablePlus:
+
+| Host | Port | User | Password | Database |
+|---|---|---|---|---|
+| `localhost` | `5432` | `p151` | `p151` | `p151` |
+
+Nếu máy đã có PostgreSQL khác chiếm cổng 5432, đặt `POSTGRES_PORT=5433` trong `.env`
+rồi `make up` lại.
+
+---
+
+## Chạy backend ngoài Docker (tuỳ chọn, để hot reload)
+
+Vẫn dùng PostgreSQL trong Docker, chỉ chạy backend trực tiếp trên máy:
+
+```bash
+docker compose up -d db                       # chỉ chạy database
+
 python3.11 -m venv .venv
-source .venv/bin/activate      # Windows: .venv\Scripts\activate
+source .venv/bin/activate                     # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+
+uvicorn src.main:app --reload --port 8000     # hoặc: make run
 ```
 
-### 3. Cấu hình biến môi trường
+`DATABASE_URL` trong `.env` mặc định trỏ tới `localhost:5432`, nên backend chạy ngoài
+Docker vẫn kết nối được với database trong Docker.
 
-```bash
-cp .env.example .env
-```
+> Nếu `make up` đang chạy backend trong Docker thì cổng 8000 đã bị chiếm — dừng bằng
+> `docker compose stop backend` trước.
 
-Mở `.env` và điền `OPENAI_API_KEY`. Riêng `AI_LOG_API_KEY`, mỗi thành viên tự
-tạo key riêng tại [dashboard Phoenix](https://phoenix.note.transformerlabs.ai/api-keys)
-rồi thay vào chỗ `<get-your-api-key-from-dashboard-phoenix>` — giá trị trong
-`.env.example` chỉ là placeholder, để nguyên thì log không vào được hệ thống chấm.
+---
 
-### 4. Cài hook ghi log AI
+## Bắt buộc với mỗi thành viên: cài hook ghi log AI
+
+Khoá học chấm điểm dựa trên log sử dụng công cụ AI. Chạy **một lần** sau khi clone
+(chạy trên máy, không phải trong Docker):
 
 ```bash
 bash scripts/setup_hooks.sh                                      # Linux / macOS / Git Bash
 powershell -ExecutionPolicy Bypass -File scripts\setup_hooks.ps1 # Windows PowerShell
 ```
 
-Chạy một lần sau khi clone. Hook ghi lại prompt khi bạn dùng Claude Code, Cursor,
-Codex CLI, Gemini CLI, Antigravity hoặc GitHub Copilot, và cài pre-push hook để
-đẩy log lên server.
-
-### 5. Chạy server
+Log được ghi vào `.ai-log/` và tự gửi lên server chấm ở bước `git push`. Dùng ChatGPT
+hoặc công cụ web khác thì log thủ công:
 
 ```bash
-uvicorn src.main:app --reload --port 8000
+bash scripts/_pyrun.sh scripts/log_manual.py --tool chatgpt --prompt "Nội dung đã hỏi"
 ```
 
-Swagger UI ở <http://localhost:8000/docs>. Hoặc dùng `make run`, `make test`,
-`make lint` — xem `Makefile`.
+---
+
+## Xử lý sự cố thường gặp
+
+| Triệu chứng | Cách xử lý |
+|---|---|
+| `failed to connect to the docker API` / `Cannot connect to the Docker daemon` | Docker Desktop chưa chạy — mở Docker Desktop và đợi báo "Engine running" |
+| `port is already allocated` (5432 hoặc 8000) | Đổi `POSTGRES_PORT` / `APP_PORT` trong `.env`, hoặc tắt chương trình đang dùng cổng đó |
+| `env file .env not found` | Chưa tạo `.env` — làm lại bước 2 |
+| Backend báo lỗi kết nối DB | Xem `docker compose ps`; nếu `db` chưa `healthy` thì xem `docker compose logs db` |
+| Sửa code nhưng không thấy thay đổi | Chạy `make up` để build lại image |
+| Thêm thư viện vào `requirements.txt` | Chạy `make up` để build lại; thành viên khác cũng cần `make up` sau khi pull |
+| Đổi `POSTGRES_USER` / `POSTGRES_PASSWORD` nhưng không có tác dụng | Postgres chỉ đọc các biến này lần đầu tạo volume — `docker compose down -v` rồi `make up` (mất dữ liệu) |
+
+---
 
 ## Cấu trúc thư mục
 
 ```
 src/
-  agents/            LangGraph agent
-    graph.py         State graph (nodes + edges)
-    state.py         State schema (TypedDict)
-    nodes/           Node functions
-    tools/           Agent tools (@tool)
-  api/routes.py      FastAPI endpoints
-  models/schemas.py  Pydantic schemas
-  services/llm.py    LLM client
-  config.py          Pydantic Settings
+  agents/            LangGraph agent (graph, state, nodes, tools)
+  api/routes.py      Endpoint chat mẫu của template
+  models/schemas.py  Pydantic schemas (request/response)
+  api/routers/       Endpoints: tickets, work_orders, escalations, jobs, metrics, catalog
+  models/entities.py Bảng DB (SQLModel)
+  services/          Nghiệp vụ: triage, safety, intake_llm, assignment, evidence_check, metrics
+  config.py          Cấu hình (đọc từ .env)
   main.py            App entry point
-tests/               pytest suite
-scripts/             Hook ghi log AI + installer
-docs/
-  guide/             Technical Guidebook (nguồn của bản online)
-  architecture_diagram.md
+tests/               pytest (5 kịch bản MVP + unit test quy tắc)
+seed/                Dữ liệu mẫu một tòa: vị trí, lịch trực, playbook
+docs/                Tài liệu, architecture diagram, Technical Guidebook
 eval/                Kết quả evaluation
-presentation/        Slide và video Demo Day
-.claude/ .codex/ .cursor/ .gemini/ .agents/ .github/hooks/
-                     Config hook cho từng công cụ
-.github/workflows/   CI
-Dockerfile           Multi-stage build
-docker-compose.yml   Chạy backend bằng Docker
-README_boilerplate.md  Khung README cho dự án của đội
+presentation/        Slide, video Demo Day
+Dockerfile           Image backend (multi-stage)
+docker-compose.yml   Backend + PostgreSQL
 ```
 
-## Technical Guidebook
+## API Endpoints
 
-| Chương | Nội dung | Thời gian |
-|---|---|---|
-| 1 | Lời mở đầu — mục tiêu, cách sử dụng | 15 phút |
-| 2 | Khởi tạo dự án — clone, setup, git workflow | 4 giờ |
-| 3 | Thiết kế kiến trúc — 3-tier, diagram, ADR | 6 giờ |
-| 4 | LangGraph Agent — state, node, edge, tool, RAG | 8 giờ |
-| 5 | FastAPI — routes, validation, error handling, streaming | 6 giờ |
-| 6 | Giao diện — Next.js và Streamlit | 6 giờ |
-| 7 | DevOps — Docker, CI/CD, deploy, logging | 6 giờ |
-| 8 | Kiểm thử — unit test, integration test, RAGAS | 4 giờ |
-| 9 | Demo Day — 10 deliverables, checklist | 2 giờ |
-| 10 | Tài nguyên — khoá học, tài liệu, BMAD method | tham khảo |
+Tất cả nằm dưới prefix `/api/v1`. Chưa có đăng nhập: gửi header **`X-Role: bql`** hoặc
+**`X-Role: technician`** để giả lập vai trò (Swagger có ô nhập `x-role` ở mỗi endpoint).
 
-Đọc online tại <https://phoenix.note.transformerlabs.ai/technical-book>: đăng
-nhập bằng GitHub (đúng account đã được BTC mời vào org của khoá), chọn tab
-**Technical Book** ở sidebar trái. Bản offline nằm trong `docs/guide/`, mở được
-bằng bất kỳ markdown viewer nào.
-
-## 10 deliverables cho Demo Day
-
-| # | Deliverable | Vị trí | Template lo tới đâu |
+| Method | Path | Vai trò | Việc làm |
 |---|---|---|---|
-| 1 | Source code | `src/` | Khung sẵn |
-| 2 | README | copy `README_boilerplate.md` thành `README.md` | Khung sẵn |
-| 3 | Architecture diagram | `docs/architecture_diagram.md` | Khung sẵn |
-| 4 | AI logs | LangSmith (3 biến môi trường) + auto AI usage logging | Cấu hình sẵn |
-| 5 | Live URL | deploy lên Render/Vercel | CI/CD sẵn |
-| 6 | Video demo | `presentation/` | Đội tự làm |
-| 7 | Pitch deck | `presentation/` | Đội tự làm |
-| 8 | Development journal | `JOURNAL.md` | Khung sẵn |
-| 9 | Worklog | `WORKLOG.md` | Khung sẵn |
-| 10 | Evaluation evidence | `eval/` | Đội tự làm |
+| POST | `/tickets` | (cư dân) | Nhận phản ánh; kiểm tra an toàn, tách vị trí/loại sự cố → `TRIAGED` hoặc `ESCALATED` |
+| GET | `/tickets`, `/tickets/{id}` | bql (xem chi tiết: cả technician) | Danh sách / chi tiết ticket kèm work order, bằng chứng, ngoại lệ |
+| POST | `/tickets/{id}/propose-work-order` | bql | Đề xuất người trực và nội dung việc theo playbook |
+| POST | `/work-orders/{id}/approve` | bql | Duyệt giao việc (có thể đổi người), bắt đầu tính hạn |
+| POST | `/work-orders/{id}/accept` | technician | Kỹ thuật xác nhận nhận việc |
+| POST | `/work-orders/{id}/evidence` | technician | Upload ảnh trước/sau, checklist, vật tư (nộp bổ sung được) |
+| POST | `/work-orders/{id}/check` | bql | Soát hồ sơ bằng quy tắc cứng: đạt → đề xuất đóng; thiếu → nhắc bổ sung kèm lý do |
+| GET | `/work-orders` | bql, technician | Lọc theo `technician_id`, `status` |
+| POST | `/tickets/{id}/close` | bql | Đóng ticket (khi `CLOSE_PROPOSED`) |
+| POST | `/tickets/{id}/escalate` | bql, technician | Chuyển BQL thủ công từ bất kỳ bước nào |
+| GET | `/escalations` | bql | Hàng đợi ngoại lệ (`status=OPEN/RESOLVED/ALL`) |
+| POST | `/escalations/{id}/resolve` | bql | `resume` (tiếp tục), `retriage` (sửa vị trí/loại), `close` (đóng) |
+| POST | `/jobs/check-overdue` | bql | Quét việc quá hạn nhận/hoàn thành (bấm tay thay cho cron) |
+| GET | `/tickets/{id}/audit` | bql | Nhật ký mọi quyết định và lần chuyển trạng thái |
+| GET | `/metrics` | bql | Thời gian đến lúc giao việc (trung vị), tỷ lệ hồ sơ đạt lần đầu, số ngoại lệ |
+| GET | `/locations`, `/shifts`, `/playbooks` | (ai cũng xem) | Danh mục vị trí, lịch trực, playbook |
 
-## Tech stack
+Vòng đời ticket:
+`NEW → TRIAGED → WO_PROPOSED → ASSIGNED → EVIDENCE_SUBMITTED → CHECK_PASSED → CLOSE_PROPOSED → CLOSED`.
+Bước nào cũng có thể rẽ sang `ESCALATED`; hồ sơ thiếu thì về `CHECK_FAILED` chờ nộp bổ sung.
 
-| Lớp | Công nghệ |
-|---|---|
-| Agent | LangGraph + LangChain 0.3 |
-| Backend | FastAPI 0.115 + Uvicorn |
-| LLM | OpenAI, mặc định `gpt-4o-mini` (đổi trong `src/config.py`) |
-| Giao diện | Next.js hoặc Streamlit (đội tự chọn, hướng dẫn ở chương 6) |
-| Lint / test | ruff + pytest 8 |
-| DevOps | Docker + GitHub Actions |
+### Thử luồng chuẩn trên Swagger (<http://localhost:8000/docs>)
 
-## AI usage logging
+1. `POST /tickets` với `{"text": "Đèn hành lang tầng 5 bị hỏng"}` → `TRIAGED`, `location_id = S101-T05-HL`.
+2. `POST /tickets/{id}/propose-work-order` (x-role `bql`) → lấy `work_orders[0].work_order.id`.
+3. `POST /work-orders/{id}/approve` (bql), body `{}`.
+4. `POST /work-orders/{id}/evidence` (technician): chọn ảnh ở `before_photos` và `after_photos`,
+   `checklist_done = diagnose,power_off,replace,test`, `materials_used = Bóng LED 18W x1`.
+5. `POST /work-orders/{id}/check` (bql) → `CLOSE_PROPOSED`.
+6. `POST /tickets/{id}/close` (bql) → `CLOSED`; xem `GET /tickets/{id}/audit`.
 
-Mọi prompt được ghi vào `.ai-log/session.jsonl` và tự động gửi lên grading server
-ở bước pre-push.
+Ca chuyển BQL: `"tầng 5 tối"` (vị trí mơ hồ), `"Mất điện cả hành lang tầng 7, có mùi khét"` (an toàn).
 
-| Công cụ | Cấu hình | Thời điểm ghi |
+### Dữ liệu mẫu và LLM
+
+- Lần đầu khởi động với DB trống, backend nạp dữ liệu một tòa từ `seed/`:
+  `locations.csv` (vị trí), `shifts.csv` (lịch trực), `playbook.yaml` (quy trình + checklist).
+  Sửa các file này rồi reset DB (`docker compose down -v`, `make up`) để nạp lại.
+- `LLM_MODE=mock` (mặc định): tách vị trí/loại sự cố bằng từ khoá, không cần API key, kết quả cố định.
+  Đổi `LLM_MODE=openai` để dùng model trong `MODEL_NAME`. Kiểm tra an toàn và soát hồ sơ luôn là
+  quy tắc cứng, không phụ thuộc LLM.
+- Chưa dùng Alembic: bảng được tạo tự động khi khởi động. Đổi cấu trúc bảng thì reset DB.
+
+## Tài liệu
+
+- Technical Guidebook: `docs/guide/` hoặc <https://phoenix.note.transformerlabs.ai/technical-book>
+- Kiến trúc: `ARCHITECTURE.md`, `docs/architecture_diagram.md`
+- Quy ước đóng góp: `CONTRIBUTING.md`
+
+## Deliverables Checklist
+
+- [x] Source Code (GitHub)
+- [x] README.md
+- [ ] Architecture Diagram (`docs/architecture_diagram.md`)
+- [x] AI Logs (auto-collected)
+- [ ] Live URL / Deploy
+- [ ] Video Demo
+- [ ] Pitch Deck (`presentation/`)
+- [ ] Weekly Journal (`JOURNAL.md`)
+- [ ] Worklog (`WORKLOG.md`)
+- [ ] Evaluation Evidence (`eval/results/`)
+
+## Team
+
+| Thành viên | Vai trò | MSSV |
 |---|---|---|
-| Claude Code | `.claude/settings.json` | mỗi prompt (`UserPromptSubmit`) |
-| Cursor | `.cursor/hooks.json` | mỗi prompt và khi dừng |
-| OpenAI Codex CLI | `.codex/hooks.json` | mỗi prompt và khi dừng |
-| Gemini CLI | `.gemini/settings.json` | mỗi lượt agent chạy |
-| GitHub Copilot | `.github/hooks/hooks.json` | mỗi prompt và cuối session |
-| Antigravity IDE | `.agents/hooks.json` | mỗi prompt, kèm lần quét lại lúc `git push` |
-
-Dùng ChatGPT hay công cụ web khác thì log thủ công:
-
-```bash
-bash scripts/_pyrun.sh scripts/log_manual.py --tool chatgpt --prompt "What you asked"
-```
-
-## Đóng góp
-
-Repo này là open source. Đọc [CONTRIBUTING.md](CONTRIBUTING.md) trước khi mở PR.
-
-Nội dung trong `docs/guide/` là nguồn của Technical Book và được đồng bộ lên bản
-online, nên mọi thay đổi ở đó cần review của
-[@AI20K-Build-Phase/book-maintainers](https://github.com/orgs/AI20K-Build-Phase/teams/book-maintainers)
-— xem [.github/CODEOWNERS](.github/CODEOWNERS).
-
-Báo lỗ hổng bảo mật theo [SECURITY.md](SECURITY.md), đừng mở public issue.
+| [Tên] | [Vai trò] | [MSSV] |
+| [Tên] | [Vai trò] | [MSSV] |
+| [Tên] | [Vai trò] | [MSSV] |
 
 ## License
 
-[MIT](LICENSE) — dùng tự do cho mục đích giáo dục.
+MIT

@@ -1,0 +1,7 @@
+technician_id,technician_name,zalo_chat_id,skill,building,days,start,end
+KT01,Nguyễn Văn An,,lighting,S1.01,0123456,06:00,14:00
+KT02,Trần Văn Bình,,lighting,S1.01,0123456,14:00,22:00
+KT03,Lê Văn Cường,,lighting,S1.01,0123456,22:00,06:00
+KT04,Phạm Văn Dũng,,plumbing,S1.01,0123456,06:00,18:00
+KT05,Hoàng Văn Em,,plumbing,S1.01,0123456,18:00,06:00
+KT06,Đỗ Văn Phúc,,elevator,S1.01,0123456,07:00,19:00
