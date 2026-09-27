@@ -11,15 +11,13 @@ from src.api.routers.common import get_ticket, require_status, ticket_detail
 from src.models.entities import (
     AuditLog,
     EscalationReason,
-    Location,
-    Playbook,
     Ticket,
     TicketPhoto,
     TicketStatus,
 )
 from src.models.schemas import CloseRequest, EscalateRequest, TicketDetail
 from src.services import audit, clock
-from src.services.assignment import draft_work_order, find_on_duty
+from src.services.assignment import assign
 from src.services.evidence_check import read_image, write_image
 from src.services.triage import triage
 
@@ -48,7 +46,8 @@ async def create_ticket(
 ) -> TicketDetail:
     """Cư dân gửi phản ánh, có thể kèm ảnh. Hệ thống kiểm tra an toàn, tách vị trí/loại sự cố và khớp danh mục vị trí.
 
-    Kết quả: `TRIAGED` nếu đủ thông tin, hoặc `ESCALATED` (chuyển BQL) kèm lý do.
+    Đủ thông tin thì tự giao ngay cho kỹ thuật đang trực: `ASSIGNED`.
+    Nghi lỗi an toàn, vị trí mơ hồ, chưa có playbook hoặc không ai trực: `ESCALATED` (chuyển BQL) kèm lý do.
     Ảnh chỉ được lưu để BQL/kỹ thuật xem, không dùng để phân loại.
     """
     if len(photos) > MAX_TICKET_PHOTOS:
@@ -79,6 +78,8 @@ async def create_ticket(
         detail={"channel": channel, "photos": len(images)},
     )
     triage(session, ticket)
+    if ticket.status == TicketStatus.TRIAGED:
+        assign(session, ticket)
     session.commit()
     session.refresh(ticket)
     return ticket_detail(session, ticket)
@@ -109,43 +110,6 @@ def read_ticket_photo(ticket_id: int, photo_id: int, session: SessionDep, _role:
     if photo is None or photo.ticket_id != ticket_id or not Path(photo.file_path).is_file():
         raise HTTPException(status_code=404, detail=f"Không có ảnh {photo_id} của ticket {ticket_id}")
     return FileResponse(photo.file_path, media_type=photo.content_type)
-
-
-@router.post("/{ticket_id}/propose-work-order", response_model=TicketDetail)
-def propose_work_order(ticket_id: int, session: SessionDep, _role: BQL) -> TicketDetail:
-    """Đề xuất người trực và nội dung việc theo playbook. Không có ai trực thì chuyển BQL."""
-    ticket = get_ticket(session, ticket_id)
-    require_status(ticket.status, TicketStatus.TRIAGED)
-    location = session.get(Location, ticket.location_id)
-    playbook = session.get(Playbook, ticket.category)
-    if location is None or playbook is None:
-        raise HTTPException(status_code=409, detail="Ticket thiếu vị trí hoặc loại sự cố chưa có playbook")
-
-    shift = find_on_duty(session, playbook.category, location.building, clock.now())
-    if shift is None:
-        audit.escalate(
-            session,
-            ticket,
-            EscalationReason.NO_ON_DUTY,
-            f"Không có kỹ thuật '{playbook.category}' đang trực tại tòa {location.building}",
-            "system",
-        )
-    else:
-        work_order = draft_work_order(ticket, location, playbook, shift)
-        session.add(work_order)
-        session.flush()
-        audit.change_status(
-            session,
-            ticket,
-            TicketStatus.WO_PROPOSED,
-            "system",
-            "work_order_proposed",
-            work_order=work_order,
-            detail={"technician_id": shift.technician_id, "shift_id": shift.id},
-        )
-    session.commit()
-    session.refresh(ticket)
-    return ticket_detail(session, ticket)
 
 
 @router.post("/{ticket_id}/close", response_model=TicketDetail)

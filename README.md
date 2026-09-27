@@ -194,11 +194,10 @@ Tất cả nằm dưới prefix `/api/v1`. Chưa có đăng nhập: gửi header
 
 | Method | Path | Vai trò | Việc làm |
 |---|---|---|---|
-| POST | `/tickets` | (cư dân) | Nhận phản ánh (form, kèm tối đa 5 ảnh); kiểm tra an toàn, tách vị trí/loại sự cố → `TRIAGED` hoặc `ESCALATED` |
+| POST | `/tickets` | (cư dân) | Nhận phản ánh (form, kèm tối đa 5 ảnh); kiểm tra an toàn, tách vị trí/loại sự cố → tự giao cho kỹ thuật đang trực (`ASSIGNED`) hoặc `ESCALATED` |
 | GET | `/tickets/{id}/photos/{photo_id}` | bql, technician | Xem ảnh cư dân gửi kèm |
 | GET | `/tickets`, `/tickets/{id}` | bql (xem chi tiết: cả technician) | Danh sách / chi tiết ticket kèm work order, bằng chứng, ngoại lệ |
-| POST | `/tickets/{id}/propose-work-order` | bql | Đề xuất người trực và nội dung việc theo playbook |
-| POST | `/work-orders/{id}/approve` | bql | Duyệt giao việc (có thể đổi người), bắt đầu tính hạn |
+| POST | `/work-orders/{id}/reassign` | bql | Đổi người được hệ thống tự giao (người mới phải đang trực), khi chưa nhận việc |
 | POST | `/work-orders/{id}/accept` | technician | Kỹ thuật xác nhận nhận việc |
 | POST | `/work-orders/{id}/evidence` | technician | Upload ảnh trước/sau, checklist, vật tư (nộp bổ sung được) |
 | POST | `/work-orders/{id}/check` | bql | Soát hồ sơ bằng quy tắc cứng: đạt → đề xuất đóng; thiếu → nhắc bổ sung kèm lý do |
@@ -213,19 +212,19 @@ Tất cả nằm dưới prefix `/api/v1`. Chưa có đăng nhập: gửi header
 | GET | `/locations`, `/shifts`, `/playbooks` | (ai cũng xem) | Danh mục vị trí, lịch trực, playbook |
 
 Vòng đời ticket:
-`NEW → TRIAGED → WO_PROPOSED → ASSIGNED → EVIDENCE_SUBMITTED → CHECK_PASSED → CLOSE_PROPOSED → CLOSED`.
+`NEW → TRIAGED → ASSIGNED → EVIDENCE_SUBMITTED → CHECK_PASSED → CLOSE_PROPOSED → CLOSED`.
 Bước nào cũng có thể rẽ sang `ESCALATED`; hồ sơ thiếu thì về `CHECK_FAILED` chờ nộp bổ sung.
 
 ### Thử luồng chuẩn trên Swagger (<http://localhost:8000/docs>)
 
-1. `POST /tickets`: điền `text = Đèn hành lang tầng 5 bị hỏng`, có thể chọn ảnh ở `photos` → `TRIAGED`,
-   `location_id = S101-T05-HL`. Ảnh chỉ lưu để xem, không dùng để phân loại.
-2. `POST /tickets/{id}/propose-work-order` (x-role `bql`) → lấy `work_orders[0].work_order.id`.
-3. `POST /work-orders/{id}/approve` (bql), body `{}`.
-4. `POST /work-orders/{id}/evidence` (technician): chọn ảnh ở `before_photos` và `after_photos`,
+1. `POST /tickets`: điền `text = Đèn hành lang tầng 5 bị hỏng`, có thể chọn ảnh ở `photos` → `ASSIGNED`,
+   `location_id = S101-T05-HL`, việc đã giao cho kỹ thuật ca đèn đang trực. Lấy `work_orders[0].work_order.id`.
+   Ảnh chỉ lưu để xem, không dùng để phân loại.
+2. (Tuỳ chọn) `POST /work-orders/{id}/accept` (technician).
+3. `POST /work-orders/{id}/evidence` (technician): chọn ảnh ở `before_photos` và `after_photos`,
    `checklist_done = diagnose,power_off,replace,test`, `materials_used = Bóng LED 18W x1`.
-5. `POST /work-orders/{id}/check` (bql) → `CLOSE_PROPOSED`.
-6. `POST /tickets/{id}/close` (bql) → `CLOSED`; xem `GET /tickets/{id}/audit`.
+4. `POST /work-orders/{id}/check` (bql) → `CLOSE_PROPOSED`.
+5. `POST /tickets/{id}/close` (bql) → `CLOSED`; xem `GET /tickets/{id}/audit`.
 
 Ca chuyển BQL: `"tầng 5 tối"` (vị trí mơ hồ), `"Mất điện cả hành lang tầng 7, có mùi khét"` (an toàn).
 

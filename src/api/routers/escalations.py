@@ -20,6 +20,7 @@ from src.models.entities import (
 )
 from src.models.schemas import ResolveRequest, TicketDetail
 from src.services import audit, clock
+from src.services.assignment import assign
 from src.services.triage import apply_location
 
 router = APIRouter(prefix="/escalations", tags=["escalations"])
@@ -105,6 +106,8 @@ def resolve_escalation(escalation_id: int, body: ResolveRequest, session: Sessio
     escalation.resolution = body.action
     escalation.resolution_note = body.note
     session.add(escalation)
+    if ticket.status == TicketStatus.TRIAGED:
+        assign(session, ticket)
     session.commit()
     session.refresh(ticket)
     return ticket_detail(session, ticket)

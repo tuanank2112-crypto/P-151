@@ -18,14 +18,10 @@ def create_ticket(api, text: str) -> dict:
 
 
 def assign(api, text: str = "Đèn hành lang tầng 5 bị hỏng, tối om") -> tuple[int, int]:
-    """Create a ticket and take it to ASSIGNED. Returns (ticket_id, work_order_id)."""
-    ticket_id = create_ticket(api, text)["ticket"]["id"]
-    proposed = api.post(f"{V}/tickets/{ticket_id}/propose-work-order", headers=BQL)
-    assert proposed.status_code == 200, proposed.text
-    work_order_id = proposed.json()["work_orders"][0]["work_order"]["id"]
-    approved = api.post(f"{V}/work-orders/{work_order_id}/approve", json={}, headers=BQL)
-    assert approved.status_code == 200, approved.text
-    return ticket_id, work_order_id
+    """Create a ticket; it is assigned automatically. Returns (ticket_id, work_order_id)."""
+    created = create_ticket(api, text)
+    assert created["ticket"]["status"] == "ASSIGNED", created
+    return created["ticket"]["id"], created["work_orders"][0]["work_order"]["id"]
 
 
 def audit_actions(api, ticket_id: int) -> list[str]:
@@ -33,21 +29,17 @@ def audit_actions(api, ticket_id: int) -> list[str]:
 
 
 def test_happy_path(api):
-    """1. Clear location -> assigned -> full evidence -> check passes -> closed."""
+    """1. Clear location -> assigned automatically -> full evidence -> check passes -> closed."""
     created = create_ticket(api, "Đèn hành lang tầng 5 bị hỏng, tối om từ tối qua")
     ticket = created["ticket"]
-    assert ticket["status"] == "TRIAGED"
+    assert ticket["status"] == "ASSIGNED"
     assert ticket["category"] == "lighting"
     assert ticket["location_id"] == "S101-T05-HL"
 
-    proposed = api.post(f"{V}/tickets/{ticket['id']}/propose-work-order", headers=BQL).json()
-    assert proposed["ticket"]["status"] == "WO_PROPOSED"
-    work_order = proposed["work_orders"][0]["work_order"]
+    work_order = created["work_orders"][0]["work_order"]
+    assert work_order["status"] == "ASSIGNED"
     assert work_order["technician_id"] == "KT01"  # 06:00-14:00 lighting shift
-
-    approved = api.post(f"{V}/work-orders/{work_order['id']}/approve", json={}, headers=BQL).json()
-    assert approved["ticket_status"] == "ASSIGNED"
-    assert approved["work_order"]["accept_due_at"] is not None
+    assert work_order["accept_due_at"] is not None
 
     accepted = api.post(f"{V}/work-orders/{work_order['id']}/accept", headers=TECH)
     assert accepted.json()["work_order"]["status"] == "ACCEPTED"
@@ -74,8 +66,7 @@ def test_happy_path(api):
         "created",
         "intake_extracted",
         "triaged",
-        "work_order_proposed",
-        "work_order_approved",
+        "work_order_assigned",
         "work_order_accepted",
         "evidence_submitted",
         "check_passed",
@@ -103,8 +94,9 @@ def test_ambiguous_location_escalates(api):
         json={"action": "retriage", "location_id": "S101-T05-STM", "note": "Đã gọi cư dân xác nhận"},
         headers=BQL,
     ).json()
-    assert resolved["ticket"]["status"] == "TRIAGED"
+    assert resolved["ticket"]["status"] == "ASSIGNED"
     assert resolved["ticket"]["location_id"] == "S101-T05-STM"
+    assert resolved["work_orders"][0]["work_order"]["technician_id"] == "KT01"
     assert api.get(f"{V}/escalations", headers=BQL).json() == []
 
 
@@ -116,10 +108,6 @@ def test_suspected_electrical_fault_escalates_without_work_order(api):
     assert set(created["ticket"]["safety_flags"]) >= {"burning_smell", "power_outage"}
     assert created["work_orders"] == []
 
-    # Even BQL cannot propose a work order while the ticket is escalated
-    ticket_id = created["ticket"]["id"]
-    response = api.post(f"{V}/tickets/{ticket_id}/propose-work-order", headers=BQL)
-    assert response.status_code == 409
 
 
 def test_missing_after_photo_fails_check_and_requests_reminder(api):
@@ -171,9 +159,31 @@ def test_unaccepted_work_order_becomes_overdue(api, frozen_clock):
 
 
 def test_roles_are_enforced(api):
-    ticket_id = create_ticket(api, "Đèn hành lang tầng 5 bị hỏng")["ticket"]["id"]
-    assert api.post(f"{V}/tickets/{ticket_id}/propose-work-order").status_code == 403
-    assert api.post(f"{V}/tickets/{ticket_id}/propose-work-order", headers=TECH).status_code == 403
+    _, work_order_id = assign(api)
+    body = {"technician_id": "KT02"}
+    assert api.post(f"{V}/work-orders/{work_order_id}/reassign", json=body).status_code == 403
+    assert api.post(f"{V}/work-orders/{work_order_id}/reassign", json=body, headers=TECH).status_code == 403
+
+
+def test_bql_can_reassign_to_on_duty_technician(api, frozen_clock):
+    frozen_clock.now = frozen_clock.now.replace(hour=13, minute=50)
+    _, work_order_id = assign(api)
+    # KT02 works 14:00-22:00, so not on duty yet
+    off_duty = api.post(f"{V}/work-orders/{work_order_id}/reassign", json={"technician_id": "KT02"}, headers=BQL)
+    assert off_duty.status_code == 422
+
+    frozen_clock.now = frozen_clock.now.replace(hour=14, minute=5)
+    moved = api.post(f"{V}/work-orders/{work_order_id}/reassign", json={"technician_id": "KT02"}, headers=BQL)
+    assert moved.status_code == 200, moved.text
+    assert moved.json()["work_order"]["technician_id"] == "KT02"
+
+
+def test_no_one_on_duty_escalates(api, frozen_clock):
+    frozen_clock.now = frozen_clock.now.replace(hour=20)  # elevator shift is 07:00-19:00
+    created = create_ticket(api, "Thang máy số 2 tòa S1.01 bị kẹt cửa")
+    assert created["ticket"]["status"] == "ESCALATED"
+    assert created["escalations"][0]["reason"] == "NO_ON_DUTY"
+    assert created["work_orders"] == []
 
 
 def test_repeated_check_failure_escalates(api):
@@ -206,7 +216,7 @@ def test_resident_photos(api):
     )
     assert created.status_code == 201, created.text
     body = created.json()
-    assert body["ticket"]["status"] == "TRIAGED"
+    assert body["ticket"]["status"] == "ASSIGNED"
     assert len(body["photos"]) == 2
 
     photo = body["photos"][0]

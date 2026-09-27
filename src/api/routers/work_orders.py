@@ -16,7 +16,7 @@ from src.models.entities import (
     WorkOrder,
     WorkOrderStatus,
 )
-from src.models.schemas import ApproveRequest, CheckResponse, WorkOrderDetail
+from src.models.schemas import CheckResponse, ReassignRequest, WorkOrderDetail
 from src.services import audit, clock
 from src.services.assignment import is_on_shift
 from src.services.evidence_check import check_evidence, save_photo
@@ -46,44 +46,49 @@ def read_work_order(work_order_id: int, session: SessionDep, _role: BQLOrTechnic
     return work_order_detail(session, get_work_order(session, work_order_id))
 
 
-@router.post("/{work_order_id}/approve", response_model=WorkOrderDetail)
-def approve_work_order(work_order_id: int, body: ApproveRequest, session: SessionDep, _role: BQL) -> WorkOrderDetail:
-    """BQL duyệt giao việc (có thể đổi người). Bắt đầu tính hạn nhận việc và hạn hoàn thành."""
+@router.post("/{work_order_id}/reassign", response_model=WorkOrderDetail)
+def reassign_work_order(
+    work_order_id: int, body: ReassignRequest, session: SessionDep, _role: BQL
+) -> WorkOrderDetail:
+    """BQL đổi người được hệ thống tự giao (người mới phải đang trực đúng chuyên môn). Chỉ đổi được khi chưa nhận việc."""
     work_order = get_work_order(session, work_order_id)
     ticket = get_ticket(session, work_order.ticket_id)
-    require_status(work_order.status, WorkOrderStatus.PROPOSED, what="Work order")
-    require_status(ticket.status, TicketStatus.WO_PROPOSED)
+    require_status(work_order.status, WorkOrderStatus.ASSIGNED, what="Work order")
+    require_status(ticket.status, TicketStatus.ASSIGNED)
+    if body.technician_id == work_order.technician_id:
+        raise HTTPException(status_code=422, detail=f"Việc đang giao cho {body.technician_id}")
+
     now = clock.now()
+    shifts = session.exec(
+        select(Shift).where(Shift.technician_id == body.technician_id, Shift.skill == work_order.category)
+    ).all()
+    shift = next((s for s in shifts if is_on_shift(s, now)), None)
+    if shift is None:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Kỹ thuật {body.technician_id} không trực ca '{work_order.category}' lúc này",
+        )
 
-    if body.technician_id and body.technician_id != work_order.technician_id:
-        shifts = session.exec(
-            select(Shift).where(Shift.technician_id == body.technician_id, Shift.skill == work_order.category)
-        ).all()
-        shift = next((s for s in shifts if is_on_shift(s, now)), None)
-        if shift is None:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Kỹ thuật {body.technician_id} không trực ca '{work_order.category}' lúc này",
-            )
-        work_order.shift_id = shift.id
-        work_order.technician_id = shift.technician_id
-        work_order.technician_name = shift.technician_name
-
+    previous = work_order.technician_id
     playbook = session.get(Playbook, work_order.category)
-    work_order.status = WorkOrderStatus.ASSIGNED
-    work_order.approved_at = now
+    work_order.shift_id = shift.id
+    work_order.technician_id = shift.technician_id
+    work_order.technician_name = shift.technician_name
+    # The new technician gets a full acceptance window
     work_order.accept_due_at = now + timedelta(minutes=playbook.sla_accept_minutes)
-    work_order.resolve_due_at = now + timedelta(hours=playbook.sla_resolve_hours)
     session.add(work_order)
-    notification = notify_technician(work_order)
-    audit.change_status(
+    audit.log(
         session,
         ticket,
-        TicketStatus.ASSIGNED,
+        "work_order_reassigned",
         "bql",
-        "work_order_approved",
         work_order=work_order,
-        detail={"technician_id": work_order.technician_id, "note": body.note, "notification": notification},
+        detail={
+            "from": previous,
+            "to": shift.technician_id,
+            "note": body.note,
+            "notification": notify_technician(work_order),
+        },
     )
     session.commit()
     session.refresh(work_order)

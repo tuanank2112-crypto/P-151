@@ -134,7 +134,7 @@ class WorkOrder(SQLModel, table=True):
     requires_materials: bool = True
 
     created_at: NaiveDatetime = Field(default_factory=lambda: clock.now())
-    approved_at: NaiveDatetime | None = None
+    approved_at: NaiveDatetime | None = None  # when the work order was assigned
     accepted_at: NaiveDatetime | None = None
     accept_due_at: NaiveDatetime | None = None
     resolve_due_at: NaiveDatetime | None = None

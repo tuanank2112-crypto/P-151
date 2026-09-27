@@ -30,10 +30,8 @@ class TicketDetail(BaseModel):
     escalations: list[Escalation]
 
 
-class ApproveRequest(BaseModel):
-    technician_id: str | None = Field(
-        default=None, description="Đổi người được giao (phải đang trong ca). Bỏ trống = giữ người hệ thống đề xuất"
-    )
+class ReassignRequest(BaseModel):
+    technician_id: str = Field(description="Mã kỹ thuật mới, phải đang trực đúng chuyên môn. Ví dụ KT02")
     note: str | None = None
 
 
@@ -65,7 +63,7 @@ class EscalateRequest(BaseModel):
 class ResolveRequest(BaseModel):
     action: Literal["resume", "retriage", "close"] = Field(
         description="resume: quay lại bước trước khi chuyển BQL; "
-        "retriage: sửa vị trí/loại sự cố rồi về TRIAGED (huỷ work order đang mở); "
+        "retriage: sửa vị trí/loại sự cố rồi tự giao lại cho người đang trực (huỷ work order đang mở); "
         "close: đóng ticket (đã xử lý ngoài hệ thống, trùng, không phải sự cố)"
     )
     note: str | None = None

@@ -1,17 +1,21 @@
-"""Pick the on-duty technician and draft a work order from the playbook."""
+"""Pick the on-duty technician and assign the work order right after triage. No BQL approval step."""
 
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 
 from sqlmodel import Session, func, select
 
 from src.models.entities import (
+    EscalationReason,
     Location,
     Playbook,
     Shift,
     Ticket,
+    TicketStatus,
     WorkOrder,
     WorkOrderStatus,
 )
+from src.services import audit, clock
+from src.services.notifier import notify_technician
 
 
 def _parse_hhmm(value: str) -> time:
@@ -61,3 +65,42 @@ def draft_work_order(ticket: Ticket, location: Location, playbook: Playbook, shi
         required_photos=list(playbook.required_photos),
         requires_materials=playbook.requires_materials,
     )
+
+
+def assign(session: Session, ticket: Ticket) -> WorkOrder | None:
+    """Assign a TRIAGED ticket to the on-duty technician and notify them. Nobody on duty: escalate to BQL."""
+    location = session.get(Location, ticket.location_id)
+    playbook = session.get(Playbook, ticket.category)
+    now = clock.now()
+    shift = find_on_duty(session, playbook.category, location.building, now)
+    if shift is None:
+        audit.escalate(
+            session,
+            ticket,
+            EscalationReason.NO_ON_DUTY,
+            f"Không có kỹ thuật '{playbook.category}' đang trực tại tòa {location.building}",
+            "system",
+        )
+        return None
+
+    work_order = draft_work_order(ticket, location, playbook, shift)
+    work_order.status = WorkOrderStatus.ASSIGNED
+    work_order.approved_at = now
+    work_order.accept_due_at = now + timedelta(minutes=playbook.sla_accept_minutes)
+    work_order.resolve_due_at = now + timedelta(hours=playbook.sla_resolve_hours)
+    session.add(work_order)
+    session.flush()
+    audit.change_status(
+        session,
+        ticket,
+        TicketStatus.ASSIGNED,
+        "system",
+        "work_order_assigned",
+        work_order=work_order,
+        detail={
+            "technician_id": shift.technician_id,
+            "shift_id": shift.id,
+            "notification": notify_technician(work_order),
+        },
+    )
+    return work_order
