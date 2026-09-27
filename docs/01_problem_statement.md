@@ -1,10 +1,10 @@
 # MaintenanceOps Agent — Problem Statement
 
 > **Phân loại tài liệu:** DRAFT · Dữ liệu và quy trình mô phỏng  
-> **Version:** 0.2  
+> **Version:** 0.3
 > **Ngày:** 2026-09-27  
 > **Owner:** TV1 — Product / BA / Process  
-> **Source of truth:** Prompt dự án, stakeholder decisions OD-01/02/03/08/09 ngày 2026-09-27 và `maintenanceops-one-week-delivery-plan.canvas.tsx` (Delivery plan v1.1)  
+> **Source of truth:** Prompt MVP MaintenanceOps Agent ngày 2026-09-27 và các quyết định đã khóa trong tài liệu này
 > **Lưu ý:** Tài liệu này không mô tả quy trình, SLA, định mức, tồn kho hay hiệu quả vận hành thực tế của Vinhomes.
 
 ## Changelog
@@ -13,6 +13,7 @@
 |---|---|---|---|
 | 0.1 | 2026-09-27 | Tạo mới Phase 0 Source Audit và Phase 1 Problem Statement từ source of truth | DRAFT |
 | 0.2 | 2026-09-27 | Ghi nhận quyết định OD-01/02/03/08 và cơ chế sign-off OD-09; cập nhật workflow proposal → BPTN confirmation | DRAFT · Chờ tên/sign-off approver |
+| 0.3 | 2026-09-27 | Re-baseline MVP còn hai nhóm dịch vụ; bổ sung asset, duty, stock gate, team-only routing, dataset 12 ticket và 4 demo flow | DRAFT · Chờ tên/sign-off approver |
 
 ---
 
@@ -20,39 +21,34 @@
 
 ## 0.1 Nguồn đã đọc
 
-- `CONFIRMED` Prompt dự án trong phiên làm việc hiện tại, ngày 2026-09-27.
-- `CONFIRMED` Artefact `C:\Users\caotr\.codex\visualizations\2026\09\27\01a0e0dc-e0cc-7c53-bf49-6edfd5e1315f\maintenanceops-one-week-delivery-plan.canvas.tsx`, Delivery plan v1.1.
-- `CONFIRMED` Artefact đã được đọc toàn bộ trước khi tạo tài liệu.
-- `CONFIRMED` Stakeholder decision response ngày 2026-09-27 đã chốt policy mô phỏng cho OD-01/02/03/08 và cơ chế OD-09.
-- `CONFIRMED` Năm file đích chưa tồn tại trước lần tạo version 0.1; không có nội dung đã xác nhận cần hợp nhất.
+- `CONFIRMED` Prompt MVP MaintenanceOps Agent trong phiên làm việc hiện tại.
+- `CONFIRMED` Toàn bộ bảy tài liệu Markdown trong workspace: Problem Statement, Product Brief, Lean PRD, UI Flow, Traceability, Data Contract và Playbook.
+- `CONFIRMED` Không sử dụng Internet, Library hoặc dữ liệu vận hành nội bộ thật để re-baseline v0.3/v1.1.
 
 ## 0.2 Source Audit
 
-### Điểm thống nhất giữa prompt và artefact
+### Baseline MVP hiện hành
 
 - MVP một tuần chỉ chứng minh tính khả thi của prototype bằng dữ liệu mô phỏng.
-- Phạm vi khóa ở ba nhóm: vệ sinh, kỹ thuật, CSKH; mỗi nhóm có một happy path và một exception path.
-- Có bốn actor nghiệp vụ riêng biệt: BPTN, Agent, nhân sự thực hiện, BQL; không ánh xạ với TV1–TV4.
+- Active scope chỉ có vệ sinh `PB-CLN-01` và kỹ thuật `PB-TEC-01`.
+- Duty lookup là bắt buộc cho cả hai playbook; chỉ route tới team mô phỏng, không gán nhân viên.
+- Asset lookup là bắt buộc riêng cho kỹ thuật; catalog ưu tiên `LIGHTING`, read-only và dùng ID `SIM-ASSET-*`.
+- Material stock gate chạy trước routing; sau thực hiện Agent đối soát planned/norm/issued/used nhưng không phê duyệt.
+- Không có team trực vẫn được tạo `WorkOrderDraft`, nhưng không có route hợp lệ và không được vào `READY_FOR_REVIEW`.
 - Dữ liệu phản ánh gốc và bằng chứng gốc là bất biến; chỉnh sửa trường hành chính phải có audit.
-- Chỉ dùng bốn state tối thiểu: `IN_PROGRESS`, `CHỜ XÁC MINH`, `READY_FOR_REVIEW`, `EXCEPTION`.
-- `READY_FOR_REVIEW` chỉ là hồ sơ sẵn sàng cho BQL xem xét, không phải nghiệm thu, hoàn tất hay đóng ticket.
-- Ảnh không phải evidence bắt buộc chung.
-- CSKH dùng material gate `N/A`.
-- Agent chỉ được thực hiện ba phép đối soát vật tư; không duyệt xuất kho, điều chỉnh tồn kho hoặc kết luận vi phạm.
-- Audit tối thiểu là P0; full replay và export audit là P1.
-- Dataset mục tiêu gồm 18 synthetic tickets, 6 demo paths và 9 expected work order drafts khi test design phù hợp.
+- Chỉ dùng bốn state: `IN_PROGRESS`, `CHỜ XÁC MINH`, `READY_FOR_REVIEW`, `EXCEPTION`; trạng thái hàng đợi nằm ở field phụ.
+- Dataset khóa ở 12 synthetic tickets: 6 vệ sinh, 6 kỹ thuật; 4 demo flow và 8 regression cases.
 
-### Khác biệt và cách xử lý
+### Thay đổi so với baseline cũ
 
-| ID | Nội dung | Artefact v1.1 | Prompt hiện tại | Xử lý |
-|---|---|---|---|---|
-| SA-01 | Non-blocking warning trong `READY_FOR_REVIEW` | Xếp P1 | Bắt buộc hiển thị rõ trong điều kiện state, UI và review | Dùng prompt hiện tại, xếp P0 vì yêu cầu mới hơn và cụ thể hơn |
-| SA-02 | Quy mô golden dataset khi thiếu thời gian | Cho phép phương án cắt 18 xuống 12 | Yêu cầu giữ 18 synthetic tickets | Dùng prompt hiện tại; 18 tickets là P0 |
-| SA-03 | Kết quả exception CSKH | Có thể `CHỜ XÁC MINH` hoặc `EXCEPTION` theo rule sẽ chốt | Exception path gồm mâu thuẫn hồ sơ, tranh chấp hoặc khiếu nại nhạy cảm; thiếu/không rõ thông tin vào `CHỜ XÁC MINH` | Dùng prompt hiện tại: mâu thuẫn đã xác định/tranh chấp/nhạy cảm → `EXCEPTION`; chỉ thiếu trường hoặc chưa đủ dữ kiện để phân loại → `CHỜ XÁC MINH` |
-| SA-04 | Explainability/rule view | Bảng giải thích rule được xếp P1 | Work Order, Exception Review và Agent output phải hiển thị rule/lý do | Dùng prompt hiện tại; reason và rule trigger tối thiểu là P0, giao diện phân tích nâng cao vẫn P1 |
-| SA-05 | Thứ tự chuẩn hóa service/type | Artefact/prompt ban đầu đặt BPTN chuẩn hóa trước Agent phân loại | Quyết định OD-01 ngày 2026-09-27: Agent đề xuất service/type, BPTN xác nhận trước khi tạo draft | Dùng quyết định stakeholder mới hơn; BPTN vẫn giữ quyền xác nhận trường hành chính, Agent không tự sửa source |
+| ID | Nội dung cũ | Quyết định hiện hành | Xử lý |
+|---|---|---|---|
+| SA-01 | Phạm vi dịch vụ cũ rộng hơn | Chỉ hai nhóm/two playbooks | Loại phần ngoài phạm vi khỏi schema, validator, UI, acceptance và test |
+| SA-02 | Baseline dataset/demo cũ | 12 ticket, 4 demo flow | Re-baseline toàn bộ acceptance/evaluation |
+| SA-03 | Draft chỉ sinh sau mọi precondition routing | Draft vẫn tồn tại khi asset/material/duty chưa cho route | Tách `draft_status` khỏi `route_status` |
+| SA-04 | READY chưa kiểm tra route | Route hợp lệ là gate bắt buộc bổ sung | Dùng tám gate; không READY khi route invalid |
 
-Không phát hiện mâu thuẫn khác làm thay đổi P0 scope.
+Không phát hiện yêu cầu nào cho phép tích hợp hoặc dữ liệu vận hành thật.
 
 ## 0.3 Confirmed facts
 
@@ -66,13 +62,15 @@ Không phát hiện mâu thuẫn khác làm thay đổi P0 scope.
 - `CONFIRMED CF-08` BQL xem xét `READY_FOR_REVIEW`, xử lý `EXCEPTION`, yêu cầu xác minh/bổ sung và ra quyết định nghiệp vụ cuối cùng ngoài quyền Agent.
 - `CONFIRMED CF-09` Mọi chỉnh sửa phải tạo audit event có `actor_id`, `actor_role`, `timestamp`, `field_name`, `old_value`, `new_value`, `reason`.
 - `CONFIRMED CF-10` Thiếu hoặc không rõ thông tin phải vào `CHỜ XÁC MINH`, ghi trường thiếu/mâu thuẫn và không được tự điền.
-- `CONFIRMED CF-11` `READY_FOR_REVIEW` cần đủ bảy gate được nêu trong source of truth.
-- `CONFIRMED CF-12` Sáu demo path phải trình diễn được trong 10–12 phút và reset được.
+- `CONFIRMED CF-11` `READY_FOR_REVIEW` cần đủ tám gate, trong đó có `route_status=ROUTED`.
+- `CONFIRMED CF-12` Bốn demo flow phải trình diễn được và reset được.
 - `CONFIRMED CF-13` Trước classification chỉ bắt buộc `ticket_id`, `created_at`, `original_description`; thiếu một trong ba field → `CHỜ XÁC MINH`.
 - `CONFIRMED CF-14` Agent đề xuất `service_category_normalized` và `ticket_type_normalized`; BPTN phải xác nhận trước khi tạo work order draft. `location_normalized` không chặn playbook proposal nhưng bắt buộc trước draft. `priority` là optional.
-- `CONFIRMED CF-15` Checklist là readiness gate riêng, không được tính thay cho minimum evidence của ba playbook v0.2; ảnh không bắt buộc trong MVP.
+- `CONFIRMED CF-15` Checklist là readiness gate riêng, không được tính thay cho minimum evidence của hai playbook; ảnh không bắt buộc trong MVP.
 - `CONFIRMED CF-16` `ACTION_OUT_OF_AUTHORITY` bị từ chối và audit; không tự chuyển business state của ticket sang `EXCEPTION`.
-- `CONFIRMED CF-17` CSKH conflict chỉ tồn tại khi hai nguồn hiện hữu nói về cùng field nghiệp vụ nhưng có giá trị không tương thích; thiếu một nguồn → `CHỜ XÁC MINH`.
+- `CONFIRMED CF-17` Không có team đang trực nhưng duty data rõ → tạo draft, `IN_PROGRESS`, reason `NO_AVAILABLE_TEAM`, không route; duty data không xác định → `CHỜ XÁC MINH`, reason `DUTY_UNKNOWN`.
+- `CONFIRMED CF-18` Kỹ thuật không tìm thấy hoặc tìm thấy nhiều asset phù hợp → `CHỜ XÁC MINH`, không đoán và không route.
+- `CONFIRMED CF-19` Tồn kho thiếu → draft tồn tại, `IN_PROGRESS`, không route; tồn kho không rõ → `CHỜ XÁC MINH`, không route.
 
 ## 0.4 Assumptions dùng để tạo draft
 
@@ -81,7 +79,7 @@ Các assumption dưới đây chỉ giúp tài liệu đủ cụ thể để rev
 - `ASSUMPTION A-01` Prototype dùng fixture lưu sẵn, ID tiền tố `SIM-`, state cục bộ/in-memory và không có tích hợp hệ thống thật.
 - `ASSUMPTION A-02` Timestamp dùng ISO 8601 với timezone; cách hiển thị theo `Asia/Ho_Chi_Minh` để audit nhất quán trong demo.
 - `ASSUMPTION A-03` Một role BQL tổng quát được dùng trong prototype; chưa tách các cấp phê duyệt nội bộ.
-- `ASSUMPTION A-06` Không dùng ngưỡng số lượng để tự chuyển `EXCEPTION` trong v0.2 vì `OD-04` chưa được chốt; explained material variance là non-blocking warning duy nhất theo `OD-03`.
+- `ASSUMPTION A-06` Không dùng ngưỡng số lượng để tự chuyển `EXCEPTION` trong v0.3 vì `OD-04` chưa được chốt; explained material variance là non-blocking warning duy nhất theo `OD-03`.
 - `ASSUMPTION A-08` Agent tự gắn `READY_FOR_REVIEW` chỉ khi deterministic readiness gate pass; đây không phải thao tác phê duyệt mang tính quyết định của con người.
 - `ASSUMPTION A-09` Evidence trong prototype là metadata/placeholder hoặc nội dung mô phỏng; không upload, phân tích ảnh hoặc computer vision.
 - `ASSUMPTION A-10` Mọi thay đổi của nhân sự thực hiện đối với execution data cũng tạo audit event; raw resident data không có action edit.
@@ -93,12 +91,14 @@ Các assumption dưới đây chỉ giúp tài liệu đủ cụ thể để rev
 | OD-01 | Required fields và confirmation gate | `CLOSED` — ba raw fields trước classification; Agent proposal service/type; BPTN confirmation + location trước draft; priority optional | TV1 / Product approver proxy |
 | OD-02 | Minimum evidence và rule ảnh | `CLOSED` — checklist tách gate; evidence theo use case; không bắt buộc ảnh | TV1 / Product approver proxy |
 | OD-03 | Blocking/non-blocking catalog | `CLOSED` — catalog được duyệt; explained material variance là warning không chặn duy nhất; action ngoài quyền reject + audit | TV1 + TV4 |
-| OD-04 | Ngưỡng chênh lệch vật tư, nếu có | `OPEN · NON-BLOCKING FOR MVP` — v0.2 không tự dùng threshold | Product approver proxy + TV1 |
+| OD-04 | Ngưỡng chênh lệch vật tư, nếu có | `OPEN · NON-BLOCKING FOR MVP` — v0.3 không tự dùng threshold | Product approver proxy + TV1 |
 | OD-05 | BQL sub-role authority | `OPEN · PILOT ONLY` — prototype dùng role BQL chung | Business owner tương lai |
 | OD-06 | Mức ưu tiên và SLA | `OPEN · PILOT ONLY`; priority optional trong MVP | Business owner tương lai |
 | OD-07 | Taxonomy reason cho chỉnh sửa hành chính | `OPEN · UAT`; schema vẫn bắt buộc reason | TV1 |
-| OD-08 | CSKH conflict/verification split | `CLOSED` — field list, taxonomy và state priority đã chốt | TV1 / Product approver proxy |
 | OD-09 | Owner và thẩm quyền sign-off | `PARTIALLY CLOSED` — role/deadline đã chốt; tên Product approver/proxy và bằng chứng sign-off còn `TBD` | TV1; `[Tên nhóm trưởng / Product Owner]` |
+| OD-10 | Asset/duty lookup và team-only routing | `CLOSED` — asset chỉ bắt buộc cho kỹ thuật; duty bắt buộc cho cả hai; không gán nhân viên | TV1 / Product approver proxy |
+| OD-11 | Draft khi route chưa hợp lệ | `CLOSED` — vẫn tạo draft; state/reason theo asset, stock hoặc duty; không READY | TV1 / Product approver proxy |
+| OD-12 | Dataset/demo baseline | `CLOSED` — 12 ticket, 4 demo flow, 8 regression cases | TV1 + TV4 |
 
 ## 0.6 Glossary
 
@@ -117,7 +117,7 @@ Các assumption dưới đây chỉ giúp tài liệu đủ cụ thể để rev
 
 ### Phase 0 consistency gate
 
-**PASS.** Không có mâu thuẫn P0 chưa được xử lý. Quyết định OD-01/02/03/08 được ghi nhận là policy mô phỏng, không phải xác nhận quy trình thật. OD-09 còn thiếu tên và bằng chứng sign-off.
+**PASS.** Không có mâu thuẫn P0 chưa được xử lý. Asset, duty, stock gate và team-only routing chỉ là policy mô phỏng; OD-09 còn thiếu tên và bằng chứng sign-off.
 
 ---
 
@@ -125,7 +125,7 @@ Các assumption dưới đây chỉ giúp tài liệu đủ cụ thể để rev
 
 ## 1. Background
 
-MaintenanceOps Agent là prototype hỗ trợ BQL xử lý hồ sơ sau khi cư dân đã gửi phản ánh qua app/form chuẩn hóa. Trong một tuần, MVP cần chứng minh Agent có thể điều phối sáu kịch bản mô phỏng thuộc vệ sinh, kỹ thuật và CSKH: phân loại, tạo work order draft, sinh/kiểm tra checklist, vật tư và evidence, phát hiện ngoại lệ, rồi chuyển đúng case cho BQL mà không vượt quyền.
+MaintenanceOps Agent là prototype hỗ trợ BQL xử lý ticket bảo trì sau khi cư dân đã gửi phản ánh qua app/form hiện có. Trong một tuần, MVP cần chứng minh Agent có thể xử lý hai nhóm vệ sinh và kỹ thuật: phân loại, tra Playbook Registry, tra asset khi là kỹ thuật, kiểm tra vật tư và duty, tạo work order draft, đề xuất route cho team mô phỏng, đối soát hồ sơ rồi chuyển đúng case cho BQL mà không vượt quyền.
 
 MVP không có dữ liệu hoặc workflow vận hành thật. Vì vậy, tài liệu chỉ xác định target workflow mô phỏng và các giả thuyết cần kiểm chứng; không đưa ra kết luận về hiện trạng hay hiệu quả của Vinhomes.
 
@@ -146,7 +146,7 @@ MVP không có dữ liệu hoặc workflow vận hành thật. Vì vậy, tài l
 
 ## 3. Target workflow mô phỏng
 
-`Cư dân gửi ticket → BPTN tiếp nhận → Agent validate ba raw fields bắt buộc và đề xuất service/type/playbook → BPTN xác nhận service/type và bổ sung/xác nhận location → Agent tạo work order draft → Nhân sự thực hiện cập nhật tiến độ/checklist/vật tư/evidence → Agent kiểm tra hồ sơ → BQL xem xét READY_FOR_REVIEW hoặc EXCEPTION`
+`Ticket từ app/form → BPTN xác nhận thông tin hành chính → Agent phân loại ticket → Agent tra Playbook Registry → nếu kỹ thuật, tra Asset Catalog → xác định vật tư và kiểm tra tồn kho mô phỏng → tra team đang trực → tạo WorkOrderDraft và đề xuất route cho team → nhân sự thực hiện checklist/cập nhật vật tư/ghi chú/bằng chứng → Agent đối soát hồ sơ → READY_FOR_REVIEW / IN_PROGRESS / CHỜ XÁC MINH / EXCEPTION → BQL xem xét`
 
 Việc tiếp nhận/tạo draft là event/action, không tạo thêm state ngoài bốn state đã khóa.
 
@@ -172,7 +172,7 @@ Các điểm dưới đây là giả thuyết, không phải kết luận từ d
 
 ## 6. Problem statement đầy đủ
 
-Trong phạm vi prototype mô phỏng, BQL cần một cách nhất quán và có thể truy vết để biến ticket đã được BPTN chuẩn hóa thành một hồ sơ sẵn sàng xem xét hoặc một exception được chuyển đúng thẩm quyền. Giải pháp phải kiểm tra đầy đủ dữ kiện, checklist, vật tư và evidence theo playbook; giữ nguyên dữ liệu cư dân; giải thích rule; và chặn mọi hành động vượt quyền. Do chưa có dữ liệu/quy trình thật, MVP chỉ kiểm chứng tính khả thi trên 18 synthetic tickets và sáu demo paths, không chứng minh pain point hay hiệu quả vận hành thực tế.
+Trong phạm vi prototype mô phỏng, BQL cần một cách nhất quán và có thể truy vết để biến ticket đã được BPTN xác nhận thông tin hành chính thành một hồ sơ sẵn sàng xem xét hoặc một case dừng đúng lý do. Giải pháp phải kiểm tra playbook, asset kỹ thuật, vật tư/tồn kho, duty/capacity, route, checklist và evidence; giữ nguyên dữ liệu cư dân; giải thích rule; và chặn mọi hành động vượt quyền. MVP chỉ kiểm chứng tính khả thi trên 12 synthetic tickets và bốn demo flow, không chứng minh pain point hay hiệu quả vận hành thực tế.
 
 ## 7. Problem statement một câu
 
@@ -180,11 +180,11 @@ Trong phạm vi prototype mô phỏng, BQL cần một cách nhất quán và c�
 
 ## 8. Desired outcome
 
-- Sáu demo path chạy end-to-end trong 10–12 phút từ ticket mô phỏng tới đúng state.
+- Bốn demo flow chạy end-to-end từ ticket mô phỏng tới đúng state và route status.
 - Mỗi case `READY_FOR_REVIEW` tạo ra một review package đủ gate và giải thích được.
 - Mỗi case thiếu dữ liệu hoặc rủi ro dừng đúng, chỉ rõ lý do, nguồn và actor có thẩm quyền.
 - Không có thay đổi dữ liệu gốc hoặc Agent action vượt quyền.
-- Có test oracle trên 18 tickets để Product/BA, AI/Data, UX/UI và Integration/QA cùng kiểm thử.
+- Có test oracle trên 12 tickets để Product/BA, AI/Data, UX/UI và Integration/QA cùng kiểm thử.
 
 ## 9. Product hypothesis
 
@@ -196,13 +196,13 @@ Nếu Agent kết hợp deterministic safety/permission rules với structured o
 
 1. Playbook và phiên bản.
 2. Work order draft liên kết ticket.
-3. Required fields đủ.
-4. Evidence tối thiểu đủ theo playbook.
-5. Checklist không còn `PENDING`.
-6. Material đã đối soát hoặc `N/A`.
-7. Không còn blocking exception.
-8. Non-blocking warning, nếu có, vẫn hiển thị rule và lý do.
-9. Audit/reason đủ để truy vết.
+3. Required fields đủ; kỹ thuật có asset match duy nhất.
+4. Route hợp lệ tới team mô phỏng đang trực và còn khả năng nhận ticket.
+5. Evidence tối thiểu đủ theo playbook.
+6. Checklist không còn `PENDING`.
+7. Vật tư đã đối soát; stock gate trước route đã pass.
+8. Không còn blocking exception.
+9. Warning và audit/reason vẫn hiển thị để truy vết.
 
 ## 11. Non-goals
 
@@ -211,7 +211,7 @@ Nếu Agent kết hợp deterministic safety/permission rules với structured o
 - Không tích hợp hệ thống thật hoặc tạo work order thật.
 - Không gửi tin nhắn/yêu cầu ảnh từ cư dân.
 - Không nghiệm thu, đóng ticket, xác nhận chất lượng kỹ thuật, phê duyệt/điều chỉnh vật tư.
-- Không làm báo giá, hóa đơn, thanh toán, thuê ngoài, phân công/tối ưu lịch hoặc quản lý tồn kho đầy đủ.
+- Không làm báo giá, hóa đơn, thanh toán, thuê ngoài, gán nhân viên/tối ưu lịch thực tế hoặc quản lý tồn kho đầy đủ.
 - Không đo hoặc cam kết SLA/KPI vận hành thật.
 
 ## 12. Assumptions áp dụng cho Problem Statement
@@ -221,9 +221,9 @@ Nếu Agent kết hợp deterministic safety/permission rules với structured o
 
 ## 13. Open decisions áp dụng
 
-- `OD-01`, `OD-02`, `OD-03` và `OD-08` đã `CLOSED` cho policy mô phỏng.
+- `OD-01`, `OD-02`, `OD-03`, `OD-10`, `OD-11` và `OD-12` đã `CLOSED` cho policy mô phỏng.
 - `OD-09` còn thiếu tên Product approver/proxy và bằng chứng sign-off; đây là blocker duy nhất để đổi trạng thái tài liệu sang approved build baseline.
-- `OD-04`, `OD-05`, `OD-06`, `OD-07` vẫn mở nhưng không chặn prototype build theo phạm vi v0.2.
+- `OD-04`, `OD-05`, `OD-06`, `OD-07` vẫn mở nhưng không chặn prototype build theo phạm vi v0.3.
 
 ## 14. Risk nếu giải sai bài toán
 
@@ -254,3 +254,7 @@ Chỉ thu thập sau khi có phê duyệt governance và không để Agent th�
 ### Phase 1 consistency gate
 
 **PASS.** Problem Statement giữ rõ known/unknown, pain point dưới dạng hypothesis, không có KPI giả, không mở rộng use case, và thống nhất với Phase 0 về actor, state, quyền hạn, evidence, material và synthetic boundary.
+
+## Deferred / Future Scope
+
+- CSKH chỉ thuộc discovery/backlog tương lai; không có use case, playbook, schema, validator, acceptance criteria, demo flow hoặc test case trong MVP hiện hành.

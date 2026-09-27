@@ -1,7 +1,7 @@
 # MaintenanceOps Agent — UI Flow & Low-fidelity Wireframe
 
-> **Document status:** DRAFT · Policy v0.2 recorded, awaiting approver identity/sign-off  
-> **Version:** 0.2  
+> **Document status:** DRAFT · Policy v0.3 recorded, awaiting approver identity/sign-off
+> **Version:** 0.3
 > **Ngày:** 2026-09-27  
 > **Owner:** TV1 — Product / BA / Process; UX reviewer: TV3 — UX / UI / Prototype  
 > **Boundary:** Prototype với dữ liệu mô phỏng; không có CTA tạo work order thật, gửi cư dân, nghiệm thu, đóng ticket hoặc phê duyệt vật tư
@@ -11,7 +11,8 @@
 | Version | Ngày | Thay đổi | Trạng thái |
 |---|---|---|---|
 | 0.1 | 2026-09-27 | Tạo IA, 10 UI flows và wireframe cho `UI-01`–`UI-08` | DRAFT |
-| 0.2 | 2026-09-27 | Áp dụng Agent proposal → BPTN confirmation, evidence/state oracle, CSKH conflict và permission rejection | DRAFT · Chờ sign-off |
+| 0.2 | 2026-09-27 | Áp dụng Agent proposal → BPTN confirmation, evidence/state oracle và permission rejection | DRAFT · Chờ sign-off |
+| 0.3 | 2026-09-27 | Khóa 4 demo flow cho vệ sinh/kỹ thuật; thêm asset/duty/stock/route status và loại bỏ UI ngoài active scope | DRAFT · Chờ sign-off |
 
 ---
 
@@ -26,7 +27,7 @@
 | `UI-03` | Work Order Draft | Xem draft/playbook/requirements/reason | Nhân sự thực hiện, BQL |
 | `UI-04` | Execution Update | Cập nhật progress/result note trong execution layer | Nhân sự thực hiện |
 | `UI-05` | Checklist, Material & Evidence | Cập nhật/kiểm tra checklist, material, evidence | Nhân sự thực hiện, BQL |
-| `UI-06` | `READY_FOR_REVIEW` Package | Xem seven-gate package và chuyển BQL xem xét | BQL; action handoff từ system/authorized user |
+| `UI-06` | `READY_FOR_REVIEW` Package | Xem eight-gate package, gồm route, và chuyển BQL xem xét | BQL; action handoff từ system/authorized user |
 | `UI-07` | Exception Review | Xem reason/rule/source/risk và BQL action | BQL |
 | `UI-08` | Audit History | Truy vết edit/decision/transition | BPTN, BQL, QA nội bộ |
 
@@ -41,12 +42,17 @@
 - Nếu vẫn gọi forbidden action, UI hiển thị `ACTION_OUT_OF_AUTHORITY`; hệ thống reject, audit và giữ nguyên business state.
 - Mọi Agent result có playbook/rule/reason/source/version.
 - Service/type/playbook của Agent hiển thị là **proposal** cho tới khi BPTN xác nhận; không tạo draft nếu service/type chưa confirmed hoặc thiếu location.
+- Ticket detail/draft hiển thị Playbook match, Asset match (kỹ thuật), vật tư cần dùng, tồn kho mô phỏng, team đề xuất, Duty status và Route status.
+- Route chỉ ở cấp `SIM-TEAM-*`; không có nút gán nhân viên và không hiển thị assignee selector.
+- Playbook Registry, Asset Catalog và DutyAvailability là read-only; không có màn hình CRUD tài sản hoặc lập lịch nhân sự.
 - Không dùng các CTA “Nghiệm thu”, “Hoàn tất công việc”, “Đóng ticket”, “Phê duyệt vật tư”.
 - Không có CTA gửi thông báo, yêu cầu ảnh cư dân hoặc tạo work order thật.
 
 ---
 
 # 2. UI flows
+
+Dataset demo dùng 12 ticket mô phỏng: 6 vệ sinh, 6 kỹ thuật. Bốn flow 2.1–2.4 là demo chính; tám ticket còn lại chạy regression và không tạo thêm demo flow.
 
 ## 2.1 Flow 1 — Happy path vệ sinh
 
@@ -55,60 +61,45 @@
 | 1 | BPTN | Tiếp nhận, mở raw ticket read-only | Có ingest event | ingest → `IN_PROGRESS` | Không | Access/ingest event |
 | 2 | Agent | Validate ba raw fields, match `PB-CLN-01`, chạy risk rule và đề xuất service/type | Đủ raw field; không hazard signal | `IN_PROGRESS` → `IN_PROGRESS` | Không | Proposal + reason/rule/source |
 | 3 | BPTN | Xác nhận service/type và location | Dựa trên source; reason/audit bắt buộc | `IN_PROGRESS` → `IN_PROGRESS` | Thiếu confirmation/location → `CHỜ XÁC MINH` | Admin confirmation revision + audit |
-| 4 | Agent | Tạo work order draft | Confirmation/location gate pass; không blocker | `IN_PROGRESS` → `IN_PROGRESS` | Không | Draft/checklist/material/evidence requirement + audit |
-| 5 | Nhân sự thực hiện | Cập nhật progress, checklist, material, ghi chú | Chỉ execution layer | `IN_PROGRESS` → `IN_PROGRESS` | Chưa đủ thì giữ state | Execution revisions + audit |
-| 6 | Agent | Reconcile/validate seven gates | Tất cả pass | `IN_PROGRESS` → `READY_FOR_REVIEW` | Không | Gate result + transition audit |
-| 7 | Authorized UI user/System | Chọn “Chuyển BQL xem xét” | State READY | `READY_FOR_REVIEW` → `READY_FOR_REVIEW` | Không | Handoff event; không phải acceptance |
+| 4 | Agent | Xác định vật tư, kiểm tra stock và duty | Stock đủ; team vệ sinh đang trực/còn sức chứa | giữ `IN_PROGRESS` | Không | Stock + `SIM-DUTY-*` result |
+| 5 | Agent | Tạo draft và route cấp team | Mọi route gate pass | giữ `IN_PROGRESS` | Không | Draft + `SIM-TEAM-*` + `route_status=ROUTED`; `assignee_id=null` |
+| 6 | Nhân sự thực hiện | Cập nhật checklist, material, ghi chú/evidence | Chỉ execution layer | giữ `IN_PROGRESS` | Chưa đủ thì giữ state | Execution revisions + audit |
+| 7 | Agent | Reconcile planned/norm/issued/used và tám gates | Tất cả pass, route hợp lệ | `IN_PROGRESS` → `READY_FOR_REVIEW` | Không | Gate result + transition audit |
+| 8 | Authorized UI user/System | Chọn “Chuyển BQL xem xét” | State READY | giữ `READY_FOR_REVIEW` | Không | Handoff event; không phải acceptance |
 
-## 2.2 Flow 2 — Exception vệ sinh
+## 2.2 Flow 2 — Vệ sinh không có team đang trực
 
 | Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
 |---|---|---|---|---|---|---|
-| 1 | Agent | Validate raw fields và chạy high-risk rule trước confirmation/draft | Rule `EX-CLN-01` match raw source | `IN_PROGRESS` → `EXCEPTION` | **Blocking** | Exception record: rule, reason, source, risk, BQL; transition audit |
-| 3 | BQL | Review exception | Agent không đưa hướng dẫn xử lý | `EXCEPTION` → giữ/`CHỜ XÁC MINH`/`IN_PROGRESS` theo resolution | BQL quyết định | BQL resolution/request audit; không có close/accept action |
+| 1 | Agent/BPTN | Validate, match `PB-CLN-01`, confirm admin data | Raw/admin gates pass | giữ `IN_PROGRESS` | Không | Proposal + confirmation audit |
+| 2 | Agent | Check stock và duty | Stock đủ; duty data rõ nhưng không team vệ sinh trực | giữ `IN_PROGRESS` | **Chặn route/READY** | `duty_lookup_status=NO_AVAILABLE_TEAM` |
+| 3 | Agent | Tạo work order draft không có route | Draft hợp lệ dù duty fail | giữ `IN_PROGRESS` | **Chặn route/READY** | `route_status=NOT_ROUTED`, `queue_reason=NO_AVAILABLE_TEAM` |
+| 4 | UI/BQL | Xem draft và lý do chưa route | Không được coi là giao việc | giữ `IN_PROGRESS` | **Chặn READY** | Audit lookup/draft; không có nút gán nhân viên |
 
 ## 2.3 Flow 3 — Happy path kỹ thuật
 
 | Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
 |---|---|---|---|---|---|---|
-| 1 | Agent | Validate raw fields, match `PB-TEC-01`, risk scan và đề xuất service/type | Không mùi khét/tia lửa/dây hở | `IN_PROGRESS` → `IN_PROGRESS` | Không | Proposal/rule/source reason |
+| 1 | Agent | Validate raw fields, match `PB-TEC-01`, risk scan và đề xuất service/type | Không mùi khét/tia lửa/dây hở | giữ `IN_PROGRESS` | Không | Proposal/rule/source reason |
 | 2 | BPTN | Xác nhận service/type và location | Source đủ để xác nhận | giữ `IN_PROGRESS` | Thiếu gate → `CHỜ XÁC MINH` | Confirmation audit |
-| 3 | Agent | Tạo draft và requirements | Confirmation/location gate pass | giữ `IN_PROGRESS` | Không | Draft + checklist an toàn/result/material/evidence |
-| 4 | Nhân sự thực hiện | Cập nhật execution data | Không sửa raw | giữ `IN_PROGRESS` | Pending/missing evidence giữ IN_PROGRESS | Execution audit |
-| 5 | Agent | Validate | Safety checklist gate, result evidence và material gate đủ | `IN_PROGRESS` → `READY_FOR_REVIEW` | Không | Gate summary + transition |
-| 6 | System/user | Handoff BQL | READY | giữ READY | Không | Handoff audit |
+| 3 | Agent | Lookup `LIGHTING` asset | Đúng một `SIM-ASSET-*` match location | giữ `IN_PROGRESS` | Không | Asset match + source ref |
+| 4 | Agent | Check planned/norm stock và duty | Vật tư đủ; team kỹ thuật trực/còn capacity | giữ `IN_PROGRESS` | Không | Stock + duty results |
+| 5 | Agent | Tạo draft và team route | Các route gate pass | giữ `IN_PROGRESS` | Không | Draft + `SIM-TEAM-*`; `route_status=ROUTED`; `assignee_id=null` |
+| 6 | Nhân sự thực hiện | Cập nhật execution/checklist/material/evidence | Không sửa raw | giữ `IN_PROGRESS` | Pending/missing giữ IN_PROGRESS | Execution audit |
+| 7 | Agent | Validate tám gates | Route, checklist, result evidence và material đủ | `IN_PROGRESS` → `READY_FOR_REVIEW` | Không | Gate summary + transition |
+| 8 | System/user | Handoff BQL | READY | giữ READY | Không | Handoff audit |
 
-## 2.4 Flow 4 — Exception kỹ thuật
-
-| Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
-|---|---|---|---|---|---|---|
-| 1 | Agent | Detect mùi khét/tia lửa/dây hở | Bất kỳ signal match source | `IN_PROGRESS` → `EXCEPTION` | **Blocking** | `EX-TEC-01`, source reference, risk; audit |
-| 2 | UI | Dừng standard path; ẩn/disable draft continuation | State EXCEPTION | giữ `EXCEPTION` | **Blocking** | UI event optional; no operational guidance |
-| 3 | BQL | Review/request verification/record resolution | Theo quyền BQL | `EXCEPTION` → state hợp lệ | BQL quyết định | Resolution audit |
-
-## 2.5 Flow 5 — Happy path CSKH
+## 2.4 Flow 4 — Kỹ thuật không tìm thấy asset hoặc thiếu vật tư
 
 | Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
 |---|---|---|---|---|---|---|
-| 1 | Agent | Validate raw fields, đề xuất CSKH/status-update playbook | Đủ ba raw fields | ingest → `IN_PROGRESS` | Không | Proposal + reason/source |
-| 2 | BPTN | Xác nhận service/type và location | Có source phù hợp | giữ `IN_PROGRESS` | Thiếu gate → `CHỜ XÁC MINH` | Confirmation audit |
-| 3 | Agent | Compare allowlisted fields giữa request và history | Có `reference_ticket_id` + history; không conflict/sensitive | giữ `IN_PROGRESS` | Không | Comparison result |
-| 3a | Agent | Dừng comparison và yêu cầu xác minh | Thiếu `reference_ticket_id` hoặc history source | `IN_PROGRESS` → `CHỜ XÁC MINH` | **Blocking** | Missing-source reason + audit |
-| 4 | Agent | Tạo CSKH draft | Gate pass; material `N/A` | giữ `IN_PROGRESS` | Không | Draft/checklist/evidence requirement |
-| 5 | Nhân sự thực hiện | Ghi nội dung xử lý/bản nháp phản hồi và log liên hệ | Không gửi ra ngoài | giữ `IN_PROGRESS` | Thiếu evidence → giữ IN_PROGRESS | Execution audit |
-| 6 | Agent | Validate gates | Material `N/A`, checklist riêng và evidence đủ | `IN_PROGRESS` → `READY_FOR_REVIEW` | Không | Gate/transition audit |
+| 1 | Agent/BPTN | Validate, match `PB-TEC-01`, confirm admin data | Không high-risk | giữ `IN_PROGRESS` | Không | Proposal + confirmation audit |
+| 2a | Agent | Lookup asset | Không có match hoặc nhiều match | `IN_PROGRESS` → `CHỜ XÁC MINH` | **Chặn route** | `asset_lookup_status=NOT_FOUND|AMBIGUOUS`, reason/source |
+| 2b | Agent | Check stock sau asset match | `material_stock_status=INSUFFICIENT` | giữ `IN_PROGRESS` | **Chặn route** | `queue_reason=MATERIAL_SHORTAGE` |
+| 3 | Agent | Tạo draft phản ánh gate result | Asset unresolved dùng `asset_id=null`; shortage giữ matched asset | state theo 2a/2b | **Chặn READY** | Draft + `route_status=NOT_ROUTED` |
+| 4 | UI/BQL | Xem Asset/Material/Duty/Route panels | Hiển thị exact reason; không tự route | giữ state | **Chặn READY** | Audit; no employee assignment CTA |
 
-## 2.6 Flow 6 — Exception CSKH
-
-| Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
-|---|---|---|---|---|---|---|
-| 1 | Agent | Compare request/history và run sensitive rules | Hai nguồn cùng nói về một allowlisted field nhưng giá trị không tương thích; hoặc denial/right-wrong/sensitive flag | `IN_PROGRESS` → `EXCEPTION` | **Blocking** | `EX-CS-01`, comparison field, hai source/value, neutral reason; audit |
-| 2 | UI | Hiển thị raw/history cạnh nhau, read-only | State EXCEPTION | giữ `EXCEPTION` | **Blocking** | Không kết luận đúng/sai; no message CTA |
-| 3 | BQL | Request verification hoặc record resolution | BQL authority | `EXCEPTION` → `CHỜ XÁC MINH`/`IN_PROGRESS`/giữ | Theo BQL | Resolution audit |
-
-Thiếu một trong hai source không đi Flow 6; case đi `CHỜ XÁC MINH` theo Flow 5 bước 3a.
-
-## 2.7 Flow 7 — Thiếu required field → `CHỜ XÁC MINH`
+## 2.5 Edge flow A — Thiếu required field → `CHỜ XÁC MINH`
 
 | Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
 |---|---|---|---|---|---|---|
@@ -117,7 +108,7 @@ Thiếu một trong hai source không đi Flow 6; case đi `CHỜ XÁC MINH` the
 | 3 | UI/BPTN | Kiểm tra pre-draft gate | Service/type chưa confirmed hoặc thiếu location | `IN_PROGRESS` → `CHỜ XÁC MINH` | **Blocking draft** | Gate list; no draft |
 | 4 | BPTN | Xác nhận proposal và location với reason | Dữ liệu đã xác minh; BPTN có quyền | `CHỜ XÁC MINH` → `IN_PROGRESS` qua revalidation | Gỡ block sau validate | Confirmation/edit audit đầy đủ |
 
-## 2.8 Flow 8 — Material variance
+## 2.6 Edge flow B — Material variance sau thực hiện
 
 | Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
 |---|---|---|---|---|---|---|
@@ -126,7 +117,7 @@ Thiếu một trong hai source không đi Flow 6; case đi `CHỜ XÁC MINH` the
 | 3a | Agent | Yêu cầu xác minh | `variance_reason` thiếu | `IN_PROGRESS` → `CHỜ XÁC MINH` | **Blocking** | Missing reason + transition audit |
 | 3b | Agent | Mark reconciled với warning | Có reason; không safety rule khác (`CONFIRMED OD-03`) | `IN_PROGRESS` → có thể READY nếu gate khác pass | **Non-blocking** | Warning rule/reason/comparison + audit |
 
-## 2.9 Flow 9 — Missing minimum evidence
+## 2.7 Edge flow C — Missing minimum evidence
 
 | Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
 |---|---|---|---|---|---|---|
@@ -137,11 +128,11 @@ Thiếu một trong hai source không đi Flow 6; case đi `CHỜ XÁC MINH` the
 
 Nếu không xác định được evidence nào cần bổ sung hoặc source cần con người xác minh, Agent chuyển `CHỜ XÁC MINH` thay vì giữ `IN_PROGRESS`.
 
-## 2.10 Flow 10 — Non-blocking warning trong `READY_FOR_REVIEW`
+## 2.8 Edge flow D — Non-blocking warning trong `READY_FOR_REVIEW`
 
 | Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
 |---|---|---|---|---|---|---|
-| 1 | Agent | Evaluate seven gates | Tất cả pass; có explained variance warning | `IN_PROGRESS` → `READY_FOR_REVIEW` | **Non-blocking** | Warning + gate/transition audit |
+| 1 | Agent | Evaluate eight gates | Tất cả pass, gồm route; có explained variance warning | `IN_PROGRESS` → `READY_FOR_REVIEW` | **Non-blocking** | Warning + gate/transition audit |
 | 2 | UI | Hiển thị banner warning cùng rule/reason/comparison | Không dùng copy “không có vấn đề” | giữ READY | Không | Warning acknowledgment không bắt buộc |
 | 3 | BQL | Mở package để xem | Warning còn active/visible | giữ READY | Không | Review access event optional |
 
@@ -159,7 +150,7 @@ Nếu không xác định được evidence nào cần bổ sung hoặc source c
 |----------------------------------------------------------------------------|
 | SIM-T-001 | Vệ sinh | IN_PROGRESS       | Missing: 0 | Warning: 0          |
 | SIM-T-002 | Kỹ thuật| EXCEPTION          | Rule: EX-TEC-01              |
-| SIM-T-003 | CSKH    | READY_FOR_REVIEW   | Warning: 1                    |
+| SIM-T-003 | Kỹ thuật| CHỜ XÁC MINH       | Asset: NOT_FOUND              |
 |----------------------------------------------------------------------------|
 | Chọn case → Ticket Detail                                                  |
 +----------------------------------------------------------------------------+
@@ -195,6 +186,10 @@ Nếu không xác định được evidence nào cần bổ sung hoặc source c
 | [Xác nhận service/type + location] | confirmation_status                    |
 | [Lưu trường hành chính]            | [Xem proposal details]                 |
 |----------------------------------------------------------------------------|
+| LOOKUP & ROUTING                                                           |
+| Playbook match | Asset match (kỹ thuật) | Material/stock status                 |
+| Proposed SIM-TEAM-* | Duty status | Route status | Queue reason                  |
+|----------------------------------------------------------------------------|
 | AUDIT PREVIEW: actor | field | old → new | reason | timestamp              |
 +----------------------------------------------------------------------------+
 ```
@@ -219,6 +214,9 @@ Nếu không xác định được evidence nào cần bổ sung hoặc source c
 |----------------------------------------------------------------------------|
 | Raw required fields: [PASS] | BPTN service/type confirmation: [PASS]       |
 | Location before draft: [PASS] | Priority: [OPTIONAL]                       |
+| Playbook match: PB-... | Asset: MATCHED / N/A / unresolved                 |
+| Material needed + simulated stock | Proposed team + duty/capacity           |
+| Route status: ROUTED / NOT_ROUTED | Queue reason                            |
 | Scope summary (source-grounded)                                             |
 | Checklist template                                                         |
 | Material requirement: simulated / N/A                                      |
@@ -236,7 +234,8 @@ Nếu không xác định được evidence nào cần bổ sung hoặc source c
 - **Bất biến:** link/raw source; generated draft revision read-only.
 - **Primary CTA:** “Đi tới Execution Update”.
 - **Secondary:** “Xem Ticket Source”, “Xem reason/rule”.
-- **Disabled/absent:** create real work order, assign staff, approve.
+- **Disabled/absent:** create real work order, gán nhân viên cụ thể, approve.
+- **Route rule:** nếu không có team trực/stock thiếu/asset unresolved, draft vẫn hiển thị cùng lý do chưa route; `assignee_id` không có giá trị.
 - **Warning/error:** schema error giữ IN_PROGRESS; blocker dẫn UI-07.
 - **Audit:** created/revised by Agent, versions, idempotency context.
 
@@ -269,11 +268,11 @@ Nếu không xác định được evidence nào cần bổ sung hoặc source c
 | DỮ LIỆU MÔ PHỎNG | Checklist, Material & Evidence                          |
 | CHECKLIST: [PENDING/COMPLETED] item ...                                     |
 |----------------------------------------------------------------------------|
-| MATERIAL (VE SINH/KY THUAT)                                                 |
-| item | planned_qty | norm_qty [MÔ PHỎNG/N/A] | issued_qty | used_qty       |
+| MATERIAL & SIMULATED STOCK                                                  |
+| item | planned_qty | norm_qty | stock_qty/status | issued_qty | used_qty    |
 | variance | variance_reason                                                  |
 | Comparisons: planned↔norm | issued↔planned | used↔issued                   |
-| CSKH: MATERIAL GATE = N/A                                                   |
+| Pre-route stock gate: SUFFICIENT / INSUFFICIENT / UNKNOWN / N/A             |
 |----------------------------------------------------------------------------|
 | EVIDENCE REQUIREMENTS — TÁCH KHỎI CHECKLIST GATE                            |
 | requirement | required? | present/missing/invalid | source                  |
@@ -282,7 +281,7 @@ Nếu không xác định được evidence nào cần bổ sung hoặc source c
 +----------------------------------------------------------------------------+
 ```
 
-- **Mục tiêu:** cập nhật và nhìn rõ ba nhóm readiness data.
+- **Mục tiêu:** cập nhật và nhìn rõ các nhóm readiness data.
 - **Actor:** nhân sự thực hiện edit; Agent validate; BQL read.
 - **Field sửa:** checklist status, material fields/reason, execution evidence metadata.
 - **Bất biến:** original resident evidence; playbook requirement/version.
@@ -302,6 +301,8 @@ Nếu không xác định được evidence nào cần bổ sung hoặc source c
 | Playbook + version                 [PASS]                                   |
 | Work order draft                   [PASS]                                   |
 | Required fields                    [PASS]                                   |
+| Asset lookup (kỹ thuật)            [PASS / N/A]                             |
+| Team route + duty/capacity         [PASS: ROUTED]                           |
 | Checklist: no PENDING              [PASS]                                   |
 | Material reconciliation / N/A      [PASS]                                   |
 | Minimum evidence                   [PASS]                                   |
@@ -314,7 +315,7 @@ Nếu không xác định được evidence nào cần bổ sung hoặc source c
 +----------------------------------------------------------------------------+
 ```
 
-- **Mục tiêu:** một review package kiểm chứng đủ seven gates.
+- **Mục tiêu:** một review package kiểm chứng đủ eight gates, trong đó route hợp lệ là bắt buộc.
 - **Actor:** BQL xem; handoff action từ system/authorized internal role.
 - **Hiển thị:** playbook, draft, field/checklist/material/evidence/blocker status, warnings.
 - **Được sửa:** không edit dữ liệu trong package.
@@ -381,7 +382,7 @@ Nếu không xác định được evidence nào cần bổ sung hoặc source c
 
 # 4. UI acceptance notes
 
-- Six demo paths có thể chạy qua `UI-01 → UI-02 → UI-03 → UI-04/05 → UI-06` hoặc `UI-07`, với `UI-08` làm bằng chứng audit.
+- Bốn demo flow chính chạy qua `UI-01 → UI-02 → UI-03 → UI-04/05 → UI-06` hoặc dừng tại draft/lookup reason; `UI-07` dành cho high-risk exception và `UI-08` làm bằng chứng audit.
 - Flow missing required field, material variance, missing evidence và non-blocking warning đều có trạng thái/banner/action rõ.
 - Copy `READY_FOR_REVIEW` luôn kèm câu không đồng nghĩa nghiệm thu/hoàn tất/đóng/phê duyệt.
 - Component không dựa màu đơn lẻ; trạng thái và severity có text.
@@ -390,4 +391,8 @@ Nếu không xác định được evidence nào cần bổ sung hoặc source c
 
 ## Phase 4 consistency gate
 
-**PASS.** IA và flow bao phủ sáu demo paths cùng bốn edge flows, áp dụng nhất quán OD-01/02/03/08 và không tạo state/actor/CTA ngoài PRD. BQL sub-role OD-05 chỉ còn là vấn đề pilot; tên/bằng chứng sign-off OD-09 vẫn `TBD`.
+**PASS.** IA và flow bao phủ bốn demo flow cùng bốn edge flows, áp dụng nhất quán asset/duty/stock/team-only routing và không tạo state/actor/CTA ngoài PRD. Không có màn hình quản lý tài sản/lịch nhân sự hoặc nút gán nhân viên; tên/bằng chứng sign-off OD-09 vẫn `TBD`.
+
+## Deferred / Future Scope
+
+- CSKH chỉ thuộc backlog tương lai; không có row Work Queue, flow, wireframe, CTA hoặc demo trong active MVP.
