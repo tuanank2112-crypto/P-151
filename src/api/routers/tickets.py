@@ -1,4 +1,9 @@
-from fastapi import APIRouter, HTTPException, Query
+import hashlib
+from pathlib import Path
+from typing import Literal
+
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse
 from sqlmodel import select
 
 from src.api.deps import BQL, BQLOrTechnician, SessionDep
@@ -9,31 +14,70 @@ from src.models.entities import (
     Location,
     Playbook,
     Ticket,
+    TicketPhoto,
     TicketStatus,
 )
-from src.models.schemas import CloseRequest, EscalateRequest, TicketCreate, TicketDetail
+from src.models.schemas import CloseRequest, EscalateRequest, TicketDetail
 from src.services import audit, clock
 from src.services.assignment import draft_work_order, find_on_duty
+from src.services.evidence_check import read_image, write_image
 from src.services.triage import triage
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
 
+MAX_TICKET_PHOTOS = 5
+
+
 @router.post("", response_model=TicketDetail, status_code=201)
-def create_ticket(body: TicketCreate, session: SessionDep) -> TicketDetail:
-    """Cư dân gửi phản ánh. Hệ thống kiểm tra an toàn, tách vị trí/loại sự cố và khớp danh mục vị trí.
+async def create_ticket(
+    session: SessionDep,
+    text: str = Form(
+        ...,
+        min_length=5,
+        max_length=2000,
+        description="Nội dung phản ánh của cư dân",
+        examples=["Đèn hành lang tầng 5 bị hỏng, tối om từ tối qua"],
+    ),
+    channel: Literal["app", "form", "zalo", "hotline"] = Form(default="form"),
+    reporter_name: str | None = Form(default=None, max_length=100),
+    reporter_contact: str | None = Form(
+        default=None, max_length=100, description="SĐT hoặc căn hộ", examples=["S1.01-0512"]
+    ),
+    photos: list[UploadFile] = File(default=[], description=f"Ảnh hiện trạng (không bắt buộc, tối đa {MAX_TICKET_PHOTOS})"),
+) -> TicketDetail:
+    """Cư dân gửi phản ánh, có thể kèm ảnh. Hệ thống kiểm tra an toàn, tách vị trí/loại sự cố và khớp danh mục vị trí.
 
     Kết quả: `TRIAGED` nếu đủ thông tin, hoặc `ESCALATED` (chuyển BQL) kèm lý do.
+    Ảnh chỉ được lưu để BQL/kỹ thuật xem, không dùng để phân loại.
     """
-    ticket = Ticket(
-        text=body.text,
-        channel=body.channel,
-        reporter_name=body.reporter_name,
-        reporter_contact=body.reporter_contact,
-    )
+    if len(photos) > MAX_TICKET_PHOTOS:
+        raise HTTPException(status_code=422, detail=f"Tối đa {MAX_TICKET_PHOTOS} ảnh")
+    # Validate every photo before creating anything, so a bad file does not leave a half-made ticket
+    images = [(upload, *await read_image(upload)) for upload in photos]
+
+    ticket = Ticket(text=text, channel=channel, reporter_name=reporter_name, reporter_contact=reporter_contact)
     session.add(ticket)
     session.flush()
-    audit.log(session, ticket, "created", "resident", to_status=TicketStatus.NEW, detail={"channel": body.channel})
+    for upload, data, extension in images:
+        path = write_image(f"ticket_{ticket.id}", "resident", data, extension)
+        session.add(
+            TicketPhoto(
+                ticket_id=ticket.id,
+                file_path=str(path),
+                content_type=upload.content_type,
+                size_bytes=len(data),
+                sha256=hashlib.sha256(data).hexdigest(),
+            )
+        )
+    audit.log(
+        session,
+        ticket,
+        "created",
+        "resident",
+        to_status=TicketStatus.NEW,
+        detail={"channel": channel, "photos": len(images)},
+    )
     triage(session, ticket)
     session.commit()
     session.refresh(ticket)
@@ -56,6 +100,15 @@ def list_tickets(
 @router.get("/{ticket_id}", response_model=TicketDetail)
 def read_ticket(ticket_id: int, session: SessionDep, _role: BQLOrTechnician) -> TicketDetail:
     return ticket_detail(session, get_ticket(session, ticket_id))
+
+
+@router.get("/{ticket_id}/photos/{photo_id}", response_class=FileResponse)
+def read_ticket_photo(ticket_id: int, photo_id: int, session: SessionDep, _role: BQLOrTechnician) -> FileResponse:
+    """Xem ảnh cư dân gửi kèm phản ánh."""
+    photo = session.get(TicketPhoto, photo_id)
+    if photo is None or photo.ticket_id != ticket_id or not Path(photo.file_path).is_file():
+        raise HTTPException(status_code=404, detail=f"Không có ảnh {photo_id} của ticket {ticket_id}")
+    return FileResponse(photo.file_path, media_type=photo.content_type)
 
 
 @router.post("/{ticket_id}/propose-work-order", response_model=TicketDetail)

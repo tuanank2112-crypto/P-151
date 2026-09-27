@@ -12,7 +12,7 @@ AFTER = ("after.png", b"\x89PNG\r\n\x1a\n-after", "image/png")
 
 
 def create_ticket(api, text: str) -> dict:
-    response = api.post(f"{V}/tickets", json={"text": text, "reporter_contact": "S1.01-0512"})
+    response = api.post(f"{V}/tickets", data={"text": text, "reporter_contact": "S1.01-0512"})
     assert response.status_code == 201, response.text
     return response.json()
 
@@ -195,3 +195,31 @@ def test_evidence_rejects_non_image_and_unknown_checklist(api):
     assert not_image.status_code == 415
     bad_code = api.post(f"{V}/work-orders/{work_order_id}/evidence", headers=TECH, data={"checklist_done": "fly"})
     assert bad_code.status_code == 422
+
+
+def test_resident_photos(api):
+    """Resident can attach photos; BQL can view them; bad files are rejected without creating a ticket."""
+    created = api.post(
+        f"{V}/tickets",
+        data={"text": "Đèn hành lang tầng 5 bị hỏng, tối om từ tối qua"},
+        files=[("photos", BEFORE), ("photos", AFTER)],
+    )
+    assert created.status_code == 201, created.text
+    body = created.json()
+    assert body["ticket"]["status"] == "TRIAGED"
+    assert len(body["photos"]) == 2
+
+    photo = body["photos"][0]
+    viewed = api.get(f"{V}/tickets/{body['ticket']['id']}/photos/{photo['id']}", headers=BQL)
+    assert viewed.status_code == 200
+    assert viewed.content == BEFORE[1]
+    assert api.get(f"{V}/tickets/{body['ticket']['id']}/photos/{photo['id']}").status_code == 403
+
+    before = len(api.get(f"{V}/tickets", headers=BQL).json())
+    rejected = api.post(
+        f"{V}/tickets",
+        data={"text": "Đèn hành lang tầng 5 bị hỏng"},
+        files=[("photos", ("note.txt", b"hello", "text/plain"))],
+    )
+    assert rejected.status_code == 415
+    assert len(api.get(f"{V}/tickets", headers=BQL).json()) == before

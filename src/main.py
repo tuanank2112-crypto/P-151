@@ -3,6 +3,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session
 
@@ -47,6 +48,31 @@ app.add_middleware(
 app.include_router(router, prefix="/api/v1")
 for module in (tickets, work_orders, escalations, jobs, metrics, catalog):
     app.include_router(module.router, prefix="/api/v1")
+
+
+def _mark_binary(node):
+    # FastAPI marks uploads with contentMediaType only; Swagger UI needs format: binary to show a file picker
+    if isinstance(node, dict):
+        if node.get("contentMediaType") == "application/octet-stream":
+            node["format"] = "binary"
+        for value in node.values():
+            _mark_binary(value)
+    elif isinstance(node, list):
+        for value in node:
+            _mark_binary(value)
+
+
+def custom_openapi():
+    if app.openapi_schema is None:
+        schema = get_openapi(
+            title=app.title, version=app.version, description=app.description, routes=app.routes
+        )
+        _mark_binary(schema)
+        app.openapi_schema = schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
 
 
 @app.get("/", include_in_schema=False)

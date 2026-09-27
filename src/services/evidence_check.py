@@ -13,7 +13,8 @@ from src.models.schemas import CheckIssue, CheckResult
 ALLOWED_IMAGE_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/heic": ".heic"}
 
 
-async def save_photo(work_order: WorkOrder, kind: str, upload: UploadFile) -> Evidence:
+async def read_image(upload: UploadFile) -> tuple[bytes, str]:
+    """Validate an uploaded image and return its bytes and file extension."""
     settings = get_settings()
     if upload.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(
@@ -25,11 +26,20 @@ async def save_photo(work_order: WorkOrder, kind: str, upload: UploadFile) -> Ev
         raise HTTPException(status_code=422, detail=f"'{upload.filename}' rỗng")
     if len(data) > settings.max_upload_mb * 1024 * 1024:
         raise HTTPException(status_code=413, detail=f"'{upload.filename}' vượt quá {settings.max_upload_mb} MB")
+    return data, ALLOWED_IMAGE_TYPES[upload.content_type]
 
-    folder = Path(settings.upload_dir) / f"wo_{work_order.id}"
+
+def write_image(folder_name: str, prefix: str, data: bytes, extension: str) -> Path:
+    folder = Path(get_settings().upload_dir) / folder_name
     folder.mkdir(parents=True, exist_ok=True)
-    path = folder / f"{kind}_{uuid.uuid4().hex[:12]}{ALLOWED_IMAGE_TYPES[upload.content_type]}"
+    path = folder / f"{prefix}_{uuid.uuid4().hex[:12]}{extension}"
     path.write_bytes(data)
+    return path
+
+
+async def save_photo(work_order: WorkOrder, kind: str, upload: UploadFile) -> Evidence:
+    data, extension = await read_image(upload)
+    path = write_image(f"wo_{work_order.id}", kind, data, extension)
     return Evidence(
         work_order_id=work_order.id,
         kind=kind,

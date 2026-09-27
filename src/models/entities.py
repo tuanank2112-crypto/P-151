@@ -162,6 +162,18 @@ class Evidence(SQLModel, table=True):
     uploaded_at: NaiveDatetime = Field(default_factory=lambda: clock.now())
 
 
+class TicketPhoto(SQLModel, table=True):
+    """Photo the resident attached when reporting. Not used by triage or the evidence check."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    ticket_id: int = Field(foreign_key="ticket.id", index=True)
+    file_path: str
+    content_type: str
+    size_bytes: int
+    sha256: str
+    uploaded_at: NaiveDatetime = Field(default_factory=lambda: clock.now())
+
+
 class Escalation(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     ticket_id: int = Field(foreign_key="ticket.id", index=True)

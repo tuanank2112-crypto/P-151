@@ -194,7 +194,8 @@ Tất cả nằm dưới prefix `/api/v1`. Chưa có đăng nhập: gửi header
 
 | Method | Path | Vai trò | Việc làm |
 |---|---|---|---|
-| POST | `/tickets` | (cư dân) | Nhận phản ánh; kiểm tra an toàn, tách vị trí/loại sự cố → `TRIAGED` hoặc `ESCALATED` |
+| POST | `/tickets` | (cư dân) | Nhận phản ánh (form, kèm tối đa 5 ảnh); kiểm tra an toàn, tách vị trí/loại sự cố → `TRIAGED` hoặc `ESCALATED` |
+| GET | `/tickets/{id}/photos/{photo_id}` | bql, technician | Xem ảnh cư dân gửi kèm |
 | GET | `/tickets`, `/tickets/{id}` | bql (xem chi tiết: cả technician) | Danh sách / chi tiết ticket kèm work order, bằng chứng, ngoại lệ |
 | POST | `/tickets/{id}/propose-work-order` | bql | Đề xuất người trực và nội dung việc theo playbook |
 | POST | `/work-orders/{id}/approve` | bql | Duyệt giao việc (có thể đổi người), bắt đầu tính hạn |
@@ -217,7 +218,8 @@ Bước nào cũng có thể rẽ sang `ESCALATED`; hồ sơ thiếu thì về `
 
 ### Thử luồng chuẩn trên Swagger (<http://localhost:8000/docs>)
 
-1. `POST /tickets` với `{"text": "Đèn hành lang tầng 5 bị hỏng"}` → `TRIAGED`, `location_id = S101-T05-HL`.
+1. `POST /tickets`: điền `text = Đèn hành lang tầng 5 bị hỏng`, có thể chọn ảnh ở `photos` → `TRIAGED`,
+   `location_id = S101-T05-HL`. Ảnh chỉ lưu để xem, không dùng để phân loại.
 2. `POST /tickets/{id}/propose-work-order` (x-role `bql`) → lấy `work_orders[0].work_order.id`.
 3. `POST /work-orders/{id}/approve` (bql), body `{}`.
 4. `POST /work-orders/{id}/evidence` (technician): chọn ảnh ở `before_photos` và `after_photos`,

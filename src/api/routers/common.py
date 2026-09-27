@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
-from src.models.entities import Escalation, Evidence, Ticket, WorkOrder
+from src.models.entities import Escalation, Evidence, Ticket, TicketPhoto, WorkOrder
 from src.models.schemas import TicketDetail, WorkOrderDetail
 
 
@@ -38,8 +38,10 @@ def ticket_detail(session: Session, ticket: Ticket) -> TicketDetail:
     escalations = session.exec(
         select(Escalation).where(Escalation.ticket_id == ticket.id).order_by(Escalation.id)
     ).all()
+    photos = session.exec(select(TicketPhoto).where(TicketPhoto.ticket_id == ticket.id).order_by(TicketPhoto.id)).all()
     return TicketDetail(
         ticket=ticket,
+        photos=list(photos),
         work_orders=[work_order_detail(session, wo) for wo in work_orders],
         escalations=list(escalations),
     )
