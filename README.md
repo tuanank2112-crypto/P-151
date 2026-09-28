@@ -1,7 +1,10 @@
 # P-151 — Resident Ticket Routing Agent
 
-> Cư dân gửi phản ánh sự cố → AI phân loại ticket, kiểm tra ảnh bằng chứng → tự chuyển
-> việc cho kỹ thuật qua Zalo, ca khó/khẩn cấp chuyển Ban quản lý (BQL).
+> **ResidentGPT project docs:** [bản đồ tài liệu](docs/README.md) dẫn tới baseline MVP v0.3 và đặc tả mở rộng v0.4 cho demo 04/10/2026. Phần còn lại của README này là hướng dẫn template; trạng thái triển khai thực tế được ghi trong [ARCHITECTURE.md](ARCHITECTURE.md).
+
+Template chính thức cho học viên VinUni AI20K Build Phase: cấu trúc dự án, code
+mẫu và hướng dẫn kỹ thuật để xây dựng một AI Agent hoàn chỉnh — từ kiến trúc,
+code, test cho đến deploy và nộp bài Demo Day.
 
 ## Vấn đề
 
@@ -143,8 +146,17 @@ bash scripts/setup_hooks.sh                                      # Linux / macOS
 powershell -ExecutionPolicy Bypass -File scripts\setup_hooks.ps1 # Windows PowerShell
 ```
 
-Log được ghi vào `.ai-log/` và tự gửi lên server chấm ở bước `git push`. Dùng ChatGPT
-hoặc công cụ web khác thì log thủ công:
+On Windows, the Codex hook uses `commandWindows` and the repository Git root,
+so it also works when Codex starts in a subdirectory. If Codex reports that the
+hook is new or changed, open `/hooks` in Codex and review/trust the two logging
+hooks once. The Windows launcher first tries the project virtual environment,
+then installed Python interpreters, and finally a PowerShell fallback.
+
+Chạy một lần sau khi clone. Hook ghi lại prompt khi bạn dùng Claude Code, Cursor,
+Codex CLI, Gemini CLI, Antigravity hoặc GitHub Copilot, và cài pre-push hook để
+đẩy log lên server.
+
+### 5. Chạy server
 
 ```bash
 bash scripts/_pyrun.sh scripts/log_manual.py --tool chatgpt --prompt "Nội dung đã hỏi"

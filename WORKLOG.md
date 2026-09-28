@@ -8,9 +8,10 @@
 
 | Member | Task | Status | Output | Time |
 |--------|------|--------|--------|------|
-| [Tên] | [mô tả task] | ✅ Done | [link/kết quả] | 2h |
-| [Tên] | [mô tả task] | 🔄 WIP | [mô tả tiến độ] | 1.5h |
-| [Tên] | [mô tả task] | ❌ Blocked | [lý do block] | - |
+| Cao Văn Trường | [mô tả task] | ✅ Done | [link/kết quả] | 2h |
+| Lê Như Ý | [mô tả task] | 🔄 WIP | [mô tả tiến độ] | 1.5h |
+| Võ Đức Trí | [mô tả task] | ❌ Blocked | [lý do block] | - |
+| Lê Thị Châm Anh | [mô tả task] | ❌ Blocked | [lý do block] | - |
 
 **Tổng kết ngày:** [1-2 câu về tiến độ chung]
 
