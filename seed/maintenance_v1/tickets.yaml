@@ -1,0 +1,256 @@
+# MaintenanceOps Agent — 12 synthetic tickets (6 vệ sinh, 6 kỹ thuật), 4 demo flow + 8 regression.
+# SIMULATED: nội dung, vị trí, vật tư và kết quả đều mô phỏng; không có dữ liệu cư dân hoặc vận hành thật.
+#
+# Mỗi ticket gồm:
+#   raw          — lớp nguồn cư dân, bất biến sau ingest
+#   bptn         — xác nhận hành chính của BPTN (bỏ trống = BPTN chưa xác nhận)
+#   materials    — vật tư dự kiến (planned) cho stock gate trước route
+#   execution    — cập nhật của nhân sự thực hiện (chỉ chạy nếu ticket đã được route)
+#   expected     — oracle kết quả cuối cùng sau khi chạy hết kịch bản
+dataset_version: maintenanceops-sim-v1
+synthetic: true
+
+tickets:
+  # ------------------------------------------------------------------ VỆ SINH
+  - raw:
+      ticket_id: SIM-TKT-CLN-001
+      created_at: "2026-09-27T08:00:00+07:00"
+      original_description: "Hành lang tầng 3 tòa SIM-A có nhiều rác và vết bẩn, cần vệ sinh."
+    flow: DEMO-1
+    purpose: "Vệ sinh thành công; chênh lệch vật tư có giải thích → READY kèm warning không chặn"
+    bptn: {location_normalized: "Tòa SIM-A / Tầng 3 / Hành lang", reason: "Xác nhận theo nội dung phản ánh mô phỏng"}
+    materials:
+      - {item_code: SIM-MAT-CLEAN-01, planned_qty: 2}
+      - {item_code: SIM-MAT-BAG-01, planned_qty: 3}
+    execution:
+      checklist: [CLN-CHK-01, CLN-CHK-02, CLN-CHK-03]
+      materials:
+        - {item_code: SIM-MAT-CLEAN-01, issued_qty: 2, used_qty: 2}
+        - {item_code: SIM-MAT-BAG-01, issued_qty: 3, used_qty: 3, variance_reason: "Khối lượng rác mô phỏng lớn hơn định mức"}
+      evidence:
+        - {requirement_id: CLN-EVD-PROCESSING-NOTE, evidence_type: PROCESSING_NOTE, content_or_metadata: "Ghi chú xử lý mô phỏng: đã thu gom rác và lau sàn hành lang", readability_status: NOT_APPLICABLE}
+    expected:
+      playbook_id: PB-CLN-01
+      asset_lookup_status: NOT_APPLICABLE
+      duty_lookup_status: AVAILABLE
+      material_stock_status: SUFFICIENT
+      draft_exists: true
+      route_status: ROUTED
+      routing_team_id: SIM-TEAM-CLN-01
+      state: READY_FOR_REVIEW
+      rule_id: PB-COM-R-READY-01
+      warnings: [EXPLAINED_MATERIAL_VARIANCE]
+
+  - raw:
+      ticket_id: SIM-TKT-CLN-002
+      created_at: "2026-09-27T23:30:00+07:00"
+      original_description: "Sảnh chính tòa SIM-B bị đổ nước ngọt, sàn dính bẩn, cần dọn dẹp."
+    flow: DEMO-2
+    purpose: "Vệ sinh không có team trực (ca đêm) → draft tồn tại, không route"
+    bptn: {location_normalized: "Tòa SIM-B / Tầng 1 / Sảnh chính", reason: "Xác nhận theo nội dung phản ánh mô phỏng"}
+    materials:
+      - {item_code: SIM-MAT-CLEAN-01, planned_qty: 1}
+    expected:
+      playbook_id: PB-CLN-01
+      asset_lookup_status: NOT_APPLICABLE
+      duty_lookup_status: NO_AVAILABLE_TEAM
+      material_stock_status: SUFFICIENT
+      draft_exists: true
+      route_status: NOT_ROUTED
+      queue_reason: NO_AVAILABLE_TEAM
+      state: IN_PROGRESS
+      rule_id: PB-COM-R-DTY-01
+
+  - raw:
+      ticket_id: SIM-TKT-CLN-003
+      created_at: "2026-09-27T09:10:00+07:00"
+      original_description: "   "
+    flow: REGRESSION
+    purpose: "Thiếu raw field original_description → CHỜ XÁC MINH, không proposal/draft"
+    expected:
+      playbook_id: null
+      draft_exists: false
+      state: CHỜ XÁC MINH
+      rule_id: PB-COM-R-ING-01
+
+  - raw:
+      ticket_id: SIM-TKT-CLN-004
+      created_at: "2026-09-27T09:20:00+07:00"
+      original_description: "Tầng hầm B1 tòa SIM-A có chất lỏng lạ không rõ nguồn gốc, bốc mùi hắc gây khó thở, cần vệ sinh."
+    flow: REGRESSION
+    purpose: "Cleaning hazard: hai tín hiệu PRESENT → EXCEPTION cho BQL, không draft"
+    bptn: {location_normalized: "Tòa SIM-A / Tầng B1 / Hầm xe", reason: "Xác nhận theo nội dung phản ánh mô phỏng"}
+    expected:
+      playbook_id: PB-CLN-01
+      draft_exists: false
+      state: EXCEPTION
+      rule_id: PB-CLN-R-EX-01
+      exception_type: CLEANING_HAZARD
+
+  - raw:
+      ticket_id: SIM-TKT-CLN-005
+      created_at: "2026-09-27T15:00:00+07:00"
+      original_description: "Cầu thang bộ tầng 6 tòa SIM-A nhiều bụi bẩn, cần vệ sinh."
+    flow: REGRESSION
+    purpose: "Duty data không xác định (ca chiều) → CHỜ XÁC MINH / DUTY_UNKNOWN"
+    bptn: {location_normalized: "Tòa SIM-A / Tầng 6 / Cầu thang bộ", reason: "Xác nhận theo nội dung phản ánh mô phỏng"}
+    materials:
+      - {item_code: SIM-MAT-CLEAN-01, planned_qty: 1}
+    expected:
+      playbook_id: PB-CLN-01
+      asset_lookup_status: NOT_APPLICABLE
+      duty_lookup_status: DUTY_UNKNOWN
+      material_stock_status: SUFFICIENT
+      draft_exists: true
+      route_status: NOT_ROUTED
+      queue_reason: DUTY_UNKNOWN
+      state: CHỜ XÁC MINH
+      rule_id: PB-COM-R-DTY-03
+
+  - raw:
+      ticket_id: SIM-TKT-CLN-006
+      created_at: "2026-09-27T09:00:00+07:00"
+      original_description: "Khu sảnh thang máy tầng 2 tòa SIM-B có rác vương vãi, cần dọn dẹp."
+    flow: REGRESSION
+    purpose: "Đã route, checklist xong nhưng thiếu processing note → IN_PROGRESS, không READY; vật tư N/A"
+    bptn: {location_normalized: "Tòa SIM-B / Tầng 2 / Sảnh thang máy", reason: "Xác nhận theo nội dung phản ánh mô phỏng"}
+    materials: []
+    execution:
+      checklist: [CLN-CHK-01, CLN-CHK-02, CLN-CHK-03]
+    expected:
+      playbook_id: PB-CLN-01
+      asset_lookup_status: NOT_APPLICABLE
+      duty_lookup_status: AVAILABLE
+      material_stock_status: NOT_APPLICABLE
+      draft_exists: true
+      route_status: ROUTED
+      routing_team_id: SIM-TEAM-CLN-01
+      state: IN_PROGRESS
+      rule_id: PB-COM-R-EVD-01
+
+  # ------------------------------------------------------------------ KỸ THUẬT
+  - raw:
+      ticket_id: SIM-TKT-TEC-001
+      created_at: "2026-09-27T10:00:00+07:00"
+      original_description: "Đèn hành lang tầng 3 tòa SIM-A không sáng từ tối qua."
+    flow: DEMO-3
+    purpose: "Kỹ thuật: asset match, vật tư đủ, team trực → route và READY"
+    bptn: {location_normalized: "Tòa SIM-A / Tầng 3 / Hành lang", reason: "Xác nhận theo nội dung phản ánh mô phỏng"}
+    materials:
+      - {item_code: SIM-MAT-LAMP-01, planned_qty: 1}
+    execution:
+      checklist: [TEC-CHK-01, TEC-CHK-02, TEC-CHK-03]
+      materials:
+        - {item_code: SIM-MAT-LAMP-01, issued_qty: 1, used_qty: 1}
+      evidence:
+        - {requirement_id: TEC-EVD-RESULT-NOTE, evidence_type: RESULT_NOTE, content_or_metadata: "Ghi chú kết quả mô phỏng: đã thay bóng, đèn sáng lại", readability_status: NOT_APPLICABLE}
+    expected:
+      playbook_id: PB-TEC-01
+      asset_lookup_status: MATCHED
+      asset_id: SIM-ASSET-LIGHT-001
+      duty_lookup_status: AVAILABLE
+      material_stock_status: SUFFICIENT
+      draft_exists: true
+      route_status: ROUTED
+      routing_team_id: SIM-TEAM-TEC-01
+      state: READY_FOR_REVIEW
+      rule_id: PB-COM-R-READY-01
+      warnings: []
+
+  - raw:
+      ticket_id: SIM-TKT-TEC-002
+      created_at: "2026-09-27T10:30:00+07:00"
+      original_description: "Đèn cầu thang bộ tầng 9 tòa SIM-A bị hỏng, không sáng."
+    flow: DEMO-4
+    purpose: "Kỹ thuật không tìm thấy asset → draft có asset_id=null, CHỜ XÁC MINH, không route"
+    bptn: {location_normalized: "Tòa SIM-A / Tầng 9 / Cầu thang bộ", reason: "Xác nhận theo nội dung phản ánh mô phỏng"}
+    materials:
+      - {item_code: SIM-MAT-LAMP-01, planned_qty: 1}
+    expected:
+      playbook_id: PB-TEC-01
+      asset_lookup_status: NOT_FOUND
+      asset_id: null
+      duty_lookup_status: AVAILABLE
+      material_stock_status: SUFFICIENT
+      draft_exists: true
+      route_status: NOT_ROUTED
+      queue_reason: ASSET_NOT_FOUND
+      state: CHỜ XÁC MINH
+      rule_id: PB-COM-R-AST-01
+
+  - raw:
+      ticket_id: SIM-TKT-TEC-003
+      created_at: "2026-09-27T11:00:00+07:00"
+      original_description: "Bóng đèn hành lang tầng 2 tòa SIM-B không hoạt động."
+    flow: REGRESSION
+    purpose: "Asset match nhưng vật tư thiếu → IN_PROGRESS / MATERIAL_SHORTAGE, draft giữ asset"
+    bptn: {location_normalized: "Tòa SIM-B / Tầng 2 / Hành lang", reason: "Xác nhận theo nội dung phản ánh mô phỏng"}
+    materials:
+      - {item_code: SIM-MAT-LAMP-02, planned_qty: 2}
+    expected:
+      playbook_id: PB-TEC-01
+      asset_lookup_status: MATCHED
+      asset_id: SIM-ASSET-LIGHT-004
+      duty_lookup_status: AVAILABLE
+      material_stock_status: INSUFFICIENT
+      draft_exists: true
+      route_status: NOT_ROUTED
+      queue_reason: MATERIAL_SHORTAGE
+      state: IN_PROGRESS
+      rule_id: PB-COM-R-STK-01
+
+  - raw:
+      ticket_id: SIM-TKT-TEC-004
+      created_at: "2026-09-27T16:00:00+07:00"
+      original_description: "Đèn hành lang tầng 7 tòa SIM-B không sáng."
+    flow: REGRESSION
+    purpose: "Team kỹ thuật đang trực nhưng vượt capacity → IN_PROGRESS / TEAM_CAPACITY_EXCEEDED"
+    bptn: {location_normalized: "Tòa SIM-B / Tầng 7 / Hành lang", reason: "Xác nhận theo nội dung phản ánh mô phỏng"}
+    materials:
+      - {item_code: SIM-MAT-LAMP-01, planned_qty: 1}
+    expected:
+      playbook_id: PB-TEC-01
+      asset_lookup_status: MATCHED
+      asset_id: SIM-ASSET-LIGHT-005
+      duty_lookup_status: CAPACITY_EXCEEDED
+      material_stock_status: SUFFICIENT
+      draft_exists: true
+      route_status: NOT_ROUTED
+      queue_reason: TEAM_CAPACITY_EXCEEDED
+      state: IN_PROGRESS
+      rule_id: PB-COM-R-DTY-02
+
+  - raw:
+      ticket_id: SIM-TKT-TEC-005
+      created_at: "2026-09-27T10:45:00+07:00"
+      original_description: "Đèn sảnh thang máy tầng 5 tòa SIM-A không sáng, có tia lửa và mùi khét ở hộp đèn."
+    flow: REGRESSION
+    purpose: "Electrical high risk → EXCEPTION cho BQL, không chẩn đoán/draft"
+    bptn: {location_normalized: "Tòa SIM-A / Tầng 5 / Sảnh thang máy", reason: "Xác nhận theo nội dung phản ánh mô phỏng"}
+    expected:
+      playbook_id: PB-TEC-01
+      draft_exists: false
+      state: EXCEPTION
+      rule_id: PB-TEC-R-EX-01
+      exception_type: ELECTRICAL_HIGH_RISK
+
+  - raw:
+      ticket_id: SIM-TKT-TEC-006
+      created_at: "2026-09-27T09:30:00+07:00"
+      original_description: "Hệ thống chiếu sáng hầm B1 tòa SIM-A không hoạt động."
+    flow: REGRESSION
+    purpose: "Asset match nhưng tồn kho không rõ → CHỜ XÁC MINH / MATERIAL_STOCK_UNKNOWN"
+    bptn: {location_normalized: "Tòa SIM-A / Tầng B1 / Hầm xe", reason: "Xác nhận theo nội dung phản ánh mô phỏng"}
+    materials:
+      - {item_code: SIM-MAT-STARTER-01, planned_qty: 1}
+    expected:
+      playbook_id: PB-TEC-01
+      asset_lookup_status: MATCHED
+      asset_id: SIM-ASSET-LIGHT-006
+      duty_lookup_status: AVAILABLE
+      material_stock_status: UNKNOWN
+      draft_exists: true
+      route_status: NOT_ROUTED
+      queue_reason: MATERIAL_STOCK_UNKNOWN
+      state: CHỜ XÁC MINH
+      rule_id: PB-COM-R-STK-02

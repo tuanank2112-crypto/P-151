@@ -199,7 +199,48 @@ Dockerfile           Image backend (multi-stage)
 docker-compose.yml   Backend + PostgreSQL
 ```
 
-## API Endpoints
+## MaintenanceOps Agent v0.3 (baseline mới)
+
+Code theo tài liệu baseline v0.3 (`docs/01`–`05`, `docs/data-contract-v1.md`, `docs/playbook-v1.md`) nằm ở
+`src/maintenance/`, API dưới prefix `/api/v1/mo`. Toàn bộ dữ liệu là **mô phỏng**, giữ in-memory và reset được.
+
+- Hai playbook: `PB-CLN-01` (vệ sinh khu vực chung), `PB-TEC-01` (đèn khu vực chung không hoạt động).
+- Bốn state: `IN_PROGRESS`, `CHỜ XÁC MINH`, `READY_FOR_REVIEW`, `EXCEPTION`. Không có trạng thái đóng/nghiệm thu.
+- Route chỉ tới team `SIM-TEAM-*` (`TEAM_ONLY`, `assignee_id=null`) sau khi qua asset (chỉ kỹ thuật), tồn kho và lịch trực.
+- Fixture: `seed/maintenance_v1/catalog.yaml` (asset, duty, vật tư, checklist, evidence) và `tickets.yaml`
+  (12 ticket, 4 demo flow + 8 regression, kèm expected outcome).
+- Người gọi xác định bằng header `X-Actor-Id`: `SIM-ACTOR-BPTN-01`, `SIM-ACTOR-EXEC-01`, `SIM-ACTOR-BQL-01`, `SIM-ACTOR-AGENT`.
+
+| Method | Path | Actor | Việc làm |
+|---|---|---|---|
+| POST | `/mo/reset` | (demo nội bộ) | Nạp lại 12 ticket fixture, run ID mới |
+| POST | `/mo/evaluate` | (demo nội bộ) | Reset, chạy cả 12 ticket, so với expected outcome |
+| POST | `/mo/demo/{ticket_id}` | (demo nội bộ) | Chạy các bước kịch bản của một ticket fixture |
+| GET | `/mo/tickets`, `/mo/tickets/{id}`, `/mo/tickets/{id}/audit` | — | Work queue, chi tiết case, audit |
+| POST | `/mo/tickets` | — | Tiếp nhận ticket mô phỏng mới; Agent đề xuất playbook + chạy luật rủi ro |
+| POST | `/mo/tickets/{id}/confirm` | BPTN | Xác nhận service/type/location → Agent lookup, tạo draft, đề xuất route |
+| POST | `/mo/tickets/{id}/checklist/{item}` | Nhân sự thực hiện | Cập nhật checklist |
+| POST | `/mo/tickets/{id}/materials/{item_code}` | Nhân sự thực hiện | Nhập vật tư xuất/dùng, lý do chênh lệch |
+| POST | `/mo/tickets/{id}/evidence` | Nhân sự thực hiện | Thêm processing/result note (ảnh không bắt buộc) |
+| POST | `/mo/tickets/{id}/exceptions/{exc_id}/resolve` | BQL | Ghi resolution cho exception |
+| POST | `/mo/tickets/{id}/handoff` | BPTN/Agent | "Chuyển BQL xem xét" khi `READY_FOR_REVIEW` |
+| POST | `/mo/tickets/{id}/attempt` | bất kỳ | Thử hành động ngoài quyền → luôn `ACTION_DENIED` + audit |
+
+**Phân loại bằng LLM** (`src/maintenance/proposer.py`): đặt `LLM_MODE=openai` trong `.env` (kèm
+`OPENAI_BASE_URL=https://openrouter.ai/api/v1` nếu dùng key OpenRouter). LLM chỉ đề xuất service/type và
+tín hiệu rủi ro; luật cố định vẫn chạy song song:
+- luật và LLM không thống nhất playbook → `CHỜ XÁC MINH`, không đoán;
+- tín hiệu rủi ro lấy mức nặng hơn của luật và LLM, nên LLM không làm mất exception mà luật đã thấy;
+- LLM báo `PRESENT` phải trích nguyên văn từ phản ánh, không có thì hạ xuống `UNCLEAR`;
+- LLM lỗi/hết quota → tự dùng luật; mỗi ticket chỉ gọi LLM một lần, audit ghi `proposer`.
+`LLM_MODE=mock` (mặc định, và luôn dùng trong test) chỉ chạy luật, kết quả cố định.
+
+Demo nhanh trên Swagger: `POST /mo/demo/SIM-TKT-CLN-001` (flow 1), `SIM-TKT-CLN-002` (flow 2),
+`SIM-TKT-TEC-001` (flow 3), `SIM-TKT-TEC-002` (flow 4); `POST /mo/evaluate` để xem 12/12.
+
+Các endpoint cũ bên dưới (giao cho kỹ thuật cá nhân, bắt buộc ảnh, `CLOSED`) là luồng trước v0.3 và sẽ được gỡ.
+
+## API Endpoints (luồng cũ, trước v0.3)
 
 Tất cả nằm dưới prefix `/api/v1`. Chưa có đăng nhập: gửi header **`X-Role: bql`** hoặc
 **`X-Role: technician`** để giả lập vai trò (Swagger có ô nhập `x-role` ở mỗi endpoint).

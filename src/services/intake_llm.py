@@ -56,7 +56,12 @@ def extract_openai(text: str) -> IntakeExtraction:
     from langchain_openai import ChatOpenAI
 
     settings = get_settings()
-    llm = ChatOpenAI(model=settings.model_name, api_key=settings.openai_api_key, temperature=0)
+    model = settings.model_name
+    if "openrouter.ai" in settings.openai_base_url and "/" not in model:
+        model = f"openai/{model}"
+    llm = ChatOpenAI(
+        model=model, api_key=settings.openai_api_key, base_url=settings.openai_base_url or None, temperature=0
+    )
     structured = llm.with_structured_output(IntakeExtraction)
     return structured.invoke([("system", SYSTEM_PROMPT), ("human", text)])
 

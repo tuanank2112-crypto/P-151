@@ -22,6 +22,8 @@ class Settings(BaseSettings):
 
     # LLM
     openai_api_key: str = ""
+    # OpenAI-compatible endpoint, e.g. https://openrouter.ai/api/v1 (empty = api.openai.com)
+    openai_base_url: str = ""
     model_name: str = "gpt-4o-mini"
     llm_temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     # mock: rule-based extraction, deterministic, no API key needed (dev/test)

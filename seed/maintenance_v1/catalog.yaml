@@ -1,0 +1,71 @@
+# MaintenanceOps Agent — static read-only catalog (Data Contract v1.1 §5.4–5.6, §6)
+# SIMULATED: không phải dữ liệu, lịch trực, định mức, tồn kho hoặc quy trình vận hành thật của Vinhomes.
+dataset_version: maintenanceops-sim-v1
+synthetic: true
+
+# Ca trực mô phỏng. Ticket được tra duty theo ca chứa created_at (giờ địa phương +07:00).
+shifts:
+  - {shift_window: SIM-SHIFT-AM, start: "06:00", end: "14:00"}
+  - {shift_window: SIM-SHIFT-PM, start: "14:00", end: "22:00"}
+  - {shift_window: SIM-SHIFT-NIGHT, start: "22:00", end: "06:00"}
+
+assets:
+  - {asset_id: SIM-ASSET-LIGHT-001, asset_type: LIGHTING, location_normalized: "Tòa SIM-A / Tầng 3 / Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.001, synthetic: true, read_only: true}
+  # Hai asset cùng vị trí: dùng cho test lookup AMBIGUOUS
+  - {asset_id: SIM-ASSET-LIGHT-002, asset_type: LIGHTING, location_normalized: "Tòa SIM-A / Tầng 5 / Sảnh thang máy", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.002, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-003, asset_type: LIGHTING, location_normalized: "Tòa SIM-A / Tầng 5 / Sảnh thang máy", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.003, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-004, asset_type: LIGHTING, location_normalized: "Tòa SIM-B / Tầng 2 / Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.004, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-005, asset_type: LIGHTING, location_normalized: "Tòa SIM-B / Tầng 7 / Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.005, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-006, asset_type: LIGHTING, location_normalized: "Tòa SIM-A / Tầng B1 / Hầm xe", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.006, synthetic: true, read_only: true}
+
+duty_availability:
+  - {duty_id: SIM-DUTY-CLN-AM, team_id: SIM-TEAM-CLN-01, service_category: VE_SINH, shift_window: SIM-SHIFT-AM, availability_status: AVAILABLE, current_open_ticket_count: 1, max_open_ticket_count: 3, source_ref: fixture.duty.cln.am, synthetic: true, assignment_scope: TEAM_ONLY}
+  # Ca chiều: dữ liệu trực chưa xác định
+  - {duty_id: SIM-DUTY-CLN-PM, team_id: SIM-TEAM-CLN-01, service_category: VE_SINH, shift_window: SIM-SHIFT-PM, availability_status: UNKNOWN, source_ref: fixture.duty.cln.pm, synthetic: true, assignment_scope: TEAM_ONLY}
+  # Ca đêm: dữ liệu rõ, không có team vệ sinh trực
+  - {duty_id: SIM-DUTY-CLN-NIGHT, team_id: SIM-TEAM-CLN-01, service_category: VE_SINH, shift_window: SIM-SHIFT-NIGHT, availability_status: NOT_ON_DUTY, current_open_ticket_count: 0, max_open_ticket_count: 3, source_ref: fixture.duty.cln.night, synthetic: true, assignment_scope: TEAM_ONLY}
+  - {duty_id: SIM-DUTY-TEC-AM, team_id: SIM-TEAM-TEC-01, service_category: KY_THUAT, shift_window: SIM-SHIFT-AM, availability_status: AVAILABLE, current_open_ticket_count: 1, max_open_ticket_count: 3, source_ref: fixture.duty.tec.am, synthetic: true, assignment_scope: TEAM_ONLY}
+  # Ca chiều: team kỹ thuật đang trực nhưng đã đủ tải
+  - {duty_id: SIM-DUTY-TEC-PM, team_id: SIM-TEAM-TEC-02, service_category: KY_THUAT, shift_window: SIM-SHIFT-PM, availability_status: AVAILABLE, current_open_ticket_count: 3, max_open_ticket_count: 3, source_ref: fixture.duty.tec.pm, synthetic: true, assignment_scope: TEAM_ONLY}
+  - {duty_id: SIM-DUTY-TEC-NIGHT, team_id: SIM-TEAM-TEC-01, service_category: KY_THUAT, shift_window: SIM-SHIFT-NIGHT, availability_status: NOT_ON_DUTY, current_open_ticket_count: 0, max_open_ticket_count: 3, source_ref: fixture.duty.tec.night, synthetic: true, assignment_scope: TEAM_ONLY}
+
+# Định mức (norm) và tồn kho mô phỏng. simulated_stock_qty=null nghĩa là tồn kho không rõ.
+materials:
+  - {item_code: SIM-MAT-CLEAN-01, item_name: "Dung dịch vệ sinh mô phỏng", unit: unit-sim, norm_qty: 2, norm_label: SYNTHETIC, simulated_stock_qty: 10, synthetic: true}
+  - {item_code: SIM-MAT-BAG-01, item_name: "Túi rác mô phỏng", unit: unit-sim, norm_qty: 2, norm_label: SYNTHETIC, simulated_stock_qty: 20, synthetic: true}
+  - {item_code: SIM-MAT-LAMP-01, item_name: "Bóng đèn LED mô phỏng", unit: unit-sim, norm_qty: 1, norm_label: SYNTHETIC, simulated_stock_qty: 5, synthetic: true}
+  - {item_code: SIM-MAT-LAMP-02, item_name: "Bóng đèn tuýp mô phỏng", unit: unit-sim, norm_qty: 2, norm_label: SYNTHETIC, simulated_stock_qty: 0, synthetic: true}
+  - {item_code: SIM-MAT-STARTER-01, item_name: "Tắc te mô phỏng", unit: unit-sim, norm_qty: null, norm_label: N_A, simulated_stock_qty: null, synthetic: true}
+
+checklist_templates:
+  - checklist_template_id: PB-CLN-01-CHK-V1
+    playbook_id: PB-CLN-01
+    playbook_version: "1.1"
+    template_version: "1.1"
+    not_real_sop_label: true
+    synthetic: true
+    items:
+      - {template_item_id: CLN-CHK-01, label: "Khu vực trong execution update khớp location_normalized"}
+      - {template_item_id: CLN-CHK-02, label: "Execution update đã được ghi nhận theo scope_summary"}
+      - {template_item_id: CLN-CHK-03, label: "Các hạng mục trong phạm vi draft đã được đánh dấu hoàn tất"}
+  - checklist_template_id: PB-TEC-01-CHK-V1
+    playbook_id: PB-TEC-01
+    playbook_version: "1.1"
+    template_version: "1.1"
+    not_real_sop_label: true
+    synthetic: true
+    items:
+      - {template_item_id: TEC-CHK-01, label: "Execution update nhận diện đúng location và đối tượng lighting"}
+      - {template_item_id: TEC-CHK-02, label: "Việc hoàn tất checklist an toàn mô phỏng đã được ghi nhận"}
+      - {template_item_id: TEC-CHK-03, label: "Kết quả xử lý mô phỏng đã được cập nhật"}
+
+evidence_requirements:
+  - {requirement_id: CLN-EVD-PROCESSING-NOTE, playbook_id: PB-CLN-01, allowed_evidence_types: [PROCESSING_NOTE]}
+  - {requirement_id: TEC-EVD-RESULT-NOTE, playbook_id: PB-TEC-01, allowed_evidence_types: [RESULT_NOTE]}
+
+actors:
+  - {actor_id: SIM-ACTOR-BPTN-01, actor_role: BPTN}
+  - {actor_id: SIM-ACTOR-EXEC-01, actor_role: HUMAN_EXECUTION}
+  - {actor_id: SIM-ACTOR-BQL-01, actor_role: BQL}
+  - {actor_id: SIM-ACTOR-AGENT, actor_role: AGENT}
+  - {actor_id: SIM-ACTOR-SYSTEM, actor_role: SYSTEM}

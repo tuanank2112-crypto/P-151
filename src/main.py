@@ -7,7 +7,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session
 
-from src.api.routers import catalog, escalations, jobs, metrics, tickets, work_orders
+from src.api.routers import catalog, escalations, jobs, maintenance, metrics, tickets, work_orders
 from src.api.routes import router
 from src.config import get_settings
 from src.db import get_engine, init_db
@@ -46,7 +46,7 @@ app.add_middleware(
 )
 
 app.include_router(router, prefix="/api/v1")
-for module in (tickets, work_orders, escalations, jobs, metrics, catalog):
+for module in (tickets, work_orders, escalations, jobs, metrics, catalog, maintenance):
     app.include_router(module.router, prefix="/api/v1")
 
 
