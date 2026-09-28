@@ -32,18 +32,6 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql+psycopg2://p151:p151@localhost:5432/p151"
 
-    # Zalo Bot (notify technicians)
-    zalo_bot_token: str = ""
-    zalo_webhook_secret: str = ""
-    zalo_tech_chat_id: str = ""
-
-    # Maintenance ops
-    upload_dir: str = "./data/uploads"
-    max_upload_mb: int = Field(default=10, ge=1)
-    seed_on_startup: bool = True
-    # Escalate to BQL after this many failed evidence checks on one work order
-    max_check_failures: int = Field(default=2, ge=1)
-
     # Vector Store
     chroma_persist_dir: str = "./data/chroma"
 

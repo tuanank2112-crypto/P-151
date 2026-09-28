@@ -1,34 +1,30 @@
-# P-151 — Resident Ticket Routing Agent
+# P-151 — MaintenanceOps Agent
 
-> **ResidentGPT project docs:** [bản đồ tài liệu](docs/README.md) dẫn tới baseline MVP v0.3 và đặc tả mở rộng v0.4 cho demo 04/10/2026. Phần còn lại của README này là hướng dẫn template; trạng thái triển khai thực tế được ghi trong [ARCHITECTURE.md](ARCHITECTURE.md).
-
-Template chính thức cho học viên VinUni AI20K Build Phase: cấu trúc dự án, code
-mẫu và hướng dẫn kỹ thuật để xây dựng một AI Agent hoàn chỉnh — từ kiến trúc,
-code, test cho đến deploy và nộp bài Demo Day.
+> Prototype **mô phỏng** theo baseline v0.3 (`docs/01`–`05`, `docs/data-contract-v1.md`, `docs/playbook-v1.md`).
+> Toàn bộ dữ liệu, quy trình, định mức và kết quả là mô phỏng, không phải vận hành thật.
 
 ## Vấn đề
 
-BQL nhận phản ánh sự cố (đèn hỏng, thang máy, điện nước, ...) từ cư dân qua nhiều kênh và
-phải đọc, phân loại, xác minh rồi giao việc thủ công cho kỹ thuật. Việc này chậm, dễ sót
-và phụ thuộc vào người điều phối.
+BQL cần tạo và kiểm tra hồ sơ bảo trì một cách nhất quán, truy vết được và không vượt quyền, để mỗi case
+đủ điều kiện được chuyển BQL xem xét hoặc dừng đúng ở bước xác minh/ngoại lệ.
 
 ## Giải pháp
 
-- **Phân loại ticket**: loại sự cố, vị trí, mức khẩn cấp (LLM có vision).
-- **Kiểm tra bằng chứng**: ticket sửa chữa phải có ảnh khớp với mô tả.
-- **Chuyển tiếp tự động**: đủ điều kiện → tạo work order và báo kỹ thuật qua Zalo Bot.
-- **Chuyển BQL**: thiếu thông tin, mơ hồ, hoặc ca an toàn (kẹt thang máy, chập điện, ...).
+- **Phân loại**: Agent đề xuất playbook vệ sinh (`PB-CLN-01`) hoặc đèn khu vực chung (`PB-TEC-01`) bằng luật cố định
+  + LLM; phát hiện tín hiệu rủi ro (chất lạ nguy hại, mùi khét, tia lửa, dây hở) → `EXCEPTION` cho BQL.
+- **BPTN xác nhận** loại việc và vị trí trước khi tạo draft.
+- **Route cấp team**: tra asset (kỹ thuật), tồn kho, lịch trực và sức chứa → route tới `SIM-TEAM-*`, không gán cá nhân.
+- **Kiểm tra hồ sơ**: checklist, vật tư (3 phép đối soát), evidence tối thiểu; đủ 8 gate → `READY_FOR_REVIEW`.
+- Bốn state: `IN_PROGRESS`, `CHỜ XÁC MINH`, `READY_FOR_REVIEW`, `EXCEPTION`; mọi thao tác có audit.
 
 ## Tech Stack
 
 | Lớp | Công nghệ |
 |---|---|
-| AI Agent | LangGraph + LangChain, OpenAI `gpt-4o-mini` |
+| Agent | Luật cố định + LLM đề xuất (LangChain, `gpt-4o-mini` qua OpenAI/OpenRouter) |
 | Backend | FastAPI + Python 3.11 |
-| Database | PostgreSQL 16 (SQLModel / SQLAlchemy) |
-| Thông báo kỹ thuật | Zalo Bot |
+| Dữ liệu | Fixture YAML mô phỏng, giữ in-memory và reset được (PostgreSQL 16 có sẵn trong compose, chưa dùng) |
 | DevOps | Docker Compose + GitHub Actions |
-
 ---
 
 ## Chạy dự án bằng Docker (khuyến nghị)
@@ -60,10 +56,11 @@ Mở `.env` và điền:
 
 | Biến | Bắt buộc | Lấy ở đâu |
 |---|---|---|
-| `OPENAI_API_KEY` | Có | Key OpenAI của team |
+| `LLM_MODE` | Không | `mock` (mặc định, chỉ luật cố định) hoặc `openai` (bật LLM đề xuất) |
+| `OPENAI_API_KEY` | Khi `LLM_MODE=openai` | Key OpenAI hoặc OpenRouter của team |
+| `OPENAI_BASE_URL` | Khi dùng OpenRouter | `https://openrouter.ai/api/v1` |
 | `AI_LOG_API_KEY` | Có | Mỗi người tự tạo tại [dashboard Phoenix](https://phoenix.note.transformerlabs.ai/api-keys) |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Không | Để mặc định khi chạy local |
-| `ZALO_BOT_TOKEN`, `ZALO_WEBHOOK_SECRET`, `ZALO_TECH_CHAT_ID` | Khi làm phần Zalo | Hỏi người phụ trách Zalo Bot |
 | `LANGCHAIN_API_KEY` | Nên có | [LangSmith](https://smith.langchain.com) — dùng cho AI logs (deliverable #4) |
 
 > Không commit file `.env` (đã có trong `.gitignore`). Gửi key cho nhau qua kênh riêng,
@@ -182,16 +179,13 @@ bash scripts/_pyrun.sh scripts/log_manual.py --tool chatgpt --prompt "Nội dung
 
 ```
 src/
-  agents/            LangGraph agent (graph, state, nodes, tools)
-  api/routes.py      Endpoint chat mẫu của template
-  models/schemas.py  Pydantic schemas (request/response)
-  api/routers/       Endpoints: tickets, work_orders, escalations, jobs, metrics, catalog
-  models/entities.py Bảng DB (SQLModel)
-  services/          Nghiệp vụ: triage, safety, intake_llm, assignment, evidence_check, metrics
+  maintenance/       Core v0.3: models, rules, proposer (LLM), resolver, engine, demo/evaluate
+  api/routers/maintenance.py  Endpoints /api/v1/mo
+  agents/, api/routes.py      Code mẫu LangGraph + endpoint chat của template (không dùng trong flow)
   config.py          Cấu hình (đọc từ .env)
   main.py            App entry point
-tests/               pytest (5 kịch bản MVP + unit test quy tắc)
-seed/                Dữ liệu mẫu một tòa: vị trí, lịch trực, playbook
+tests/test_maintenance/  pytest cho fixture, engine, resolver, proposer, API
+seed/maintenance_v1/     Catalog mô phỏng + 12 ticket kèm expected outcome
 docs/                Tài liệu, architecture diagram, Technical Guidebook
 eval/                Kết quả evaluation
 presentation/        Slide, video Demo Day
@@ -199,7 +193,7 @@ Dockerfile           Image backend (multi-stage)
 docker-compose.yml   Backend + PostgreSQL
 ```
 
-## MaintenanceOps Agent v0.3 (baseline mới)
+## API (v0.3)
 
 Code theo tài liệu baseline v0.3 (`docs/01`–`05`, `docs/data-contract-v1.md`, `docs/playbook-v1.md`) nằm ở
 `src/maintenance/`, API dưới prefix `/api/v1/mo`. Toàn bộ dữ liệu là **mô phỏng**, giữ in-memory và reset được.
@@ -237,59 +231,6 @@ tín hiệu rủi ro; luật cố định vẫn chạy song song:
 
 Demo nhanh trên Swagger: `POST /mo/demo/SIM-TKT-CLN-001` (flow 1), `SIM-TKT-CLN-002` (flow 2),
 `SIM-TKT-TEC-001` (flow 3), `SIM-TKT-TEC-002` (flow 4); `POST /mo/evaluate` để xem 12/12.
-
-Các endpoint cũ bên dưới (giao cho kỹ thuật cá nhân, bắt buộc ảnh, `CLOSED`) là luồng trước v0.3 và sẽ được gỡ.
-
-## API Endpoints (luồng cũ, trước v0.3)
-
-Tất cả nằm dưới prefix `/api/v1`. Chưa có đăng nhập: gửi header **`X-Role: bql`** hoặc
-**`X-Role: technician`** để giả lập vai trò (Swagger có ô nhập `x-role` ở mỗi endpoint).
-
-| Method | Path | Vai trò | Việc làm |
-|---|---|---|---|
-| POST | `/tickets` | (cư dân) | Nhận phản ánh (form, kèm tối đa 5 ảnh); kiểm tra an toàn, tách vị trí/loại sự cố → tự giao cho kỹ thuật đang trực (`ASSIGNED`) hoặc `ESCALATED` |
-| GET | `/tickets/{id}/photos/{photo_id}` | bql, technician | Xem ảnh cư dân gửi kèm |
-| GET | `/tickets`, `/tickets/{id}` | bql (xem chi tiết: cả technician) | Danh sách / chi tiết ticket kèm work order, bằng chứng, ngoại lệ |
-| POST | `/work-orders/{id}/reassign` | bql | Đổi người được hệ thống tự giao (người mới phải đang trực), khi chưa nhận việc |
-| POST | `/work-orders/{id}/accept` | technician | Kỹ thuật xác nhận nhận việc |
-| POST | `/work-orders/{id}/evidence` | technician | Upload ảnh trước/sau, checklist, vật tư (nộp bổ sung được) |
-| POST | `/work-orders/{id}/check` | bql | Soát hồ sơ bằng quy tắc cứng: đạt → đề xuất đóng; thiếu → nhắc bổ sung kèm lý do |
-| GET | `/work-orders` | bql, technician | Lọc theo `technician_id`, `status` |
-| POST | `/tickets/{id}/close` | bql | Đóng ticket (khi `CLOSE_PROPOSED`) |
-| POST | `/tickets/{id}/escalate` | bql, technician | Chuyển BQL thủ công từ bất kỳ bước nào |
-| GET | `/escalations` | bql | Hàng đợi ngoại lệ (`status=OPEN/RESOLVED/ALL`) |
-| POST | `/escalations/{id}/resolve` | bql | `resume` (tiếp tục), `retriage` (sửa vị trí/loại), `close` (đóng) |
-| POST | `/jobs/check-overdue` | bql | Quét việc quá hạn nhận/hoàn thành (bấm tay thay cho cron) |
-| GET | `/tickets/{id}/audit` | bql | Nhật ký mọi quyết định và lần chuyển trạng thái |
-| GET | `/metrics` | bql | Thời gian đến lúc giao việc (trung vị), tỷ lệ hồ sơ đạt lần đầu, số ngoại lệ |
-| GET | `/locations`, `/shifts`, `/playbooks` | (ai cũng xem) | Danh mục vị trí, lịch trực, playbook |
-
-Vòng đời ticket:
-`NEW → TRIAGED → ASSIGNED → EVIDENCE_SUBMITTED → CHECK_PASSED → CLOSE_PROPOSED → CLOSED`.
-Bước nào cũng có thể rẽ sang `ESCALATED`; hồ sơ thiếu thì về `CHECK_FAILED` chờ nộp bổ sung.
-
-### Thử luồng chuẩn trên Swagger (<http://localhost:8000/docs>)
-
-1. `POST /tickets`: điền `text = Đèn hành lang tầng 5 bị hỏng`, có thể chọn ảnh ở `photos` → `ASSIGNED`,
-   `location_id = S101-T05-HL`, việc đã giao cho kỹ thuật ca đèn đang trực. Lấy `work_orders[0].work_order.id`.
-   Ảnh chỉ lưu để xem, không dùng để phân loại.
-2. (Tuỳ chọn) `POST /work-orders/{id}/accept` (technician).
-3. `POST /work-orders/{id}/evidence` (technician): chọn ảnh ở `before_photos` và `after_photos`,
-   `checklist_done = diagnose,power_off,replace,test`, `materials_used = Bóng LED 18W x1`.
-4. `POST /work-orders/{id}/check` (bql) → `CLOSE_PROPOSED`.
-5. `POST /tickets/{id}/close` (bql) → `CLOSED`; xem `GET /tickets/{id}/audit`.
-
-Ca chuyển BQL: `"tầng 5 tối"` (vị trí mơ hồ), `"Mất điện cả hành lang tầng 7, có mùi khét"` (an toàn).
-
-### Dữ liệu mẫu và LLM
-
-- Lần đầu khởi động với DB trống, backend nạp dữ liệu một tòa từ `seed/`:
-  `locations.csv` (vị trí), `shifts.csv` (lịch trực), `playbook.yaml` (quy trình + checklist).
-  Sửa các file này rồi reset DB (`docker compose down -v`, `make up`) để nạp lại.
-- `LLM_MODE=mock` (mặc định): tách vị trí/loại sự cố bằng từ khoá, không cần API key, kết quả cố định.
-  Đổi `LLM_MODE=openai` để dùng model trong `MODEL_NAME`. Kiểm tra an toàn và soát hồ sơ luôn là
-  quy tắc cứng, không phụ thuộc LLM.
-- Chưa dùng Alembic: bảng được tạo tự động khi khởi động. Đổi cấu trúc bảng thì reset DB.
 
 ## Tài liệu
 
