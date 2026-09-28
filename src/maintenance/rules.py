@@ -81,6 +81,36 @@ def classify(description: str) -> Classification:
     return Classification(None, ServiceCategory.UNKNOWN, TicketType.UNKNOWN, "PB-COM-R-CLS-01", f"Nội dung {reason}")
 
 
+# --- Location proposal ------------------------------------------------------
+
+BUILDING_PATTERN = r"\btoa ([a-z0-9]+(?:-[a-z0-9]+)*)\b"
+FLOOR_PATTERN = r"\b(?:tang(?: ham)?|ham) (b?\d+)\b"
+# Ordered: the longer area name must win ("sảnh thang máy" before "sảnh chính")
+AREA_PATTERNS: list[tuple[str, str]] = [
+    (r"\bsanh thang may\b", "Sảnh thang máy"),
+    (r"\bsanh chinh\b", "Sảnh chính"),
+    (r"\bhanh lang\b", "Hành lang"),
+    (r"\bcau thang bo\b", "Cầu thang bộ"),
+    (r"\bham( xe)?\b", "Hầm xe"),
+]
+IMPLIED_FLOOR = {"Sảnh chính": "1"}
+
+
+def extract_location(description: str) -> str | None:
+    """Propose `Tòa X / Tầng N / Khu vực` from the resident text, or None unless all three parts are found.
+
+    Only a proposal: BPTN still confirms or edits it before it becomes `location_normalized`.
+    """
+    text = normalize(description)
+    building = re.search(BUILDING_PATTERN, text)
+    area = next((label for pattern, label in AREA_PATTERNS if re.search(pattern, text)), None)
+    floor = re.search(FLOOR_PATTERN, text)
+    floor_label = floor.group(1).upper() if floor else IMPLIED_FLOOR.get(area)
+    if not (building and floor_label and area):
+        return None
+    return f"Tòa {building.group(1).upper()} / Tầng {floor_label} / {area}"
+
+
 # --- Risk signals -----------------------------------------------------------
 
 # Hedged wording ("hình như", "không chắc", ...) before a risk term makes the signal UNCLEAR, not PRESENT

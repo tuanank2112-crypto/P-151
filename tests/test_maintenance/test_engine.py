@@ -100,10 +100,32 @@ def test_tc_class_005_no_draft_before_bptn_confirmation(engine):
 
 
 def test_tc_wo_004_missing_location_blocks_draft(engine):
-    case = engine.confirm(CLN_OK, BPTN, location_normalized="  ", reason="Chưa rõ vị trí")
+    tid = engine.receive("Khu vực chung có nhiều rác, cần vệ sinh.").ticket.ticket_id
+    assert engine.get(tid).proposal.location_proposed is None
+    case = engine.confirm(tid, BPTN, location_normalized="  ", reason="Chưa rõ vị trí")
     assert case.draft is None
     assert case.ticket.current_state == "CHỜ XÁC MINH"
     assert case.ticket.state_decision.rule_id == "PB-COM-R-LOC-01"
+
+
+def test_agent_proposes_location_from_resident_text(engine):
+    for fixture in engine.dataset.tickets:
+        proposal = engine.get(fixture.raw.ticket_id).proposal
+        if proposal is not None:
+            assert proposal.location_proposed == fixture.bptn.location_normalized
+
+
+def test_blank_location_on_confirm_takes_the_proposed_location(engine):
+    case = engine.confirm(CLN_OK, BPTN, location_normalized=None, reason="Xác nhận theo đề xuất của Agent")
+    admin = case.ticket.administrative_normalization
+    assert admin.location_normalized == "Tòa SIM-A / Tầng 3 / Hành lang"
+    assert "proposal.location_proposed" in admin.source_references
+    assert case.draft is not None
+
+
+def test_bptn_location_overrides_the_proposal(engine):
+    case = engine.confirm(CLN_OK, BPTN, location_normalized="Tòa SIM-A / Tầng 4 / Hành lang", reason="Cư dân gọi lại")
+    assert case.ticket.administrative_normalization.location_normalized == "Tòa SIM-A / Tầng 4 / Hành lang"
 
 
 def test_bptn_edit_to_invalid_pair_is_rejected(engine):

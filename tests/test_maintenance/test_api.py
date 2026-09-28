@@ -101,3 +101,16 @@ def test_naive_simulated_time_is_rejected(api):
         json={"original_description": "Hành lang nhiều rác", "simulated_received_at": "2026-09-28T09:00:00"},
     )
     assert response.status_code == 422
+
+
+def test_confirm_without_location_uses_agent_proposal(api):
+    tid = api.post(
+        "/api/v1/mo/tickets", json={"original_description": "Hành lang tầng 3 tòa SIM-A nhiều rác, cần vệ sinh."}
+    ).json()["ticket"]["ticket_id"]
+    case = api.post(f"/api/v1/mo/tickets/{tid}/confirm", json={"reason": "Xác nhận theo đề xuất"}, headers=BPTN).json()
+    assert case["ticket"]["administrative_normalization"]["location_normalized"] == "Tòa SIM-A / Tầng 3 / Hành lang"
+
+
+def test_confirm_rejects_swagger_placeholder(api):
+    body = {"location_normalized": "string", "reason": "string"}
+    assert api.post("/api/v1/mo/tickets/SIM-TKT-CLN-001/confirm", json=body, headers=BPTN).status_code == 422

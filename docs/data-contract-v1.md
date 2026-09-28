@@ -189,6 +189,7 @@ Mỗi bảng dùng các cột: field; type; required/gate; enum/const; source/ow
 | `playbook_version` | string | R | const `1.1` | Static config/Agent | Version tồn tại | ChecklistTemplate | `1.1` |
 | `asset_type` | enum/null | O; chỉ TEC | `LIGHTING` | AGENT_PROPOSAL | Không phải raw required field | TEC explanation | `LIGHTING` |
 | `reported_symptom` | enum/null | O; chỉ TEC | `NOT_WORKING` | AGENT_PROPOSAL | Không phải raw required field | TEC explanation | `NOT_WORKING` |
+| `location_proposed` | string/null | O | — | AGENT_PROPOSAL (luật cố định) | Chỉ khi đọc được đủ tòa/tầng/khu vực từ `original_description`; null nếu thiếu. BPTN bỏ trống location khi confirm = chấp nhận giá trị này | `location_normalized` | `Tòa SIM-A / Tầng 3 / Hành lang` |
 | `asset_id` | string/null | C: field bắt buộc cho TEC, nullable khi unresolved | `SIM-ASSET-*` | SYSTEM_DERIVED lookup | CLN phải null; TEC chỉ non-null khi exact one match | Asset FK | `SIM-ASSET-LIGHT-001` |
 | `asset_lookup_status` | enum | R | `AssetLookupStatus` | SYSTEM_DERIVED | CLN=`NOT_APPLICABLE`; TEC phải được lookup | Route gate | `MATCHED` |
 | `asset_match_reason` | string | R | — | SYSTEM_DERIVED | Non-empty; nêu exact match/not found/ambiguous | Explainability | `Một asset LIGHTING khớp vị trí` |

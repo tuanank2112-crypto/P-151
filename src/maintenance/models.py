@@ -248,6 +248,7 @@ class AgentClassificationProposal(Entity):
     playbook_version: Literal["1.1"] = PLAYBOOK_VERSION
     asset_type: Literal["LIGHTING"] | None = None
     reported_symptom: Literal["NOT_WORKING"] | None = None
+    location_proposed: str | None = None  # read from the resident text; BPTN confirms it into location_normalized
     asset_id: str | None = None
     asset_lookup_status: AssetLookupStatus = AssetLookupStatus.NOT_APPLICABLE
     asset_match_reason: str = "Chưa lookup"

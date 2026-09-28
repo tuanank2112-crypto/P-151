@@ -62,7 +62,7 @@ from src.maintenance.models import (
 )
 from src.maintenance.proposer import LLMClient, propose
 from src.maintenance.resolver import CaseFacts, resolve, route_blockers
-from src.maintenance.rules import SIGNALS_BY_PLAYBOOK, RiskOutcome, evaluate_signals
+from src.maintenance.rules import SIGNALS_BY_PLAYBOOK, RiskOutcome, evaluate_signals, extract_location
 
 LOCAL_TZ = timezone(timedelta(hours=7))
 AGENT_ID = "SIM-ACTOR-AGENT"
@@ -270,18 +270,23 @@ class MaintenanceEngine:
                     "Cặp service/type không khớp playbook v1.1", {"service": service, "type": ticket_type_}
                 )
             changed = service != proposal.service_category_proposed or ticket_type_ != proposal.ticket_type_proposed
+            # BPTN leaving location blank accepts the Agent's proposed location (if any)
+            location = proposal.location_proposed if _blank(location_normalized) else location_normalized.strip()
+            sources = ["ticket.original_description"]
+            if _blank(location_normalized) and location is not None:
+                sources.append("proposal.location_proposed")
 
             previous = work.ticket.administrative_normalization
             admin = AdministrativeNormalization(
                 administrative_revision=(previous.administrative_revision + 1) if previous else 1,
                 service_category_normalized=service,
                 ticket_type_normalized=ticket_type_,
-                location_normalized=None if _blank(location_normalized) else location_normalized.strip(),
+                location_normalized=location,
                 priority=previous.priority if previous else None,
                 confirmation_status=ConfirmationStatus.CONFIRMED,
                 confirmed_by=actor_id,
                 confirmed_at=now,
-                source_references=["ticket.original_description"],
+                source_references=sources,
                 change_reason=reason,
             )
             for field_name in ("service_category_normalized", "ticket_type_normalized", "location_normalized"):
@@ -761,6 +766,7 @@ class MaintenanceEngine:
             playbook_id=result.playbook_id,
             asset_type="LIGHTING" if result.playbook_id == PlaybookId.TEC else None,
             reported_symptom="NOT_WORKING" if result.playbook_id == PlaybookId.TEC else None,
+            location_proposed=extract_location(description),
             matched_rule_ids=[r for r in (result.rule_id, risk.rule_id) if r],
             classification_reason=result.reason,
             source_references=["ticket.original_description"],
@@ -780,7 +786,7 @@ class MaintenanceEngine:
             work.proposal.proposal_id,
             "playbook_id",
             None,
-            {"playbook_id": result.playbook_id, **trace},
+            {"playbook_id": result.playbook_id, "location_proposed": work.proposal.location_proposed, **trace},
             result.reason,
             now=now,
             rule_id=result.rule_id,

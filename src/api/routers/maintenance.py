@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from src.maintenance.demo import EvaluationReport, evaluate, run_fixture
 from src.maintenance.engine import (
@@ -166,15 +166,29 @@ def read_audit(ticket_id: str, engine: EngineDep) -> list[AuditEvent]:
 
 
 class ConfirmRequest(BaseModel):
-    location_normalized: str | None
+    model_config = {"json_schema_extra": {"examples": [{"reason": "Xác nhận theo đề xuất của Agent"}]}}
+
+    location_normalized: str | None = Field(
+        default=None, description="Bỏ trống = dùng proposal.location_proposed; điền để sửa vị trí"
+    )
     reason: str
     service_category: ServiceCategory | None = None
     ticket_type: TicketType | None = None
 
+    @field_validator("location_normalized", "reason")
+    @classmethod
+    def _not_swagger_placeholder(cls, value: str | None) -> str | None:
+        if value is not None and value.strip().lower() == "string":
+            raise ValueError('"string" là giá trị mẫu của Swagger, không phải dữ liệu thật')
+        return value
+
 
 @router.post("/tickets/{ticket_id}/confirm", response_model=Case)
 def confirm(ticket_id: str, body: ConfirmRequest, actor: ActorDep, engine: EngineDep) -> Case:
-    """BPTN xác nhận/chỉnh service, type và location; Agent tạo draft và đề xuất route nếu đủ gate."""
+    """BPTN xác nhận/chỉnh service, type và location; Agent tạo draft và đề xuất route nếu đủ gate.
+
+    `location_normalized` bỏ trống thì hệ thống lấy vị trí Agent đã đọc từ phản ánh (`proposal.location_proposed`).
+    """
     return _call(engine.confirm, ticket_id, actor, **body.model_dump())
 
 
