@@ -4,7 +4,8 @@ The caller is identified by the `X-Actor-Id` header; its role comes from the sim
 SIM-ACTOR-BPTN-01 (BPTN), SIM-ACTOR-EXEC-01 (nhân sự thực hiện), SIM-ACTOR-BQL-01 (BQL), SIM-ACTOR-AGENT.
 """
 
-from typing import Annotated, Any
+from datetime import datetime
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field, ValidationError
@@ -28,7 +29,7 @@ from src.maintenance.enums import (
     TicketState,
     TicketType,
 )
-from src.maintenance.models import AuditEvent, Case, PlannedMaterial, RawTicket
+from src.maintenance.models import AuditEvent, Case
 
 router = APIRouter(prefix="/mo", tags=["maintenance-ops v0.3"])
 
@@ -122,25 +123,29 @@ def run_evaluation(engine: EngineDep) -> EvaluationReport:
 
 
 class IngestRequest(BaseModel):
-    ticket_id: str = Field(examples=["SIM-TKT-CLN-101"])
-    created_at: str = Field(examples=["2026-09-28T08:15:00+07:00"])
+    """Chỉ những gì cư dân gửi. ticket_id và created_at do hệ thống tạo; vật tư dự kiến do Agent xác định."""
+
     original_description: str = Field(examples=["Hành lang tầng 3 tòa SIM-A nhiều rác, cần vệ sinh."])
-    channel: str = "form"
-    planned_materials: list[PlannedMaterial] = Field(default_factory=list)
+    channel: Literal["form", "app", "hotline"] = "form"
+    simulated_received_at: datetime | None = Field(
+        default=None,
+        description="Chỉ dùng khi demo: giả lập giờ tiếp nhận để chọn ca trực (ca sáng 06–14h có team). "
+        "Để trống = thời điểm hiện tại.",
+        examples=[None],
+    )
 
 
 @router.post("/tickets", response_model=Case, status_code=201)
 def ingest_ticket(body: IngestRequest, engine: EngineDep) -> Case:
-    """Tiếp nhận ticket mô phỏng mới; Agent đề xuất playbook và chạy luật rủi ro ngay."""
-    raw = _call(
-        RawTicket,
-        ticket_id=body.ticket_id,
-        created_at=body.created_at,
-        original_description=body.original_description,
+    """Cư dân gửi phản ánh. Hệ thống tạo mã ticket; Agent đề xuất playbook và chạy luật rủi ro ngay."""
+    if body.simulated_received_at is not None and body.simulated_received_at.tzinfo is None:
+        raise HTTPException(status_code=422, detail="simulated_received_at phải có timezone, ví dụ +07:00")
+    return _call(
+        engine.receive,
+        body.original_description,
         channel=body.channel,
+        received_at=body.simulated_received_at,
     )
-    _call(engine.ingest, raw, planned_materials=body.planned_materials)
-    return _call(engine.run_agent, body.ticket_id)
 
 
 @router.get("/tickets", response_model=list[TicketSummary])

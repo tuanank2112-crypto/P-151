@@ -37,6 +37,13 @@ materials:
   - {item_code: SIM-MAT-LAMP-02, item_name: "Bóng đèn tuýp mô phỏng", unit: unit-sim, norm_qty: 2, norm_label: SYNTHETIC, simulated_stock_qty: 0, synthetic: true}
   - {item_code: SIM-MAT-STARTER-01, item_name: "Tắc te mô phỏng", unit: unit-sim, norm_qty: null, norm_label: N_A, simulated_stock_qty: null, synthetic: true}
 
+# Vật tư dự kiến Agent tự đề xuất theo playbook khi ticket không có kế hoạch vật tư riêng (PRD §7 bước 7)
+default_materials:
+  PB-CLN-01:
+    - {item_code: SIM-MAT-CLEAN-01, planned_qty: 1}
+  PB-TEC-01:
+    - {item_code: SIM-MAT-LAMP-01, planned_qty: 1}
+
 checklist_templates:
   - checklist_template_id: PB-CLN-01-CHK-V1
     playbook_id: PB-CLN-01

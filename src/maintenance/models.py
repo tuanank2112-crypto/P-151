@@ -493,7 +493,8 @@ class Case(Entity):
     """Everything the engine holds for one ticket. Mutated only through MaintenanceEngine."""
 
     ticket: Ticket
-    planned_materials: list[PlannedMaterial] = Field(default_factory=list)
+    # None = the Agent takes the playbook default at draft time; [] = explicitly no tracked material (N_A)
+    planned_materials: list[PlannedMaterial] | None = None
     classification_rule: str | None = None  # set when no unique playbook matched (PB-COM-R-CLS-01)
     classification_reason: str | None = None
     signal_assessment: dict[str, SignalStatus] = Field(default_factory=dict)  # all five signals, assessed once

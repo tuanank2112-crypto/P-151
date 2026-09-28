@@ -175,7 +175,7 @@ class MaintenanceEngine:
         self.run_id = f"SIM-RUN-{self.run_number:03d}"
         if with_fixtures:
             for fixture in self.dataset.tickets:
-                planned = list(fixture.materials) if fixture.materials is not None else []
+                planned = list(fixture.materials) if fixture.materials is not None else None
                 self.ingest(fixture.raw, planned_materials=planned)
                 self.run_agent(fixture.raw.ticket_id)
         return self.run_id
@@ -187,6 +187,23 @@ class MaintenanceEngine:
         return case
 
     # ------------------------------------------------------------------ commands
+
+    def receive(self, original_description: str, *, channel: str = "form", received_at: datetime | None = None) -> Case:
+        """A resident report arrives: the system assigns ticket_id/created_at (SYSTEM_INGEST), then the Agent runs.
+
+        `received_at` only exists to simulate a shift in demos; normally it is the current time.
+        """
+        number = len(self.cases) + 1
+        while f"SIM-TKT-{number:04d}" in self.cases:
+            number += 1
+        raw = RawTicket(
+            ticket_id=f"SIM-TKT-{number:04d}",
+            created_at=(received_at or self.clock()).astimezone(LOCAL_TZ).isoformat(timespec="seconds"),
+            original_description=original_description,
+            channel=channel,
+        )
+        self.ingest(raw)
+        return self.run_agent(raw.ticket_id)
 
     def ingest(self, raw: RawTicket, planned_materials: list[PlannedMaterial] | None = None) -> Case:
         """Store the raw resident ticket unchanged and validate the three classification fields (FR-INGEST-001)."""
@@ -205,7 +222,7 @@ class MaintenanceEngine:
                 state=TicketState.IN_PROGRESS, rule_id="INGEST", reason="Ticket được tiếp nhận"
             ),
         )
-        work = Case(ticket=ticket, planned_materials=planned_materials or [])
+        work = Case(ticket=ticket, planned_materials=planned_materials)
         self._audit(
             work,
             Action.INGEST,
@@ -866,7 +883,13 @@ class MaintenanceEngine:
         draft_id = f"SIM-WOD-{suffix}"
         if existing:
             lines = work.material_lines
+            material_source = "draft hiện có"
         else:
+            if work.planned_materials is None:  # Agent determines planned materials from the playbook
+                work.planned_materials = list(self.catalog.default_materials.get(playbook_id, ()))
+                material_source = f"vật tư mặc định của {playbook_id}"
+            else:
+                material_source = "kế hoạch vật tư của ticket"
             lines = [
                 self._material_line(draft_id, suffix, index, planned)
                 for index, planned in enumerate(work.planned_materials, start=1)
@@ -880,7 +903,7 @@ class MaintenanceEngine:
             "material_stock_status",
             None,
             stock_status,
-            "So vật tư dự kiến với tồn kho mô phỏng",
+            f"So vật tư dự kiến ({material_source}) với tồn kho mô phỏng",
             now=now,
             rule_id={"INSUFFICIENT": "PB-COM-R-STK-01", "UNKNOWN": "PB-COM-R-STK-02"}.get(stock_status),
         )

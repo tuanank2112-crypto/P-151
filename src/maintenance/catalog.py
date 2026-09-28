@@ -50,6 +50,7 @@ class Catalog(Frozen):
     assets: tuple[Asset, ...]
     duty_availability: tuple[DutyAvailability, ...]
     materials: tuple[MaterialCatalogItem, ...]
+    default_materials: dict[PlaybookId, tuple[PlannedMaterial, ...]]
     checklist_templates: tuple[ChecklistTemplate, ...]
     evidence_requirements: tuple[EvidenceRequirement, ...]
     actors: tuple[Actor, ...]

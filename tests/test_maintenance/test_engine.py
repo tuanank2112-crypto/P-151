@@ -570,3 +570,25 @@ def test_tc_reset_001_002_reset_restores_and_replays(engine):
     assert engine.get(CLN_OK).ticket.current_state == "CHỜ XÁC MINH" and engine.get(CLN_OK).draft is None
     assert run_fixture(engine, CLN_OK).ticket.current_state == "READY_FOR_REVIEW"
     assert all(a.run_id == second_run for a in engine.get(CLN_OK).audit)
+
+
+# ---------------------------------------------------------------- planned materials
+
+
+def test_agent_uses_playbook_default_materials_when_ticket_has_none(engine):
+    case = engine.receive("Hành lang tầng 3 tòa SIM-A nhiều rác, cần dọn dẹp")
+    case = engine.confirm(case.ticket.ticket_id, BPTN, location_normalized="Tòa SIM-A / Tầng 3 / Hành lang", reason="x")
+    assert [m.item_code for m in case.material_lines] == ["SIM-MAT-CLEAN-01"]
+    stock_event = next(a for a in case.audit if a.action == "CHECK_MATERIAL_STOCK")
+    assert "vật tư mặc định của PB-CLN-01" in stock_event.reason
+
+
+def test_explicit_empty_material_plan_stays_not_applicable(engine):
+    case = confirm(engine, CLN_NO_EVIDENCE)
+    assert case.material_lines == [] and case.draft.material_requirement_mode == "N_A"
+
+
+def test_system_generates_unique_ticket_ids(engine):
+    first = engine.receive("Hành lang nhiều rác, cần vệ sinh")
+    second = engine.receive("Hành lang nhiều rác, cần vệ sinh")
+    assert first.ticket.ticket_id == "SIM-TKT-0013" and second.ticket.ticket_id == "SIM-TKT-0014"

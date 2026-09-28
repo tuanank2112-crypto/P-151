@@ -68,14 +68,36 @@ def test_handoff_before_ready_is_409(api):
     assert api.post("/api/v1/mo/tickets/SIM-TKT-CLN-002/handoff", headers=BPTN).status_code == 409
 
 
-def test_ingest_new_ticket(api):
+def test_resident_only_sends_the_description(api):
     response = api.post(
         "/api/v1/mo/tickets",
-        json={
-            "ticket_id": "SIM-TKT-CLN-201",
-            "created_at": "2026-09-28T08:15:00+07:00",
-            "original_description": "Hành lang tầng 3 tòa SIM-A nhiều rác, cần vệ sinh.",
-        },
+        json={"original_description": "Hành lang tầng 3 tòa SIM-A nhiều rác, cần vệ sinh."},
     )
     assert response.status_code == 201
-    assert response.json()["proposal"]["playbook_id"] == "PB-CLN-01"
+    case = response.json()
+    assert case["ticket"]["ticket_id"] == "SIM-TKT-0013"  # generated after the 12 fixture tickets
+    assert case["ticket"]["raw"]["created_at"].endswith("+07:00")
+    assert case["proposal"]["playbook_id"] == "PB-CLN-01"
+
+
+def test_new_ticket_goes_through_confirm_with_default_materials(api):
+    case = api.post(
+        "/api/v1/mo/tickets",
+        json={
+            "original_description": "Đèn hành lang tầng 3 tòa SIM-A không sáng",
+            "simulated_received_at": "2026-09-28T09:00:00+07:00",
+        },
+    ).json()
+    tid = case["ticket"]["ticket_id"]
+    body = {"location_normalized": "Tòa SIM-A / Tầng 3 / Hành lang", "reason": "Xác nhận"}
+    case = api.post(f"/api/v1/mo/tickets/{tid}/confirm", json=body, headers=BPTN).json()
+    assert case["draft"]["route_status"] == "ROUTED"
+    assert [m["item_code"] for m in case["material_lines"]] == ["SIM-MAT-LAMP-01"]
+
+
+def test_naive_simulated_time_is_rejected(api):
+    response = api.post(
+        "/api/v1/mo/tickets",
+        json={"original_description": "Hành lang nhiều rác", "simulated_received_at": "2026-09-28T09:00:00"},
+    )
+    assert response.status_code == 422
