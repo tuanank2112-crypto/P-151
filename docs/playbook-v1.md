@@ -113,7 +113,7 @@ reset `asset_resolution`, chạy lại từ bước 6; cùng loại việc → c
 | `GATE-STOCK` (bước 7) | Tồn kho mô phỏng không thiếu | Agent | `ON_HOLD`/`WAITING_MATERIAL`; không rõ → cờ, đi tiếp |
 | `GATE-ROUTE` (bước 8) | `can_route` đúng; `department_id = proposed_department_id`; `assignee_id=null` trên draft | `transition()` | Từ chối; không vào `ROUTED` |
 | `GATE-HOURS` (bước 8) | Trong ca phòng ban | Lịch phòng ban | `ROUTED` + `OUT_OF_HOURS` |
-| `GATE-READY` (bước 10) | Có `department_id` + `accepted_at`; checklist `COMPLETED`; có ghi chú xử lý; đã nhập vật tư xuất/dùng; lệch có lý do; không blocker mở (trừ `REWORK`) | Agent đối soát | Giữ `IN_PROGRESS`, trả `failing_items` |
+| `GATE-READY` (bước 10) | Có `department_id` + `accepted_at`; checklist `COMPLETED`; có ảnh sau xử lý; đã nhập vật tư xuất/dùng; lệch có lý do; không blocker mở (trừ `REWORK`) | Agent đối soát | Giữ `IN_PROGRESS`, trả `failing_items` |
 
 ## 3.3 Evidence validity chung
 
@@ -253,7 +253,7 @@ Ma trận dưới đây là handoff nghiệp vụ cho AI/Data. `Required` luôn 
 | `PB-COM-R-HRS-01` | Giao ngoài ca phòng ban | Blocker `OUT_OF_HOURS`, tự gỡ đầu ca | `ROUTED` | acceptance 5 |
 | `PB-COM-R-WO-01` | Bước 8 | Tạo draft `SIMULATED`, `assignee_id=null` | `ROUTED` | — |
 | `PB-COM-R-CHK-01` | Báo hoàn thành khi checklist còn `PENDING` | Nêu item; không blocker | `IN_PROGRESS` | — |
-| `PB-COM-R-EVD-01` | Báo hoàn thành khi thiếu/sai ghi chú xử lý | Nêu requirement; không blocker | `IN_PROGRESS` | — |
+| `PB-COM-R-EVD-01` | Báo hoàn thành khi không có ghi chú xử lý | Ghi chú không bắt buộc; ghi nhận `processing_note_present=false` | Không đổi | — |
 | `PB-COM-R-MAT-01` | Báo hoàn thành khi vật tư chưa nhập hoặc lệch thiếu lý do | Nêu line; không blocker | `IN_PROGRESS` | — |
 | `PB-COM-R-WARN-01` | Lệch vật tư có lý do | `EXPLAINED_MATERIAL_VARIANCE`, không chặn | Không đổi | — |
 | `PB-COM-R-READY-01` | Sáu điều kiện bước 10 đạt | Agent chuyển trạng thái | `READY_FOR_REVIEW` | acceptance 1 |
@@ -300,7 +300,7 @@ Ma trận dưới đây là handoff nghiệp vụ cho AI/Data. `Required` luôn 
 | Rule ID | Condition | Output | Trạng thái |
 |---|---|---|---|
 | `PB-CLN-R-TRG-01` | Nội dung khớp vệ sinh khu vực chung, không khớp đèn | Đề xuất CLN, `proposed_department_id=DEPT_CLEANING` | Tiếp tục pipeline |
-| `PB-CLN-R-EVD-01` | Ghi chú xử lý không hợp lệ khi báo hoàn thành | Nêu requirement; ảnh không thay thế | `IN_PROGRESS` |
+| `PB-CLN-R-EVD-01` | Không có ghi chú xử lý khi báo hoàn thành | Không chặn; ghi chú không bắt buộc | Không đổi |
 | `PB-CLN-R-READY-01` | Đối soát đạt | Readiness breakdown | `READY_FOR_REVIEW` |
 
 `PB-CLN-R-EX-01`, `PB-CLN-R-RISK-01`, `PB-CLN-R-SAFE-01` đã bỏ (`CR-BPTN-02` (v0.5 candidate)).
@@ -345,9 +345,9 @@ Các label trên chỉ kiểm tra hồ sơ; không quy định cách vệ sinh.
 
 ## 6.7 Evidence và material
 
-- Minimum evidence: một `EvidenceRecord` có `requirement_id=CLN-EVD-PROCESSING-NOTE`, `evidence_type=PROCESSING_NOTE`, nội dung không rỗng và pass validity chung.
+- Ghi chú xử lý không bắt buộc. Nếu có: một `EvidenceRecord` có `requirement_id=CLN-EVD-PROCESSING-NOTE`, `evidence_type=PROCESSING_NOTE`, nội dung không rỗng và pass validity chung.
 - Checklist không thay evidence record.
-- Ảnh optional; thiếu ảnh không warning và không block.
+- Ảnh sau xử lý của phòng ban bắt buộc (ít nhất một); thiếu → đối soát không đạt, `failing_items=[execution_photo]`. Ảnh cư dân tùy chọn.
 - Material gate theo mục 3.4. Không nêu mã vật tư hoặc số lượng thật. Khi tracked và variance có reason, warning `EXPLAINED_MATERIAL_VARIANCE` vẫn phải hiển thị trong READY package.
 
 ## 6.8 Acceptance criteria
@@ -358,8 +358,8 @@ Các label trên chỉ kiểm tra hồ sơ; không quy định cách vệ sinh.
 | `AC-PB-CLN-02` | Thiếu vị trí | Pipeline chạy | `NEED_INFO`/`MISSING_INFO`; cư dân bổ sung thì chạy lại từ bước 2; nội dung gốc không đổi |
 | `AC-PB-CLN-03` | Ngoài ca phòng ban | Bước 8 | `ROUTED` + `OUT_OF_HOURS`; đầu ca tự gỡ và thông báo phòng ban |
 | `AC-PB-CLN-04` | Phòng ban vệ sinh trả `WRONG_DEPT`, BPTN đổi sang đèn | Resume | Qua tra tài sản rồi mới `ROUTED` tới `DEPT_TECHNICAL` |
-| `AC-PB-CLN-05` | Checklist xong nhưng thiếu ghi chú xử lý | Báo hoàn thành | Giữ `IN_PROGRESS`, `failing_items` nêu requirement; không blocker |
-| `AC-PB-CLN-06` | Không có ảnh, mọi điều kiện khác đạt | Báo hoàn thành | Ảnh không chặn; `READY_FOR_REVIEW` |
+| `AC-PB-CLN-05` | Checklist xong nhưng không có ghi chú xử lý | Báo hoàn thành | `READY_FOR_REVIEW`; `processing_note_present=false` |
+| `AC-PB-CLN-06` | Không có ảnh của phòng ban, mọi điều kiện khác đạt | Báo hoàn thành | Giữ `IN_PROGRESS`, `failing_items=[execution_photo]`; không blocker |
 | `AC-PB-CLN-07` | Lệch vật tư có lý do | Báo hoàn thành | Warning hiển thị; `READY_FOR_REVIEW` |
 | `AC-PB-CLN-08` | `READY_FOR_REVIEW` | Agent/BPTN/phòng ban gọi đóng | `ACTION_DENIED`; chỉ BQL đóng được |
 | `AC-PB-CLN-09` | Agent cố set `assignee_id` | Permission validate | Reject + audit; không đổi |
@@ -404,7 +404,7 @@ Nội dung có chất lạ/mùi hắc không còn là exception (`CR-BPTN-02` (v
 | `PB-TEC-R-TRG-01` | Nội dung khớp đèn khu vực chung không hoạt động, không khớp vệ sinh | Đề xuất TEC, `proposed_department_id=DEPT_TECHNICAL` | Tiếp tục pipeline |
 | `PB-TEC-R-AST-01` | Đúng một asset LIGHTING khớp vị trí, hoặc `locked_fields.asset_id` | `asset_resolution=FOUND` | Tiếp tục |
 | `PB-TEC-R-AST-02` | Không có hoặc nhiều asset khớp | Blocker `ASSET_UNCLEAR`; không đoán; chỉ BPTN chọn asset hoặc `ONSITE_BY_BPTN` (kèm lý do, cờ `ASSET_CHECK_ONSITE`) | `VERIFYING` |
-| `PB-TEC-R-EVD-01` | Result note không hợp lệ khi báo hoàn thành | Nêu requirement; ảnh không thay thế | `IN_PROGRESS` |
+| `PB-TEC-R-EVD-01` | Báo hoàn thành khi chưa có ảnh sau xử lý | Nêu `execution_photo`; result note không bắt buộc | `IN_PROGRESS` |
 | `PB-TEC-R-MAT-01` | Vật tư chưa nhập hoặc lệch thiếu lý do khi báo hoàn thành | Nêu line | `IN_PROGRESS` |
 | `PB-TEC-R-READY-01` | Đối soát đạt | Readiness breakdown | `READY_FOR_REVIEW` |
 
@@ -454,7 +454,7 @@ Checklist không mô tả thao tác sửa chữa, cô lập điện hoặc tiêu
 - Minimum evidence: một `EvidenceRecord` có `requirement_id=TEC-EVD-RESULT-NOTE`, `evidence_type=RESULT_NOTE`, nội dung không rỗng và pass validity chung.
 - Checklist an toàn là gate riêng; không thay result note.
 - Material gate phải `RECONCILED` hoặc `N/A`; nếu tracked, dùng đúng material contract chung.
-- Ảnh optional; Agent không xác định chất lượng từ ảnh.
+- Ảnh sau xử lý bắt buộc (ít nhất một); Agent không xác định chất lượng từ ảnh.
 
 ## 7.8 Acceptance criteria
 
@@ -496,7 +496,7 @@ Giao lại (sau `WRONG_DEPT`) tăng `draft_revision`; đổi playbook thì sinh 
 
 1. Có `department_id` và `accepted_at`.
 2. Mọi required checklist item `COMPLETED`.
-3. Có ghi chú xử lý (evidence requirement của playbook `PRESENT`).
+3. Có ít nhất một ảnh sau xử lý của phòng ban cho work order hiện tại. Ghi chú xử lý không bắt buộc (chỉ ghi nhận có/không).
 4. Đã nhập vật tư xuất và dùng.
 5. Vật tư lệch định mức có lý do (lệch có lý do chỉ là warning `EXPLAINED_MATERIAL_VARIANCE`).
 6. Không còn blocker mở (`REWORK` không tính).
@@ -539,7 +539,7 @@ Agent A đã quyết định toàn bộ gaps nhận được từ AI/Data vòng 
 | Mỗi routing rule dẫn tới đúng state/reason | PASS | §5, §6.3, §7.3 |
 | Mỗi READY gate có dữ liệu kiểm tra được | PASS | §3.2, §9.1 |
 | Không Agent authority vượt scope | PASS | §2, §3.5, §9.3 |
-| Không ảnh bắt buộc toàn cục | PASS | §3.3 và từng playbook |
+| Ảnh sau xử lý bắt buộc với phòng ban, tùy chọn với cư dân | PASS | §3.3 và từng playbook |
 | `norm_qty` là mô phỏng hoặc `N/A` | PASS | §3.4, §4.3 |
 | Mọi nội dung chưa có dữ liệu thật gắn `SIMULATED` | PASS | Metadata, §1.1, output contract |
 | Mapping required field → entity/validator | PASS | `data-contract-v1.md` v1.1 §§5–7 |

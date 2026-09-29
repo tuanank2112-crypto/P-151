@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 
 from src.maintenance.engine import MaintenanceEngine
-from src.maintenance.enums import ChecklistStatus, ReadabilityStatus
+from src.maintenance.enums import ChecklistStatus, EvidenceType, ReadabilityStatus
 
 TZ = timezone(timedelta(hours=7))
 MONDAY_9AM = datetime(2026, 9, 28, 9, tzinfo=TZ)  # inside business hours and both departments' shifts
@@ -49,6 +49,7 @@ def do_work(
     ticket_id: str,
     *,
     note: bool = True,
+    photo: bool = True,
     variance_reason: str | None = None,
     issued_delta: float = 0,
 ):
@@ -71,6 +72,15 @@ def do_work(
             evidence_type=requirement.allowed_evidence_types[0],
             content_or_metadata="Đã xử lý (mô phỏng)",
             readability_status=ReadabilityStatus.NOT_APPLICABLE,
+        )
+    if photo:
+        engine.add_evidence(
+            ticket_id,
+            actor,
+            requirement_id=None,
+            evidence_type=EvidenceType.SIMULATED_IMAGE,
+            content_or_metadata="after.jpg",
+            readability_status=ReadabilityStatus.READABLE,
         )
 
 

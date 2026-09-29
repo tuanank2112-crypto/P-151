@@ -112,11 +112,22 @@ def extract_location(description: str) -> str | None:
 
     A preliminary location: pipeline step 2 asks the resident for more when this is None.
     """
+    building, floor, area = _location_parts(description)
+    if not (building and floor and area):
+        return None
+    return f"Tòa {building} / Tầng {floor} / {area}"
+
+
+def missing_location_parts(description: str) -> list[str]:
+    """Which of building / floor / area the resident still has to give, so the request can name just those."""
+    parts = _location_parts(description)
+    return [name for name, value in zip(("building", "floor", "area"), parts) if value is None]
+
+
+def _location_parts(description: str) -> tuple[str | None, str | None, str | None]:
     text = normalize(description)
     building = re.search(BUILDING_PATTERN, text)
     area = next((label for pattern, label in AREA_PATTERNS if re.search(pattern, text)), None)
     floor = re.search(FLOOR_PATTERN, text)
     floor_label = floor.group(1).upper() if floor else IMPLIED_FLOOR.get(area)
-    if not (building and floor_label and area):
-        return None
-    return f"Tòa {building.group(1).upper()} / Tầng {floor_label} / {area}"
+    return (building.group(1).upper() if building else None), floor_label, area

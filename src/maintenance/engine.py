@@ -73,12 +73,16 @@ from src.maintenance.models import (
     WorkOrderDraft,
 )
 from src.maintenance.proposer import LLMClient, propose
-from src.maintenance.rules import extract_location
+from src.maintenance.rules import extract_location, missing_location_parts
 
 LOCAL_TZ = timezone(timedelta(hours=7))
 AGENT_ID = "SIM-ACTOR-AGENT"
 SYSTEM_ID = "SIM-ACTOR-SYSTEM"
 DEFAULT_RESIDENT_ID = "SIM-ACTOR-RESIDENT-01"
+# Photos: optional for the resident, required from the department before step 10 passes
+MAX_RESIDENT_PHOTOS = 5
+MAX_EXECUTION_PHOTOS = 10
+EXECUTION_PHOTO = "execution_photo"  # failing_items entry when the department sent no photo
 SOURCE_REVISION = "SRC-001"
 
 S = TicketStatus
@@ -90,6 +94,7 @@ PERMISSIONS: dict[Action, frozenset[ActorRole]] = {
     Action.INGEST: frozenset({Role.SYSTEM}),
     Action.RUN_PIPELINE: frozenset({Role.AGENT, Role.SYSTEM}),
     Action.ADD_RESIDENT_INFO: frozenset({Role.RESIDENT}),
+    Action.ADD_RESIDENT_PHOTO: frozenset({Role.RESIDENT}),
     Action.RATE_TICKET: frozenset({Role.RESIDENT}),
     Action.BPTN_RESOLVE: frozenset({Role.BPTN}),
     Action.RECEIVE_STOCK: frozenset({Role.WAREHOUSE}),
@@ -374,6 +379,8 @@ class MaintenanceEngine:
         def op(work: Case, now: datetime) -> None:
             if work.ticket.status in TERMINAL_STATUSES:
                 raise GuardError("Ticket đã kết thúc; không nhận thêm thông tin")
+            if work.ticket.status != S.NEED_INFO:
+                raise GuardError("Phản ánh không cần bổ sung thông tin lúc này")
             if _blank(content):
                 raise GuardError("Nội dung bổ sung không được rỗng")
             addition = ResidentAddition(
@@ -402,6 +409,45 @@ class MaintenanceEngine:
             self._resume(work, now)
 
         return self._mutate(ticket_id, actor_id, Action.ADD_RESIDENT_INFO, op)
+
+    def add_resident_photo(self, ticket_id: str, actor_id: str, file_ref: str) -> Case:
+        """Optional photo the resident attaches to their own report. Kept as original evidence: never edited, never
+        read by the Agent, never a condition for anything."""
+
+        def op(work: Case, now: datetime) -> None:
+            if work.ticket.status in TERMINAL_STATUSES:
+                raise GuardError("Ticket đã kết thúc; không nhận thêm ảnh")
+            if len(resident_photos(work)) >= MAX_RESIDENT_PHOTOS:
+                raise GuardError(f"Mỗi phản ánh tối đa {MAX_RESIDENT_PHOTOS} ảnh")
+            record = EvidenceRecord(
+                evidence_id=f"SIM-EVD-{_suffix(ticket_id)}-{len(work.evidence) + 1:02d}",
+                ticket_id=ticket_id,
+                work_order_draft_id=None,
+                requirement_id=None,
+                evidence_type=EvidenceType.RESIDENT_ORIGINAL,
+                content_or_metadata=file_ref,
+                source=EvidenceSource.RESIDENT_ORIGINAL,
+                submitted_by=actor_id,
+                submitted_at=now,
+                readability_status=ReadabilityStatus.READABLE,
+                immutable=True,
+            )
+            work.evidence.append(record)
+            self._audit(
+                work,
+                Action.ADD_RESIDENT_PHOTO,
+                "EvidenceRecord",
+                record.evidence_id,
+                actor_id,
+                Role.RESIDENT,
+                "evidence",
+                None,
+                {"evidence_type": record.evidence_type},
+                "Cư dân đính kèm ảnh",
+                now=now,
+            )
+
+        return self._mutate(ticket_id, actor_id, Action.ADD_RESIDENT_PHOTO, op)
 
     def rate(self, ticket_id: str, actor_id: str, score: int) -> Case:
         def op(work: Case, now: datetime) -> None:
@@ -672,6 +718,8 @@ class MaintenanceEngine:
                 )
             if evidence_type == EvidenceType.RESIDENT_ORIGINAL:
                 raise GuardError("Execution evidence không được mang type RESIDENT_ORIGINAL")
+            if evidence_type == EvidenceType.SIMULATED_IMAGE and len(execution_photos(work)) >= MAX_EXECUTION_PHOTOS:
+                raise GuardError(f"Mỗi lần xử lý tối đa {MAX_EXECUTION_PHOTOS} ảnh")
             record = EvidenceRecord(
                 evidence_id=f"SIM-EVD-{_suffix(ticket_id)}-{len(work.evidence) + 1:02d}",
                 ticket_id=ticket_id,
@@ -1437,7 +1485,9 @@ class MaintenanceEngine:
         if _blank(self._content(work)):
             missing.append("description")
         if self.effective_location(work) is None:
-            missing.append("location")
+            parts = missing_location_parts(self._content(work))
+            # name only the parts still missing; a report with none of them gets the general request
+            missing.extend(["location"] if len(parts) == 3 else [f"location_{part}" for part in parts])
         return missing
 
     def _step_check_data(self, work: Case, now: datetime) -> bool:
@@ -1802,6 +1852,9 @@ class MaintenanceEngine:
             i.template_item_id for i in work.checklist_items if i.required and i.status != ChecklistStatus.COMPLETED
         ]
         notes_missing = self._validate_evidence(work)
+        photos = execution_photos(work)
+        for photo in photos:
+            photo.evidence_validation_status = EvidenceValidationStatus.PRESENT
         incomplete, unexplained = self._compare_materials(work, now)
         # REWORK is the reason the department is working again, not something still to clear
         open_blocker = ticket.blocker is not None and ticket.blocker.code != R.REWORK
@@ -1809,13 +1862,14 @@ class MaintenanceEngine:
             department_accepted=ticket.department_id is not None and ticket.accepted_at is not None,
             checklist_complete=not checklist_pending,
             processing_note_present=not notes_missing,
+            photo_present=bool(photos),
             materials_entered=not incomplete,
             variance_explained=not unexplained,
             no_open_blocker=not open_blocker,
             evaluated_at=now,
             failing_items=[
                 *checklist_pending,
-                *notes_missing,
+                *([] if photos else [EXECUTION_PHOTO]),
                 *incomplete,
                 *unexplained,
                 *([f"blocker:{ticket.blocker.code}"] if open_blocker else []),
@@ -1902,7 +1956,7 @@ class MaintenanceEngine:
                 missing.append(requirement.requirement_id)
             requirement.satisfied_by = present
         for record in work.evidence:
-            if record.requirement_id is None:
+            if record.requirement_id is None and record.evidence_type != EvidenceType.SIMULATED_IMAGE:
                 record.evidence_validation_status = EvidenceValidationStatus.MISSING
         return missing
 
@@ -1931,6 +1985,22 @@ def _aggregate_stock(lines: list[MaterialLine]) -> MaterialStockStatus:
     if MaterialStockStatus.UNKNOWN in statuses:
         return MaterialStockStatus.UNKNOWN
     return MaterialStockStatus.SUFFICIENT
+
+
+def resident_photos(case: Case) -> list[EvidenceRecord]:
+    return [e for e in case.evidence if e.source == EvidenceSource.RESIDENT_ORIGINAL]
+
+
+def execution_photos(case: Case) -> list[EvidenceRecord]:
+    """Photos the department took for the current work order (a new draft after rework needs its own)."""
+    draft_id = case.draft.work_order_draft_id if case.draft else None
+    return [
+        e
+        for e in case.evidence
+        if e.evidence_type == EvidenceType.SIMULATED_IMAGE
+        and e.source == EvidenceSource.DEPARTMENT_EXECUTION
+        and e.work_order_draft_id == draft_id
+    ]
 
 
 def _evidence_status(record: EvidenceRecord, allowed: list[EvidenceType]) -> EvidenceValidationStatus:

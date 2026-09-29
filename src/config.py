@@ -31,6 +31,10 @@ class Settings(BaseSettings):
 
     # MaintenanceOps: run the retry/escalation job inside the API process (CR-BPTN-02 §5)
     mo_jobs_enabled: bool = True
+    # Accept X-Actor-Id instead of a login token (tests/scripts only; never enable in production)
+    mo_allow_actor_header: bool = False
+    # Resident and department photos (the folder is mounted as a volume in docker-compose)
+    mo_upload_dir: str = "./data/uploads/maintenance"
 
     # Database
     database_url: str = "postgresql+psycopg2://p151:p151@localhost:5432/p151"

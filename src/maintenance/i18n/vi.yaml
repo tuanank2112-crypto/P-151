@@ -41,11 +41,17 @@ reason_messages:
   BLOCKED_ONSITE: "Việc xử lý tạm hoãn, dự kiến tiếp tục trước {eta}."
   REWORK: "{department} đang xử lý lại phản ánh."
 
+# Khi mốc dự kiến (eta) đã qua mà blocker chưa gỡ: không hiển thị một ngày đã qua như thể vẫn đang chờ
+overdue_eta_message: "Việc xử lý đang chậm hơn dự kiến (trước {eta}). Ban quản lý đang theo dõi và sẽ cập nhật mốc mới."
+
 # Tên field khi liệt kê thông tin còn thiếu (MISSING_INFO)
 field_labels:
   ticket_id: "mã phản ánh"
   created_at: "thời điểm tiếp nhận"
   description: "nội dung phản ánh"
   location: "vị trí (tòa, tầng, khu vực)"
+  location_building: "tòa (ghi kèm chữ \"tòa\", ví dụ: tòa SIM-A)"
+  location_floor: "tầng (ví dụ: tầng 3)"
+  location_area: "khu vực (hành lang, sảnh thang máy, sảnh chính, cầu thang bộ hoặc hầm xe)"
 
 datetime_format: "%H:%M %d/%m/%Y"

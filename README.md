@@ -243,6 +243,12 @@ Demo nhanh trên Swagger: `POST /mo/demo/SIM-TKT-CLN-001` (flow 1), xem `SIM-TKT
 `POST /mo/demo/SIM-TKT-TEC-001` (flow 3), `SIM-TKT-TEC-002` (flow 4, chờ BPTN xác minh asset);
 `POST /mo/evaluate` để xem 12/12.
 
+**Giao diện prototype** (`src/web/`, Tailwind qua CDN, JS thuần, không cần build): chạy `make run` rồi mở
+<http://localhost:8000/ui/>. Đăng nhập bằng tài khoản thử nghiệm trong `seed/maintenance_v1/accounts.yaml` (cudan01,
+bptn01, vesinh01, kythuat01, kho01, bql01, qa01; mật khẩu chung ghi trong file); vai trò lấy từ tài khoản. Cư dân có thể
+đính kèm ảnh (không bắt buộc); phòng ban phải gửi ít nhất một ảnh sau xử lý mới báo hoàn thành được. Ảnh lưu ở
+`data/uploads/maintenance`. Tailwind Play CDN chỉ dùng cho prototype; bản thật nên build bằng Tailwind CLI.
+
 ## Tài liệu
 
 - Technical Guidebook: `docs/guide/` hoặc <https://phoenix.note.transformerlabs.ai/technical-book>

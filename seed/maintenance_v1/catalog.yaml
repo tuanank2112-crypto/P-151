@@ -63,6 +63,7 @@ actors:
   - {actor_id: SIM-ACTOR-BQL-01, actor_role: BQL}
   - {actor_id: SIM-ACTOR-AGENT, actor_role: AGENT}
   - {actor_id: SIM-ACTOR-SYSTEM, actor_role: SYSTEM}
+  - {actor_id: SIM-ACTOR-QA-01, actor_role: QA_INTERNAL}  # công cụ demo: nạp lại dữ liệu, chạy job
 
 # ---------------------------------------------------------------------------
 # CR-BPTN-02: phòng ban, lịch làm việc và SLA. Mọi giá trị là MẶC ĐỊNH TẠM, chờ chốt (CR-BPTN-02 §8).

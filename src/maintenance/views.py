@@ -9,9 +9,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from src.maintenance.engine import MaintenanceEngine
+from src.maintenance.engine import MaintenanceEngine, resident_photos
 from src.maintenance.enums import (
-    TERMINAL_STATUSES,
     AssetResolution,
     Department,
     ReasonCode,
@@ -19,7 +18,7 @@ from src.maintenance.enums import (
     TicketFlag,
     TicketStatus,
 )
-from src.maintenance.messages import status_label
+from src.maintenance.messages import overdue_eta_message, status_label
 from src.maintenance.models import Blocker, Case
 
 ResidentAction = Literal["ADD_INFO", "RATE", "REPORT_NOT_DONE"]
@@ -42,6 +41,10 @@ class MergedInto(BaseModel):
 
 class ResidentTicketView(BaseModel):
     ticket_id: str
+    created_at: str
+    description: str  # the resident's own report
+    additions: list[str]  # the resident's own additions, oldest first
+    photos: list[str]  # evidence IDs of the resident's own photos; department photos stay internal
     status: TicketStatus
     status_label: str
     department_name: str | None
@@ -69,13 +72,15 @@ def _current_message(case: Case) -> str:
 def resident_view(engine: MaintenanceEngine, case: Case, now: datetime) -> ResidentTicketView:
     ticket = case.ticket
     actions: list[ResidentAction] = []
-    if ticket.status not in TERMINAL_STATUSES:
+    if ticket.status == TicketStatus.NEED_INFO:  # only ask when the resident is the one blocking the ticket
         actions.append("ADD_INFO")
     if ticket.status == TicketStatus.CLOSED:
         if ticket.rating is None:
             actions.append("RATE")
         if ticket.reopen_until and now < ticket.reopen_until:
             actions.append("REPORT_NOT_DONE")
+    eta = ticket.blocker.eta if ticket.blocker else None
+    eta_passed = eta is not None and eta <= now
     merged = None
     if ticket.merged_into:
         original = engine.get(ticket.merged_into)
@@ -88,11 +93,15 @@ def resident_view(engine: MaintenanceEngine, case: Case, now: datetime) -> Resid
         )
     return ResidentTicketView(
         ticket_id=ticket.ticket_id,
+        created_at=ticket.raw.created_at,
+        description=ticket.raw.original_description,
+        additions=[a.content for a in case.additions],
+        photos=[e.evidence_id for e in resident_photos(case)],
         status=ticket.status,
         status_label=status_label(ticket.status),
         department_name=_department_name(engine, case),
-        public_message=_current_message(case),
-        eta=ticket.blocker.eta if ticket.blocker else None,
+        public_message=overdue_eta_message(eta) if eta_passed else _current_message(case),
+        eta=None if eta_passed else eta,
         timeline=[
             TimelineEntry(
                 status=e.to_status,

@@ -151,6 +151,15 @@ def test_step2_lists_every_missing_field(fresh):
     assert case.proposal is None and case.classification is None
 
 
+def test_step2_names_only_the_missing_location_parts(fresh):
+    case = fresh.get(report(fresh, "Tầng 3 ở S4 quá nhiều rác"))
+    assert case.ticket.status == "NEED_INFO"
+    assert case.ticket.blocker.public_message == (
+        'Vui lòng bổ sung: tòa (ghi kèm chữ "tòa", ví dụ: tòa SIM-A), '
+        "khu vực (hành lang, sảnh thang máy, sảnh chính, cầu thang bộ hoặc hầm xe)."
+    )
+
+
 def test_step2_blank_report_is_classified_from_the_addition(fresh):
     tid = report(fresh, "   ")
     case = fresh.add_resident_info(tid, RESIDENT, "Đèn sảnh chính tòa SIM-B không sáng")
@@ -209,13 +218,22 @@ def test_step8_draft_goes_to_a_department_never_a_person(engine):
             assert not hasattr(case.draft, "routing_team_id")
 
 
-def test_step10_missing_note_keeps_in_progress_without_blocker(fresh):
+def test_step10_note_is_optional(fresh):
     tid = report(fresh, CLEANING)
     fresh.accept(tid, CLN)
     do_work(fresh, tid, note=False)
     case = fresh.report_complete(tid, CLN)
+    assert case.ticket.status == "READY_FOR_REVIEW"
+    evaluation = case.draft.readiness_evaluation
+    assert evaluation.all_pass and not evaluation.processing_note_present and evaluation.failing_items == []
+
+
+def test_step10_incomplete_work_keeps_in_progress_without_blocker(fresh):
+    tid = report(fresh, CLEANING)
+    fresh.accept(tid, CLN)
+    case = fresh.report_complete(tid, CLN)
     assert case.ticket.status == "IN_PROGRESS" and case.ticket.blocker is None
-    assert case.draft.readiness_evaluation.failing_items == ["CLN-EVD-PROCESSING-NOTE"]
+    assert case.draft.readiness_evaluation.failing_items
     assert case.notifications[-1].type == "department.reconcile_failed"
 
 
@@ -245,7 +263,7 @@ def test_step10_images_never_count_as_the_note(fresh):
         content_or_metadata="img.jpg",
         readability_status=ReadabilityStatus.READABLE,
     )
-    assert fresh.report_complete(tid, CLN).ticket.status == "IN_PROGRESS"
+    assert not fresh.report_complete(tid, CLN).draft.readiness_evaluation.processing_note_present
 
 
 def test_three_material_comparisons():

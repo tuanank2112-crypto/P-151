@@ -3,6 +3,8 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
+from src.api import photos
+from src.api.auth import actor_header_allowed
 from src.api.routers.maintenance import get_engine
 from src.main import app
 from src.maintenance.engine import MaintenanceEngine
@@ -16,6 +18,7 @@ BQL = {"X-Actor-Id": "SIM-ACTOR-BQL-01"}
 AGENT = {"X-Actor-Id": "SIM-ACTOR-AGENT"}
 WAREHOUSE = {"X-Actor-Id": "SIM-ACTOR-WAREHOUSE-01"}
 MORNING = "2026-09-28T09:00:00+07:00"
+PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
 
 
 @pytest.fixture
@@ -28,8 +31,13 @@ def engine():
 
 
 @pytest.fixture
-def api(engine):
-    return TestClient(app)
+def api(engine, tmp_path, monkeypatch):
+    """These tests name the actor with X-Actor-Id (header auth is off in the app; login is tested in test_auth).
+    Requests without their own header run as the QA account, which may use the demo control endpoints."""
+    monkeypatch.setattr(photos, "upload_dir", lambda: tmp_path)
+    app.dependency_overrides[actor_header_allowed] = lambda: True
+    yield TestClient(app, headers={"X-Actor-Id": "SIM-ACTOR-QA-01"})
+    app.dependency_overrides.pop(actor_header_allowed, None)
 
 
 def create(api, text, when=MORNING, headers=RESIDENT):
@@ -101,6 +109,10 @@ def test_resident_full_journey_over_http(api):
         headers=CLN,
     )
     case = api.post(f"/api/v1/mo/tickets/{tid}/complete", headers=CLN).json()
+    assert case["ticket"]["status"] == "IN_PROGRESS"  # no photo of the finished work yet
+    assert case["draft"]["readiness_evaluation"]["failing_items"] == ["execution_photo"]
+    upload(api, f"/api/v1/mo/tickets/{tid}/photos", CLN)
+    case = api.post(f"/api/v1/mo/tickets/{tid}/complete", headers=CLN).json()
     assert case["ticket"]["status"] == "READY_FOR_REVIEW"
 
     assert api.post(f"/api/v1/bql/tickets/{tid}/close", json={}, headers=BQL).json()["ticket"]["status"] == "CLOSED"
@@ -108,6 +120,47 @@ def test_resident_full_journey_over_http(api):
     assert view["allowed_actions"] == ["RATE", "REPORT_NOT_DONE"]
     view = api.post(f"/api/v1/resident/tickets/{tid}/rating", json={"score": 5}, headers=RESIDENT).json()
     assert view["allowed_actions"] == ["REPORT_NOT_DONE"]
+
+
+def upload(api, url, headers, files=None):
+    response = api.post(url, files=files or [("files", ("a.png", PNG, "image/png"))], headers=headers)
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def test_resident_photo_is_optional_and_private(api):
+    tid = create(api, "Cầu thang bộ tầng 4 tòa SIM-B nhiều rác")
+    assert api.get(f"/api/v1/resident/tickets/{tid}", headers=RESIDENT).json()["photos"] == []
+
+    view = upload(api, f"/api/v1/resident/tickets/{tid}/photos", RESIDENT)
+    [photo] = view["photos"]
+    response = api.get(f"/api/v1/resident/tickets/{tid}/photos/{photo}", headers=RESIDENT)
+    assert response.status_code == 200 and response.content == PNG and response.headers["content-type"] == "image/png"
+    assert api.get(f"/api/v1/mo/tickets/{tid}/photos/{photo}", headers=CLN).status_code == 200  # routed to cleaning
+    assert api.get(f"/api/v1/mo/tickets/{tid}/photos/{photo}", headers=TEC).status_code == 404
+    assert api.get(f"/api/v1/resident/tickets/{tid}/photos/{photo}", headers=OTHER_RESIDENT).status_code == 404
+    response = api.post(
+        f"/api/v1/resident/tickets/{tid}/photos", files=[("files", ("a.png", PNG, "image/png"))], headers=OTHER_RESIDENT
+    )
+    assert response.status_code == 404
+
+
+def test_photo_upload_checks_the_bytes_not_the_name(api):
+    tid = create(api, "Cầu thang bộ tầng 4 tòa SIM-B nhiều rác")
+    url = f"/api/v1/resident/tickets/{tid}/photos"
+    fake = api.post(url, files=[("files", ("x.png", b"<script>alert(1)</script>", "image/png"))], headers=RESIDENT)
+    assert fake.status_code == 415
+    big = api.post(url, files=[("files", ("b.png", PNG + b"\x00" * photos.MAX_BYTES, "image/png"))], headers=RESIDENT)
+    assert big.status_code == 413
+    six = [("files", (f"{i}.png", PNG, "image/png")) for i in range(6)]
+    assert api.post(url, files=six, headers=RESIDENT).status_code == 422
+    assert api.get(f"/api/v1/resident/tickets/{tid}", headers=RESIDENT).json()["photos"] == []
+
+
+def test_department_photo_needs_an_accepted_ticket(api):
+    tid = create(api, "Cầu thang bộ tầng 4 tòa SIM-B nhiều rác")
+    response = api.post(f"/api/v1/mo/tickets/{tid}/photos", files=[("files", ("a.png", PNG, "image/png"))], headers=CLN)
+    assert response.status_code == 409  # ROUTED, not yet accepted
 
 
 def test_resident_cannot_see_another_residents_ticket(api):
@@ -178,6 +231,28 @@ def test_no_endpoint_assigns_a_person(api):
     schema = api.get("/openapi.json").json()
     assert not any("assign" in path for path in schema["paths"])
     assert "technician" not in json.dumps(schema).lower()
+
+
+def test_resident_lists_only_their_own_tickets(api):
+    mine = create(api, "Hành lang tầng 7 tòa SIM-B nhiều rác")
+    theirs = create(api, "Sảnh chính tòa SIM-A nhiều rác", headers=OTHER_RESIDENT)
+    ids = [v["ticket_id"] for v in api.get("/api/v1/resident/tickets", headers=RESIDENT).json()]
+    assert mine in ids and theirs not in ids
+    assert api.get("/api/v1/resident/tickets", headers=BQL).status_code == 403
+
+
+def test_catalog_feeds_the_ui(api):
+    catalog = api.get("/api/v1/mo/catalog").json()
+    assert catalog["departments"] == {"DEPT_CLEANING": "Phòng Vệ sinh", "DEPT_TECHNICAL": "Phòng Kỹ thuật"}
+    assert catalog["status_labels"]["ROUTED"] == "Đã chuyển phòng ban"
+    assert all(a["asset_id"].startswith("SIM-ASSET-") for a in catalog["assets"])
+
+
+def test_ui_is_served(api):
+    assert api.get("/", follow_redirects=False).headers["location"] == "/ui/"
+    page = api.get("/ui/")
+    assert page.status_code == 200 and "app.js" in page.text
+    assert api.get("/ui/app.js").status_code == 200
 
 
 def test_16_resident_sees_no_department_before_hand_over(api, engine):

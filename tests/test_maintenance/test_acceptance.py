@@ -82,6 +82,16 @@ def test_04_material_shortage_holds_then_resumes_on_stock_received(fresh, clock)
     assert case.ticket.blocker.owner_role == "WAREHOUSE" and case.ticket.blocker.resume_step == 7
     assert "Đang chờ vật tư, dự kiến xử lý trước" in case.ticket.blocker.public_message
 
+    view = resident_view(fresh, case, clock.now)
+    assert view.allowed_actions == []  # the ticket waits on stock, not on the resident
+    with pytest.raises(GuardError):
+        fresh.add_resident_info(tid, "SIM-ACTOR-RESIDENT-01", "Vẫn chưa sửa")
+    assert view.eta == case.ticket.blocker.eta
+
+    clock.advance(hours=25)  # past the eta, still no stock: never show a date in the past as the plan
+    view = resident_view(fresh, fresh.get(tid), clock.now)
+    assert view.eta is None and view.public_message.startswith("Việc xử lý đang chậm hơn dự kiến")
+
     fresh.receive_stock(WAREHOUSE, "SIM-MAT-LAMP-01", 5)
     case = fresh.get(tid)
     assert case.ticket.status == "ROUTED" and case.ticket.blocker is None

@@ -2,11 +2,14 @@ import asyncio
 import contextlib
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
+from src.api import auth
 from src.api.routers import maintenance
 from src.api.routes import router
 from src.config import get_settings
@@ -57,14 +60,18 @@ app.add_middleware(
 )
 
 app.include_router(router, prefix="/api/v1")
+app.include_router(auth.router, prefix="/api/v1")
 app.include_router(maintenance.router, prefix="/api/v1")
 app.include_router(maintenance.resident_router, prefix="/api/v1")
 app.include_router(maintenance.bql_router, prefix="/api/v1")
 
+# Static prototype UI (Tailwind via CDN, no build step); it only calls the API above
+app.mount("/ui", StaticFiles(directory=Path(__file__).parent / "web", html=True), name="ui")
+
 
 @app.get("/", include_in_schema=False)
 async def root():
-    return RedirectResponse(url="/docs")
+    return RedirectResponse(url="/ui/")
 
 
 @app.get("/health")

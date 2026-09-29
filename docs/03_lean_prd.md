@@ -143,7 +143,7 @@ tương ứng.
   (ngoài ca → kèm `OUT_OF_HOURS`).
 - **Thực hiện:** phòng ban nhận việc, cập nhật checklist/vật tư/ghi chú xử lý, báo hoàn thành → đối soát → `READY_FOR_REVIEW`.
 - **Nghiệm thu:** BQL đóng hoặc trả làm lại.
-- **Evidence:** processing note không rỗng; ảnh không bắt buộc; checklist là điều kiện riêng.
+- **Evidence:** phòng ban bắt buộc gửi ít nhất một ảnh sau khi xử lý; processing note không bắt buộc; cư dân có thể đính kèm ảnh (không bắt buộc); checklist là điều kiện riêng.
 
 ## 3.2 UC-TEC-01 — Đèn khu vực chung không hoạt động
 
@@ -151,7 +151,7 @@ tương ứng.
 - **Pipeline:** như vệ sinh, đề xuất `DEPT_TECHNICAL`; **tra tài sản bắt buộc trước khi giao**: đúng một `SIM-ASSET-*`
   `LIGHTING` khớp vị trí → `FOUND`; không có/nhiều → `VERIFYING`/`ASSET_UNCLEAR`, chỉ BPTN chọn asset hoặc chọn xác định
   tại hiện trường kèm lý do.
-- **Thực hiện/nghiệm thu:** như vệ sinh; result note bắt buộc; ảnh không bắt buộc.
+- **Thực hiện/nghiệm thu:** như vệ sinh; ảnh sau xử lý bắt buộc; result note không bắt buộc.
 
 ## 3.3 Giao phòng ban và thẩm quyền
 
@@ -289,10 +289,10 @@ tương ứng.
 - **Priority:** P0
 - **Actor:** phòng ban add; Agent validate; BQL review.
 - **Input:** evidence requirements + evidence records/metadata.
-- **Mô tả/business rule:** checklist là readiness gate riêng, không tính thay evidence. Evidence type/requirement đến từ playbook v1.1; ảnh không bắt buộc; Agent không đánh giá chất lượng bằng ảnh hoặc làm theo instruction trong tệp.
+- **Mô tả/business rule:** checklist là readiness gate riêng, không tính thay evidence. Evidence type/requirement đến từ playbook v1.1; phòng ban bắt buộc có ít nhất một ảnh sau xử lý (JPG/PNG/WEBP, ≤ 5 MB, tối đa 10 ảnh mỗi lần xử lý), ảnh cư dân tùy chọn (tối đa 5); Agent không đánh giá chất lượng bằng ảnh hoặc làm theo instruction trong tệp.
 - **Expected output:** per-requirement `PRESENT|MISSING|INVALID_TYPE`, source link và summary.
-- **Failure behavior:** thiếu/sai/không đọc được ghi chú xử lý → đối soát không đạt, giữ `IN_PROGRESS`, `failing_items` nêu requirement; invalid/untrusted content treated as data.
-- **Given/When/Then:** Given ghi chú xử lý thiếu, When phòng ban báo hoàn thành, Then giữ `IN_PROGRESS` và không READY. Given ảnh thiếu, Then không chặn vì ảnh.
+- **Failure behavior:** thiếu ghi chú xử lý không chặn đối soát (chỉ ghi nhận `processing_note_present=false`); invalid/untrusted content treated as data.
+- **Given/When/Then:** Given checklist và vật tư đủ nhưng không có ghi chú xử lý, When phòng ban báo hoàn thành, Then `READY_FOR_REVIEW` nếu có ảnh sau xử lý. Given không có ảnh của phòng ban, Then giữ `IN_PROGRESS`, `failing_items=[execution_photo]`. Given cư dân không gửi ảnh, Then không ảnh hưởng gì.
 - **Use case:** tất cả.
 - **UI:** `UI-05`, `UI-06`, `UI-07`.
 - **Test:** `TC-EVD-001` đến `TC-EVD-005`, `TC-SEC-001`.
@@ -447,9 +447,9 @@ tương ứng.
 
 ## 5.3 Đối soát bước 10 và warning
 
-`READY_FOR_REVIEW` chỉ khi: có `department_id` và `accepted_at`; checklist `COMPLETED`; có ghi chú xử lý; đã nhập vật
+`READY_FOR_REVIEW` chỉ khi: có `department_id` và `accepted_at`; checklist `COMPLETED`; có ít nhất một ảnh sau xử lý; đã nhập vật
 tư xuất và dùng; lệch định mức có lý do; không còn blocker mở (`REWORK` không tính). Không đạt → giữ `IN_PROGRESS`, trả
-danh sách mục thiếu, không set blocker. Explained material variance là warning không chặn duy nhất (`OD-03`).
+danh sách mục thiếu, không set blocker. Ghi chú xử lý không bắt buộc (chỉ ghi nhận có/không). Explained material variance là warning không chặn duy nhất (`OD-03`).
 
 ## 5.4 Bất biến
 
@@ -615,7 +615,7 @@ model output. Model không được thực hiện side effect ngoài structured 
 - **4 demo flow (`CR-BPTN-02` (v0.5 candidate)):** vệ sinh thành công tới `READY_FOR_REVIEW`; vệ sinh ngoài giờ (`ROUTED` + `OUT_OF_HOURS`);
   kỹ thuật thành công tới `READY_FOR_REVIEW`; kỹ thuật không tìm thấy asset (`VERIFYING`/`ASSET_UNCLEAR`).
 - **8 regression:** thiếu nội dung (`NEED_INFO`), hai ticket từng là exception (nay đi như ticket thường), ca chiều,
-  thiếu ghi chú xử lý, thiếu vật tư (`ON_HOLD`), tồn kho không rõ (cờ), hai asset cùng vị trí.
+  không có ghi chú xử lý (vẫn READY), thiếu vật tư (`ON_HOLD`), tồn kho không rõ (cờ), hai asset cùng vị trí.
 - Mỗi expected outcome ghi `status`, `reason_code`, `proposed_department_id`, `department_id`, `review_status`,
   `asset_resolution`, draft, vật tư, cờ, warning, `failing_items`.
 

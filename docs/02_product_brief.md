@@ -79,7 +79,7 @@ Không khẳng định các giá trị trên đã cải thiện thời gian, chi
 2. **Source is immutable:** không sửa phản ánh hoặc bằng chứng gốc.
 3. **No guessing:** thiếu/không rõ input bắt buộc cho classification/draft → `CHỜ XÁC MINH`; execution/evidence chưa hoàn tất → `IN_PROGRESS`; Agent không tự điền.
 4. **Safety rules before model output:** high-risk/permission rules có ưu tiên tuyệt đối.
-5. **Evidence is playbook-specific:** ảnh không phải requirement chung.
+5. **Evidence:** phòng ban phải gửi ít nhất một ảnh sau khi xử lý (cả hai playbook); ảnh của cư dân là tùy chọn.
 6. **Explain every gate:** mọi trạng thái, warning và exception phải có reason/rule/source.
 7. **Synthetic by design:** mọi dữ liệu/output có nhãn mô phỏng; không giả lập claim vận hành thật.
 8. **Narrow and testable:** chỉ hai use case, bốn demo flow và các regression case đã nêu; mọi yêu cầu mới đi backlog.
@@ -136,7 +136,7 @@ Ghi chú: việc hiển thị non-blocking warning và reason tối thiểu là 
 - Trigger: phản ánh khu vực chung cần vệ sinh.
 - Output mong đợi: playbook match, vật tư/tồn kho, team/duty/route status, work order draft và checklist/evidence requirement; sau execution update, Agent chỉ đưa `READY_FOR_REVIEW` khi route hợp lệ và đủ gate.
 - Duty lookup bắt buộc. Nếu không có team trực: draft vẫn tồn tại, `IN_PROGRESS`, reason `NO_AVAILABLE_TEAM`, `route_status=NOT_ROUTED`; duty không xác định: `CHỜ XÁC MINH`, reason `DUTY_UNKNOWN`.
-- Checklist là readiness gate riêng. Minimum evidence: ghi chú xử lý không rỗng, liên kết đúng case. Ảnh không bắt buộc.
+- Checklist là readiness gate riêng. Phòng ban bắt buộc gửi ít nhất một ảnh sau khi xử lý; ghi chú xử lý không bắt buộc. Cư dân có thể đính kèm ảnh khi gửi hoặc bổ sung (không bắt buộc).
 
 ### UC-TEC-01 — Đèn khu vực chung không hoạt động
 
@@ -226,7 +226,7 @@ Nếu structured Agent được giới hạn bởi deterministic safety/permissi
 - 0 ticket `CLOSED`/`CANCELLED` không do BQL; 0 lần Agent ghi `assignee_id` hoặc ghi đè `locked_fields`.
 - Mọi thay đổi trạng thái có đúng một event; `resume()` gọi lại không tạo event mới.
 - API cư dân không lộ `reason_code`, `internal_note`, `assignee_id`, phòng ban đề xuất.
-- Đối soát vật tư đúng ba phép so sánh; không có phê duyệt tự động; ảnh không bắt buộc.
+- Đối soát vật tư đúng ba phép so sánh; không có phê duyệt tự động; phòng ban bắt buộc có ảnh sau xử lý, cư dân thì không.
 - Bốn demo flow chạy end-to-end và reset được.
 
 ## 18. Risks và mitigation
@@ -238,7 +238,7 @@ Nếu structured Agent được giới hạn bởi deterministic safety/permissi
 | Dữ liệu mô phỏng bị hiểu là dữ liệu thật | Claim sai về Vinhomes | Nhãn synthetic ở mọi screen/export; ID `SIM-`; không dùng tên/SLA/định mức thật |
 | BPTN/BQL bị gộp | Sai quyền chỉnh sửa/quyết định | Permission matrix, UI CTA theo role, negative tests |
 | BPTN confirmation bắt buộc thành thủ tục hình thức | Chậm flow, trách nhiệm mờ | `CR-BPTN-01`: chỉ review khi dữ liệu hành chính thiếu/không rõ; override bắt buộc reason và audit |
-| Ảnh bị biến thành evidence chung | Chặn sai case | Policy v0.3 xác nhận không bắt buộc ảnh trong cả hai playbook |
+| Ảnh bị lạm dụng làm tiêu chí chất lượng | Nghiệm thu sai | Ảnh chỉ chứng minh đã có mặt và xử lý; Agent không đánh giá ảnh, BQL xem ảnh khi nghiệm thu |
 | Draft hoặc route bị hiểu là giao việc thành công | Báo sai trạng thái vận hành | Hiển thị riêng `draft_status` và `route_status`; UI copy "Đề xuất team"/"Đề xuất tuyến team hợp lệ"; không route/READY nếu gate chưa pass |
 | Team route bị biến thành gán cá nhân | Vượt phạm vi mô phỏng | Chỉ dùng `SIM-TEAM-*`; `assignee_id=null`; không có CTA gán nhân viên |
 | Material variance bị hiểu là vi phạm | Agent vượt quyền | Chỉ phát hiện/mô tả; không approve/conclude; hiển thị `variance_reason` và mô phỏng |

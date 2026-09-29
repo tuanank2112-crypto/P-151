@@ -36,3 +36,7 @@ def public_message(status: TicketStatus, reason: ReasonCode | None = None, **val
     templates = _templates()
     template = templates["reason_messages"][reason] if reason else templates["status_messages"][status]
     return template.format(**{key: _fmt(value) for key, value in values.items()})
+
+
+def overdue_eta_message(eta: datetime) -> str:
+    return _templates()["overdue_eta_message"].format(eta=_fmt(eta))

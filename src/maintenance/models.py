@@ -438,7 +438,8 @@ class ReadinessEvaluation(Entity):
 
     department_accepted: bool
     checklist_complete: bool
-    processing_note_present: bool
+    processing_note_present: bool  # recorded for BQL; the note is optional, so it never fails readiness
+    photo_present: bool  # at least one department photo of the finished work: required
     materials_entered: bool
     variance_explained: bool
     no_open_blocker: bool
@@ -451,7 +452,7 @@ class ReadinessEvaluation(Entity):
             (
                 self.department_accepted,
                 self.checklist_complete,
-                self.processing_note_present,
+                self.photo_present,
                 self.materials_entered,
                 self.variance_explained,
                 self.no_open_blocker,

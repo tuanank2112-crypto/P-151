@@ -5,17 +5,24 @@ Three routers over one engine:
   /resident  what a resident sees and may do (public fields only)
   /bql       BQL dashboard and the only close / rework / cancel actions
 
-The caller is identified by the `X-Actor-Id` header; its role comes from the simulated actor catalog.
+The caller is the logged-in account (`Authorization: Bearer <token>` from /api/v1/auth/login); its role comes from
+the simulated actor catalog. Reads are scoped too: a department only sees tickets handed to it, the warehouse only
+tickets waiting for material, residents only their own tickets (via /resident), and demo control is QA-only.
 """
 
 from datetime import datetime
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
+from src.api import photos
+from src.api.auth import get_actor
 from src.maintenance.demo import EvaluationReport, evaluate, run_fixture
 from src.maintenance.engine import (
+    MAX_EXECUTION_PHOTOS,
+    MAX_RESIDENT_PHOTOS,
     ActionDeniedError,
     AuditWriteError,
     EngineError,
@@ -23,6 +30,8 @@ from src.maintenance.engine import (
     MaintenanceEngine,
     NotFoundError,
     build_engine,
+    execution_photos,
+    resident_photos,
 )
 from src.maintenance.enums import (
     Action,
@@ -35,6 +44,7 @@ from src.maintenance.enums import (
     ServiceCategory,
     TicketStatus,
 )
+from src.maintenance.messages import status_label
 from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent
 from src.maintenance.views import BqlTicketRow, ResidentTicketView, bql_rows, resident_view
 
@@ -54,14 +64,9 @@ def get_engine() -> MaintenanceEngine:
 
 
 EngineDep = Annotated[MaintenanceEngine, Depends(get_engine)]
-ActorDep = Annotated[
-    str,
-    Header(
-        alias="X-Actor-Id",
-        description="VD: SIM-ACTOR-RESIDENT-01, SIM-ACTOR-BPTN-01, SIM-ACTOR-DEPT-CLN-01, SIM-ACTOR-DEPT-TEC-01, "
-        "SIM-ACTOR-WAREHOUSE-01, SIM-ACTOR-BQL-01, SIM-ACTOR-SYSTEM",
-    ),
-]
+ActorDep = Annotated[str, Depends(get_actor)]
+
+STAFF = {ActorRole.BPTN, ActorRole.DEPARTMENT, ActorRole.WAREHOUSE, ActorRole.BQL, ActorRole.QA_INTERNAL}
 
 
 def _call(fn, *args, **kwargs):
@@ -87,9 +92,31 @@ def _plain(detail: dict[str, Any]) -> dict[str, Any]:
     return {k: v.isoformat() if isinstance(v, datetime) else v for k, v in detail.items()}
 
 
-def _require_role(engine: MaintenanceEngine, actor_id: str, role: ActorRole) -> None:
-    if engine.catalog.actor_role(actor_id) != role:
-        raise HTTPException(status_code=403, detail={"code": "ACTION_DENIED", "message": f"Chỉ {role}"})
+def _require_role(engine: MaintenanceEngine, actor_id: str, *roles: ActorRole) -> ActorRole:
+    role = engine.catalog.actor_role(actor_id)
+    if role not in roles:
+        allowed = ", ".join(roles)
+        raise HTTPException(status_code=403, detail={"code": "ACTION_DENIED", "message": f"Chỉ {allowed}"})
+    return role
+
+
+def _visible(engine: MaintenanceEngine, actor_id: str, case: Case) -> bool:
+    """Who may read a ticket's internal detail."""
+    actor = engine.catalog.actor(actor_id)
+    ticket = case.ticket
+    if actor.actor_role == ActorRole.DEPARTMENT:
+        return ticket.department_id is not None and ticket.department_id == actor.department_id
+    if actor.actor_role == ActorRole.WAREHOUSE:
+        return ticket.blocker is not None and ticket.blocker.code == ReasonCode.WAITING_MATERIAL
+    return actor.actor_role in (ActorRole.BPTN, ActorRole.BQL, ActorRole.QA_INTERNAL)
+
+
+def _staff_case(engine: MaintenanceEngine, actor_id: str, ticket_id: str) -> Case:
+    _require_role(engine, actor_id, *STAFF)
+    case = _call(engine.get, ticket_id)
+    if not _visible(engine, actor_id, case):
+        raise HTTPException(status_code=404, detail=f"Không có ticket {ticket_id}")  # do not reveal it exists
+    return case
 
 
 def _no_placeholder(value: str | None) -> str | None:
@@ -113,26 +140,56 @@ class RequiredNoteBody(NoteBody):
     note: str = Field(min_length=1)
 
 
+PhotoFiles = Annotated[list[UploadFile], File(description="Ảnh JPG, PNG hoặc WEBP, tối đa 5 MB mỗi ảnh")]
+
+
+async def _attach_photos(files: list[UploadFile], room: int, limit: int, attach) -> Case:
+    """Validate all files, then store and record them one by one. A file whose record is refused is deleted."""
+    batch = await photos.read_photos(files)
+    if len(batch) > room:
+        raise HTTPException(status_code=409, detail=f"Tối đa {limit} ảnh; còn gửi thêm được {room} ảnh")
+    case = None
+    for data, extension in batch:
+        ref = photos.save(data, extension)
+        try:
+            case = _call(attach, ref)
+        except Exception:
+            photos.discard(ref)
+            raise
+    return case
+
+
+def _photo_file(case: Case, evidence_id: str, allowed) -> FileResponse:
+    record = next((e for e in allowed(case) if e.evidence_id == evidence_id), None)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh")
+    path, media_type = photos.locate(record.content_or_metadata)
+    return FileResponse(path, media_type=media_type, headers={"Cache-Control": "private, max-age=3600"})
+
+
 # ------------------------------------------------------------------ demo control (internal, FR-DEMO-001)
 
 
 @router.post("/reset")
-def reset(engine: EngineDep) -> dict[str, Any]:
-    """Xoá mọi dữ liệu thay đổi, nạp lại 12 ticket fixture (mỗi ticket chạy đúng tại created_at của nó)."""
+def reset(actor: ActorDep, engine: EngineDep) -> dict[str, Any]:
+    """Chỉ QA. Xoá mọi dữ liệu thay đổi, nạp lại 12 ticket fixture (mỗi ticket chạy đúng tại created_at của nó)."""
+    _require_role(engine, actor, ActorRole.QA_INTERNAL)
     return {"run_id": engine.reset(), "tickets": len(engine.cases)}
 
 
 @router.post("/demo/{ticket_id}", response_model=Case)
-def run_demo_ticket(ticket_id: str, engine: EngineDep) -> Case:
-    """Chạy kịch bản phòng ban của một ticket fixture: nhận việc, cập nhật, báo hoàn thành (nếu đã ROUTED)."""
+def run_demo_ticket(ticket_id: str, actor: ActorDep, engine: EngineDep) -> Case:
+    """Chỉ QA. Chạy kịch bản phòng ban của một ticket fixture: nhận việc, cập nhật, báo hoàn thành (nếu đã ROUTED)."""
+    _require_role(engine, actor, ActorRole.QA_INTERNAL)
     if engine.dataset.get(ticket_id) is None:
         raise HTTPException(status_code=404, detail=f"{ticket_id} không có trong fixture")
     return _call(run_fixture, engine, ticket_id)
 
 
 @router.post("/evaluate", response_model=EvaluationReport)
-def run_evaluation(engine: EngineDep) -> EvaluationReport:
-    """Reset rồi chạy cả 12 ticket, so với expected outcome. Acceptance nội bộ trên dữ liệu mô phỏng."""
+def run_evaluation(actor: ActorDep, engine: EngineDep) -> EvaluationReport:
+    """Chỉ QA. Reset rồi chạy cả 12 ticket, so với expected outcome. Acceptance nội bộ trên dữ liệu mô phỏng."""
+    _require_role(engine, actor, ActorRole.QA_INTERNAL)
     return evaluate(engine)
 
 
@@ -164,62 +221,91 @@ def _ingest(engine: MaintenanceEngine, body: IngestRequest, resident_id: str) ->
 
 
 @router.post("/tickets", response_model=Case, status_code=201)
-def ingest_ticket(body: IngestRequest, engine: EngineDep) -> Case:
-    """Tạo phản ánh demo thay cho SIM-ACTOR-RESIDENT-01; Agent chạy pipeline bước 2–8."""
+def ingest_ticket(body: IngestRequest, actor: ActorDep, engine: EngineDep) -> Case:
+    """Chỉ QA. Tạo phản ánh demo thay cho SIM-ACTOR-RESIDENT-01; cư dân thật dùng POST /resident/tickets."""
+    _require_role(engine, actor, ActorRole.QA_INTERNAL)
     return _ingest(engine, body, "SIM-ACTOR-RESIDENT-01")
 
 
 class TicketSummary(BaseModel):
     ticket_id: str
     status: TicketStatus
+    status_label: str
     reason_code: ReasonCode | None
+    proposed_department_id: Department | None
     department_id: Department | None
     escalated: bool
+    created_at: str
+    description: str  # resident text: untrusted data, the UI renders it as plain text
     flow: str | None
     synthetic: bool = True
 
 
 @router.get("/tickets", response_model=list[TicketSummary])
-def list_tickets(engine: EngineDep, status: TicketStatus | None = None) -> list[TicketSummary]:
-    """Work queue nội bộ."""
+def list_tickets(actor: ActorDep, engine: EngineDep, status: TicketStatus | None = None) -> list[TicketSummary]:
+    """Work queue nội bộ, chỉ gồm ticket vai trò của bạn được xem (phòng ban: ticket đã giao; kho: chờ vật tư)."""
+    _require_role(engine, actor, *STAFF)
     rows = []
     for case in engine.cases.values():
         ticket = case.ticket
-        if status is not None and ticket.status != status:
+        if (status is not None and ticket.status != status) or not _visible(engine, actor, case):
             continue
         fixture = engine.dataset.get(ticket.ticket_id)
         rows.append(
             TicketSummary(
                 ticket_id=ticket.ticket_id,
                 status=ticket.status,
+                status_label=status_label(ticket.status),
                 reason_code=ticket.blocker.code if ticket.blocker else None,
+                proposed_department_id=ticket.proposed_department_id,
                 department_id=ticket.department_id,
                 escalated=bool(ticket.blocker and ticket.blocker.escalated),
+                created_at=ticket.raw.created_at,
+                description=ticket.raw.original_description,
                 flow=fixture.flow if fixture else None,
             )
         )
     return rows
 
 
+class CatalogView(BaseModel):
+    departments: dict[str, str]
+    assets: list[dict[str, str]]
+    status_labels: dict[str, str]
+    materials: list[dict[str, str]]
+
+
+@router.get("/catalog", response_model=CatalogView)
+def read_catalog(actor: ActorDep, engine: EngineDep) -> CatalogView:
+    """Tên phòng ban, asset, vật tư và nhãn trạng thái cho giao diện (dữ liệu mô phỏng, read-only)."""
+    catalog = engine.catalog
+    return CatalogView(
+        departments={d.department_id.value: d.name for d in catalog.departments},
+        assets=[{"asset_id": a.asset_id, "location": a.location_normalized} for a in catalog.assets],
+        status_labels={s.value: status_label(s) for s in TicketStatus},
+        materials=[{"item_code": m.item_code, "item_name": m.item_name} for m in catalog.materials],
+    )
+
+
 @router.get("/tickets/{ticket_id}", response_model=Case)
-def read_ticket(ticket_id: str, engine: EngineDep) -> Case:
-    return _call(engine.get, ticket_id)
+def read_ticket(ticket_id: str, actor: ActorDep, engine: EngineDep) -> Case:
+    return _staff_case(engine, actor, ticket_id)
 
 
 @router.get("/tickets/{ticket_id}/events", response_model=list[StatusEvent])
-def read_events(ticket_id: str, engine: EngineDep) -> list[StatusEvent]:
+def read_events(ticket_id: str, actor: ActorDep, engine: EngineDep) -> list[StatusEvent]:
     """`ticket_status_events`: mọi thay đổi status/blocker."""
-    return _call(engine.get, ticket_id).events
+    return _staff_case(engine, actor, ticket_id).events
 
 
 @router.get("/tickets/{ticket_id}/audit", response_model=list[AuditEvent])
-def read_audit(ticket_id: str, engine: EngineDep) -> list[AuditEvent]:
-    return _call(engine.get, ticket_id).audit
+def read_audit(ticket_id: str, actor: ActorDep, engine: EngineDep) -> list[AuditEvent]:
+    return _staff_case(engine, actor, ticket_id).audit
 
 
 @router.get("/tickets/{ticket_id}/notifications", response_model=list[Notification])
-def read_notifications(ticket_id: str, engine: EngineDep) -> list[Notification]:
-    return _call(engine.get, ticket_id).notifications
+def read_notifications(ticket_id: str, actor: ActorDep, engine: EngineDep) -> list[Notification]:
+    return _staff_case(engine, actor, ticket_id).notifications
 
 
 class TransitionRequest(BaseModel):
@@ -239,8 +325,9 @@ def transition(ticket_id: str, body: TransitionRequest, actor: ActorDep, engine:
 
 
 @router.post("/tickets/{ticket_id}/resume", response_model=Case)
-def resume(ticket_id: str, engine: EngineDep) -> Case:
-    """Chạy lại nếu điều kiện gỡ blocker đã đạt. Idempotent."""
+def resume(ticket_id: str, actor: ActorDep, engine: EngineDep) -> Case:
+    """Chỉ QA. Chạy lại nếu điều kiện gỡ blocker đã đạt. Idempotent."""
+    _require_role(engine, actor, ActorRole.QA_INTERNAL)
     return _call(engine.resume, ticket_id)
 
 
@@ -249,8 +336,9 @@ class JobsRequest(BaseModel):
 
 
 @router.post("/jobs/run")
-def run_jobs(body: JobsRequest, engine: EngineDep) -> dict[str, list[str]]:
-    """Job định kỳ: retry/nhắc/leo thang các ticket đến hạn. Server tự chạy mỗi `job_interval_minutes`."""
+def run_jobs(body: JobsRequest, actor: ActorDep, engine: EngineDep) -> dict[str, list[str]]:
+    """Chỉ QA. Job định kỳ: retry/nhắc/leo thang các ticket đến hạn. Server tự chạy mỗi `job_interval_minutes`."""
+    _require_role(engine, actor, ActorRole.QA_INTERNAL)
     if body.now is not None and body.now.tzinfo is None:
         raise HTTPException(status_code=422, detail="now phải có timezone")
     return {"changed": _call(engine.run_jobs, body.now)}
@@ -356,6 +444,34 @@ def add_evidence(ticket_id: str, body: EvidenceRequest, actor: ActorDep, engine:
     return _call(engine.add_evidence, ticket_id, actor, **body.model_dump())
 
 
+@router.post("/tickets/{ticket_id}/photos", response_model=Case)
+async def add_execution_photos(ticket_id: str, files: PhotoFiles, actor: ActorDep, engine: EngineDep) -> Case:
+    """Phòng ban gửi ảnh sau khi xử lý (bắt buộc ít nhất một ảnh trước khi báo hoàn thành)."""
+    case = _staff_case(engine, actor, ticket_id)
+    room = MAX_EXECUTION_PHOTOS - len(execution_photos(case))
+
+    def attach(ref: str) -> Case:
+        return engine.add_evidence(
+            ticket_id,
+            actor,
+            requirement_id=None,
+            evidence_type=EvidenceType.SIMULATED_IMAGE,
+            content_or_metadata=ref,
+            readability_status=ReadabilityStatus.READABLE,
+        )
+
+    return await _attach_photos(files, room, MAX_EXECUTION_PHOTOS, attach)
+
+
+@router.get("/tickets/{ticket_id}/photos/{evidence_id}", response_class=FileResponse)
+def read_photo(ticket_id: str, evidence_id: str, actor: ActorDep, engine: EngineDep) -> FileResponse:
+    """Ảnh của cư dân hoặc của phòng ban, cho người được xem ticket."""
+    case = _staff_case(engine, actor, ticket_id)
+    # every department photo, including those from before a rework, so BQL can compare
+    images = (EvidenceType.RESIDENT_ORIGINAL, EvidenceType.SIMULATED_IMAGE)
+    return _photo_file(case, evidence_id, lambda c: [e for e in c.evidence if e.evidence_type in images])
+
+
 @router.post("/tickets/{ticket_id}/complete", response_model=Case)
 def report_complete(ticket_id: str, actor: ActorDep, engine: EngineDep) -> Case:
     """Báo hoàn thành → Agent đối soát (bước 10). Không đạt: giữ IN_PROGRESS, xem
@@ -411,6 +527,16 @@ def resident_create(body: IngestRequest, actor: ActorDep, engine: EngineDep) -> 
     return resident_view(engine, case, engine.clock())
 
 
+@resident_router.get("/tickets", response_model=list[ResidentTicketView])
+def resident_list(actor: ActorDep, engine: EngineDep) -> list[ResidentTicketView]:
+    """Các phản ánh của chính cư dân gọi API, mới nhất trước."""
+    _require_role(engine, actor, ActorRole.RESIDENT)
+    now = engine.clock()
+    own = [c for c in engine.cases.values() if c.ticket.resident_id == actor]
+    own.sort(key=lambda c: c.ticket.raw.created_at, reverse=True)
+    return [resident_view(engine, c, now) for c in own]
+
+
 def _own_case(engine: MaintenanceEngine, ticket_id: str, actor: str) -> Case:
     _require_role(engine, actor, ActorRole.RESIDENT)
     case = _call(engine.get, ticket_id)
@@ -435,6 +561,25 @@ def resident_add(ticket_id: str, body: AdditionRequest, actor: ActorDep, engine:
     _own_case(engine, ticket_id, actor)
     case = _call(engine.add_resident_info, ticket_id, actor, body.content)
     return resident_view(engine, case, engine.clock())
+
+
+@resident_router.post("/tickets/{ticket_id}/photos", response_model=ResidentTicketView)
+async def resident_add_photos(
+    ticket_id: str, files: PhotoFiles, actor: ActorDep, engine: EngineDep
+) -> ResidentTicketView:
+    """Đính kèm ảnh (không bắt buộc) vào phản ánh của chính mình."""
+    case = _own_case(engine, ticket_id, actor)
+    room = MAX_RESIDENT_PHOTOS - len(resident_photos(case))
+    case = await _attach_photos(
+        files, room, MAX_RESIDENT_PHOTOS, lambda ref: engine.add_resident_photo(ticket_id, actor, ref)
+    )
+    return resident_view(engine, case, engine.clock())
+
+
+@resident_router.get("/tickets/{ticket_id}/photos/{evidence_id}", response_class=FileResponse)
+def resident_read_photo(ticket_id: str, evidence_id: str, actor: ActorDep, engine: EngineDep) -> FileResponse:
+    """Chỉ ảnh cư dân tự gửi."""
+    return _photo_file(_own_case(engine, ticket_id, actor), evidence_id, resident_photos)
 
 
 class RatingRequest(BaseModel):

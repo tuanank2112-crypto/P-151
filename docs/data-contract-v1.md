@@ -92,7 +92,7 @@ trên. `CR-BPTN-02` (v0.5 candidate) bỏ luật an toàn: contract không còn 
 | `ChecklistTemplate` | Template checklist versioned của playbook | 1—N ChecklistItem | Static simulated config | Không chứa SOP kỹ thuật thật |
 | `ChecklistItem` | Instance checklist execution | N—1 WorkOrderDraft/template item | DEPARTMENT | Agent không tự `COMPLETED` |
 | `MaterialLine` | Material record và ba comparison | N—1 WorkOrderDraft | DEPARTMENT input; Agent derive comparisons | Không approval/inventory/violation conclusion |
-| `EvidenceRecord` | Original hoặc execution evidence | N—1 Ticket; 0..1 WorkOrderDraft requirement | Ingest hoặc DEPARTMENT | Checklist không thay evidence; ảnh optional |
+| `EvidenceRecord` | Original hoặc execution evidence | N—1 Ticket; 0..1 WorkOrderDraft requirement | Ingest hoặc DEPARTMENT | Checklist không thay evidence; ảnh phòng ban bắt buộc, ảnh cư dân optional |
 | `StatusEvent` (`CR-BPTN-02` (v0.5 candidate)) | `ticket_status_events`: một dòng cho mỗi thay đổi status hoặc blocker | N—1 Ticket | SYSTEM (trong `transition`) | Nguồn duy nhất cho timeline cư dân và audit trạng thái |
 | `ResidentAddition` (`CR-BPTN-02` (v0.5 candidate)) | `ticket_resident_additions`: thông tin cư dân bổ sung | N—1 Ticket | RESIDENT | Append-only; không sửa raw |
 | `Notification` (`CR-BPTN-02` (v0.5 candidate)) | Outbox sự kiện thông báo | N—1 Ticket | SYSTEM | Không gửi kênh thật |
@@ -261,10 +261,10 @@ từ nội dung gốc + phần cư dân bổ sung; vị trí hiệu lực là `l
 | `synthetic` | boolean | R | true | SYSTEM | Missing/false reject | — | `true` |
 
 `WorkOrderDraft` chỉ được tạo ở bước 8, ngay trước khi giao (`CR-BPTN-02` (v0.5 candidate)). `ReadinessEvaluation` (bước 10, chạy khi
-phòng ban báo hoàn thành) chứa sáu boolean: `department_accepted` (có `department_id` và `accepted_at`),
-`checklist_complete`, `processing_note_present`, `materials_entered`, `variance_explained` (lệch có lý do chỉ là
-warning), `no_open_blocker` (`REWORK` không tính); cùng `evaluated_at`, `failing_items`. Đạt cả sáu → Agent chuyển
-`IN_PROGRESS → READY_FOR_REVIEW`. Không đạt → giữ `IN_PROGRESS`, trả `failing_items` cho phòng ban, không set blocker.
+phòng ban báo hoàn thành) chứa bảy boolean: `department_accepted` (có `department_id` và `accepted_at`),
+`checklist_complete`, `photo_present` (ít nhất một ảnh `SIMULATED_IMAGE` của phòng ban cho draft hiện tại), `processing_note_present`, `materials_entered`, `variance_explained` (lệch có lý do chỉ là
+warning), `no_open_blocker` (`REWORK` không tính); cùng `evaluated_at`, `failing_items`. Đạt sáu điều kiện còn lại → Agent chuyển
+`IN_PROGRESS → READY_FOR_REVIEW`. `processing_note_present` chỉ để ghi nhận, không tính vào điều kiện đạt (ghi chú không bắt buộc). Không đạt → giữ `IN_PROGRESS`, trả `failing_items` cho phòng ban, không set blocker.
 
 `NonBlockingWarning` gồm `warning_id`, `warning_type=EXPLAINED_MATERIAL_VARIANCE`, `blocking=false`, `rule_id`, `reason`, `material_line_ids`, `comparison_types`, `created_at`, `synthetic=true`.
 
@@ -371,7 +371,7 @@ Agent chỉ detect/mô tả. Contract không có field approve, inventory adjust
 | `immutable` | boolean | R | true iff resident original | SYSTEM | Original evidence cannot mutate; execution edit tạo revision/audit | Immutability | `false` |
 | `synthetic` | boolean | R | true | SYSTEM | Missing/false reject | — | `true` |
 
-Ảnh chỉ dùng `SIMULATED_IMAGE`, optional và không xuất hiện trong required evidence catalog v1. Không có computer vision hoặc quality confirmation field.
+Ảnh phòng ban dùng `SIMULATED_IMAGE` (source `DEPARTMENT_EXECUTION`, `requirement_id=null`), bắt buộc ít nhất một cho mỗi draft (điều kiện `photo_present`, thiếu → `failing_items` có `execution_photo`). Ảnh cư dân dùng `RESIDENT_ORIGINAL` (source `RESIDENT_ORIGINAL`, `immutable=true`), optional, tối đa 5. `content_or_metadata` là tên tệp do server sinh; loại tệp kiểm bằng magic bytes (JPG/PNG/WEBP, ≤ 5 MB). Không có computer vision hoặc quality confirmation field.
 
 ### 5.10 `ExceptionRecord`
 
@@ -531,8 +531,8 @@ Các label trên là documentation gates mô phỏng, không phải SOP xử lý
 | `VAL-EVD-TYPE-001` | Requirement + record | Type thuộc allowlist requirement | `INVALID_TYPE`; `IN_PROGRESS` |
 | `VAL-EVD-CONTENT-001` | content/metadata | Non-empty, schema-valid | `MISSING`; `IN_PROGRESS` |
 | `VAL-EVD-READ-001` | readability | READABLE; hoặc NOT_APPLICABLE cho structured text/metadata schema-valid | UNREADABLE hoặc nguồn không xác minh được → not PRESENT, bước 10 không đạt |
-| `VAL-EVD-READY-001` | All requirements | Mỗi requirement có ít nhất một record PRESENT (ghi chú xử lý) | Thiếu → bước 10 không đạt, giữ `IN_PROGRESS` |
-| `VAL-EVD-IMG-001` | Image absence | Không required requirement nào là image | Không block, không warning |
+| `VAL-EVD-READY-001` | All requirements | Ghi nhận requirement có record PRESENT hay không (ghi chú xử lý) | Thiếu → chỉ `processing_note_present=false`, không chặn bước 10 |
+| `VAL-EVD-IMG-001` | Image absence | Phòng ban: ít nhất một ảnh cho draft hiện tại; cư dân: không bắt buộc | Thiếu ảnh phòng ban → bước 10 không đạt, giữ `IN_PROGRESS` |
 
 ### 7.6 Asset, duty, route và exception
 
@@ -727,7 +727,7 @@ Không còn Implementation Gap chưa có disposition sau Field Matrix và revers
 5. `READY_FOR_REVIEW` chỉ khi sáu điều kiện bước 10 đều đạt.
 6. Chỉ BQL đóng/hủy; raw content/evidence mutation, Agent checklist completion, material approval, outbound action đều
    `ACTION_DENIED` + audit.
-7. Không evidence requirement nào bắt buộc ảnh.
+7. Ảnh sau xử lý của phòng ban bắt buộc (điều kiện `photo_present`); ảnh cư dân không bắt buộc.
 8. Tra tài sản chỉ bắt buộc cho kỹ thuật; khi không xác định được, chỉ BPTN quyết định.
 9. Agent không chọn người (`assignee_id`); phòng ban tự phân công.
 10. Mọi `public_message` sinh từ template; resident API không lộ dữ liệu nội bộ.
