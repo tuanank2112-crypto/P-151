@@ -12,8 +12,10 @@ BQL cần tạo và kiểm tra hồ sơ bảo trì một cách nhất quán, tru
 
 - **Phân loại**: Agent đề xuất playbook vệ sinh (`PB-CLN-01`) hoặc đèn khu vực chung (`PB-TEC-01`) bằng luật cố định
   + LLM; phát hiện tín hiệu rủi ro (chất lạ nguy hại, mùi khét, tia lửa, dây hở) → `EXCEPTION` cho BQL.
-- **BPTN xác nhận** loại việc và vị trí trước khi tạo draft.
-- **Route cấp team**: tra asset (kỹ thuật), tồn kho, lịch trực và sức chứa → route tới `SIM-TEAM-*`, không gán cá nhân.
+- **BPTN review có điều kiện** (`CR-BPTN-01`, v0.4 candidate — `docs/CR-BPTN-01.md`): ticket rủi ro thấp, category và vị trí rõ
+  đi thẳng tới draft; thiếu vị trí/category không rõ → `CHỜ XÁC MINH` cho tới khi BPTN override kèm lý do.
+- **Đề xuất team**: tra asset (kỹ thuật), tồn kho, lịch trực và capacity mô phỏng (fixture tĩnh) → đề xuất tuyến tới
+  `SIM-TEAM-*`, không gán cá nhân. `ROUTED` là đề xuất tuyến team hợp lệ, không phải đã giao việc.
 - **Kiểm tra hồ sơ**: checklist, vật tư (3 phép đối soát), evidence tối thiểu; đủ 8 gate → `READY_FOR_REVIEW`.
 - Bốn state: `IN_PROGRESS`, `CHỜ XÁC MINH`, `READY_FOR_REVIEW`, `EXCEPTION`; mọi thao tác có audit.
 
@@ -211,8 +213,9 @@ Code theo tài liệu baseline v0.3 (`docs/01`–`05`, `docs/data-contract-v1.md
 | POST | `/mo/evaluate` | (demo nội bộ) | Reset, chạy cả 12 ticket, so với expected outcome |
 | POST | `/mo/demo/{ticket_id}` | (demo nội bộ) | Chạy các bước kịch bản của một ticket fixture |
 | GET | `/mo/tickets`, `/mo/tickets/{id}`, `/mo/tickets/{id}/audit` | — | Work queue, chi tiết case, audit |
-| POST | `/mo/tickets` | — | Tiếp nhận ticket mô phỏng mới; Agent đề xuất playbook + chạy luật rủi ro |
-| POST | `/mo/tickets/{id}/confirm` | BPTN | Xác nhận service/type/location → Agent lookup, tạo draft, đề xuất route |
+| POST | `/mo/tickets` | — | Tiếp nhận ticket mô phỏng mới; Agent đề xuất playbook, chạy luật rủi ro, quyết định có cần BPTN review; rõ thì tạo draft + đề xuất team |
+| POST | `/mo/tickets/{id}/confirm` | BPTN | Tùy chọn: xác nhận không đổi (`CONFIRMED`); bị từ chối khi `PENDING_REVIEW` |
+| POST | `/mo/tickets/{id}/override` | BPTN | Bổ sung/sửa service/type/location, bắt buộc `override_reason` → Agent chạy lại mọi gate; không dùng được khi có safety exception |
 | POST | `/mo/tickets/{id}/checklist/{item}` | Nhân sự thực hiện | Cập nhật checklist |
 | POST | `/mo/tickets/{id}/materials/{item_code}` | Nhân sự thực hiện | Nhập vật tư xuất/dùng, lý do chênh lệch |
 | POST | `/mo/tickets/{id}/evidence` | Nhân sự thực hiện | Thêm processing/result note (ảnh không bắt buộc) |

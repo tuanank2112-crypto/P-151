@@ -13,6 +13,7 @@
 | 0.1 | 2026-09-27 | Tạo Product Brief từ Source Audit và Problem Statement v0.1 | DRAFT |
 | 0.2 | 2026-09-27 | Áp dụng OD-01/02/03/08; ghi nhận governance OD-09 và cập nhật readiness | DRAFT · Chờ sign-off |
 | 0.3 | 2026-09-27 | Khóa hai nhóm dịch vụ; thêm asset/duty/stock gate, team-only routing, 12 ticket và 4 demo flow | DRAFT · Chờ sign-off |
+| 0.4-candidate | 2026-09-29 | `CR-BPTN-01`: BPTN review có điều kiện + override; định vị "đề xuất tuyến team" và capacity mô phỏng | PROPOSED · Chờ duyệt CR |
 
 # Phase 2 — Product Brief
 
@@ -82,10 +83,10 @@ Không khẳng định các giá trị trên đã cải thiện thời gian, chi
 - Ticket ingestion từ fixture/form chuẩn hóa và schema validation.
 - Tách raw immutable data, normalized administrative data, Agent proposal, human execution data và audit.
 - Trước classification bắt buộc `ticket_id`, `created_at`, `original_description`; `priority` optional.
-- Agent đề xuất `service_category_normalized`, `ticket_type_normalized` và playbook; BPTN xác nhận service/type và `location_normalized` trước draft, mọi xác nhận/chỉnh sửa có audit.
-- Agent chạy high-risk rules và tạo work order draft idempotent sau confirmation/location gate; asset, stock hoặc duty chưa pass vẫn cho phép draft tồn tại nhưng không cho route hợp lệ.
+- Agent đề xuất `service_category_normalized`, `ticket_type_normalized`, playbook và location; theo `CR-BPTN-01` (v0.4 candidate) BPTN chỉ review khi Agent đánh dấu `PENDING_REVIEW` (thiếu location/category không rõ), xác nhận hoặc override có `override_reason`; mọi xác nhận/override có audit.
+- Agent chạy high-risk rules và tạo work order draft idempotent khi không `PENDING_REVIEW` và có location; asset, stock hoặc duty chưa pass vẫn cho phép draft tồn tại nhưng không cho route hợp lệ.
 - Playbook Registry, Asset Catalog, tồn kho và duty roster là cấu hình/dữ liệu mô phỏng read-only; không có CRUD trong MVP.
-- Duty lookup bắt buộc cho cả hai nhóm; chỉ kiểm tra team phù hợp, đang trực và còn sức chứa. Asset lookup bắt buộc riêng cho kỹ thuật, ưu tiên `LIGHTING`.
+- Duty lookup bắt buộc cho cả hai nhóm; chỉ kiểm tra team phù hợp, đang trực và capacity mô phỏng đạt điều kiện fixture (không phản ánh năng lực nhận việc thực tế, không cập nhật động). Asset lookup bắt buộc riêng cho kỹ thuật, ưu tiên `LIGHTING`.
 - Routing chỉ tới `SIM-TEAM-*`; không gán nhân viên, `assignee_id=null`.
 - Checklist, material và evidence requirement theo playbook.
 - Bốn state: `IN_PROGRESS`, `CHỜ XÁC MINH`, `READY_FOR_REVIEW`, `EXCEPTION`.
@@ -156,12 +157,12 @@ Ghi chú: việc hiển thị non-blocking warning và reason tối thiểu là 
 
 ## 12. Target workflow
 
-1. Ticket đến từ app/form hiện có; BPTN xem raw data read-only và xác nhận thông tin hành chính.
-2. Agent phân loại và tra Playbook Registry.
+1. Ticket đến từ app/form hiện có; hệ thống kiểm tra dữ liệu có cấu trúc.
+2. Agent phân loại, chạy safety rules và quyết định có cần BPTN review không (`CR-BPTN-01`): rõ → tiếp tục; thiếu/không rõ → `CHỜ XÁC MINH` chờ BPTN override có lý do. Agent tra Playbook Registry.
 3. Nếu kỹ thuật, Agent tra Asset Catalog read-only; không match duy nhất thì chờ xác minh.
 4. Agent xác định vật tư dự kiến/định mức và kiểm tra tồn kho mô phỏng.
 5. Agent tra duty team mô phỏng theo service, trạng thái trực và sức chứa.
-6. Agent tạo `WorkOrderDraft`; chỉ tạo route cấp team khi asset/stock/duty gates pass.
+6. Agent tạo `WorkOrderDraft`; chỉ tạo đề xuất tuyến team hợp lệ khi asset/stock/duty gates pass. Đây không phải xác nhận đã giao việc.
 7. Nhân sự thực hiện checklist, cập nhật vật tư, ghi chú và bằng chứng.
 8. Agent đối soát planned/norm/issued/used, checklist, evidence và route.
 9. Agent xác định một trong bốn state, kèm reason/audit; BQL xem xét.
@@ -177,8 +178,8 @@ Không có transition trực tiếp do Agent thực hiện sang nghiệm thu/ho�
 
 ## 14. Role and permission summary
 
-- **BPTN:** xác nhận service/type proposal, bổ sung/xác nhận location và edit administrative fields trong allowlist; không edit raw resident data/evidence.
-- **Agent:** read/validate/propose service/type/playbook/check/route; không tự xác nhận administrative proposal, edit source, execute, approve hoặc communicate externally.
+- **BPTN:** review có điều kiện (`CR-BPTN-01`): xác nhận hoặc override service/type/location có `override_reason` khi `PENDING_REVIEW` hoặc khi phát hiện sai; không edit raw resident data/evidence và không override để bỏ qua safety exception.
+- **Agent:** read/validate/propose service/type/playbook/check/route; quyết định `NOT_REQUIRED`/`PENDING_REVIEW` theo rule cố định; không tự đặt `CONFIRMED`/`OVERRIDDEN`, edit source, execute, approve hoặc communicate externally.
 - **Nhân sự thực hiện:** update execution data; không edit source hoặc quyết định exception.
 - **BQL:** review package, resolve exception/request verification và ra quyết định nghiệp vụ cuối; chi tiết sub-role là `OD-05`.
 
@@ -224,8 +225,9 @@ Nếu structured Agent được giới hạn bởi deterministic safety/permissi
 | LLM output không ổn định | Routing/safety không dự đoán được | Deterministic schema, safety, state và permission rules chạy trước model output |
 | Dữ liệu mô phỏng bị hiểu là dữ liệu thật | Claim sai về Vinhomes | Nhãn synthetic ở mọi screen/export; ID `SIM-`; không dùng tên/SLA/định mức thật |
 | BPTN/BQL bị gộp | Sai quyền chỉnh sửa/quyết định | Permission matrix, UI CTA theo role, negative tests |
+| BPTN confirmation bắt buộc thành thủ tục hình thức | Chậm flow, trách nhiệm mờ | `CR-BPTN-01`: chỉ review khi dữ liệu hành chính thiếu/không rõ; override bắt buộc reason và audit |
 | Ảnh bị biến thành evidence chung | Chặn sai case | Policy v0.3 xác nhận không bắt buộc ảnh trong cả hai playbook |
-| Draft bị hiểu là đã giao việc | Báo sai trạng thái vận hành | Hiển thị riêng `draft_status` và `route_status`; không route/READY nếu gate chưa pass |
+| Draft hoặc route bị hiểu là giao việc thành công | Báo sai trạng thái vận hành | Hiển thị riêng `draft_status` và `route_status`; UI copy "Đề xuất team"/"Đề xuất tuyến team hợp lệ"; không route/READY nếu gate chưa pass |
 | Team route bị biến thành gán cá nhân | Vượt phạm vi mô phỏng | Chỉ dùng `SIM-TEAM-*`; `assignee_id=null`; không có CTA gán nhân viên |
 | Material variance bị hiểu là vi phạm | Agent vượt quyền | Chỉ phát hiện/mô tả; không approve/conclude; hiển thị `variance_reason` và mô phỏng |
 | Prompt injection trong evidence | Model làm theo nội dung không tin cậy | Treat evidence as data; instruction hierarchy; allowlisted schema/actions; red-team tests |
@@ -238,6 +240,7 @@ Các mục dưới đây không thuộc MVP hiện tại và cần discovery/sou
 - Loại vệ sinh khác ngoài khu vực chung cần vệ sinh.
 - Sự cố điện, nước hoặc thiết bị khác ngoài đèn khu vực chung.
 - CSKH chỉ thuộc Deferred/Future Scope; không có active use case, acceptance criteria, data contract, validator, demo flow hoặc test case MVP.
+- Route acknowledgement của team, capacity cập nhật động, route khảo sát/sửa chữa nhiều bước và safety containment route thuộc backlog sau MVP.
 - Bộ lọc/nâng cấp explainability/export/replay thuộc P1.
 - Authentication, persistence và integration thật chỉ được xem xét trong phase sau, không nằm trong prototype một tuần.
 

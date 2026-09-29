@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -30,11 +32,11 @@ def test_evaluate_endpoint_passes_all(api):
     assert report["passed"] == 12 and report["demo_flows_passed"] == 4
 
 
-def test_confirm_execute_and_handoff_over_http(api):
+def test_execute_and_handoff_over_http_without_bptn_step(api):
     tid = "SIM-TKT-TEC-001"
-    body = {"location_normalized": "Tòa SIM-A / Tầng 3 / Hành lang", "reason": "Xác nhận mô phỏng"}
-    case = api.post(f"/api/v1/mo/tickets/{tid}/confirm", json=body, headers=BPTN).json()
-    assert case["draft"]["route_status"] == "ROUTED"
+    case = api.get(f"/api/v1/mo/tickets/{tid}").json()
+    assert case["ticket"]["administrative_normalization"]["confirmation_status"] == "NOT_REQUIRED"
+    assert case["draft"]["route_status"] == "ROUTED" and case["draft"]["assignee_id"] is None
 
     for item in ("TEC-CHK-01", "TEC-CHK-02", "TEC-CHK-03"):
         api.post(f"/api/v1/mo/tickets/{tid}/checklist/{item}", json={"status": "COMPLETED"}, headers=EXEC)
@@ -80,7 +82,7 @@ def test_resident_only_sends_the_description(api):
     assert case["proposal"]["playbook_id"] == "PB-CLN-01"
 
 
-def test_new_ticket_goes_through_confirm_with_default_materials(api):
+def test_new_low_risk_ticket_routes_without_bptn(api):
     case = api.post(
         "/api/v1/mo/tickets",
         json={
@@ -88,10 +90,8 @@ def test_new_ticket_goes_through_confirm_with_default_materials(api):
             "simulated_received_at": "2026-09-28T09:00:00+07:00",
         },
     ).json()
-    tid = case["ticket"]["ticket_id"]
-    body = {"location_normalized": "Tòa SIM-A / Tầng 3 / Hành lang", "reason": "Xác nhận"}
-    case = api.post(f"/api/v1/mo/tickets/{tid}/confirm", json=body, headers=BPTN).json()
-    assert case["draft"]["route_status"] == "ROUTED"
+    assert case["ticket"]["administrative_normalization"]["confirmation_status"] == "NOT_REQUIRED"
+    assert case["draft"]["route_status"] == "ROUTED" and case["draft"]["routing_team_id"] == "SIM-TEAM-TEC-01"
     assert [m["item_code"] for m in case["material_lines"]] == ["SIM-MAT-LAMP-01"]
 
 
@@ -103,14 +103,43 @@ def test_naive_simulated_time_is_rejected(api):
     assert response.status_code == 422
 
 
-def test_confirm_without_location_uses_agent_proposal(api):
+def test_missing_location_is_fixed_by_override_over_http(api):
     tid = api.post(
-        "/api/v1/mo/tickets", json={"original_description": "Hành lang tầng 3 tòa SIM-A nhiều rác, cần vệ sinh."}
+        "/api/v1/mo/tickets",
+        json={
+            "original_description": "Khu vực chung nhiều rác, cần vệ sinh.",
+            "simulated_received_at": "2026-09-28T09:00:00+07:00",
+        },
     ).json()["ticket"]["ticket_id"]
-    case = api.post(f"/api/v1/mo/tickets/{tid}/confirm", json={"reason": "Xác nhận theo đề xuất"}, headers=BPTN).json()
-    assert case["ticket"]["administrative_normalization"]["location_normalized"] == "Tòa SIM-A / Tầng 3 / Hành lang"
+    url = f"/api/v1/mo/tickets/{tid}"
+    assert api.get(url).json()["ticket"]["administrative_normalization"]["confirmation_status"] == "PENDING_REVIEW"
+    assert api.post(f"{url}/confirm", json={}, headers=BPTN).status_code == 409
+
+    body = {"location_normalized": "Tòa SIM-A / Tầng 3 / Hành lang"}
+    assert api.post(f"{url}/override", json=body, headers=BPTN).status_code == 422  # override_reason required
+    body["override_reason"] = "Cư dân gọi lại xác nhận vị trí"
+    case = api.post(f"{url}/override", json=body, headers=BPTN).json()
+    assert case["ticket"]["administrative_normalization"]["confirmation_status"] == "OVERRIDDEN"
+    assert case["draft"]["route_status"] == "ROUTED"
 
 
-def test_confirm_rejects_swagger_placeholder(api):
-    body = {"location_normalized": "string", "reason": "string"}
-    assert api.post("/api/v1/mo/tickets/SIM-TKT-CLN-001/confirm", json=body, headers=BPTN).status_code == 422
+def test_override_on_safety_exception_is_403(api):
+    body = {"override_reason": "Đổi sang vệ sinh", "service_category": "VE_SINH", "ticket_type": "COMMON_AREA_CLEANING"}
+    response = api.post("/api/v1/mo/tickets/SIM-TKT-TEC-005/override", json=body, headers=BPTN)
+    assert response.status_code == 403
+    assert api.get("/api/v1/mo/tickets/SIM-TKT-TEC-005").json()["ticket"]["current_state"] == "EXCEPTION"
+
+
+def test_review_bodies_reject_placeholders_and_old_fields(api):
+    url = "/api/v1/mo/tickets/SIM-TKT-CLN-001"
+    assert api.post(f"{url}/override", json={"override_reason": "string"}, headers=BPTN).status_code == 422
+    old_style = {"location_normalized": "Tòa SIM-A / Tầng 3 / Hành lang", "reason": "x"}
+    assert api.post(f"{url}/confirm", json=old_style, headers=BPTN).status_code == 422
+
+
+def test_no_endpoint_picks_a_person(api):
+    """Team-only routing: nothing in the API assigns, accepts or reassigns an individual."""
+    schema = api.get("/openapi.json").json()
+    text = json.dumps(schema).lower()
+    assert "technician" not in text and "reassign" not in text
+    assert not any("assign" in path or "accept" in path for path in schema["paths"])

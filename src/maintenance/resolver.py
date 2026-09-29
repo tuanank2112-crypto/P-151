@@ -24,7 +24,8 @@ class CaseFacts:
     playbook_present: bool = False
     exception_rule: str | None = None  # open blocking exception
     risk_unclear_rule: str | None = None
-    confirmation_pending: bool = False
+    confirmation_pending: bool = False  # confirmation_status=PENDING_REVIEW (CR-BPTN-01)
+    review_required_reason: str | None = None
     location_missing: bool = False
     draft_present: bool = False
     asset_status: AssetLookupStatus | None = None
@@ -97,7 +98,9 @@ def _blockers(facts: CaseFacts) -> list[Blocker]:
     if facts.missing_raw_fields:
         return [Blocker(cho, "PB-COM-R-ING-01", f"Thiếu field bắt buộc: {', '.join(facts.missing_raw_fields)}")]
     if facts.classification_rule:
-        return [Blocker(cho, facts.classification_rule, "Không khớp duy nhất một playbook v1.1")]
+        return [
+            Blocker(cho, facts.classification_rule, "Không khớp duy nhất một playbook v1.1; cần BPTN review category")
+        ]
     if not facts.playbook_present:
         return [Blocker(in_progress, "FR-INGEST-001", "Raw hợp lệ; chờ Agent đề xuất playbook")]
 
@@ -112,7 +115,9 @@ def _blockers(facts: CaseFacts) -> list[Blocker]:
     if facts.risk_unclear_rule:
         pre_draft.append(Blocker(cho, facts.risk_unclear_rule, "Tín hiệu rủi ro chưa rõ; cần xác minh nguồn"))
     if facts.confirmation_pending:
-        pre_draft.append(Blocker(cho, "PB-COM-R-CFM-01", "Đề xuất service/type chưa được BPTN xác nhận"))
+        pre_draft.append(
+            Blocker(cho, "PB-COM-R-CFM-01", f"Cần BPTN review trường hành chính: {facts.review_required_reason}")
+        )
     if facts.location_missing:
         pre_draft.append(Blocker(cho, "PB-COM-R-LOC-01", "Thiếu location_normalized"))
     if pre_draft:

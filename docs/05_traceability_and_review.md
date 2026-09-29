@@ -13,6 +13,7 @@
 | 0.1 | 2026-09-27 | Tạo RTM, P0 completeness audit, safety coverage, 25-point consistency review và Executive Summary | DRAFT |
 | 0.2 | 2026-09-27 | Re-baseline RTM/review theo OD-01/02/03/08 và governance OD-09 | DRAFT · Chờ tên/sign-off approver |
 | 0.3 | 2026-09-27 | Re-baseline theo hai playbook, asset/duty/stock gate, team-only route, 12 ticket và 4 demo flow | DRAFT · Chờ tên/sign-off approver |
+| 0.4-candidate | 2026-09-29 | Trace `CR-BPTN-01` (BPTN review có điều kiện + override), `BR-17`, test `TC-BPTN-*`/`TC-MAT-005/006`; OD-09 vẫn PENDING | PROPOSED · Chờ duyệt CR |
 
 ---
 
@@ -35,7 +36,7 @@
 - `BR-01` Không suy đoán/tự điền: thiếu raw/pre-draft required data hoặc unknown evidence/source → `CHỜ XÁC MINH`; known incomplete execution/evidence → `IN_PROGRESS`.
 - `BR-02` Raw resident content/evidence bất biến; editable data nằm layer riêng.
 - `BR-03` Deterministic safety/permission rules ưu tiên model output; confidence không là điều kiện duy nhất.
-- `BR-04` Work order chỉ là draft/mô phỏng, schema-valid/idempotent; sau BPTN confirmation/location có thể tạo dù asset/stock/duty chưa cho route; high-risk exception không tạo standard draft.
+- `BR-04` Work order chỉ là draft/mô phỏng, schema-valid/idempotent; khi không `PENDING_REVIEW` và có location thì có thể tạo dù asset/stock/duty chưa cho route; high-risk exception không tạo standard draft.
 - `BR-05` Checklist là gate riêng; còn `PENDING` thì không READY; Agent không tự complete hoặc dùng checklist thay minimum evidence.
 - `BR-06` Trước route kiểm tra planned/norm/stock; sau thực hiện đối soát planned/norm/issued/used bằng ba comparisons; Agent không approve/conclude violation.
 - `BR-07` Evidence theo playbook v0.3; ảnh không bắt buộc; known missing evidence giữ `IN_PROGRESS`, không READY.
@@ -47,7 +48,8 @@
 - `BR-13` Mọi entity/run có nhãn synthetic; demo reset không sửa source fixture.
 - `BR-14` Asset lookup chỉ bắt buộc cho kỹ thuật; zero/multiple match → `CHỜ XÁC MINH`, không route.
 - `BR-15` Duty lookup bắt buộc cho cả hai nhóm; no-team/capacity → `IN_PROGRESS`; duty unknown → `CHỜ XÁC MINH`; draft vẫn tồn tại.
-- `BR-16` Route chỉ tới `SIM-TEAM-*`, `assignment_scope=TEAM_ONLY`, `assignee_id=null`; route invalid luôn chặn READY.
+- `BR-16` Route chỉ tới `SIM-TEAM-*`, `assignment_scope=TEAM_ONLY`, `assignee_id=null`; route invalid luôn chặn READY. `ROUTED` nghĩa là đề xuất tuyến team hợp lệ, không phải đã giao việc; capacity là điều kiện fixture tĩnh.
+- `BR-17` (`CR-BPTN-01`, v0.4 candidate) BPTN review có điều kiện: `NOT_REQUIRED` khi category/location rõ; `PENDING_REVIEW` → `CHỜ XÁC MINH` khi thiếu/không rõ; override bắt buộc `override_reason`, audit từng field và chạy lại toàn bộ gate downstream; không override khi có safety exception.
 
 ---
 
@@ -126,7 +128,9 @@ Không có P0 requirement mồ côi trong version 0.3.
 |---|---|---|---|---|
 | Raw source immutable | `TC-ING-002` | `TC-PERM-001` | `UI-02`, `UI-08` | PASS |
 | No guessing/missing → CHỜ | `TC-ING-001`, `TC-ASSET-002/003` | `TC-CLASS-004` | `UI-02`, `UI-07` | PASS |
-| Agent proposal cần BPTN confirmation/location trước draft | `TC-CLASS-005`, `TC-WO-004` | direct-create attempt | `UI-02`, `UI-03` | PASS |
+| Draft chỉ khi không `PENDING_REVIEW` và có location (`CR-BPTN-01`) | `TC-BPTN-001/002/003` | `TC-BPTN-008` (override thiếu reason) | `UI-02`, `UI-03` | PASS |
+| BPTN không bỏ qua safety exception | `TC-BPTN-006` | `TC-BPTN-007` (raw edit) | `UI-02`, `UI-07` | PASS |
+| Override chạy lại downstream gate | `TC-BPTN-004/005` | idempotent retry `TC-WO-002` | `UI-02`, `UI-03` | PASS |
 | Cleaning hazard → BQL | `TC-EX-001` | happy `TC-CLASS-001` | `UI-07` | PASS |
 | Electrical risk → BQL/no diagnosis | `TC-EX-002` | happy `TC-CLASS-002` | `UI-07` | PASS |
 | Asset lookup chỉ kỹ thuật; zero/multiple không đoán | `TC-ASSET-002/003` | matched `TC-ASSET-001` | `UI-02/03` | PASS |
@@ -166,7 +170,7 @@ Các quyết định re-baseline v0.3 đã được kiểm tra xuyên suốt:
 | # | Check | Kết quả | Evidence |
 |---:|---|---|---|
 | 1 | BPTN và BQL được tách rõ | PASS | Problem §4; Brief §3/14; PRD §2; UI role-specific CTA |
-| 2 | BPTN chỉ sửa trường hành chính | PASS | BPTN xác nhận Agent proposal/service/type và location trong admin layer; `UI-02` allowlist |
+| 2 | BPTN chỉ sửa trường hành chính | PASS | BPTN review có điều kiện; override service/type/location có reason trong admin layer (`CR-BPTN-01`); `UI-02` allowlist |
 | 3 | Phản ánh và bằng chứng gốc bất biến | PASS | `FR-INGEST-002`, `BR-02`, raw layer, `UI-02` |
 | 4 | Mọi chỉnh sửa có audit tối thiểu | PASS | `FR-AUDIT-001`, audit schema, `TC-AUD-*` |
 | 5 | Agent không tự sửa dữ liệu nguồn | PASS | Permission matrix, `FR-PERMISSION-001` |
@@ -309,6 +313,8 @@ Hai playbook, four-state workflow, raw immutability, role permissions, audit t�
 - Role BQL tổng quát đủ cho demo nhưng không đủ cho pilot permission governance.
 - Synthetic success có thể bị diễn giải quá mức thành hiệu quả vận hành nếu bỏ disclaimer.
 - LLM/injection/schema failure vẫn cần được chứng minh bằng eval runner, không chỉ tài liệu.
+- `CR-BPTN-01` đã hiện thực trên nhánh `feature/chamanh` như v0.4 candidate nhưng CR còn `PROPOSED`; cần duyệt trước khi merge vào baseline.
+- Metric pilot (classification agreement, first-route correctness, false-block/false-ready, clarification theo reason, override rate, touch time, rework, safety recall, asset ambiguity) chỉ nằm trong kế hoạch pilot `03_lean_prd.md` §9.5, không phải acceptance MVP.
 
 ## 8.9 Consistency review
 

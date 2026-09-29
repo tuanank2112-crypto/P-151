@@ -31,8 +31,17 @@ class PlaybookId(StrEnum):
 
 
 class ConfirmationStatus(StrEnum):
-    PENDING = "PENDING"
-    CONFIRMED = "CONFIRMED"
+    """BPTN review of the administrative layer (CR-BPTN-01, v0.4 candidate). Not a ticket state."""
+
+    NOT_REQUIRED = "NOT_REQUIRED"  # low risk, complete data, category and location clear: Agent continues
+    PENDING_REVIEW = "PENDING_REVIEW"  # administrative data missing/unclear: CHỜ XÁC MINH until BPTN acts
+    CONFIRMED = "CONFIRMED"  # BPTN reviewed without changing anything
+    OVERRIDDEN = "OVERRIDDEN"  # BPTN changed an administrative field, with override_reason
+
+
+class ReviewRequiredReason(StrEnum):
+    LOCATION_MISSING = "LOCATION_MISSING"  # the resident text does not give building + floor + area
+    CATEGORY_UNCLEAR = "CATEGORY_UNCLEAR"  # no unique playbook matched
 
 
 class SignalStatus(StrEnum):

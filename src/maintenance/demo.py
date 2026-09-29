@@ -1,4 +1,7 @@
-"""Replay the scripted fixture steps (BPTN confirmation, execution updates) and compare with the expected oracle."""
+"""Replay the scripted fixture steps (execution updates) and compare with the expected oracle.
+
+No fixture ticket needs BPTN review under CR-BPTN-01, so there is no scripted BPTN step.
+"""
 
 from typing import Any
 
@@ -8,7 +11,6 @@ from src.maintenance.engine import MaintenanceEngine
 from src.maintenance.enums import ChecklistStatus, RouteStatus
 from src.maintenance.models import Case
 
-BPTN_ID = "SIM-ACTOR-BPTN-01"
 EXEC_ID = "SIM-ACTOR-EXEC-01"
 
 
@@ -18,13 +20,6 @@ def run_fixture(engine: MaintenanceEngine, ticket_id: str) -> Case:
     if fixture is None:
         raise KeyError(ticket_id)
     case = engine.get(ticket_id)
-    if fixture.bptn and case.proposal is not None:
-        case = engine.confirm(
-            ticket_id,
-            BPTN_ID,
-            location_normalized=fixture.bptn.location_normalized,
-            reason=fixture.bptn.reason,
-        )
     routed = case.draft is not None and case.draft.route_status == RouteStatus.ROUTED
     if fixture.execution and routed:
         for item_id in fixture.execution.checklist:
@@ -53,12 +48,15 @@ def run_fixture(engine: MaintenanceEngine, ticket_id: str) -> Case:
 def observe(case: Case) -> dict[str, Any]:
     """The same keys as the fixture `expected` block, read from the case."""
     proposal, draft = case.proposal, case.draft
+    admin = case.ticket.administrative_normalization
     open_exception = next((e for e in case.exceptions if e.status == "OPEN"), None)
     return {
         "playbook_id": proposal.playbook_id.value if proposal else None,
         "draft_exists": draft is not None,
         "state": case.ticket.current_state.value,
         "rule_id": case.ticket.state_decision.rule_id,
+        "location_normalized": admin.location_normalized if admin else None,
+        "confirmation_status": admin.confirmation_status.value if admin else None,
         "asset_lookup_status": proposal.asset_lookup_status.value if draft else None,
         "asset_id": draft.asset_id if draft else None,
         "duty_lookup_status": draft.duty_status.value if draft else None,

@@ -72,6 +72,7 @@ class TicketSummary(BaseModel):
     current_state: TicketState
     rule_id: str
     reason: str
+    confirmation_status: str | None
     playbook_id: str | None
     route_status: str | None
     routing_team_id: str | None
@@ -83,11 +84,13 @@ class TicketSummary(BaseModel):
 def _summary(engine: MaintenanceEngine, case: Case) -> TicketSummary:
     fixture = engine.dataset.get(case.ticket.ticket_id)
     draft = case.draft
+    admin = case.ticket.administrative_normalization
     return TicketSummary(
         ticket_id=case.ticket.ticket_id,
         current_state=case.ticket.current_state,
         rule_id=case.ticket.state_decision.rule_id,
         reason=case.ticket.state_decision.reason,
+        confirmation_status=admin.confirmation_status if admin else None,
         playbook_id=case.proposal.playbook_id if case.proposal else None,
         route_status=draft.route_status if draft else None,
         routing_team_id=draft.routing_team_id if draft else None,
@@ -107,7 +110,7 @@ def reset(engine: EngineDep) -> dict[str, Any]:
 
 @router.post("/demo/{ticket_id}", response_model=Case)
 def run_demo_ticket(ticket_id: str, engine: EngineDep) -> Case:
-    """Chạy các bước kịch bản của một ticket fixture: BPTN xác nhận, rồi nhân sự cập nhật nếu đã route."""
+    """Chạy các bước kịch bản của một ticket fixture: nhân sự cập nhật nếu đã có đề xuất tuyến team hợp lệ."""
     if engine.dataset.get(ticket_id) is None:
         raise HTTPException(status_code=404, detail=f"{ticket_id} không có trong fixture")
     return _call(run_fixture, engine, ticket_id)
@@ -137,7 +140,8 @@ class IngestRequest(BaseModel):
 
 @router.post("/tickets", response_model=Case, status_code=201)
 def ingest_ticket(body: IngestRequest, engine: EngineDep) -> Case:
-    """Cư dân gửi phản ánh. Hệ thống tạo mã ticket; Agent đề xuất playbook và chạy luật rủi ro ngay."""
+    """Cư dân gửi phản ánh. Hệ thống tạo mã ticket; Agent đề xuất playbook, chạy luật rủi ro và quyết định có cần
+    BPTN review không (CR-BPTN-01). Rủi ro thấp, category/location rõ → Agent tiếp tục tới draft và đề xuất team."""
     if body.simulated_received_at is not None and body.simulated_received_at.tzinfo is None:
         raise HTTPException(status_code=422, detail="simulated_received_at phải có timezone, ví dụ +07:00")
     return _call(
@@ -165,31 +169,64 @@ def read_audit(ticket_id: str, engine: EngineDep) -> list[AuditEvent]:
     return _call(engine.get, ticket_id).audit
 
 
+def _not_swagger_placeholder(value: str | None) -> str | None:
+    if value is not None and value.strip().lower() == "string":
+        raise ValueError('"string" là giá trị mẫu của Swagger, không phải dữ liệu thật')
+    return value
+
+
 class ConfirmRequest(BaseModel):
-    model_config = {"json_schema_extra": {"examples": [{"reason": "Xác nhận theo đề xuất của Agent"}]}}
+    model_config = {"extra": "forbid", "json_schema_extra": {"examples": [{"note": "Đã xem, giữ nguyên"}]}}
 
-    location_normalized: str | None = Field(
-        default=None, description="Bỏ trống = dùng proposal.location_proposed; điền để sửa vị trí"
-    )
-    reason: str
-    service_category: ServiceCategory | None = None
-    ticket_type: TicketType | None = None
+    note: str | None = None
 
-    @field_validator("location_normalized", "reason")
+    @field_validator("note")
     @classmethod
-    def _not_swagger_placeholder(cls, value: str | None) -> str | None:
-        if value is not None and value.strip().lower() == "string":
-            raise ValueError('"string" là giá trị mẫu của Swagger, không phải dữ liệu thật')
-        return value
+    def _no_placeholder(cls, value: str | None) -> str | None:
+        return _not_swagger_placeholder(value)
 
 
 @router.post("/tickets/{ticket_id}/confirm", response_model=Case)
 def confirm(ticket_id: str, body: ConfirmRequest, actor: ActorDep, engine: EngineDep) -> Case:
-    """BPTN xác nhận/chỉnh service, type và location; Agent tạo draft và đề xuất route nếu đủ gate.
+    """BPTN đã xem và không thay đổi gì → `confirmation_status=CONFIRMED`. Không bắt buộc với ticket rủi ro thấp.
 
-    `location_normalized` bỏ trống thì hệ thống lấy vị trí Agent đã đọc từ phản ánh (`proposal.location_proposed`).
+    Bị từ chối nếu ticket đang `PENDING_REVIEW` (thiếu location/category: dùng /override) hoặc có safety exception.
     """
-    return _call(engine.confirm, ticket_id, actor, **body.model_dump())
+    return _call(engine.confirm, ticket_id, actor, note=body.note)
+
+
+class OverrideRequest(BaseModel):
+    model_config = {
+        "extra": "forbid",
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "override_reason": "Cư dân gọi lại xác nhận vị trí",
+                    "location_normalized": "Tòa SIM-A / Tầng 3 / Hành lang",
+                    "override_source_references": ["hotline.callback"],
+                }
+            ]
+        },
+    }
+
+    override_reason: str
+    location_normalized: str | None = Field(default=None, description="Bỏ trống = giữ vị trí hiện tại")
+    service_category: ServiceCategory | None = None
+    ticket_type: TicketType | None = None
+    override_source_references: list[str] = Field(default_factory=list)
+
+    @field_validator("override_reason", "location_normalized")
+    @classmethod
+    def _no_placeholder(cls, value: str | None) -> str | None:
+        return _not_swagger_placeholder(value)
+
+
+@router.post("/tickets/{ticket_id}/override", response_model=Case)
+def override(ticket_id: str, body: OverrideRequest, actor: ActorDep, engine: EngineDep) -> Case:
+    """BPTN bổ sung/hiệu chỉnh service, type hoặc location → `OVERRIDDEN`; Agent chạy lại phân loại, asset, vật tư,
+    duty và route. Bắt buộc `override_reason`. Không sửa được nội dung/bằng chứng gốc và không bỏ qua safety exception.
+    """
+    return _call(engine.override, ticket_id, actor, **body.model_dump())
 
 
 class ChecklistRequest(BaseModel):

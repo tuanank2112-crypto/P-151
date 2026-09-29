@@ -15,6 +15,7 @@
 | 0.9 | 2026-09-27 | Phase 2: áp dụng Field Matrix v1; hoàn thiện field-level schema, validators, state machine, permission/immutability/audit và dispositions cho Implementation Gaps | CROSS-REVIEW DRAFT |
 | 1.0 | 2026-09-27 | Phase 3: reverse-review Playbook; align canonical field/rule/evidence IDs, checklist timing và material mode | FINAL |
 | 1.1 | 2026-09-27 | Re-baseline hai playbook; thêm Asset, DutyAvailability, stock gate, team-only routing và route readiness | FINAL |
+| 1.2-candidate | 2026-09-29 | `CR-BPTN-01`: `ConfirmationStatus` 4 giá trị, `review_required_reason`, `override_*`, `audit_event_id` trên administrative layer; bỏ confirmation khỏi proposal; thêm `WorkOrderDraft.duty_source_ref`; `dataset_version=maintenanceops-sim-v1.1` | PROPOSED · Chờ duyệt CR |
 
 ---
 
@@ -53,7 +54,7 @@ Contract không định nghĩa UI, integration thật, work order thật, SOP hi
 - `RESIDENT_SOURCE`: dữ liệu gốc cư dân; immutable.
 - `SYSTEM_INGEST`: fixture/system tạo ID, time, integrity metadata; sau ingest là immutable.
 - `AGENT_PROPOSAL`: Agent chỉ ghi proposal/derived result, không ghi đè source hoặc human fields.
-- `BPTN`: xác nhận/chỉnh field hành chính allowlisted.
+- `BPTN`: review có điều kiện (`CR-BPTN-01`) — xác nhận hoặc override có `override_reason` field hành chính allowlisted; không override để bỏ qua safety exception.
 - `HUMAN_EXECUTION`: nhân sự thực hiện cập nhật checklist, material, execution evidence.
 - `BQL`: chỉ xử lý business exception/resolution trong phạm vi prototype.
 - `SYSTEM_DERIVED`: validator/state engine ghi kết quả có rule/source/version; không phải human approval.
@@ -115,7 +116,8 @@ Ticket
 | `ServiceCategory` | `VE_SINH`, `KY_THUAT`, `UNKNOWN` |
 | `TicketType` | `COMMON_AREA_CLEANING`, `COMMON_AREA_LIGHTING`, `UNKNOWN` |
 | `PlaybookId` | `PB-CLN-01`, `PB-TEC-01` |
-| `ConfirmationStatus` | `PENDING`, `CONFIRMED` |
+| `ConfirmationStatus` | `NOT_REQUIRED`, `PENDING_REVIEW`, `CONFIRMED`, `OVERRIDDEN` (`CR-BPTN-01`) |
+| `ReviewRequiredReason` | `LOCATION_MISSING`, `CATEGORY_UNCLEAR` (`CR-BPTN-01`) |
 | `SignalStatus` | `PRESENT`, `ABSENT`, `UNCLEAR` |
 | `ChecklistStatus` | `PENDING`, `COMPLETED` |
 | `MaterialGateStatus` | `RECONCILED`, `NEEDS_CLARIFICATION`, `N/A` |
@@ -156,7 +158,7 @@ Mỗi bảng dùng các cột: field; type; required/gate; enum/const; source/ow
 | `original_evidence_refs` | array<string> | O | IDs `SIM-EVD-*` | RESIDENT_SOURCE/SYSTEM_INGEST | Immutable refs; zero allowed; không phải default minimum evidence | EvidenceRecord | `[]` |
 | `raw_integrity_marker` | string | R ingest integrity | — | SYSTEM_INGEST | Hash/equivalent recomputed phải unchanged sau ingest | Raw immutability validator | `sha256:SIMULATED-...` |
 | `source_revision` | string | `R-PRE_DRAFT` | — | SYSTEM_INGEST | Immutable revision token; tham gia idempotency key | WorkOrderDraft | `SRC-001` |
-| `dataset_version` | string | R | — | SYSTEM_INGEST | Non-empty; versioned fixture | QA reset | `maintenanceops-sim-v1` |
+| `dataset_version` | string | R | — | SYSTEM_INGEST | Non-empty; versioned fixture | QA reset | `maintenanceops-sim-v1.1` |
 | `current_state` | enum | R | `TicketState` | SYSTEM_DERIVED | Chỉ transition hợp lệ và có AuditEvent | State machine | `IN_PROGRESS` |
 | `administrative_normalization` | object | C: tồn tại sau proposal; fields required pre-draft | — | BPTN + SYSTEM | Theo §5.1.1; không chứa replacement raw text/evidence | Proposal/draft | xem dưới |
 | `synthetic` | boolean | R | `true` | SYSTEM_INGEST | False/missing → schema reject | Toàn entity | `true` |
@@ -166,15 +168,19 @@ Mỗi bảng dùng các cột: field; type; required/gate; enum/const; source/ow
 | Field | Type | Required/gate | Enum/const | Source/owner | Validation rule | Liên kết | Ví dụ |
 |---|---|---|---|---|---|---|---|
 | `administrative_revision` | integer | R khi object tồn tại | integer ≥ 1 | SYSTEM | Tăng đơn điệu; mỗi change có audit | Draft `administrative_revision` | `2` |
-| `service_category_normalized` | enum | `R-PRE_DRAFT` | `ServiceCategory` | BPTN confirm/edit | Không `UNKNOWN`; phải tương thích playbook; edit có reason/audit | Proposal | `VE_SINH` |
-| `ticket_type_normalized` | enum | `R-PRE_DRAFT` | `TicketType` | BPTN confirm/edit | Không `UNKNOWN`; phải tương thích playbook; audit | Proposal | `COMMON_AREA_CLEANING` |
-| `location_normalized` | string/object | `R-PRE_DRAFT` cả hai playbook | — | BPTN | Non-empty, không `UNKNOWN`; nguồn đã xác minh; audit | Draft scope | `Tòa SIM-A / sảnh chung` |
+| `service_category_normalized` | enum | `R-PRE_DRAFT` | `ServiceCategory` | AGENT_PROPOSAL; BPTN override | Không `UNKNOWN`; phải tương thích playbook; override có reason/audit | Proposal | `VE_SINH` |
+| `ticket_type_normalized` | enum | `R-PRE_DRAFT` | `TicketType` | AGENT_PROPOSAL; BPTN override | Không `UNKNOWN`; phải tương thích playbook; audit | Proposal | `COMMON_AREA_CLEANING` |
+| `location_normalized` | string/object | `R-PRE_DRAFT` cả hai playbook | — | AGENT_PROPOSAL (`location_proposed`); BPTN override | Non-empty, không `UNKNOWN`; null → `PENDING_REVIEW`/`LOCATION_MISSING`; audit | Draft scope | `Tòa SIM-A / Tầng 3 / Hành lang` |
 | `priority` | string/null | O | chưa khóa | BPTN | Agent không ghi/derive; không tham gia state gate | — | `null` |
-| `confirmation_status` | enum | `R-PRE_DRAFT` | `PENDING|CONFIRMED` | BPTN/SYSTEM | `PENDING` chặn draft → `CHỜ XÁC MINH` | Proposal | `CONFIRMED` |
-| `confirmed_by` | string/null | C: required iff `CONFIRMED` | actor ID | BPTN | Actor tồn tại và role BPTN | AuditEvent | `SIM-ACTOR-BPTN-01` |
-| `confirmed_at` | datetime/null | C: required iff `CONFIRMED` | ISO 8601 | SYSTEM | Có timezone, không trước proposal | AuditEvent | `2026-09-27T08:03:00+07:00` |
-| `source_references` | array<string> | R khi confirm/edit | — | BPTN | Ít nhất một ref hiện hữu; không tự bịa | Ticket/raw source | `["ticket.original_description"]` |
-| `change_reason` | string | C: required khi giá trị confirmed khác proposal hoặc admin edit | — | BPTN | Non-empty; đồng nhất AuditEvent.reason | AuditEvent | `Chuẩn hóa theo fixture đã xác minh` |
+| `confirmation_status` | enum | R | `ConfirmationStatus` | AGENT (`NOT_REQUIRED`/`PENDING_REVIEW`); BPTN (`CONFIRMED`/`OVERRIDDEN`) | Chỉ `PENDING_REVIEW` chặn draft → `CHỜ XÁC MINH`; không phải top-level state | Draft gate | `NOT_REQUIRED` |
+| `review_required_reason` | enum/null | C: required khi `PENDING_REVIEW`; null khi `NOT_REQUIRED` | `ReviewRequiredReason` | AGENT | Giữ lại sau khi BPTN xử lý để truy vết | Resolver reason | `LOCATION_MISSING` |
+| `confirmed_by` | string/null | C: required iff `CONFIRMED|OVERRIDDEN` | actor ID | BPTN | Actor tồn tại và role BPTN | AuditEvent | `SIM-ACTOR-BPTN-01` |
+| `confirmed_at` | datetime/null | C: required iff `CONFIRMED|OVERRIDDEN` | ISO 8601 | SYSTEM | Có timezone, không trước proposal | AuditEvent | `2026-09-27T08:03:00+07:00` |
+| `override_reason` | string/null | C: required iff `OVERRIDDEN` | — | BPTN | Non-empty; thiếu → reject; đồng nhất AuditEvent.reason | AuditEvent | `Cư dân gọi lại xác nhận vị trí` |
+| `override_source_references` | array<string> | O | — | BPTN | Lưu nguồn đối chiếu nếu có; không tự bịa | Audit | `["hotline.callback.sim-01"]` |
+| `override_fields` | array<string> | C: required iff `OVERRIDDEN` | tên field admin | SYSTEM | Chỉ field thực sự đổi; override không đổi gì bị reject | Audit | `["location_normalized"]` |
+| `audit_event_id` | string | R | `SIM-AUD-*` | SYSTEM | Event đã đặt `confirmation_status` hiện tại | AuditEvent | `SIM-AUD-CLN-001-0003` |
+| `source_references` | array<string> | R | — | AGENT/BPTN | Ít nhất một ref hiện hữu; không tự bịa | Ticket/raw source | `["ticket.original_description"]` |
 
 ### 5.2 `AgentClassificationProposal`
 
@@ -189,7 +195,7 @@ Mỗi bảng dùng các cột: field; type; required/gate; enum/const; source/ow
 | `playbook_version` | string | R | const `1.1` | Static config/Agent | Version tồn tại | ChecklistTemplate | `1.1` |
 | `asset_type` | enum/null | O; chỉ TEC | `LIGHTING` | AGENT_PROPOSAL | Không phải raw required field | TEC explanation | `LIGHTING` |
 | `reported_symptom` | enum/null | O; chỉ TEC | `NOT_WORKING` | AGENT_PROPOSAL | Không phải raw required field | TEC explanation | `NOT_WORKING` |
-| `location_proposed` | string/null | O | — | AGENT_PROPOSAL (luật cố định) | Chỉ khi đọc được đủ tòa/tầng/khu vực từ `original_description`; null nếu thiếu. BPTN bỏ trống location khi confirm = chấp nhận giá trị này | `location_normalized` | `Tòa SIM-A / Tầng 3 / Hành lang` |
+| `location_proposed` | string/null | O | — | AGENT_PROPOSAL (luật cố định) | Chỉ khi đọc được đủ tòa/tầng/khu vực từ `original_description`; null nếu thiếu → `PENDING_REVIEW`. Giá trị này thành `location_normalized` trừ khi BPTN override | `location_normalized` | `Tòa SIM-A / Tầng 3 / Hành lang` |
 | `asset_id` | string/null | C: field bắt buộc cho TEC, nullable khi unresolved | `SIM-ASSET-*` | SYSTEM_DERIVED lookup | CLN phải null; TEC chỉ non-null khi exact one match | Asset FK | `SIM-ASSET-LIGHT-001` |
 | `asset_lookup_status` | enum | R | `AssetLookupStatus` | SYSTEM_DERIVED | CLN=`NOT_APPLICABLE`; TEC phải được lookup | Route gate | `MATCHED` |
 | `asset_match_reason` | string | R | — | SYSTEM_DERIVED | Non-empty; nêu exact match/not found/ambiguous | Explainability | `Một asset LIGHTING khớp vị trí` |
@@ -201,9 +207,7 @@ Mỗi bảng dùng các cột: field; type; required/gate; enum/const; source/ow
 | `classification_reason` | string | R | — | AGENT_PROPOSAL | Non-empty, không chứa unsupported fact | Explainability | `Khớp phản ánh vệ sinh khu vực chung` |
 | `source_references` | array<string> | R | — | AGENT_PROPOSAL | Non-empty; ref tồn tại | Ticket/raw | `["ticket.original_description"]` |
 | `rule_signals` | array<RuleSignal> | R | signal catalog | AGENT_PROPOSAL/SYSTEM_DERIVED | Đủ signal bắt buộc theo playbook; `UNCLEAR` không bị coi là false | Exception validator | xem dưới |
-| `confirmation_status` | enum | `R-PRE_DRAFT` | `PENDING|CONFIRMED` | BPTN/SYSTEM | PENDING → no draft/`CHỜ XÁC MINH` | Ticket admin | `CONFIRMED` |
-| `confirmed_by` | string/null | C iff CONFIRMED | BPTN actor | BPTN | Actor role BPTN | Audit | `SIM-ACTOR-BPTN-01` |
-| `confirmed_at` | datetime/null | C iff CONFIRMED | ISO 8601 | SYSTEM | Không trước proposal creation | Audit | `2026-09-27T08:03:00+07:00` |
+| *(confirmation)* | — | — | — | — | `CR-BPTN-01`: `confirmation_status`/`confirmed_by`/`confirmed_at` chỉ nằm ở `Ticket.administrative_normalization` (§5.1.1), không lặp lại trên proposal | — | — |
 | `created_at` | datetime | R | ISO 8601 | SYSTEM | Có timezone | Audit | `2026-09-27T08:01:00+07:00` |
 | `synthetic` | boolean | R | true | SYSTEM | Missing/false reject | — | `true` |
 
@@ -218,10 +222,10 @@ Mỗi bảng dùng các cột: field; type; required/gate; enum/const; source/ow
 |---|---|---|---|---|---|---|---|
 | `work_order_draft_id` | string | R | `SIM-WOD-*` | SYSTEM | Unique logical draft ID | PK | `SIM-WOD-CLN-001` |
 | `ticket_id` | string | R | — | SYSTEM | Ticket tồn tại | Ticket FK | `SIM-TKT-CLN-001` |
-| `proposal_id` | string | R | — | SYSTEM | Proposal confirmed | Proposal FK | `SIM-ACP-001` |
+| `proposal_id` | string | R | — | SYSTEM | Proposal tồn tại; admin layer không `PENDING_REVIEW` | Proposal FK | `SIM-ACP-001` |
 | `playbook_id` | enum | R | `PlaybookId` | AGENT_PROPOSAL | Khớp proposal/admin | Template FK | `PB-CLN-01` |
 | `playbook_version` | string | R | `1.1` | SYSTEM | Khớp proposal/template | Template FK | `1.1` |
-| `administrative_revision` | integer | R | ≥1 | SYSTEM | Ref đúng confirmed administrative revision | Ticket admin | `2` |
+| `administrative_revision` | integer | R | ≥1 | SYSTEM | Ref đúng administrative revision dùng để tạo draft (override tăng revision → draft revision mới) | Ticket admin | `2` |
 | `source_revision` | string | R | — | SYSTEM | Khớp Ticket source revision | Ticket | `SRC-001` |
 | `idempotency_key` | string | R | derived | SYSTEM | Chính xác `ticket_id + playbook_version + source_revision`; unique cho logical draft | Idempotency | `SIM-TKT-CLN-001|1.1|SRC-001` |
 | `draft_revision` | integer | R | ≥1 | SYSTEM | Retry cùng input không tạo duplicate; revision tăng khi authorized source/admin revision đổi | Audit | `1` |
@@ -233,11 +237,12 @@ Mỗi bảng dùng các cột: field; type; required/gate; enum/const; source/ow
 | `asset_id` | string/null | R key | `SIM-ASSET-*`/null | SYSTEM_DERIVED | TEC non-null khi MATCHED; unresolved được null; CLN null | Asset FK | `null` |
 | `routing_team_id` | string/null | R key | `SIM-TEAM-*`/null | SYSTEM_DERIVED | Non-null chỉ khi `route_status=ROUTED` | Duty/team | `SIM-TEAM-CLN-01` |
 | `duty_status` | enum | R | `DutyLookupStatus` | SYSTEM_DERIVED | Phản ánh exact duty lookup | Route gate | `AVAILABLE` |
+| `duty_source_ref` | string/null | C khi lookup có dữ liệu | `SIM-DUTY-*` | SYSTEM_DERIVED | Ref fixture tồn tại; capacity trong đó là fixture tĩnh, không phải capacity vận hành thật | DutyAvailability | `SIM-DUTY-CLN-AM` |
 | `assignment_mode` | enum | R | const `SIMULATED_TEAM_ROUTE` | SYSTEM | Giá trị khác reject | Routing boundary | `SIMULATED_TEAM_ROUTE` |
 | `assignment_scope` | enum | R | const `TEAM_ONLY` | SYSTEM | Giá trị khác reject | Routing boundary | `TEAM_ONLY` |
 | `assignee_id` | null | R | const `null` | SYSTEM | Bất kỳ non-null value → `ACTION_DENIED`/schema reject | Permission | `null` |
 | `material_stock_status` | enum | R | `MaterialStockStatus` | SYSTEM_DERIVED | `INSUFFICIENT|UNKNOWN` chặn route | MaterialLine | `SUFFICIENT` |
-| `route_status` | enum | R | `RouteStatus` | SYSTEM_DERIVED | ROUTED chỉ khi all route gates pass | Readiness | `ROUTED` |
+| `route_status` | enum | R | `RouteStatus` | SYSTEM_DERIVED | ROUTED chỉ khi all route gates pass; nghĩa là đề xuất tuyến team hợp lệ, không phải đã giao việc | Readiness | `ROUTED` |
 | `queue_status` | enum | R | `QueueStatus` | SYSTEM_DERIVED | Field phụ, không phải top-level state | Queue UI | `NOT_QUEUED` |
 | `queue_reason` | string/null | C khi NOT_ROUTED | reason catalog | SYSTEM_DERIVED | `NO_AVAILABLE_TEAM|DUTY_UNKNOWN|TEAM_CAPACITY_EXCEEDED|ASSET_NOT_FOUND|ASSET_AMBIGUOUS|MATERIAL_SHORTAGE|MATERIAL_STOCK_UNKNOWN` | Explainability | `null` |
 | `checklist_template_id` | string | R | template ID | SYSTEM | Template đúng playbook/version | ChecklistTemplate | `PB-CLN-01-CHK-V1` |
@@ -279,7 +284,7 @@ Mỗi bảng dùng các cột: field; type; required/gate; enum/const; source/ow
 | `shift_window` | object/string | R | simulated | Static fixture | Parseable simulated window; không phải lịch thật | Duty lookup | `SIM-SHIFT-AM` |
 | `availability_status` | enum | R | `AVAILABLE|NOT_ON_DUTY|UNKNOWN` | Static fixture | UNKNOWN không được coi là absent/available | Resolver | `AVAILABLE` |
 | `current_open_ticket_count` | integer/null | C | ≥0 | Static fixture | Required khi status known | Capacity | `1` |
-| `max_open_ticket_count` | integer/null | C | ≥0 | Static fixture | Required khi status known; available capacity iff current < max | Capacity | `3` |
+| `max_open_ticket_count` | integer/null | C | ≥0 | Static fixture | Required khi status known; available capacity iff current < max. Giá trị tĩnh: engine không tăng/giảm khi route | Capacity | `3` |
 | `source_ref` | string | R | — | Static fixture | Ref tồn tại | Audit | `fixture.duty.tec.01` |
 | `synthetic` | boolean | R | true | Static fixture | False/missing reject | All output | `true` |
 | `assignment_scope` | enum | R | const `TEAM_ONLY` | Static fixture | Giá trị khác reject | Routing boundary | `TEAM_ONLY` |
@@ -532,7 +537,7 @@ Permission validator phải chạy trước mutation. Action catalog tối thi�
 | Action | BPTN | Agent | HUMAN_EXECUTION | BQL | Failure |
 |---|---:|---:|---:|---:|---|
 | View raw ticket | Allow read-only | Allow read-only | Allow read-only theo case | Allow read-only | Default deny unknown role |
-| Edit admin allowlist/confirm proposal | Allow + reason/audit | Deny | Deny | Deny trong MVP | `ACTION_DENIED` |
+| Confirm/override admin allowlist (`CR-BPTN-01`) | Allow; override cần `override_reason`; Deny khi safety exception OPEN | Deny (Agent chỉ đặt `NOT_REQUIRED`/`PENDING_REVIEW`) | Deny | Deny trong MVP | `ACTION_DENIED` + audit |
 | Edit raw content/original evidence | Deny | Deny | Deny | Deny | `ACTION_DENIED`, raw unchanged |
 | Edit Playbook Registry/Asset/Duty fixture | Deny | Deny; read-only lookup | Deny | Deny | `ACTION_DENIED`, fixture unchanged |
 | Create classification proposal/draft | Deny | Allow theo gates | Deny | Deny | `ACTION_DENIED` |
@@ -558,7 +563,7 @@ Audit action catalog: `INGEST`, `CREATE_PROPOSAL`, `CONFIRM_NORMALIZATION`, `UPD
 1. Permission failure: emit `ACTION_DENIED`, audit; **không đổi state** và không tạo business exception.
 2. Raw schema/required failure: `CHỜ XÁC MINH`; không classification/draft.
 3. Sau khi đủ raw fields, exception safety/business rule có source rõ: `EXCEPTION`; chặn standard draft/flow.
-4. Asset not found/ambiguous, duty unknown, stock unknown, signal/source unclear, classification ambiguous, proposal chưa confirm, thiếu location, variance reason hoặc evidence/source: `CHỜ XÁC MINH`; draft có thể tồn tại nếu confirmation/location đã pass nhưng không route.
+4. Asset not found/ambiguous, duty unknown, stock unknown, signal/source unclear, classification ambiguous, `confirmation_status=PENDING_REVIEW`, thiếu location, variance reason hoặc evidence/source: `CHỜ XÁC MINH`; draft có thể tồn tại nếu không `PENDING_REVIEW` và có location nhưng không route.
 5. No available team, team capacity exceeded, stock insufficient hoặc execution known-incomplete: `IN_PROGRESS`; draft tồn tại, route invalid khi áp dụng.
 6. Eight gates all true và `route_status=ROUTED`: `READY_FOR_REVIEW`; explained material variance có thể còn active và phải hiển thị.
 7. System/validator error: fail closed, không tạo route/READY; giữ prior safe state và tạo audit/error.
@@ -567,7 +572,7 @@ Audit action catalog: `INGEST`, `CREATE_PROPOSAL`, `CONFIRM_NORMALIZATION`, `UPD
 
 | State | Entry condition | Allowed mutation/action | Prohibited |
 |---|---|---|---|
-| `IN_PROGRESS` | Raw valid; no-team/capacity/stock shortage; execution incomplete; hoặc revalidation | Agent proposal/draft/lookup/re-route; BPTN confirm; HUMAN_EXECUTION update | Agent accept/close/approve/send; raw edit |
+| `IN_PROGRESS` | Raw valid; no-team/capacity/stock shortage; execution incomplete; hoặc revalidation | Agent proposal/draft/lookup/re-route; BPTN confirm/override có điều kiện; HUMAN_EXECUTION update | Agent accept/close/approve/send; raw edit |
 | `CHỜ XÁC MINH` | Missing/unknown/unclear input, asset, duty, stock, variance reason hoặc evidence/source | Authorized human bổ sung editable layer; Agent revalidate | Agent tự điền; direct READY; raw edit |
 | `READY_FOR_REVIEW` | Eight gates true và route hợp lệ | BQL review; authorized change quay lại IN_PROGRESS rồi re-evaluate | Diễn giải như accepted/completed/closed/material-approved |
 | `EXCEPTION` | Exact CLN/TEC high-risk rule | BQL resolution/request verification | Agent resolve, diagnosis, standard high-risk guidance |

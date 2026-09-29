@@ -37,6 +37,7 @@ from src.maintenance.enums import (
     QueueReason,
     QueueStatus,
     ReadabilityStatus,
+    ReviewRequiredReason,
     RouteStatus,
     ServiceCategory,
     SignalStatus,
@@ -184,22 +185,37 @@ class RawTicket(Entity):
 
 
 class AdministrativeNormalization(Entity):
+    """Administrative layer. BPTN review is conditional (CR-BPTN-01): the Agent decides whether it is needed."""
+
     administrative_revision: int = Field(ge=1)
     service_category_normalized: ServiceCategory = ServiceCategory.UNKNOWN
     ticket_type_normalized: TicketType = TicketType.UNKNOWN
     location_normalized: str | None = None
     priority: str | None = None
-    confirmation_status: ConfirmationStatus = ConfirmationStatus.PENDING
+    confirmation_status: ConfirmationStatus
+    review_required_reason: ReviewRequiredReason | None = None
     confirmed_by: str | None = None
     confirmed_at: AwareDatetime | None = None
+    override_reason: str | None = None
+    override_source_references: list[str] = Field(default_factory=list)
+    override_fields: list[str] = Field(default_factory=list)
+    audit_event_id: str | None = None  # the audit event that set confirmation_status
     source_references: list[str] = Field(default_factory=list)
-    change_reason: str | None = None
 
     @model_validator(mode="after")
-    def _confirmed_fields(self):
-        confirmed = self.confirmation_status == ConfirmationStatus.CONFIRMED
-        if confirmed != (self.confirmed_by is not None and self.confirmed_at is not None):
-            raise ValueError("confirmed_by/confirmed_at bắt buộc iff confirmation_status=CONFIRMED")
+    def _review_fields(self):
+        status = self.confirmation_status
+        reviewed = status in (ConfirmationStatus.CONFIRMED, ConfirmationStatus.OVERRIDDEN)
+        if reviewed != (self.confirmed_by is not None and self.confirmed_at is not None):
+            raise ValueError("confirmed_by/confirmed_at bắt buộc iff confirmation_status=CONFIRMED|OVERRIDDEN")
+        overridden = status == ConfirmationStatus.OVERRIDDEN
+        if overridden != bool(self.override_reason and self.override_fields):
+            raise ValueError("override_reason/override_fields bắt buộc iff confirmation_status=OVERRIDDEN")
+        # The reason stays after BPTN acts, so the record still shows why a review was needed
+        if status == ConfirmationStatus.PENDING_REVIEW and self.review_required_reason is None:
+            raise ValueError("review_required_reason bắt buộc khi confirmation_status=PENDING_REVIEW")
+        if status == ConfirmationStatus.NOT_REQUIRED and self.review_required_reason is not None:
+            raise ValueError("NOT_REQUIRED thì không có review_required_reason")
         return self
 
 
@@ -248,7 +264,7 @@ class AgentClassificationProposal(Entity):
     playbook_version: Literal["1.1"] = PLAYBOOK_VERSION
     asset_type: Literal["LIGHTING"] | None = None
     reported_symptom: Literal["NOT_WORKING"] | None = None
-    location_proposed: str | None = None  # read from the resident text; BPTN confirms it into location_normalized
+    location_proposed: str | None = None  # read from the resident text; becomes location_normalized unless overridden
     asset_id: str | None = None
     asset_lookup_status: AssetLookupStatus = AssetLookupStatus.NOT_APPLICABLE
     asset_match_reason: str = "Chưa lookup"
@@ -260,9 +276,7 @@ class AgentClassificationProposal(Entity):
     classification_reason: str = Field(min_length=1)
     source_references: list[str] = Field(min_length=1)
     rule_signals: list[RuleSignal]
-    confirmation_status: ConfirmationStatus = ConfirmationStatus.PENDING
-    confirmed_by: str | None = None
-    confirmed_at: AwareDatetime | None = None
+    # BPTN review lives in ticket.administrative_normalization (confirmation_status, override_*)
     created_at: AwareDatetime
     synthetic: Synthetic = True
 
@@ -409,6 +423,7 @@ class WorkOrderDraft(Entity):
     asset_id: str | None
     routing_team_id: str | None
     duty_status: DutyLookupStatus
+    duty_source_ref: str | None = None  # SIM-DUTY-* fixture record; capacity there is simulated, not real
     assignment_mode: Literal["SIMULATED_TEAM_ROUTE"] = "SIMULATED_TEAM_ROUTE"
     assignment_scope: Literal["TEAM_ONLY"] = "TEAM_ONLY"
     assignee_id: None = None

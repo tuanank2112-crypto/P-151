@@ -1,4 +1,8 @@
-"""MaintenanceOps Agent engine: ingest → proposal → BPTN confirmation → lookups/draft/route → execution → readiness.
+"""MaintenanceOps Agent engine: ingest → proposal → conditional BPTN review → lookups/draft/route → execution → readiness.
+
+BPTN review follows CR-BPTN-01 (v0.4 candidate on top of the frozen v0.3 baseline): the Agent only stops for BPTN
+when administrative data is missing or unclear; BPTN may confirm or override (with a reason) but never bypass a
+safety exception or touch the resident's raw content.
 
 Every public operation:
   1. checks permission first (denial = ACTION_DENIED audit, no data/state change, no ExceptionRecord);
@@ -18,7 +22,6 @@ from src.maintenance.enums import (
     ActionResult,
     ActorRole,
     AssetLookupStatus,
-    AvailabilityStatus,
     ChecklistStatus,
     ComparisonStatus,
     ComparisonType,
@@ -36,6 +39,7 @@ from src.maintenance.enums import (
     PlaybookId,
     QueueStatus,
     ReadabilityStatus,
+    ReviewRequiredReason,
     RouteStatus,
     ServiceCategory,
     TicketState,
@@ -63,6 +67,7 @@ from src.maintenance.models import (
 from src.maintenance.proposer import LLMClient, propose
 from src.maintenance.resolver import CaseFacts, resolve, route_blockers
 from src.maintenance.rules import SIGNALS_BY_PLAYBOOK, RiskOutcome, evaluate_signals, extract_location
+from src.maintenance.team_routing import lookup_team
 
 LOCAL_TZ = timezone(timedelta(hours=7))
 AGENT_ID = "SIM-ACTOR-AGENT"
@@ -242,78 +247,124 @@ class MaintenanceEngine:
         return work
 
     def run_agent(self, ticket_id: str) -> Case:
-        """Agent step: propose playbook + run risk rules, then (if BPTN confirmed) lookups, draft and route."""
+        """Agent step: propose playbook, run risk rules, decide whether BPTN review is needed, then (if not
+        blocked) lookups, draft and team route proposal."""
         return self._mutate(ticket_id, AGENT_ID, Action.CREATE_PROPOSAL, self._agent_pass)
 
-    def confirm(
+    def confirm(self, ticket_id: str, actor_id: str, *, note: str | None = None) -> Case:
+        """BPTN reviewed the administrative layer and changes nothing → CONFIRMED. Optional (CR-BPTN-01)."""
+        self._guard_safety(ticket_id, actor_id, Action.CONFIRM_NORMALIZATION, note)
+
+        def op(work: Case, now: datetime) -> None:
+            admin = self._reviewable_admin(work)
+            if admin.confirmation_status == ConfirmationStatus.PENDING_REVIEW:
+                raise GuardError(
+                    "Dữ liệu hành chính còn thiếu/không rõ; cần override kèm override_reason",
+                    {"review_required_reason": admin.review_required_reason},
+                )
+            reason = "BPTN xem lại, không thay đổi trường hành chính" if _blank(note) else note.strip()
+            self._audit(
+                work,
+                Action.CONFIRM_NORMALIZATION,
+                "Ticket",
+                ticket_id,
+                actor_id,
+                ActorRole.BPTN,
+                "administrative_normalization.confirmation_status",
+                admin.confirmation_status,
+                ConfirmationStatus.CONFIRMED,
+                reason,
+                now=now,
+                rule_id="PB-COM-R-CFM-01",
+            )
+            work.ticket.administrative_normalization = AdministrativeNormalization.model_validate(
+                {
+                    **admin.model_dump(),
+                    "confirmation_status": ConfirmationStatus.CONFIRMED,
+                    "confirmed_by": actor_id,
+                    "confirmed_at": now,
+                    "audit_event_id": work.audit[-1].event_id,
+                }
+            )
+            self._agent_pass(work, now)
+
+        return self._mutate(ticket_id, actor_id, Action.CONFIRM_NORMALIZATION, op)
+
+    def override(
         self,
         ticket_id: str,
         actor_id: str,
         *,
-        location_normalized: str | None,
-        reason: str,
+        override_reason: str,
+        location_normalized: str | None = None,
         service_category: ServiceCategory | None = None,
         ticket_type: TicketType | None = None,
+        override_source_references: list[str] | None = None,
     ) -> Case:
-        """BPTN confirms/edits service, type and location in the administrative layer; then the Agent revalidates."""
+        """BPTN changes allowed administrative fields → OVERRIDDEN, then every downstream rule runs again.
+
+        Only service/type/location can change. Raw content, raw evidence and safety exceptions are out of reach.
+        """
+        self._guard_safety(ticket_id, actor_id, Action.UPDATE_ADMIN_FIELD, override_reason)
 
         def op(work: Case, now: datetime) -> None:
-            proposal = work.proposal
-            if proposal is None:
-                raise GuardError("Chưa có đề xuất của Agent để xác nhận")
-            if _blank(reason):
-                raise GuardError("Cần reason khi xác nhận/chỉnh field hành chính")
-            service = service_category or proposal.service_category_proposed
-            ticket_type_ = ticket_type or proposal.ticket_type_proposed
+            admin = self._reviewable_admin(work)
+            if _blank(override_reason):
+                raise GuardError("override_reason bắt buộc khi BPTN thay đổi trường hành chính")
+            if (service_category is None) != (ticket_type is None):
+                raise GuardError("Đổi category cần cả service_category và ticket_type")
+            service = service_category or admin.service_category_normalized
+            ticket_type_ = ticket_type or admin.ticket_type_normalized
             if (service, ticket_type_) not in PLAYBOOK_PAIRS:
                 raise GuardError(
                     "Cặp service/type không khớp playbook v1.1", {"service": service, "type": ticket_type_}
                 )
-            changed = service != proposal.service_category_proposed or ticket_type_ != proposal.ticket_type_proposed
-            # BPTN leaving location blank accepts the Agent's proposed location (if any)
-            location = proposal.location_proposed if _blank(location_normalized) else location_normalized.strip()
-            sources = ["ticket.original_description"]
-            if _blank(location_normalized) and location is not None:
-                sources.append("proposal.location_proposed")
+            location = admin.location_normalized if _blank(location_normalized) else location_normalized.strip()
+            if _blank(location):
+                raise GuardError("Thiếu location_normalized; override phải bổ sung vị trí")
+            new_values = {
+                "service_category_normalized": service,
+                "ticket_type_normalized": ticket_type_,
+                "location_normalized": location,
+            }
+            changes = {f: v for f, v in new_values.items() if getattr(admin, f) != v}
+            if not changes:
+                raise GuardError("Override không thay đổi trường nào; dùng confirm nếu chỉ xác nhận")
 
-            previous = work.ticket.administrative_normalization
-            admin = AdministrativeNormalization(
-                administrative_revision=(previous.administrative_revision + 1) if previous else 1,
-                service_category_normalized=service,
-                ticket_type_normalized=ticket_type_,
-                location_normalized=location,
-                priority=previous.priority if previous else None,
-                confirmation_status=ConfirmationStatus.CONFIRMED,
-                confirmed_by=actor_id,
-                confirmed_at=now,
-                source_references=sources,
-                change_reason=reason,
-            )
-            for field_name in ("service_category_normalized", "ticket_type_normalized", "location_normalized"):
-                old = getattr(previous, field_name) if previous else None
+            reason = override_reason.strip()
+            for field_name, value in changes.items():
                 self._audit(
                     work,
-                    Action.CONFIRM_NORMALIZATION,
+                    Action.UPDATE_ADMIN_FIELD,
                     "Ticket",
                     ticket_id,
                     actor_id,
                     ActorRole.BPTN,
                     f"administrative_normalization.{field_name}",
-                    old,
                     getattr(admin, field_name),
+                    value,
                     reason,
                     now=now,
+                    rule_id="PB-COM-R-OVR-01",
                 )
-            work.ticket.administrative_normalization = admin
-            proposal.confirmation_status = ConfirmationStatus.CONFIRMED
-            proposal.confirmed_by = actor_id
-            proposal.confirmed_at = now
-            if changed:
-                proposal.playbook_id = PLAYBOOK_PAIRS[(service, ticket_type_)]
-                proposal.rule_signals = self._rule_signals(work, proposal.playbook_id, now)
+            work.ticket.administrative_normalization = AdministrativeNormalization(
+                administrative_revision=admin.administrative_revision + 1,
+                **new_values,
+                priority=admin.priority,
+                confirmation_status=ConfirmationStatus.OVERRIDDEN,
+                review_required_reason=admin.review_required_reason,
+                confirmed_by=actor_id,
+                confirmed_at=now,
+                override_reason=reason,
+                override_source_references=list(override_source_references or []),
+                override_fields=list(changes),
+                audit_event_id=work.audit[-1].event_id,
+                source_references=["ticket.original_description", "bptn.override"],
+            )
+            self._bind_playbook(work, PLAYBOOK_PAIRS[(service, ticket_type_)], service, ticket_type_, now)
             self._agent_pass(work, now)
 
-        return self._mutate(ticket_id, actor_id, Action.CONFIRM_NORMALIZATION, op)
+        return self._mutate(ticket_id, actor_id, Action.UPDATE_ADMIN_FIELD, op)
 
     def update_checklist(
         self, ticket_id: str, actor_id: str, template_item_id: str, *, status: ChecklistStatus, note: str | None = None
@@ -556,6 +607,9 @@ class MaintenanceEngine:
         new_value: Any,
         reason: str | None,
         now: datetime,
+        *,
+        rule_id: str = "PB-COM-R-PERM-01",
+        message: str | None = None,
     ) -> None:
         event = self._make_event(
             case,
@@ -570,7 +624,7 @@ class MaintenanceEngine:
             reason or f"Yêu cầu {action} ngoài quyền",
             now=now,
             result=ActionResult.ACTION_DENIED,
-            rule_id="PB-COM-R-PERM-01",
+            rule_id=rule_id,
             extra_reason=f"requested={action}",
         )
         try:
@@ -581,7 +635,7 @@ class MaintenanceEngine:
         denied.audit.append(event)
         self.cases[case.ticket.ticket_id] = denied
         raise ActionDeniedError(
-            f"{action} ngoài quyền của {role or 'actor không xác định'}",
+            message or f"{action} ngoài quyền của {role or 'actor không xác định'}",
             {
                 "decision": "DENY",
                 "code": "ACTION_DENIED",
@@ -698,6 +752,73 @@ class MaintenanceEngine:
         if work.draft is None or work.draft.route_status != RouteStatus.ROUTED:
             raise GuardError("Draft chưa được route tới team; chưa nhận cập nhật thực hiện")
 
+    def _guard_safety(self, ticket_id: str, actor_id: str, action: Action, reason: str | None) -> None:
+        """BPTN review/override never bypasses a safety exception: the attempt is denied and audited."""
+        case = self.get(ticket_id)
+        open_exception = self._open_exception(case)
+        role = self._role(actor_id)
+        if open_exception is None or role != ActorRole.BPTN:
+            return  # other roles are stopped by the permission matrix inside _mutate
+        self._deny(
+            case,
+            actor_id,
+            role,
+            action,
+            "administrative_normalization",
+            None,
+            reason,
+            self.clock(),
+            rule_id=open_exception.rule_id,
+            message="Ticket có safety exception OPEN; chỉ BQL xử lý, BPTN không review/override để bỏ qua",
+        )
+
+    def _reviewable_admin(self, work: Case) -> AdministrativeNormalization:
+        if self._missing_raw_fields(work.ticket.raw):
+            raise GuardError("Raw thiếu field bắt buộc; BPTN không được sửa nội dung phản ánh gốc")
+        admin = work.ticket.administrative_normalization
+        if admin is None:
+            raise GuardError("Chưa có lớp hành chính để review")
+        return admin
+
+    def _bind_playbook(
+        self, work: Case, playbook_id: PlaybookId, service: ServiceCategory, ticket_type: TicketType, now: datetime
+    ) -> None:
+        """Point the proposal at the playbook of the (possibly overridden) category. Risk rules re-run afterwards."""
+        proposal = work.proposal
+        technical = playbook_id == PlaybookId.TEC
+        if proposal is None:
+            # The Agent found no unique playbook; the category now comes from the BPTN override
+            work.classification_rule = None
+            work.proposal = AgentClassificationProposal(
+                proposal_id=f"SIM-ACP-{_suffix(work.ticket.ticket_id)}",
+                ticket_id=work.ticket.ticket_id,
+                proposal_revision=1,
+                service_category_proposed=service,
+                ticket_type_proposed=ticket_type,
+                playbook_id=playbook_id,
+                asset_type="LIGHTING" if technical else None,
+                reported_symptom="NOT_WORKING" if technical else None,
+                location_proposed=extract_location(work.ticket.raw.original_description),
+                matched_rule_ids=["PB-COM-R-OVR-01"],
+                classification_reason="Category do BPTN override khi Agent không khớp duy nhất một playbook",
+                source_references=["ticket.original_description", "administrative_normalization"],
+                rule_signals=self._rule_signals(work, playbook_id, now),
+                created_at=now,
+            )
+            return
+        if proposal.playbook_id == playbook_id:
+            return
+        # Clear the asset first: a cleaning proposal may not carry an asset_id
+        proposal.asset_id = None
+        proposal.asset_lookup_status = AssetLookupStatus.NOT_APPLICABLE
+        proposal.asset_match_reason = "Chưa lookup"
+        proposal.playbook_id = playbook_id
+        proposal.asset_type = "LIGHTING" if technical else None
+        proposal.reported_symptom = "NOT_WORKING" if technical else None
+        proposal.proposal_revision += 1
+        proposal.matched_rule_ids = [*proposal.matched_rule_ids, "PB-COM-R-OVR-01"]
+        proposal.rule_signals = self._rule_signals(work, playbook_id, now)
+
     # ------------------------------------------------------------------ agent pass
 
     def _agent_pass(self, work: Case, now: datetime) -> None:
@@ -738,6 +859,7 @@ class MaintenanceEngine:
         work.proposer_notes = outcome.notes
         work.classification_reason = result.reason
         trace = {"proposer": outcome.proposer, "notes": outcome.notes}
+        location = extract_location(description)
         if result.playbook_id is None:
             work.classification_rule = result.rule_id
             self._agent(
@@ -751,6 +873,9 @@ class MaintenanceEngine:
                 result.reason,
                 now=now,
                 rule_id=result.rule_id,
+            )
+            self._decide_review(
+                work, ServiceCategory.UNKNOWN, TicketType.UNKNOWN, location, ReviewRequiredReason.CATEGORY_UNCLEAR, now
             )
             return
 
@@ -766,18 +891,12 @@ class MaintenanceEngine:
             playbook_id=result.playbook_id,
             asset_type="LIGHTING" if result.playbook_id == PlaybookId.TEC else None,
             reported_symptom="NOT_WORKING" if result.playbook_id == PlaybookId.TEC else None,
-            location_proposed=extract_location(description),
+            location_proposed=location,
             matched_rule_ids=[r for r in (result.rule_id, risk.rule_id) if r],
             classification_reason=result.reason,
             source_references=["ticket.original_description"],
             rule_signals=signals,
             created_at=now,
-        )
-        work.ticket.administrative_normalization = AdministrativeNormalization(
-            administrative_revision=1,
-            service_category_normalized=result.service_category,
-            ticket_type_normalized=result.ticket_type,
-            source_references=["ticket.original_description"],
         )
         self._agent(
             work,
@@ -791,7 +910,45 @@ class MaintenanceEngine:
             now=now,
             rule_id=result.rule_id,
         )
+        review = None if location else ReviewRequiredReason.LOCATION_MISSING
+        self._decide_review(work, result.service_category, result.ticket_type, location, review, now)
         self._check_risk(work, result.playbook_id, now)
+
+    def _decide_review(
+        self,
+        work: Case,
+        service: ServiceCategory,
+        ticket_type: TicketType,
+        location: str | None,
+        review: ReviewRequiredReason | None,
+        now: datetime,
+    ) -> None:
+        """CR-BPTN-01: BPTN review is required only when category or location is missing/unclear."""
+        status = ConfirmationStatus.PENDING_REVIEW if review else ConfirmationStatus.NOT_REQUIRED
+        self._agent(
+            work,
+            Action.CREATE_PROPOSAL,
+            "Ticket",
+            work.ticket.ticket_id,
+            "administrative_normalization.confirmation_status",
+            None,
+            {"confirmation_status": status, "review_required_reason": review},
+            f"Cần BPTN review: {review}"
+            if review
+            else "Category và location rõ; không bắt buộc BPTN xác nhận, Agent tiếp tục",
+            now=now,
+            rule_id="PB-COM-R-CFM-01",
+        )
+        work.ticket.administrative_normalization = AdministrativeNormalization(
+            administrative_revision=1,
+            service_category_normalized=service,
+            ticket_type_normalized=ticket_type,
+            location_normalized=location,
+            confirmation_status=status,
+            review_required_reason=review,
+            audit_event_id=work.audit[-1].event_id,
+            source_references=["ticket.original_description"],
+        )
 
     def _check_risk(self, work: Case, playbook_id: PlaybookId, now: datetime) -> None:
         risk = evaluate_signals(playbook_id, work.signal_assessment)
@@ -828,7 +985,7 @@ class MaintenanceEngine:
         return (
             work.proposal is not None
             and admin is not None
-            and admin.confirmation_status == ConfirmationStatus.CONFIRMED
+            and admin.confirmation_status != ConfirmationStatus.PENDING_REVIEW
             and not _blank(admin.location_normalized)
             and not self._open_exception(work)
             and not self._risk(work).unclear
@@ -845,6 +1002,10 @@ class MaintenanceEngine:
             and existing.administrative_revision == admin.administrative_revision
         ):
             return  # VAL-IDEMP-001: same input → same logical draft
+        # A new playbook (BPTN override of the category) means new checklist, materials and evidence requirements
+        rebuild = existing is None or existing.playbook_id != playbook_id
+        if existing is not None and rebuild:
+            work.planned_materials = None  # the previous plan belonged to the other playbook
 
         # Asset gate (technical only)
         if playbook_id == PlaybookId.TEC:
@@ -887,7 +1048,7 @@ class MaintenanceEngine:
         # Stock gate before route
         suffix = _suffix(ticket.ticket_id)
         draft_id = f"SIM-WOD-{suffix}"
-        if existing:
+        if not rebuild:
             lines = work.material_lines
             material_source = "draft hiện có"
         else:
@@ -914,8 +1075,13 @@ class MaintenanceEngine:
             rule_id={"INSUFFICIENT": "PB-COM-R-STK-01", "UNKNOWN": "PB-COM-R-STK-02"}.get(stock_status),
         )
 
-        # Duty gate (both playbooks)
-        duty_status, team_id, duty_ref, duty_reason = self._lookup_duty(admin.service_category_normalized, ticket)
+        # Duty gate (both playbooks): team-only, from the simulated duty fixture
+        duty = lookup_team(
+            self.catalog,
+            admin.service_category_normalized,
+            datetime.fromisoformat(ticket.raw.created_at).astimezone(LOCAL_TZ),
+        )
+        duty_status, team_id, duty_ref, duty_reason = duty.status, duty.team_id, duty.source_ref, duty.reason
         proposal.duty_lookup_status = duty_status
         proposal.duty_source_ref = duty_ref
         self._agent(
@@ -943,7 +1109,7 @@ class MaintenanceEngine:
         proposal.routing_team_id = team_id if routed else None
 
         template = self.catalog.template_for(playbook_id)
-        if existing is None:
+        if rebuild:
             work.checklist_items = [
                 ChecklistItem(
                     checklist_item_id=f"SIM-CHK-{suffix}-{index:02d}",
@@ -968,12 +1134,14 @@ class MaintenanceEngine:
             draft_revision=(existing.draft_revision + 1) if existing else 1,
             scope_summary=f"Ghi nhận {SCOPE_LABELS[playbook_id]} tại {admin.location_normalized} theo phản ánh mô "
             "phỏng. Bản nháp, không phải lệnh công việc thật.",
-            generation_reason="Pre-draft gates passed: BPTN đã xác nhận service/type/location, không có exception",
+            generation_reason=f"Pre-draft gates passed: confirmation_status={admin.confirmation_status}, "
+            "service/type/location rõ, không có exception",
             matched_rule_ids=[*proposal.matched_rule_ids, "PB-COM-R-WO-01"],
             source_references=["ticket.original_description", "administrative_normalization.location_normalized"],
             asset_id=asset_id,
             routing_team_id=team_id if routed else None,
             duty_status=duty_status,
+            duty_source_ref=duty_ref,
             material_stock_status=stock_status,
             route_status=proposal.route_status,
             queue_status=QueueStatus.NOT_QUEUED if routed else QueueStatus.PENDING_BQL_REVIEW,
@@ -983,9 +1151,9 @@ class MaintenanceEngine:
             material_requirement_mode=MaterialRequirementMode.TRACKED if lines else MaterialRequirementMode.N_A,
             material_gate_status=MaterialGateStatus.NEEDS_CLARIFICATION if lines else MaterialGateStatus.NA,
             material_line_ids=[m.material_line_id for m in work.material_lines],
-            evidence_requirements=existing.evidence_requirements
-            if existing
-            else self.catalog.requirements_for(playbook_id),
+            evidence_requirements=self.catalog.requirements_for(playbook_id)
+            if rebuild
+            else existing.evidence_requirements,
             created_at=existing.created_at if existing else now,
         )
         self._agent(
@@ -1009,7 +1177,8 @@ class MaintenanceEngine:
                 "routing_team_id",
                 None,
                 team_id,
-                "Asset/stock/duty gates pass; route cấp team, assignee_id=null",
+                "Asset/stock/duty gates pass; đề xuất tuyến team hợp lệ (team-only, assignee_id=null), "
+                "không phải xác nhận đã giao việc",
                 now=now,
                 rule_id="PB-COM-R-ROUTE-01",
             )
@@ -1034,34 +1203,6 @@ class MaintenanceEngine:
             simulated_stock_qty=item.simulated_stock_qty if item else None,
             material_stock_status=stock,
         )
-
-    def _lookup_duty(
-        self, service: ServiceCategory, ticket: Ticket
-    ) -> tuple[DutyLookupStatus, str | None, str | None, str]:
-        shift = self.catalog.shift_for(datetime.fromisoformat(ticket.raw.created_at).astimezone(LOCAL_TZ))
-        records = sorted(
-            (d for d in self.catalog.duty_availability if d.service_category == service and d.shift_window == shift),
-            key=lambda d: d.team_id,
-        )
-        if not records:
-            return DutyLookupStatus.DUTY_UNKNOWN, None, None, f"Không có nguồn duty cho {service} ở {shift}"
-        available = [d for d in records if d.availability_status == AvailabilityStatus.AVAILABLE]
-        with_capacity = [d for d in available if d.has_capacity]
-        if with_capacity:
-            duty = with_capacity[0]
-            return DutyLookupStatus.AVAILABLE, duty.team_id, duty.duty_id, f"{duty.team_id} đang trực và còn sức chứa"
-        unknown = [d for d in records if d.availability_status == AvailabilityStatus.UNKNOWN]
-        if unknown:
-            return DutyLookupStatus.DUTY_UNKNOWN, None, unknown[0].duty_id, "Trạng thái trực không xác định"
-        if available:
-            duty = available[0]
-            return (
-                DutyLookupStatus.CAPACITY_EXCEEDED,
-                None,
-                duty.duty_id,
-                f"{duty.team_id} đang trực nhưng {duty.current_open_ticket_count}/{duty.max_open_ticket_count}",
-            )
-        return DutyLookupStatus.NO_AVAILABLE_TEAM, None, records[0].duty_id, f"Không có team {service} trực ở {shift}"
 
     # ------------------------------------------------------------------ evaluation
 
@@ -1180,7 +1321,8 @@ class MaintenanceEngine:
         if risk.unclear and risk.rule_id not in resolved:
             facts.risk_unclear_rule = risk.rule_id
         admin = work.ticket.administrative_normalization
-        facts.confirmation_pending = admin is None or admin.confirmation_status != ConfirmationStatus.CONFIRMED
+        facts.confirmation_pending = admin is None or admin.confirmation_status == ConfirmationStatus.PENDING_REVIEW
+        facts.review_required_reason = admin.review_required_reason if facts.confirmation_pending and admin else None
         facts.location_missing = not facts.confirmation_pending and _blank(admin.location_normalized)
 
         draft = work.draft

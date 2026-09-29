@@ -1,6 +1,6 @@
 # MaintenanceOps Agent — static read-only catalog (Data Contract v1.1 §5.4–5.6, §6)
 # SIMULATED: không phải dữ liệu, lịch trực, định mức, tồn kho hoặc quy trình vận hành thật của Vinhomes.
-dataset_version: maintenanceops-sim-v1
+dataset_version: maintenanceops-sim-v1.1
 synthetic: true
 
 # Ca trực mô phỏng. Ticket được tra duty theo ca chứa created_at (giờ địa phương +07:00).
@@ -18,6 +18,8 @@ assets:
   - {asset_id: SIM-ASSET-LIGHT-005, asset_type: LIGHTING, location_normalized: "Tòa SIM-B / Tầng 7 / Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.005, synthetic: true, read_only: true}
   - {asset_id: SIM-ASSET-LIGHT-006, asset_type: LIGHTING, location_normalized: "Tòa SIM-A / Tầng B1 / Hầm xe", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.006, synthetic: true, read_only: true}
 
+# current/max_open_ticket_count là giá trị fixture tĩnh: engine chỉ đọc để so sánh, không tăng/giảm khi route.
+# "Còn capacity" nghĩa là capacity mô phỏng đạt điều kiện fixture, không phải năng lực nhận việc thực tế.
 duty_availability:
   - {duty_id: SIM-DUTY-CLN-AM, team_id: SIM-TEAM-CLN-01, service_category: VE_SINH, shift_window: SIM-SHIFT-AM, availability_status: AVAILABLE, current_open_ticket_count: 1, max_open_ticket_count: 3, source_ref: fixture.duty.cln.am, synthetic: true, assignment_scope: TEAM_ONLY}
   # Ca chiều: dữ liệu trực chưa xác định
@@ -40,7 +42,7 @@ materials:
 # Vật tư dự kiến Agent tự đề xuất theo playbook khi ticket không có kế hoạch vật tư riêng (PRD §7 bước 7)
 default_materials:
   PB-CLN-01:
-    - {item_code: SIM-MAT-CLEAN-01, planned_qty: 1}
+    - {item_code: SIM-MAT-CLEAN-01, planned_qty: 2}  # = norm_qty, nên happy path không cần variance_reason
   PB-TEC-01:
     - {item_code: SIM-MAT-LAMP-01, planned_qty: 1}
 

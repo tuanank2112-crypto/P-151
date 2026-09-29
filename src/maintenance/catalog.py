@@ -77,13 +77,6 @@ class Catalog(Frozen):
 # ---------------------------------------------------------------------------
 
 
-class BptnInput(Frozen):
-    location_normalized: str | None = None
-    reason: str
-    service_category: str | None = None  # None = accept the Agent proposal
-    ticket_type: str | None = None
-
-
 class ExecutedMaterial(Frozen):
     item_code: str
     issued_qty: float = Field(ge=0)
@@ -109,6 +102,8 @@ class Expected(Frozen):
     draft_exists: bool
     state: str
     rule_id: str
+    location_normalized: str | None = None
+    confirmation_status: str | None = None
     asset_lookup_status: str | None = None
     asset_id: str | None = None
     duty_lookup_status: str | None = None
@@ -124,7 +119,6 @@ class TicketFixture(Frozen):
     raw: RawTicket
     flow: Literal["DEMO-1", "DEMO-2", "DEMO-3", "DEMO-4", "REGRESSION"]
     purpose: str
-    bptn: BptnInput | None = None
     materials: tuple[PlannedMaterial, ...] | None = None
     execution: ExecutionInput | None = None
     expected: Expected
