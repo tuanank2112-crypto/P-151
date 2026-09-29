@@ -1,0 +1,250 @@
+{
+  "schema_version": "1.0.0",
+  "product": {
+    "name": "MaintenanceOps Agent",
+    "baseline": "MaintenanceOps MVP v0.3",
+    "status": "FROZEN",
+    "freeze_date": "2026-09-28",
+    "freeze_authority": "OD-09 Sign-off Record",
+    "readiness": "READY_FOR_BUILD"
+  },
+  "current_truth": {
+    "canonical_documents": [
+      "docs/01_problem_statement.md",
+      "docs/02_product_brief.md",
+      "docs/03_lean_prd.md",
+      "docs/04_ui_flow_wireframe.md",
+      "docs/05_traceability_and_review.md",
+      "docs/data-contract-v1.md",
+      "docs/playbook-v1.md"
+    ],
+    "precedence": [
+      "frozen_governance_and_traceability",
+      "problem_and_product_scope",
+      "prd_rules_and_state_oracle",
+      "ui_flow",
+      "data_contract",
+      "playbook_rules",
+      "implementation_and_fixtures"
+    ],
+    "conflict_rule": "STOP_AND_RECORD_DRIFT; frozen documents prevail until approved change control"
+  },
+  "active_scope": {
+    "service_categories": [
+      "CLEANING",
+      "TECHNICAL"
+    ],
+    "playbooks": [
+      {
+        "playbook_id": "PB-CLN-01",
+        "service_category": "CLEANING",
+        "label": "Vệ sinh",
+        "duty_lookup_required": true,
+        "asset_lookup_required": false,
+        "material_stock_gate_required": true
+      },
+      {
+        "playbook_id": "PB-TEC-01",
+        "service_category": "TECHNICAL",
+        "label": "Kỹ thuật",
+        "primary_asset_type": "LIGHTING",
+        "duty_lookup_required": true,
+        "asset_lookup_required": true,
+        "material_stock_gate_required": true
+      }
+    ],
+    "top_level_states": [
+      "IN_PROGRESS",
+      "CHỜ XÁC MINH",
+      "READY_FOR_REVIEW",
+      "EXCEPTION"
+    ],
+    "routing": {
+      "assignment_mode": "SIMULATED_TEAM_ROUTE",
+      "assignment_scope": "TEAM_ONLY",
+      "assignee_id": null,
+      "valid_route_requires": [
+        "administrative_confirmation",
+        "playbook_match",
+        "asset_match_when_technical",
+        "material_stock_gate_pass",
+        "duty_team_on_shift",
+        "team_capacity_available"
+      ]
+    }
+  },
+  "deferred_future_scope": [
+    "CSKH",
+    "individual_employee_assignment",
+    "real_operational_system_integration",
+    "real_duty_schedule",
+    "real_workforce_optimization",
+    "payments",
+    "invoices",
+    "outsourcing"
+  ],
+  "canonical_flow": [
+    "ticket_received_from_existing_app_or_form",
+    "bptn_confirms_allowed_administrative_fields",
+    "agent_classifies_ticket",
+    "agent_looks_up_read_only_playbook_registry",
+    "technical_ticket_looks_up_read_only_asset_catalog",
+    "agent_determines_expected_and_norm_materials",
+    "agent_checks_synthetic_stock",
+    "agent_checks_synthetic_team_duty_and_capacity",
+    "agent_creates_work_order_draft",
+    "agent_proposes_valid_team_route_only_when_all_route_gates_pass",
+    "human_executes_checklist",
+    "human_updates_materials_notes_and_evidence",
+    "agent_reconciles_record",
+    "agent_sets_one_of_four_top_level_states",
+    "bql_reviews"
+  ],
+  "route_outcomes": {
+    "team_available_and_all_gates_pass": {
+      "draft_exists": true,
+      "route_status": "ROUTED",
+      "route_valid": true
+    },
+    "no_team_on_duty": {
+      "draft_exists": true,
+      "state": "IN_PROGRESS",
+      "reason": "NO_AVAILABLE_TEAM",
+      "route_status": "NOT_ROUTED",
+      "route_valid": false
+    },
+    "duty_data_unknown": {
+      "draft_exists": true,
+      "state": "CHỜ XÁC MINH",
+      "reason": "DUTY_UNKNOWN",
+      "route_status": "NOT_ROUTED",
+      "route_valid": false
+    },
+    "team_capacity_exceeded": {
+      "draft_exists": true,
+      "state": "IN_PROGRESS",
+      "reason": "TEAM_CAPACITY_EXCEEDED",
+      "route_status": "NOT_ROUTED",
+      "route_valid": false,
+      "bql_review_required": true
+    },
+    "asset_zero_or_multiple_match": {
+      "applies_to": "PB-TEC-01",
+      "draft_exists": true,
+      "asset_id": null,
+      "state": "CHỜ XÁC MINH",
+      "reason_options": [
+        "ASSET_NOT_FOUND",
+        "ASSET_AMBIGUOUS"
+      ],
+      "route_status": "NOT_ROUTED",
+      "route_valid": false,
+      "auto_guess_forbidden": true
+    },
+    "material_stock_insufficient": {
+      "draft_exists": true,
+      "state": "IN_PROGRESS",
+      "reason": "MATERIAL_SHORTAGE",
+      "route_status": "NOT_ROUTED",
+      "route_valid": false,
+      "treated_as_assigned": false,
+      "bql_review_required": true
+    },
+    "material_stock_unknown": {
+      "draft_exists": true,
+      "state": "CHỜ XÁC MINH",
+      "reason": "MATERIAL_STOCK_UNKNOWN",
+      "route_status": "NOT_ROUTED",
+      "route_valid": false,
+      "treated_as_assigned": false,
+      "bql_review_required": true
+    }
+  },
+  "readiness_policy": {
+    "ready_for_review_requires_valid_prior_route": true,
+    "ready_for_review_when_route_invalid": false,
+    "route_or_queue_fields_are_not_top_level_states": true,
+    "post_execution_material_reconciliation": [
+      "expected_material",
+      "norm_material",
+      "issued_material",
+      "actual_used_material"
+    ],
+    "agent_cannot_auto_accept": true
+  },
+  "immutable_and_authority_rules": {
+    "resident_raw_content_immutable": true,
+    "resident_raw_evidence_immutable": true,
+    "bptn_edits_only_allowed_administrative_fields": true,
+    "agent_cannot_self_accept_work": true,
+    "agent_cannot_close_ticket": true,
+    "agent_cannot_approve_materials_or_stock_adjustments": true,
+    "agent_cannot_approve_payments": true,
+    "photo_required": false
+  },
+  "synthetic_data": {
+    "real_internal_data_allowed": false,
+    "present_as_real_vinhomes_data": false,
+    "read_only_registries": [
+      "Playbook Registry",
+      "Asset Catalog",
+      "Duty Availability",
+      "Material Stock"
+    ],
+    "id_prefixes": [
+      "SIM-ASSET-",
+      "SIM-TEAM-",
+      "SIM-DUTY-"
+    ]
+  },
+  "dataset": {
+    "total_tickets": 12,
+    "cleaning_tickets": 6,
+    "technical_tickets": 6,
+    "main_demo_flows": 4,
+    "regression_tickets": 8,
+    "demo_flows": [
+      {
+        "id": "DEMO-CLN-SUCCESS",
+        "description": "Vệ sinh thành công"
+      },
+      {
+        "id": "DEMO-CLN-NO-DUTY-TEAM",
+        "description": "Vệ sinh không có team đang trực"
+      },
+      {
+        "id": "DEMO-TEC-ASSET-STOCK-DUTY-PASS",
+        "description": "Kỹ thuật tìm thấy asset, đủ vật tư, có team đang trực"
+      },
+      {
+        "id": "DEMO-TEC-ASSET-OR-STOCK-BLOCKED",
+        "description": "Kỹ thuật không tìm thấy asset hoặc thiếu vật tư"
+      }
+    ]
+  },
+  "implementation_status": {
+    "code_audit_completed": false,
+    "build_started_under_frozen_baseline": false,
+    "production_integration_completed": false,
+    "note": "Active memory rebase does not assert implementation completion."
+  },
+  "active_memory_rebase": {
+    "status": "CORE_ACTIVE_MEMORY_REBASE_COMPLETED",
+    "completed_in_order": [
+      "brain4agent/memory-distill.txt",
+      "brain4agent/memory/hot/state.json",
+      "brain4agent/index.md",
+      "brain4agent/project-intro.md",
+      "brain4agent/roadmap.md",
+      "brain4agent/-data-architecture.md"
+    ],
+    "next": "brain4agent/memory/hot/today.md",
+    "remaining_memory_hygiene": [
+      "brain4agent/memory/hot/today.md",
+      "brain4agent/changelog.md",
+      "brain4agent/-known-gotchas.md",
+      "brain4agent/memory/archive/* legacy isolation"
+    ]
+  },
+  "last_updated": "2026-09-28"
+}
