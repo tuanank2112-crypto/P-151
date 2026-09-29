@@ -1,8 +1,10 @@
 # MaintenanceOps Agent — Playbook v1
 
-> **Document status:** FINAL · CROSS-REVIEW COMPLETE  
+> **Document status:** FROZEN · CROSS-REVIEW COMPLETE
 > **Version:** 1.1
-> **Ngày:** 2026-09-27  
+> **Ngày:** 2026-09-28
+> **MVP baseline:** MaintenanceOps MVP v0.3
+> **Freeze date:** 28/09/2026
 > **Owner duy nhất:** TV1 — Product / BA / Process  
 > **Business scope:** Hai playbook mô phỏng `PB-CLN-01`, `PB-TEC-01`
 > **Data classification:** `SIMULATED` — không phải quy trình, dữ liệu, SLA, định mức, tồn kho hoặc hướng dẫn vận hành thực tế của Vinhomes.
@@ -14,6 +16,7 @@
 | 0.9 | 2026-09-27 | Tạo baseline playbook theo template chung; khóa Field Matrix, rule ID, state oracle, checklist hồ sơ, evidence/material gate và acceptance criteria | DRAFT FOR CROSS-REVIEW |
 | 1.0 | 2026-09-27 | Áp dụng `GAP-B-01..09`; cross-review Data Contract; đồng bộ canonical field/rule/checklist/evidence IDs, state outcome, field owner và machine-checkable READY gates | FINAL |
 | 1.1 | 2026-09-27 | Chỉ giữ CLN/TEC; thêm asset/duty/stock gate, team-only routing, draft-without-route và route readiness | FINAL |
+| 1.1-freeze | 2026-09-28 | Đóng OD-09 và đưa Playbook v1.1 vào frozen baseline MaintenanceOps MVP v0.3 | FROZEN |
 
 ---
 
@@ -552,4 +555,4 @@ Không còn Implementation Gap undecided trong batch này. Các quyết định 
 
 # 12. Open Issues
 
-`No blocking open issues` cho Playbook v1.1 và Data Contract v1.1. Tên Product approver/proxy và approval record thuộc governance `OD-09` của bộ tài liệu sản phẩm, không làm thay đổi schema/rule của hai deliverable này.
+`No blocking open issues` cho Playbook v1.1 và Data Contract v1.1. Governance `OD-09` đã đóng; hai deliverable thuộc frozen baseline MaintenanceOps MVP v0.3 ngày 28/09/2026. Các quyết định mở non-blocking không làm thay đổi schema/rule đã freeze.

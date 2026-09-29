@@ -1,10 +1,42 @@
 # MaintenanceOps Agent — Requirement Traceability & Consistency/Safety Review
 
-> **Document status:** REVIEW COMPLETE · POLICY v0.3 RECORDED · SIGN-OFF PENDING
+> **Document status:** FROZEN · READY FOR BUILD
 > **Version:** 0.3
-> **Ngày:** 2026-09-27  
+> **Ngày:** 2026-09-28
+> **MVP baseline:** MaintenanceOps MVP v0.3
+> **Freeze date:** 28/09/2026
+> **Freeze authority:** `OD-09 Sign-off Record` — Cao Văn Trường
 > **Owner:** TV1 — Product / BA / Process; QA approver: TV4 — Integration / QA / Demo  
 > **Review scope:** Toàn bộ 7 tài liệu từ Problem Statement đến Playbook/Data Contract
+
+## MVP Freeze Record
+
+**Version:** MaintenanceOps MVP v0.3
+**Status:** FROZEN
+**Freeze date:** 28/09/2026
+
+### Included
+
+- `PB-CLN-01` — Vệ sinh
+- `PB-TEC-01` — Kỹ thuật
+- `IN_PROGRESS`
+- `CHỜ XÁC MINH`
+- `READY_FOR_REVIEW`
+- `EXCEPTION`
+- 12 synthetic tickets
+- 4 demo flows
+- Team-only routing
+
+### Explicitly excluded — Deferred / Future Scope / Backlog
+
+- CSKH
+- Gán nhân viên cụ thể
+- Tích hợp hệ thống thật
+- Lịch trực thật
+- Tối ưu nhân sự thực tế
+- Thanh toán, hóa đơn, thuê ngoài
+
+Mọi thay đổi đối với danh sách Included/Explicitly excluded sau ngày freeze phải qua change control và tạo quyết định re-baseline; không được sửa ngầm baseline v0.3.
 
 ## Changelog
 
@@ -13,6 +45,7 @@
 | 0.1 | 2026-09-27 | Tạo RTM, P0 completeness audit, safety coverage, 25-point consistency review và Executive Summary | DRAFT |
 | 0.2 | 2026-09-27 | Re-baseline RTM/review theo OD-01/02/03/08 và governance OD-09 | DRAFT · Chờ tên/sign-off approver |
 | 0.3 | 2026-09-27 | Re-baseline theo hai playbook, asset/duty/stock gate, team-only route, 12 ticket và 4 demo flow | DRAFT · Chờ tên/sign-off approver |
+| 0.3-freeze | 2026-09-28 | Đóng OD-09; ghi Freeze Record và chuyển MaintenanceOps MVP v0.3 sang frozen build baseline | FROZEN · READY FOR BUILD |
 
 ---
 
@@ -224,24 +257,25 @@ Các quyết định re-baseline v0.3 đã được kiểm tra xuyên suốt:
 | `OD-05` | BQL sub-role authority | Không block demo role chung; block pilot permission | `OPEN · PILOT` |
 | `OD-06` | Priority/SLA | Không block MVP; priority optional | `OPEN · PILOT` |
 | `OD-07` | Administrative edit reason taxonomy | Không block build; block UAT copy | `OPEN · UAT` |
-| `OD-09` | Owner, approvers, deadline, sign-off | Chỉ còn thiếu tên Product approver/proxy và sign-off evidence | `PARTIALLY CLOSED · BLOCKER` |
+| `OD-09` | Owner, approvers, deadline, sign-off | Product approver/proxy: Cao Văn Trường; sign-off owner: Cao Văn Trường; freeze date: 28/09/2026; evidence: `OD-09 Sign-off Record` | `CLOSED · FROZEN` |
 | `OD-10` | Asset/duty lookup và team-only routing | Đã có FR/UI/AC/test | `CLOSED · APPLIED v0.3` |
 | `OD-11` | Draft tồn tại khi route invalid | Đã có state/reason/route oracle | `CLOSED · APPLIED v0.3` |
 | `OD-12` | Dataset 12 tickets và 4 demo flow | Đã re-baseline eval/reset | `CLOSED · APPLIED v0.3` |
 
-Governance đã ghi nhận: Document Owner TV1; Technical reviewer TV2; QA approver TV4; Product approver và proxy BQL cùng là `[Tên nhóm trưởng / Product Owner]`; deadline cuối Ngày 1, 27/09/2026. Proxy approval chỉ áp dụng policy mô phỏng, không phải phê duyệt quy trình thật.
+Governance đã ghi nhận: Document Owner TV1; Technical reviewer TV2; QA approver TV4; Product approver/proxy BQL và sign-off owner là Cao Văn Trường; freeze date 28/09/2026. Proxy approval chỉ áp dụng policy/test oracle mô phỏng của MaintenanceOps MVP v0.3, không phải phê duyệt quy trình thật.
 
 ## 6.1 Approval record
 
 - **Document Owner:** TV1 — Product / BA / Process.
-- **Product approver:** `[TBD tên nhóm trưởng / Product Owner]`.
-- **BQL business approver:** không có BQL thực tế trong prototype; Product approver ở trên làm proxy cho policy mô phỏng.
+- **Product approver:** Cao Văn Trường.
+- **BQL business approver:** không có BQL thực tế trong prototype; Cao Văn Trường làm proxy cho policy mô phỏng.
+- **Sign-off owner:** Cao Văn Trường.
 - **Technical reviewer:** TV2 — AI Agent / Data.
 - **QA approver:** TV4 — Integration / QA / Demo.
-- **Sign-off deadline:** cuối Ngày 1 — 27/09/2026.
+- **Freeze date:** 28/09/2026.
 - **Approval scope:** chỉ xác nhận policy/test oracle mô phỏng của prototype; không xác nhận quy trình vận hành thật.
-- **Change control sau deadline:** chỉ nhận thay đổi P0 liên quan safety, blocker hoặc bốn demo flow; thay đổi khác chuyển backlog và không sửa baseline hiện tại.
-- **Approval evidence:** `PENDING` — cần điền tên người phê duyệt, thời điểm và xác nhận version 0.3.
+- **Change control sau freeze:** chỉ nhận thay đổi P0 liên quan safety, blocker hoặc bốn demo flow qua quyết định re-baseline; thay đổi khác chuyển backlog và không sửa baseline v0.3.
+- **Approval evidence:** `OD-09 Sign-off Record` — đã xác nhận MaintenanceOps MVP v0.3 ngày 28/09/2026.
 
 ---
 
@@ -257,9 +291,9 @@ Governance đã ghi nhận: Document Owner TV1; Technical reviewer TV2; QA appro
 | UI Flow bao phủ bốn demo flow | PASS | Flows 1–4 + four edge flows |
 | Mọi safety rule quan trọng có test | PASS | Safety coverage matrix |
 | Core playbook decisions đã được ghi nhận | PASS | `OD-01/02/03/10/11/12` closed/applied |
-| Product approver/proxy có tên và sign-off evidence | **FAIL / NOT MET** | Placeholder `[Tên nhóm trưởng / Product Owner]` chưa được thay; chưa có approval record |
+| Product approver/proxy có tên và sign-off evidence | PASS | Cao Văn Trường; `OD-09 Sign-off Record`; freeze date 28/09/2026 |
 
-**Kết luận readiness:** Policy, state oracle, data model, UI flow và tests đã đủ để freeze nội dung kỹ thuật v0.3. Chưa được đổi nhãn sang approved build baseline vì OD-09 chưa có tên người phê duyệt và sign-off evidence.
+**Kết luận readiness:** Tất cả điều kiện `READY FOR BUILD` đã PASS. Policy, state oracle, data model, UI flow và tests của MaintenanceOps MVP v0.3 đã được freeze ngày 28/09/2026; các quyết định mở OD-04/05/06/07 vẫn non-blocking và không được dùng để mở rộng frozen scope.
 
 ---
 
@@ -299,12 +333,11 @@ Hai playbook, four-state workflow, raw immutability, role permissions, audit t�
 
 - `CLOSED/APPLIED`: `OD-01`, `OD-02`, `OD-03`, `OD-10`, `OD-11`, `OD-12`.
 - `OPEN nhưng không chặn MVP`: `OD-04`, `OD-05`, `OD-06`, `OD-07`.
-- `PARTIALLY CLOSED và đang chặn formal baseline`: `OD-09` — cần tên thật của Product approver/proxy và approval record.
+- `CLOSED · FROZEN`: `OD-09` — Cao Văn Trường; evidence `OD-09 Sign-off Record`; freeze date 28/09/2026.
 
 ## 8.8 Rủi ro còn lại
 
-- Proxy Product Owner/BQL chưa có tên và chưa ký; policy v0.3 chưa có approval evidence.
-- Không có BQL thực tế tham gia, nên toàn bộ policy vẫn chỉ là policy mô phỏng và không được dùng như quy trình thật.
+- Product approver/BQL chỉ là proxy cho prototype; toàn bộ policy vẫn là policy mô phỏng và không được dùng như quy trình thật.
 - `OD-04` chưa chốt threshold; v0.3 chỉ coi explained variance là warning, không suy diễn mức độ.
 - Role BQL tổng quát đủ cho demo nhưng không đủ cho pilot permission governance.
 - Synthetic success có thể bị diễn giải quá mức thành hiệu quả vận hành nếu bỏ disclaimer.
@@ -316,9 +349,9 @@ Hai playbook, four-state workflow, raw immutability, role permissions, audit t�
 
 ## 8.10 Kết luận
 
-# `NOT READY FOR BUILD`
+# `FROZEN · READY FOR BUILD`
 
-OD-01/02/03/10/11/12 đã được chốt và áp dụng nhất quán. Blocker duy nhất còn lại là OD-09: thay placeholder bằng tên Product approver/proxy và ghi approval record cho version 0.3. Sau bước governance này, bộ tài liệu có thể chuyển sang `READY FOR BUILD` mà không cần mở rộng scope.
+OD-01/02/03/09/10/11/12 đã được chốt và áp dụng nhất quán. MaintenanceOps MVP v0.3 đã `FROZEN` ngày 28/09/2026 theo `OD-09 Sign-off Record` và đủ điều kiện bắt đầu build trong đúng phạm vi freeze. Mọi yêu cầu mở rộng phải chuyển backlog hoặc đi qua change control/re-baseline.
 
 ## 8.11 Deferred / Future Scope
 

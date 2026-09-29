@@ -1,10 +1,12 @@
 # MaintenanceOps Agent — Lean PRD
 
-> **Document status:** DRAFT · Policy v0.3 recorded, awaiting approver identity/sign-off
+> **Document status:** FROZEN
 > **Version:** 0.3
-> **Ngày:** 2026-09-27  
+> **Ngày:** 2026-09-28
+> **MVP baseline:** MaintenanceOps MVP v0.3
+> **Freeze date:** 28/09/2026
 > **Owner:** TV1 — Product / BA / Process  
-> **Reviewers:** TV2 — AI Agent / Data; TV4 — Integration / QA / Demo; Product approver/proxy BQL `[TBD tên]`  
+> **Reviewers:** TV2 — AI Agent / Data; TV4 — Integration / QA / Demo; Product approver/proxy BQL: Cao Văn Trường
 > **Data classification:** Chỉ dữ liệu mô phỏng; không phải quy trình/dữ liệu vận hành Vinhomes
 
 ## Changelog
@@ -14,6 +16,7 @@
 | 0.1 | 2026-09-27 | Tạo PRD P0/P1, use cases, FR, state machine, data model, Agent flow, NFR và evaluation plan | DRAFT |
 | 0.2 | 2026-09-27 | Áp dụng OD-01/02/03/08; thêm Agent proposal → BPTN confirmation gate, evidence/state oracle và governance OD-09 | DRAFT · Chờ sign-off |
 | 0.3 | 2026-09-27 | Re-baseline hai playbook; thêm Asset/Duty lookup, stock gate, team-only routing, 12 ticket và 4 demo flow | DRAFT · Chờ sign-off |
+| 0.3-freeze | 2026-09-28 | Đóng OD-09 và freeze PRD trong MaintenanceOps MVP v0.3 | FROZEN |
 
 ---
 
@@ -48,8 +51,8 @@ Các nội dung sau không được xuất hiện trong schema thực thi, accep
 
 ## 1.6 Decision status
 
-- `CLOSED`: `OD-01`, `OD-02`, `OD-03`, `OD-10`, `OD-11`, `OD-12` — policy v0.3 trong tài liệu này là test oracle hiện hành cho prototype.
-- `PARTIALLY CLOSED`: `OD-09` — owner/reviewer role và deadline đã chốt; tên Product approver/proxy BQL và bằng chứng sign-off còn `TBD`.
+- `CLOSED`: `OD-01`, `OD-02`, `OD-03`, `OD-09`, `OD-10`, `OD-11`, `OD-12` — policy v0.3 trong tài liệu này là test oracle đã freeze cho prototype.
+- `FROZEN`: `OD-09 Sign-off Record` xác nhận Cao Văn Trường là Product approver/proxy và sign-off owner; freeze date 28/09/2026.
 - `OPEN · NON-BLOCKING FOR MVP`: `OD-04` material threshold, `OD-05` BQL sub-role, `OD-06` pilot priority/SLA, `OD-07` reason taxonomy.
 
 ---
@@ -459,7 +462,7 @@ Ký hiệu: `Có`; `Không`; `Điều kiện`.
 - `evidence_requirements` với `required` boolean.
 - `blocking_rules`, `warning_rules`, `exit_criteria`.
 - `asset_lookup_required`, `duty_lookup_required`, `routing_team_id`, `material_stock_gate_required`.
-- `status=DRAFT|APPROVED_FOR_PROTOTYPE` (`TBD` qua sign-off).
+- `status=APPROVED_FOR_PROTOTYPE` cho fixture thuộc frozen baseline v0.3.
 - Playbook Registry là cấu hình nội bộ read-only; không có CRUD riêng.
 
 ## 6.5 Asset
@@ -646,4 +649,4 @@ Thứ tự bắt buộc, không được bỏ qua hoặc đảo safety sau model
 
 ## Phase 3 consistency gate
 
-**PASS.** PRD v0.3 chỉ có hai playbook, 12 tickets và 4 demo flow; duty áp dụng cả hai, asset chỉ cho kỹ thuật, route chỉ ở cấp team và draft tồn tại độc lập với route. Chỉ tên/bằng chứng sign-off OD-09 còn chặn approved baseline.
+**PASS.** PRD v0.3 chỉ có hai playbook, 12 tickets và 4 demo flow; duty áp dụng cả hai, asset chỉ cho kỹ thuật, route chỉ ở cấp team và draft tồn tại độc lập với route. OD-09 đã đóng; baseline đã `FROZEN` ngày 28/09/2026.

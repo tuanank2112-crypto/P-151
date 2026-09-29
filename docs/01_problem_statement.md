@@ -1,8 +1,10 @@
 # MaintenanceOps Agent — Problem Statement
 
-> **Phân loại tài liệu:** DRAFT · Dữ liệu và quy trình mô phỏng  
+> **Phân loại tài liệu:** FROZEN · Dữ liệu và quy trình mô phỏng
 > **Version:** 0.3
-> **Ngày:** 2026-09-27  
+> **Ngày:** 2026-09-28
+> **MVP baseline:** MaintenanceOps MVP v0.3
+> **Freeze date:** 28/09/2026
 > **Owner:** TV1 — Product / BA / Process  
 > **Source of truth:** Prompt MVP MaintenanceOps Agent ngày 2026-09-27 và các quyết định đã khóa trong tài liệu này
 > **Lưu ý:** Tài liệu này không mô tả quy trình, SLA, định mức, tồn kho hay hiệu quả vận hành thực tế của Vinhomes.
@@ -14,6 +16,7 @@
 | 0.1 | 2026-09-27 | Tạo mới Phase 0 Source Audit và Phase 1 Problem Statement từ source of truth | DRAFT |
 | 0.2 | 2026-09-27 | Ghi nhận quyết định OD-01/02/03/08 và cơ chế sign-off OD-09; cập nhật workflow proposal → BPTN confirmation | DRAFT · Chờ tên/sign-off approver |
 | 0.3 | 2026-09-27 | Re-baseline MVP còn hai nhóm dịch vụ; bổ sung asset, duty, stock gate, team-only routing, dataset 12 ticket và 4 demo flow | DRAFT · Chờ tên/sign-off approver |
+| 0.3-freeze | 2026-09-28 | Đóng OD-09 và freeze phạm vi MaintenanceOps MVP v0.3 | FROZEN |
 
 ---
 
@@ -95,7 +98,7 @@ Các assumption dưới đây chỉ giúp tài liệu đủ cụ thể để rev
 | OD-05 | BQL sub-role authority | `OPEN · PILOT ONLY` — prototype dùng role BQL chung | Business owner tương lai |
 | OD-06 | Mức ưu tiên và SLA | `OPEN · PILOT ONLY`; priority optional trong MVP | Business owner tương lai |
 | OD-07 | Taxonomy reason cho chỉnh sửa hành chính | `OPEN · UAT`; schema vẫn bắt buộc reason | TV1 |
-| OD-09 | Owner và thẩm quyền sign-off | `PARTIALLY CLOSED` — role/deadline đã chốt; tên Product approver/proxy và bằng chứng sign-off còn `TBD` | TV1; `[Tên nhóm trưởng / Product Owner]` |
+| OD-09 | Owner và thẩm quyền sign-off | `CLOSED · FROZEN` — Product approver/proxy và sign-off owner: Cao Văn Trường; evidence: `OD-09 Sign-off Record`; freeze date 28/09/2026 | Cao Văn Trường |
 | OD-10 | Asset/duty lookup và team-only routing | `CLOSED` — asset chỉ bắt buộc cho kỹ thuật; duty bắt buộc cho cả hai; không gán nhân viên | TV1 / Product approver proxy |
 | OD-11 | Draft khi route chưa hợp lệ | `CLOSED` — vẫn tạo draft; state/reason theo asset, stock hoặc duty; không READY | TV1 / Product approver proxy |
 | OD-12 | Dataset/demo baseline | `CLOSED` — 12 ticket, 4 demo flow, 8 regression cases | TV1 + TV4 |
@@ -117,7 +120,7 @@ Các assumption dưới đây chỉ giúp tài liệu đủ cụ thể để rev
 
 ### Phase 0 consistency gate
 
-**PASS.** Không có mâu thuẫn P0 chưa được xử lý. Asset, duty, stock gate và team-only routing chỉ là policy mô phỏng; OD-09 còn thiếu tên và bằng chứng sign-off.
+**PASS.** Không có mâu thuẫn P0 chưa được xử lý. Asset, duty, stock gate và team-only routing chỉ là policy mô phỏng; OD-09 đã đóng và baseline v0.3 đã `FROZEN` ngày 28/09/2026.
 
 ---
 
@@ -221,8 +224,8 @@ Nếu Agent kết hợp deterministic safety/permission rules với structured o
 
 ## 13. Open decisions áp dụng
 
-- `OD-01`, `OD-02`, `OD-03`, `OD-10`, `OD-11` và `OD-12` đã `CLOSED` cho policy mô phỏng.
-- `OD-09` còn thiếu tên Product approver/proxy và bằng chứng sign-off; đây là blocker duy nhất để đổi trạng thái tài liệu sang approved build baseline.
+- `OD-01`, `OD-02`, `OD-03`, `OD-09`, `OD-10`, `OD-11` và `OD-12` đã `CLOSED` cho policy mô phỏng.
+- Baseline `MaintenanceOps MVP v0.3` đã `FROZEN` ngày 28/09/2026 theo `OD-09 Sign-off Record`; thay đổi phạm vi sau freeze phải qua change control.
 - `OD-04`, `OD-05`, `OD-06`, `OD-07` vẫn mở nhưng không chặn prototype build theo phạm vi v0.3.
 
 ## 14. Risk nếu giải sai bài toán

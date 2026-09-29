@@ -1,8 +1,10 @@
 # MaintenanceOps Agent — Data Contract v1
 
-> **Document status:** FINAL — cross-reviewed với Playbook v1.1
+> **Document status:** FROZEN — cross-reviewed với Playbook v1.1
 > **Version:** 1.1
-> **Ngày:** 2026-09-27  
+> **Ngày:** 2026-09-28
+> **MVP baseline:** MaintenanceOps MVP v0.3
+> **Freeze date:** 28/09/2026
 > **Owner duy nhất:** Agent B — AI/Data Owner  
 > **Business reviewer:** Agent A — Product/BA Owner  
 > **Data classification:** `SIMULATED` — toàn bộ instance, workflow, rule, checklist, vật tư, bằng chứng, định mức và kết quả trong contract này là dữ liệu mô phỏng; không phải dữ liệu hoặc quy trình vận hành thật của Vinhomes.
@@ -15,6 +17,7 @@
 | 0.9 | 2026-09-27 | Phase 2: áp dụng Field Matrix v1; hoàn thiện field-level schema, validators, state machine, permission/immutability/audit và dispositions cho Implementation Gaps | CROSS-REVIEW DRAFT |
 | 1.0 | 2026-09-27 | Phase 3: reverse-review Playbook; align canonical field/rule/evidence IDs, checklist timing và material mode | FINAL |
 | 1.1 | 2026-09-27 | Re-baseline hai playbook; thêm Asset, DutyAvailability, stock gate, team-only routing và route readiness | FINAL |
+| 1.1-freeze | 2026-09-28 | Đóng OD-09 và đưa Data Contract v1.1 vào frozen baseline MaintenanceOps MVP v0.3 | FROZEN |
 
 ---
 

@@ -1,8 +1,10 @@
 # MaintenanceOps Agent — UI Flow & Low-fidelity Wireframe
 
-> **Document status:** DRAFT · Policy v0.3 recorded, awaiting approver identity/sign-off
+> **Document status:** FROZEN
 > **Version:** 0.3
-> **Ngày:** 2026-09-27  
+> **Ngày:** 2026-09-28
+> **MVP baseline:** MaintenanceOps MVP v0.3
+> **Freeze date:** 28/09/2026
 > **Owner:** TV1 — Product / BA / Process; UX reviewer: TV3 — UX / UI / Prototype  
 > **Boundary:** Prototype với dữ liệu mô phỏng; không có CTA tạo work order thật, gửi cư dân, nghiệm thu, đóng ticket hoặc phê duyệt vật tư
 
@@ -13,6 +15,7 @@
 | 0.1 | 2026-09-27 | Tạo IA, 10 UI flows và wireframe cho `UI-01`–`UI-08` | DRAFT |
 | 0.2 | 2026-09-27 | Áp dụng Agent proposal → BPTN confirmation, evidence/state oracle và permission rejection | DRAFT · Chờ sign-off |
 | 0.3 | 2026-09-27 | Khóa 4 demo flow cho vệ sinh/kỹ thuật; thêm asset/duty/stock/route status và loại bỏ UI ngoài active scope | DRAFT · Chờ sign-off |
+| 0.3-freeze | 2026-09-28 | Đóng OD-09 và freeze UI scope/flow trong MaintenanceOps MVP v0.3 | FROZEN |
 
 ---
 
@@ -391,7 +394,7 @@ Nếu không xác định được evidence nào cần bổ sung hoặc source c
 
 ## Phase 4 consistency gate
 
-**PASS.** IA và flow bao phủ bốn demo flow cùng bốn edge flows, áp dụng nhất quán asset/duty/stock/team-only routing và không tạo state/actor/CTA ngoài PRD. Không có màn hình quản lý tài sản/lịch nhân sự hoặc nút gán nhân viên; tên/bằng chứng sign-off OD-09 vẫn `TBD`.
+**PASS.** IA và flow bao phủ bốn demo flow cùng bốn edge flows, áp dụng nhất quán asset/duty/stock/team-only routing và không tạo state/actor/CTA ngoài PRD. Không có màn hình quản lý tài sản/lịch nhân sự hoặc nút gán nhân viên; OD-09 đã đóng và UI baseline đã `FROZEN` ngày 28/09/2026.
 
 ## Deferred / Future Scope
 

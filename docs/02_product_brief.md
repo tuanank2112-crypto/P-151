@@ -1,8 +1,10 @@
 # MaintenanceOps Agent — Product Brief
 
-> **Document status:** DRAFT · Policy v0.3 đã chốt, chờ tên và sign-off approver
+> **Document status:** FROZEN
 > **Version:** 0.3
-> **Ngày:** 2026-09-27  
+> **Ngày:** 2026-09-28
+> **MVP baseline:** MaintenanceOps MVP v0.3
+> **Freeze date:** 28/09/2026
 > **Owner:** TV1 — Product / BA / Process  
 > **Phạm vi:** Prototype một tuần, chỉ dùng dữ liệu mô phỏng
 
@@ -13,6 +15,7 @@
 | 0.1 | 2026-09-27 | Tạo Product Brief từ Source Audit và Problem Statement v0.1 | DRAFT |
 | 0.2 | 2026-09-27 | Áp dụng OD-01/02/03/08; ghi nhận governance OD-09 và cập nhật readiness | DRAFT · Chờ sign-off |
 | 0.3 | 2026-09-27 | Khóa hai nhóm dịch vụ; thêm asset/duty/stock gate, team-only routing, 12 ticket và 4 demo flow | DRAFT · Chờ sign-off |
+| 0.3-freeze | 2026-09-28 | Đóng OD-09 và freeze phạm vi MaintenanceOps MVP v0.3 | FROZEN |
 
 # Phase 2 — Product Brief
 
@@ -220,7 +223,7 @@ Nếu structured Agent được giới hạn bởi deterministic safety/permissi
 
 | Risk | Hệ quả | Mitigation P0 |
 |---|---|---|
-| Product approver/proxy BQL chưa có tên và sign-off | Policy mô phỏng chưa có approval evidence | Giữ tài liệu DRAFT; điền tên và ghi version/date/sign-off trước build baseline |
+| Scope thay đổi sau freeze nhưng không qua change control | Baseline và test oracle bị lệch | Giữ v0.3 bất biến; yêu cầu mới chuyển backlog hoặc cần quyết định re-baseline riêng |
 | LLM output không ổn định | Routing/safety không dự đoán được | Deterministic schema, safety, state và permission rules chạy trước model output |
 | Dữ liệu mô phỏng bị hiểu là dữ liệu thật | Claim sai về Vinhomes | Nhãn synthetic ở mọi screen/export; ID `SIM-`; không dùng tên/SLA/định mức thật |
 | BPTN/BQL bị gộp | Sai quyền chỉnh sửa/quyết định | Permission matrix, UI CTA theo role, negative tests |
@@ -267,4 +270,4 @@ Build baseline chỉ Ready khi:
 
 ## Phase 2 consistency gate
 
-**PASS.** Product Brief thống nhất với Problem Statement và policy v0.3: hai playbook, 12 ticket, 4 demo flow, asset/duty/stock gate và team-only route. Chỉ danh tính và bằng chứng sign-off thuộc OD-09 còn chặn approved build baseline.
+**PASS.** Product Brief thống nhất với Problem Statement và policy v0.3: hai playbook, 12 ticket, 4 demo flow, asset/duty/stock gate và team-only route. OD-09 đã đóng; baseline `MaintenanceOps MVP v0.3` đã `FROZEN` ngày 28/09/2026.
