@@ -4,7 +4,7 @@
 > **Version:** 0.3
 > **Ngày:** 2026-09-27  
 > **Owner:** TV1 — Product / BA / Process; UX reviewer: TV3 — UX / UI / Prototype  
-> **Boundary:** Prototype với dữ liệu mô phỏng; không có CTA tạo work order thật, gửi cư dân, nghiệm thu, đóng ticket hoặc phê duyệt vật tư
+> **Boundary:** Prototype với dữ liệu mô phỏng; không có CTA tạo work order thật, gửi tin cư dân qua kênh thật hoặc phê duyệt vật tư. Từ `CR-BPTN-02` (v0.5 candidate): chỉ BQL có CTA nghiệm thu/trả làm lại/hủy
 
 ## Changelog
 
@@ -14,6 +14,10 @@
 | 0.2 | 2026-09-27 | Áp dụng Agent proposal → BPTN confirmation, evidence/state oracle và permission rejection | DRAFT · Chờ sign-off |
 | 0.3 | 2026-09-27 | Khóa 4 demo flow cho vệ sinh/kỹ thuật; thêm asset/duty/stock/route status và loại bỏ UI ngoài active scope | DRAFT · Chờ sign-off |
 | 0.4-candidate | 2026-09-29 | `CR-BPTN-01`: bỏ bước BPTN xác nhận khỏi happy path, thêm review/override có điều kiện; UI copy "Đề xuất team" (§1.2); backlog frontend (§5) | PROPOSED · Chờ duyệt CR |
+| 0.5-candidate | 2026-09-29 | `CR-BPTN-02`: 4 demo flow mới (giao phòng ban, ngoài giờ, chờ BPTN xác minh tài sản); màn hình theo dõi cho cư dân (`UI-09`) và dashboard BQL (`UI-10`); `UI-07` thành hàng chờ BPTN xác minh; CTA phòng ban nhận việc/báo hoàn thành; BQL nghiệm thu/trả làm lại/hủy | PROPOSED · Chờ duyệt CR |
+
+> **`CR-BPTN-02` (v0.5 candidate), PROPOSED:** mục 1, 2, `UI-01`, `UI-02`, `UI-06`, `UI-07`, `UI-09`, `UI-10`, 4 và 5 đã viết lại theo
+> [CR-BPTN-02](CR-BPTN-02.md). Giao diện chi tiết nằm ngoài phạm vi CR; wireframe dưới đây là low-fidelity.
 
 ---
 
@@ -23,131 +27,125 @@
 
 | UI ID | Screen | Mục tiêu chính | Primary actor |
 |---|---|---|---|
-| `UI-01` | Work Queue | Chọn case theo state/service và thấy blocker/warning | BPTN, nhân sự thực hiện, BQL |
-| `UI-02` | Ticket Detail | Tách raw source, administrative normalization và Agent proposal | BPTN, BQL |
-| `UI-03` | Work Order Draft | Xem draft/playbook/requirements/reason | Nhân sự thực hiện, BQL |
-| `UI-04` | Execution Update | Cập nhật progress/result note trong execution layer | Nhân sự thực hiện |
-| `UI-05` | Checklist, Material & Evidence | Cập nhật/kiểm tra checklist, material, evidence | Nhân sự thực hiện, BQL |
-| `UI-06` | `READY_FOR_REVIEW` Package | Xem eight-gate package, gồm route, và chuyển BQL xem xét | BQL; action handoff từ system/authorized user |
-| `UI-07` | Exception Review | Xem reason/rule/source/risk và BQL action | BQL |
-| `UI-08` | Audit History | Truy vết edit/decision/transition | BPTN, BQL, QA nội bộ |
+| `UI-01` | Work Queue | Chọn case theo trạng thái/phòng ban/blocker | BPTN, phòng ban, BQL |
+| `UI-02` | Ticket Detail | Tách raw source, phần cư dân bổ sung, Agent proposal, lựa chọn của BPTN (`locked_fields`) | BPTN, BQL |
+| `UI-03` | Work Order Draft | Xem draft đã giao phòng ban | Phòng ban, BQL |
+| `UI-04` | Execution Update | Nhận việc, tạm hoãn/tiếp tục, trả sai phòng ban | Phòng ban |
+| `UI-05` | Checklist, Material & Evidence | Cập nhật và báo hoàn thành | Phòng ban, BQL |
+| `UI-06` | `READY_FOR_REVIEW` Package | Xem kết quả đối soát; BQL nghiệm thu hoặc trả làm lại | BQL |
+| `UI-07` | Hàng chờ BPTN xác minh (`CR-BPTN-02` (v0.5 candidate), thay Exception Review) | Gỡ blocker `VERIFYING` | BPTN |
+| `UI-08` | Audit History | Timeline `ticket_status_events` + audit | BPTN, BQL, QA nội bộ |
+| `UI-09` | Theo dõi phản ánh (`CR-BPTN-02` (v0.5 candidate)) | Cư dân xem trạng thái công khai, bổ sung, đánh giá, báo chưa xong | Cư dân |
+| `UI-10` | Dashboard BQL (`CR-BPTN-02` (v0.5 candidate)) | Lọc theo trạng thái, phòng ban, mã blocker, leo thang, quá SLA; hủy ticket | BQL |
 
-`UI-04` và `UI-05` có thể là hai tab trong một Work Order Detail để giảm scope, nhưng ID, permission và acceptance criteria vẫn tách riêng.
+`UI-04` và `UI-05` có thể là hai tab trong một Work Order Detail.
 
 ## 1.1 Global UI rules
 
-- Mọi screen có banner cố định: **“DỮ LIỆU MÔ PHỎNG — Không phải hồ sơ/quy trình vận hành thật.”**
-- State hiển thị bằng text + icon/pattern, không chỉ bằng màu.
-- Raw resident content/evidence luôn trong vùng read-only có nhãn **“Nguồn gốc — bất biến”**.
-- CTA theo role; forbidden action không render hoặc disabled kèm lý do.
-- Nếu vẫn gọi forbidden action, UI hiển thị `ACTION_OUT_OF_AUTHORITY`; hệ thống reject, audit và giữ nguyên business state.
+- Mọi screen nội bộ có banner cố định: **“DỮ LIỆU MÔ PHỎNG — Không phải hồ sơ/quy trình vận hành thật.”**
+- Trạng thái hiển thị bằng text + icon/pattern, không chỉ bằng màu. Cư dân thấy nhãn tiếng Việt (`Đã tiếp nhận`,
+  `Đang xác minh`, `Đã chuyển phòng ban`, `Đang xử lý`, `Chờ nghiệm thu`, `Hoàn thành`, `Chờ bạn bổ sung`, `Tạm hoãn`,
+  `Đã gộp`, `Đã hủy`); màn hình nội bộ thấy mã + nhãn.
+- Raw resident content/evidence luôn read-only, nhãn **“Nguồn gốc — bất biến”**; phần cư dân bổ sung hiện riêng, theo thứ tự thời gian.
+- CTA theo role; forbidden action không render hoặc disabled kèm lý do. Nếu vẫn gọi, UI hiển thị `ACTION_DENIED` (có audit).
 - Mọi Agent result có playbook/rule/reason/source/version.
-- Service/type/playbook/location của Agent hiển thị kèm `confirmation_status` (`CR-BPTN-01`): `NOT_REQUIRED` → Agent tiếp tục, BPTN không phải thao tác; `PENDING_REVIEW` → banner `CHỜ XÁC MINH` nêu `review_required_reason` và CTA override cho BPTN; không tạo draft khi `PENDING_REVIEW` hoặc thiếu location.
-- Ticket detail/draft hiển thị Playbook match, Asset match (kỹ thuật), vật tư cần dùng, tồn kho mô phỏng, team đề xuất, Duty status và Route status.
-- Route chỉ ở cấp `SIM-TEAM-*`; không có nút gán nhân viên và không hiển thị assignee selector.
-- Playbook Registry, Asset Catalog và DutyAvailability là read-only; không có màn hình CRUD tài sản hoặc lập lịch nhân sự.
-- Không dùng các CTA “Nghiệm thu”, “Hoàn tất công việc”, “Đóng ticket”, “Phê duyệt vật tư”.
-- Không có CTA gửi thông báo, yêu cầu ảnh cư dân hoặc tạo work order thật.
+- Blocker hiển thị: mã lý do, người gỡ, từ lúc nào, bước chạy lại, mốc nhắc/leo thang, cờ leo thang (nội bộ);
+  `public_message` và `eta` (cư dân).
+- Phòng ban: trước bước 8 chỉ hiện **“Phòng ban đề xuất”** (`proposed_department_id`, nội bộ); sau khi giao hiện
+  **“Phòng ban phụ trách”** (`department_id`). Cư dân chỉ thấy tên phòng ban sau khi giao.
+- Không có assignee selector trong UI của Agent/BPTN; phòng ban tự phân công trong hệ thống của phòng ban.
+- Chỉ BQL có CTA “Nghiệm thu”, “Trả làm lại”, “Hủy”. Không có CTA phê duyệt vật tư, gửi tin qua kênh thật, tạo work order thật.
 
-## 1.2 UI copy cho route (`CR-BPTN-01` / v0.4 candidate)
+## 1.2 UI copy cho giao phòng ban (`CR-BPTN-02` (v0.5 candidate), thay copy "Đề xuất team")
 
 | Vị trí | Copy bắt buộc |
 |---|---|
-| Tiêu đề panel route | **Đề xuất team** |
-| `route_status=ROUTED` | **Đề xuất tuyến team hợp lệ** |
-| `route_status=NOT_ROUTED` | **Chưa có đề xuất tuyến team hợp lệ** + `queue_reason` |
-| Helper text dưới panel | *Đây là đề xuất tuyến tới team mô phỏng, không phải xác nhận đã giao việc hoặc đã có nhân sự nhận việc.* |
-| Capacity khi duty pass | *Capacity mô phỏng đạt điều kiện fixture; không phản ánh năng lực nhận việc thực tế.* |
+| Trước bước 8 (nội bộ) | **Phòng ban đề xuất:** {tên} — *chưa giao; cần review/tài sản trước* |
+| `can_route` sai (nội bộ) | **Chưa đủ điều kiện giao** + danh sách điều kiện thiếu (`review_status`, `asset_resolution`, phòng ban) |
+| `ROUTED` | **Đã chuyển {tên phòng ban}** |
+| `ROUTED` + `OUT_OF_HOURS` | **Phản ánh sẽ được xử lý từ {giờ}** |
+| `IN_PROGRESS` | **{tên phòng ban} đang xử lý** |
+| `READY_FOR_REVIEW` | **Chờ nghiệm thu** — *Ban quản lý sẽ kiểm tra trước khi đóng* |
 
-Không hiển thị trong active MVP: "Đã giao việc", "Đã phân công", "Team đã nhận việc", "Nhân viên phụ trách", "Kỹ thuật viên được gán"; không có nút gán hoặc đổi nhân viên.
+Lời hiển thị cho cư dân chỉ lấy từ `src/maintenance/i18n/vi.yaml`.
 
 ---
 
 # 2. UI flows
 
-Dataset demo dùng 12 ticket mô phỏng: 6 vệ sinh, 6 kỹ thuật. Bốn flow 2.1–2.4 là demo chính; tám ticket còn lại chạy regression và không tạo thêm demo flow.
+`CR-BPTN-02` (v0.5 candidate). Dataset demo dùng 12 ticket mô phỏng: 6 vệ sinh, 6 kỹ thuật. Bốn flow 2.1–2.4 là demo chính.
 
 ## 2.1 Flow 1 — Happy path vệ sinh
 
-| Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
-|---|---|---|---|---|---|---|
-| 1 | BPTN | Tiếp nhận, mở raw ticket read-only | Có ingest event | ingest → `IN_PROGRESS` | Không | Access/ingest event |
-| 2 | Agent | Validate ba raw fields, match `PB-CLN-01`, chạy risk rule và đề xuất service/type | Đủ raw field; không hazard signal | `IN_PROGRESS` → `IN_PROGRESS` | Không | Proposal + reason/rule/source |
-| 3 | Agent | Quyết định BPTN review (`CR-BPTN-01`) | Category + location rõ → `NOT_REQUIRED`; BPTN không phải thao tác | giữ `IN_PROGRESS` | Thiếu/không rõ → `PENDING_REVIEW`, `CHỜ XÁC MINH` | `confirmation_status` + audit |
-| 4 | Agent | Xác định vật tư, kiểm tra stock và duty | Stock đủ; team vệ sinh đang trực, capacity mô phỏng đạt điều kiện fixture | giữ `IN_PROGRESS` | Không | Stock + `SIM-DUTY-*` result |
-| 5 | Agent | Tạo draft và đề xuất tuyến team | Mọi route gate pass | giữ `IN_PROGRESS` | Không | Draft + `SIM-TEAM-*` + `route_status=ROUTED` ("Đề xuất tuyến team hợp lệ"); `assignee_id=null` |
-| 6 | Nhân sự thực hiện | Cập nhật checklist, material, ghi chú/evidence | Chỉ execution layer | giữ `IN_PROGRESS` | Chưa đủ thì giữ state | Execution revisions + audit |
-| 7 | Agent | Reconcile planned/norm/issued/used và tám gates | Tất cả pass, route hợp lệ | `IN_PROGRESS` → `READY_FOR_REVIEW` | Không | Gate result + transition audit |
-| 8 | Authorized UI user/System | Chọn “Chuyển BQL xem xét” | State READY | giữ `READY_FOR_REVIEW` | Không | Handoff event; không phải acceptance |
+| Bước | Actor | Action | Trạng thái trước → sau | Cư dân thấy |
+|---|---|---|---|---|
+| 1 | Cư dân | Gửi phản ánh qua `UI-09` | — → `RECEIVED` | Đã tiếp nhận |
+| 2 | Agent | Kiểm tra dữ liệu, trùng; match `PB-CLN-01`; đề xuất `DEPT_CLEANING`; review `NOT_REQUIRED`; tài sản `NOT_APPLICABLE`; vật tư đủ | giữ `RECEIVED` | — |
+| 3 | System | `can_route` đúng → giao `DEPT_CLEANING`, tạo draft | `RECEIVED` → `ROUTED` | Đã chuyển Phòng Vệ sinh |
+| 4 | Phòng ban | Nhận việc (`UI-04`) | `ROUTED` → `IN_PROGRESS` | Phòng Vệ sinh đang xử lý |
+| 5 | Phòng ban | Checklist, vật tư, ghi chú; báo hoàn thành (`UI-05`) | giữ `IN_PROGRESS` | — |
+| 6 | Agent | Đối soát bước 10 đạt | `IN_PROGRESS` → `READY_FOR_REVIEW` | Chờ nghiệm thu |
+| 7 | BQL | Nghiệm thu (`UI-06`) | `READY_FOR_REVIEW` → `CLOSED` | Hoàn thành; có thể đánh giá/báo chưa xong trong 7 ngày |
 
-## 2.2 Flow 2 — Vệ sinh không có team đang trực
+Timeline cư dân có đúng 5 mốc.
 
-| Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
-|---|---|---|---|---|---|---|
-| 1 | Agent | Validate, match `PB-CLN-01`, quyết định BPTN review | Raw/admin gates pass; `NOT_REQUIRED` | giữ `IN_PROGRESS` | Không | Proposal + `confirmation_status` audit |
-| 2 | Agent | Check stock và duty | Stock đủ; duty data rõ nhưng không team vệ sinh trực | giữ `IN_PROGRESS` | **Chặn route/READY** | `duty_lookup_status=NO_AVAILABLE_TEAM` |
-| 3 | Agent | Tạo work order draft không có route | Draft hợp lệ dù duty fail | giữ `IN_PROGRESS` | **Chặn route/READY** | `route_status=NOT_ROUTED`, `queue_reason=NO_AVAILABLE_TEAM` |
-| 4 | UI/BQL | Xem draft và lý do chưa route | Không được coi là giao việc | giữ `IN_PROGRESS` | **Chặn READY** | Audit lookup/draft; không có nút gán nhân viên |
+## 2.2 Flow 2 — Vệ sinh ngoài giờ phòng ban
+
+| Bước | Actor | Action | Trạng thái | Cư dân thấy |
+|---|---|---|---|---|
+| 1 | Agent/System | Như flow 1 bước 2–3, lúc 23:30 | `ROUTED` + blocker `OUT_OF_HOURS` | Phản ánh sẽ được xử lý từ 06:00 |
+| 2 | Job 5 phút | Đầu ca 06:00: gỡ blocker, thông báo phòng ban | giữ `ROUTED` | Đã chuyển Phòng Vệ sinh |
+| 3 | Job | Sau 2h chưa ai nhận → `NOT_ACCEPTED`, nhắc trưởng phòng mỗi 2h, leo thang sau 3 lần | giữ `ROUTED` | Đang chờ phòng ban tiếp nhận |
 
 ## 2.3 Flow 3 — Happy path kỹ thuật
 
-| Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
-|---|---|---|---|---|---|---|
-| 1 | Agent | Validate raw fields, match `PB-TEC-01`, risk scan và đề xuất service/type | Không mùi khét/tia lửa/dây hở | giữ `IN_PROGRESS` | Không | Proposal/rule/source reason |
-| 2 | Agent | Quyết định BPTN review (`CR-BPTN-01`) | Category + location rõ → `NOT_REQUIRED` | giữ `IN_PROGRESS` | Thiếu/không rõ → `CHỜ XÁC MINH` | `confirmation_status` audit |
-| 3 | Agent | Lookup `LIGHTING` asset | Đúng một `SIM-ASSET-*` match location | giữ `IN_PROGRESS` | Không | Asset match + source ref |
-| 4 | Agent | Check planned/norm stock và duty | Vật tư đủ; team kỹ thuật trực/còn capacity | giữ `IN_PROGRESS` | Không | Stock + duty results |
-| 5 | Agent | Tạo draft và đề xuất tuyến team | Các route gate pass | giữ `IN_PROGRESS` | Không | Draft + `SIM-TEAM-*`; `route_status=ROUTED` ("Đề xuất tuyến team hợp lệ"); `assignee_id=null` |
-| 6 | Nhân sự thực hiện | Cập nhật execution/checklist/material/evidence | Không sửa raw | giữ `IN_PROGRESS` | Pending/missing giữ IN_PROGRESS | Execution audit |
-| 7 | Agent | Validate tám gates | Route, checklist, result evidence và material đủ | `IN_PROGRESS` → `READY_FOR_REVIEW` | Không | Gate summary + transition |
-| 8 | System/user | Handoff BQL | READY | giữ READY | Không | Handoff audit |
+| Bước | Actor | Action | Trạng thái |
+|---|---|---|---|
+| 1 | Agent | Match `PB-TEC-01`; đề xuất `DEPT_TECHNICAL`; review `NOT_REQUIRED` | `RECEIVED` |
+| 2 | Agent | Tra tài sản: đúng một `SIM-ASSET-*` → `FOUND` | `RECEIVED` |
+| 3 | Agent/System | Vật tư đủ; `can_route` → giao `DEPT_TECHNICAL` | `ROUTED` |
+| 4–7 | Phòng ban / Agent / BQL | Như flow 1 bước 4–7 | `IN_PROGRESS` → `READY_FOR_REVIEW` → `CLOSED` |
 
-## 2.4 Flow 4 — Kỹ thuật không tìm thấy asset hoặc thiếu vật tư
+## 2.4 Flow 4 — Kỹ thuật chưa xác định được tài sản
 
-| Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
-|---|---|---|---|---|---|---|
-| 1 | Agent | Validate, match `PB-TEC-01`, quyết định BPTN review | Không high-risk; `NOT_REQUIRED` | giữ `IN_PROGRESS` | Không | Proposal + `confirmation_status` audit |
-| 2a | Agent | Lookup asset | Không có match hoặc nhiều match | `IN_PROGRESS` → `CHỜ XÁC MINH` | **Chặn route** | `asset_lookup_status=NOT_FOUND|AMBIGUOUS`, reason/source |
-| 2b | Agent | Check stock sau asset match | `material_stock_status=INSUFFICIENT` | giữ `IN_PROGRESS` | **Chặn route** | `queue_reason=MATERIAL_SHORTAGE` |
-| 3 | Agent | Tạo draft phản ánh gate result | Asset unresolved dùng `asset_id=null`; shortage giữ matched asset | state theo 2a/2b | **Chặn READY** | Draft + `route_status=NOT_ROUTED` |
-| 4 | UI/BQL | Xem Asset/Material/Duty/Route panels | Hiển thị exact reason; không tự route | giữ state | **Chặn READY** | Audit; no employee assignment CTA |
+| Bước | Actor | Action | Trạng thái | Ghi chú |
+|---|---|---|---|---|
+| 1 | Agent | Tra tài sản: không có hoặc nhiều asset | `RECEIVED` → `VERIFYING` (`ASSET_UNCLEAR`) | Chưa giao; cư dân không thấy tên phòng ban |
+| 2 | Job | Nhắc BPTN mỗi 1h giờ hành chính; 4h → leo thang | giữ `VERIFYING` | Không tự giao |
+| 3a | BPTN (`UI-07`) | Chọn asset | `VERIFYING` → `RECEIVED` → `ROUTED` | `asset_resolution=FOUND` |
+| 3b | BPTN (`UI-07`) | Chọn "Xác định tại hiện trường" + lý do | `VERIFYING` → `RECEIVED` → `ROUTED` | `ONSITE_BY_BPTN`, cờ `ASSET_CHECK_ONSITE` cho phòng ban |
 
-## 2.5 Edge flow A — Thiếu required field → `CHỜ XÁC MINH`
+## 2.5 Edge flow A — Thiếu thông tin → `NEED_INFO`
 
-| Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
-|---|---|---|---|---|---|---|
-| 1 | Agent | Validate ba raw fields | Thiếu `ticket_id`, `created_at` hoặc `original_description` | `IN_PROGRESS` → `CHỜ XÁC MINH` | **Blocking** | Missing-field list, rule/source, transition audit |
-| 2 | Agent | Đề xuất service/type/playbook | Đủ raw fields | `IN_PROGRESS` → giữ | Không | Proposal/reason/source |
-| 3 | Agent | Quyết định BPTN review (`CR-BPTN-01`) | Thiếu location hoặc category không rõ → `PENDING_REVIEW` | `IN_PROGRESS` → `CHỜ XÁC MINH` | **Blocking draft** | `review_required_reason`; no draft |
-| 4 | BPTN | Override service/type/location với `override_reason` (và source nếu có) | Dữ liệu đã xác minh; không có safety exception | `CHỜ XÁC MINH` → `IN_PROGRESS` qua revalidation | Gỡ block sau validate; Agent chạy lại playbook/asset/stock/duty | `OVERRIDDEN` + audit từng field |
+| Bước | Actor | Action | Trạng thái | Cư dân thấy |
+|---|---|---|---|---|
+| 1 | Agent | Thiếu nội dung hoặc vị trí | `RECEIVED` → `NEED_INFO` | Vui lòng bổ sung: {fields} |
+| 2 | Job | Nhắc mỗi 24h; 72h → cờ để BQL quyết định hủy | giữ `NEED_INFO` | — |
+| 3 | Cư dân (`UI-09`) | Bổ sung (append-only) | `NEED_INFO` → `RECEIVED` → … | Pipeline chạy lại từ bước 2 |
 
-## 2.6 Edge flow B — Material variance sau thực hiện
+## 2.6 Edge flow B — Thiếu vật tư
 
-| Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
-|---|---|---|---|---|---|---|
-| 1 | Nhân sự thực hiện | Nhập planned/norm/issued/used/reason | Use case vệ sinh/kỹ thuật | `IN_PROGRESS` → giữ | Tùy kết quả | Material update audit |
-| 2 | Agent | Chạy đúng ba comparisons | Có mismatch | giữ `IN_PROGRESS` | Chưa có reason: blocking clarification | Comparison result + neutral explanation |
-| 3a | Agent | Yêu cầu xác minh | `variance_reason` thiếu | `IN_PROGRESS` → `CHỜ XÁC MINH` | **Blocking** | Missing reason + transition audit |
-| 3b | Agent | Mark reconciled với warning | Có reason; không safety rule khác (`CONFIRMED OD-03`) | `IN_PROGRESS` → có thể READY nếu gate khác pass | **Non-blocking** | Warning rule/reason/comparison + audit |
+| Bước | Actor | Action | Trạng thái |
+|---|---|---|---|
+| 1 | Agent | Tồn kho không đủ | `RECEIVED` → `ON_HOLD` (`WAITING_MATERIAL`) |
+| 2 | Kho | Nhập vật tư | `ON_HOLD` → `RECEIVED` → `ROUTED` |
+| 2' | Job | 24h không nhập | giữ `ON_HOLD`, `escalated=true`, thông báo BQL |
 
-## 2.7 Edge flow C — Missing minimum evidence
+## 2.7 Edge flow C — Phòng ban trả về sai phòng ban
 
-| Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
-|---|---|---|---|---|---|---|
-| 1 | Agent | Validate evidence requirements, tách khỏi checklist gate | Required evidence `MISSING/INVALID_TYPE` nhưng requirement đã rõ | `IN_PROGRESS` → giữ `IN_PROGRESS` | **Blocking READY** | Evidence gap result + rule/source |
-| 2 | UI | Chỉ rõ evidence thiếu/sai loại | Không được mặc định yêu cầu ảnh | giữ | **Blocking READY** | View event optional |
-| 3 | Nhân sự thực hiện | Add evidence mô phỏng đúng loại | Execution evidence only | giữ `IN_PROGRESS` | Revalidate | Evidence + audit |
-| 4 | Agent | Revalidate | Tất cả gate pass | `IN_PROGRESS` → `READY_FOR_REVIEW` | Không | Gate/transition audit |
+| Bước | Actor | Action | Trạng thái |
+|---|---|---|---|
+| 1 | Phòng ban (`UI-04`) | "Không thuộc phòng ban" + lý do | `ROUTED` → `VERIFYING` (`WRONG_DEPT`); `department_id=null` |
+| 2a | BPTN (`UI-07`) | Đổi loại việc (vd. vệ sinh → đèn) | Chạy lại từ bước 6 (tra tài sản) → `ROUTED` tới phòng ban mới, hoặc dừng ở `ASSET_UNCLEAR` |
+| 2b | BPTN (`UI-07`) | Giữ loại việc, chỉ đổi phòng ban | Chạy lại từ bước 7 → `ROUTED` |
 
-Nếu không xác định được evidence nào cần bổ sung hoặc source cần con người xác minh, Agent chuyển `CHỜ XÁC MINH` thay vì giữ `IN_PROGRESS`.
+## 2.8 Edge flow D — Đối soát không đạt, trả làm lại, mở lại
 
-## 2.8 Edge flow D — Non-blocking warning trong `READY_FOR_REVIEW`
-
-| Bước | Actor | Action | Điều kiện | State trước → sau | Block | Dữ liệu/audit tạo |
-|---|---|---|---|---|---|---|
-| 1 | Agent | Evaluate eight gates | Tất cả pass, gồm route; có explained variance warning | `IN_PROGRESS` → `READY_FOR_REVIEW` | **Non-blocking** | Warning + gate/transition audit |
-| 2 | UI | Hiển thị banner warning cùng rule/reason/comparison | Không dùng copy “không có vấn đề” | giữ READY | Không | Warning acknowledgment không bắt buộc |
-| 3 | BQL | Mở package để xem | Warning còn active/visible | giữ READY | Không | Review access event optional |
+| Bước | Actor | Action | Trạng thái |
+|---|---|---|---|
+| 1 | Phòng ban | Báo hoàn thành khi thiếu ghi chú/checklist/vật tư | giữ `IN_PROGRESS`; `UI-05` hiện danh sách mục thiếu; không blocker |
+| 2 | BQL (`UI-06`) | Trả làm lại + lý do | `READY_FOR_REVIEW` → `IN_PROGRESS` (`REWORK`); lần 3 → leo thang |
+| 3 | Cư dân (`UI-09`) | Báo chưa xong trong 7 ngày | `CLOSED` → `READY_FOR_REVIEW` |
 
 ---
 
@@ -159,65 +157,47 @@ Nếu không xác định được evidence nào cần bổ sung hoặc source c
 +----------------------------------------------------------------------------+
 | DỮ LIỆU MÔ PHỎNG                                      [Role: BPTN/BQL/...] |
 | Work Queue                                                                 |
-| [State filter (P1)] [Service filter (P1)] [Warning filter (P1)]            |
+| [Trạng thái] [Phòng ban] [Mã blocker] [Leo thang]                          |
 |----------------------------------------------------------------------------|
-| SIM-T-001 | Vệ sinh | IN_PROGRESS       | Missing: 0 | Warning: 0          |
-| SIM-T-002 | Kỹ thuật| EXCEPTION          | Rule: EX-TEC-01              |
-| SIM-T-003 | Kỹ thuật| CHỜ XÁC MINH       | Asset: NOT_FOUND              |
+| SIM-TKT-0001 | Vệ sinh | ROUTED       | DEPT_CLEANING  | —                 |
+| SIM-TKT-0002 | Đèn     | VERIFYING    | (đề xuất TEC)  | ASSET_UNCLEAR ⚑   |
+| SIM-TKT-0003 | Vệ sinh | NEED_INFO    | —              | MISSING_INFO      |
 |----------------------------------------------------------------------------|
 | Chọn case → Ticket Detail                                                  |
 +----------------------------------------------------------------------------+
 ```
 
-- **Mục tiêu:** ưu tiên case theo state và mở đúng detail/review screen.
-- **Actor:** BPTN, nhân sự thực hiện, BQL; row actions theo role.
-- **Hiển thị:** SIM ID, service, state text, blocker/warning count, last updated, synthetic label.
+- **Hiển thị (`CR-BPTN-02` (v0.5 candidate)):** SIM ID, loại việc, trạng thái (mã + nhãn), phòng ban (đã giao) hoặc phòng ban đề xuất (ghi rõ
+  “đề xuất”), mã blocker, cờ leo thang, last updated.
 - **Được sửa:** không sửa entity trực tiếp trên queue.
-- **Bất biến:** raw summary chỉ preview read-only.
-- **Primary CTA:** “Mở hồ sơ”.
-- **Secondary CTA:** filter P1; reset demo nằm ở internal control, không phải operational CTA.
-- **Disabled/absent:** close, accept, approve material, send resident message.
-- **Status/warning/error:** state badge text; system error không giả READY.
-- **Audit:** last transition/time/actor preview.
+- **Primary CTA:** “Mở hồ sơ”. Phòng ban chỉ thấy ticket đã giao cho mình.
+- **Audit:** sự kiện trạng thái gần nhất.
 
 ## UI-02 — Ticket Detail
 
 ```text
 +----------------------------------------------------------------------------+
-| DỮ LIỆU MÔ PHỎNG | SIM-T-001 | State: IN_PROGRESS                         |
+| DỮ LIỆU MÔ PHỎNG | SIM-TKT-0002 | VERIFYING · ASSET_UNCLEAR (BPTN) ⚑      |
 |----------------------------------------------------------------------------|
 | NỘI DUNG PHẢN ÁNH GỐC — READ ONLY / BẤT BIẾN                               |
-| original_description ...                           [Copy reference only]    |
-| BẰNG CHỨNG GỐC — READ ONLY / BẤT BIẾN                                      |
-| evidence metadata ...                                                       |
+| CƯ DÂN BỔ SUNG (append-only, theo thời gian)                                |
 |----------------------------------------------------------------------------|
-| TRƯỜNG HÀNH CHÍNH                  | AGENT PROPOSAL + confirmation_status   |
-| Department [editable allowlist]    | Service category proposed              |
-| Location [required before draft]   | Ticket type proposed                   |
-| Priority [optional]                | Playbook + version                     |
-| override_reason [required khi sửa] | Matched rules + source + reason        |
-| [Xác nhận không đổi] [Override]    | NOT_REQUIRED / PENDING_REVIEW (+ lý do) |
-| Nguồn đối chiếu [optional]         | [Xem proposal details]                 |
+| AGENT PROPOSAL                        | LỰA CHỌN CỦA BPTN (locked_fields)  |
+| Loại việc + playbook + rule/reason    | category / location / asset / dept |
+| Phòng ban đề xuất: Phòng Kỹ thuật     | review_status: NOT_REQUIRED        |
+| Tra tài sản: NOT_FOUND                | asset_resolution: —                |
 |----------------------------------------------------------------------------|
-| LOOKUP & ROUTING                                                           |
-| Playbook match | Asset match (kỹ thuật) | Material/stock status                 |
-| ĐỀ XUẤT TEAM: SIM-TEAM-* | Duty status | Đề xuất tuyến team hợp lệ / Chưa có |
-| đề xuất tuyến team hợp lệ + Queue reason | Capacity mô phỏng (fixture)       |
+| ĐIỀU KIỆN GIAO (can_route): review ✓ | tài sản ✗ | phòng ban đề xuất ✓    |
+| BLOCKER: người gỡ BPTN | từ 09:00 | nhắc lần 1/3 | leo thang lúc 13:00     |
 |----------------------------------------------------------------------------|
-| AUDIT PREVIEW: actor | field | old → new | reason | timestamp              |
+| TIMELINE (ticket_status_events)                                            |
 +----------------------------------------------------------------------------+
 ```
 
-- **Mục tiêu:** tách trực quan raw/admin/proposal và chống sửa nguồn.
-- **Actor:** BPTN chỉnh admin; Agent/BQL/nhân sự read theo quyền.
-- **Field hiển thị:** toàn bộ raw content/evidence; Agent-proposed service/type/playbook/location/reason/source; `confirmation_status`, `review_required_reason`, `override_*`; admin revision.
-- **Field sửa/xác nhận (`CR-BPTN-01`):** BPTN chỉ bắt buộc thao tác khi `PENDING_REVIEW`; có thể xác nhận không đổi (`CONFIRMED`) hoặc override service/type/location (`OVERRIDDEN`) với `override_reason` bắt buộc và nguồn đối chiếu nếu có. Không override khi có safety exception.
-- **Field bất biến:** original content, original evidence, original timestamp/ID.
-- **Primary CTA:** khi `PENDING_REVIEW`: BPTN “Override trường hành chính” (reason bắt buộc); khi `NOT_REQUIRED`: không có CTA bắt buộc, chỉ “Xác nhận không đổi” (tùy chọn) hoặc “Override” nếu phát hiện sai.
-- **Secondary CTA:** “Xem audit history”.
-- **Disabled:** raw editor, overwrite evidence, auto-fill missing data.
-- **Banner:** `CHỜ XÁC MINH` liệt kê field; `EXCEPTION` dẫn UI-07.
-- **Audit:** preview edit và link UI-08.
+- **Mục tiêu (`CR-BPTN-02` (v0.5 candidate)):** tách raw / phần bổ sung / đề xuất của Agent / lựa chọn của BPTN; cho thấy vì sao chưa giao.
+- **Field bất biến:** nội dung gốc, bằng chứng gốc, ID/thời điểm gốc.
+- **Primary CTA:** BPTN “Xử lý xác minh” → `UI-07` (khi `VERIFYING`); BQL “Hủy” (kèm lý do) từ `UI-10`.
+- **Disabled:** raw editor, ghi đè evidence, tự điền dữ liệu thiếu, nút giao phòng ban thủ công.
 
 ## UI-03 — Work Order Draft
 
@@ -245,14 +225,14 @@ Nếu không xác định được evidence nào cần bổ sung hoặc source c
 ```
 
 - **Mục tiêu:** cho thấy draft có cấu trúc, nguồn và giới hạn.
-- **Actor:** nhân sự thực hiện, BQL; BPTN/Agent read.
+- **Actor:** phòng ban được giao, BQL; BPTN/Agent read.
 - **Được sửa:** không sửa draft trực tiếp; execution ở UI-04/05.
 - **Bất biến:** link/raw source; generated draft revision read-only.
 - **Primary CTA:** “Đi tới Execution Update”.
 - **Secondary:** “Xem Ticket Source”, “Xem reason/rule”.
 - **Disabled/absent:** create real work order, gán nhân viên cụ thể, approve.
-- **Route rule:** nếu không có team trực/stock thiếu/asset unresolved, draft vẫn hiển thị cùng lý do chưa route; `assignee_id` không có giá trị.
-- **Warning/error:** schema error giữ IN_PROGRESS; blocker dẫn UI-07.
+- **Rule (`CR-BPTN-02` (v0.5 candidate)):** draft chỉ tồn tại sau khi giao (bước 8); hiển thị `department_id`, cờ, vật tư dự kiến; `assignee_id` trên draft luôn trống.
+- **Warning/error:** schema error fail closed.
 - **Audit:** created/revised by Agent, versions, idempotency context.
 
 ## UI-04 — Execution Update
@@ -260,8 +240,8 @@ Nếu không xác định được evidence nào cần bổ sung hoặc source c
 ```text
 +----------------------------------------------------------------------------+
 | DỮ LIỆU MÔ PHỎNG | Execution Update | SIM-WO-001                           |
-| Progress note [editable by Nhân sự thực hiện]                              |
-| Result note   [editable by Nhân sự thực hiện]                              |
+| [Nhận việc] [Không thuộc phòng ban + lý do] [Tạm hoãn + lý do + eta]       |
+| [Tiếp tục] (chỉ khi BLOCKED_ONSITE)   Cờ: ASSET_CHECK_ONSITE / STOCK_...  |
 | Last saved by / at / revision                                               |
 | [Lưu cập nhật]  [Sang Checklist, Material & Evidence]                      |
 |----------------------------------------------------------------------------|
@@ -270,8 +250,8 @@ Nếu không xác định được evidence nào cần bổ sung hoặc source c
 ```
 
 - **Mục tiêu:** ghi execution updates tách khỏi source/proposal.
-- **Actor:** nhân sự thực hiện.
-- **Primary CTA:** “Lưu cập nhật”.
+- **Actor:** phòng ban được giao (`CR-BPTN-02` (v0.5 candidate)).
+- **Primary CTA:** “Nhận việc” (`ROUTED`), sau đó “Lưu cập nhật”.
 - **Secondary:** tới UI-05; xem draft.
 - **Disabled:** state override, source edit, send message, mark complete/accept.
 - **Status/error:** save validation; audit failure làm save fail closed.
@@ -293,135 +273,160 @@ Nếu không xác định được evidence nào cần bổ sung hoặc source c
 | EVIDENCE REQUIREMENTS — TÁCH KHỎI CHECKLIST GATE                            |
 | requirement | required? | present/missing/invalid | source                  |
 | Ảnh không bắt buộc trong MVP                                                |
-| [Lưu execution data] [Chạy kiểm tra hồ sơ]                                 |
+| [Lưu execution data] [Báo hoàn thành]                                      |
 +----------------------------------------------------------------------------+
 ```
 
 - **Mục tiêu:** cập nhật và nhìn rõ các nhóm readiness data.
-- **Actor:** nhân sự thực hiện edit; Agent validate; BQL read.
+- **Actor:** phòng ban được giao edit (khi `IN_PROGRESS`); Agent đối soát; BQL read.
 - **Field sửa:** checklist status, material fields/reason, execution evidence metadata.
 - **Bất biến:** original resident evidence; playbook requirement/version.
 - **Primary CTA:** “Lưu execution data”.
-- **Secondary:** “Chạy kiểm tra hồ sơ” (Agent validation, không nghiệm thu).
+- **Secondary:** “Báo hoàn thành” → Agent đối soát bước 10; không đạt thì hiện danh sách mục thiếu.
 - **Disabled:** Agent auto-complete; approve/adjust inventory; image quality confirmation.
-- **Warning/error:** checklist pending hoặc known missing evidence giữ `IN_PROGRESS`; unknown evidence/source cần xác minh → `CHỜ XÁC MINH`; variance label blocking/non-blocking rõ.
+- **Warning/error:** đối soát không đạt giữ `IN_PROGRESS` (không blocker); lệch vật tư có lý do là warning không chặn.
 - **Audit:** per change + validation run ID.
 
 ## UI-06 — `READY_FOR_REVIEW` Package
 
 ```text
 +----------------------------------------------------------------------------+
-| DỮ LIỆU MÔ PHỎNG | READY_FOR_REVIEW                                        |
-| Sẵn sàng để BQL xem xét — KHÔNG phải nghiệm thu/hoàn tất/đóng               |
+| DỮ LIỆU MÔ PHỎNG | READY_FOR_REVIEW — Chờ nghiệm thu                       |
 |----------------------------------------------------------------------------|
-| Playbook + version                 [PASS]                                   |
-| Work order draft                   [PASS]                                   |
-| Required fields                    [PASS]                                   |
-| Asset lookup (kỹ thuật)            [PASS / N/A]                             |
-| Đề xuất team + duty/capacity mô phỏng [PASS: Đề xuất tuyến team hợp lệ]    |
-| Checklist: no PENDING              [PASS]                                   |
-| Material reconciliation / N/A      [PASS]                                   |
-| Minimum evidence                   [PASS]                                   |
-| Blocking exception                 [NONE]                                   |
+| Phòng ban đã nhận việc (accepted_at)  [PASS]                                |
+| Checklist: không còn PENDING          [PASS]                                |
+| Ghi chú xử lý                         [PASS]                                |
+| Vật tư xuất/dùng đã nhập              [PASS]                                |
+| Lệch vật tư có lý do                  [PASS / WARNING]                      |
+| Không còn blocker mở                  [PASS]                                |
+| Rework count: 0                                                             |
 |----------------------------------------------------------------------------|
-| NON-BLOCKING WARNINGS                                                        |
-| rule | reason | comparison/source (không ẩn)                                |
+| NON-BLOCKING WARNINGS: rule | reason | comparison/source                   |
 |----------------------------------------------------------------------------|
-| [Chuyển BQL xem xét] [Xem audit] [Quay lại detail]                          |
+| [Nghiệm thu]  [Trả làm lại + lý do]  [Xem audit]        (chỉ BQL)          |
 +----------------------------------------------------------------------------+
 ```
 
-- **Mục tiêu:** một review package kiểm chứng đủ eight gates, trong đó route hợp lệ là bắt buộc.
-- **Actor:** BQL xem; handoff action từ system/authorized internal role.
-- **Hiển thị:** playbook, draft, field/checklist/material/evidence/blocker status, warnings.
-- **Được sửa:** không edit dữ liệu trong package.
-- **Primary CTA:** **“Chuyển BQL xem xét”.**
-- **Secondary:** xem detail/audit.
-- **Không dùng CTA:** nghiệm thu, hoàn tất công việc, đóng ticket, phê duyệt vật tư.
-- **Status:** warning vẫn prominent; không dùng copy “hồ sơ hoàn toàn không có vấn đề”.
-- **Audit:** gate evaluation/transition/handoff.
+- **Mục tiêu (`CR-BPTN-02` (v0.5 candidate)):** BQL kiểm sáu điều kiện đối soát rồi nghiệm thu hoặc trả làm lại.
+- **Primary CTA (chỉ BQL):** **“Nghiệm thu”** → `CLOSED`; **“Trả làm lại”** (bắt buộc lý do) → `IN_PROGRESS`/`REWORK`;
+  lần thứ 3 hiện cờ leo thang.
+- **Role khác:** không render CTA; gọi API vẫn bị `ACTION_DENIED`.
+- **Audit:** mỗi quyết định là một `ticket_status_events`.
 
-## UI-07 — Exception Review
+## UI-07 — Hàng chờ BPTN xác minh (`CR-BPTN-02` (v0.5 candidate), thay Exception Review)
 
 ```text
 +----------------------------------------------------------------------------+
-| DỮ LIỆU MÔ PHỎNG | EXCEPTION | SIM-T-002                                  |
+| DỮ LIỆU MÔ PHỎNG | Chờ BPTN xác minh | SIM-TKT-0002 | ASSET_UNCLEAR ⚑      |
 |----------------------------------------------------------------------------|
-| Lý do chuyển tuyến                                                        |
-| Rule đã kích hoạt | Risk level [taxonomy TBD]                              |
-| Dữ liệu nguồn liên quan — READ ONLY                                       |
-| Thông tin còn thiếu / mâu thuẫn                                            |
-| Hành động đề xuất an toàn (không chẩn đoán/hướng dẫn high-risk)            |
-| Người có thẩm quyền: BQL                                                   |
+| Lý do dừng + ghi chú nội bộ | Nội dung gốc + phần bổ sung (read-only)      |
 |----------------------------------------------------------------------------|
-| [Yêu cầu xác minh] [Ghi nhận resolution của BQL] [Xem audit]               |
-| Forbidden: Agent resolve | close | accept | approve material | send         |
+| DUPLICATE        : [Gộp vào SIM-TKT-0001] [Không trùng]                    |
+| CATEGORY_UNCLEAR / OUT_OF_SCOPE : Loại việc [Vệ sinh|Đèn] + lý do           |
+| PENDING_REVIEW   : [Xác nhận] hoặc sửa loại việc/vị trí + lý do             |
+| ASSET_UNCLEAR    : Asset [SIM-ASSET-...] | Vị trí [...]                      |
+|                    [Xác định tại hiện trường] + lý do (bắt buộc)            |
+| WRONG_DEPT       : Loại việc [...] hoặc Phòng ban [...] + lý do             |
+|----------------------------------------------------------------------------|
+| Sau khi lưu: chạy lại từ bước 4 / 6 / 7 — không bao giờ giao thẳng          |
 +----------------------------------------------------------------------------+
 ```
 
-- **Mục tiêu:** giúp BQL hiểu chính xác lý do/rule/source và xử lý trong quyền.
-- **Actor:** BQL; các role khác read-only theo permission.
-- **Field sửa:** BQL resolution note/request verification; sub-permission `OD-05`.
-- **Bất biến:** source, Agent rule record, prior audit.
-- **Primary CTA:** “Yêu cầu xác minh” hoặc “Ghi nhận resolution của BQL”.
-- **Secondary:** xem raw side-by-side/audit.
-- **Disabled:** Agent resolution, technical diagnosis, standard continuation khi blocker active, close/approve/send.
-- **Status/error:** rule engine unavailable hiển thị fail-closed system error. `ACTION_OUT_OF_AUTHORITY` là permission error có audit, không tự tạo business exception.
-- **Audit:** exception created, viewed, resolution/request.
+- **Mục tiêu (`CR-BPTN-02` (v0.5 candidate)):** BPTN gỡ đúng blocker; giá trị chọn vào `locked_fields`, Agent không ghi đè.
+- **Actor:** BPTN. Không có CTA đóng/hủy (chỉ BQL).
+- **Rule:** tài sản chỉ đi tiếp khi BPTN chọn asset hoặc chủ động chọn xác định tại hiện trường kèm lý do; đổi loại việc
+  sau `WRONG_DEPT` thì chạy lại tra tài sản.
+- **Error:** thiếu lý do khi thay đổi → 409, không ghi gì.
 
 ## UI-08 — Audit History
 
 ```text
 +----------------------------------------------------------------------------+
-| DỮ LIỆU MÔ PHỎNG | Audit History | SIM-T-001                              |
-| Filters (P1)                                                                  |
+| DỮ LIỆU MÔ PHỎNG | Audit History | SIM-TKT-0001                           |
 |----------------------------------------------------------------------------|
-| time | actor_id/role | entity/field | old_value → new_value | reason        |
-| time | SYSTEM/AGENT  | state        | IN_PROGRESS → READY... | rule          |
-| time | BQL           | exception    | open → resolved        | note          |
+| time | actor_id/role | from → to         | reason_code | note              |
+| time | SYSTEM        | — → RECEIVED      | —           |                   |
+| time | SYSTEM        | RECEIVED → ROUTED | —           |                   |
+| time | BQL           | READY... → CLOSED | —           | note              |
 |----------------------------------------------------------------------------|
 | [Back to case]   [Export JSON — P1]                                        |
 +----------------------------------------------------------------------------+
 ```
 
-- **Mục tiêu:** truy vết đầy đủ edit/decision/transition tối thiểu.
-- **Actor:** BPTN/BQL/QA nội bộ; visibility theo role.
-- **Hiển thị:** actor ID/role, timestamp, field, old/new, reason, entity, rule/version/run khi có.
+- **Mục tiêu:** truy vết mọi thay đổi trạng thái/blocker (`ticket_status_events`, `CR-BPTN-02` (v0.5 candidate)) và audit các action khác.
 - **Được sửa:** không; append-only.
-- **Primary CTA:** “Back to case”.
-- **Secondary:** export JSON P1.
-- **Disabled:** edit/delete audit event; export full trail nếu P1 chưa bật.
-- **Status/error:** incomplete event là P0 error; không che field thiếu.
-- **Synthetic label:** xuất hiện trên screen/export.
+
+## UI-09 — Theo dõi phản ánh (cư dân, `CR-BPTN-02` (v0.5 candidate))
+
+```text
++--------------------------------------------------+
+| Phản ánh SIM-TKT-0001                            |
+| ● Đang xử lý — Phòng Vệ sinh đang xử lý phản ánh |
+|--------------------------------------------------|
+| ✓ Đã tiếp nhận        09:00 28/09                |
+| ✓ Đã chuyển phòng ban 09:00 28/09                |
+| ● Đang xử lý          10:00 28/09                |
+|   Chờ nghiệm thu                                 |
+|   Hoàn thành                                     |
+|--------------------------------------------------|
+| [Bổ sung thông tin]  [Đánh giá]  [Báo chưa xong] |
++--------------------------------------------------+
+```
+
+- **Nguồn:** `GET /api/v1/resident/tickets/{id}` (chỉ trường công khai).
+- **Hiển thị:** nhãn trạng thái, tên phòng ban **chỉ sau khi giao**, `public_message`, `eta`, timeline; ticket đã gộp
+  hiện trạng thái ticket gốc.
+- **Không hiển thị:** mã lý do, ghi chú nội bộ, người được giao, vật tư, số lần nhắc, cờ leo thang, phòng ban đề xuất.
+- **CTA:** chỉ những hành động trong `allowed_actions` (bổ sung khi chưa kết thúc; đánh giá và báo chưa xong khi đã
+  hoàn thành, trong 7 ngày).
+
+## UI-10 — Dashboard BQL (`CR-BPTN-02` (v0.5 candidate))
+
+```text
++----------------------------------------------------------------------------+
+| DỮ LIỆU MÔ PHỎNG | Dashboard BQL                                            |
+| [Trạng thái] [Phòng ban] [Mã blocker] [Leo thang ⚑] [Quá SLA]               |
+|----------------------------------------------------------------------------|
+| ID | Trạng thái | Phòng ban (đề xuất) | Blocker | Người gỡ | Leo thang | …  |
+|----------------------------------------------------------------------------|
+| Chọn ticket: [Nghiệm thu] [Trả làm lại] [Hủy + lý do]                       |
++----------------------------------------------------------------------------+
+```
+
+- **Nguồn:** `GET /api/v1/bql/tickets` (đầy đủ, có filter).
+- **CTA (chỉ BQL):** nghiệm thu, trả làm lại, hủy ticket chưa kết thúc (bắt buộc lý do). Leo thang chỉ là cờ; BQL quyết định.
 
 ---
 
 # 4. UI acceptance notes
 
-- Bốn demo flow chính chạy qua `UI-01 → UI-02 → UI-03 → UI-04/05 → UI-06` hoặc dừng tại draft/lookup reason; `UI-07` dành cho high-risk exception và `UI-08` làm bằng chứng audit.
-- Flow missing required field, material variance, missing evidence và non-blocking warning đều có trạng thái/banner/action rõ.
-- Copy `READY_FOR_REVIEW` luôn kèm câu không đồng nghĩa nghiệm thu/hoàn tất/đóng/phê duyệt.
+- Bốn demo flow (`CR-BPTN-02` (v0.5 candidate)) chạy qua `UI-09 → UI-01/02 → UI-04/05 → UI-06`, hoặc dừng tại `UI-07` khi chờ BPTN.
+- Cư dân thấy timeline trạng thái; happy path có đúng 5 mốc; trước khi giao không thấy tên phòng ban.
+- Không có nút giao phòng ban thủ công; giao chỉ xảy ra khi `can_route` đúng.
+- Chỉ BQL có CTA nghiệm thu/trả làm lại/hủy.
 - Component không dựa màu đơn lẻ; trạng thái và severity có text.
-- Không có resident-facing surface hoặc outbound message action.
-- Không có financial field/action ngoài danh sách out-of-scope của các tài liệu khác.
+- Không có outbound message action qua kênh thật; thông báo chỉ là outbox.
 
 ## Phase 4 consistency gate
 
-**PASS.** IA và flow bao phủ bốn demo flow cùng bốn edge flows, áp dụng nhất quán asset/duty/stock/team-only routing và không tạo state/actor/CTA ngoài PRD. Không có màn hình quản lý tài sản/lịch nhân sự hoặc nút gán nhân viên; tên/bằng chứng sign-off OD-09 vẫn `TBD`.
+**PASS cho v0.3.** `CR-BPTN-02` (v0.5 candidate) (PROPOSED) thêm màn hình cư dân và BQL, thay Exception Review bằng hàng chờ BPTN; tên/bằng chứng
+sign-off OD-09 vẫn `TBD`.
 
 # 5. Backlog implementation UI (nhánh chưa có frontend)
 
-Repo hiện chỉ có API `/api/v1/mo` (Swagger); chưa có frontend. Không tạo UI giả không được dùng. Khi làm frontend:
+Repo hiện chỉ có API (Swagger); chưa có frontend. Khi làm frontend (`CR-BPTN-02` (v0.5 candidate)):
 
 | ID | Hạng mục | Nguồn dữ liệu API |
 |---|---|---|
-| `UI-BL-01` | Panel "Đề xuất team" dùng đúng copy §1.2; không có assignee selector | `draft.route_status`, `routing_team_id`, `duty_status`, `duty_source_ref`, `queue_reason` |
-| `UI-BL-02` | Banner `PENDING_REVIEW` + form override (reason bắt buộc, nguồn optional) | `ticket.administrative_normalization.*`; `POST /tickets/{id}/override` |
-| `UI-BL-03` | Nút "Xác nhận không đổi" tùy chọn | `POST /tickets/{id}/confirm` |
-| `UI-BL-04` | Ẩn/disable review/override khi có `EXCEPTION`; hiển thị lỗi 403 có audit | `exceptions[].status`, `audit` |
-| `UI-BL-05` | Copy `READY_FOR_REVIEW` kèm "không phải nghiệm thu/đóng ticket" | `ticket.state_decision.reason` |
+| `UI-BL-01` | `UI-09` theo dõi phản ánh | `GET/POST /api/v1/resident/tickets…` (`additions`, `rating`, `reopen`) |
+| `UI-BL-02` | `UI-10` dashboard BQL + nghiệm thu/trả làm lại/hủy | `GET /api/v1/bql/tickets`, `POST /bql/tickets/{id}/close|rework|cancel` |
+| `UI-BL-03` | `UI-07` hàng chờ BPTN | `POST /api/v1/mo/tickets/{id}/bptn-resolve` |
+| `UI-BL-04` | `UI-04/05` phòng ban | `POST /mo/tickets/{id}/accept|return|block|resume-work|complete`, checklist/materials/evidence |
+| `UI-BL-05` | Panel "Điều kiện giao" (`can_route`) và blocker | `ticket.review_status`, `asset_resolution`, `proposed_department_id`, `blocker` |
+| `UI-BL-06` | Timeline | `GET /mo/tickets/{id}/events` |
 
 ## Deferred / Future Scope
 
-- CSKH chỉ thuộc backlog tương lai; không có row Work Queue, flow, wireframe, CTA hoặc demo trong active MVP.
-- Route acknowledgement của team và mọi hiển thị "team đã nhận việc" thuộc pilot, không thuộc MVP.
+- CSKH chỉ thuộc backlog tương lai.
+- Kênh gửi thông báo (push/SMS/Zalo) và phân công nhân sự trong phòng ban nằm ngoài `CR-BPTN-02` (v0.5 candidate).
+
