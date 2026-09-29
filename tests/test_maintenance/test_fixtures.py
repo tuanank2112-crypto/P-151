@@ -19,15 +19,21 @@ def test_every_catalog_record_is_synthetic():
     catalog = load_catalog()
     assert catalog.synthetic and load_dataset().synthetic
     assert all(a.asset_id.startswith("SIM-ASSET-") and a.synthetic and a.read_only for a in catalog.assets)
-    assert all(a.asset_type == "LIGHTING" for a in catalog.assets)
-    assert all(
-        d.duty_id.startswith("SIM-DUTY-") and d.team_id.startswith("SIM-TEAM-") for d in catalog.duty_availability
-    )
-    assert all(d.assignment_scope == "TEAM_ONLY" for d in catalog.duty_availability)
     assert all(m.item_code.startswith("SIM-") and m.synthetic for m in catalog.materials)
     assert all(t.not_real_sop_label for t in catalog.checklist_templates)
     # No evidence requirement may require an image (VAL-EVD-IMG-001)
     assert all("SIMULATED_IMAGE" not in r.allowed_evidence_types for r in catalog.evidence_requirements)
+
+
+def test_department_table_is_config_not_code():
+    catalog = load_catalog()
+    assert {p.value: d.value for p, d in catalog.playbook_departments.items()} == {
+        "PB-CLN-01": "DEPT_CLEANING",
+        "PB-TEC-01": "DEPT_TECHNICAL",
+    }
+    assert {d.department_id for d in catalog.departments} == set(catalog.playbook_departments.values())
+    department_actors = [a for a in catalog.actors if a.actor_role == "DEPARTMENT"]
+    assert all(a.department_id for a in department_actors)
 
 
 def test_all_twelve_tickets_match_expected_outcome():
@@ -38,21 +44,13 @@ def test_all_twelve_tickets_match_expected_outcome():
 
 
 def test_quality_gates_over_the_dataset():
-    """PRD §9.3: duty lookup 12/12 reachable, asset only for TEC, no individual assignment, no READY without route."""
+    """No person is ever picked, no ticket is closed without BQL, the safety states are gone."""
     engine = MaintenanceEngine()
-    report = evaluate(engine)
-    assert report.passed == 12
+    evaluate(engine)
     for case in engine.cases.values():
-        draft = case.draft
-        if draft is None:
-            continue
-        assert draft.assignee_id is None
-        assert draft.assignment_scope == "TEAM_ONLY" and draft.assignment_mode == "SIMULATED_TEAM_ROUTE"
-        if draft.routing_team_id:
-            assert draft.routing_team_id.startswith("SIM-TEAM-")
-        if case.ticket.current_state == "READY_FOR_REVIEW":
-            assert draft.route_status == "ROUTED"
-        if draft.playbook_id == "PB-CLN-01":
-            assert case.proposal.asset_lookup_status == "NOT_APPLICABLE"
-        else:
-            assert case.proposal.asset_lookup_status != "NOT_APPLICABLE"
+        assert case.ticket.assignee_id is None
+        assert case.ticket.status not in ("CLOSED", "CANCELLED", "EXCEPTION")
+        if case.draft:
+            assert case.draft.assignee_id is None and case.draft.department_id == case.ticket.department_id
+            if case.draft.playbook_id == "PB-CLN-01":
+                assert case.proposal.asset_lookup_status == "NOT_APPLICABLE"

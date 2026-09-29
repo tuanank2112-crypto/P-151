@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # mock: rule-based extraction, deterministic, no API key needed (dev/test)
     llm_mode: Literal["openai", "mock"] = "mock"
 
+    # MaintenanceOps: run the retry/escalation job inside the API process (CR-BPTN-02 §5)
+    mo_jobs_enabled: bool = True
+
     # Database
     database_url: str = "postgresql+psycopg2://p151:p151@localhost:5432/p151"
 

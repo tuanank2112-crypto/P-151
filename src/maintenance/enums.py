@@ -1,16 +1,77 @@
-"""Controlled vocabulary from Data Contract v1.1 §4. Values are stored exactly as written there."""
+"""Controlled vocabulary. Data Contract v1.1 §4 as amended by CR-BPTN-02 (v0.5 candidate)."""
 
 from enum import StrEnum
 
-SCHEMA_VERSION = "1.1"
+SCHEMA_VERSION = "1.2"
 PLAYBOOK_VERSION = "1.1"
 
 
-class TicketState(StrEnum):
+class TicketStatus(StrEnum):
+    """CR-BPTN-02 §2.1: order-tracking style status, shared by resident and BQL at two levels of detail."""
+
+    RECEIVED = "RECEIVED"
+    VERIFYING = "VERIFYING"
+    ROUTED = "ROUTED"
     IN_PROGRESS = "IN_PROGRESS"
-    CHO_XAC_MINH = "CHỜ XÁC MINH"
     READY_FOR_REVIEW = "READY_FOR_REVIEW"
-    EXCEPTION = "EXCEPTION"
+    CLOSED = "CLOSED"
+    NEED_INFO = "NEED_INFO"
+    ON_HOLD = "ON_HOLD"
+    MERGED = "MERGED"
+    CANCELLED = "CANCELLED"
+
+
+# CLOSED is terminal too, but a resident may reopen it inside the reopen window
+TERMINAL_STATUSES = frozenset({TicketStatus.CLOSED, TicketStatus.MERGED, TicketStatus.CANCELLED})
+# Entering or leaving these (or any change between main statuses) notifies; blocker-only changes do not
+SIDE_STATUSES = frozenset({TicketStatus.NEED_INFO, TicketStatus.ON_HOLD})
+
+
+class ReasonCode(StrEnum):
+    MISSING_INFO = "MISSING_INFO"
+    DUPLICATE = "DUPLICATE"
+    CATEGORY_UNCLEAR = "CATEGORY_UNCLEAR"
+    OUT_OF_SCOPE = "OUT_OF_SCOPE"
+    PENDING_REVIEW = "PENDING_REVIEW"
+    ASSET_UNCLEAR = "ASSET_UNCLEAR"
+    WAITING_MATERIAL = "WAITING_MATERIAL"
+    OUT_OF_HOURS = "OUT_OF_HOURS"
+    NOT_ACCEPTED = "NOT_ACCEPTED"
+    WRONG_DEPT = "WRONG_DEPT"
+    BLOCKED_ONSITE = "BLOCKED_ONSITE"
+    REWORK = "REWORK"
+
+
+# Blockers BPTN clears (event `bptn_resolved`)
+BPTN_REASONS = frozenset(
+    {
+        ReasonCode.DUPLICATE,
+        ReasonCode.CATEGORY_UNCLEAR,
+        ReasonCode.OUT_OF_SCOPE,
+        ReasonCode.PENDING_REVIEW,
+        ReasonCode.ASSET_UNCLEAR,
+        ReasonCode.WRONG_DEPT,
+    }
+)
+
+
+class Department(StrEnum):
+    DEPT_CLEANING = "DEPT_CLEANING"
+    DEPT_TECHNICAL = "DEPT_TECHNICAL"
+
+
+class BlockerOwner(StrEnum):
+    RESIDENT = "RESIDENT"
+    BPTN = "BPTN"
+    DEPARTMENT = "DEPARTMENT"
+    WAREHOUSE = "WAREHOUSE"
+    SYSTEM = "SYSTEM"
+    BQL = "BQL"
+
+
+class TicketFlag(StrEnum):
+    ASSET_CHECK_ONSITE = "ASSET_CHECK_ONSITE"  # BPTN could not identify the asset; the department checks on site
+    STOCK_CHECK_ON_ACCEPT = "STOCK_CHECK_ON_ACCEPT"  # stock unknown; the department checks when it accepts
 
 
 class ServiceCategory(StrEnum):
@@ -30,24 +91,20 @@ class PlaybookId(StrEnum):
     TEC = "PB-TEC-01"
 
 
-class ConfirmationStatus(StrEnum):
-    """BPTN review of the administrative layer (CR-BPTN-01, v0.4 candidate). Not a ticket state."""
+class ReviewStatus(StrEnum):
+    """Pipeline step 5 (CR-BPTN-01, kept by CR-BPTN-02). Not a ticket status."""
 
-    NOT_REQUIRED = "NOT_REQUIRED"  # low risk, complete data, category and location clear: Agent continues
-    PENDING_REVIEW = "PENDING_REVIEW"  # administrative data missing/unclear: CHỜ XÁC MINH until BPTN acts
-    CONFIRMED = "CONFIRMED"  # BPTN reviewed without changing anything
-    OVERRIDDEN = "OVERRIDDEN"  # BPTN changed an administrative field, with override_reason
-
-
-class ReviewRequiredReason(StrEnum):
-    LOCATION_MISSING = "LOCATION_MISSING"  # the resident text does not give building + floor + area
-    CATEGORY_UNCLEAR = "CATEGORY_UNCLEAR"  # no unique playbook matched
+    NOT_REQUIRED = "NOT_REQUIRED"  # category and location clear: no BPTN review
+    PENDING_REVIEW = "PENDING_REVIEW"  # VERIFYING until BPTN acts
+    CONFIRMED = "CONFIRMED"  # BPTN reviewed (with or without changing a value)
 
 
-class SignalStatus(StrEnum):
-    PRESENT = "PRESENT"
-    ABSENT = "ABSENT"
-    UNCLEAR = "UNCLEAR"
+class AssetResolution(StrEnum):
+    """Pipeline step 6 outcome. Only BPTN can choose ONSITE_BY_BPTN; the Agent never skips the asset step."""
+
+    FOUND = "FOUND"  # exactly one asset matched, or BPTN picked one
+    ONSITE_BY_BPTN = "ONSITE_BY_BPTN"  # BPTN chose "xác định tại hiện trường", with a reason
+    NOT_APPLICABLE = "NOT_APPLICABLE"  # cleaning tickets
 
 
 class ChecklistStatus(StrEnum):
@@ -105,25 +162,17 @@ class ReadabilityStatus(StrEnum):
 
 class EvidenceSource(StrEnum):
     RESIDENT_ORIGINAL = "RESIDENT_ORIGINAL"
-    HUMAN_EXECUTION = "HUMAN_EXECUTION"
+    DEPARTMENT_EXECUTION = "DEPARTMENT_EXECUTION"
     SYSTEM_SIMULATED = "SYSTEM_SIMULATED"
-
-
-class ExceptionType(StrEnum):
-    CLEANING_HAZARD = "CLEANING_HAZARD"
-    ELECTRICAL_HIGH_RISK = "ELECTRICAL_HIGH_RISK"
-
-
-class ExceptionStatus(StrEnum):
-    OPEN = "OPEN"
-    RESOLVED_BY_BQL = "RESOLVED_BY_BQL"
 
 
 class ActorRole(StrEnum):
     SYSTEM = "SYSTEM"
-    BPTN = "BPTN"
     AGENT = "AGENT"
-    HUMAN_EXECUTION = "HUMAN_EXECUTION"
+    RESIDENT = "RESIDENT"
+    BPTN = "BPTN"
+    DEPARTMENT = "DEPARTMENT"
+    WAREHOUSE = "WAREHOUSE"
     BQL = "BQL"
     QA_INTERNAL = "QA_INTERNAL"
 
@@ -137,20 +186,9 @@ class AssetLookupStatus(StrEnum):
     MATCHED = "MATCHED"
     NOT_FOUND = "NOT_FOUND"
     AMBIGUOUS = "AMBIGUOUS"
+    LOCKED_BY_BPTN = "LOCKED_BY_BPTN"
+    CHECK_ONSITE = "CHECK_ONSITE"
     NOT_APPLICABLE = "NOT_APPLICABLE"
-
-
-class AvailabilityStatus(StrEnum):
-    AVAILABLE = "AVAILABLE"
-    NOT_ON_DUTY = "NOT_ON_DUTY"
-    UNKNOWN = "UNKNOWN"
-
-
-class DutyLookupStatus(StrEnum):
-    AVAILABLE = "AVAILABLE"
-    NO_AVAILABLE_TEAM = "NO_AVAILABLE_TEAM"
-    CAPACITY_EXCEEDED = "CAPACITY_EXCEEDED"
-    DUTY_UNKNOWN = "DUTY_UNKNOWN"
 
 
 class MaterialStockStatus(StrEnum):
@@ -160,65 +198,41 @@ class MaterialStockStatus(StrEnum):
     NOT_APPLICABLE = "NOT_APPLICABLE"
 
 
-class RouteStatus(StrEnum):
-    ROUTED = "ROUTED"
-    NOT_ROUTED = "NOT_ROUTED"
-
-
-class QueueStatus(StrEnum):
-    NOT_QUEUED = "NOT_QUEUED"
-    PENDING_BQL_REVIEW = "PENDING_BQL_REVIEW"
-
-
-class QueueReason(StrEnum):
-    """Why a draft is not routed (Data Contract §5.3 `queue_reason`)."""
-
-    NO_AVAILABLE_TEAM = "NO_AVAILABLE_TEAM"
-    DUTY_UNKNOWN = "DUTY_UNKNOWN"
-    TEAM_CAPACITY_EXCEEDED = "TEAM_CAPACITY_EXCEEDED"
-    ASSET_NOT_FOUND = "ASSET_NOT_FOUND"
-    ASSET_AMBIGUOUS = "ASSET_AMBIGUOUS"
-    MATERIAL_SHORTAGE = "MATERIAL_SHORTAGE"
-    MATERIAL_STOCK_UNKNOWN = "MATERIAL_STOCK_UNKNOWN"
-
-
 class Action(StrEnum):
-    """Audit action catalog (Data Contract §7.8) plus the attempted actions the permission matrix names."""
+    """Audit action catalog. Status and blocker changes are recorded as StatusEvents, not here."""
 
     INGEST = "INGEST"
+    RUN_PIPELINE = "RUN_PIPELINE"
     CREATE_PROPOSAL = "CREATE_PROPOSAL"
-    CONFIRM_NORMALIZATION = "CONFIRM_NORMALIZATION"
-    UPDATE_ADMIN_FIELD = "UPDATE_ADMIN_FIELD"
     LOOKUP_ASSET = "LOOKUP_ASSET"
     CHECK_MATERIAL_STOCK = "CHECK_MATERIAL_STOCK"
-    LOOKUP_DUTY = "LOOKUP_DUTY"
     CREATE_DRAFT = "CREATE_DRAFT"
-    PROPOSE_TEAM_ROUTE = "PROPOSE_TEAM_ROUTE"
+    RECONCILE = "RECONCILE"
+    ADD_RESIDENT_INFO = "ADD_RESIDENT_INFO"
+    RATE_TICKET = "RATE_TICKET"
+    BPTN_RESOLVE = "BPTN_RESOLVE"
+    RECEIVE_STOCK = "RECEIVE_STOCK"
+    SET_ASSIGNEE = "SET_ASSIGNEE"
     UPDATE_CHECKLIST = "UPDATE_CHECKLIST"
     UPDATE_MATERIAL = "UPDATE_MATERIAL"
     ADD_EVIDENCE = "ADD_EVIDENCE"
-    VALIDATE_EVIDENCE = "VALIDATE_EVIDENCE"
-    RECONCILE_MATERIAL = "RECONCILE_MATERIAL"
-    TRANSITION_STATE = "TRANSITION_STATE"
-    CREATE_EXCEPTION = "CREATE_EXCEPTION"
-    RESOLVE_EXCEPTION = "RESOLVE_EXCEPTION"
-    HANDOFF_TO_BQL = "HANDOFF_TO_BQL"
+    REPORT_COMPLETE = "REPORT_COMPLETE"
+    TRANSITION = "TRANSITION"
+    RUN_JOBS = "RUN_JOBS"
     ACTION_DENIED = "ACTION_DENIED"
-    SYSTEM_ERROR = "SYSTEM_ERROR"
-    # Attempted actions that the permission matrix always denies in the MVP
+    # Attempted actions that the permission matrix always denies
     EDIT_RAW = "EDIT_RAW"
     EDIT_CATALOG = "EDIT_CATALOG"
-    ASSIGN_EMPLOYEE = "ASSIGN_EMPLOYEE"
-    ACCEPT_TICKET = "ACCEPT_TICKET"
-    CLOSE_TICKET = "CLOSE_TICKET"
     APPROVE_MATERIAL = "APPROVE_MATERIAL"
     ADJUST_INVENTORY = "ADJUST_INVENTORY"
     SEND_RESIDENT_MESSAGE = "SEND_RESIDENT_MESSAGE"
-    SET_STATE = "SET_STATE"
 
 
 # Playbook pair mapping (Playbook §6.1, §7.1): the only valid service/type/playbook triples
 PLAYBOOK_PAIRS: dict[tuple[ServiceCategory, TicketType], PlaybookId] = {
     (ServiceCategory.VE_SINH, TicketType.COMMON_AREA_CLEANING): PlaybookId.CLN,
     (ServiceCategory.KY_THUAT, TicketType.COMMON_AREA_LIGHTING): PlaybookId.TEC,
+}
+PLAYBOOK_BY_CATEGORY: dict[ServiceCategory, tuple[TicketType, PlaybookId]] = {
+    service: (ticket_type, playbook) for (service, ticket_type), playbook in PLAYBOOK_PAIRS.items()
 }

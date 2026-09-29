@@ -1,7 +1,7 @@
-"""Entities from Data Contract v1.1 §5. Pydantic enforces the schema-level rules (VAL-SCHEMA-001, VAL-SYN-001).
+"""Entities from Data Contract v1.1 §5 as amended by CR-BPTN-02 (v0.5 candidate).
 
-Constants the contract fixes (synthetic=true, TEAM_ONLY, assignee_id=null, ...) are typed as Literal, so any
-other value is rejected at construction time rather than checked later.
+Pydantic enforces the schema-level rules. Constants the contract fixes (synthetic=true, draft assignee_id=null, ...)
+are typed as Literal, so any other value is rejected at construction time rather than checked later.
 """
 
 import hashlib
@@ -18,30 +18,26 @@ from src.maintenance.enums import (
     ActionResult,
     ActorRole,
     AssetLookupStatus,
-    AvailabilityStatus,
+    AssetResolution,
+    BlockerOwner,
     ChecklistStatus,
     ComparisonStatus,
     ComparisonType,
-    ConfirmationStatus,
-    DutyLookupStatus,
+    Department,
     EvidenceSource,
     EvidenceType,
     EvidenceValidationStatus,
-    ExceptionStatus,
-    ExceptionType,
     MaterialGateStatus,
     MaterialRequirementMode,
     MaterialStockStatus,
     NormLabel,
     PlaybookId,
-    QueueReason,
-    QueueStatus,
     ReadabilityStatus,
-    ReviewRequiredReason,
-    RouteStatus,
+    ReasonCode,
+    ReviewStatus,
     ServiceCategory,
-    SignalStatus,
-    TicketState,
+    TicketFlag,
+    TicketStatus,
     TicketType,
 )
 
@@ -70,7 +66,7 @@ class Entity(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Static read-only catalog (Asset, DutyAvailability, material catalog)
+# Static read-only catalog (Asset, material catalog, checklist and evidence templates)
 # ---------------------------------------------------------------------------
 
 
@@ -85,32 +81,6 @@ class Asset(Entity):
     source_ref: str = Field(min_length=1)
     synthetic: Synthetic
     read_only: Literal[True]
-
-
-class DutyAvailability(Entity):
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    duty_id: Annotated[str, _sim_id("SIM-DUTY-")]
-    team_id: Annotated[str, _sim_id("SIM-TEAM-")]
-    service_category: Literal[ServiceCategory.VE_SINH, ServiceCategory.KY_THUAT]
-    shift_window: str = Field(min_length=1)
-    availability_status: AvailabilityStatus
-    current_open_ticket_count: int | None = Field(default=None, ge=0)
-    max_open_ticket_count: int | None = Field(default=None, ge=0)
-    source_ref: str = Field(min_length=1)
-    synthetic: Synthetic
-    assignment_scope: Literal["TEAM_ONLY"]
-
-    @model_validator(mode="after")
-    def _counts_when_known(self):
-        known = self.availability_status != AvailabilityStatus.UNKNOWN
-        if known and (self.current_open_ticket_count is None or self.max_open_ticket_count is None):
-            raise ValueError("current/max_open_ticket_count bắt buộc khi availability_status đã biết")
-        return self
-
-    @property
-    def has_capacity(self) -> bool:
-        return self.current_open_ticket_count < self.max_open_ticket_count
 
 
 class MaterialCatalogItem(Entity):
@@ -139,7 +109,7 @@ class ChecklistTemplateItem(Entity):
     template_item_id: str
     label: str
     required: bool = True
-    update_owner: Literal[ActorRole.HUMAN_EXECUTION] = ActorRole.HUMAN_EXECUTION
+    update_owner: Literal[ActorRole.DEPARTMENT] = ActorRole.DEPARTMENT
 
 
 class ChecklistTemplate(Entity):
@@ -164,12 +134,12 @@ class EvidenceRequirement(Entity):
 
 
 # ---------------------------------------------------------------------------
-# Ticket (raw layer + administrative layer + derived state)
+# Ticket
 # ---------------------------------------------------------------------------
 
 
 class RawTicket(Entity):
-    """Resident source layer. Frozen after ingest (FR-INGEST-002). Blank values are stored as-is and fail the gate later."""
+    """Resident source layer. Frozen after ingest; additions go to ResidentAddition, never here."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -184,61 +154,164 @@ class RawTicket(Entity):
         return "sha256:" + hashlib.sha256(payload.encode()).hexdigest()
 
 
-class AdministrativeNormalization(Entity):
-    """Administrative layer. BPTN review is conditional (CR-BPTN-01): the Agent decides whether it is needed."""
+class ResidentAddition(Entity):
+    """`ticket_resident_additions`: append-only information added by the resident after the report."""
 
-    administrative_revision: int = Field(ge=1)
-    service_category_normalized: ServiceCategory = ServiceCategory.UNKNOWN
-    ticket_type_normalized: TicketType = TicketType.UNKNOWN
-    location_normalized: str | None = None
-    priority: str | None = None
-    confirmation_status: ConfirmationStatus
-    review_required_reason: ReviewRequiredReason | None = None
-    confirmed_by: str | None = None
-    confirmed_at: AwareDatetime | None = None
-    override_reason: str | None = None
-    override_source_references: list[str] = Field(default_factory=list)
-    override_fields: list[str] = Field(default_factory=list)
-    audit_event_id: str | None = None  # the audit event that set confirmation_status
-    source_references: list[str] = Field(default_factory=list)
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    addition_id: Annotated[str, _sim_id("SIM-ADD-")]
+    ticket_id: str
+    content: str = Field(min_length=1)
+    submitted_by: str
+    submitted_at: AwareDatetime
+
+
+class LockedFields(Entity):
+    """Values BPTN chose. The Agent reads them and never overwrites them."""
+
+    category: ServiceCategory | None = None
+    location: str | None = None
+    asset_id: str | None = None
+    department: Department | None = None  # BPTN re-picked the department after WRONG_DEPT (same category)
 
     @model_validator(mode="after")
-    def _review_fields(self):
-        status = self.confirmation_status
-        reviewed = status in (ConfirmationStatus.CONFIRMED, ConfirmationStatus.OVERRIDDEN)
-        if reviewed != (self.confirmed_by is not None and self.confirmed_at is not None):
-            raise ValueError("confirmed_by/confirmed_at bắt buộc iff confirmation_status=CONFIRMED|OVERRIDDEN")
-        overridden = status == ConfirmationStatus.OVERRIDDEN
-        if overridden != bool(self.override_reason and self.override_fields):
-            raise ValueError("override_reason/override_fields bắt buộc iff confirmation_status=OVERRIDDEN")
-        # The reason stays after BPTN acts, so the record still shows why a review was needed
-        if status == ConfirmationStatus.PENDING_REVIEW and self.review_required_reason is None:
-            raise ValueError("review_required_reason bắt buộc khi confirmation_status=PENDING_REVIEW")
-        if status == ConfirmationStatus.NOT_REQUIRED and self.review_required_reason is not None:
-            raise ValueError("NOT_REQUIRED thì không có review_required_reason")
+    def _known_category(self):
+        if self.category == ServiceCategory.UNKNOWN:
+            raise ValueError("BPTN chỉ khóa được category thuộc playbook v1.1")
         return self
 
 
-class StateDecision(Entity):
-    """Why the ticket is in its current state: primary rule plus every other blocker found."""
+class Blocker(Entity):
+    """Why the ticket is stopped, who clears it, where the pipeline resumes and when it escalates (CR §2.5)."""
 
-    state: TicketState
-    rule_id: str
-    reason: str
-    queue_reason: QueueReason | None = None
-    blocking_rules: list[str] = Field(default_factory=list)
+    code: ReasonCode
+    owner_role: BlockerOwner
+    since: AwareDatetime
+    resume_step: int | None = Field(default=None, ge=2, le=8)
+    auto_retry_count: int = Field(default=0, ge=0)
+    next_retry_at: AwareDatetime | None = None
+    escalate_at: AwareDatetime | None = None
+    escalated: bool = False
+    eta: AwareDatetime | None = None
+    public_message: str = Field(min_length=1)
+    internal_note: str | None = None
+    related_ticket_id: str | None = None  # DUPLICATE: the open ticket this one may duplicate
+    resolved_at: AwareDatetime | None = None  # set by the clearing event; resume() then acts on it
+    resolved_by: str | None = None
+
+    @model_validator(mode="after")
+    def _required_by_code(self):
+        if self.code == ReasonCode.BLOCKED_ONSITE and self.eta is None:
+            raise ValueError("BLOCKED_ONSITE bắt buộc eta")
+        if self.code == ReasonCode.DUPLICATE and self.related_ticket_id is None:
+            raise ValueError("DUPLICATE bắt buộc related_ticket_id")
+        return self
+
+
+# CR §2.5: where a blocker may exist
+BLOCKER_CODES_BY_STATUS: dict[TicketStatus, frozenset[ReasonCode]] = {
+    TicketStatus.NEED_INFO: frozenset({ReasonCode.MISSING_INFO}),
+    TicketStatus.VERIFYING: frozenset(
+        {
+            ReasonCode.DUPLICATE,
+            ReasonCode.CATEGORY_UNCLEAR,
+            ReasonCode.OUT_OF_SCOPE,
+            ReasonCode.PENDING_REVIEW,
+            ReasonCode.ASSET_UNCLEAR,
+            ReasonCode.WRONG_DEPT,
+        }
+    ),
+    TicketStatus.ON_HOLD: frozenset({ReasonCode.WAITING_MATERIAL, ReasonCode.BLOCKED_ONSITE}),
+    TicketStatus.ROUTED: frozenset({ReasonCode.OUT_OF_HOURS, ReasonCode.NOT_ACCEPTED}),
+    TicketStatus.IN_PROGRESS: frozenset({ReasonCode.REWORK}),
+}
+# Handed over to a department (step 8) and not returned
+STATUSES_REQUIRING_DEPARTMENT = frozenset(
+    {TicketStatus.ROUTED, TicketStatus.IN_PROGRESS, TicketStatus.READY_FOR_REVIEW, TicketStatus.CLOSED}
+)
+# Side statuses cannot exist without the blocker that explains them
+STATUSES_REQUIRING_BLOCKER = frozenset({TicketStatus.NEED_INFO, TicketStatus.VERIFYING, TicketStatus.ON_HOLD})
 
 
 class Ticket(Entity):
     ticket_id: str
     raw: RawTicket
     raw_integrity_marker: str
+    resident_id: str
     source_revision: str
     dataset_version: str
-    current_state: TicketState
-    state_decision: StateDecision
-    administrative_normalization: AdministrativeNormalization | None = None
+    status: TicketStatus
+    proposed_department_id: Department | None = None  # step 4 proposal; internal, the resident never sees it
+    department_id: Department | None = None  # set only at step 8, when the ticket is actually handed over
+    assignee_id: str | None = None  # written only by the department; the Agent never touches it
+    blocker: Blocker | None = None
+    locked_fields: LockedFields = Field(default_factory=LockedFields)
+    review_status: ReviewStatus | None = None  # pipeline step 5
+    asset_resolution: AssetResolution | None = None  # pipeline step 6
+    merged_into: str | None = None
+    flags: list[TicketFlag] = Field(default_factory=list)
+    rework_count: int = Field(default=0, ge=0)
+    dispatched_at: AwareDatetime | None = None  # ROUTED and inside the department's hours
+    accepted_at: AwareDatetime | None = None
+    closed_by: str | None = None
+    closed_at: AwareDatetime | None = None
+    cancel_reason: str | None = None
+    reopen_until: AwareDatetime | None = None
+    rating: int | None = Field(default=None, ge=1, le=5)
     synthetic: Synthetic = True
+
+    @model_validator(mode="after")
+    def _status_rules(self):
+        if self.blocker is not None and self.blocker.code not in BLOCKER_CODES_BY_STATUS.get(self.status, ()):
+            raise ValueError(f"Blocker {self.blocker.code} không được phép ở trạng thái {self.status}")
+        if self.blocker is None and self.status in STATUSES_REQUIRING_BLOCKER:
+            raise ValueError(f"Trạng thái {self.status} phải có blocker")
+        if self.status in STATUSES_REQUIRING_DEPARTMENT and self.department_id is None:
+            raise ValueError(f"Trạng thái {self.status} phải có department_id (đã giao ở bước 8)")
+        if (self.status == TicketStatus.MERGED) != (self.merged_into is not None):
+            raise ValueError("merged_into bắt buộc iff MERGED")
+        if self.status == TicketStatus.CANCELLED and not (self.cancel_reason and self.cancel_reason.strip()):
+            raise ValueError("cancel_reason bắt buộc khi CANCELLED")
+        if (self.status == TicketStatus.CLOSED) != (self.closed_by is not None and self.closed_at is not None):
+            raise ValueError("closed_by/closed_at bắt buộc iff CLOSED")
+        return self
+
+
+class StatusEvent(Entity):
+    """`ticket_status_events`: one row per status or blocker change. The only source for timeline and audit."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    id: Annotated[str, _sim_id("SIM-EVT-")]
+    ticket_id: str
+    from_status: TicketStatus | None  # None only for the creation event
+    to_status: TicketStatus
+    reason_code: ReasonCode | None = None
+    actor_role: ActorRole
+    actor_id: str | None = None
+    public_message: str = Field(min_length=1)
+    internal_note: str | None = None
+    public: bool  # shown on the resident timeline (status change or blocker set/cleared)
+    created_at: AwareDatetime
+
+
+class Notification(Entity):
+    """Outbox row. Delivery channels (push/SMS/Zalo) are out of scope; this only records what was emitted."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    notification_id: Annotated[str, _sim_id("SIM-NTF-")]
+    ticket_id: str
+    type: Literal[
+        "ticket.status_changed",
+        "department.dispatch",
+        "department.reconcile_failed",
+        "reminder",
+        "escalation",
+    ]
+    audience: BlockerOwner
+    payload: dict[str, Any] = Field(default_factory=dict)
+    created_at: AwareDatetime
 
 
 # ---------------------------------------------------------------------------
@@ -246,12 +319,18 @@ class Ticket(Entity):
 # ---------------------------------------------------------------------------
 
 
-class RuleSignal(Entity):
-    signal_code: str
-    status: SignalStatus
-    source_references: list[str]
-    evaluated_at: AwareDatetime
+class ClassificationRecord(Entity):
+    """What the proposer returned for the current content. Cached so the Agent does not re-ask the model."""
+
+    playbook_id: PlaybookId | None
+    service_category: ServiceCategory
+    ticket_type: TicketType
     rule_id: str
+    reason: str
+    reason_code: ReasonCode | None = None  # CATEGORY_UNCLEAR / OUT_OF_SCOPE when no playbook
+    needs_review: bool = False  # LLM-only proposal: pipeline step 5 asks BPTN
+    proposer: str
+    notes: list[str] = Field(default_factory=list)
 
 
 class AgentClassificationProposal(Entity):
@@ -262,21 +341,16 @@ class AgentClassificationProposal(Entity):
     ticket_type_proposed: TicketType
     playbook_id: PlaybookId
     playbook_version: Literal["1.1"] = PLAYBOOK_VERSION
+    category_source: Literal["AGENT", "BPTN_LOCKED"] = "AGENT"
     asset_type: Literal["LIGHTING"] | None = None
     reported_symptom: Literal["NOT_WORKING"] | None = None
-    location_proposed: str | None = None  # read from the resident text; becomes location_normalized unless overridden
+    location_proposed: str | None = None
     asset_id: str | None = None
     asset_lookup_status: AssetLookupStatus = AssetLookupStatus.NOT_APPLICABLE
     asset_match_reason: str = "Chưa lookup"
-    routing_team_id: str | None = None
-    duty_lookup_status: DutyLookupStatus | None = None
-    duty_source_ref: str | None = None
-    route_status: RouteStatus = RouteStatus.NOT_ROUTED
     matched_rule_ids: list[str] = Field(min_length=1)
     classification_reason: str = Field(min_length=1)
     source_references: list[str] = Field(min_length=1)
-    rule_signals: list[RuleSignal]
-    # BPTN review lives in ticket.administrative_normalization (confirmation_status, override_*)
     created_at: AwareDatetime
     synthetic: Synthetic = True
 
@@ -284,8 +358,6 @@ class AgentClassificationProposal(Entity):
     def _asset_by_playbook(self):
         if self.playbook_id == PlaybookId.CLN and self.asset_id is not None:
             raise ValueError("Ticket vệ sinh phải có asset_id=null")
-        if self.asset_id is not None and self.asset_lookup_status != AssetLookupStatus.MATCHED:
-            raise ValueError("asset_id chỉ non-null khi asset_lookup_status=MATCHED")
         return self
 
 
@@ -362,33 +434,27 @@ class EvidenceRecord(Entity):
 
 
 class ReadinessEvaluation(Entity):
-    playbook_present: bool
-    work_order_draft_present: bool
-    required_fields_complete: bool
-    route_valid: bool
+    """Step 10 reconciliation (CR-BPTN-02 §4): six conditions, run when the department reports completion."""
+
+    department_accepted: bool
     checklist_complete: bool
-    minimum_evidence_complete: bool
-    material_reconciled_or_na: bool
-    no_blocking_exception: bool
+    processing_note_present: bool
+    materials_entered: bool
+    variance_explained: bool
+    no_open_blocker: bool
     evaluated_at: AwareDatetime
-    rule_ids: list[str]
-    source_references: list[str]
-    target_state: TicketState
-    reason: str
     failing_items: list[str] = Field(default_factory=list)
 
     @property
     def all_pass(self) -> bool:
         return all(
             (
-                self.playbook_present,
-                self.work_order_draft_present,
-                self.required_fields_complete,
-                self.route_valid,
+                self.department_accepted,
                 self.checklist_complete,
-                self.minimum_evidence_complete,
-                self.material_reconciled_or_na,
-                self.no_blocking_exception,
+                self.processing_note_present,
+                self.materials_entered,
+                self.variance_explained,
+                self.no_open_blocker,
             )
         )
 
@@ -411,26 +477,18 @@ class WorkOrderDraft(Entity):
     proposal_id: str
     playbook_id: PlaybookId
     playbook_version: Literal["1.1"] = PLAYBOOK_VERSION
-    administrative_revision: int = Field(ge=1)
     source_revision: str
-    idempotency_key: str
     draft_revision: int = Field(ge=1)
     draft_status: Literal["DRAFT"] = "DRAFT"
     scope_summary: str = Field(min_length=1)
-    generation_reason: str = Field(min_length=1)
     matched_rule_ids: list[str] = Field(min_length=1)
     source_references: list[str] = Field(min_length=1)
+    location: str
     asset_id: str | None
-    routing_team_id: str | None
-    duty_status: DutyLookupStatus
-    duty_source_ref: str | None = None  # SIM-DUTY-* fixture record; capacity there is simulated, not real
-    assignment_mode: Literal["SIMULATED_TEAM_ROUTE"] = "SIMULATED_TEAM_ROUTE"
-    assignment_scope: Literal["TEAM_ONLY"] = "TEAM_ONLY"
-    assignee_id: None = None
+    department_id: Department
+    flags: list[TicketFlag] = Field(default_factory=list)
+    assignee_id: None = None  # the Agent never picks a person; the department sets ticket.assignee_id itself
     material_stock_status: MaterialStockStatus
-    route_status: RouteStatus
-    queue_status: QueueStatus
-    queue_reason: QueueReason | None = None
     checklist_template_id: str
     checklist_item_ids: list[str] = Field(min_length=1)
     material_requirement_mode: MaterialRequirementMode
@@ -438,41 +496,20 @@ class WorkOrderDraft(Entity):
     material_line_ids: list[str] = Field(default_factory=list)
     evidence_requirements: list[EvidenceRequirement] = Field(min_length=1)
     readiness_evaluation: ReadinessEvaluation | None = None
-    blocking_exception_active: bool = False
     non_blocking_warnings: list[NonBlockingWarning] = Field(default_factory=list)
     created_at: AwareDatetime
     synthetic: Synthetic = True
 
     @model_validator(mode="after")
-    def _route_consistency(self):
-        if (self.route_status == RouteStatus.ROUTED) != (self.routing_team_id is not None):
-            raise ValueError("routing_team_id non-null iff route_status=ROUTED")
-        if self.route_status == RouteStatus.NOT_ROUTED and self.queue_reason is None:
-            raise ValueError("queue_reason bắt buộc khi NOT_ROUTED")
+    def _material_mode(self):
         if self.material_requirement_mode == MaterialRequirementMode.N_A and self.material_line_ids:
             raise ValueError("material_requirement_mode=N_A thì không có MaterialLine (VAL-MAT-MODE-001)")
         return self
 
 
-class ExceptionRecord(Entity):
-    exception_id: Annotated[str, _sim_id("SIM-EXC-")]
-    ticket_id: str
-    exception_type: ExceptionType
-    rule_id: str
-    blocking: Literal[True] = True
-    reason: str = Field(min_length=1)
-    source_references: list[str] = Field(min_length=1)
-    risk_level: Literal["HIGH_RISK"] = "HIGH_RISK"
-    authorized_handler: Literal["BQL"] = "BQL"
-    status: ExceptionStatus = ExceptionStatus.OPEN
-    missing_information: list[str] = Field(default_factory=list)
-    resolution_note: str | None = None
-    resolved_by: str | None = None
-    resolved_at: AwareDatetime | None = None
-    synthetic: Synthetic = True
-
-
 class AuditEvent(Entity):
+    """Non-status actions (lookups, execution updates, denials). Status/blocker changes are StatusEvents."""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     event_id: Annotated[str, _sim_id("SIM-AUD-")]
@@ -491,13 +528,13 @@ class AuditEvent(Entity):
     error_code: str | None = None
     rule_id: str | None = None
     playbook_version: str | None = None
-    schema_version: Literal["1.1"] = SCHEMA_VERSION
+    schema_version: Literal["1.2"] = SCHEMA_VERSION
     run_id: Annotated[str, _sim_id("SIM-RUN-")]
     synthetic: Synthetic = True
 
 
 class PlannedMaterial(Entity):
-    """Planned quantity used by the pre-route stock gate. Simulated fixture input, not a real material plan."""
+    """Planned quantity used by the stock check. Simulated fixture input, not a real material plan."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -509,18 +546,17 @@ class Case(Entity):
     """Everything the engine holds for one ticket. Mutated only through MaintenanceEngine."""
 
     ticket: Ticket
-    # None = the Agent takes the playbook default at draft time; [] = explicitly no tracked material (N_A)
+    # None = the Agent takes the playbook default at step 7; [] = explicitly no tracked material (N_A)
     planned_materials: list[PlannedMaterial] | None = None
-    classification_rule: str | None = None  # set when no unique playbook matched (PB-COM-R-CLS-01)
-    classification_reason: str | None = None
-    signal_assessment: dict[str, SignalStatus] = Field(default_factory=dict)  # all five signals, assessed once
-    proposer: str | None = None  # "rules" or "rules+llm:<model>"
-    proposer_notes: list[str] = Field(default_factory=list)
+    planned_for_playbook: PlaybookId | None = None
+    classification: ClassificationRecord | None = None
+    not_duplicate_of: list[str] = Field(default_factory=list)  # BPTN said "not a duplicate" of these
     proposal: AgentClassificationProposal | None = None
     draft: WorkOrderDraft | None = None
     checklist_items: list[ChecklistItem] = Field(default_factory=list)
     material_lines: list[MaterialLine] = Field(default_factory=list)
     evidence: list[EvidenceRecord] = Field(default_factory=list)
-    exceptions: list[ExceptionRecord] = Field(default_factory=list)
+    additions: list[ResidentAddition] = Field(default_factory=list)
+    events: list[StatusEvent] = Field(default_factory=list)
+    notifications: list[Notification] = Field(default_factory=list)
     audit: list[AuditEvent] = Field(default_factory=list)
-    handed_off_to_bql: bool = False

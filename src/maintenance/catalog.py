@@ -1,6 +1,6 @@
-"""Load the read-only simulated catalog and the 12-ticket fixture from seed/maintenance_v1."""
+"""Load the read-only simulated catalog, department calendar, SLA config and the 12-ticket fixture."""
 
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -8,11 +8,10 @@ from typing import Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.maintenance.enums import ActorRole, EvidenceType, PlaybookId, ReadabilityStatus
+from src.maintenance.enums import ActorRole, Department, EvidenceType, PlaybookId, ReadabilityStatus
 from src.maintenance.models import (
     Asset,
     ChecklistTemplate,
-    DutyAvailability,
     EvidenceRequirement,
     MaterialCatalogItem,
     PlannedMaterial,
@@ -26,8 +25,11 @@ class Frozen(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
-class Shift(Frozen):
-    shift_window: str
+def _at(day: datetime, clock: str) -> datetime:
+    return datetime.combine(day.date(), time.fromisoformat(clock), tzinfo=day.tzinfo)
+
+
+class ShiftWindow(Frozen):
     start: str
     end: str
 
@@ -38,26 +40,99 @@ class Shift(Frozen):
         return moment >= start or moment < end  # overnight shift
 
 
+class DepartmentConfig(Frozen):
+    department_id: Department
+    name: str
+    shifts: tuple[ShiftWindow, ...] = Field(min_length=1)
+
+    def on_shift(self, moment: datetime) -> bool:
+        clock = moment.timetz().replace(tzinfo=None)
+        return any(s.contains(clock) for s in self.shifts)
+
+    def next_shift_start(self, moment: datetime) -> datetime:
+        """First shift start strictly after `moment` (local time of `moment`)."""
+        candidates = (_at(moment + timedelta(days=offset), s.start) for offset in range(0, 8) for s in self.shifts)
+        return min(c for c in candidates if c > moment)
+
+
+class BusinessHours(Frozen):
+    start: str
+    end: str
+    weekdays: tuple[int, ...] = Field(min_length=1)
+
+    def add(self, moment: datetime, hours: float) -> datetime:
+        """`moment` plus `hours` counted only inside business hours."""
+        remaining = timedelta(hours=hours)
+        current = moment
+        for _ in range(366):
+            day_start, day_end = _at(current, self.start), _at(current, self.end)
+            if current.weekday() not in self.weekdays or current >= day_end:
+                current = _at(current + timedelta(days=1), self.start)
+                continue
+            current = max(current, day_start)
+            if current + remaining <= day_end:
+                return current + remaining
+            remaining -= day_end - current
+            current = _at(current + timedelta(days=1), self.start)
+        raise ValueError("business_hours không có ngày làm việc nào")
+
+
+class MissingInfoSla(Frozen):
+    retry_every_hours: float
+    escalate_after_hours: float
+
+
+class BptnSla(Frozen):
+    retry_every_business_hours: float
+    escalate_after_business_hours: float
+
+
+class WaitingMaterialSla(Frozen):
+    escalate_after_hours: float
+
+
+class NotAcceptedSla(Frozen):
+    start_after_hours: float
+    retry_every_hours: float
+
+
+class ReworkSla(Frozen):
+    escalate_at_count: int = Field(ge=1)
+
+
+class SlaConfig(Frozen):
+    """Every timing the engine uses. Defaults in catalog.yaml are provisional (CR-BPTN-02 §8)."""
+
+    max_auto_retries: int = Field(ge=0)
+    job_interval_minutes: float = Field(gt=0)
+    duplicate_window_hours: float = Field(gt=0)
+    reopen_window_days: float = Field(gt=0)
+    missing_info: MissingInfoSla
+    bptn: BptnSla
+    waiting_material: WaitingMaterialSla
+    not_accepted: NotAcceptedSla
+    rework: ReworkSla
+
+
 class Actor(Frozen):
     actor_id: str
     actor_role: ActorRole
+    department_id: Department | None = None
 
 
 class Catalog(Frozen):
     dataset_version: str
     synthetic: Literal[True]
-    shifts: tuple[Shift, ...]
     assets: tuple[Asset, ...]
-    duty_availability: tuple[DutyAvailability, ...]
     materials: tuple[MaterialCatalogItem, ...]
     default_materials: dict[PlaybookId, tuple[PlannedMaterial, ...]]
     checklist_templates: tuple[ChecklistTemplate, ...]
     evidence_requirements: tuple[EvidenceRequirement, ...]
     actors: tuple[Actor, ...]
-
-    def shift_for(self, created_at: datetime) -> str | None:
-        moment = created_at.timetz().replace(tzinfo=None)
-        return next((s.shift_window for s in self.shifts if s.contains(moment)), None)
+    playbook_departments: dict[PlaybookId, Department]
+    departments: tuple[DepartmentConfig, ...]
+    business_hours: BusinessHours
+    sla_config: SlaConfig
 
     def material(self, item_code: str) -> MaterialCatalogItem | None:
         return next((m for m in self.materials if m.item_code == item_code), None)
@@ -68,8 +143,18 @@ class Catalog(Frozen):
     def requirements_for(self, playbook_id: PlaybookId) -> list[EvidenceRequirement]:
         return [r.model_copy() for r in self.evidence_requirements if r.playbook_id == playbook_id]
 
+    def actor(self, actor_id: str) -> Actor | None:
+        return next((a for a in self.actors if a.actor_id == actor_id), None)
+
     def actor_role(self, actor_id: str) -> ActorRole | None:
-        return next((a.actor_role for a in self.actors if a.actor_id == actor_id), None)
+        actor = self.actor(actor_id)
+        return actor.actor_role if actor else None
+
+    def department_for(self, playbook_id: PlaybookId) -> Department:
+        return self.playbook_departments[playbook_id]
+
+    def department(self, department_id: Department) -> DepartmentConfig:
+        return next(d for d in self.departments if d.department_id == department_id)
 
 
 # ---------------------------------------------------------------------------
@@ -92,27 +177,29 @@ class ExecutedEvidence(Frozen):
 
 
 class ExecutionInput(Frozen):
+    """Department steps after it accepts the ticket; ends with 'báo hoàn thành' (step 10)."""
+
     checklist: tuple[str, ...] = ()
     materials: tuple[ExecutedMaterial, ...] = ()
     evidence: tuple[ExecutedEvidence, ...] = ()
 
 
 class Expected(Frozen):
-    playbook_id: str | None
-    draft_exists: bool
-    state: str
-    rule_id: str
-    location_normalized: str | None = None
-    confirmation_status: str | None = None
+    status: str
+    reason_code: str | None = None
+    playbook_id: str | None = None
+    proposed_department_id: str | None = None
+    department_id: str | None = None
+    review_status: str | None = None
+    asset_resolution: str | None = None
+    draft_exists: bool = False
+    location: str | None = None
     asset_lookup_status: str | None = None
     asset_id: str | None = None
-    duty_lookup_status: str | None = None
     material_stock_status: str | None = None
-    route_status: str | None = None
-    routing_team_id: str | None = None
-    queue_reason: str | None = None
-    exception_type: str | None = None
+    flags: tuple[str, ...] | None = None
     warnings: tuple[str, ...] | None = None
+    failing_items: tuple[str, ...] | None = None
 
 
 class TicketFixture(Frozen):

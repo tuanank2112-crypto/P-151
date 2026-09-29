@@ -1,3 +1,6 @@
+import asyncio
+import contextlib
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -8,19 +11,39 @@ from src.api.routers import maintenance
 from src.api.routes import router
 from src.config import get_settings
 
+logger = logging.getLogger(__name__)
+
+
+async def _maintenance_jobs() -> None:
+    """CR-BPTN-02 §5: scan for due retries/escalations every `sla_config.job_interval_minutes`."""
+    engine = maintenance.get_engine()
+    interval = engine.catalog.sla_config.job_interval_minutes * 60
+    while True:
+        await asyncio.sleep(interval)
+        try:
+            engine.run_jobs()
+        except Exception:  # one bad run must not stop the schedule
+            logger.exception("MaintenanceOps job failed")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
     print(f"Starting {settings.app_name} in {settings.app_env} mode (LLM_MODE={settings.llm_mode})")
+    jobs = asyncio.create_task(_maintenance_jobs()) if settings.mo_jobs_enabled else None
     yield
+    if jobs:
+        jobs.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await jobs
     print("Shutting down...")
 
 
 app = FastAPI(
     title="MaintenanceOps Agent",
-    description="Prototype mô phỏng v0.3: phân loại ticket vệ sinh/kỹ thuật, route cấp team, kiểm tra hồ sơ cho BQL",
-    version="0.3.0",
+    description="Prototype mô phỏng v0.5 candidate (CR-BPTN-02): phân loại ticket vệ sinh/kỹ thuật, chuyển phòng "
+    "ban, trạng thái công khai cho cư dân, retry/leo thang, BQL nghiệm thu",
+    version="0.5.0-candidate",
     lifespan=lifespan,
 )
 
@@ -35,6 +58,8 @@ app.add_middleware(
 
 app.include_router(router, prefix="/api/v1")
 app.include_router(maintenance.router, prefix="/api/v1")
+app.include_router(maintenance.resident_router, prefix="/api/v1")
+app.include_router(maintenance.bql_router, prefix="/api/v1")
 
 
 @app.get("/", include_in_schema=False)

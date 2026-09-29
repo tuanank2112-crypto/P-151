@@ -7,18 +7,37 @@ from src.api.routers.maintenance import get_engine
 from src.main import app
 from src.maintenance.engine import MaintenanceEngine
 
+RESIDENT = {"X-Actor-Id": "SIM-ACTOR-RESIDENT-01"}
+OTHER_RESIDENT = {"X-Actor-Id": "SIM-ACTOR-RESIDENT-02"}
 BPTN = {"X-Actor-Id": "SIM-ACTOR-BPTN-01"}
-EXEC = {"X-Actor-Id": "SIM-ACTOR-EXEC-01"}
+CLN = {"X-Actor-Id": "SIM-ACTOR-DEPT-CLN-01"}
+TEC = {"X-Actor-Id": "SIM-ACTOR-DEPT-TEC-01"}
+BQL = {"X-Actor-Id": "SIM-ACTOR-BQL-01"}
 AGENT = {"X-Actor-Id": "SIM-ACTOR-AGENT"}
+WAREHOUSE = {"X-Actor-Id": "SIM-ACTOR-WAREHOUSE-01"}
+MORNING = "2026-09-28T09:00:00+07:00"
 
 
 @pytest.fixture
-def api():
-    engine = MaintenanceEngine()
-    engine.reset()
-    app.dependency_overrides[get_engine] = lambda: engine
-    yield TestClient(app)
+def engine():
+    e = MaintenanceEngine()
+    e.reset()
+    app.dependency_overrides[get_engine] = lambda: e
+    yield e
     app.dependency_overrides.pop(get_engine, None)
+
+
+@pytest.fixture
+def api(engine):
+    return TestClient(app)
+
+
+def create(api, text, when=MORNING, headers=RESIDENT):
+    response = api.post(
+        "/api/v1/resident/tickets", json={"original_description": text, "simulated_received_at": when}, headers=headers
+    )
+    assert response.status_code == 201, response.text
+    return response.json()["ticket_id"]
 
 
 def test_queue_lists_twelve_fixture_tickets(api):
@@ -32,114 +51,143 @@ def test_evaluate_endpoint_passes_all(api):
     assert report["passed"] == 12 and report["demo_flows_passed"] == 4
 
 
-def test_execute_and_handoff_over_http_without_bptn_step(api):
-    tid = "SIM-TKT-TEC-001"
-    case = api.get(f"/api/v1/mo/tickets/{tid}").json()
-    assert case["ticket"]["administrative_normalization"]["confirmation_status"] == "NOT_REQUIRED"
-    assert case["draft"]["route_status"] == "ROUTED" and case["draft"]["assignee_id"] is None
+def test_12_resident_view_hides_internal_fields(api, engine):
+    tid = create(
+        api, "Đèn hành lang tầng 7 tòa SIM-B không sáng", when="2026-10-01T23:00:00+07:00"
+    )  # > 48h after the fixture
+    engine.get(tid).ticket.assignee_id = "NV-TEC-03"  # set directly: the resident must never see it
+    view = api.get(f"/api/v1/resident/tickets/{tid}", headers=RESIDENT).json()
+    assert view["status"] == "ROUTED" and view["status_label"] == "Đã chuyển phòng ban"
+    assert view["department_name"] == "Phòng Kỹ thuật"
+    assert view["public_message"].startswith("Phản ánh sẽ được xử lý từ 06:00")
+    assert [e["status"] for e in view["timeline"]] == ["RECEIVED", "ROUTED"]
+    assert set(view["timeline"][0]) == {"status", "status_label", "public_message", "created_at"}
+    text = json.dumps(view)
+    for secret in (
+        "reason_code",
+        "internal_note",
+        "assignee_id",
+        "OUT_OF_HOURS",
+        "auto_retry_count",
+        "escalated",
+        "SIM-MAT",
+        "Ngoài ca phòng ban",
+        "NV-TEC-03",
+    ):
+        assert secret not in text
 
-    for item in ("TEC-CHK-01", "TEC-CHK-02", "TEC-CHK-03"):
-        api.post(f"/api/v1/mo/tickets/{tid}/checklist/{item}", json={"status": "COMPLETED"}, headers=EXEC)
-    api.post(f"/api/v1/mo/tickets/{tid}/materials/SIM-MAT-LAMP-01", json={"issued_qty": 1, "used_qty": 1}, headers=EXEC)
-    case = api.post(
+
+def test_resident_full_journey_over_http(api):
+    tid = create(api, "Nhiều rác quá, cần dọn")
+    view = api.get(f"/api/v1/resident/tickets/{tid}", headers=RESIDENT).json()
+    assert view["status"] == "NEED_INFO" and view["allowed_actions"] == ["ADD_INFO"]
+
+    view = api.post(
+        f"/api/v1/resident/tickets/{tid}/additions", json={"content": "Hành lang tầng 7 tòa SIM-B"}, headers=RESIDENT
+    ).json()
+    assert view["status"] == "ROUTED"
+
+    assert api.post(f"/api/v1/mo/tickets/{tid}/accept", headers=CLN).json()["ticket"]["status"] == "IN_PROGRESS"
+    for item in ("CLN-CHK-01", "CLN-CHK-02", "CLN-CHK-03"):
+        api.post(f"/api/v1/mo/tickets/{tid}/checklist/{item}", json={"status": "COMPLETED"}, headers=CLN)
+    api.post(f"/api/v1/mo/tickets/{tid}/materials/SIM-MAT-CLEAN-01", json={"issued_qty": 2, "used_qty": 2}, headers=CLN)
+    api.post(
         f"/api/v1/mo/tickets/{tid}/evidence",
         json={
-            "requirement_id": "TEC-EVD-RESULT-NOTE",
-            "evidence_type": "RESULT_NOTE",
-            "content_or_metadata": "Đã xử lý",
+            "requirement_id": "CLN-EVD-PROCESSING-NOTE",
+            "evidence_type": "PROCESSING_NOTE",
+            "content_or_metadata": "Đã dọn",
         },
-        headers=EXEC,
-    ).json()
-    assert case["ticket"]["current_state"] == "READY_FOR_REVIEW"
-    assert api.post(f"/api/v1/mo/tickets/{tid}/handoff", headers=BPTN).json()["handed_off_to_bql"] is True
+        headers=CLN,
+    )
+    case = api.post(f"/api/v1/mo/tickets/{tid}/complete", headers=CLN).json()
+    assert case["ticket"]["status"] == "READY_FOR_REVIEW"
+
+    assert api.post(f"/api/v1/bql/tickets/{tid}/close", json={}, headers=BQL).json()["ticket"]["status"] == "CLOSED"
+    view = api.get(f"/api/v1/resident/tickets/{tid}", headers=RESIDENT).json()
+    assert view["allowed_actions"] == ["RATE", "REPORT_NOT_DONE"]
+    view = api.post(f"/api/v1/resident/tickets/{tid}/rating", json={"score": 5}, headers=RESIDENT).json()
+    assert view["allowed_actions"] == ["REPORT_NOT_DONE"]
 
 
-def test_forbidden_action_returns_403_and_is_audited(api):
+def test_resident_cannot_see_another_residents_ticket(api):
+    tid = create(api, "Hành lang tầng 3 tòa SIM-A nhiều rác")
+    assert api.get(f"/api/v1/resident/tickets/{tid}", headers=OTHER_RESIDENT).status_code == 404
+    assert api.get(f"/api/v1/resident/tickets/{tid}", headers=BQL).status_code == 403
+
+
+@pytest.mark.parametrize("headers", [AGENT, BPTN, CLN, RESIDENT])
+def test_close_by_anyone_but_bql_is_403_and_audited(api, headers):
     tid = "SIM-TKT-CLN-001"
-    response = api.post(
-        f"/api/v1/mo/tickets/{tid}/attempt",
-        json={"action": "ASSIGN_EMPLOYEE", "field_name": "assignee_id", "new_value": "NV-01"},
-        headers=AGENT,
-    )
+    api.post(f"/api/v1/mo/demo/{tid}")  # → READY_FOR_REVIEW
+    response = api.post(f"/api/v1/mo/tickets/{tid}/transition", json={"to": "CLOSED"}, headers=headers)
     assert response.status_code == 403 and response.json()["detail"]["code"] == "ACTION_DENIED"
-    audit = api.get(f"/api/v1/mo/tickets/{tid}/audit").json()
-    assert audit[-1]["action_result"] == "ACTION_DENIED"
+    assert api.get(f"/api/v1/mo/tickets/{tid}/audit").json()[-1]["action_result"] == "ACTION_DENIED"
+    assert api.get(f"/api/v1/mo/tickets/{tid}").json()["ticket"]["status"] == "READY_FOR_REVIEW"
 
 
-def test_handoff_before_ready_is_409(api):
-    assert api.post("/api/v1/mo/tickets/SIM-TKT-CLN-002/handoff", headers=BPTN).status_code == 409
+def test_invalid_transition_is_409(api):
+    response = api.post("/api/v1/bql/tickets/SIM-TKT-CLN-004/close", json={}, headers=BQL)
+    assert response.status_code == 409 and response.json()["detail"]["code"] == "INVALID_TRANSITION"
 
 
-def test_resident_only_sends_the_description(api):
-    response = api.post(
-        "/api/v1/mo/tickets",
-        json={"original_description": "Hành lang tầng 3 tòa SIM-A nhiều rác, cần vệ sinh."},
-    )
-    assert response.status_code == 201
-    case = response.json()
-    assert case["ticket"]["ticket_id"] == "SIM-TKT-0013"  # generated after the 12 fixture tickets
-    assert case["ticket"]["raw"]["created_at"].endswith("+07:00")
-    assert case["proposal"]["playbook_id"] == "PB-CLN-01"
+def test_bql_filters(api):
+    rows = api.get("/api/v1/bql/tickets", params={"status": "VERIFYING"}, headers=BQL).json()
+    assert {r["ticket_id"] for r in rows} == {"SIM-TKT-TEC-002", "SIM-TKT-TEC-005"}
+    rows = api.get("/api/v1/bql/tickets", params={"blocker_code": "OUT_OF_HOURS"}, headers=BQL).json()
+    assert [r["ticket_id"] for r in rows] == ["SIM-TKT-CLN-002"]
+    rows = api.get("/api/v1/bql/tickets", params={"department_id": "DEPT_TECHNICAL"}, headers=BQL).json()
+    # Only tickets actually handed over at step 8; the other three are still a proposal
+    assert {r["ticket_id"] for r in rows} == {"SIM-TKT-TEC-001", "SIM-TKT-TEC-004", "SIM-TKT-TEC-006"}
+    proposed = api.get("/api/v1/bql/tickets", params={"status": "ON_HOLD"}, headers=BQL).json()
+    assert proposed[0]["department_id"] is None and proposed[0]["proposed_department_id"] == "DEPT_TECHNICAL"
+    # Fixture tickets are from 27/09, so by the real clock their escalation times have passed
+    assert api.get("/api/v1/bql/tickets", params={"overdue": True}, headers=BQL).json()
+    assert api.get("/api/v1/bql/tickets", headers=CLN).status_code == 403
 
 
-def test_new_low_risk_ticket_routes_without_bptn(api):
+def test_jobs_endpoint_escalates_and_bql_sees_it(api):
+    tid = create(api, "Nhiều rác quá")
+    api.post("/api/v1/mo/jobs/run", json={"now": "2026-10-01T10:00:00+07:00"})
+    rows = api.get("/api/v1/bql/tickets", params={"escalated": True, "status": "NEED_INFO"}, headers=BQL).json()
+    assert tid in {r["ticket_id"] for r in rows}
+
+
+def test_bptn_resolve_and_stock_over_http(api):
     case = api.post(
-        "/api/v1/mo/tickets",
-        json={
-            "original_description": "Đèn hành lang tầng 3 tòa SIM-A không sáng",
-            "simulated_received_at": "2026-09-28T09:00:00+07:00",
-        },
+        "/api/v1/mo/tickets/SIM-TKT-TEC-002/bptn-resolve",
+        json={"asset_onsite": True, "note": "Không có trong sổ tài sản"},
+        headers=BPTN,
     ).json()
-    assert case["ticket"]["administrative_normalization"]["confirmation_status"] == "NOT_REQUIRED"
-    assert case["draft"]["route_status"] == "ROUTED" and case["draft"]["routing_team_id"] == "SIM-TEAM-TEC-01"
-    assert [m["item_code"] for m in case["material_lines"]] == ["SIM-MAT-LAMP-01"]
+    assert case["ticket"]["status"] == "ROUTED" and case["ticket"]["flags"] == ["ASSET_CHECK_ONSITE"]
+
+    assert api.post("/api/v1/mo/warehouse/stock/SIM-MAT-LAMP-02", json={"qty": 5}, headers=BPTN).status_code == 403
+    resumed = api.post("/api/v1/mo/warehouse/stock/SIM-MAT-LAMP-02", json={"qty": 5}, headers=WAREHOUSE).json()
+    assert [c["ticket"]["ticket_id"] for c in resumed] == ["SIM-TKT-TEC-003"]
+    assert resumed[0]["ticket"]["status"] == "ROUTED"
 
 
-def test_naive_simulated_time_is_rejected(api):
-    response = api.post(
-        "/api/v1/mo/tickets",
-        json={"original_description": "Hành lang nhiều rác", "simulated_received_at": "2026-09-28T09:00:00"},
-    )
-    assert response.status_code == 422
+def test_request_bodies_reject_placeholders(api):
+    url = "/api/v1/mo/tickets/SIM-TKT-TEC-002/bptn-resolve"
+    assert api.post(url, json={"note": "string", "asset_onsite": True}, headers=BPTN).status_code == 422
+    assert api.post(url, json={"reason": "x"}, headers=BPTN).status_code == 422
 
 
-def test_missing_location_is_fixed_by_override_over_http(api):
-    tid = api.post(
-        "/api/v1/mo/tickets",
-        json={
-            "original_description": "Khu vực chung nhiều rác, cần vệ sinh.",
-            "simulated_received_at": "2026-09-28T09:00:00+07:00",
-        },
-    ).json()["ticket"]["ticket_id"]
-    url = f"/api/v1/mo/tickets/{tid}"
-    assert api.get(url).json()["ticket"]["administrative_normalization"]["confirmation_status"] == "PENDING_REVIEW"
-    assert api.post(f"{url}/confirm", json={}, headers=BPTN).status_code == 409
-
-    body = {"location_normalized": "Tòa SIM-A / Tầng 3 / Hành lang"}
-    assert api.post(f"{url}/override", json=body, headers=BPTN).status_code == 422  # override_reason required
-    body["override_reason"] = "Cư dân gọi lại xác nhận vị trí"
-    case = api.post(f"{url}/override", json=body, headers=BPTN).json()
-    assert case["ticket"]["administrative_normalization"]["confirmation_status"] == "OVERRIDDEN"
-    assert case["draft"]["route_status"] == "ROUTED"
-
-
-def test_override_on_safety_exception_is_403(api):
-    body = {"override_reason": "Đổi sang vệ sinh", "service_category": "VE_SINH", "ticket_type": "COMMON_AREA_CLEANING"}
-    response = api.post("/api/v1/mo/tickets/SIM-TKT-TEC-005/override", json=body, headers=BPTN)
-    assert response.status_code == 403
-    assert api.get("/api/v1/mo/tickets/SIM-TKT-TEC-005").json()["ticket"]["current_state"] == "EXCEPTION"
-
-
-def test_review_bodies_reject_placeholders_and_old_fields(api):
-    url = "/api/v1/mo/tickets/SIM-TKT-CLN-001"
-    assert api.post(f"{url}/override", json={"override_reason": "string"}, headers=BPTN).status_code == 422
-    old_style = {"location_normalized": "Tòa SIM-A / Tầng 3 / Hành lang", "reason": "x"}
-    assert api.post(f"{url}/confirm", json=old_style, headers=BPTN).status_code == 422
-
-
-def test_no_endpoint_picks_a_person(api):
-    """Team-only routing: nothing in the API assigns, accepts or reassigns an individual."""
+def test_no_endpoint_assigns_a_person(api):
+    """The department assigns its own staff outside this CR; no endpoint picks a person."""
     schema = api.get("/openapi.json").json()
-    text = json.dumps(schema).lower()
-    assert "technician" not in text and "reassign" not in text
-    assert not any("assign" in path or "accept" in path for path in schema["paths"])
+    assert not any("assign" in path for path in schema["paths"])
+    assert "technician" not in json.dumps(schema).lower()
+
+
+def test_16_resident_sees_no_department_before_hand_over(api, engine):
+    need_info = create(api, "Nhiều rác quá")
+    asset_unclear = create(api, "Đèn cầu thang bộ tầng 9 tòa SIM-A không sáng")
+    engine.stock["SIM-MAT-CLEAN-01"] = 0
+    waiting = create(api, "Hành lang tầng 7 tòa SIM-B nhiều rác")
+    for tid in (need_info, asset_unclear, waiting):
+        assert engine.get(tid).ticket.department_id is None
+        view = api.get(f"/api/v1/resident/tickets/{tid}", headers=RESIDENT).json()
+        assert view["department_name"] is None
+        text = json.dumps(view, ensure_ascii=False)
+        assert "Phòng" not in text and "DEPT_" not in text

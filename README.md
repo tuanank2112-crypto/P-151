@@ -181,12 +181,13 @@ bash scripts/_pyrun.sh scripts/log_manual.py --tool chatgpt --prompt "Nội dung
 
 ```
 src/
-  maintenance/       Core v0.3: models, rules, proposer (LLM), resolver, engine, demo/evaluate
-  api/routers/maintenance.py  Endpoints /api/v1/mo
+  maintenance/       Core v0.5 candidate: models, rules, proposer (LLM), engine (state machine + pipeline),
+                     views (cư dân/BQL), migration v0.4→v0.5, i18n/vi.yaml (lời cho cư dân), demo/evaluate
+  api/routers/maintenance.py  Endpoints /api/v1/mo, /api/v1/resident, /api/v1/bql
   agents/, api/routes.py      Code mẫu LangGraph + endpoint chat của template (không dùng trong flow)
   config.py          Cấu hình (đọc từ .env)
   main.py            App entry point
-tests/test_maintenance/  pytest cho fixture, engine, resolver, proposer, API
+tests/test_maintenance/  pytest: acceptance CR-BPTN-02 §7, engine, fixture, proposer, migration, API
 seed/maintenance_v1/     Catalog mô phỏng + 12 ticket kèm expected outcome
 docs/                Tài liệu, architecture diagram, Technical Guidebook
 eval/                Kết quả evaluation
@@ -195,45 +196,52 @@ Dockerfile           Image backend (multi-stage)
 docker-compose.yml   Backend + PostgreSQL
 ```
 
-## API (v0.3)
+## API (v0.5 candidate — CR-BPTN-02)
 
-Code theo tài liệu baseline v0.3 (`docs/01`–`05`, `docs/data-contract-v1.md`, `docs/playbook-v1.md`) nằm ở
-`src/maintenance/`, API dưới prefix `/api/v1/mo`. Toàn bộ dữ liệu là **mô phỏng**, giữ in-memory và reset được.
+Baseline v0.3 (`docs/01`–`05`, `docs/data-contract-v1.md`, `docs/playbook-v1.md`) cộng hai change request trên nhánh
+`feature/chamanh`: [CR-BPTN-01](docs/CR-BPTN-01.md) (BPTN review có điều kiện) và [CR-BPTN-02](docs/CR-BPTN-02.md)
+(chuyển phòng ban, trạng thái công khai, retry, BQL đóng ticket). Cả hai đang `PROPOSED`. Toàn bộ dữ liệu là
+**mô phỏng**, giữ in-memory và reset được.
 
-- Hai playbook: `PB-CLN-01` (vệ sinh khu vực chung), `PB-TEC-01` (đèn khu vực chung không hoạt động).
-- Bốn state: `IN_PROGRESS`, `CHỜ XÁC MINH`, `READY_FOR_REVIEW`, `EXCEPTION`. Không có trạng thái đóng/nghiệm thu.
-- Route chỉ tới team `SIM-TEAM-*` (`TEAM_ONLY`, `assignee_id=null`) sau khi qua asset (chỉ kỹ thuật), tồn kho và lịch trực.
-- Fixture: `seed/maintenance_v1/catalog.yaml` (asset, duty, vật tư, checklist, evidence) và `tickets.yaml`
-  (12 ticket, 4 demo flow + 8 regression, kèm expected outcome).
-- Người gọi xác định bằng header `X-Actor-Id`: `SIM-ACTOR-BPTN-01`, `SIM-ACTOR-EXEC-01`, `SIM-ACTOR-BQL-01`, `SIM-ACTOR-AGENT`.
+- Hai playbook: `PB-CLN-01` → `DEPT_CLEANING`, `PB-TEC-01` → `DEPT_TECHNICAL` (bảng `playbook_departments` trong
+  `seed/maintenance_v1/catalog.yaml`). Thứ tự bắt buộc: BPTN review (nếu cần) → tra tài sản → giao phòng ban.
+  Bước 4 chỉ đề xuất (`proposed_department_id`); `department_id` chỉ set ở bước 8 khi `can_route` đúng. Agent không
+  gán người; phòng ban tự set `assignee_id`.
+- Trạng thái: `RECEIVED`, `VERIFYING`, `ROUTED`, `IN_PROGRESS`, `READY_FOR_REVIEW`, `CLOSED` (chính);
+  `NEED_INFO`, `ON_HOLD` (phụ); `MERGED`, `CANCELLED` (kết thúc). Mọi thay đổi đi qua một hàm `transition`,
+  ghi một dòng `ticket_status_events`. Chỉ BQL đóng/hủy.
+- Mỗi lần dừng là một `blocker` (mã lý do, người gỡ, bước chạy lại, mốc retry/leo thang). Job chạy mỗi 5 phút trong
+  process API (`MO_JOBS_ENABLED=false` để tắt). Mốc SLA và ca phòng ban ở `sla_config`/`departments` trong catalog.
+- Lời cho cư dân sinh từ `src/maintenance/i18n/vi.yaml`; Agent không tự viết.
+- Người gọi xác định bằng header `X-Actor-Id`: `SIM-ACTOR-RESIDENT-01`/`-02`, `SIM-ACTOR-BPTN-01`,
+  `SIM-ACTOR-DEPT-CLN-01`, `SIM-ACTOR-DEPT-TEC-01`, `SIM-ACTOR-WAREHOUSE-01`, `SIM-ACTOR-BQL-01`, `SIM-ACTOR-SYSTEM`.
 
 | Method | Path | Actor | Việc làm |
 |---|---|---|---|
-| POST | `/mo/reset` | (demo nội bộ) | Nạp lại 12 ticket fixture, run ID mới |
-| POST | `/mo/evaluate` | (demo nội bộ) | Reset, chạy cả 12 ticket, so với expected outcome |
-| POST | `/mo/demo/{ticket_id}` | (demo nội bộ) | Chạy các bước kịch bản của một ticket fixture |
-| GET | `/mo/tickets`, `/mo/tickets/{id}`, `/mo/tickets/{id}/audit` | — | Work queue, chi tiết case, audit |
-| POST | `/mo/tickets` | — | Tiếp nhận ticket mô phỏng mới; Agent đề xuất playbook, chạy luật rủi ro, quyết định có cần BPTN review; rõ thì tạo draft + đề xuất team |
-| POST | `/mo/tickets/{id}/confirm` | BPTN | Tùy chọn: xác nhận không đổi (`CONFIRMED`); bị từ chối khi `PENDING_REVIEW` |
-| POST | `/mo/tickets/{id}/override` | BPTN | Bổ sung/sửa service/type/location, bắt buộc `override_reason` → Agent chạy lại mọi gate; không dùng được khi có safety exception |
-| POST | `/mo/tickets/{id}/checklist/{item}` | Nhân sự thực hiện | Cập nhật checklist |
-| POST | `/mo/tickets/{id}/materials/{item_code}` | Nhân sự thực hiện | Nhập vật tư xuất/dùng, lý do chênh lệch |
-| POST | `/mo/tickets/{id}/evidence` | Nhân sự thực hiện | Thêm processing/result note (ảnh không bắt buộc) |
-| POST | `/mo/tickets/{id}/exceptions/{exc_id}/resolve` | BQL | Ghi resolution cho exception |
-| POST | `/mo/tickets/{id}/handoff` | BPTN/Agent | "Chuyển BQL xem xét" khi `READY_FOR_REVIEW` |
+| POST | `/resident/tickets` | Cư dân | Gửi phản ánh; Agent chạy pipeline bước 2–8 |
+| GET | `/resident/tickets/{id}` | Cư dân (chủ ticket) | Chỉ trường công khai: trạng thái, phòng ban, lời nhắn, eta, timeline, hành động được phép |
+| POST | `/resident/tickets/{id}/additions`, `/rating`, `/reopen` | Cư dân | Bổ sung thông tin; đánh giá; báo chưa xong (trong 7 ngày) |
+| POST | `/mo/tickets/{id}/bptn-resolve` | BPTN | Gỡ blocker `VERIFYING`: gộp/không trùng, chọn loại việc, phòng ban (sau `WRONG_DEPT`), asset, location, hoặc xác định tài sản tại hiện trường (`asset_onsite`, kèm lý do) → `locked_fields` |
+| POST | `/mo/tickets/{id}/accept`, `/return`, `/block`, `/resume-work` | Phòng ban | Nhận việc; trả sai phòng ban; tạm hoãn tại hiện trường (kèm eta); tiếp tục |
+| POST | `/mo/tickets/{id}/checklist/{item}`, `/materials/{code}`, `/evidence` | Phòng ban | Cập nhật khi đang xử lý |
+| POST | `/mo/tickets/{id}/complete` | Phòng ban | Báo hoàn thành → Agent đối soát (bước 10) |
+| POST | `/mo/warehouse/stock/{item_code}` | Kho | Nhập vật tư; ticket chờ vật tư đó tự chạy lại |
+| GET | `/bql/tickets` | BQL | Đầy đủ; lọc `status`, `department_id`, `blocker_code`, `escalated`, `overdue` |
+| POST | `/bql/tickets/{id}/close`, `/rework`, `/cancel` | BQL | Nghiệm thu; trả làm lại; hủy |
+| POST | `/mo/tickets/{id}/transition` | theo bảng | Hàm chuyển trạng thái chung (403 nếu vai trò không bao giờ được vào trạng thái đích, 409 nếu sai trạng thái nguồn) |
+| POST | `/mo/tickets/{id}/resume`, `/mo/jobs/run` | Hệ thống | Chạy lại nếu blocker đã gỡ (idempotent); chạy job retry/leo thang (có thể giả lập `now`) |
+| GET | `/mo/tickets`, `/mo/tickets/{id}`, `.../events`, `.../audit`, `.../notifications` | nội bộ | Work queue, case đầy đủ, timeline, audit, outbox thông báo |
+| POST | `/mo/reset`, `/mo/evaluate`, `/mo/demo/{ticket_id}` | demo nội bộ | Nạp lại fixture; chạy 12 ticket so với expected; chạy kịch bản một ticket |
 | POST | `/mo/tickets/{id}/attempt` | bất kỳ | Thử hành động ngoài quyền → luôn `ACTION_DENIED` + audit |
 
 **Phân loại bằng LLM** (`src/maintenance/proposer.py`): đặt `LLM_MODE=openai` trong `.env` (kèm
-`OPENAI_BASE_URL=https://openrouter.ai/api/v1` nếu dùng key OpenRouter). LLM chỉ đề xuất service/type và
-tín hiệu rủi ro; luật cố định vẫn chạy song song:
-- luật và LLM không thống nhất playbook → `CHỜ XÁC MINH`, không đoán;
-- tín hiệu rủi ro lấy mức nặng hơn của luật và LLM, nên LLM không làm mất exception mà luật đã thấy;
-- LLM báo `PRESENT` phải trích nguyên văn từ phản ánh, không có thì hạ xuống `UNCLEAR`;
-- LLM lỗi/hết quota → tự dùng luật; mỗi ticket chỉ gọi LLM một lần, audit ghi `proposer`.
-`LLM_MODE=mock` (mặc định, và luôn dùng trong test) chỉ chạy luật, kết quả cố định.
+`OPENAI_BASE_URL=https://openrouter.ai/api/v1` nếu dùng key OpenRouter). LLM chỉ đề xuất service/type; luật cố định
+vẫn chạy song song: không thống nhất → `CATEGORY_UNCLEAR`; chỉ LLM thấy playbook → BPTN review (`PENDING_REVIEW`);
+LLM lỗi → dùng luật. `LLM_MODE=mock` (mặc định, và luôn dùng trong test) chỉ chạy luật, kết quả cố định.
 
-Demo nhanh trên Swagger: `POST /mo/demo/SIM-TKT-CLN-001` (flow 1), `SIM-TKT-CLN-002` (flow 2),
-`SIM-TKT-TEC-001` (flow 3), `SIM-TKT-TEC-002` (flow 4); `POST /mo/evaluate` để xem 12/12.
+Demo nhanh trên Swagger: `POST /mo/demo/SIM-TKT-CLN-001` (flow 1), xem `SIM-TKT-CLN-002` (flow 2, ngoài giờ),
+`POST /mo/demo/SIM-TKT-TEC-001` (flow 3), `SIM-TKT-TEC-002` (flow 4, chờ BPTN xác minh asset);
+`POST /mo/evaluate` để xem 12/12.
 
 ## Tài liệu
 

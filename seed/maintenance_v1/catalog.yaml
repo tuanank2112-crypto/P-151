@@ -1,13 +1,7 @@
-# MaintenanceOps Agent — static read-only catalog (Data Contract v1.1 §5.4–5.6, §6)
+# MaintenanceOps Agent — static read-only catalog (Data Contract v1.1 §5.4–5.6, §6; CR-BPTN-02)
 # SIMULATED: không phải dữ liệu, lịch trực, định mức, tồn kho hoặc quy trình vận hành thật của Vinhomes.
 dataset_version: maintenanceops-sim-v1.1
 synthetic: true
-
-# Ca trực mô phỏng. Ticket được tra duty theo ca chứa created_at (giờ địa phương +07:00).
-shifts:
-  - {shift_window: SIM-SHIFT-AM, start: "06:00", end: "14:00"}
-  - {shift_window: SIM-SHIFT-PM, start: "14:00", end: "22:00"}
-  - {shift_window: SIM-SHIFT-NIGHT, start: "22:00", end: "06:00"}
 
 assets:
   - {asset_id: SIM-ASSET-LIGHT-001, asset_type: LIGHTING, location_normalized: "Tòa SIM-A / Tầng 3 / Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.001, synthetic: true, read_only: true}
@@ -17,19 +11,6 @@ assets:
   - {asset_id: SIM-ASSET-LIGHT-004, asset_type: LIGHTING, location_normalized: "Tòa SIM-B / Tầng 2 / Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.004, synthetic: true, read_only: true}
   - {asset_id: SIM-ASSET-LIGHT-005, asset_type: LIGHTING, location_normalized: "Tòa SIM-B / Tầng 7 / Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.005, synthetic: true, read_only: true}
   - {asset_id: SIM-ASSET-LIGHT-006, asset_type: LIGHTING, location_normalized: "Tòa SIM-A / Tầng B1 / Hầm xe", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.006, synthetic: true, read_only: true}
-
-# current/max_open_ticket_count là giá trị fixture tĩnh: engine chỉ đọc để so sánh, không tăng/giảm khi route.
-# "Còn capacity" nghĩa là capacity mô phỏng đạt điều kiện fixture, không phải năng lực nhận việc thực tế.
-duty_availability:
-  - {duty_id: SIM-DUTY-CLN-AM, team_id: SIM-TEAM-CLN-01, service_category: VE_SINH, shift_window: SIM-SHIFT-AM, availability_status: AVAILABLE, current_open_ticket_count: 1, max_open_ticket_count: 3, source_ref: fixture.duty.cln.am, synthetic: true, assignment_scope: TEAM_ONLY}
-  # Ca chiều: dữ liệu trực chưa xác định
-  - {duty_id: SIM-DUTY-CLN-PM, team_id: SIM-TEAM-CLN-01, service_category: VE_SINH, shift_window: SIM-SHIFT-PM, availability_status: UNKNOWN, source_ref: fixture.duty.cln.pm, synthetic: true, assignment_scope: TEAM_ONLY}
-  # Ca đêm: dữ liệu rõ, không có team vệ sinh trực
-  - {duty_id: SIM-DUTY-CLN-NIGHT, team_id: SIM-TEAM-CLN-01, service_category: VE_SINH, shift_window: SIM-SHIFT-NIGHT, availability_status: NOT_ON_DUTY, current_open_ticket_count: 0, max_open_ticket_count: 3, source_ref: fixture.duty.cln.night, synthetic: true, assignment_scope: TEAM_ONLY}
-  - {duty_id: SIM-DUTY-TEC-AM, team_id: SIM-TEAM-TEC-01, service_category: KY_THUAT, shift_window: SIM-SHIFT-AM, availability_status: AVAILABLE, current_open_ticket_count: 1, max_open_ticket_count: 3, source_ref: fixture.duty.tec.am, synthetic: true, assignment_scope: TEAM_ONLY}
-  # Ca chiều: team kỹ thuật đang trực nhưng đã đủ tải
-  - {duty_id: SIM-DUTY-TEC-PM, team_id: SIM-TEAM-TEC-02, service_category: KY_THUAT, shift_window: SIM-SHIFT-PM, availability_status: AVAILABLE, current_open_ticket_count: 3, max_open_ticket_count: 3, source_ref: fixture.duty.tec.pm, synthetic: true, assignment_scope: TEAM_ONLY}
-  - {duty_id: SIM-DUTY-TEC-NIGHT, team_id: SIM-TEAM-TEC-01, service_category: KY_THUAT, shift_window: SIM-SHIFT-NIGHT, availability_status: NOT_ON_DUTY, current_open_ticket_count: 0, max_open_ticket_count: 3, source_ref: fixture.duty.tec.night, synthetic: true, assignment_scope: TEAM_ONLY}
 
 # Định mức (norm) và tồn kho mô phỏng. simulated_stock_qty=null nghĩa là tồn kho không rõ.
 materials:
@@ -73,8 +54,44 @@ evidence_requirements:
   - {requirement_id: TEC-EVD-RESULT-NOTE, playbook_id: PB-TEC-01, allowed_evidence_types: [RESULT_NOTE]}
 
 actors:
+  - {actor_id: SIM-ACTOR-RESIDENT-01, actor_role: RESIDENT}
+  - {actor_id: SIM-ACTOR-RESIDENT-02, actor_role: RESIDENT}
   - {actor_id: SIM-ACTOR-BPTN-01, actor_role: BPTN}
-  - {actor_id: SIM-ACTOR-EXEC-01, actor_role: HUMAN_EXECUTION}
+  - {actor_id: SIM-ACTOR-DEPT-CLN-01, actor_role: DEPARTMENT, department_id: DEPT_CLEANING}
+  - {actor_id: SIM-ACTOR-DEPT-TEC-01, actor_role: DEPARTMENT, department_id: DEPT_TECHNICAL}
+  - {actor_id: SIM-ACTOR-WAREHOUSE-01, actor_role: WAREHOUSE}
   - {actor_id: SIM-ACTOR-BQL-01, actor_role: BQL}
   - {actor_id: SIM-ACTOR-AGENT, actor_role: AGENT}
   - {actor_id: SIM-ACTOR-SYSTEM, actor_role: SYSTEM}
+
+# ---------------------------------------------------------------------------
+# CR-BPTN-02: phòng ban, lịch làm việc và SLA. Mọi giá trị là MẶC ĐỊNH TẠM, chờ chốt (CR-BPTN-02 §8).
+# ---------------------------------------------------------------------------
+
+# Bảng playbook → phòng ban. Thêm phòng ban mới bằng cách thêm dòng ở đây và trong `departments`.
+playbook_departments:
+  PB-CLN-01: DEPT_CLEANING
+  PB-TEC-01: DEPT_TECHNICAL
+
+# Ca làm việc của từng phòng ban (giờ địa phương +07:00). Ngoài các ca này ticket giữ ROUTED + OUT_OF_HOURS.
+departments:
+  - department_id: DEPT_CLEANING
+    name: "Phòng Vệ sinh"
+    shifts: [{start: "06:00", end: "14:00"}, {start: "14:00", end: "22:00"}]
+  - department_id: DEPT_TECHNICAL
+    name: "Phòng Kỹ thuật"
+    shifts: [{start: "06:00", end: "14:00"}, {start: "14:00", end: "22:00"}]
+
+# Giờ hành chính của BPTN (dùng cho mốc leo thang "4h giờ hành chính"). weekdays: 0 = thứ Hai.
+business_hours: {start: "08:00", end: "17:00", weekdays: [0, 1, 2, 3, 4]}
+
+sla_config:
+  max_auto_retries: 3
+  job_interval_minutes: 5
+  duplicate_window_hours: 48
+  reopen_window_days: 7
+  missing_info: {retry_every_hours: 24, escalate_after_hours: 72}
+  bptn: {retry_every_business_hours: 1, escalate_after_business_hours: 4}
+  waiting_material: {escalate_after_hours: 24}  # kiểm lại tồn kho ở đầu mỗi ca
+  not_accepted: {start_after_hours: 2, retry_every_hours: 2}
+  rework: {escalate_at_count: 3}

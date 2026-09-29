@@ -1,114 +1,159 @@
-"""MaintenanceOps Agent engine: ingest → proposal → conditional BPTN review → lookups/draft/route → execution → readiness.
+"""MaintenanceOps Agent engine, CR-BPTN-02 (v0.5 candidate).
 
-BPTN review follows CR-BPTN-01 (v0.4 candidate on top of the frozen v0.3 baseline): the Agent only stops for BPTN
-when administrative data is missing or unclear; BPTN may confirm or override (with a reason) but never bypass a
-safety exception or touch the resident's raw content.
+Flow: resident report → Agent pipeline steps 2–8 (data, duplicate, category + department, BPTN review, asset,
+material, route to department) → department accepts and works → step 10 reconciliation → BQL closes.
 
-Every public operation:
-  1. checks permission first (denial = ACTION_DENIED audit, no data/state change, no ExceptionRecord);
-  2. works on a deep copy of the case;
-  3. commits the copy only after the audit sink accepted every new event (audit failure = fail closed).
+Rules that hold everywhere:
+  - every status change goes through `_apply_transition`: it checks TRANSITIONS, writes exactly one StatusEvent
+    and emits `ticket.status_changed`. An invalid transition raises; it is never skipped silently;
+  - only BQL closes or cancels; the Agent never writes `assignee_id` or a locked field; the raw report never changes;
+  - a stop is a `blocker` with an owner, a resume step and escalation times. Escalation only raises a flag and
+    notifies BQL, it never changes the status;
+  - every public operation checks permission first (denial = ACTION_DENIED audit, nothing else changes), works on a
+    deep copy and commits only after the audit sink accepted the new rows (audit failure = fail closed).
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from src.maintenance.catalog import Catalog, TicketDataset, load_catalog, load_dataset
 from src.maintenance.enums import (
-    PLAYBOOK_PAIRS,
+    BPTN_REASONS,
+    PLAYBOOK_BY_CATEGORY,
     PLAYBOOK_VERSION,
+    TERMINAL_STATUSES,
     Action,
     ActionResult,
     ActorRole,
     AssetLookupStatus,
+    AssetResolution,
+    BlockerOwner,
     ChecklistStatus,
     ComparisonStatus,
     ComparisonType,
-    ConfirmationStatus,
-    DutyLookupStatus,
+    Department,
     EvidenceSource,
     EvidenceType,
     EvidenceValidationStatus,
-    ExceptionStatus,
-    ExceptionType,
     MaterialGateStatus,
     MaterialRequirementMode,
     MaterialStockStatus,
     NormLabel,
     PlaybookId,
-    QueueStatus,
     ReadabilityStatus,
-    ReviewRequiredReason,
-    RouteStatus,
+    ReasonCode,
+    ReviewStatus,
     ServiceCategory,
-    TicketState,
-    TicketType,
+    TicketFlag,
+    TicketStatus,
 )
+from src.maintenance.messages import field_label, public_message
 from src.maintenance.models import (
-    AdministrativeNormalization,
     AgentClassificationProposal,
     AuditEvent,
+    Blocker,
     Case,
     ChecklistItem,
+    ClassificationRecord,
     EvidenceRecord,
-    ExceptionRecord,
+    LockedFields,
     MaterialComparisonResult,
     MaterialLine,
     NonBlockingWarning,
+    Notification,
     PlannedMaterial,
     RawTicket,
     ReadinessEvaluation,
-    RuleSignal,
-    StateDecision,
+    ResidentAddition,
+    StatusEvent,
     Ticket,
     WorkOrderDraft,
 )
 from src.maintenance.proposer import LLMClient, propose
-from src.maintenance.resolver import CaseFacts, resolve, route_blockers
-from src.maintenance.rules import SIGNALS_BY_PLAYBOOK, RiskOutcome, evaluate_signals, extract_location
-from src.maintenance.team_routing import lookup_team
+from src.maintenance.rules import extract_location
 
 LOCAL_TZ = timezone(timedelta(hours=7))
 AGENT_ID = "SIM-ACTOR-AGENT"
 SYSTEM_ID = "SIM-ACTOR-SYSTEM"
+DEFAULT_RESIDENT_ID = "SIM-ACTOR-RESIDENT-01"
 SOURCE_REVISION = "SRC-001"
 
-# Permission matrix (Data Contract §7.8). Anything not listed is denied for every role (default deny).
-PERMISSIONS: dict[Action, set[ActorRole]] = {
-    Action.INGEST: {ActorRole.SYSTEM},
-    Action.CREATE_PROPOSAL: {ActorRole.AGENT},
-    Action.CONFIRM_NORMALIZATION: {ActorRole.BPTN},
-    Action.UPDATE_ADMIN_FIELD: {ActorRole.BPTN},
-    Action.LOOKUP_ASSET: {ActorRole.AGENT},
-    Action.CHECK_MATERIAL_STOCK: {ActorRole.AGENT},
-    Action.LOOKUP_DUTY: {ActorRole.AGENT},
-    Action.CREATE_DRAFT: {ActorRole.AGENT},
-    Action.PROPOSE_TEAM_ROUTE: {ActorRole.AGENT},
-    Action.UPDATE_CHECKLIST: {ActorRole.HUMAN_EXECUTION},
-    Action.UPDATE_MATERIAL: {ActorRole.HUMAN_EXECUTION},
-    Action.ADD_EVIDENCE: {ActorRole.HUMAN_EXECUTION},
-    Action.VALIDATE_EVIDENCE: {ActorRole.AGENT},
-    Action.RECONCILE_MATERIAL: {ActorRole.AGENT},
-    Action.TRANSITION_STATE: {ActorRole.AGENT, ActorRole.SYSTEM},
-    Action.CREATE_EXCEPTION: {ActorRole.AGENT},
-    Action.RESOLVE_EXCEPTION: {ActorRole.BQL},
-    Action.HANDOFF_TO_BQL: {ActorRole.AGENT, ActorRole.SYSTEM, ActorRole.BPTN},
+S = TicketStatus
+R = ReasonCode
+Role = ActorRole
+
+# Permission matrix for non-transition actions. Anything not listed is denied for every role (default deny).
+PERMISSIONS: dict[Action, frozenset[ActorRole]] = {
+    Action.INGEST: frozenset({Role.SYSTEM}),
+    Action.RUN_PIPELINE: frozenset({Role.AGENT, Role.SYSTEM}),
+    Action.ADD_RESIDENT_INFO: frozenset({Role.RESIDENT}),
+    Action.RATE_TICKET: frozenset({Role.RESIDENT}),
+    Action.BPTN_RESOLVE: frozenset({Role.BPTN}),
+    Action.RECEIVE_STOCK: frozenset({Role.WAREHOUSE}),
+    Action.SET_ASSIGNEE: frozenset({Role.DEPARTMENT}),
+    Action.UPDATE_CHECKLIST: frozenset({Role.DEPARTMENT}),
+    Action.UPDATE_MATERIAL: frozenset({Role.DEPARTMENT}),
+    Action.ADD_EVIDENCE: frozenset({Role.DEPARTMENT}),
+    Action.REPORT_COMPLETE: frozenset({Role.DEPARTMENT}),
+    Action.RUN_JOBS: frozenset({Role.SYSTEM}),
 }
 
-# Allowed transitions (Data Contract §8.3). CHỜ/EXCEPTION reach READY only through IN_PROGRESS.
-TRANSITIONS: dict[TicketState, set[TicketState]] = {
-    TicketState.IN_PROGRESS: {TicketState.CHO_XAC_MINH, TicketState.EXCEPTION, TicketState.READY_FOR_REVIEW},
-    TicketState.CHO_XAC_MINH: {TicketState.IN_PROGRESS, TicketState.EXCEPTION},
-    TicketState.EXCEPTION: {TicketState.IN_PROGRESS, TicketState.CHO_XAC_MINH},
-    TicketState.READY_FOR_REVIEW: {TicketState.IN_PROGRESS, TicketState.EXCEPTION},
+
+@dataclass(frozen=True)
+class TransitionRule:
+    actors: frozenset[ActorRole]
+    reasons: frozenset[ReasonCode] = frozenset()  # reason codes this transition may carry
+    reason_required: bool = False
+    pipeline_only: bool = False  # driven by the pipeline / resume, never by an outside caller
+
+
+def _rule(*actors: ActorRole, reasons=(), required=False, pipeline=False) -> TransitionRule:
+    return TransitionRule(frozenset(actors), frozenset(reasons), required, pipeline)
+
+
+# CR-BPTN-02 §3. The only allowed status changes.
+TRANSITIONS: dict[tuple[TicketStatus, TicketStatus], TransitionRule] = {
+    (S.RECEIVED, S.NEED_INFO): _rule(Role.SYSTEM, reasons=[R.MISSING_INFO], required=True, pipeline=True),
+    (S.NEED_INFO, S.RECEIVED): _rule(Role.SYSTEM, pipeline=True),
+    (S.RECEIVED, S.VERIFYING): _rule(
+        Role.AGENT,
+        reasons=[R.DUPLICATE, R.CATEGORY_UNCLEAR, R.OUT_OF_SCOPE, R.PENDING_REVIEW, R.ASSET_UNCLEAR],
+        required=True,
+        pipeline=True,
+    ),
+    (S.VERIFYING, S.MERGED): _rule(Role.BPTN),
+    (S.VERIFYING, S.RECEIVED): _rule(Role.SYSTEM, pipeline=True),
+    (S.RECEIVED, S.ON_HOLD): _rule(Role.AGENT, reasons=[R.WAITING_MATERIAL], required=True, pipeline=True),
+    (S.ON_HOLD, S.RECEIVED): _rule(Role.SYSTEM, pipeline=True),
+    (S.RECEIVED, S.ROUTED): _rule(Role.SYSTEM, reasons=[R.OUT_OF_HOURS], pipeline=True),
+    (S.ROUTED, S.IN_PROGRESS): _rule(Role.DEPARTMENT),
+    (S.ROUTED, S.VERIFYING): _rule(Role.DEPARTMENT, reasons=[R.WRONG_DEPT], required=True),
+    (S.IN_PROGRESS, S.ON_HOLD): _rule(Role.DEPARTMENT, reasons=[R.BLOCKED_ONSITE], required=True),
+    (S.ON_HOLD, S.IN_PROGRESS): _rule(Role.DEPARTMENT),
+    (S.IN_PROGRESS, S.READY_FOR_REVIEW): _rule(Role.AGENT, pipeline=True),
+    (S.READY_FOR_REVIEW, S.CLOSED): _rule(Role.BQL),
+    (S.READY_FOR_REVIEW, S.IN_PROGRESS): _rule(Role.BQL, reasons=[R.REWORK], required=True),
+    (S.CLOSED, S.READY_FOR_REVIEW): _rule(Role.RESIDENT),
+    **{(status, S.CANCELLED): _rule(Role.BQL) for status in S if status not in TERMINAL_STATUSES},
+}
+
+BLOCKER_OWNERS: dict[ReasonCode, BlockerOwner] = {
+    R.MISSING_INFO: BlockerOwner.RESIDENT,
+    **{code: BlockerOwner.BPTN for code in BPTN_REASONS},
+    R.WAITING_MATERIAL: BlockerOwner.WAREHOUSE,
+    R.OUT_OF_HOURS: BlockerOwner.SYSTEM,
+    R.NOT_ACCEPTED: BlockerOwner.DEPARTMENT,
+    R.BLOCKED_ONSITE: BlockerOwner.DEPARTMENT,
+    R.REWORK: BlockerOwner.DEPARTMENT,
 }
 
 SCOPE_LABELS = {
     PlaybookId.CLN: "vệ sinh khu vực chung",
     PlaybookId.TEC: "đèn chiếu sáng khu vực chung không hoạt động",
 }
-EXCEPTION_TYPES = {PlaybookId.CLN: ExceptionType.CLEANING_HAZARD, PlaybookId.TEC: ExceptionType.ELECTRICAL_HIGH_RISK}
 
 
 class EngineError(Exception):
@@ -130,6 +175,10 @@ class GuardError(EngineError):
     code = "GUARD_FAILED"
 
 
+class InvalidTransitionError(GuardError):
+    code = "INVALID_TRANSITION"
+
+
 class ActionDeniedError(EngineError):
     """Permission rejection (canonical code ACTION_DENIED). The denial itself is audited."""
 
@@ -140,7 +189,28 @@ class AuditWriteError(EngineError):
     code = "AUDIT_WRITE_FAILED"
 
 
-AuditSink = Callable[[list[AuditEvent]], None]
+AuditSink = Callable[[list[AuditEvent | StatusEvent]], None]
+NotifySink = Callable[[list[Notification]], None]
+
+
+def route_blockers(ticket: Ticket) -> list[str]:
+    """Why `can_route` is false (CR-BPTN-02 §3): review done, asset resolved, a department proposed."""
+    failing = []
+    if ticket.review_status not in (ReviewStatus.NOT_REQUIRED, ReviewStatus.CONFIRMED):
+        failing.append(f"review_status={ticket.review_status}")
+    if ticket.asset_resolution not in (
+        AssetResolution.FOUND,
+        AssetResolution.ONSITE_BY_BPTN,
+        AssetResolution.NOT_APPLICABLE,
+    ):
+        failing.append(f"asset_resolution={ticket.asset_resolution}")
+    if ticket.proposed_department_id is None:
+        failing.append("proposed_department_id=null")
+    return failing
+
+
+def can_route(ticket: Ticket) -> bool:
+    return not route_blockers(ticket)
 
 
 def _blank(value: str | None) -> bool:
@@ -151,38 +221,65 @@ def _suffix(ticket_id: str) -> str:
     return ticket_id.removeprefix("SIM-TKT-")
 
 
+def _created_at(raw: RawTicket) -> datetime | None:
+    try:
+        moment = datetime.fromisoformat(raw.created_at)
+    except ValueError:
+        return None
+    return moment if moment.tzinfo else None
+
+
 class MaintenanceEngine:
     def __init__(
         self,
         catalog: Catalog | None = None,
         dataset: TicketDataset | None = None,
         audit_sink: AuditSink | None = None,
+        notify_sink: NotifySink | None = None,
         clock: Callable[[], datetime] | None = None,
         llm: LLMClient | None = None,
         llm_label: str = "llm",
     ):
         self.catalog = catalog or load_catalog()
         self.dataset = dataset or load_dataset()
-        self.audit_sink = audit_sink or (lambda events: None)
+        self.audit_sink = audit_sink or (lambda rows: None)
+        self.notify_sink = notify_sink or (lambda rows: None)
         self.clock = clock or (lambda: datetime.now(LOCAL_TZ))
         self.llm = llm  # None = fixed rules only (deterministic, used by tests and LLM_MODE=mock)
         self.llm_label = llm_label
         self.cases: dict[str, Case] = {}
+        self.stock: dict[str, float | None] = {}
         self.run_number = 0
         self.run_id = "SIM-RUN-000"
+        self._reset_stock()
 
     # ------------------------------------------------------------------ run control
 
+    def _reset_stock(self) -> None:
+        self.stock = {m.item_code: m.simulated_stock_qty for m in self.catalog.materials}
+
+    @contextmanager
+    def at(self, moment: datetime) -> Iterator[None]:
+        """Run the enclosed calls as if the clock showed `moment` (demo replays and scheduled jobs)."""
+        previous = self.clock
+        self.clock = lambda: moment
+        try:
+            yield
+        finally:
+            self.clock = previous
+
     def reset(self, *, with_fixtures: bool = True) -> str:
-        """FR-DEMO-001: drop every mutable layer and re-ingest the fixture. Source fixture files are never written."""
+        """FR-DEMO-001: drop every mutable layer and re-ingest the fixture, each at its own created_at."""
         self.cases = {}
+        self._reset_stock()
         self.run_number += 1
         self.run_id = f"SIM-RUN-{self.run_number:03d}"
         if with_fixtures:
             for fixture in self.dataset.tickets:
                 planned = list(fixture.materials) if fixture.materials is not None else None
-                self.ingest(fixture.raw, planned_materials=planned)
-                self.run_agent(fixture.raw.ticket_id)
+                with self.at(_created_at(fixture.raw) or self.clock()):
+                    self.ingest(fixture.raw, planned_materials=planned)
+                    self.run_agent(fixture.raw.ticket_id)
         return self.run_id
 
     def get(self, ticket_id: str) -> Case:
@@ -191,27 +288,44 @@ class MaintenanceEngine:
             raise NotFoundError(f"Không có ticket {ticket_id}")
         return case
 
-    # ------------------------------------------------------------------ commands
+    # ------------------------------------------------------------------ resident
 
-    def receive(self, original_description: str, *, channel: str = "form", received_at: datetime | None = None) -> Case:
-        """A resident report arrives: the system assigns ticket_id/created_at (SYSTEM_INGEST), then the Agent runs.
+    def receive(
+        self,
+        original_description: str,
+        *,
+        resident_id: str = DEFAULT_RESIDENT_ID,
+        channel: str = "form",
+        received_at: datetime | None = None,
+    ) -> Case:
+        """A resident report arrives: the system assigns ticket_id/created_at, then the Agent pipeline runs.
 
-        `received_at` only exists to simulate a shift in demos; normally it is the current time.
+        `received_at` only exists to simulate a time of day in demos; normally it is the current time.
         """
+        if self.catalog.actor_role(resident_id) != Role.RESIDENT:
+            raise ActionDeniedError(f"{resident_id} không phải cư dân", {"code": "ACTION_DENIED"})
+        moment = (received_at or self.clock()).astimezone(LOCAL_TZ)
         number = len(self.cases) + 1
         while f"SIM-TKT-{number:04d}" in self.cases:
             number += 1
         raw = RawTicket(
             ticket_id=f"SIM-TKT-{number:04d}",
-            created_at=(received_at or self.clock()).astimezone(LOCAL_TZ).isoformat(timespec="seconds"),
+            created_at=moment.isoformat(timespec="seconds"),
             original_description=original_description,
             channel=channel,
         )
-        self.ingest(raw)
-        return self.run_agent(raw.ticket_id)
+        with self.at(moment):
+            self.ingest(raw, resident_id=resident_id)
+            return self.run_agent(raw.ticket_id)
 
-    def ingest(self, raw: RawTicket, planned_materials: list[PlannedMaterial] | None = None) -> Case:
-        """Store the raw resident ticket unchanged and validate the three classification fields (FR-INGEST-001)."""
+    def ingest(
+        self,
+        raw: RawTicket,
+        planned_materials: list[PlannedMaterial] | None = None,
+        *,
+        resident_id: str = DEFAULT_RESIDENT_ID,
+    ) -> Case:
+        """Store the raw resident report unchanged in status RECEIVED (step 1)."""
         if raw.ticket_id in self.cases:
             raise GuardError(f"Ticket {raw.ticket_id} đã được ingest")
         now = self.clock()
@@ -220,12 +334,10 @@ class MaintenanceEngine:
             ticket_id=raw.ticket_id,
             raw=raw,
             raw_integrity_marker=marker,
+            resident_id=resident_id,
             source_revision=SOURCE_REVISION,
             dataset_version=self.dataset.dataset_version,
-            current_state=TicketState.IN_PROGRESS,
-            state_decision=StateDecision(
-                state=TicketState.IN_PROGRESS, rule_id="INGEST", reason="Ticket được tiếp nhận"
-            ),
+            status=S.RECEIVED,
         )
         work = Case(ticket=ticket, planned_materials=planned_materials)
         self._audit(
@@ -234,167 +346,271 @@ class MaintenanceEngine:
             "Ticket",
             raw.ticket_id,
             SYSTEM_ID,
-            ActorRole.SYSTEM,
+            Role.SYSTEM,
             "ticket",
             None,
             {"raw_integrity_marker": marker},
             "Ingest raw ticket mô phỏng",
             now=now,
         )
-        self._reevaluate(work, now)
-        self.audit_sink(work.audit)
-        self.cases[raw.ticket_id] = work
+        self._record_event(work, None, S.RECEIVED, None, SYSTEM_ID, Role.SYSTEM, now, public=True)
+        self._notify(work, "ticket.status_changed", BlockerOwner.RESIDENT, now, {"to": S.RECEIVED})
+        self._commit(work, 0, 0, 0)
         return work
 
     def run_agent(self, ticket_id: str) -> Case:
-        """Agent step: propose playbook, run risk rules, decide whether BPTN review is needed, then (if not
-        blocked) lookups, draft and team route proposal."""
-        return self._mutate(ticket_id, AGENT_ID, Action.CREATE_PROPOSAL, self._agent_pass)
-
-    def confirm(self, ticket_id: str, actor_id: str, *, note: str | None = None) -> Case:
-        """BPTN reviewed the administrative layer and changes nothing → CONFIRMED. Optional (CR-BPTN-01)."""
-        self._guard_safety(ticket_id, actor_id, Action.CONFIRM_NORMALIZATION, note)
+        """Run the pipeline from step 2 on a RECEIVED ticket."""
 
         def op(work: Case, now: datetime) -> None:
-            admin = self._reviewable_admin(work)
-            if admin.confirmation_status == ConfirmationStatus.PENDING_REVIEW:
-                raise GuardError(
-                    "Dữ liệu hành chính còn thiếu/không rõ; cần override kèm override_reason",
-                    {"review_required_reason": admin.review_required_reason},
-                )
-            reason = "BPTN xem lại, không thay đổi trường hành chính" if _blank(note) else note.strip()
+            if work.ticket.status != S.RECEIVED:
+                raise GuardError("Pipeline chỉ chạy khi ticket ở RECEIVED", {"status": work.ticket.status})
+            self._run_pipeline(work, 2, now)
+
+        return self._mutate(ticket_id, AGENT_ID, Action.RUN_PIPELINE, op)
+
+    def add_resident_info(self, ticket_id: str, actor_id: str, content: str) -> Case:
+        """Event `resident_info_added`: append (never edit the original), then resume."""
+
+        def op(work: Case, now: datetime) -> None:
+            if work.ticket.status in TERMINAL_STATUSES:
+                raise GuardError("Ticket đã kết thúc; không nhận thêm thông tin")
+            if _blank(content):
+                raise GuardError("Nội dung bổ sung không được rỗng")
+            addition = ResidentAddition(
+                addition_id=f"SIM-ADD-{_suffix(ticket_id)}-{len(work.additions) + 1:02d}",
+                ticket_id=ticket_id,
+                content=content.strip(),
+                submitted_by=actor_id,
+                submitted_at=now,
+            )
+            work.additions.append(addition)
+            if work.ticket.status == S.NEED_INFO and work.ticket.locked_fields.category is None:
+                work.classification = None  # new content: classify again from original + additions
             self._audit(
                 work,
-                Action.CONFIRM_NORMALIZATION,
+                Action.ADD_RESIDENT_INFO,
+                "ResidentAddition",
+                addition.addition_id,
+                actor_id,
+                Role.RESIDENT,
+                "additions",
+                None,
+                addition.content,
+                "Cư dân bổ sung thông tin",
+                now=now,
+            )
+            self._resume(work, now)
+
+        return self._mutate(ticket_id, actor_id, Action.ADD_RESIDENT_INFO, op)
+
+    def rate(self, ticket_id: str, actor_id: str, score: int) -> Case:
+        def op(work: Case, now: datetime) -> None:
+            if work.ticket.status != S.CLOSED:
+                raise GuardError("Chỉ đánh giá được khi ticket đã hoàn thành")
+            old = work.ticket.rating
+            work.ticket.rating = score
+            self._audit(
+                work,
+                Action.RATE_TICKET,
                 "Ticket",
                 ticket_id,
                 actor_id,
-                ActorRole.BPTN,
-                "administrative_normalization.confirmation_status",
-                admin.confirmation_status,
-                ConfirmationStatus.CONFIRMED,
-                reason,
+                Role.RESIDENT,
+                "rating",
+                old,
+                score,
+                "Cư dân đánh giá",
                 now=now,
-                rule_id="PB-COM-R-CFM-01",
             )
-            work.ticket.administrative_normalization = AdministrativeNormalization.model_validate(
-                {
-                    **admin.model_dump(),
-                    "confirmation_status": ConfirmationStatus.CONFIRMED,
-                    "confirmed_by": actor_id,
-                    "confirmed_at": now,
-                    "audit_event_id": work.audit[-1].event_id,
-                }
-            )
-            self._agent_pass(work, now)
 
-        return self._mutate(ticket_id, actor_id, Action.CONFIRM_NORMALIZATION, op)
+        return self._mutate(ticket_id, actor_id, Action.RATE_TICKET, op)
 
-    def override(
+    def reopen(self, ticket_id: str, actor_id: str, *, note: str | None = None) -> Case:
+        """'Báo chưa xong': CLOSED → READY_FOR_REVIEW inside the reopen window."""
+        return self.transition(ticket_id, S.READY_FOR_REVIEW, actor_id, note=note)
+
+    # ------------------------------------------------------------------ BPTN
+
+    def bptn_resolve(
         self,
         ticket_id: str,
         actor_id: str,
         *,
-        override_reason: str,
-        location_normalized: str | None = None,
-        service_category: ServiceCategory | None = None,
-        ticket_type: TicketType | None = None,
-        override_source_references: list[str] | None = None,
+        note: str | None = None,
+        merge: bool | None = None,
+        category: ServiceCategory | None = None,
+        department: Department | None = None,
+        location: str | None = None,
+        asset_id: str | None = None,
+        asset_onsite: bool = False,
     ) -> Case:
-        """BPTN changes allowed administrative fields → OVERRIDDEN, then every downstream rule runs again.
+        """Event `bptn_resolved`. BPTN answers the open VERIFYING blocker; chosen values go to `locked_fields`.
 
-        Only service/type/location can change. Raw content, raw evidence and safety exceptions are out of reach.
+        DUPLICATE: merge=True → MERGED; merge=False → pipeline resumes at step 4.
+        CATEGORY_UNCLEAR / OUT_OF_SCOPE: `category` required → review CONFIRMED, resume at step 6.
+        PENDING_REVIEW: confirm as is, or change category/location → CONFIRMED, resume at step 6.
+        ASSET_UNCLEAR: `asset_id`, a new `location`, or `asset_onsite` ("xác định tại hiện trường", reason
+            required → ONSITE_BY_BPTN + flag ASSET_CHECK_ONSITE); resume at step 6.
+        WRONG_DEPT: `category` and/or `department`. A new category resets the asset and resumes at step 6;
+            the same category resumes at step 7. Never straight to step 8.
         """
-        self._guard_safety(ticket_id, actor_id, Action.UPDATE_ADMIN_FIELD, override_reason)
 
         def op(work: Case, now: datetime) -> None:
-            admin = self._reviewable_admin(work)
-            if _blank(override_reason):
-                raise GuardError("override_reason bắt buộc khi BPTN thay đổi trường hành chính")
-            if (service_category is None) != (ticket_type is None):
-                raise GuardError("Đổi category cần cả service_category và ticket_type")
-            service = service_category or admin.service_category_normalized
-            ticket_type_ = ticket_type or admin.ticket_type_normalized
-            if (service, ticket_type_) not in PLAYBOOK_PAIRS:
-                raise GuardError(
-                    "Cặp service/type không khớp playbook v1.1", {"service": service, "type": ticket_type_}
-                )
-            location = admin.location_normalized if _blank(location_normalized) else location_normalized.strip()
-            if _blank(location):
-                raise GuardError("Thiếu location_normalized; override phải bổ sung vị trí")
-            new_values = {
-                "service_category_normalized": service,
-                "ticket_type_normalized": ticket_type_,
-                "location_normalized": location,
-            }
-            changes = {f: v for f, v in new_values.items() if getattr(admin, f) != v}
-            if not changes:
-                raise GuardError("Override không thay đổi trường nào; dùng confirm nếu chỉ xác nhận")
-
-            reason = override_reason.strip()
-            for field_name, value in changes.items():
+            ticket = work.ticket
+            blocker = ticket.blocker
+            if ticket.status != S.VERIFYING or blocker is None or blocker.code not in BPTN_REASONS:
+                raise GuardError("Không có blocker nào chờ BPTN", {"status": ticket.status})
+            code = blocker.code
+            if (merge is not None) != (code == R.DUPLICATE):
+                raise GuardError("`merge` chỉ dùng và bắt buộc với DUPLICATE", {"reason_code": code})
+            if code == R.DUPLICATE and merge:
                 self._audit(
                     work,
-                    Action.UPDATE_ADMIN_FIELD,
+                    Action.BPTN_RESOLVE,
                     "Ticket",
                     ticket_id,
                     actor_id,
-                    ActorRole.BPTN,
-                    f"administrative_normalization.{field_name}",
-                    getattr(admin, field_name),
-                    value,
-                    reason,
+                    Role.BPTN,
+                    "merged_into",
+                    None,
+                    blocker.related_ticket_id,
+                    note or "BPTN xác nhận trùng",
                     now=now,
-                    rule_id="PB-COM-R-OVR-01",
                 )
-            work.ticket.administrative_normalization = AdministrativeNormalization(
-                administrative_revision=admin.administrative_revision + 1,
-                **new_values,
-                priority=admin.priority,
-                confirmation_status=ConfirmationStatus.OVERRIDDEN,
-                review_required_reason=admin.review_required_reason,
-                confirmed_by=actor_id,
-                confirmed_at=now,
-                override_reason=reason,
-                override_source_references=list(override_source_references or []),
-                override_fields=list(changes),
-                audit_event_id=work.audit[-1].event_id,
-                source_references=["ticket.original_description", "bptn.override"],
-            )
-            self._bind_playbook(work, PLAYBOOK_PAIRS[(service, ticket_type_)], service, ticket_type_, now)
-            self._agent_pass(work, now)
+                self._human_transition(work, S.MERGED, actor_id, Role.BPTN, now, note=note)
+                return
+            if code in (R.CATEGORY_UNCLEAR, R.OUT_OF_SCOPE) and category is None:
+                raise GuardError(f"{code}: BPTN phải chọn loại việc (category)")
+            if code == R.WRONG_DEPT and category is None and department is None:
+                raise GuardError("WRONG_DEPT: BPTN phải chọn lại loại việc hoặc phòng ban")
+            if department is not None and code != R.WRONG_DEPT:
+                raise GuardError("Chỉ chọn phòng ban trực tiếp khi phòng ban trả về (WRONG_DEPT)")
+            if code == R.ASSET_UNCLEAR and not (asset_id or location or asset_onsite):
+                raise GuardError("ASSET_UNCLEAR: chọn asset_id, sửa location hoặc chọn xác định tại hiện trường")
+            if asset_onsite and code != R.ASSET_UNCLEAR:
+                raise GuardError("asset_onsite chỉ dùng cho ASSET_UNCLEAR")
+            locks: dict[str, Any] = {}
+            if category is not None:
+                if category not in PLAYBOOK_BY_CATEGORY:
+                    raise GuardError("Category không thuộc playbook v1.1", {"category": category})
+                locks["category"] = category
+            if department is not None:
+                locks["department"] = department
+            if location is not None:
+                if _blank(location):
+                    raise GuardError("location không được rỗng")
+                locks["location"] = location.strip()
+            if asset_id is not None:
+                if not any(a.asset_id == asset_id for a in self.catalog.assets):
+                    raise GuardError(f"Không có asset {asset_id} trong catalog")
+                locks["asset_id"] = asset_id
+            if (locks or asset_onsite) and _blank(note):
+                raise GuardError("BPTN thay đổi giá trị hoặc chọn xác định tại hiện trường thì bắt buộc ghi lý do")
 
-        return self._mutate(ticket_id, actor_id, Action.UPDATE_ADMIN_FIELD, op)
+            category_changed = category is not None and category != self._category(work)
+            if code == R.DUPLICATE:
+                work.not_duplicate_of.append(blocker.related_ticket_id)
+            current_locks = ticket.locked_fields.model_dump()
+            if category_changed:
+                # A new kind of work: the old asset and department choices no longer apply; step 6 runs again
+                current_locks.update(asset_id=None, department=None)
+                ticket.asset_resolution = None
+                ticket.flags = [f for f in ticket.flags if f != TicketFlag.ASSET_CHECK_ONSITE]
+            ticket.locked_fields = LockedFields(**{**current_locks, **locks})
+            if asset_onsite and TicketFlag.ASSET_CHECK_ONSITE not in ticket.flags:
+                ticket.flags = [*ticket.flags, TicketFlag.ASSET_CHECK_ONSITE]
+            if category is not None:
+                self._bind_category(work, category, "BPTN_LOCKED", now)
+            elif department is not None:
+                self._propose_department(work, now)
+            if code in (R.CATEGORY_UNCLEAR, R.OUT_OF_SCOPE, R.PENDING_REVIEW, R.WRONG_DEPT):
+                ticket.review_status = ReviewStatus.CONFIRMED
+            resume_step = (6 if category_changed else 7) if code == R.WRONG_DEPT else blocker.resume_step
+            ticket.blocker = blocker.model_copy(
+                update={"resolved_at": now, "resolved_by": actor_id, "resume_step": resume_step}
+            )
+            self._audit(
+                work,
+                Action.BPTN_RESOLVE,
+                "Ticket",
+                ticket_id,
+                actor_id,
+                Role.BPTN,
+                "locked_fields",
+                None,
+                {**locks, "asset_onsite": asset_onsite, "reason_code": code, "resume_step": resume_step},
+                note.strip() if not _blank(note) else "BPTN xác nhận, không đổi giá trị",
+                now=now,
+            )
+            self._resume(work, now)
+
+        return self._mutate(ticket_id, actor_id, Action.BPTN_RESOLVE, op)
+
+    # ------------------------------------------------------------------ department
+
+    def accept(self, ticket_id: str, actor_id: str) -> Case:
+        """Event `department_accepted`: ROUTED → IN_PROGRESS, clears OUT_OF_HOURS / NOT_ACCEPTED."""
+        return self.transition(ticket_id, S.IN_PROGRESS, actor_id, expected_from=S.ROUTED)
+
+    def return_wrong_department(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
+        return self.transition(ticket_id, S.VERIFYING, actor_id, note=note)
+
+    def block_onsite(self, ticket_id: str, actor_id: str, *, note: str, eta: datetime) -> Case:
+        return self.transition(ticket_id, S.ON_HOLD, actor_id, note=note, eta=eta)
+
+    def resume_work(self, ticket_id: str, actor_id: str) -> Case:
+        """Event `department_resumed`: ON_HOLD (BLOCKED_ONSITE) → IN_PROGRESS."""
+        return self.transition(ticket_id, S.IN_PROGRESS, actor_id, expected_from=S.ON_HOLD)
+
+    def set_assignee(self, ticket_id: str, actor_id: str, assignee_id: str | None) -> Case:
+        """Staff assignment inside the department is the department's own business (out of CR scope)."""
+
+        def op(work: Case, now: datetime) -> None:
+            if work.ticket.status in TERMINAL_STATUSES:
+                raise GuardError("Ticket đã kết thúc")
+            old = work.ticket.assignee_id
+            work.ticket.assignee_id = assignee_id
+            self._audit(
+                work,
+                Action.SET_ASSIGNEE,
+                "Ticket",
+                ticket_id,
+                actor_id,
+                Role.DEPARTMENT,
+                "assignee_id",
+                old,
+                assignee_id,
+                "Phòng ban phân công nội bộ",
+                now=now,
+            )
+
+        return self._mutate(ticket_id, actor_id, Action.SET_ASSIGNEE, op)
 
     def update_checklist(
         self, ticket_id: str, actor_id: str, template_item_id: str, *, status: ChecklistStatus, note: str | None = None
     ) -> Case:
         def op(work: Case, now: datetime) -> None:
-            self._require_routed(work)
+            self._require_in_progress(work)
             item = next((i for i in work.checklist_items if i.template_item_id == template_item_id), None)
             if item is None:
                 raise GuardError(f"Không có checklist item {template_item_id} trong draft")
             if note is not None and not note.strip():
                 raise GuardError("note nếu có phải không rỗng")
             old = item.status
-            item.status = status
-            item.updated_by = actor_id
-            item.updated_at = now
-            item.note = note
+            item.status, item.updated_by, item.updated_at, item.note = status, actor_id, now, note
             self._audit(
                 work,
                 Action.UPDATE_CHECKLIST,
                 "ChecklistItem",
                 item.checklist_item_id,
                 actor_id,
-                ActorRole.HUMAN_EXECUTION,
+                Role.DEPARTMENT,
                 "status",
                 old,
                 status,
                 note or "Cập nhật checklist mô phỏng",
                 now=now,
             )
-            self._reevaluate(work, now)
 
         return self._mutate(ticket_id, actor_id, Action.UPDATE_CHECKLIST, op)
 
@@ -409,7 +625,7 @@ class MaintenanceEngine:
         variance_reason: str | None = None,
     ) -> Case:
         def op(work: Case, now: datetime) -> None:
-            self._require_routed(work)
+            self._require_in_progress(work)
             line = next((m for m in work.material_lines if m.item_code == item_code), None)
             if line is None:
                 raise GuardError(f"Không có dòng vật tư {item_code} trong draft")
@@ -424,14 +640,13 @@ class MaintenanceEngine:
                 "MaterialLine",
                 line.material_line_id,
                 actor_id,
-                ActorRole.HUMAN_EXECUTION,
+                Role.DEPARTMENT,
                 "issued_qty,used_qty,variance_reason",
                 old,
                 new,
-                "Nhập vật tư thực dùng mô phỏng",
+                "Nhập vật tư xuất và dùng mô phỏng",
                 now=now,
             )
-            self._reevaluate(work, now)
 
         return self._mutate(ticket_id, actor_id, Action.UPDATE_MATERIAL, op)
 
@@ -445,10 +660,10 @@ class MaintenanceEngine:
         content_or_metadata: str,
         readability_status: ReadabilityStatus,
     ) -> Case:
-        """Execution evidence. The content is stored as untrusted data and never interpreted (FR-SECURITY-001)."""
+        """Execution note. The content is stored as untrusted data and never interpreted (FR-SECURITY-001)."""
 
         def op(work: Case, now: datetime) -> None:
-            self._require_routed(work)
+            self._require_in_progress(work)
             draft = work.draft
             known = {r.requirement_id for r in draft.evidence_requirements}
             if requirement_id is not None and requirement_id not in known:
@@ -464,7 +679,7 @@ class MaintenanceEngine:
                 requirement_id=requirement_id,
                 evidence_type=evidence_type,
                 content_or_metadata=content_or_metadata,
-                source=EvidenceSource.HUMAN_EXECUTION,
+                source=EvidenceSource.DEPARTMENT_EXECUTION,
                 submitted_by=actor_id,
                 submitted_at=now,
                 readability_status=readability_status,
@@ -476,86 +691,175 @@ class MaintenanceEngine:
                 "EvidenceRecord",
                 record.evidence_id,
                 actor_id,
-                ActorRole.HUMAN_EXECUTION,
+                Role.DEPARTMENT,
                 "evidence",
                 None,
                 {"requirement_id": requirement_id, "evidence_type": evidence_type},
-                "Thêm evidence mô phỏng",
+                "Thêm ghi chú xử lý mô phỏng",
                 now=now,
             )
-            self._reevaluate(work, now)
 
         return self._mutate(ticket_id, actor_id, Action.ADD_EVIDENCE, op)
 
-    def resolve_exception(self, ticket_id: str, actor_id: str, exception_id: str, *, resolution_note: str) -> Case:
-        """BQL records a resolution that allows the standard flow; the Agent then revalidates from the proposal."""
+    def report_complete(self, ticket_id: str, actor_id: str) -> Case:
+        """'Báo hoàn thành' → step 10 reconciliation. Pass: READY_FOR_REVIEW. Fail: stays IN_PROGRESS, the
+        failing items go back to the department in `draft.readiness_evaluation` and a notification; no blocker."""
 
         def op(work: Case, now: datetime) -> None:
-            record = next((e for e in work.exceptions if e.exception_id == exception_id), None)
-            if record is None or record.status != ExceptionStatus.OPEN:
-                raise GuardError(f"Không có exception OPEN {exception_id}")
-            if _blank(resolution_note):
-                raise GuardError("resolution_note bắt buộc")
-            record.status = ExceptionStatus.RESOLVED_BY_BQL
-            record.resolution_note = resolution_note
-            record.resolved_by = actor_id
-            record.resolved_at = now
+            self._require_in_progress(work)
             self._audit(
                 work,
-                Action.RESOLVE_EXCEPTION,
-                "ExceptionRecord",
-                exception_id,
-                actor_id,
-                ActorRole.BQL,
-                "status",
-                ExceptionStatus.OPEN,
-                ExceptionStatus.RESOLVED_BY_BQL,
-                resolution_note,
-                rule_id=record.rule_id,
-                now=now,
-            )
-            self._agent_pass(work, now)
-
-        return self._mutate(ticket_id, actor_id, Action.RESOLVE_EXCEPTION, op)
-
-    def handoff_to_bql(self, ticket_id: str, actor_id: str) -> Case:
-        """'Chuyển BQL xem xét' — only from READY_FOR_REVIEW. It is a handoff event, not acceptance."""
-
-        def op(work: Case, now: datetime) -> None:
-            if work.ticket.current_state != TicketState.READY_FOR_REVIEW:
-                raise GuardError(
-                    "Chỉ chuyển BQL xem xét khi READY_FOR_REVIEW",
-                    {"state": work.ticket.current_state, "rule_id": work.ticket.state_decision.rule_id},
-                )
-            work.handed_off_to_bql = True
-            self._audit(
-                work,
-                Action.HANDOFF_TO_BQL,
+                Action.REPORT_COMPLETE,
                 "Ticket",
                 ticket_id,
                 actor_id,
-                self._role(actor_id),
-                "handed_off_to_bql",
-                False,
-                True,
-                "Chuyển hồ sơ READY_FOR_REVIEW cho BQL xem xét",
+                Role.DEPARTMENT,
+                "status",
+                None,
+                "REPORTED_COMPLETE",
+                "Phòng ban báo hoàn thành",
                 now=now,
             )
+            evaluation = self._reconcile(work, now)
+            self._agent(
+                work,
+                Action.RECONCILE,
+                "WorkOrderDraft",
+                work.draft.work_order_draft_id,
+                "readiness_evaluation",
+                None,
+                {"all_pass": evaluation.all_pass, "failing_items": evaluation.failing_items},
+                "Đối soát bước 10",
+                now=now,
+            )
+            if evaluation.all_pass:
+                self._apply_transition(work, S.READY_FOR_REVIEW, AGENT_ID, Role.AGENT, now, note="Đối soát đạt")
+            else:
+                self._notify(
+                    work,
+                    "department.reconcile_failed",
+                    BlockerOwner.DEPARTMENT,
+                    now,
+                    {"failing_items": evaluation.failing_items},
+                )
 
-        return self._mutate(ticket_id, actor_id, Action.HANDOFF_TO_BQL, op)
+        return self._mutate(ticket_id, actor_id, Action.REPORT_COMPLETE, op)
+
+    # ------------------------------------------------------------------ BQL
+
+    def close(self, ticket_id: str, actor_id: str, *, note: str | None = None) -> Case:
+        return self.transition(ticket_id, S.CLOSED, actor_id, note=note)
+
+    def rework(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
+        return self.transition(ticket_id, S.IN_PROGRESS, actor_id, note=note, expected_from=S.READY_FOR_REVIEW)
+
+    def cancel(self, ticket_id: str, actor_id: str, *, cancel_reason: str) -> Case:
+        return self.transition(ticket_id, S.CANCELLED, actor_id, cancel_reason=cancel_reason)
+
+    # ------------------------------------------------------------------ warehouse
+
+    def receive_stock(self, actor_id: str, item_code: str, qty: float) -> list[Case]:
+        """Event `stock_received`: raise simulated stock, then resume every ticket waiting for that item."""
+        if self.catalog.actor_role(actor_id) != Role.WAREHOUSE:
+            raise ActionDeniedError("Chỉ kho được nhập vật tư", {"code": "ACTION_DENIED", "actor_id": actor_id})
+        if self.catalog.material(item_code) is None:
+            raise NotFoundError(f"Không có vật tư {item_code} trong catalog")
+        if qty <= 0:
+            raise GuardError("Số lượng nhập phải > 0")
+        self.stock[item_code] = (self.stock.get(item_code) or 0) + qty
+        waiting = [
+            case.ticket.ticket_id
+            for case in self.cases.values()
+            if case.ticket.blocker is not None
+            and case.ticket.blocker.code == R.WAITING_MATERIAL
+            and any(line.item_code == item_code for line in case.material_lines)
+        ]
+        return [self.resume(ticket_id) for ticket_id in waiting]
+
+    # ------------------------------------------------------------------ system: resume + scheduled job
+
+    def resume(self, ticket_id: str) -> Case:
+        """Clear the blocker if its condition is met and continue. Idempotent: a second call changes nothing."""
+        return self._mutate(ticket_id, SYSTEM_ID, Action.RUN_PIPELINE, lambda work, now: self._resume(work, now))
+
+    def run_jobs(self, now: datetime | None = None) -> list[str]:
+        """The 5-minute job: tickets whose `next_retry_at` or `escalate_at` is due, plus ROUTED tickets nobody
+        accepted. Returns the ticket IDs that changed."""
+        moment = now or self.clock()
+        changed = []
+        with self.at(moment):
+            for ticket_id in list(self.cases):
+                before = len(self.cases[ticket_id].events)
+                self._mutate(ticket_id, SYSTEM_ID, Action.RUN_JOBS, lambda work, now: self._tick(work, now))
+                if len(self.cases[ticket_id].events) != before:
+                    changed.append(ticket_id)
+        return changed
+
+    # ------------------------------------------------------------------ the one transition entry point
+
+    def transition(
+        self,
+        ticket_id: str,
+        to: TicketStatus,
+        actor_id: str,
+        *,
+        note: str | None = None,
+        eta: datetime | None = None,
+        cancel_reason: str | None = None,
+        expected_from: TicketStatus | None = None,
+    ) -> Case:
+        """Change status on behalf of a person (department, BQL, BPTN, resident). Checks the CR §3 table.
+
+        A role that may never reach `to` is denied and audited (e.g. anyone but BQL closing). A role that may reach
+        `to`, but not from the current status, gets INVALID_TRANSITION. `expected_from` pins the source for the
+        named actions that share a target (accept / resume_work / rework all lead to IN_PROGRESS).
+        """
+        case = self.get(ticket_id)
+        now = self.clock()
+        role = self._role(actor_id)
+        current = case.ticket.status
+        reachable = {
+            actor
+            for (_, target), rule in TRANSITIONS.items()
+            if target == to and not rule.pipeline_only
+            for actor in rule.actors
+        }
+        if role is None or role not in reachable:
+            self._deny(
+                case,
+                actor_id,
+                role,
+                Action.TRANSITION,
+                "status",
+                to,
+                note,
+                now,
+                message=f"{role or 'actor không xác định'} không được chuyển sang {to}",
+            )
+        rule = TRANSITIONS.get((current, to))
+        if rule is None or rule.pipeline_only or role not in rule.actors or expected_from not in (None, current):
+            raise InvalidTransitionError(
+                f"Không chuyển được {current} → {to}", {"from": current, "to": to, "actor_role": role}
+            )
+
+        def op(work: Case, now: datetime) -> None:
+            self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
+
+        return self._mutate(
+            ticket_id, actor_id, Action.TRANSITION, op, roles=rule.actors, field_name="status", new_value=to
+        )
 
     def attempt(
         self, ticket_id: str, actor_id: str, action: Action, *, field_name: str, new_value: Any, reason: str
     ) -> Case:
-        """Entry point for actions outside every role's authority (edit raw, assign employee, close, approve...).
-
-        They always end in ACTION_DENIED; the method exists so the denial path can be exercised and audited.
-        """
+        """Entry point for actions outside every role's authority (edit raw, edit catalog, adjust inventory...).
+        They always end in ACTION_DENIED; the method exists so the denial path can be exercised and audited."""
         return self._mutate(
             ticket_id,
             actor_id,
             action,
             lambda work, now: None,
+            roles=frozenset(),
             field_name=field_name,
             new_value=new_value,
             reason=reason,
@@ -573,6 +877,7 @@ class MaintenanceEngine:
         action: Action,
         op: Callable[[Case, datetime], None],
         *,
+        roles: frozenset[ActorRole] | None = None,
         field_name: str = "-",
         new_value: Any = None,
         reason: str | None = None,
@@ -580,22 +885,41 @@ class MaintenanceEngine:
         case = self.get(ticket_id)
         now = self.clock()
         role = self._role(actor_id)
-        if role is None or role not in PERMISSIONS.get(action, set()):
+        allowed = PERMISSIONS.get(action, frozenset()) if roles is None else roles
+        if role is None or role not in allowed:
             self._deny(case, actor_id, role, action, field_name, new_value, reason, now)
+        scope_error = self._scope_error(case, actor_id, role)
+        if scope_error:
+            self._deny(case, actor_id, role, action, field_name, new_value, reason, now, message=scope_error)
 
         if case.ticket.raw.integrity_marker() != case.ticket.raw_integrity_marker:
             raise EngineError("Raw integrity marker không khớp; dừng xử lý (fail closed)")
 
         work = case.model_copy(deep=True)
-        first_new = len(work.audit)
+        marks = (len(work.audit), len(work.events), len(work.notifications))
         op(work, now)
-        new_events = work.audit[first_new:]
+        self._commit(work, *marks)
+        return work
+
+    def _commit(self, work: Case, audit_from: int, events_from: int, notes_from: int) -> None:
         try:
-            self.audit_sink(new_events)
+            self.audit_sink([*work.audit[audit_from:], *work.events[events_from:]])
         except Exception as exc:  # audit failure → nothing is committed
             raise AuditWriteError("Không ghi được audit; thay đổi bị huỷ", {"error": str(exc)}) from exc
-        self.cases[ticket_id] = work
-        return work
+        self.cases[work.ticket.ticket_id] = work
+        new_notifications = work.notifications[notes_from:]
+        if new_notifications:
+            self.notify_sink(new_notifications)
+
+    def _scope_error(self, case: Case, actor_id: str, role: ActorRole | None) -> str | None:
+        """A department acts only on its own tickets; a resident only on the tickets they reported."""
+        if role == Role.DEPARTMENT:
+            actor = self.catalog.actor(actor_id)
+            if actor.department_id is None or actor.department_id != case.ticket.department_id:
+                return f"Ticket không thuộc phòng ban của {actor_id}"
+        if role == Role.RESIDENT and actor_id != case.ticket.resident_id:
+            return f"Ticket không do {actor_id} phản ánh"
+        return None
 
     def _deny(
         self,
@@ -608,23 +932,22 @@ class MaintenanceEngine:
         reason: str | None,
         now: datetime,
         *,
-        rule_id: str = "PB-COM-R-PERM-01",
         message: str | None = None,
     ) -> None:
-        event = self._make_event(
+        event = self._make_audit(
             case,
             Action.ACTION_DENIED,
             "Ticket",
             case.ticket.ticket_id,
             actor_id,
-            role or ActorRole.SYSTEM,
+            role or Role.SYSTEM,
             field_name,
             None,
             new_value,
-            reason or f"Yêu cầu {action} ngoài quyền",
+            reason or message or f"Yêu cầu {action} ngoài quyền",
             now=now,
             result=ActionResult.ACTION_DENIED,
-            rule_id=rule_id,
+            rule_id="PB-COM-R-PERM-01",
             extra_reason=f"requested={action}",
         )
         try:
@@ -643,12 +966,14 @@ class MaintenanceEngine:
                 "actor_id": actor_id,
                 "actor_role": role,
                 "target_field": field_name,
-                "unchanged_state": case.ticket.current_state,
+                "unchanged_status": case.ticket.status,
                 "audit_event_id": event.event_id,
             },
         )
 
-    def _make_event(
+    # ------------------------------------------------------------------ audit, events, notifications
+
+    def _make_audit(
         self,
         work: Case,
         action: Action,
@@ -685,38 +1010,8 @@ class MaintenanceEngine:
             run_id=self.run_id,
         )
 
-    def _audit(
-        self,
-        work: Case,
-        action: Action,
-        entity_type: str,
-        entity_id: str,
-        actor_id: str,
-        role: ActorRole,
-        field_name: str,
-        old: Any,
-        new: Any,
-        reason: str,
-        *,
-        now: datetime,
-        rule_id: str | None = None,
-    ) -> None:
-        work.audit.append(
-            self._make_event(
-                work,
-                action,
-                entity_type,
-                entity_id,
-                actor_id,
-                role,
-                field_name,
-                old,
-                new,
-                reason,
-                now=now,
-                rule_id=rule_id,
-            )
-        )
+    def _audit(self, work: Case, *args: Any, now: datetime, rule_id: str | None = None) -> None:
+        work.audit.append(self._make_audit(work, *args, now=now, rule_id=rule_id))
 
     def _agent(
         self,
@@ -738,7 +1033,7 @@ class MaintenanceEngine:
             entity_type,
             entity_id,
             AGENT_ID,
-            ActorRole.AGENT,
+            Role.AGENT,
             field_name,
             old,
             new,
@@ -747,287 +1042,591 @@ class MaintenanceEngine:
             rule_id=rule_id,
         )
 
-    @staticmethod
-    def _require_routed(work: Case) -> None:
-        if work.draft is None or work.draft.route_status != RouteStatus.ROUTED:
-            raise GuardError("Draft chưa được route tới team; chưa nhận cập nhật thực hiện")
-
-    def _guard_safety(self, ticket_id: str, actor_id: str, action: Action, reason: str | None) -> None:
-        """BPTN review/override never bypasses a safety exception: the attempt is denied and audited."""
-        case = self.get(ticket_id)
-        open_exception = self._open_exception(case)
-        role = self._role(actor_id)
-        if open_exception is None or role != ActorRole.BPTN:
-            return  # other roles are stopped by the permission matrix inside _mutate
-        self._deny(
-            case,
-            actor_id,
-            role,
-            action,
-            "administrative_normalization",
-            None,
-            reason,
-            self.clock(),
-            rule_id=open_exception.rule_id,
-            message="Ticket có safety exception OPEN; chỉ BQL xử lý, BPTN không review/override để bỏ qua",
-        )
-
-    def _reviewable_admin(self, work: Case) -> AdministrativeNormalization:
-        if self._missing_raw_fields(work.ticket.raw):
-            raise GuardError("Raw thiếu field bắt buộc; BPTN không được sửa nội dung phản ánh gốc")
-        admin = work.ticket.administrative_normalization
-        if admin is None:
-            raise GuardError("Chưa có lớp hành chính để review")
-        return admin
-
-    def _bind_playbook(
-        self, work: Case, playbook_id: PlaybookId, service: ServiceCategory, ticket_type: TicketType, now: datetime
+    def _record_event(
+        self,
+        work: Case,
+        from_status: TicketStatus | None,
+        to_status: TicketStatus,
+        reason: ReasonCode | None,
+        actor_id: str | None,
+        role: ActorRole,
+        now: datetime,
+        *,
+        public: bool,
+        note: str | None = None,
     ) -> None:
-        """Point the proposal at the playbook of the (possibly overridden) category. Risk rules re-run afterwards."""
-        proposal = work.proposal
-        technical = playbook_id == PlaybookId.TEC
-        if proposal is None:
-            # The Agent found no unique playbook; the category now comes from the BPTN override
-            work.classification_rule = None
-            work.proposal = AgentClassificationProposal(
-                proposal_id=f"SIM-ACP-{_suffix(work.ticket.ticket_id)}",
+        blocker = work.ticket.blocker
+        message = blocker.public_message if blocker else self._status_message(work)
+        work.events.append(
+            StatusEvent(
+                id=f"SIM-EVT-{_suffix(work.ticket.ticket_id)}-{len(work.events) + 1:04d}",
                 ticket_id=work.ticket.ticket_id,
-                proposal_revision=1,
-                service_category_proposed=service,
-                ticket_type_proposed=ticket_type,
-                playbook_id=playbook_id,
-                asset_type="LIGHTING" if technical else None,
-                reported_symptom="NOT_WORKING" if technical else None,
-                location_proposed=extract_location(work.ticket.raw.original_description),
-                matched_rule_ids=["PB-COM-R-OVR-01"],
-                classification_reason="Category do BPTN override khi Agent không khớp duy nhất một playbook",
-                source_references=["ticket.original_description", "administrative_normalization"],
-                rule_signals=self._rule_signals(work, playbook_id, now),
+                from_status=from_status,
+                to_status=to_status,
+                reason_code=reason,
+                actor_role=role,
+                actor_id=actor_id,
+                public_message=message,
+                internal_note=None if _blank(note) else note.strip(),
+                public=public,
                 created_at=now,
             )
-            return
-        if proposal.playbook_id == playbook_id:
-            return
-        # Clear the asset first: a cleaning proposal may not carry an asset_id
-        proposal.asset_id = None
-        proposal.asset_lookup_status = AssetLookupStatus.NOT_APPLICABLE
-        proposal.asset_match_reason = "Chưa lookup"
-        proposal.playbook_id = playbook_id
-        proposal.asset_type = "LIGHTING" if technical else None
-        proposal.reported_symptom = "NOT_WORKING" if technical else None
-        proposal.proposal_revision += 1
-        proposal.matched_rule_ids = [*proposal.matched_rule_ids, "PB-COM-R-OVR-01"]
-        proposal.rule_signals = self._rule_signals(work, playbook_id, now)
+        )
 
-    # ------------------------------------------------------------------ agent pass
-
-    def _agent_pass(self, work: Case, now: datetime) -> None:
-        if not self._missing_raw_fields(work.ticket.raw):
-            self._propose(work, now)
-            if self._draft_eligible(work):
-                self._build_draft(work, now)
-        self._reevaluate(work, now)
-
-    def _risk(self, work: Case) -> RiskOutcome:
-        return evaluate_signals(work.proposal.playbook_id, work.signal_assessment)
-
-    def _rule_signals(self, work: Case, playbook_id: PlaybookId, now: datetime) -> list[RuleSignal]:
-        risk = evaluate_signals(playbook_id, work.signal_assessment)
-        trigger = "PB-CLN-R-TRG-01" if playbook_id == PlaybookId.CLN else "PB-TEC-R-TRG-01"
-        return [
-            RuleSignal(
-                signal_code=code,
-                status=work.signal_assessment[code],
-                source_references=["ticket.original_description"],
-                evaluated_at=now,
-                rule_id=risk.rule_id or trigger,
+    def _notify(self, work: Case, kind: str, audience: BlockerOwner, now: datetime, payload: dict[str, Any]) -> None:
+        work.notifications.append(
+            Notification(
+                notification_id=f"SIM-NTF-{_suffix(work.ticket.ticket_id)}-{len(work.notifications) + 1:04d}",
+                ticket_id=work.ticket.ticket_id,
+                type=kind,
+                audience=audience,
+                payload=_plain(payload),
+                created_at=now,
             )
-            for code in SIGNALS_BY_PLAYBOOK[playbook_id]
-        ]
+        )
 
-    def _propose(self, work: Case, now: datetime) -> None:
-        if work.proposal is not None:
-            self._check_risk(work, work.proposal.playbook_id, now)
+    def _department_config(self, work: Case):
+        """The department whose hours apply: the assigned one, or before step 8 the proposed one."""
+        ticket = work.ticket
+        return self.catalog.department(ticket.department_id or ticket.proposed_department_id)
+
+    def _department_name(self, work: Case) -> str:
+        department = work.ticket.department_id
+        return self.catalog.department(department).name if department else "phòng ban phụ trách"
+
+    def _status_message(self, work: Case) -> str:
+        ticket = work.ticket
+        return public_message(
+            ticket.status,
+            department=self._department_name(work),
+            merged_into=ticket.merged_into,
+            cancel_reason=ticket.cancel_reason,
+        )
+
+    # ------------------------------------------------------------------ transitions and blockers
+
+    def _set_ticket(self, work: Case, **changes: Any) -> None:
+        """Apply several ticket fields at once, so the cross-field validators see the final combination."""
+        work.ticket = Ticket.model_validate({**work.ticket.model_dump(), **changes})
+
+    def _apply_transition(
+        self,
+        work: Case,
+        to: TicketStatus,
+        actor_id: str,
+        role: ActorRole,
+        now: datetime,
+        *,
+        blocker: Blocker | None = None,
+        note: str | None = None,
+        **changes: Any,
+    ) -> None:
+        """The only place a status changes: validate against TRANSITIONS, write one event, notify."""
+        current = work.ticket.status
+        rule = TRANSITIONS.get((current, to))
+        if rule is None:
+            raise InvalidTransitionError(f"Transition {current} → {to} không hợp lệ", {"from": current, "to": to})
+        if role not in rule.actors:
+            raise InvalidTransitionError(f"{role} không được chuyển {current} → {to}", {"actor_role": role})
+        reason = blocker.code if blocker else None
+        if (rule.reason_required and reason is None) or (reason is not None and reason not in rule.reasons):
+            raise InvalidTransitionError(f"Lý do {reason} không hợp lệ cho {current} → {to}")
+        if to == S.ROUTED:
+            failing = route_blockers(work.ticket)
+            if failing:
+                raise InvalidTransitionError("Chưa đủ điều kiện giao phòng ban (can_route)", {"failing": failing})
+            if changes.get("department_id") != work.ticket.proposed_department_id:
+                raise InvalidTransitionError("department_id khi giao phải bằng proposed_department_id")
+        self._set_ticket(work, status=to, blocker=blocker, **changes)
+        self._record_event(work, current, to, reason, actor_id, role, now, public=True, note=note)
+        self._notify(
+            work,
+            "ticket.status_changed",
+            BlockerOwner.RESIDENT,
+            now,
+            {"from": current, "to": to, "reason_code": reason},
+        )
+
+    def _set_blocker(
+        self,
+        work: Case,
+        blocker: Blocker | None,
+        actor_id: str,
+        role: ActorRole,
+        now: datetime,
+        *,
+        note: str | None = None,
+        **changes: Any,
+    ) -> None:
+        """Blocker change without a status change (ROUTED + OUT_OF_HOURS cleared, retries, escalation).
+
+        Still one event; shown to the resident only when the blocker itself was set, cleared or replaced.
+        """
+        old = work.ticket.blocker
+        self._set_ticket(work, blocker=blocker, **changes)
+        status = work.ticket.status
+        code = (blocker or old).code if (blocker or old) else None
+        public = (old.code if old else None) != (blocker.code if blocker else None)
+        self._record_event(work, status, status, code, actor_id, role, now, public=public, note=note)
+
+    def _new_blocker(
+        self,
+        work: Case,
+        code: ReasonCode,
+        now: datetime,
+        *,
+        resume_step: int | None = None,
+        note: str | None = None,
+        eta: datetime | None = None,
+        related_ticket_id: str | None = None,
+        fields: list[str] | None = None,
+    ) -> Blocker:
+        sla = self.catalog.sla_config
+        next_retry_at, escalate_at, dispatch_at = self._schedule(work, code, now, eta), None, None
+        if code == R.MISSING_INFO:
+            escalate_at = now + timedelta(hours=sla.missing_info.escalate_after_hours)
+        elif code in BPTN_REASONS:
+            escalate_at = self.catalog.business_hours.add(now, sla.bptn.escalate_after_business_hours)
+        elif code == R.WAITING_MATERIAL:
+            escalate_at = now + timedelta(hours=sla.waiting_material.escalate_after_hours)
+            eta = eta or escalate_at
+        elif code == R.OUT_OF_HOURS:
+            dispatch_at = next_retry_at
+        elif code == R.BLOCKED_ONSITE:
+            escalate_at = eta
+        message = public_message(
+            work.ticket.status,
+            code,
+            department=self._department_name(work),
+            fields=", ".join(field_label(f) for f in fields or []),
+            eta=eta,
+            dispatch_at=dispatch_at,
+        )
+        return Blocker(
+            code=code,
+            owner_role=BLOCKER_OWNERS[code],
+            since=now,
+            resume_step=resume_step,
+            next_retry_at=next_retry_at,
+            escalate_at=escalate_at,
+            eta=eta,
+            public_message=message,
+            internal_note=None if _blank(note) else note.strip(),
+            related_ticket_id=related_ticket_id,
+        )
+
+    def _schedule(self, work: Case, code: ReasonCode, now: datetime, eta: datetime | None = None) -> datetime | None:
+        """When the job should next retry / remind for this blocker. None = no automatic retry."""
+        sla = self.catalog.sla_config
+        if code == R.MISSING_INFO:
+            return now + timedelta(hours=sla.missing_info.retry_every_hours)
+        if code in BPTN_REASONS:
+            return self.catalog.business_hours.add(now, sla.bptn.retry_every_business_hours)
+        if code in (R.WAITING_MATERIAL, R.OUT_OF_HOURS):
+            return self._department_config(work).next_shift_start(now)
+        if code == R.NOT_ACCEPTED:
+            return now + timedelta(hours=sla.not_accepted.retry_every_hours)
+        return None  # BLOCKED_ONSITE (escalates at eta), REWORK (escalates on count)
+
+    def _stop(
+        self,
+        work: Case,
+        to: TicketStatus,
+        code: ReasonCode,
+        now: datetime,
+        *,
+        resume_step: int,
+        actor_id: str = AGENT_ID,
+        role: ActorRole = Role.AGENT,
+        **blocker_args: Any,
+    ) -> bool:
+        """Pipeline stop: enter a side status with a blocker. Returns True so the step loop ends."""
+        blocker = self._new_blocker(work, code, now, resume_step=resume_step, **blocker_args)
+        self._apply_transition(work, to, actor_id, role, now, blocker=blocker, note=blocker.internal_note)
+        return True
+
+    def _human_transition(
+        self,
+        work: Case,
+        to: TicketStatus,
+        actor_id: str,
+        role: ActorRole,
+        now: datetime,
+        *,
+        note: str | None = None,
+        eta: datetime | None = None,
+        cancel_reason: str | None = None,
+    ) -> None:
+        """Guards and side effects of each human-driven row of the CR §3 table."""
+        ticket = work.ticket
+        key = (ticket.status, to)
+        blocker = ticket.blocker
+
+        if to == S.CANCELLED:
+            if _blank(cancel_reason):
+                raise GuardError("cancel_reason bắt buộc khi hủy")
+            self._apply_transition(work, to, actor_id, role, now, note=note, cancel_reason=cancel_reason.strip())
+        elif key == (S.ROUTED, S.IN_PROGRESS):
+            self._apply_transition(work, to, actor_id, role, now, note=note, accepted_at=now)
+        elif key == (S.ROUTED, S.VERIFYING):
+            if _blank(note):
+                raise GuardError("Trả lại sai phòng ban phải có lý do")
+            # resume_step is decided by BPTN's answer: 6 if the category changes, 7 if not (never 8)
+            wrong = self._new_blocker(work, R.WRONG_DEPT, now, resume_step=6, note=note)
+            self._apply_transition(
+                work, to, actor_id, role, now, blocker=wrong, note=note, department_id=None, dispatched_at=None
+            )
+        elif key == (S.IN_PROGRESS, S.ON_HOLD):
+            if _blank(note) or eta is None:
+                raise GuardError("BLOCKED_ONSITE bắt buộc lý do và eta")
+            if eta.tzinfo is None or eta <= now:
+                raise GuardError("eta phải có timezone và ở tương lai")
+            onsite = self._new_blocker(work, R.BLOCKED_ONSITE, now, note=note, eta=eta)
+            self._apply_transition(work, to, actor_id, role, now, blocker=onsite, note=note)
+        elif key == (S.ON_HOLD, S.IN_PROGRESS):
+            if blocker is None or blocker.code != R.BLOCKED_ONSITE:
+                raise InvalidTransitionError("Chỉ tiếp tục được khi đang tạm hoãn tại hiện trường (BLOCKED_ONSITE)")
+            self._apply_transition(work, to, actor_id, role, now, note=note)
+        elif key == (S.READY_FOR_REVIEW, S.CLOSED):
+            reopen_until = now + timedelta(days=self.catalog.sla_config.reopen_window_days)
+            self._apply_transition(
+                work, to, actor_id, role, now, note=note, closed_by=actor_id, closed_at=now, reopen_until=reopen_until
+            )
+        elif key == (S.READY_FOR_REVIEW, S.IN_PROGRESS):
+            if _blank(note):
+                raise GuardError("Trả lại làm lại (REWORK) phải có lý do")
+            count = ticket.rework_count + 1
+            rework = self._new_blocker(work, R.REWORK, now, note=note)
+            escalate = count >= self.catalog.sla_config.rework.escalate_at_count
+            rework.escalated = escalate
+            for item in work.checklist_items:
+                item.status, item.updated_by, item.updated_at = ChecklistStatus.PENDING, None, None
+            self._apply_transition(work, to, actor_id, role, now, blocker=rework, note=note, rework_count=count)
+            if escalate:
+                self._notify(
+                    work, "escalation", BlockerOwner.BQL, now, {"reason_code": R.REWORK, "rework_count": count}
+                )
+        elif key == (S.CLOSED, S.READY_FOR_REVIEW):
+            if ticket.reopen_until is None or now >= ticket.reopen_until:
+                raise GuardError("Đã quá hạn báo chưa xong", {"reopen_until": ticket.reopen_until})
+            self._apply_transition(
+                work, to, actor_id, role, now, note=note, closed_by=None, closed_at=None, reopen_until=None
+            )
+        elif key == (S.VERIFYING, S.MERGED):
+            if blocker is None or blocker.code != R.DUPLICATE:
+                raise InvalidTransitionError("Chỉ gộp được ticket đang chờ xác nhận trùng (DUPLICATE)")
+            self._apply_transition(work, to, actor_id, role, now, note=note, merged_into=blocker.related_ticket_id)
+        else:
+            raise InvalidTransitionError(f"Không chuyển được {ticket.status} → {to}")
+
+    # ------------------------------------------------------------------ resume and scheduled checks
+
+    def _cleared(self, work: Case, blocker: Blocker, now: datetime) -> bool:
+        code = blocker.code
+        if code == R.MISSING_INFO:
+            return not self._missing_fields(work)
+        if code in BPTN_REASONS:
+            return blocker.resolved_at is not None
+        if code == R.WAITING_MATERIAL:
+            return not any(
+                self._line_stock(line.item_code, line.planned_qty) == MaterialStockStatus.INSUFFICIENT
+                for line in work.material_lines
+            )
+        if code == R.OUT_OF_HOURS:
+            return self.catalog.department(work.ticket.department_id).on_shift(now)
+        return False  # NOT_ACCEPTED, BLOCKED_ONSITE, REWORK clear through their own transitions
+
+    def _resume(self, work: Case, now: datetime) -> bool:
+        blocker = work.ticket.blocker
+        if blocker is None or not self._cleared(work, blocker, now):
+            return False
+        code = blocker.code
+        if code == R.OUT_OF_HOURS:
+            self._set_blocker(work, None, SYSTEM_ID, Role.SYSTEM, now, note="Đầu ca phòng ban", dispatched_at=now)
+            self._notify(
+                work, "department.dispatch", BlockerOwner.DEPARTMENT, now, {"department_id": work.ticket.department_id}
+            )
+            return True
+        resume_step = {R.MISSING_INFO: 2, R.WAITING_MATERIAL: 7}.get(code, blocker.resume_step)
+        self._apply_transition(work, S.RECEIVED, SYSTEM_ID, Role.SYSTEM, now, note=f"Gỡ {code}")
+        self._run_pipeline(work, resume_step, now)
+        return True
+
+    def _tick(self, work: Case, now: datetime) -> None:
+        ticket = work.ticket
+        sla = self.catalog.sla_config
+        blocker = ticket.blocker
+        if blocker is None:
+            waited = ticket.dispatched_at and now >= ticket.dispatched_at + timedelta(
+                hours=sla.not_accepted.start_after_hours
+            )
+            if ticket.status == S.ROUTED and ticket.accepted_at is None and waited:
+                nudge = self._new_blocker(work, R.NOT_ACCEPTED, now)
+                nudge.auto_retry_count = 1
+                self._set_blocker(work, nudge, SYSTEM_ID, Role.SYSTEM, now, note="Nhắc trưởng phòng lần 1")
+                self._notify(work, "reminder", BlockerOwner.DEPARTMENT, now, {"reason_code": R.NOT_ACCEPTED})
             return
-        if work.classification_rule is not None:
-            return  # already found no unique playbook; do not re-ask the model on every pass
-        description = work.ticket.raw.original_description
-        outcome = propose(description, self.llm, self.llm_label)  # the only place the LLM is called
-        result = outcome.classification
-        work.signal_assessment = outcome.signals
-        work.proposer = outcome.proposer
-        work.proposer_notes = outcome.notes
-        work.classification_reason = result.reason
-        trace = {"proposer": outcome.proposer, "notes": outcome.notes}
-        location = extract_location(description)
-        if result.playbook_id is None:
-            work.classification_rule = result.rule_id
+
+        if blocker.next_retry_at and blocker.next_retry_at <= now:
+            if self._resume(work, now):
+                return
+            if blocker.auto_retry_count >= sla.max_auto_retries:
+                self._escalate(work, now, f"Quá {sla.max_auto_retries} lần tự chạy lại/nhắc")
+            else:
+                count = blocker.auto_retry_count + 1
+                retried = blocker.model_copy(
+                    update={"auto_retry_count": count, "next_retry_at": self._schedule(work, blocker.code, now)}
+                )
+                self._set_blocker(work, retried, SYSTEM_ID, Role.SYSTEM, now, note=f"Tự chạy lại/nhắc lần {count}")
+                self._notify(work, "reminder", blocker.owner_role, now, {"reason_code": blocker.code})
+        blocker = work.ticket.blocker
+        if blocker and blocker.escalate_at and blocker.escalate_at <= now and not blocker.escalated:
+            self._escalate(work, now, "Quá mốc leo thang")
+
+    def _escalate(self, work: Case, now: datetime, why: str) -> None:
+        """Flag and notify BQL. Never cancels, closes or otherwise changes the status."""
+        blocker = work.ticket.blocker
+        escalated = blocker.model_copy(update={"escalated": True, "next_retry_at": None})
+        if escalated == blocker:
+            return
+        self._set_blocker(work, escalated, SYSTEM_ID, Role.SYSTEM, now, note=f"Leo thang: {why}")
+        if not blocker.escalated:
+            self._notify(work, "escalation", BlockerOwner.BQL, now, {"reason_code": blocker.code, "why": why})
+
+    # ------------------------------------------------------------------ pipeline (steps 2–8)
+
+    def _run_pipeline(self, work: Case, from_step: int, now: datetime) -> None:
+        if work.ticket.status != S.RECEIVED:
+            raise EngineError(f"Pipeline chạy khi ticket ở {work.ticket.status}")
+        steps = (
+            (2, self._step_check_data),
+            (3, self._step_duplicate),
+            (4, self._step_classify),
+            (5, self._step_review),
+            (6, self._step_asset),
+            (7, self._step_material),
+            (8, self._step_route),
+        )
+        for number, step in steps:
+            if number >= from_step and step(work, now):
+                return
+        raise EngineError("Pipeline kết thúc mà không route hoặc dừng")
+
+    def _content(self, work: Case) -> str:
+        """Original report plus resident additions: what the Agent reads. The original itself never changes."""
+        parts = [work.ticket.raw.original_description, *(a.content for a in work.additions)]
+        return "\n".join(p for p in parts if p and p.strip())
+
+    def effective_location(self, work: Case) -> str | None:
+        return work.ticket.locked_fields.location or extract_location(self._content(work))
+
+    def _category(self, work: Case) -> ServiceCategory | None:
+        locked = work.ticket.locked_fields.category
+        if locked:
+            return locked
+        cls = work.classification
+        return cls.service_category if cls and cls.playbook_id else None
+
+    def _missing_fields(self, work: Case) -> list[str]:
+        raw = work.ticket.raw
+        missing = []
+        if _blank(raw.ticket_id) or not raw.ticket_id.startswith("SIM-TKT-"):
+            missing.append("ticket_id")
+        if _created_at(raw) is None:
+            missing.append("created_at")
+        if _blank(self._content(work)):
+            missing.append("description")
+        if self.effective_location(work) is None:
+            missing.append("location")
+        return missing
+
+    def _step_check_data(self, work: Case, now: datetime) -> bool:
+        missing = self._missing_fields(work)
+        if missing:
+            return self._stop(
+                work,
+                S.NEED_INFO,
+                R.MISSING_INFO,
+                now,
+                resume_step=2,
+                actor_id=SYSTEM_ID,
+                role=Role.SYSTEM,
+                fields=missing,
+                note=f"Thiếu: {', '.join(missing)}",
+            )
+        return False
+
+    def _classification(self, work: Case, now: datetime) -> ClassificationRecord:
+        if work.classification is None:
+            outcome = propose(self._content(work), self.llm, self.llm_label)  # the only place the LLM is called
+            result = outcome.classification
+            work.classification = ClassificationRecord(
+                playbook_id=result.playbook_id,
+                service_category=result.service_category,
+                ticket_type=result.ticket_type,
+                rule_id=result.rule_id,
+                reason=result.reason,
+                reason_code=result.reason_code,
+                needs_review=outcome.needs_review,
+                proposer=outcome.proposer,
+                notes=outcome.notes,
+            )
             self._agent(
                 work,
                 Action.CREATE_PROPOSAL,
                 "Ticket",
                 work.ticket.ticket_id,
-                "playbook_id",
+                "classification",
                 None,
-                {"playbook_id": None, **trace},
+                work.classification,
                 result.reason,
                 now=now,
                 rule_id=result.rule_id,
             )
-            self._decide_review(
-                work, ServiceCategory.UNKNOWN, TicketType.UNKNOWN, location, ReviewRequiredReason.CATEGORY_UNCLEAR, now
+        return work.classification
+
+    def _step_duplicate(self, work: Case, now: datetime) -> bool:
+        if work.ticket.locked_fields.category is None:
+            self._classification(work, now)
+        category, location = self._category(work), self.effective_location(work)
+        if category is None or location is None:
+            return False  # step 4 decides what to do with an unclear category
+        mine = (_created_at(work.ticket.raw), work.ticket.ticket_id)
+        window = timedelta(hours=self.catalog.sla_config.duplicate_window_hours)
+        candidates = sorted(
+            (
+                (_created_at(other.ticket.raw), other.ticket.ticket_id)
+                for other in self.cases.values()
+                if other.ticket.ticket_id != work.ticket.ticket_id
+                and other.ticket.ticket_id not in work.not_duplicate_of
+                and other.ticket.status not in TERMINAL_STATUSES
+                and _created_at(other.ticket.raw) is not None
+                and self._category(other) == category
+                and self.effective_location(other) == location
+            ),
+        )
+        for created, ticket_id in candidates:
+            if (created, ticket_id) < mine and mine[0] - created <= window:
+                return self._stop(
+                    work,
+                    S.VERIFYING,
+                    R.DUPLICATE,
+                    now,
+                    resume_step=4,
+                    related_ticket_id=ticket_id,
+                    note=f"Cùng vị trí và loại với {ticket_id} trong {window}",
+                )
+        return False
+
+    def _step_classify(self, work: Case, now: datetime) -> bool:
+        locked = work.ticket.locked_fields.category
+        if locked:
+            self._bind_category(work, locked, "BPTN_LOCKED", now)  # BPTN already chose; never reclassify
+            return False
+        cls = self._classification(work, now)
+        if cls.playbook_id is None:
+            return self._stop(
+                work, S.VERIFYING, cls.reason_code or R.CATEGORY_UNCLEAR, now, resume_step=6, note=cls.reason
             )
-            return
+        self._bind_category(work, cls.service_category, "AGENT", now)
+        return False
 
-        risk = evaluate_signals(result.playbook_id, outcome.signals)
-        signals = self._rule_signals(work, result.playbook_id, now)
-        suffix = _suffix(work.ticket.ticket_id)
-        work.proposal = AgentClassificationProposal(
-            proposal_id=f"SIM-ACP-{suffix}",
-            ticket_id=work.ticket.ticket_id,
-            proposal_revision=1,
-            service_category_proposed=result.service_category,
-            ticket_type_proposed=result.ticket_type,
-            playbook_id=result.playbook_id,
-            asset_type="LIGHTING" if result.playbook_id == PlaybookId.TEC else None,
-            reported_symptom="NOT_WORKING" if result.playbook_id == PlaybookId.TEC else None,
-            location_proposed=location,
-            matched_rule_ids=[r for r in (result.rule_id, risk.rule_id) if r],
-            classification_reason=result.reason,
-            source_references=["ticket.original_description"],
-            rule_signals=signals,
-            created_at=now,
-        )
-        self._agent(
-            work,
-            Action.CREATE_PROPOSAL,
-            "AgentClassificationProposal",
-            work.proposal.proposal_id,
-            "playbook_id",
-            None,
-            {"playbook_id": result.playbook_id, "location_proposed": work.proposal.location_proposed, **trace},
-            result.reason,
-            now=now,
-            rule_id=result.rule_id,
-        )
-        review = None if location else ReviewRequiredReason.LOCATION_MISSING
-        self._decide_review(work, result.service_category, result.ticket_type, location, review, now)
-        self._check_risk(work, result.playbook_id, now)
+    def _bind_category(self, work: Case, category: ServiceCategory, source: str, now: datetime) -> None:
+        """Proposal + department for a category. The department comes from the playbook → department table."""
+        ticket_type, playbook_id = PLAYBOOK_BY_CATEGORY[category]
+        location = self.effective_location(work)
+        existing = work.proposal
+        if existing and existing.playbook_id == playbook_id:
+            existing.location_proposed = location
+            if source == "BPTN_LOCKED":
+                existing.category_source = source
+        else:
+            cls = work.classification
+            technical = playbook_id == PlaybookId.TEC
+            agent_made = source == "AGENT" and cls is not None
+            work.proposal = AgentClassificationProposal(
+                proposal_id=f"SIM-ACP-{_suffix(work.ticket.ticket_id)}",
+                ticket_id=work.ticket.ticket_id,
+                proposal_revision=(existing.proposal_revision + 1) if existing else 1,
+                service_category_proposed=category,
+                ticket_type_proposed=ticket_type,
+                playbook_id=playbook_id,
+                category_source=source,
+                asset_type="LIGHTING" if technical else None,
+                reported_symptom="NOT_WORKING" if technical else None,
+                location_proposed=location,
+                matched_rule_ids=[cls.rule_id] if agent_made else ["PB-COM-R-OVR-01"],
+                classification_reason=cls.reason if agent_made else "Category do BPTN chọn (locked_fields)",
+                source_references=["ticket.original_description", "ticket_resident_additions"]
+                if agent_made
+                else ["locked_fields.category"],
+                created_at=now,
+            )
+        self._propose_department(work, now)
 
-    def _decide_review(
-        self,
-        work: Case,
-        service: ServiceCategory,
-        ticket_type: TicketType,
-        location: str | None,
-        review: ReviewRequiredReason | None,
-        now: datetime,
-    ) -> None:
-        """CR-BPTN-01: BPTN review is required only when category or location is missing/unclear."""
-        status = ConfirmationStatus.PENDING_REVIEW if review else ConfirmationStatus.NOT_REQUIRED
-        self._agent(
-            work,
-            Action.CREATE_PROPOSAL,
-            "Ticket",
-            work.ticket.ticket_id,
-            "administrative_normalization.confirmation_status",
-            None,
-            {"confirmation_status": status, "review_required_reason": review},
-            f"Cần BPTN review: {review}"
-            if review
-            else "Category và location rõ; không bắt buộc BPTN xác nhận, Agent tiếp tục",
-            now=now,
-            rule_id="PB-COM-R-CFM-01",
-        )
-        work.ticket.administrative_normalization = AdministrativeNormalization(
-            administrative_revision=1,
-            service_category_normalized=service,
-            ticket_type_normalized=ticket_type,
-            location_normalized=location,
-            confirmation_status=status,
-            review_required_reason=review,
-            audit_event_id=work.audit[-1].event_id,
-            source_references=["ticket.original_description"],
-        )
+    def _propose_department(self, work: Case, now: datetime) -> None:
+        """Step 4: only a proposal. `department_id` is written at step 8, after review and asset lookup."""
+        ticket = work.ticket
+        department = ticket.locked_fields.department or self.catalog.department_for(work.proposal.playbook_id)
+        if ticket.proposed_department_id != department:
+            self._agent(
+                work,
+                Action.CREATE_PROPOSAL,
+                "Ticket",
+                ticket.ticket_id,
+                "proposed_department_id",
+                ticket.proposed_department_id,
+                department,
+                "BPTN chọn phòng ban" if ticket.locked_fields.department else f"Playbook → {department}",
+                now=now,
+            )
+            ticket.proposed_department_id = department
 
-    def _check_risk(self, work: Case, playbook_id: PlaybookId, now: datetime) -> None:
-        risk = evaluate_signals(playbook_id, work.signal_assessment)
-        if not risk.exception:
-            return
-        if any(e.rule_id == risk.rule_id for e in work.exceptions):
-            return  # already raised (open) or already resolved by BQL
-        present = [code for code, status in risk.signals.items() if status == "PRESENT"]
-        record = ExceptionRecord(
-            exception_id=f"SIM-EXC-{_suffix(work.ticket.ticket_id)}-{len(work.exceptions) + 1:02d}",
-            ticket_id=work.ticket.ticket_id,
-            exception_type=EXCEPTION_TYPES[playbook_id],
-            rule_id=risk.rule_id,
-            reason=f"Phát hiện tín hiệu rủi ro đã định nghĩa: {', '.join(present)}. Chuyển BQL; Agent không chẩn đoán "
-            "hoặc hướng dẫn xử lý.",
-            source_references=[f"proposal.rule_signals[{code}]" for code in present],
-        )
-        work.exceptions.append(record)
-        self._agent(
-            work,
-            Action.CREATE_EXCEPTION,
-            "ExceptionRecord",
-            record.exception_id,
-            "status",
-            None,
-            record.status,
-            record.reason,
-            now=now,
-            rule_id=record.rule_id,
-        )
+    def _step_review(self, work: Case, now: datetime) -> bool:
+        ticket = work.ticket
+        if ticket.review_status == ReviewStatus.CONFIRMED:
+            return False
+        cls = work.classification
+        if cls is not None and cls.needs_review:
+            ticket.review_status = ReviewStatus.PENDING_REVIEW
+            return self._stop(
+                work,
+                S.VERIFYING,
+                R.PENDING_REVIEW,
+                now,
+                resume_step=6,
+                note="Playbook chỉ do LLM đề xuất; cần BPTN xác nhận",
+            )
+        ticket.review_status = ReviewStatus.NOT_REQUIRED
+        return False
 
-    def _draft_eligible(self, work: Case) -> bool:
-        admin = work.ticket.administrative_normalization
-        return (
-            work.proposal is not None
-            and admin is not None
-            and admin.confirmation_status != ConfirmationStatus.PENDING_REVIEW
-            and not _blank(admin.location_normalized)
-            and not self._open_exception(work)
-            and not self._risk(work).unclear
-        )
-
-    def _build_draft(self, work: Case, now: datetime) -> None:
-        proposal, admin, ticket = work.proposal, work.ticket.administrative_normalization, work.ticket
-        playbook_id = proposal.playbook_id
-        key = f"{ticket.ticket_id}|{PLAYBOOK_VERSION}|{ticket.source_revision}"
-        existing = work.draft
-        if (
-            existing
-            and existing.idempotency_key == key
-            and existing.administrative_revision == admin.administrative_revision
-        ):
-            return  # VAL-IDEMP-001: same input → same logical draft
-        # A new playbook (BPTN override of the category) means new checklist, materials and evidence requirements
-        rebuild = existing is None or existing.playbook_id != playbook_id
-        if existing is not None and rebuild:
-            work.planned_materials = None  # the previous plan belonged to the other playbook
-
-        # Asset gate (technical only)
-        if playbook_id == PlaybookId.TEC:
+    def _step_asset(self, work: Case, now: datetime) -> bool:
+        proposal, ticket = work.proposal, work.ticket
+        location = self.effective_location(work)
+        if proposal.playbook_id != PlaybookId.TEC:
+            status, asset_id, reason = AssetLookupStatus.NOT_APPLICABLE, None, "Vệ sinh không tra tài sản"
+        elif ticket.locked_fields.asset_id:
+            status, asset_id, reason = AssetLookupStatus.LOCKED_BY_BPTN, ticket.locked_fields.asset_id, "BPTN chọn"
+        elif TicketFlag.ASSET_CHECK_ONSITE in ticket.flags:
+            status, asset_id, reason = AssetLookupStatus.CHECK_ONSITE, None, "BPTN: không xác định được, kiểm tại chỗ"
+        else:
             matches = [
-                a
-                for a in self.catalog.assets
-                if a.asset_type == "LIGHTING" and a.location_normalized == admin.location_normalized
+                a for a in self.catalog.assets if a.asset_type == "LIGHTING" and a.location_normalized == location
             ]
             if len(matches) == 1:
-                asset_status, asset_id = AssetLookupStatus.MATCHED, matches[0].asset_id
-                asset_reason = f"Một asset LIGHTING khớp vị trí ({matches[0].source_ref})"
+                status, asset_id = AssetLookupStatus.MATCHED, matches[0].asset_id
+                reason = f"Một asset LIGHTING khớp vị trí ({matches[0].source_ref})"
             elif matches:
-                asset_status, asset_id = AssetLookupStatus.AMBIGUOUS, None
-                asset_reason = f"{len(matches)} asset LIGHTING cùng khớp vị trí; không đoán"
+                status, asset_id, reason = AssetLookupStatus.AMBIGUOUS, None, f"{len(matches)} asset cùng vị trí"
             else:
-                asset_status, asset_id = AssetLookupStatus.NOT_FOUND, None
-                asset_reason = "Không có asset LIGHTING nào khớp vị trí đã chuẩn hóa"
-        else:
-            asset_status, asset_id, asset_reason = AssetLookupStatus.NOT_APPLICABLE, None, "Vệ sinh không lookup asset"
-        proposal.asset_lookup_status = asset_status
-        proposal.asset_id = asset_id
-        proposal.asset_match_reason = asset_reason
+                status, asset_id, reason = AssetLookupStatus.NOT_FOUND, None, "Không có asset LIGHTING tại vị trí"
+        proposal.asset_lookup_status, proposal.asset_id, proposal.asset_match_reason = status, asset_id, reason
+        ticket.asset_resolution = {
+            AssetLookupStatus.NOT_APPLICABLE: AssetResolution.NOT_APPLICABLE,
+            AssetLookupStatus.MATCHED: AssetResolution.FOUND,
+            AssetLookupStatus.LOCKED_BY_BPTN: AssetResolution.FOUND,
+            AssetLookupStatus.CHECK_ONSITE: AssetResolution.ONSITE_BY_BPTN,  # only BPTN sets the flag
+        }.get(status)
         self._agent(
             work,
             Action.LOOKUP_ASSET,
@@ -1035,79 +1634,92 @@ class MaintenanceEngine:
             proposal.proposal_id,
             "asset_lookup_status",
             None,
-            {"status": asset_status, "asset_id": asset_id},
-            asset_reason,
+            {"status": status, "asset_id": asset_id},
+            reason,
             now=now,
-            rule_id={
-                AssetLookupStatus.MATCHED: "PB-TEC-R-AST-01",
-                AssetLookupStatus.NOT_FOUND: "PB-COM-R-AST-01",
-                AssetLookupStatus.AMBIGUOUS: "PB-COM-R-AST-01",
-            }.get(asset_status),
         )
+        if status in (AssetLookupStatus.NOT_FOUND, AssetLookupStatus.AMBIGUOUS):
+            return self._stop(work, S.VERIFYING, R.ASSET_UNCLEAR, now, resume_step=6, note=reason)
+        return False
 
-        # Stock gate before route
-        suffix = _suffix(ticket.ticket_id)
-        draft_id = f"SIM-WOD-{suffix}"
-        if not rebuild:
-            lines = work.material_lines
-            material_source = "draft hiện có"
+    def _line_stock(self, item_code: str, planned_qty: float) -> MaterialStockStatus:
+        stock = self.stock.get(item_code)
+        if stock is None:
+            return MaterialStockStatus.UNKNOWN
+        return MaterialStockStatus.INSUFFICIENT if stock < planned_qty else MaterialStockStatus.SUFFICIENT
+
+    def _step_material(self, work: Case, now: datetime) -> bool:
+        playbook_id = work.proposal.playbook_id
+        if work.planned_for_playbook not in (None, playbook_id):
+            work.planned_materials = None  # the previous plan belonged to the other playbook
+        if work.planned_materials is None:
+            work.planned_materials = list(self.catalog.default_materials.get(playbook_id, ()))
+            source = f"vật tư mặc định của {playbook_id}"
         else:
-            if work.planned_materials is None:  # Agent determines planned materials from the playbook
-                work.planned_materials = list(self.catalog.default_materials.get(playbook_id, ()))
-                material_source = f"vật tư mặc định của {playbook_id}"
-            else:
-                material_source = "kế hoạch vật tư của ticket"
-            lines = [
-                self._material_line(draft_id, suffix, index, planned)
-                for index, planned in enumerate(work.planned_materials, start=1)
-            ]
-        stock_status = _aggregate_stock(lines)
+            source = "kế hoạch vật tư của ticket"
+        work.planned_for_playbook = playbook_id
+        suffix = _suffix(work.ticket.ticket_id)
+        work.material_lines = [
+            self._material_line(f"SIM-WOD-{suffix}", suffix, index, planned)
+            for index, planned in enumerate(work.planned_materials, start=1)
+        ]
+        status = _aggregate_stock(work.material_lines)
         self._agent(
             work,
             Action.CHECK_MATERIAL_STOCK,
-            "WorkOrderDraft",
-            draft_id,
+            "Ticket",
+            work.ticket.ticket_id,
             "material_stock_status",
             None,
-            stock_status,
-            f"So vật tư dự kiến ({material_source}) với tồn kho mô phỏng",
+            status,
+            f"So vật tư dự kiến ({source}) với định mức và tồn kho mô phỏng",
             now=now,
-            rule_id={"INSUFFICIENT": "PB-COM-R-STK-01", "UNKNOWN": "PB-COM-R-STK-02"}.get(stock_status),
         )
+        flags = [f for f in work.ticket.flags if f != TicketFlag.STOCK_CHECK_ON_ACCEPT]
+        if status == MaterialStockStatus.UNKNOWN:
+            flags.append(TicketFlag.STOCK_CHECK_ON_ACCEPT)  # not a stop: the department checks on acceptance
+        work.ticket.flags = flags
+        if status == MaterialStockStatus.INSUFFICIENT:
+            return self._stop(
+                work, S.ON_HOLD, R.WAITING_MATERIAL, now, resume_step=7, note="Tồn kho mô phỏng không đủ vật tư dự kiến"
+            )
+        return False
 
-        # Duty gate (both playbooks): team-only, from the simulated duty fixture
-        duty = lookup_team(
-            self.catalog,
-            admin.service_category_normalized,
-            datetime.fromisoformat(ticket.raw.created_at).astimezone(LOCAL_TZ),
-        )
-        duty_status, team_id, duty_ref, duty_reason = duty.status, duty.team_id, duty.source_ref, duty.reason
-        proposal.duty_lookup_status = duty_status
-        proposal.duty_source_ref = duty_ref
-        self._agent(
-            work,
-            Action.LOOKUP_DUTY,
-            "AgentClassificationProposal",
-            proposal.proposal_id,
-            "duty_lookup_status",
-            None,
-            {"status": duty_status, "team_id": team_id, "source": duty_ref},
-            duty_reason,
-            now=now,
-            rule_id={
-                DutyLookupStatus.NO_AVAILABLE_TEAM: "PB-COM-R-DTY-01",
-                DutyLookupStatus.CAPACITY_EXCEEDED: "PB-COM-R-DTY-02",
-                DutyLookupStatus.DUTY_UNKNOWN: "PB-COM-R-DTY-03",
-            }.get(duty_status),
-        )
+    def _step_route(self, work: Case, now: datetime) -> bool:
+        ticket = work.ticket
+        failing = route_blockers(ticket)
+        if failing:  # the step order should make this impossible; refuse rather than hand over
+            raise EngineError("Bước 8 chạy khi can_route sai", {"failing": failing})
+        self._build_draft(work, now)
+        department = self.catalog.department(ticket.proposed_department_id)
+        handover = {"department_id": department.department_id}
+        if department.on_shift(now):
+            self._apply_transition(work, S.ROUTED, SYSTEM_ID, Role.SYSTEM, now, dispatched_at=now, **handover)
+            self._notify(
+                work, "department.dispatch", BlockerOwner.DEPARTMENT, now, {"department_id": department.department_id}
+            )
+        else:
+            late = self._new_blocker(work, R.OUT_OF_HOURS, now, resume_step=8, note="Ngoài ca phòng ban")
+            self._apply_transition(
+                work,
+                S.ROUTED,
+                SYSTEM_ID,
+                Role.SYSTEM,
+                now,
+                blocker=late,
+                note=late.internal_note,
+                dispatched_at=None,
+                **handover,
+            )
+        return True
 
-        blockers = route_blockers(
-            CaseFacts(asset_status=asset_status, stock_status=stock_status, duty_status=duty_status)
-        )
-        routed = not blockers
-        proposal.route_status = RouteStatus.ROUTED if routed else RouteStatus.NOT_ROUTED
-        proposal.routing_team_id = team_id if routed else None
-
+    def _build_draft(self, work: Case, now: datetime) -> None:
+        proposal, ticket = work.proposal, work.ticket
+        playbook_id = proposal.playbook_id
+        suffix = _suffix(ticket.ticket_id)
+        draft_id = f"SIM-WOD-{suffix}"
+        existing = work.draft
+        rebuild = existing is None or existing.playbook_id != playbook_id
         template = self.catalog.template_for(playbook_id)
         if rebuild:
             work.checklist_items = [
@@ -1121,36 +1733,29 @@ class MaintenanceEngine:
                 )
                 for index, item in enumerate(template.items, start=1)
             ]
-            work.material_lines = lines
-
+        lines = work.material_lines
+        location = self.effective_location(work)
         work.draft = WorkOrderDraft(
             work_order_draft_id=draft_id,
             ticket_id=ticket.ticket_id,
             proposal_id=proposal.proposal_id,
             playbook_id=playbook_id,
-            administrative_revision=admin.administrative_revision,
             source_revision=ticket.source_revision,
-            idempotency_key=key,
             draft_revision=(existing.draft_revision + 1) if existing else 1,
-            scope_summary=f"Ghi nhận {SCOPE_LABELS[playbook_id]} tại {admin.location_normalized} theo phản ánh mô "
-            "phỏng. Bản nháp, không phải lệnh công việc thật.",
-            generation_reason=f"Pre-draft gates passed: confirmation_status={admin.confirmation_status}, "
-            "service/type/location rõ, không có exception",
+            scope_summary=f"Ghi nhận {SCOPE_LABELS[playbook_id]} tại {location} theo phản ánh mô phỏng. "
+            "Bản nháp, không phải lệnh công việc thật.",
             matched_rule_ids=[*proposal.matched_rule_ids, "PB-COM-R-WO-01"],
-            source_references=["ticket.original_description", "administrative_normalization.location_normalized"],
-            asset_id=asset_id,
-            routing_team_id=team_id if routed else None,
-            duty_status=duty_status,
-            duty_source_ref=duty_ref,
-            material_stock_status=stock_status,
-            route_status=proposal.route_status,
-            queue_status=QueueStatus.NOT_QUEUED if routed else QueueStatus.PENDING_BQL_REVIEW,
-            queue_reason=None if routed else blockers[0].queue_reason,
+            source_references=["ticket.original_description", "locked_fields", "ticket_resident_additions"],
+            location=location,
+            asset_id=proposal.asset_id,
+            department_id=ticket.proposed_department_id,
+            flags=list(ticket.flags),
+            material_stock_status=_aggregate_stock(lines),
             checklist_template_id=template.checklist_template_id,
             checklist_item_ids=[i.checklist_item_id for i in work.checklist_items],
             material_requirement_mode=MaterialRequirementMode.TRACKED if lines else MaterialRequirementMode.N_A,
             material_gate_status=MaterialGateStatus.NEEDS_CLARIFICATION if lines else MaterialGateStatus.NA,
-            material_line_ids=[m.material_line_id for m in work.material_lines],
+            material_line_ids=[m.material_line_id for m in lines],
             evidence_requirements=self.catalog.requirements_for(playbook_id)
             if rebuild
             else existing.evidence_requirements,
@@ -1164,33 +1769,13 @@ class MaintenanceEngine:
             "draft_revision",
             existing.draft_revision if existing else None,
             work.draft.draft_revision,
-            work.draft.generation_reason,
+            f"Giao {ticket.proposed_department_id}; assignee_id để trống cho phòng ban tự phân công",
             now=now,
             rule_id="PB-COM-R-WO-01",
         )
-        if routed:
-            self._agent(
-                work,
-                Action.PROPOSE_TEAM_ROUTE,
-                "WorkOrderDraft",
-                draft_id,
-                "routing_team_id",
-                None,
-                team_id,
-                "Asset/stock/duty gates pass; đề xuất tuyến team hợp lệ (team-only, assignee_id=null), "
-                "không phải xác nhận đã giao việc",
-                now=now,
-                rule_id="PB-COM-R-ROUTE-01",
-            )
 
     def _material_line(self, draft_id: str, suffix: str, index: int, planned: PlannedMaterial) -> MaterialLine:
         item = self.catalog.material(planned.item_code)
-        if item is None or item.simulated_stock_qty is None:
-            stock = MaterialStockStatus.UNKNOWN
-        elif item.simulated_stock_qty < planned.planned_qty:
-            stock = MaterialStockStatus.INSUFFICIENT
-        else:
-            stock = MaterialStockStatus.SUFFICIENT
         return MaterialLine(
             material_line_id=f"SIM-MAT-LINE-{suffix}-{index:02d}",
             work_order_draft_id=draft_id,
@@ -1200,32 +1785,48 @@ class MaintenanceEngine:
             planned_qty=planned.planned_qty,
             norm_qty=item.norm_qty if item else None,
             norm_label=item.norm_label if item else NormLabel.N_A,
-            simulated_stock_qty=item.simulated_stock_qty if item else None,
-            material_stock_status=stock,
+            simulated_stock_qty=self.stock.get(planned.item_code),
+            material_stock_status=self._line_stock(planned.item_code, planned.planned_qty),
         )
 
-    # ------------------------------------------------------------------ evaluation
+    # ------------------------------------------------------------------ step 10 reconciliation
 
     @staticmethod
-    def _missing_raw_fields(raw: RawTicket) -> list[str]:
-        missing = []
-        if _blank(raw.ticket_id) or not raw.ticket_id.startswith("SIM-TKT-"):
-            missing.append("ticket_id")
-        try:
-            if datetime.fromisoformat(raw.created_at).tzinfo is None:
-                missing.append("created_at")
-        except ValueError:
-            missing.append("created_at")
-        if _blank(raw.original_description):
-            missing.append("original_description")
-        return missing
+    def _require_in_progress(work: Case) -> None:
+        if work.ticket.status != S.IN_PROGRESS or work.draft is None:
+            raise GuardError("Phòng ban chưa nhận việc hoặc ticket không ở IN_PROGRESS", {"status": work.ticket.status})
 
-    @staticmethod
-    def _open_exception(work: Case) -> ExceptionRecord | None:
-        return next((e for e in work.exceptions if e.status == ExceptionStatus.OPEN), None)
+    def _reconcile(self, work: Case, now: datetime) -> ReadinessEvaluation:
+        ticket = work.ticket
+        checklist_pending = [
+            i.template_item_id for i in work.checklist_items if i.required and i.status != ChecklistStatus.COMPLETED
+        ]
+        notes_missing = self._validate_evidence(work)
+        incomplete, unexplained = self._compare_materials(work, now)
+        # REWORK is the reason the department is working again, not something still to clear
+        open_blocker = ticket.blocker is not None and ticket.blocker.code != R.REWORK
+        evaluation = ReadinessEvaluation(
+            department_accepted=ticket.department_id is not None and ticket.accepted_at is not None,
+            checklist_complete=not checklist_pending,
+            processing_note_present=not notes_missing,
+            materials_entered=not incomplete,
+            variance_explained=not unexplained,
+            no_open_blocker=not open_blocker,
+            evaluated_at=now,
+            failing_items=[
+                *checklist_pending,
+                *notes_missing,
+                *incomplete,
+                *unexplained,
+                *([f"blocker:{ticket.blocker.code}"] if open_blocker else []),
+            ],
+        )
+        work.draft.readiness_evaluation = evaluation
+        return evaluation
 
-    def _reconcile(self, work: Case, now: datetime) -> tuple[list[str], list[str]]:
-        """Three comparisons per line (VAL-MAT-CMP-001). Returns (lines missing qty, lines with unexplained variance)."""
+    def _compare_materials(self, work: Case, now: datetime) -> tuple[list[str], list[str]]:
+        """Three comparisons per line (VAL-MAT-CMP-001). Returns (lines missing qty, lines with unexplained variance).
+        An explained variance is a non-blocking warning."""
         incomplete, unexplained = [], []
         warnings: list[NonBlockingWarning] = []
         for line in work.material_lines:
@@ -1261,19 +1862,19 @@ class MaintenanceEngine:
                         created_at=now,
                     )
                 )
-        if work.draft:
-            if work.draft.material_requirement_mode == MaterialRequirementMode.N_A:
-                work.draft.material_gate_status = MaterialGateStatus.NA
-            elif incomplete or unexplained:
-                work.draft.material_gate_status = MaterialGateStatus.NEEDS_CLARIFICATION
-            else:
-                work.draft.material_gate_status = MaterialGateStatus.RECONCILED
-            work.draft.non_blocking_warnings = warnings
+        draft = work.draft
+        if draft.material_requirement_mode == MaterialRequirementMode.N_A:
+            draft.material_gate_status = MaterialGateStatus.NA
+        elif incomplete or unexplained:
+            draft.material_gate_status = MaterialGateStatus.NEEDS_CLARIFICATION
+        else:
+            draft.material_gate_status = MaterialGateStatus.RECONCILED
+        draft.non_blocking_warnings = warnings
         return incomplete, unexplained
 
-    def _validate_evidence(self, work: Case) -> tuple[list[str], list[str]]:
-        """Per requirement: PRESENT/MISSING/INVALID_TYPE/SOURCE_UNVERIFIED. Returns (known missing, needs human)."""
-        missing, unverified = [], []
+    def _validate_evidence(self, work: Case) -> list[str]:
+        """Processing/result note per requirement. Returns the requirement IDs still missing. Images never count."""
+        missing = []
         draft = work.draft
         for requirement in draft.evidence_requirements:
             records = [
@@ -1289,120 +1890,21 @@ class MaintenanceEngine:
             statuses = {r.evidence_validation_status for r in records}
             if present:
                 requirement.validation_status = EvidenceValidationStatus.PRESENT
-            elif EvidenceValidationStatus.SOURCE_UNVERIFIED in statuses:
-                requirement.validation_status = EvidenceValidationStatus.SOURCE_UNVERIFIED
-                unverified.append(requirement.requirement_id)
-            elif EvidenceValidationStatus.INVALID_TYPE in statuses:
-                requirement.validation_status = EvidenceValidationStatus.INVALID_TYPE
-                missing.append(requirement.requirement_id)
             else:
-                requirement.validation_status = EvidenceValidationStatus.MISSING
+                requirement.validation_status = next(
+                    (
+                        s
+                        for s in (EvidenceValidationStatus.SOURCE_UNVERIFIED, EvidenceValidationStatus.INVALID_TYPE)
+                        if s in statuses
+                    ),
+                    EvidenceValidationStatus.MISSING,
+                )
                 missing.append(requirement.requirement_id)
             requirement.satisfied_by = present
-        # Images and other records without a requirement are kept but never satisfy one (VAL-EVD-IMG-001)
         for record in work.evidence:
             if record.requirement_id is None:
                 record.evidence_validation_status = EvidenceValidationStatus.MISSING
-        return missing, unverified
-
-    def _facts(self, work: Case, now: datetime) -> CaseFacts:
-        facts = CaseFacts(missing_raw_fields=self._missing_raw_fields(work.ticket.raw))
-        if facts.missing_raw_fields:
-            return facts
-        facts.classification_rule = work.classification_rule
-        proposal = work.proposal
-        if proposal is None:
-            return facts
-        facts.playbook_present = True
-        open_exception = self._open_exception(work)
-        facts.exception_rule = open_exception.rule_id if open_exception else None
-        risk = self._risk(work)
-        resolved = {e.rule_id for e in work.exceptions if e.status == ExceptionStatus.RESOLVED_BY_BQL}
-        if risk.unclear and risk.rule_id not in resolved:
-            facts.risk_unclear_rule = risk.rule_id
-        admin = work.ticket.administrative_normalization
-        facts.confirmation_pending = admin is None or admin.confirmation_status == ConfirmationStatus.PENDING_REVIEW
-        facts.review_required_reason = admin.review_required_reason if facts.confirmation_pending and admin else None
-        facts.location_missing = not facts.confirmation_pending and _blank(admin.location_normalized)
-
-        draft = work.draft
-        if draft is None:
-            return facts
-        facts.draft_present = True
-        facts.asset_status = proposal.asset_lookup_status
-        facts.stock_status = draft.material_stock_status
-        facts.duty_status = draft.duty_status
-        facts.route_status = draft.route_status
-        facts.routed = draft.route_status == RouteStatus.ROUTED and draft.assignee_id is None
-        if facts.routed:
-            facts.checklist_pending = [
-                i.template_item_id for i in work.checklist_items if i.required and i.status != ChecklistStatus.COMPLETED
-            ]
-            facts.evidence_missing, facts.evidence_unverified = self._validate_evidence(work)
-            facts.material_incomplete, facts.material_variance_unexplained = self._reconcile(work, now)
-        return facts
-
-    def _reevaluate(self, work: Case, now: datetime) -> None:
-        facts = self._facts(work, now)
-        decision = resolve(facts)
-        draft = work.draft
-        if draft is not None:
-            draft.blocking_exception_active = facts.exception_rule is not None
-            asset_ok = facts.asset_status in (AssetLookupStatus.MATCHED, AssetLookupStatus.NOT_APPLICABLE)
-            stock_ok = facts.stock_status in (MaterialStockStatus.SUFFICIENT, MaterialStockStatus.NOT_APPLICABLE)
-            draft.readiness_evaluation = ReadinessEvaluation(
-                playbook_present=facts.playbook_present,
-                work_order_draft_present=True,
-                required_fields_complete=not facts.confirmation_pending and not facts.location_missing and asset_ok,
-                route_valid=facts.routed,
-                checklist_complete=facts.routed and not facts.checklist_pending,
-                minimum_evidence_complete=facts.routed and not facts.evidence_missing and not facts.evidence_unverified,
-                material_reconciled_or_na=stock_ok
-                and draft.material_gate_status in (MaterialGateStatus.RECONCILED, MaterialGateStatus.NA),
-                no_blocking_exception=facts.exception_rule is None,
-                evaluated_at=now,
-                rule_ids=decision.blocking_rules or [decision.rule_id],
-                source_references=["work_order_draft", "checklist_items", "material_lines", "evidence"],
-                target_state=decision.state,
-                reason=decision.reason,
-                failing_items=[
-                    *facts.checklist_pending,
-                    *facts.evidence_missing,
-                    *facts.evidence_unverified,
-                    *facts.material_incomplete,
-                    *facts.material_variance_unexplained,
-                ],
-            )
-            if decision.state == TicketState.READY_FOR_REVIEW and not draft.readiness_evaluation.all_pass:
-                raise EngineError("Resolver trả READY nhưng còn gate false (fail closed)")
-        self._transition(work, decision, now)
-
-    def _transition(self, work: Case, decision: StateDecision, now: datetime) -> None:
-        ticket = work.ticket
-        current, target = ticket.current_state, decision.state
-        path = [target]
-        if current != target and target not in TRANSITIONS[current]:
-            # CHỜ XÁC MINH / EXCEPTION → READY goes through IN_PROGRESS after revalidation
-            path = [TicketState.IN_PROGRESS, target]
-        for step in path:
-            if step == ticket.current_state:
-                continue
-            if step not in TRANSITIONS[ticket.current_state]:
-                raise EngineError(f"Transition {ticket.current_state} → {step} không hợp lệ")
-            self._agent(
-                work,
-                Action.TRANSITION_STATE,
-                "Ticket",
-                ticket.ticket_id,
-                "current_state",
-                ticket.current_state,
-                step,
-                decision.reason,
-                now=now,
-                rule_id=decision.rule_id,
-            )
-            ticket.current_state = step
-        ticket.state_decision = decision
+        return missing
 
 
 def _compare(kind: ComparisonType, left: str, right: str, left_value: float, right_value: float | None):
@@ -1424,17 +1926,17 @@ def _aggregate_stock(lines: list[MaterialLine]) -> MaterialStockStatus:
     statuses = {line.material_stock_status for line in lines}
     if not lines:
         return MaterialStockStatus.NOT_APPLICABLE
-    if MaterialStockStatus.UNKNOWN in statuses:
-        return MaterialStockStatus.UNKNOWN
     if MaterialStockStatus.INSUFFICIENT in statuses:
         return MaterialStockStatus.INSUFFICIENT
+    if MaterialStockStatus.UNKNOWN in statuses:
+        return MaterialStockStatus.UNKNOWN
     return MaterialStockStatus.SUFFICIENT
 
 
 def _evidence_status(record: EvidenceRecord, allowed: list[EvidenceType]) -> EvidenceValidationStatus:
     if record.evidence_type not in allowed:
         return EvidenceValidationStatus.INVALID_TYPE
-    if record.source != EvidenceSource.HUMAN_EXECUTION:
+    if record.source != EvidenceSource.DEPARTMENT_EXECUTION:
         return EvidenceValidationStatus.SOURCE_UNVERIFIED
     if not record.content_or_metadata.strip() or record.readability_status == ReadabilityStatus.UNREADABLE:
         return EvidenceValidationStatus.MISSING

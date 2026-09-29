@@ -1,71 +1,79 @@
-"""Replay the scripted fixture steps (execution updates) and compare with the expected oracle.
+"""Replay the scripted fixture steps and compare with the expected oracle.
 
-No fixture ticket needs BPTN review under CR-BPTN-01, so there is no scripted BPTN step.
+A routed fixture with an `execution` block is accepted by its department, worked on and reported complete (step 10).
+Nothing here closes a ticket: only BQL does that.
 """
 
+from datetime import datetime, timedelta
 from typing import Any
 
 from pydantic import BaseModel
 
 from src.maintenance.engine import MaintenanceEngine
-from src.maintenance.enums import ChecklistStatus, RouteStatus
+from src.maintenance.enums import ChecklistStatus, Department, TicketStatus
 from src.maintenance.models import Case
 
-EXEC_ID = "SIM-ACTOR-EXEC-01"
+DEPARTMENT_ACTORS = {
+    Department.DEPT_CLEANING: "SIM-ACTOR-DEPT-CLN-01",
+    Department.DEPT_TECHNICAL: "SIM-ACTOR-DEPT-TEC-01",
+}
 
 
 def run_fixture(engine: MaintenanceEngine, ticket_id: str) -> Case:
-    """Run every scripted human step for one fixture ticket. Execution only happens once the draft is routed."""
+    """Run every scripted department step for one fixture ticket, one hour after it was reported."""
     fixture = engine.dataset.get(ticket_id)
     if fixture is None:
         raise KeyError(ticket_id)
     case = engine.get(ticket_id)
-    routed = case.draft is not None and case.draft.route_status == RouteStatus.ROUTED
-    if fixture.execution and routed:
+    ticket = case.ticket
+    if not fixture.execution or ticket.status != TicketStatus.ROUTED or ticket.blocker is not None:
+        return case
+    actor = DEPARTMENT_ACTORS[ticket.department_id]
+    with engine.at(datetime.fromisoformat(fixture.raw.created_at) + timedelta(hours=1)):
+        engine.accept(ticket_id, actor)
         for item_id in fixture.execution.checklist:
-            case = engine.update_checklist(ticket_id, EXEC_ID, item_id, status=ChecklistStatus.COMPLETED)
+            engine.update_checklist(ticket_id, actor, item_id, status=ChecklistStatus.COMPLETED)
         for material in fixture.execution.materials:
-            case = engine.record_material(
+            engine.record_material(
                 ticket_id,
-                EXEC_ID,
+                actor,
                 material.item_code,
                 issued_qty=material.issued_qty,
                 used_qty=material.used_qty,
                 variance_reason=material.variance_reason,
             )
         for evidence in fixture.execution.evidence:
-            case = engine.add_evidence(
+            engine.add_evidence(
                 ticket_id,
-                EXEC_ID,
+                actor,
                 requirement_id=evidence.requirement_id,
                 evidence_type=evidence.evidence_type,
                 content_or_metadata=evidence.content_or_metadata,
                 readability_status=evidence.readability_status,
             )
-    return case
+        return engine.report_complete(ticket_id, actor)
 
 
-def observe(case: Case) -> dict[str, Any]:
+def observe(engine: MaintenanceEngine, case: Case) -> dict[str, Any]:
     """The same keys as the fixture `expected` block, read from the case."""
-    proposal, draft = case.proposal, case.draft
-    admin = case.ticket.administrative_normalization
-    open_exception = next((e for e in case.exceptions if e.status == "OPEN"), None)
+    ticket, proposal, draft = case.ticket, case.proposal, case.draft
+    readiness = draft.readiness_evaluation if draft else None
     return {
+        "status": ticket.status.value,
+        "reason_code": ticket.blocker.code.value if ticket.blocker else None,
         "playbook_id": proposal.playbook_id.value if proposal else None,
+        "proposed_department_id": ticket.proposed_department_id.value if ticket.proposed_department_id else None,
+        "department_id": ticket.department_id.value if ticket.department_id else None,
+        "review_status": ticket.review_status.value if ticket.review_status else None,
+        "asset_resolution": ticket.asset_resolution.value if ticket.asset_resolution else None,
         "draft_exists": draft is not None,
-        "state": case.ticket.current_state.value,
-        "rule_id": case.ticket.state_decision.rule_id,
-        "location_normalized": admin.location_normalized if admin else None,
-        "confirmation_status": admin.confirmation_status.value if admin else None,
-        "asset_lookup_status": proposal.asset_lookup_status.value if draft else None,
-        "asset_id": draft.asset_id if draft else None,
-        "duty_lookup_status": draft.duty_status.value if draft else None,
+        "location": draft.location if draft else engine.effective_location(case),
+        "asset_lookup_status": proposal.asset_lookup_status.value if proposal else None,
+        "asset_id": proposal.asset_id if proposal else None,
         "material_stock_status": draft.material_stock_status.value if draft else None,
-        "route_status": draft.route_status.value if draft else None,
-        "routing_team_id": draft.routing_team_id if draft else None,
-        "queue_reason": draft.queue_reason.value if draft and draft.queue_reason else None,
-        "exception_type": open_exception.exception_type.value if open_exception else None,
+        "flags": tuple(f.value for f in ticket.flags),
         "warnings": tuple(w.warning_type for w in draft.non_blocking_warnings) if draft else (),
+        "failing_items": tuple(readiness.failing_items) if readiness else (),
     }
 
 
@@ -94,7 +102,7 @@ def evaluate(engine: MaintenanceEngine) -> EvaluationReport:
     results = []
     for fixture in engine.dataset.tickets:
         case = run_fixture(engine, fixture.raw.ticket_id)
-        observed = observe(case)
+        observed = observe(engine, case)
         expected = fixture.expected.model_dump(exclude_unset=True)
         mismatches = {
             key: {"expected": value, "observed": observed[key]}

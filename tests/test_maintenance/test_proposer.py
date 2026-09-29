@@ -1,20 +1,13 @@
 """LLM proposal guards, tested with a fake model (no network)."""
 
+from datetime import datetime, timedelta, timezone
+
 from src.maintenance.engine import MaintenanceEngine
-from src.maintenance.models import RawTicket
-from src.maintenance.proposer import LLMAssessment, SignalJudgement, propose
-
-ABSENT = SignalJudgement(status="ABSENT")
+from src.maintenance.proposer import LLMAssessment, propose
 
 
-def assessment(service="KY_THUAT", ticket_type="COMMON_AREA_LIGHTING", **signals) -> LLMAssessment:
-    fields = ("unknown_substance", "hazard_signal", "burning_smell", "spark", "exposed_wire")
-    return LLMAssessment(
-        service_category=service,
-        ticket_type=ticket_type,
-        reason="Lý do giả lập",
-        **{f: signals.get(f, ABSENT) for f in fields},
-    )
+def assessment(service="KY_THUAT", ticket_type="COMMON_AREA_LIGHTING") -> LLMAssessment:
+    return LLMAssessment(service_category=service, ticket_type=ticket_type, reason="Lý do giả lập")
 
 
 def fake(result):
@@ -36,14 +29,14 @@ def test_llm_classifies_what_the_rules_miss():
     result = propose(text, fake(assessment()), "gpt-test")
     assert result.classification.playbook_id == "PB-TEC-01"
     assert result.classification.rule_id == "PB-TEC-R-TRG-01"
-    assert result.proposer == "rules+llm:gpt-test"
+    assert result.proposer == "rules+llm:gpt-test" and result.needs_review
 
 
 def test_rules_and_llm_disagreeing_is_ambiguous():
     text = "Hành lang tầng 3 nhiều rác, cần vệ sinh"
     result = propose(text, fake(assessment()))  # LLM says lighting, rules say cleaning
     assert result.classification.playbook_id is None
-    assert result.classification.rule_id == "PB-COM-R-CLS-01"
+    assert result.classification.reason_code == "CATEGORY_UNCLEAR"
 
 
 def test_llm_abstaining_on_a_rules_match_is_ambiguous():
@@ -62,22 +55,6 @@ def test_invalid_pair_from_llm_is_not_a_playbook():
     assert any("không hợp lệ" in n for n in result.notes)
 
 
-def test_llm_cannot_remove_a_risk_signal_found_by_rules():
-    text = "Đèn hành lang tầng 3 không sáng, có tia lửa ở hộp đèn"
-    result = propose(text, fake(assessment(spark=ABSENT)))
-    assert result.signals["SPARK_PRESENT"] == "PRESENT"
-
-
-def test_llm_present_needs_a_real_quote():
-    text = "Đèn hành lang tầng 3 không sáng, ngửi thấy mùi cháy nhẹ"
-    grounded = propose(text, fake(assessment(burning_smell=SignalJudgement(status="PRESENT", quote="mùi cháy nhẹ"))))
-    assert grounded.signals["BURNING_SMELL_PRESENT"] == "PRESENT"
-
-    invented = propose(text, fake(assessment(spark=SignalJudgement(status="PRESENT", quote="tóe lửa liên tục"))))
-    assert invented.signals["SPARK_PRESENT"] == "UNCLEAR"
-    assert any("SPARK_PRESENT" in n for n in invented.notes)
-
-
 def test_llm_error_falls_back_to_rules():
     text = "Đèn hành lang tầng 3 tòa SIM-A không sáng"
     result = propose(text, fake(TimeoutError("quota")))
@@ -86,20 +63,15 @@ def test_llm_error_falls_back_to_rules():
 
 
 def test_engine_calls_llm_once_and_traces_the_proposer():
-    llm = fake(assessment(burning_smell=SignalJudgement(status="PRESENT", quote="mùi cháy")))
+    llm = fake(assessment())
     engine = MaintenanceEngine(llm=llm, llm_label="gpt-test")
     engine.reset(with_fixtures=False)
-    raw = RawTicket(
-        ticket_id="SIM-TKT-TEC-301",
-        created_at="2026-09-27T10:00:00+07:00",
-        original_description="Bóng tuýp hành lang tầng 3 tòa SIM-A chết rồi, có mùi cháy",
-    )
-    engine.ingest(raw)
-    case = engine.run_agent(raw.ticket_id)
-    case = engine.run_agent(raw.ticket_id)
+    monday = datetime(2026, 9, 28, 9, tzinfo=timezone(timedelta(hours=7)))
+    case = engine.receive("Bóng tuýp hành lang tầng 3 tòa SIM-A chết rồi", received_at=monday)
     assert len(llm.calls) == 1
-    assert case.proposer == "rules+llm:gpt-test"
-    assert case.ticket.current_state == "EXCEPTION"
-    assert case.exceptions[0].exception_type == "ELECTRICAL_HIGH_RISK"
-    proposal_event = next(a for a in case.audit if a.action == "CREATE_PROPOSAL")
+    assert case.classification.proposer == "rules+llm:gpt-test" and case.classification.needs_review
+    assert case.ticket.status == "VERIFYING" and case.ticket.blocker.code == "PENDING_REVIEW"
+    engine.bptn_resolve(case.ticket.ticket_id, "SIM-ACTOR-BPTN-01")
+    assert len(llm.calls) == 1  # resuming after review does not ask the model again
+    proposal_event = next(a for a in engine.get(case.ticket.ticket_id).audit if a.action == "CREATE_PROPOSAL")
     assert proposal_event.new_value["proposer"] == "rules+llm:gpt-test"

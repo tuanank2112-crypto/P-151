@@ -1,0 +1,51 @@
+# Lời hiển thị cho cư dân (CR-BPTN-02 §6). Agent không tự viết lời cho cư dân: mọi public_message sinh từ đây.
+# Biến trong {} được engine điền; thiếu biến thì engine báo lỗi thay vì hiển thị câu dở.
+
+status_labels:
+  RECEIVED: "Đã tiếp nhận"
+  VERIFYING: "Đang xác minh"
+  ROUTED: "Đã chuyển phòng ban"
+  IN_PROGRESS: "Đang xử lý"
+  READY_FOR_REVIEW: "Chờ nghiệm thu"
+  CLOSED: "Hoàn thành"
+  NEED_INFO: "Chờ bạn bổ sung"
+  ON_HOLD: "Tạm hoãn"
+  MERGED: "Đã gộp"
+  CANCELLED: "Đã hủy"
+
+# Lời theo trạng thái, dùng khi không có blocker
+status_messages:
+  RECEIVED: "Phản ánh của bạn đã được tiếp nhận."
+  VERIFYING: "Phản ánh đang được xác minh."
+  ROUTED: "Phản ánh đã được chuyển tới {department}."
+  IN_PROGRESS: "{department} đang xử lý phản ánh."
+  READY_FOR_REVIEW: "Đã xử lý xong, đang chờ Ban quản lý nghiệm thu."
+  CLOSED: "Phản ánh đã hoàn thành."
+  NEED_INFO: "Vui lòng bổ sung thông tin cho phản ánh."
+  ON_HOLD: "Việc xử lý đang tạm hoãn."
+  MERGED: "Phản ánh đã được gộp vào phản ánh {merged_into}."
+  CANCELLED: "Phản ánh đã được hủy. Lý do: {cancel_reason}."
+
+# Lời theo ReasonCode, dùng khi có blocker
+reason_messages:
+  MISSING_INFO: "Vui lòng bổ sung: {fields}."
+  DUPLICATE: "Đang kiểm tra phản ánh có trùng với phản ánh khác không."
+  CATEGORY_UNCLEAR: "Đang xác minh loại phản ánh."
+  OUT_OF_SCOPE: "Đang xác minh phạm vi xử lý của phản ánh."
+  PENDING_REVIEW: "Đang xác minh thông tin phản ánh."
+  ASSET_UNCLEAR: "Đang xác minh thiết bị tại vị trí phản ánh."
+  WAITING_MATERIAL: "Đang chờ vật tư, dự kiến xử lý trước {eta}."
+  OUT_OF_HOURS: "Phản ánh sẽ được xử lý từ {dispatch_at}."
+  NOT_ACCEPTED: "Phản ánh đang chờ {department} tiếp nhận."
+  WRONG_DEPT: "Đang xác minh lại phòng ban phụ trách."
+  BLOCKED_ONSITE: "Việc xử lý tạm hoãn, dự kiến tiếp tục trước {eta}."
+  REWORK: "{department} đang xử lý lại phản ánh."
+
+# Tên field khi liệt kê thông tin còn thiếu (MISSING_INFO)
+field_labels:
+  ticket_id: "mã phản ánh"
+  created_at: "thời điểm tiếp nhận"
+  description: "nội dung phản ánh"
+  location: "vị trí (tòa, tầng, khu vực)"
+
+datetime_format: "%H:%M %d/%m/%Y"
