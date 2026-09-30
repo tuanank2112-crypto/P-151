@@ -99,6 +99,7 @@ function getConfidenceInfo(c) {
  * Open Modal displaying raw LLM Prompt and Response
  */
 async function openAiRawModal(ticketId, c) {
+  const triggerElement = document.activeElement;
   let modal = document.getElementById('ai-raw-modal');
   if (!modal) {
     modal = document.createElement('dialog');
@@ -107,6 +108,8 @@ async function openAiRawModal(ticketId, c) {
     document.body.appendChild(modal);
   }
 
+  modal.setAttribute('aria-labelledby', 'ai-raw-modal-title');
+  modal.setAttribute('aria-modal', 'true');
   modal.replaceChildren();
 
   // Loading skeleton inside modal
@@ -115,21 +118,21 @@ async function openAiRawModal(ticketId, c) {
   container.innerHTML = `
     <div class="flex items-center justify-between border-b border-slate-200 pb-4 dark:border-slate-800">
       <div class="flex items-center gap-2">
-        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300" aria-hidden="true">
           <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
           </svg>
         </span>
         <div>
-          <h3 class="text-base font-semibold text-slate-900 dark:text-white">Chi tiết AI Prompt & Raw Output</h3>
+          <h3 id="ai-raw-modal-title" class="text-base font-semibold text-slate-900 dark:text-white">Chi tiết AI Prompt & Raw Output</h3>
           <p class="text-xs text-slate-500 dark:text-slate-400">Phản ánh: <span class="font-mono font-medium">${ticketId}</span></p>
         </div>
       </div>
-      <button type="button" id="ai-modal-close-btn" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <button type="button" id="ai-modal-close-btn" aria-label="Đóng hộp thoại" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
-    <div class="animate-pulse space-y-3 py-6">
+    <div class="animate-pulse space-y-3 py-6" aria-busy="true" aria-label="Đang tải dữ liệu AI">
       <div class="h-4 bg-slate-200 rounded w-1/3 dark:bg-slate-800"></div>
       <div class="h-24 bg-slate-100 rounded dark:bg-slate-800"></div>
       <div class="h-32 bg-slate-100 rounded dark:bg-slate-800"></div>
@@ -137,6 +140,13 @@ async function openAiRawModal(ticketId, c) {
   `;
   modal.appendChild(container);
   modal.showModal();
+
+  const restoreFocus = () => {
+    if (triggerElement && typeof triggerElement.focus === 'function') {
+      triggerElement.focus();
+    }
+  };
+  modal.addEventListener('close', restoreFocus, { once: true });
 
   modal.querySelector('#ai-modal-close-btn').addEventListener('click', () => modal.close());
   modal.addEventListener('click', (e) => {
@@ -305,6 +315,8 @@ function agentProposal(c) {
   // --- PANEL ROOT CONTAINER ---
   return el('div', {
     class: 'group relative overflow-hidden rounded-2xl border border-indigo-100 bg-white p-5 shadow-sm ring-1 ring-slate-200/80 transition-all duration-300 hover:shadow-md dark:border-indigo-900/40 dark:bg-slate-900/90 dark:ring-slate-800',
+    role: 'region',
+    'aria-label': 'Đề xuất và phân tích của Agent AI',
     'data-ticket-id': t.ticket_id,
   },
     // Top highlight glow bar
@@ -313,14 +325,18 @@ function agentProposal(c) {
     // --- HEADER: TITLE, CONFIDENCE & RAW AI BUTTON ---
     el('div', { class: 'flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800' },
       el('div', { class: 'flex items-center gap-2.5' },
-        el('div', { class: 'flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-400/30' },
+        el('div', { class: 'flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-400/30', 'aria-hidden': 'true' },
           el('svg', { class: 'h-5 w-5', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' },
             el('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M13 10V3L4 14h7v7l9-11h-7z' }))),
         el('div', {},
           el('div', { class: 'flex items-center gap-2' },
             el('h2', { class: 'text-base font-bold text-slate-900 dark:text-white' }, 'Agent Đề Xuất & Phân Tích'),
-            el('span', { class: `inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${conf.badgeClass}` },
-              el('span', { class: `h-1.5 w-1.5 rounded-full ${conf.dotClass}` }),
+            el('span', {
+              class: `inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${conf.badgeClass}`,
+              role: 'status',
+              'aria-label': `Độ tin cậy của Agent: ${conf.label} - ${conf.description}`,
+            },
+              el('span', { class: `h-1.5 w-1.5 rounded-full ${conf.dotClass}`, 'aria-hidden': 'true' }),
               conf.label)),
           el('p', { class: 'text-xs text-slate-500 dark:text-slate-400 mt-0.5' },
             'Phân loại tự động kết hợp Deterministic Rules và LLM Structured Output'))),
@@ -330,9 +346,10 @@ function agentProposal(c) {
         type: 'button',
         class: 'inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50/70 px-3 py-1.5 text-xs font-semibold text-indigo-700 shadow-xs hover:bg-indigo-100 hover:border-indigo-300 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 dark:border-indigo-800/60 dark:bg-indigo-950/50 dark:text-indigo-300 dark:hover:bg-indigo-900/60',
         title: 'Xem chính xác nội dung prompt đã gửi và phản hồi raw từ mô hình AI',
+        'aria-label': `Xem raw LLM prompt và response cho phản ánh ${t.ticket_id}`,
         onclick: () => openAiRawModal(t.ticket_id, c),
       },
-        el('svg', { class: 'h-4 w-4 text-indigo-600 dark:text-indigo-400', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' },
+        el('svg', { class: 'h-4 w-4 text-indigo-600 dark:text-indigo-400', 'aria-hidden': 'true', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' },
           el('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4' })),
         el('span', {}, 'Xem raw LLM prompt/response'))),
 

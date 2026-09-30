@@ -38,6 +38,7 @@ async function fetchAiLogs() {
  * Open Modal displaying full detail of an AI Log entry
  */
 function openAiLogDetailModal(entry) {
+  const triggerElement = document.activeElement;
   let modal = document.getElementById('ai-log-entry-modal');
   if (!modal) {
     modal = document.createElement('dialog');
@@ -46,6 +47,8 @@ function openAiLogDetailModal(entry) {
     document.body.appendChild(modal);
   }
 
+  modal.setAttribute('aria-labelledby', 'ai-log-entry-title');
+  modal.setAttribute('aria-modal', 'true');
   modal.replaceChildren();
 
   const statusTone = entry.status === 'SUCCESS' ? 'emerald' : entry.status === 'FALLBACK_RULE' ? 'amber' : 'rose';
@@ -59,16 +62,17 @@ function openAiLogDetailModal(entry) {
     // Header
     el('div', { class: 'flex items-start justify-between border-b border-slate-200 pb-4 dark:border-slate-800' },
       el('div', { class: 'flex items-center gap-3' },
-        el('span', { class: 'flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm' },
+        el('span', { class: 'flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm', 'aria-hidden': 'true' },
           el('svg', { class: 'h-6 w-6', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' },
             el('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' }))),
         el('div', {},
-          el('h3', { class: 'text-lg font-bold text-slate-900 dark:text-white' }, 'Chi tiết Lượt gọi AI / LLM'),
+          el('h3', { id: 'ai-log-entry-title', class: 'text-lg font-bold text-slate-900 dark:text-white' }, 'Chi tiết Lượt gọi AI / LLM'),
           el('p', { class: 'font-mono text-xs text-slate-500 dark:text-slate-400 mt-0.5' },
             `ID: ${entry.entry_id} · Ticket: ${entry.ticket_id}`))),
       el('button', {
         type: 'button',
-        class: 'rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200',
+        'aria-label': 'Đóng hộp thoại',
+        class: 'rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
         onclick: () => modal.close(),
       }, el('svg', { class: 'h-5 w-5', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' },
         el('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M6 18L18 6M6 6l12 12' })))),
@@ -127,6 +131,13 @@ function openAiLogDetailModal(entry) {
 
   modal.appendChild(container);
   modal.showModal();
+
+  const restoreFocus = () => {
+    if (triggerElement && typeof triggerElement.focus === 'function') {
+      triggerElement.focus();
+    }
+  };
+  modal.addEventListener('close', restoreFocus, { once: true });
 
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.close();
