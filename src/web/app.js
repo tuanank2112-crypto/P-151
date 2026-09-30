@@ -65,6 +65,7 @@ const state = {
   user: null, // { username, display_name, role, department_id }
   role: null, // screen key from VIEW_BY_ROLE
   selected: null,
+  activeTab: 'workspace', // 'workspace' | 'ai-logs'
   catalog: { departments: {}, assets: [], status_labels: {}, materials: [] },
   bqlFilters: { status: '', department_id: '', escalated: false },
 };
@@ -990,7 +991,18 @@ async function renderQa(list, detail) {
     },
   }, 'Kiểm tra 12 phản ánh mẫu');
 
-  list.append(card('Dữ liệu demo',
+  const aiLogsCard = card('Lịch sử AI Logs (LLM Calls)',
+    el('p', { class: 'text-sm text-slate-600' }, 'Theo dõi chi tiết các lượt gọi LLM, độ trễ latency và kết quả fallback quy tắc.'),
+    el('button', {
+      type: 'button',
+      class: BTN.primary,
+      onclick: () => {
+        state.activeTab = 'ai-logs';
+        render();
+      },
+    }, 'Mở màn hình AI Logs đầy đủ'));
+
+  list.append(aiLogsCard, card('Dữ liệu demo',
     el('p', { class: 'text-sm text-slate-600' }, 'Cả hai nút "Kiểm tra" và "Nạp lại" đều xóa phản ánh tạo trong phiên demo.'),
     el('div', { class: 'flex flex-wrap gap-3' }, evaluateBtn, jobs, reset),
     result));
@@ -1087,6 +1099,7 @@ function signIn(token, user) {
   state.user = user;
   state.role = view;
   state.selected = null;
+  state.activeTab = 'workspace';
   try { sessionStorage.setItem(TOKEN_KEY, token); } catch { /* storage unavailable */ }
   $('login-view').classList.add('hidden');
   $('login-view').replaceChildren();
@@ -1101,6 +1114,7 @@ function signOut({ remote = true, message = null } = {}) {
   state.user = null;
   state.role = null;
   state.selected = null;
+  state.activeTab = 'workspace';
   try { sessionStorage.removeItem(TOKEN_KEY); } catch { /* storage unavailable */ }
   if (remote && token) {
     fetch(`${API}/auth/logout`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
@@ -1114,12 +1128,37 @@ function renderUserMenu() {
   const user = state.user;
   if (!user) return;
   const initials = user.display_name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+
+  const isStaff = user.role !== 'RESIDENT';
+  const isAiLogsActive = state.activeTab === 'ai-logs';
+
+  const navTabs = isStaff ? el('div', { class: 'flex items-center rounded-lg bg-slate-100 p-1 text-xs font-medium dark:bg-slate-800' },
+    el('button', {
+      type: 'button',
+      class: `rounded-md px-3 py-1.5 transition ${!isAiLogsActive ? 'bg-white font-semibold text-indigo-700 shadow-xs dark:bg-slate-700 dark:text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'}`,
+      onclick: () => {
+        state.activeTab = 'workspace';
+        render();
+      },
+    }, 'Bảng làm việc'),
+    el('button', {
+      type: 'button',
+      class: `flex items-center gap-1.5 rounded-md px-3 py-1.5 transition ${isAiLogsActive ? 'bg-white font-semibold text-indigo-700 shadow-xs dark:bg-slate-700 dark:text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'}`,
+      onclick: () => {
+        state.activeTab = 'ai-logs';
+        render();
+      },
+    },
+      el('span', {}, 'Lịch sử AI Logs'),
+      el('span', { class: 'inline-flex items-center rounded-full bg-indigo-100 px-1.5 py-0.2 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' }, 'LLM'))) : null;
+
   $('user-menu').replaceChildren(
+    navTabs,
     el('div', { class: 'hidden text-right sm:block' },
-      el('p', { class: 'text-sm font-medium text-slate-900' }, user.display_name),
-      el('p', { class: 'text-xs text-slate-500' },
+      el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, user.display_name),
+      el('p', { class: 'text-xs text-slate-500 dark:text-slate-400' },
         `${ROLE_LABEL[user.role] || user.role}${user.department_id ? ` · ${deptName(user.department_id)}` : ''} · ${user.username}`)),
-    el('span', { class: 'flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700', 'aria-hidden': 'true' }, initials),
+    el('span', { class: 'flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200', 'aria-hidden': 'true' }, initials),
     el('button', { type: 'button', class: BTN.secondary, onclick: () => signOut() }, 'Đăng xuất'));
 }
 
@@ -1135,13 +1174,36 @@ let renderToken = 0;
 async function render() {
   if (!state.user) return;
   const token = ++renderToken;
+
+  const listPane = $('list-pane');
+  const detailPane = $('detail-pane');
+
+  if (state.activeTab === 'ai-logs') {
+    $('view-title').textContent = 'Lịch sử AI Logs (LLM Observability)';
+    $('view-subtitle').textContent = 'Theo dõi chi tiết các lượt gọi LLM, độ trễ và prompt phục vụ kiểm thử và đánh giá mô hình.';
+    listPane.classList.add('hidden');
+    detailPane.className = 'lg:col-span-12';
+    detailPane.replaceChildren(skeleton(3));
+    const container = el('div');
+    if (typeof window !== 'undefined' && typeof window.renderAiLogsView === 'function') {
+      await window.renderAiLogsView(container);
+    }
+    if (token !== renderToken || !state.user) return;
+    detailPane.replaceChildren(container);
+    renderUserMenu();
+    return;
+  }
+
+  // Restore regular layout
+  listPane.classList.remove('hidden');
+  listPane.className = 'space-y-6 lg:col-span-5';
+  detailPane.className = 'lg:col-span-7';
+
   const [title, subtitle] = VIEW_TEXT[state.role];
   $('view-title').textContent = title;
   $('view-subtitle').textContent = subtitle;
   const list = el('div', { class: 'space-y-6' });
   const detail = el('div');
-  const listPane = $('list-pane');
-  const detailPane = $('detail-pane');
   if (!listPane.children.length) {
     listPane.replaceChildren(skeleton(4));
     detailPane.replaceChildren(skeleton(2));
