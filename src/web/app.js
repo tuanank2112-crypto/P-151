@@ -617,6 +617,9 @@ async function renderBptn(list, detail) {
 }
 
 function agentProposal(c) {
+  if (typeof window !== 'undefined' && typeof window.agentProposalComponent === 'function') {
+    return window.agentProposalComponent(c);
+  }
   const p = c.proposal;
   const locked = c.ticket.locked_fields;
   return el('div', {},
@@ -712,6 +715,7 @@ async function renderDepartment(list, detail) {
     blockerCard(t.blocker),
     reportText(t.raw.original_description, c.additions.map((a) => a.content)),
     residentPhotosInternal(c),
+    agentProposal(c),
   ];
   const id = t.ticket_id;
 
@@ -901,6 +905,7 @@ async function renderBql(list, detail) {
     blockerCard(t.blocker),
     reportText(t.raw.original_description, c.additions.map((a) => a.content)),
     residentPhotosInternal(c),
+    agentProposal(c),
   ];
 
   if (t.status === 'READY_FOR_REVIEW' && readiness) {
