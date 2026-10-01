@@ -19,6 +19,10 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | **Lộ trình nâng cấp & Ý tưởng** | [`roadmap.md`](roadmap.md) | Active tasks, Kho Ý Tưởng (Idea Vault) và các mốc đã hoàn thành. |
 | **Lịch sử cập nhật** | [`changelog.md`](changelog.md) | Lịch sử Semantic Releases (vX.Y.Z). |
 | **Tài liệu kỹ thuật module** | [`docs/`](../docs/) | Thư mục chứa tài liệu chuyên trách 1-1 cho từng module. |
+| **⭐ SPEC DUY NHẤT — MaintenanceOps** | [`../docs/CR-BPTN-03.md`](../docs/CR-BPTN-03.md) | Vai trò/quyền, 10 trạng thái, T01–T23, pipeline §5.1, tầng an toàn §6, priority §7, gộp §8, AC-01..18, P0/P1. CR-01/02 đã xoá. |
+| **Sản phẩm (nền v0.3, lệch thì CR-03 thắng)** | [`../docs/01_problem_statement.md`](../docs/01_problem_statement.md) … [`05_traceability_and_review.md`](../docs/05_traceability_and_review.md), [`data-contract-v1.md`](../docs/data-contract-v1.md), [`playbook-v1.md`](../docs/playbook-v1.md) | Bài toán, PRD, UI flow, data contract, playbook. |
+| **Swimlane / sơ đồ flow** | [`../docs/Activity Diagram.png`](../docs/Activity%20Diagram.png) | Bản nháp, CHƯA khớp CR-03 (thiếu Bậc 2, sai thứ tự an toàn). `flow_maintenanceops_v04.png` là flow cũ. |
+| **Chạy app / API hiện có** | [`../README.md`](../README.md) | Docker, endpoints `/api/v1/mo`, `/resident`, `/bql`. |
 
 ---
 
@@ -26,27 +30,8 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 
 | STT | Tên Skill (`.agents/skills/`) | File Quy Chuẩn (`SKILL.md`) | Vai Trò & Chức Năng Cốt Lõi |
 | :---: | :--- | :--- | :--- |
-| **1** | `nao-dong-bo` | `SKILL.md` | Đồng bộ tài liệu não sau khi xong task. |
-| **2** | `nao-commit` | `SKILL.md` | Đề xuất/thực hiện commit theo chuẩn não. |
-| **3** | `nao-dong-phien` | `SKILL.md` | Đóng phiên, ghi ký ức nóng. |
-| **4** | `nao-ten-phien` | `SKILL.md` | Đặt tên phiên. |
-| **5** | `vai-dieu-phoi` | `SKILL.md` | Điều phối nhiều vai agent. |
-| **6** | `vai-thi-cong` | `SKILL.md` | Vai thi công (thực thi task). |
-
-### 🧩 1.3. Bản đồ mã nguồn P-151 (Entry Points)
-
-| Đường dẫn | Vai trò |
-| :--- | :--- |
-| `src/main.py` | FastAPI app, lifespan (khởi tạo engine, job retry/leo thang), mount `/ui` |
-| `src/api/auth.py` | Đăng nhập, session in-memory, `get_actor` |
-| `src/api/routers/maintenance.py` | Router `/mo` (nội bộ), `/resident`, `/bql` |
-| `src/api/photos.py` | Kiểm tra magic bytes, lưu/đọc ảnh |
-| `src/maintenance/engine.py` | State machine, pipeline bước 2–8, đối soát bước 10, jobs |
-| `src/maintenance/{rules,proposer}.py` | Phân loại bằng luật + LLM có guard |
-| `src/maintenance/views.py` | View cư dân (allow-list) và bảng BQL |
-| `src/maintenance/{catalog,models,enums}.py` | Catalog mô phỏng, model Pydantic, enum |
-| `seed/maintenance_v1/` | Fixture: tickets, catalog, accounts |
-| `tests/test_maintenance/` | Test engine, API, auth, acceptance |
+| **1** | `nao-dong-bo`, `nao-commit`, `nao-dong-phien`, `nao-ten-phien` | `SKILL.md` từng thư mục | Đồng bộ bộ nhớ, commit, đóng và đặt tên phiên. |
+| **2** | `vai-dieu-phoi`, `vai-thi-cong` | `SKILL.md` từng thư mục | Hồ sơ điều phối và thi công của bộ não. |
 
 ---
 
@@ -56,8 +41,28 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 project-root/
 ├── AGENTS.md                         # [QUY TẮC TỐI THƯỢNG] Nguồn chân lý DUY NHẤT (Gemini/Codex đọc trực tiếp)
 ├── CLAUDE.md                         # [SHIM] Điểm nạp tự động của Claude Code — chỉ chứa @AGENTS.md
-├── brain4agent-v1.7.1.md   # [MARKER] Phiên bản khung não — soi nhanh ở root
-├── README.md                         # Tài liệu giới thiệu và hướng dẫn build dự án
+├── brain4agent-v1.7.1.md             # [MARKER] Phiên bản khung não — soi nhanh ở root
+├── README.md                         # Giới thiệu + cách chạy (phần v0.3 đã cũ; spec là docs/CR-BPTN-03.md)
+├── requirements.txt                  # Dependency Python
+├── src/
+│   ├── main.py                       # FastAPI app; lifespan tạo engine + job retry/leo thang (asyncio.to_thread); mount /api/v1, /ui
+│   ├── config.py                     # Pydantic Settings (LLM_MODE, MO_JOBS_ENABLED, ...)
+│   ├── maintenance/                  # [LÕI NGHIỆP VỤ] MaintenanceOps
+│   │   ├── engine.py                 # State machine (TRANSITIONS) + pipeline `_step_2.._step_8` + bước 10 + resume/jobs/receive_stock
+│   │   ├── enums.py, models.py       # TicketStatus, ReasonCode, Ticket, Blocker, WorkOrderDraft, ...
+│   │   ├── rules.py, proposer.py     # Luật cố định + LLM structured proposal (fallback khi lỗi)
+│   │   ├── catalog.py                # Đọc seed catalog + sla_config
+│   │   ├── views.py, messages.py, i18n/vi.yaml  # View cư dân (allow-list) / BQL; lời cho cư dân
+│   │   └── migration.py, demo.py     # Ánh xạ v0.4→v0.5; demo/evaluate
+│   ├── api/routers/maintenance.py    # /api/v1/mo, /resident, /bql
+│   ├── api/auth.py, api/photos.py    # Đăng nhập + session in-memory + khoá theo client; ảnh (kiểm magic bytes)
+│   ├── web/                          # UI tĩnh (index.html, app.js)
+│   ├── agents/                       # LangGraph MẪU của template, chưa trên đường chạy
+│   └── services/llm.py               # Factory LLM
+├── seed/maintenance_v1/              # catalog.yaml, tickets.yaml (12 ca + expected), accounts.yaml
+├── tests/test_maintenance/           # acceptance, engine, api, auth, fixtures, proposer, migration
+├── scripts/                           # Hook ghi log AI của template
+├── .github/workflows/                 # CI
 ├── brain4agent/                      # [BỘ NHỚ DỰ ÁN] Single Source of Truth
 │   ├── memory/hot/                   # [HOT MEMORY] Ký ức nóng phiên (today.md, state.json)
 │   ├── memory-distill.txt            # [KERNEL] Bản cô đọng tối thượng (< 100 dòng)

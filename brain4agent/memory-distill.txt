@@ -11,13 +11,13 @@
 </agent_startup_protocol>
 
 <project_foundation>
-- Dự án: P-151 MaintenanceOps Agent — prototype MÔ PHỎNG, v0.5 candidate (CR-BPTN-02) trên nhánh feature/chamanh.
-- Tech Stack: Python 3.11 + FastAPI; engine thuần Python `src/maintenance/engine.py`; LLM tùy chọn (LangChain ChatOpenAI, `LLM_MODE=mock|openai`); UI tĩnh `src/web/` (Tailwind CDN).
-- Data/State: fixture YAML `seed/maintenance_v1/` nạp in-memory, reset được; ảnh trên đĩa (`MO_UPLOAD_DIR`); Postgres trong compose chưa dùng.
-- Bất biến: mọi đổi status qua `_apply_transition` + bảng TRANSITIONS; mọi ghi qua `_mutate` (deep copy → audit sink → commit, fail closed); chỉ BQL đóng/hủy.
-- Pipeline (2026-10-01): 2 dữ liệu → 3 phân loại + đề xuất phòng ban → 4 trùng → 5 review → 6 tài sản → 7 vật tư/tồn kho → 8 giao. Hàm bước tên `_step_<số>_<việc>`; phân loại luôn trước trùng.
-- Đồng thời: ghi phải giữ `engine.lock`; `engine.at()` là thread-local (xem `-known-gotchas.md`).
-- Kiểm tra: `python -m pytest -q` + `python -m ruff check src tests` + `python -m ruff format --check src tests`.
+- Sản phẩm: **MaintenanceOps Agent** (dữ liệu MÔ PHỎNG, tiền tố `SIM-`): cư dân gửi phản ánh vệ sinh/đèn khu vực chung → Agent kiểm tra, chạy tầng an toàn, phân loại, tra asset/vật tư → giao phòng ban → BQL kiểm duyệt. ResidentGPT/`Problem_Card.md` là hướng CŨ, đã bỏ.
+- SPEC DUY NHẤT: `docs/CR-BPTN-03.md` (v0.6 candidate, PROPOSED). CR-BPTN-01/02 đã XOÁ 2026-10-01 — KHÔNG dùng, KHÔNG khôi phục. Docs `01`–`05`, `data-contract-v1.md`, `playbook-v1.md`, README và comment code còn ghi v0.3/CR-02: lệch thì CR-03 THẮNG. Thứ tự pipeline chuẩn (CR-03 §5.1 + D-09): 2 dữ liệu → 2b an toàn → 3 phân loại/phòng ban/priority → 4 trùng → 5 review → 6 asset → 7 vật tư → 8 giao. Phân loại TRƯỚC trùng (khớp code Châm Anh `1e2f42b`).
+- Kế hoạch nhóm (Notion "Kế hoạch MaintenanceOps MVP"): MVP online 04/10 (CR-03 P0 + persistence Render/Supabase + gpt-4o), bàn giao 19/10 (CR-03 P1 + LangGraph thật + eval). Như Ý = engine/state machine/safety/LangGraph.
+- Tech Stack: Python 3.11, FastAPI, Pydantic, LangChain (OpenAI), pytest/ruff, Docker, GitHub Actions; UI tĩnh `src/web/`. Lõi nghiệp vụ ở `src/maintenance/` (engine = state machine + pipeline). `src/agents/` LangGraph vẫn là mẫu, chưa nằm trên đường chạy.
+- Data/State: ticket/stock/audit giữ IN-MEMORY, nạp lại từ `seed/maintenance_v1/` khi khởi động (chưa có persistence); ảnh trên đĩa (`MO_UPLOAD_DIR`). Code mới nhất nhánh `feature/chamanh` = `1e2f42b` (pipeline đã theo D-09, CHƯA có tầng an toàn 2b).
+- Bất biến code: mọi đổi status qua `_apply_transition` + bảng `TRANSITIONS`; mọi ghi qua `_mutate` (deep copy → audit → commit, fail closed); ghi phải giữ `engine.lock`; `engine.at()` thread-local. Hàm bước tên `_step_<số>_<việc>`.
+- Kiểm tra: `python -m pytest -q` + `python -m ruff check src tests` + `python -m ruff format --check src tests` (venv Python 3.11, `LLM_MODE=mock`).
 - Planning & RFCs: Thư mục `planning/` lưu trữ các bản kế hoạch theo định dạng `[STT]_[YYYY-MM-DD]_[Ten-Ngan]` (25-35 ký tự, cố định path).
 </project_foundation>
 

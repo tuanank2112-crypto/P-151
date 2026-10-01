@@ -12,8 +12,8 @@ BQL cần tạo và kiểm tra hồ sơ bảo trì một cách nhất quán, tru
 
 - **Phân loại**: Agent đề xuất playbook vệ sinh (`PB-CLN-01`) hoặc đèn khu vực chung (`PB-TEC-01`) bằng luật cố định
   + LLM; phát hiện tín hiệu rủi ro (chất lạ nguy hại, mùi khét, tia lửa, dây hở) → `EXCEPTION` cho BQL.
-- **BPTN review có điều kiện** (`CR-BPTN-01`, v0.4 candidate — `docs/CR-BPTN-01.md`): ticket rủi ro thấp, category và vị trí rõ
-  đi thẳng tới draft; thiếu vị trí/category không rõ → `CHỜ XÁC MINH` cho tới khi BPTN override kèm lý do.
+- **Spec đích duy nhất: [CR-BPTN-03](docs/CR-BPTN-03.md)** (v0.6 candidate, `PROPOSED`). CR-BPTN-01/02 đã bỏ
+  (2026-10-01). Phần mô tả v0.3 trong README này là lịch sử; chỗ nào lệch CR-BPTN-03 thì theo CR-BPTN-03.
 - **Đề xuất team**: tra asset (kỹ thuật), tồn kho, lịch trực và capacity mô phỏng (fixture tĩnh) → đề xuất tuyến tới
   `SIM-TEAM-*`, không gán cá nhân. `ROUTED` là đề xuất tuyến team hợp lệ, không phải đã giao việc.
 - **Kiểm tra hồ sơ**: checklist, vật tư (3 phép đối soát), evidence tối thiểu; đủ 8 gate → `READY_FOR_REVIEW`.
@@ -196,11 +196,10 @@ Dockerfile           Image backend (multi-stage)
 docker-compose.yml   Backend + PostgreSQL
 ```
 
-## API (v0.5 candidate — CR-BPTN-02)
+## API (code `a305fc0`, v0.5 candidate — đang chuyển sang [CR-BPTN-03](docs/CR-BPTN-03.md))
 
-Baseline v0.3 (`docs/01`–`05`, `docs/data-contract-v1.md`, `docs/playbook-v1.md`) cộng hai change request trên nhánh
-`feature/chamanh`: [CR-BPTN-01](docs/CR-BPTN-01.md) (BPTN review có điều kiện) và [CR-BPTN-02](docs/CR-BPTN-02.md)
-(chuyển phòng ban, trạng thái công khai, retry, BQL đóng ticket). Cả hai đang `PROPOSED`. Toàn bộ dữ liệu là
+Mục này mô tả API **code hiện có** (bản cài đặt CR-BPTN-02 cũ, đã bỏ khỏi repo 2026-10-01). Spec đích là
+[CR-BPTN-03](docs/CR-BPTN-03.md); phần nào lệch thì theo CR-BPTN-03. Toàn bộ dữ liệu là
 **mô phỏng**, giữ in-memory và reset được.
 
 - Hai playbook: `PB-CLN-01` → `DEPT_CLEANING`, `PB-TEC-01` → `DEPT_TECHNICAL` (bảng `playbook_departments` trong

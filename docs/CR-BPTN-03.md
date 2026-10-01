@@ -1,8 +1,8 @@
 # CR-BPTN-03 — Flow lai: giao phòng ban + đường an toàn/khẩn cấp + ưu tiên + gộp ticket an toàn
 
 > **Status:** PROPOSED — chưa được duyệt. Chưa có Product approver ghi tên (xem §17).
-> **Baseline bị tác động:** MaintenanceOps MVP v0.3 (FROZEN) + [CR-BPTN-01](CR-BPTN-01.md) + [CR-BPTN-02](CR-BPTN-02.md), cả hai cũng `PROPOSED`.
-> **Target candidate:** MaintenanceOps MVP v0.6 (flow lai: lõi CR-BPTN-02, bù bằng điểm mạnh của v0.3/v0.4).
+> **Baseline bị tác động:** code MaintenanceOps tại commit `a305fc0`. CR-BPTN-01 và CR-BPTN-02 **đã bỏ** (xoá khỏi repo 2026-10-01): tài liệu này là **spec duy nhất**; mọi nhãn `[GIỮ]`/`[ĐỔI]`/`[BỎ]` so với code ở `a305fc0`. Bản cũ chỉ còn để tra lịch sử: `git show a305fc0:docs/CR-BPTN-02.md`.
+> **Target candidate:** MaintenanceOps MVP v0.6 (flow lai: lõi giao phòng ban của code `a305fc0`, bù bằng điểm mạnh của v0.3/v0.4).
 > **Phạm vi nhánh:** `feature/chamanh` (code nền: commit `a305fc0`).
 > **Data classification:** chỉ dữ liệu mô phỏng; không phải quy trình, dữ liệu hay hiệu quả vận hành thật của Vinhomes.
 > **Đối tượng đọc:** reviewer (Product/BA) và **coding agent**. Mọi mục có nhãn `[MỚI]`, `[ĐỔI]`, `[BỎ]`, `[GIỮ]` so với code ở `a305fc0`.
@@ -23,8 +23,8 @@ Flow đầy đủ:
 ```text
 Cư dân gửi phản ánh
 → kiểm tra dữ liệu tối thiểu
-→ Agent đọc, phân loại, đề xuất phòng ban
-→ TẦNG AN TOÀN (mọi ticket) → Bậc 1: BQL | Bậc 2: BPTN | không có: đi tiếp
+→ TẦNG AN TOÀN (mọi ticket, kể cả ngoài phạm vi) → Bậc 1: BQL | Bậc 2: BPTN | không có: đi tiếp
+→ Agent phân loại, đề xuất phòng ban và priority
 → kiểm tra trùng → BPTN xác nhận gộp khi cần
 → BPTN làm rõ khi cần (loại việc, vị trí, asset)
 → asset (kỹ thuật) → vật tư/kho → giao phòng ban
@@ -152,15 +152,15 @@ Quy ước: `Actor` là vai trò được phép gọi. `Pipe` = chỉ pipeline h
 
 ## 5. Pipeline Agent
 
-### 5.1 Các bước (`[ĐỔI]`: thêm bước an toàn, chạy trước kiểm tra trùng)
+### 5.1 Các bước (`[ĐỔI]`: thêm bước an toàn chạy trước phân loại; phân loại **trước** kiểm tra trùng — D-09)
 
 | Bước | Nội dung | Khi không đạt |
 |---|---|---|
 | 1 | Nhận ticket; kiểm tra toàn vẹn dữ liệu gốc | |
 | 2 | Dữ liệu tối thiểu: `ticket_id`, `created_at`, nội dung; vị trí sơ bộ | `NEED_INFO` / `MISSING_INFO` (T02) |
-| **2b** `[MỚI]` | **Tầng an toàn (§6): chạy cho MỌI ticket, kể cả ngoài phạm vi hai loại việc** | Bậc 1 → `VERIFYING`/`EMERGENCY_PENDING_BQL` và **dừng** (bỏ qua bước 4–8; vẫn chạy bước 3 để liên kết ticket trùng). Bậc 2 → `VERIFYING`/`SAFETY_REVIEW_REQUIRED` và dừng |
-| 3 | Kiểm tra trùng (§8) | `VERIFYING`/`DUPLICATE`, `resume_step=4` |
-| 4 | Phân loại → playbook → đề xuất phòng ban (`proposed_department_id`); **`[MỚI]`** đề xuất `priority` (§7) | `CATEGORY_UNCLEAR` hoặc `OUT_OF_SCOPE` |
+| **2b** `[MỚI]` | **Tầng an toàn (§6): chạy cho MỌI ticket, kể cả ngoài phạm vi hai loại việc** | Bậc 1 → `VERIFYING`/`EMERGENCY_PENDING_BQL` và **dừng** (bỏ qua bước 3 và 5–8; vẫn chạy bước 4 ở chế độ **chỉ liên kết**, so theo vị trí + cửa sổ thời gian vì chưa có category). Bậc 2 → `VERIFYING`/`SAFETY_REVIEW_REQUIRED` và dừng |
+| 3 | Phân loại → playbook → đề xuất phòng ban (`proposed_department_id`); **`[MỚI]`** đề xuất `priority` (§7) | `CATEGORY_UNCLEAR` hoặc `OUT_OF_SCOPE`, `resume_step=4` |
+| 4 | Kiểm tra trùng (§8), chỉ quét ticket cùng category trong cửa sổ | `VERIFYING`/`DUPLICATE`, `resume_step=5` |
 | 5 | `review_status` (chỉ `PENDING_REVIEW` khi playbook do LLM đề xuất mà luật không thấy) | `VERIFYING`/`PENDING_REVIEW` |
 | 6 | Asset (kỹ thuật): đúng 1 asset hoặc `locked_fields.asset_id`; vệ sinh `NOT_APPLICABLE` | `VERIFYING`/`ASSET_UNCLEAR` (§9.1) |
 | 7 | Vật tư dự kiến so với tồn kho mô phỏng (§9.5) | Thiếu: `ON_HOLD`/`WAITING_MATERIAL`; không rõ: cờ `STOCK_CHECK_ON_ACCEPT`, đi tiếp |
@@ -174,10 +174,11 @@ Quy ước: `Actor` là vai trò được phép gọi. `Pipe` = chỉ pipeline h
 | `MISSING_INFO` (cư dân bổ sung) | Bước 2 **kể cả 2b** |
 | `SAFETY_REVIEW_REQUIRED` (BPTN xác nhận an toàn) | Bước 3, **bỏ qua 2b** nếu `safety_cleared_by` đã đặt và chưa có bổ sung mới sau đó |
 | `EMERGENCY_PENDING_BQL` (BQL hạ) | Bước 3, bỏ qua 2b theo cùng điều kiện |
-| `DUPLICATE` (BPTN bác) | Bước 4 |
-| `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE`, `PENDING_REVIEW`, `ASSET_UNCLEAR` | Bước 6 |
+| `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE` (BPTN chọn loại việc) | Bước 4 (kiểm tra trùng với category vừa chốt) |
+| `DUPLICATE` (BPTN bác) | Bước 5 |
+| `PENDING_REVIEW`, `ASSET_UNCLEAR` | Bước 6 |
 | `WRONG_DEPT` | Bước 6 nếu đổi loại việc; bước 7 nếu giữ loại việc. Không bao giờ nhảy thẳng bước 8 |
-| `WAITING_MATERIAL` | Bước 7 |
+| `WAITING_MATERIAL` | Bước 6 (tra asset lại rồi vật tư — khớp "chạy lại toàn bộ điều kiện giao" của T12) |
 | Hoàn tác gộp (T09) | Bước 4 (bỏ qua cặp trong `duplicate_rejected_of`) |
 
 Sau mọi bổ sung của cư dân (text hoặc ảnh), **luôn chạy lại 2b** trên phần mới; `safety_cleared_*` chỉ có hiệu lực với nội dung tại thời điểm xác nhận.
@@ -306,7 +307,7 @@ Giá trị: `HIGH | MEDIUM | LOW`. Tách khỏi `risk_level`. Dùng luật cố 
 
 ## 8. Ticket trùng và gộp
 
-**Phát hiện (bước 3):** cùng category, cùng vị trí tới `Tòa / Tầng / Khu vực`, trong `duplicate_window_hours` (`[GIỮ]` 48 giờ), với ticket chưa kết thúc tạo trước. Ghi `duplicate_count` trên ticket gốc.
+**Phát hiện (bước 4, sau phân loại):** cùng category, cùng vị trí tới `Tòa / Tầng / Khu vực`, trong `duplicate_window_hours` (`[GIỮ]` 48 giờ), với ticket chưa kết thúc tạo trước. Ghi `duplicate_count` trên ticket gốc.
 
 **Quy tắc:**
 1. BPTN xác nhận trùng → T08: ticket mới `MERGED`, `merged_into=<gốc>`; ticket gốc lưu danh sách `merged_children`. Liên kết hai chiều.
@@ -315,7 +316,7 @@ Giá trị: `HIGH | MEDIUM | LOW`. Tách khỏi `risk_level`. Dùng luật cố 
 4. **Hoàn tác gộp:** T09, BPTN hoặc BQL, ghi chú*. Cặp được thêm vào `duplicate_rejected_of`.
 5. **Ticket gốc bị hủy (T23):** mọi ticket `MERGED` vào nó chuyển `RECEIVED` (T09, SYSTEM) và chạy lại pipeline với ghi chú "ticket gốc bị hủy".
 6. **Ticket khẩn cấp:** vẫn chạy kiểm tra trùng để **liên kết** (`related_ticket_ids`), không tự gộp; BQL được gộp (T08) để tránh nhiều ticket khẩn cấp cùng sự cố.
-7. Không xác nhận trùng: ticket tiếp tục bước 4.
+7. Không xác nhận trùng: ticket tiếp tục bước 5.
 
 ## 9. Asset, vật tư, phòng ban, hồ sơ
 
@@ -398,7 +399,7 @@ Bỏ: `reopen_until`; `assignee_id` chỉ còn `null` (giữ cột, validator é
 | `enums.py` | Thêm 3 `ReasonCode`, `RiskLevel`, `Priority`, `ClosureKind`, các `Action` mới (§12.1); cập nhật `BPTN_REASONS` (+`SAFETY_REVIEW_REQUIRED`) và thêm tập lý do chủ BQL |
 | `models.py` | Thêm trường §12.1; sửa lý do hợp lệ theo trạng thái; ngoại lệ `CLOSED` không cần `department_id` khi `EMERGENCY_HANDLED`; ép `assignee_id=null` |
 | `engine.py` `TRANSITIONS` | Thêm/sửa T03, T04, T05, T06, T07, T08, T09, T10, T16, T17, T18, T19, T23 (bắt buộc lý do); **xóa** `(CLOSED, READY_FOR_REVIEW)`; sửa `BLOCKER_OWNERS` |
-| `engine.py` pipeline | Thêm bước 2b; thêm `priority` ở bước 4; sửa `can_route`; sửa bảng chạy lại (§5.2); chặn `resume()` và job gỡ `EMERGENCY_PENDING_BQL` |
+| `engine.py` pipeline | Thêm bước 2b (trước `_step_3_classify_and_propose_department`); thêm `priority` ở bước 3; sửa `can_route`; sửa bảng chạy lại (§5.2); chặn `resume()` và job gỡ `EMERGENCY_PENDING_BQL` |
 | `engine.py` hành động | Thêm: xác nhận an toàn, nâng khẩn cấp, hạ khẩn cấp, đóng khẩn cấp, tạo ticket tiếp theo, hoàn tác gộp, báo sai phòng ban sau khi làm, BQL chuyển về BPTN, đặt priority; **xóa** `reopen()`; `set_assignee` → `ACTION_DENIED`; guard rating một lần |
 | Mới `src/maintenance/safety.py` | Bộ nhận diện §6 (luật, chuẩn hóa không dấu, phủ định, bẫy B-01…B-05, LLM chỉ nâng mức); có thể tham khảo từ lịch sử commit `4c2d07f` (`rules.py`, `proposer.py`, `services/safety.py`) — **cần xác minh còn chạy được** |
 | `catalog.yaml`, `catalog.py` | Cập nhật `sla_config` §12.2 |
@@ -448,7 +449,8 @@ Bỏ: `reopen_until`; `assignee_id` chỉ còn `null` (giữ cột, validator é
 | D-05 | Tồn kho **không rõ** | Đi tiếp kèm cờ `STOCK_CHECK_ON_ACCEPT` (khớp code); lựa chọn thay thế: dừng chờ xác minh |
 | D-06 | Tín hiệu mở rộng ngoài v0.3 (S-04…S-13, C-01) | Có, dưới dạng giả định mô phỏng |
 | D-07 | Ảnh bằng chứng bắt buộc, không miễn | Có (đã khớp code hiện tại) |
-| D-08 | Ai duyệt CR-BPTN-01/02/03 | **Chưa có người duyệt ghi tên**; không tạo hoặc giả định |
+| D-08 | Ai duyệt CR-BPTN-03 | **Chưa có người duyệt ghi tên**; không tạo hoặc giả định |
+| D-09 | Thứ tự phân loại và kiểm tra trùng | **Đã chốt 2026-10-01 (Như Ý), theo code `1e2f42b` của Châm Anh:** phân loại (bước 3) **trước** kiểm tra trùng (bước 4), để quét trùng có category và ticket không rõ loại việc dừng trước khi đọc ticket khác. Tầng an toàn 2b **vẫn trước** phân loại (giữ AC-02: ticket ngoài phạm vi có tín hiệu nguy hiểm vẫn bị bắt). Ticket Bậc 1 chưa có category nên bước 4 chỉ liên kết theo vị trí + cửa sổ thời gian. Bảng chạy lại §5.2 theo code: `CATEGORY_UNCLEAR`/`OUT_OF_SCOPE`→4, `DUPLICATE` bác→5, `WAITING_MATERIAL`→6 |
 
 **Cần xác minh trong code (chưa đọc đủ):** (a) `engine.receive_stock` và `resume()`; (b) kết quả chạy bộ test ở `a305fc0` (số 110 test là theo CR-BPTN-02, chưa kiểm); (c) cách `models.py` ràng buộc lý do theo trạng thái; (d) `services/safety.py` và `rules.py` ở `4c2d07f` còn dùng lại được không; (e) các trường `escalated`/`flags` hiện có.
 
