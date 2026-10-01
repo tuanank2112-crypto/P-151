@@ -48,3 +48,4 @@
 - WP2 ✅ (R01, SO đo 149 pass). Phóng WP3 (safety 2b) theo H02.
 - WP3 (safety 2b) xong: 266 test pass (nền WP2 149, +117 trong test_safety.py), ruff sạch; REF TOTAL=84 BAD=0 TIER1_MISS=0; evaluate 12/4/[]; làm đỏ lexicon (active_phases P1 / xoá S-02) rồi xanh; nền trước commit `27655d5`.
 - WP3 ✅ (R02, SO đo 266 pass; 0 bỏ sót Bậc 1). Q22: "bóng đèn bị cháy" bị classifier cho OUT_OF_SCOPE — chuyển Trường. Phóng WP4 theo H03.
+- WP4 (luồng khẩn cấp) xong: 292 test pass (nền WP3 266, +26 trong test_emergency.py), ruff sạch; 5 method safety_*/emergency_*, T03/T05/T06/T07/T10, chặn BPTN trên blocker BQL, guard Q19; làm đỏ resume-gỡ-khẩn-cấp và bỏ Q19 rồi xanh; nền trước commit `f854cf3`.

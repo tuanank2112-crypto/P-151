@@ -26,6 +26,7 @@ from typing import Any
 from src.maintenance.catalog import Catalog, Lexicon, TicketDataset, load_catalog, load_dataset, load_lexicon
 from src.maintenance.enums import (
     BPTN_REASONS,
+    BQL_REASONS,
     PLAYBOOK_BY_CATEGORY,
     PLAYBOOK_VERSION,
     SAFETY_REASONS,
@@ -656,6 +657,210 @@ class MaintenanceEngine:
 
         return self._mutate(ticket_id, actor_id, Action.BPTN_RESOLVE, op)
 
+    # ------------------------------------------------------------------ safety layer: human actions (SPEC-P02)
+
+    def safety_confirm_safe(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
+        """CR-03 T05 (BPTN or BQL, VERIFYING + SAFETY_REVIEW_REQUIRED) and T03 (BQL only, safety NEED_INFO).
+
+        Clears the safety state with a mandatory reason, then reruns the pipeline from step 2 (2b skips itself).
+        """
+        with self.lock:
+            case = self.get(ticket_id)
+            if case.ticket.status == S.NEED_INFO:  # T03: BQL only
+                self._safety_precheck(
+                    ticket_id,
+                    actor_id,
+                    Action.SAFETY_CONFIRM_SAFE,
+                    statuses={S.NEED_INFO},
+                    codes={R.MISSING_INFO},
+                    note=note,
+                    note_required=True,
+                    require_safety_context=True,
+                    bql_only_when={S.NEED_INFO},
+                )
+                return self.transition(ticket_id, S.RECEIVED, actor_id, note=note, expected_from=S.NEED_INFO)
+            case = self._safety_precheck(
+                ticket_id,
+                actor_id,
+                Action.SAFETY_CONFIRM_SAFE,
+                statuses={S.VERIFYING},
+                codes={R.SAFETY_REVIEW_REQUIRED, R.EMERGENCY_PENDING_BQL},
+                note=note,
+                note_required=True,
+                bql_needs_escalation=True,
+            )
+            if case.ticket.blocker.code == R.EMERGENCY_PENDING_BQL:
+                raise GuardError("Ticket khẩn cấp: dùng emergency_downgrade", {"reason_code": R.EMERGENCY_PENDING_BQL})
+            return self.transition(ticket_id, S.RECEIVED, actor_id, note=note, expected_from=S.VERIFYING)
+
+    def safety_escalate(self, ticket_id: str, actor_id: str, *, note: str | None = None) -> Case:
+        """CR-03 E01 (BPTN or BQL: tier 2 becomes tier 1, status unchanged) and T07 (BQL only, safety NEED_INFO)."""
+        with self.lock:
+            case = self.get(ticket_id)
+            if case.ticket.status == S.NEED_INFO:  # T07: BQL only
+                self._safety_precheck(
+                    ticket_id,
+                    actor_id,
+                    Action.SAFETY_ESCALATE,
+                    statuses={S.NEED_INFO},
+                    codes={R.MISSING_INFO},
+                    note=note,
+                    note_required=False,
+                    require_safety_context=True,
+                    bql_only_when={S.NEED_INFO},
+                )
+                return self.transition(ticket_id, S.VERIFYING, actor_id, note=note, expected_from=S.NEED_INFO)
+            self._safety_precheck(
+                ticket_id,
+                actor_id,
+                Action.SAFETY_ESCALATE,
+                statuses={S.VERIFYING},
+                codes={R.SAFETY_REVIEW_REQUIRED},
+                note=note,
+                note_required=False,
+                bql_needs_escalation=True,
+            )
+            role = self._role(actor_id)
+
+            def op(work: Case, now: datetime) -> None:  # E01: the owner changes, the status does not
+                ticket, blocker = work.ticket, work.ticket.blocker
+                if ticket.status != S.VERIFYING or blocker is None or blocker.code != R.SAFETY_REVIEW_REQUIRED:
+                    raise GuardError("Chỉ nâng khẩn cấp từ SAFETY_REVIEW_REQUIRED", {"status": ticket.status})
+                emergency = self._new_blocker(work, R.EMERGENCY_PENDING_BQL, now, resume_step=2, note=note)
+                self._audit(
+                    work,
+                    Action.SAFETY_ESCALATE,
+                    "Ticket",
+                    ticket.ticket_id,
+                    actor_id,
+                    role,
+                    "blocker.code",
+                    R.SAFETY_REVIEW_REQUIRED,
+                    R.EMERGENCY_PENDING_BQL,
+                    note.strip() if not _blank(note) else "Nâng Bậc 2 thành khẩn cấp (E01)",
+                    now=now,
+                )
+                self._set_blocker(work, emergency, actor_id, role, now, note=note, risk_level=RiskLevel.EMERGENCY)
+                self._notify(
+                    work,
+                    "emergency.created",
+                    BlockerOwner.BQL,
+                    now,
+                    {"risk_level": RiskLevel.EMERGENCY, "escalated_by": actor_id, "from": R.SAFETY_REVIEW_REQUIRED},
+                )
+
+            return self._mutate(ticket_id, actor_id, Action.SAFETY_ESCALATE, op)
+
+    def safety_request_info(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
+        """CR-03 T06 (BPTN or BQL): ask the resident for more detail; VERIFYING → NEED_INFO with safety_context."""
+        with self.lock:
+            self._safety_precheck(
+                ticket_id,
+                actor_id,
+                Action.SAFETY_REQUEST_INFO,
+                statuses={S.VERIFYING},
+                codes={R.SAFETY_REVIEW_REQUIRED},
+                note=note,
+                note_required=True,
+                bql_needs_escalation=True,
+            )
+            return self.transition(ticket_id, S.NEED_INFO, actor_id, note=note, expected_from=S.VERIFYING)
+
+    def emergency_downgrade(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
+        """CR-03 T05 (BQL only, VERIFYING + EMERGENCY_PENDING_BQL): a false alarm; the normal flow restarts."""
+        with self.lock:
+            self._safety_precheck(
+                ticket_id,
+                actor_id,
+                Action.EMERGENCY_DOWNGRADE,
+                statuses={S.VERIFYING},
+                codes={R.EMERGENCY_PENDING_BQL},
+                note=note,
+                note_required=True,
+            )
+            return self.transition(ticket_id, S.RECEIVED, actor_id, note=note, expected_from=S.VERIFYING)
+
+    def emergency_close(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
+        """CR-03 T10 (BQL only, VERIFYING + EMERGENCY_PENDING_BQL): handled outside the system; closes the ticket."""
+        with self.lock:
+            self._safety_precheck(
+                ticket_id,
+                actor_id,
+                Action.EMERGENCY_CLOSE,
+                statuses={S.VERIFYING},
+                codes={R.EMERGENCY_PENDING_BQL},
+                note=note,
+                note_required=True,
+            )
+            return self.transition(ticket_id, S.CLOSED, actor_id, note=note, expected_from=S.VERIFYING)
+
+    def _bql_escalation_gate(
+        self, case: Case, actor_id: str, role: ActorRole | None, action: Action, note: str | None, now: datetime
+    ) -> None:
+        """Q19: BQL uses the three tier-2 choices only on a ticket that has already been escalated (4 h passed)."""
+        blocker = case.ticket.blocker
+        if (
+            role == Role.BQL
+            and blocker is not None
+            and blocker.code == R.SAFETY_REVIEW_REQUIRED
+            and not blocker.escalated
+        ):
+            self._deny(
+                case,
+                actor_id,
+                role,
+                action,
+                "blocker",
+                blocker.code,
+                None if _blank(note) else note,
+                now,
+                message="BQL chỉ xử lý Bậc 2 sau khi ticket đã leo thang (CR-03 §2)",
+            )
+
+    def _safety_precheck(
+        self,
+        ticket_id: str,
+        actor_id: str,
+        action: Action,
+        *,
+        statuses: set[TicketStatus] | frozenset[TicketStatus],
+        codes: set[ReasonCode] | frozenset[ReasonCode],
+        note: str | None,
+        note_required: bool,
+        require_safety_context: bool = False,
+        bql_only_when: set[TicketStatus] | frozenset[TicketStatus] = frozenset(),
+        bql_needs_escalation: bool = False,
+    ) -> Case:
+        """Checks shared by the safety methods, in the fixed order: 404, 403 (role, BPTN on a BQL blocker, BQL-only
+        statuses, Q19), 409 INVALID (status / blocker / safety_context), 409 GUARD (note). Call under `self.lock`."""
+        case = self.get(ticket_id)
+        now = self.clock()
+        role = self._role(actor_id)
+        ticket, blocker = case.ticket, case.ticket.blocker
+        target = blocker.code if blocker else None
+        reason = None if _blank(note) else note
+
+        def deny(message: str) -> None:
+            self._deny(case, actor_id, role, action, "blocker", target, reason, now, message=message)
+
+        if role is None or role not in PERMISSIONS.get(action, frozenset()):
+            deny(f"{role or 'actor không xác định'} không được {action}")
+        if role == Role.BPTN and blocker is not None and blocker.code in BQL_REASONS:
+            deny(f"Blocker {blocker.code} thuộc BQL; BPTN không được tác động (CR-03 §4.4.5)")
+        if role != Role.BQL and ticket.status in bql_only_when:
+            deny(f"Chỉ BQL được {action} khi ticket ở {ticket.status}")
+        if bql_needs_escalation:
+            self._bql_escalation_gate(case, actor_id, role, action, note, now)
+        if ticket.status not in statuses or blocker is None or blocker.code not in codes:
+            raise InvalidTransitionError(
+                f"{action} không áp dụng cho ticket ở {ticket.status} / {target}", {"status": ticket.status}
+            )
+        if require_safety_context and not ticket.safety_context:
+            raise InvalidTransitionError(f"{action} chỉ áp dụng cho NEED_INFO do tầng an toàn (safety_context)")
+        if note_required and _blank(note):
+            raise GuardError(f"{action} bắt buộc ghi lý do")
+        return case
+
     # ------------------------------------------------------------------ department
 
     def accept(self, ticket_id: str, actor_id: str) -> Case:
@@ -1041,6 +1246,20 @@ class MaintenanceEngine:
         scope_error = self._scope_error(case, actor_id, role)
         if scope_error:
             self._deny(case, actor_id, role, action, field_name, new_value, reason, now, message=scope_error)
+        blocker = case.ticket.blocker
+        # I-11: BPTN may not touch a ticket whose blocker BQL owns. `bptn_resolve` is left to its own guard (409), E-13.
+        if role == Role.BPTN and blocker is not None and blocker.code in BQL_REASONS and action != Action.BPTN_RESOLVE:
+            self._deny(
+                case,
+                actor_id,
+                role,
+                action,
+                field_name,
+                new_value,
+                reason,
+                now,
+                message=f"Blocker {blocker.code} thuộc BQL; BPTN không được tác động (CR-03 §4.4.5)",
+            )
 
         if case.ticket.raw.integrity_marker() != case.ticket.raw_integrity_marker:
             raise EngineError("Raw integrity marker không khớp; dừng xử lý (fail closed)")
@@ -1330,11 +1549,17 @@ class MaintenanceEngine:
         eta: datetime | None = None,
         related_ticket_id: str | None = None,
         fields: list[str] | None = None,
+        safety_context: bool = False,
     ) -> Blocker:
         sla = self.catalog.sla_config
         next_retry_at, escalate_at, dispatch_at = self._schedule(work, code, now, eta), None, None
         if code == R.MISSING_INFO:
-            escalate_at = now + timedelta(hours=sla.missing_info.escalate_after_hours)
+            hours = (
+                sla.missing_info.safety_context.escalate_after_hours
+                if safety_context
+                else sla.missing_info.escalate_after_hours
+            )
+            escalate_at = now + timedelta(hours=hours)
         elif code == R.SAFETY_REVIEW_REQUIRED:
             escalate_at = now + timedelta(hours=sla.safety_review.escalate_after_hours)  # calendar hours (Q10)
         elif code == R.EMERGENCY_PENDING_BQL:
@@ -1469,6 +1694,127 @@ class MaintenanceEngine:
                 self._notify(
                     work, "escalation", BlockerOwner.BQL, now, {"reason_code": R.REWORK, "rework_count": count}
                 )
+        elif key == (S.VERIFYING, S.RECEIVED):  # T05 by a person
+            if role == Role.SYSTEM or blocker is None or blocker.code not in SAFETY_REASONS:
+                raise InvalidTransitionError(
+                    "VERIFYING → RECEIVED do người chỉ khi blocker là SAFETY_REVIEW_REQUIRED/EMERGENCY_PENDING_BQL"
+                )
+            action = (
+                Action.EMERGENCY_DOWNGRADE if blocker.code == R.EMERGENCY_PENDING_BQL else Action.SAFETY_CONFIRM_SAFE
+            )
+            if blocker.code == R.EMERGENCY_PENDING_BQL and role != Role.BQL:
+                raise InvalidTransitionError("Chỉ BQL hạ khẩn cấp (emergency_downgrade)")
+            self._bql_escalation_gate(self.get(ticket.ticket_id), actor_id, role, action, note, now)
+            if _blank(note):
+                raise GuardError("Xác nhận an toàn / hạ khẩn cấp bắt buộc ghi lý do")
+            self._audit(
+                work, action, "Ticket", ticket.ticket_id, actor_id, role, "safety_cleared_by", None, actor_id,
+                note.strip(), now=now,
+            )  # fmt: skip
+            self._apply_transition(
+                work,
+                S.RECEIVED,
+                actor_id,
+                role,
+                now,
+                note=note,
+                safety_cleared_by=actor_id,
+                safety_cleared_at=now,
+                safety_clear_reason=note.strip(),
+                risk_level=RiskLevel.NONE,
+            )
+            self._run_pipeline(work, 2, now)  # 2b skips itself (cleared); step 2 checks the location; then 3...
+        elif key == (S.NEED_INFO, S.RECEIVED):  # T03: BQL confirms a safety NEED_INFO is safe
+            if role != Role.BQL or not ticket.safety_context:
+                raise InvalidTransitionError("NEED_INFO → RECEIVED do người chỉ với BQL khi safety_context=true (T03)")
+            if _blank(note):
+                raise GuardError("BQL xác nhận an toàn bắt buộc ghi lý do")
+            self._audit(
+                work, Action.SAFETY_CONFIRM_SAFE, "Ticket", ticket.ticket_id, actor_id, role, "safety_cleared_by",
+                None, actor_id, note.strip(), now=now,
+            )  # fmt: skip
+            self._apply_transition(
+                work,
+                S.RECEIVED,
+                actor_id,
+                role,
+                now,
+                note=note,
+                safety_cleared_by=actor_id,
+                safety_cleared_at=now,
+                safety_clear_reason=note.strip(),
+                risk_level=RiskLevel.NONE,
+                safety_context=False,
+            )
+            self._run_pipeline(work, 2, now)
+        elif key == (S.NEED_INFO, S.VERIFYING):  # T07: BQL escalates a safety NEED_INFO
+            if role != Role.BQL or not ticket.safety_context or blocker is None or blocker.code != R.MISSING_INFO:
+                raise InvalidTransitionError("NEED_INFO → VERIFYING chỉ với BQL khi safety_context=true (T07)")
+            emergency = self._new_blocker(work, R.EMERGENCY_PENDING_BQL, now, resume_step=2, note=note)
+            self._audit(
+                work, Action.SAFETY_ESCALATE, "Ticket", ticket.ticket_id, actor_id, role, "blocker.code",
+                R.MISSING_INFO, R.EMERGENCY_PENDING_BQL,
+                note.strip() if not _blank(note) else "Cư dân không trả lời; BQL nâng khẩn cấp (T07)", now=now,
+            )  # fmt: skip
+            self._apply_transition(
+                work,
+                S.VERIFYING,
+                actor_id,
+                role,
+                now,
+                blocker=emergency,
+                note=note,
+                risk_level=RiskLevel.EMERGENCY,
+                safety_context=False,
+            )
+            self._notify(
+                work,
+                "emergency.created",
+                BlockerOwner.BQL,
+                now,
+                {"risk_level": RiskLevel.EMERGENCY, "escalated_by": actor_id, "from": R.MISSING_INFO},
+            )
+        elif key == (S.VERIFYING, S.NEED_INFO):  # T06: ask the resident for more detail
+            if blocker is None or blocker.code != R.SAFETY_REVIEW_REQUIRED:
+                raise InvalidTransitionError("VERIFYING → NEED_INFO chỉ từ SAFETY_REVIEW_REQUIRED ở P0 (T06)")
+            self._bql_escalation_gate(self.get(ticket.ticket_id), actor_id, role, Action.SAFETY_REQUEST_INFO, note, now)
+            if _blank(note):
+                raise GuardError("Yêu cầu cư dân bổ sung bắt buộc ghi lý do")
+            missing = [f for f in self._missing_fields(work) if f.startswith("location")]
+            ask = self._new_blocker(
+                work,
+                R.MISSING_INFO,
+                now,
+                resume_step=2,
+                fields=["safety_details", *missing],
+                note=note,
+                safety_context=True,
+            )
+            self._audit(
+                work, Action.SAFETY_REQUEST_INFO, "Ticket", ticket.ticket_id, actor_id, role, "blocker.code",
+                R.SAFETY_REVIEW_REQUIRED, R.MISSING_INFO, note.strip(), now=now,
+            )  # fmt: skip
+            self._apply_transition(work, S.NEED_INFO, actor_id, role, now, blocker=ask, note=note, safety_context=True)
+        elif key == (S.VERIFYING, S.CLOSED):  # T10: BQL closes an emergency handled outside the system
+            if blocker is None or blocker.code != R.EMERGENCY_PENDING_BQL:
+                raise InvalidTransitionError("Chỉ đóng từ VERIFYING khi ticket khẩn cấp (T10)")
+            if _blank(note):
+                raise GuardError("Đóng khẩn cấp bắt buộc ghi kết quả xử lý")
+            self._audit(
+                work, Action.EMERGENCY_CLOSE, "Ticket", ticket.ticket_id, actor_id, role, "closure_kind", None,
+                ClosureKind.EMERGENCY_HANDLED, note.strip(), now=now,
+            )  # fmt: skip
+            self._apply_transition(
+                work,
+                S.CLOSED,
+                actor_id,
+                role,
+                now,
+                note=note,
+                closed_by=actor_id,
+                closed_at=now,
+                closure_kind=ClosureKind.EMERGENCY_HANDLED,
+            )
         elif key == (S.VERIFYING, S.MERGED):
             if blocker is None or blocker.code != R.DUPLICATE:
                 raise InvalidTransitionError("Chỉ gộp được ticket đang chờ xác nhận trùng (DUPLICATE)")
@@ -1483,6 +1829,8 @@ class MaintenanceEngine:
         if code in SAFETY_REASONS:
             return False  # only a person clears a safety blocker (I-10)
         if code == R.MISSING_INFO:
+            if work.ticket.safety_context and not any(a.submitted_at > blocker.since for a in work.additions):
+                return False  # nobody answered yet: a job must not call it safe (AC-08)
             return not self._missing_fields(work)
         if code in BPTN_REASONS:
             return blocker.resolved_at is not None
@@ -1507,7 +1855,7 @@ class MaintenanceEngine:
             )
             return True
         resume_step = {R.MISSING_INFO: 2, R.WAITING_MATERIAL: 6}.get(code, blocker.resume_step)
-        self._apply_transition(work, S.RECEIVED, SYSTEM_ID, Role.SYSTEM, now, note=f"Gỡ {code}")
+        self._apply_transition(work, S.RECEIVED, SYSTEM_ID, Role.SYSTEM, now, note=f"Gỡ {code}", safety_context=False)
         self._run_pipeline(work, resume_step, now)
         return True
 
@@ -1551,7 +1899,8 @@ class MaintenanceEngine:
         self._set_blocker(work, escalated, SYSTEM_ID, Role.SYSTEM, now, note=f"Leo thang: {why}")
         if not blocker.escalated:
             kind = "safety.review_escalated" if blocker.code == R.SAFETY_REVIEW_REQUIRED else "escalation"
-            self._notify(work, kind, BlockerOwner.BQL, now, {"reason_code": blocker.code, "why": why})
+            payload = {"reason_code": blocker.code, "why": why, "safety_context": work.ticket.safety_context}
+            self._notify(work, kind, BlockerOwner.BQL, now, payload)
 
     # ------------------------------------------------------------------ pipeline (steps 2–8)
 

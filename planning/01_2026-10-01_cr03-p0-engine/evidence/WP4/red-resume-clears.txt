@@ -1,0 +1,7 @@
+E         ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests\test_maintenance\test_emergency.py:206: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_emergency.py::test_resume_and_jobs_never_clear_emergency
+1 failed, 25 passed in 1.14s
+EXIT=1

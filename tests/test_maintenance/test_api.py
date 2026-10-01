@@ -178,7 +178,7 @@ def test_close_by_anyone_but_bql_is_403_and_audited(api, headers):
 
 
 def test_invalid_transition_is_409(api):
-    response = api.post("/api/v1/bql/tickets/SIM-TKT-CLN-004/close", json={}, headers=BQL)
+    response = api.post("/api/v1/bql/tickets/SIM-TKT-TEC-002/close", json={}, headers=BQL)
     assert response.status_code == 409 and response.json()["detail"]["code"] == "INVALID_TRANSITION"
 
 
