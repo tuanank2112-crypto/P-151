@@ -44,4 +44,4 @@
 
 ## 📐 Phiên 2026-10-01 17:15 — Hồ sơ 01 (CR-03 P0 engine)
 - Nhánh `feature/nhuy-cr03-p0`, nền `e5ececf` (142/142, ruff sạch). SPEC ✅ (8 file; proto 84 câu, 0 bỏ sót Bậc 1). Quyết định Q01–Q20 ở `planning/01_2026-10-01_cr03-p0-engine/plan.md` §2. Phóng WP2 (contracts).
-- WP2 (contracts) xong: 149 test pass (142 nền, sửa 5 test cũ, +7 mới), ruff sạch; M-01..M-03, M-05..M-08 đúng; nền trước commit `738a58b`; chưa có logic an toàn/hành động BPTN-BQL/priority (WP3-WP5).
+- WP2 (contracts) xong: 149 test pass (142 nền, sửa 6 test cũ, +7 mới), ruff sạch; M-01..M-03, M-05..M-08 đúng; nền trước commit `738a58b`; chưa có logic an toàn/hành động BPTN-BQL/priority (WP3-WP5).
