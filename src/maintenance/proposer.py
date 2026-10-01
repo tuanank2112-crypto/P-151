@@ -9,13 +9,12 @@ The LLM only produces a structured proposal. Guards around it (Playbook §1.1, P
 CR-BPTN-02 removed the safety-signal assessment: the model is no longer asked about risk.
 """
 
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Literal
 
 from pydantic import BaseModel, Field
-
-import time
 
 from src.maintenance.ai_logger import AILogStatus, ai_logger
 from src.maintenance.enums import PLAYBOOK_PAIRS, PlaybookId, ReasonCode, ServiceCategory, TicketType

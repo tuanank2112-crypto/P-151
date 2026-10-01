@@ -6,21 +6,18 @@ os.environ["LLM_MODE"] = "mock"
 from unittest.mock import AsyncMock  # noqa: E402
 
 import pytest  # noqa: E402
-try:
-    import pytest_asyncio
-except ImportError:
-    pytest_asyncio = None
+import pytest_asyncio  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402
 
 from src.main import app  # noqa: E402
 
-if pytest_asyncio:
-    @pytest_asyncio.fixture
-    async def client():
-        """Async HTTP client for testing API endpoints."""
-        transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://test") as ac:
-            yield ac
+
+@pytest_asyncio.fixture
+async def client():
+    """Async HTTP client for testing API endpoints."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
 
 
 @pytest.fixture

@@ -156,7 +156,7 @@ def bql_rows(
     overdue: bool | None = None,
 ) -> list[BqlTicketRow]:
     rows = []
-    for case in engine.cases.values():
+    for case in list(engine.cases.values()):  # snapshot: a new ticket may arrive from another thread
         ticket, blocker = case.ticket, case.ticket.blocker
         row = BqlTicketRow(
             ticket_id=ticket.ticket_id,

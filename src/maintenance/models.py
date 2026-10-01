@@ -241,7 +241,7 @@ class Ticket(Entity):
     source_revision: str
     dataset_version: str
     status: TicketStatus
-    proposed_department_id: Department | None = None  # step 4 proposal; internal, the resident never sees it
+    proposed_department_id: Department | None = None  # step 3 proposal; internal, the resident never sees it
     department_id: Department | None = None  # set only at step 8, when the ticket is actually handed over
     assignee_id: str | None = None  # written only by the department; the Agent never touches it
     blocker: Blocker | None = None

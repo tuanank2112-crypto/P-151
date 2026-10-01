@@ -1,110 +1,16 @@
-# Architecture Document
+# ResidentGPT — trạng thái kiến trúc và tài liệu thiết kế
 
-## System Overview
+> **LEGACY — không phải kiến trúc active.** Tài liệu này mô tả ResidentGPT (FAQ/RAG) trước MaintenanceOps MVP v0.3. Kiến trúc active nằm ở `docs/03_lean_prd.md`, `docs/data-contract-v1.md` và `src/maintenance/`. CSKH chỉ thuộc Deferred/Future Scope.
 
-[Tóm tắt 2-3 câu về kiến trúc hệ thống]
+## Đã có trong code tại 23/09/2026
 
-## Architecture Diagram
+Repo có khung FastAPI (`src/main.py`, `src/api/routes.py`), LangGraph mẫu (`src/agents/graph.py`, `src/agents/state.py`) và cấu hình model. Node và search tool còn trả kết quả ví dụ; chưa có retrieval trên Knowledge Pack, auth/RBAC hai vai trò, conversation persistence, BQL UI, ingestion runtime, HITL, eval/dashboard. `ChatResponse.analysis` của template hiện được trả ra API; implementation ResidentGPT cần dùng response contract không lộ phân tích nội bộ.
 
-```mermaid
-graph TB
-    subgraph Frontend
-        UI[React/Next.js UI]
-    end
+## Kiến trúc mục tiêu
 
-    subgraph Backend[FastAPI Backend]
-        API[API Routes]
-        Agent[LangGraph Agent]
-        LLM[LLM Service]
-        Tools[Agent Tools]
-    end
+- [Sơ đồ và ranh giới MVP v0.3](docs/architecture_diagram.md) mô tả baseline frozen, không phải bằng chứng đã deploy.
+- [Kiến trúc và hợp đồng v0.4](docs/extension_v0.4/AGENT_ARCHITECTURE_AND_CONTRACTS.md) mô tả coordinator, classifier, retriever, composer, verifier, evidence snapshot, API/event contracts và error path.
+- [Quản trị tài liệu và HITL](docs/extension_v0.4/KNOWLEDGE_GOVERNANCE_AND_HITL.md) mô tả parser/OCR, version/publish, answer review và support handoff.
+- [PRD v0.4](docs/extension_v0.4/PRD_ResidentGPT_v0.4.md), [UI Flow](docs/extension_v0.4/UI_FLOW.md), [eval/dashboard](docs/extension_v0.4/EVAL_METRICS_DASHBOARD.md) và [backlog](docs/extension_v0.4/DELIVERY_BACKLOG.md) là nguồn giao việc.
 
-    subgraph Data[Data Layer]
-        DB[(Database)]
-        Vector[Vector Store]
-    end
-
-    UI -->|HTTP/REST| API
-    API --> Agent
-    Agent --> LLM
-    Agent --> Tools
-    Agent --> Vector
-    Tools --> DB
-    API --> DB
-```
-
-## Components
-
-### 1. Frontend (React/Next.js)
-- **Purpose:** [mô tả]
-- **Key Features:** [danh sách]
-- **State Management:** [approach]
-
-### 2. Backend (FastAPI)
-- **Purpose:** [mô tả]
-- **API Design:** RESTful
-- **Authentication:** [JWT/None]
-
-### 3. AI Agent (LangGraph)
-- **Agent Type:** [ReAct / Plan-and-Execute / Custom]
-- **State:** [mô tả state schema]
-- **Nodes:** [danh sách nodes]
-- **Tools:** [danh sách tools]
-- **Flow:**
-
-```mermaid
-graph LR
-    START --> A[Node A]
-    A --> B{Decision}
-    B -->|Yes| C[Node C]
-    B -->|No| D[Node D]
-    C --> E[END]
-    D --> E
-```
-
-### 4. Database
-- **Type:** [PostgreSQL / SQLite]
-- **Tables:** [danh sách]
-- **Migrations:** Alembic
-
-### 5. Vector Store
-- **Type:** [ChromaDB / FAISS / Pinecone]
-- **Embeddings:** [model]
-- **Purpose:** [RAG / similarity search]
-
-## Data Flow
-
-1. User gửi request từ Frontend
-2. API route nhận và validate input
-3. Agent xử lý qua LangGraph pipeline
-4. LLM generate response
-5. Tools thực thi actions (nếu cần)
-6. Response trả về Frontend
-
-## Deployment Architecture
-
-```mermaid
-graph LR
-    subgraph Docker
-        FE[Frontend Container]
-        BE[Backend Container]
-        DB_C[Database Container]
-    end
-    FE --> BE --> DB_C
-```
-
-## Security
-
-- API keys stored in `.env` (never commit)
-- Input validation via Pydantic
-- Rate limiting on API endpoints
-- CORS configured for frontend domain
-
-## Design Decisions
-
-| Decision | Choice | Reason |
-|----------|--------|--------|
-| Framework | FastAPI | Async, auto-docs, type-safe |
-| Agent | LangGraph | Flexible state management |
-| Database | [choice] | [reason] |
-| Frontend | Next.js | [reason] |
+Các quyết định về DB, vector store, OCR/parser provider, frontend framework và deployment provider cần được chốt qua implementation và decision log. `src/config.py` có `database_url`/`chroma_persist_dir` mặc định, còn database/vector packages trong `requirements.txt` đang comment; không suy ra đã có DB/vector index chạy được.

@@ -10,6 +10,7 @@ the simulated actor catalog. Reads are scoped too: a department only sees ticket
 tickets waiting for material, residents only their own tickets (via /resident), and demo control is QA-only.
 """
 
+import threading
 from datetime import datetime
 from typing import Annotated, Any, Literal
 
@@ -19,6 +20,7 @@ from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from src.api import photos
 from src.api.auth import get_actor
+from src.config import get_settings
 from src.maintenance.ai_logger import AILogEntry, AILogStatus, ai_logger
 from src.maintenance.demo import EvaluationReport, evaluate, run_fixture
 from src.maintenance.engine import (
@@ -54,13 +56,17 @@ resident_router = APIRouter(prefix="/resident", tags=["cư dân"])
 bql_router = APIRouter(prefix="/bql", tags=["BQL"])
 
 _engine: MaintenanceEngine | None = None
+_engine_lock = threading.Lock()
 
 
 def get_engine() -> MaintenanceEngine:
     global _engine
     if _engine is None:
-        _engine = build_engine()
-        _engine.reset()
+        with _engine_lock:  # two first requests must not build two engines
+            if _engine is None:
+                engine = build_engine()
+                engine.reset()
+                _engine = engine
     return _engine
 
 
@@ -222,8 +228,6 @@ def reset_ai_logs(actor: ActorDep, engine: EngineDep) -> dict[str, Any]:
     _require_role(engine, actor, ActorRole.QA_INTERNAL)
     ai_logger.clear()
     return {"message": "Đã reset dữ liệu AI logs"}
-
-
 # ------------------------------------------------------------------ tickets (internal, full detail)
 
 
@@ -277,7 +281,7 @@ def list_tickets(actor: ActorDep, engine: EngineDep, status: TicketStatus | None
     """Work queue nội bộ, chỉ gồm ticket vai trò của bạn được xem (phòng ban: ticket đã giao; kho: chờ vật tư)."""
     _require_role(engine, actor, *STAFF)
     rows = []
-    for case in engine.cases.values():
+    for case in list(engine.cases.values()):  # snapshot: a new ticket may arrive from another thread
         ticket = case.ticket
         if (status is not None and ticket.status != status) or not _visible(engine, actor, case):
             continue
@@ -554,6 +558,9 @@ def attempt(ticket_id: str, body: AttemptRequest, actor: ActorDep, engine: Engin
 def resident_create(body: IngestRequest, actor: ActorDep, engine: EngineDep) -> ResidentTicketView:
     """Cư dân gửi phản ánh."""
     _require_role(engine, actor, ActorRole.RESIDENT)
+    if body.simulated_received_at is not None and get_settings().app_env == "production":
+        # demo-only: a resident must not backdate a report (it shifts duplicate checks and SLA timers)
+        raise HTTPException(status_code=422, detail="simulated_received_at chỉ dùng khi demo")
     case = _ingest(engine, body, actor)
     return resident_view(engine, case, engine.clock())
 
@@ -563,7 +570,7 @@ def resident_list(actor: ActorDep, engine: EngineDep) -> list[ResidentTicketView
     """Các phản ánh của chính cư dân gọi API, mới nhất trước."""
     _require_role(engine, actor, ActorRole.RESIDENT)
     now = engine.clock()
-    own = [c for c in engine.cases.values() if c.ticket.resident_id == actor]
+    own = [c for c in list(engine.cases.values()) if c.ticket.resident_id == actor]
     own.sort(key=lambda c: c.ticket.raw.created_at, reverse=True)
     return [resident_view(engine, c, now) for c in own]
 

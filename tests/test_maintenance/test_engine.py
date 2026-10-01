@@ -402,3 +402,43 @@ def test_fixture_replay_uses_each_created_at():
     e.reset()
     first = e.get("SIM-TKT-CLN-002").events[0]
     assert first.created_at.isoformat() == "2026-09-27T23:30:00+07:00"
+
+
+def test_at_only_shifts_the_clock_for_its_own_thread(fresh, clock):
+    import threading
+
+    inside, release = threading.Event(), threading.Event()
+
+    def replay():
+        with fresh.at(datetime(2020, 1, 1, tzinfo=TZ)):
+            inside.set()
+            release.wait(1)
+
+    worker = threading.Thread(target=replay)
+    worker.start()
+    inside.wait(1)
+    assert fresh.clock() == clock()  # another thread still sees the real time
+    release.set()
+    worker.join()
+
+
+def test_run_jobs_keeps_going_when_one_ticket_fails(fresh, clock, monkeypatch):
+    first = fresh.get(report(fresh, CLEANING.replace("tầng 3", "tầng 2"))).ticket.ticket_id
+    second = fresh.get(report(fresh, CLEANING)).ticket.ticket_id
+    original = fresh._tick
+
+    def tick(work, now):
+        if work.ticket.ticket_id == first:
+            raise GuardError("broken ticket")
+        original(work, now)
+
+    monkeypatch.setattr(fresh, "_tick", tick)
+    changed = fresh.run_jobs(clock() + timedelta(days=2))
+    assert second in changed and first not in changed
+
+
+def test_run_jobs_skips_tickets_with_nothing_due(fresh, clock, monkeypatch):
+    report(fresh, CLEANING)
+    calls = []
+    monkeypatch.setattr(fresh, "_tick", lambda work, now: calls.append(work.ticket.ticket_id))
+    assert fresh.run_jobs(clock()) == [] and calls == []
