@@ -1,5 +1,7 @@
 # ResidentGPT v0.3 — Architecture Diagram
 
+> **LEGACY — không phải kiến trúc active.** Tài liệu này mô tả ResidentGPT (FAQ/RAG) trước MaintenanceOps MVP v0.3. Kiến trúc active nằm ở `docs/03_lean_prd.md`, `docs/data-contract-v1.md` và `src/maintenance/`. CSKH chỉ thuộc Deferred/Future Scope.
+
 ## System Overview
 
 ```mermaid

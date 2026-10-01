@@ -1,34 +1,32 @@
-# P-151 — Resident Ticket Routing Agent
+# P-151 — MaintenanceOps Agent
 
-> **ResidentGPT project docs:** [bản đồ tài liệu](docs/README.md) dẫn tới baseline MVP v0.3 và đặc tả mở rộng v0.4 cho demo 04/10/2026. Phần còn lại của README này là hướng dẫn template; trạng thái triển khai thực tế được ghi trong [ARCHITECTURE.md](ARCHITECTURE.md).
-
-Template chính thức cho học viên VinUni AI20K Build Phase: cấu trúc dự án, code
-mẫu và hướng dẫn kỹ thuật để xây dựng một AI Agent hoàn chỉnh — từ kiến trúc,
-code, test cho đến deploy và nộp bài Demo Day.
+> Prototype **mô phỏng** theo baseline v0.3 (`docs/01`–`05`, `docs/data-contract-v1.md`, `docs/playbook-v1.md`).
+> Toàn bộ dữ liệu, quy trình, định mức và kết quả là mô phỏng, không phải vận hành thật.
 
 ## Vấn đề
 
-BQL nhận phản ánh sự cố (đèn hỏng, thang máy, điện nước, ...) từ cư dân qua nhiều kênh và
-phải đọc, phân loại, xác minh rồi giao việc thủ công cho kỹ thuật. Việc này chậm, dễ sót
-và phụ thuộc vào người điều phối.
+BQL cần tạo và kiểm tra hồ sơ bảo trì một cách nhất quán, truy vết được và không vượt quyền, để mỗi case
+đủ điều kiện được chuyển BQL xem xét hoặc dừng đúng ở bước xác minh/ngoại lệ.
 
 ## Giải pháp
 
-- **Phân loại ticket**: loại sự cố, vị trí, mức khẩn cấp (LLM có vision).
-- **Kiểm tra bằng chứng**: ticket sửa chữa phải có ảnh khớp với mô tả.
-- **Chuyển tiếp tự động**: đủ điều kiện → tạo work order và báo kỹ thuật qua Zalo Bot.
-- **Chuyển BQL**: thiếu thông tin, mơ hồ, hoặc ca an toàn (kẹt thang máy, chập điện, ...).
+- **Phân loại**: Agent đề xuất playbook vệ sinh (`PB-CLN-01`) hoặc đèn khu vực chung (`PB-TEC-01`) bằng luật cố định
+  + LLM; phát hiện tín hiệu rủi ro (chất lạ nguy hại, mùi khét, tia lửa, dây hở) → `EXCEPTION` cho BQL.
+- **BPTN review có điều kiện** (`CR-BPTN-01`, v0.4 candidate — `docs/CR-BPTN-01.md`): ticket rủi ro thấp, category và vị trí rõ
+  đi thẳng tới draft; thiếu vị trí/category không rõ → `CHỜ XÁC MINH` cho tới khi BPTN override kèm lý do.
+- **Đề xuất team**: tra asset (kỹ thuật), tồn kho, lịch trực và capacity mô phỏng (fixture tĩnh) → đề xuất tuyến tới
+  `SIM-TEAM-*`, không gán cá nhân. `ROUTED` là đề xuất tuyến team hợp lệ, không phải đã giao việc.
+- **Kiểm tra hồ sơ**: checklist, vật tư (3 phép đối soát), evidence tối thiểu; đủ 8 gate → `READY_FOR_REVIEW`.
+- Bốn state: `IN_PROGRESS`, `CHỜ XÁC MINH`, `READY_FOR_REVIEW`, `EXCEPTION`; mọi thao tác có audit.
 
 ## Tech Stack
 
 | Lớp | Công nghệ |
 |---|---|
-| AI Agent | LangGraph + LangChain, OpenAI `gpt-4o-mini` |
+| Agent | Luật cố định + LLM đề xuất (LangChain, `gpt-4o-mini` qua OpenAI/OpenRouter) |
 | Backend | FastAPI + Python 3.11 |
-| Database | PostgreSQL 16 (SQLModel / SQLAlchemy) |
-| Thông báo kỹ thuật | Zalo Bot |
+| Dữ liệu | Fixture YAML mô phỏng, giữ in-memory và reset được (PostgreSQL 16 có sẵn trong compose, chưa dùng) |
 | DevOps | Docker Compose + GitHub Actions |
-
 ---
 
 ## Chạy dự án bằng Docker (khuyến nghị)
@@ -60,10 +58,11 @@ Mở `.env` và điền:
 
 | Biến | Bắt buộc | Lấy ở đâu |
 |---|---|---|
-| `OPENAI_API_KEY` | Có | Key OpenAI của team |
+| `LLM_MODE` | Không | `mock` (mặc định, chỉ luật cố định) hoặc `openai` (bật LLM đề xuất) |
+| `OPENAI_API_KEY` | Khi `LLM_MODE=openai` | Key OpenAI hoặc OpenRouter của team |
+| `OPENAI_BASE_URL` | Khi dùng OpenRouter | `https://openrouter.ai/api/v1` |
 | `AI_LOG_API_KEY` | Có | Mỗi người tự tạo tại [dashboard Phoenix](https://phoenix.note.transformerlabs.ai/api-keys) |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Không | Để mặc định khi chạy local |
-| `ZALO_BOT_TOKEN`, `ZALO_WEBHOOK_SECRET`, `ZALO_TECH_CHAT_ID` | Khi làm phần Zalo | Hỏi người phụ trách Zalo Bot |
 | `LANGCHAIN_API_KEY` | Nên có | [LangSmith](https://smith.langchain.com) — dùng cho AI logs (deliverable #4) |
 
 > Không commit file `.env` (đã có trong `.gitignore`). Gửi key cho nhau qua kênh riêng,
@@ -182,16 +181,14 @@ bash scripts/_pyrun.sh scripts/log_manual.py --tool chatgpt --prompt "Nội dung
 
 ```
 src/
-  agents/            LangGraph agent (graph, state, nodes, tools)
-  api/routes.py      Endpoint chat mẫu của template
-  models/schemas.py  Pydantic schemas (request/response)
-  api/routers/       Endpoints: tickets, work_orders, escalations, jobs, metrics, catalog
-  models/entities.py Bảng DB (SQLModel)
-  services/          Nghiệp vụ: triage, safety, intake_llm, assignment, evidence_check, metrics
+  maintenance/       Core v0.5 candidate: models, rules, proposer (LLM), engine (state machine + pipeline),
+                     views (cư dân/BQL), migration v0.4→v0.5, i18n/vi.yaml (lời cho cư dân), demo/evaluate
+  api/routers/maintenance.py  Endpoints /api/v1/mo, /api/v1/resident, /api/v1/bql
+  agents/, api/routes.py      Code mẫu LangGraph + endpoint chat của template (không dùng trong flow)
   config.py          Cấu hình (đọc từ .env)
   main.py            App entry point
-tests/               pytest (5 kịch bản MVP + unit test quy tắc)
-seed/                Dữ liệu mẫu một tòa: vị trí, lịch trực, playbook
+tests/test_maintenance/  pytest: acceptance CR-BPTN-02 §7, engine, fixture, proposer, migration, API
+seed/maintenance_v1/     Catalog mô phỏng + 12 ticket kèm expected outcome
 docs/                Tài liệu, architecture diagram, Technical Guidebook
 eval/                Kết quả evaluation
 presentation/        Slide, video Demo Day
@@ -199,56 +196,58 @@ Dockerfile           Image backend (multi-stage)
 docker-compose.yml   Backend + PostgreSQL
 ```
 
-## API Endpoints
+## API (v0.5 candidate — CR-BPTN-02)
 
-Tất cả nằm dưới prefix `/api/v1`. Chưa có đăng nhập: gửi header **`X-Role: bql`** hoặc
-**`X-Role: technician`** để giả lập vai trò (Swagger có ô nhập `x-role` ở mỗi endpoint).
+Baseline v0.3 (`docs/01`–`05`, `docs/data-contract-v1.md`, `docs/playbook-v1.md`) cộng hai change request trên nhánh
+`feature/chamanh`: [CR-BPTN-01](docs/CR-BPTN-01.md) (BPTN review có điều kiện) và [CR-BPTN-02](docs/CR-BPTN-02.md)
+(chuyển phòng ban, trạng thái công khai, retry, BQL đóng ticket). Cả hai đang `PROPOSED`. Toàn bộ dữ liệu là
+**mô phỏng**, giữ in-memory và reset được.
 
-| Method | Path | Vai trò | Việc làm |
+- Hai playbook: `PB-CLN-01` → `DEPT_CLEANING`, `PB-TEC-01` → `DEPT_TECHNICAL` (bảng `playbook_departments` trong
+  `seed/maintenance_v1/catalog.yaml`). Thứ tự bắt buộc: BPTN review (nếu cần) → tra tài sản → giao phòng ban.
+  Bước 4 chỉ đề xuất (`proposed_department_id`); `department_id` chỉ set ở bước 8 khi `can_route` đúng. Agent không
+  gán người; phòng ban tự set `assignee_id`.
+- Trạng thái: `RECEIVED`, `VERIFYING`, `ROUTED`, `IN_PROGRESS`, `READY_FOR_REVIEW`, `CLOSED` (chính);
+  `NEED_INFO`, `ON_HOLD` (phụ); `MERGED`, `CANCELLED` (kết thúc). Mọi thay đổi đi qua một hàm `transition`,
+  ghi một dòng `ticket_status_events`. Chỉ BQL đóng/hủy.
+- Mỗi lần dừng là một `blocker` (mã lý do, người gỡ, bước chạy lại, mốc retry/leo thang). Job chạy mỗi 5 phút trong
+  process API (`MO_JOBS_ENABLED=false` để tắt). Mốc SLA và ca phòng ban ở `sla_config`/`departments` trong catalog.
+- Lời cho cư dân sinh từ `src/maintenance/i18n/vi.yaml`; Agent không tự viết.
+- Người gọi xác định bằng header `X-Actor-Id`: `SIM-ACTOR-RESIDENT-01`/`-02`, `SIM-ACTOR-BPTN-01`,
+  `SIM-ACTOR-DEPT-CLN-01`, `SIM-ACTOR-DEPT-TEC-01`, `SIM-ACTOR-WAREHOUSE-01`, `SIM-ACTOR-BQL-01`, `SIM-ACTOR-SYSTEM`.
+
+| Method | Path | Actor | Việc làm |
 |---|---|---|---|
-| POST | `/tickets` | (cư dân) | Nhận phản ánh (form, kèm tối đa 5 ảnh); kiểm tra an toàn, tách vị trí/loại sự cố → tự giao cho kỹ thuật đang trực (`ASSIGNED`) hoặc `ESCALATED` |
-| GET | `/tickets/{id}/photos/{photo_id}` | bql, technician | Xem ảnh cư dân gửi kèm |
-| GET | `/tickets`, `/tickets/{id}` | bql (xem chi tiết: cả technician) | Danh sách / chi tiết ticket kèm work order, bằng chứng, ngoại lệ |
-| POST | `/work-orders/{id}/reassign` | bql | Đổi người được hệ thống tự giao (người mới phải đang trực), khi chưa nhận việc |
-| POST | `/work-orders/{id}/accept` | technician | Kỹ thuật xác nhận nhận việc |
-| POST | `/work-orders/{id}/evidence` | technician | Upload ảnh trước/sau, checklist, vật tư (nộp bổ sung được) |
-| POST | `/work-orders/{id}/check` | bql | Soát hồ sơ bằng quy tắc cứng: đạt → đề xuất đóng; thiếu → nhắc bổ sung kèm lý do |
-| GET | `/work-orders` | bql, technician | Lọc theo `technician_id`, `status` |
-| POST | `/tickets/{id}/close` | bql | Đóng ticket (khi `CLOSE_PROPOSED`) |
-| POST | `/tickets/{id}/escalate` | bql, technician | Chuyển BQL thủ công từ bất kỳ bước nào |
-| GET | `/escalations` | bql | Hàng đợi ngoại lệ (`status=OPEN/RESOLVED/ALL`) |
-| POST | `/escalations/{id}/resolve` | bql | `resume` (tiếp tục), `retriage` (sửa vị trí/loại), `close` (đóng) |
-| POST | `/jobs/check-overdue` | bql | Quét việc quá hạn nhận/hoàn thành (bấm tay thay cho cron) |
-| GET | `/tickets/{id}/audit` | bql | Nhật ký mọi quyết định và lần chuyển trạng thái |
-| GET | `/metrics` | bql | Thời gian đến lúc giao việc (trung vị), tỷ lệ hồ sơ đạt lần đầu, số ngoại lệ |
-| GET | `/locations`, `/shifts`, `/playbooks` | (ai cũng xem) | Danh mục vị trí, lịch trực, playbook |
+| POST | `/resident/tickets` | Cư dân | Gửi phản ánh; Agent chạy pipeline bước 2–8 |
+| GET | `/resident/tickets/{id}` | Cư dân (chủ ticket) | Chỉ trường công khai: trạng thái, phòng ban, lời nhắn, eta, timeline, hành động được phép |
+| POST | `/resident/tickets/{id}/additions`, `/rating`, `/reopen` | Cư dân | Bổ sung thông tin; đánh giá; báo chưa xong (trong 7 ngày) |
+| POST | `/mo/tickets/{id}/bptn-resolve` | BPTN | Gỡ blocker `VERIFYING`: gộp/không trùng, chọn loại việc, phòng ban (sau `WRONG_DEPT`), asset, location, hoặc xác định tài sản tại hiện trường (`asset_onsite`, kèm lý do) → `locked_fields` |
+| POST | `/mo/tickets/{id}/accept`, `/return`, `/block`, `/resume-work` | Phòng ban | Nhận việc; trả sai phòng ban; tạm hoãn tại hiện trường (kèm eta); tiếp tục |
+| POST | `/mo/tickets/{id}/checklist/{item}`, `/materials/{code}`, `/evidence` | Phòng ban | Cập nhật khi đang xử lý |
+| POST | `/mo/tickets/{id}/complete` | Phòng ban | Báo hoàn thành → Agent đối soát (bước 10) |
+| POST | `/mo/warehouse/stock/{item_code}` | Kho | Nhập vật tư; ticket chờ vật tư đó tự chạy lại |
+| GET | `/bql/tickets` | BQL | Đầy đủ; lọc `status`, `department_id`, `blocker_code`, `escalated`, `overdue` |
+| POST | `/bql/tickets/{id}/close`, `/rework`, `/cancel` | BQL | Nghiệm thu; trả làm lại; hủy |
+| POST | `/mo/tickets/{id}/transition` | theo bảng | Hàm chuyển trạng thái chung (403 nếu vai trò không bao giờ được vào trạng thái đích, 409 nếu sai trạng thái nguồn) |
+| POST | `/mo/tickets/{id}/resume`, `/mo/jobs/run` | Hệ thống | Chạy lại nếu blocker đã gỡ (idempotent); chạy job retry/leo thang (có thể giả lập `now`) |
+| GET | `/mo/tickets`, `/mo/tickets/{id}`, `.../events`, `.../audit`, `.../notifications` | nội bộ | Work queue, case đầy đủ, timeline, audit, outbox thông báo |
+| POST | `/mo/reset`, `/mo/evaluate`, `/mo/demo/{ticket_id}` | demo nội bộ | Nạp lại fixture; chạy 12 ticket so với expected; chạy kịch bản một ticket |
+| POST | `/mo/tickets/{id}/attempt` | bất kỳ | Thử hành động ngoài quyền → luôn `ACTION_DENIED` + audit |
 
-Vòng đời ticket:
-`NEW → TRIAGED → ASSIGNED → EVIDENCE_SUBMITTED → CHECK_PASSED → CLOSE_PROPOSED → CLOSED`.
-Bước nào cũng có thể rẽ sang `ESCALATED`; hồ sơ thiếu thì về `CHECK_FAILED` chờ nộp bổ sung.
+**Phân loại bằng LLM** (`src/maintenance/proposer.py`): đặt `LLM_MODE=openai` trong `.env` (kèm
+`OPENAI_BASE_URL=https://openrouter.ai/api/v1` nếu dùng key OpenRouter). LLM chỉ đề xuất service/type; luật cố định
+vẫn chạy song song: không thống nhất → `CATEGORY_UNCLEAR`; chỉ LLM thấy playbook → BPTN review (`PENDING_REVIEW`);
+LLM lỗi → dùng luật. `LLM_MODE=mock` (mặc định, và luôn dùng trong test) chỉ chạy luật, kết quả cố định.
 
-### Thử luồng chuẩn trên Swagger (<http://localhost:8000/docs>)
+Demo nhanh trên Swagger: `POST /mo/demo/SIM-TKT-CLN-001` (flow 1), xem `SIM-TKT-CLN-002` (flow 2, ngoài giờ),
+`POST /mo/demo/SIM-TKT-TEC-001` (flow 3), `SIM-TKT-TEC-002` (flow 4, chờ BPTN xác minh asset);
+`POST /mo/evaluate` để xem 12/12.
 
-1. `POST /tickets`: điền `text = Đèn hành lang tầng 5 bị hỏng`, có thể chọn ảnh ở `photos` → `ASSIGNED`,
-   `location_id = S101-T05-HL`, việc đã giao cho kỹ thuật ca đèn đang trực. Lấy `work_orders[0].work_order.id`.
-   Ảnh chỉ lưu để xem, không dùng để phân loại.
-2. (Tuỳ chọn) `POST /work-orders/{id}/accept` (technician).
-3. `POST /work-orders/{id}/evidence` (technician): chọn ảnh ở `before_photos` và `after_photos`,
-   `checklist_done = diagnose,power_off,replace,test`, `materials_used = Bóng LED 18W x1`.
-4. `POST /work-orders/{id}/check` (bql) → `CLOSE_PROPOSED`.
-5. `POST /tickets/{id}/close` (bql) → `CLOSED`; xem `GET /tickets/{id}/audit`.
-
-Ca chuyển BQL: `"tầng 5 tối"` (vị trí mơ hồ), `"Mất điện cả hành lang tầng 7, có mùi khét"` (an toàn).
-
-### Dữ liệu mẫu và LLM
-
-- Lần đầu khởi động với DB trống, backend nạp dữ liệu một tòa từ `seed/`:
-  `locations.csv` (vị trí), `shifts.csv` (lịch trực), `playbook.yaml` (quy trình + checklist).
-  Sửa các file này rồi reset DB (`docker compose down -v`, `make up`) để nạp lại.
-- `LLM_MODE=mock` (mặc định): tách vị trí/loại sự cố bằng từ khoá, không cần API key, kết quả cố định.
-  Đổi `LLM_MODE=openai` để dùng model trong `MODEL_NAME`. Kiểm tra an toàn và soát hồ sơ luôn là
-  quy tắc cứng, không phụ thuộc LLM.
-- Chưa dùng Alembic: bảng được tạo tự động khi khởi động. Đổi cấu trúc bảng thì reset DB.
+**Giao diện prototype** (`src/web/`, Tailwind qua CDN, JS thuần, không cần build): chạy `make run` rồi mở
+<http://localhost:8000/ui/>. Đăng nhập bằng tài khoản thử nghiệm trong `seed/maintenance_v1/accounts.yaml` (cudan01,
+bptn01, vesinh01, kythuat01, kho01, bql01, qa01; mật khẩu chung ghi trong file); vai trò lấy từ tài khoản. Cư dân có thể
+đính kèm ảnh (không bắt buộc); phòng ban phải gửi ít nhất một ảnh sau xử lý mới báo hoàn thành được. Ảnh lưu ở
+`data/uploads/maintenance`. Tailwind Play CDN chỉ dùng cho prototype; bản thật nên build bằng Tailwind CLI.
 
 ## Tài liệu
 

@@ -22,25 +22,22 @@ class Settings(BaseSettings):
 
     # LLM
     openai_api_key: str = ""
+    # OpenAI-compatible endpoint, e.g. https://openrouter.ai/api/v1 (empty = api.openai.com)
+    openai_base_url: str = ""
     model_name: str = "gpt-4o-mini"
     llm_temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     # mock: rule-based extraction, deterministic, no API key needed (dev/test)
     llm_mode: Literal["openai", "mock"] = "mock"
 
+    # MaintenanceOps: run the retry/escalation job inside the API process (CR-BPTN-02 §5)
+    mo_jobs_enabled: bool = True
+    # Accept X-Actor-Id instead of a login token (tests/scripts only; never enable in production)
+    mo_allow_actor_header: bool = False
+    # Resident and department photos (the folder is mounted as a volume in docker-compose)
+    mo_upload_dir: str = "./data/uploads/maintenance"
+
     # Database
     database_url: str = "postgresql+psycopg2://p151:p151@localhost:5432/p151"
-
-    # Zalo Bot (notify technicians)
-    zalo_bot_token: str = ""
-    zalo_webhook_secret: str = ""
-    zalo_tech_chat_id: str = ""
-
-    # Maintenance ops
-    upload_dir: str = "./data/uploads"
-    max_upload_mb: int = Field(default=10, ge=1)
-    seed_on_startup: bool = True
-    # Escalate to BQL after this many failed evidence checks on one work order
-    max_check_failures: int = Field(default=2, ge=1)
 
     # Vector Store
     chroma_persist_dir: str = "./data/chroma"

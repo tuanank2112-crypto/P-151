@@ -14,6 +14,11 @@
 | 0.1 | 2026-09-27 | Tạo mới Phase 0 Source Audit và Phase 1 Problem Statement từ source of truth | DRAFT |
 | 0.2 | 2026-09-27 | Ghi nhận quyết định OD-01/02/03/08 và cơ chế sign-off OD-09; cập nhật workflow proposal → BPTN confirmation | DRAFT · Chờ tên/sign-off approver |
 | 0.3 | 2026-09-27 | Re-baseline MVP còn hai nhóm dịch vụ; bổ sung asset, duty, stock gate, team-only routing, dataset 12 ticket và 4 demo flow | DRAFT · Chờ tên/sign-off approver |
+| 0.4-candidate | 2026-09-29 | `CR-BPTN-01`: BPTN review có điều kiện + override có lý do; cập nhật CF-14, OD-01 và target workflow | PROPOSED · Chờ duyệt CR |
+| 0.5-candidate | 2026-09-29 | `CR-BPTN-02`: giao phòng ban thay team route; 10 trạng thái công khai + blocker/retry/leo thang; cư dân là user (xem trạng thái, bổ sung); chỉ BQL đóng/hủy; bỏ luật an toàn và `EXCEPTION` | PROPOSED · Chờ duyệt CR |
+
+> **`CR-BPTN-02` (v0.5 candidate), PROPOSED:** baseline MVP (§0.2), target workflow (§3), desired outcome (§8) và tín hiệu shadow mode (§15)
+> đã cập nhật theo [CR-BPTN-02](CR-BPTN-02.md). Các quyết định v0.3 còn lại giữ nguyên.
 
 ---
 
@@ -31,12 +36,12 @@
 
 - MVP một tuần chỉ chứng minh tính khả thi của prototype bằng dữ liệu mô phỏng.
 - Active scope chỉ có vệ sinh `PB-CLN-01` và kỹ thuật `PB-TEC-01`.
-- Duty lookup là bắt buộc cho cả hai playbook; chỉ route tới team mô phỏng, không gán nhân viên.
+- `CR-BPTN-02` (v0.5 candidate): Agent đề xuất phòng ban (`DEPT_CLEANING`, `DEPT_TECHNICAL`) và chỉ giao sau BPTN review (nếu cần) và tra tài sản; không tra ca trực/capacity theo team, không gán nhân viên (phòng ban tự phân công).
 - Asset lookup là bắt buộc riêng cho kỹ thuật; catalog ưu tiên `LIGHTING`, read-only và dùng ID `SIM-ASSET-*`.
-- Material stock gate chạy trước routing; sau thực hiện Agent đối soát planned/norm/issued/used nhưng không phê duyệt.
-- Không có team trực vẫn được tạo `WorkOrderDraft`, nhưng không có route hợp lệ và không được vào `READY_FOR_REVIEW`.
+- Kiểm vật tư trước khi giao (thiếu → `ON_HOLD` chờ kho); sau thực hiện Agent đối soát planned/norm/issued/used nhưng không phê duyệt.
+- `CR-BPTN-02` (v0.5 candidate): ngoài giờ phòng ban, ticket vẫn `ROUTED` với blocker `OUT_OF_HOURS` và tự chuyển đầu ca.
 - Dữ liệu phản ánh gốc và bằng chứng gốc là bất biến; chỉnh sửa trường hành chính phải có audit.
-- Chỉ dùng bốn state: `IN_PROGRESS`, `CHỜ XÁC MINH`, `READY_FOR_REVIEW`, `EXCEPTION`; trạng thái hàng đợi nằm ở field phụ.
+- `CR-BPTN-02` (v0.5 candidate): mười trạng thái kiểu theo dõi đơn hàng (`RECEIVED`, `VERIFYING`, `ROUTED`, `IN_PROGRESS`, `READY_FOR_REVIEW`, `CLOSED`, `NEED_INFO`, `ON_HOLD`, `MERGED`, `CANCELLED`); mỗi lần dừng có blocker với người gỡ và mốc leo thang; chỉ BQL đóng/hủy. Bỏ luật an toàn và `EXCEPTION`.
 - Dataset khóa ở 12 synthetic tickets: 6 vệ sinh, 6 kỹ thuật; 4 demo flow và 8 regression cases.
 
 ### Thay đổi so với baseline cũ
@@ -57,7 +62,7 @@ Không phát hiện yêu cầu nào cho phép tích hợp hoặc dữ liệu v�
 - `CONFIRMED CF-03` Mọi ticket, workflow, playbook, work order, checklist, vật tư, bằng chứng, ngưỡng và kết quả trong MVP là mô phỏng.
 - `CONFIRMED CF-04` Value unit là một case đủ điều kiện để BQL xem xét.
 - `CONFIRMED CF-05` Agent được phân loại, tạo draft, sinh và kiểm tra hồ sơ, phát hiện ngoại lệ, đề xuất chuyển BQL; Agent không được tự sửa nguồn, tự nghiệm thu, tự đóng ticket, tự xác nhận chất lượng, tự phê duyệt vật tư, tự xử lý rủi ro cao hoặc tự gửi liên hệ cho cư dân.
-- `CONFIRMED CF-06` BPTN chỉ chỉnh trường hành chính được cấu hình; không sửa nội dung/bằng chứng gốc hoặc suy đoán dữ kiện.
+- `CONFIRMED CF-06` BPTN chỉ chỉnh trường hành chính được cấu hình; không sửa nội dung/bằng chứng gốc hoặc suy đoán dữ kiện. Theo `CR-BPTN-01`, BPTN cũng không được override để bỏ qua safety rule.
 - `CONFIRMED CF-07` Nhân sự thực hiện cập nhật tiến độ, checklist, vật tư, evidence và ghi chú kết quả.
 - `CONFIRMED CF-08` BQL xem xét `READY_FOR_REVIEW`, xử lý `EXCEPTION`, yêu cầu xác minh/bổ sung và ra quyết định nghiệp vụ cuối cùng ngoài quyền Agent.
 - `CONFIRMED CF-09` Mọi chỉnh sửa phải tạo audit event có `actor_id`, `actor_role`, `timestamp`, `field_name`, `old_value`, `new_value`, `reason`.
@@ -65,7 +70,7 @@ Không phát hiện yêu cầu nào cho phép tích hợp hoặc dữ liệu v�
 - `CONFIRMED CF-11` `READY_FOR_REVIEW` cần đủ tám gate, trong đó có `route_status=ROUTED`.
 - `CONFIRMED CF-12` Bốn demo flow phải trình diễn được và reset được.
 - `CONFIRMED CF-13` Trước classification chỉ bắt buộc `ticket_id`, `created_at`, `original_description`; thiếu một trong ba field → `CHỜ XÁC MINH`.
-- `CONFIRMED CF-14` Agent đề xuất `service_category_normalized` và `ticket_type_normalized`; BPTN phải xác nhận trước khi tạo work order draft. `location_normalized` không chặn playbook proposal nhưng bắt buộc trước draft. `priority` là optional.
+- `PROPOSED CF-14 (CR-BPTN-01, v0.4 candidate)` Agent đề xuất `service_category_normalized`, `ticket_type_normalized` và location từ phản ánh. Category và location rõ → `confirmation_status=NOT_REQUIRED`, Agent tiếp tục; thiếu location hoặc category không rõ → `PENDING_REVIEW`, `CHỜ XÁC MINH` cho tới khi BPTN override có `override_reason`. `location_normalized` không chặn playbook proposal nhưng bắt buộc trước draft. `priority` là optional. *(v0.3 gốc: BPTN phải xác nhận mọi ticket trước draft.)*
 - `CONFIRMED CF-15` Checklist là readiness gate riêng, không được tính thay cho minimum evidence của hai playbook; ảnh không bắt buộc trong MVP.
 - `CONFIRMED CF-16` `ACTION_OUT_OF_AUTHORITY` bị từ chối và audit; không tự chuyển business state của ticket sang `EXCEPTION`.
 - `CONFIRMED CF-17` Không có team đang trực nhưng duty data rõ → tạo draft, `IN_PROGRESS`, reason `NO_AVAILABLE_TEAM`, không route; duty data không xác định → `CHỜ XÁC MINH`, reason `DUTY_UNKNOWN`.
@@ -88,7 +93,7 @@ Các assumption dưới đây chỉ giúp tài liệu đủ cụ thể để rev
 
 | ID | Quyết định | Kết quả/status | Owner/approver |
 |---|---|---|---|
-| OD-01 | Required fields và confirmation gate | `CLOSED` — ba raw fields trước classification; Agent proposal service/type; BPTN confirmation + location trước draft; priority optional | TV1 / Product approver proxy |
+| OD-01 | Required fields và confirmation gate | `CLOSED` — ba raw fields trước classification; Agent proposal service/type; BPTN confirmation + location trước draft; priority optional. **`CR-BPTN-01` (PROPOSED):** confirmation chỉ bắt buộc khi `PENDING_REVIEW`; override cần reason | TV1 / Product approver proxy |
 | OD-02 | Minimum evidence và rule ảnh | `CLOSED` — checklist tách gate; evidence theo use case; không bắt buộc ảnh | TV1 / Product approver proxy |
 | OD-03 | Blocking/non-blocking catalog | `CLOSED` — catalog được duyệt; explained material variance là warning không chặn duy nhất; action ngoài quyền reject + audit | TV1 + TV4 |
 | OD-04 | Ngưỡng chênh lệch vật tư, nếu có | `OPEN · NON-BLOCKING FOR MVP` — v0.3 không tự dùng threshold | Product approver proxy + TV1 |
@@ -146,13 +151,13 @@ MVP không có dữ liệu hoặc workflow vận hành thật. Vì vậy, tài l
 
 ## 3. Target workflow mô phỏng
 
-`Ticket từ app/form → BPTN xác nhận thông tin hành chính → Agent phân loại ticket → Agent tra Playbook Registry → nếu kỹ thuật, tra Asset Catalog → xác định vật tư và kiểm tra tồn kho mô phỏng → tra team đang trực → tạo WorkOrderDraft và đề xuất route cho team → nhân sự thực hiện checklist/cập nhật vật tư/ghi chú/bằng chứng → Agent đối soát hồ sơ → READY_FOR_REVIEW / IN_PROGRESS / CHỜ XÁC MINH / EXCEPTION → BQL xem xét`
+`CR-BPTN-02` (v0.5 candidate): `Cư dân gửi phản ánh → RECEIVED → Agent kiểm tra dữ liệu (thiếu → NEED_INFO) → phân loại + đề xuất phòng ban → kiểm tra trùng → BPTN review nếu cần → tra tài sản (đèn) → kiểm vật tư (thiếu → ON_HOLD) → giao phòng ban khi can_route (ROUTED) → phòng ban nhận việc (IN_PROGRESS) và báo hoàn thành → Agent đối soát → READY_FOR_REVIEW → BQL nghiệm thu (CLOSED) / trả làm lại / hủy`
 
-Việc tiếp nhận/tạo draft là event/action, không tạo thêm state ngoài bốn state đã khóa.
+Mọi thay đổi trạng thái đi qua một hàm `transition` và ghi một event; `review_status`, `asset_resolution` và blocker là field phụ (`CR-BPTN-02` (v0.5 candidate)).
 
 ## 4. Người dùng và actor liên quan
 
-- **BPTN:** cần xem nguyên bản ticket và chuẩn hóa đúng các trường hành chính được phép.
+- **BPTN:** cần xem nguyên bản ticket; chỉ can thiệp khi Agent đánh dấu `PENDING_REVIEW` hoặc khi phát hiện sai, bằng cách xác nhận hoặc override có lý do các trường hành chính được phép.
 - **Nhân sự thực hiện:** cần biết checklist, material/evidence requirement và cập nhật execution data.
 - **BQL:** cần nhận một package có lý do, nguồn, trạng thái gate và audit để xem xét hoặc xử lý ngoại lệ.
 - **Agent:** actor hệ thống bị ràng buộc bởi schema, rule an toàn và permission.
@@ -172,7 +177,7 @@ Các điểm dưới đây là giả thuyết, không phải kết luận từ d
 
 ## 6. Problem statement đầy đủ
 
-Trong phạm vi prototype mô phỏng, BQL cần một cách nhất quán và có thể truy vết để biến ticket đã được BPTN xác nhận thông tin hành chính thành một hồ sơ sẵn sàng xem xét hoặc một case dừng đúng lý do. Giải pháp phải kiểm tra playbook, asset kỹ thuật, vật tư/tồn kho, duty/capacity, route, checklist và evidence; giữ nguyên dữ liệu cư dân; giải thích rule; và chặn mọi hành động vượt quyền. MVP chỉ kiểm chứng tính khả thi trên 12 synthetic tickets và bốn demo flow, không chứng minh pain point hay hiệu quả vận hành thực tế.
+Trong phạm vi prototype mô phỏng, BQL cần một cách nhất quán và có thể truy vết để biến ticket đã qua kiểm tra dữ liệu có cấu trúc (BPTN chỉ review khi dữ liệu hành chính thiếu/không rõ) thành một hồ sơ sẵn sàng xem xét hoặc một case dừng đúng lý do. Giải pháp phải kiểm tra playbook, asset kỹ thuật, vật tư/tồn kho, duty/capacity, route, checklist và evidence; giữ nguyên dữ liệu cư dân; giải thích rule; và chặn mọi hành động vượt quyền. MVP chỉ kiểm chứng tính khả thi trên 12 synthetic tickets và bốn demo flow, không chứng minh pain point hay hiệu quả vận hành thực tế.
 
 ## 7. Problem statement một câu
 
@@ -197,7 +202,7 @@ Nếu Agent kết hợp deterministic safety/permission rules với structured o
 1. Playbook và phiên bản.
 2. Work order draft liên kết ticket.
 3. Required fields đủ; kỹ thuật có asset match duy nhất.
-4. Route hợp lệ tới team mô phỏng đang trực và còn khả năng nhận ticket.
+4. Giao đúng phòng ban, chỉ sau review (nếu cần) và tra tài sản; cư dân và BQL theo dõi cùng một trạng thái (`CR-BPTN-02` (v0.5 candidate)).
 5. Evidence tối thiểu đủ theo playbook.
 6. Checklist không còn `PENDING`.
 7. Vật tư đã đối soát; stock gate trước route đã pass.
@@ -246,10 +251,11 @@ Chỉ thu thập sau khi có phê duyệt governance và không để Agent th�
 - Các bước con người thực hiện để tạo/check work order, checklist, evidence và material.
 - Loại evidence thực sự được BQL dùng để review; trường hợp ảnh thực sự cần thiết.
 - Các kiểu chênh lệch vật tư và cách người có thẩm quyền xử lý; không suy ngưỡng từ dữ liệu ít.
-- Tỷ lệ/loại case cần `CHỜ XÁC MINH`, `EXCEPTION`, hoặc có non-blocking warning.
+- Tỷ lệ/loại case có blocker theo `ReasonCode`, bị leo thang, bị phòng ban trả về (`WRONG_DEPT`) hoặc có non-blocking warning (`CR-BPTN-02` (v0.5 candidate)); ticket rủi ro cao đi như ticket thường sau khi bỏ luật an toàn.
 - Lý do BQL đồng ý, yêu cầu bổ sung hoặc bác đề xuất Agent.
 - Số lần Agent đề xuất hành động ngoài quyền hoặc giải thích không đủ.
 - Thời gian theo từng bước chỉ dùng để mô tả baseline sau khi dữ liệu đủ tin cậy; không dùng số mô phỏng làm KPI.
+- Danh sách metric pilot có numerator/denominator nằm ở `03_lean_prd.md` §9.5; không phải MVP acceptance criteria.
 
 ### Phase 1 consistency gate
 
