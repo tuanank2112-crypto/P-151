@@ -237,9 +237,17 @@ def test_bql_downgrade_routes_normally(engine):
 
 
 def test_bptn_resolve_rejects_safety_blockers(engine, fresh):
-    """E-13, §5.5: bptn_resolve is a GuardError on a safety blocker; BPTN's other writes on tier 1 are denied."""
-    with pytest.raises(GuardError):
+    """E-13/X-2, CR-03 §4.4.5 + AC-06: on a BQL-owned blocker every BPTN write, bptn_resolve included, is a 403 with
+    audit and no state change; on SAFETY_REVIEW_REQUIRED (BPTN-owned) bptn_resolve stays a 409 GuardError."""
+    before = engine.get(TEC005)
+    with pytest.raises(ActionDeniedError):
         engine.bptn_resolve(TEC005, BPTN, note="x")
+    denied = engine.get(TEC005)
+    assert denied.audit[-1].action_result == "ACTION_DENIED" and denied.audit[-1].reason.endswith(
+        "(requested=BPTN_RESOLVE)"
+    )
+    assert (denied.ticket.status, denied.ticket.blocker) == (before.ticket.status, before.ticket.blocker)
+    assert len(denied.events) == len(before.events)
     with pytest.raises(ActionDeniedError):
         engine.attempt(TEC005, BPTN, Action.EDIT_RAW, field_name="original_description", new_value="x", reason="t")
     assert last_audit(engine, TEC005).action_result == "ACTION_DENIED"

@@ -1247,8 +1247,8 @@ class MaintenanceEngine:
         if scope_error:
             self._deny(case, actor_id, role, action, field_name, new_value, reason, now, message=scope_error)
         blocker = case.ticket.blocker
-        # I-11: BPTN may not touch a ticket whose blocker BQL owns. `bptn_resolve` is left to its own guard (409), E-13.
-        if role == Role.BPTN and blocker is not None and blocker.code in BQL_REASONS and action != Action.BPTN_RESOLVE:
+        # I-11 (CR-03 §4.4.5, AC-06): BPTN may not touch a ticket whose blocker BQL owns, `bptn_resolve` included.
+        if role == Role.BPTN and blocker is not None and blocker.code in BQL_REASONS:
             self._deny(
                 case,
                 actor_id,
