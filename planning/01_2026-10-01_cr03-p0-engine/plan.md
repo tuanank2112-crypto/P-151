@@ -42,6 +42,7 @@
 | Q20 | 2026-10-01 17:10 | (D13) Sửa expected seed CLN-004/TEC-005 ở **WP3** (không phải WP5) để cổng xanh sau từng WP. | Detector bật ở WP3 làm đổi kết quả fixture | — |
 | Q21 | 2026-10-01 18:00 | **WP3 ✅** (SO đo: 266 pass, ruff sạch, diff 20 file trong phạm vi; evidence làm đỏ có). Chấp nhận: sửa 9 dòng `test_engine.py` (hệ quả Q20); `git add -f` file `tests/test_maintenance/data/*.yaml`, **không sửa `.gitignore`** (cấu hình chung của nhóm — thêm file data mới thì cũng `-f`); mỗi ticket có thêm audit `ASSESS_SAFETY` kể cả NONE (truy vết); ví dụ chuẩn hoá P01 §3.1 theo luật + REF. | Đo lại | Thêm `!tests/**/data/` vào `.gitignore` khi nhóm đồng ý · rẻ |
 | Q22 | 2026-10-01 18:00 | **Vấn đề ngoài engine:** "Bóng đèn … bị cháy" qua 2b ra `NONE` đúng (B-01), nhưng bộ phân loại (rules/proposer, V-10 không đổi ở P0) cho `OUT_OF_SCOPE` ⇒ ticket đèn phổ biến nhất bị dừng chờ BPTN. Chuyển Trường (chủ rules/playbook) xử; không sửa trong hồ sơ này. | Ranh giới Q01 | Thêm WP sửa `rules.py` nếu Trường giao lại · ~0,5 giờ |
+| Q23 | 2026-10-01 18:50 | **WP4 🔁 SỬA drift 1:** BPTN trên blocker chủ BQL (`EMERGENCY_PENDING_BQL`) ⇒ `ACTION_DENIED` 403 + audit cho MỌI hành động, kể cả `bptn_resolve`; `bptn_resolve` trên `SAFETY_REVIEW_REQUIRED` (chủ BPTN) vẫn 409. Chấp nhận drift 2 (theo Q19) và drift 3 (`test_api.py` dùng TEC-002). SPEC P02 §5.5/§11/E-13 và TESTING X-2 lệch CR-03 ⇒ CR-03 thắng. | CR-03 §4.4 bất biến 5, AC-06 | — |
 
 ### Quyết định bị thay thế
 - Q12 (seed sửa ở WP5) → thay bởi Q20 (sửa ở WP3).
