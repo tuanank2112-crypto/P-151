@@ -40,6 +40,8 @@
 | Q18 | 2026-10-01 17:10 | (Q-C) S-06 giữ P1; "bị điện giật" ở P0 là Bậc 2 (vẫn dừng cho người xem). (Q-D) Chấp nhận B-04 "an toàn trước"; Trường rà nhãn sau. (Q-F) Chấp nhận câu chữ `safety_details` của architect; Trường rà. | Nghiêng về an toàn, không chặn tiến độ | Đổi `phase`/nhãn trong lexicon · rẻ |
 | Q19 | 2026-10-01 17:10 | (Q-E) **BQL chỉ dùng 3 lựa chọn Bậc 2 khi ticket đã leo thang** (+1 guard +1 test). | CR-03 §2 dòng BQL: "trên ticket đã leo thang" | Bỏ guard · rẻ |
 | Q20 | 2026-10-01 17:10 | (D13) Sửa expected seed CLN-004/TEC-005 ở **WP3** (không phải WP5) để cổng xanh sau từng WP. | Detector bật ở WP3 làm đổi kết quả fixture | — |
+| Q21 | 2026-10-01 18:00 | **WP3 ✅** (SO đo: 266 pass, ruff sạch, diff 20 file trong phạm vi; evidence làm đỏ có). Chấp nhận: sửa 9 dòng `test_engine.py` (hệ quả Q20); `git add -f` file `tests/test_maintenance/data/*.yaml`, **không sửa `.gitignore`** (cấu hình chung của nhóm — thêm file data mới thì cũng `-f`); mỗi ticket có thêm audit `ASSESS_SAFETY` kể cả NONE (truy vết); ví dụ chuẩn hoá P01 §3.1 theo luật + REF. | Đo lại | Thêm `!tests/**/data/` vào `.gitignore` khi nhóm đồng ý · rẻ |
+| Q22 | 2026-10-01 18:00 | **Vấn đề ngoài engine:** "Bóng đèn … bị cháy" qua 2b ra `NONE` đúng (B-01), nhưng bộ phân loại (rules/proposer, V-10 không đổi ở P0) cho `OUT_OF_SCOPE` ⇒ ticket đèn phổ biến nhất bị dừng chờ BPTN. Chuyển Trường (chủ rules/playbook) xử; không sửa trong hồ sơ này. | Ranh giới Q01 | Thêm WP sửa `rules.py` nếu Trường giao lại · ~0,5 giờ |
 
 ### Quyết định bị thay thế
 - Q12 (seed sửa ở WP5) → thay bởi Q20 (sửa ở WP3).
@@ -62,7 +64,7 @@
 - [x] WP0 đo nền (142/142, ruff sạch)
 - [x] Commit nền `e5ececf`, nhánh `feature/nhuy-cr03-p0`
 - [x] WP1 `specs/` đủ 4 mảng + SO đo (Q15)
-- [x] WP2 (R01 ✅) · [ ] WP3 · [ ] WP4 · [ ] WP5 (mỗi WP: report + SO đo lại + phán)
+- [x] WP2 (R01 ✅) · [x] WP3 (R02 ✅) · [ ] WP4 · [ ] WP5 (mỗi WP: report + SO đo lại + phán)
 - [ ] WP6 thẩm định ✅
 - [ ] Đồng bộ não (6 điểm) + `docs/` + changelog/version
 - [ ] Sign-off `✅ ĐÃ HOÀN THÀNH` + mốc giây

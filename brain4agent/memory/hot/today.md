@@ -47,3 +47,4 @@
 - WP2 (contracts) xong: 149 test pass (142 nền, sửa 6 test cũ, +7 mới), ruff sạch; M-01..M-03, M-05..M-08 đúng; nền trước commit `738a58b`; chưa có logic an toàn/hành động BPTN-BQL/priority (WP3-WP5).
 - WP2 ✅ (R01, SO đo 149 pass). Phóng WP3 (safety 2b) theo H02.
 - WP3 (safety 2b) xong: 266 test pass (nền WP2 149, +117 trong test_safety.py), ruff sạch; REF TOTAL=84 BAD=0 TIER1_MISS=0; evaluate 12/4/[]; làm đỏ lexicon (active_phases P1 / xoá S-02) rồi xanh; nền trước commit `27655d5`.
+- WP3 ✅ (R02, SO đo 266 pass; 0 bỏ sót Bậc 1). Q22: "bóng đèn bị cháy" bị classifier cho OUT_OF_SCOPE — chuyển Trường. Phóng WP4 theo H03.
