@@ -41,3 +41,6 @@
 - Kéo code: sao lưu não local ra scratchpad, `git stash`, dời `brain4agent/` local, `git pull --ff-only` (exit 0), `stash pop`; xung đột `CR-BPTN-02.md` (họ sửa / mình xoá) giải bằng `git rm`. README + CR-03 khớp bản sao lưu.
 - Não: đặt lại bản CR-03, gộp ghi chú kỹ thuật từ não Châm Anh (bản gốc của họ còn ở `git show 1e2f42b:brain4agent/...`). `stash@{0}` còn giữ để phòng hờ; `stash@{1}` (main, cũ) không đụng.
 - Phiên Châm Anh (theo não của họ): 142 test pass, ruff sạch; đảo lại thứ tự cũ ⇒ 3 test mới đỏ.
+
+## 📐 Phiên 2026-10-01 17:15 — Hồ sơ 01 (CR-03 P0 engine)
+- Nhánh `feature/nhuy-cr03-p0`, nền `e5ececf` (142/142, ruff sạch). SPEC ✅ (8 file; proto 84 câu, 0 bỏ sót Bậc 1). Quyết định Q01–Q20 ở `planning/01_2026-10-01_cr03-p0-engine/plan.md` §2. Phóng WP2 (contracts).
