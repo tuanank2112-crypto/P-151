@@ -23,11 +23,12 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from src.maintenance.catalog import Catalog, TicketDataset, load_catalog, load_dataset
+from src.maintenance.catalog import Catalog, Lexicon, TicketDataset, load_catalog, load_dataset, load_lexicon
 from src.maintenance.enums import (
     BPTN_REASONS,
     PLAYBOOK_BY_CATEGORY,
     PLAYBOOK_VERSION,
+    SAFETY_REASONS,
     TERMINAL_STATUSES,
     Action,
     ActionResult,
@@ -53,6 +54,7 @@ from src.maintenance.enums import (
     ReviewStatus,
     RiskLevel,
     ServiceCategory,
+    SignalStatus,
     TicketFlag,
     TicketStatus,
 )
@@ -80,6 +82,7 @@ from src.maintenance.models import (
 )
 from src.maintenance.proposer import LLMClient, propose
 from src.maintenance.rules import extract_location, missing_location_parts
+from src.maintenance.safety import SafetyLLMClient, assess_with_llm
 
 logger = logging.getLogger(__name__)
 
@@ -273,6 +276,8 @@ class MaintenanceEngine:
         clock: Callable[[], datetime] | None = None,
         llm: LLMClient | None = None,
         llm_label: str = "llm",
+        lexicon: Lexicon | None = None,
+        safety_llm: SafetyLLMClient | None = None,
     ):
         self.catalog = catalog or load_catalog()
         self.dataset = dataset or load_dataset()
@@ -284,6 +289,8 @@ class MaintenanceEngine:
         self.lock = threading.RLock()
         self.llm = llm  # None = fixed rules only (deterministic, used by tests and LLM_MODE=mock)
         self.llm_label = llm_label
+        self.lexicon = lexicon or load_lexicon()  # fail fast: a broken lexicon.yaml stops the engine (01 §10.4)
+        self.safety_llm = safety_llm  # Q09: P0 never sets it outside tests; build_engine() leaves it None
         self.cases: dict[str, Case] = {}
         self.stock: dict[str, float | None] = {}
         self.run_number = 0
@@ -1328,6 +1335,10 @@ class MaintenanceEngine:
         next_retry_at, escalate_at, dispatch_at = self._schedule(work, code, now, eta), None, None
         if code == R.MISSING_INFO:
             escalate_at = now + timedelta(hours=sla.missing_info.escalate_after_hours)
+        elif code == R.SAFETY_REVIEW_REQUIRED:
+            escalate_at = now + timedelta(hours=sla.safety_review.escalate_after_hours)  # calendar hours (Q10)
+        elif code == R.EMERGENCY_PENDING_BQL:
+            escalate_at = None  # BQL is notified at once (emergency.created)
         elif code in BPTN_REASONS:
             escalate_at = self.catalog.business_hours.add(now, sla.bptn.escalate_after_business_hours)
         elif code == R.WAITING_MATERIAL:
@@ -1361,6 +1372,8 @@ class MaintenanceEngine:
     def _schedule(self, work: Case, code: ReasonCode, now: datetime, eta: datetime | None = None) -> datetime | None:
         """When the job should next retry / remind for this blocker. None = no automatic retry."""
         sla = self.catalog.sla_config
+        if code in SAFETY_REASONS:
+            return None  # no automatic reminder: people decide (I-10)
         if code == R.MISSING_INFO:
             return now + timedelta(hours=sla.missing_info.retry_every_hours)
         if code in BPTN_REASONS:
@@ -1467,6 +1480,8 @@ class MaintenanceEngine:
 
     def _cleared(self, work: Case, blocker: Blocker, now: datetime) -> bool:
         code = blocker.code
+        if code in SAFETY_REASONS:
+            return False  # only a person clears a safety blocker (I-10)
         if code == R.MISSING_INFO:
             return not self._missing_fields(work)
         if code in BPTN_REASONS:
@@ -1535,7 +1550,8 @@ class MaintenanceEngine:
             return
         self._set_blocker(work, escalated, SYSTEM_ID, Role.SYSTEM, now, note=f"Leo thang: {why}")
         if not blocker.escalated:
-            self._notify(work, "escalation", BlockerOwner.BQL, now, {"reason_code": blocker.code, "why": why})
+            kind = "safety.review_escalated" if blocker.code == R.SAFETY_REVIEW_REQUIRED else "escalation"
+            self._notify(work, kind, BlockerOwner.BQL, now, {"reason_code": blocker.code, "why": why})
 
     # ------------------------------------------------------------------ pipeline (steps 2–8)
 
@@ -1543,6 +1559,7 @@ class MaintenanceEngine:
         if work.ticket.status != S.RECEIVED:
             raise EngineError(f"Pipeline chạy khi ticket ở {work.ticket.status}")
         steps = (
+            (2, self._step_2b_assess_safety),  # Q08: before the minimum data: tier 1 > tier 2 > MISSING_INFO
             (2, self._step_2_check_required_data),
             (3, self._step_3_classify_and_propose_department),
             (4, self._step_4_check_duplicate_ticket),
@@ -1585,6 +1602,83 @@ class MaintenanceEngine:
             # name only the parts still missing; a report with none of them gets the general request
             missing.extend(["location"] if len(parts) == 3 else [f"location_{part}" for part in parts])
         return missing
+
+    def _safety_scope_text(self, work: Case) -> str:
+        """All content before a safety clearance; after it only the additions the resident made later (CR §5.2)."""
+        cleared_at = work.ticket.safety_cleared_at
+        if cleared_at is None:
+            return self._content(work)
+        return "\n".join(a.content for a in work.additions if a.submitted_at > cleared_at)
+
+    def _related_ticket_ids(self, work: Case) -> list[str]:
+        """Open tickets at the same location, created earlier and inside the duplicate window (Q11). Link only."""
+        location, created = self.effective_location(work), _created_at(work.ticket.raw)
+        if location is None or created is None:
+            return []
+        earliest = created - timedelta(hours=self.catalog.sla_config.duplicate_window_hours)
+        found = []
+        for other in list(self.cases.values()):
+            ticket = other.ticket
+            if ticket.ticket_id == work.ticket.ticket_id or ticket.status in TERMINAL_STATUSES:
+                continue
+            other_created = _created_at(ticket.raw)
+            if other_created is None or not (earliest <= other_created < created):
+                continue
+            if self.effective_location(other) == location:
+                found.append(ticket.ticket_id)
+        return sorted(found)
+
+    def _step_2b_assess_safety(self, work: Case, now: datetime) -> bool:
+        """CR §5.1 step 2b. Runs on any ticket with content, before classification: tier 1 stops (BQL), tier 2 (BPTN)."""
+        text = self._safety_scope_text(work)
+        if _blank(text):
+            return False  # nothing to assess (empty, or cleared and no later addition)
+        result = assess_with_llm(text, self.lexicon.safety, self.safety_llm, self.llm_label)
+        ticket = work.ticket
+        old = ticket.risk_level
+        ticket.risk_level, ticket.risk_signals = result.risk_level, list(result.signals)
+        present = sorted({s.signal_id for s in result.signals if s.status == SignalStatus.PRESENT})
+        self._agent(
+            work,
+            Action.ASSESS_SAFETY,
+            "Ticket",
+            ticket.ticket_id,
+            "risk_level",
+            old,
+            {
+                "risk_level": result.risk_level,
+                "signals": list(result.signals),
+                "notes": list(result.notes),
+                "proposer": result.proposer,
+                "scope": "additions_after_clear" if ticket.safety_cleared_at else "full",
+            },
+            "Tầng an toàn bước 2b (luật cố định; LLM chỉ nâng mức)",
+            now=now,
+            rule_id=next((s.rule_id for s in result.signals if s.status == SignalStatus.PRESENT), None),
+        )
+        if result.risk_level == RiskLevel.EMERGENCY:
+            ticket.related_ticket_ids = self._related_ticket_ids(work)  # Q11: link, never merge
+            self._stop(
+                work, S.VERIFYING, R.EMERGENCY_PENDING_BQL, now, resume_step=2, note=f"Bậc 1: {', '.join(present)}"
+            )
+            self._notify(
+                work,
+                "emergency.created",
+                BlockerOwner.BQL,
+                now,
+                {
+                    "risk_level": RiskLevel.EMERGENCY,
+                    "signal_ids": present,
+                    "related_ticket_ids": work.ticket.related_ticket_ids,
+                },
+            )
+            return True
+        if result.risk_level == RiskLevel.UNCLEAR:
+            unclear = sorted({s.signal_id for s in result.signals if s.status != SignalStatus.ABSENT})
+            return self._stop(
+                work, S.VERIFYING, R.SAFETY_REVIEW_REQUIRED, now, resume_step=2, note="Bậc 2: " + ", ".join(unclear)
+            )
+        return False
 
     def _step_2_check_required_data(self, work: Case, now: datetime) -> bool:
         missing = self._missing_fields(work)

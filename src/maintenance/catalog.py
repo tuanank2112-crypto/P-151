@@ -1,12 +1,13 @@
 """Load the read-only simulated catalog, department calendar, SLA config and the 12-ticket fixture."""
 
+import re
 from datetime import datetime, time, timedelta
-from functools import lru_cache
+from functools import cache, lru_cache
 from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from src.maintenance.enums import ActorRole, Department, EvidenceType, PlaybookId, ReadabilityStatus
 from src.maintenance.models import (
@@ -128,6 +129,109 @@ class SlaConfig(Frozen):
     priority: PrioritySla
 
 
+# ---------------------------------------------------------------------------
+# Safety / priority vocabulary is DATA (lexicon.yaml, Q07); the logic lives in safety.py and priority.py
+# ---------------------------------------------------------------------------
+
+
+@cache
+def compile_pattern(pattern: str) -> re.Pattern[str]:
+    """'re:<regex>' = raw regex; anything else = a phrase matched whole, on word boundaries."""
+    return re.compile(pattern[3:]) if pattern.startswith("re:") else re.compile(r"\b" + re.escape(pattern) + r"\b")
+
+
+def _check_patterns(patterns: tuple[str, ...]) -> None:
+    for pattern in patterns:
+        try:
+            compile_pattern(pattern)
+        except re.error as exc:
+            raise ValueError(f"Pattern không compile được: {pattern!r} ({exc})") from exc
+
+
+class SignalDef(Frozen):
+    signal_id: str = Field(pattern=r"^(S-\d{2}|T2-0[1-5])$")
+    name: str
+    tier: Literal[1, 2]
+    phase: Literal["P0", "P1"]
+    scope: tuple[str, ...] = ()  # lookup only (00 §8 D12): P0 never filters by scope
+    patterns: tuple[str, ...] = ()
+    all_of: tuple[str, ...] = ()  # tier 1 combination: EVERY component PRESENT (S-14)
+    any_of: tuple[str, ...] = ()  # tier 2: some component but not all of all_of (T2-05)
+
+
+class ComponentDef(Frozen):
+    component_id: str
+    patterns: tuple[str, ...] = Field(min_length=1)
+
+
+class SafetyLexicon(Frozen):
+    active_phases: tuple[Literal["P0", "P1"], ...] = Field(min_length=1)
+    negation_window_words: int = Field(ge=1)
+    negation_prefixes: tuple[str, ...] = Field(min_length=1)
+    hedge_window_words: int = Field(ge=1)
+    hedges: tuple[str, ...] = Field(min_length=1)
+    resolved_markers: tuple[str, ...]
+    benign_phrases: tuple[str, ...]
+    benign_lamp_nouns: tuple[str, ...]
+    benign_with_lamp_noun: tuple[str, ...]
+    ambiguous_terms: tuple[str, ...]
+    ambiguous_exclusions: tuple[str, ...]
+    khet_benign_contexts: tuple[str, ...]
+    components: tuple[ComponentDef, ...]
+    signals: tuple[SignalDef, ...] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _consistent(self):
+        """Every pattern compiles; signal_id unique; all_of/any_of name real components; a signal is either a
+        pattern signal or a combination (T2-03 alone has no patterns: they come from ambiguous_terms)."""
+        for group in (
+            self.negation_prefixes,
+            self.hedges,
+            self.resolved_markers,
+            self.benign_phrases,
+            self.benign_lamp_nouns,
+            self.ambiguous_terms,
+            self.ambiguous_exclusions,
+            self.khet_benign_contexts,
+        ):
+            _check_patterns(group)
+        for component in self.components:
+            _check_patterns(component.patterns)
+        ids = [s.signal_id for s in self.signals]
+        if len(ids) != len(set(ids)):
+            raise ValueError("signal_id trùng nhau trong lexicon")
+        known = {c.component_id for c in self.components}
+        for signal in self.signals:
+            _check_patterns(signal.patterns)
+            combo = signal.all_of or signal.any_of
+            if not set(signal.all_of + signal.any_of) <= known:
+                raise ValueError(f"{signal.signal_id}: all_of/any_of trỏ tới component không có")
+            if combo and signal.patterns:
+                raise ValueError(f"{signal.signal_id}: tín hiệu tổ hợp không được có patterns")
+            if not combo and not signal.patterns and signal.signal_id != "T2-03":
+                raise ValueError(f"{signal.signal_id}: thiếu patterns")
+        return self
+
+
+class PriorityLexicon(Frozen):
+    high_areas: tuple[str, ...] = Field(min_length=1)  # area labels, exactly as rules.AREA_PATTERNS
+    obstruction_patterns: tuple[str, ...] = Field(min_length=1)  # PRI-H2
+    usage_impact_patterns: tuple[str, ...] = Field(min_length=1)  # PRI-M2
+
+    @model_validator(mode="after")
+    def _compile(self):
+        _check_patterns(self.obstruction_patterns)
+        _check_patterns(self.usage_impact_patterns)
+        return self
+
+
+class Lexicon(Frozen):
+    lexicon_version: str
+    synthetic: Literal[True]
+    safety: SafetyLexicon
+    priority: PriorityLexicon
+
+
 class Actor(Frozen):
     actor_id: str
     actor_role: ActorRole
@@ -214,6 +318,8 @@ class Expected(Frozen):
     flags: tuple[str, ...] | None = None
     warnings: tuple[str, ...] | None = None
     failing_items: tuple[str, ...] | None = None
+    risk_level: str | None = None
+    priority: str | None = None
 
 
 class TicketFixture(Frozen):
@@ -245,6 +351,11 @@ def _read(path: Path) -> dict:
 @lru_cache
 def load_catalog(directory: Path = FIXTURE_DIR) -> Catalog:
     return Catalog.model_validate(_read(directory / "catalog.yaml"))
+
+
+@lru_cache
+def load_lexicon(directory: Path = FIXTURE_DIR) -> Lexicon:
+    return Lexicon.model_validate(_read(directory / "lexicon.yaml"))
 
 
 @lru_cache

@@ -184,7 +184,7 @@ def test_invalid_transition_is_409(api):
 
 def test_bql_filters(api):
     rows = api.get("/api/v1/bql/tickets", params={"status": "VERIFYING"}, headers=BQL).json()
-    assert {r["ticket_id"] for r in rows} == {"SIM-TKT-TEC-002", "SIM-TKT-TEC-005"}
+    assert {r["ticket_id"] for r in rows} == {"SIM-TKT-TEC-002", "SIM-TKT-TEC-005", "SIM-TKT-CLN-004"}
     rows = api.get("/api/v1/bql/tickets", params={"blocker_code": "OUT_OF_HOURS"}, headers=BQL).json()
     assert [r["ticket_id"] for r in rows] == ["SIM-TKT-CLN-002"]
     rows = api.get("/api/v1/bql/tickets", params={"department_id": "DEPT_TECHNICAL"}, headers=BQL).json()

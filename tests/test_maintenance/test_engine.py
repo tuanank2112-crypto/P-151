@@ -558,6 +558,11 @@ def test_p0_contract_queue_sort_key_and_bql_row_fields(engine):
     order = sorted([none, low, high, emergency], key=queue_sort_key)
     assert [t.ticket_id for t in order] == ["SIM-TKT-Z", "SIM-TKT-Y", "SIM-TKT-X", "SIM-TKT-W"]
     rows = bql_rows(engine, engine.clock(), risk_level=RiskLevel.NONE)
-    assert len(rows) == 12 and rows[0].priority is None and rows[0].closure_kind is None
-    assert bql_rows(engine, engine.clock(), blocker_owner_role="BQL") == []
+    assert len(rows) == 10 and rows[0].priority is None and rows[0].closure_kind is None  # CLN-004/TEC-005 are tier 1
+    emergency_rows = bql_rows(engine, engine.clock(), risk_level=RiskLevel.EMERGENCY)
+    assert [r.ticket_id for r in emergency_rows] == ["SIM-TKT-CLN-004", "SIM-TKT-TEC-005"]
+    assert {r.ticket_id for r in bql_rows(engine, engine.clock(), blocker_owner_role="BQL")} == {
+        "SIM-TKT-CLN-004",
+        "SIM-TKT-TEC-005",
+    }
     assert resident_view(engine, engine.get("SIM-TKT-CLN-001"), engine.clock()).allowed_actions == []
