@@ -170,8 +170,8 @@ Leo thang chỉ bật cờ và thông báo BQL; không đổi trạng thái, kh�
 `CR-BPTN-02` (v0.5 candidate):
 
 1. Cư dân gửi phản ánh → `RECEIVED`.
-2. Agent kiểm tra dữ liệu (tính cả phần bổ sung) và trùng.
-3. Agent phân loại, **đề xuất** phòng ban theo bảng playbook → phòng ban.
+2. Agent kiểm tra dữ liệu (tính cả phần bổ sung).
+3. Agent phân loại, **đề xuất** phòng ban theo bảng playbook → phòng ban, rồi kiểm tra trùng.
 4. BPTN review nếu cần.
 5. Nếu kỹ thuật, tra Asset Catalog; không xác định thì chờ BPTN.
 6. Kiểm vật tư/tồn kho mô phỏng.

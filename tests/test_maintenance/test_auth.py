@@ -1,6 +1,7 @@
 """Login, sessions and role-scoped access with the real test accounts (header auth off, as in the running app)."""
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from src.api.auth import MAX_FAILED_LOGINS, AuthService, get_auth, load_accounts, verify_password
@@ -141,3 +142,15 @@ def test_demo_accounts_list_has_no_hashes(client):
         "qa01",
     }
     assert "password_hash" not in str(body)
+
+
+def test_lockout_is_per_client_so_others_cannot_lock_a_user_out():
+    auth = AuthService({a.username: a for a in load_accounts().accounts})
+    for _ in range(MAX_FAILED_LOGINS):
+        with pytest.raises(HTTPException):
+            auth.login("bql01", "nope", client="10.0.0.66")
+    with pytest.raises(HTTPException) as locked:
+        auth.login("bql01", PASSWORD, client="10.0.0.66")
+    assert locked.value.status_code == 429
+    token, account = auth.login("bql01", PASSWORD, client="10.0.0.7")
+    assert token and account.username == "bql01"

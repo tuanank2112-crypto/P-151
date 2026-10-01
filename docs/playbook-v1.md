@@ -73,17 +73,17 @@ Fixture validation dùng 12 ticket mô phỏng: 6 vệ sinh, 6 kỹ thuật. B�
 1. Ingest raw ticket bất biến → `RECEIVED`.
 2. Kiểm tra dữ liệu: `ticket_id`, `created_at`, nội dung, vị trí sơ bộ (tính cả phần cư dân bổ sung). Thiếu →
    `NEED_INFO`/`MISSING_INFO`, liệt kê đúng field thiếu.
-3. Kiểm tra trùng: ticket đang mở, cùng vị trí và loại, trong 48h → `VERIFYING`/`DUPLICATE`. BPTN gộp (`MERGED`) hoặc
-   bác (chạy lại từ bước 4).
-4. Phân loại + **đề xuất** phòng ban (`proposed_department_id` từ bảng playbook → phòng ban). Bỏ qua phân loại nếu
+3. Phân loại + **đề xuất** phòng ban (`proposed_department_id` từ bảng playbook → phòng ban). Bỏ qua phân loại nếu
    `locked_fields.category`. Không rõ → `CATEGORY_UNCLEAR`/`OUT_OF_SCOPE`: BPTN chọn loại việc, `review_status=CONFIRMED`,
-   chạy lại từ bước 6.
+   chạy lại từ bước 4.
+4. Kiểm tra trùng: ticket đang mở, cùng loại và vị trí, trong 48h → `VERIFYING`/`DUPLICATE`. BPTN gộp (`MERGED`) hoặc
+   bác (chạy lại từ bước 5).
 5. **BPTN review nếu cần:** loại việc và vị trí rõ → `NOT_REQUIRED`. Playbook chỉ do LLM đề xuất → `PENDING_REVIEW`:
    BPTN sửa hoặc xác nhận → `CONFIRMED`, chạy lại từ bước 6.
 6. **Tra tài sản:** đèn có đúng một asset → `FOUND`; vệ sinh → `NOT_APPLICABLE`. Không xác định → `ASSET_UNCLEAR`:
    BPTN chọn asset (`FOUND`) hoặc chủ động chọn "xác định tại hiện trường" kèm lý do (`ONSITE_BY_BPTN` + cờ
    `ASSET_CHECK_ONSITE`). Agent không tự bỏ qua bước này.
-7. Vật tư: so định mức với tồn kho. Thiếu → `ON_HOLD`/`WAITING_MATERIAL` (chạy lại bước 7 khi nhập kho). Không rõ tồn
+7. Vật tư: so định mức với tồn kho. Thiếu → `ON_HOLD`/`WAITING_MATERIAL` (nhập kho xong chạy lại từ bước 6). Không rõ tồn
    kho → không chặn, cờ `STOCK_CHECK_ON_ACCEPT`.
 8. **Giao phòng ban:** kiểm tra `can_route`, `department_id = proposed_department_id`, tạo draft (`assignee_id=null`),
    `ROUTED`. Ngoài ca phòng ban → giữ `ROUTED` + `OUT_OF_HOURS`, tự chuyển đầu ca.
@@ -106,7 +106,7 @@ reset `asset_resolution`, chạy lại từ bước 6; cùng loại việc → c
 | Gate (`CR-BPTN-02` (v0.5 candidate)) | Field/điều kiện bắt buộc | Owner/source | Nếu không đạt |
 |---|---|---|---|
 | `GATE-DATA` (bước 2) | `ticket_id`, `created_at`, nội dung, vị trí sơ bộ (tính cả phần bổ sung) | System ingest / cư dân | `NEED_INFO`/`MISSING_INFO` |
-| `GATE-DUPLICATE` (bước 3) | Không trùng ticket đang mở cùng vị trí/loại trong 48h | Agent | `VERIFYING`/`DUPLICATE` |
+| `GATE-DUPLICATE` (bước 4) | Không trùng ticket đang mở cùng vị trí/loại trong 48h | Agent | `VERIFYING`/`DUPLICATE` |
 | `GATE-CLASSIFY` (bước 4) | Một `playbook_id` trong allowlist → `proposed_department_id` | Agent; BPTN khi không rõ | `VERIFYING`/`CATEGORY_UNCLEAR` hoặc `OUT_OF_SCOPE` |
 | `GATE-REVIEW` (bước 5) | `review_status ∈ {NOT_REQUIRED, CONFIRMED}` | Agent; BPTN khi `PENDING_REVIEW` | `VERIFYING`/`PENDING_REVIEW` |
 | `GATE-ASSET` (bước 6) | `asset_resolution ∈ {FOUND, ONSITE_BY_BPTN, NOT_APPLICABLE}` | Agent + Asset Catalog; chỉ BPTN chọn `ONSITE_BY_BPTN` | `VERIFYING`/`ASSET_UNCLEAR` |
@@ -246,7 +246,7 @@ Ma trận dưới đây là handoff nghiệp vụ cho AI/Data. `Required` luôn 
 | `PB-COM-R-CFM-01` | Playbook chỉ do LLM đề xuất | `review_status=PENDING_REVIEW` | `VERIFYING` | test 13 |
 | `PB-COM-R-OVR-01` | BPTN gỡ blocker và chọn giá trị | Ghi `locked_fields` (bắt buộc lý do); `review_status=CONFIRMED` khi áp dụng; chạy lại từ `resume_step` | Theo pipeline | acceptance 3, 6 |
 | `PB-COM-R-AST-01` | TEC không đúng một asset khớp vị trí | Blocker `ASSET_UNCLEAR`; không đoán, không tự bỏ qua | `VERIFYING` | test 14 |
-| `PB-COM-R-STK-01` | Tồn kho thiếu | Blocker `WAITING_MATERIAL`; chạy lại bước 7 khi `stock_received` | `ON_HOLD` | acceptance 4 |
+| `PB-COM-R-STK-01` | Tồn kho thiếu | Blocker `WAITING_MATERIAL`; chạy lại từ bước 6 khi `stock_received` | `ON_HOLD` | acceptance 4 |
 | `PB-COM-R-STK-02` | Tồn kho không rõ | Cờ `STOCK_CHECK_ON_ACCEPT`; không chặn | Không đổi | fixture TEC-006 |
 | `PB-COM-R-ROUTE-01` | `can_route` đúng | `department_id = proposed_department_id`; tạo draft; giao phòng ban | `ROUTED` | acceptance 1, bất biến 6 |
 | `PB-COM-R-ROUTE-02` | `can_route` sai | `transition()` từ chối | Không vào `ROUTED` | test 13b |
@@ -286,7 +286,7 @@ Ma trận dưới đây là handoff nghiệp vụ cho AI/Data. `Required` luôn 
 | Gate | Required fields/conditions | Owner |
 |---|---|---|
 | Dữ liệu (bước 2) | Raw + vị trí sơ bộ | System / cư dân |
-| Trùng (bước 3) | Không trùng ticket vệ sinh đang mở cùng vị trí | Agent; BPTN |
+| Trùng (bước 4) | Không trùng ticket vệ sinh đang mở cùng vị trí | Agent; BPTN |
 | Phân loại (bước 4) | Service/type/playbook/rule/reason/source → `proposed_department_id=DEPT_CLEANING` | Agent; BPTN khi không rõ |
 | Review (bước 5) | `review_status ∈ {NOT_REQUIRED, CONFIRMED}` | Agent; BPTN |
 | Tài sản (bước 6) | `asset_resolution=NOT_APPLICABLE` | Agent |
@@ -310,7 +310,7 @@ Ma trận dưới đây là handoff nghiệp vụ cho AI/Data. `Required` luôn 
 | Bước | Actor | Action/condition | From | To |
 |---:|---|---|---|---|
 | 1 | System | Ingest | — | `RECEIVED` |
-| 2–7 | Agent | Dữ liệu, trùng, phân loại + đề xuất `DEPT_CLEANING`, review, tài sản `NOT_APPLICABLE`, vật tư | `RECEIVED` | Dừng ở `NEED_INFO`/`VERIFYING`/`ON_HOLD` nếu có blocker |
+| 2–7 | Agent | Dữ liệu, phân loại + đề xuất `DEPT_CLEANING`, trùng, review, tài sản `NOT_APPLICABLE`, vật tư | `RECEIVED` | Dừng ở `NEED_INFO`/`VERIFYING`/`ON_HOLD` nếu có blocker |
 | 8 | System | `can_route` → giao `DEPT_CLEANING`, tạo draft | `RECEIVED` | `ROUTED` (kèm `OUT_OF_HOURS` nếu ngoài ca) |
 | 9 | Phòng ban | Nhận việc, cập nhật checklist/vật tư/ghi chú | `ROUTED` | `IN_PROGRESS` |
 | 10 | Agent | Đối soát khi báo hoàn thành | `IN_PROGRESS` | `READY_FOR_REVIEW` hoặc giữ `IN_PROGRESS` |
@@ -388,7 +388,7 @@ Nội dung có chất lạ/mùi hắc không còn là exception (`CR-BPTN-02` (v
 | Gate | Required fields/conditions | Owner |
 |---|---|---|
 | Dữ liệu (bước 2) | Raw + vị trí sơ bộ | System / cư dân |
-| Trùng (bước 3) | Không trùng ticket đèn đang mở cùng vị trí | Agent; BPTN |
+| Trùng (bước 4) | Không trùng ticket đèn đang mở cùng vị trí | Agent; BPTN |
 | Phân loại (bước 4) | → `proposed_department_id=DEPT_TECHNICAL` | Agent; BPTN khi không rõ |
 | Review (bước 5) | `review_status ∈ {NOT_REQUIRED, CONFIRMED}` | Agent; BPTN |
 | Tài sản (bước 6) | Đúng một `SIM-ASSET-*` `LIGHTING` khớp vị trí (`FOUND`), hoặc BPTN chọn asset / xác định tại hiện trường (`ONSITE_BY_BPTN`) | Agent + Asset Catalog; BPTN |
@@ -415,7 +415,7 @@ Nội dung có chất lạ/mùi hắc không còn là exception (`CR-BPTN-02` (v
 | Bước | Actor | Action/condition | From | To |
 |---:|---|---|---|---|
 | 1 | System | Ingest | — | `RECEIVED` |
-| 2–5 | Agent | Dữ liệu, trùng, phân loại + đề xuất `DEPT_TECHNICAL`, review | `RECEIVED` | Dừng ở `NEED_INFO`/`VERIFYING` nếu có blocker |
+| 2–5 | Agent | Dữ liệu, phân loại + đề xuất `DEPT_TECHNICAL`, trùng, review | `RECEIVED` | Dừng ở `NEED_INFO`/`VERIFYING` nếu có blocker |
 | 6 | Agent / BPTN | Tra tài sản; không xác định → BPTN quyết định | `RECEIVED` | `VERIFYING`/`ASSET_UNCLEAR` hoặc tiếp tục |
 | 7 | Agent | Vật tư | `RECEIVED` | `ON_HOLD`/`WAITING_MATERIAL` hoặc tiếp tục |
 | 8 | System | `can_route` → giao `DEPT_TECHNICAL`, tạo draft | `RECEIVED` | `ROUTED` (kèm `OUT_OF_HOURS` nếu ngoài ca) |

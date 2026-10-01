@@ -1,7 +1,9 @@
 """MaintenanceOps Agent engine, CR-BPTN-02 (v0.5 candidate).
 
-Flow: resident report → Agent pipeline steps 2–8 (data, duplicate, category + department, BPTN review, asset,
-material, route to department) → department accepts and works → step 10 reconciliation → BQL closes.
+Flow: resident report → Agent pipeline steps 2–8 (data, category + department, duplicate, BPTN review, asset,
+material + stock, route to department) → department accepts and works → step 10 reconciliation → BQL closes.
+Classification runs before the duplicate check: the check then compares only tickets of the same category, and a
+ticket whose category is unclear stops before any other ticket is read.
 
 Rules that hold everywhere:
   - every status change goes through `_apply_transition`: it checks TRANSITIONS, writes exactly one StatusEvent
@@ -13,6 +15,8 @@ Rules that hold everywhere:
     deep copy and commits only after the audit sink accepted the new rows (audit failure = fail closed).
 """
 
+import logging
+import threading
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -74,6 +78,8 @@ from src.maintenance.models import (
 )
 from src.maintenance.proposer import LLMClient, propose
 from src.maintenance.rules import extract_location, missing_location_parts
+
+logger = logging.getLogger(__name__)
 
 LOCAL_TZ = timezone(timedelta(hours=7))
 AGENT_ID = "SIM-ACTOR-AGENT"
@@ -249,7 +255,10 @@ class MaintenanceEngine:
         self.dataset = dataset or load_dataset()
         self.audit_sink = audit_sink or (lambda rows: None)
         self.notify_sink = notify_sink or (lambda rows: None)
-        self.clock = clock or (lambda: datetime.now(LOCAL_TZ))
+        self._base_clock = clock or (lambda: datetime.now(LOCAL_TZ))
+        self._local = threading.local()  # per-thread clock override set by `at()`
+        # One writer at a time: API requests run in a thread pool and the scheduled job runs beside them
+        self.lock = threading.RLock()
         self.llm = llm  # None = fixed rules only (deterministic, used by tests and LLM_MODE=mock)
         self.llm_label = llm_label
         self.cases: dict[str, Case] = {}
@@ -263,18 +272,30 @@ class MaintenanceEngine:
     def _reset_stock(self) -> None:
         self.stock = {m.item_code: m.simulated_stock_qty for m in self.catalog.materials}
 
+    def clock(self) -> datetime:
+        """The current time, or the moment an enclosing `at()` set for this thread."""
+        moment = getattr(self._local, "moment", None)
+        return moment if moment is not None else self._base_clock()
+
     @contextmanager
     def at(self, moment: datetime) -> Iterator[None]:
-        """Run the enclosed calls as if the clock showed `moment` (demo replays and scheduled jobs)."""
-        previous = self.clock
-        self.clock = lambda: moment
+        """Run the enclosed calls as if the clock showed `moment` (demo replays and scheduled jobs).
+
+        Thread-local, so a replay never shifts the time other requests see.
+        """
+        previous = getattr(self._local, "moment", None)
+        self._local.moment = moment
         try:
             yield
         finally:
-            self.clock = previous
+            self._local.moment = previous
 
     def reset(self, *, with_fixtures: bool = True) -> str:
         """FR-DEMO-001: drop every mutable layer and re-ingest the fixture, each at its own created_at."""
+        with self.lock:
+            return self._reset(with_fixtures)
+
+    def _reset(self, with_fixtures: bool) -> str:
         self.cases = {}
         self._reset_stock()
         self.run_number += 1
@@ -310,18 +331,19 @@ class MaintenanceEngine:
         if self.catalog.actor_role(resident_id) != Role.RESIDENT:
             raise ActionDeniedError(f"{resident_id} không phải cư dân", {"code": "ACTION_DENIED"})
         moment = (received_at or self.clock()).astimezone(LOCAL_TZ)
-        number = len(self.cases) + 1
-        while f"SIM-TKT-{number:04d}" in self.cases:
-            number += 1
-        raw = RawTicket(
-            ticket_id=f"SIM-TKT-{number:04d}",
-            created_at=moment.isoformat(timespec="seconds"),
-            original_description=original_description,
-            channel=channel,
-        )
-        with self.at(moment):
-            self.ingest(raw, resident_id=resident_id)
-            return self.run_agent(raw.ticket_id)
+        with self.lock:  # pick and take the ticket number in one step
+            number = len(self.cases) + 1
+            while f"SIM-TKT-{number:04d}" in self.cases:
+                number += 1
+            raw = RawTicket(
+                ticket_id=f"SIM-TKT-{number:04d}",
+                created_at=moment.isoformat(timespec="seconds"),
+                original_description=original_description,
+                channel=channel,
+            )
+            with self.at(moment):
+                self.ingest(raw, resident_id=resident_id)
+                return self.run_agent(raw.ticket_id)
 
     def ingest(
         self,
@@ -331,6 +353,10 @@ class MaintenanceEngine:
         resident_id: str = DEFAULT_RESIDENT_ID,
     ) -> Case:
         """Store the raw resident report unchanged in status RECEIVED (step 1)."""
+        with self.lock:
+            return self._ingest(raw, planned_materials, resident_id)
+
+    def _ingest(self, raw: RawTicket, planned_materials: list[PlannedMaterial] | None, resident_id: str) -> Case:
         if raw.ticket_id in self.cases:
             raise GuardError(f"Ticket {raw.ticket_id} đã được ingest")
         now = self.clock()
@@ -492,8 +518,9 @@ class MaintenanceEngine:
     ) -> Case:
         """Event `bptn_resolved`. BPTN answers the open VERIFYING blocker; chosen values go to `locked_fields`.
 
-        DUPLICATE: merge=True → MERGED; merge=False → pipeline resumes at step 4.
-        CATEGORY_UNCLEAR / OUT_OF_SCOPE: `category` required → review CONFIRMED, resume at step 6.
+        DUPLICATE: merge=True → MERGED; merge=False → pipeline resumes at step 5 (BPTN review, then asset).
+        CATEGORY_UNCLEAR / OUT_OF_SCOPE: `category` required → review CONFIRMED, resume at step 4 (duplicate
+            check on the chosen category).
         PENDING_REVIEW: confirm as is, or change category/location → CONFIRMED, resume at step 6.
         ASSET_UNCLEAR: `asset_id`, a new `location`, or `asset_onsite` ("xác định tại hiện trường", reason
             required → ONSITE_BY_BPTN + flag ASSET_CHECK_ONSITE); resume at step 6.
@@ -814,15 +841,16 @@ class MaintenanceEngine:
             raise NotFoundError(f"Không có vật tư {item_code} trong catalog")
         if qty <= 0:
             raise GuardError("Số lượng nhập phải > 0")
-        self.stock[item_code] = (self.stock.get(item_code) or 0) + qty
-        waiting = [
-            case.ticket.ticket_id
-            for case in self.cases.values()
-            if case.ticket.blocker is not None
-            and case.ticket.blocker.code == R.WAITING_MATERIAL
-            and any(line.item_code == item_code for line in case.material_lines)
-        ]
-        return [self.resume(ticket_id) for ticket_id in waiting]
+        with self.lock:
+            self.stock[item_code] = (self.stock.get(item_code) or 0) + qty
+            waiting = [
+                case.ticket.ticket_id
+                for case in self.cases.values()
+                if case.ticket.blocker is not None
+                and case.ticket.blocker.code == R.WAITING_MATERIAL
+                and any(line.item_code == item_code for line in case.material_lines)
+            ]
+            return [self.resume(ticket_id) for ticket_id in waiting]
 
     # ------------------------------------------------------------------ system: resume + scheduled job
 
@@ -835,13 +863,34 @@ class MaintenanceEngine:
         accepted. Returns the ticket IDs that changed."""
         moment = now or self.clock()
         changed = []
-        with self.at(moment):
-            for ticket_id in list(self.cases):
-                before = len(self.cases[ticket_id].events)
-                self._mutate(ticket_id, SYSTEM_ID, Action.RUN_JOBS, lambda work, now: self._tick(work, now))
+        with self.lock, self.at(moment):
+            for ticket_id, case in list(self.cases.items()):
+                if not self._due(case.ticket, moment):
+                    continue  # nothing for _tick to do: skip the deep copy
+                before = len(case.events)
+                try:
+                    self._mutate(ticket_id, SYSTEM_ID, Action.RUN_JOBS, lambda work, now: self._tick(work, now))
+                except EngineError:  # one broken ticket must not stop the job for all the others
+                    logger.exception("run_jobs: ticket %s failed", ticket_id)
+                    continue
                 if len(self.cases[ticket_id].events) != before:
                     changed.append(ticket_id)
         return changed
+
+    def _due(self, ticket: Ticket, now: datetime) -> bool:
+        """Whether `_tick` would change anything: the same conditions it checks, without copying the case."""
+        blocker = ticket.blocker
+        if blocker is None:
+            wait = timedelta(hours=self.catalog.sla_config.not_accepted.start_after_hours)
+            return (
+                ticket.status == S.ROUTED
+                and ticket.accepted_at is None
+                and ticket.dispatched_at is not None
+                and now >= ticket.dispatched_at + wait
+            )
+        retry_due = blocker.next_retry_at is not None and blocker.next_retry_at <= now
+        escalation_due = blocker.escalate_at is not None and blocker.escalate_at <= now and not blocker.escalated
+        return retry_due or escalation_due
 
     # ------------------------------------------------------------------ the one transition entry point
 
@@ -862,6 +911,19 @@ class MaintenanceEngine:
         `to`, but not from the current status, gets INVALID_TRANSITION. `expected_from` pins the source for the
         named actions that share a target (accept / resume_work / rework all lead to IN_PROGRESS).
         """
+        with self.lock:
+            return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+
+    def _transition(
+        self,
+        ticket_id: str,
+        to: TicketStatus,
+        actor_id: str,
+        note: str | None,
+        eta: datetime | None,
+        cancel_reason: str | None,
+        expected_from: TicketStatus | None,
+    ) -> Case:
         case = self.get(ticket_id)
         now = self.clock()
         role = self._role(actor_id)
@@ -929,6 +991,20 @@ class MaintenanceEngine:
         field_name: str = "-",
         new_value: Any = None,
         reason: str | None = None,
+    ) -> Case:
+        with self.lock:
+            return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+
+    def _mutate_locked(
+        self,
+        ticket_id: str,
+        actor_id: str,
+        action: Action,
+        op: Callable[[Case, datetime], None],
+        roles: frozenset[ActorRole] | None,
+        field_name: str,
+        new_value: Any,
+        reason: str | None,
     ) -> Case:
         case = self.get(ticket_id)
         now = self.clock()
@@ -1395,7 +1471,7 @@ class MaintenanceEngine:
                 work, "department.dispatch", BlockerOwner.DEPARTMENT, now, {"department_id": work.ticket.department_id}
             )
             return True
-        resume_step = {R.MISSING_INFO: 2, R.WAITING_MATERIAL: 7}.get(code, blocker.resume_step)
+        resume_step = {R.MISSING_INFO: 2, R.WAITING_MATERIAL: 6}.get(code, blocker.resume_step)
         self._apply_transition(work, S.RECEIVED, SYSTEM_ID, Role.SYSTEM, now, note=f"Gỡ {code}")
         self._run_pipeline(work, resume_step, now)
         return True
@@ -1447,13 +1523,13 @@ class MaintenanceEngine:
         if work.ticket.status != S.RECEIVED:
             raise EngineError(f"Pipeline chạy khi ticket ở {work.ticket.status}")
         steps = (
-            (2, self._step_check_data),
-            (3, self._step_duplicate),
-            (4, self._step_classify),
-            (5, self._step_review),
-            (6, self._step_asset),
-            (7, self._step_material),
-            (8, self._step_route),
+            (2, self._step_2_check_required_data),
+            (3, self._step_3_classify_and_propose_department),
+            (4, self._step_4_check_duplicate_ticket),
+            (5, self._step_5_check_bptn_review_needed),
+            (6, self._step_6_lookup_asset),
+            (7, self._step_7_check_material_stock),
+            (8, self._step_8_route_to_department),
         )
         for number, step in steps:
             if number >= from_step and step(work, now):
@@ -1490,7 +1566,7 @@ class MaintenanceEngine:
             missing.extend(["location"] if len(parts) == 3 else [f"location_{part}" for part in parts])
         return missing
 
-    def _step_check_data(self, work: Case, now: datetime) -> bool:
+    def _step_2_check_required_data(self, work: Case, now: datetime) -> bool:
         missing = self._missing_fields(work)
         if missing:
             return self._stop(
@@ -1535,40 +1611,8 @@ class MaintenanceEngine:
             )
         return work.classification
 
-    def _step_duplicate(self, work: Case, now: datetime) -> bool:
-        if work.ticket.locked_fields.category is None:
-            self._classification(work, now)
-        category, location = self._category(work), self.effective_location(work)
-        if category is None or location is None:
-            return False  # step 4 decides what to do with an unclear category
-        mine = (_created_at(work.ticket.raw), work.ticket.ticket_id)
-        window = timedelta(hours=self.catalog.sla_config.duplicate_window_hours)
-        candidates = sorted(
-            (
-                (_created_at(other.ticket.raw), other.ticket.ticket_id)
-                for other in self.cases.values()
-                if other.ticket.ticket_id != work.ticket.ticket_id
-                and other.ticket.ticket_id not in work.not_duplicate_of
-                and other.ticket.status not in TERMINAL_STATUSES
-                and _created_at(other.ticket.raw) is not None
-                and self._category(other) == category
-                and self.effective_location(other) == location
-            ),
-        )
-        for created, ticket_id in candidates:
-            if (created, ticket_id) < mine and mine[0] - created <= window:
-                return self._stop(
-                    work,
-                    S.VERIFYING,
-                    R.DUPLICATE,
-                    now,
-                    resume_step=4,
-                    related_ticket_id=ticket_id,
-                    note=f"Cùng vị trí và loại với {ticket_id} trong {window}",
-                )
-        return False
-
-    def _step_classify(self, work: Case, now: datetime) -> bool:
+    def _step_3_classify_and_propose_department(self, work: Case, now: datetime) -> bool:
+        """Category → playbook → proposed department. Runs before the duplicate check, which needs the category."""
         locked = work.ticket.locked_fields.category
         if locked:
             self._bind_category(work, locked, "BPTN_LOCKED", now)  # BPTN already chose; never reclassify
@@ -1576,10 +1620,52 @@ class MaintenanceEngine:
         cls = self._classification(work, now)
         if cls.playbook_id is None:
             return self._stop(
-                work, S.VERIFYING, cls.reason_code or R.CATEGORY_UNCLEAR, now, resume_step=6, note=cls.reason
+                work, S.VERIFYING, cls.reason_code or R.CATEGORY_UNCLEAR, now, resume_step=4, note=cls.reason
             )
         self._bind_category(work, cls.service_category, "AGENT", now)
         return False
+
+    def _step_4_check_duplicate_ticket(self, work: Case, now: datetime) -> bool:
+        """An open ticket created earlier, same category and location, within the window → BPTN decides."""
+        duplicate_of = self._find_duplicate_ticket_id(work)
+        if duplicate_of is None:
+            return False
+        window = timedelta(hours=self.catalog.sla_config.duplicate_window_hours)
+        return self._stop(
+            work,
+            S.VERIFYING,
+            R.DUPLICATE,
+            now,
+            resume_step=5,
+            related_ticket_id=duplicate_of,
+            note=f"Cùng vị trí và loại với {duplicate_of} trong {window}",
+        )
+
+    def _find_duplicate_ticket_id(self, work: Case) -> str | None:
+        """The earliest matching ticket. Cheap fields are compared first; the location, the one comparison that
+        parses report text, is read only for open tickets of the same category inside the window."""
+        category, location = self._category(work), self.effective_location(work)
+        created = _created_at(work.ticket.raw)
+        if category is None or location is None or created is None:
+            return None  # steps 2 and 3 already stop such tickets
+        mine = (created, work.ticket.ticket_id)
+        earliest = created - timedelta(hours=self.catalog.sla_config.duplicate_window_hours)
+        matches = []
+        for other in self.cases.values():
+            ticket = other.ticket
+            if (
+                ticket.ticket_id == work.ticket.ticket_id
+                or ticket.ticket_id in work.not_duplicate_of
+                or ticket.status in TERMINAL_STATUSES
+                or self._category(other) != category
+            ):
+                continue
+            other_created = _created_at(ticket.raw)
+            if other_created is None or other_created < earliest or (other_created, ticket.ticket_id) >= mine:
+                continue
+            if self.effective_location(other) == location:
+                matches.append((other_created, ticket.ticket_id))
+        return min(matches)[1] if matches else None
 
     def _bind_category(self, work: Case, category: ServiceCategory, source: str, now: datetime) -> None:
         """Proposal + department for a category. The department comes from the playbook → department table."""
@@ -1615,7 +1701,7 @@ class MaintenanceEngine:
         self._propose_department(work, now)
 
     def _propose_department(self, work: Case, now: datetime) -> None:
-        """Step 4: only a proposal. `department_id` is written at step 8, after review and asset lookup."""
+        """Step 3: only a proposal. `department_id` is written at step 8, after review and asset lookup."""
         ticket = work.ticket
         department = ticket.locked_fields.department or self.catalog.department_for(work.proposal.playbook_id)
         if ticket.proposed_department_id != department:
@@ -1632,7 +1718,7 @@ class MaintenanceEngine:
             )
             ticket.proposed_department_id = department
 
-    def _step_review(self, work: Case, now: datetime) -> bool:
+    def _step_5_check_bptn_review_needed(self, work: Case, now: datetime) -> bool:
         ticket = work.ticket
         if ticket.review_status == ReviewStatus.CONFIRMED:
             return False
@@ -1650,7 +1736,7 @@ class MaintenanceEngine:
         ticket.review_status = ReviewStatus.NOT_REQUIRED
         return False
 
-    def _step_asset(self, work: Case, now: datetime) -> bool:
+    def _step_6_lookup_asset(self, work: Case, now: datetime) -> bool:
         proposal, ticket = work.proposal, work.ticket
         location = self.effective_location(work)
         if proposal.playbook_id != PlaybookId.TEC:
@@ -1698,22 +1784,11 @@ class MaintenanceEngine:
             return MaterialStockStatus.UNKNOWN
         return MaterialStockStatus.INSUFFICIENT if stock < planned_qty else MaterialStockStatus.SUFFICIENT
 
-    def _step_material(self, work: Case, now: datetime) -> bool:
-        playbook_id = work.proposal.playbook_id
-        if work.planned_for_playbook not in (None, playbook_id):
-            work.planned_materials = None  # the previous plan belonged to the other playbook
-        if work.planned_materials is None:
-            work.planned_materials = list(self.catalog.default_materials.get(playbook_id, ()))
-            source = f"vật tư mặc định của {playbook_id}"
-        else:
-            source = "kế hoạch vật tư của ticket"
-        work.planned_for_playbook = playbook_id
-        suffix = _suffix(work.ticket.ticket_id)
-        work.material_lines = [
-            self._material_line(f"SIM-WOD-{suffix}", suffix, index, planned)
-            for index, planned in enumerate(work.planned_materials, start=1)
-        ]
-        status = _aggregate_stock(work.material_lines)
+    def _step_7_check_material_stock(self, work: Case, now: datetime) -> bool:
+        """Planned materials, then each line against simulated stock. Short → ON_HOLD; when stock arrives the
+        pipeline resumes at step 6 (asset lookup), as the flow diagram draws it."""
+        source = self._plan_materials_for_playbook(work)
+        status = self._check_material_lines_against_stock(work)
         self._agent(
             work,
             Action.CHECK_MATERIAL_STOCK,
@@ -1731,11 +1806,32 @@ class MaintenanceEngine:
         work.ticket.flags = flags
         if status == MaterialStockStatus.INSUFFICIENT:
             return self._stop(
-                work, S.ON_HOLD, R.WAITING_MATERIAL, now, resume_step=7, note="Tồn kho mô phỏng không đủ vật tư dự kiến"
+                work, S.ON_HOLD, R.WAITING_MATERIAL, now, resume_step=6, note="Tồn kho mô phỏng không đủ vật tư dự kiến"
             )
         return False
 
-    def _step_route(self, work: Case, now: datetime) -> bool:
+    def _plan_materials_for_playbook(self, work: Case) -> str:
+        """Keep the ticket's own plan, or take the playbook defaults. Returns where the plan came from."""
+        playbook_id = work.proposal.playbook_id
+        if work.planned_for_playbook not in (None, playbook_id):
+            work.planned_materials = None  # the previous plan belonged to the other playbook
+        if work.planned_materials is None:
+            work.planned_materials = list(self.catalog.default_materials.get(playbook_id, ()))
+            source = f"vật tư mặc định của {playbook_id}"
+        else:
+            source = "kế hoạch vật tư của ticket"
+        work.planned_for_playbook = playbook_id
+        return source
+
+    def _check_material_lines_against_stock(self, work: Case) -> MaterialStockStatus:
+        suffix = _suffix(work.ticket.ticket_id)
+        work.material_lines = [
+            self._material_line(f"SIM-WOD-{suffix}", suffix, index, planned)
+            for index, planned in enumerate(work.planned_materials, start=1)
+        ]
+        return _aggregate_stock(work.material_lines)
+
+    def _step_8_route_to_department(self, work: Case, now: datetime) -> bool:
         ticket = work.ticket
         failing = route_blockers(ticket)
         if failing:  # the step order should make this impossible; refuse rather than hand over

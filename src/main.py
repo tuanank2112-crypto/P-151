@@ -24,7 +24,8 @@ async def _maintenance_jobs() -> None:
     while True:
         await asyncio.sleep(interval)
         try:
-            engine.run_jobs()
+            # off the event loop: the job may call the LLM, and must not freeze every request meanwhile
+            await asyncio.to_thread(engine.run_jobs)
         except Exception:  # one bad run must not stop the schedule
             logger.exception("MaintenanceOps job failed")
 
@@ -33,6 +34,8 @@ async def _maintenance_jobs() -> None:
 async def lifespan(app: FastAPI):
     settings = get_settings()
     print(f"Starting {settings.app_name} in {settings.app_env} mode (LLM_MODE={settings.llm_mode})")
+    # Load the fixture now, not on the first request (with LLM_MODE=openai that is 12 model calls)
+    await asyncio.to_thread(maintenance.get_engine)
     jobs = asyncio.create_task(_maintenance_jobs()) if settings.mo_jobs_enabled else None
     yield
     if jobs:

@@ -80,7 +80,7 @@ Lời hiển thị cho cư dân chỉ lấy từ `src/maintenance/i18n/vi.yaml`.
 | Bước | Actor | Action | Trạng thái trước → sau | Cư dân thấy |
 |---|---|---|---|---|
 | 1 | Cư dân | Gửi phản ánh qua `UI-09` | — → `RECEIVED` | Đã tiếp nhận |
-| 2 | Agent | Kiểm tra dữ liệu, trùng; match `PB-CLN-01`; đề xuất `DEPT_CLEANING`; review `NOT_REQUIRED`; tài sản `NOT_APPLICABLE`; vật tư đủ | giữ `RECEIVED` | — |
+| 2 | Agent | Kiểm tra dữ liệu; match `PB-CLN-01`; đề xuất `DEPT_CLEANING`; kiểm tra trùng; review `NOT_REQUIRED`; tài sản `NOT_APPLICABLE`; vật tư đủ | giữ `RECEIVED` | — |
 | 3 | System | `can_route` đúng → giao `DEPT_CLEANING`, tạo draft | `RECEIVED` → `ROUTED` | Đã chuyển Phòng Vệ sinh |
 | 4 | Phòng ban | Nhận việc (`UI-04`) | `ROUTED` → `IN_PROGRESS` | Phòng Vệ sinh đang xử lý |
 | 5 | Phòng ban | Checklist, vật tư, ghi chú; báo hoàn thành (`UI-05`) | giữ `IN_PROGRESS` | — |

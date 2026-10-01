@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Annotated
 
 import yaml
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -29,6 +29,7 @@ from src.maintenance.catalog import FIXTURE_DIR
 SESSION_TTL_SECONDS = 8 * 3600
 MAX_FAILED_LOGINS = 5
 LOCKOUT_SECONDS = 5 * 60
+MAX_TRACKED_FAILURES = 10_000
 PBKDF2_ITERATIONS = 200_000
 
 
@@ -81,22 +82,29 @@ class AuthService:
     accounts: dict[str, Account]
     clock: Callable[[], float] = time.monotonic
     sessions: dict[str, tuple[str, float]] = field(default_factory=dict)  # token -> (username, expires_at)
-    failures: dict[str, tuple[int, float]] = field(default_factory=dict)  # username -> (count, locked_until)
+    # (username, client address) -> (count, locked_until). Keyed by client too, so failures from elsewhere
+    # cannot lock the real user out of their own account.
+    failures: dict[tuple[str, str], tuple[int, float]] = field(default_factory=dict)
 
-    def login(self, username: str, password: str) -> tuple[str, Account]:
+    def login(self, username: str, password: str, client: str = "") -> tuple[str, Account]:
         now = self.clock()
-        key = username.strip().lower()
+        username = username.strip().lower()
+        key = (username, client)
         count, locked_until = self.failures.get(key, (0, 0.0))
         if locked_until > now:
             raise HTTPException(status_code=429, detail="Đăng nhập sai quá nhiều lần. Thử lại sau vài phút.")
-        account = self.accounts.get(key)
+        account = self.accounts.get(username)
         # Always hash, so a wrong username takes as long as a wrong password
         ok = verify_password(password, account.password_hash if account else _DUMMY_HASH) and account is not None
         if not ok:
+            if len(self.failures) >= MAX_TRACKED_FAILURES:  # bound memory: keep only live lockouts
+                self.failures = {k: v for k, v in self.failures.items() if v[1] > now}
             count += 1
             self.failures[key] = (count, now + LOCKOUT_SECONDS if count >= MAX_FAILED_LOGINS else 0.0)
             raise HTTPException(status_code=401, detail="Tên đăng nhập hoặc mật khẩu không đúng")
         self.failures.pop(key, None)
+        # drop expired sessions here, since a token nobody uses again is never looked up
+        self.sessions = {t: s for t, s in self.sessions.items() if s[1] > now}
         token = secrets.token_urlsafe(32)
         self.sessions[token] = (account.username, now + SESSION_TTL_SECONDS)
         return token, account
@@ -192,8 +200,8 @@ def _me(account: Account) -> Me:
 
 
 @router.post("/login", response_model=LoginResponse)
-def login(body: LoginRequest, auth: Annotated[AuthService, Depends(get_auth)]) -> LoginResponse:
-    token, account = auth.login(body.username, body.password)
+def login(body: LoginRequest, request: Request, auth: Annotated[AuthService, Depends(get_auth)]) -> LoginResponse:
+    token, account = auth.login(body.username, body.password, request.client.host if request.client else "")
     return LoginResponse(access_token=token, user=_me(account))
 
 

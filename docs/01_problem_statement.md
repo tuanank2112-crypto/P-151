@@ -151,7 +151,7 @@ MVP không có dữ liệu hoặc workflow vận hành thật. Vì vậy, tài l
 
 ## 3. Target workflow mô phỏng
 
-`CR-BPTN-02` (v0.5 candidate): `Cư dân gửi phản ánh → RECEIVED → Agent kiểm tra dữ liệu (thiếu → NEED_INFO) → kiểm tra trùng → phân loại + đề xuất phòng ban → BPTN review nếu cần → tra tài sản (đèn) → kiểm vật tư (thiếu → ON_HOLD) → giao phòng ban khi can_route (ROUTED) → phòng ban nhận việc (IN_PROGRESS) và báo hoàn thành → Agent đối soát → READY_FOR_REVIEW → BQL nghiệm thu (CLOSED) / trả làm lại / hủy`
+`CR-BPTN-02` (v0.5 candidate): `Cư dân gửi phản ánh → RECEIVED → Agent kiểm tra dữ liệu (thiếu → NEED_INFO) → phân loại + đề xuất phòng ban → kiểm tra trùng → BPTN review nếu cần → tra tài sản (đèn) → kiểm vật tư (thiếu → ON_HOLD) → giao phòng ban khi can_route (ROUTED) → phòng ban nhận việc (IN_PROGRESS) và báo hoàn thành → Agent đối soát → READY_FOR_REVIEW → BQL nghiệm thu (CLOSED) / trả làm lại / hủy`
 
 Mọi thay đổi trạng thái đi qua một hàm `transition` và ghi một event; `review_status`, `asset_resolution` và blocker là field phụ (`CR-BPTN-02` (v0.5 candidate)).
 

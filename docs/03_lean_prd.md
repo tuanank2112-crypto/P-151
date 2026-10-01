@@ -200,14 +200,14 @@ tương ứng.
 - **Priority:** P0
 - **Actor:** Agent; BPTN khi không rõ.
 - **Input:** nội dung gốc + bổ sung; `locked_fields.category` nếu BPTN đã chọn.
-- **Mô tả/business rule (`CR-BPTN-02` (v0.5 candidate)):** bước 3 kiểm tra trùng (ticket đang mở, cùng vị trí và loại, trong 48h). Bước 4 phân
-  loại bằng luật cố định (+ LLM nếu bật) và **đề xuất** phòng ban (`proposed_department_id`) từ bảng playbook → phòng ban;
-  không giao. Có `locked_fields.category` thì không phân loại lại. Bước 5: playbook chỉ do LLM đề xuất →
+- **Mô tả/business rule (`CR-BPTN-02` (v0.5 candidate)):** bước 3 phân loại bằng luật cố định (+ LLM nếu bật) và
+  **đề xuất** phòng ban (`proposed_department_id`) từ bảng playbook → phòng ban; không giao. Có `locked_fields.category`
+  thì không phân loại lại. Bước 4 kiểm tra trùng (ticket đang mở, cùng loại và vị trí, trong 48h), chỉ đọc ticket cùng loại. Bước 5: playbook chỉ do LLM đề xuất →
   `PENDING_REVIEW`; còn lại `NOT_REQUIRED`. Không dùng confidence đơn lẻ.
 - **Expected output:** proposal (service/type/playbook/rule/reason/source), `proposed_department_id`, `review_status`.
 - **Failure behavior:** trùng → `VERIFYING`/`DUPLICATE`; khớp cả hai hoặc luật-LLM lệch → `CATEGORY_UNCLEAR`; không khớp
-  → `OUT_OF_SCOPE`; LLM-only → `PENDING_REVIEW`. BPTN gỡ → chạy lại từ bước 6 (từ bước 4 nếu bác trùng).
-- **Given/When/Then:** Given `CATEGORY_UNCLEAR` và BPTN chọn vệ sinh, When resume, Then chạy lại từ bước 6, Agent không
+  → `OUT_OF_SCOPE`; LLM-only → `PENDING_REVIEW`. BPTN gỡ → chạy lại từ bước 4 (`CATEGORY_UNCLEAR`/`OUT_OF_SCOPE`), bước 5 (bác trùng), bước 6 (`PENDING_REVIEW`).
+- **Given/When/Then:** Given `CATEGORY_UNCLEAR` và BPTN chọn vệ sinh, When resume, Then chạy lại từ bước 4, Agent không
   phân loại lại, `locked_fields.category` giữ nguyên.
 - **Test:** acceptance 3, 10; `test_step4_out_of_scope`, `test_step5_*`.
 
@@ -278,7 +278,7 @@ tương ứng.
 - **Input:** planned/norm, simulated stock quantity/status trước route; issued/used/reason sau thực hiện.
 - **Mô tả/business rule:** pre-route check xác định `material_stock_status`; post-execution đối soát bốn mức planned/norm/issued/used bằng ba comparison; không approve/adjust/conclude violation.
 - **Expected output:** stock gate, three comparison results, reconciliation status, warning/block reason.
-- **Failure behavior (`CR-BPTN-02` (v0.5 candidate)):** `INSUFFICIENT` → `ON_HOLD`/`WAITING_MATERIAL` (kho nhập → chạy lại bước 7; 24h → leo thang); `UNKNOWN` → không chặn, cờ `STOCK_CHECK_ON_ACCEPT`; sau thực hiện thiếu số lượng hoặc lệch thiếu lý do → đối soát không đạt, giữ `IN_PROGRESS`.
+- **Failure behavior (`CR-BPTN-02` (v0.5 candidate)):** `INSUFFICIENT` → `ON_HOLD`/`WAITING_MATERIAL` (kho nhập → chạy lại từ bước 6 tra tài sản; 24h → leo thang); `UNKNOWN` → không chặn, cờ `STOCK_CHECK_ON_ACCEPT`; sau thực hiện thiếu số lượng hoặc lệch thiếu lý do → đối soát không đạt, giữ `IN_PROGRESS`.
 - **Given/When/Then:** Given stock đủ và chênh lệch đã seed, When reconcile, Then phát hiện đúng comparison, mô tả trung tính, không phê duyệt/kết luận.
 - **Use case:** `UC-CLN-01`, `UC-TEC-01`.
 - **UI:** `UI-05`, `UI-06`, `UI-07`.
@@ -581,8 +581,8 @@ Thứ tự bắt buộc (`CR-BPTN-02` (v0.5 candidate)); pipeline dừng ở bư
 10. **Đối soát** khi phòng ban báo hoàn thành → `READY_FOR_REVIEW` hoặc giữ `IN_PROGRESS`.
 11. **BQL** nghiệm thu / trả làm lại / hủy.
 
-Gỡ blocker chạy lại từ: bước 2 (`MISSING_INFO`), bước 4 (bác `DUPLICATE`), bước 6 (`CATEGORY_UNCLEAR`, `OUT_OF_SCOPE`,
-`PENDING_REVIEW`, `ASSET_UNCLEAR`, `WRONG_DEPT` đổi loại việc), bước 7 (`WAITING_MATERIAL`, `WRONG_DEPT` cùng loại việc).
+Gỡ blocker chạy lại từ: bước 2 (`MISSING_INFO`), bước 4 (`CATEGORY_UNCLEAR`, `OUT_OF_SCOPE`), bước 5 (bác `DUPLICATE`),
+bước 6 (`PENDING_REVIEW`, `ASSET_UNCLEAR`, `WAITING_MATERIAL`, `WRONG_DEPT` đổi loại việc), bước 7 (`WRONG_DEPT` cùng loại việc).
 
 **Không dùng LLM confidence làm điều kiện duy nhất.** Schema, permission và `transition` có quyền ưu tiên cao hơn mọi
 model output. Model không được thực hiện side effect ngoài structured proposal.

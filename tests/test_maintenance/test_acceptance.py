@@ -64,7 +64,7 @@ def test_03_bptn_category_is_locked_and_never_reclassified(fresh, monkeypatch):
     tid = report(fresh, "Hành lang tầng 3 tòa SIM-A nhiều rác và bóng đèn hành lang không sáng")
     case = fresh.get(tid)
     assert case.ticket.status == "VERIFYING" and case.ticket.blocker.code == "CATEGORY_UNCLEAR"
-    assert case.ticket.blocker.resume_step == 6 and len(calls) == 1
+    assert case.ticket.blocker.resume_step == 4 and len(calls) == 1  # BPTN's category still gets the duplicate check
 
     case = fresh.bptn_resolve(tid, BPTN, category="VE_SINH", note="Cư dân xác nhận chủ yếu là rác")
     assert case.ticket.status == "ROUTED" and case.ticket.department_id == "DEPT_CLEANING"
@@ -79,7 +79,7 @@ def test_04_material_shortage_holds_then_resumes_on_stock_received(fresh, clock)
     tid = report(fresh, LIGHTING)
     case = fresh.get(tid)
     assert case.ticket.status == "ON_HOLD" and case.ticket.blocker.code == "WAITING_MATERIAL"
-    assert case.ticket.blocker.owner_role == "WAREHOUSE" and case.ticket.blocker.resume_step == 7
+    assert case.ticket.blocker.owner_role == "WAREHOUSE" and case.ticket.blocker.resume_step == 6
     assert "Đang chờ vật tư, dự kiến xử lý trước" in case.ticket.blocker.public_message
 
     view = resident_view(fresh, case, clock.now)
@@ -95,6 +95,7 @@ def test_04_material_shortage_holds_then_resumes_on_stock_received(fresh, clock)
     fresh.receive_stock(WAREHOUSE, "SIM-MAT-LAMP-01", 5)
     case = fresh.get(tid)
     assert case.ticket.status == "ROUTED" and case.ticket.blocker is None
+    assert [a.action for a in case.audit].count("LOOKUP_ASSET") == 2  # stock arrived: back to step 6
     assert [e.to_status for e in case.events][-2:] == ["RECEIVED", "ROUTED"]
 
 
@@ -196,12 +197,46 @@ def test_10_duplicate_is_merged_and_the_resident_sees_the_original(fresh, clock)
     assert view.allowed_actions == []
 
 
-def test_10b_rejected_duplicate_resumes_at_step_4(fresh, clock):
+def test_10b_rejected_duplicate_resumes_at_step_5(fresh, clock):
     first = report(fresh, LIGHTING)
     clock.advance(hours=1)
     second = report(fresh, LIGHTING)
+    assert fresh.get(second).ticket.blocker.resume_step == 5
     case = fresh.bptn_resolve(second, BPTN, merge=False, note="Hai đèn khác nhau")
     assert case.ticket.status == "ROUTED" and case.not_duplicate_of == [first]
+    assert [a.action for a in case.audit].count("CREATE_PROPOSAL") == 2  # classified once, not again on resume
+
+
+def test_10d_classification_runs_before_the_duplicate_check(fresh, clock, monkeypatch):
+    first = report(fresh, LIGHTING)
+    clock.advance(hours=1)
+    second = report(fresh, "Bóng đèn hành lang tầng 3 tòa SIM-A tắt rồi")
+    case = fresh.get(second)
+    assert case.ticket.blocker.code == "DUPLICATE" and case.ticket.blocker.related_ticket_id == first
+    assert case.proposal is not None and case.ticket.proposed_department_id == "DEPT_TECHNICAL"
+
+    reads = []
+    real = MaintenanceEngine.effective_location
+    monkeypatch.setattr(
+        MaintenanceEngine,
+        "effective_location",
+        lambda self, work: reads.append(work.ticket.ticket_id) or real(self, work),
+    )
+    third = report(fresh, "Hành lang tầng 3 tòa SIM-A nhiều rác")  # same place, other category
+    assert fresh.get(third).ticket.status == "ROUTED"
+    assert first not in reads and second not in reads  # another category: their report text is never parsed
+
+
+def test_10e_unclear_category_stops_before_reading_other_tickets(fresh, clock, monkeypatch):
+    report(fresh, LIGHTING)
+    clock.advance(hours=1)
+    scans = []
+    real = MaintenanceEngine._find_duplicate_ticket_id
+    monkeypatch.setattr(
+        MaintenanceEngine, "_find_duplicate_ticket_id", lambda self, work: scans.append(1) or real(self, work)
+    )
+    tid = report(fresh, "Hành lang tầng 3 tòa SIM-A nhiều rác và bóng đèn hành lang không sáng")
+    assert fresh.get(tid).ticket.blocker.code == "CATEGORY_UNCLEAR" and scans == []
 
 
 def test_10c_duplicate_window_is_48h(fresh, clock):

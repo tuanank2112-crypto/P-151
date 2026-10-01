@@ -497,7 +497,7 @@ Các label trên là documentation gates mô phỏng, không phải SOP xử lý
 
 | Validator | Input | Pass condition | Failure behavior |
 |---|---|---|---|
-| `VAL-DUP-001` (`CR-BPTN-02` (v0.5 candidate)) | Ticket + ticket đang mở | Không có ticket chưa kết thúc, tạo trước, cùng category + vị trí, trong `duplicate_window_hours` | `VERIFYING`/`DUPLICATE`; BPTN gộp (`MERGED`) hoặc bác (chạy lại từ bước 4) |
+| `VAL-DUP-001` (`CR-BPTN-02` (v0.5 candidate)) | Ticket + ticket đang mở | Không có ticket chưa kết thúc, tạo trước, cùng category + vị trí, trong `duplicate_window_hours` | `VERIFYING`/`DUPLICATE`; BPTN gộp (`MERGED`) hoặc bác (chạy lại từ bước 5) |
 | `VAL-CLASS-001` | Ticket + proposal | Service/type/playbook exact mapping; rules/reason/source non-empty | Khớp cả hai/luật-LLM lệch → `CATEGORY_UNCLEAR`; không khớp → `OUT_OF_SCOPE`; không invent playbook |
 | `VAL-REVIEW-001` (`CR-BPTN-02` (v0.5 candidate)) | Proposal | Playbook không chỉ do LLM đề xuất, hoặc BPTN đã `CONFIRMED` | `VERIFYING`/`PENDING_REVIEW` |
 | `VAL-LOCK-001` (`CR-BPTN-02` (v0.5 candidate)) | `locked_fields` | Agent không ghi đè; khi có `category` thì bước 4 không phân loại lại | Reject mutation |
@@ -516,7 +516,7 @@ Các label trên là documentation gates mô phỏng, không phải SOP xử lý
 | Validator | Input | Pass condition | Failure behavior |
 |---|---|---|---|
 | `VAL-MAT-MODE-001` | Draft/material | Gate N/A → zero line; tracked line chỉ CLN/TEC | Reject inconsistent payload |
-| `VAL-MAT-STOCK-001` | planned/norm/stock fixture | Không `INSUFFICIENT` | `CR-BPTN-02` (v0.5 candidate): INSUFFICIENT → `ON_HOLD`/`WAITING_MATERIAL`, chạy lại từ bước 7 khi nhập kho; UNKNOWN không chặn, gắn cờ `STOCK_CHECK_ON_ACCEPT` |
+| `VAL-MAT-STOCK-001` | planned/norm/stock fixture | Không `INSUFFICIENT` | `CR-BPTN-02` (v0.5 candidate): INSUFFICIENT → `ON_HOLD`/`WAITING_MATERIAL`, chạy lại từ bước 6 (tra tài sản) khi nhập kho; UNKNOWN không chặn, gắn cờ `STOCK_CHECK_ON_ACCEPT` |
 | `VAL-MAT-QTY-001` | MaterialLine | planned/issued/used ≥0 và đã nhập | Gate `NEEDS_CLARIFICATION`, ticket giữ `IN_PROGRESS`; không READY |
 | `VAL-MAT-CMP-001` | MaterialLine | Exact ba comparison records; no fourth comparison | Reject derived result; no READY |
 | `VAL-MAT-VAR-001` | Applicable comparisons | Mọi VARIANCE có non-empty `variance_reason` | Thiếu reason → bước 10 không đạt, giữ `IN_PROGRESS` |
@@ -622,7 +622,7 @@ Audit action catalog: `INGEST`, `RUN_PIPELINE`, `CREATE_PROPOSAL`, `LOOKUP_ASSET
 | `VERIFYING` | `MERGED` | BPTN | Xác nhận trùng; set `merged_into` |
 | `VERIFYING` | `RECEIVED` | SYSTEM | BPTN đã gỡ; chạy lại từ `resume_step` |
 | `RECEIVED` | `ON_HOLD` | AGENT | `WAITING_MATERIAL` |
-| `ON_HOLD` | `RECEIVED` | SYSTEM | Chỉ `WAITING_MATERIAL`, khi đủ tồn kho; chạy lại bước 7 |
+| `ON_HOLD` | `RECEIVED` | SYSTEM | Chỉ `WAITING_MATERIAL`, khi đủ tồn kho; chạy lại từ bước 6 |
 | `RECEIVED` | `ROUTED` | SYSTEM | **`can_route` đúng**; `department_id = proposed_department_id`; có thể kèm `OUT_OF_HOURS` |
 | `ROUTED` | `IN_PROGRESS` | DEPARTMENT | Nhận việc; set `accepted_at`; gỡ `OUT_OF_HOURS`/`NOT_ACCEPTED` |
 | `ROUTED` | `VERIFYING` | DEPARTMENT | `WRONG_DEPT`, bắt buộc lý do; `department_id` về `null` |
@@ -650,12 +650,12 @@ Bất biến (có test):
 | Mã | Người gỡ | Sự kiện gỡ | Chạy lại từ |
 |---|---|---|---|
 | `MISSING_INFO` | RESIDENT | `resident_info_added` | Bước 2 |
-| `DUPLICATE` | BPTN | `bptn_resolved` (bác trùng) | Bước 4 |
-| `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE` | BPTN | `bptn_resolved` (chọn loại việc → `review_status=CONFIRMED`) | Bước 6 |
+| `DUPLICATE` | BPTN | `bptn_resolved` (bác trùng) | Bước 5 |
+| `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE` | BPTN | `bptn_resolved` (chọn loại việc → `review_status=CONFIRMED`) | Bước 4 |
 | `PENDING_REVIEW` | BPTN | `bptn_resolved` (sửa hoặc xác nhận → `CONFIRMED`) | Bước 6 |
 | `ASSET_UNCLEAR` | BPTN | `bptn_resolved` (chọn asset → `FOUND`, hoặc xác định tại hiện trường kèm lý do → `ONSITE_BY_BPTN`) | Bước 6 |
 | `WRONG_DEPT` | BPTN | `bptn_resolved` (chọn lại loại việc và/hoặc phòng ban) | Bước 6 nếu đổi loại việc (reset `asset_resolution`), bước 7 nếu không. Không bao giờ bước 8 |
-| `WAITING_MATERIAL` | WAREHOUSE | `stock_received` | Bước 7 |
+| `WAITING_MATERIAL` | WAREHOUSE | `stock_received` | Bước 6 |
 | `OUT_OF_HOURS` | SYSTEM | Đầu ca phòng ban | — (gỡ blocker, thông báo phòng ban) |
 | `NOT_ACCEPTED` | DEPARTMENT | `department_accepted` | — |
 | `BLOCKED_ONSITE` | DEPARTMENT | `department_resumed` | — |

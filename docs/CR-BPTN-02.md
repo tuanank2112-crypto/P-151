@@ -74,13 +74,16 @@ Bảng `TRANSITIONS` là 16 dòng của bản mô tả cộng `→ CANCELLED` t�
 
 ## 4. Pipeline Agent (bước 2–8, 10)
 
-`_run_pipeline(work, from_step)` dừng ở bước đầu tiên gặp blocker.
+`_run_pipeline(work, from_step)` dừng ở bước đầu tiên gặp blocker. Hàm bước đặt tên `_step_<số>_<việc>`
+(`_step_3_classify_and_propose_department`, `_step_4_check_duplicate_ticket`, …) để tìm theo số bước.
+Phân loại chạy **trước** kiểm tra trùng (2026-10-01, theo biểu đồ flow): ticket loại việc không rõ dừng ở bước 3
+mà không đọc ticket nào khác; bước 4 chỉ so ticket cùng category.
 
 | Bước | Hiện thực | Khi không đạt |
 |---|---|---|
 | 2 | `ticket_id`, `created_at`, nội dung, vị trí sơ bộ (`extract_location` trên nội dung gốc + bổ sung, hoặc `locked_fields.location`) | `NEED_INFO`/`MISSING_INFO`, liệt kê field thiếu |
-| 3 | Ticket khác chưa kết thúc, tạo trước, cùng category và cùng vị trí `Tòa / Tầng / Khu vực`, cách ≤ 48h | `VERIFYING`/`DUPLICATE`, `resume_step=4` |
-| 4 | Phân loại (luật + LLM nếu bật) → playbook → **đề xuất** phòng ban (`proposed_department_id`). Bỏ qua phân loại nếu `locked_fields.category` | `CATEGORY_UNCLEAR` (khớp cả hai / luật-LLM lệch) hoặc `OUT_OF_SCOPE` (không khớp): BPTN chọn loại việc → `review_status=CONFIRMED`, `resume_step=6` |
+| 3 | Phân loại (luật + LLM nếu bật) → playbook → **đề xuất** phòng ban (`proposed_department_id`). Bỏ qua phân loại nếu `locked_fields.category` | `CATEGORY_UNCLEAR` (khớp cả hai / luật-LLM lệch) hoặc `OUT_OF_SCOPE` (không khớp): BPTN chọn loại việc → `review_status=CONFIRMED`, `resume_step=4` |
+| 4 | Ticket khác chưa kết thúc, tạo trước, cùng category và cùng vị trí `Tòa / Tầng / Khu vực`, cách ≤ 48h. Chỉ đọc vị trí của ticket cùng category, trong cửa sổ | `VERIFYING`/`DUPLICATE`, `resume_step=5` |
 | 5 | Playbook chỉ do LLM đề xuất → `PENDING_REVIEW`; còn lại `NOT_REQUIRED`. Bỏ qua nếu đã `CONFIRMED` | `VERIFYING`/`PENDING_REVIEW`: BPTN sửa hoặc xác nhận → `CONFIRMED`, `resume_step=6` |
 | 6 | Đèn: đúng 1 asset khớp vị trí hoặc `locked_fields.asset_id` → `FOUND`. Vệ sinh → `NOT_APPLICABLE` | `ASSET_UNCLEAR`: BPTN chọn asset (`FOUND`) hoặc chủ động chọn xác định tại hiện trường kèm lý do (`ONSITE_BY_BPTN` + cờ `ASSET_CHECK_ONSITE`). Agent không tự bỏ qua |
 | 7 | So vật tư dự kiến với tồn kho mô phỏng | Thiếu: `ON_HOLD`/`WAITING_MATERIAL`. Không rõ: cờ `STOCK_CHECK_ON_ACCEPT`, đi tiếp |
@@ -92,10 +95,11 @@ chạy lại từ bước 6. Cùng loại việc → chạy lại từ bước 7
 
 | Mã | Chạy lại từ |
 |---|---|
-| `DUPLICATE` (BPTN bác) | Bước 4 |
-| `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE`, `PENDING_REVIEW`, `ASSET_UNCLEAR` | Bước 6 |
+| `DUPLICATE` (BPTN bác) | Bước 5 (review nếu cần, rồi tra tài sản) |
+| `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE` | Bước 4 (kiểm tra trùng trên loại việc BPTN chọn) |
+| `PENDING_REVIEW`, `ASSET_UNCLEAR` | Bước 6 |
 | `WRONG_DEPT` | Bước 6 nếu đổi loại việc, bước 7 nếu không |
-| `MISSING_INFO` / `WAITING_MATERIAL` | Bước 2 / bước 7 |
+| `MISSING_INFO` / `WAITING_MATERIAL` | Bước 2 / bước 6 (nhập kho xong tra lại tài sản, như biểu đồ flow) |
 | 10 | `report_complete`: 6 điều kiện (§4 bản mô tả) | Giữ `IN_PROGRESS`, `failing_items` trong `draft.readiness_evaluation` + thông báo `department.reconcile_failed`, không blocker |
 
 ## 5. Retry và leo thang
@@ -141,10 +145,13 @@ do `CHỜ XÁC MINH` không có mã tương ứng (`DTY-03`, `STK-02`, `RISK-01`
 1. **Bỏ luật an toàn là thay đổi hành vi thật:** phản ánh có tia lửa, mùi khét, dây hở, chất lạ/mùi hắc giờ đi như
    ticket thường. Code không còn nhận diện các tín hiệu này ở bất kỳ đâu (cả luật lẫn LLM).
 2. Bước 5 đặt `PENDING_REVIEW` chỉ khi playbook do LLM đề xuất mà luật không thấy. Thiếu vị trí đã dừng ở bước 2
-   (`MISSING_INFO`), category không rõ đã dừng ở bước 4, nên tới bước 5 thì loại việc và vị trí đều rõ.
+   (`MISSING_INFO`), category không rõ đã dừng ở bước 3, nên tới bước 5 thì loại việc và vị trí đều rõ.
    BPTN bác trùng (`DUPLICATE`) hoặc chọn asset (`ASSET_UNCLEAR`) không đổi `review_status`.
 3. `REWORK` không tính là "blocker mở" ở điều kiện 6 của bước 10 (nó là lý do phòng ban đang làm lại); blocker
-   được gỡ khi đối soát đạt. Khi BQL trả làm lại, checklist về `PENDING`.
+   được gỡ khi đối soát đạt. Khi BQL trả làm lại, checklist về `PENDING`. BQL trả làm lại thì ticket về thẳng phòng
+   ban đang giữ (`READY_FOR_REVIEW → IN_PROGRESS` + `REWORK`), **không** qua BPTN đối chiếu lại phòng ban như ô
+   "Đối chiếu lại phòng ban" trong biểu đồ flow 2026-10-01 (chốt với người dùng 2026-10-01). Sai phòng ban thì phòng
+   ban tự trả về bằng `WRONG_DEPT`.
 4. `bptn_resolve` bắt buộc `note` khi BPTN khóa giá trị hoặc chọn `asset_onsite`; với `CATEGORY_UNCLEAR`,
    `OUT_OF_SCOPE` bắt buộc chọn category; với `WRONG_DEPT` bắt buộc chọn category hoặc `department`. BPTN thấy ticket thật sự ngoài phạm vi thì để nguyên, ticket
    leo thang để BQL hủy.

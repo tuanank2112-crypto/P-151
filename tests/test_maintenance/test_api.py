@@ -266,3 +266,13 @@ def test_16_resident_sees_no_department_before_hand_over(api, engine):
         assert view["department_name"] is None
         text = json.dumps(view, ensure_ascii=False)
         assert "Phòng" not in text and "DEPT_" not in text
+
+
+def test_resident_cannot_backdate_in_production(api, monkeypatch):
+    from src.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "app_env", "production")
+    body = {"original_description": "Hành lang tầng 3 tòa SIM-A nhiều rác", "simulated_received_at": MORNING}
+    assert api.post("/api/v1/resident/tickets", json=body, headers=RESIDENT).status_code == 422
+    body.pop("simulated_received_at")
+    assert api.post("/api/v1/resident/tickets", json=body, headers=RESIDENT).status_code == 201
