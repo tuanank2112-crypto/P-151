@@ -36,6 +36,7 @@ from src.maintenance.enums import (
     AssetResolution,
     BlockerOwner,
     ChecklistStatus,
+    ClosureKind,
     ComparisonStatus,
     ComparisonType,
     Department,
@@ -50,6 +51,7 @@ from src.maintenance.enums import (
     ReadabilityStatus,
     ReasonCode,
     ReviewStatus,
+    RiskLevel,
     ServiceCategory,
     TicketFlag,
     TicketStatus,
@@ -104,12 +106,18 @@ PERMISSIONS: dict[Action, frozenset[ActorRole]] = {
     Action.RATE_TICKET: frozenset({Role.RESIDENT}),
     Action.BPTN_RESOLVE: frozenset({Role.BPTN}),
     Action.RECEIVE_STOCK: frozenset({Role.WAREHOUSE}),
-    Action.SET_ASSIGNEE: frozenset({Role.DEPARTMENT}),
+    # Action.SET_ASSIGNEE is not listed: every role is denied, with an audit row (CR-BPTN-03 §4.4.2)
     Action.UPDATE_CHECKLIST: frozenset({Role.DEPARTMENT}),
     Action.UPDATE_MATERIAL: frozenset({Role.DEPARTMENT}),
     Action.ADD_EVIDENCE: frozenset({Role.DEPARTMENT}),
     Action.REPORT_COMPLETE: frozenset({Role.DEPARTMENT}),
     Action.RUN_JOBS: frozenset({Role.SYSTEM}),
+    Action.SAFETY_CONFIRM_SAFE: frozenset({Role.BPTN, Role.BQL}),  # §6.4 (BPTN), §6.4 last paragraph (BQL)
+    Action.SAFETY_ESCALATE: frozenset({Role.BPTN, Role.BQL}),  # E01 (BPTN|BQL); T07 is BQL only (via TRANSITIONS)
+    Action.SAFETY_REQUEST_INFO: frozenset({Role.BPTN, Role.BQL}),  # T06
+    Action.EMERGENCY_DOWNGRADE: frozenset({Role.BQL}),  # §6.5
+    Action.EMERGENCY_CLOSE: frozenset({Role.BQL}),  # T10
+    Action.SET_PRIORITY: frozenset({Role.BPTN, Role.BQL}),  # §7
 }
 
 
@@ -125,18 +133,29 @@ def _rule(*actors: ActorRole, reasons=(), required=False, pipeline=False) -> Tra
     return TransitionRule(frozenset(actors), frozenset(reasons), required, pipeline)
 
 
-# CR-BPTN-02 §3. The only allowed status changes.
+# CR-BPTN-03 §4.1. The only allowed status changes: 18 rows + cancel from the 7 non-terminal statuses.
 TRANSITIONS: dict[tuple[TicketStatus, TicketStatus], TransitionRule] = {
-    (S.RECEIVED, S.NEED_INFO): _rule(Role.SYSTEM, reasons=[R.MISSING_INFO], required=True, pipeline=True),
-    (S.NEED_INFO, S.RECEIVED): _rule(Role.SYSTEM, pipeline=True),
-    (S.RECEIVED, S.VERIFYING): _rule(
+    (S.RECEIVED, S.NEED_INFO): _rule(Role.SYSTEM, reasons=[R.MISSING_INFO], required=True, pipeline=True),  # T02
+    (S.NEED_INFO, S.RECEIVED): _rule(Role.SYSTEM, Role.BQL),  # T03: not pipeline-only, BQL clears a safety NEED_INFO
+    (S.RECEIVED, S.VERIFYING): _rule(  # T04
         Role.AGENT,
-        reasons=[R.DUPLICATE, R.CATEGORY_UNCLEAR, R.OUT_OF_SCOPE, R.PENDING_REVIEW, R.ASSET_UNCLEAR],
+        reasons=[
+            R.DUPLICATE,
+            R.CATEGORY_UNCLEAR,
+            R.OUT_OF_SCOPE,
+            R.PENDING_REVIEW,
+            R.ASSET_UNCLEAR,
+            R.SAFETY_REVIEW_REQUIRED,
+            R.EMERGENCY_PENDING_BQL,
+        ],
         required=True,
         pipeline=True,
     ),
-    (S.VERIFYING, S.MERGED): _rule(Role.BPTN),
-    (S.VERIFYING, S.RECEIVED): _rule(Role.SYSTEM, pipeline=True),
+    (S.VERIFYING, S.MERGED): _rule(Role.BPTN),  # T08 (BQL merge is P1)
+    (S.VERIFYING, S.RECEIVED): _rule(Role.SYSTEM, Role.BPTN, Role.BQL),  # T05: not pipeline-only
+    (S.VERIFYING, S.NEED_INFO): _rule(Role.BPTN, Role.BQL, reasons=[R.MISSING_INFO], required=True),  # T06
+    (S.NEED_INFO, S.VERIFYING): _rule(Role.BQL, reasons=[R.EMERGENCY_PENDING_BQL], required=True),  # T07
+    (S.VERIFYING, S.CLOSED): _rule(Role.BQL),  # T10
     (S.RECEIVED, S.ON_HOLD): _rule(Role.AGENT, reasons=[R.WAITING_MATERIAL], required=True, pipeline=True),
     (S.ON_HOLD, S.RECEIVED): _rule(Role.SYSTEM, pipeline=True),
     (S.RECEIVED, S.ROUTED): _rule(Role.SYSTEM, reasons=[R.OUT_OF_HOURS], pipeline=True),
@@ -147,13 +166,15 @@ TRANSITIONS: dict[tuple[TicketStatus, TicketStatus], TransitionRule] = {
     (S.IN_PROGRESS, S.READY_FOR_REVIEW): _rule(Role.AGENT, pipeline=True),
     (S.READY_FOR_REVIEW, S.CLOSED): _rule(Role.BQL),
     (S.READY_FOR_REVIEW, S.IN_PROGRESS): _rule(Role.BQL, reasons=[R.REWORK], required=True),
-    (S.CLOSED, S.READY_FOR_REVIEW): _rule(Role.RESIDENT),
     **{(status, S.CANCELLED): _rule(Role.BQL) for status in S if status not in TERMINAL_STATUSES},
 }
 
 BLOCKER_OWNERS: dict[ReasonCode, BlockerOwner] = {
     R.MISSING_INFO: BlockerOwner.RESIDENT,
     **{code: BlockerOwner.BPTN for code in BPTN_REASONS},
+    R.SAFETY_REVIEW_REQUIRED: BlockerOwner.BPTN,
+    R.EMERGENCY_PENDING_BQL: BlockerOwner.BQL,
+    R.WRONG_DEPT_AFTER_START: BlockerOwner.BQL,  # Q-A: declared only, nothing creates it in P0
     R.WAITING_MATERIAL: BlockerOwner.WAREHOUSE,
     R.OUT_OF_HOURS: BlockerOwner.SYSTEM,
     R.NOT_ACCEPTED: BlockerOwner.DEPARTMENT,
@@ -217,6 +238,8 @@ def route_blockers(ticket: Ticket) -> list[str]:
         failing.append(f"asset_resolution={ticket.asset_resolution}")
     if ticket.proposed_department_id is None:
         failing.append("proposed_department_id=null")
+    if ticket.risk_level == RiskLevel.EMERGENCY:
+        failing.append("risk_level=EMERGENCY")
     return failing
 
 
@@ -498,8 +521,15 @@ class MaintenanceEngine:
         return self._mutate(ticket_id, actor_id, Action.RATE_TICKET, op)
 
     def reopen(self, ticket_id: str, actor_id: str, *, note: str | None = None) -> Case:
-        """'Báo chưa xong': CLOSED → READY_FOR_REVIEW inside the reopen window."""
-        return self.transition(ticket_id, S.READY_FOR_REVIEW, actor_id, note=note)
+        """CR-BPTN-03 §4.3: a closed ticket is never reopened. Kept because the router still calls it (Q03).
+
+        Always INVALID_TRANSITION (409), no audit: a pair outside the table is not a permission denial.
+        """
+        self.get(ticket_id)  # 404 first
+        raise InvalidTransitionError(
+            "Không còn mở lại ticket đã đóng (CR-BPTN-03 §4.3); cư dân tạo phản ánh mới",
+            {"from": S.CLOSED, "to": S.READY_FOR_REVIEW, "actor_id": actor_id},
+        )
 
     # ------------------------------------------------------------------ BPTN
 
@@ -636,28 +666,17 @@ class MaintenanceEngine:
         return self.transition(ticket_id, S.IN_PROGRESS, actor_id, expected_from=S.ON_HOLD)
 
     def set_assignee(self, ticket_id: str, actor_id: str, assignee_id: str | None) -> Case:
-        """Staff assignment inside the department is the department's own business (out of CR scope)."""
-
-        def op(work: Case, now: datetime) -> None:
-            if work.ticket.status in TERMINAL_STATUSES:
-                raise GuardError("Ticket đã kết thúc")
-            old = work.ticket.assignee_id
-            work.ticket.assignee_id = assignee_id
-            self._audit(
-                work,
-                Action.SET_ASSIGNEE,
-                "Ticket",
-                ticket_id,
-                actor_id,
-                Role.DEPARTMENT,
-                "assignee_id",
-                old,
-                assignee_id,
-                "Phòng ban phân công nội bộ",
-                now=now,
-            )
-
-        return self._mutate(ticket_id, actor_id, Action.SET_ASSIGNEE, op)
+        """CR-BPTN-03 §4.4.2: nobody assigns a person in this version. Every role gets ACTION_DENIED with an audit."""
+        return self._mutate(
+            ticket_id,
+            actor_id,
+            Action.SET_ASSIGNEE,
+            lambda work, now: None,
+            roles=frozenset(),
+            field_name="assignee_id",
+            new_value=assignee_id,
+            reason="Gán nhân viên bị tắt (CR-BPTN-03 §4.4.2)",
+        )
 
     def update_checklist(
         self, ticket_id: str, actor_id: str, template_item_id: str, *, status: ChecklistStatus, note: str | None = None
@@ -1412,9 +1431,16 @@ class MaintenanceEngine:
                 raise InvalidTransitionError("Chỉ tiếp tục được khi đang tạm hoãn tại hiện trường (BLOCKED_ONSITE)")
             self._apply_transition(work, to, actor_id, role, now, note=note)
         elif key == (S.READY_FOR_REVIEW, S.CLOSED):
-            reopen_until = now + timedelta(days=self.catalog.sla_config.reopen_window_days)
             self._apply_transition(
-                work, to, actor_id, role, now, note=note, closed_by=actor_id, closed_at=now, reopen_until=reopen_until
+                work,
+                to,
+                actor_id,
+                role,
+                now,
+                note=note,
+                closed_by=actor_id,
+                closed_at=now,
+                closure_kind=ClosureKind.NORMAL,
             )
         elif key == (S.READY_FOR_REVIEW, S.IN_PROGRESS):
             if _blank(note):
@@ -1430,12 +1456,6 @@ class MaintenanceEngine:
                 self._notify(
                     work, "escalation", BlockerOwner.BQL, now, {"reason_code": R.REWORK, "rework_count": count}
                 )
-        elif key == (S.CLOSED, S.READY_FOR_REVIEW):
-            if ticket.reopen_until is None or now >= ticket.reopen_until:
-                raise GuardError("Đã quá hạn báo chưa xong", {"reopen_until": ticket.reopen_until})
-            self._apply_transition(
-                work, to, actor_id, role, now, note=note, closed_by=None, closed_at=None, reopen_until=None
-            )
         elif key == (S.VERIFYING, S.MERGED):
             if blocker is None or blocker.code != R.DUPLICATE:
                 raise InvalidTransitionError("Chỉ gộp được ticket đang chờ xác nhận trùng (DUPLICATE)")

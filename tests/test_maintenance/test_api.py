@@ -63,7 +63,6 @@ def test_12_resident_view_hides_internal_fields(api, engine):
     tid = create(
         api, "Đèn hành lang tầng 7 tòa SIM-B không sáng", when="2026-10-01T23:00:00+07:00"
     )  # > 48h after the fixture
-    engine.get(tid).ticket.assignee_id = "NV-TEC-03"  # set directly: the resident must never see it
     view = api.get(f"/api/v1/resident/tickets/{tid}", headers=RESIDENT).json()
     assert view["status"] == "ROUTED" and view["status_label"] == "Đã chuyển phòng ban"
     assert view["department_name"] == "Phòng Kỹ thuật"
@@ -80,7 +79,6 @@ def test_12_resident_view_hides_internal_fields(api, engine):
         "escalated",
         "SIM-MAT",
         "Ngoài ca phòng ban",
-        "NV-TEC-03",
     ):
         assert secret not in text
 
@@ -117,9 +115,9 @@ def test_resident_full_journey_over_http(api):
 
     assert api.post(f"/api/v1/bql/tickets/{tid}/close", json={}, headers=BQL).json()["ticket"]["status"] == "CLOSED"
     view = api.get(f"/api/v1/resident/tickets/{tid}", headers=RESIDENT).json()
-    assert view["allowed_actions"] == ["RATE", "REPORT_NOT_DONE"]
+    assert view["allowed_actions"] == ["RATE"]
     view = api.post(f"/api/v1/resident/tickets/{tid}/rating", json={"score": 5}, headers=RESIDENT).json()
-    assert view["allowed_actions"] == ["REPORT_NOT_DONE"]
+    assert view["allowed_actions"] == []
 
 
 def upload(api, url, headers, files=None):

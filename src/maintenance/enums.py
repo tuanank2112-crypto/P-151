@@ -21,7 +21,7 @@ class TicketStatus(StrEnum):
     CANCELLED = "CANCELLED"
 
 
-# CLOSED is terminal too, but a resident may reopen it inside the reopen window
+# CLOSED is terminal: no reopen (CR-BPTN-03 §4.3)
 TERMINAL_STATUSES = frozenset({TicketStatus.CLOSED, TicketStatus.MERGED, TicketStatus.CANCELLED})
 # Entering or leaving these (or any change between main statuses) notifies; blocker-only changes do not
 SIDE_STATUSES = frozenset({TicketStatus.NEED_INFO, TicketStatus.ON_HOLD})
@@ -40,6 +40,9 @@ class ReasonCode(StrEnum):
     WRONG_DEPT = "WRONG_DEPT"
     BLOCKED_ONSITE = "BLOCKED_ONSITE"
     REWORK = "REWORK"
+    SAFETY_REVIEW_REQUIRED = "SAFETY_REVIEW_REQUIRED"  # CR-BPTN-03 §3.2: tier 2, owned by BPTN
+    EMERGENCY_PENDING_BQL = "EMERGENCY_PENDING_BQL"  # CR-BPTN-03 §3.2: tier 1, owned by BQL
+    WRONG_DEPT_AFTER_START = "WRONG_DEPT_AFTER_START"  # CR-BPTN-03 §3.2: owned by BQL; P0 only declares it (Q-A)
 
 
 # Blockers BPTN clears (event `bptn_resolved`)
@@ -53,6 +56,55 @@ BPTN_REASONS = frozenset(
         ReasonCode.WRONG_DEPT,
     }
 )
+# Safety-layer blockers: never cleared by `_resume()` or a job (invariant I-10)
+SAFETY_REASONS = frozenset({ReasonCode.SAFETY_REVIEW_REQUIRED, ReasonCode.EMERGENCY_PENDING_BQL})
+# Blockers owned by BQL: BPTN is denied while the ticket carries one (invariant I-11)
+BQL_REASONS = frozenset({ReasonCode.EMERGENCY_PENDING_BQL, ReasonCode.WRONG_DEPT_AFTER_START})
+
+
+class RiskLevel(StrEnum):
+    """CR-BPTN-03 §6.1.5: safety risk, kept apart from priority."""
+
+    NONE = "NONE"
+    UNCLEAR = "UNCLEAR"
+    EMERGENCY = "EMERGENCY"
+
+
+class SignalStatus(StrEnum):
+    """CR-BPTN-03 §6.1.3."""
+
+    PRESENT = "PRESENT"
+    ABSENT = "ABSENT"
+    UNCLEAR = "UNCLEAR"
+
+
+class DetectedBy(StrEnum):
+    """CR-BPTN-03 §6.1.3."""
+
+    RULE = "RULE"
+    LLM = "LLM"
+
+
+class Priority(StrEnum):
+    """CR-BPTN-03 §7."""
+
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
+
+
+class PrioritySource(StrEnum):
+    """CR-BPTN-03 §7."""
+
+    AGENT_RULE = "AGENT_RULE"
+    HUMAN_OVERRIDE = "HUMAN_OVERRIDE"
+
+
+class ClosureKind(StrEnum):
+    """CR-BPTN-03 §12.1: how a CLOSED ticket was closed."""
+
+    NORMAL = "NORMAL"
+    EMERGENCY_HANDLED = "EMERGENCY_HANDLED"
 
 
 class Department(StrEnum):
@@ -227,6 +279,14 @@ class Action(StrEnum):
     APPROVE_MATERIAL = "APPROVE_MATERIAL"
     ADJUST_INVENTORY = "ADJUST_INVENTORY"
     SEND_RESIDENT_MESSAGE = "SEND_RESIDENT_MESSAGE"
+    # CR-BPTN-03 safety layer and priority
+    ASSESS_SAFETY = "ASSESS_SAFETY"  # step 2b (extra to §12.1: traces AC-05/AC-17)
+    SAFETY_CONFIRM_SAFE = "SAFETY_CONFIRM_SAFE"
+    SAFETY_ESCALATE = "SAFETY_ESCALATE"
+    SAFETY_REQUEST_INFO = "SAFETY_REQUEST_INFO"  # extra to §12.1: T06
+    EMERGENCY_CLOSE = "EMERGENCY_CLOSE"
+    EMERGENCY_DOWNGRADE = "EMERGENCY_DOWNGRADE"
+    SET_PRIORITY = "SET_PRIORITY"
 
 
 # Playbook pair mapping (Playbook §6.1, §7.1): the only valid service/type/playbook triples

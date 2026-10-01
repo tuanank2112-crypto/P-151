@@ -21,9 +21,11 @@ from src.maintenance.enums import (
     AssetResolution,
     BlockerOwner,
     ChecklistStatus,
+    ClosureKind,
     ComparisonStatus,
     ComparisonType,
     Department,
+    DetectedBy,
     EvidenceSource,
     EvidenceType,
     EvidenceValidationStatus,
@@ -32,10 +34,14 @@ from src.maintenance.enums import (
     MaterialStockStatus,
     NormLabel,
     PlaybookId,
+    Priority,
+    PrioritySource,
     ReadabilityStatus,
     ReasonCode,
     ReviewStatus,
+    RiskLevel,
     ServiceCategory,
+    SignalStatus,
     TicketFlag,
     TicketStatus,
     TicketType,
@@ -208,6 +214,19 @@ class Blocker(Entity):
         return self
 
 
+class RiskSignal(Entity):
+    """CR-BPTN-03 §6.1.3. Only signals with textual evidence are recorded: PRESENT/UNCLEAR, or ABSENT because of a
+    negation (B-02) or a benign phrase (B-01). A signal the text never mentions is not recorded."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    signal_id: str = Field(pattern=r"^(S-\d{2}|T2-0[1-5])$")
+    status: SignalStatus
+    source_quote: str = Field(min_length=1)  # verbatim, accents kept; S-14 joins two spans with " | "
+    detected_by: DetectedBy
+    rule_id: str = Field(min_length=1)  # S-xx | T2-xx | B-01 | B-02 | B-04 | LLM
+
+
 # CR §2.5: where a blocker may exist
 BLOCKER_CODES_BY_STATUS: dict[TicketStatus, frozenset[ReasonCode]] = {
     TicketStatus.NEED_INFO: frozenset({ReasonCode.MISSING_INFO}),
@@ -219,6 +238,9 @@ BLOCKER_CODES_BY_STATUS: dict[TicketStatus, frozenset[ReasonCode]] = {
             ReasonCode.PENDING_REVIEW,
             ReasonCode.ASSET_UNCLEAR,
             ReasonCode.WRONG_DEPT,
+            ReasonCode.SAFETY_REVIEW_REQUIRED,
+            ReasonCode.EMERGENCY_PENDING_BQL,
+            ReasonCode.WRONG_DEPT_AFTER_START,
         }
     ),
     TicketStatus.ON_HOLD: frozenset({ReasonCode.WAITING_MATERIAL, ReasonCode.BLOCKED_ONSITE}),
@@ -243,7 +265,7 @@ class Ticket(Entity):
     status: TicketStatus
     proposed_department_id: Department | None = None  # step 3 proposal; internal, the resident never sees it
     department_id: Department | None = None  # set only at step 8, when the ticket is actually handed over
-    assignee_id: str | None = None  # written only by the department; the Agent never touches it
+    assignee_id: None = None  # CR-BPTN-03 §4.4.2: nobody assigns a person; any other value is a ValidationError
     blocker: Blocker | None = None
     locked_fields: LockedFields = Field(default_factory=LockedFields)
     review_status: ReviewStatus | None = None  # pipeline step 5
@@ -255,9 +277,22 @@ class Ticket(Entity):
     accepted_at: AwareDatetime | None = None
     closed_by: str | None = None
     closed_at: AwareDatetime | None = None
+    closure_kind: ClosureKind | None = None  # iff CLOSED
     cancel_reason: str | None = None
-    reopen_until: AwareDatetime | None = None
-    rating: int | None = Field(default=None, ge=1, le=5)
+    rating: int | None = Field(default=None, ge=1, le=5)  # one rating only: guarded in `engine.rate`
+    # Safety layer (CR-BPTN-03 §6, §12.1)
+    risk_level: RiskLevel = RiskLevel.NONE
+    risk_signals: list[RiskSignal] = Field(default_factory=list)  # latest step-2b assessment; history is in the audit
+    safety_cleared_by: str | None = None
+    safety_cleared_at: AwareDatetime | None = None
+    safety_clear_reason: str | None = None
+    safety_context: bool = False  # true only for a NEED_INFO created by T06 (12 h deadline)
+    related_ticket_ids: list[str] = Field(default_factory=list)  # tier-1 tickets are linked, never merged (Q11)
+    # Priority (CR-BPTN-03 §7)
+    priority: Priority | None = None
+    priority_source: PrioritySource | None = None
+    priority_rule_id: str | None = None  # PRI-H1|PRI-H2|PRI-M1|PRI-M2|PRI-L1|PRI-D0; None for HUMAN_OVERRIDE
+    priority_reason: str | None = None
     synthetic: Synthetic = True
 
     @model_validator(mode="after")
@@ -266,7 +301,8 @@ class Ticket(Entity):
             raise ValueError(f"Blocker {self.blocker.code} không được phép ở trạng thái {self.status}")
         if self.blocker is None and self.status in STATUSES_REQUIRING_BLOCKER:
             raise ValueError(f"Trạng thái {self.status} phải có blocker")
-        if self.status in STATUSES_REQUIRING_DEPARTMENT and self.department_id is None:
+        emergency_closed = self.status == TicketStatus.CLOSED and self.closure_kind == ClosureKind.EMERGENCY_HANDLED
+        if self.status in STATUSES_REQUIRING_DEPARTMENT and self.department_id is None and not emergency_closed:
             raise ValueError(f"Trạng thái {self.status} phải có department_id (đã giao ở bước 8)")
         if (self.status == TicketStatus.MERGED) != (self.merged_into is not None):
             raise ValueError("merged_into bắt buộc iff MERGED")
@@ -274,6 +310,17 @@ class Ticket(Entity):
             raise ValueError("cancel_reason bắt buộc khi CANCELLED")
         if (self.status == TicketStatus.CLOSED) != (self.closed_by is not None and self.closed_at is not None):
             raise ValueError("closed_by/closed_at bắt buộc iff CLOSED")
+        if (self.status == TicketStatus.CLOSED) != (self.closure_kind is not None):
+            raise ValueError("closure_kind bắt buộc iff CLOSED")
+        cleared = (self.safety_cleared_by, self.safety_cleared_at, self.safety_clear_reason)
+        if any(v is None for v in cleared) != all(v is None for v in cleared):
+            raise ValueError("safety_cleared_by/at/reason phải cùng đặt hoặc cùng null")
+        if (self.priority is None) != (self.priority_source is None):
+            raise ValueError("priority và priority_source cùng đặt hoặc cùng null")
+        if self.priority_source == PrioritySource.HUMAN_OVERRIDE and not (self.priority_reason or "").strip():
+            raise ValueError("HUMAN_OVERRIDE bắt buộc priority_reason")
+        if self.safety_context and self.status != TicketStatus.NEED_INFO:
+            raise ValueError("safety_context chỉ true khi NEED_INFO")
         return self
 
 
@@ -308,6 +355,8 @@ class Notification(Entity):
         "department.reconcile_failed",
         "reminder",
         "escalation",
+        "emergency.created",  # CR-BPTN-03 §6.5/§13: BQL, as soon as EMERGENCY_PENDING_BQL is set
+        "safety.review_escalated",  # CR-BPTN-03 §13: BQL, when SAFETY_REVIEW_REQUIRED passes 4 calendar hours
     ]
     audience: BlockerOwner
     payload: dict[str, Any] = Field(default_factory=dict)

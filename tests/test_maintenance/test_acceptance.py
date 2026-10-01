@@ -168,18 +168,16 @@ def test_08_only_bql_closes_or_cancels(fresh, actor, target):
     assert fresh.transition(tid, target, BQL, **reason).ticket.status == target
 
 
-def test_09_reopen_window(fresh, clock):
-    early = report(fresh, CLEANING)
-    late = report(fresh, LIGHTING)
-    for tid in (early, late):
-        to_ready(fresh, tid)
-        fresh.close(tid, BQL)
-    clock.advance(days=6)
-    assert fresh.reopen(early, "SIM-ACTOR-RESIDENT-01", note="Vẫn còn rác").ticket.status == "READY_FOR_REVIEW"
-    clock.advance(days=2)
-    with pytest.raises(GuardError):
-        fresh.reopen(late, "SIM-ACTOR-RESIDENT-01")
-    assert fresh.get(late).ticket.status == "CLOSED"
+def test_09_no_reopen_and_closure_kind(fresh, clock):
+    """CR-BPTN-03 §4.3 / AC-15: a closed ticket cannot be reopened; closing records closure_kind=NORMAL."""
+    tid = report(fresh, CLEANING)
+    to_ready(fresh, tid)
+    case = fresh.close(tid, BQL)
+    assert case.ticket.closure_kind == "NORMAL"
+    with pytest.raises(InvalidTransitionError):
+        fresh.reopen(tid, "SIM-ACTOR-RESIDENT-01", note="Vẫn còn rác")
+    assert fresh.get(tid).ticket.status == "CLOSED"
+    assert resident_view(fresh, fresh.get(tid), clock.now).allowed_actions == ["RATE"]
 
 
 def test_10_duplicate_is_merged_and_the_resident_sees_the_original(fresh, clock):

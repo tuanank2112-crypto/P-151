@@ -77,9 +77,14 @@ class BusinessHours(Frozen):
         raise ValueError("business_hours không có ngày làm việc nào")
 
 
+class MissingInfoSafetySla(Frozen):
+    escalate_after_hours: float = Field(gt=0)
+
+
 class MissingInfoSla(Frozen):
     retry_every_hours: float
     escalate_after_hours: float
+    safety_context: MissingInfoSafetySla  # CR-BPTN-03 §6.4: NEED_INFO raised by a suspected hazard (T06)
 
 
 class BptnSla(Frozen):
@@ -100,18 +105,27 @@ class ReworkSla(Frozen):
     escalate_at_count: int = Field(ge=1)
 
 
+class SafetyReviewSla(Frozen):
+    escalate_after_hours: float = Field(gt=0)  # CALENDAR hours: never goes through business_hours.add (Q10)
+
+
+class PrioritySla(Frozen):
+    duplicate_raise_at_count: int = Field(ge=1)  # D-03; loaded in P0, not used yet (PRI-U1 is P1)
+
+
 class SlaConfig(Frozen):
     """Every timing the engine uses. Defaults in catalog.yaml are provisional (CR-BPTN-02 §8)."""
 
     max_auto_retries: int = Field(ge=0)
     job_interval_minutes: float = Field(gt=0)
     duplicate_window_hours: float = Field(gt=0)
-    reopen_window_days: float = Field(gt=0)
     missing_info: MissingInfoSla
+    safety_review: SafetyReviewSla
     bptn: BptnSla
     waiting_material: WaitingMaterialSla
     not_accepted: NotAcceptedSla
     rework: ReworkSla
+    priority: PrioritySla
 
 
 class Actor(Frozen):
