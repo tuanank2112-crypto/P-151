@@ -65,7 +65,7 @@
 - [x] WP0 đo nền (142/142, ruff sạch)
 - [x] Commit nền `e5ececf`, nhánh `feature/nhuy-cr03-p0`
 - [x] WP1 `specs/` đủ 4 mảng + SO đo (Q15)
-- [x] WP2 (R01 ✅) · [x] WP3 (R02 ✅) · [ ] WP4 · [ ] WP5 (mỗi WP: report + SO đo lại + phán)
+- [x] WP2 (R01 ✅) · [x] WP3 (R02 ✅) · [x] WP4 (R03 ✅ sau 🔁) · [ ] WP5 (mỗi WP: report + SO đo lại + phán)
 - [ ] WP6 thẩm định ✅
 - [ ] Đồng bộ não (6 điểm) + `docs/` + changelog/version
 - [ ] Sign-off `✅ ĐÃ HOÀN THÀNH` + mốc giây

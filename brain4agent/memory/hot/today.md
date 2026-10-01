@@ -51,3 +51,4 @@
 - WP4 (luồng khẩn cấp) xong: 292 test pass (nền WP3 266, +26 trong test_emergency.py), ruff sạch; 5 method safety_*/emergency_*, T03/T05/T06/T07/T10, chặn BPTN trên blocker BQL, guard Q19; làm đỏ resume-gỡ-khẩn-cấp và bỏ Q19 rồi xanh; nền trước commit `f854cf3`.
 - WP4 🔁 (R03): BPTN trên blocker BQL phải 403 kể cả bptn_resolve (CR-03 §4.4.5). Trả worker sửa.
 - WP4 sửa 🔁 (drift 1): BPTN bị 403+audit trên mọi blocker chủ BQL kể cả bptn_resolve; 292 test pass, ruff sạch; làm đỏ (thêm lại ngoại lệ) rồi xanh; nền `dae9513`.
+- WP4 ✅ sau 🔁 (R03, 292 pass, BPTN trên blocker BQL = 403). Phóng WP5 theo H04.

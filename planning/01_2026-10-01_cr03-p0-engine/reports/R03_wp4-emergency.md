@@ -60,3 +60,15 @@ Cây còn lại không đụng: `D docs/flow_*.png` x2, `?? docs/Activity Diagra
 
 SO đo lại 2026-10-01 18:50: pytest 292 passed EXIT=0 · ruff EXIT=0 · format EXIT=0 · diff f854cf3..183df6b 12 file trong phạm vi. Drift 2 (theo Q19) và drift 3 (test_api.py đổi sang TEC-002) chấp nhận. Drift 1 SAI nguồn: CR-03 §4.4 bất biến 5 + AC-06 bắt `ACTION_DENIED` (403, có audit) cho MỌI hành động BPTN trên blocker chủ BQL, kể cả `bptn_resolve`. `bptn_resolve` trên `SAFETY_REVIEW_REQUIRED` (chủ BPTN) giữ 409 GuardError.
 🔁 SỬA: drift 1 — bỏ ngoại lệ `action != Action.BPTN_RESOLVE` ở engine.py:1251; sửa E-13 + X-2 theo 403; thêm làm đỏ chứng minh.
+
+## Sửa theo 🔁 (drift 1)
+Base: dae95135b3cd07faafe2d35a5c55d210cbc9d8bf · Head: 0ef1c612afedcbe03283941ff703b0493d8e9854 (commit `fix(engine): deny BPTN actions on BQL-owned safety blockers (WP4)`)
+- engine.py `_mutate_locked`: bỏ ngoại lệ `action != Action.BPTN_RESOLVE`; BPTN trên blocker thuộc `BQL_REASONS` luôn ACTION_DENIED 403 có audit (reason kết thúc `(requested=BPTN_RESOLVE)`).
+- Test E-13/X-2 `test_bptn_resolve_rejects_safety_blockers` sửa: `bptn_resolve` BPTN trên TEC-005 => `ActionDeniedError`, audit cuối ACTION_DENIED, status/blocker/số event không đổi; trên `SAFETY_REVIEW_REQUIRED` vẫn `GuardError` 409.
+- Làm đỏ: thêm lại ngoại lệ => `1 failed, 25 passed` EXIT=1 (`evidence/WP4/red-bptn-resolve.txt`); hoàn tác => `292 passed` EXIT=0, ruff check EXIT=0, ruff format --check EXIT=0 (`evidence/WP4/green-after-fix.txt`).
+- Diff: engine.py, test_emergency.py, 2 file evidence, 1 dòng today.md. Không đụng file ngoài phạm vi H03.
+
+⏳ Chờ người duyệt (sau 🔁).
+
+SO đo lại lần 2 (2026-10-01): pytest 292 passed EXIT=0 · ruff EXIT=0 · format EXIT=0 · diff dae9513..0ef1c61 5 file trong phạm vi; ngoại lệ BPTN_RESOLVE đã bỏ; evidence red-bptn-resolve + green-after-fix có.
+✅ DUYỆT
