@@ -12,13 +12,12 @@ const TOKEN_KEY = 'mo-token';
 
 // The server decides the role from the logged-in account; the UI only picks the matching screen.
 const VIEW_BY_ROLE = {
-  RESIDENT: 'resident', BPTN: 'bptn', DEPARTMENT: 'dept', WAREHOUSE: 'warehouse', BQL: 'bql', QA_INTERNAL: 'qa',
+  RESIDENT: 'resident', BPTN: 'bptn', DEPARTMENT: 'dept', WAREHOUSE: 'warehouse', BQL: 'bql',
 };
 const ROLE_LABEL = {
-  RESIDENT: 'Cư dân', BPTN: 'BPTN', DEPARTMENT: 'Phòng ban', WAREHOUSE: 'Kho', BQL: 'Ban quản lý', QA_INTERNAL: 'QA / demo',
+  RESIDENT: 'Cư dân', BPTN: 'BPTN', DEPARTMENT: 'Phòng ban', WAREHOUSE: 'Kho', BQL: 'Ban quản lý',
 };
 const VIEW_TEXT = {
-  qa: ['Công cụ demo', 'Nạp lại dữ liệu mẫu, chạy job nhắc và leo thang, kiểm tra 12 phản ánh mẫu. Chỉ tài khoản QA dùng được.'],
   resident: ['Phản ánh của tôi', 'Gửi phản ánh về khu vực chung và theo dõi tiến độ xử lý như theo dõi đơn hàng.'],
   bptn: ['Hàng chờ xác minh', 'Các phản ánh Agent chưa thể tự quyết. Chọn một phản ánh để xác nhận hoặc bổ sung thông tin.'],
   dept: ['Việc của phòng ban', 'Nhận việc, cập nhật tiến độ và báo hoàn thành. Chỉ hiện phản ánh đã được giao cho phòng ban.'],
@@ -1186,65 +1185,6 @@ async function renderBql(list, detail) {
   detail.append(card(null, ...sections));
 }
 
-// ------------------------------------------------------------------ QA (demo control)
-
-async function renderQa(list, detail) {
-  const reset = el('button', {
-    type: 'button', class: BTN.danger,
-    onclick: async () => {
-      const ok = await confirmDialog('Nạp lại dữ liệu mẫu?', 'Mọi phản ánh và thay đổi trong phiên demo sẽ mất, 12 phản ánh mẫu được nạp lại.');
-      if (!ok) return;
-      state.selected = null;
-      await act(api('/mo/reset', { method: 'POST' }), 'Đã nạp lại dữ liệu mẫu');
-    },
-  }, 'Nạp lại dữ liệu mẫu');
-  const jobs = el('button', {
-    type: 'button', class: BTN.secondary,
-    onclick: () => act(api('/mo/jobs/run', { method: 'POST', body: {} }), 'Đã chạy job nhắc và leo thang'),
-  }, 'Chạy job nhắc / leo thang');
-  const result = el('div');
-  const evaluateBtn = el('button', {
-    type: 'button', class: BTN.primary,
-    onclick: async () => {
-      // Evaluation resets first: without asking, it silently wipes tickets people created during the demo
-      const ok = await confirmDialog('Kiểm tra 12 phản ánh mẫu?', 'Hệ thống sẽ nạp lại dữ liệu mẫu trước khi kiểm tra: mọi phản ánh và thay đổi trong phiên demo sẽ mất.');
-      if (!ok) return;
-      evaluateBtn.disabled = true;
-      state.selected = null;
-      try {
-        const report = await api('/mo/evaluate', { method: 'POST' });
-        const failed = report.results.filter((r) => !r.passed);
-        result.replaceChildren(callout(failed.length ? 'danger' : 'ok',
-          `${report.passed}/${report.total} phản ánh mẫu đúng kết quả mong đợi (${report.demo_flows_passed}/4 demo flow)`,
-          failed.length ? `Sai: ${failed.map((r) => r.ticket_id).join(', ')}` : report.disclaimer));
-      } catch (error) {
-        toast(error.message, 'error');
-      } finally {
-        evaluateBtn.disabled = false;
-      }
-    },
-  }, 'Kiểm tra 12 phản ánh mẫu');
-
-  const aiLogsCard = card('Lịch sử AI Logs (LLM Calls)',
-    el('p', { class: 'text-sm text-slate-600 dark:text-slate-400' }, 'Theo dõi chi tiết các lượt gọi LLM, độ trễ latency và kết quả fallback quy tắc.'),
-    el('button', {
-      type: 'button',
-      class: BTN.primary,
-      onclick: () => {
-        state.activeTab = 'ai-logs';
-        render();
-      },
-    }, 'Mở màn hình AI Logs đầy đủ'));
-
-  list.append(aiLogsCard, card('Dữ liệu demo',
-    el('p', { class: 'text-sm text-slate-600 dark:text-slate-400' }, 'Cả hai nút "Kiểm tra" và "Nạp lại" đều xóa phản ánh tạo trong phiên demo.'),
-    el('div', { class: 'flex flex-wrap gap-3' }, evaluateBtn, jobs, reset),
-    result));
-  detail.append(card('Tài khoản thử nghiệm',
-    el('p', { class: 'text-sm text-slate-600 dark:text-slate-400' }, 'Đăng xuất rồi đăng nhập bằng tài khoản khác để xem màn hình của từng vai trò.'),
-    await demoAccountList(null)));
-}
-
 // ------------------------------------------------------------------ login
 
 async function demoAccountList(onPick) {
@@ -1254,10 +1194,11 @@ async function demoAccountList(onPick) {
   } catch {
     return el('p', { class: 'text-sm text-slate-500 dark:text-slate-400' }, 'Không có danh sách tài khoản thử nghiệm.');
   }
+  const accounts = (data.accounts || []).filter((a) => a.role !== 'QA_INTERNAL' && a.username !== 'qa01');
   return el('div', { class: 'space-y-3' },
     data.shared_test_password ? el('p', { class: 'text-sm text-slate-600 dark:text-slate-400' }, 'Mật khẩu chung: ',
       el('code', { class: 'rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 font-mono text-slate-900 dark:text-slate-200' }, data.shared_test_password)) : null,
-    el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 rounded-lg ring-1 ring-slate-200 dark:ring-slate-800' }, data.accounts.map((a) => el('li', {},
+    el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 rounded-lg ring-1 ring-slate-200 dark:ring-slate-800' }, accounts.map((a) => el('li', {},
       el(onPick ? 'button' : 'div', {
         type: onPick ? 'button' : undefined,
         class: `flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm ${onPick ? 'hover:bg-slate-50 dark:hover:bg-slate-800/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-600' : ''}`,
@@ -1320,7 +1261,7 @@ async function showLogin(message) {
 // ------------------------------------------------------------------ session + shell
 
 const RENDERERS = {
-  resident: renderResident, bptn: renderBptn, dept: renderDepartment, warehouse: renderWarehouse, bql: renderBql, qa: renderQa,
+  resident: renderResident, bptn: renderBptn, dept: renderDepartment, warehouse: renderWarehouse, bql: renderBql,
 };
 
 function signIn(token, user) {

@@ -173,7 +173,7 @@ sequenceDiagram
 ---
 
 ### UI-07 — Panel "Agent Đề Xuất & Phân Tích" (AI Decision Card)
-- **Đối tượng sử dụng:** Toàn bộ nhân viên nội bộ (BPTN, Phòng ban, BQL, QA).
+- **Đối tượng sử dụng:** Toàn bộ nhân viên nội bộ (BPTN, Phòng ban, BQL).
 - **Mục tiêu:** Minh bạch hóa quá trình suy luận của Agent AI, cung cấp đầy đủ dữ kiện để nhân viên đưa ra quyết định nhanh chóng.
 - **Thành phần giao diện:**
   1. **Badge Độ tin cậy (Confidence Badge):** Thể hiện phần trăm độ tin cậy kèm chỉ báo nhịp thở (Pulse dot):
@@ -224,19 +224,18 @@ sequenceDiagram
 
 ---
 
-### UI-10 — Bảng điều khiển QA, Đánh giá mô hình & Quan sát AI Logs (Observability & Evaluation)
-- **Đối tượng sử dụng:** Chuyên viên QA, Kỹ sư AI / MLOps (`ActorRole.QA_INTERNAL`).
-- **Mục tiêu:** Đánh giá độ chính xác của Agent trên 12 kịch bản mẫu, giả lập tiến trình nghiệp vụ và giám sát chuyên sâu các lượt gọi LLM.
+### UI-10 — Trung tâm Giám sát AI Logs & Khả năng quan sát (AI Logs & LLM Observability)
+- **Đối tượng sử dụng:** Nhân viên nội bộ (`BPTN`, `Phòng ban`, `Kho`, `BQL`).
+- **Mục tiêu:** Giám sát toàn bộ các lượt gọi mô hình LLM, phân tích độ trễ (latency), truy vết Prompt/Response payload và đánh giá kết quả fallback quy tắc.
 - **Thành phần giao diện:**
-  1. **Bộ công cụ thử nghiệm dữ liệu mẫu:**
-     - Nút "Kiểm tra 12 phản ánh mẫu": Thực hiện nạp lại dữ liệu gốc, chạy đánh giá tự động và hiển thị tỷ lệ chính xác (Accuracy %).
-     - Nút "Chạy job nhắc / leo thang": Kích hoạt cưỡng bức cron job kiểm tra SLA và leo thang ticket.
-     - Nút "Nạp lại dữ liệu mẫu": Reset toàn bộ dữ liệu phiên demo về trạng thái ban đầu.
-     - Danh sách tài khoản thử nghiệm nhanh (Resident, BPTN, Tech, Cleaning, Warehouse, BQL).
-  2. **Màn hình AI Logs Chuyên sâu (Observability Dashboard):**
-     - Bảng thẻ tóm tắt: Tổng số lượt gọi, Lượt thành công LLM, Lượt Fallback quy tắc, Độ trễ trung bình (ms).
-     - Bộ lọc theo Model (Tất cả, gemini-2.5, gpt-4o, claude-3.5, rule-engine).
-     - Ô tìm kiếm từ khóa theo mã ticket hoặc nội dung prompt.
-     - Modal "Chi tiết AI Log": Hiển thị chi tiết System Prompt, User Prompt, Output JSON cấu trúc và nút sao chép JSON.
-     - Nút "Làm mới" và "Reset Logs" phục vụ kiểm thử lại từ đầu.
-- **API tương ứng:** `POST /api/v1/mo/evaluate`, `POST /api/v1/mo/jobs/run`, `POST /api/v1/mo/reset`, `GET /api/v1/mo/ai-logs`, `POST /api/v1/mo/ai-logs/reset`.
+  1. **Thẻ thống kê tổng quan:** Tổng số lượt gọi AI, Lượt phản hồi thành công, Lượt fallback quy tắc, Độ trễ trung bình (ms).
+  2. **Thanh công cụ lọc & tìm kiếm:**
+     - Bộ lọc theo Model (Tất cả, mock, gpt-4o-mini, gemini-1.5-flash...).
+     - Bộ lọc theo Trạng thái (Tất cả, SUCCESS, FALLBACK_RULE, ERROR).
+     - Ô tìm kiếm từ khóa real-time trong nội dung Prompt và Event.
+     - Nút "Làm mới" danh sách và nút "Reset Logs" làm sạch dữ liệu trong bộ nhớ.
+  3. **Bảng lịch sử AI Logs chi tiết:** Cột Thời gian, Ticket ID, Tool & Event, Prompt tóm tắt, Model, Latency, Badge trạng thái.
+  4. **Modal "Chi tiết AI Log":**
+     - Xem toàn văn System Prompt và User Prompt gửi lên mô hình.
+     - Xem Structured Output JSON format rõ ràng, có nút sao chép JSON.
+- **API tương ứng:** `GET /api/v1/mo/ai-logs`, `POST /api/v1/mo/ai-logs/reset`.
