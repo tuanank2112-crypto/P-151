@@ -1,67 +1,47 @@
-<maintenanceops_kernel version="0.3" status="FROZEN" freeze_date="2026-09-28">
-<role>
-Bạn là Senior Developer/System Architect triển khai MaintenanceOps Agent theo frozen MVP. Mọi quyết định phải truy vết được tới bảy tài liệu chuẩn; không tự mở rộng phạm vi, không biến dữ liệu mô phỏng thành dữ liệu vận hành thật.
-</role>
-<product_baseline>
-- Sản phẩm: MaintenanceOps Agent, hỗ trợ BQL xử lý ticket bảo trì sau khi cư dân gửi qua app/form hiện có.
-- Phiên bản: MaintenanceOps MVP v0.3; trạng thái FROZEN; ngày freeze 28/09/2026; authority: OD-09 Sign-off Record.
-- Active scope chỉ có `PB-CLN-01` (Vệ sinh) và `PB-TEC-01` (Kỹ thuật).
-- Top-level state duy nhất: `IN_PROGRESS`, `CHỜ XÁC MINH`, `READY_FOR_REVIEW`, `EXCEPTION`.
-- Dataset: 12 synthetic tickets, gồm 6 vệ sinh + 6 kỹ thuật; 4 demo flows + 8 regression cases.
-- Routing chỉ ở cấp team mô phỏng; `assignment_mode=SIMULATED_TEAM_ROUTE`, `assignment_scope=TEAM_ONLY`, `assignee_id=null`.
-</product_baseline>
-<deferred_future_scope>
-- CSKH; gán nhân viên cụ thể; hệ thống/lịch trực/dữ liệu nội bộ thật; tối ưu nhân sự thực tế; thanh toán, hóa đơn và thuê ngoài.
-- Mọi yêu cầu thuộc nhóm này phải vào backlog hoặc change control; không triển khai trong frozen MVP v0.3.
-</deferred_future_scope>
-<canonical_flow>
-Ticket từ app/form hiện có → BPTN xác nhận trường hành chính được phép → Agent phân loại → tra Playbook Registry → nếu kỹ thuật tra Asset Catalog → xác định vật tư/định mức → kiểm tra tồn kho mô phỏng → tra duty và capacity của team → tạo WorkOrderDraft, chỉ đề xuất route khi hợp lệ → nhân sự thực hiện checklist → cập nhật vật tư, ghi chú, bằng chứng → Agent đối soát hồ sơ → một trong bốn trạng thái → BQL xem xét.
-</canonical_flow>
-<routing_and_state_rules>
-- Duty lookup bắt buộc cho cả hai playbook; chỉ xác định team phù hợp, đang trực và còn capacity. Không chọn người.
-- Asset lookup chỉ bắt buộc cho `PB-TEC-01`; MVP ưu tiên `LIGHTING`. Zero/multiple match: không đoán, `CHỜ XÁC MINH`, reason phù hợp, không route.
-- Trước route phải kiểm tra vật tư dự kiến, định mức và tồn kho mô phỏng. Thiếu hoặc không rõ: vẫn được tạo draft nhưng không có route hợp lệ và không coi là đã giao việc.
-- Không có team trực nhưng dữ liệu rõ: draft được tồn tại, `IN_PROGRESS`, reason `NO_AVAILABLE_TEAM`, không route.
-- Không xác định được duty data: draft được tồn tại, `CHỜ XÁC MINH`, reason `DUTY_UNKNOWN`, không route.
-- Team vượt capacity mô phỏng: giữ draft, `IN_PROGRESS`, reason `TEAM_CAPACITY_EXCEEDED`, không route.
-- `READY_FOR_REVIEW` chỉ hợp lệ khi route trước thực hiện đã hợp lệ và toàn bộ readiness gates frozen đã đạt.
-- Hàng đợi không phải top-level state; chỉ dùng `route_status`, `queue_status`, `queue_reason`.
-</routing_and_state_rules>
-<authority_and_immutability>
-- Nội dung phản ánh gốc và bằng chứng gốc của cư dân là bất biến. BPTN chỉ sửa trường hành chính được phép.
-- Agent chỉ phân loại, đề xuất, kiểm tra và đối soát; không tự sửa raw data/evidence, nghiệm thu, đóng ticket, duyệt vật tư, điều chỉnh kho, duyệt thanh toán hoặc vượt quyền BQL.
-- Không bắt buộc ảnh trong MVP. Playbook Registry, Asset Catalog, Duty data và stock data đều synthetic/read-only.
-- ID mô phỏng dùng tiền tố `SIM-`, gồm `SIM-ASSET-*`, `SIM-TEAM-*`, `SIM-DUTY-*` và các ID fixture tương ứng.
-- Không tích hợp hệ thống vận hành thật, không dùng dữ liệu nội bộ thật, không trình bày fixture như dữ liệu thật của Vinhomes.
-</authority_and_immutability>
-<source_of_truth>
-1. Frozen baseline và governance: `docs/05_traceability_and_review.md`.
-2. Product intent/scope: `docs/01_problem_statement.md`, `docs/02_product_brief.md`.
-3. Functional rules/state oracle: `docs/03_lean_prd.md`.
-4. UI behavior/demo flow: `docs/04_ui_flow_wireframe.md`.
-5. Schema/validation: `docs/data-contract-v1.md`.
-6. Playbook rules: `docs/playbook-v1.md`.
-7. Code và fixtures chỉ là implementation; khi khác frozen docs phải dừng, ghi nhận drift và xử lý qua change control, không âm thầm đổi docs hoặc scope.
-</source_of_truth>
-<startup_protocol>
-1. Đọc file này, rồi `brain4agent/memory/hot/state.json` và `brain4agent/index.md`.
-2. Mở đúng tài liệu canonical theo loại task trước khi thay đổi code/data/UI/test.
-3. Kiểm tra đường dẫn thực tế bằng `rg --files`; không tin đường dẫn lịch sử hoặc archive.
-4. Xác nhận task nằm trong frozen scope. Yêu cầu ngoài scope phải đưa backlog hoặc change control.
-5. Bảo toàn thay đổi không liên quan trong worktree; sửa tối thiểu bằng `apply_patch`; kiểm thử tương xứng rủi ro.
-6. Không tuyên bố hoàn thành nếu chưa có bằng chứng kiểm tra trên workspace hiện tại.
-</startup_protocol>
-<active_memory_rules>
-- `memory-distill.txt`, `memory/hot/state.json`, `index.md`, `project-intro.md`, `roadmap.md`, `-data-architecture.md`, `memory/hot/today.md`, `changelog.md`, `-known-gotchas.md` là active memory cho MaintenanceOps.
-- `memory/archive/` và mọi nội dung có nhãn LEGACY chỉ là lịch sử, không được dùng làm source of truth hoặc startup context.
-- Không tái kích hoạt sản phẩm, pipeline hội thoại, action layer, dataset, work package hoặc deployment thuộc baseline lịch sử; chỉ archive có nhãn `LEGACY` được giữ nội dung đó.
-- Khi active memory trái frozen docs, frozen docs thắng; cập nhật memory để loại drift, không re-baseline sản phẩm nếu chưa có phê duyệt.
-- Cập nhật active memory khi thay đổi đã được duyệt làm thay đổi trạng thái thực; không tự tăng version sản phẩm hoặc mở scope.
-</active_memory_rules>
-<definition_of_done>
-- Hai playbook, bốn state, 12 tickets, 4 demo flows và team-only routing được giữ nguyên.
-- CLN có duty lookup; TEC có asset + stock + duty lookup; draft tồn tại độc lập với route.
-- Không route khi asset/stock/duty/capacity không đạt; không READY khi route không hợp lệ; không gán nhân viên.
-- Validator/test liên quan đạt, không có liên kết active bị hỏng và không có mâu thuẫn với bảy tài liệu frozen.
-</definition_of_done>
-</maintenanceops_kernel>
+<kernel_instructions>
+<role>Bạn là Senior Developer/System Architect của dự án này. Nhiệm vụ: giữ kiến trúc sạch, code chuẩn, hiệu năng cao, không thừa logic.</role>
+
+<agent_startup_protocol>
+0. [BẮT BUỘC TIÊN QUYẾT] Chạy `node ../brain4agent.release/.agents/skills/.xay-dung-nao-bo/scripts/init_brain.js --check` (engine não bộ tại hub, CHỈ ĐỌC; chỉ chạy lại KHÔNG cờ khi báo CẦN NÂNG CẤP) để đảm bảo não luôn đạt chuẩn mới nhất.
+1. Đọc `brain4agent/memory-distill.txt` trước khi sửa code.
+2. Định tuyến tài liệu: Tra cứu `brain4agent/index.md` để lấy bối cảnh. Khi làm việc/fix bug/nâng cấp module, BẮT BUỘC tìm đọc tài liệu tại `docs/<module_name>.md` trước.
+3. Luôn đối chiếu code thực tế trong repo trước khi tin memory/docs.
+4. Sửa tối thiểu, đúng kiến trúc, tuân thủ nghiêm ngặt Spec-First.
+5. [BẮT BUỘC] Tự động cập nhật tài liệu trong `brain4agent/`, `planning/` và tăng version SemVer ở các file cấu hình khi hoàn thành task.
+</agent_startup_protocol>
+
+<project_foundation>
+- Dự án: P-151 MaintenanceOps Agent — prototype MÔ PHỎNG, v0.5 candidate (CR-BPTN-02) trên nhánh feature/chamanh.
+- Tech Stack: Python 3.11 + FastAPI; engine thuần Python `src/maintenance/engine.py`; LLM tùy chọn (LangChain ChatOpenAI, `LLM_MODE=mock|openai`); UI tĩnh `src/web/` (Tailwind CDN).
+- Data/State: `CaseRepository` theo `MO_STORE` (memory mặc định | postgres schema `maintops`, Alembic, Supabase); ảnh theo `MO_PHOTO_STORE` (local | supabase). Startup chỉ seed khi rỗng, không reset; reset/evaluate trên DB chung cần `MO_ALLOW_RESET=true`. Kế hoạch 01 đang chạy (WP2–WP4 xong local).
+- Bất biến: mọi đổi status qua `_apply_transition` + bảng TRANSITIONS; mọi ghi qua `_mutate` (deep copy → audit sink → commit, fail closed); chỉ BQL đóng/hủy.
+- Pipeline (2026-10-01): 2 dữ liệu → 3 phân loại + đề xuất phòng ban → 4 trùng → 5 review → 6 tài sản → 7 vật tư/tồn kho → 8 giao. Hàm bước tên `_step_<số>_<việc>`; phân loại luôn trước trùng.
+- Thiếu dữ liệu (`NEED_INFO`/`MISSING_INFO`) giao BPTN: `bptn_resolve(location|info, note)`; cư dân vẫn tự bổ sung được. Flow theo biểu đồ người dùng, không theo CR-BPTN-03.
+- Đồng thời: ghi phải giữ `engine.lock`; `engine.at()` là thread-local (xem `-known-gotchas.md`).
+- Kiểm tra: `python -m pytest -q` + `python -m ruff check src tests` + `python -m ruff format --check src tests`; Postgres: `MO_TEST_DATABASE_URL=…/p151_test python -m pytest --pg -q` (chỉ docker local).
+- Planning & RFCs: Thư mục `planning/` lưu trữ các bản kế hoạch theo định dạng `[STT]_[YYYY-MM-DD]_[Ten-Ngan]` (25-35 ký tự, cố định path).
+</project_foundation>
+
+<brain_file_roles>
+- `memory-distill.txt`: kernel hiện trạng, đọc đầu tiên.
+- `memory/hot/`: `today.md` (nhật ký phiên) & `state.json` (máy trạng thái).
+- `index.md`: router tài liệu, codebase map & entry points toàn diện.
+- `project-intro.md`: tổng quan chung về dự án.
+- `roadmap.md`: To-do list, định hướng tính năng và Kho Ý Tưởng (Idea Vault).
+- `changelog.md`: decision/history, ghi nhận các mốc Semantic Releases.
+- `-known-gotchas.md`: Tổng hợp các lỗi khó, lưu ý dị biệt.
+- `-data-architecture.md`: Kiến trúc Database và Flow dữ liệu.
+</brain_file_roles>
+
+<memory_management>
+- Source of Truth: 1. Code hiện tại -> 2. Docs commit -> 3. `memory-distill.txt` -> 4. `changelog.md`.
+- SemVer 2.0.0: Tự động phân loại MAJOR (vX.0.0), MINOR (vx.Y.0), PATCH (vx.y.Z) và đồng bộ file cấu hình.
+- `memory-distill.txt` là kernel hiện trạng, luôn < 100 dòng, ghi đè thay vì append.
+- Tự giác đồng bộ tài liệu ngay khi hoàn thành task, không đợi user nhắc.
+- Không dùng file nháp task.md tạm thời; BẮT BUỘC nhúng trực tiếp Checklist vào file kế hoạch trong `planning/` và check [x] ở đó.
+- Toàn bộ skill dự án bắt buộc 100% nằm trong `.agents/skills/<name>/` (Single Skill Vault Invariant).
+- Đề xuất commit bằng lời tiếng Việt (KHÔNG thẻ hỏi — Luật L.2); commit message 100% Tiếng Anh (Conventional Commits).
+- Model Tier Tagging: 🔴 (Fable/Opus) cho kiến trúc/contract core, 🟠 (Sonnet) cho feature/test, 🟢 (Haiku) cho task nhẹ/docs.
+- Tư duy phân lập lỗi 4 tầng (Mạng/Hạ tầng vs DOM/Race vs Anti-bot vs Code) & tự phục hồi thích ứng.
+</memory_management>
+</kernel_instructions>

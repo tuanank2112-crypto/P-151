@@ -1,29 +1,29 @@
 #!/usr/bin/env bash
 # Cross-platform Python launcher for AI log hooks.
-# Tries python3 → python → py -3 on PATH; on Windows, falls back to common
-# Python install locations because Git Bash launched by some hooks gets a
-# stripped PATH that omits the Windows Python directory.
-# Designed to be sourced or called as: bash scripts/_pyrun.sh <script> [args...]
-#
-# Exits 0 silently if no Python is found — hooks must never block the AI tool.
+# Robust against Windows App Execution Aliases (WindowsApps dummy python.exe)
 set -u
 
-if command -v python3 >/dev/null 2>&1 && python3 -c 'import sys' >/dev/null 2>&1; then
-  PY=python3
-elif command -v python >/dev/null 2>&1 && python -c 'import sys' >/dev/null 2>&1; then
-  PY=python
-elif command -v py >/dev/null 2>&1 && py -3 -c 'import sys' >/dev/null 2>&1; then
+check_py() {
+  "$@" -c "import sys; sys.exit(0)" >/dev/null 2>&1
+}
+
+PY=""
+if check_py py -3; then
   PY="py -3"
+elif check_py python3; then
+  PY=python3
+elif check_py python; then
+  PY=python
 else
-  # PATH lookup failed — probe standard Windows install locations.
-  PY=""
+  # PATH lookup failed or hit WindowsApp dummy — probe standard install paths
   shopt -s nullglob 2>/dev/null || true
   for cand in \
+    "/c/Users/LENOVO/AppData/Local/Programs/Python/Python311/python.exe" \
     /c/Users/*/AppData/Local/Programs/Python/Python*/python.exe \
     "/c/Program Files/Python"*/python.exe \
     "/c/Program Files (x86)/Python"*/python.exe \
     /c/Python*/python.exe; do
-    if [ -x "$cand" ] && "$cand" -c 'import sys' >/dev/null 2>&1; then
+    if check_py "$cand"; then
       PY="$cand"
       break
     fi

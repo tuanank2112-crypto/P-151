@@ -1,5 +1,7 @@
 # ResidentGPT — trạng thái kiến trúc và tài liệu thiết kế
 
+> **LEGACY — không phải kiến trúc active.** Tài liệu này mô tả ResidentGPT (FAQ/RAG) trước MaintenanceOps MVP v0.3. Kiến trúc active nằm ở `docs/03_lean_prd.md`, `docs/data-contract-v1.md` và `src/maintenance/`. CSKH chỉ thuộc Deferred/Future Scope.
+
 ## Đã có trong code tại 23/09/2026
 
 Repo có khung FastAPI (`src/main.py`, `src/api/routes.py`), LangGraph mẫu (`src/agents/graph.py`, `src/agents/state.py`) và cấu hình model. Node và search tool còn trả kết quả ví dụ; chưa có retrieval trên Knowledge Pack, auth/RBAC hai vai trò, conversation persistence, BQL UI, ingestion runtime, HITL, eval/dashboard. `ChatResponse.analysis` của template hiện được trả ra API; implementation ResidentGPT cần dùng response contract không lộ phân tích nội bộ.

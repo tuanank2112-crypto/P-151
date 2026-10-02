@@ -1,0 +1,46 @@
+R12 — broken file: src/maintenance/store/postgres.py
+sha256 before: 013f2eab8fba657ee5380a689b3e58044fde40104ce55c576c64a8d1073b2bb2
+sha256 after restore: 013f2eab8fba657ee5380a689b3e58044fde40104ce55c576c64a8d1073b2bb2
+restored: True
+
+--- diff applied ---
+--- a/src/maintenance/store/postgres.py
++++ b/src/maintenance/store/postgres.py
+@@ -80,7 +80,7 @@
+         parsed = make_url(url)
+     except Exception:
+         # `from None` is mandatory: the original error carries the whole URL, password included
+-        raise RuntimeError("DATABASE_URL không phân tích được (MO_STORE=postgres)") from None
++        raise RuntimeError("DATABASE_URL không phân tích được (MO_STORE=postgres)")
+     if parsed.drivername not in ("postgresql", "postgresql+psycopg2"):
+         raise RuntimeError(
+             "DATABASE_URL phải bắt đầu bằng postgresql:// hoặc postgresql+psycopg2:// khi MO_STORE=postgres"
+
+--- command ---
+MO_TEST_DATABASE_URL=<local p151_test> python -m pytest -q -p no:cacheprovider tests/test_maintenance/test_persistence_guards.py::test_t27_database_url_checks_never_leak_the_password
+exit=1
+
+--- pytest output (last 60 lines) ---
+F                                                                        [100%]
+================================== FAILURES ===================================
+____________ test_t27_database_url_checks_never_leak_the_password _____________
+
+    def test_t27_database_url_checks_never_leak_the_password():
+        with pytest.raises(RuntimeError, match="DATABASE_URL") as wrong_driver:
+            connect_args_for("postgres://u:secretpw@h/db")
+        assert "secretpw" not in str(wrong_driver.value)
+    
+        with pytest.raises(RuntimeError, match="DATABASE_URL") as unparsable:
+            connect_args_for("not a url at all ://")
+        # `from None`: the parser's own error (older SQLAlchemy put the whole URL in it) is not chained into tracebacks
+>       assert unparsable.value.__cause__ is None and unparsable.value.__suppress_context__ is True
+E       AssertionError: assert (None is None and False is True)
+E        +  where None = RuntimeError('DATABASE_URL không phân tích được (MO_STORE=postgres)').__cause__
+E        +    where RuntimeError('DATABASE_URL không phân tích được (MO_STORE=postgres)') = <ExceptionInfo RuntimeError('DATABASE_URL không phân tích được (MO_STORE=postgres)') tblen=2>.value
+E        +  and   False = RuntimeError('DATABASE_URL không phân tích được (MO_STORE=postgres)').__suppress_context__
+E        +    where RuntimeError('DATABASE_URL không phân tích được (MO_STORE=postgres)') = <ExceptionInfo RuntimeError('DATABASE_URL không phân tích được (MO_STORE=postgres)') tblen=2>.value
+
+tests\test_maintenance\test_persistence_guards.py:56: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_persistence_guards.py::test_t27_database_url_checks_never_leak_the_password
+1 failed in 0.15s

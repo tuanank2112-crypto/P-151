@@ -1,0 +1,83 @@
+R10 — broken file: src/maintenance/engine.py
+sha256 before: b6f2f9857d0520bea69fae97f8c1995793bc6eef5f49ff8c753fc5b4719ac215
+sha256 after restore: b6f2f9857d0520bea69fae97f8c1995793bc6eef5f49ff8c753fc5b4719ac215
+restored: True
+
+--- diff applied ---
+--- a/src/maintenance/engine.py
++++ b/src/maintenance/engine.py
+@@ -1137,7 +1137,7 @@
+         tx.append_log(new_rows)  # a store failure surfaces as itself (409/503/403), never as AuditWriteError
+         self._sink(self.audit_sink, new_rows)
+         if new_notifications:
+-            tx.append_notifications(new_notifications)
++            pass
+             self._sink(self.notify_sink, new_notifications)
+ 
+     @staticmethod
+
+--- command ---
+MO_TEST_DATABASE_URL=<local p151_test> python -m pytest -q -p no:cacheprovider --pg tests/test_maintenance/test_store_memory.py::test_t23_ledger_matches_every_doc
+exit=1
+
+--- pytest output (last 60 lines) ---
+repo = <src.maintenance.store.memory.InMemoryRepository object at 0x00000186E39FC450>
+clock = <tests.test_maintenance.helpers.Clock object at 0x00000186E39CC350>
+
+    def test_t23_ledger_matches_every_doc(repo, clock):
+        engine = MaintenanceEngine(clock=clock, repo=repo)
+        engine.reset()
+        tid = report(engine, LIGHTING)
+        with pytest.raises(ActionDeniedError):
+            engine.attempt(tid, BQL, Action.EDIT_RAW, field_name="original_description", new_value="x", reason="t23")
+        engine.receive_stock(WAREHOUSE, "SIM-MAT-LAMP-02", 5)
+        engine.run_jobs(clock.now + timedelta(days=2))
+        log, notifications = repo.log_rows(), repo.notification_rows()
+        for case in repo.list():
+            ticket_id = case.ticket.ticket_id
+            audit = [r for r in log if isinstance(r, AuditEvent) and r.ticket_id == ticket_id]
+            events = [r for r in log if isinstance(r, StatusEvent) and r.ticket_id == ticket_id]
+            assert len(audit) == len(case.audit), ticket_id
+            assert len(events) == len(case.events), ticket_id
+>           assert len([n for n in notifications if n.ticket_id == ticket_id]) == len(case.notifications), ticket_id
+E           AssertionError: SIM-TKT-0001
+E           assert 0 == 4
+E            +  where 0 = len([])
+E            +  and   4 = len([Notification(notification_id='SIM-NTF-0001-0001', ticket_id='SIM-TKT-0001', type='ticket.status_changed', audience=<B...thang'}, created_at=datetime.datetime(2026, 9, 30, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200))))])
+E            +    where [Notification(notification_id='SIM-NTF-0001-0001', ticket_id='SIM-TKT-0001', type='ticket.status_changed', audience=<B...thang'}, created_at=datetime.datetime(2026, 9, 30, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200))))] = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...None, rule_id='PB-COM-R-PERM-01', playbook_version='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)]).notifications
+
+tests\test_maintenance\test_store_memory.py:209: AssertionError
+_________________ test_t23_ledger_matches_every_doc[postgres] _________________
+
+repo = <src.maintenance.store.postgres.PostgresRepository object at 0x00000186E3A50AD0>
+clock = <tests.test_maintenance.helpers.Clock object at 0x00000186E3BE25D0>
+
+    def test_t23_ledger_matches_every_doc(repo, clock):
+        engine = MaintenanceEngine(clock=clock, repo=repo)
+        engine.reset()
+        tid = report(engine, LIGHTING)
+        with pytest.raises(ActionDeniedError):
+            engine.attempt(tid, BQL, Action.EDIT_RAW, field_name="original_description", new_value="x", reason="t23")
+        engine.receive_stock(WAREHOUSE, "SIM-MAT-LAMP-02", 5)
+        engine.run_jobs(clock.now + timedelta(days=2))
+        log, notifications = repo.log_rows(), repo.notification_rows()
+        for case in repo.list():
+            ticket_id = case.ticket.ticket_id
+            audit = [r for r in log if isinstance(r, AuditEvent) and r.ticket_id == ticket_id]
+            events = [r for r in log if isinstance(r, StatusEvent) and r.ticket_id == ticket_id]
+            assert len(audit) == len(case.audit), ticket_id
+            assert len(events) == len(case.events), ticket_id
+>           assert len([n for n in notifications if n.ticket_id == ticket_id]) == len(case.notifications), ticket_id
+E           AssertionError: SIM-TKT-0001
+E           assert 0 == 4
+E            +  where 0 = len([])
+E            +  and   4 = len([Notification(notification_id='SIM-NTF-0001-0001', ticket_id='SIM-TKT-0001', type='ticket.status_changed', audience=<B...uá mốc leo thang', 'reason_code': 'DUPLICATE'}, created_at=datetime.datetime(2026, 9, 30, 9, 0, tzinfo=TzInfo(25200)))])
+E            +    where [Notification(notification_id='SIM-NTF-0001-0001', ticket_id='SIM-TKT-0001', type='ticket.status_changed', audience=<B...uá mốc leo thang', 'reason_code': 'DUPLICATE'}, created_at=datetime.datetime(2026, 9, 30, 9, 0, tzinfo=TzInfo(25200)))] = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...None, rule_id='PB-COM-R-PERM-01', playbook_version='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)]).notifications
+
+tests\test_maintenance\test_store_memory.py:209: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+alembic -> host=localhost db=p151_test user=p151
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_store_memory.py::test_t23_ledger_matches_every_doc[memory]
+FAILED tests/test_maintenance/test_store_memory.py::test_t23_ledger_matches_every_doc[postgres]
+2 failed in 0.65s
