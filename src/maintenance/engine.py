@@ -17,11 +17,11 @@ Rules that hold everywhere:
 
 import logging
 import threading
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping, MutableMapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from src.maintenance.catalog import Catalog, Lexicon, TicketDataset, load_catalog, load_dataset, load_lexicon
 from src.maintenance.enums import (
@@ -61,7 +61,7 @@ from src.maintenance.enums import (
     TicketFlag,
     TicketStatus,
 )
-from src.maintenance.messages import field_label, public_message
+from src.maintenance.messages import field_label, public_message, safety_info_message
 from src.maintenance.models import (
     AgentClassificationProposal,
     AuditEvent,
@@ -87,6 +87,17 @@ from src.maintenance.priority import propose_priority
 from src.maintenance.proposer import LLMClient, propose
 from src.maintenance.rules import extract_location, missing_location_parts
 from src.maintenance.safety import SafetyLLMClient, assess_with_llm
+from src.maintenance.store.base import (  # the error hierarchy lives with the store
+    CaseRepository,
+    EngineError,
+    GuardError,
+    NotFoundError,
+    Tx,
+)
+from src.maintenance.store.memory import InMemoryRepository
+
+if TYPE_CHECKING:
+    from src.config import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +188,6 @@ TRANSITIONS: dict[tuple[TicketStatus, TicketStatus], TransitionRule] = {
 }
 
 BLOCKER_OWNERS: dict[ReasonCode, BlockerOwner] = {
-    R.MISSING_INFO: BlockerOwner.RESIDENT,
     **{code: BlockerOwner.BPTN for code in BPTN_REASONS},
     R.SAFETY_REVIEW_REQUIRED: BlockerOwner.BPTN,
     R.EMERGENCY_PENDING_BQL: BlockerOwner.BQL,
@@ -193,25 +203,6 @@ SCOPE_LABELS = {
     PlaybookId.CLN: "vệ sinh khu vực chung",
     PlaybookId.TEC: "đèn chiếu sáng khu vực chung không hoạt động",
 }
-
-
-class EngineError(Exception):
-    code = "ENGINE_ERROR"
-
-    def __init__(self, message: str, detail: dict[str, Any] | None = None):
-        super().__init__(message)
-        self.message = message
-        self.detail = detail or {}
-
-
-class NotFoundError(EngineError):
-    code = "NOT_FOUND"
-
-
-class GuardError(EngineError):
-    """Business precondition not met. Nothing is written."""
-
-    code = "GUARD_FAILED"
 
 
 class InvalidTransitionError(GuardError):
@@ -230,6 +221,71 @@ class AuditWriteError(EngineError):
 
 AuditSink = Callable[[list[AuditEvent | StatusEvent]], None]
 NotifySink = Callable[[list[Notification]], None]
+
+
+class _Denied(Exception):  # noqa: N818 - internal signal, not an error
+    """Leaves the transaction of `_mutate_locked` (rollback) so the denial is written in its own transaction."""
+
+    def __init__(self, case: Case, message: str | None, deny_kwargs: dict[str, Any] | None = None):
+        super().__init__(message)
+        self.case = case
+        self.message = message
+        self.deny_kwargs = deny_kwargs  # set when `_deny` itself deferred: the exact denial to write
+
+
+def initial_stock(catalog: Catalog) -> dict[str, float | None]:
+    """Simulated stock as the catalog defines it (start state and the state after `reset`)."""
+    return {m.item_code: m.simulated_stock_qty for m in catalog.materials}
+
+
+class CasesView(Mapping[str, Case]):
+    """Read-only `engine.cases` kept for tests and old callers; every read goes to the repository."""
+
+    def __init__(self, repo: CaseRepository):
+        self._repo = repo
+
+    def __getitem__(self, ticket_id: str) -> Case:
+        try:
+            return self._repo.get(ticket_id)
+        except NotFoundError as exc:
+            raise KeyError(ticket_id) from exc
+
+    def __iter__(self) -> Iterator[str]:
+        return iter([case.ticket.ticket_id for case in self._repo.list()])
+
+    def __len__(self) -> int:
+        return self._repo.count()
+
+    def values(self) -> list[Case]:  # type: ignore[override] - one list() instead of one get() per key
+        return self._repo.list()
+
+    def items(self) -> list[tuple[str, Case]]:  # type: ignore[override]
+        return [(case.ticket.ticket_id, case) for case in self._repo.list()]
+
+
+class StockView(MutableMapping[str, float | None]):
+    """`engine.stock` kept for tests: reads and item assignment go to the repository."""
+
+    def __init__(self, repo: CaseRepository):
+        self._repo = repo
+
+    def __getitem__(self, item_code: str) -> float | None:
+        stock = self._repo.stock()
+        if item_code not in stock:
+            raise KeyError(item_code)
+        return stock[item_code]
+
+    def __setitem__(self, item_code: str, qty: float | None) -> None:
+        self._repo.set_stock(item_code, qty)
+
+    def __delitem__(self, item_code: str) -> None:
+        raise TypeError("Không xoá được vật tư khỏi tồn kho")
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._repo.stock())
+
+    def __len__(self) -> int:
+        return len(self._repo.stock())
 
 
 def route_blockers(ticket: Ticket) -> list[str]:
@@ -282,6 +338,7 @@ class MaintenanceEngine:
         llm_label: str = "llm",
         lexicon: Lexicon | None = None,
         safety_llm: SafetyLLMClient | None = None,
+        repo: CaseRepository | None = None,
     ):
         self.catalog = catalog or load_catalog()
         self.dataset = dataset or load_dataset()
@@ -295,16 +352,25 @@ class MaintenanceEngine:
         self.llm_label = llm_label
         self.lexicon = lexicon or load_lexicon()  # fail fast: a broken lexicon.yaml stops the engine (01 §10.4)
         self.safety_llm = safety_llm  # Q09: P0 never sets it outside tests; build_engine() leaves it None
-        self.cases: dict[str, Case] = {}
-        self.stock: dict[str, float | None] = {}
-        self.run_number = 0
-        self.run_id = "SIM-RUN-000"
-        self._reset_stock()
+        # Source of truth for cases and stock (I-1): the engine keeps no Case between two calls
+        self.repo: CaseRepository = repo or InMemoryRepository(initial_stock(self.catalog))
+        self._set_run(self.repo.run_number())
 
     # ------------------------------------------------------------------ run control
 
-    def _reset_stock(self) -> None:
-        self.stock = {m.item_code: m.simulated_stock_qty for m in self.catalog.materials}
+    @property
+    def cases(self) -> CasesView:
+        """Read-only view over the repository (compatibility for tests and old callers)."""
+        return CasesView(self.repo)
+
+    @property
+    def stock(self) -> StockView:
+        """Stock view over the repository; item assignment is for tests only."""
+        return StockView(self.repo)
+
+    def _set_run(self, run_number: int) -> None:
+        self.run_number = run_number
+        self.run_id = f"SIM-RUN-{run_number:03d}"
 
     def clock(self) -> datetime:
         """The current time, or the moment an enclosing `at()` set for this thread."""
@@ -330,23 +396,26 @@ class MaintenanceEngine:
             return self._reset(with_fixtures)
 
     def _reset(self, with_fixtures: bool) -> str:
-        self.cases = {}
-        self._reset_stock()
-        self.run_number += 1
-        self.run_id = f"SIM-RUN-{self.run_number:03d}"
+        self._set_run(self.repo.wipe(initial_stock(self.catalog)))
         if with_fixtures:
+            self.seed()
+        return self.run_id
+
+    def seed(self) -> None:
+        """Ingest the fixture tickets, each at its own created_at, and run the Agent on each."""
+        with self.lock:
+            present = self.repo.stock()
+            for item_code, qty in initial_stock(self.catalog).items():
+                if item_code not in present:  # a new database starts with an empty stock table; never overwrite
+                    self.repo.set_stock(item_code, qty)
             for fixture in self.dataset.tickets:
                 planned = list(fixture.materials) if fixture.materials is not None else None
                 with self.at(_created_at(fixture.raw) or self.clock()):
                     self.ingest(fixture.raw, planned_materials=planned)
                     self.run_agent(fixture.raw.ticket_id)
-        return self.run_id
 
     def get(self, ticket_id: str) -> Case:
-        case = self.cases.get(ticket_id)
-        if case is None:
-            raise NotFoundError(f"Không có ticket {ticket_id}")
-        return case
+        return self.repo.get(ticket_id)
 
     # ------------------------------------------------------------------ resident
 
@@ -365,10 +434,8 @@ class MaintenanceEngine:
         if self.catalog.actor_role(resident_id) != Role.RESIDENT:
             raise ActionDeniedError(f"{resident_id} không phải cư dân", {"code": "ACTION_DENIED"})
         moment = (received_at or self.clock()).astimezone(LOCAL_TZ)
-        with self.lock:  # pick and take the ticket number in one step
-            number = len(self.cases) + 1
-            while f"SIM-TKT-{number:04d}" in self.cases:
-                number += 1
+        with self.lock:
+            number = self.repo.next_ticket_number()  # never handed out twice, even across processes
             raw = RawTicket(
                 ticket_id=f"SIM-TKT-{number:04d}",
                 created_at=moment.isoformat(timespec="seconds"),
@@ -391,8 +458,6 @@ class MaintenanceEngine:
             return self._ingest(raw, planned_materials, resident_id)
 
     def _ingest(self, raw: RawTicket, planned_materials: list[PlannedMaterial] | None, resident_id: str) -> Case:
-        if raw.ticket_id in self.cases:
-            raise GuardError(f"Ticket {raw.ticket_id} đã được ingest")
         now = self.clock()
         marker = raw.integrity_marker()
         ticket = Ticket(
@@ -420,7 +485,9 @@ class MaintenanceEngine:
         )
         self._record_event(work, None, S.RECEIVED, None, SYSTEM_ID, Role.SYSTEM, now, public=True)
         self._notify(work, "ticket.status_changed", BlockerOwner.RESIDENT, now, {"to": S.RECEIVED})
-        self._commit(work, 0, 0, 0)
+        with self.repo.transaction() as tx:
+            tx.insert(work)  # a duplicate ticket_id raises GuardError("... đã được ingest")
+            self._commit(tx, work, 0, 0, 0)
         return work
 
     def run_agent(self, ticket_id: str) -> Case:
@@ -443,32 +510,36 @@ class MaintenanceEngine:
                 raise GuardError("Phản ánh không cần bổ sung thông tin lúc này")
             if _blank(content):
                 raise GuardError("Nội dung bổ sung không được rỗng")
-            addition = ResidentAddition(
-                addition_id=f"SIM-ADD-{_suffix(ticket_id)}-{len(work.additions) + 1:02d}",
-                ticket_id=ticket_id,
-                content=content.strip(),
-                submitted_by=actor_id,
-                submitted_at=now,
-            )
-            work.additions.append(addition)
-            if work.ticket.status == S.NEED_INFO and work.ticket.locked_fields.category is None:
-                work.classification = None  # new content: classify again from original + additions
-            self._audit(
-                work,
-                Action.ADD_RESIDENT_INFO,
-                "ResidentAddition",
-                addition.addition_id,
-                actor_id,
-                Role.RESIDENT,
-                "additions",
-                None,
-                addition.content,
-                "Cư dân bổ sung thông tin",
-                now=now,
-            )
+            self._append_addition(work, content, actor_id, Role.RESIDENT, "Cư dân bổ sung thông tin", now)
             self._resume(work, now)
 
         return self._mutate(ticket_id, actor_id, Action.ADD_RESIDENT_INFO, op)
+
+    def _append_addition(self, work: Case, content: str, actor_id: str, role: ActorRole, reason: str, now: datetime):
+        """Append to what the Agent reads (the original never changes). `submitted_by` tells resident from BPTN."""
+        addition = ResidentAddition(
+            addition_id=f"SIM-ADD-{_suffix(work.ticket.ticket_id)}-{len(work.additions) + 1:02d}",
+            ticket_id=work.ticket.ticket_id,
+            content=content.strip(),
+            submitted_by=actor_id,
+            submitted_at=now,
+        )
+        work.additions.append(addition)
+        if work.ticket.status == S.NEED_INFO and work.ticket.locked_fields.category is None:
+            work.classification = None  # new content: classify again from original + additions
+        self._audit(
+            work,
+            Action.ADD_RESIDENT_INFO,
+            "ResidentAddition",
+            addition.addition_id,
+            actor_id,
+            role,
+            "additions",
+            None,
+            addition.content,
+            reason,
+            now=now,
+        )
 
     def add_resident_photo(self, ticket_id: str, actor_id: str, file_ref: str) -> Case:
         """Optional photo the resident attaches to their own report. Kept as original evidence: never edited, never
@@ -560,8 +631,15 @@ class MaintenanceEngine:
         location: str | None = None,
         asset_id: str | None = None,
         asset_onsite: bool = False,
+        info: str | None = None,
     ) -> Case:
-        """Event `bptn_resolved`. BPTN answers the open VERIFYING blocker; chosen values go to `locked_fields`.
+        """Event `bptn_resolved`. BPTN answers the open blocker; chosen values go to `locked_fields`.
+
+        MISSING_INFO (status NEED_INFO): BPTN contacted the resident and enters a `location` and/or `info` (what the
+            resident said, appended as an addition by BPTN; the original report never changes). Reason required.
+            Every missing field must be covered, otherwise nothing is saved; then the pipeline resumes at step 2,
+            so the safety layer 2b runs again on the new content. Never on a safety NEED_INFO (`safety_context`,
+            T06): GuardError, only the resident's answer or BQL (T03/T07) moves it (plan 02 Q04).
 
         DUPLICATE: merge=True → MERGED; merge=False → pipeline resumes at step 5 (BPTN review, then asset).
         CATEGORY_UNCLEAR / OUT_OF_SCOPE: `category` required → review CONFIRMED, resume at step 4 (duplicate
@@ -576,9 +654,22 @@ class MaintenanceEngine:
         def op(work: Case, now: datetime) -> None:
             ticket = work.ticket
             blocker = ticket.blocker
-            if ticket.status != S.VERIFYING or blocker is None or blocker.code not in BPTN_REASONS:
+            if blocker is None or blocker.code not in BPTN_REASONS:
                 raise GuardError("Không có blocker nào chờ BPTN", {"status": ticket.status})
             code = blocker.code
+            if ticket.status != (S.NEED_INFO if code == R.MISSING_INFO else S.VERIFYING):
+                raise GuardError("Không có blocker nào chờ BPTN", {"status": ticket.status})
+            if code == R.MISSING_INFO and ticket.safety_context:
+                # Q04 (plan 02): a safety NEED_INFO (T06) moves only on the resident's own answer (2b reruns) or a
+                # BQL decision (T03 confirm safe / T07 escalate); BPTN's phone note must not clear it.
+                raise GuardError(
+                    "NEED_INFO do tầng an toàn: chờ cư dân tự bổ sung hoặc BQL quyết (T03/T07); BPTN không gỡ",
+                    {"reason_code": code, "safety_context": True},
+                )
+            if info is not None and code != R.MISSING_INFO:
+                raise GuardError("`info` chỉ dùng cho MISSING_INFO", {"reason_code": code})
+            if code == R.MISSING_INFO and _blank(location) and _blank(info):
+                raise GuardError("MISSING_INFO: nhập vị trí hoặc thông tin thu thập từ cư dân")
             if (merge is not None) != (code == R.DUPLICATE):
                 raise GuardError("`merge` chỉ dùng và bắt buộc với DUPLICATE", {"reason_code": code})
             if code == R.DUPLICATE and merge:
@@ -622,7 +713,7 @@ class MaintenanceEngine:
                 if not any(a.asset_id == asset_id for a in self.catalog.assets):
                     raise GuardError(f"Không có asset {asset_id} trong catalog")
                 locks["asset_id"] = asset_id
-            if (locks or asset_onsite) and _blank(note):
+            if (locks or asset_onsite or info is not None) and _blank(note):
                 raise GuardError("BPTN thay đổi giá trị hoặc chọn xác định tại hiện trường thì bắt buộc ghi lý do")
 
             category_changed = category is not None and category != self._category(work)
@@ -637,6 +728,10 @@ class MaintenanceEngine:
             ticket.locked_fields = LockedFields(**{**current_locks, **locks})
             if asset_onsite and TicketFlag.ASSET_CHECK_ONSITE not in ticket.flags:
                 ticket.flags = [*ticket.flags, TicketFlag.ASSET_CHECK_ONSITE]
+            if not _blank(info):
+                self._append_addition(work, info, actor_id, Role.BPTN, "BPTN ghi thông tin thu thập từ cư dân", now)
+            if code == R.MISSING_INFO and (still_missing := self._missing_fields(work)):
+                raise GuardError(f"Vẫn thiếu: {', '.join(still_missing)}", {"fields": still_missing})
             if category is not None:
                 self._bind_category(work, category, "BPTN_LOCKED", now)
             elif department is not None:
@@ -1120,10 +1215,11 @@ class MaintenanceEngine:
         if qty <= 0:
             raise GuardError("Số lượng nhập phải > 0")
         with self.lock:
-            self.stock[item_code] = (self.stock.get(item_code) or 0) + qty
+            with self.repo.transaction() as tx:
+                tx.add_stock(item_code, qty)
             waiting = [
                 case.ticket.ticket_id
-                for case in self.cases.values()
+                for case in self.repo.list()
                 if case.ticket.blocker is not None
                 and case.ticket.blocker.code == R.WAITING_MATERIAL
                 and any(line.item_code == item_code for line in case.material_lines)
@@ -1141,8 +1237,11 @@ class MaintenanceEngine:
         accepted. Returns the ticket IDs that changed."""
         moment = now or self.clock()
         changed = []
-        with self.lock, self.at(moment):
-            for ticket_id, case in list(self.cases.items()):
+        with self.lock, self.repo.job_lease() as leader, self.at(moment):
+            if not leader:
+                return []  # another process runs the job this round
+            for case in self.repo.list():
+                ticket_id = case.ticket.ticket_id
                 if not self._due(case.ticket, moment):
                     continue  # nothing for _tick to do: skip the deep copy
                 before = len(case.events)
@@ -1151,7 +1250,7 @@ class MaintenanceEngine:
                 except EngineError:  # one broken ticket must not stop the job for all the others
                     logger.exception("run_jobs: ticket %s failed", ticket_id)
                     continue
-                if len(self.cases[ticket_id].events) != before:
+                if len(self.repo.get(ticket_id).events) != before:
                     changed.append(ticket_id)
         return changed
 
@@ -1231,6 +1330,17 @@ class MaintenanceEngine:
             )
 
         def op(work: Case, now: datetime) -> None:
+            locked = work.ticket.status  # the copy read under the row lock: another backend may have moved it
+            locked_rule = TRANSITIONS.get((locked, to))
+            if (
+                locked_rule is None
+                or locked_rule.pipeline_only
+                or role not in locked_rule.actors
+                or expected_from not in (None, locked)
+            ):
+                raise InvalidTransitionError(
+                    f"Không chuyển được {locked} → {to}", {"from": locked, "to": to, "actor_role": role}
+                )
             self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
 
         return self._mutate(
@@ -1284,48 +1394,64 @@ class MaintenanceEngine:
         new_value: Any,
         reason: str | None,
     ) -> Case:
-        case = self.get(ticket_id)
         now = self.clock()
         role = self._role(actor_id)
         allowed = PERMISSIONS.get(action, frozenset()) if roles is None else roles
-        if role is None or role not in allowed:
-            self._deny(case, actor_id, role, action, field_name, new_value, reason, now)
-        scope_error = self._scope_error(case, actor_id, role)
-        if scope_error:
-            self._deny(case, actor_id, role, action, field_name, new_value, reason, now, message=scope_error)
-        blocker = case.ticket.blocker
-        # I-11 (CR-03 §4.4.5, AC-06): BPTN may not touch a ticket whose blocker BQL owns, `bptn_resolve` included.
-        if role == Role.BPTN and blocker is not None and blocker.code in BQL_REASONS:
-            self._deny(
-                case,
-                actor_id,
-                role,
-                action,
-                field_name,
-                new_value,
-                reason,
-                now,
-                message=f"Blocker {blocker.code} thuộc BQL; BPTN không được tác động (CR-03 §4.4.5)",
-            )
+        try:
+            with self.repo.transaction() as tx, self._in_transaction():
+                case = tx.get_for_update(ticket_id)  # row lock (I-3)
+                if role is None or role not in allowed:
+                    raise _Denied(case, None)
+                scope_error = self._scope_error(case, actor_id, role)
+                if scope_error:
+                    raise _Denied(case, scope_error)
+                blocker = case.ticket.blocker
+                # I-11 (CR-03 §4.4.5, AC-06): BPTN may not touch a ticket whose blocker BQL owns, `bptn_resolve`
+                # included. Checked on the locked copy.
+                if role == Role.BPTN and blocker is not None and blocker.code in BQL_REASONS:
+                    raise _Denied(case, f"Blocker {blocker.code} thuộc BQL; BPTN không được tác động (CR-03 §4.4.5)")
 
-        if case.ticket.raw.integrity_marker() != case.ticket.raw_integrity_marker:
-            raise EngineError("Raw integrity marker không khớp; dừng xử lý (fail closed)")
+                if case.ticket.raw.integrity_marker() != case.ticket.raw_integrity_marker:
+                    raise EngineError("Raw integrity marker không khớp; dừng xử lý (fail closed)")
 
-        work = case.model_copy(deep=True)
-        marks = (len(work.audit), len(work.events), len(work.notifications))
-        op(work, now)
-        self._commit(work, *marks)
+                work = case.model_copy(deep=True)
+                marks = (len(work.audit), len(work.events), len(work.notifications))
+                op(work, now)
+                self._commit(tx, work, *marks)
+        except _Denied as denied:  # the transaction above rolled back; the denial is written in its own
+            if denied.deny_kwargs is not None:  # raised by `_deny` inside `op` (e.g. the Q19 gate of T06/T07)
+                self._deny(**denied.deny_kwargs)
+            self._deny(denied.case, actor_id, role, action, field_name, new_value, reason, now, message=denied.message)
         return work
 
-    def _commit(self, work: Case, audit_from: int, events_from: int, notes_from: int) -> None:
+    @contextmanager
+    def _in_transaction(self) -> Iterator[None]:
+        """Marks this thread as inside `_mutate_locked`'s transaction: `_deny` then defers (never nests a tx)."""
+        depth = getattr(self._local, "tx_depth", 0)
+        self._local.tx_depth = depth + 1
         try:
-            self.audit_sink([*work.audit[audit_from:], *work.events[events_from:]])
-        except Exception as exc:  # audit failure → nothing is committed
-            raise AuditWriteError("Không ghi được audit; thay đổi bị huỷ", {"error": str(exc)}) from exc
-        self.cases[work.ticket.ticket_id] = work
+            yield
+        finally:
+            self._local.tx_depth = depth
+
+    def _commit(self, tx: Tx, work: Case, audit_from: int, events_from: int, notes_from: int) -> None:
+        """Save `work` and append its new rows inside `tx`. A failing append or sink rolls everything back."""
+        tx.save(work)
+        new_rows = [*work.audit[audit_from:], *work.events[events_from:]]
         new_notifications = work.notifications[notes_from:]
+        tx.append_log(new_rows)  # a store failure surfaces as itself (409/503/403), never as AuditWriteError
+        self._sink(self.audit_sink, new_rows)
         if new_notifications:
-            self.notify_sink(new_notifications)
+            tx.append_notifications(new_notifications)
+            self._sink(self.notify_sink, new_notifications)
+
+    @staticmethod
+    def _sink(sink: Callable[[Any], None], rows: Sequence[Any]) -> None:
+        """Only the external callback is wrapped: its failure means nothing is committed (D3)."""
+        try:
+            sink(rows)
+        except Exception as exc:  # audit/notify failure → nothing is committed
+            raise AuditWriteError("Không ghi được audit; thay đổi bị huỷ", {"error": str(exc)}) from exc
 
     def _scope_error(self, case: Case, actor_id: str, role: ActorRole | None) -> str | None:
         """A department acts only on its own tickets; a resident only on the tickets they reported."""
@@ -1350,29 +1476,52 @@ class MaintenanceEngine:
         *,
         message: str | None = None,
     ) -> None:
-        event = self._make_audit(
-            case,
-            Action.ACTION_DENIED,
-            "Ticket",
-            case.ticket.ticket_id,
-            actor_id,
-            role or Role.SYSTEM,
-            field_name,
-            None,
-            new_value,
-            reason or message or f"Yêu cầu {action} ngoài quyền",
-            now=now,
-            result=ActionResult.ACTION_DENIED,
-            rule_id="PB-COM-R-PERM-01",
-            extra_reason=f"requested={action}",
-        )
-        try:
-            self.audit_sink([event])
-        except Exception as exc:
-            raise AuditWriteError("Không ghi được audit cho lần từ chối", {"error": str(exc)}) from exc
-        denied = case.model_copy(deep=True)
-        denied.audit.append(event)
-        self.cases[case.ticket.ticket_id] = denied
+        """Write one ACTION_DENIED audit row in its own transaction, then raise ActionDeniedError.
+
+        Called from inside `op` (an open `_mutate_locked` transaction), it raises `_Denied` instead: that transaction
+        rolls back first, then the denial is written in its own (no nested transaction, Postgres would self-lock)."""
+        if getattr(self._local, "tx_depth", 0):
+            raise _Denied(
+                case,
+                message,
+                {
+                    "case": case,
+                    "actor_id": actor_id,
+                    "role": role,
+                    "action": action,
+                    "field_name": field_name,
+                    "new_value": new_value,
+                    "reason": reason,
+                    "now": now,
+                    "message": message,
+                },
+            )
+        with self.repo.transaction() as tx:
+            fresh = tx.get_for_update(case.ticket.ticket_id)  # locked: the audit sequence number is right
+            event = self._make_audit(
+                fresh,
+                Action.ACTION_DENIED,
+                "Ticket",
+                fresh.ticket.ticket_id,
+                actor_id,
+                role or Role.SYSTEM,
+                field_name,
+                None,
+                new_value,
+                reason or message or f"Yêu cầu {action} ngoài quyền",
+                now=now,
+                result=ActionResult.ACTION_DENIED,
+                rule_id="PB-COM-R-PERM-01",
+                extra_reason=f"requested={action}",
+            )
+            denied = fresh.model_copy(deep=True)
+            denied.audit.append(event)
+            tx.save(denied)
+            tx.append_log([event])
+            try:
+                self.audit_sink([event])
+            except Exception as exc:
+                raise AuditWriteError("Không ghi được audit cho lần từ chối", {"error": str(exc)}) from exc
         raise ActionDeniedError(
             message or f"{action} ngoài quyền của {role or 'actor không xác định'}",
             {
@@ -1382,7 +1531,7 @@ class MaintenanceEngine:
                 "actor_id": actor_id,
                 "actor_role": role,
                 "target_field": field_name,
-                "unchanged_status": case.ticket.status,
+                "unchanged_status": fresh.ticket.status,
                 "audit_event_id": event.event_id,
             },
         )
@@ -1599,19 +1748,15 @@ class MaintenanceEngine:
         safety_context: bool = False,
     ) -> Blocker:
         sla = self.catalog.sla_config
-        next_retry_at, escalate_at, dispatch_at = self._schedule(work, code, now, eta), None, None
-        if code == R.MISSING_INFO:
-            hours = (
-                sla.missing_info.safety_context.escalate_after_hours
-                if safety_context
-                else sla.missing_info.escalate_after_hours
-            )
-            escalate_at = now + timedelta(hours=hours)
+        next_retry_at = self._schedule(work, code, now, eta, safety_context=safety_context)
+        escalate_at, dispatch_at = None, None
+        if code == R.MISSING_INFO and safety_context:  # T06: BQL after 12 calendar hours (CR-03 §6.4, D-02)
+            escalate_at = now + timedelta(hours=sla.missing_info.safety_context.escalate_after_hours)
         elif code == R.SAFETY_REVIEW_REQUIRED:
             escalate_at = now + timedelta(hours=sla.safety_review.escalate_after_hours)  # calendar hours (Q10)
         elif code == R.EMERGENCY_PENDING_BQL:
             escalate_at = None  # BQL is notified at once (emergency.created)
-        elif code in BPTN_REASONS:
+        elif code in BPTN_REASONS:  # ordinary MISSING_INFO included (f1c6ebf): BPTN contacts the resident
             escalate_at = self.catalog.business_hours.add(now, sla.bptn.escalate_after_business_hours)
         elif code == R.WAITING_MATERIAL:
             escalate_at = now + timedelta(hours=sla.waiting_material.escalate_after_hours)
@@ -1620,17 +1765,23 @@ class MaintenanceEngine:
             dispatch_at = next_retry_at
         elif code == R.BLOCKED_ONSITE:
             escalate_at = eta
-        message = public_message(
-            work.ticket.status,
-            code,
-            department=self._department_name(work),
-            fields=", ".join(field_label(f) for f in fields or []),
-            eta=eta,
-            dispatch_at=dispatch_at,
-        )
+        field_text = ", ".join(field_label(f) for f in fields or [])
+        if code == R.MISSING_INFO and safety_context:
+            message = safety_info_message(field_text)
+        else:
+            message = public_message(
+                work.ticket.status,
+                code,
+                department=self._department_name(work),
+                fields=field_text,
+                eta=eta,
+                dispatch_at=dispatch_at,
+            )
+        # Q04 (plan 02): an ordinary MISSING_INFO is BPTN's (f1c6ebf); the safety NEED_INFO (T06) waits on the resident
+        owner = BlockerOwner.RESIDENT if code == R.MISSING_INFO and safety_context else BLOCKER_OWNERS[code]
         return Blocker(
             code=code,
-            owner_role=BLOCKER_OWNERS[code],
+            owner_role=owner,
             since=now,
             resume_step=resume_step,
             next_retry_at=next_retry_at,
@@ -1641,13 +1792,21 @@ class MaintenanceEngine:
             related_ticket_id=related_ticket_id,
         )
 
-    def _schedule(self, work: Case, code: ReasonCode, now: datetime, eta: datetime | None = None) -> datetime | None:
+    def _schedule(
+        self,
+        work: Case,
+        code: ReasonCode,
+        now: datetime,
+        eta: datetime | None = None,
+        *,
+        safety_context: bool = False,
+    ) -> datetime | None:
         """When the job should next retry / remind for this blocker. None = no automatic retry."""
         sla = self.catalog.sla_config
         if code in SAFETY_REASONS:
             return None  # no automatic reminder: people decide (I-10)
-        if code == R.MISSING_INFO:
-            return now + timedelta(hours=sla.missing_info.retry_every_hours)
+        if code == R.MISSING_INFO and safety_context:
+            return None  # T06: only the resident's answer or BQL (T03/T07) moves it; escalates at 12 h (Q04)
         if code in BPTN_REASONS:
             return self.catalog.business_hours.add(now, sla.bptn.retry_every_business_hours)
         if code in (R.WAITING_MATERIAL, R.OUT_OF_HOURS):
@@ -1929,7 +2088,12 @@ class MaintenanceEngine:
             else:
                 count = blocker.auto_retry_count + 1
                 retried = blocker.model_copy(
-                    update={"auto_retry_count": count, "next_retry_at": self._schedule(work, blocker.code, now)}
+                    update={
+                        "auto_retry_count": count,
+                        "next_retry_at": self._schedule(
+                            work, blocker.code, now, safety_context=work.ticket.safety_context
+                        ),
+                    }
                 )
                 self._set_blocker(work, retried, SYSTEM_ID, Role.SYSTEM, now, note=f"Tự chạy lại/nhắc lần {count}")
                 self._notify(work, "reminder", blocker.owner_role, now, {"reason_code": blocker.code})
@@ -2013,7 +2177,7 @@ class MaintenanceEngine:
             return []
         earliest = created - timedelta(hours=self.catalog.sla_config.duplicate_window_hours)
         found = []
-        for other in list(self.cases.values()):
+        for other in self.repo.list():
             ticket = other.ticket
             if ticket.ticket_id == work.ticket.ticket_id or ticket.status in TERMINAL_STATUSES:
                 continue
@@ -2161,7 +2325,7 @@ class MaintenanceEngine:
         mine = (created, work.ticket.ticket_id)
         earliest = created - timedelta(hours=self.catalog.sla_config.duplicate_window_hours)
         matches = []
-        for other in self.cases.values():
+        for other in self.repo.list():
             ticket = other.ticket
             if (
                 ticket.ticket_id == work.ticket.ticket_id
@@ -2318,7 +2482,7 @@ class MaintenanceEngine:
         return False
 
     def _line_stock(self, item_code: str, planned_qty: float) -> MaterialStockStatus:
-        stock = self.stock.get(item_code)
+        stock = self.repo.stock_of(item_code)
         if stock is None:
             return MaterialStockStatus.UNKNOWN
         return MaterialStockStatus.INSUFFICIENT if stock < planned_qty else MaterialStockStatus.SUFFICIENT
@@ -2470,7 +2634,7 @@ class MaintenanceEngine:
             planned_qty=planned.planned_qty,
             norm_qty=item.norm_qty if item else None,
             norm_label=item.norm_label if item else NormLabel.N_A,
-            simulated_stock_qty=self.stock.get(planned.item_code),
+            simulated_stock_qty=self.repo.stock_of(planned.item_code),
             material_stock_status=self._line_stock(planned.item_code, planned.planned_qty),
         )
 
@@ -2661,15 +2825,32 @@ def _plain(value: Any) -> Any:
     return str(value) if hasattr(value, "value") else value
 
 
-def build_engine() -> MaintenanceEngine:
-    """Engine configured from settings: LLM_MODE=openai with a key adds the OpenAI proposer, otherwise rules only."""
+def build_engine(settings: "Settings | None" = None) -> MaintenanceEngine:
+    """Engine configured from settings: MO_STORE picks the repository (postgres is checked before use, a wrong URL or
+    schema revision raises RuntimeError); LLM_MODE=openai with a key adds the OpenAI proposer, otherwise rules only."""
     from src.config import get_settings
     from src.maintenance.proposer import openai_client
 
-    settings = get_settings()
+    settings = settings or get_settings()
+    repo = None
+    if settings.mo_store == "postgres":
+        from src.maintenance.store.postgres import PostgresRepository  # lazy: memory mode needs no psycopg2
+
+        repo = PostgresRepository(settings.database_url)
+        repo.check()
     if settings.llm_mode == "openai" and settings.openai_api_key:
         return MaintenanceEngine(
+            repo=repo,
             llm=openai_client(settings.model_name, settings.openai_api_key, settings.openai_base_url),
             llm_label=settings.model_name,
         )
-    return MaintenanceEngine()
+    return MaintenanceEngine(repo=repo)
+
+
+def seed_if_empty(engine: MaintenanceEngine) -> bool:
+    """Startup seeding: the fixture goes in only when the store holds no ticket. True if this call seeded."""
+    with engine.lock, engine.repo.seed_lease() as leader:  # engine.lock first, the DB lease second (I-9)
+        if not leader or engine.repo.count() > 0:
+            return False
+        engine.seed()
+        return True

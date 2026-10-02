@@ -45,9 +45,11 @@ class ReasonCode(StrEnum):
     WRONG_DEPT_AFTER_START = "WRONG_DEPT_AFTER_START"  # CR-BPTN-03 §3.2: owned by BQL; P0 only declares it (Q-A)
 
 
-# Blockers BPTN clears (event `bptn_resolved`)
+# Blockers BPTN clears (event `bptn_resolved`). MISSING_INFO too: BPTN contacts the resident and enters what is
+# missing, while the resident can still add it directly (whichever comes first clears the blocker).
 BPTN_REASONS = frozenset(
     {
+        ReasonCode.MISSING_INFO,
         ReasonCode.DUPLICATE,
         ReasonCode.CATEGORY_UNCLEAR,
         ReasonCode.OUT_OF_SCOPE,

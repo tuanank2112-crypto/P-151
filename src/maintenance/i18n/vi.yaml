@@ -11,7 +11,7 @@ status_labels:
   IN_PROGRESS: "Đang xử lý"
   READY_FOR_REVIEW: "Chờ nghiệm thu"
   CLOSED: "Hoàn thành"
-  NEED_INFO: "Chờ bạn bổ sung"
+  NEED_INFO: "Chờ bổ sung thông tin"
   ON_HOLD: "Tạm hoãn"
   MERGED: "Đã gộp"
   CANCELLED: "Đã hủy"
@@ -31,7 +31,7 @@ status_messages:
 
 # Lời theo ReasonCode, dùng khi có blocker
 reason_messages:
-  MISSING_INFO: "Vui lòng bổ sung: {fields}."
+  MISSING_INFO: "Ban tiếp nhận thông tin sẽ liên hệ bạn để bổ sung: {fields}. Bạn cũng có thể bổ sung ngay tại đây."
   DUPLICATE: "Đang kiểm tra phản ánh có trùng với phản ánh khác không."
   CATEGORY_UNCLEAR: "Đang xác minh loại phản ánh."
   OUT_OF_SCOPE: "Đang xác minh phạm vi xử lý của phản ánh."
@@ -46,6 +46,9 @@ reason_messages:
   SAFETY_REVIEW_REQUIRED: "Phản ánh đang được kiểm tra."
   EMERGENCY_PENDING_BQL: "Phản ánh đang được kiểm tra."
   WRONG_DEPT_AFTER_START: "Đang xác minh lại phòng ban phụ trách."  # dự phòng Q-A; P0 chưa có đường tạo
+
+# NEED_INFO do tầng an toàn yêu cầu (T06, safety_context): chỉ cư dân trả lời mới gỡ được (plan 02 Q04)
+safety_info_message: "Vui lòng bổ sung: {fields}."
 
 # Khi mốc dự kiến (eta) đã qua mà blocker chưa gỡ: không hiển thị một ngày đã qua như thể vẫn đang chờ
 overdue_eta_message: "Việc xử lý đang chậm hơn dự kiến (trước {eta}). Ban quản lý đang theo dõi và sẽ cập nhật mốc mới."

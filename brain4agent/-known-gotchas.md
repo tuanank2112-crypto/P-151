@@ -40,3 +40,18 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 - **Sau `_set_ticket` (priority) biến `ticket` cũ trong op bị thay:** gán lại `ticket = work.ticket` trước khi ghi tiếp (đã sửa ở `bptn_resolve`).
 - **Log AI cho BTC không ghi được trên máy Như Ý (2026-10-02):** hook `UserPromptSubmit` và `pre-push` gọi `scripts/_pyrun.sh`, script này thử `python3` trước ⇒ trúng stub Microsoft Store `WindowsApps\python3` ⇒ lỗi im lặng; `.ai-log/` chỉ có `.gitkeep`. Sửa: tắt App execution aliases `python.exe`/`python3.exe` trong Windows Settings, hoặc lấy bản `_pyrun.sh` đã sửa của Trí trên `develop` (`ff2bcdc`, kiểm `check_py` thật). Key `AI_LOG_API_KEY` nằm ở `.env` (bị `.gitignore`), KHÔNG commit. Trang `phoenix.note.transformerlabs.ai/demo-day` cần đăng nhập (`/api/me/*`); máy chưa cài `ego-browser`.
 - **ĐÃ SỬA 2026-10-02:** đổi tên `%LOCALAPPDATA%\Microsoft\WindowsApps\python.exe` và `python3.exe` thành `*.disabled` (tương đương tắt App execution aliases) ⇒ `_pyrun.sh` dùng Python313 thật (kiểm: in đúng `Python313\python.exe`, có `dotenv`). Khôi phục: đổi tên lại hoặc bật alias trong Settings. Prompt trước thời điểm này KHÔNG có log (hook chỉ ghi lúc gửi prompt).
+- **Merge `develop` (hồ sơ 02, 2026-10-02):** `_deny` gọi trong `op` (vd cổng Q19 của T06/T07 khi BQL gọi `transition` thẳng) KHÔNG được mở transaction lồng (Postgres tự khoá) ⇒ `_deny` ném `_Denied` mang đủ tham số khi `self._local.tx_depth > 0`, `_mutate_locked` ghi từ chối sau rollback. Test store của `develop` dùng `ticket.cancel_reason` làm trường dò (CR-03 ép `assignee_id` chỉ `None`). NEED_INFO an toàn (T06) có `next_retry_at=None`: nhắc mỗi giờ của `bptn` sẽ leo thang sau 3 lần, sớm hơn 12 giờ.
+
+## Lưu bền (kế hoạch 01, 2026-10-02)
+- `.env` máy owner có `MO_STORE=postgres` (Supabase dùng chung): test PHẢI ép `MO_STORE=memory`, `MO_PHOTO_STORE=local`,
+  `MO_ALLOW_RESET=false` trong `tests/conftest.py` trước khi import app. Thiếu khối này, pytest đã từng mở kết nối tới Supabase.
+- `pytest --pg` chỉ nhận `MO_TEST_DATABASE_URL` host local + tên DB đuôi `_test` (exit 4 nếu sai) — fixture TRUNCATE bảng.
+- Postgres cấm `transaction()` lồng trên cùng thread (tự chờ khoá dòng của chính mình) ⇒ `RuntimeError`; memory thì cho.
+- Startup không còn `reset()`: chỉ `seed_if_empty`. `/mo/reset` và `/mo/evaluate` (evaluate gọi reset) bị 403 `RESET_DISABLED`
+  khi `MO_STORE=postgres` mà `MO_ALLOW_RESET=false`.
+- `src/maintenance/engine.py` dùng xuống dòng CRLF: script sửa bằng chuỗi `
+` sẽ không khớp.
+- Bỏ `from None` khi raise trong `except` KHÔNG làm `__cause__` khác None (chỉ gắn `__context__`): kiểm `__suppress_context__`.
+- Shell `(base)` conda: `python` là miniconda, không có alembic/deps ⇒ dùng `.venv\Scripts\python.exe` hoặc activate `.venv`.
+- Qua Supabase pooler, `pg_stat_ssl.ssl` = false (chặng pooler→DB); TLS client kiểm bằng `connection.info.ssl_in_use`.
+- Docker backend dùng nguyên `DATABASE_URL` của `.env` (Supabase) từ 2026-10-02; service `db` chỉ cho `pytest --pg`. Schema thiếu ⇒ container exit 3 và restart lặp.

@@ -31,8 +31,29 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 
 | STT | Tên Skill (`.agents/skills/`) | File Quy Chuẩn (`SKILL.md`) | Vai Trò & Chức Năng Cốt Lõi |
 | :---: | :--- | :--- | :--- |
-| **1** | `nao-dong-bo`, `nao-commit`, `nao-dong-phien`, `nao-ten-phien` | `SKILL.md` từng thư mục | Đồng bộ bộ nhớ, commit, đóng và đặt tên phiên. |
-| **2** | `vai-dieu-phoi`, `vai-thi-cong` | `SKILL.md` từng thư mục | Hồ sơ điều phối và thi công của bộ não. |
+| **1** | `nao-dong-bo` | `SKILL.md` | Đồng bộ tài liệu não sau khi xong task. |
+| **2** | `nao-commit` | `SKILL.md` | Đề xuất/thực hiện commit theo chuẩn não. |
+| **3** | `nao-dong-phien` | `SKILL.md` | Đóng phiên, ghi ký ức nóng. |
+| **4** | `nao-ten-phien` | `SKILL.md` | Đặt tên phiên. |
+| **5** | `vai-dieu-phoi` | `SKILL.md` | Điều phối nhiều vai agent. |
+| **6** | `vai-thi-cong` | `SKILL.md` | Vai thi công (thực thi task). |
+
+### 🧩 1.3. Bản đồ mã nguồn P-151 (Entry Points)
+
+| Đường dẫn | Vai trò |
+| :--- | :--- |
+| `src/main.py` | FastAPI app, lifespan (kiểm cấu hình ảnh → dựng engine + seed khi rỗng, KHÔNG reset; job), handler 503/403 lỗi store, mount `/ui` |
+| `src/api/auth.py` | Đăng nhập, session in-memory, `get_actor` |
+| `src/api/routers/maintenance.py` | Router `/mo` (nội bộ), `/resident`, `/bql` |
+| `src/api/photos.py` | Kiểm tra magic bytes; `save`/`discard`/`load` qua `PhotoStore` (502 `PHOTO_STORE_FAILED`) |
+| `src/maintenance/engine.py` | State machine, pipeline bước 2–8 (+2b an toàn), đối soát bước 10, jobs, 5 method `safety_*`/`emergency_*` + `set_priority`; `build_engine(settings)`, `seed_if_empty` |
+| `src/maintenance/{safety,priority}.py` | Tầng an toàn 2b (luật R1–R10, từ vựng `lexicon.yaml`); luật priority PRI-* |
+| `src/maintenance/store/` | `base.py` (Protocol + lỗi), `memory.py`, `postgres.py` (`MO_STORE=postgres`, schema `maintops`), `photos.py` (local/Supabase Storage), Alembic `alembic.ini` + `migrations/` |
+| `src/maintenance/{rules,proposer}.py` | Phân loại bằng luật + LLM có guard |
+| `src/maintenance/views.py` | View cư dân (allow-list) và bảng BQL |
+| `src/maintenance/{catalog,models,enums}.py` | Catalog mô phỏng, model Pydantic, enum |
+| `seed/maintenance_v1/` | Fixture: tickets, catalog (`sla_config`), accounts, `lexicon.yaml` (từ vựng an toàn + priority) |
+| `tests/test_maintenance/` | Test engine, API, auth, acceptance, safety/emergency/priority (CR-03), store (pg chỉ chạy `--pg` trên docker `*_test`), `test_cr03_store.py` (CR-03 qua repository + Q04) |
 
 ---
 

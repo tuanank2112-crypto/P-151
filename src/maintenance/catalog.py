@@ -84,8 +84,8 @@ class MissingInfoSafetySla(Frozen):
 
 
 class MissingInfoSla(Frozen):
-    retry_every_hours: float
-    escalate_after_hours: float
+    """Only the safety NEED_INFO (T06) has its own SLA; an ordinary MISSING_INFO follows `bptn` (f1c6ebf)."""
+
     safety_context: MissingInfoSafetySla  # CR-BPTN-03 §6.4: NEED_INFO raised by a suspected hazard (T06)
 
 

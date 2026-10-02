@@ -1,4 +1,4 @@
-"""MaintenanceOps Agent v0.5 candidate API (CR-BPTN-02; simulated data, in-memory, resettable).
+"""MaintenanceOps Agent v0.5 candidate API (CR-BPTN-02; simulated data; MO_STORE=memory or postgres).
 
 Three routers over one engine:
   /mo        internal: demo control, Agent/department/BPTN/warehouse/system actions, full case
@@ -15,12 +15,13 @@ from datetime import datetime
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from src.api import photos
 from src.api.auth import get_actor
 from src.config import get_settings
+from src.maintenance.ai_logger import AILogEntry, AILogStatus, ai_logger
 from src.maintenance.demo import EvaluationReport, evaluate, run_fixture
 from src.maintenance.engine import (
     MAX_EXECUTION_PHOTOS,
@@ -34,6 +35,7 @@ from src.maintenance.engine import (
     build_engine,
     execution_photos,
     resident_photos,
+    seed_if_empty,
 )
 from src.maintenance.enums import (
     Action,
@@ -48,6 +50,7 @@ from src.maintenance.enums import (
 )
 from src.maintenance.messages import status_label
 from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent
+from src.maintenance.store.base import ConcurrencyError, StorePermissionError, StoreUnavailableError
 from src.maintenance.views import BqlTicketRow, ResidentTicketView, bql_rows, resident_view
 
 router = APIRouter(prefix="/mo", tags=["maintenance-ops (nội bộ)"])
@@ -63,8 +66,10 @@ def get_engine() -> MaintenanceEngine:
     if _engine is None:
         with _engine_lock:  # two first requests must not build two engines
             if _engine is None:
-                engine = build_engine()
-                engine.reset()
+                settings = get_settings()
+                engine = build_engine(settings)
+                if settings.mo_seed_on_empty:
+                    seed_if_empty(engine)  # never wipes: a persistent store keeps its tickets across restarts
                 _engine = engine
     return _engine
 
@@ -86,12 +91,28 @@ def _call(fn, *args, **kwargs):
         raise HTTPException(
             status_code=409, detail={"code": exc.code, "message": exc.message, **_plain(exc.detail)}
         ) from exc
+    except ConcurrencyError as exc:
+        raise HTTPException(status_code=409, detail={"code": exc.code, "message": exc.message}) from exc
+    except StoreUnavailableError as exc:
+        raise HTTPException(status_code=503, detail={"code": exc.code, "message": exc.message}) from exc
+    except StorePermissionError as exc:
+        raise HTTPException(status_code=403, detail={"code": exc.code, "message": exc.message}) from exc
     except AuditWriteError as exc:
         raise HTTPException(status_code=500, detail={"code": exc.code, "message": exc.message}) from exc
     except ValidationError as exc:
         raise HTTPException(status_code=422, detail=exc.errors(include_url=False)) from exc
     except EngineError as exc:
         raise HTTPException(status_code=500, detail={"code": exc.code, "message": exc.message}) from exc
+
+
+def _require_reset_allowed() -> None:
+    """Reset and evaluate wipe the store: on a shared database only when MO_ALLOW_RESET=true."""
+    settings = get_settings()
+    if settings.mo_store != "memory" and not settings.mo_allow_reset:
+        raise HTTPException(
+            status_code=403,
+            detail={"code": "RESET_DISABLED", "message": "Reset bị tắt trên DB dùng chung (MO_ALLOW_RESET=false)"},
+        )
 
 
 def _plain(detail: dict[str, Any]) -> dict[str, Any]:
@@ -165,12 +186,12 @@ async def _attach_photos(files: list[UploadFile], room: int, limit: int, attach)
     return case
 
 
-def _photo_file(case: Case, evidence_id: str, allowed) -> FileResponse:
+def _photo_file(case: Case, evidence_id: str, allowed) -> Response:
     record = next((e for e in allowed(case) if e.evidence_id == evidence_id), None)
     if record is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy ảnh")
-    path, media_type = photos.locate(record.content_or_metadata)
-    return FileResponse(path, media_type=media_type, headers={"Cache-Control": "private, max-age=3600"})
+    data, media_type = photos.load(record.content_or_metadata)
+    return Response(content=data, media_type=media_type, headers={"Cache-Control": "private, max-age=3600"})
 
 
 # ------------------------------------------------------------------ demo control (internal, FR-DEMO-001)
@@ -180,6 +201,7 @@ def _photo_file(case: Case, evidence_id: str, allowed) -> FileResponse:
 def reset(actor: ActorDep, engine: EngineDep) -> dict[str, Any]:
     """Chỉ QA. Xoá mọi dữ liệu thay đổi, nạp lại 12 ticket fixture (mỗi ticket chạy đúng tại created_at của nó)."""
     _require_role(engine, actor, ActorRole.QA_INTERNAL)
+    _require_reset_allowed()
     return {"run_id": engine.reset(), "tickets": len(engine.cases)}
 
 
@@ -196,7 +218,38 @@ def run_demo_ticket(ticket_id: str, actor: ActorDep, engine: EngineDep) -> Case:
 def run_evaluation(actor: ActorDep, engine: EngineDep) -> EvaluationReport:
     """Chỉ QA. Reset rồi chạy cả 12 ticket, so với expected outcome. Acceptance nội bộ trên dữ liệu mô phỏng."""
     _require_role(engine, actor, ActorRole.QA_INTERNAL)
+    _require_reset_allowed()  # evaluate starts with engine.reset()
     return evaluate(engine)
+
+
+@router.get("/ai-logs", response_model=list[AILogEntry])
+def get_ai_logs(
+    actor: ActorDep,
+    engine: EngineDep,
+    status: AILogStatus | None = None,
+    since: datetime | None = None,
+    until: datetime | None = None,
+    ticket_id: str | None = None,
+    limit: int = 100,
+) -> list[AILogEntry]:
+    """Lấy danh sách các lượt gọi LLM (AI Logs), hỗ trợ lọc theo trạng thái, khoảng thời gian và ticket_id."""
+    _require_role(engine, actor, *STAFF)
+    logs = ai_logger.get_logs(ticket_id=ticket_id, limit=limit)
+    if status is not None:
+        logs = [entry for entry in logs if entry.status == status]
+    if since is not None:
+        logs = [entry for entry in logs if entry.timestamp >= since]
+    if until is not None:
+        logs = [entry for entry in logs if entry.timestamp <= until]
+    return logs
+
+
+@router.post("/ai-logs/reset")
+def reset_ai_logs(actor: ActorDep, engine: EngineDep) -> dict[str, Any]:
+    """Reset toàn bộ dữ liệu AI logs phục vụ QA và kịch bản demo."""
+    _require_role(engine, actor, ActorRole.QA_INTERNAL)
+    ai_logger.clear()
+    return {"message": "Đã reset dữ liệu AI logs"}
 
 
 # ------------------------------------------------------------------ tickets (internal, full detail)
@@ -368,8 +421,9 @@ class BptnResolveRequest(BaseModel):
     location: str | None = None
     asset_id: str | None = None
     asset_onsite: bool = Field(default=False, description="ASSET_UNCLEAR: xác định tại hiện trường (bắt buộc note)")
+    info: str | None = Field(default=None, description="Chỉ với MISSING_INFO: thông tin BPTN thu thập từ cư dân")
 
-    @field_validator("note", "location", "asset_id")
+    @field_validator("note", "location", "asset_id", "info")
     @classmethod
     def _check(cls, value: str | None) -> str | None:
         return _no_placeholder(value)
@@ -377,7 +431,8 @@ class BptnResolveRequest(BaseModel):
 
 @router.post("/tickets/{ticket_id}/bptn-resolve", response_model=Case)
 def bptn_resolve(ticket_id: str, body: BptnResolveRequest, actor: ActorDep, engine: EngineDep) -> Case:
-    """BPTN gỡ blocker VERIFYING. Giá trị BPTN chọn vào `locked_fields`; Agent không ghi đè."""
+    """BPTN gỡ blocker VERIFYING, hoặc MISSING_INFO (NEED_INFO) sau khi liên hệ cư dân. Giá trị BPTN chọn vào
+    `locked_fields`; Agent không ghi đè."""
     return _call(engine.bptn_resolve, ticket_id, actor, **body.model_dump())
 
 
@@ -469,8 +524,8 @@ async def add_execution_photos(ticket_id: str, files: PhotoFiles, actor: ActorDe
     return await _attach_photos(files, room, MAX_EXECUTION_PHOTOS, attach)
 
 
-@router.get("/tickets/{ticket_id}/photos/{evidence_id}", response_class=FileResponse)
-def read_photo(ticket_id: str, evidence_id: str, actor: ActorDep, engine: EngineDep) -> FileResponse:
+@router.get("/tickets/{ticket_id}/photos/{evidence_id}", response_class=Response)
+def read_photo(ticket_id: str, evidence_id: str, actor: ActorDep, engine: EngineDep) -> Response:
     """Ảnh của cư dân hoặc của phòng ban, cho người được xem ticket."""
     case = _staff_case(engine, actor, ticket_id)
     # every department photo, including those from before a rework, so BQL can compare
@@ -585,8 +640,8 @@ async def resident_add_photos(
     return resident_view(engine, case, engine.clock())
 
 
-@resident_router.get("/tickets/{ticket_id}/photos/{evidence_id}", response_class=FileResponse)
-def resident_read_photo(ticket_id: str, evidence_id: str, actor: ActorDep, engine: EngineDep) -> FileResponse:
+@resident_router.get("/tickets/{ticket_id}/photos/{evidence_id}", response_class=Response)
+def resident_read_photo(ticket_id: str, evidence_id: str, actor: ActorDep, engine: EngineDep) -> Response:
     """Chỉ ảnh cư dân tự gửi."""
     return _photo_file(_own_case(engine, ticket_id, actor), evidence_id, resident_photos)
 

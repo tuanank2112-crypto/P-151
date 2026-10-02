@@ -1,0 +1,6 @@
+$ python -m ruff check src tests
+All checks passed!
+exit=0
+$ python -m ruff format --check src/api/photos.py src/config.py src/main.py src/maintenance/engine.py src/maintenance/store/base.py src/maintenance/store/migrations/env.py src/maintenance/store/migrations/versions/0001_maintops_initial.py src/maintenance/store/photos.py src/maintenance/store/postgres.py tests/conftest.py tests/test_maintenance/conftest.py tests/test_maintenance/test_persistence_api.py tests/test_maintenance/test_persistence_guards.py tests/test_maintenance/test_photo_store.py tests/test_maintenance/test_store_memory.py tests/test_maintenance/test_store_postgres.py 
+16 files already formatted
+exit=0

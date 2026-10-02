@@ -1,0 +1,15 @@
+target host=aws-0-ap-southeast-1.pooler.supabase.com port=5432 db=postgres user=postgres.aznecwoyeravoupqbjbd
+alembic_version = [('0001_maintops_initial',)]
+tables = ['alembic_version', 'audit_log', 'cases', 'meta', 'notifications', 'sessions', 'stock']
+sequences = ['ticket_number_seq']
+triggers = ['audit_log_append_only', 'notifications_append_only']
+role maintops_dev = [('maintops_dev', False)]
+rows cases/audit/notifications/stock/sessions = [(0, 0, 0, 0, 0)]
+meta = [('run_number', 0)]
+ssl = [(False, None)]
+PostgresRepository.check() = OK, head = 0001_maintops_initial
+result=PASS
+exit=0
+--- client side TLS (psycopg2 connection.info), connect_args = {'connect_timeout': 10, 'sslmode': 'require'}
+ssl_in_use = True | protocol = TLSv1.3 | cipher = TLS_AES_256_GCM_SHA384
+exit=0

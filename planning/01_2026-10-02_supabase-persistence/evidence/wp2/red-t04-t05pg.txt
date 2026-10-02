@@ -1,0 +1,51 @@
+R1 — broken file: src/maintenance/store/postgres.py
+sha256 before: 013f2eab8fba657ee5380a689b3e58044fde40104ce55c576c64a8d1073b2bb2
+sha256 after restore: 013f2eab8fba657ee5380a689b3e58044fde40104ce55c576c64a8d1073b2bb2
+restored: True
+
+--- diff applied ---
+--- a/src/maintenance/store/postgres.py
++++ b/src/maintenance/store/postgres.py
+@@ -163,7 +163,7 @@
+ ).bindparams(bindparam("doc", type_=JSONB))
+ _SAVE_LOCKED = text(
+     "update maintops.cases set doc = :doc, status = :status, department_id = :department_id, "
+-    "version = version + 1, updated_at = now() where ticket_id = :id and version = :v"
++    "version = version + 1, updated_at = now() where ticket_id = :id"
+ ).bindparams(bindparam("doc", type_=JSONB))
+ 
+ 
+@@ -178,7 +178,7 @@
+     def get_for_update(self, ticket_id: str) -> Case:
+         with _db_errors():
+             row = self.conn.execute(
+-                text("select version, doc from maintops.cases where ticket_id = :id for update"), {"id": ticket_id}
++                text("select version, doc from maintops.cases where ticket_id = :id"), {"id": ticket_id}
+             ).first()
+         if row is None:
+             raise NotFoundError(f"Không có ticket {ticket_id}")
+
+--- command ---
+MO_TEST_DATABASE_URL=<local p151_test> python -m pytest -q -p no:cacheprovider --pg tests/test_maintenance/test_store_postgres.py::test_t04_two_processes_editing_one_ticket_both_land tests/test_maintenance/test_store_postgres.py::test_t05_pg_stale_save_raises_concurrency_error
+exit=1
+
+--- pytest output (last 60 lines) ---
+.F                                                                       [100%]
+================================== FAILURES ===================================
+_______________ test_t05_pg_stale_save_raises_concurrency_error _______________
+
+pg_repo = <src.maintenance.store.postgres.PostgresRepository object at 0x0000014D121B7AD0>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000014D121B7CD0>
+
+    def test_t05_pg_stale_save_raises_concurrency_error(pg_repo, clock):
+        engine = MaintenanceEngine(clock=clock, repo=pg_repo)
+        engine.reset(with_fixtures=False)
+        tid = report(engine, CLEANING)
+        before = pg_repo.version_of(tid)
+>       with pytest.raises(ConcurrencyError):
+E       Failed: DID NOT RAISE ConcurrencyError
+
+tests\test_maintenance\test_store_postgres.py:102: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_store_postgres.py::test_t05_pg_stale_save_raises_concurrency_error
+1 failed, 1 passed in 0.45s

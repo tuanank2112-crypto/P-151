@@ -107,7 +107,7 @@ def _resident_status_label(case: Case) -> str:
 def resident_view(engine: MaintenanceEngine, case: Case, now: datetime) -> ResidentTicketView:
     ticket = case.ticket
     actions: list[ResidentAction] = []
-    if ticket.status == TicketStatus.NEED_INFO:  # only ask when the resident is the one blocking the ticket
+    if ticket.status == TicketStatus.NEED_INFO:  # BPTN follows up, but the resident may still add it directly
         actions.append("ADD_INFO")
     if ticket.status == TicketStatus.CLOSED:
         if ticket.rating is None:

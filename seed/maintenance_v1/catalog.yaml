@@ -91,9 +91,9 @@ sla_config:
   job_interval_minutes: 5
   duplicate_window_hours: 48
   # Cửa sổ mở lại ticket: BỎ (CR-BPTN-03 §4.3 — không reopen)
+  # Mọi blocker BPTN gỡ, kể cả MISSING_INFO (BPTN liên hệ cư dân để bổ sung) — theo `bptn` bên dưới.
+  # Riêng NEED_INFO do tầng an toàn (safety_context, T06): không nhắc tự động, leo thang BQL sau 12 giờ lịch.
   missing_info:
-    retry_every_hours: 24
-    escalate_after_hours: 72
     safety_context: {escalate_after_hours: 12}  # CR-03 §6.4 / D-02: NEED_INFO khi nghi nguy hiểm
   safety_review: {escalate_after_hours: 4}  # CR-03 §6.4 / D-02: GIỜ LỊCH, không tính giờ hành chính
   bptn: {retry_every_business_hours: 1, escalate_after_business_hours: 4}

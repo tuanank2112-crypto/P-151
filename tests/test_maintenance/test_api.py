@@ -218,6 +218,15 @@ def test_bptn_resolve_and_stock_over_http(api):
     assert resumed[0]["ticket"]["status"] == "ROUTED"
 
 
+def test_bptn_fills_missing_location_over_http(api):
+    tid = create(api, "Nhiều rác quá, cần dọn")
+    url = f"/api/v1/mo/tickets/{tid}/bptn-resolve"
+    body = {"location": "Tòa SIM-B / Tầng 7 / Hành lang", "note": "Gọi cư dân"}
+    assert api.post(url, json=body, headers=RESIDENT).status_code == 403
+    case = api.post(url, json=body, headers=BPTN).json()
+    assert case["ticket"]["status"] == "ROUTED" and case["ticket"]["department_id"] == "DEPT_CLEANING"
+
+
 def test_request_bodies_reject_placeholders(api):
     url = "/api/v1/mo/tickets/SIM-TKT-TEC-002/bptn-resolve"
     assert api.post(url, json={"note": "string", "asset_onsite": True}, headers=BPTN).status_code == 422

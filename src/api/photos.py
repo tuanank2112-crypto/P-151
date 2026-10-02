@@ -1,10 +1,13 @@
 """Photo files for MaintenanceOps: residents may attach some, departments must send at least one.
 
-Only the file lives on disk; the engine keeps an EvidenceRecord whose `content_or_metadata` is the file name this
-module generated. The type is read from the file's own bytes, never from the name or the Content-Type the client
-sent, and the file name never comes from the client either, so a stored name cannot point outside the folder.
+Only the bytes live in the photo store (a local folder or Supabase Storage, MO_PHOTO_STORE); the engine keeps an
+EvidenceRecord whose `content_or_metadata` is the name (`ref`) this module generated. The type is read from the
+file's own bytes, never from the name or the Content-Type the client sent, and the name never comes from the client
+either, so a stored name cannot point outside the folder or the bucket.
 """
 
+import functools
+import logging
 import re
 import uuid
 from pathlib import Path
@@ -12,6 +15,15 @@ from pathlib import Path
 from fastapi import HTTPException, UploadFile
 
 from src.config import get_settings
+from src.maintenance.store.photos import (
+    LocalPhotoStore,
+    PhotoNotFoundError,
+    PhotoStore,
+    PhotoStoreError,
+    build_photo_store,
+)
+
+logger = logging.getLogger(__name__)
 
 MAX_BYTES = 5 * 1024 * 1024
 MAX_FILES_PER_REQUEST = 5
@@ -58,21 +70,61 @@ async def read_photos(files: list[UploadFile]) -> list[tuple[bytes, str]]:
     return photos
 
 
+@functools.lru_cache(maxsize=1)
+def _remote_store() -> PhotoStore:
+    return build_photo_store(get_settings())
+
+
+def photo_store() -> PhotoStore:
+    """Supabase: one client per process. Local: built on every call, so tests can monkeypatch `upload_dir`."""
+    if get_settings().mo_photo_store == "supabase":
+        return _remote_store()
+    return LocalPhotoStore(upload_dir())
+
+
+def check_photo_store() -> None:
+    """Startup: a missing Supabase URL/key stops the app (RuntimeError). Configuration only, no network call."""
+    photo_store()
+
+
+def new_ref(extension: str) -> str:
+    return f"{uuid.uuid4().hex}.{extension}"
+
+
 def save(data: bytes, extension: str) -> str:
-    ref = f"{uuid.uuid4().hex}.{extension}"
-    (upload_dir() / ref).write_bytes(data)
+    ref = new_ref(extension)
+    try:
+        photo_store().put(ref, data, _MEDIA_TYPES[extension])
+    except PhotoStoreError as exc:
+        logger.warning("photo save failed: %s", exc)
+        raise HTTPException(
+            status_code=502, detail={"code": "PHOTO_STORE_FAILED", "message": "Không lưu được ảnh, thử lại sau"}
+        ) from exc
     return ref
 
 
 def discard(ref: str) -> None:
-    if _REF.match(ref):
-        (upload_dir() / ref).unlink(missing_ok=True)
+    """Best effort: a photo whose evidence was refused is deleted; a failure only leaves an orphan, logged."""
+    if not _REF.match(ref):
+        return
+    try:
+        photo_store().delete(ref)
+    except PhotoStoreError:
+        logger.warning("photo discard failed ref=%s", ref)
 
 
-def locate(ref: str) -> tuple[Path, str]:
-    """Path and media type of a stored photo; 404 for anything this module did not write."""
+def load(ref: str) -> tuple[bytes, str]:
+    """Bytes and media type of a stored photo; 404 for anything this module did not write."""
     match = _REF.match(ref)
-    path = upload_dir() / ref if match else None
-    if path is None or not path.is_file():
+    if match is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy ảnh")
-    return path, _MEDIA_TYPES[match.group(1)]
+    try:
+        data = photo_store().get(ref)
+    except PhotoNotFoundError:
+        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh") from None
+    except PhotoStoreError as exc:
+        logger.warning("photo load failed: %s", exc)
+        raise HTTPException(
+            status_code=502, detail={"code": "PHOTO_STORE_FAILED", "message": "Không tải được ảnh, thử lại sau"}
+        ) from exc
+    return data, _MEDIA_TYPES[match.group(1)]

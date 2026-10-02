@@ -168,7 +168,10 @@ def test_cancel_needs_a_reason_and_only_non_terminal(fresh):
 
 def test_step2_lists_every_missing_field(fresh):
     case = fresh.get(report(fresh, "   "))
-    assert case.ticket.blocker.public_message == ("Vui lòng bổ sung: nội dung phản ánh, vị trí (tòa, tầng, khu vực).")
+    assert (
+        case.ticket.blocker.public_message
+        == "Ban tiếp nhận thông tin sẽ liên hệ bạn để bổ sung: nội dung phản ánh, vị trí (tòa, tầng, khu vực). Bạn cũng có thể bổ sung ngay tại đây."
+    )
     assert case.proposal is None and case.classification is None
 
 
@@ -176,8 +179,8 @@ def test_step2_names_only_the_missing_location_parts(fresh):
     case = fresh.get(report(fresh, "Tầng 3 ở S4 quá nhiều rác"))
     assert case.ticket.status == "NEED_INFO"
     assert case.ticket.blocker.public_message == (
-        'Vui lòng bổ sung: tòa (ghi kèm chữ "tòa", ví dụ: tòa SIM-A), '
-        "khu vực (hành lang, sảnh thang máy, sảnh chính, cầu thang bộ hoặc hầm xe)."
+        'Ban tiếp nhận thông tin sẽ liên hệ bạn để bổ sung: tòa (ghi kèm chữ "tòa", ví dụ: tòa SIM-A), '
+        "khu vực (hành lang, sảnh thang máy, sảnh chính, cầu thang bộ hoặc hầm xe). Bạn cũng có thể bổ sung ngay tại đây."
     )
 
 
@@ -301,17 +304,19 @@ def test_execution_updates_need_acceptance_first(fresh):
 # ---------------------------------------------------------------- retry and escalation (CR §5)
 
 
-def test_missing_info_reminds_daily_and_escalates_at_72h(fresh, clock):
+def test_missing_info_reminds_bptn_hourly_and_escalates_after_four_business_hours(fresh, clock):
     tid = report(fresh, "Nhiều rác quá")
     start = clock.now
-    for hours in (24, 48):
+    assert fresh.get(tid).ticket.blocker.escalate_at == start + timedelta(hours=4)
+    for hours in (1, 2):
         fresh.run_jobs(start + timedelta(hours=hours))
     blocker = fresh.get(tid).ticket.blocker
     assert blocker.auto_retry_count == 2 and not blocker.escalated
-    fresh.run_jobs(start + timedelta(hours=72))
+    fresh.run_jobs(start + timedelta(hours=4))
     case = fresh.get(tid)
     assert case.ticket.status == "NEED_INFO" and case.ticket.blocker.escalated
-    assert [n.type for n in case.notifications].count("reminder") == 3
+    reminders = [n for n in case.notifications if n.type == "reminder"]
+    assert len(reminders) == 3 and all(n.audience == "BPTN" for n in reminders)
     assert case.notifications[-1].type == "escalation"
 
 
@@ -469,7 +474,8 @@ def test_p0_contract_blocker_groups_and_owners():
     """CR-03 P0 contract (01 §1, §3.3): safety/BQL blocker groups, owners, VERIFYING accepts the new codes."""
     assert SAFETY_REASONS == {"SAFETY_REVIEW_REQUIRED", "EMERGENCY_PENDING_BQL"}
     assert BQL_REASONS == {"EMERGENCY_PENDING_BQL", "WRONG_DEPT_AFTER_START"}
-    assert not (SAFETY_REASONS & BPTN_REASONS) and len(BPTN_REASONS) == 6  # drift D1: BPTN_REASONS unchanged
+    assert not (SAFETY_REASONS & BPTN_REASONS) and len(BPTN_REASONS) == 7  # drift D1 + f1c6ebf (develop):
+    assert ReasonCode.MISSING_INFO in BPTN_REASONS  # BPTN also clears an ordinary MISSING_INFO (plan 02 Q04)
     assert BLOCKER_OWNERS[ReasonCode.SAFETY_REVIEW_REQUIRED] == "BPTN"
     assert BLOCKER_OWNERS[ReasonCode.EMERGENCY_PENDING_BQL] == "BQL"
     assert BLOCKER_OWNERS[ReasonCode.WRONG_DEPT_AFTER_START] == "BQL"

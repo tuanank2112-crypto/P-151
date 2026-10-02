@@ -1,0 +1,61 @@
+R11 — broken file: src/maintenance/store/photos.py
+sha256 before: b6ae67cb818adcfc876033c09b0a8fb4e60f1b4e2b2f18cb8db12fd913a41ff1
+sha256 after restore: b6ae67cb818adcfc876033c09b0a8fb4e60f1b4e2b2f18cb8db12fd913a41ff1
+restored: True
+
+--- diff applied ---
+--- a/src/maintenance/store/photos.py
++++ b/src/maintenance/store/photos.py
+@@ -18,7 +18,7 @@
+ if TYPE_CHECKING:
+     from src.config import Settings
+ 
+-RETRY_DELAYS = (0.5, 1.0)  # transport errors and 5xx: two more tries
++RETRY_DELAYS = ()  # transport errors and 5xx: two more tries
+ _NOT_FOUND_MARKERS = ("not_found", "Object not found")
+ _DUPLICATE_MARKERS = ("Duplicate", "already exists")
+ 
+
+--- command ---
+MO_TEST_DATABASE_URL=<local p151_test> python -m pytest -q -p no:cacheprovider tests/test_maintenance/test_photo_store.py::test_t15d_retries_5xx_twice_then_gives_up
+exit=1
+
+--- pytest output (last 60 lines) ---
+F                                                                        [100%]
+================================== FAILURES ===================================
+__________________ test_t15d_retries_5xx_twice_then_gives_up __________________
+
+    def test_t15d_retries_5xx_twice_then_gives_up():
+        store, sent, sleeps = supabase([503, 503, 200])
+>       store.put(REF, PNG, "image/png")
+
+tests\test_maintenance\test_photo_store.py:89: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = SupabasePhotoStore(base='https://example-ref.supabase.co/storage/v1', bucket='maintenance-photos')
+ref = '0123456789abcdef0123456789abcdef.png'
+data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+media_type = 'image/png'
+
+    def put(self, ref: str, data: bytes, media_type: str) -> None:
+        response, retries = self._send(
+            ref,
+            "POST",
+            self._object_url(ref),
+            headers={"Content-Type": media_type, "x-upsert": "false"},
+            content=data,
+        )
+        if response.status_code == 200:
+            return
+        if retries and _duplicate(response):
+            return  # an earlier try wrote it (the ref is 128 random bits, nobody else writes it)
+>       raise PhotoStoreError(response.status_code, ref, response.text)
+E       src.maintenance.store.photos.PhotoStoreError: Photo store failed (status=503) for 0123456789abcdef0123456789abcdef.png: �PNG
+
+E       
+E       <NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL><NUL>
+
+src\maintenance\store\photos.py:131: PhotoStoreError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_photo_store.py::test_t15d_retries_5xx_twice_then_gives_up
+1 failed in 0.18s

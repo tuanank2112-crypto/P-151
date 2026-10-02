@@ -1,10 +1,42 @@
 # MaintenanceOps Agent — Requirement Traceability & Consistency/Safety Review
 
-> **Document status:** REVIEW COMPLETE · POLICY v0.3 RECORDED · SIGN-OFF PENDING
-> **Version:** 0.3
-> **Ngày:** 2026-09-27  
+> **Document status:** DRAFT · NOT YET READY FOR BUILD
+> **Version:** 0.6-candidate
+> **Ngày cập nhật:** 2026-10-01
+> **MVP baseline:** v0.3 đã freeze; v0.6 candidate theo `CR-BPTN-03`
+> **Freeze history:** v0.3 — 28/09/2026; v0.6 chưa freeze
+> **Approval:** OD-09 chỉ phê duyệt v0.3; chưa phải bằng chứng phê duyệt CR-BPTN-03
 > **Owner:** TV1 — Product / BA / Process; QA approver: TV4 — Integration / QA / Demo  
 > **Review scope:** Toàn bộ 7 tài liệu từ Problem Statement đến Playbook/Data Contract
+
+## Historical MVP v0.3 Freeze Record
+
+**Version:** MaintenanceOps MVP v0.3
+**Status:** FROZEN
+**Freeze date:** 28/09/2026
+
+### Included
+
+- `PB-CLN-01` — Vệ sinh
+- `PB-TEC-01` — Kỹ thuật
+- `IN_PROGRESS`
+- `CHỜ XÁC MINH`
+- `READY_FOR_REVIEW`
+- `EXCEPTION`
+- 12 synthetic tickets
+- 4 demo flows
+- Team-only routing
+
+### Explicitly excluded — Deferred / Future Scope / Backlog
+
+- CSKH
+- Gán nhân viên cụ thể
+- Tích hợp hệ thống thật
+- Lịch trực thật
+- Tối ưu nhân sự thực tế
+- Thanh toán, hóa đơn, thuê ngoài
+
+Mọi thay đổi đối với danh sách Included/Explicitly excluded sau ngày freeze phải qua change control và tạo quyết định re-baseline; không được sửa ngầm baseline v0.3.
 
 ## Changelog
 
@@ -13,13 +45,91 @@
 | 0.1 | 2026-09-27 | Tạo RTM, P0 completeness audit, safety coverage, 25-point consistency review và Executive Summary | DRAFT |
 | 0.2 | 2026-09-27 | Re-baseline RTM/review theo OD-01/02/03/08 và governance OD-09 | DRAFT · Chờ tên/sign-off approver |
 | 0.3 | 2026-09-27 | Re-baseline theo hai playbook, asset/duty/stock gate, team-only route, 12 ticket và 4 demo flow | DRAFT · Chờ tên/sign-off approver |
-| 0.4-candidate | 2026-09-29 | Trace `CR-BPTN-01` (BPTN review có điều kiện + override), `BR-17`, test `TC-BPTN-*`/`TC-MAT-005/006`; OD-09 vẫn PENDING | PROPOSED · Chờ duyệt CR |
-| 0.5-candidate | 2026-09-29 | Trace `CR-BPTN-02`: `PO-07`/`BR` mới cho giao phòng ban, blocker, BQL đóng; test acceptance 1–16 và bất biến 1–6; safety coverage thay luật an toàn bằng quyền/`can_route`; OD-09 vẫn PENDING | PROPOSED · Chờ duyệt CR |
-
-> **`CR-BPTN-02` (v0.5 candidate), PROPOSED:** mục 1.1 (`PO-07`), 1.2 (`BR-18`–`BR-23`), 2.3 và 3 đã cập nhật theo
-> [CR-BPTN-02](CR-BPTN-02.md). Các dòng trace tới `EXCEPTION`, duty/capacity và `CHỜ XÁC MINH` là lịch sử v0.3/v0.4.
+| 0.3-freeze | 2026-09-28 | Đóng OD-09; ghi Freeze Record và chuyển MaintenanceOps MVP v0.3 sang frozen build baseline | FROZEN · READY FOR BUILD |
+| 0.6-candidate | 2026-10-01 | Tạo RTM/review gate mới theo CR-BPTN-03; giữ v0.3 làm lịch sử freeze | DRAFT · NOT READY |
 
 ---
+
+# Active traceability — MVP v0.6 candidate
+
+## 1. Governance status
+
+| Item | Status | Evidence / điều kiện còn thiếu |
+|---|---|---|
+| MaintenanceOps MVP v0.3 | `FROZEN` | OD-09, Cao Văn Trường, 28/09/2026 |
+| `CR-BPTN-03` | `PROPOSED` | Chưa có người phê duyệt ghi tên |
+| MaintenanceOps MVP v0.6 candidate | `DRAFT · NOT READY` | Cần sign-off CR-03, chốt D-02/D-03/D-05/D-09, cập nhật code và test evidence |
+
+Không được dùng OD-09 cũ để suy ra v0.6 đã được duyệt. Khi CR-03 được phê duyệt, cần tạo record mới gồm version, người duyệt, ngày, phạm vi và commit/tag evidence.
+
+## 2. Requirement Traceability Matrix active
+
+| Req | Yêu cầu | PRD/UI/Data/Playbook | Acceptance |
+|---|---|---|---|
+| R-SAFE-01 | Safety chạy cho mọi ticket trước phân loại | PRD FR-SAFETY; UI Flow B/C; contract risk/blocker; common playbook | AC-01–09 |
+| R-ROLE-01 | BPTN và BQL là tài khoản riêng, action theo quyền | PRD actors; UI shared shell; permission validators | AC-06, AC-16 |
+| R-PRI-01 | Priority ba mức, rule + override có lý do/audit | PRD FR-PRIORITY; queue UI; contract priority fields | AC-10 |
+| R-DUP-01 | Merge hai chiều, append, undo và root-cancel handling | PRD FR-DUPLICATE; merge UI; relation contract | AC-11 |
+| R-AST-01 | Kỹ thuật cần asset hoặc `ONSITE_BY_BPTN` | PRD FR-ASSET; detail UI; playbook TEC | Asset test set |
+| R-MAT-01 | Biết thiếu → ON_HOLD, chưa route; nhập đủ tự chạy lại | PRD FR-MATERIAL; UI Flow D; stock contract | AC-12 |
+| R-ROUTE-01 | Route theo phòng ban, chỉ khi can_route; không team/duty | PRD FR-ROUTE; Department UI; draft contract | AC-12, AC-16 |
+| R-NOASSIGNEE-01 | `assignee_id=null`, `SET_ASSIGNEE` bị từ chối | mọi tài liệu | AC-15 |
+| R-DEPT-01 | Phòng ban nhận, thực hiện, báo sai phòng ban | PRD FR-DEPARTMENT; Department UI; transitions T14–T19 | AC-13 |
+| R-READY-01 | Checklist/note/material/ảnh/readiness đủ mới review | PRD FR-REVIEW; BQL review UI; validators | AC-14 |
+| R-CLOSE-01 | Chỉ BQL close/cancel; reason/audit theo rule | PRD/UI/contract/transition T10/T21/T23 | AC-09, AC-16 |
+| R-RES-01 | Raw immutable, append NEED_INFO, rating một lần, không reopen | Resident UI; data contract; permissions | AC-08, AC-15, AC-17 |
+| R-SEC-01 | Ticket content không điều khiển Agent | PRD NFR; input validation | AC-18 |
+
+## 3. Canonical acceptance suite
+
+Nguồn chi tiết là AC-01–AC-18 trong CR-BPTN-03. Tối thiểu phải có:
+
+1. Mọi tín hiệu Bậc 1, cả ngoài hai playbook, đi `VERIFYING + EMERGENCY_PENDING_BQL`, không draft/department.
+2. Phủ định và từ mơ hồ không bị hiểu sai; LLM không hạ signal do rule xác định.
+3. BPTN chỉ có đúng ba action cho Bậc 2 và không chạm Bậc 1.
+4. `resume()`/job không gỡ emergency blocker.
+5. Mỗi rule priority có fixture; override bắt buộc lý do/audit; sort đúng.
+6. Merge/undo, append-to-root và root cancel chạy đúng.
+7. Thiếu vật tư không route; nhập đủ chạy lại toàn bộ gate.
+8. Sai phòng ban trước/sau khi làm đi đúng owner và giữ dữ liệu cần thiết.
+9. Thiếu ảnh hoặc thành phần hồ sơ không READY; rework lần thứ ba escalates.
+10. Không reopen; rating một lần; không actor nào set assignee.
+11. Transition/action trái phép không đổi state và có audit.
+12. Raw và ảnh gốc không đổi; resident view không rò rỉ nội bộ.
+
+Safety evaluation cần ít nhất 40 câu có nhãn `EMERGENCY|UNCLEAR|NONE`, gồm có/không dấu, phủ định, từ đa nghĩa và tổ hợp tín hiệu. Mục tiêu chấp nhận: 0 false negative cho bộ Bậc 1; báo nhầm phải được đo và công bố.
+
+## 4. Cross-document consistency result
+
+| Check | Result | Ghi chú |
+|---|---|---|
+| Chỉ hai playbook | PASS | CLN/TEC |
+| State model 10 trạng thái | PASS trong active sections | v0.3 chỉ còn ở historical appendix |
+| Routing theo phòng ban | PASS | duty/team routing bị loại khỏi active candidate |
+| Safety trước classification | PASS | cùng blocker/owner semantics |
+| Evidence ảnh bắt buộc | PASS | candidate thay đổi policy v0.3 |
+| Close/cancel/rating/no-reopen | PASS | quyền BQL/resident thống nhất |
+| `assignee_id=null` | PASS | không có UI/action gán người |
+| Data mô phỏng | PASS | không tuyên bố dữ liệu thật |
+| Governance | OPEN | CR-03 chưa sign-off; D-02/D-03/D-05/D-09 chưa khóa |
+
+## 5. Build readiness decision
+
+### `NOT YET READY FOR BUILD AS A FROZEN BASELINE`
+
+Có thể dùng candidate để lập kế hoạch và tạo test trước, nhưng chưa được tuyên bố v0.6 frozen. Điều kiện mở gate:
+
+- Product approver ghi tên và duyệt CR-BPTN-03.
+- Chốt D-02, D-03, D-05 và D-09; điền người đề xuất/người duyệt.
+- Code/state/permission/data migration được đối chiếu với transition T01–T23.
+- Bộ test AC-01–AC-18 và safety ≥40 câu có kết quả lưu được.
+- Cập nhật expected outcomes của CLN-004, TEC-005 và fixture priority/safety.
+
+---
+
+# Historical appendix — Traceability v0.3
+
+> Từ đây trở xuống là bằng chứng cho freeze v0.3. Các kết luận `READY FOR BUILD`, bốn state, duty/team routing, 12-ticket-only và 4 demo flow không áp dụng cho v0.6 candidate.
 
 # Phase 5 — Traceability và consistency review
 
@@ -33,14 +143,14 @@
 - `PO-04` Giữ raw source bất biến và mọi thay đổi/decision truy vết được.
 - `PO-05` Đối soát material/evidence/readiness đúng rule theo use case.
 - `PO-06` Chứng minh feasibility qua 12 synthetic tickets và bốn demo flow reset được.
-- `PO-07` (`CR-BPTN-02` (v0.5 candidate)) Chỉ giao phòng ban khi `can_route` đúng (review → tài sản → giao); cư dân và BQL theo dõi cùng trạng thái; chỉ BQL đóng/hủy.
+- `PO-07` Chỉ tạo route cấp team khi asset/stock/duty gate pass; draft vẫn tồn tại khi route chưa hợp lệ.
 
 ## 1.2 Business rules
 
 - `BR-01` Không suy đoán/tự điền: thiếu raw/pre-draft required data hoặc unknown evidence/source → `CHỜ XÁC MINH`; known incomplete execution/evidence → `IN_PROGRESS`.
 - `BR-02` Raw resident content/evidence bất biến; editable data nằm layer riêng.
 - `BR-03` Deterministic safety/permission rules ưu tiên model output; confidence không là điều kiện duy nhất.
-- `BR-04` Work order chỉ là draft/mô phỏng, schema-valid/idempotent; khi không `PENDING_REVIEW` và có location thì có thể tạo dù asset/stock/duty chưa cho route; high-risk exception không tạo standard draft.
+- `BR-04` Work order chỉ là draft/mô phỏng, schema-valid/idempotent; sau BPTN confirmation/location có thể tạo dù asset/stock/duty chưa cho route; high-risk exception không tạo standard draft.
 - `BR-05` Checklist là gate riêng; còn `PENDING` thì không READY; Agent không tự complete hoặc dùng checklist thay minimum evidence.
 - `BR-06` Trước route kiểm tra planned/norm/stock; sau thực hiện đối soát planned/norm/issued/used bằng ba comparisons; Agent không approve/conclude violation.
 - `BR-07` Evidence theo playbook v0.3; ảnh không bắt buộc; known missing evidence giữ `IN_PROGRESS`, không READY.
@@ -52,14 +162,7 @@
 - `BR-13` Mọi entity/run có nhãn synthetic; demo reset không sửa source fixture.
 - `BR-14` Asset lookup chỉ bắt buộc cho kỹ thuật; zero/multiple match → `CHỜ XÁC MINH`, không route.
 - `BR-15` Duty lookup bắt buộc cho cả hai nhóm; no-team/capacity → `IN_PROGRESS`; duty unknown → `CHỜ XÁC MINH`; draft vẫn tồn tại.
-- `BR-16` Route chỉ tới `SIM-TEAM-*`, `assignment_scope=TEAM_ONLY`, `assignee_id=null`; route invalid luôn chặn READY. `ROUTED` nghĩa là đề xuất tuyến team hợp lệ, không phải đã giao việc; capacity là điều kiện fixture tĩnh.
-- `BR-17` (`CR-BPTN-01`, v0.4 candidate) BPTN review có điều kiện: `NOT_REQUIRED` khi category/location rõ; `PENDING_REVIEW` → `CHỜ XÁC MINH` khi thiếu/không rõ; override bắt buộc `override_reason`, audit từng field và chạy lại toàn bộ gate downstream; không override khi có safety exception.
-- `BR-18` (`CR-BPTN-02` (v0.5 candidate)) Bước 4 chỉ đề xuất phòng ban; `department_id` chỉ set ở bước 8 khi `can_route` đúng.
-- `BR-19` (`CR-BPTN-02` (v0.5 candidate)) Tra tài sản không được tự bỏ qua; chỉ BPTN chọn asset hoặc `ONSITE_BY_BPTN` kèm lý do.
-- `BR-20` (`CR-BPTN-02` (v0.5 candidate)) Mọi thay đổi trạng thái đi qua `transition`, ghi đúng một event; chuyển sai trả lỗi.
-- `BR-21` (`CR-BPTN-02` (v0.5 candidate)) Chỉ BQL đóng/hủy/trả làm lại; cư dân mở lại trong 7 ngày.
-- `BR-22` (`CR-BPTN-02` (v0.5 candidate)) Mỗi lần dừng có blocker; leo thang chỉ bật cờ + thông báo BQL, không đổi trạng thái.
-- `BR-23` (`CR-BPTN-02` (v0.5 candidate)) Lời cho cư dân chỉ từ template; API cư dân không lộ dữ liệu nội bộ.
+- `BR-16` Route chỉ tới `SIM-TEAM-*`, `assignment_scope=TEAM_ONLY`, `assignee_id=null`; route invalid luôn chặn READY.
 
 ---
 
@@ -117,48 +220,44 @@ Không có P0 requirement mồ côi trong version 0.3.
 
 ## 2.3 Test case bắt buộc cho re-baseline MVP
 
-`CR-BPTN-02` (v0.5 candidate) thay bộ test re-baseline v0.3 bằng test chấp nhận 1–16 (`03_lean_prd.md` §9.2) và bất biến 1–6:
-
-| Nhóm | Test | Trace |
+| Test ID | Kịch bản bắt buộc | Expected oracle |
 |---|---|---|
-| Happy path, timeline 5 mốc | acceptance 1 | `PO-01`, `BR-20` |
-| Thiếu thông tin, append-only | acceptance 2 | `BR-01`, `BR-02` |
-| BPTN khóa loại việc, không phân loại lại | acceptance 3 | `BR-18` |
-| Thiếu vật tư, leo thang | acceptance 4 | `BR-22` |
-| Ngoài giờ | acceptance 5 | `PO-07` |
-| Sai phòng ban, qua tra tài sản | acceptance 6, 15, 15b | `BR-18`, `BR-19` |
-| Rework leo thang | acceptance 7 | `BR-21`, `BR-22` |
-| Chỉ BQL đóng/hủy | acceptance 8 | `BR-21` |
-| Mở lại trong 7 ngày | acceptance 9 | `BR-21` |
-| Trùng → gộp | acceptance 10 | `PO-02` |
-| `resume()` idempotent | acceptance 11 | `BR-20` |
-| API cư dân, không lộ nội bộ; không tên phòng ban trước khi giao | acceptance 12, 16 | `BR-23` |
-| `PENDING_REVIEW` không giao được | acceptance 13, 13b | `BR-18` |
-| `ASSET_UNCLEAR` chờ BPTN | acceptance 14 | `BR-19` |
-| Bất biến 1–6 | `test_engine.py`, `test_acceptance.py` | `BR-02`, `BR-18`–`BR-21` |
+| `TC-ASSET-001` | Technical ticket có asset match | Exact one `SIM-ASSET-*`; asset gate pass |
+| `TC-ASSET-002` | Technical ticket không tìm thấy asset | Draft tồn tại với asset unresolved; `CHỜ XÁC MINH`; no route |
+| `TC-DUTY-001` | Cleaning ticket có team đang trực/còn capacity | Duty pass; route được phép nếu stock gate pass |
+| `TC-DUTY-002` | Cleaning ticket không có team đang trực | Draft tồn tại; `IN_PROGRESS`; `NO_AVAILABLE_TEAM`; no route |
+| `TC-STOCK-001` | Vật tư đủ | Stock gate pass |
+| `TC-STOCK-002` | Vật tư thiếu | Draft tồn tại; `IN_PROGRESS`; `MATERIAL_SHORTAGE`; no route |
+| `TC-DUTY-003` | Duty status unknown | Draft tồn tại; `CHỜ XÁC MINH`; `DUTY_UNKNOWN`; no route |
+| `TC-DUTY-004` | Team vượt sức chứa mô phỏng | Draft tồn tại; `IN_PROGRESS`; `TEAM_CAPACITY_EXCEEDED`; no route |
+| `TC-WO-001` | Work order draft không có route vẫn tồn tại | Schema valid; không coi là giao việc; không READY |
+| `TC-ROUTE-003` | Agent cố gán `assignee_id` | Reject + audit; `assignee_id=null`; state unchanged |
 
 ---
 
 # 3. Safety rule test coverage
 
-`CR-BPTN-02` (v0.5 candidate): luật an toàn (cleaning hazard, electrical risk) đã bỏ. Bảng dưới là coverage của các rào chắn còn hiệu lực.
-
-| Rào chắn | Positive test | Negative/bypass test | UI evidence | Coverage |
+| Safety rule | Positive/trigger test | Negative/bypass test | UI evidence | Coverage |
 |---|---|---|---|---|
-| Raw source immutable | bất biến 4 | `EDIT_RAW` bị `ACTION_DENIED` | `UI-02`, `UI-08` | PASS |
-| Không suy đoán dữ liệu thiếu | acceptance 2 | `test_step2_*` | `UI-09` | PASS |
-| Review → tài sản → giao (`can_route`) | acceptance 1, 15 | acceptance 13, 13b, 14; bất biến 6 | `UI-02`, `UI-07` | PASS |
-| Agent không ghi đè `locked_fields` | acceptance 3 | bất biến 3 | `UI-02` | PASS |
-| Agent không ghi `assignee_id` | bất biến 2 | `SET_ASSIGNEE` bởi Agent bị từ chối | `UI-03` | PASS |
-| Chỉ BQL đóng/hủy | acceptance 8 | Agent/BPTN/phòng ban/cư dân/kho bị từ chối | `UI-06`, `UI-10` | PASS |
-| Phòng ban chỉ thao tác ticket đã giao | `test_department_and_resident_*` | `test_waiting_material_is_not_the_departments_ticket_yet` | `UI-04` | PASS |
-| Một event mỗi thay đổi trạng thái | bất biến 5 | acceptance 11 | `UI-08` | PASS |
-| Leo thang không đổi trạng thái | acceptance 4, 7 | `test_escalation_never_changes_status` | `UI-10` | PASS |
-| API cư dân không lộ nội bộ | acceptance 12, 16 | — | `UI-09` | PASS |
-| Đúng ba phép so sánh vật tư; ảnh không bắt buộc | `test_step10_*` | `test_step10_images_never_count_as_the_note` | `UI-05` | PASS |
-| Prompt injection ignored | `test_instruction_in_content_is_data` | — | `UI-05` | PASS |
-| Audit fail closed | `test_audit_failure_fails_closed` | — | `UI-08` | PASS |
-| Nhận diện rủi ro an toàn | — | — | — | **ĐÃ BỎ theo CR; cần Product/BQL chấp nhận (CR-BPTN-02 §10)** |
+| Raw source immutable | `TC-ING-002` | `TC-PERM-001` | `UI-02`, `UI-08` | PASS |
+| No guessing/missing → CHỜ | `TC-ING-001`, `TC-ASSET-002/003` | `TC-CLASS-004` | `UI-02`, `UI-07` | PASS |
+| Agent proposal cần BPTN confirmation/location trước draft | `TC-CLASS-005`, `TC-WO-004` | direct-create attempt | `UI-02`, `UI-03` | PASS |
+| Cleaning hazard → BQL | `TC-EX-001` | happy `TC-CLASS-001` | `UI-07` | PASS |
+| Electrical risk → BQL/no diagnosis | `TC-EX-002` | happy `TC-CLASS-002` | `UI-07` | PASS |
+| Asset lookup chỉ kỹ thuật; zero/multiple không đoán | `TC-ASSET-002/003` | matched `TC-ASSET-001` | `UI-02/03` | PASS |
+| Duty lookup cả hai nhóm | `TC-DUTY-001..004` | source/capacity assertion | `UI-02/03` | PASS |
+| Route chỉ cấp team, không assignee | `TC-ROUTE-001/003` | CTA/schema inspection | `UI-03/06` | PASS |
+| Agent cannot complete checklist | `TC-CHK-002` | human update `TC-CHK-001` setup | `UI-05` | PASS |
+| Checklist không thay minimum evidence | `TC-EVD-005` | all-evidence `TC-EVD-004` | `UI-05/06` | PASS |
+| Exactly three material comparisons | `TC-MAT-001..003` | permission `TC-PERM-002` | `UI-05/06` | PASS |
+| Stock gate trước route | `TC-STOCK-001..003` | no-route assertion | `UI-03/05` | PASS |
+| Photo not default evidence | `TC-EVD-002` | required-type `TC-EVD-003` | `UI-05/06` | PASS |
+| Eight-gate READY, route bắt buộc | `TC-STATE-001` | `TC-STATE-002`, `TC-ROUTE-002` | `UI-06` | PASS |
+| Warning remains visible | `TC-STATE-002` | UI copy review | `UI-06` | PASS |
+| Agent no accept/close/approve/send | `TC-PERM-002/003` | CTA inspection | `UI-02..08` | PASS |
+| `ACTION_OUT_OF_AUTHORITY` không tạo business exception | `TC-PERM-001..004` | state/event comparison | `UI-02..08` | PASS |
+| Prompt injection ignored | `TC-SEC-001/002` | policy result comparison | `UI-05/07` | PASS |
+| Audit fail closed | `TC-AUD-003` | successful `TC-AUD-001/002` | `UI-08` | PASS |
 
 ---
 
@@ -182,7 +281,7 @@ Các quyết định re-baseline v0.3 đã được kiểm tra xuyên suốt:
 | # | Check | Kết quả | Evidence |
 |---:|---|---|---|
 | 1 | BPTN và BQL được tách rõ | PASS | Problem §4; Brief §3/14; PRD §2; UI role-specific CTA |
-| 2 | BPTN chỉ sửa trường hành chính | PASS | BPTN review có điều kiện; override service/type/location có reason trong admin layer (`CR-BPTN-01`); `UI-02` allowlist |
+| 2 | BPTN chỉ sửa trường hành chính | PASS | BPTN xác nhận Agent proposal/service/type và location trong admin layer; `UI-02` allowlist |
 | 3 | Phản ánh và bằng chứng gốc bất biến | PASS | `FR-INGEST-002`, `BR-02`, raw layer, `UI-02` |
 | 4 | Mọi chỉnh sửa có audit tối thiểu | PASS | `FR-AUDIT-001`, audit schema, `TC-AUD-*` |
 | 5 | Agent không tự sửa dữ liệu nguồn | PASS | Permission matrix, `FR-PERMISSION-001` |
@@ -240,24 +339,25 @@ Các quyết định re-baseline v0.3 đã được kiểm tra xuyên suốt:
 | `OD-05` | BQL sub-role authority | Không block demo role chung; block pilot permission | `OPEN · PILOT` |
 | `OD-06` | Priority/SLA | Không block MVP; priority optional | `OPEN · PILOT` |
 | `OD-07` | Administrative edit reason taxonomy | Không block build; block UAT copy | `OPEN · UAT` |
-| `OD-09` | Owner, approvers, deadline, sign-off | Chỉ còn thiếu tên Product approver/proxy và sign-off evidence | `PARTIALLY CLOSED · BLOCKER` |
+| `OD-09` | Owner, approvers, deadline, sign-off | Product approver/proxy: Cao Văn Trường; sign-off owner: Cao Văn Trường; freeze date: 28/09/2026; evidence: `OD-09 Sign-off Record` | `CLOSED · FROZEN` |
 | `OD-10` | Asset/duty lookup và team-only routing | Đã có FR/UI/AC/test | `CLOSED · APPLIED v0.3` |
 | `OD-11` | Draft tồn tại khi route invalid | Đã có state/reason/route oracle | `CLOSED · APPLIED v0.3` |
 | `OD-12` | Dataset 12 tickets và 4 demo flow | Đã re-baseline eval/reset | `CLOSED · APPLIED v0.3` |
 
-Governance đã ghi nhận: Document Owner TV1; Technical reviewer TV2; QA approver TV4; Product approver và proxy BQL cùng là `[Tên nhóm trưởng / Product Owner]`; deadline cuối Ngày 1, 27/09/2026. Proxy approval chỉ áp dụng policy mô phỏng, không phải phê duyệt quy trình thật.
+Governance đã ghi nhận: Document Owner TV1; Technical reviewer TV2; QA approver TV4; Product approver/proxy BQL và sign-off owner là Cao Văn Trường; freeze date 28/09/2026. Proxy approval chỉ áp dụng policy/test oracle mô phỏng của MaintenanceOps MVP v0.3, không phải phê duyệt quy trình thật.
 
 ## 6.1 Approval record
 
 - **Document Owner:** TV1 — Product / BA / Process.
-- **Product approver:** `[TBD tên nhóm trưởng / Product Owner]`.
-- **BQL business approver:** không có BQL thực tế trong prototype; Product approver ở trên làm proxy cho policy mô phỏng.
+- **Product approver:** Cao Văn Trường.
+- **BQL business approver:** không có BQL thực tế trong prototype; Cao Văn Trường làm proxy cho policy mô phỏng.
+- **Sign-off owner:** Cao Văn Trường.
 - **Technical reviewer:** TV2 — AI Agent / Data.
 - **QA approver:** TV4 — Integration / QA / Demo.
-- **Sign-off deadline:** cuối Ngày 1 — 27/09/2026.
+- **Freeze date:** 28/09/2026.
 - **Approval scope:** chỉ xác nhận policy/test oracle mô phỏng của prototype; không xác nhận quy trình vận hành thật.
-- **Change control sau deadline:** chỉ nhận thay đổi P0 liên quan safety, blocker hoặc bốn demo flow; thay đổi khác chuyển backlog và không sửa baseline hiện tại.
-- **Approval evidence:** `PENDING` — cần điền tên người phê duyệt, thời điểm và xác nhận version 0.3.
+- **Change control sau freeze:** chỉ nhận thay đổi P0 liên quan safety, blocker hoặc bốn demo flow qua quyết định re-baseline; thay đổi khác chuyển backlog và không sửa baseline v0.3.
+- **Approval evidence:** `OD-09 Sign-off Record` — đã xác nhận MaintenanceOps MVP v0.3 ngày 28/09/2026.
 
 ---
 
@@ -273,9 +373,9 @@ Governance đã ghi nhận: Document Owner TV1; Technical reviewer TV2; QA appro
 | UI Flow bao phủ bốn demo flow | PASS | Flows 1–4 + four edge flows |
 | Mọi safety rule quan trọng có test | PASS | Safety coverage matrix |
 | Core playbook decisions đã được ghi nhận | PASS | `OD-01/02/03/10/11/12` closed/applied |
-| Product approver/proxy có tên và sign-off evidence | **FAIL / NOT MET** | Placeholder `[Tên nhóm trưởng / Product Owner]` chưa được thay; chưa có approval record |
+| Product approver/proxy có tên và sign-off evidence | PASS | Cao Văn Trường; `OD-09 Sign-off Record`; freeze date 28/09/2026 |
 
-**Kết luận readiness:** Policy, state oracle, data model, UI flow và tests đã đủ để freeze nội dung kỹ thuật v0.3. Chưa được đổi nhãn sang approved build baseline vì OD-09 chưa có tên người phê duyệt và sign-off evidence.
+**Kết luận readiness:** Tất cả điều kiện `READY FOR BUILD` đã PASS. Policy, state oracle, data model, UI flow và tests của MaintenanceOps MVP v0.3 đã được freeze ngày 28/09/2026; các quyết định mở OD-04/05/06/07 vẫn non-blocking và không được dùng để mở rộng frozen scope.
 
 ---
 
@@ -315,18 +415,15 @@ Hai playbook, four-state workflow, raw immutability, role permissions, audit t�
 
 - `CLOSED/APPLIED`: `OD-01`, `OD-02`, `OD-03`, `OD-10`, `OD-11`, `OD-12`.
 - `OPEN nhưng không chặn MVP`: `OD-04`, `OD-05`, `OD-06`, `OD-07`.
-- `PARTIALLY CLOSED và đang chặn formal baseline`: `OD-09` — cần tên thật của Product approver/proxy và approval record.
+- `CLOSED · FROZEN`: `OD-09` — Cao Văn Trường; evidence `OD-09 Sign-off Record`; freeze date 28/09/2026.
 
 ## 8.8 Rủi ro còn lại
 
-- Proxy Product Owner/BQL chưa có tên và chưa ký; policy v0.3 chưa có approval evidence.
-- Không có BQL thực tế tham gia, nên toàn bộ policy vẫn chỉ là policy mô phỏng và không được dùng như quy trình thật.
+- Product approver/BQL chỉ là proxy cho prototype; toàn bộ policy vẫn là policy mô phỏng và không được dùng như quy trình thật.
 - `OD-04` chưa chốt threshold; v0.3 chỉ coi explained variance là warning, không suy diễn mức độ.
 - Role BQL tổng quát đủ cho demo nhưng không đủ cho pilot permission governance.
 - Synthetic success có thể bị diễn giải quá mức thành hiệu quả vận hành nếu bỏ disclaimer.
 - LLM/injection/schema failure vẫn cần được chứng minh bằng eval runner, không chỉ tài liệu.
-- `CR-BPTN-01` đã hiện thực trên nhánh `feature/chamanh` như v0.4 candidate nhưng CR còn `PROPOSED`; cần duyệt trước khi merge vào baseline.
-- Metric pilot (classification agreement, first-route correctness, false-block/false-ready, clarification theo reason, override rate, touch time, rework, safety recall, asset ambiguity) chỉ nằm trong kế hoạch pilot `03_lean_prd.md` §9.5, không phải acceptance MVP.
 
 ## 8.9 Consistency review
 
@@ -334,9 +431,9 @@ Hai playbook, four-state workflow, raw immutability, role permissions, audit t�
 
 ## 8.10 Kết luận
 
-# `NOT READY FOR BUILD`
+# `FROZEN · READY FOR BUILD`
 
-OD-01/02/03/10/11/12 đã được chốt và áp dụng nhất quán. Blocker duy nhất còn lại là OD-09: thay placeholder bằng tên Product approver/proxy và ghi approval record cho version 0.3. Sau bước governance này, bộ tài liệu có thể chuyển sang `READY FOR BUILD` mà không cần mở rộng scope.
+OD-01/02/03/09/10/11/12 đã được chốt và áp dụng nhất quán. MaintenanceOps MVP v0.3 đã `FROZEN` ngày 28/09/2026 theo `OD-09 Sign-off Record` và đủ điều kiện bắt đầu build trong đúng phạm vi freeze. Mọi yêu cầu mở rộng phải chuyển backlog hoặc đi qua change control/re-baseline.
 
 ## 8.11 Deferred / Future Scope
 

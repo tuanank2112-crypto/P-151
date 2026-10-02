@@ -1,0 +1,25 @@
+$ git diff --name-only --diff-filter=U
+(end, exit=0)
+$ grep -cP '[\x08\x0c\x0b]' on files edited by hand
+0 src/maintenance/engine.py
+0 src/maintenance/catalog.py
+0 src/maintenance/messages.py
+0 src/maintenance/i18n/vi.yaml
+0 seed/maintenance_v1/catalog.yaml
+0 docs/CR-BPTN-03.md
+0 tests/test_maintenance/test_cr03_store.py
+0 tests/test_maintenance/test_engine.py
+0 tests/test_maintenance/test_store_memory.py
+0 tests/test_maintenance/test_store_postgres.py
+0 brain4agent/-data-architecture.md
+0 brain4agent/-known-gotchas.md
+0 brain4agent/changelog.md
+0 brain4agent/index.md
+0 brain4agent/memory-distill.txt
+0 brain4agent/memory/hot/state.json
+0 brain4agent/memory/hot/today.md
+0 brain4agent/roadmap.md
+$ node init_brain.js --check
+👉 Trạng thái: NÃO ĐÃ OK — KHÔNG CẦN NÂNG CẤP THÊM!
+
+init_brain EXIT=0

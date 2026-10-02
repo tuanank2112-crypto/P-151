@@ -9,12 +9,14 @@ The LLM only produces a structured proposal. Guards around it (Playbook §1.1, P
 CR-BPTN-02 removed the safety-signal assessment: the model is no longer asked about risk.
 """
 
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from src.maintenance.ai_logger import AILogStatus, ai_logger
 from src.maintenance.enums import PLAYBOOK_PAIRS, PlaybookId, ReasonCode, ServiceCategory, TicketType
 from src.maintenance.rules import Classification, classify
 
@@ -63,14 +65,42 @@ def _unclear(reason: str) -> Classification:
     )
 
 
-def propose(description: str, llm: LLMClient | None = None, model_label: str = "llm") -> ProposalResult:
+def propose(
+    description: str,
+    llm: LLMClient | None = None,
+    model_label: str = "llm",
+    ticket_id: str = "PENDING",
+) -> ProposalResult:
     rules_cls = classify(description)
     if llm is None:
         return ProposalResult(rules_cls, "rules")
 
+    prompt_dict = {
+        "system": SYSTEM_PROMPT,
+        "user": f"<phan_anh>\n{description}\n</phan_anh>",
+    }
+    start_time = time.perf_counter()
     try:
         assessment = llm(description)
+        latency_ms = (time.perf_counter() - start_time) * 1000
+        ai_logger.log(
+            ticket_id=ticket_id,
+            prompt_sent=prompt_dict,
+            structured_output=assessment.model_dump(),
+            model_name=model_label,
+            latency_ms=latency_ms,
+            status=AILogStatus.SUCCESS,
+        )
     except Exception as exc:  # network, quota, schema... → deterministic rules only
+        latency_ms = (time.perf_counter() - start_time) * 1000
+        ai_logger.log(
+            ticket_id=ticket_id,
+            prompt_sent=prompt_dict,
+            error_message=f"{type(exc).__name__}: {str(exc)}",
+            model_name=model_label,
+            latency_ms=latency_ms,
+            status=AILogStatus.FALLBACK_RULE,
+        )
         return ProposalResult(rules_cls, "rules", notes=[f"LLM lỗi ({type(exc).__name__}); dùng luật cố định"])
 
     notes: list[str] = []
