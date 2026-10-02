@@ -1,5 +1,6 @@
 """Safety layer, pipeline step 2b (CR-BPTN-03 §6, SPEC-P01): pure detector, lexicon data, LLM guard, engine wiring."""
 
+import time
 from copy import deepcopy
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -22,7 +23,7 @@ from src.maintenance.safety import (
     normalize_with_map,
     quote_of,
 )
-from tests.test_maintenance.helpers import BPTN, CLEANING, TZ, report
+from tests.test_maintenance.helpers import BPTN, CLEANING, RESIDENT, TZ, report
 
 DATA = yaml.safe_load((Path(__file__).parent / "data" / "safety_cases_p0.yaml").read_text(encoding="utf-8"))
 LEXICON = load_lexicon()
@@ -94,7 +95,10 @@ def test_lexicon_rejects_bad_regex_and_duplicate_signal_id():
 def test_labelled_case(case):
     """AC-01..AC-04, AC-18: level, required signals, ABSENT records and verbatim quotes of one labelled sentence."""
     result = assess(case["text"], LEX)
-    assert result.risk_level == case["expect"]
+    if "expect_any" in case:  # "at least": any of the listed levels is acceptable (safety-first ambiguity, Q25)
+        assert result.risk_level in case["expect_any"]
+    else:
+        assert result.risk_level == case["expect"]
     recorded = {s.signal_id for s in result.signals if s.status != SignalStatus.ABSENT}
     assert set(case.get("signals", [])) <= recorded
     for absent in case.get("absent", []):
@@ -114,18 +118,18 @@ def test_regression_string_stays_none(case):
 
 def test_false_alarm_count_on_benign_strings():
     """TESTING §3 / T-V1: absolute count of NONE-labelled strings that rise above NONE must be 0."""
-    benign = [c for c in [*SAFETY_CASES, *REGRESSION] if c["expect"] == "NONE"]
+    benign = [c for c in [*SAFETY_CASES, *REGRESSION] if c.get("expect") == "NONE"]
     raised = [c["id"] for c in benign if assess(c["text"], LEX).risk_level != RiskLevel.NONE]
     print(f"false alarms: {len(raised)}/{len(benign)}")
-    assert raised == [] and len(benign) == 44
+    assert raised == [] and len(benign) >= 44  # the 44 original NONE strings plus the WP3b guards
 
 
 def test_tier1_never_missed_on_the_labelled_set():
     """CR-03 §15: 0 missed tier-1 sentences."""
-    emergencies = [c for c in [*SAFETY_CASES, *REGRESSION] if c["expect"] == "EMERGENCY"]
+    emergencies = [c for c in [*SAFETY_CASES, *REGRESSION] if c.get("expect") == "EMERGENCY"]
     missed = [c["id"] for c in emergencies if assess(c["text"], LEX).risk_level != RiskLevel.EMERGENCY]
     print(f"tier-1 missed: {len(missed)}/{len(emergencies)}")
-    assert missed == [] and len(emergencies) == 22
+    assert missed == [] and len(emergencies) >= 22  # the 22 original tier-1 strings plus the WP3b cases
 
 
 # ---------------------------------------------------------------- algorithm details
@@ -469,3 +473,63 @@ def test_safety_blockers_are_not_cleared_by_resume_or_jobs(fresh, clock):
     assert escalated.ticket.status == "VERIFYING" and escalated.ticket.blocker.escalated is True
     assert [n.type for n in escalated.notifications].count("safety.review_escalated") == 1
     assert [n.type for n in escalated.notifications].count("escalation") == 0
+
+
+# ---------------------------------------------------------------- WP3b (R05 N-07, N-09): size, length limit, same-instant addition
+
+
+def test_assess_is_linear_on_a_24kb_text():
+    """R05 N-07 / Q26: 24 KB of repeated signals (one long clause, then many short ones) takes well under 1 s."""
+    long_clause = "Hành lang tầng 3 tòa SIM-A " + "có mùi khét " * 2000
+    many_clauses = "Hành lang tầng 3 tòa SIM-A. " + "Có mùi khét, không có khói. " * 900
+    for text in (long_clause, many_clauses):
+        started = time.perf_counter()
+        result = assess(text, LEX)
+        elapsed = time.perf_counter() - started
+        print(f"assess {len(text)} chars: {elapsed:.3f}s")
+        assert len(text) > 24000 and elapsed < 1.0 and result.risk_level == RiskLevel.EMERGENCY
+
+
+def test_description_length_limit_is_a_validation_error(fresh):
+    """R05 N-07 / Q26: 5000 characters are accepted (and fast); 5001 is a ValidationError (HTTP 422), never truncated."""
+    ok = ("Hành lang tầng 3 tòa SIM-A nhiều rác. " * 200)[:5000]
+    started = time.perf_counter()
+    case = fresh.receive(ok)
+    print(f"receive 5000 chars: {time.perf_counter() - started:.3f}s")
+    assert time.perf_counter() - started < 1.0 and len(case.ticket.raw.original_description) == 5000
+    before = len(fresh.cases)
+    with pytest.raises(ValidationError):
+        fresh.receive(ok + "x")
+    assert len(fresh.cases) == before
+    need_info = fresh.get(report(fresh, "Nhiều rác quá, cần dọn"))
+    with pytest.raises(ValidationError):
+        fresh.add_resident_info(need_info.ticket.ticket_id, RESIDENT, "y" * 5001)
+
+
+def test_tier1_without_location_in_the_engine(fresh):
+    """R05 N-05 / Q08: a fainting person with no building named is still tier 1, not NEED_INFO."""
+    case = fresh.get(report(fresh, "Có người ngất ở sảnh, không rõ tòa nào"))
+    assert (case.ticket.status, case.ticket.blocker.code) == ("VERIFYING", "EMERGENCY_PENDING_BQL")
+
+
+def test_addition_at_the_same_instant_as_the_clearance_is_rescanned(fresh, clock):
+    """R05 N-09 / Q27: `>=`: an addition stamped at the very instant of the clearance is still read by 2b and by `_cleared`."""
+    tid = report(fresh, "Hình như có mùi khét ở hành lang tầng 3 tòa SIM-A.")
+    fresh.safety_request_info(tid, BPTN, note="Hỏi rõ")
+    case = fresh.add_resident_info(tid, RESIDENT, "Có tia lửa ở hộp đèn")  # same clock reading as the question
+    assert (case.ticket.status, case.ticket.blocker.code) == ("VERIFYING", "EMERGENCY_PENDING_BQL")
+    work = fresh.get(report(fresh, TIER1_TEXTS["S-01"])).model_copy(deep=True)
+    now = clock()
+    fresh._set_ticket(
+        work, status="RECEIVED", blocker=None, safety_cleared_by=BPTN, safety_cleared_at=now, safety_clear_reason="ok"
+    )
+    work.additions.append(
+        ResidentAddition(
+            addition_id="SIM-ADD-TEST-9",
+            ticket_id=work.ticket.ticket_id,
+            content="Tia lửa lại xuất hiện.",
+            submitted_by=work.ticket.resident_id,
+            submitted_at=now,
+        )
+    )
+    assert fresh._safety_scope_text(work) == "Tia lửa lại xuất hiện."

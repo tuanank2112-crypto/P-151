@@ -55,3 +55,4 @@
 - WP5 (priority) xong: 313 test pass (nền WP4 292, +21), ruff sạch; PRI-H1/H2/M1/M2/L1/D0, set_priority, queue sort, rate một lần, seed priority; làm đỏ rate-ghi-đè và đảo khoá sắp xếp rồi xanh; nền `8c91c2d`.
 - WP5 ✅ (R04, 313 pass). Đã push nhánh feature/nhuy-cr03-p0 lên origin (yêu cầu người dùng). Tiếp: WP6 thẩm định cô lập.
 - WP6 thẩm định 🔁 (R05): quyền/audit/đồng thời PASS nhưng bỏ sót Bậc 1 (phủ định lan qua dấu phẩy, thiếu từ vựng, ký tự lạ) + DoS O(n²). Kỳ vọng Q24–Q27; phóng WP3b theo H05.
+- WP3b (safety hardening) xong: 352 test pass (nền 313, +39), ruff sạch; 0 bỏ sót Bậc 1 / 0 báo nhầm trên 52 ca Bậc 1 và 46 ca NONE; N-01..N-10 sửa; assess 24 KB < 0,35 s, mô tả > 5000 ký tự => 422; nền `a23a85f`.

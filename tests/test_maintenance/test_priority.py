@@ -169,3 +169,19 @@ def test_priority_never_notifies_and_ignores_risk(fresh):
     case = fresh.get(report(fresh, LIGHTING))
     assert case.ticket.priority == "HIGH"
     assert {n.type for n in case.notifications} <= {"ticket.status_changed", "department.dispatch"}
+
+
+def test_negated_obstruction_is_not_h2():
+    """R05 N-10 / Q27: 'không chắn lối đi, không trơn trượt' does not trigger PRI-H2; the plain wording still does."""
+    where = "Tòa SIM-A / Tầng 3 / Hành lang"
+    negated = "Hành lang tầng 3 tòa SIM-A có nhiều rác, không chắn lối đi, không trơn trượt."
+    proposal = propose_priority(ServiceCategory.VE_SINH, where, negated, LEX)
+    assert proposal.rule_id != "PRI-H2" and proposal.priority != "HIGH"
+    assert proposal.rule_id == "PRI-M2"  # the real impact ("nhiều rác") is kept
+    only_negated = propose_priority(ServiceCategory.VE_SINH, where, "Hành lang không chắn lối đi, không bị trơn.", LEX)
+    assert only_negated.rule_id != "PRI-H2"
+    assert (
+        propose_priority(ServiceCategory.VE_SINH, where, "Hành lang chắn lối đi, trơn trượt.", LEX).rule_id == "PRI-H2"
+    )
+    mixed = propose_priority(ServiceCategory.VE_SINH, where, "Không chắn lối đi nhưng trơn trượt.", LEX)
+    assert mixed.rule_id == "PRI-H2"  # a negation does not cross the conjunction

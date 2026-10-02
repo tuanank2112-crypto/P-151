@@ -1876,7 +1876,7 @@ class MaintenanceEngine:
         if code in SAFETY_REASONS:
             return False  # only a person clears a safety blocker (I-10)
         if code == R.MISSING_INFO:
-            if work.ticket.safety_context and not any(a.submitted_at > blocker.since for a in work.additions):
+            if work.ticket.safety_context and not any(a.submitted_at >= blocker.since for a in work.additions):
                 return False  # nobody answered yet: a job must not call it safe (AC-08)
             return not self._missing_fields(work)
         if code in BPTN_REASONS:
@@ -2004,7 +2004,7 @@ class MaintenanceEngine:
         cleared_at = work.ticket.safety_cleared_at
         if cleared_at is None:
             return self._content(work)
-        return "\n".join(a.content for a in work.additions if a.submitted_at > cleared_at)
+        return "\n".join(a.content for a in work.additions if a.submitted_at >= cleared_at)
 
     def _related_ticket_ids(self, work: Case) -> list[str]:
         """Open tickets at the same location, created earlier and inside the duplicate window (Q11). Link only."""

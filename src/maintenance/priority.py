@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from src.maintenance.catalog import PriorityLexicon, compile_pattern
 from src.maintenance.enums import Priority, ServiceCategory
-from src.maintenance.safety import normalize_with_map
+from src.maintenance.safety import build_context, is_negated
 
 
 @dataclass(frozen=True)
@@ -18,12 +18,12 @@ class PriorityProposal:
     reason: str  # one Vietnamese sentence: the rule and its evidence (area, or the first matching phrase)
 
 
-def _first_match(patterns: tuple[str, ...], norm: str) -> str | None:
-    """The first phrase (in lexicon order) found in the normalised text, as the evidence."""
+def _first_match(patterns: tuple[str, ...], ctx, lexicon: PriorityLexicon) -> str | None:
+    """The first phrase (in lexicon order) found in the text and NOT negated in its own clause, as the evidence."""
     for pattern in patterns:
-        found = compile_pattern(pattern).search(norm)
-        if found:
-            return found.group(0)
+        for found in compile_pattern(pattern).finditer(ctx.norm):
+            if not is_negated(ctx, found.start(), lexicon.negation_prefixes, lexicon.negation_window_words):
+                return found.group(0)
     return None
 
 
@@ -38,11 +38,11 @@ def propose_priority(
         if area in lexicon.high_areas:
             return PriorityProposal(Priority.HIGH, "PRI-H1", f"PRI-H1: đèn tại lối đi chung ({area})")
         return PriorityProposal(Priority.MEDIUM, "PRI-M1", f"PRI-M1: đèn tại khu vực khác ({area})")
-    norm = normalize_with_map(text)[0]
-    evidence = _first_match(lexicon.obstruction_patterns, norm)
+    ctx = build_context(text, lexicon.clause_conjunctions)
+    evidence = _first_match(lexicon.obstruction_patterns, ctx, lexicon)
     if evidence:
         return PriorityProposal(Priority.HIGH, "PRI-H2", f"PRI-H2: cản trở lối đi ('{evidence}')")
-    evidence = _first_match(lexicon.usage_impact_patterns, norm)
+    evidence = _first_match(lexicon.usage_impact_patterns, ctx, lexicon)
     if evidence:
         return PriorityProposal(Priority.MEDIUM, "PRI-M2", f"PRI-M2: ảnh hưởng sử dụng ('{evidence}')")
     return PriorityProposal(Priority.LOW, "PRI-L1", "PRI-L1: chưa ảnh hưởng trực tiếp")

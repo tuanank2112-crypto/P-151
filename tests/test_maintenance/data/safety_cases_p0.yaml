@@ -47,6 +47,42 @@ safety_cases:
   - {id: SC-40, text: "Không có dấu hiệu cháy nổ, chỉ là đèn hành lang tầng 3 tòa SIM-A hỏng.", expect: NONE, absent: [S-05]}
   - {id: SC-41, text: "MÙI  KHÉT!!! Ở HÀNH LANG TẦNG 3 TÒA SIM-A, mọi người ơi", expect: EMERGENCY, signals: [S-01]}   # viết hoa, thừa khoảng trắng/dấu câu
   - {id: SC-42, text: "den tang 3 toa SIM-A co tia lua, ko co khoi", expect: EMERGENCY, signals: [S-02], absent: [S-04]}   # không dấu + viết tắt "ko"
+  # ---- WP3b (R05 / Q25): phủ định, marker, hedge chỉ áp trong CÙNG MỆNH ĐỀ; từ vựng bổ sung; ký tự lạ. expect_any = mức tối thiểu chấp nhận.
+  - {id: SC-43, text: "Hành lang tầng 3 tòa SIM-A không có điện, tia lửa tóe ra.", expect: EMERGENCY, signals: [S-02]}   # N-01
+  - {id: SC-44, text: "Hành lang tầng 3 tòa SIM-A\nKhông thấy đèn sáng\nTia lửa tóe ra", expect: EMERGENCY, signals: [S-02]}   # N-01 xuống dòng
+  - {id: SC-45, text: "Hành lang tầng 3 tòa SIM-A không phải đèn hỏng, khói bốc ra", expect: EMERGENCY, signals: [S-04]}   # N-01
+  - {id: SC-46, text: "Hành lang tầng 3 tòa SIM-A không thấy đèn, mùi khét", expect: EMERGENCY, signals: [S-01]}   # N-01
+  - {id: SC-47, text: "Hành lang tầng 3 tòa SIM-A không bị gì, tia lửa tóe ra", expect: EMERGENCY, signals: [S-02]}   # N-01
+  - {id: SC-48, text: "Hành lang tầng 3 tòa SIM-A\nChưa thấy đèn sáng\nBốc khói", expect: EMERGENCY, signals: [S-04]}   # N-01
+  - {id: SC-49, text: "Đèn không còn sáng, bốc cháy", expect: EMERGENCY, signals: [S-05]}   # N-01
+  - {id: SC-50, text: "Đèn hành lang tầng 3 tòa SIM-A đã tắt, có khói bốc ra từ hộp đèn.", expect: EMERGENCY, signals: [S-04]}   # N-02 marker khác mệnh đề
+  - {id: SC-51, text: "Đèn hành lang tầng 3 tòa SIM-A hỏng hết rồi, có mùi khét.", expect: EMERGENCY, signals: [S-01]}   # N-02
+  - {id: SC-52, text: "Có khói bốc ra từ hộp điện hành lang tầng 3 tòa SIM-A, đã ổn chưa?", expect: EMERGENCY, signals: [S-04]}   # N-02 câu hỏi
+  - {id: SC-53, text: "Hành lang tầng 3 tòa SIM-A nghi là chập, có khói bốc ra", expect: EMERGENCY, signals: [S-04]}   # N-02 hedge khác mệnh đề
+  - {id: SC-54, text: "Hành lang tầng 3 tòa SIM-A có vẻ đèn hỏng, tia lửa tóe ra", expect: EMERGENCY, signals: [S-02]}   # N-02
+  - {id: SC-55, text: "Hành lang tầng 3 tòa SIM-A nước hết rồi và có mùi khét", expect: EMERGENCY, signals: [S-01]}   # N-02 liên từ "và"
+  - {id: SC-56, text: "Đèn hành lang tầng 3 tòa SIM-A nhấp nháy đã ổn định nhưng có tia lửa", expect: EMERGENCY, signals: [S-02]}   # N-02 liên từ "nhưng"
+  - {id: SC-57, text: "Hành lang tầng 3 tòa SIM-A chưa rõ nguyên nhân nhưng có khói bốc ra từ hộp điện.", expect: EMERGENCY, signals: [S-04]}   # N-02
+  - {id: SC-58, text: "Ổ cắm điện cạnh đèn hành lang tầng 3 tòa SIM-A bị cháy đen.", expect_any: [UNCLEAR, EMERGENCY]}   # N-03 B-01 không che thiết bị điện khác
+  - {id: SC-59, text: "Hộp điện cạnh bếp tầng 1 tòa SIM-A có mùi khét.", expect: EMERGENCY, signals: [S-01]}   # N-04 ngữ cảnh điện
+  - {id: SC-60, text: "Dây điện màu nâu ở hành lang tầng 3 tòa SIM-A có mùi khét.", expect: EMERGENCY, signals: [S-01]}   # N-04 nâu khác nấu
+  - {id: SC-61, text: "Dây điện gần nồi chiên có mùi khét tầng 3 tòa SIM-A", expect: EMERGENCY, signals: [S-01]}   # N-04
+  - {id: SC-62, text: "Sảnh tầng 1 tòa SIM-A có bà cụ ngất", expect: EMERGENCY, signals: [S-09]}   # N-05
+  - {id: SC-63, text: "Thang máy tầng 5 tòa SIM-A đang kẹt thang máy có trẻ em", expect: EMERGENCY, signals: [S-09]}   # N-05
+  - {id: SC-64, text: "Hành lang tầng 3 tòa SIM-A có hỏa hoạn", expect: EMERGENCY, signals: [S-05]}   # N-05
+  - {id: SC-65, text: "Hầm xe B1 tòa SIM-A khói mù mịt", expect: EMERGENCY, signals: [S-04]}   # N-05
+  - {id: SC-66, text: "Hầm xe B1 tòa SIM-A thấy lửa bốc lên ở thùng rác", expect: EMERGENCY, signals: [S-05]}   # N-05
+  - {id: SC-67, text: "Hành lang tầng 3 tòa SIM-A dây điện bị hở ra ngoài", expect: EMERGENCY, signals: [S-03]}   # N-05
+  - {id: SC-68, text: "Hành lang tầng 3 tòa SIM-A hở điện ngay chỗ trẻ con hay chơi", expect: EMERGENCY, signals: [S-03]}   # N-05
+  - {id: SC-69, text: "Có người ngất ở sảnh, không rõ tòa nào", expect: EMERGENCY, signals: [S-09]}   # N-05 + Q08 thiếu vị trí
+  - {id: SC-70, text: "Hành lang tầng 3 tòa SIM-A có khóiiiii và mùi khéttttt", expect: EMERGENCY, signals: [S-01, S-04]}   # N-06 kéo dài
+  - {id: SC-71, text: "Hành lang tầng 3 tòa SIM-A có mùi kh​ét", expect: EMERGENCY, signals: [S-01]}   # N-06 zero-width
+  - {id: SC-72, text: "Hành lang tầng 3 tòa SIM-A có ｋｈóｉ", expect: EMERGENCY, signals: [S-04]}   # N-06 fullwidth
+  - {id: SC-73, text: "Hành lang tầng 3 tòa SIM-A không phải không có khói", expect_any: [UNCLEAR, EMERGENCY]}   # N-08 phủ định kép
+  - {id: SC-74, text: "Tủ điện hành lang tầng 3 tòa SIM-A đang bị cháy", expect: EMERGENCY, signals: [S-05]}   # R05 A24
+  - {id: SC-75, text: "Hành lang tầng 3 tòa SIM-A không có khói, không có mùi khét", expect: NONE, absent: [S-04, S-01]}   # giữ phủ định cùng mệnh đề
+  - {id: SC-76, text: "Máy tính xách tay tầng 3 tòa SIM-A tắt đột ngột, ngắt điện cả dãy", expect: NONE}   # 'ngắt' không phải 'ngất'
+
 
 # Mọi chuỗi phản ánh đang dùng trong fixture và test hiện có: chỉ CLN-004 và TEC-005 được phép lên Bậc 1.
 regression_strings:

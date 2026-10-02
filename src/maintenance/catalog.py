@@ -177,6 +177,11 @@ class SafetyLexicon(Frozen):
     ambiguous_terms: tuple[str, ...]
     ambiguous_exclusions: tuple[str, ...]
     khet_benign_contexts: tuple[str, ...]
+    # WP3b (Q25): defaults keep older lexicon files loadable; the shipped lexicon.yaml fills them
+    khet_benign_contexts_accented: tuple[str, ...] = ()  # matched on the lower-cased ORIGINAL text: nấu is not nâu
+    khet_electric_contexts: tuple[str, ...] = ()  # an electrical word in the sentence keeps 'khét' at tier 1 (B-04)
+    non_lamp_electrical: tuple[str, ...] = ()  # sockets, boxes, wires: B-01 (benign lamp) does not cover them
+    clause_conjunctions: tuple[str, ...] = ()  # words that end a clause for negation/hedge/marker (và, nhưng...)
     components: tuple[ComponentDef, ...]
     signals: tuple[SignalDef, ...] = Field(min_length=1)
 
@@ -193,6 +198,9 @@ class SafetyLexicon(Frozen):
             self.ambiguous_terms,
             self.ambiguous_exclusions,
             self.khet_benign_contexts,
+            self.khet_benign_contexts_accented,
+            self.khet_electric_contexts,
+            self.non_lamp_electrical,
         ):
             _check_patterns(group)
         for component in self.components:
@@ -217,11 +225,15 @@ class PriorityLexicon(Frozen):
     high_areas: tuple[str, ...] = Field(min_length=1)  # area labels, exactly as rules.AREA_PATTERNS
     obstruction_patterns: tuple[str, ...] = Field(min_length=1)  # PRI-H2
     usage_impact_patterns: tuple[str, ...] = Field(min_length=1)  # PRI-M2
+    negation_prefixes: tuple[str, ...] = ()  # WP3b (Q27): "không chắn lối đi" does not trigger PRI-H2
+    negation_window_words: int = Field(default=4, ge=1)
+    clause_conjunctions: tuple[str, ...] = ()
 
     @model_validator(mode="after")
     def _compile(self):
         _check_patterns(self.obstruction_patterns)
         _check_patterns(self.usage_impact_patterns)
+        _check_patterns(self.negation_prefixes)
         return self
 
 

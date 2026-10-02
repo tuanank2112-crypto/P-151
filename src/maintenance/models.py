@@ -64,6 +64,7 @@ def _aware(value: datetime) -> datetime:
 
 
 AwareDatetime = Annotated[datetime, AfterValidator(_aware)]
+MAX_DESCRIPTION_CHARS = 5000  # a resident's report or addition: same limit as ChatRequest; keeps step 2b cheap
 Synthetic = Literal[True]
 
 
@@ -151,7 +152,7 @@ class RawTicket(Entity):
 
     ticket_id: str
     created_at: str
-    original_description: str
+    original_description: str = Field(max_length=MAX_DESCRIPTION_CHARS)  # Q26: too long is a 422, never truncated
     original_evidence_refs: tuple[str, ...] = ()
     channel: str = "form"
 
@@ -167,7 +168,7 @@ class ResidentAddition(Entity):
 
     addition_id: Annotated[str, _sim_id("SIM-ADD-")]
     ticket_id: str
-    content: str = Field(min_length=1)
+    content: str = Field(min_length=1, max_length=MAX_DESCRIPTION_CHARS)
     submitted_by: str
     submitted_at: AwareDatetime
 
