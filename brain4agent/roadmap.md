@@ -6,6 +6,8 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [ ] **MVP online 04/10/2026:** engine CR-03 P0 đã xong (xem Done); còn nối router/UI cho 5 method khẩn cấp + `set_priority` (Châm Anh/Trí — gợi ý ở `planning/01_2026-10-01_cr03-p0-engine/specs/00-ARCHITECTURE.md` §4.1), persistence PostgreSQL/Supabase, deploy Render, gpt-4o thật.
 - [ ] **Tích hợp:** rebase/merge nhánh `feature/nhuy-cr03-p0` vào `develop` (Q04; điểm va chạm `engine.py`, `models.py`, `enums.py`), chạy lại G1–G4, G7 trên CI/Render (cột "server" của Exit Gates), rồi bump version app.
 - [ ] **Q22 cho Trường (chủ rules/playbook):** "Bóng đèn … bị cháy" qua 2b ra NONE đúng nhưng `rules.py`/`proposer.py` phân loại `OUT_OF_SCOPE` ⇒ ticket đèn phổ biến nhất dừng chờ BPTN.
+- [ ] Log AI cho BTC: tắt alias Python trên máy Như Ý hoặc merge `_pyrun.sh` của Trí từ `develop` (xem gotchas); kiểm `.ai-log/session.jsonl` có dòng mới.
+- [ ] Đồng bộ chữ `planning/01_.../specs/01-CONTRACTS.md` §5 cho 3 khoá WP3d (`hedge_forms`, `homograph_confirmers`, `coordination_hazard_exclusions`) + nới V-08 (nguồn chân lý hiện là `lexicon.yaml` + SPEC-P01 §0.1).
 - [ ] Trường rà nhãn từ vựng `lexicon.yaml` (từ mới của WP3b–WP3d) và danh sách `khet_electric_contexts`; mọi sửa phải chạy bộ dừng.
 - [ ] Sơ đồ swimlane khớp CR-03 (thay `docs/Activity Diagram.png`): an toàn trước phân loại, phân loại trước trùng (D-09), có Bậc 2 cho BPTN, gộp → `MERGED` kết thúc, Kho, rating.
 

@@ -43,5 +43,7 @@
     },
     "holdout_none": "2/39",
     "assess_24kb_seconds": 0.28
-  }
+  },
+  "last_sync": "2026-10-02T13:09:52.176Z",
+  "next_step": "plan 02: merge origin/develop (12 conflicts) + hand off 6 new engine methods to router/UI"
 }

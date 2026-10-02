@@ -67,3 +67,4 @@
 - WP3d ✅ (R10, 1462 pass, holdout NONE 2/39) ⇒ cổng WP6 đóng ✅ (Q32). Giao H08 đóng hồ sơ + đồng bộ + v1.1.0.
 - H08 đóng hồ sơ 01 (2026-10-02 20:04 +0700): đồng bộ chữ SPEC-P01 (§0.1 WP3d), TESTING (X-2 = 403, §4.3, Exit Gates local ✅ / server ⬜), OPERATIONS (WP3b/c/d/H08), 00-ARCHITECTURE (D14–D16), CR-03 §5.2 + D-10 (Q17); `docs/maintenance.md` mới; não 6 điểm + project-intro + data-architecture; brain `current_version` 1.0.1 → 1.1.0 (KHÔNG đổi version app). Số đo cuối: 1462 test pass, ruff sạch, bộ dừng 1065 ca xanh, holdout NONE 2/39.
 - Hồ sơ 01 ĐÓNG ✅ (R11). Push nhánh feature/nhuy-cr03-p0.
+- Đồng bộ não sau đóng hồ sơ (2026-10-02): thêm gotcha log AI (python3 alias ⇒ .ai-log trống; .env có key), roadmap (log AI, đồng bộ 01-CONTRACTS §5), kernel trạng thái remote/develop.
