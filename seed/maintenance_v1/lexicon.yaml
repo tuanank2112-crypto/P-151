@@ -1,33 +1,28 @@
-# TỪ VỰNG P0 — tầng an toàn + priority (CR-BPTN-03 §6, §7). BẢN CHUẨN: worker WP3 chép NGUYÊN VĂN sang seed/maintenance_v1/lexicon.yaml.
-# Đã đo bằng REF-safety-proto.py trên SAFETY-CASES-P0.yaml: TOTAL=84 BAD=0 TIER1_MISS=0 (2026-10-01). Schema: 01-CONTRACTS.md §5.
-# Mọi pattern khớp trên văn bản ĐÃ CHUẨN HOÁ (chữ thường, bỏ dấu, đ→d, dấu câu trừ .;!? thành khoảng trắng).
-# Pattern là CỤM TỪ THƯỜNG (khớp nguyên cụm, có ranh giới từ) trừ khi bắt đầu bằng "re:" (regex Python thô).
-lexicon_version: "2026-10-01.p0"
+# TỪ VỰNG P0 — tầng an toàn + priority (CR-BPTN-03 §6, §7), bản WP3c (luật R1–R10 của judge, plan.md Q29).
+# NGUỒN CHÂN LÝ dữ liệu: file này (01-CONTRACTS.md §5.0). LEXICON-P0.yaml trong specs/ chỉ còn là lịch sử WP3.
+# Mọi cụm thường (cue, đệm, tập đóng, tiểu từ, token nối, gốc R9) = chữ thường KHÔNG dấu, cách nhau đúng MỘT khoảng trắng.
+# Pattern là cụm thường (khớp nguyên cụm, có ranh giới từ) trừ khi bắt đầu bằng "re:" (regex Python thô).
+# Dạng CÓ dấu (homographs, homograph_intended, tier2_net_roots, benign_lamp_noun_forms) = NFC chữ thường, bỏ dấu ra đúng khoá.
+# Bẫy YAML 1.1: token trần no/yes/on/off/y/n/true/false bị đọc thành bool => phải đặt trong nháy.
+lexicon_version: "2026-10-02.p0c"
 synthetic: true
 
 safety:
   active_phases: [P0]
-  negation_window_words: 4
-  negation_prefixes:
-    - khong co
-    - khong thay
-    - khong he
-    - khong hai
-    - khong con
-    - chua thay
-    - khong ngui thay
-    - khong nghe thay
-    - khong phai
-    - chang co
-    - khong bi
-    - khong co dau hieu
-    - ko co
-    - k co
-    - ko thay
-    - k thay
-    - hok co
-  hedge_window_words: 5
-  hedges:
+  # ---- R1/R3/R4 (phủ định): cue + 0..scope_max_fillers đệm kết thúc ngay trước tín hiệu, trong mệnh đề, cửa sổ <= scope_max_chars
+  scope_max_fillers: 2
+  scope_max_chars: 80
+  negation_prefixes: [khong co, khong thay, khong he, khong hai, khong con, chua thay, khong ngui thay, khong nghe thay,
+                      khong phai, chang co, khong bi, khong co dau hieu, ko co, k co, ko thay, k thay, hok co,
+                      khong phat hien, chang thay,          # Q29 (cue thêm của judge)
+                      khong phai la, chang phai]            # A4: phủ định kép "không phải là không có khói" => UNCLEAR
+  negation_fillers: [co, thay, bi, he, duoc, con]          # R1 (Q29, từng chữ)
+  person_negation_cues: [khong ai, khong co ai, khong thay ai, khong thay nguoi nao, khong co nguoi nao, khong nguoi nao,
+                         chua thay ai, chua co ai, khong co nguoi, khong thay nguoi, khong thay co nguoi]   # R3 (+A4: 5 mục cuối)
+  person_signal_ids: [S-09]
+  coordination_conjunctions: [hay, hoac, lan]               # R4
+  coordination_hazard_tokens: [khoi, lua, khet, chay, "no", xet, ho]   # R4/A3 — "no" PHẢI có nháy (YAML 1.1: no => False)
+  hedges:                    # R5: cue nghi ngờ (cùng luật R1 với đệm riêng)
     - hinh nhu
     - co ve
     - nghe nhu
@@ -42,7 +37,8 @@ safety:
     - khong biet co phai
     - khong ro co phai
     - duong nhu
-  resolved_markers:          # T2-02: sự việc đã xảy ra và đã hết (cùng câu với tín hiệu)
+  hedge_fillers: [co, thay, bi, la, nhu, dang]
+  resolved_markers:          # T2-02: sự việc đã xảy ra và đã hết (đứng SAU tín hiệu, sau nó chỉ còn tiểu từ)
     - gio het roi
     - het roi
     - da het
@@ -53,30 +49,56 @@ safety:
     - gio on roi
     - da on
     - gio da het
-  benign_phrases:            # B-01: cụm lành tính của đèn → NONE, ghi T2-03 ABSENT (rule B-01) kèm trích dẫn
+  final_particles: [roi, a, nhe, nha, thoi, nua, ha, day, luon]
+  resolved_bridge_tokens: [ra, len, xuong, gio, bay, hien, luc, nay, thi, cung, da]   # A2
+  benign_phrases:            # B-01: cụm lành tính của đèn -> NONE, ghi T2-03 ABSENT (rule B-01) kèm trích dẫn
     - "re:\\b(bong|den|bong den|den tuyp|bong tuyp|tuyp)( bi| da| cung| lai)? ?(chay|hong|chap chon|nhap nhay|no)\\b"
     - "re:\\b(chay|no|hong) (bong|den|bong den|tuyp)\\b"
     - chap chon
     - nhap nhay
     - no bong
     - chay bong
-  benign_lamp_nouns:         # B-01 mở rộng: "chay" đứng riêng trong CÂU có danh từ đèn đứng trước → lành tính
-    - bong den
-    - bong tuyp
-    - den tuyp
-    - den led
-    - "re:\\bbong\\b"
-    - "re:\\bden\\b"
-    - "re:\\btuyp\\b"
-    - chieu sang
+  # ---- R6/A1 (B-01): tập đóng tiền tố <= b01_max_prefix_tokens token; danh từ đèn phải là dạng CÓ dấu đã chứng minh
+  benign_lamp_nouns: [bong den, bong tuyp, den tuyp, den led, bong, den, tuyp, chieu sang]
+  benign_lamp_noun_forms: {bong: [bóng], den: [đèn], tuyp: [tuýp, tuyp], chieu: [chiếu], sang: [sáng]}
+  b01_prefix_words: [sanh thang may, sanh chinh, sanh, hanh lang, cau thang bo, cau thang, thang bo, thang may, ham xe, ham,
+                     phong rac, phong, khu vuc, khu, tang, toa, lau, block, sim, o, tai, cua, tren, duoi, trong, ngoai, truoc,
+                     he thong, loi di, loi thoat hiem, nha xe,
+                     bi, da, lai, cung, vua, moi, hay, thi, cai, cac, may, mot, hai, nhung, deu, dang]
+  b01_code_token_regex: "[a-z]?\\d+[a-z]?|[a-z]"
+  b01_max_prefix_tokens: 20
   benign_with_lamp_noun: [chay]
-  ambiguous_terms:           # B-03 / T2-03: đứng riêng (không benign, không có Bậc 1 kèm) → Bậc 2
+  ambiguous_terms:           # B-03 / T2-03: đứng riêng (không benign, không có Bậc 1 kèm) -> Bậc 2
     - "re:\\bchay\\b"
     - "re:\\bchap( dien| mach| chay)?\\b"
     - dien giat
     - giat dien
     - bi giat
     - giat tay
+  # ---- R7: đồng tự theo token CÓ dấu, theo từng pattern
+  homographs:
+    chay: [chảy, chạy]
+    ngat: [ngắt]
+    ho: [hộ, hồ, họ, hổ, hố, hô, hò]
+    khoi: [khối, khỏi, khơi]
+    lua: [lựa, lúa, lừa, lụa]
+    day: [dãy, đầy, dạy, dày, đây, đẩy, dậy, dấy, đày]
+    giat: [giặt]
+  homograph_intended:                                      # judge: 5 mục đầu; A4: pattern chắc nghĩa (gõ sai dấu không làm mất match)
+    chay mau: {chay: [chảy]}
+    nga khong day: {day: [dậy]}
+    khong day duoc: {day: [dậy]}
+    khong dung day duoc: {day: [dậy]}
+    day khoi: {day: [đầy]}
+    tia lua: {lua: [lựa, lúa, lừa, lụa]}
+    toe lua: {lua: [lựa, lúa, lừa, lụa]}
+    xet lua: {lua: [lựa, lúa, lừa, lụa]}
+    ngon lua: {lua: [lựa, lúa, lừa, lụa]}
+    ban tia lua: {lua: [lựa, lúa, lừa, lụa]}
+    phat tia lua: {lua: [lựa, lúa, lừa, lụa]}
+    ngat xiu: {ngat: [ngắt]}
+  # ---- R9: lưới Bậc 2 cho "khói/lửa/máu/bất động" (dạng có dấu) nằm ngoài mọi span
+  tier2_net_roots: {khoi: [khói], lua: [lửa], mau: [máu], bat dong: [bất động]}
   ambiguous_exclusions:      # từ đồng tự không phải rủi ro (chảy nước, ...): bỏ qua, không ghi
     - nuoc chay
     - chay nuoc
@@ -87,7 +109,12 @@ safety:
     - chay dai
     - ro ri chay
     - chay nhua
-  khet_benign_contexts:      # B-04: "khét" trong ngữ cảnh nấu ăn → Bậc 2 (S-01 UNCLEAR)
+    - phong chay                 # R10: "phòng/chữa cháy"
+    - chua chay
+    - khoi thuoc                 # A4: nguồn khói lành tính (R9 coi là span loại trừ)
+    - khoi huong
+    - khoi nhang
+  khet_benign_contexts:      # B-04: "khét" trong ngữ cảnh nấu ăn -> Bậc 2 (S-01 UNCLEAR)
     - com
     - thuc an
     - do an
@@ -98,9 +125,9 @@ safety:
     - banh
     - thit
     - mon an
-  khet_benign_contexts_accented:  # WP3b N-04: matched on the ORIGINAL lower-cased text, so "nâu" (brown) is not "nấu" (cook)
+  khet_benign_contexts_accented:  # B-04: so khớp trên văn bản GỐC chữ thường có dấu, nên "nâu" (màu) không phải "nấu"
     - nấu
-  khet_electric_contexts:     # WP3b N-04: an electrical word in the same sentence keeps "khét" at tier 1
+  khet_electric_contexts:     # B-04: có từ điện trong câu thì "khét" giữ Bậc 1
     - dien
     - o cam
     - cong tac
@@ -109,20 +136,7 @@ safety:
     - day cap
     - may bien ap
     - quat
-  non_lamp_electrical:        # WP3b N-03: B-01 (benign lamp) never covers these devices
-    - o cam
-    - o dien
-    - hop dien
-    - day dien
-    - tu dien
-    - cong tac
-    - cau dao
-    - may bien ap
-    - cap dien
-    - cau chi
-    - dong ho dien
-    - bang dien
-  clause_conjunctions: [va, nhung, ma, roi]   # WP3b N-01/N-02: end a clause for negation, hedge and "already over"
+  clause_conjunctions: [va, nhung, ma, roi]   # ngắt mệnh đề cho phủ định, hedge, marker ("va" bắt buộc)
   components:                # thành phần cho tín hiệu tổ hợp S-14 / T2-05
     - component_id: unknown_substance
       patterns:
@@ -156,14 +170,15 @@ safety:
        patterns: [tia lua, toe lua, xet dien, xet lua, ban tia lua, phat tia lua]}
     - {signal_id: S-03, name: exposed_wire, tier: 1, phase: P0, scope: [KY_THUAT],
        patterns: [day dien ho, day tran, day dut loi ra, lo day, ho day, day dien bi dut, day dien loi ra, day dien dut, loi day dien, day ho,
-                 day dien bi ho, day bi ho, ho dien, dien ho, day dien ho ra]}
+                  day dien bi ho, day bi ho, ho dien, dien ho, day dien ho ra, day dien tran, day dien thong, day dien bi loi, day dien loi]}
     - {signal_id: S-04, name: smoke, tier: 1, phase: P0, scope: [COMMON],
        patterns: [co khoi, boc khoi, khoi bay, khoi den, khoi trang, kem khoi, xi khoi, toa khoi, nhieu khoi, thay khoi, khoi boc, khoi bay ra, mui khoi,
-                 khoi mu, mu khoi, khoi dac, ngap khoi, khoi cuon]}
+                  khoi mu, mu khoi, khoi dac, ngap khoi, khoi cuon, day khoi, con khoi, khoi um, khoi lan, toan khoi, khoi nghi ngut]}
     - {signal_id: S-05, name: fire, tier: 1, phase: P0, scope: [COMMON],
        patterns: [boc chay, dang chay, co lua, chay hop dien, hop dien chay, hop dien boc chay, hop den chay, chay hop den, lua chay, ngon lua, chay lon, chay bung, phat no, chay no, chap chay, bat lua, chay thanh ngon,
-                 hoa hoan, chay nha, dam chay, chay lan, lua boc, thay lua,
-                 "re:\\b(tu dien|o cam|day dien|cong tac|hop dien|cau dao)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b|den\\b|bong\\b|tuyp\\b)\\w+){0,8}(?: (?:dang|bi|da))* chay\\b"]}
+                  hoa hoan, chay nha, dam chay, chay lan, lua boc, thay lua,
+                  "re:\\b(tu dien|o cam|day dien|cong tac|hop dien|cau dao)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b|den\\b|bong\\b|tuyp\\b)\\w+){0,8}(?: (?:dang|bi|da))* chay\\b(?! (cham|lien tuc|suot|thu|on|binh thuong|manh|yeu|ngam|tot|lai))",
+                  lua to, lua bung, lua lan, boc lua, phong lua]}
     - {signal_id: S-06, name: electric_shock, tier: 1, phase: P1, scope: [COMMON],
        patterns: [bi dien giat, dien giat, giat tay khi cham, ro dien, ro ri dien, te dien]}
     - {signal_id: S-07, name: overheat, tier: 1, phase: P1, scope: [KY_THUAT],
@@ -171,9 +186,11 @@ safety:
     - {signal_id: S-08, name: water_in_electrics, tier: 1, phase: P1, scope: [KY_THUAT],
        patterns: [nuoc nho vao hop dien, nuoc vao hop dien, nuoc tran vao o cam, nuoc vao o cam, nuoc vao tu dien, nuoc chay vao hop dien, nuoc nho vao den]}
     - {signal_id: S-09, name: person_hurt_or_trapped, tier: 1, phase: P0, scope: [COMMON],
-       patterns: [bi thuong, chay mau, nga dap dau, ngat xiu, bi ngat, ngat di, bat tinh, mac ket, ket trong, ket nguoi, bi ket, cap cuu, nguoi bi nga, gay chan, gay tay,
-                 "re:\\bngat\\b(?! (dien|cau dao|nguon|mach|may|quang|ket noi|dong))",
-                 bi xiu, xiu di, ket thang may, thang may ket, thang may bi ket]}
+       patterns: [bi thuong, chay mau, nga dap dau, ngat xiu, bi ngat, ngat di, bat tinh, mac ket, ket nguoi, cap cuu, nguoi bi nga, gay chan, gay tay,
+                  "re:\\bngat\\b(?! (dien|cau dao|nguon|mach|may|quang|ket noi|dong|nuoc|den|wifi|mang|he thong|nguong|ngay))",
+                  bi xiu, xiu di, ket thang may,
+                  dot quy, co giat, nga khong day, khong dung day duoc, khong day duoc,
+                  nguoi bi ket, bi ket trong thang may, ket trong thang may, ket ben trong]}
     - {signal_id: S-10, name: gas_smell, tier: 1, phase: P1, scope: [COMMON],
        patterns: [mui gas, mui ga, mui khi dot, ro ri gas, xi gas]}
     - {signal_id: S-11, name: falling_object, tier: 1, phase: P1, scope: [COMMON],
@@ -227,6 +244,9 @@ priority:
     - chat long
     - chat thai
     - boc mui
-  negation_window_words: 4    # WP3b N-10 (Q27): a negated phrase in the same clause does not count
+  # R1 là MỘT luật: bốn khoá dưới PHẢI bằng safety (V-12)
   negation_prefixes: [khong, ko, chang, chua]
+  negation_fillers: [co, thay, bi, he, duoc, con]
+  scope_max_fillers: 2
+  scope_max_chars: 80
   clause_conjunctions: [va, nhung, ma, roi]

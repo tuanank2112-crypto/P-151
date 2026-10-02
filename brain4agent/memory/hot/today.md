@@ -60,3 +60,4 @@
 - Thẩm định lần 2 🔁 (R07): còn bỏ sót Bậc 1 (M1 phủ định lan không dấu câu, M13 B-01, M14 từ vựng) + báo nhầm mới. Fail ×2 ⇒ leo judge (Q28).
 - Judge (Opus) phán Q29: sửa thiết kế phạm vi phủ định/B-01 theo R1–R10, tiêu chí dừng đo được, không bật LLM ở P0. Phóng architect (Opus, không Fable) sửa SPEC-P01 + 01 §5.
 - SPEC sửa đổi (architect Opus) ✅ Q30; phóng WP3c theo H06.
+- WP3c (thiết kế lại phạm vi tầng an toàn R1-R10) xong: 1378 test pass (nền 352, +1026), ruff sạch; bộ dừng 989/989 xanh, D-1..D-7, D-9 đạt (D-8 holdout do SO); assess 24 KB <= 0,28 s; RED-6..10 có cặp đỏ/xanh; nền `c911971`.

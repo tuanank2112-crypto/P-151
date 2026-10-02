@@ -1,0 +1,7 @@
+E       AssertionError: assert <RiskLevel.UNCLEAR: 'UNCLEAR'> == <RiskLevel.EM...: 'EMERGENCY'>
+E         
+E         - EMERGENCY
+E         + UNCLEAR
+FAILED tests/test_maintenance/test_safety.py::test_hedge_adjacent_and_marker_after_signal
+1 failed, 1179 deselected in 0.51s
+EXIT=1

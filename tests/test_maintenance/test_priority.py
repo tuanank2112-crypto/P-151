@@ -185,3 +185,24 @@ def test_negated_obstruction_is_not_h2():
     )
     mixed = propose_priority(ServiceCategory.VE_SINH, where, "Không chắn lối đi nhưng trơn trượt.", LEX)
     assert mixed.rule_id == "PRI-H2"  # a negation does not cross the conjunction
+
+
+def test_priority_uses_shared_scope():
+    """R-08 (WP3c, SPEC-P03 §1.1): priority negation is the safety R1 function itself; the seven documented sentences."""
+    import src.maintenance.priority as priority_module
+    import src.maintenance.safety as safety_module
+
+    assert priority_module.scope_before is safety_module.scope_before
+    where = "Tòa SIM-A / Tầng 3 / Hành lang"
+    table = [
+        ("Rác chưa được dọn chắn hết lối đi", "HIGH", "PRI-H2"),
+        ("Sàn chưa lau nên trơn trượt", "HIGH", "PRI-H2"),
+        ("Không ai dọn rác tràn ra lối đi", "HIGH", "PRI-H2"),
+        ("Hành lang không chắn lối đi, không bị trơn.", "LOW", "PRI-L1"),
+        ("Hành lang tầng 3 tòa SIM-A có nhiều rác, không chắn lối đi, không trơn trượt.", "MEDIUM", "PRI-M2"),
+        ("Không chắn lối đi nhưng sàn trơn trượt", "HIGH", "PRI-H2"),
+        ("Không có rác chắn lối đi", "HIGH", "PRI-H2"),  # known trade-off P3-06: "rác" is the cue's object
+    ]
+    for text, expected_priority, expected_rule in table:
+        proposal = propose_priority(ServiceCategory.VE_SINH, where, text, LEX)
+        assert (proposal.priority, proposal.rule_id) == (expected_priority, expected_rule), text

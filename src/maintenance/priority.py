@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from src.maintenance.catalog import PriorityLexicon, compile_pattern
 from src.maintenance.enums import Priority, ServiceCategory
-from src.maintenance.safety import build_context, is_negated
+from src.maintenance.safety import TextContext, build_context, scope_before
 
 
 @dataclass(frozen=True)
@@ -18,11 +18,23 @@ class PriorityProposal:
     reason: str  # one Vietnamese sentence: the rule and its evidence (area, or the first matching phrase)
 
 
-def _first_match(patterns: tuple[str, ...], ctx, lexicon: PriorityLexicon) -> str | None:
-    """The first phrase (in lexicon order) found in the text and NOT negated in its own clause, as the evidence."""
+def _first_match(patterns: tuple[str, ...], ctx: TextContext, lexicon: PriorityLexicon) -> str | None:
+    """The first phrase (lexicon order, then position) NOT negated by the shared R1 rule, as the evidence.
+
+    A double negation counts as not negated: the phrase stays (priority leans high).
+    """
     for pattern in patterns:
         for found in compile_pattern(pattern).finditer(ctx.norm):
-            if not is_negated(ctx, found.start(), lexicon.negation_prefixes, lexicon.negation_window_words):
+            scope = scope_before(
+                ctx,
+                found.start(),
+                found.start(),
+                lexicon.negation_prefixes,
+                lexicon.negation_fillers,
+                max_fillers=lexicon.scope_max_fillers,
+                max_chars=lexicon.scope_max_chars,
+            )
+            if scope is None or scope.double:
                 return found.group(0)
     return None
 

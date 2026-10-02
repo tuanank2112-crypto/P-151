@@ -9,7 +9,7 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
-from src.maintenance.catalog import FIXTURE_DIR, Lexicon, SafetyReviewSla, load_catalog, load_lexicon
+from src.maintenance.catalog import FIXTURE_DIR, Lexicon, SafetyReviewSla, load_catalog, load_dataset, load_lexicon
 from src.maintenance.engine import MaintenanceEngine, can_route, route_blockers
 from src.maintenance.enums import SAFETY_REASONS, Action, ReasonCode, RiskLevel, SignalStatus
 from src.maintenance.messages import _templates
@@ -135,16 +135,6 @@ def test_tier1_never_missed_on_the_labelled_set():
 # ---------------------------------------------------------------- algorithm details
 
 
-def test_negation_window_is_four_words_same_sentence():
-    """P01 §3.2 B-02: a negation prefix counts only within 4 words before the signal, in the same sentence."""
-    near = assess("Không có ai nói tia lửa.", LEX)
-    assert signal(near, "S-02", SignalStatus.ABSENT).rule_id == "B-02" and near.risk_level == RiskLevel.NONE
-    far = assess("Không có ai nói rằng nghe tia lửa.", LEX)
-    assert signal(far, "S-02", SignalStatus.PRESENT) and far.risk_level == RiskLevel.EMERGENCY
-    other_sentence = assess("Không có gì cả. Có tia lửa ở hộp đèn.", LEX)
-    assert other_sentence.risk_level == RiskLevel.EMERGENCY
-
-
 def test_hedge_only_counts_before_signal():
     """P01 §3.2 T2-01: a hedge after the signal does not lower it (safety first)."""
     before = assess("Hình như có tia lửa ở hộp đèn.", LEX)
@@ -209,7 +199,7 @@ def test_assess_is_pure_and_rejects_instructions_as_data():
 
 # ---------------------------------------------------------------- LLM guard (Q09, I-12)
 
-TEXT_NONE = "Hành lang tầng 3 tòa SIM-A bóng đèn tối, nghe mùi lạ như cao su cháy."
+TEXT_NONE = "Hành lang tầng 3 tòa SIM-A bóng đèn tối, nghe mùi lạ như cao su."
 TEXT_EMERGENCY = "Đèn hành lang tầng 3 tòa SIM-A có mùi khét bốc ra từ hộp đèn."
 
 
@@ -229,8 +219,11 @@ def test_llm_present_needs_grounded_quote():
     """AC-05: an LLM PRESENT with a quote found in the text raises to tier 1; an invented quote only reaches tier 2."""
     rule = assess(TEXT_NONE, LEX)
     assert rule.risk_level == RiskLevel.NONE
-    grounded = merge_llm(rule, judged("S-01", "PRESENT", "mùi lạ như cao su cháy"), TEXT_NONE, LEX)
+    grounded = merge_llm(rule, judged("S-01", "PRESENT", "mùi lạ như cao su"), TEXT_NONE, LEX)
     assert grounded.risk_level == RiskLevel.EMERGENCY and grounded.signals[-1].detected_by == "LLM"
+    # R6: "cao su" is outside the closed prefix, so a burnt rubber smell is tier 2, not a benign lamp (WP3c)
+    burnt = "Hành lang tầng 3 tòa SIM-A bóng đèn tối, nghe mùi lạ như cao su cháy."
+    assert assess(burnt, LEX).risk_level == RiskLevel.UNCLEAR
     invented = merge_llm(rule, judged("S-01", "PRESENT", "có khói đen"), TEXT_NONE, LEX)
     assert invented.risk_level == RiskLevel.UNCLEAR
     no_quote = merge_llm(rule, judged("S-01", "PRESENT"), TEXT_NONE, LEX)
@@ -533,3 +526,308 @@ def test_addition_at_the_same_instant_as_the_clearance_is_rescanned(fresh, clock
         )
     )
     assert fresh._safety_scope_text(work) == "Tia lửa lại xuất hiện."
+
+
+# ---------------------------------------------------------------- WP3c (Q29, SPEC-P01 R1-R10, TESTING §4.1, §11.3)
+
+STOP = yaml.safe_load((Path(__file__).parent / "data" / "safety_stop_sets_p0.yaml").read_text(encoding="utf-8"))
+RANK = {"NONE": 0, "UNCLEAR": 1, "EMERGENCY": 2}
+COMBOS = [
+    (joiner, i, j)
+    for joiner in STOP["generators"]["joiners"]
+    for i in range(1, len(STOP["generators"]["negations"]) + 1)
+    for j in range(1, len(STOP["generators"]["signals"]) + 1)
+]
+
+
+def level(text):
+    return assess(text, LEX).risk_level
+
+
+def sig(result, signal_id, status):
+    return next((s for s in result.signals if s.signal_id == signal_id and s.status == status), None)
+
+
+def triple(result, signal_id, status):
+    found = sig(result, signal_id, status)
+    return (found.rule_id, found.source_quote) if found else None
+
+
+def test_negation_scope_is_cue_plus_two_fillers():
+    """R1 §3.2.1: a negation is a cue plus at most two fillers right before the signal, inside the clause."""
+    result = assess("Không có khói ở hộp đèn.", LEX)
+    assert result.risk_level == RiskLevel.NONE and triple(result, "S-04", SignalStatus.ABSENT) == (
+        "B-02",
+        "Không có khói",
+    )
+    assert triple(assess("Không thấy có khói ở hộp đèn.", LEX), "S-04", SignalStatus.ABSENT)[1] == "Không thấy có khói"
+    assert (
+        level("Không có điện có tia lửa ở hộp đèn.") == RiskLevel.EMERGENCY
+    )  # "điện" is the cue's object, not a filler
+    assert level("Không có ai nói tia lửa.") == RiskLevel.EMERGENCY  # was NONE under the four-word window
+    assert level("Không có gì cả. Có tia lửa ở hộp đèn.") == RiskLevel.EMERGENCY
+    double = assess("Không phải không có khói.", LEX)
+    assert double.risk_level == RiskLevel.UNCLEAR
+    assert triple(double, "S-04", SignalStatus.UNCLEAR) == ("B-02D", "không có khói")
+    assert level("Không phải là không có khói.") == RiskLevel.UNCLEAR
+    assert level("x " * 1000 + "không có khói") == RiskLevel.NONE
+
+
+def test_overlapping_matches_are_judged_once():
+    """R2 §3.3: overlapping matches of one signal merge into one span, judged once."""
+    result = assess("Không có dây điện hở ở hành lang tầng 3 tòa SIM-A.", LEX)
+    assert result.risk_level == RiskLevel.NONE
+    assert [(s.signal_id, s.status, s.rule_id, s.source_quote) for s in result.signals] == [
+        ("S-03", "ABSENT", "B-02", "Không có dây điện hở")
+    ]
+
+
+def test_person_cues_only_for_person_signals():
+    """R3 §3.2.2: cues that carry a person as object apply to S-09 only."""
+    result = assess("Không ai bị thương nhưng kính hành lang tầng 3 tòa SIM-A vỡ.", LEX)
+    assert result.risk_level == RiskLevel.NONE and triple(result, "S-09", SignalStatus.ABSENT) == (
+        "B-02",
+        "Không ai bị thương",
+    )
+    assert level("Không thấy ai có khói bốc ra từ hộp điện.") == RiskLevel.EMERGENCY
+    assert level("Không ai biết có người bị thương.") == RiskLevel.EMERGENCY
+    assert level("Hành lang tầng 3 tòa SIM-A không thấy có người bị ngất") == RiskLevel.NONE
+
+
+def test_negation_inherits_over_hay_hoac_lan_only():
+    """R4 §3.2.3: a negation is inherited across hay/hoặc/lẫn only when the first part is itself a hazard."""
+    text = "Không thấy khói hay tia lửa gì, đèn hành lang tầng 3 tòa SIM-A chỉ không sáng."
+    result = assess(text, LEX)
+    assert result.risk_level == RiskLevel.NONE
+    assert triple(result, "S-02", SignalStatus.ABSENT) == ("B-02", "Không thấy khói hay tia lửa")
+    assert level("Không có khói hoặc tia lửa ở hộp đèn.") == RiskLevel.NONE
+    assert level("Không có điện hay tia lửa ở hộp đèn.") == RiskLevel.EMERGENCY
+    assert level("Không có khói, có tia lửa ở hộp đèn.") == RiskLevel.EMERGENCY
+    assert level("Không có khói và tia lửa ở hộp đèn.") == RiskLevel.EMERGENCY
+
+
+def test_hedge_adjacent_and_marker_after_signal():
+    """R5 §3.2.4-§3.2.5 and A2: a hedge must be adjacent; a marker must follow the signal with only particles after."""
+    hedged = assess("Hình như có mùi khét ở hành lang tầng 3 tòa SIM-A.", LEX)
+    assert triple(hedged, "S-01", SignalStatus.UNCLEAR) == ("T2-01", "Hình như có mùi khét")
+    assert level("Hình như mất điện có khói ở hộp đèn.") == RiskLevel.EMERGENCY
+    over = assess("Hôm qua đèn tầng 2 tòa SIM-B có tia lửa, giờ hết rồi.", LEX)
+    assert triple(over, "S-02", SignalStatus.UNCLEAR) == ("T2-02", "tia lửa, giờ hết rồi")
+    assert level("Có khói bốc ra từ hộp điện, giờ hết rồi") == RiskLevel.UNCLEAR
+    assert level("Có tia lửa tóe ra từ ổ cắm, đèn đã tắt.") == RiskLevel.EMERGENCY  # A2: "đèn" stands between
+    assert level("Có khói bốc ra từ hộp điện hành lang tầng 3 tòa SIM-A, đã ổn chưa?") == RiskLevel.EMERGENCY
+    assert level("Em đã tắt cầu dao tổng có khói bốc ra từ tủ điện") == RiskLevel.EMERGENCY  # marker before the signal
+
+
+def test_b01_closed_prefix_twenty_tokens_and_lamp_accent():
+    """R6 §3.5 and A1: B-01 needs a closed prefix of at most 20 tokens and a proven (accented) lamp noun."""
+    lamp = assess("Bóng đèn hành lang tầng 3 tòa SIM-A bị cháy.", LEX)
+    assert triple(lamp, "T2-03", SignalStatus.ABSENT) == ("B-01", "Bóng đèn hành lang tầng 3 tòa SIM-A bị cháy")
+    assert lamp.risk_level == RiskLevel.NONE
+    assert level("Thùng rác cạnh đèn hành lang tầng 3 tòa SIM-A bị cháy") == RiskLevel.UNCLEAR
+    twenty = "Đèn hành lang tầng 3 tòa SIM-A hành lang tầng 4 tòa SIM-B hành lang tầng 5 bị cháy"
+    assert level(twenty) == RiskLevel.NONE
+    assert level(twenty.replace(" bị cháy", " tòa bị cháy")) == RiskLevel.UNCLEAR  # 21 tokens
+    assert level("Cháy đến tầng 3 tòa SIM-A rồi") == RiskLevel.UNCLEAR
+    assert level("Bông bị cháy ở hành lang") == RiskLevel.UNCLEAR
+    assert level("Bong den hanh lang tang 3 bi chay") == RiskLevel.UNCLEAR  # unaccented lamp noun is not proven (P1-11)
+    nobble = assess("Nổ bóng đèn hành lang tầng 7 tòa SIM-B, cần thay bóng.", LEX)
+    assert triple(nobble, "T2-03", SignalStatus.ABSENT) == ("B-01", "Nổ bóng")
+
+
+def test_homographs_by_accented_token_per_pattern():
+    """R7 §3.3.1: a homograph is judged by its accented token, pattern by pattern; unaccented text keeps the match."""
+    for text in (
+        "Nước chảy lan ra sảnh tầng 1 tòa SIM-A từ ống thoát.",
+        "Cư dân có lựa chọn đỗ xe ở hầm xe B1 tòa SIM-A không?",
+        "Ngắt nước theo lịch ở tòa SIM-A, nhờ thông báo trước.",
+        "Hóa đơn tiền điện hộ gia đình căn 1203 tòa SIM-A bị sai.",
+        "Khối đặc bê tông rơi vãi ở hầm xe B1 tòa SIM-A, nhờ dọn.",
+    ):
+        assert level(text) == RiskLevel.NONE, text
+    for text in (
+        "Có người bị chảy máu ở sảnh tầng 1 tòa SIM-A.",
+        "Hành lang tầng 3 tòa SIM-A đầy khói",
+        "Có tia lừa ở ổ cắm",
+        "Có người ngắt xỉu ở sảnh",
+        "Nuoc chay lan ra sanh",
+    ):
+        assert level(text) == RiskLevel.EMERGENCY, text
+
+
+def test_invisible_characters_two_variants_take_max():
+    """R8 §3.1: invisible characters are read twice (dropped / as a space) and the higher level wins."""
+    for ch in ("​", "­", "﻿", "‍", "‮", "⁠", "͏", "️", "ㅤ", "ᅟ"):
+        text = "có" + ch + "khói bốc ra từ hộp điện"
+        result = assess(text, LEX)
+        assert result.risk_level == RiskLevel.EMERGENCY, repr(ch)
+        assert all(part in text for s in result.signals for part in s.source_quote.split(" | "))
+    assert level("Hành lang có kh​ói bốc ra") == RiskLevel.EMERGENCY
+    for text in (
+        "có​khói bốc ra từ hộp điện",
+        "Hành lang có kh​ói bốc ra",
+        "Hành lang không​có khói",
+        "cóㅤkhói bốc ra",
+        "có͏khói bốc ra",
+    ):
+        dropped = "".join(c for c in text if c not in "​ㅤ͏")
+        spaced = "".join(" " if c in "​ㅤ͏" else c for c in text)
+        expected = max((level(dropped), level(spaced)), key=lambda x: RANK[x])
+        assert level(text) == expected, repr(text)
+
+
+def test_tier2_net_outside_spans():
+    """R9 §3.6.2: an accented 'khói/lửa/máu/bất động' outside every span is a tier-2 net."""
+    smoke = assess("Hành lang tầng 3 tòa SIM-A có tiếng nổ lớn và khói", LEX)
+    assert smoke.risk_level == RiskLevel.UNCLEAR and triple(smoke, "T2-03", SignalStatus.PRESENT) == ("B-03N", "khói")
+    assert triple(assess("Thấy máu ở cầu thang bộ tòa SIM-A", LEX), "T2-03", SignalStatus.PRESENT) == ("B-03N", "máu")
+    assert triple(assess("Có người nằm bất động ở sảnh tầng 1 tòa SIM-A", LEX), "T2-03", SignalStatus.PRESENT) == (
+        "B-03N",
+        "bất động",
+    )
+    assert level("Không có khói hay lửa gì cả.") == RiskLevel.NONE
+    assert level("Khói thuốc lá ở sảnh tầng 1 tòa SIM-A rất khó chịu, nhờ vệ sinh.") == RiskLevel.NONE
+    unaccented = assess("Hanh lang co tieng no lon va khoi", LEX)
+    assert unaccented.risk_level == RiskLevel.UNCLEAR and sig(unaccented, "T2-03", SignalStatus.PRESENT) is None
+
+
+R10_EMERGENCY = [
+    "Hành lang tầng 3 tòa SIM-A đầy khói",
+    "Hành lang tầng 3 tòa SIM-A vẫn còn khói",
+    "Tủ điện hành lang tầng 3 tòa SIM-A khói um",
+    "Khói lan ra hành lang tầng 3 tòa SIM-A",
+    "Hầm xe B1 tòa SIM-A toàn khói",
+    "Lửa to ở hầm xe B1 tòa SIM-A",
+    "Lửa bùng lên ở hầm xe B1 tòa SIM-A",
+    "Lửa lan ra hành lang tầng 3 tòa SIM-A",
+    "Tủ điện bốc lửa ở hành lang tầng 3 tòa SIM-A",
+    "Tủ điện phóng lửa ở hành lang tầng 3 tòa SIM-A",
+    "Có người đột quỵ ở sảnh tầng 1 tòa SIM-A",
+    "Có người co giật ở sảnh tầng 1 tòa SIM-A",
+    "Cư dân té ngã không dậy được ở sảnh tầng 1 tòa SIM-A",
+    "Cụ bà bị ngã không đứng dậy được ở cầu thang bộ tòa SIM-A",
+    "Dây điện trần ở hành lang tầng 3 tòa SIM-A",
+    "Dây điện thòng xuống ở hành lang tầng 3 tòa SIM-A",
+    "Dây điện bị lòi ra ở hành lang tầng 3 tòa SIM-A",
+    "Em bé bị kẹt trong thang máy tầng 5 tòa SIM-A",
+]
+R10_NONE = [
+    "Thang máy tòa SIM-A kẹt cửa bấm mãi không đóng.",
+    "Cửa thang máy kẹt rác ở khe cửa tầng 5 tòa SIM-A.",
+    "Ống rác tầng 5 tòa SIM-A bị kẹt, rác không xuống.",
+    "Cư dân đề nghị tập huấn phòng cháy chữa cháy cho tòa SIM-A.",
+    "Tủ điện tầng 1 tòa SIM-A thang máy chạy chậm.",
+    "Công tắc tự động của máy bơm nước tầng hầm tòa SIM-A chạy liên tục.",
+    "Ngất ngây mùi hoa sữa ở sảnh tầng 1 tòa SIM-A, nhờ cắt tỉa.",
+]
+R10_CASES = (
+    [(f"r10-e{k:02d}", text, "EMERGENCY") for k, text in enumerate(R10_EMERGENCY, 1)]
+    + [(f"r10-n{k:02d}", text, "NONE") for k, text in enumerate(R10_NONE, 1)]
+    + [("r10-x01", "Tu dien tang 1 toa SIM-A thang may chay cham", "NOT_EMERGENCY")]
+)
+
+
+@pytest.mark.parametrize("text,expect", [(c[1], c[2]) for c in R10_CASES], ids=[c[0] for c in R10_CASES])
+def test_lexicon_r10_vocabulary(text, expect):
+    """R10 (01 §5.3): the vocabulary added by the judge ruling, and the sentences it must not catch."""
+    got = level(text)
+    assert (got != RiskLevel.EMERGENCY) if expect == "NOT_EMERGENCY" else (got == expect)
+
+
+def test_lexicon_wp3c_keys_and_validator():
+    """01 §5.4: the shipped lexicon has the WP3c keys; broken variants are ValidationErrors (fail fast)."""
+    lexicon = load_lexicon()
+    safety, priority = lexicon.safety, lexicon.priority
+    assert (safety.scope_max_fillers, safety.scope_max_chars, safety.b01_max_prefix_tokens) == (2, 80, 20)
+    assert safety.negation_fillers == ("co", "thay", "bi", "he", "duoc", "con") and safety.person_signal_ids == (
+        "S-09",
+    )
+    assert sorted(safety.tier2_net_roots) == ["bat dong", "khoi", "lua", "mau"]
+    assert priority.negation_fillers == safety.negation_fillers and lexicon.lexicon_version == "2026-10-02.p0c"
+    assert not hasattr(safety, "non_lamp_electrical") and not hasattr(safety, "negation_window_words")
+    assert (len(safety.signals), sum(s.phase == "P0" for s in safety.signals), len(safety.components)) == (17, 10, 2)
+    data = yaml.safe_load((FIXTURE_DIR / "lexicon.yaml").read_text(encoding="utf-8"))
+    Lexicon.model_validate(data)
+
+    def broken(edit):
+        bad = deepcopy(data)
+        edit(bad)
+        with pytest.raises(ValidationError):
+            Lexicon.model_validate(bad)
+
+    broken(lambda d: d["safety"]["homographs"].__setitem__("chay", ["chả"]))  # "chả" does not fold to "chay"
+    broken(lambda d: d["safety"]["homograph_intended"].__setitem__("khong co pattern nay", {"chay": ["chảy"]}))
+    broken(lambda d: d["safety"]["clause_conjunctions"].remove("va"))
+    broken(lambda d: d["safety"]["negation_prefixes"].append("không có"))  # accented: not a plain phrase
+    broken(lambda d: d["safety"].__setitem__("negation_window_words", 4))
+    broken(lambda d: d["priority"].__setitem__("scope_max_chars", 81))  # priority must share the safety scope (V-12)
+
+
+ADVERSARIAL_24KB = [
+    "Hành lang tầng 3 tòa SIM-A " + "có mùi khét " * 2000,
+    "Bóng đèn " + "đèn cháy " * 2700,
+    "không có khói hay tia lửa " * 1000,
+    "có khói giờ hết rồi " * 1300,
+    "có​khói bốc ra " * 1600,
+    "khói lửa máu bất động " * 1100,
+]
+
+
+def test_assess_is_linear_on_adversarial_24kb_texts():
+    """R10 §3.11: six adversarial texts of at least 24000 characters each take less than one second."""
+    slowest = 0.0
+    for text in ADVERSARIAL_24KB:
+        started = time.perf_counter()
+        assess(text, LEX)
+        elapsed = time.perf_counter() - started
+        slowest = max(slowest, elapsed)
+        assert len(text) >= 24000 and elapsed < 1.0, (len(text), elapsed)
+    print(f"slowest adversarial 24 KB text: {slowest:.3f}s")
+
+
+# ---------------------------------------------------------------- stop sets (TESTING §11.3)
+
+
+@pytest.mark.parametrize("joiner,i,j", COMBOS, ids=[f"{a}-n{b:02d}-s{c:02d}" for a, b, c in COMBOS])
+def test_stop_set_combo_is_emergency(joiner, i, j):
+    """D-3: every negation + joiner + signal combination that is not a real negation stays EMERGENCY."""
+    g = STOP["generators"]
+    text = g["prefix"] + g["negations"][i - 1] + g["joiners"][joiner] + g["signals"][j - 1]
+    assert level(text) == RiskLevel.EMERGENCY, text
+
+
+@pytest.mark.parametrize("key", list(STOP["separators"]["items"]), ids=list(STOP["separators"]["items"]))
+def test_stop_set_separator_is_emergency(key):
+    """D-3: a negation separated from the signal by any of the 40 separators stays EMERGENCY."""
+    s = STOP["separators"]
+    assert level(s["base"] + s["items"][key] + s["tail"]) == RiskLevel.EMERGENCY
+
+
+@pytest.mark.parametrize("case", STOP["labelled"], ids=[c["id"] for c in STOP["labelled"]])
+def test_stop_set_labelled(case):
+    """D-1/D-2: the labelled sets of the two audits (known limitations excluded, TESTING §11.4)."""
+    result = assess(case["text"], LEX)
+    allowed = case.get("expect_any") or [case["expect"]]
+    assert result.risk_level in allowed, (result.risk_level, allowed)
+    assert all(part in case["text"] for s in result.signals for part in s.source_quote.split(" | "))
+
+
+@pytest.mark.parametrize("name", ["b_fp", "b_fp2", "jx_negfp", "fixture"])
+def test_false_alarm_budget(name):
+    """D-4..D-7: ordinary sentences must not be raised above the agreed budget."""
+    if name == "fixture":
+        emergencies = {
+            t.raw.ticket_id for t in load_dataset().tickets if level(t.raw.original_description) == RiskLevel.EMERGENCY
+        }
+        assert emergencies == {"SIM-TKT-CLN-004", "SIM-TKT-TEC-005"}
+        return
+    budget = STOP["budgets"][name]
+    counts = {"EMERGENCY": 0, "UNCLEAR": 0, "NONE": 0}
+    raised = []
+    for text in budget["texts"]:
+        got = str(level(text))
+        counts[got] += 1
+        if got != "NONE":
+            raised.append((got, text))
+    print(name, counts, raised)
+    assert all(counts[k] <= m for k, m in budget["max"].items()), (counts, budget["max"])

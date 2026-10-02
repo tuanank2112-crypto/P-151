@@ -3,8 +3,10 @@
 Pure functions: no IO, no clock, no LLM except `assess_with_llm`. Ticket text is DATA: it is only matched against
 lexicon patterns, so an instruction inside the text has no effect (FR-SECURITY-001, AC-18).
 
-A negation, a hedge or an "already over" marker only counts inside the CLAUSE of the signal it modifies (Q25). Clause
-boundaries are `, ; : . ! ? ( ) —`, a line break and the conjunctions listed in the lexicon (và / nhưng / mà / rồi).
+Scope rules (plan Q29, rules R1-R10): a negation or a hedge is a cue plus at most two filler tokens ending right before
+the signal, inside its clause and within 80 characters; "already over" markers must follow the signal; a benign lamp
+phrase (B-01) is a closed set; homographs are judged by their accented token; invisible characters are read twice.
+Every threshold, cue and closed set comes from the lexicon.
 """
 
 import re
@@ -12,6 +14,7 @@ import unicodedata
 from bisect import bisect_left, bisect_right
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
+from functools import lru_cache
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -21,15 +24,23 @@ from src.maintenance.enums import DetectedBy, RiskLevel, SignalStatus
 from src.maintenance.models import RiskSignal
 
 SEVERITY: dict[SignalStatus, int] = {SignalStatus.ABSENT: 0, SignalStatus.UNCLEAR: 1, SignalStatus.PRESENT: 2}
-LEAD = re.compile(r"^(co|thay|nghe thay|ngui thay|bi) ")  # lead words the negation window absorbs ("khong co khoi")
+LEAD = re.compile(r"^(co|thay|nghe thay|ngui thay|bi) ")  # a span opening with a lead word: the window ends after it
 SOFT_BREAKS = ",:()—–"  # clause breaks that keep a space in `norm`, so a phrase may still match across them
 HARD_BREAKS = ".;!?"  # sentence breaks, kept in `norm`
-WINDOW_CHARS = 200  # a negation/hedge window never needs more than this many characters of context
+HANGUL_FILLERS = frozenset({"ᅟ", "ᅠ", "ㅤ", "ﾠ"})  # R8
+DOWNGRADE_RULES = frozenset({"B-02", "B-02D", "T2-01", "T2-02"})  # rules copied onto T2-05 (§3.4)
+TOKEN = re.compile(r"[a-z0-9]+")
+LETTERS = re.compile(r"[a-z]+")
 
 Span = tuple[int, int]
 
 
-# ---------------------------------------------------------------- 3.1 normalisation with an index map
+# ---------------------------------------------------------------- 3.1 normalisation with an index map (R8)
+
+
+def is_invisible(char: str) -> bool:
+    """R8, checked on the ORIGINAL character: format characters, U+034F, variation selectors, Hangul fillers."""
+    return unicodedata.category(char) == "Cf" or char == "͏" or "︀" <= char <= "️" or char in HANGUL_FILLERS
 
 
 def _fold(char: str) -> str:
@@ -38,11 +49,12 @@ def _fold(char: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFD", low) if unicodedata.category(c) != "Mn")
 
 
-def _normalize(text: str) -> tuple[str, list[int], list[int], list[int]]:
+def _normalize(text: str, invisible_as_space: bool) -> tuple[str, list[int], list[int], list[int]]:
     """Returns (norm, index_map, hard_cuts, soft_cuts). A cut is the index in `norm` where the next segment starts.
 
-    Format characters (zero-width and the like) vanish without a space; a run of 3 or more equal letters becomes one
-    ("khóiiiii" -> "khoi"); `.;!?` and line breaks are hard cuts; `,:()—–` are soft cuts.
+    Variant A (`invisible_as_space=False`): an invisible character vanishes and does not split a word. Variant B: it
+    becomes one space (no clause break). A run of 3 or more equal letters becomes one ("khóiiiii" -> "khoi").
+    `.;!?` and line breaks are hard cuts; `,:()—–` are soft cuts.
     """
     out: list[str] = []
     index: list[int] = []
@@ -51,6 +63,14 @@ def _normalize(text: str) -> tuple[str, list[int], list[int], list[int]]:
     prev_space = True
     run_char, run_len, collapsed = "", 0, False
     for i, char in enumerate(text):
+        if is_invisible(char):
+            if invisible_as_space:
+                if not prev_space:
+                    out.append(" ")
+                    index.append(i)
+                    prev_space = True
+                run_char, run_len, collapsed = "", 0, False
+            continue
         for c in _fold(char):
             if unicodedata.category(c) == "Cf":
                 continue
@@ -98,12 +118,12 @@ def _normalize(text: str) -> tuple[str, list[int], list[int], list[int]]:
     return "".join(out), index, hard, soft
 
 
-def normalize_with_map(text: str) -> tuple[str, list[int]]:
+def normalize_with_map(text: str, *, invisible_as_space: bool = False) -> tuple[str, list[int]]:
     """Lower case, accents stripped, d-stroke to d; punctuation other than `.;!?` becomes one space.
 
     Returns (norm, index_map) where index_map[k] is the index in `text` of the character that produced norm[k].
     """
-    norm, index, _, _ = _normalize(text)
+    norm, index, _, _ = _normalize(text, invisible_as_space)
     return norm, index
 
 
@@ -131,16 +151,9 @@ class TextContext:
     def clause(self, pos: int) -> Span:
         return _span(self.clause_cuts, pos, len(self.norm))
 
-    def words_before(self, pos: int, count: int) -> str:
-        """The `count` words right before `pos`, inside the same clause."""
-        if not count:
-            return ""
-        lo = self.clause(pos)[0]
-        bound = max(lo, pos - WINDOW_CHARS)
-        words = self.norm[bound:pos].split()
-        if bound > lo and self.norm[bound - 1] != " " and words:
-            words = words[1:]  # the first word was cut in the middle
-        return " ".join(words[-count:])
+    def original(self, start: int, end: int) -> str:
+        """R7/R9: the accented source of norm[start:end]: NFC, lower case, whitespace collapsed."""
+        return " ".join(unicodedata.normalize("NFC", quote_of(self.text, self.index, start, end)).lower().split())
 
 
 def _span(cuts: list[int], pos: int, size: int) -> Span:
@@ -148,34 +161,86 @@ def _span(cuts: list[int], pos: int, size: int) -> Span:
     return (cuts[k - 1] if k else 0), (cuts[k] if k < len(cuts) else size)
 
 
-def build_context(text: str, conjunctions: Sequence[str] = ()) -> TextContext:
+def build_context(text: str, conjunctions: Sequence[str] = (), *, invisible_as_space: bool = False) -> TextContext:
     """Normalise once and index the sentence and clause boundaries (no per-match scanning later)."""
-    norm, index, hard, soft = _normalize(text)
-    sentence = sorted(set(hard))
+    norm, index, hard, soft = _normalize(text, invisible_as_space)
     cuts = set(hard) | set(soft)
     if conjunctions:
         conj = re.compile(r"\b(?:" + "|".join(re.escape(c) for c in conjunctions) + r")\b")
         for m in conj.finditer(norm):
             cuts.update((m.start(), m.end()))
-    return TextContext(text, norm, index, sentence, sorted(cuts))
+    return TextContext(text, norm, index, sorted(set(hard)), sorted(cuts))
 
 
-def negation_spans(window: str, prefixes: Sequence[str]) -> list[Span]:
-    """Non-overlapping negation phrases found in `window` (the longest wins where two overlap)."""
-    found = sorted(
-        (m.span() for prefix in prefixes for m in compile_pattern(prefix).finditer(window)),
-        key=lambda s: (s[0], s[0] - s[1]),
+# ---------------------------------------------------------------- R1: ONE scope rule shared with priority
+
+
+@dataclass(frozen=True)
+class Scope:
+    cue_start: int  # position in norm of the first letter of the cue (start of the quote)
+    double: bool  # R1: another cue (+ 0..max_fillers fillers) ends right before this cue: a double negation
+
+
+def _alt(values: Sequence[str]) -> str:
+    return "|".join(re.escape(v) for v in sorted(set(values), key=len, reverse=True))
+
+
+@lru_cache(maxsize=256)
+def _scope_regex(cues: tuple[str, ...], fillers: tuple[str, ...], max_fillers: int) -> re.Pattern[str]:
+    pad = rf"(?:\s(?:{_alt(fillers)})){{0,{max_fillers}}}" if fillers and max_fillers > 0 else ""
+    return re.compile(rf"(?:^|(?<=\s))(?P<cue>{_alt(cues)}){pad}\s*$")
+
+
+@lru_cache(maxsize=256)
+def _coordination_regex(
+    cues: tuple[str, ...], fillers: tuple[str, ...], max_fillers: int, conjunctions: tuple[str, ...]
+) -> re.Pattern[str]:
+    pad = rf"(?:\s(?:{_alt(fillers)})){{0,{max_fillers}}}" if fillers and max_fillers > 0 else ""
+    tail = rf"(?:\s(?:{_alt(fillers)}))?" if fillers else ""
+    return re.compile(
+        rf"(?:^|(?<=\s))(?P<cue>{_alt(cues)}){pad}(?P<x>(?:\s[a-z0-9]+){{1,3}})\s(?:{_alt(conjunctions)}){tail}\s*$"
     )
-    kept: list[Span] = []
-    for start, end in found:
-        if not kept or start >= kept[-1][1]:
-            kept.append((start, end))
-    return kept
 
 
-def is_negated(ctx: TextContext, start: int, prefixes: Sequence[str], window_words: int) -> bool:
-    """A negation phrase within `window_words` words before `start`, in the same clause (used by priority too)."""
-    return bool(negation_spans(ctx.words_before(start, window_words), prefixes))
+def _window(ctx: TextContext, start: int, hi: int, max_chars: int) -> tuple[int, str]:
+    """The text a cue is looked for in: inside the clause of `start`, at most `max_chars` before `hi`."""
+    lo = max(ctx.clause(start)[0], hi - max_chars)
+    if lo > ctx.clause(start)[0] and lo > 0 and ctx.norm[lo - 1] != " ":
+        space = ctx.norm.find(" ", lo, hi)  # never start in the middle of a word
+        lo = hi if space < 0 else space + 1
+    return lo, ctx.norm[lo:hi]
+
+
+def scope_before(
+    ctx: TextContext,
+    start: int,
+    hi: int,
+    cues: Sequence[str],
+    fillers: Sequence[str],
+    *,
+    max_fillers: int,
+    max_chars: int,
+) -> Scope | None:
+    """R1: a cue plus 0..max_fillers filler tokens ending right before `hi`, in the clause of `start`, within
+    `max_chars`. Used by safety (negation, hedge) and by priority: one rule, one function."""
+    lo, window = _window(ctx, start, hi, max_chars)
+    regex = _scope_regex(tuple(cues), tuple(fillers), max_fillers)
+    found = regex.search(window)
+    if found is None:
+        return None
+    before = window[: found.start("cue")]
+    return Scope(lo + found.start("cue"), bool(before.strip()) and regex.search(before) is not None)
+
+
+def merge_spans(spans: Sequence[Span]) -> list[Span]:
+    """R2: overlapping spans of one signal become one; spans that only touch stay apart."""
+    merged: list[Span] = []
+    for start, end in sorted(spans):
+        if merged and start < merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+        else:
+            merged.append((start, end))
+    return merged
 
 
 # ---------------------------------------------------------------- result types
@@ -223,27 +288,37 @@ def _any_in(starts: list[int], lo: int, hi: int) -> bool:
     return k < len(starts) and starts[k] < hi
 
 
+# ---------------------------------------------------------------- lookups computed once per text and variant
+
+
 class _Lookups:
-    """Everything `_judge` and `assess` ask about positions, computed once per text."""
+    """Everything `_judge` and `assess` ask about positions, computed once per text and per R8 variant."""
 
     def __init__(self, ctx: TextContext, lexicon: SafetyLexicon):
         norm = ctx.norm
         self.ctx = ctx
         self.lexicon = lexicon
+        self.max_fillers = lexicon.scope_max_fillers
+        self.max_chars = lexicon.scope_max_chars
+        self.particles = frozenset(lexicon.final_particles)
+        self.bridge = frozenset(lexicon.resolved_bridge_tokens)
         self.markers = sorted(m.span() for m in _matches(lexicon.resolved_markers, norm))
-        self.marker_starts = [s for s, _ in self.markers]
-        self.gio_markers = [(s, e) for s, e in self.markers if norm[s:e].startswith("gio ")]
-        self.gio_starts = [s for s, _ in self.gio_markers]
+        self._valid_markers: dict[int, list[Span]] = {}
         self.cooking = _starts([m.span() for m in _matches(lexicon.khet_benign_contexts, norm)])
         self.electric = _starts([m.span() for m in _matches(lexicon.khet_electric_contexts, norm)])
-        self.non_lamp = _starts([m.span() for m in _matches(lexicon.non_lamp_electrical, norm)])
         raw = unicodedata.normalize("NFC", ctx.text).lower()
         self.cooking_raw = sorted(
             m.start() for p in lexicon.khet_benign_contexts_accented for m in compile_pattern(p).finditer(raw)
         )
-        self.raw_offset = 0 if len(raw) == len(ctx.text) else None  # raw positions only usable when NFC kept lengths
-        self.lamp_nouns = sorted(m.span() for m in _matches(lexicon.benign_lamp_nouns, norm))
+        self.raw_aligned = len(raw) == len(ctx.text)  # raw positions only usable when NFC kept the lengths
+        self.token_starts = [m.start() for m in TOKEN.finditer(norm)]
+        self.lamp_re = re.compile(r"\b(?:" + _alt(lexicon.benign_lamp_nouns) + r")\b")
+        self.phrases = {tuple(p.split()) for p in (*lexicon.benign_lamp_nouns, *lexicon.b01_prefix_words)}
+        self.longest = max((len(p) for p in self.phrases), default=1)
+        self.code_re = re.compile(lexicon.b01_code_token_regex)
+        self.person = frozenset(lexicon.person_signal_ids)
 
+    # -- B-04 ----------------------------------------------------------------------------------------------
     def cooking_context(self, sentence: Span) -> bool:
         """B-04: a cooking word in the sentence and no electrical word: 'khét' near food, not near a wire."""
         s0, s1 = sentence
@@ -251,88 +326,187 @@ class _Lookups:
             return False
         if _any_in(self.cooking, s0, s1):
             return True
-        if self.raw_offset is not None and self.ctx.index and s1 > s0:
+        if self.raw_aligned and self.ctx.index and s1 > s0:
             return _any_in(self.cooking_raw, self.ctx.index[s0], self.ctx.index[s1 - 1] + 1)
         return False
 
+    # -- R5 markers ----------------------------------------------------------------------------------------
+    def valid_markers(self, sentence: Span) -> list[Span]:
+        """Markers of the sentence after which only final particles remain (computed once per sentence)."""
+        s0, s1 = sentence
+        if s0 not in self._valid_markers:
+            inside = [(a, b) for a, b in self.markers if s0 <= a < s1]
+            tail = s0
+            if inside:  # end of the last token of the sentence that is not a final particle
+                for token in reversed(list(TOKEN.finditer(self.ctx.norm, s0, s1))):
+                    if token.group(0) not in self.particles:
+                        tail = token.end()
+                        break
+            self._valid_markers[s0] = [(a, b) for a, b in inside if b >= tail]
+        return self._valid_markers[s0]
 
-# ---------------------------------------------------------------- 3.2 judging one match
+    # -- R7 ------------------------------------------------------------------------------------------------
+    def homograph_dropped(self, start: int, end: int, pattern: str) -> bool:
+        """R7: a match whose accented token is a known non-risk homograph is dropped, unless the pattern means it."""
+        homographs = self.lexicon.homographs
+        intended = self.lexicon.homograph_intended.get(pattern, {})
+        for token in LETTERS.finditer(self.ctx.norm, start, end):
+            forms = homographs.get(token.group(0))
+            if forms:
+                original = self.ctx.original(token.start(), token.end())
+                if original in forms and original not in intended.get(token.group(0), ()):
+                    return True
+        return False
 
 
-def _judge(lk: _Lookups, match: re.Match[str]):
-    """Status of one signal match. Priority: B-02 negation > T2-01 hedge > T2-02 resolved > PRESENT.
+# ---------------------------------------------------------------- 3.2 judging one span
 
-    Negation, hedge and 'already over' only count in the clause of the signal (Q25). Returns (status, quote, rule_id).
+
+def _negation(lk: _Lookups, start: int, hi: int, signal_id: str) -> Scope | None:
+    """R1 + R3 (generic cues, plus person cues for person signals), then R4 (hay/hoặc/lẫn)."""
+    lexicon, ctx = lk.lexicon, lk.ctx
+    cues = lexicon.negation_prefixes
+    if signal_id in lk.person:
+        cues = (*cues, *lexicon.person_negation_cues)
+    found = scope_before(
+        ctx, start, hi, cues, lexicon.negation_fillers, max_fillers=lk.max_fillers, max_chars=lk.max_chars
+    )
+    if found is not None:
+        return found
+    lo, window = _window(ctx, start, hi, lk.max_chars)
+    regex = _coordination_regex(
+        tuple(cues), tuple(lexicon.negation_fillers), lk.max_fillers, tuple(lexicon.coordination_conjunctions)
+    )
+    m = regex.search(window)
+    if m is None:
+        return None
+    hazard = set(lexicon.coordination_hazard_tokens)
+    base = lo + m.start("x")
+    for token in TOKEN.finditer(m.group("x")):
+        if token.group(0) in hazard:
+            a, b = base + token.start(), base + token.end()
+            if ctx.original(a, b) not in lexicon.homographs.get(token.group(0), ()):
+                before = window[: m.start("cue")]
+                regex1 = _scope_regex(tuple(cues), tuple(lexicon.negation_fillers), lk.max_fillers)
+                return Scope(lo + m.start("cue"), bool(before.strip()) and regex1.search(before) is not None)
+    return None
+
+
+def _judge(lk: _Lookups, start: int, end: int, signal_id: str = ""):
+    """Status of one span. Order: B-02 (R1/R3/R4) > T2-01 (R5 hedge) > T2-02 (R5 marker) > PRESENT.
+
+    Returns (status, quote, rule_id or None).
     """
     ctx, lexicon = lk.ctx, lk.lexicon
     norm, index, text = ctx.norm, ctx.index, ctx.text
-    start, end = match.start(), match.end()
-    c0, c1 = ctx.clause(start)
     lead = LEAD.match(norm[start:end])
-    probe_end = start + lead.end() - 1 if lead else start  # "khong co khoi": the window absorbs the lead word
-    window = ctx.words_before(probe_end, lexicon.negation_window_words)
-    if lead:
-        window = (window + " " + norm[start:probe_end]).strip()
-    negations = negation_spans(window, lexicon.negation_prefixes)
-    if negations:
-        first = norm.rfind(window[negations[0][0] : negations[0][1]], c0, end)
-        quote = quote_of(text, index, first if first >= 0 else start, end)
-        if len(negations) >= 2:  # "không phải không có khói": a double negation is not a clear absence
+    hi = start + lead.end() - 1 if lead else start  # "khong co khoi": the window ends after the lead word
+    negated = _negation(lk, start, hi, signal_id)
+    if negated is not None:
+        quote = quote_of(text, index, negated.cue_start, end)
+        if negated.double:  # "không phải không có khói": a double negation is not a clear absence
             return SignalStatus.UNCLEAR, quote, "B-02D"
         return SignalStatus.ABSENT, quote, "B-02"
-    hedge_window = ctx.words_before(start, lexicon.hedge_window_words)
-    for hedge in lexicon.hedges:
-        found = compile_pattern(hedge).search(hedge_window)
-        if found:
-            quote_start = norm.rfind(found.group(0), c0, start)
-            return SignalStatus.UNCLEAR, quote_of(text, index, quote_start if quote_start >= 0 else start, end), "T2-01"
-    s0, s1 = ctx.sentence(start)
-    k = bisect_left(lk.marker_starts, c0)
-    if k < len(lk.markers) and lk.markers[k][0] < c1:  # an "already over" phrase in the same clause
-        m0, m1 = lk.markers[k]
-        if m0 >= start:
-            return SignalStatus.UNCLEAR, quote_of(text, index, start, m1), "T2-02"
-        return SignalStatus.UNCLEAR, quote_of(text, index, m0, end), "T2-02"
-    g = bisect_left(lk.gio_starts, c1)  # "..., giờ hết rồi": an explicit "now" in the next clause of the sentence
-    if g < len(lk.gio_markers) and lk.gio_markers[g][0] < s1:
-        return SignalStatus.UNCLEAR, quote_of(text, index, start, lk.gio_markers[g][1]), "T2-02"
+    hedge = scope_before(
+        ctx, start, hi, lexicon.hedges, lexicon.hedge_fillers, max_fillers=lk.max_fillers, max_chars=lk.max_chars
+    )
+    if hedge is not None:
+        return SignalStatus.UNCLEAR, quote_of(text, index, hedge.cue_start, end), "T2-01"
+    sentence = ctx.sentence(start)
+    for m0, m1 in lk.valid_markers(sentence):
+        if end <= m0 < sentence[1]:
+            gap = norm[max(end, ctx.clause(m0)[0]) : m0]
+            if len(gap) <= lk.max_chars and all(t in lk.bridge for t in gap.split()):  # A2: no subject in between
+                return SignalStatus.UNCLEAR, quote_of(text, index, start, m1), "T2-02"
     return SignalStatus.PRESENT, quote_of(text, index, start, end), None
+
+
+# ---------------------------------------------------------------- 3.5 B-01 benign lamp phrases (R6, A1)
+
+
+def _closed_prefix(lk: _Lookups, c0: int, p: int) -> bool:
+    """R6(a)(b): the tokens of norm[c0:p] are at most N and decompose into the closed set of phrases and codes."""
+    count = bisect_left(lk.token_starts, p) - bisect_left(lk.token_starts, c0)
+    if count > lk.lexicon.b01_max_prefix_tokens:
+        return False
+    tokens = lk.ctx.norm[c0:p].split()
+    reach = [False] * (len(tokens) + 1)
+    reach[0] = True
+    for i in range(len(tokens)):
+        if not reach[i]:
+            continue
+        if lk.code_re.fullmatch(tokens[i]):
+            reach[i + 1] = True
+        for length in range(1, min(lk.longest, len(tokens) - i) + 1):
+            if tuple(tokens[i : i + length]) in lk.phrases:
+                reach[i + length] = True
+    return reach[len(tokens)]
+
+
+def _proven_lamp(lk: _Lookups, match: re.Match[str]) -> bool:
+    """A1: every token of the lamp noun that has accented forms is written with one of them."""
+    forms = lk.lexicon.benign_lamp_noun_forms
+    for token in TOKEN.finditer(match.group(0)):
+        accepted = forms.get(token.group(0))
+        if accepted and lk.ctx.original(match.start() + token.start(), match.start() + token.end()) not in accepted:
+            return False
+    return True
+
+
+def _b01_ok(lk: _Lookups, c0: int, p: int, e: int) -> bool:
+    """R6: candidate [p, e) in the clause starting at c0 is a benign lamp phrase."""
+    if not _closed_prefix(lk, c0, p):
+        return False
+    norm = lk.ctx.norm
+    if any(_proven_lamp(lk, m) for m in lk.lamp_re.finditer(norm, c0, e)):
+        return True
+    after = e + 1 if e < len(norm) and norm[e] == " " else e
+    following = lk.lamp_re.match(norm, after)
+    return following is not None and _proven_lamp(lk, following)
 
 
 # ---------------------------------------------------------------- 3 assess
 
 
-def assess(text: str, lexicon: SafetyLexicon) -> SafetyAssessment:
-    """Deterministic rule assessment of `text` against `lexicon` (SPEC-P01 §3, Q25, Q26)."""
-    ctx = build_context(text, lexicon.clause_conjunctions)
-    norm, index = ctx.norm, ctx.index
+def _assess_hits(text: str, lexicon: SafetyLexicon, invisible_as_space: bool) -> list[_Hit]:
+    """§3.0: the whole sequence for ONE R8 variant."""
+    ctx = build_context(text, lexicon.clause_conjunctions, invisible_as_space=invisible_as_space)
+    norm = ctx.norm
     if not norm.strip():
-        return SafetyAssessment(RiskLevel.NONE, ())
+        return []
     lk = _Lookups(ctx, lexicon)
     hits: list[_Hit] = []
-    tier1 = _Coverage(len(norm))
     excluded = _Coverage(len(norm))
     for m in _matches(lexicon.ambiguous_exclusions, norm):
         excluded.add(*m.span())
-    # B-01 benign phrases: not when another electrical device (socket, box, wire...) is in the same clause (Q25.3)
-    benign_spans = [
-        m.span() for m in _matches(lexicon.benign_phrases, norm) if not _any_in(lk.non_lamp, *ctx.clause(m.start()))
-    ]
+    benign_spans = []
+    for m in _matches(lexicon.benign_phrases, norm):
+        c0 = ctx.clause(m.start())[0]
+        if _b01_ok(lk, c0, m.start(), m.end()):
+            benign_spans.append(m.span())
     benign = _Coverage(len(norm))
     for span in benign_spans:
         benign.add(*span)
+    tier1 = _Coverage(len(norm))
+    anysig = _Coverage(len(norm))
     active = [s for s in lexicon.signals if s.phase in lexicon.active_phases]
 
-    # 3.3 pattern signals
+    # 3.3 pattern signals: R7 drops homographs per pattern, R2 merges overlaps, then one verdict per span
     for signal in active:
-        for match in _matches(signal.patterns, norm):
-            status, quote, rule = _judge(lk, match)
+        raw: list[Span] = []
+        for pattern in signal.patterns:
+            for m in compile_pattern(pattern).finditer(norm):
+                if not lk.homograph_dropped(m.start(), m.end(), pattern):
+                    raw.append(m.span())
+        for a, b in merge_spans(raw):
+            anysig.add(a, b)
+            status, quote, rule = _judge(lk, a, b, signal.signal_id)
             rule_id = rule or signal.signal_id
             if signal.signal_id == "S-01" and status == SignalStatus.PRESENT:  # B-04
-                if lk.cooking_context(ctx.sentence(match.start())):
+                if lk.cooking_context(ctx.sentence(a)):
                     status, rule_id = SignalStatus.UNCLEAR, "B-04"
             if signal.tier == 1 and status == SignalStatus.PRESENT:
-                tier1.add(*match.span())
+                tier1.add(a, b)
             hits.append(_Hit(signal.signal_id, status, quote, rule_id))
 
     # 3.4 components and combinations (S-14 / T2-05)
@@ -340,7 +514,7 @@ def assess(text: str, lexicon: SafetyLexicon) -> SafetyAssessment:
     for component in lexicon.components:
         best: tuple[SignalStatus, str, str] | None = None
         for match in _matches(component.patterns, norm):
-            status, quote, rule = _judge(lk, match)
+            status, quote, rule = _judge(lk, match.start(), match.end())
             if best is None or SEVERITY[status] > SEVERITY[best[0]]:
                 best = (status, quote, rule or component.component_id)
         if best:
@@ -359,32 +533,54 @@ def assess(text: str, lexicon: SafetyLexicon) -> SafetyAssessment:
             present = [p for p in found if p is not None]
             if present and any(p[0] != SignalStatus.ABSENT for p in present):
                 top = max(present, key=lambda p: SEVERITY[p[0]])
-                rule_id = top[2] if top[2] in ("B-02", "B-02D", "T2-01", "T2-02") else signal.signal_id
+                rule_id = top[2] if top[2] in DOWNGRADE_RULES else signal.signal_id
                 hits.append(_Hit(signal.signal_id, top[0], top[1], rule_id))
 
-    # 3.5 B-01 benign phrases: recorded for traceability, one record per span
+    # 3.5.3 B-01 records, one per span
     seen: set[Span] = set()
     for span in benign_spans:
         if span not in seen and not tier1.inside(*span):
             seen.add(span)
-            hits.append(_Hit("T2-03", SignalStatus.ABSENT, quote_of(text, index, *span), "B-01"))
+            hits.append(_Hit("T2-03", SignalStatus.ABSENT, quote_of(ctx.text, ctx.index, *span), "B-01"))
 
-    # 3.6 ambiguous terms (B-03 -> T2-03)
-    for match in _matches(lexicon.ambiguous_terms, norm):
-        a, b = match.span()
-        if tier1.inside(a, b) or excluded.inside(a, b) or benign.inside(a, b):
-            continue
-        if match.group(0) in lexicon.benign_with_lamp_noun and not _any_in(lk.non_lamp, *ctx.clause(a)):
-            sentence_start = ctx.sentence(a)[0]
-            j = bisect_left(lk.lamp_nouns, (sentence_start, 0))
-            while j < len(lk.lamp_nouns) and lk.lamp_nouns[j][0] < a and lk.lamp_nouns[j][1] > a:
-                j += 1
-            if j < len(lk.lamp_nouns) and lk.lamp_nouns[j][0] < a:  # "Bong den ... bi chay": benign (B-01)
-                hits.append(_Hit("T2-03", SignalStatus.ABSENT, quote_of(text, index, lk.lamp_nouns[j][0], b), "B-01"))
+    # 3.6.1 ambiguous terms (B-03 -> T2-03)
+    for pattern in lexicon.ambiguous_terms:
+        for match in compile_pattern(pattern).finditer(norm):
+            a, b = match.span()
+            if tier1.inside(a, b) or excluded.inside(a, b) or benign.inside(a, b):
                 continue
-        status, quote, rule = _judge(lk, match)
-        hits.append(_Hit("T2-03", status, quote, rule or "B-03"))
+            if lk.homograph_dropped(a, b, pattern):
+                continue
+            c0 = ctx.clause(a)[0]
+            if match.group(0) in lexicon.benign_with_lamp_noun and _b01_ok(lk, c0, a, b):
+                q0 = c0 + (1 if norm[c0 : c0 + 1] == " " else 0)
+                hits.append(_Hit("T2-03", SignalStatus.ABSENT, quote_of(ctx.text, ctx.index, q0, b), "B-01"))
+                continue
+            status, quote, rule = _judge(lk, a, b)
+            hits.append(_Hit("T2-03", status, quote, rule or "B-03"))
 
+    # 3.6.2 R9: accented "khói / lửa / máu / bất động" outside every span is a tier-2 net
+    for root, forms in lexicon.tier2_net_roots.items():
+        for match in compile_pattern(root).finditer(norm):
+            a, b = match.span()
+            if any(c.inside(a, b) for c in (tier1, excluded, benign, anysig)):
+                continue
+            if ctx.original(a, b) not in forms:
+                continue
+            status, quote, rule = _judge(lk, a, b)
+            hits.append(_Hit("T2-03", status, quote, rule or "B-03N"))
+    return hits
+
+
+def assess(text: str, lexicon: SafetyLexicon) -> SafetyAssessment:
+    """Deterministic rule assessment of `text` against `lexicon` (SPEC-P01 §3, rules R1-R10).
+
+    R8: the text is read once with invisible characters dropped and, if it has any, once with them as spaces; the
+    records of both readings are merged, so the level is the higher of the two.
+    """
+    hits = _assess_hits(text, lexicon, False)
+    if any(is_invisible(c) for c in text):
+        hits += _assess_hits(text, lexicon, True)
     signals = _dedupe(hits)
     return SafetyAssessment(derive_risk_level(signals, lexicon), signals)
 
