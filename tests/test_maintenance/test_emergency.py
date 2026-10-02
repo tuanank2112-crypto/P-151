@@ -69,6 +69,7 @@ def test_bptn_confirm_safe_resumes_pipeline(fresh):
     assert count(case, Action.SAFETY_CONFIRM_SAFE) == 1 and count(case, Action.ASSESS_SAFETY) == 1
     lamp = fresh.safety_confirm_safe(report(fresh, TIER2_LAMP), BPTN, note="Đã gọi cư dân, mùi sơn")
     assert lamp.ticket.status == "ROUTED" and lamp.ticket.department_id == "DEPT_TECHNICAL"
+    assert (lamp.ticket.priority, lamp.ticket.priority_rule_id) == ("HIGH", "PRI-H1")
     assert lamp.ticket.risk_level == RiskLevel.NONE
 
 
@@ -251,6 +252,9 @@ def test_bptn_resolve_rejects_safety_blockers(engine, fresh):
     with pytest.raises(ActionDeniedError):
         engine.attempt(TEC005, BPTN, Action.EDIT_RAW, field_name="original_description", new_value="x", reason="t")
     assert last_audit(engine, TEC005).action_result == "ACTION_DENIED"
+    with pytest.raises(ActionDeniedError):
+        engine.set_priority(TEC005, BPTN, "HIGH", note="x")
+    assert last_audit(engine, TEC005).action_result == "ACTION_DENIED" and engine.get(TEC005).ticket.priority is None
     tid = report(fresh, TIER2)
     with pytest.raises(GuardError):
         fresh.bptn_resolve(tid, BPTN, note="x")

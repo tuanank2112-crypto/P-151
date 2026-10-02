@@ -5,7 +5,7 @@ assignee_id, staff, materials, retries, escalation) cannot leak through a new mo
 """
 
 from collections.abc import Iterable
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Literal
 
 from pydantic import BaseModel
@@ -35,9 +35,10 @@ PRIORITY_RANK: dict[Priority | None, int] = {Priority.HIGH: 0, Priority.MEDIUM: 
 
 def _created_key(created_at: str) -> str:
     try:
-        return datetime.fromisoformat(created_at).isoformat()  # normalised offset
+        parsed = datetime.fromisoformat(created_at)
     except ValueError:
         return created_at
+    return parsed.astimezone(UTC).isoformat() if parsed.tzinfo else created_at
 
 
 def queue_sort_key(ticket: Ticket) -> tuple[int, int, str, str]:

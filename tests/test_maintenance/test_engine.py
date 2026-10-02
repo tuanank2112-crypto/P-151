@@ -514,8 +514,8 @@ def test_p0_contract_ticket_cross_field_validators(fresh):
     assert ticket.risk_level == RiskLevel.NONE and ticket.risk_signals == [] and ticket.closure_kind is None
     for bad in (
         {"closure_kind": "NORMAL"},  # not CLOSED
-        {"priority": "HIGH"},  # priority without source
-        {"priority": "HIGH", "priority_source": "HUMAN_OVERRIDE"},  # override without a reason
+        {"priority": "HIGH", "priority_source": None},  # priority without source
+        {"priority": "HIGH", "priority_source": "HUMAN_OVERRIDE", "priority_reason": None},  # override without a reason
         {"safety_cleared_by": "SIM-ACTOR-BPTN-01"},  # cleared_* must be set together
         {"safety_context": True},  # not NEED_INFO
     ):
@@ -551,14 +551,15 @@ def test_p0_contract_sla_config_and_i18n_keys():
 def test_p0_contract_queue_sort_key_and_bql_row_fields(engine):
     """CR-03 P0 contract (01 §8): EMERGENCY first, then priority, then oldest; BQL rows expose the new fields."""
     ticket = engine.get("SIM-TKT-CLN-001").ticket
-    emergency = ticket.model_copy(update={"risk_level": RiskLevel.EMERGENCY, "ticket_id": "SIM-TKT-Z"})
+    unset = {"priority": None, "priority_source": None}
+    emergency = ticket.model_copy(update={**unset, "risk_level": RiskLevel.EMERGENCY, "ticket_id": "SIM-TKT-Z"})
     high = ticket.model_copy(update={"priority": "HIGH", "priority_source": "AGENT_RULE", "ticket_id": "SIM-TKT-Y"})
     low = ticket.model_copy(update={"priority": "LOW", "priority_source": "AGENT_RULE", "ticket_id": "SIM-TKT-X"})
-    none = ticket.model_copy(update={"ticket_id": "SIM-TKT-W"})
+    none = ticket.model_copy(update={**unset, "ticket_id": "SIM-TKT-W"})
     order = sorted([none, low, high, emergency], key=queue_sort_key)
     assert [t.ticket_id for t in order] == ["SIM-TKT-Z", "SIM-TKT-Y", "SIM-TKT-X", "SIM-TKT-W"]
     rows = bql_rows(engine, engine.clock(), risk_level=RiskLevel.NONE)
-    assert len(rows) == 10 and rows[0].priority is None and rows[0].closure_kind is None  # CLN-004/TEC-005 are tier 1
+    assert len(rows) == 10 and rows[0].closure_kind is None  # CLN-004/TEC-005 are tier 1
     emergency_rows = bql_rows(engine, engine.clock(), risk_level=RiskLevel.EMERGENCY)
     assert [r.ticket_id for r in emergency_rows] == ["SIM-TKT-CLN-004", "SIM-TKT-TEC-005"]
     assert {r.ticket_id for r in bql_rows(engine, engine.clock(), blocker_owner_role="BQL")} == {

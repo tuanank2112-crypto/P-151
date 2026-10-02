@@ -33,6 +33,7 @@ tickets:
         - {requirement_id: null, evidence_type: SIMULATED_IMAGE, content_or_metadata: "Ảnh mô phỏng: hành lang sau khi dọn", readability_status: READABLE}
     expected:
       status: READY_FOR_REVIEW
+      priority: MEDIUM
       reason_code: null
       playbook_id: PB-CLN-01
       proposed_department_id: DEPT_CLEANING
@@ -57,6 +58,7 @@ tickets:
       - {item_code: SIM-MAT-CLEAN-01, planned_qty: 2}
     expected:
       status: ROUTED
+      priority: MEDIUM
       reason_code: OUT_OF_HOURS
       playbook_id: PB-CLN-01
       proposed_department_id: DEPT_CLEANING
@@ -109,6 +111,7 @@ tickets:
       - {item_code: SIM-MAT-CLEAN-01, planned_qty: 2}
     expected:
       status: ROUTED
+      priority: LOW
       reason_code: null
       playbook_id: PB-CLN-01
       proposed_department_id: DEPT_CLEANING
@@ -130,6 +133,7 @@ tickets:
       checklist: [CLN-CHK-01, CLN-CHK-02, CLN-CHK-03]
     expected:
       status: IN_PROGRESS
+      priority: MEDIUM
       reason_code: null
       playbook_id: PB-CLN-01
       proposed_department_id: DEPT_CLEANING
@@ -159,6 +163,7 @@ tickets:
         - {requirement_id: null, evidence_type: SIMULATED_IMAGE, content_or_metadata: "Ảnh mô phỏng: đèn đã sáng lại", readability_status: READABLE}
     expected:
       status: READY_FOR_REVIEW
+      priority: HIGH
       reason_code: null
       playbook_id: PB-TEC-01
       proposed_department_id: DEPT_TECHNICAL
@@ -183,6 +188,7 @@ tickets:
       - {item_code: SIM-MAT-LAMP-01, planned_qty: 1}
     expected:
       status: VERIFYING
+      priority: HIGH
       reason_code: ASSET_UNCLEAR
       playbook_id: PB-TEC-01
       proposed_department_id: DEPT_TECHNICAL
@@ -204,6 +210,7 @@ tickets:
       - {item_code: SIM-MAT-LAMP-02, planned_qty: 2}
     expected:
       status: ON_HOLD
+      priority: HIGH
       reason_code: WAITING_MATERIAL
       playbook_id: PB-TEC-01
       proposed_department_id: DEPT_TECHNICAL
@@ -224,6 +231,7 @@ tickets:
       - {item_code: SIM-MAT-LAMP-01, planned_qty: 1}
     expected:
       status: ROUTED
+      priority: HIGH
       reason_code: null
       playbook_id: PB-TEC-01
       proposed_department_id: DEPT_TECHNICAL
@@ -264,6 +272,7 @@ tickets:
       - {item_code: SIM-MAT-STARTER-01, planned_qty: 1}
     expected:
       status: ROUTED
+      priority: HIGH
       reason_code: null
       playbook_id: PB-TEC-01
       proposed_department_id: DEPT_TECHNICAL

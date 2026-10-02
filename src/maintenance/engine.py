@@ -50,6 +50,8 @@ from src.maintenance.enums import (
     MaterialStockStatus,
     NormLabel,
     PlaybookId,
+    Priority,
+    PrioritySource,
     ReadabilityStatus,
     ReasonCode,
     ReviewStatus,
@@ -81,6 +83,7 @@ from src.maintenance.models import (
     Ticket,
     WorkOrderDraft,
 )
+from src.maintenance.priority import propose_priority
 from src.maintenance.proposer import LLMClient, propose
 from src.maintenance.rules import extract_location, missing_location_parts
 from src.maintenance.safety import SafetyLLMClient, assess_with_llm
@@ -510,6 +513,10 @@ class MaintenanceEngine:
         def op(work: Case, now: datetime) -> None:
             if work.ticket.status != S.CLOSED:
                 raise GuardError("Chỉ đánh giá được khi ticket đã hoàn thành")
+            if work.ticket.rating is not None:
+                raise GuardError(
+                    "Đã đánh giá; không sửa được đánh giá (CR-BPTN-03 §11)", {"rating": work.ticket.rating}
+                )
             old = work.ticket.rating
             work.ticket.rating = score
             self._audit(
@@ -634,6 +641,7 @@ class MaintenanceEngine:
                 self._bind_category(work, category, "BPTN_LOCKED", now)
             elif department is not None:
                 self._propose_department(work, now)
+            ticket = work.ticket  # `_set_ticket` (priority) replaced the object: refresh before writing more fields
             if code in (R.CATEGORY_UNCLEAR, R.OUT_OF_SCOPE, R.PENDING_REVIEW, R.WRONG_DEPT):
                 ticket.review_status = ReviewStatus.CONFIRMED
             resume_step = (6 if category_changed else 7) if code == R.WRONG_DEPT else blocker.resume_step
@@ -793,6 +801,45 @@ class MaintenanceEngine:
                 note_required=True,
             )
             return self.transition(ticket_id, S.CLOSED, actor_id, note=note, expected_from=S.VERIFYING)
+
+    def set_priority(self, ticket_id: str, actor_id: str, priority: Priority, *, note: str) -> Case:
+        """CR-03 §7 manual change: BPTN or BQL, reason required, audit SET_PRIORITY, source HUMAN_OVERRIDE.
+
+        No status event and no notification. Later pipeline reruns never overwrite it.
+        """
+        try:
+            priority = Priority(priority)
+        except ValueError as exc:
+            raise GuardError(f"priority không hợp lệ: {priority!r}") from exc
+
+        def op(work: Case, now: datetime) -> None:
+            ticket = work.ticket
+            if ticket.status in TERMINAL_STATUSES:
+                raise GuardError("Ticket đã kết thúc; không sửa priority", {"status": ticket.status})
+            if _blank(note):
+                raise GuardError("Sửa priority bắt buộc ghi lý do")
+            self._audit(
+                work,
+                Action.SET_PRIORITY,
+                "Ticket",
+                ticket_id,
+                actor_id,
+                self._role(actor_id),
+                "priority",
+                ticket.priority,
+                priority,
+                note.strip(),
+                now=now,
+            )
+            self._set_ticket(
+                work,
+                priority=priority,
+                priority_source=PrioritySource.HUMAN_OVERRIDE,
+                priority_rule_id=None,
+                priority_reason=note.strip(),
+            )
+
+        return self._mutate(ticket_id, actor_id, Action.SET_PRIORITY, op)
 
     def _bql_escalation_gate(
         self, case: Case, actor_id: str, role: ActorRole | None, action: Action, note: str | None, now: datetime
@@ -2162,6 +2209,35 @@ class MaintenanceEngine:
                 created_at=now,
             )
         self._propose_department(work, now)
+        self._propose_priority(work, category, now)
+
+    def _propose_priority(self, work: Case, category: ServiceCategory, now: datetime) -> None:
+        """CR §5.1 step 3: propose a priority by rule. A person's override is never overwritten. Idempotent."""
+        ticket = work.ticket
+        if ticket.priority_source == PrioritySource.HUMAN_OVERRIDE:
+            return
+        proposal = propose_priority(category, self.effective_location(work), self._content(work), self.lexicon.priority)
+        if (ticket.priority, ticket.priority_rule_id) == (proposal.priority, proposal.rule_id):
+            return  # a pipeline rerun adds no audit row
+        self._agent(
+            work,
+            Action.CREATE_PROPOSAL,
+            "Ticket",
+            ticket.ticket_id,
+            "priority",
+            ticket.priority,
+            proposal.priority,
+            proposal.reason,
+            now=now,
+            rule_id=proposal.rule_id,
+        )
+        self._set_ticket(
+            work,
+            priority=proposal.priority,
+            priority_source=PrioritySource.AGENT_RULE,
+            priority_rule_id=proposal.rule_id,
+            priority_reason=proposal.reason,
+        )
 
     def _propose_department(self, work: Case, now: datetime) -> None:
         """Step 3: only a proposal. `department_id` is written at step 8, after review and asset lookup."""

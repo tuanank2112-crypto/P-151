@@ -52,3 +52,4 @@
 - WP4 🔁 (R03): BPTN trên blocker BQL phải 403 kể cả bptn_resolve (CR-03 §4.4.5). Trả worker sửa.
 - WP4 sửa 🔁 (drift 1): BPTN bị 403+audit trên mọi blocker chủ BQL kể cả bptn_resolve; 292 test pass, ruff sạch; làm đỏ (thêm lại ngoại lệ) rồi xanh; nền `dae9513`.
 - WP4 ✅ sau 🔁 (R03, 292 pass, BPTN trên blocker BQL = 403). Phóng WP5 theo H04.
+- WP5 (priority) xong: 313 test pass (nền WP4 292, +21), ruff sạch; PRI-H1/H2/M1/M2/L1/D0, set_priority, queue sort, rate một lần, seed priority; làm đỏ rate-ghi-đè và đảo khoá sắp xếp rồi xanh; nền `8c91c2d`.
