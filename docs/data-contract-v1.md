@@ -94,7 +94,7 @@ trên. `CR-BPTN-02` (v0.5 candidate) bỏ luật an toàn: contract không còn 
 | `MaterialLine` | Material record và ba comparison | N—1 WorkOrderDraft | DEPARTMENT input; Agent derive comparisons | Không approval/inventory/violation conclusion |
 | `EvidenceRecord` | Original hoặc execution evidence | N—1 Ticket; 0..1 WorkOrderDraft requirement | Ingest hoặc DEPARTMENT | Checklist không thay evidence; ảnh phòng ban bắt buộc, ảnh cư dân optional |
 | `StatusEvent` (`CR-BPTN-02` (v0.5 candidate)) | `ticket_status_events`: một dòng cho mỗi thay đổi status hoặc blocker | N—1 Ticket | SYSTEM (trong `transition`) | Nguồn duy nhất cho timeline cư dân và audit trạng thái |
-| `ResidentAddition` (`CR-BPTN-02` (v0.5 candidate)) | `ticket_resident_additions`: thông tin cư dân bổ sung | N—1 Ticket | RESIDENT | Append-only; không sửa raw |
+| `ResidentAddition` (`CR-BPTN-02` (v0.5 candidate)) | `ticket_resident_additions`: thông tin cư dân bổ sung, hoặc BPTN ghi thay sau khi liên hệ cư dân (`submitted_by`) | N—1 Ticket | RESIDENT, BPTN | Append-only; không sửa raw |
 | `Notification` (`CR-BPTN-02` (v0.5 candidate)) | Outbox sự kiện thông báo | N—1 Ticket | SYSTEM | Không gửi kênh thật |
 | `AuditEvent` | Append-only event cho action không phải status (lookup, cập nhật thực hiện, từ chối quyền) | N—1 Ticket; target polymorphic | SYSTEM | Audit fail → business mutation fail closed |
 
@@ -606,7 +606,7 @@ Audit action catalog: `INGEST`, `RUN_PIPELINE`, `CREATE_PROPOSAL`, `LOOKUP_ASSET
 | `IN_PROGRESS` | Đang xử lý | chính | Phòng ban đã nhận việc |
 | `READY_FOR_REVIEW` | Chờ nghiệm thu | chính | Đối soát đạt; chờ BQL |
 | `CLOSED` | Hoàn thành | chính, kết thúc (trừ khi mở lại) | BQL đã đóng |
-| `NEED_INFO` | Chờ bạn bổ sung | phụ | Chờ cư dân |
+| `NEED_INFO` | Chờ bổ sung thông tin | phụ | BPTN liên hệ cư dân; cư dân cũng tự bổ sung được |
 | `ON_HOLD` | Tạm hoãn | phụ | Chờ vật tư hoặc vướng tại hiện trường |
 | `MERGED` | Đã gộp | kết thúc | Trùng với ticket khác |
 | `CANCELLED` | Đã hủy | kết thúc | BQL hủy, có lý do |
@@ -617,7 +617,7 @@ Audit action catalog: `INGEST`, `RUN_PIPELINE`, `CREATE_PROPOSAL`, `LOOKUP_ASSET
 |---|---|---|---|
 | (tạo) | `RECEIVED` | SYSTEM | Ingest |
 | `RECEIVED` | `NEED_INFO` | SYSTEM | `MISSING_INFO` |
-| `NEED_INFO` | `RECEIVED` | SYSTEM | Cư dân bổ sung; chạy lại từ bước 2 |
+| `NEED_INFO` | `RECEIVED` | SYSTEM | Cư dân bổ sung hoặc BPTN nhập phần thiếu; chạy lại từ bước 2 |
 | `RECEIVED` | `VERIFYING` | AGENT | `DUPLICATE`, `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE`, `PENDING_REVIEW`, `ASSET_UNCLEAR` |
 | `VERIFYING` | `MERGED` | BPTN | Xác nhận trùng; set `merged_into` |
 | `VERIFYING` | `RECEIVED` | SYSTEM | BPTN đã gỡ; chạy lại từ `resume_step` |
@@ -649,7 +649,7 @@ Bất biến (có test):
 
 | Mã | Người gỡ | Sự kiện gỡ | Chạy lại từ |
 |---|---|---|---|
-| `MISSING_INFO` | RESIDENT | `resident_info_added` | Bước 2 |
+| `MISSING_INFO` | BPTN (cư dân vẫn tự bổ sung được) | `bptn_resolved` (nhập `location`/`info`, kèm lý do) hoặc `resident_info_added` | Bước 2 |
 | `DUPLICATE` | BPTN | `bptn_resolved` (bác trùng) | Bước 5 |
 | `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE` | BPTN | `bptn_resolved` (chọn loại việc → `review_status=CONFIRMED`) | Bước 4 |
 | `PENDING_REVIEW` | BPTN | `bptn_resolved` (sửa hoặc xác nhận → `CONFIRMED`) | Bước 6 |
@@ -667,8 +667,7 @@ Bất biến (có test):
 
 | Mã | Retry tự động | Leo thang |
 |---|---|---|
-| `MISSING_INFO` | Nhắc cư dân mỗi 24h | 72h: gắn cờ để BQL quyết định hủy |
-| `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE`, `PENDING_REVIEW`, `ASSET_UNCLEAR`, `WRONG_DEPT`, `DUPLICATE` | Nhắc BPTN mỗi 1h giờ hành chính | 4h giờ hành chính |
+| `MISSING_INFO`, `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE`, `PENDING_REVIEW`, `ASSET_UNCLEAR`, `WRONG_DEPT`, `DUPLICATE` | Nhắc BPTN mỗi 1h giờ hành chính | 4h giờ hành chính |
 | `WAITING_MATERIAL` | Kiểm lại tồn kho đầu mỗi ca | 24h |
 | `OUT_OF_HOURS` | Tự chuyển đầu ca | không |
 | `NOT_ACCEPTED` | Bắt đầu sau 2h chưa ai nhận; nhắc trưởng phòng mỗi 2h | Sau 3 lần nhắc |

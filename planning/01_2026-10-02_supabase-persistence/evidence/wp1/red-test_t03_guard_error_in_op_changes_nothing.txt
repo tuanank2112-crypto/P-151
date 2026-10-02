@@ -1,0 +1,43 @@
+# red evidence: test_t03_guard_error_in_op_changes_nothing
+# broken file: src/maintenance/engine.py
+# injected change:
+- '                work = case.model_copy(deep=True)'
++ '                work = case  # RED: op works on the stored case, no copy'
+# command: python -m pytest -q tests/test_maintenance/test_store_memory.py::test_t03_guard_error_in_op_changes_nothing
+# exit code: 1
+
+F                                                                        [100%]
+================================== FAILURES ===================================
+_____________ test_t03_guard_error_in_op_changes_nothing[memory] ______________
+
+repo = <src.maintenance.store.memory.InMemoryRepository object at 0x000002C1980C7910>
+clock = <tests.test_maintenance.helpers.Clock object at 0x000002C198A64CD0>
+
+    def test_t03_guard_error_in_op_changes_nothing(repo, clock):
+        engine = MaintenanceEngine(clock=clock, repo=repo)
+        engine.reset(with_fixtures=False)
+        tid = report(engine, CLEANING)
+        assert engine.get(tid).ticket.status == "ROUTED"
+        before = _snapshot(repo, tid)
+        with pytest.raises(GuardError):
+            engine.run_agent(tid)  # the pipeline only runs on RECEIVED: the op raises inside the transaction
+        assert _snapshot(repo, tid) == before
+    
+        def half_done(work: Case, now) -> None:  # changes the case, then a guard fails
+            work.ticket.assignee_id = "SIM-HALF-DONE"
+            work.audit.append(work.audit[-1].model_copy(update={"event_id": "SIM-AUD-HALF"}))
+            raise GuardError("Điều kiện nghiệp vụ không đạt")
+    
+        with pytest.raises(GuardError):
+            engine._mutate(tid, SYSTEM, Action.RUN_PIPELINE, half_done)
+>       assert _snapshot(repo, tid) == before
+E       AssertionError: assert (2, {'ticket'...}, ...}, 8, 3) == (2, {'ticket'...}, ...}, 8, 3)
+E         
+E         At index 1 diff: {'ticket': {'ticket_id': 'SIM-TKT-0001', 'raw': {'ticket_id': 'SIM-TKT-0001', 'created_at': '2026-09-28T09:00:00+07:00', 'original_description': 'Hành lang tầng 3 tòa SIM-A nhiều rác, cần vệ sinh.', 'original_evidence_refs': [], 'channel': 'form'}, 'raw_integrity_marker': 'sha256:d744682787539cd1c9af4f626cee169e9609dae10f0c39a4e52fa5c7c4074381', 'resident_id': 'SIM-ACTOR-RESIDENT-01', 'source_revision': 'SRC-001', 'dataset_version': 'maintenanceops-sim-v1.2', 'status': 'ROUTED', 'proposed_department_id': 'DEPT_CLEANING', 'department_id': 'DEPT_CLEANING'...
+E         
+E         ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests\test_maintenance\test_store_memory.py:82: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_store_memory.py::test_t03_guard_error_in_op_changes_nothing[memory]
+1 failed in 0.19s

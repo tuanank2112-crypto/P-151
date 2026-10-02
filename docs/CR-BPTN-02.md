@@ -81,7 +81,7 @@ mà không đọc ticket nào khác; bước 4 chỉ so ticket cùng category.
 
 | Bước | Hiện thực | Khi không đạt |
 |---|---|---|
-| 2 | `ticket_id`, `created_at`, nội dung, vị trí sơ bộ (`extract_location` trên nội dung gốc + bổ sung, hoặc `locked_fields.location`) | `NEED_INFO`/`MISSING_INFO`, liệt kê field thiếu |
+| 2 | `ticket_id`, `created_at`, nội dung, vị trí sơ bộ (`extract_location` trên nội dung gốc + bổ sung, hoặc `locked_fields.location`) | `NEED_INFO`/`MISSING_INFO`, liệt kê field thiếu. **Giao BPTN** (chủ blocker): BPTN liên hệ cư dân rồi nhập `location` và/hoặc `info` qua `bptn_resolve` (bắt buộc lý do, phải đủ mọi phần thiếu); cư dân vẫn tự bổ sung được |
 | 3 | Phân loại (luật + LLM nếu bật) → playbook → **đề xuất** phòng ban (`proposed_department_id`). Bỏ qua phân loại nếu `locked_fields.category` | `CATEGORY_UNCLEAR` (khớp cả hai / luật-LLM lệch) hoặc `OUT_OF_SCOPE` (không khớp): BPTN chọn loại việc → `review_status=CONFIRMED`, `resume_step=4` |
 | 4 | Ticket khác chưa kết thúc, tạo trước, cùng category và cùng vị trí `Tòa / Tầng / Khu vực`, cách ≤ 48h. Chỉ đọc vị trí của ticket cùng category, trong cửa sổ | `VERIFYING`/`DUPLICATE`, `resume_step=5` |
 | 5 | Playbook chỉ do LLM đề xuất → `PENDING_REVIEW`; còn lại `NOT_REQUIRED`. Bỏ qua nếu đã `CONFIRMED` | `VERIFYING`/`PENDING_REVIEW`: BPTN sửa hoặc xác nhận → `CONFIRMED`, `resume_step=6` |
@@ -157,7 +157,11 @@ do `CHỜ XÁC MINH` không có mã tương ứng (`DTY-03`, `STK-02`, `RISK-01`
    leo thang để BQL hủy.
 5. Kho nhập vật tư (`receive_stock`) không gắn với một ticket nên lần bị từ chối không ghi audit theo ticket.
 6. `WAITING_MATERIAL` hiển thị "dự kiến xử lý trước {eta}" với `eta` = mốc leo thang (24h).
-7. Cư dân tạo ticket qua `/resident/tickets` (chủ ticket = `X-Actor-Id`); `/mo/tickets` giữ cho demo, tạo thay
+7. **Thiếu dữ liệu giao BPTN (2026-10-01):** `MISSING_INFO` thuộc `BPTN_REASONS`, chủ blocker BPTN, SLA như mọi
+   blocker BPTN (nhắc 1h giờ hành chính, leo thang 4h); bỏ `sla_config.missing_info`. Trạng thái vẫn `NEED_INFO`, không
+   thêm chuyển trạng thái (`NEED_INFO → RECEIVED` vẫn do SYSTEM khi blocker gỡ). `info` của BPTN lưu thành
+   `ResidentAddition` với `submitted_by` = BPTN; nội dung gốc không đổi. BPTN nhập thiếu phần nào thì báo lỗi, không lưu gì.
+8. Cư dân tạo ticket qua `/resident/tickets` (chủ ticket = `X-Actor-Id`); `/mo/tickets` giữ cho demo, tạo thay
    `SIM-ACTOR-RESIDENT-01`.
 
 ## 10. Câu hỏi cần chốt trước khi merge

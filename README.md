@@ -221,7 +221,7 @@ Baseline v0.3 (`docs/01`–`05`, `docs/data-contract-v1.md`, `docs/playbook-v1.m
 | POST | `/resident/tickets` | Cư dân | Gửi phản ánh; Agent chạy pipeline bước 2–8 |
 | GET | `/resident/tickets/{id}` | Cư dân (chủ ticket) | Chỉ trường công khai: trạng thái, phòng ban, lời nhắn, eta, timeline, hành động được phép |
 | POST | `/resident/tickets/{id}/additions`, `/rating`, `/reopen` | Cư dân | Bổ sung thông tin; đánh giá; báo chưa xong (trong 7 ngày) |
-| POST | `/mo/tickets/{id}/bptn-resolve` | BPTN | Gỡ blocker `VERIFYING`: gộp/không trùng, chọn loại việc, phòng ban (sau `WRONG_DEPT`), asset, location, hoặc xác định tài sản tại hiện trường (`asset_onsite`, kèm lý do) → `locked_fields` |
+| POST | `/mo/tickets/{id}/bptn-resolve` | BPTN | Gỡ blocker `MISSING_INFO` (nhập `location`/`info` sau khi liên hệ cư dân) hoặc `VERIFYING`: gộp/không trùng, chọn loại việc, phòng ban (sau `WRONG_DEPT`), asset, location, hoặc xác định tài sản tại hiện trường (`asset_onsite`, kèm lý do) → `locked_fields` |
 | POST | `/mo/tickets/{id}/accept`, `/return`, `/block`, `/resume-work` | Phòng ban | Nhận việc; trả sai phòng ban; tạm hoãn tại hiện trường (kèm eta); tiếp tục |
 | POST | `/mo/tickets/{id}/checklist/{item}`, `/materials/{code}`, `/evidence` | Phòng ban | Cập nhật khi đang xử lý |
 | POST | `/mo/tickets/{id}/complete` | Phòng ban | Báo hoàn thành → Agent đối soát (bước 10) |

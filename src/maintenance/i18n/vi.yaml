@@ -8,7 +8,7 @@ status_labels:
   IN_PROGRESS: "Đang xử lý"
   READY_FOR_REVIEW: "Chờ nghiệm thu"
   CLOSED: "Hoàn thành"
-  NEED_INFO: "Chờ bạn bổ sung"
+  NEED_INFO: "Chờ bổ sung thông tin"
   ON_HOLD: "Tạm hoãn"
   MERGED: "Đã gộp"
   CANCELLED: "Đã hủy"
@@ -28,7 +28,7 @@ status_messages:
 
 # Lời theo ReasonCode, dùng khi có blocker
 reason_messages:
-  MISSING_INFO: "Vui lòng bổ sung: {fields}."
+  MISSING_INFO: "Ban tiếp nhận thông tin sẽ liên hệ bạn để bổ sung: {fields}. Bạn cũng có thể bổ sung ngay tại đây."
   DUPLICATE: "Đang kiểm tra phản ánh có trùng với phản ánh khác không."
   CATEGORY_UNCLEAR: "Đang xác minh loại phản ánh."
   OUT_OF_SCOPE: "Đang xác minh phạm vi xử lý của phản ánh."

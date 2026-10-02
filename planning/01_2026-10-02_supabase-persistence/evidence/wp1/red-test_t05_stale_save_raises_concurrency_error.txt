@@ -1,0 +1,36 @@
+# red evidence: test_t05_stale_save_raises_concurrency_error
+# broken file: src/maintenance/store/memory.py
+# injected change:
+- '            if self._repo._versions.get(ticket_id) != self.expected[ticket_id]:'
++ '            if False:  # RED: no version check'
+- '                if self._versions.get(ticket_id) != tx.expected[ticket_id]:'
++ '                if False:  # RED: no version check'
+# command: python -m pytest -q tests/test_maintenance/test_store_memory.py::test_t05_stale_save_raises_concurrency_error
+# exit code: 1
+
+F                                                                        [100%]
+================================== FAILURES ===================================
+____________ test_t05_stale_save_raises_concurrency_error[memory] _____________
+
+repo = <src.maintenance.store.memory.InMemoryRepository object at 0x00000286F4F6CC90>
+clock = <tests.test_maintenance.helpers.Clock object at 0x00000286F4F32B90>
+
+    def test_t05_stale_save_raises_concurrency_error(repo, clock):
+        engine = MaintenanceEngine(clock=clock, repo=repo)
+        engine.reset(with_fixtures=False)
+        tid = report(engine, CLEANING)
+        with repo.transaction() as first:
+            stale = first.get_for_update(tid).model_copy(deep=True)
+            with repo.transaction() as second:
+                winner = second.get_for_update(tid).model_copy(deep=True)
+                winner.ticket.assignee_id = "SIM-WINNER"
+                second.save(winner)
+            after_winner = _snapshot(repo, tid)
+            stale.ticket.assignee_id = "SIM-LOSER"
+>           with pytest.raises(ConcurrencyError):
+E           Failed: DID NOT RAISE ConcurrencyError
+
+tests\test_maintenance\test_store_memory.py:87: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_store_memory.py::test_t05_stale_save_raises_concurrency_error[memory]
+1 failed in 0.18s

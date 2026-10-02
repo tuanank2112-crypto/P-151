@@ -4,12 +4,12 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from src.api import auth
+from src.api import auth, photos
 from src.api.routers import maintenance
 
 try:
@@ -17,6 +17,7 @@ try:
 except (ImportError, ModuleNotFoundError):
     router = None
 from src.config import get_settings
+from src.maintenance.store.base import StorePermissionError, StoreUnavailableError
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +38,13 @@ async def _maintenance_jobs() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
-    print(f"Starting {settings.app_name} in {settings.app_env} mode (LLM_MODE={settings.llm_mode})")
-    # Load the fixture now, not on the first request (with LLM_MODE=openai that is 12 model calls)
+    print(
+        f"Starting {settings.app_name} in {settings.app_env} mode (LLM_MODE={settings.llm_mode}, "
+        f"MO_STORE={settings.mo_store}, MO_PHOTO_STORE={settings.mo_photo_store})"
+    )
+    # Fail fast (uvicorn exits 3) on a bad photo-store config, DB URL or schema revision; never wipes data
+    await asyncio.to_thread(photos.check_photo_store)
+    # Seed the fixture now if the store is empty, not on the first request (LLM_MODE=openai: 12 model calls)
     await asyncio.to_thread(maintenance.get_engine)
     jobs = asyncio.create_task(_maintenance_jobs()) if settings.mo_jobs_enabled else None
     yield
@@ -65,6 +71,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _store_error_handler(status_code: int):
+    """Store errors on routes that do not go through `_call` (reads, reset, auth): same body shape as HTTPException."""
+
+    async def handler(request: Request, exc: StoreUnavailableError | StorePermissionError) -> JSONResponse:
+        return JSONResponse(status_code=status_code, content={"detail": {"code": exc.code, "message": exc.message}})
+
+    return handler
+
+
+app.add_exception_handler(StoreUnavailableError, _store_error_handler(503))
+app.add_exception_handler(StorePermissionError, _store_error_handler(403))
 
 if router:
     app.include_router(router, prefix="/api/v1")

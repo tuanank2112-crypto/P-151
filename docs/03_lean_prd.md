@@ -171,15 +171,15 @@ tương ứng.
 ## FR-INGEST-001 — Validate ticket schema và required fields
 
 - **Priority:** P0
-- **Actor:** Agent/System; cư dân nhận yêu cầu bổ sung.
+- **Actor:** Agent/System; BPTN liên hệ cư dân và nhập phần thiếu; cư dân cũng tự bổ sung được.
 - **Input:** raw ticket và phần cư dân bổ sung (`ticket_resident_additions`).
 - **Mô tả/business rule (`CR-BPTN-02` (v0.5 candidate)):** bước 2 kiểm tra `ticket_id`, `created_at`, nội dung, vị trí sơ bộ (tính cả phần bổ
   sung); không suy đoán.
 - **Expected output:** thiếu → `NEED_INFO` + blocker `MISSING_INFO` với `public_message` liệt kê đúng field thiếu
-  (từ template); cư dân bổ sung → chạy lại từ bước 2.
+  (từ template), chủ blocker BPTN; BPTN nhập phần thiếu (kèm lý do) hoặc cư dân bổ sung → chạy lại từ bước 2.
 - **Failure behavior:** fail closed; không phân loại, không draft; raw không đổi.
-- **Given/When/Then:** Given phản ánh không có vị trí, When pipeline chạy, Then `NEED_INFO`, lời nhắn "Vui lòng bổ sung:
-  vị trí (tòa, tầng, khu vực)."; When cư dân bổ sung, Then pipeline chạy tiếp và nội dung gốc không đổi.
+- **Given/When/Then:** Given phản ánh không có vị trí, When pipeline chạy, Then `NEED_INFO`, lời nhắn
+  "Ban tiếp nhận thông tin sẽ liên hệ bạn để bổ sung: vị trí (tòa, tầng, khu vực). Bạn cũng có thể bổ sung ngay tại đây."; When BPTN nhập vị trí hoặc cư dân bổ sung, Then pipeline chạy tiếp và nội dung gốc không đổi.
 - **Test:** acceptance 2, `test_step2_*`.
 
 ## FR-INGEST-002 — Bảo toàn raw resident data
@@ -418,7 +418,7 @@ tương ứng.
 | `IN_PROGRESS` | Đang xử lý | chính | `REWORK` |
 | `READY_FOR_REVIEW` | Chờ nghiệm thu | chính | — |
 | `CLOSED` | Hoàn thành | chính, kết thúc (trừ khi mở lại) | — |
-| `NEED_INFO` | Chờ bạn bổ sung | phụ | `MISSING_INFO` (bắt buộc có) |
+| `NEED_INFO` | Chờ bổ sung thông tin | phụ | `MISSING_INFO` (bắt buộc có) |
 | `ON_HOLD` | Tạm hoãn | phụ | `WAITING_MATERIAL`, `BLOCKED_ONSITE` (bắt buộc có) |
 | `MERGED` | Đã gộp | kết thúc | — |
 | `CANCELLED` | Đã hủy | kết thúc | — |
@@ -428,7 +428,7 @@ tương ứng.
 | Từ | Sang | Actor | Điều kiện |
 |---|---|---|---|
 | `RECEIVED` | `NEED_INFO` | SYSTEM | `MISSING_INFO` |
-| `NEED_INFO` | `RECEIVED` | SYSTEM | Cư dân bổ sung; chạy lại từ bước 2 |
+| `NEED_INFO` | `RECEIVED` | SYSTEM | Cư dân bổ sung hoặc BPTN nhập phần thiếu; chạy lại từ bước 2 |
 | `RECEIVED` | `VERIFYING` | AGENT | `DUPLICATE`, `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE`, `PENDING_REVIEW`, `ASSET_UNCLEAR` |
 | `VERIFYING` | `MERGED` | BPTN | Xác nhận trùng |
 | `VERIFYING` | `RECEIVED` | SYSTEM | BPTN đã gỡ; chạy lại từ `resume_step` |
