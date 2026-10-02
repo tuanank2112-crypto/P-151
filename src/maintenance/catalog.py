@@ -206,7 +206,9 @@ class SafetyLexicon(Frozen):
     person_signal_ids: tuple[str, ...]
     coordination_conjunctions: tuple[str, ...]  # R4: hay / hoặc / lẫn
     coordination_hazard_tokens: tuple[str, ...]  # R4 (A3): the first part must hold one of these
+    coordination_hazard_exclusions: tuple[str, ...]  # Q31.D: phrases whose hazard token is not a hazard (chữa cháy)
     hedges: tuple[str, ...] = Field(min_length=1)
+    hedge_forms: dict[str, tuple[str, ...]]  # Q31.B: hedge phrase -> accented forms; an unaccented text never hedges
     hedge_fillers: tuple[str, ...]
     resolved_markers: tuple[str, ...]
     final_particles: tuple[str, ...]  # R5: only these may follow a marker
@@ -223,6 +225,7 @@ class SafetyLexicon(Frozen):
     ambiguous_terms: tuple[str, ...]
     ambiguous_exclusions: tuple[str, ...]
     homographs: dict[str, tuple[str, ...]]  # R7: token -> accented forms that are NOT a risk
+    homograph_confirmers: dict[str, tuple[str, ...]]  # Q31.C: words in the clause that keep a homograph match
     homograph_intended: dict[str, dict[str, tuple[str, ...]]]  # R7: pattern -> token -> forms the pattern means
     tier2_net_roots: dict[str, tuple[str, ...]]  # R9: root -> accented forms that trigger the tier-2 net
     # B-04
@@ -254,6 +257,7 @@ class SafetyLexicon(Frozen):
             "person_negation_cues",
             "coordination_conjunctions",
             "coordination_hazard_tokens",
+            "coordination_hazard_exclusions",
             "hedges",
             "hedge_fillers",
             "final_particles",
@@ -273,6 +277,22 @@ class SafetyLexicon(Frozen):
         ):
             _check_phrases(name, getattr(self, name), token=True)  # V-03
         _check_phrases("homographs", tuple(self.homographs), token=True)
+        for name in (
+            "negation_prefixes",
+            "person_negation_cues",
+        ):  # Q31.A: a one-letter cue ("k co") matches a location code
+            if any(len(token) == 1 for phrase in getattr(self, name) for token in phrase.split()):
+                raise ValueError(f"{name}: cue có token một ký tự (khớp mã toà/khu)")
+        if set(self.hedge_forms) != set(self.hedges):  # Q31.B
+            raise ValueError("hedge_forms phải có đúng một mục cho mỗi hedge")
+        for key, forms in self.hedge_forms.items():
+            _check_accented("hedge_forms", key, forms)
+        for token, phrases in self.homograph_confirmers.items():  # Q31.C
+            if token not in self.homographs:
+                raise ValueError(f"homograph_confirmers: {token!r} không có trong homographs")
+            _check_phrases("homograph_confirmers", phrases)
+            if any(len(phrase.split()) > 2 for phrase in phrases):
+                raise ValueError("homograph_confirmers: tối đa hai token mỗi cụm")
         if "va" not in self.clause_conjunctions or set(self.coordination_conjunctions) & set(self.clause_conjunctions):
             raise ValueError("clause_conjunctions phải chứa 'va' và không giao với coordination_conjunctions")  # V-04
         try:
@@ -288,10 +308,10 @@ class SafetyLexicon(Frozen):
             _check_accented("homographs", key, forms)
         patterns = {p for s in self.signals for p in s.patterns} | set(self.ambiguous_terms)
         for pattern, per_token in self.homograph_intended.items():  # V-08
-            if not PHRASE.fullmatch(pattern) or pattern not in patterns:
-                raise ValueError(f"homograph_intended: {pattern!r} không phải pattern cụm thường có thật")
+            if pattern not in patterns:
+                raise ValueError(f"homograph_intended: {pattern!r} không phải pattern có thật")
             for token, forms in per_token.items():
-                if token not in self.homographs or token not in pattern.split():
+                if token not in self.homographs or (PHRASE.fullmatch(pattern) and token not in pattern.split()):
                     raise ValueError(f"homograph_intended[{pattern!r}]: token {token!r} không hợp lệ")
                 _check_accented("homograph_intended", token, forms)
         for root, forms in self.tier2_net_roots.items():  # V-09

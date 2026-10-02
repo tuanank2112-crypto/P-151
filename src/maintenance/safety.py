@@ -27,7 +27,7 @@ SEVERITY: dict[SignalStatus, int] = {SignalStatus.ABSENT: 0, SignalStatus.UNCLEA
 LEAD = re.compile(r"^(co|thay|nghe thay|ngui thay|bi) ")  # a span opening with a lead word: the window ends after it
 SOFT_BREAKS = ",:()—–"  # clause breaks that keep a space in `norm`, so a phrase may still match across them
 HARD_BREAKS = ".;!?"  # sentence breaks, kept in `norm`
-HANGUL_FILLERS = frozenset({"ᅟ", "ᅠ", "ㅤ", "ﾠ"})  # R8
+HANGUL_FILLERS = frozenset(map(chr, (0x115F, 0x1160, 0x3164, 0xFFA0)))  # R8 (code points, never literal characters)
 DOWNGRADE_RULES = frozenset({"B-02", "B-02D", "T2-01", "T2-02"})  # rules copied onto T2-05 (§3.4)
 TOKEN = re.compile(r"[a-z0-9]+")
 LETTERS = re.compile(r"[a-z]+")
@@ -39,8 +39,17 @@ Span = tuple[int, int]
 
 
 def is_invisible(char: str) -> bool:
-    """R8, checked on the ORIGINAL character: format characters, U+034F, variation selectors, Hangul fillers."""
-    return unicodedata.category(char) == "Cf" or char == "͏" or "︀" <= char <= "️" or char in HANGUL_FILLERS
+    """R8 + Q31.G, checked on the ORIGINAL character: format and control characters (not tab/newline/CR), U+034F,
+    variation selectors, Hangul fillers, the blank Braille cell and private-use characters."""
+    category = unicodedata.category(char)
+    code = ord(char)
+    return (
+        category in ("Cf", "Co")
+        or (category == "Cc" and char not in (chr(9), chr(10), chr(13)))
+        or code in (0x034F, 0x2800)
+        or 0xFE00 <= code <= 0xFE0F
+        or char in HANGUL_FILLERS
+    )
 
 
 def _fold(char: str) -> str:
@@ -317,6 +326,7 @@ class _Lookups:
         self.longest = max((len(p) for p in self.phrases), default=1)
         self.code_re = re.compile(lexicon.b01_code_token_regex)
         self.person = frozenset(lexicon.person_signal_ids)
+        self._clause_grams: dict[int, frozenset[str]] = {}
 
     # -- B-04 ----------------------------------------------------------------------------------------------
     def cooking_context(self, sentence: Span) -> bool:
@@ -346,8 +356,17 @@ class _Lookups:
         return self._valid_markers[s0]
 
     # -- R7 ------------------------------------------------------------------------------------------------
+    def clause_grams(self, pos: int) -> frozenset[str]:
+        """Single tokens and token pairs of the clause of `pos`, computed once per clause."""
+        c0, c1 = self.ctx.clause(pos)
+        if c0 not in self._clause_grams:
+            tokens = TOKEN.findall(self.ctx.norm, c0, c1)
+            self._clause_grams[c0] = frozenset(tokens) | frozenset(f"{a} {b}" for a, b in zip(tokens, tokens[1:]))
+        return self._clause_grams[c0]
+
     def homograph_dropped(self, start: int, end: int, pattern: str) -> bool:
-        """R7: a match whose accented token is a known non-risk homograph is dropped, unless the pattern means it."""
+        """R7 + Q31.C: a match whose accented token is a known non-risk homograph is dropped, unless the pattern
+        means it or the clause holds a word that confirms the dangerous reading (typos keep the signal)."""
         homographs = self.lexicon.homographs
         intended = self.lexicon.homograph_intended.get(pattern, {})
         for token in LETTERS.finditer(self.ctx.norm, start, end):
@@ -355,6 +374,9 @@ class _Lookups:
             if forms:
                 original = self.ctx.original(token.start(), token.end())
                 if original in forms and original not in intended.get(token.group(0), ()):
+                    confirmers = self.lexicon.homograph_confirmers.get(token.group(0), ())
+                    if confirmers and not self.clause_grams(start).isdisjoint(confirmers):
+                        continue
                     return True
         return False
 
@@ -382,8 +404,13 @@ def _negation(lk: _Lookups, start: int, hi: int, signal_id: str) -> Scope | None
         return None
     hazard = set(lexicon.coordination_hazard_tokens)
     base = lo + m.start("x")
+    excluded = [
+        e.span()
+        for phrase in lexicon.coordination_hazard_exclusions
+        for e in compile_pattern(phrase).finditer(m.group("x"))
+    ]  # Q31.D: "chữa cháy", "báo cháy", "phòng cháy" are equipment, not a fire
     for token in TOKEN.finditer(m.group("x")):
-        if token.group(0) in hazard:
+        if token.group(0) in hazard and not any(a <= token.start() and token.end() <= b for a, b in excluded):
             a, b = base + token.start(), base + token.end()
             if ctx.original(a, b) not in lexicon.homographs.get(token.group(0), ()):
                 before = window[: m.start("cue")]
@@ -410,7 +437,7 @@ def _judge(lk: _Lookups, start: int, end: int, signal_id: str = ""):
     hedge = scope_before(
         ctx, start, hi, lexicon.hedges, lexicon.hedge_fillers, max_fillers=lk.max_fillers, max_chars=lk.max_chars
     )
-    if hedge is not None:
+    if hedge is not None and _hedge_accented(lk, hedge.cue_start):
         return SignalStatus.UNCLEAR, quote_of(text, index, hedge.cue_start, end), "T2-01"
     sentence = ctx.sentence(start)
     for m0, m1 in lk.valid_markers(sentence):
@@ -419,6 +446,18 @@ def _judge(lk: _Lookups, start: int, end: int, signal_id: str = ""):
             if len(gap) <= lk.max_chars and all(t in lk.bridge for t in gap.split()):  # A2: no subject in between
                 return SignalStatus.UNCLEAR, quote_of(text, index, start, m1), "T2-02"
     return SignalStatus.PRESENT, quote_of(text, index, start, end), None
+
+
+def _hedge_accented(lk: _Lookups, cue_start: int) -> bool:
+    """Q31.B: the hedge cue must be written with its accents ("có lẽ", not the name "Cô Lê"); unaccented text keeps
+    the higher level."""
+    norm = lk.ctx.norm
+    for phrase, forms in lk.lexicon.hedge_forms.items():
+        end = cue_start + len(phrase)
+        if norm.startswith(phrase, cue_start) and (end >= len(norm) or not norm[end].isalnum()):
+            if lk.ctx.original(cue_start, end) in forms:
+                return True
+    return False
 
 
 # ---------------------------------------------------------------- 3.5 B-01 benign lamp phrases (R6, A1)

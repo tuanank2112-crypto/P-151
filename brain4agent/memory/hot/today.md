@@ -63,3 +63,4 @@
 - WP3c (thiết kế lại phạm vi tầng an toàn R1-R10) xong: 1378 test pass (nền 352, +1026), ruff sạch; bộ dừng 989/989 xanh, D-1..D-7, D-9 đạt (D-8 holdout do SO); assess 24 KB <= 0,28 s; RED-6..10 có cặp đỏ/xanh; nền `c911971`.
 - WP3c ✅ (R08): 1378 pass; holdout judge NONE 3/39 đạt. Phóng thẩm định lần 3 (auditor mới).
 - Thẩm định lần 3 🔁 (R09): gate máy xanh hết, còn 4 lỗi cơ chế hẹp (cue 1 chữ, hedge khớp tên, đồng tự gõ sai dấu, chữa cháy). Q31: sửa WP3d, không mở vòng 4.
+- WP3d (siết cue/đồng tự/ký tự điều khiển theo thẩm định lần 3) xong: 1462 test pass (nền 1378, +84), ruff sạch; atk1-atk4 ca A-D, G, từ vựng đúng mức Q31; bộ dừng + ngưỡng báo nhầm Q29 không hồi quy; RED A,B,C,D,G có cặp đỏ/xanh; nền `a37926a`.

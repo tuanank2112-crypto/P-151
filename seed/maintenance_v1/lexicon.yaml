@@ -13,7 +13,8 @@ safety:
   scope_max_fillers: 2
   scope_max_chars: 80
   negation_prefixes: [khong co, khong thay, khong he, khong hai, khong con, chua thay, khong ngui thay, khong nghe thay,
-                      khong phai, chang co, khong bi, khong co dau hieu, ko co, k co, ko thay, k thay, hok co,
+                      khong phai, chang co, khong bi, khong co dau hieu, ko co, ko thay, hok co,                       # Q31.A: bỏ k co / k thay (khớp mã toà/khu)
+                      
                       khong phat hien, chang thay,          # Q29 (cue thêm của judge)
                       khong phai la, chang phai]            # A4: phủ định kép "không phải là không có khói" => UNCLEAR
   negation_fillers: [co, thay, bi, he, duoc, con]          # R1 (Q29, từng chữ)
@@ -22,6 +23,7 @@ safety:
   person_signal_ids: [S-09]
   coordination_conjunctions: [hay, hoac, lan]               # R4
   coordination_hazard_tokens: [khoi, lua, khet, chay, "no", xet, ho]   # R4/A3 — "no" PHẢI có nháy (YAML 1.1: no => False)
+  coordination_hazard_exclusions: [chua chay, bao chay, phong chay]    # Q31.D: thiết bị/hệ thống, không phải đám cháy
   hedges:                    # R5: cue nghi ngờ (cùng luật R1 với đệm riêng)
     - hinh nhu
     - co ve
@@ -37,6 +39,21 @@ safety:
     - khong biet co phai
     - khong ro co phai
     - duong nhu
+  hedge_forms:               # Q31.B: cue hedge chỉ tính khi viết ĐÚNG dấu (tên "Cô Lê" không phải "có lẽ")
+    hinh nhu: [hình như]
+    co ve: [có vẻ]
+    nghe nhu: [nghe như]
+    nghi la: [nghĩ là]
+    nghi co: [nghĩ có]
+    khong chac: [không chắc]
+    chua ro: [chưa rõ]
+    co le: [có lẽ]
+    giong nhu: [giống như]
+    cam giac nhu: [cảm giác như]
+    co the la: [có thể là]
+    khong biet co phai: [không biết có phải]
+    khong ro co phai: [không rõ có phải]
+    duong nhu: [dường như]
   hedge_fillers: [co, thay, bi, la, nhu, dang]
   resolved_markers:          # T2-02: sự việc đã xảy ra và đã hết (đứng SAU tín hiệu, sau nó chỉ còn tiểu từ)
     - gio het roi
@@ -84,6 +101,14 @@ safety:
     lua: [lựa, lúa, lừa, lụa]
     day: [dãy, đầy, dạy, dày, đây, đẩy, dậy, dấy, đày]
     giat: [giặt]
+    "no": [nó, nò, nỏ, nõ, nọ]                              # Q31 vocabulary: "nổ" khác "nó" (PHẢI có nháy: YAML 1.1)
+    bong: [bong, bóng, bòng, bõng, bọng, bông, bống, bồng, bổng, bỗng, bộng]   # Q31 vocabulary: "bỏng" (burn) khác các dạng khác
+  homograph_confirmers:      # Q31.C: từ đồng hiện trong cùng mệnh đề giữ lại match đồng tự (gõ sai dấu vẫn là tín hiệu)
+    khoi: [boc, bay, len, toa, mui, mu, um]
+    lua: [boc, len, toe, bung, hop dien, tu dien, o cam]
+    ngat: [nguoi, bi, xiu, nga, bat]
+    ho: [ra, day, lo, tran, thong]
+    chay: [lua, khoi, khet, boc, mau]
   homograph_intended:                                      # judge: 5 mục đầu; A4: pattern chắc nghĩa (gõ sai dấu không làm mất match)
     chay mau: {chay: [chảy]}
     nga khong day: {day: [dậy]}
@@ -97,6 +122,15 @@ safety:
     ban tia lua: {lua: [lựa, lúa, lừa, lụa]}
     phat tia lua: {lua: [lựa, lúa, lừa, lụa]}
     ngat xiu: {ngat: [ngắt]}
+    co khoi: {khoi: [khối, khỏi, khơi]}                      # Q31.C
+    boc khoi: {khoi: [khối, khỏi, khơi]}
+    khoi boc: {khoi: [khối, khỏi, khơi]}
+    lua boc: {lua: [lựa, lúa, lừa, lụa]}
+    "re:\\bbi ngat\\b(?! (dien|cau dao|nguon|mach|may|quang|ket noi|dong|nuoc|den|wifi|mang|he thong|nguong|ngay))": {ngat: [ngắt]}
+    ngat di: {ngat: [ngắt]}
+    day dien ho: {ho: [hộ, hồ, họ, hổ, hố, hô, hò]}
+    day dien ho ra: {ho: [hộ, hồ, họ, hổ, hố, hô, hò]}
+    bi bong: {bong: [bỏng]}                                  # Q31 vocabulary: không có trong homographs.bong => giữ
   # ---- R9: lưới Bậc 2 cho "khói/lửa/máu/bất động" (dạng có dấu) nằm ngoài mọi span
   tier2_net_roots: {khoi: [khói], lua: [lửa], mau: [máu], bat dong: [bất động]}
   ambiguous_exclusions:      # từ đồng tự không phải rủi ro (chảy nước, ...): bỏ qua, không ghi
@@ -114,18 +148,18 @@ safety:
     - khoi thuoc                 # A4: nguồn khói lành tính (R9 coi là span loại trừ)
     - khoi huong
     - khoi nhang
-  khet_benign_contexts:      # B-04: "khét" trong ngữ cảnh nấu ăn -> Bậc 2 (S-01 UNCLEAR)
-    - com
-    - thuc an
-    - do an
-    - bep
-    - chien
-    - nuong
-    - xao
-    - banh
-    - thit
-    - mon an
-  khet_benign_contexts_accented:  # B-04: so khớp trên văn bản GỐC chữ thường có dấu, nên "nâu" (màu) không phải "nấu"
+  khet_benign_contexts: []   # Q31.B: không còn ngữ cảnh nấu ăn không dấu (tên "chị Nương", "anh Chiến" khớp "nướng/chiên")
+  khet_benign_contexts_accented:  # B-04: so khớp trên văn bản GỐC chữ thường CÓ dấu; văn bản không dấu không bị hạ mức
+    - cơm
+    - thức ăn
+    - đồ ăn
+    - bếp
+    - chiên
+    - nướng
+    - xào
+    - bánh
+    - thịt
+    - món ăn
     - nấu
   khet_electric_contexts:     # B-04: có từ điện trong câu thì "khét" giữ Bậc 1
     - dien
@@ -170,7 +204,8 @@ safety:
        patterns: [tia lua, toe lua, xet dien, xet lua, ban tia lua, phat tia lua]}
     - {signal_id: S-03, name: exposed_wire, tier: 1, phase: P0, scope: [KY_THUAT],
        patterns: [day dien ho, day tran, day dut loi ra, lo day, ho day, day dien bi dut, day dien loi ra, day dien dut, loi day dien, day ho,
-                  day dien bi ho, day bi ho, ho dien, dien ho, day dien ho ra, day dien tran, day dien thong, day dien bi loi, day dien loi]}
+                  day dien bi ho, day bi ho, ho dien, dien ho, day dien ho ra, day dien tran, day dien thong, day dien bi loi, day dien loi,
+                  day dien bi tran, day dien bi tran ra]}
     - {signal_id: S-04, name: smoke, tier: 1, phase: P0, scope: [COMMON],
        patterns: [co khoi, boc khoi, khoi bay, khoi den, khoi trang, kem khoi, xi khoi, toa khoi, nhieu khoi, thay khoi, khoi boc, khoi bay ra, mui khoi,
                   khoi mu, mu khoi, khoi dac, ngap khoi, khoi cuon, day khoi, con khoi, khoi um, khoi lan, toan khoi, khoi nghi ngut]}
@@ -178,7 +213,9 @@ safety:
        patterns: [boc chay, dang chay, co lua, chay hop dien, hop dien chay, hop dien boc chay, hop den chay, chay hop den, lua chay, ngon lua, chay lon, chay bung, phat no, chay no, chap chay, bat lua, chay thanh ngon,
                   hoa hoan, chay nha, dam chay, chay lan, lua boc, thay lua,
                   "re:\\b(tu dien|o cam|day dien|cong tac|hop dien|cau dao)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b|den\\b|bong\\b|tuyp\\b)\\w+){0,8}(?: (?:dang|bi|da))* chay\\b(?! (cham|lien tuc|suot|thu|on|binh thuong|manh|yeu|ngam|tot|lai))",
-                  lua to, lua bung, lua lan, boc lua, phong lua]}
+                  lua to, lua bung, lua lan, boc lua, phong lua,
+                  "re:(?<!nuoc )\\bchay (?:sang|ra)\\b",
+                  "re:\\b(hop dien|tu dien|o cam|cong tac|cau dao|day dien|may bien ap)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b|den\\b|bong\\b|tuyp\\b)\\w+){0,8} no\\b"]}
     - {signal_id: S-06, name: electric_shock, tier: 1, phase: P1, scope: [COMMON],
        patterns: [bi dien giat, dien giat, giat tay khi cham, ro dien, ro ri dien, te dien]}
     - {signal_id: S-07, name: overheat, tier: 1, phase: P1, scope: [KY_THUAT],
@@ -186,11 +223,14 @@ safety:
     - {signal_id: S-08, name: water_in_electrics, tier: 1, phase: P1, scope: [KY_THUAT],
        patterns: [nuoc nho vao hop dien, nuoc vao hop dien, nuoc tran vao o cam, nuoc vao o cam, nuoc vao tu dien, nuoc chay vao hop dien, nuoc nho vao den]}
     - {signal_id: S-09, name: person_hurt_or_trapped, tier: 1, phase: P0, scope: [COMMON],
-       patterns: [bi thuong, chay mau, nga dap dau, ngat xiu, bi ngat, ngat di, bat tinh, mac ket, ket nguoi, cap cuu, nguoi bi nga, gay chan, gay tay,
+       patterns: [bi thuong, chay mau, nga dap dau, ngat xiu,
+                  "re:\\bbi ngat\\b(?! (dien|cau dao|nguon|mach|may|quang|ket noi|dong|nuoc|den|wifi|mang|he thong|nguong|ngay))",   # Q31.C: "bị ngắt điện/nước" không phải ngất
+                  ngat di, bat tinh, mac ket, ket nguoi, cap cuu, nguoi bi nga, gay chan, gay tay,
                   "re:\\bngat\\b(?! (dien|cau dao|nguon|mach|may|quang|ket noi|dong|nuoc|den|wifi|mang|he thong|nguong|ngay))",
                   bi xiu, xiu di, ket thang may,
                   dot quy, co giat, nga khong day, khong dung day duoc, khong day duoc,
-                  nguoi bi ket, bi ket trong thang may, ket trong thang may, ket ben trong]}
+                  nguoi bi ket, bi ket trong thang may, ket trong thang may, ket ben trong,
+                  bi bong, nguoi ben trong khong ra duoc]}
     - {signal_id: S-10, name: gas_smell, tier: 1, phase: P1, scope: [COMMON],
        patterns: [mui gas, mui ga, mui khi dot, ro ri gas, xi gas]}
     - {signal_id: S-11, name: falling_object, tier: 1, phase: P1, scope: [COMMON],

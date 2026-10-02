@@ -19,6 +19,7 @@ from src.maintenance.safety import (
     SignalJudgement,
     assess,
     assess_with_llm,
+    is_invisible,
     merge_llm,
     normalize_with_map,
     quote_of,
@@ -831,3 +832,124 @@ def test_false_alarm_budget(name):
             raised.append((got, text))
     print(name, counts, raised)
     assert all(counts[k] <= m for k, m in budget["max"].items()), (counts, budget["max"])
+
+
+# ---------------------------------------------------------------- WP3d (Q31, third audit R09): A cue letters, B hedge, C homograph typos, D hazard, G control chars
+
+
+def test_wp3d_single_letter_cues_are_gone():
+    """Q31.A: 'k co' / 'k thay' matched a location code ('tòa SIM-K có khói'); no negation cue has a one-letter token."""
+    for text in (
+        "Tòa SIM-K có khói bốc ra từ hộp điện.",
+        "Block K có khói bốc ra từ hộp điện hành lang.",
+        "Khu K thấy khói bốc ra từ tủ điện.",
+        "Căn hộ K có tia lửa tóe ra từ ổ cắm.",
+        "Hanh lang toa SIM-K co khoi boc ra",
+    ):
+        assert level(text) == RiskLevel.EMERGENCY, text
+    assert level("Hành lang tầng 3 tòa SIM-A ko có khói") == RiskLevel.NONE  # "ko" and "hok" stay (known limit: tòa KO)
+    for cue in (*LEX.negation_prefixes, *LEX.person_negation_cues):
+        assert all(len(token) > 1 for token in cue.split()), cue
+
+
+def test_wp3d_hedge_cue_needs_accents():
+    """Q31.B: a hedge cue is read on the accented text, so the names 'Cô Lê', 'Cô Vẽ', 'Dương Như' hedge nothing."""
+    for text in (
+        "Căn hộ cô Lệ có khói bốc ra từ ổ cắm.",
+        "Phòng cô Lê có mùi khét nồng.",
+        "Nhà cô Vẽ có khói bốc ra",
+        "Căn hộ chị Nghị có khói bốc ra từ ổ cắm",
+        "Nhà chị Dương Như có khói bốc ra",
+    ):
+        assert level(text) == RiskLevel.EMERGENCY, text
+    assert level("Hình như có mùi khét ở hành lang tầng 3 tòa SIM-A.") == RiskLevel.UNCLEAR
+    assert level("Có lẽ có khói bốc ra từ hộp điện") == RiskLevel.UNCLEAR
+    assert level("hinh nhu co khoi boc ra tu hop dien") == RiskLevel.EMERGENCY  # unaccented: no downgrade
+
+
+def test_wp3d_cooking_context_needs_accents():
+    """Q31.B: B-04 reads the cooking words on the accented text: 'anh Chiến' is not 'chiên', 'chị Nương' not 'nướng'."""
+    assert level("Căn hộ anh Chiến có mùi khét lan ra hành lang tầng 3") == RiskLevel.EMERGENCY
+    assert level("Phòng 305 chị Nương có mùi khét") == RiskLevel.EMERGENCY
+    assert level("Hành lang tầng 3 tòa SIM-A có mùi cơm khét từ căn hộ bên cạnh.") == RiskLevel.UNCLEAR
+    assert level("Hanh lang tang 3 co mui com khet") == RiskLevel.EMERGENCY  # unaccented: no downgrade
+
+
+def test_wp3d_homograph_typos_keep_the_signal():
+    """Q31.C: a wrongly accented danger word keeps the signal when the clause confirms it; plain homographs stay NONE."""
+    for text in (
+        "Hành lang tầng 3 tòa SIM-A có khỏi bốc ra từ hộp điện.",
+        "Tầng 3 tòa SIM-A có khối bốc ra từ hộp điện",
+        "Hộp điện tầng 3 tòa SIM-A có lừa bốc lên",
+        "Hộp điện tầng 3 tòa SIM-A có lúa",
+        "Có người bị ngắt ở cầu thang bộ tòa SIM-A",
+        "Dây điện hộ ra ở hành lang tầng 3 tòa SIM-A",
+        "Hộp điện tầng 3 tòa SIM-A bốc chảy",
+    ):
+        assert level(text) == RiskLevel.EMERGENCY, text
+    for text in (
+        "Nước chảy lan ra sảnh tầng 1 tòa SIM-A từ ống thoát.",
+        "Cư dân có lựa chọn đỗ xe ở hầm xe B1 tòa SIM-A không?",
+        "Phòng 502 tòa SIM-A bị ngắt điện từ sáng, nhờ kiểm tra.",
+        "Khối đặc bê tông rơi vãi ở hầm xe B1 tòa SIM-A, nhờ dọn.",
+        "Hóa đơn tiền điện hộ gia đình căn 1203 tòa SIM-A bị sai.",
+    ):
+        assert level(text) == RiskLevel.NONE, text
+
+
+def test_wp3d_fire_equipment_is_not_a_hazard_in_coordination():
+    """Q31.D: 'chữa cháy / báo cháy / phòng cháy' do not let 'không có ... hay' negate the real signal."""
+    for text in (
+        "Hành lang tầng 3 tòa SIM-A không có bình chữa cháy hay có khói bốc ra từ hộp điện",
+        "Không có chuông báo cháy hay có tia lửa tóe ra từ ổ cắm",
+        "Tầng 3 tòa SIM-A không có vòi chữa cháy hay khói bốc ra từ tủ điện",
+    ):
+        assert level(text) == RiskLevel.EMERGENCY, text
+    assert level("Không có khói hay lửa gì cả.") == RiskLevel.NONE  # the real coordination still negates
+
+
+def test_wp3d_control_characters_are_invisible():
+    """Q31.G: control characters, the blank Braille cell and private-use characters are invisible like Cf."""
+    for ch in ("\x08", "\x7f", "\x00", "\x01", "\x1b", "\x85", "⠀", "", "\U000f0000"):
+        text = "Hành lang có kh" + ch + "ói bốc ra từ hộp điện"
+        assert level(text) == RiskLevel.EMERGENCY, repr(ch)
+        assert all(part in text for s in assess(text, LEX).signals for part in s.source_quote.split(" | "))
+    assert not is_invisible("\t") and not is_invisible("\n") and not is_invisible("\r") and not is_invisible("a")
+    assert level("Hành lang\tcó\nkhói bốc ra") == RiskLevel.EMERGENCY  # tab and newline stay whitespace
+
+
+def test_wp3d_vocabulary_holes():
+    """Q31 vocabulary: electric devices that blow up, burns, bare wire, fire spreading, people trapped inside."""
+    for text in (
+        "Đèn hành lang tầng 3 tòa SIM-A cháy sang tường bên cạnh",
+        "Hộp điện tầng 3 tòa SIM-A nổ rồi tối om",
+        "Cư dân bị bỏng ở sảnh tầng 1 tòa SIM-A",
+        "Dây điện bị trần ra ở hành lang tầng 3 tòa SIM-A",
+        "Thang máy tầng 5 tòa SIM-A có người bên trong không ra được",
+    ):
+        assert level(text) in (RiskLevel.EMERGENCY, RiskLevel.UNCLEAR), text
+    for text in (
+        "Nước chảy ra sảnh tầng 1 tòa SIM-A từ ống thoát.",
+        "Sơn tường hành lang tầng 3 tòa SIM-A bị bong tróc.",
+        "Tủ điện tầng 3 tòa SIM-A nó kêu to, nhờ kiểm tra.",
+    ):
+        assert level(text) == RiskLevel.NONE, text
+
+
+def test_wp3d_lexicon_validators():
+    """Q31: hedge_forms covers every hedge, confirmers name a homograph, cues carry no one-letter token."""
+    data = yaml.safe_load((FIXTURE_DIR / "lexicon.yaml").read_text(encoding="utf-8"))
+    Lexicon.model_validate(data)
+
+    def broken(edit):
+        bad = deepcopy(data)
+        edit(bad)
+        with pytest.raises(ValidationError):
+            Lexicon.model_validate(bad)
+
+    broken(lambda d: d["safety"]["hedge_forms"].pop("co le"))
+    broken(
+        lambda d: d["safety"]["hedge_forms"].__setitem__("co le", ["xyz"])
+    )  # the name is not an accented form of "có lẽ"
+    broken(lambda d: d["safety"]["homograph_confirmers"].__setitem__("khong co token nay", ["boc"]))
+    broken(lambda d: d["safety"]["negation_prefixes"].append("k co"))
