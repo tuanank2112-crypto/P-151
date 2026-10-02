@@ -54,3 +54,4 @@
 - WP4 ✅ sau 🔁 (R03, 292 pass, BPTN trên blocker BQL = 403). Phóng WP5 theo H04.
 - WP5 (priority) xong: 313 test pass (nền WP4 292, +21), ruff sạch; PRI-H1/H2/M1/M2/L1/D0, set_priority, queue sort, rate một lần, seed priority; làm đỏ rate-ghi-đè và đảo khoá sắp xếp rồi xanh; nền `8c91c2d`.
 - WP5 ✅ (R04, 313 pass). Đã push nhánh feature/nhuy-cr03-p0 lên origin (yêu cầu người dùng). Tiếp: WP6 thẩm định cô lập.
+- WP6 thẩm định 🔁 (R05): quyền/audit/đồng thời PASS nhưng bỏ sót Bậc 1 (phủ định lan qua dấu phẩy, thiếu từ vựng, ký tự lạ) + DoS O(n²). Kỳ vọng Q24–Q27; phóng WP3b theo H05.

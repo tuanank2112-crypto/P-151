@@ -43,6 +43,10 @@
 | Q21 | 2026-10-01 18:00 | **WP3 ✅** (SO đo: 266 pass, ruff sạch, diff 20 file trong phạm vi; evidence làm đỏ có). Chấp nhận: sửa 9 dòng `test_engine.py` (hệ quả Q20); `git add -f` file `tests/test_maintenance/data/*.yaml`, **không sửa `.gitignore`** (cấu hình chung của nhóm — thêm file data mới thì cũng `-f`); mỗi ticket có thêm audit `ASSESS_SAFETY` kể cả NONE (truy vết); ví dụ chuẩn hoá P01 §3.1 theo luật + REF. | Đo lại | Thêm `!tests/**/data/` vào `.gitignore` khi nhóm đồng ý · rẻ |
 | Q22 | 2026-10-01 18:00 | **Vấn đề ngoài engine:** "Bóng đèn … bị cháy" qua 2b ra `NONE` đúng (B-01), nhưng bộ phân loại (rules/proposer, V-10 không đổi ở P0) cho `OUT_OF_SCOPE` ⇒ ticket đèn phổ biến nhất bị dừng chờ BPTN. Chuyển Trường (chủ rules/playbook) xử; không sửa trong hồ sơ này. | Ranh giới Q01 | Thêm WP sửa `rules.py` nếu Trường giao lại · ~0,5 giờ |
 | Q23 | 2026-10-01 18:50 | **WP4 🔁 SỬA drift 1:** BPTN trên blocker chủ BQL (`EMERGENCY_PENDING_BQL`) ⇒ `ACTION_DENIED` 403 + audit cho MỌI hành động, kể cả `bptn_resolve`; `bptn_resolve` trên `SAFETY_REVIEW_REQUIRED` (chủ BPTN) vẫn 409. Chấp nhận drift 2 (theo Q19) và drift 3 (`test_api.py` dùng TEC-002). SPEC P02 §5.5/§11/E-13 và TESTING X-2 lệch CR-03 ⇒ CR-03 thắng. | CR-03 §4.4 bất biến 5, AC-06 | — |
+| Q24 | 2026-10-02 | **WP6 thẩm định 🔁 SỬA** (R05): quyền/audit/chặn gỡ khẩn cấp/đồng thời PASS; N-01, N-05, N-06 **bỏ sót Bậc 1** ⇒ thêm gói **WP3b** (cùng worker, cùng SPEC P01) rồi **thẩm định lại bằng auditor MỚI**. Thước đo WP3b = các ca N-xx thành ca có nhãn trong `tests/test_maintenance/data/safety_cases_p0.yaml` với kỳ vọng ở Q25; bộ 84 ca cũ giữ 0 sai, 0 báo nhầm. | CR-03 §15 "0 bỏ sót Bậc 1" | — |
+| Q25 | 2026-10-02 | **Kỳ vọng (theo CR-03, nghiêng về an toàn):** (1) phủ định/marker "đã xảy ra"/hedge **chỉ áp trong cùng mệnh đề** với tín hiệu — ranh giới mệnh đề gồm `, ; . ! ? \n` và liên từ "và/nhưng/mà/rồi" ⇒ N-01, N-02 = **EMERGENCY**; (2) phủ định kép N-08 ⇒ ít nhất **UNCLEAR**; (3) B-01 chỉ khi "cháy/hỏng/…" thuộc chính danh từ đèn/bóng, có thiết bị điện khác (ổ cắm, hộp điện, dây, tủ điện, công tắc) làm chủ ngữ ⇒ không áp B-01 ⇒ N-03 ít nhất **UNCLEAR**; (4) B-04 chỉ hạ khi có ngữ cảnh nấu ăn **và không** có ngữ cảnh điện; so khớp ngữ cảnh nấu ăn phải phân biệt dấu ("nâu" ≠ "nấu") ⇒ N-04 = **EMERGENCY**; (5) từ vựng thêm: ngất/xỉu, hỏa hoạn/cháy nhà, khói mù/khói đen, lửa bốc, dây (điện) bị hở/hở điện, kẹt thang máy/mắc kẹt ⇒ N-05 = **EMERGENCY** (kể cả thiếu vị trí, Q08); (6) chuẩn hoá NFKC trước NFD, bỏ ký tự định dạng (Cf) KHÔNG chèn khoảng trắng, gộp ký tự lặp ≥3 ⇒ N-06 = như câu thường. | Ưu tiên không bỏ sót | Trường rà nhãn/từ vựng sau · rẻ |
+| Q26 | 2026-10-02 | **Hiệu năng/độ dài:** bỏ O(n²) trong `_sentence_bounds` (một lần tách câu/mệnh đề cho cả văn bản); engine từ chối mô tả cư dân > **5000 ký tự** bằng lỗi validation (422) — không cắt cụt âm thầm. Đo: mô tả 24 KB xử lý < 1 s; 5001 ký tự ⇒ 422. | N-07 DoS; khớp giới hạn 5000 của `ChatRequest` sẵn có | Đổi ngưỡng trong catalog · rẻ |
+| Q27 | 2026-10-02 | **Lỗi nhẹ cùng gói:** N-09 so sánh `>=` (bổ sung cùng instant vẫn quét lại 2b); N-10 luật priority dùng cùng hàm phủ định theo mệnh đề ("không chắn lối đi" không kích hoạt PRI-H2). **Ngoài phạm vi, ghi lại:** `cancel_reason` hiển thị nguyên văn cho cư dân, `cancel` thiếu AuditEvent (có từ trước) ⇒ Idea Vault; chữ "409" ở TESTING X-2 sửa lúc đồng bộ docs. | Rẻ, cùng file | — |
 
 ### Quyết định bị thay thế
 - Q12 (seed sửa ở WP5) → thay bởi Q20 (sửa ở WP3).
@@ -66,7 +70,7 @@
 - [x] Commit nền `e5ececf`, nhánh `feature/nhuy-cr03-p0`
 - [x] WP1 `specs/` đủ 4 mảng + SO đo (Q15)
 - [x] WP2 (R01 ✅) · [x] WP3 (R02 ✅) · [x] WP4 (R03 ✅ sau 🔁) · [x] WP5 (R04 ✅) (mỗi WP: report + SO đo lại + phán)
-- [ ] WP6 thẩm định ✅
+- [ ] WP6 thẩm định ✅ — lần 1 🔁 (R05) → WP3b (H05) → thẩm định lại bằng auditor mới
 - [ ] Đồng bộ não (6 điểm) + `docs/` + changelog/version
 - [ ] Sign-off `✅ ĐÃ HOÀN THÀNH` + mốc giây
 
