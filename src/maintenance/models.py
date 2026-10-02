@@ -1,4 +1,4 @@
-"""Entities from Data Contract v1.1 §5 as amended by CR-BPTN-02 (v0.5 candidate).
+"""Entities from Data Contract v1.1 §5 as amended by CR-BPTN-02 and CR-BPTN-03 (v0.6 candidate).
 
 Pydantic enforces the schema-level rules. Constants the contract fixes (synthetic=true, draft assignee_id=null, ...)
 are typed as Literal, so any other value is rejected at construction time rather than checked later.
@@ -21,6 +21,7 @@ from src.maintenance.enums import (
     AssetResolution,
     BlockerOwner,
     ChecklistStatus,
+    ClosureKind,
     ComparisonStatus,
     ComparisonType,
     Department,
@@ -32,10 +33,14 @@ from src.maintenance.enums import (
     MaterialStockStatus,
     NormLabel,
     PlaybookId,
+    Priority,
+    PrioritySource,
     ReadabilityStatus,
     ReasonCode,
     ReviewStatus,
+    RiskLevel,
     ServiceCategory,
+    SignalStatus,
     TicketFlag,
     TicketStatus,
     TicketType,
@@ -188,7 +193,7 @@ class Blocker(Entity):
     code: ReasonCode
     owner_role: BlockerOwner
     since: AwareDatetime
-    resume_step: int | None = Field(default=None, ge=2, le=8)
+    resume_step: int | None = Field(default=None, ge=2, le=8)  # None: never resumed by the system (emergency)
     auto_retry_count: int = Field(default=0, ge=0)
     next_retry_at: AwareDatetime | None = None
     escalate_at: AwareDatetime | None = None
@@ -220,9 +225,12 @@ BLOCKER_CODES_BY_STATUS: dict[TicketStatus, frozenset[ReasonCode]] = {
             ReasonCode.PENDING_REVIEW,
             ReasonCode.ASSET_UNCLEAR,
             ReasonCode.WRONG_DEPT,
+            ReasonCode.SAFETY_REVIEW_REQUIRED,
+            ReasonCode.EMERGENCY_PENDING_BQL,
+            ReasonCode.WRONG_DEPT_AFTER_START,
         }
     ),
-    TicketStatus.ON_HOLD: frozenset({ReasonCode.WAITING_MATERIAL, ReasonCode.BLOCKED_ONSITE}),
+    TicketStatus.ON_HOLD: frozenset({ReasonCode.WAITING_MATERIAL, ReasonCode.BLOCKED_ONSITE}),  # also after accept
     TicketStatus.ROUTED: frozenset({ReasonCode.OUT_OF_HOURS, ReasonCode.NOT_ACCEPTED}),
     TicketStatus.IN_PROGRESS: frozenset({ReasonCode.REWORK}),
 }
@@ -232,6 +240,21 @@ STATUSES_REQUIRING_DEPARTMENT = frozenset(
 )
 # Side statuses cannot exist without the blocker that explains them
 STATUSES_REQUIRING_BLOCKER = frozenset({TicketStatus.NEED_INFO, TicketStatus.VERIFYING, TicketStatus.ON_HOLD})
+
+
+class RiskSignal(Entity):
+    """One safety signal (CR-BPTN-03 §6.1.3). ABSENT rows are kept too, so a benign reading can be traced."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    signal_id: str = Field(min_length=1)
+    status: SignalStatus
+    source_quote: str = Field(min_length=1)
+    detected_by: Literal["RULE", "LLM"]
+
+
+# Keys a stored v0.5 document may still carry; dropped on read so old rows stay loadable
+_LEGACY_TICKET_KEYS = ("reopen_until",)
 
 
 class Ticket(Entity):
@@ -257,9 +280,39 @@ class Ticket(Entity):
     closed_by: str | None = None
     closed_at: AwareDatetime | None = None
     cancel_reason: str | None = None
-    reopen_until: AwareDatetime | None = None
-    rating: int | None = Field(default=None, ge=1, le=5)
+    closure_kind: ClosureKind | None = None  # set iff CLOSED
+    rating: int | None = Field(default=None, ge=1, le=5)  # once, never overwritten
+    # CR-BPTN-03 §6: safety layer (step 3b). None = step 3b has not run yet
+    risk_level: RiskLevel | None = None
+    risk_signals: list[RiskSignal] = Field(default_factory=list)
+    risk_amplifiers: list[str] = Field(default_factory=list)  # tier 3: raise priority only
+    safety_cleared_by: str | None = None  # BPTN/BQL confirmed safe; valid only for the content of that moment
+    safety_cleared_at: AwareDatetime | None = None
+    safety_clear_reason: str | None = None
+    safety_context: bool = False  # NEED_INFO was asked because of a tier-2 signal
+    # CR-BPTN-03 §7
+    priority: Priority | None = None
+    priority_source: PrioritySource | None = None
+    priority_rule_id: str | None = None
+    priority_reason: str | None = None
+    # CR-BPTN-03 §8, §9
+    wrong_department_return_count: int = Field(default=0, ge=0)
+    duplicate_count: int = Field(default=0, ge=0)  # reports detected as duplicates of this ticket
+    merged_children: list[str] = Field(default_factory=list)
+    related_ticket_ids: list[str] = Field(default_factory=list)
+    follow_up_of: str | None = None
     synthetic: Synthetic = True
+
+    @model_validator(mode="before")
+    @classmethod
+    def _drop_legacy_keys(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        if any(key in data for key in _LEGACY_TICKET_KEYS):
+            data = {k: v for k, v in data.items() if k not in _LEGACY_TICKET_KEYS}
+        if data.get("status") == TicketStatus.CLOSED and "closure_kind" not in data:
+            data = {**data, "closure_kind": ClosureKind.NORMAL}  # every v0.5 close was a normal BQL sign-off
+        return data
 
     @model_validator(mode="after")
     def _status_rules(self):
@@ -267,8 +320,11 @@ class Ticket(Entity):
             raise ValueError(f"Blocker {self.blocker.code} không được phép ở trạng thái {self.status}")
         if self.blocker is None and self.status in STATUSES_REQUIRING_BLOCKER:
             raise ValueError(f"Trạng thái {self.status} phải có blocker")
-        if self.status in STATUSES_REQUIRING_DEPARTMENT and self.department_id is None:
+        emergency_closed = self.closure_kind == ClosureKind.EMERGENCY_HANDLED
+        if self.status in STATUSES_REQUIRING_DEPARTMENT and self.department_id is None and not emergency_closed:
             raise ValueError(f"Trạng thái {self.status} phải có department_id (đã giao ở bước 8)")
+        if (self.status == TicketStatus.CLOSED) != (self.closure_kind is not None):
+            raise ValueError("closure_kind bắt buộc iff CLOSED")
         if (self.status == TicketStatus.MERGED) != (self.merged_into is not None):
             raise ValueError("merged_into bắt buộc iff MERGED")
         if self.status == TicketStatus.CANCELLED and not (self.cancel_reason and self.cancel_reason.strip()):
@@ -309,6 +365,8 @@ class Notification(Entity):
         "department.reconcile_failed",
         "reminder",
         "escalation",
+        "emergency.created",
+        "safety.review_escalated",
     ]
     audience: BlockerOwner
     payload: dict[str, Any] = Field(default_factory=dict)
@@ -332,6 +390,7 @@ class ClassificationRecord(Entity):
     needs_review: bool = False  # LLM-only proposal: pipeline step 5 asks BPTN
     proposer: str
     notes: list[str] = Field(default_factory=list)
+    llm_risk_signals: list[RiskSignal] = Field(default_factory=list)  # step 3b may only raise with these
 
 
 class AgentClassificationProposal(Entity):

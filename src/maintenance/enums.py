@@ -1,4 +1,4 @@
-"""Controlled vocabulary. Data Contract v1.1 §4 as amended by CR-BPTN-02 (v0.5 candidate)."""
+"""Controlled vocabulary. Data Contract v1.1 §4 as amended by CR-BPTN-02 and CR-BPTN-03 (v0.6 candidate)."""
 
 from enum import StrEnum
 
@@ -7,7 +7,8 @@ PLAYBOOK_VERSION = "1.1"
 
 
 class TicketStatus(StrEnum):
-    """CR-BPTN-02 §2.1: order-tracking style status, shared by resident and BQL at two levels of detail."""
+    """CR-BPTN-02 §2.1 / CR-BPTN-03 §3.1: ten statuses, shared by resident and BQL at two levels of detail.
+    An emergency is a blocker (EMERGENCY_PENDING_BQL), not a status."""
 
     RECEIVED = "RECEIVED"
     VERIFYING = "VERIFYING"
@@ -21,7 +22,7 @@ class TicketStatus(StrEnum):
     CANCELLED = "CANCELLED"
 
 
-# CLOSED is terminal too, but a resident may reopen it inside the reopen window
+# CR-BPTN-03 §4.3: no reopen; a resident who is not satisfied files a new ticket
 TERMINAL_STATUSES = frozenset({TicketStatus.CLOSED, TicketStatus.MERGED, TicketStatus.CANCELLED})
 # Entering or leaving these (or any change between main statuses) notifies; blocker-only changes do not
 SIDE_STATUSES = frozenset({TicketStatus.NEED_INFO, TicketStatus.ON_HOLD})
@@ -40,6 +41,9 @@ class ReasonCode(StrEnum):
     WRONG_DEPT = "WRONG_DEPT"
     BLOCKED_ONSITE = "BLOCKED_ONSITE"
     REWORK = "REWORK"
+    SAFETY_REVIEW_REQUIRED = "SAFETY_REVIEW_REQUIRED"  # CR-BPTN-03: tier-2 risk, BPTN decides (3 choices)
+    EMERGENCY_PENDING_BQL = "EMERGENCY_PENDING_BQL"  # CR-BPTN-03: tier-1 risk, only BQL acts
+    WRONG_DEPT_AFTER_START = "WRONG_DEPT_AFTER_START"  # CR-BPTN-03: department reports a wrong hand-over mid-work
 
 
 # Blockers BPTN clears (event `bptn_resolved`). MISSING_INFO too: BPTN contacts the resident and enters what is
@@ -55,6 +59,9 @@ BPTN_REASONS = frozenset(
         ReasonCode.WRONG_DEPT,
     }
 )
+# Blockers only BQL may act on. BPTN touching them is ACTION_DENIED (CR-BPTN-03 §4.4.5); resume() never clears them.
+BQL_REASONS = frozenset({ReasonCode.EMERGENCY_PENDING_BQL, ReasonCode.WRONG_DEPT_AFTER_START})
+SAFETY_REASONS = frozenset({ReasonCode.SAFETY_REVIEW_REQUIRED, ReasonCode.EMERGENCY_PENDING_BQL})
 
 
 class Department(StrEnum):
@@ -74,6 +81,38 @@ class BlockerOwner(StrEnum):
 class TicketFlag(StrEnum):
     ASSET_CHECK_ONSITE = "ASSET_CHECK_ONSITE"  # BPTN could not identify the asset; the department checks on site
     STOCK_CHECK_ON_ACCEPT = "STOCK_CHECK_ON_ACCEPT"  # stock unknown; the department checks when it accepts
+
+
+class RiskLevel(StrEnum):
+    """CR-BPTN-03 §6.1.5. Separate from priority."""
+
+    NONE = "NONE"
+    UNCLEAR = "UNCLEAR"  # tier 2: BPTN reviews
+    EMERGENCY = "EMERGENCY"  # tier 1: BQL acts, the Agent never routes
+
+
+class SignalStatus(StrEnum):
+    PRESENT = "PRESENT"
+    ABSENT = "ABSENT"
+    UNCLEAR = "UNCLEAR"
+
+
+class Priority(StrEnum):
+    """CR-BPTN-03 §7."""
+
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
+
+
+class PrioritySource(StrEnum):
+    AGENT_RULE = "AGENT_RULE"
+    HUMAN_OVERRIDE = "HUMAN_OVERRIDE"
+
+
+class ClosureKind(StrEnum):
+    NORMAL = "NORMAL"
+    EMERGENCY_HANDLED = "EMERGENCY_HANDLED"  # BQL handled an emergency; no department ever had the ticket
 
 
 class ServiceCategory(StrEnum):
@@ -222,6 +261,20 @@ class Action(StrEnum):
     REPORT_COMPLETE = "REPORT_COMPLETE"
     TRANSITION = "TRANSITION"
     RUN_JOBS = "RUN_JOBS"
+    # CR-BPTN-03
+    ASSESS_SAFETY = "ASSESS_SAFETY"
+    SAFETY_CONFIRM_SAFE = "SAFETY_CONFIRM_SAFE"
+    SAFETY_ESCALATE = "SAFETY_ESCALATE"
+    SAFETY_REQUEST_INFO = "SAFETY_REQUEST_INFO"
+    EMERGENCY_CLOSE = "EMERGENCY_CLOSE"
+    EMERGENCY_DOWNGRADE = "EMERGENCY_DOWNGRADE"
+    CREATE_FOLLOW_UP = "CREATE_FOLLOW_UP"
+    BQL_MERGE = "BQL_MERGE"
+    MERGE_UNDO = "MERGE_UNDO"
+    REPORT_WRONG_DEPT = "REPORT_WRONG_DEPT"
+    BQL_REASSIGN_TO_BPTN = "BQL_REASSIGN_TO_BPTN"
+    BQL_KEEP_DEPARTMENT = "BQL_KEEP_DEPARTMENT"
+    SET_PRIORITY = "SET_PRIORITY"
     ACTION_DENIED = "ACTION_DENIED"
     # Attempted actions that the permission matrix always denies
     EDIT_RAW = "EDIT_RAW"

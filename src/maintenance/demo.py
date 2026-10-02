@@ -61,6 +61,8 @@ def observe(engine: MaintenanceEngine, case: Case) -> dict[str, Any]:
     return {
         "status": ticket.status.value,
         "reason_code": ticket.blocker.code.value if ticket.blocker else None,
+        "risk_level": ticket.risk_level.value if ticket.risk_level else None,
+        "priority": ticket.priority.value if ticket.priority else None,
         "playbook_id": proposal.playbook_id.value if proposal else None,
         "proposed_department_id": ticket.proposed_department_id.value if ticket.proposed_department_id else None,
         "department_id": ticket.department_id.value if ticket.department_id else None,

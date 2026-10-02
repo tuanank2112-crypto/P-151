@@ -1,6 +1,6 @@
 """Deterministic classification and location rules (Playbook v1.1 §6.3, §7.3; Data Contract §6.3).
 
-CR-BPTN-02 removed the safety-signal rules and the EXCEPTION state; nothing here scores risk any more.
+CR-BPTN-02 removed the safety-signal rules from here; CR-BPTN-03 put a separate safety layer in `safety.py` (step 3b).
 
 No model output is used here: the resident text is treated as untrusted data and only matched against
 fixed patterns, so any instruction embedded in it has no effect (FR-SECURITY-001).
@@ -46,7 +46,19 @@ LIGHTING_PATTERNS = [
     r"\bchieu sang\b",
     r"\bden (hanh lang|sanh|cau thang|ham|tang|khu vuc)\b",
 ]
-NOT_WORKING_PATTERNS = [r"\bkhong sang\b", r"\bkhong hoat dong\b", r"\bhong\b", r"\bchap chon\b", r"\btat\b"]
+# CR-BPTN-03 B-01: a burnt, flickering or blown bulb is the usual PB-TEC-01 report (the safety layer decides
+# separately whether smoke, heat or a smell makes it an emergency)
+NOT_WORKING_PATTERNS = [
+    r"\bkhong sang\b",
+    r"\bkhong hoat dong\b",
+    r"\bhong\b",
+    r"\bchap chon\b",
+    r"\btat\b",
+    r"\bchay\b",
+    r"\bnhap nhay\b",
+    r"\bno bong\b",
+    r"\bchet\b",
+]
 
 
 @dataclass(frozen=True)

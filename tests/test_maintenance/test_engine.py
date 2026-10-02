@@ -1,4 +1,4 @@
-"""Engine behaviour under CR-BPTN-02: invariants (§3), pipeline steps (§4), retry and escalation (§5)."""
+"""Engine behaviour under CR-BPTN-02 as amended by CR-BPTN-03: invariants (§3), pipeline steps (§4), retry and escalation (§5)."""
 
 from datetime import datetime, timedelta
 
@@ -55,8 +55,6 @@ def test_invariant_5_event_chain_over_every_fixture_and_scenario(engine, fresh, 
     fresh.rework(tid, BQL, note="Còn bẩn")
     finish(fresh, tid)
     fresh.close(tid, BQL)
-    clock.advance(days=1)
-    fresh.reopen(tid, RESIDENT)
     assert_event_chain(fresh.get(tid))
 
 
@@ -110,7 +108,8 @@ def test_invariant_4_raw_is_read_only(engine):
 def test_transition_table_matches_the_cr():
     assert all(rule.actors == {"BQL"} for (_, to), rule in TRANSITIONS.items() if to in ("CLOSED", "CANCELLED"))
     assert ("CLOSED", "CANCELLED") not in TRANSITIONS and ("MERGED", "CANCELLED") not in TRANSITIONS
-    assert len(TRANSITIONS) == 16 + 7  # 16 rows + cancel from the 7 non-terminal statuses
+    assert ("CLOSED", "READY_FOR_REVIEW") not in TRANSITIONS  # CR-BPTN-03 §4.3: no reopen
+    assert len(TRANSITIONS) == 21 + 7  # T02–T22 (21 rows) + T23 cancel from the 7 non-terminal statuses
 
 
 def test_wrong_source_status_is_invalid_not_silent(fresh):

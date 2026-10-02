@@ -41,13 +41,16 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | `src/api/auth.py` | Đăng nhập, session in-memory, `get_actor` |
 | `src/api/routers/maintenance.py` | Router `/mo` (nội bộ), `/resident`, `/bql` |
 | `src/api/photos.py` | Kiểm tra magic bytes; `save`/`discard`/`load` qua `PhotoStore` (502 `PHOTO_STORE_FAILED`) |
-| `src/maintenance/engine.py` | State machine, pipeline bước 2–8, đối soát bước 10, jobs; `build_engine(settings)`, `seed_if_empty` |
+| `src/maintenance/engine.py` | State machine theo CR-BPTN-03 (bảng T02–T23), pipeline bước 2–8 + 3b an toàn, đối soát bước 10, jobs; ghi ticket liên quan cùng transaction (`_related`); `build_engine(settings)`, `seed_if_empty` |
 | `src/maintenance/store/` | `base.py` (Protocol + lỗi), `memory.py`, `postgres.py` (`MO_STORE=postgres`, schema `maintops`), `photos.py` (local/Supabase Storage), Alembic `alembic.ini` + `migrations/` |
 | `src/maintenance/{rules,proposer}.py` | Phân loại bằng luật + LLM có guard |
+| `src/maintenance/safety.py` | Tầng an toàn bước 3b (CR-BPTN-03 §6): luật Bậc 1/2, bẫy B-01…B-05, so khớp theo dấu, LLM chỉ nâng mức |
+| `src/maintenance/priority.py` | Mức ưu tiên PRI-* (CR-BPTN-03 §7) và khoá sắp xếp danh sách |
 | `src/maintenance/views.py` | View cư dân (allow-list) và bảng BQL |
 | `src/maintenance/{catalog,models,enums}.py` | Catalog mô phỏng, model Pydantic, enum |
 | `seed/maintenance_v1/` | Fixture: tickets, catalog, accounts |
-| `tests/test_maintenance/` | Test engine, API, auth, acceptance, store (pg chỉ chạy `--pg` trên docker `*_test`) |
+| `tests/test_maintenance/` | Test engine, API, auth, acceptance, CR-03 (`test_cr03.py`, `test_safety.py` + `safety_cases.yaml` ≥40 câu), store (pg chỉ chạy `--pg` trên docker `*_test`) |
+| `docs/CR-BPTN-03.md` | Spec flow ĐANG CODE (v0.6 candidate); biểu đồ swimlane người dùng 2026-10-01 thắng khi lệch. CR-BPTN-01/02 đã xoá khỏi `docs/` ở commit `4b6f3bc` (Trường), xem git history |
 
 ---
 

@@ -2,6 +2,35 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [0.7.0-dev] - 2026-10-02: Code chuyển sang CR-BPTN-03 (kế hoạch 02, chưa đổi version app)
+### Added
+- `src/maintenance/safety.py`: tầng an toàn bước 3b cho MỌI ticket (kể cả loại việc không rõ/ngoài phạm vi). Bậc 1 (S-01…S-14,
+  C-01) → `VERIFYING`/`EMERGENCY_PENDING_BQL` chủ BQL, không draft, không phòng ban, thông báo `emergency.created`. Bậc 2
+  → `SAFETY_REVIEW_REQUIRED` chủ BPTN, leo thang BQL sau `safety_review.escalate_after_hours`. Bẫy B-01…B-05; so khớp
+  theo dấu ("chạy/chảy" ≠ "cháy" khi gõ có dấu). LLM chỉ nâng mức; PRESENT không trích nguyên văn ⇒ UNCLEAR.
+- `src/maintenance/priority.py`: PRI-H1/H2/M1/M2/L1/D0 + PRI-U1 (số báo trùng) / PRI-U2 (người dễ tổn thương); danh sách
+  BPTN/BQL/phòng ban sắp khẩn cấp → priority → cũ trước. BPTN/BQL sửa tay (bắt buộc lý do), Agent không ghi đè.
+- Hành động mới: `safety_review` (CONFIRM_SAFE / ESCALATE / REQUEST_INFO), `emergency_close` (T10, `closure_kind=
+  EMERGENCY_HANDLED`), `emergency_downgrade`, `create_follow_up`, `bql_merge`, `undo_merge` (T09), `set_priority`,
+  `report_wrong_department` (T16), `bql_wrong_department` (T17 / E02), `material_short` (T18 + T19 khi kho nhập).
+- Gộp: liên kết hai chiều, nối bổ sung + ảnh cư dân vào ticket gốc, `duplicate_count`; hủy ticket gốc ⇒ ticket con về
+  `RECEIVED` chạy lại. Ghi ticket thứ hai trong CÙNG transaction (`engine._related`).
+- Endpoint: `/mo/tickets/{id}/{safety,unmerge,priority,report-wrong-dept,material-short}`,
+  `/bql/tickets/{id}/{emergency/close,emergency/downgrade,follow-up,merge,wrong-dept}`, `/bql/safety-clearances`;
+  lọc `/bql/tickets?risk_level=&priority=`. UI BPTN/BQL/phòng ban có form tương ứng.
+- Test: `test_cr03.py` (AC-01…AC-17), `test_safety.py` + `safety_cases.yaml` (50 câu: 0 bỏ sót Bậc 1, 0 báo nhầm),
+  test pg ghi hai ticket. Fixture `maintenanceops-sim-v1.3`: CLN-004, TEC-005 → khẩn cấp.
+### Changed
+- Bảng chuyển trạng thái theo CR-03 §4.1 (21 dòng T02–T22 + hủy từ 7 trạng thái). SYSTEM/AGENT không gọi `transition()`.
+- T15 đếm `wrong_department_return_count`, lần 2 leo thang BQL. Rating đúng một lần; ticket `MERGED` được đánh giá khi
+  gốc `CLOSED`. Luật phân loại đèn nhận "cháy / nhấp nháy / nổ bóng / chết" (B-01).
+### Removed
+- Reopen: `engine.reopen`, `Ticket.reopen_until` (doc cũ vẫn đọc được), `sla_config.reopen_window_days`, endpoint
+  `/resident/tickets/{id}/reopen`, nút "Báo chưa xong".
+### Decided
+- CR-BPTN-03 là spec đích; biểu đồ swimlane của người dùng thắng khi lệch (người dùng chốt 2026-10-02).
+- Giá trị cấu hình D-02 (4 h / 12 h) và D-03 (3) dùng tạm theo CR-03, CHỜ người dùng chốt.
+
 ## [0.5.0-candidate] - 2026-10-01: Phân loại trước kiểm tra trùng (chưa đổi version app)
 ### Changed
 - Pipeline theo biểu đồ flow 2026-10-01: bước 3 = phân loại + đề xuất phòng ban, bước 4 = kiểm tra trùng (trước đây ngược lại).

@@ -1,4 +1,4 @@
-"""Resident-facing wording, rendered only from the i18n template file (CR-BPTN-02 §6)."""
+"""Resident-facing wording, rendered only from the i18n template file (CR-BPTN-02 §6, CR-BPTN-03 §13)."""
 
 from datetime import datetime
 from functools import lru_cache
@@ -40,3 +40,12 @@ def public_message(status: TicketStatus, reason: ReasonCode | None = None, **val
 
 def overdue_eta_message(eta: datetime) -> str:
     return _templates()["overdue_eta_message"].format(eta=_fmt(eta))
+
+
+def safety_info_message() -> str:
+    """NEED_INFO asked because of a possible risk: no risk detail, no technical advice (CR-BPTN-03 §13)."""
+    return _templates()["safety_info_message"]
+
+
+def emergency_closed_message() -> str:
+    return _templates()["emergency_closed_message"]

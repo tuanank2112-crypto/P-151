@@ -1,4 +1,4 @@
-# Lời hiển thị cho cư dân (CR-BPTN-02 §6). Agent không tự viết lời cho cư dân: mọi public_message sinh từ đây.
+# Lời hiển thị cho cư dân (CR-BPTN-02 §6, CR-BPTN-03 §13). Agent không tự viết lời cho cư dân: mọi public_message sinh từ đây.
 # Biến trong {} được engine điền; thiếu biến thì engine báo lỗi thay vì hiển thị câu dở.
 
 status_labels:
@@ -40,6 +40,15 @@ reason_messages:
   WRONG_DEPT: "Đang xác minh lại phòng ban phụ trách."
   BLOCKED_ONSITE: "Việc xử lý tạm hoãn, dự kiến tiếp tục trước {eta}."
   REWORK: "{department} đang xử lý lại phản ánh."
+  # CR-BPTN-03: nhãn chung, không lộ chi tiết rủi ro, không dùng "Tạm hoãn"
+  SAFETY_REVIEW_REQUIRED: "Phản ánh đang được kiểm tra."
+  EMERGENCY_PENDING_BQL: "Phản ánh đang được kiểm tra."
+  WRONG_DEPT_AFTER_START: "Đang xác minh lại phòng ban phụ trách."
+
+# CR-BPTN-03 §6.4: hỏi cư dân vì nghi có nguy hiểm (không nói rõ rủi ro, không hướng dẫn kỹ thuật)
+safety_info_message: "Ban tiếp nhận thông tin cần bạn mô tả thêm tình trạng hiện tại ở vị trí phản ánh. Bạn có thể bổ sung ngay tại đây."
+# CR-BPTN-03 §11: ticket khẩn cấp đã được BQL xử lý
+emergency_closed_message: "Sự việc đã được Ban quản lý xử lý."
 
 # Khi mốc dự kiến (eta) đã qua mà blocker chưa gỡ: không hiển thị một ngày đã qua như thể vẫn đang chờ
 overdue_eta_message: "Việc xử lý đang chậm hơn dự kiến (trước {eta}). Ban quản lý đang theo dõi và sẽ cập nhật mốc mới."

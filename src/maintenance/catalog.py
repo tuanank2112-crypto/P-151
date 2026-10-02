@@ -95,17 +95,33 @@ class ReworkSla(Frozen):
     escalate_at_count: int = Field(ge=1)
 
 
+class HoursSla(Frozen):
+    escalate_after_hours: float = Field(gt=0)  # calendar hours, not business hours
+
+
+class CountSla(Frozen):
+    escalate_at_count: int = Field(ge=1)
+
+
+class PrioritySla(Frozen):
+    duplicate_raise_at_count: int = Field(ge=1)
+
+
 class SlaConfig(Frozen):
-    """Every timing the engine uses. Defaults in catalog.yaml are provisional (CR-BPTN-02 §8)."""
+    """Every timing and threshold the engine uses (CR-BPTN-03 §12.2). Values marked "đề xuất" in catalog.yaml are
+    still waiting for a decision."""
 
     max_auto_retries: int = Field(ge=0)
     job_interval_minutes: float = Field(gt=0)
     duplicate_window_hours: float = Field(gt=0)
-    reopen_window_days: float = Field(gt=0)
     bptn: BptnSla
     waiting_material: WaitingMaterialSla
     not_accepted: NotAcceptedSla
     rework: ReworkSla
+    safety_review: HoursSla
+    safety_context_need_info: HoursSla
+    wrong_dept_return: CountSla
+    priority: PrioritySla
 
 
 class Actor(Frozen):
@@ -181,6 +197,8 @@ class ExecutionInput(Frozen):
 class Expected(Frozen):
     status: str
     reason_code: str | None = None
+    risk_level: str | None = None
+    priority: str | None = None
     playbook_id: str | None = None
     proposed_department_id: str | None = None
     department_id: str | None = None

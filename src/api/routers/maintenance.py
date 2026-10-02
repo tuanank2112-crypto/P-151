@@ -1,9 +1,9 @@
-"""MaintenanceOps Agent v0.5 candidate API (CR-BPTN-02; simulated data; MO_STORE=memory or postgres).
+"""MaintenanceOps Agent v0.6 candidate API (CR-BPTN-03; simulated data; MO_STORE=memory or postgres).
 
 Three routers over one engine:
   /mo        internal: demo control, Agent/department/BPTN/warehouse/system actions, full case
   /resident  what a resident sees and may do (public fields only)
-  /bql       BQL dashboard and the only close / rework / cancel actions
+  /bql       BQL dashboard, emergencies, and the only close / rework / cancel actions
 
 The caller is the logged-in account (`Authorization: Bearer <token>` from /api/v1/auth/login); its role comes from
 the simulated actor catalog. Reads are scoped too: a department only sees tickets handed to it, the warehouse only
@@ -43,15 +43,25 @@ from src.maintenance.enums import (
     ChecklistStatus,
     Department,
     EvidenceType,
+    Priority,
     ReadabilityStatus,
     ReasonCode,
+    RiskLevel,
     ServiceCategory,
     TicketStatus,
 )
 from src.maintenance.messages import status_label
 from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent
+from src.maintenance.priority import sort_key
 from src.maintenance.store.base import ConcurrencyError, StorePermissionError, StoreUnavailableError
-from src.maintenance.views import BqlTicketRow, ResidentTicketView, bql_rows, resident_view
+from src.maintenance.views import (
+    BqlTicketRow,
+    ResidentTicketView,
+    SafetyClearance,
+    bql_rows,
+    resident_view,
+    safety_clearances,
+)
 
 router = APIRouter(prefix="/mo", tags=["maintenance-ops (nội bộ)"])
 resident_router = APIRouter(prefix="/resident", tags=["cư dân"])
@@ -250,6 +260,8 @@ def reset_ai_logs(actor: ActorDep, engine: EngineDep) -> dict[str, Any]:
     _require_role(engine, actor, ActorRole.QA_INTERNAL)
     ai_logger.clear()
     return {"message": "Đã reset dữ liệu AI logs"}
+
+
 # ------------------------------------------------------------------ tickets (internal, full detail)
 
 
@@ -292,6 +304,8 @@ class TicketSummary(BaseModel):
     proposed_department_id: Department | None
     department_id: Department | None
     escalated: bool
+    risk_level: RiskLevel | None = None
+    priority: Priority | None = None
     created_at: str
     description: str  # resident text: untrusted data, the UI renders it as plain text
     flow: str | None
@@ -300,7 +314,8 @@ class TicketSummary(BaseModel):
 
 @router.get("/tickets", response_model=list[TicketSummary])
 def list_tickets(actor: ActorDep, engine: EngineDep, status: TicketStatus | None = None) -> list[TicketSummary]:
-    """Work queue nội bộ, chỉ gồm ticket vai trò của bạn được xem (phòng ban: ticket đã giao; kho: chờ vật tư)."""
+    """Work queue nội bộ, chỉ gồm ticket vai trò của bạn được xem (phòng ban: ticket đã giao; kho: chờ vật tư).
+    Sắp xếp: khẩn cấp trước, rồi mức ưu tiên, rồi cũ trước (CR-BPTN-03 §7)."""
     _require_role(engine, actor, *STAFF)
     rows = []
     for case in list(engine.cases.values()):  # snapshot: a new ticket may arrive from another thread
@@ -317,11 +332,14 @@ def list_tickets(actor: ActorDep, engine: EngineDep, status: TicketStatus | None
                 proposed_department_id=ticket.proposed_department_id,
                 department_id=ticket.department_id,
                 escalated=bool(ticket.blocker and ticket.blocker.escalated),
+                risk_level=ticket.risk_level,
+                priority=ticket.priority,
                 created_at=ticket.raw.created_at,
                 description=ticket.raw.original_description,
                 flow=fixture.flow if fixture else None,
             )
         )
+    rows.sort(key=lambda r: sort_key(r.risk_level, r.priority, r.created_at))
     return rows
 
 
@@ -372,11 +390,13 @@ class TransitionRequest(BaseModel):
     note: str | None = None
     eta: datetime | None = None
     cancel_reason: str | None = None
+    reason: ReasonCode | None = Field(default=None, description="Chỉ khi một dòng cho hai lý do (T18)")
+    into: str | None = Field(default=None, description="Chỉ BQL gộp ticket khẩn cấp (T08): ticket gốc")
 
 
 @router.post("/tickets/{ticket_id}/transition", response_model=Case)
 def transition(ticket_id: str, body: TransitionRequest, actor: ActorDep, engine: EngineDep) -> Case:
-    """Hàm chuyển trạng thái chung (CR §3). Vai trò không bao giờ được vào trạng thái đích → 403 + audit;
+    """Hàm chuyển trạng thái chung (CR-BPTN-03 §4.1). Vai trò không bao giờ được vào trạng thái đích → 403 + audit;
     vai trò đúng nhưng sai trạng thái nguồn → 409 INVALID_TRANSITION."""
     return _call(engine.transition, ticket_id, body.to, actor, **body.model_dump(exclude={"to"}))
 
@@ -434,6 +454,33 @@ def bptn_resolve(ticket_id: str, body: BptnResolveRequest, actor: ActorDep, engi
     return _call(engine.bptn_resolve, ticket_id, actor, **body.model_dump())
 
 
+class SafetyRequest(NoteBody):
+    decision: Literal["CONFIRM_SAFE", "ESCALATE", "REQUEST_INFO"]
+
+
+@router.post("/tickets/{ticket_id}/safety", response_model=Case)
+def safety_review(ticket_id: str, body: SafetyRequest, actor: ActorDep, engine: EngineDep) -> Case:
+    """Rủi ro chưa rõ (Bậc 2): BPTN chọn đúng một trong ba — xác nhận an toàn (bắt buộc lý do), nâng khẩn cấp
+    (chuyển BQL, không rút lại), yêu cầu cư dân bổ sung (bắt buộc lý do). BQL làm được cả ba khi leo thang."""
+    return _call(engine.safety_review, ticket_id, actor, decision=body.decision, note=body.note)
+
+
+@router.post("/tickets/{ticket_id}/unmerge", response_model=Case)
+def undo_merge(ticket_id: str, body: RequiredNoteBody, actor: ActorDep, engine: EngineDep) -> Case:
+    """Hoàn tác gộp (BPTN hoặc BQL, bắt buộc ghi chú): MERGED → RECEIVED, chạy lại pipeline."""
+    return _call(engine.undo_merge, ticket_id, actor, note=body.note)
+
+
+class PriorityRequest(RequiredNoteBody):
+    priority: Priority
+
+
+@router.post("/tickets/{ticket_id}/priority", response_model=Case)
+def set_priority(ticket_id: str, body: PriorityRequest, actor: ActorDep, engine: EngineDep) -> Case:
+    """BPTN hoặc BQL sửa mức ưu tiên, bắt buộc lý do; Agent không ghi đè nữa."""
+    return _call(engine.set_priority, ticket_id, actor, priority=body.priority, note=body.note)
+
+
 # ------------------------------------------------------------------ department
 
 
@@ -454,6 +501,19 @@ class BlockRequest(BaseModel):
 
     note: str = Field(min_length=1)
     eta: datetime
+
+
+@router.post("/tickets/{ticket_id}/report-wrong-dept", response_model=Case)
+def report_wrong_department(ticket_id: str, body: RequiredNoteBody, actor: ActorDep, engine: EngineDep) -> Case:
+    """Đã nhận việc mà phát hiện sai phòng ban: IN_PROGRESS → VERIFYING (WRONG_DEPT_AFTER_START), BQL quyết.
+    Giữ nguyên checklist, vật tư, ghi chú, ảnh."""
+    return _call(engine.report_wrong_department, ticket_id, actor, note=body.note)
+
+
+@router.post("/tickets/{ticket_id}/material-short", response_model=Case)
+def material_short(ticket_id: str, body: RequiredNoteBody, actor: ActorDep, engine: EngineDep) -> Case:
+    """Thiếu vật tư sau khi nhận việc: IN_PROGRESS → ON_HOLD (WAITING_MATERIAL); kho nhập đủ thì tự làm tiếp."""
+    return _call(engine.material_short, ticket_id, actor, note=body.note)
 
 
 @router.post("/tickets/{ticket_id}/block", response_model=Case)
@@ -547,7 +607,8 @@ class StockRequest(BaseModel):
 
 @router.post("/warehouse/stock/{item_code}", response_model=list[Case])
 def receive_stock(item_code: str, body: StockRequest, actor: ActorDep, engine: EngineDep) -> list[Case]:
-    """Kho nhập vật tư (sự kiện `stock_received`); ticket đang chờ vật tư đó tự chạy lại từ bước 7."""
+    """Kho nhập vật tư (sự kiện `stock_received`): ticket chờ vật tư đó tự chạy lại từ bước 6 (chưa nhận việc)
+    hoặc quay lại IN_PROGRESS (đã nhận việc)."""
     return _call(engine.receive_stock, actor, item_code, body.qty)
 
 
@@ -655,14 +716,6 @@ def resident_rate(ticket_id: str, body: RatingRequest, actor: ActorDep, engine: 
     return resident_view(engine, case, engine.clock())
 
 
-@resident_router.post("/tickets/{ticket_id}/reopen", response_model=ResidentTicketView)
-def resident_reopen(ticket_id: str, body: NoteBody, actor: ActorDep, engine: EngineDep) -> ResidentTicketView:
-    """Báo chưa xong: CLOSED → READY_FOR_REVIEW trong thời hạn mở lại."""
-    _own_case(engine, ticket_id, actor)
-    case = _call(engine.reopen, ticket_id, actor, note=body.note)
-    return resident_view(engine, case, engine.clock())
-
-
 # ------------------------------------------------------------------ BQL
 
 
@@ -675,8 +728,11 @@ def bql_list(
     blocker_code: ReasonCode | None = None,
     escalated: bool | None = None,
     overdue: bool | None = None,
+    risk_level: RiskLevel | None = None,
+    priority: Priority | None = None,
 ) -> list[BqlTicketRow]:
-    """Đầy đủ chi tiết, lọc theo status, phòng ban, mã blocker, cờ leo thang, quá SLA."""
+    """Đầy đủ chi tiết, lọc theo status, phòng ban, mã blocker, cờ leo thang, quá SLA, mức rủi ro, ưu tiên.
+    Khẩn cấp luôn ở trên cùng."""
     _require_role(engine, actor, ActorRole.BQL)
     return bql_rows(
         engine,
@@ -686,7 +742,16 @@ def bql_list(
         blocker_code=blocker_code,
         escalated=escalated,
         overdue=overdue,
+        risk_level=risk_level,
+        priority=priority,
     )
+
+
+@bql_router.get("/safety-clearances", response_model=list[SafetyClearance])
+def bql_safety_clearances(actor: ActorDep, engine: EngineDep) -> list[SafetyClearance]:
+    """Mọi lần BPTN/BQL xác nhận an toàn, mới nhất trước, để BQL xem lại."""
+    _require_role(engine, actor, ActorRole.BQL)
+    return safety_clearances(engine)
 
 
 @bql_router.post("/tickets/{ticket_id}/close", response_model=Case)
@@ -711,3 +776,41 @@ class CancelRequest(BaseModel):
 def bql_cancel(ticket_id: str, body: CancelRequest, actor: ActorDep, engine: EngineDep) -> Case:
     """Hủy ticket chưa kết thúc. Chỉ BQL, bắt buộc lý do."""
     return _call(engine.cancel, ticket_id, actor, cancel_reason=body.cancel_reason)
+
+
+@bql_router.post("/tickets/{ticket_id}/emergency/close", response_model=Case)
+def bql_emergency_close(ticket_id: str, body: RequiredNoteBody, actor: ActorDep, engine: EngineDep) -> Case:
+    """Khẩn cấp đã xử lý: VERIFYING → CLOSED (EMERGENCY_HANDLED), bắt buộc ghi kết quả."""
+    return _call(engine.emergency_close, ticket_id, actor, note=body.note)
+
+
+@bql_router.post("/tickets/{ticket_id}/emergency/downgrade", response_model=Case)
+def bql_emergency_downgrade(ticket_id: str, body: RequiredNoteBody, actor: ActorDep, engine: EngineDep) -> Case:
+    """Báo nhầm, hạ xuống: VERIFYING → RECEIVED, việc bảo trì đi tiếp flow thường. Bắt buộc lý do."""
+    return _call(engine.emergency_downgrade, ticket_id, actor, note=body.note)
+
+
+@bql_router.post("/tickets/{ticket_id}/follow-up", response_model=Case, status_code=201)
+def bql_follow_up(ticket_id: str, body: RequiredNoteBody, actor: ActorDep, engine: EngineDep) -> Case:
+    """Tạo ticket sửa chữa tiếp theo từ ticket khẩn cấp (trả về ticket MỚI); ticket khẩn cấp giữ nguyên."""
+    return _call(engine.create_follow_up, ticket_id, actor, note=body.note)
+
+
+class MergeRequest(RequiredNoteBody):
+    into: str = Field(min_length=1)
+
+
+@bql_router.post("/tickets/{ticket_id}/merge", response_model=Case)
+def bql_merge(ticket_id: str, body: MergeRequest, actor: ActorDep, engine: EngineDep) -> Case:
+    """Gộp ticket khẩn cấp vào ticket gốc cùng sự cố."""
+    return _call(engine.bql_merge, ticket_id, actor, into=body.into, note=body.note)
+
+
+class WrongDeptDecision(RequiredNoteBody):
+    decision: Literal["TO_BPTN", "KEEP"]
+
+
+@bql_router.post("/tickets/{ticket_id}/wrong-dept", response_model=Case)
+def bql_wrong_department(ticket_id: str, body: WrongDeptDecision, actor: ActorDep, engine: EngineDep) -> Case:
+    """Phòng ban báo sai phòng ban sau khi đã làm: TO_BPTN (BPTN chọn lại, giữ dữ liệu đã làm) hoặc KEEP."""
+    return _call(engine.bql_wrong_department, ticket_id, actor, decision=body.decision, note=body.note)

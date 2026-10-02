@@ -11,12 +11,15 @@
 </agent_startup_protocol>
 
 <project_foundation>
-- Dự án: P-151 MaintenanceOps Agent — prototype MÔ PHỎNG, v0.5 candidate (CR-BPTN-02) trên nhánh feature/chamanh.
+- Dự án: P-151 MaintenanceOps Agent — prototype MÔ PHỎNG; code theo CR-BPTN-03 (v0.6 candidate, PROPOSED) trên nhánh feature/chamanh. Biểu đồ swimlane người dùng (2026-10-01) thắng khi CR lệch. CR-BPTN-01/02 đã xoá khỏi `docs/` ở commit `4b6f3bc` (Trường), xem git history.
 - Tech Stack: Python 3.11 + FastAPI; engine thuần Python `src/maintenance/engine.py`; LLM tùy chọn (LangChain ChatOpenAI, `LLM_MODE=mock|openai`); UI tĩnh `src/web/` (Tailwind CDN).
-- Data/State: `CaseRepository` theo `MO_STORE` (memory mặc định | postgres schema `maintops`, Alembic, Supabase); ảnh theo `MO_PHOTO_STORE` (local | supabase). Startup chỉ seed khi rỗng, không reset; reset/evaluate trên DB chung cần `MO_ALLOW_RESET=true`. Kế hoạch 01 đang chạy (WP2–WP4 xong local).
+- Data/State: `CaseRepository` theo `MO_STORE` (memory mặc định | postgres schema `maintops`, Alembic, Supabase); ảnh theo `MO_PHOTO_STORE` (local | supabase). Startup chỉ seed khi rỗng, không reset; reset/evaluate trên DB chung cần `MO_ALLOW_RESET=true`. Kế hoạch 01 đang chạy (WP2–WP4 xong local); kế hoạch 02 (CR-BPTN-03) xong local, chờ cổng server.
 - Bất biến: mọi đổi status qua `_apply_transition` + bảng TRANSITIONS; mọi ghi qua `_mutate` (deep copy → audit sink → commit, fail closed); chỉ BQL đóng/hủy.
-- Pipeline (2026-10-01): 2 dữ liệu → 3 phân loại + đề xuất phòng ban → 4 trùng → 5 review → 6 tài sản → 7 vật tư/tồn kho → 8 giao. Hàm bước tên `_step_<số>_<việc>`; phân loại luôn trước trùng.
-- Thiếu dữ liệu (`NEED_INFO`/`MISSING_INFO`) giao BPTN: `bptn_resolve(location|info, note)`; cư dân vẫn tự bổ sung được. Flow theo biểu đồ người dùng, không theo CR-BPTN-03.
+- Pipeline: 2 dữ liệu → 3 phân loại + đề xuất phòng ban → 3b an toàn (`safety.py`, MỌI ticket) → 4 trùng → 5 review → 6 tài sản → 7 vật tư/tồn kho → 8 giao. Hàm bước tên `_step_<số>_<việc>`; phân loại luôn trước trùng; loại việc không rõ chỉ dừng SAU 3b.
+- An toàn: Bậc 1 → `EMERGENCY_PENDING_BQL` (chỉ BQL: đóng/hạ/ticket tiếp theo/gộp/hủy; resume/job KHÔNG gỡ; BPTN chạm ⇒ ACTION_DENIED). Bậc 2 → `SAFETY_REVIEW_REQUIRED` (BPTN: xác nhận an toàn/nâng khẩn cấp/hỏi cư dân). LLM chỉ nâng mức. Priority PRI-* (`priority.py`), người sửa thì Agent không ghi đè.
+- Thiếu dữ liệu (`NEED_INFO`/`MISSING_INFO`) giao BPTN: `bptn_resolve(location|info, note)`; cư dân vẫn tự bổ sung được. Không reopen; rating một lần.
+- Ghi ticket thứ hai (gộp, hủy gốc, đếm trùng, ticket tiếp theo) qua `engine._related` trong CÙNG transaction.
+- Ngưỡng ở `catalog.yaml` `sla_config`; D-02 (4 h/12 h), D-03 (3) là giá trị tạm CHỜ người dùng chốt.
 - Đồng thời: ghi phải giữ `engine.lock`; `engine.at()` là thread-local (xem `-known-gotchas.md`).
 - Kiểm tra: `python -m pytest -q` + `python -m ruff check src tests` + `python -m ruff format --check src tests`; Postgres: `MO_TEST_DATABASE_URL=…/p151_test python -m pytest --pg -q` (chỉ docker local).
 - Planning & RFCs: Thư mục `planning/` lưu trữ các bản kế hoạch theo định dạng `[STT]_[YYYY-MM-DD]_[Ten-Ngan]` (25-35 ký tự, cố định path).

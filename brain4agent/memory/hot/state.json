@@ -4,7 +4,7 @@
   "system_status": "initialized",
   "last_verification": {
     "timestamp": "2026-10-02T00:00:00+07:00",
-    "grade": "pytest 185 passed + 20 deselected; pytest --pg 205 passed; ruff check clean; live restart PASS"
+    "grade": "plan 02 local: pytest 290 passed + 21 deselected; pytest --pg 311 passed; ruff check+format clean; evaluate 12/12 (sim-v1.3); safety set 50: tier-1 miss 0, false alarm 0"
   },
   "active_plans_completed": 0,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",

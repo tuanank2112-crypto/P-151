@@ -30,3 +30,14 @@
 - Sự cố: G1 đầu tiên (trước khi ép env trong conftest) mở kết nối Supabase chỉ-đọc — đã chặn, ghi gotcha.
 - Còn: WP4b, WP5 (owner chạy migration Supabase + M-SB1/M-SB2), WP6; R02 chờ người duyệt; chưa commit.
 - Owner đã migrate Supabase (`0001_maintops_initial`, kiểm chỉ-đọc PASS, TLSv1.3 client). Chạy alembic phải bằng `.venv\Scripts\python.exe` (conda base không có alembic).
+
+## 🏁 Phiên 2026-10-02 — Kế hoạch 02: code chuyển sang CR-BPTN-03
+- Người dùng: "chuyển theo logic CR-BPTN 3, bản 2 cũ rồi" + "biểu đồ của tôi vẫn ưu tiên" + "phần nào config thì nhắn lại".
+- Hồ sơ `planning/02_2026-10-02_cr-bptn-03-hybrid/` (plan + 7 SPEC). Làm trọn P0 + P1 của CR-03 §16.
+- Mới: `safety.py` (so khớp theo dấu, B-01…B-05), `priority.py`, bảng T02–T23, `_related` (2 ticket/1 transaction),
+  10 endpoint mới, UI BPTN/BQL/phòng ban; bỏ reopen. Fixture v1.3 (CLN-004, TEC-005 → khẩn cấp).
+- Lỗi thật tìm ra khi viết test: "bóng đèn bị cháy" bị luật phân loại coi là ngoài phạm vi ⇒ thêm "cháy/nhấp nháy/nổ bóng/
+  chết" vào luật đèn; `return_wrong_department` không ghim `expected_from=ROUTED` ⇒ trên IN_PROGRESS thành T16.
+- Đo: pytest 290 passed + 21 deselected; `--pg` 311 passed; ruff check/format sạch; evaluate 12/12; bộ 50 câu: 0 bỏ sót
+  Bậc 1, 0 báo nhầm; 3 bằng chứng đỏ I-4/I-5/I-8 exit 1 (`evidence/wp-red/`).
+- Còn: người dùng chốt D-02/D-03; deploy Supabase (ticket cũ đọc được, muốn áp 3b cho dữ liệu demo cũ phải reset); chưa commit.

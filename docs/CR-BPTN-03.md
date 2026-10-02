@@ -1,7 +1,7 @@
 # CR-BPTN-03 — Flow lai: giao phòng ban + đường an toàn/khẩn cấp + ưu tiên + gộp ticket an toàn
 
-> **Status:** PROPOSED — chưa được duyệt. Chưa có Product approver ghi tên (xem §17).
-> **Baseline bị tác động:** MaintenanceOps MVP v0.3 (FROZEN) + [CR-BPTN-01](CR-BPTN-01.md) + [CR-BPTN-02](CR-BPTN-02.md), cả hai cũng `PROPOSED`.
+> **Status:** PROPOSED — chưa được duyệt. Chưa có Product approver ghi tên (xem §17). **Đã hiện thực trên `feature/chamanh` (2026-10-02, kế hoạch [`planning/02_2026-10-02_cr-bptn-03-hybrid`](../planning/02_2026-10-02_cr-bptn-03-hybrid/plan.md)); code ghi CR-BPTN-03 là nguồn; CR-BPTN-01/02 đã xoá khỏi `docs/` ở commit `4b6f3bc` (Trường), xem git history.** Xem §20.
+> **Baseline bị tác động:** MaintenanceOps MVP v0.3 (FROZEN) + CR-BPTN-01 + CR-BPTN-02 (cả hai `PROPOSED`, file đã xoá ở `4b6f3bc`, xem git history).
 > **Target candidate:** MaintenanceOps MVP v0.6 (flow lai: lõi CR-BPTN-02, bù bằng điểm mạnh của v0.3/v0.4).
 > **Phạm vi nhánh:** `feature/chamanh` (code nền: commit `a305fc0`; **đồng bộ flow với code 2026-10-01**, xem §19).
 > **Data classification:** chỉ dữ liệu mô phỏng; không phải quy trình, dữ liệu hay hiệu quả vận hành thật của Vinhomes.
@@ -496,3 +496,27 @@ Theo yêu cầu người dùng, tài liệu được sửa cho khớp biểu đ�
 | Phân công nhân sự | Không ai ghi `assignee_id`; `SET_ASSIGNEE` bị từ chối | Phòng ban tự phân công (theo biểu đồ); Agent không ghi |
 | BQL trả làm lại | Không nói rõ đi đâu | Về chính phòng ban đang giữ, không qua BPTN |
 | Kho nhập đủ | Chạy lại toàn bộ điều kiện | Chạy lại từ bước 6 (tra tài sản) |
+
+## 20. Hiện thực trong code (2026-10-02)
+
+Người dùng chốt: code theo tài liệu này, biểu đồ swimlane 2026-10-01 vẫn ưu tiên khi lệch. Đã làm cả P0 và P1 (§16).
+
+| Mục | Nơi trong code |
+|---|---|
+| Tầng an toàn §6 (bước 3b) | `src/maintenance/safety.py`, `engine._step_3b_check_safety_signals` |
+| Ưu tiên §7 | `src/maintenance/priority.py`, `engine._set_agent_priority`, `set_priority` |
+| Bảng chuyển §4.1 | `engine.TRANSITIONS` (21 dòng T02–T22 + T23 từ 7 trạng thái) |
+| BPTN 3 lựa chọn §6.4 | `engine.safety_review`, `POST /mo/tickets/{id}/safety` |
+| BQL khẩn cấp §6.5 | `emergency_close`, `emergency_downgrade`, `create_follow_up`, `bql_merge`; `/bql/tickets/{id}/…` |
+| Gộp §8 | `engine._merge`, `_unmerge`, `_link`; hủy gốc trả ticket con về `RECEIVED` |
+| §9.3 báo sai phòng ban sau khi làm | `report_wrong_department` (T16), `bql_wrong_department` (T17 / E02) |
+| Bỏ reopen §4.3, rating một lần §11 | đã xoá `reopen`; `rate` từ chối lần 2 |
+| Bộ ≥ 40 câu §15 | `tests/test_maintenance/safety_cases.yaml` (50 câu: 0 bỏ sót Bậc 1, 0 báo nhầm) |
+
+**Khác tài liệu (drift, có lý do):** `duplicate_rejected_of` giữ tên cũ `Case.not_duplicate_of` (dữ liệu Supabase đã lưu);
+`SAFETY_REVIEW_REQUIRED` không gỡ bằng `bptn_resolve` mà bằng đúng 3 lựa chọn; khi gộp chỉ nối phần bổ sung và ảnh của
+ticket con, không nối mô tả gốc; luật phân loại đèn thêm "cháy / nhấp nháy / nổ bóng / chết" để B-01 đi flow thường.
+
+**Còn chờ người dùng chốt (giá trị tạm trong `seed/maintenance_v1/catalog.yaml`):** D-02 `safety_review.escalate_after_hours = 4`,
+`safety_context_need_info.escalate_after_hours = 12`; D-03 `priority.duplicate_raise_at_count = 3`; D-05 tồn kho không rõ
+vẫn đi tiếp kèm cờ `STOCK_CHECK_ON_ACCEPT`.
