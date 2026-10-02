@@ -172,8 +172,8 @@ Quy ước: `Actor` là vai trò được phép gọi. `Pipe` = chỉ pipeline h
 | Blocker được gỡ | Chạy lại từ |
 |---|---|
 | `MISSING_INFO` (cư dân bổ sung) | Bước 2 **kể cả 2b** |
-| `SAFETY_REVIEW_REQUIRED` (BPTN xác nhận an toàn) | Bước 3, **bỏ qua 2b** nếu `safety_cleared_by` đã đặt và chưa có bổ sung mới sau đó |
-| `EMERGENCY_PENDING_BQL` (BQL hạ) | Bước 3, bỏ qua 2b theo cùng điều kiện |
+| `SAFETY_REVIEW_REQUIRED` (BPTN xác nhận an toàn) | Bước 2 (bước 2b **tự bỏ qua** vì `safety_cleared_by` đã đặt và chưa có bổ sung mới sau đó; bước 2 vẫn kiểm tra vị trí) — tương đương "bước 3, bỏ qua 2b" nhưng bảo đảm có vị trí (đồng bộ theo code, plan 01 Q17/D2) |
+| `EMERGENCY_PENDING_BQL` (BQL hạ) | Bước 2, 2b tự bỏ qua theo cùng điều kiện |
 | `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE` (BPTN chọn loại việc) | Bước 4 (kiểm tra trùng với category vừa chốt) |
 | `DUPLICATE` (BPTN bác) | Bước 5 |
 | `PENDING_REVIEW`, `ASSET_UNCLEAR` | Bước 6 |
@@ -181,7 +181,7 @@ Quy ước: `Actor` là vai trò được phép gọi. `Pipe` = chỉ pipeline h
 | `WAITING_MATERIAL` | Bước 6 (tra asset lại rồi vật tư — khớp "chạy lại toàn bộ điều kiện giao" của T12) |
 | Hoàn tác gộp (T09) | Bước 4 (bỏ qua cặp trong `duplicate_rejected_of`) |
 
-Sau mọi bổ sung của cư dân (text hoặc ảnh), **luôn chạy lại 2b** trên phần mới; `safety_cleared_*` chỉ có hiệu lực với nội dung tại thời điểm xác nhận.
+Sau mọi bổ sung **văn bản** của cư dân, **luôn chạy lại 2b** trên phần mới (ảnh không đổi kết quả 2b: §1 không phân tích ảnh bằng AI); `safety_cleared_*` chỉ có hiệu lực với nội dung tại thời điểm xác nhận.
 
 ### 5.3 `can_route` `[GIỮ]`
 
@@ -451,6 +451,7 @@ Bỏ: `reopen_until`; `assignee_id` chỉ còn `null` (giữ cột, validator é
 | D-07 | Ảnh bằng chứng bắt buộc, không miễn | Có (đã khớp code hiện tại) |
 | D-08 | Ai duyệt CR-BPTN-03 | **Chưa có người duyệt ghi tên**; không tạo hoặc giả định |
 | D-09 | Thứ tự phân loại và kiểm tra trùng | **Đã chốt 2026-10-01 (Như Ý), theo code `1e2f42b` của Châm Anh:** phân loại (bước 3) **trước** kiểm tra trùng (bước 4), để quét trùng có category và ticket không rõ loại việc dừng trước khi đọc ticket khác. Tầng an toàn 2b **vẫn trước** phân loại (giữ AC-02: ticket ngoài phạm vi có tín hiệu nguy hiểm vẫn bị bắt). Ticket Bậc 1 chưa có category nên bước 4 chỉ liên kết theo vị trí + cửa sổ thời gian. Bảng chạy lại §5.2 theo code: `CATEGORY_UNCLEAR`/`OUT_OF_SCOPE`→4, `DUPLICATE` bác→5, `WAITING_MATERIAL`→6 |
+| D-10 | Điểm chạy lại sau khi gỡ blocker an toàn | **Đồng bộ 2026-10-02 theo code (plan 01 Q17):** chạy lại từ **bước 2** (2b tự bỏ qua khi đã `safety_cleared_*`), không phải bước 3, vì bước 2 của code còn kiểm tra vị trí sơ bộ và 2b chạy trước bước 2 (Q08) |
 
 **Cần xác minh trong code (chưa đọc đủ):** (a) `engine.receive_stock` và `resume()`; (b) kết quả chạy bộ test ở `a305fc0` (số 110 test là theo CR-BPTN-02, chưa kiểm); (c) cách `models.py` ràng buộc lý do theo trạng thái; (d) `services/safety.py` và `rules.py` ở `4c2d07f` còn dùng lại được không; (e) các trường `escalated`/`flags` hiện có.
 

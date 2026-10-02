@@ -2,7 +2,7 @@
 
 | Trường | Giá trị |
 |---|---|
-| Trạng thái | 🚀 ĐANG THI CÔNG — SPEC ✅ 2026-10-01 17:10 |
+| Trạng thái | ✅ ĐÃ HOÀN THÀNH — 2026-10-02 20:05:09 +0700 |
 | Loại SemVer | MINOR (thêm tầng an toàn, priority, hành động mới; giữ tương thích API hiện có) |
 | Spec nguồn | [`docs/CR-BPTN-03.md`](../../docs/CR-BPTN-03.md) — P0 ở §16 |
 | Chủ việc | Như Ý (engine, state machine, safety, proposer/fallback/injection) |
@@ -78,9 +78,9 @@
 - [x] Commit nền `e5ececf`, nhánh `feature/nhuy-cr03-p0`
 - [x] WP1 `specs/` đủ 4 mảng + SO đo (Q15)
 - [x] WP2 (R01 ✅) · [x] WP3 (R02 ✅) · [x] WP4 (R03 ✅ sau 🔁) · [x] WP5 (R04 ✅) (mỗi WP: report + SO đo lại + phán)
-- [ ] WP6 thẩm định ✅ — lần 1 🔁 (R05) → WP3b (H05) → thẩm định lại bằng auditor mới
-- [ ] Đồng bộ não (6 điểm) + `docs/` + changelog/version
-- [ ] Sign-off `✅ ĐÃ HOÀN THÀNH` + mốc giây
+- [x] WP6 thẩm định ✅ — lần 1 🔁 (R05) → WP3b (R06 ✅) → lần 2 🔁 (R07) → judge Q29 → WP3c (R08 ✅) → lần 3 🔁 (R09) → WP3d (R10 ✅); cổng đóng ở Q32
+- [x] Đồng bộ não (6 điểm) + `docs/` + changelog/version (H08, R11; brain v1.1.0)
+- [x] Sign-off `✅ ĐÃ HOÀN THÀNH` + mốc giây (2026-10-02 20:05:09 +0700)
 
 ## §5. Bảng trỏ SPEC
 
@@ -95,3 +95,14 @@
 | [`specs/OPERATIONS.md`](specs/OPERATIONS.md) | Lệnh kiểm, thứ tự WP, ranh giới file, rollback |
 | [`specs/TESTING-ACCEPTANCE.md`](specs/TESTING-ACCEPTANCE.md) | Ma trận AC → test, 84 câu nhãn, cách phá, Exit Gates |
 | `specs/LEXICON-P0.yaml`, `SAFETY-CASES-P0.yaml`, `REF-safety-proto.py` | Từ vựng chuẩn, tập câu có nhãn, prototype đo |
+
+## §6. Sign-off (Q33)
+| Mục | Giá trị |
+|---|---|
+| Hoàn tất | 2026-10-02 20:05:09 +0700 |
+| Phạm vi đóng | WP2–WP5, WP3b–WP3d, thẩm định WP6 (3 vòng + holdout), đồng bộ tài liệu H08 |
+| Số đo cuối (report R10 + Q32) | pytest 1462 passed, 0 skip; ruff check/format sạch; bộ dừng an toàn 1065 ca xanh; holdout độc lập NONE 2/39; `b_fp` EM 0/UNCLEAR 4, `jx_negfp` EM 0, `b_fp2` EM 3; assess 24 KB 0,28 s |
+| Exit Gates | local ✅ G1–G12 (`specs/TESTING-ACCEPTANCE.md` §8) · server ⬜ (G1–G4, G7 sau khi rebase lên `feature/chamanh` và chạy CI/Render — Q04) |
+| Version | brain 1.0.1 → **1.1.0** (MINOR). Version app trong `src/` KHÔNG đổi (Q33) |
+| Bàn giao | `docs/maintenance.md`; roadmap Active: nối router/UI cho 5 method + `set_priority`, merge `develop` + bump version app, Q22 cho Trường |
+| Hồ sơ vòng đời | H01–H08 ↔ R01–R11 (R08 ứng H06, R10 ứng H07, R11 ứng H08); evidence WP2…WP5, WP3b, WP3c, WP3d |

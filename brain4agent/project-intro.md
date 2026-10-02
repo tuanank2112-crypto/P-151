@@ -3,7 +3,7 @@
 ## 1. Mục tiêu (Goals & Objectives)
 Repo P-151 (AI20K Build Phase) xây **MaintenanceOps Agent** cho BQL một cụm dân cư, chạy trên **dữ liệu mô phỏng** (`SIM-*`), không phải vận hành thật. Cư dân gửi phản ánh về vệ sinh khu vực chung (`PB-CLN-01`) hoặc đèn chiếu sáng khu vực chung (`PB-TEC-01`). Agent kiểm tra dữ liệu, chạy tầng an toàn hai bậc, phát hiện trùng, phân loại và đề xuất phòng ban + mức ưu tiên, tra asset/vật tư rồi giao phòng ban. Phòng ban thực hiện và nộp hồ sơ; BQL kiểm duyệt, đóng hoặc trả làm lại. Agent dừng đúng chỗ cần con người (BPTN, BQL) và không bao giờ tự đóng hay gỡ khẩn cấp.
 
-- **Spec đích duy nhất:** [`docs/CR-BPTN-03.md`](../docs/CR-BPTN-03.md). CR-BPTN-01/02 đã bỏ ngày 2026-10-01.
+- **Spec đích duy nhất:** [`docs/CR-BPTN-03.md`](../docs/CR-BPTN-03.md). CR-BPTN-01/02 đã bỏ ngày 2026-10-01. **Trạng thái 2026-10-02 (v1.1.0):** engine đã cài CR-03 P0 (tầng an toàn hai bậc, đường khẩn cấp do BQL xử lý, priority, chốt chặn reopen/gán người/rating) — tài liệu module `docs/maintenance.md`; router/UI/persistence chưa nối.
 - **Vai trò:** Cư dân · Agent · BPTN (bộ phận tiếp nhận) · Phòng ban (Vệ sinh/Kỹ thuật) · Kho (actor mô phỏng) · BQL.
 - **Mốc:** MVP online 04/10/2026; bàn giao đủ 10 deliverables 19/10/2026 (kế hoạch nhóm trên Notion "Kế hoạch MaintenanceOps MVP").
 - Hướng ResidentGPT (hỏi-đáp nội quy, `Problem_Card.md` trên `main`) là hướng cũ, không còn dùng.

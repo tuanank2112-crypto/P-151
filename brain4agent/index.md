@@ -18,7 +18,8 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | **Kiến trúc dữ liệu & Data Flow** | [`-data-architecture.md`](-data-architecture.md) | Cấu trúc dữ liệu, cơ chế lưu trữ và State Flow. |
 | **Lộ trình nâng cấp & Ý tưởng** | [`roadmap.md`](roadmap.md) | Active tasks, Kho Ý Tưởng (Idea Vault) và các mốc đã hoàn thành. |
 | **Lịch sử cập nhật** | [`changelog.md`](changelog.md) | Lịch sử Semantic Releases (vX.Y.Z). |
-| **Tài liệu kỹ thuật module** | [`docs/`](../docs/) | Thư mục chứa tài liệu chuyên trách 1-1 cho từng module. |
+| **Tài liệu kỹ thuật module** | [`docs/`](../docs/) · [`../docs/maintenance.md`](../docs/maintenance.md) | Tài liệu chuyên trách 1-1; `maintenance.md` = module `src/maintenance/` (pipeline, tầng an toàn R1–R10, 5 method khẩn cấp, priority, cấu hình, test). Đọc TRƯỚC khi sửa engine. |
+| **Kế hoạch 01 — CR-03 P0 engine (✅ 2026-10-02)** | [`../planning/01_2026-10-01_cr03-p0-engine/`](../planning/01_2026-10-01_cr03-p0-engine/) | `plan.md` (Q01–Q33), `specs/` (SPEC-P01 an toàn, P02 khẩn cấp, P03 priority, P04 chốt chặn, TESTING, OPERATIONS), `reports/R01…R11`, `evidence/`. Hợp đồng từ vựng: `specs/01-CONTRACTS.md` §5 + `seed/maintenance_v1/lexicon.yaml`. |
 | **⭐ SPEC DUY NHẤT — MaintenanceOps** | [`../docs/CR-BPTN-03.md`](../docs/CR-BPTN-03.md) | Vai trò/quyền, 10 trạng thái, T01–T23, pipeline §5.1, tầng an toàn §6, priority §7, gộp §8, AC-01..18, P0/P1. CR-01/02 đã xoá. |
 | **Sản phẩm (nền v0.3, lệch thì CR-03 thắng)** | [`../docs/01_problem_statement.md`](../docs/01_problem_statement.md) … [`05_traceability_and_review.md`](../docs/05_traceability_and_review.md), [`data-contract-v1.md`](../docs/data-contract-v1.md), [`playbook-v1.md`](../docs/playbook-v1.md) | Bài toán, PRD, UI flow, data contract, playbook. |
 | **Swimlane / sơ đồ flow** | [`../docs/Activity Diagram.png`](../docs/Activity%20Diagram.png) | Bản nháp, CHƯA khớp CR-03 (thiếu Bậc 2, sai thứ tự an toàn). `flow_maintenanceops_v04.png` là flow cũ. |
@@ -51,7 +52,9 @@ project-root/
 │   │   ├── engine.py                 # State machine (TRANSITIONS) + pipeline `_step_2.._step_8` + bước 10 + resume/jobs/receive_stock
 │   │   ├── enums.py, models.py       # TicketStatus, ReasonCode, Ticket, Blocker, WorkOrderDraft, ...
 │   │   ├── rules.py, proposer.py     # Luật cố định + LLM structured proposal (fallback khi lỗi)
-│   │   ├── catalog.py                # Đọc seed catalog + sla_config
+│   │   ├── safety.py                 # Bước 2b: assess() Bậc 1/Bậc 2 theo luật R1–R10 (hàm thuần), scope_before dùng chung; guard LLM chỉ nâng mức
+│   │   ├── priority.py               # PRI-H1/H2/M1/M2/L1/D0 (hàm thuần; phủ định qua safety.scope_before)
+│   │   ├── catalog.py                # Đọc seed catalog + sla_config + lexicon.yaml (validator V-01…V-12, khoá WP3d)
 │   │   ├── views.py, messages.py, i18n/vi.yaml  # View cư dân (allow-list) / BQL; lời cho cư dân
 │   │   └── migration.py, demo.py     # Ánh xạ v0.4→v0.5; demo/evaluate
 │   ├── api/routers/maintenance.py    # /api/v1/mo, /resident, /bql
@@ -59,8 +62,8 @@ project-root/
 │   ├── web/                          # UI tĩnh (index.html, app.js)
 │   ├── agents/                       # LangGraph MẪU của template, chưa trên đường chạy
 │   └── services/llm.py               # Factory LLM
-├── seed/maintenance_v1/              # catalog.yaml, tickets.yaml (12 ca + expected), accounts.yaml
-├── tests/test_maintenance/           # acceptance, engine, api, auth, fixtures, proposer, migration
+├── seed/maintenance_v1/              # catalog.yaml, tickets.yaml (12 ca + expected), accounts.yaml, lexicon.yaml (từ vựng an toàn + priority = DỮ LIỆU)
+├── tests/test_maintenance/           # acceptance, engine, api, auth, fixtures, proposer, migration, safety, emergency, priority; data/ (bộ dừng + ca nhãn — `git add -f`, .gitignore chặn `data/`)
 ├── scripts/                           # Hook ghi log AI của template
 ├── .github/workflows/                 # CI
 ├── brain4agent/                      # [BỘ NHỚ DỰ ÁN] Single Source of Truth
@@ -74,5 +77,5 @@ project-root/
 │   └── project-intro.md              # [INTRO] Tổng quan dự án & Tech stack
 ├── planning/                         # [QUẢN LÝ KẾ HOẠCH NÂNG CẤP] Chứa các bản kế hoạch RFCs
 ├── .agents/skills/                   # [WORKSPACE SKILLS] Kỹ năng chuyên dụng cục bộ dự án
-└── docs/                             # [MODULE DOCS] Tài liệu kỹ thuật chi tiết
+└── docs/                             # [MODULE DOCS] CR-BPTN-03.md, maintenance.md (module engine), 01–05, data-contract, playbook
 ```

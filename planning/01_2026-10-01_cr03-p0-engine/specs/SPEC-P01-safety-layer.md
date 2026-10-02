@@ -2,7 +2,7 @@
 
 | Trường | Giá trị |
 |---|---|
-| WP | WP3 (✅ R02) · WP3b (✅ R06) · **WP3c (🟠 worker — thiết kế phạm vi theo luật R1–R10 của judge, plan.md Q29, ĐÃ CHỐT)** |
+| WP | WP3 (✅ R02) · WP3b (✅ R06) · **WP3c (✅ R08 — thiết kế phạm vi theo luật R1–R10 của judge, plan.md Q29)** · **WP3d (✅ R10 — sửa hẹp theo thẩm định lần 3, plan.md Q31; chữ đồng bộ ở §0.1)** |
 | Nguồn | CR-03 §5.1 (2b), §5.2, §6.1–§6.3, §6.6 (B-01…B-04), §15 (bộ câu, "0 bỏ sót Bậc 1"), AC-01…AC-05, AC-08 (phần chạy lại), AC-18; Q06–Q09, Q11, Q24–Q29 |
 | Hợp đồng từ vựng | [`01-CONTRACTS.md`](01-CONTRACTS.md) §5 (bản WP3c). Nguồn chân lý dữ liệu = `seed/maintenance_v1/lexicon.yaml`. [`LEXICON-P0.yaml`](LEXICON-P0.yaml), [`REF-safety-proto.py`](REF-safety-proto.py), [`SAFETY-CASES-P0.yaml`](SAFETY-CASES-P0.yaml) = **lịch sử WP3, đóng băng** — mô tả thuật toán cửa sổ 4 từ đã bị thay (§7.4); CẤM dùng làm thước đo WP3c |
 | File được ghi (WP3c) | `src/maintenance/safety.py`, `src/maintenance/priority.py` (chỉ SPEC-P03 §1), `src/maintenance/catalog.py` (chỉ 01 §5), `seed/maintenance_v1/lexicon.yaml`, `tests/test_maintenance/test_safety.py`, `tests/test_maintenance/test_priority.py`, `tests/test_maintenance/data/safety_stop_sets_p0.yaml` (mới, `git add -f` theo Q21; `safety_cases_p0.yaml` KHÔNG sửa), `planning/01_2026-10-01_cr03-p0-engine/evidence/WP3c/*.txt`, file report. **Không** đụng `engine.py` (chữ ký `assess_with_llm` giữ nguyên — đã kiểm: engine chỉ gọi `assess_with_llm(text, self.lexicon.safety, self.safety_llm, self.llm_label)`, `engine.py:2032`), `models.py`, `views.py`, `rules.py`, `proposer.py`, `src/api/`, `src/web/`, `specs/`, `plan.md` |
@@ -28,6 +28,17 @@
 - **A2** — R5 marker: giữa tín hiệu (hoặc đầu mệnh đề của marker) và marker chỉ được có token nối trong `resolved_bridge_tokens` — không chủ ngữ khác chen giữa. Lỗ đo được trên bản thử judge (R5 theo chữ): `Có tia lửa tóe ra từ ổ cắm, đèn đã tắt.` ⇒ UNCLEAR `T2-02` (HEAD: EMERGENCY — hồi quy nếu cài R5 theo chữ).
 - **A3** — R4 chỉ kế thừa khi vế trước "hay/hoặc/lẫn" chứa token nguy hiểm (`coordination_hazard_tokens`, lọc R7) — giữ `jx_coord` 0 lọt. Bản thử judge **chưa từng chạy R4**: `patch_proto.py` dòng 114 chứa byte `0x08` thay cho `\b` (đo `od -c`), regex không bao giờ khớp.
 - **A4** — Từ vựng thêm ngoài danh sách Q29: cue `khong phai la`, `chang phai` (phủ định kép có "là"); cue người `chua thay ai, chua co ai, khong co nguoi, khong thay nguoi, khong thay co nguoi`; loại trừ `khoi thuoc, khoi huong, khoi nhang` (nguồn khói lành tính — cần để R9 giữ ngưỡng UNCLEAR ≤ 5/59 b_fp); `homograph_intended` cho pattern chắc nghĩa (`tia lua`, `ngat xiu`…).
+
+### 0.1 Đồng bộ chữ WP3d (plan.md Q31, đóng hồ sơ Q33) — mô tả đúng code ở `6a35664`; nếu lệch các mục dưới đây thì mục này THẮNG
+| Mục | Thay đổi so với chữ WP3c ở các mục sau | Dữ liệu (`lexicon.yaml`) / code |
+|---|---|---|
+| **A** (R1) | Cue phủ định KHÔNG có token một chữ cái: bỏ `k co`, `k thay` (khớp mã toà "Tòa SIM-K có khói"); giữ `ko`, `hok` (giới hạn đã biết: "Tòa KO có khói"). Validator `SafetyLexicon` từ chối `negation_prefixes`/`person_negation_cues` có token 1 ký tự | `negation_prefixes`; `catalog.py` |
+| **B** (R5 hedge) | Cue hedge chỉ tính khi viết ĐÚNG dấu: sau `scope_before` tìm thấy cue, `ctx.original(cue)` phải ∈ `hedge_forms[cue]`; văn bản không dấu ⇒ không hạ (giữ mức cao). Ngữ cảnh nấu ăn B-04 cũng chỉ so trên chữ gốc có dấu (`khet_benign_contexts` = `[]`, mọi từ ở `khet_benign_contexts_accented`) | khoá mới `hedge_forms` (đúng một mục cho mỗi hedge, validator) |
+| **C** (R7) | Đồng tự bị loại match CHỈ KHI mệnh đề không có từ đồng hiện xác nhận nghĩa nguy hiểm: `homograph_confirmers[token]` (từ/cụm ≤ 2 token; tra bằng tập token + cặp token của mệnh đề, tính một lần mỗi mệnh đề). Danh sách theo TỪNG token đồng tự (không phẳng) để "nước chảy lan ra sảnh" vẫn NONE. `homograph_intended` thêm `co khoi`, `boc khoi`, `khoi boc`, `lua boc`, `ngat di`, `day dien ho`, `day dien ho ra`, `bi bong`; KHÔNG thêm `co lua` ("có lựa chọn" phải NONE). Pattern S-09 `bi ngat` là regex có lookahead loại điện/nước/…, validator V-08 chấp nhận khoá `homograph_intended` là chuỗi regex có thật | khoá mới `homograph_confirmers`; `homographs` thêm `no`, `bong` |
+| **D** (R4) | Token nguy hiểm không tính khi nằm trong cụm `coordination_hazard_exclusions` (`chua chay`, `bao chay`, `phong chay`) | khoá mới; `_negation` |
+| **G** (R8) | `is_invisible` thêm: loại `Cc` trừ tab/xuống dòng/CR, U+2800, loại `Co` (Private Use); mọi ngoại lệ viết bằng mã điểm (`ord`/`chr`), không ký tự thô trong mã nguồn | `safety.py` |
+| Từ vựng | S-05: `chay sang`, `chay ra` (regex có lookbehind "nước"), thiết bị điện + `nổ`; S-09: `bi bong`, `nguoi ben trong khong ra duoc`; S-03: `day dien bi tran`, `day dien bi tran ra` | `signals` |
+Giới hạn đã biết sau WP3d (không sửa ở P0): "Tòa KO có khói"; "có khói bay ra hết rồi" ⇒ UNCLEAR; B-04 khớp chữ có dấu thật trùng tên người ("phòng bánh kẹo", "chị Thịt") ⇒ UNCLEAR.
 
 ## 1. Hợp đồng module `src/maintenance/safety.py` (WP3c)
 
@@ -136,6 +147,7 @@ def derive_risk_level(signals: Sequence[RiskSignal], lexicon: SafetyLexicon) -> 
 - **R8 — kiểm trên ký tự GỐC, TRƯỚC khi fold:** `is_invisible(c) ⇔ unicodedata.category(c) == "Cf" or c == "\u034f" or "\ufe00" <= c <= "\ufe0f" or c in HANGUL_FILLERS`.
   - Biến thể A (`invisible_as_space=False`, mặc định): ký tự vô hình **không sinh gì và không cắt chuỗi chữ** (`kh\u200bói` ⇒ `khoi`).
   - Biến thể B (`invisible_as_space=True`): ký tự vô hình ⇒ **một khoảng trắng** (cắt chuỗi chữ; KHÔNG phải ranh giới mệnh đề) (`có\u200bkhói` ⇒ `co khoi`).
+  - **[WP3d, Q31.G]** `is_invisible` còn gồm loại `Cc` (trừ `\t`, `\n`, `\r`), U+2800 và loại `Co`; hằng/so sánh dùng mã điểm, không ký tự vô hình thô trong mã nguồn.
   - `assess` luôn chạy A; chạy thêm B **khi và chỉ khi** `any(is_invisible(c) for c in text)`. Kết quả = §3.7 trên hợp bản ghi của các biến thể ⇒ `risk_level` = max mức hai biến thể (BẮT BUỘC test).
 - `quote_of(text, index_map, a, b) = text[index_map[a] : index_map[b-1] + 1]` — **nguyên văn có dấu** (giữ). Bất biến (test trên mọi bộ câu): mọi `source_quote` (tách `" | "`) là chuỗi con của `text`, kể cả khi quote chứa ký tự vô hình.
 - `TextContext.original(a, b) = " ".join(unicodedata.normalize("NFC", quote_of(text, index, a, b)).lower().split())`. Văn bản NFD: dấu của chữ CUỐI token có thể rơi khỏi lát cắt ⇒ `original` không khớp dạng có dấu nào ⇒ R7 giữ match, R9 không bắn — chiều an toàn, chấp nhận.
@@ -163,11 +175,13 @@ def derive_risk_level(signals: Sequence[RiskSignal], lexicon: SafetyLexicon) -> 
 - Regex trên `W`: `(?:^|(?<=\s))(?P<cue>ALT(negation_prefixes))(?:\s(?:ALT(negation_fillers))){0,scope_max_fillers}(?P<x>(?:\s[a-z0-9]+){1,3})\s(?:ALT(coordination_conjunctions))(?:\s(?:ALT(negation_fillers)))?\s*$` (chỉ cue CHUNG, không cue người).
 - Chấp nhận **chỉ khi** vế `x` có ít nhất một token `t ∈ coordination_hazard_tokens` mà `ctx.original(token) ∉ homographs.get(t, ())` (A3 + R7). Chấp nhận ⇒ `Scope(cue_start = lo + m.start("cue"), double = <một cue của CÙNG tập cue R1 cho tín hiệu này (chung, + người nếu S-09) + 0..max_fillers đệm kết thúc ngay trước cue_start trong W>)` ⇒ kết quả như R1.
 - **Cấm** qua phẩy/"và": `W` dừng ở ranh giới mệnh đề; validator 01 §5.4 bắt `va ∈ clause_conjunctions` và `coordination_conjunctions ∩ clause_conjunctions = ∅`.
+- **[WP3d, Q31.D]** Token `t` thuộc một match của `coordination_hazard_exclusions` trong vế `x` KHÔNG tính là token nguy hiểm.
 - Ví dụ: `Không thấy khói hay tia lửa gì, …` ⇒ `S-02 ABSENT "Không thấy khói hay tia lửa"`, `S-04 ABSENT` (NONE) · `Không có điện hay tia lửa ở hộp đèn.` ⇒ `S-02 PRESENT` (vế trước không nguy hiểm) · `Không có khói, có tia lửa…` / `Không có khói và tia lửa…` ⇒ `S-02 PRESENT`.
 
 #### 3.2.4 R5 — hedge (chỉ khi không phủ định)
 - `h = scope_before(ctx, start, hi, hedges, hedge_fillers, max_fillers=scope_max_fillers, max_chars=scope_max_chars)`; `hedge_fillers = [co, thay, bi, la, nhu, dang]`. Có ⇒ `UNCLEAR`, `rule_id="T2-01"`, quote = `quote_of(text, index, h.cue_start, end)`. `h.double` bỏ qua.
 - Hedge đứng SAU tín hiệu không tính (an toàn trước).
+- **[WP3d, Q31.B]** Cue hedge phải khớp một dạng có dấu của `hedge_forms` (so trên `ctx.original`); tên riêng "Cô Lê", "Cô Vẽ", "Dương Như" không hedge; văn bản không dấu không hedge.
 - Ví dụ: `Hình như có mùi khét ở hành lang…` ⇒ `S-01 UNCLEAR T2-01 "Hình như có mùi khét"` · `Hình như đang có khói…` ⇒ `UNCLEAR` · `Hình như mất điện có khói ở hộp đèn.` ⇒ `S-04 PRESENT` (EMERGENCY).
 
 #### 3.2.5 R5 — marker "đã xảy ra và đã hết" (chỉ khi không phủ định, không hedge)
@@ -190,6 +204,7 @@ Với mỗi `SignalDef` có `patterns` (thứ tự khai báo):
 - `homograph_drop(a, b, pattern)`: với mỗi token `t` (`[a-z]+`) của `norm[a:b]`: `forms = homographs.get(t)`; nếu `forms` và `orig = ctx.original(token)` ∈ `forms` và `orig ∉ homograph_intended.get(pattern, {}).get(t, ())` ⇒ **loại cả match**.
 - Áp cho: pattern tín hiệu (§3.3); `ambiguous_terms` (§3.6.1, khoá = chuỗi pattern); token nguy hiểm R4 (§3.2.3, không `intended`). KHÔNG áp cho `components` (S-14/T2-05), cue, đệm, hedge, marker.
 - Văn bản không dấu ⇒ `orig == t` ∉ `forms` ⇒ **giữ** match (chiều an toàn).
+- **[WP3d, Q31.C]** Trước khi loại một match đồng tự: nếu `homograph_confirmers.get(t)` có một từ/cụm nằm trong cùng mệnh đề (kể cả trong span) ⇒ GIỮ match (gõ sai dấu vẫn là tín hiệu). Ví dụ: `Có khỏi bốc ra từ hộp điện` ⇒ `S-04 PRESENT`; `Hộp điện … có lúa` ⇒ EMERGENCY; `Nước chảy lan ra sảnh …` ⇒ NONE (không có từ xác nhận cho `chay`).
 - Ví dụ: `Nước chảy lan ra sảnh…` ⇒ `chay lan` bị loại (`chảy`) ⇒ NONE · `Cư dân có lựa chọn…` ⇒ NONE · `Có người bị chảy máu…` ⇒ `S-09 PRESENT` (`chay mau` intended `chảy`) · `Hành lang … đầy khói` ⇒ `S-04 PRESENT` (`day khoi` intended `đầy`) · `Có tia lừa ở ổ cắm` (gõ sai dấu) ⇒ `S-02 PRESENT` (`tia lua` intended mọi dạng của `lua`).
 
 ### 3.4 Thành phần và tổ hợp (`components`, `all_of`, `any_of`) — giữ WP3

@@ -1,12 +1,12 @@
 {
-  "current_version": "1.0.1",
+  "current_version": "1.1.0",
   "brain_template_version": "1.7.1",
   "system_status": "active",
   "last_verification": {
-    "timestamp": "2026-10-01T09:02:51.212Z",
-    "grade": "brain realigned to CR-03 + D-09; tests not re-run locally (Châm Anh reported 142 pass at 1e2f42b)"
+    "timestamp": "2026-10-02T20:04:00+07:00",
+    "grade": "plan 01 CR-03 P0 engine closed: 1462 pytest pass, ruff clean, safety stop sets 1065 green, judge holdout NONE 2/39, 3 isolated audits passed"
   },
-  "active_plans_completed": 0,
+  "active_plans_completed": 1,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
   "engine_version": "1.13.1",
   "lang": {
@@ -31,6 +31,17 @@
     "license": ""
   },
   "active_spec": "docs/CR-BPTN-03.md",
-  "working_branch": "feature/chamanh",
-  "code_baseline": "1e2f42b"
+  "working_branch": "feature/nhuy-cr03-p0",
+  "code_baseline": "6a35664",
+  "last_benchmark": {
+    "pytest": "1462 passed, 0 skip",
+    "safety_stop_sets": "1065 green",
+    "false_alarm_budget": {
+      "b_fp": "EM 0 / UNCLEAR 4",
+      "jx_negfp": "EM 0",
+      "b_fp2": "EM 3"
+    },
+    "holdout_none": "2/39",
+    "assess_24kb_seconds": 0.28
+  }
 }

@@ -141,6 +141,9 @@ Quy tắc chọn lớp cho code mới: *quyền/vai* ⇒ `ActionDeniedError` qua
 | D11 | §5.2: "sau mọi bổ sung (text hoặc ảnh) luôn chạy lại 2b" | `add_resident_photo` không gọi `_resume`; 2b không đọc ảnh | chỉ text (V-06) |
 | D12 | §6.2 S-14 "Vệ sinh", S-03 "Kỹ thuật" (cột Áp dụng) | 2b chạy **trước** phân loại (D-09) nên chưa có category | P0 áp mọi tín hiệu active cho mọi ticket; cột `scope` trong lexicon chỉ để tra cứu |
 | D13 | §16 P0 "cập nhật kết quả CLN-004, TEC-005" ở WP5 (`plan.md`) | WP3 chèn 2b làm `test_all_twelve_tickets_match_expected_outcome` đỏ ngay | đổi expected hai fixture ngay trong **WP3** (OPERATIONS §3); WP5 chỉ thêm `priority` expected |
+| D14 | CR-03 §4.4 bất biến 5 + AC-06: BPTN không tác động blocker chủ BQL (`ACTION_DENIED`) | SPEC-P02 §5.5/§11 và TESTING X-2 cũ viết `bptn_resolve` ⇒ 409 | **Chốt (Q23): 403 + audit cho MỌI hành động của BPTN trên `EMERGENCY_PENDING_BQL`, kể cả `bptn_resolve`**; 409 GUARD chỉ trên `SAFETY_REVIEW_REQUIRED` (chủ BPTN) |
+| D15 | V-08: không chặn BQL theo cờ `escalated` | CR-03 §2: BQL chỉ làm 3 lựa chọn Bậc 2 "trên ticket đã leo thang" | **Chốt (Q19): chặn BQL trước khi leo thang (403 + audit)**; V-08 hết hiệu lực |
+| D16 | SPEC-P01 bản 2026-10-01: cửa sổ phủ định 4 từ, `non_lamp_electrical` | thẩm định 3 lần bỏ sót Bậc 1 | **Thay (Q29–Q31): R1–R10 + WP3d** — SPEC-P01 §0, §0.1, §7.4 |
 
 ## 9. Câu hỏi mở (không đổi Q01–Q14; mỗi câu ghi "cái gì đổi tuỳ câu trả lời")
 

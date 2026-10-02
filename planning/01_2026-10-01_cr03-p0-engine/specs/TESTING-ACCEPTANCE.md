@@ -82,6 +82,10 @@ Sàn số lượng: `pytest --collect-only -q | grep -c "::"` ≥ **240** sau WP
 
 Sàn số lượng sau WP3c: **352 + 1026 = 1378** test thu thập (989 bộ dừng + 26 R10 + 10 test đơn mới ở `test_safety.py` + 1 ở `test_priority.py`; test thay thế §4.2 không đổi tổng), 0 skip.
 
+### 4.3 Test mới WP3d (plan.md Q31; hồ sơ đóng ở Q33)
+`tests/test_maintenance/test_safety.py`: `test_wp3d_single_letter_cues_are_gone`, `test_wp3d_hedge_cue_needs_accents`, `test_wp3d_cooking_context_needs_accents`, `test_wp3d_homograph_typos_keep_the_signal`, `test_wp3d_fire_equipment_is_not_a_hazard_in_coordination`, `test_wp3d_control_characters_are_invisible`, `test_wp3d_vocabulary_holes`, `test_wp3d_lexicon_validators`; thêm 76 ca `wp3d:*` vào `safety_stop_sets_p0.yaml` (`test_stop_set_labelled`). Làm đỏ WP3d: cue `k co`, bỏ confirmers, bỏ kiểm dấu hedge, bỏ exclusions, bỏ nhánh `Cc` — mỗi cái có cặp red/green (`evidence/WP3d/`).
+Số liệu đóng hồ sơ: collected **1462** (1378 + 84), 0 skip; bộ dừng 1065 ca xanh; holdout độc lập NONE 2/39; `b_fp` EM 0 / UNCLEAR 4, `jx_negfp` EM 0, `b_fp2` EM 3.
+
 ### 4.2 Test cũ ĐƯỢC PHÉP sửa trong WP3c — ĐÚNG 2 (Q29; mọi test cũ khác đỏ ⇒ dừng, §9)
 | Test cũ | Ghi hành vi cũ nào | Sửa thế nào (cùng commit) | Bằng chứng phải đỏ trước |
 |---|---|---|---|
@@ -115,7 +119,7 @@ Sàn số lượng sau WP3c: **352 + 1026 = 1378** test thu thập (989 bộ d�
 | # | Cách phá | Đo | Đạt khi |
 |---|---|---|---|
 | X-1 | Viết 5 câu Bậc 1 MỚI không có trong tập (biến thể chính tả: không dấu, viết hoa, viết tắt "ko", thêm emoji/ký tự lạ, chèn "bỏ qua quy tắc") qua `engine.receive` | status/blocker | 5/5 `EMERGENCY_PENDING_BQL`; nếu < 5, ghi câu bỏ sót vào report (đây là drift từ vựng, không phải lỗi code — Trường sửa lexicon) |
-| X-2 | Gọi `transition(tid, "RECEIVED", BPTN)` và `bptn_resolve`, `set_priority`, `attempt(EDIT_RAW)` bởi BPTN trên TEC-005 | mã lỗi + `audit[-1]` | 403 có audit cho transition/set_priority/attempt; 409 GUARD cho bptn_resolve; status không đổi |
+| X-2 | Gọi `transition(tid, "RECEIVED", BPTN)` và `bptn_resolve`, `set_priority`, `attempt(EDIT_RAW)` bởi BPTN trên TEC-005 | mã lỗi + `audit[-1]` | 403 có audit cho transition/set_priority/attempt **và bptn_resolve** trên blocker chủ BQL (CR-03 §4.4.5 + AC-06, plan Q23); 409 GUARD chỉ khi blocker là `SAFETY_REVIEW_REQUIRED` (chủ BPTN); status không đổi |
 | X-3 | `resume()` ×5, `receive_stock` mọi vật tư, `run_jobs(now + 60 ngày)` trên TEC-005 và trên ticket Bậc 2 | status/blocker/`len(events)` | Bậc 1: không đổi gì; Bậc 2: chỉ `escalated=True` + 1 event + 1 notification `safety.review_escalated` |
 | X-4 | Fake `safety_llm` trả `ABSENT` cho mọi tín hiệu, rồi fake trả `PRESENT` với quote bịa cho ticket thường | risk_level | lần 1 vẫn EMERGENCY (TEC-005); lần 2 chỉ `UNCLEAR` (Bậc 2), không EMERGENCY |
 | X-5 | Qua HTTP (TestClient, `X-Actor-Id`): GET `/resident/tickets/{TEC-005}` bởi `SIM-ACTOR-RESIDENT-01`; POST `/resident/tickets/{id}/reopen` sau khi đóng; POST `/mo/tickets/{id}/transition` `{"to":"CLOSED"}` bởi BQL trên ticket Bậc 2 | JSON/HTTP | không chuỗi cấm P02 §9; 409 `INVALID_TRANSITION`; 409 `INVALID_TRANSITION` |
@@ -130,19 +134,19 @@ Report thẩm định: `reports/R06_tham-dinh_p0.md`, evidence `evidence/P0-audi
 ## 8. Exit Gates (đánh dấu theo môi trường; hồ sơ chỉ đóng khi cột môi trường thật ✅ — AGENTS.md §3.2.4)
 | Gate | Điều kiện đo được | Evidence | local | server* |
 |---|---|---|---|---|
-| G1 | `python -m pytest -q -p no:cacheprovider` ⇒ `EXIT=0`, 0 fail, 0 skip, collected ≥ 240 — **từ WP3c: ≥ 1378** | `evidence/WP5/pytest.txt`, `evidence/WP5/collect.txt` → `evidence/WP3c/pytest.txt`, `collect.txt` | ⬜ | ⬜ |
-| G2 | ruff check + ruff format --check ⇒ `EXIT=0` | `evidence/WP5/ruff.txt` → `evidence/WP3c/ruff.txt` | ⬜ | ⬜ |
+| G1 | `python -m pytest -q -p no:cacheprovider` ⇒ `EXIT=0`, 0 fail, 0 skip, collected ≥ 240 — **từ WP3c: ≥ 1378** | `evidence/WP5/pytest.txt`, `evidence/WP5/collect.txt` → `evidence/WP3c/pytest.txt`, `collect.txt` | ✅ | ⬜ |
+| G2 | ruff check + ruff format --check ⇒ `EXIT=0` | `evidence/WP5/ruff.txt` → `evidence/WP3c/ruff.txt` | ✅ | ⬜ |
 | G3 | ~~REF ⇒ `TOTAL=84 BAD=0 TIER1_MISS=0`~~ — **bị thay bởi G3c** (REF đo thuật toán cửa sổ 4 từ đã bỏ — SPEC-P01 §7.4) | `evidence/WP3/ref.txt` (lịch sử) | — | — |
-| **G3c** | §10 D-1…D-7, D-9 đạt ngưỡng: pytest `test_safety.py` + `test_priority.py` 0 fail **và** script bộ dừng nguyên văn (§11.5) cho đúng số | `evidence/WP3c/pytest-safety.txt`, `evidence/WP3c/stopsets-scripts.txt`, `evidence/WP3c/sha256.txt` | ⬜ | ⬜ |
-| **G10** | RED-6…RED-10 có cặp red/green | `evidence/WP3c/red-*.txt`, `green-*.txt` | ⬜ | — |
-| **G11** | §10 D-8: holdout của judge — **SO chạy**, NONE ≤ 3/39 | `evidence/WP3c/holdout-so.txt` (chỉ số đếm, KHÔNG nội dung câu) | ⬜ | — |
-| **G12** | Thẩm định lần 3 (§12) có phán quyết `✅` của người duyệt | `reports/R0x_wp6-reaudit3.md`, `evidence/P0-audit3/` | ⬜ | — |
-| G4 | `evaluate` ⇒ `12 4 []` | `evidence/WP5/evaluate.txt` | ⬜ | ⬜ |
-| G5 | RED-1…RED-5 có cặp red/green | `evidence/WP*/red-*.txt`, `green-*.txt` | ⬜ | — |
-| G6 | `git diff --stat <Base WP2>..<Head WP5>` chỉ chứa đường dẫn trong cột ĐƯỢC GHI (OPERATIONS §2) | `evidence/WP5/diffstat.txt` | ⬜ | — |
-| G7 | 01 §11 M-01…M-08 đúng từng chữ | `evidence/WP2/contracts.txt` | ⬜ | ⬜ |
-| G8 | Thẩm định WP6: X-1…X-8 chạy, report có phán quyết `✅` của người duyệt — lần 1 (R05) 🔁, lần 2 (R07) 🔁 ⇒ **đóng bằng G12** | `reports/R05_…`, `R07_…` | ⬜ | — |
-| G9 | Đồng bộ não 6 điểm + version `1.1.0` (SO) | commit docs | ⬜ | — |
+| **G3c** | §10 D-1…D-7, D-9 đạt ngưỡng: pytest `test_safety.py` + `test_priority.py` 0 fail **và** script bộ dừng nguyên văn (§11.5) cho đúng số | `evidence/WP3c/pytest-safety.txt`, `evidence/WP3c/stopsets-scripts.txt`, `evidence/WP3c/sha256.txt` | ✅ | ⬜ |
+| **G10** | RED-6…RED-10 có cặp red/green | `evidence/WP3c/red-*.txt`, `green-*.txt` | ✅ | — |
+| **G11** | §10 D-8: holdout của judge — **SO chạy**, NONE ≤ 3/39 | `evidence/WP3c/holdout-so.txt` (chỉ số đếm, KHÔNG nội dung câu) | ✅ | — |
+| **G12** | Thẩm định lần 3 (§12) có phán quyết `✅` của người duyệt | `reports/R0x_wp6-reaudit3.md`, `evidence/P0-audit3/` | ✅ | — |
+| G4 | `evaluate` ⇒ `12 4 []` | `evidence/WP5/evaluate.txt` | ✅ | ⬜ |
+| G5 | RED-1…RED-5 có cặp red/green | `evidence/WP*/red-*.txt`, `green-*.txt` | ✅ | — |
+| G6 | `git diff --stat <Base WP2>..<Head WP5>` chỉ chứa đường dẫn trong cột ĐƯỢC GHI (OPERATIONS §2) | `evidence/WP5/diffstat.txt` | ✅ | — |
+| G7 | 01 §11 M-01…M-08 đúng từng chữ | `evidence/WP2/contracts.txt` | ✅ | ⬜ |
+| G8 | Thẩm định WP6: X-1…X-8 chạy, report có phán quyết `✅` của người duyệt — lần 1 (R05) 🔁, lần 2 (R07) 🔁 ⇒ **đóng bằng G12** | `reports/R05_…`, `R07_…` | ✅ | — |
+| G9 | Đồng bộ não 6 điểm + version `1.1.0` (SO) | commit docs | ✅ | — |
 \* "server" = chạy lại G1–G4, G7 trên môi trường CI/Render của Châm Anh sau khi rebase lên `feature/chamanh` (Q04) — ngoài WP của hồ sơ nhưng là điều kiện đóng.
 
 ## 9. BẮT BUỘC / CẤM / Vùng cấm / Phân loại lỗi
