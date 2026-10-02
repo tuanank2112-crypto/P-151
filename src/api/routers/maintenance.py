@@ -49,6 +49,7 @@ from src.maintenance.enums import (
 )
 from src.maintenance.messages import status_label
 from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent
+from src.maintenance.store.base import ConcurrencyError, StoreUnavailableError
 from src.maintenance.views import BqlTicketRow, ResidentTicketView, bql_rows, resident_view
 
 router = APIRouter(prefix="/mo", tags=["maintenance-ops (nội bộ)"])
@@ -87,6 +88,10 @@ def _call(fn, *args, **kwargs):
         raise HTTPException(
             status_code=409, detail={"code": exc.code, "message": exc.message, **_plain(exc.detail)}
         ) from exc
+    except ConcurrencyError as exc:
+        raise HTTPException(status_code=409, detail={"code": exc.code, "message": exc.message}) from exc
+    except StoreUnavailableError as exc:
+        raise HTTPException(status_code=503, detail={"code": exc.code, "message": exc.message}) from exc
     except AuditWriteError as exc:
         raise HTTPException(status_code=500, detail={"code": exc.code, "message": exc.message}) from exc
     except ValidationError as exc:
