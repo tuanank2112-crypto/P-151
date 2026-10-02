@@ -1,12 +1,12 @@
 # MaintenanceOps Agent — Problem Statement
 
-> **Phân loại tài liệu:** FROZEN · Dữ liệu và quy trình mô phỏng
-> **Version:** 0.3
-> **Ngày:** 2026-09-28
-> **MVP baseline:** MaintenanceOps MVP v0.3
-> **Freeze date:** 28/09/2026
+> **Phân loại tài liệu:** DRAFT · CHANGE CONTROL · Dữ liệu và quy trình mô phỏng
+> **Version:** 0.6-candidate
+> **Ngày cập nhật:** 2026-10-01
+> **MVP baseline:** MaintenanceOps MVP v0.3 đã freeze; v0.6 candidate đang đề xuất theo `CR-BPTN-03`
+> **Freeze history:** v0.3 — 28/09/2026; v0.6 chưa freeze
 > **Owner:** TV1 — Product / BA / Process  
-> **Source of truth:** Prompt MVP MaintenanceOps Agent ngày 2026-09-27 và các quyết định đã khóa trong tài liệu này
+> **Source of truth đang đề xuất:** `CR-BPTN-03.md`; khi chưa có phê duyệt, đây là candidate chứ không phải frozen baseline mới
 > **Lưu ý:** Tài liệu này không mô tả quy trình, SLA, định mức, tồn kho hay hiệu quả vận hành thực tế của Vinhomes.
 
 ## Changelog
@@ -17,8 +17,86 @@
 | 0.2 | 2026-09-27 | Ghi nhận quyết định OD-01/02/03/08 và cơ chế sign-off OD-09; cập nhật workflow proposal → BPTN confirmation | DRAFT · Chờ tên/sign-off approver |
 | 0.3 | 2026-09-27 | Re-baseline MVP còn hai nhóm dịch vụ; bổ sung asset, duty, stock gate, team-only routing, dataset 12 ticket và 4 demo flow | DRAFT · Chờ tên/sign-off approver |
 | 0.3-freeze | 2026-09-28 | Đóng OD-09 và freeze phạm vi MaintenanceOps MVP v0.3 | FROZEN |
+| 0.6-candidate | 2026-10-01 | Re-baseline theo CR-BPTN-03: giao phòng ban, tầng an toàn, priority, merge, material hold, close/cancel/rating | DRAFT · CHỜ PHÊ DUYỆT CR-03 |
 
 ---
+
+# Active baseline candidate — MaintenanceOps MVP v0.6
+
+## A. Vấn đề cần giải quyết
+
+Prototype cần chứng minh một luồng ticket bảo trì mô phỏng có thể đi từ phản ánh của cư dân đến phòng ban và BQL một cách có kiểm soát. Agent giúp đọc, đề xuất và kiểm tra điều kiện; con người giữ các quyết định có ảnh hưởng vận hành hoặc an toàn.
+
+Các vấn đề chính:
+
+- Ticket có thể thiếu hoặc mơ hồ về loại việc, vị trí, thiết bị và mức nguy hiểm.
+- Phản ánh nguy hiểm không được đi vào luồng bảo trì thông thường trước khi con người xử lý.
+- Ticket trùng cần được gộp có kiểm soát, không làm mất nội dung gốc.
+- Ticket chỉ được giao đúng phòng ban khi đã vượt qua các điều kiện an toàn, phân loại, asset và vật tư.
+- Hồ sơ hoàn thành phải đủ checklist, ghi chú, vật tư và ảnh trước khi BQL kiểm duyệt.
+- Không actor nào được gán nhân viên cụ thể trong hệ thống.
+
+## B. Phạm vi candidate
+
+- Hai playbook: `PB-CLN-01` và `PB-TEC-01`.
+- Actor: Cư dân, Agent, BPTN, Phòng ban Vệ sinh/Kỹ thuật, Kho mô phỏng và BQL.
+- Dữ liệu, asset, vật tư, phòng ban và ticket đều là dữ liệu mô phỏng; ID nội bộ dùng tiền tố `SIM-`.
+- Giao việc ở cấp **phòng ban**. Phòng ban tự chia người bên ngoài hệ thống; `assignee_id` luôn `null`.
+- Mười trạng thái: `RECEIVED`, `VERIFYING`, `NEED_INFO`, `ON_HOLD`, `ROUTED`, `IN_PROGRESS`, `READY_FOR_REVIEW`, `MERGED`, `CLOSED`, `CANCELLED`.
+- Ba mức ưu tiên: `HIGH`, `MEDIUM`, `LOW`.
+- Ba mức an toàn: `NONE`, `UNCLEAR`, `EMERGENCY`; không tạo trạng thái `EMERGENCY`.
+
+## C. Luồng mục tiêu
+
+```text
+Cư dân tạo ticket
+→ hệ thống kiểm tra dữ liệu tối thiểu
+→ Agent chạy luật an toàn cho mọi ticket
+→ Agent kiểm tra trùng, đề xuất playbook, phòng ban và priority
+→ BPTN chỉ can thiệp khi có blocker thuộc quyền BPTN
+→ kỹ thuật tra asset; cả hai playbook kiểm tra vật tư/tồn kho mô phỏng
+→ đủ điều kiện thì tạo WorkOrderDraft và giao phòng ban
+→ phòng ban bấm nhận, thực hiện và nộp hồ sơ
+→ Agent kiểm tra độ đầy đủ
+→ BQL duyệt để CLOSED, trả làm lại hoặc hủy
+→ cư dân xem lịch sử và rating một lần sau CLOSED
+```
+
+## D. Luật an toàn và quyền quyết định
+
+- Bậc 1: `VERIFYING + EMERGENCY_PENDING_BQL`; không tạo draft, không giao phòng ban. Chỉ BQL được hạ cảnh báo, gộp, hủy hoặc đóng với ghi chú kết quả bắt buộc.
+- Bậc 2: `VERIFYING + SAFETY_REVIEW_REQUIRED`; BPTN có đúng ba lựa chọn: xác nhận an toàn với lý do, nâng thành khẩn cấp, hoặc yêu cầu cư dân bổ sung.
+- Khi cư dân bổ sung text/ảnh, dữ liệu mới được append-only và pipeline chạy lại từ tầng an toàn.
+- Agent/LLM chỉ được nâng mức rủi ro, không được tự hạ tín hiệu do luật xác định.
+- Chỉ BQL được đóng hoặc hủy. BPTN là tài khoản riêng và chỉ thấy thao tác theo quyền.
+
+## E. Routing, asset và vật tư
+
+- Không dùng duty/capacity theo team và không route đến `SIM-TEAM-*` trong candidate này.
+- Kỹ thuật cần một asset hợp lệ; BPTN có thể xác nhận tại hiện trường theo đường `ONSITE_BY_BPTN`, phải có lý do và audit.
+- Tồn kho biết chắc là thiếu: `ON_HOLD + WAITING_MATERIAL`, chưa giao phòng ban.
+- Kho mô phỏng nhập đủ: hệ thống tự chạy lại toàn bộ điều kiện giao.
+- Tồn kho không rõ: candidate dùng cờ `STOCK_CHECK_ON_ACCEPT` và cho đi tiếp; quyết định này vẫn cần được phê duyệt trong CR-03.
+- WorkOrderDraft chỉ được tạo khi `can_route=true`, không còn quy tắc “draft tồn tại dù route không hợp lệ” của v0.3.
+
+## F. Kết quả và giới hạn
+
+Kết quả thành công là ticket được xử lý đúng nhánh, có audit và không vượt quyền. `READY_FOR_REVIEW` không phải nghiệm thu; BQL quyết định `CLOSED` hoặc trả làm lại. Ảnh bằng chứng là bắt buộc trong v0.6 candidate. Rating 1–5 sao chỉ gửi một lần sau `CLOSED`; không reopen, cư dân chưa hài lòng tạo ticket mới.
+
+Ngoài phạm vi: gán nhân viên, lịch trực/capacity theo team, tích hợp hệ thống thật, kho thật, phân tích ảnh bằng AI, chatbot, thanh toán, hóa đơn, báo giá và tối ưu nhân sự.
+
+## G. Governance
+
+- Freeze v0.3 và OD-09 ngày 28/09/2026 vẫn là hồ sơ lịch sử hợp lệ.
+- `CR-BPTN-03` đang `PROPOSED`; chưa có người phê duyệt được ghi tên.
+- Không được gắn nhãn v0.6 là `FROZEN` hoặc `READY FOR BUILD` trước khi chốt D-02, D-03, D-05, D-09, người duyệt CR và bằng chứng sign-off.
+- Chi tiết rule, transition và acceptance test lấy từ `CR-BPTN-03`; nếu code khác spec phải ghi drift.
+
+---
+
+# Historical appendix — MaintenanceOps MVP v0.3 (đã bị candidate v0.6 thay thế nếu CR-03 được duyệt)
+
+> Nội dung từ đây trở xuống được giữ để truy vết freeze ngày 28/09/2026. Các quy tắc 4 trạng thái, duty/capacity, team-only routing và draft-without-route **không phải yêu cầu active của v0.6 candidate**.
 
 # Phase 0 — Source Audit và assumptions
 

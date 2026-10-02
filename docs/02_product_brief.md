@@ -1,10 +1,10 @@
 # MaintenanceOps Agent — Product Brief
 
-> **Document status:** FROZEN
-> **Version:** 0.3
-> **Ngày:** 2026-09-28
-> **MVP baseline:** MaintenanceOps MVP v0.3
-> **Freeze date:** 28/09/2026
+> **Document status:** DRAFT · CHANGE CONTROL
+> **Version:** 0.6-candidate
+> **Ngày cập nhật:** 2026-10-01
+> **MVP baseline:** v0.3 đã freeze; v0.6 candidate theo `CR-BPTN-03`
+> **Freeze history:** v0.3 — 28/09/2026; v0.6 chưa freeze
 > **Owner:** TV1 — Product / BA / Process  
 > **Phạm vi:** Prototype một tuần, chỉ dùng dữ liệu mô phỏng
 
@@ -16,6 +16,70 @@
 | 0.2 | 2026-09-27 | Áp dụng OD-01/02/03/08; ghi nhận governance OD-09 và cập nhật readiness | DRAFT · Chờ sign-off |
 | 0.3 | 2026-09-27 | Khóa hai nhóm dịch vụ; thêm asset/duty/stock gate, team-only routing, 12 ticket và 4 demo flow | DRAFT · Chờ sign-off |
 | 0.3-freeze | 2026-09-28 | Đóng OD-09 và freeze phạm vi MaintenanceOps MVP v0.3 | FROZEN |
+| 0.6-candidate | 2026-10-01 | Chuyển sang flow giao phòng ban; thêm safety, priority, merge, ON_HOLD, close/cancel và rating | DRAFT · CHỜ PHÊ DUYỆT CR-03 |
+
+# Active Product Brief — MVP v0.6 candidate
+
+## Product outcome
+
+MaintenanceOps Agent là prototype điều phối ticket bảo trì bằng dữ liệu mô phỏng. Sản phẩm giúp cư dân gửi phản ánh, Agent sàng lọc và đề xuất, BPTN xử lý các điểm cần xác minh, phòng ban thực hiện, và BQL kiểm duyệt/đóng ticket. Mục tiêu là chứng minh luồng, quyền và khả năng truy vết; không mô phỏng năng lực vận hành thực tế.
+
+## Target users
+
+- **Cư dân:** tạo và theo dõi ticket của mình; bổ sung text/ảnh khi được yêu cầu; đánh giá 1–5 sao một lần sau khi đóng.
+- **BPTN:** tài khoản riêng, dùng chung bố cục với BQL nhưng chỉ thấy nút thuộc quyền; xử lý rủi ro chưa rõ, ticket trùng, phân loại/vị trí/asset chưa rõ và ticket bị trả sai phòng ban.
+- **Phòng ban Vệ sinh/Kỹ thuật:** nhận ticket đã được giao; không gán nhân viên trong hệ thống; cập nhật checklist, kết quả, vật tư và ảnh.
+- **Kho mô phỏng:** chỉ phát sự kiện `RECEIVE_STOCK`; không có màn hình riêng.
+- **BQL:** xử lý khẩn cấp, kiểm duyệt, trả làm lại, đóng/hủy, xử lý leo thang và sửa priority có lý do.
+- **Agent:** chạy luật an toàn, đề xuất playbook/phòng ban/priority, kiểm tra trùng/asset/vật tư và kiểm tra hồ sơ; không đóng, hủy hay gán nhân viên.
+
+## P0 scope
+
+- `PB-CLN-01` và `PB-TEC-01`; toàn bộ dữ liệu có nhãn mô phỏng.
+- Tầng an toàn chạy trước phân loại; Bậc 1 do BQL, Bậc 2 do BPTN xử lý.
+- Priority `HIGH/MEDIUM/LOW`, luật cố định; BPTN/BQL override phải có lý do và audit.
+- Gộp ticket an toàn với liên kết hai chiều và có hoàn tác.
+- Giao **phòng ban**, không giao team/nhân viên; bỏ duty/capacity `SIM-TEAM-*`.
+- Asset cho kỹ thuật; vật tư/tồn kho mô phỏng cho cả hai playbook.
+- Thiếu vật tư đã biết → `ON_HOLD`, chưa giao; nhập đủ → tự chạy lại điều kiện.
+- Phòng ban nhận, làm, nộp hồ sơ; ảnh bằng chứng tối thiểu một ảnh.
+- BQL đóng/hủy; trả làm lại tối đa theo ngưỡng cấu hình; rating một lần sau `CLOSED`.
+
+## State model
+
+`RECEIVED → VERIFYING/NEED_INFO/ON_HOLD/ROUTED → IN_PROGRESS → READY_FOR_REVIEW → CLOSED`, với các nhánh `MERGED` và `CANCELLED`. Chỉ các transition trong CR-BPTN-03 là hợp lệ. Khẩn cấp dùng `VERIFYING + EMERGENCY_PENDING_BQL`, không tạo trạng thái riêng.
+
+## Product principles
+
+- Raw text và ảnh gốc bất biến; bổ sung là append-only.
+- Luật xác định trước, AI hỗ trợ sau; AI không được hạ cảnh báo do luật phát hiện.
+- Một ticket chỉ có một blocker mở; blocker luôn có owner rõ ràng.
+- `assignee_id=null`; việc chia người nằm ngoài hệ thống.
+- Chỉ BQL đóng/hủy; mọi override, cancel, merge, safety decision và transition quan trọng đều audit.
+- Cư dân không thấy mã rủi ro, blocker, vật tư hay ghi chú nội bộ.
+
+## Success criteria cho prototype
+
+- 100% tín hiệu Bậc 1 trong bộ kiểm thử đi đúng `EMERGENCY_PENDING_BQL`; mục tiêu không bỏ sót Bậc 1.
+- 100% action sai quyền bị từ chối và không đổi state.
+- 100% ticket chỉ sang `ROUTED` khi `can_route=true`.
+- 100% hồ sơ thiếu checklist/note/material/ảnh không sang `READY_FOR_REVIEW`.
+- 100% ticket thiếu vật tư đã biết chưa được giao phòng ban.
+- 100% rating chỉ ghi một lần và không làm đổi state/priority/phòng ban.
+
+## Explicitly out of scope
+
+CSKH; gán nhân viên; duty/capacity theo team; lịch trực thật; kho thật; tối ưu nhân sự; hệ thống thanh toán/hóa đơn/báo giá; chatbot; phân tích ảnh AI; reopen ticket đã đóng; tích hợp hệ thống vận hành thật.
+
+## Release posture
+
+V0.3 vẫn là frozen history. V0.6 là candidate và chưa được gọi là frozen/ready-for-build cho đến khi CR-BPTN-03 có người phê duyệt, các quyết định D-02/D-03/D-05/D-09 được chốt, cùng test evidence tương ứng.
+
+---
+
+# Historical appendix — Product Brief v0.3
+
+> Phần cũ được giữ để audit. Mọi nội dung về bốn state, duty/capacity, team-only routing, draft-without-route, không đóng ticket và ảnh không bắt buộc đã được active candidate phía trên thay thế.
 
 # Phase 2 — Product Brief
 

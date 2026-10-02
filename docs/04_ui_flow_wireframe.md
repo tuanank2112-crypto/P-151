@@ -1,12 +1,12 @@
 # MaintenanceOps Agent — UI Flow & Low-fidelity Wireframe
 
-> **Document status:** FROZEN
-> **Version:** 0.3
-> **Ngày:** 2026-09-28
-> **MVP baseline:** MaintenanceOps MVP v0.3
-> **Freeze date:** 28/09/2026
+> **Document status:** DRAFT · CHANGE CONTROL
+> **Version:** 0.6-candidate
+> **Ngày cập nhật:** 2026-10-01
+> **MVP baseline:** v0.3 đã freeze; v0.6 candidate theo `CR-BPTN-03`
+> **Freeze history:** v0.3 — 28/09/2026; v0.6 chưa freeze
 > **Owner:** TV1 — Product / BA / Process; UX reviewer: TV3 — UX / UI / Prototype  
-> **Boundary:** Prototype với dữ liệu mô phỏng; không có CTA tạo work order thật, gửi cư dân, nghiệm thu, đóng ticket hoặc phê duyệt vật tư
+> **Boundary:** Prototype với dữ liệu mô phỏng; BQL có CTA đóng/hủy mô phỏng, nhưng không nghiệm thu hay tích hợp vận hành thật
 
 ## Changelog
 
@@ -16,8 +16,101 @@
 | 0.2 | 2026-09-27 | Áp dụng Agent proposal → BPTN confirmation, evidence/state oracle và permission rejection | DRAFT · Chờ sign-off |
 | 0.3 | 2026-09-27 | Khóa 4 demo flow cho vệ sinh/kỹ thuật; thêm asset/duty/stock/route status và loại bỏ UI ngoài active scope | DRAFT · Chờ sign-off |
 | 0.3-freeze | 2026-09-28 | Đóng OD-09 và freeze UI scope/flow trong MaintenanceOps MVP v0.3 | FROZEN |
+| 0.6-candidate | 2026-10-01 | Thiết kế lại UI cho Cư dân/BPTN/Phòng ban/BQL, safety, priority, merge, hold, close/cancel và rating | DRAFT · CHỜ PHÊ DUYỆT CR-03 |
 
 ---
+
+# Active UI specification — MVP v0.6 candidate
+
+## 1. Information architecture
+
+- **Resident:** Tạo ticket; Ticket của tôi; Bổ sung thông tin; Chi tiết/lịch sử; Rating sau đóng.
+- **BPTN/BQL shared shell:** cùng bố cục hàng đợi và chi tiết, nhưng backend và UI ẩn/khóa action theo role.
+- **Department:** Ticket đã giao; chi tiết; nhận ticket; checklist/kết quả/vật tư/ảnh; trả sai phòng ban hoặc báo BQL xem.
+- **Warehouse:** không có màn hình; chỉ action mô phỏng `RECEIVE_STOCK` từ fixture/admin control.
+- Không có màn hình team, duty, capacity, lịch trực, gán nhân viên, quản lý asset hoặc quản lý kho riêng.
+
+## 2. Global display rules
+
+- Mọi màn hình có nhãn “Dữ liệu mô phỏng”.
+- Hiển thị state bằng nhãn dễ hiểu; nội bộ vẫn lưu canonical code.
+- `HIGH` có badge nổi bật và xếp đầu; không tự gửi thông báo ngay khi tạo.
+- Cư dân không thấy `reason_code`, `risk_*`, blocker owner, vật tư, ghi chú nội bộ, retry hay assignee.
+- BPTN/BQL thấy playbook, department đề xuất, priority/rule, safety signals, duplicate, asset, material/stock, blocker/owner và audit.
+- Không hiển thị nút gán người. `assignee_id` không xuất hiện trên form.
+
+## 3. Main flows
+
+### Flow A — Ticket thường đủ điều kiện
+
+```text
+Cư dân tạo → RECEIVED → Agent đề xuất → asset/material hợp lệ
+→ ROUTED → Phòng ban nhận → IN_PROGRESS
+→ nộp đủ hồ sơ → READY_FOR_REVIEW
+→ BQL duyệt → CLOSED → cư dân rating một lần
+```
+
+### Flow B — Rủi ro chưa rõ
+
+Ticket hiển thị `VERIFYING` cho cư dân dưới nhãn chung “Đang được kiểm tra”. BPTN thấy ba nút và chỉ ba nút: “Xác nhận an toàn”, “Nâng khẩn cấp”, “Yêu cầu bổ sung”. Action đầu bắt buộc lý do; action hai chuyển owner sang BQL; action ba đưa ticket sang `NEED_INFO`.
+
+### Flow C — Khẩn cấp
+
+`VERIFYING + EMERGENCY_PENDING_BQL`; card nổi bật trong hộp việc BQL; không có nút route/draft/nhận phòng ban. BQL có thể hạ cảnh báo với lý do để quay lại pipeline, gộp với sự cố gốc, hủy, hoặc ghi kết quả xử lý bắt buộc và đóng.
+
+### Flow D — Chờ vật tư
+
+Biết chắc thiếu → `ON_HOLD`, owner Kho, chưa hiện trong queue phòng ban. Sau `RECEIVE_STOCK`, UI nhận state mới từ lần chạy lại pipeline; không cần BQL bấm tiếp tục. Tồn kho không rõ hiển thị cờ `STOCK_CHECK_ON_ACCEPT` theo D-05 candidate.
+
+### Flow E — Sai phòng ban
+
+- Trước khi nhận/làm: phòng ban chọn “Trả sai phòng ban”, nhập lý do; ticket về BPTN ở `VERIFYING`.
+- Sau khi bắt đầu: chọn “Báo BQL xem sai phòng ban”; dữ liệu đã nhập được giữ; BQL chuyển về BPTN hoặc bác báo cáo.
+
+### Flow F — Review/rework/cancel
+
+Phòng ban chỉ có thể nộp khi checklist, result note, material/N-A và ít nhất một ảnh hợp lệ. BQL duyệt để đóng hoặc trả làm lại với lý do. Cancel chỉ hiển thị cho BQL ở các state được phép và luôn cần lý do.
+
+### Flow G — Merge và bổ sung
+
+BPTN xem cặp ticket trùng, so sánh raw read-only và xác nhận/bác. Merge hiển thị liên kết hai chiều và có hoàn tác. Trong `NEED_INFO`, cư dân chỉ thêm text/ảnh mới; không có chức năng sửa nội dung/ảnh gốc.
+
+## 4. Required screens and controls
+
+### UI-01 Resident create/detail
+
+Form phản ánh và vị trí; sau submit hiển thị mã ticket. Detail dùng public status label, timeline đã lọc, form bổ sung chỉ khi `NEED_INFO`, rating chỉ khi `CLOSED` và chưa rating. Không có nút reopen.
+
+### UI-02 BPTN/BQL queue
+
+Filter: state, blocker, owner, risk, priority, escalated. Sort: priority giảm dần rồi thời gian tăng dần. “Cần tôi xử lý” lọc blocker theo role. BPTN không thấy action của BQL; BQL có thể xử lý ticket leo thang.
+
+### UI-03 Internal ticket detail
+
+Các vùng: raw immutable; additions; safety/priority; duplicate; playbook/department; asset; material/stock; blocker/owner; work order; evidence/readiness; audit. CTA được render từ permission matrix, không chỉ ẩn bằng CSS.
+
+### UI-04 Department queue/detail
+
+Chỉ hiển thị ticket có `department_id` của phòng ban và state `ROUTED|IN_PROGRESS|ON_HOLD|READY_FOR_REVIEW` phù hợp. CTA: Nhận ticket; Trả sai phòng ban trước khi làm; Cập nhật hồ sơ; Báo vướng; Báo BQL xem sai phòng ban sau khi làm; Nộp kiểm duyệt. Không có chọn nhân viên.
+
+### UI-05 BQL review
+
+Hiển thị sáu gate readiness, ảnh, material reconciliation và audit. CTA: Duyệt & đóng; Trả làm lại; Hủy. Reason modal bắt buộc cho rework/cancel; emergency close bắt buộc result note.
+
+## 5. UI acceptance
+
+- BPTN không thể tác động `EMERGENCY_PENDING_BQL`; cư dân không thấy dữ liệu nội bộ.
+- Không CTA nào tạo route nếu `can_route=false`.
+- Department không thấy ticket chưa route và không thể set assignee.
+- Thiếu ảnh/ghi chú/checklist/material response thì nút nộp bị chặn và hiện danh sách thiếu.
+- Rating chỉ gửi một lần; không có reopen.
+- Mọi action nhạy cảm yêu cầu lý do được validate ở server và audit, không chỉ ở UI.
+
+---
+
+# Historical appendix — UI v0.3
+
+> Các wireframe cũ dưới đây chỉ để audit. Work Queue theo team/duty, bốn demo flow v0.3, UI draft khi không route, không close và evidence không bắt buộc không còn là thiết kế active.
 
 # Phase 4 — UI Flow và Wireframe
 

@@ -1,15 +1,15 @@
 # MaintenanceOps Agent — Requirement Traceability & Consistency/Safety Review
 
-> **Document status:** FROZEN · READY FOR BUILD
-> **Version:** 0.3
-> **Ngày:** 2026-09-28
-> **MVP baseline:** MaintenanceOps MVP v0.3
-> **Freeze date:** 28/09/2026
-> **Freeze authority:** `OD-09 Sign-off Record` — Cao Văn Trường
+> **Document status:** DRAFT · NOT YET READY FOR BUILD
+> **Version:** 0.6-candidate
+> **Ngày cập nhật:** 2026-10-01
+> **MVP baseline:** v0.3 đã freeze; v0.6 candidate theo `CR-BPTN-03`
+> **Freeze history:** v0.3 — 28/09/2026; v0.6 chưa freeze
+> **Approval:** OD-09 chỉ phê duyệt v0.3; chưa phải bằng chứng phê duyệt CR-BPTN-03
 > **Owner:** TV1 — Product / BA / Process; QA approver: TV4 — Integration / QA / Demo  
 > **Review scope:** Toàn bộ 7 tài liệu từ Problem Statement đến Playbook/Data Contract
 
-## MVP Freeze Record
+## Historical MVP v0.3 Freeze Record
 
 **Version:** MaintenanceOps MVP v0.3
 **Status:** FROZEN
@@ -46,8 +46,90 @@ Mọi thay đổi đối với danh sách Included/Explicitly excluded sau ngày
 | 0.2 | 2026-09-27 | Re-baseline RTM/review theo OD-01/02/03/08 và governance OD-09 | DRAFT · Chờ tên/sign-off approver |
 | 0.3 | 2026-09-27 | Re-baseline theo hai playbook, asset/duty/stock gate, team-only route, 12 ticket và 4 demo flow | DRAFT · Chờ tên/sign-off approver |
 | 0.3-freeze | 2026-09-28 | Đóng OD-09; ghi Freeze Record và chuyển MaintenanceOps MVP v0.3 sang frozen build baseline | FROZEN · READY FOR BUILD |
+| 0.6-candidate | 2026-10-01 | Tạo RTM/review gate mới theo CR-BPTN-03; giữ v0.3 làm lịch sử freeze | DRAFT · NOT READY |
 
 ---
+
+# Active traceability — MVP v0.6 candidate
+
+## 1. Governance status
+
+| Item | Status | Evidence / điều kiện còn thiếu |
+|---|---|---|
+| MaintenanceOps MVP v0.3 | `FROZEN` | OD-09, Cao Văn Trường, 28/09/2026 |
+| `CR-BPTN-03` | `PROPOSED` | Chưa có người phê duyệt ghi tên |
+| MaintenanceOps MVP v0.6 candidate | `DRAFT · NOT READY` | Cần sign-off CR-03, chốt D-02/D-03/D-05/D-09, cập nhật code và test evidence |
+
+Không được dùng OD-09 cũ để suy ra v0.6 đã được duyệt. Khi CR-03 được phê duyệt, cần tạo record mới gồm version, người duyệt, ngày, phạm vi và commit/tag evidence.
+
+## 2. Requirement Traceability Matrix active
+
+| Req | Yêu cầu | PRD/UI/Data/Playbook | Acceptance |
+|---|---|---|---|
+| R-SAFE-01 | Safety chạy cho mọi ticket trước phân loại | PRD FR-SAFETY; UI Flow B/C; contract risk/blocker; common playbook | AC-01–09 |
+| R-ROLE-01 | BPTN và BQL là tài khoản riêng, action theo quyền | PRD actors; UI shared shell; permission validators | AC-06, AC-16 |
+| R-PRI-01 | Priority ba mức, rule + override có lý do/audit | PRD FR-PRIORITY; queue UI; contract priority fields | AC-10 |
+| R-DUP-01 | Merge hai chiều, append, undo và root-cancel handling | PRD FR-DUPLICATE; merge UI; relation contract | AC-11 |
+| R-AST-01 | Kỹ thuật cần asset hoặc `ONSITE_BY_BPTN` | PRD FR-ASSET; detail UI; playbook TEC | Asset test set |
+| R-MAT-01 | Biết thiếu → ON_HOLD, chưa route; nhập đủ tự chạy lại | PRD FR-MATERIAL; UI Flow D; stock contract | AC-12 |
+| R-ROUTE-01 | Route theo phòng ban, chỉ khi can_route; không team/duty | PRD FR-ROUTE; Department UI; draft contract | AC-12, AC-16 |
+| R-NOASSIGNEE-01 | `assignee_id=null`, `SET_ASSIGNEE` bị từ chối | mọi tài liệu | AC-15 |
+| R-DEPT-01 | Phòng ban nhận, thực hiện, báo sai phòng ban | PRD FR-DEPARTMENT; Department UI; transitions T14–T19 | AC-13 |
+| R-READY-01 | Checklist/note/material/ảnh/readiness đủ mới review | PRD FR-REVIEW; BQL review UI; validators | AC-14 |
+| R-CLOSE-01 | Chỉ BQL close/cancel; reason/audit theo rule | PRD/UI/contract/transition T10/T21/T23 | AC-09, AC-16 |
+| R-RES-01 | Raw immutable, append NEED_INFO, rating một lần, không reopen | Resident UI; data contract; permissions | AC-08, AC-15, AC-17 |
+| R-SEC-01 | Ticket content không điều khiển Agent | PRD NFR; input validation | AC-18 |
+
+## 3. Canonical acceptance suite
+
+Nguồn chi tiết là AC-01–AC-18 trong CR-BPTN-03. Tối thiểu phải có:
+
+1. Mọi tín hiệu Bậc 1, cả ngoài hai playbook, đi `VERIFYING + EMERGENCY_PENDING_BQL`, không draft/department.
+2. Phủ định và từ mơ hồ không bị hiểu sai; LLM không hạ signal do rule xác định.
+3. BPTN chỉ có đúng ba action cho Bậc 2 và không chạm Bậc 1.
+4. `resume()`/job không gỡ emergency blocker.
+5. Mỗi rule priority có fixture; override bắt buộc lý do/audit; sort đúng.
+6. Merge/undo, append-to-root và root cancel chạy đúng.
+7. Thiếu vật tư không route; nhập đủ chạy lại toàn bộ gate.
+8. Sai phòng ban trước/sau khi làm đi đúng owner và giữ dữ liệu cần thiết.
+9. Thiếu ảnh hoặc thành phần hồ sơ không READY; rework lần thứ ba escalates.
+10. Không reopen; rating một lần; không actor nào set assignee.
+11. Transition/action trái phép không đổi state và có audit.
+12. Raw và ảnh gốc không đổi; resident view không rò rỉ nội bộ.
+
+Safety evaluation cần ít nhất 40 câu có nhãn `EMERGENCY|UNCLEAR|NONE`, gồm có/không dấu, phủ định, từ đa nghĩa và tổ hợp tín hiệu. Mục tiêu chấp nhận: 0 false negative cho bộ Bậc 1; báo nhầm phải được đo và công bố.
+
+## 4. Cross-document consistency result
+
+| Check | Result | Ghi chú |
+|---|---|---|
+| Chỉ hai playbook | PASS | CLN/TEC |
+| State model 10 trạng thái | PASS trong active sections | v0.3 chỉ còn ở historical appendix |
+| Routing theo phòng ban | PASS | duty/team routing bị loại khỏi active candidate |
+| Safety trước classification | PASS | cùng blocker/owner semantics |
+| Evidence ảnh bắt buộc | PASS | candidate thay đổi policy v0.3 |
+| Close/cancel/rating/no-reopen | PASS | quyền BQL/resident thống nhất |
+| `assignee_id=null` | PASS | không có UI/action gán người |
+| Data mô phỏng | PASS | không tuyên bố dữ liệu thật |
+| Governance | OPEN | CR-03 chưa sign-off; D-02/D-03/D-05/D-09 chưa khóa |
+
+## 5. Build readiness decision
+
+### `NOT YET READY FOR BUILD AS A FROZEN BASELINE`
+
+Có thể dùng candidate để lập kế hoạch và tạo test trước, nhưng chưa được tuyên bố v0.6 frozen. Điều kiện mở gate:
+
+- Product approver ghi tên và duyệt CR-BPTN-03.
+- Chốt D-02, D-03, D-05 và D-09; điền người đề xuất/người duyệt.
+- Code/state/permission/data migration được đối chiếu với transition T01–T23.
+- Bộ test AC-01–AC-18 và safety ≥40 câu có kết quả lưu được.
+- Cập nhật expected outcomes của CLN-004, TEC-005 và fixture priority/safety.
+
+---
+
+# Historical appendix — Traceability v0.3
+
+> Từ đây trở xuống là bằng chứng cho freeze v0.3. Các kết luận `READY FOR BUILD`, bốn state, duty/team routing, 12-ticket-only và 4 demo flow không áp dụng cho v0.6 candidate.
 
 # Phase 5 — Traceability và consistency review
 

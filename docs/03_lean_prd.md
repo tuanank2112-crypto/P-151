@@ -1,10 +1,10 @@
 # MaintenanceOps Agent — Lean PRD
 
-> **Document status:** FROZEN
-> **Version:** 0.3
-> **Ngày:** 2026-09-28
-> **MVP baseline:** MaintenanceOps MVP v0.3
-> **Freeze date:** 28/09/2026
+> **Document status:** DRAFT · CHANGE CONTROL
+> **Version:** 0.6-candidate
+> **Ngày cập nhật:** 2026-10-01
+> **MVP baseline:** v0.3 đã freeze; v0.6 candidate theo `CR-BPTN-03`
+> **Freeze history:** v0.3 — 28/09/2026; v0.6 chưa freeze
 > **Owner:** TV1 — Product / BA / Process  
 > **Reviewers:** TV2 — AI Agent / Data; TV4 — Integration / QA / Demo; Product approver/proxy BQL: Cao Văn Trường
 > **Data classification:** Chỉ dữ liệu mô phỏng; không phải quy trình/dữ liệu vận hành Vinhomes
@@ -17,8 +17,132 @@
 | 0.2 | 2026-09-27 | Áp dụng OD-01/02/03/08; thêm Agent proposal → BPTN confirmation gate, evidence/state oracle và governance OD-09 | DRAFT · Chờ sign-off |
 | 0.3 | 2026-09-27 | Re-baseline hai playbook; thêm Asset/Duty lookup, stock gate, team-only routing, 12 ticket và 4 demo flow | DRAFT · Chờ sign-off |
 | 0.3-freeze | 2026-09-28 | Đóng OD-09 và freeze PRD trong MaintenanceOps MVP v0.3 | FROZEN |
+| 0.6-candidate | 2026-10-01 | Re-baseline PRD theo flow phòng ban và các rule safety/priority/merge/material/review trong CR-BPTN-03 | DRAFT · CHỜ PHÊ DUYỆT CR-03 |
 
 ---
+
+# Active Lean PRD — MaintenanceOps MVP v0.6 candidate
+
+## 1. Objective và scope
+
+Prototype xử lý end-to-end hai loại ticket mô phỏng: vệ sinh khu vực chung (`PB-CLN-01`) và đèn khu vực chung (`PB-TEC-01`). Agent sàng lọc và đề xuất; BPTN/BQL quyết định các trường hợp cần con người; phòng ban nhận và báo cáo công việc. Không có duty/capacity theo team, route `SIM-TEAM-*` hoặc gán nhân viên.
+
+## 2. Actors và quyền
+
+| Actor | Quyền chính | Giới hạn bắt buộc |
+|---|---|---|
+| RESIDENT | Tạo/xem ticket của mình; append text/ảnh trong `NEED_INFO`; rating một lần sau `CLOSED` | Không sửa raw; không reopen; không thấy dữ liệu nội bộ |
+| AGENT/SYSTEM | Safety, duplicate, classification, priority, asset/material gate, pipeline, readiness | Không đóng/hủy, không xác nhận an toàn thay người, không gán nhân viên |
+| BPTN | Xử lý blocker BPTN, ba lựa chọn cho Bậc 2, merge/undo, chọn lại phòng ban/asset, override priority | Không tác động Bậc 1; không đóng/hủy |
+| DEPARTMENT | Nhận ticket, làm checklist, ghi kết quả/vật tư/ảnh, báo sai phòng ban | Không thấy ticket chưa route; không gán nhân viên; không đóng/hủy |
+| WAREHOUSE | `RECEIVE_STOCK` | Không duyệt xuất/điều chỉnh kho; không có UI riêng |
+| BQL | Xử lý khẩn cấp, review/rework, close/cancel, escalation và override | Không sửa raw resident data |
+
+## 3. Functional requirements active
+
+### FR-SAFETY-001 — Safety first
+
+- Chạy cho mọi ticket, trước duplicate/classification.
+- `risk_level=NONE|UNCLEAR|EMERGENCY`; nhận dạng tiếng Việt có/không dấu và phủ định.
+- Bậc 1 → `VERIFYING + EMERGENCY_PENDING_BQL`, dừng luồng thường; không draft, không phòng ban.
+- Bậc 2 → `VERIFYING + SAFETY_REVIEW_REQUIRED`; BPTN chỉ được: xác nhận an toàn có lý do, nâng khẩn cấp, hoặc yêu cầu bổ sung.
+- Nội dung bổ sung làm pipeline chạy lại safety. Quá hạn safety-context không được tự coi là an toàn.
+- LLM chỉ nâng, không hạ kết quả rule.
+
+### FR-PRIORITY-001 — Priority có thể giải thích
+
+- `HIGH`: mất đèn tại lối đi chung/sảnh/cầu thang/hầm/lối thoát; hoặc vệ sinh gây cản trở/trơn trượt lối đi.
+- `MEDIUM`: việc kỹ thuật/vệ sinh thông thường đã đủ rõ; cũng là mặc định khi vị trí chưa đủ để áp rule khác.
+- `LOW`: vệ sinh định kỳ, chưa ảnh hưởng trực tiếp đến sử dụng khu vực chung.
+- Duplicate count ≥ 3 và nhóm dễ tổn thương là tín hiệu tăng nặng theo CR-03.
+- BPTN/BQL được sửa với lý do và audit. `HIGH` chỉ nổi bật và lên đầu danh sách, không tự gửi thông báo ngay.
+
+### FR-DUPLICATE-001 — Gộp an toàn
+
+- Đề xuất trùng khi cùng loại và vị trí trong cửa sổ 48 giờ; BPTN xác nhận hoặc bác.
+- Khi gộp: ticket con `MERGED`, liên kết hai chiều, raw không đổi; bổ sung mới được liên kết với ticket gốc.
+- BPTN/BQL có thể hoàn tác với lý do. Khi ticket gốc bị hủy, ticket con trở lại `RECEIVED`.
+- Ticket khẩn cấp chỉ BQL được gộp.
+
+### FR-ASSET-001 — Asset kỹ thuật
+
+- `PB-TEC-01` cần đúng một asset hoặc `ONSITE_BY_BPTN`; `PB-CLN-01` là `NOT_APPLICABLE`.
+- Không rõ/nhiều asset → `VERIFYING + ASSET_UNCLEAR`.
+- BPTN chọn onsite phải ghi lý do, cờ và audit; Agent không tự đoán.
+
+### FR-MATERIAL-001 — Material và stock
+
+- Tồn kho đủ → tiếp tục.
+- Biết chắc thiếu → `ON_HOLD + WAITING_MATERIAL`; chưa giao phòng ban.
+- Kho nhập đủ → hệ thống tự chạy lại toàn bộ `can_route`.
+- Tồn kho không rõ → gắn `STOCK_CHECK_ON_ACCEPT` và đi tiếp theo D-05 của CR-03; đây là quyết định candidate cần sign-off.
+- Thiếu sau khi bắt đầu → `IN_PROGRESS → ON_HOLD`; đủ lại → `ON_HOLD → IN_PROGRESS`.
+
+### FR-ROUTE-001 — Giao phòng ban
+
+`can_route=true` khi review hợp lệ, asset là `FOUND|ONSITE_BY_BPTN|NOT_APPLICABLE`, `proposed_department_id` tồn tại và rủi ro không phải emergency. Khi đó hệ thống đặt `department_id`, tạo `WorkOrderDraft` và chuyển `RECEIVED → ROUTED`. `assignee_id` luôn `null`.
+
+### FR-DEPARTMENT-001 — Nhận và thực hiện
+
+- `ROUTED → IN_PROGRESS` khi phòng ban bấm nhận.
+- Sai phòng ban trước khi làm: trả `VERIFYING + WRONG_DEPT`, lý do bắt buộc, tăng bộ đếm; từ 2 lần báo BQL.
+- Sai sau khi làm: `VERIFYING + WRONG_DEPT_AFTER_START`, giữ dữ liệu; BQL chuyển về BPTN hoặc bác báo cáo.
+- Phòng ban nộp checklist hoàn tất, ghi chú kết quả, vật tư thực dùng hoặc N/A, và ít nhất một ảnh.
+
+### FR-REVIEW-001 — Kiểm duyệt và kết thúc
+
+- Đủ hồ sơ → `READY_FOR_REVIEW`.
+- BQL duyệt → `CLOSED`; trả lại → `IN_PROGRESS + REWORK`, lý do bắt buộc, reset checklist, tăng `rework_count`; từ 3 lần leo thang.
+- Chỉ BQL hủy từ bảy trạng thái chưa kết thúc trong CR-03; lý do và audit bắt buộc. Ticket `MERGED` phải undo trước.
+- Rating 1–5 sao, comment tùy chọn, một lần sau `CLOSED`; không đổi state/priority/phòng ban.
+- Không reopen. Cư dân chưa hài lòng tạo ticket mới; BQL có thể liên kết `follow_up_of`.
+
+## 4. Canonical state machine
+
+Các state hợp lệ: `RECEIVED`, `VERIFYING`, `NEED_INFO`, `ON_HOLD`, `ROUTED`, `IN_PROGRESS`, `READY_FOR_REVIEW`, `MERGED`, `CLOSED`, `CANCELLED`. Không có state `EMERGENCY`, `CHỜ XÁC MINH` hoặc `EXCEPTION` trong candidate. Ý nghĩa trước đây của xác minh/ngoại lệ được biểu diễn bằng `VERIFYING` cùng `reason_code` và `blocker_owner_role`.
+
+Transition allowlist dùng T01–T23 trong CR-BPTN-03 §4. Mọi cặp ngoài allowlist → `INVALID_TRANSITION`; actor sai → `ACTION_DENIED`, có audit và không đổi state.
+
+## 5. Pipeline
+
+```text
+ingest/minimum data
+→ safety
+→ duplicate
+→ playbook + department + priority
+→ review khi cần
+→ asset
+→ material/stock
+→ can_route + draft + ROUTED
+→ department accept/execute/report
+→ readiness
+→ BQL close/rework/cancel
+```
+
+Một ticket chỉ có một blocker mở. Blocker được gắn owner `RESIDENT|BPTN|DEPARTMENT|WAREHOUSE|BQL|SYSTEM` để biết ai phải hành động tiếp.
+
+## 6. NFR và evaluation
+
+- Raw text/ảnh bất biến; bổ sung append-only; audit cho transition và override.
+- Nội dung cư dân là input không tin cậy, không phải chỉ dẫn cho Agent.
+- Prototype deterministic/replayable, hiển thị nhãn dữ liệu mô phỏng.
+- Bộ safety eval có ít nhất 40 câu, gồm bẫy phủ định/từ đa nghĩa/có và không dấu; mục tiêu không bỏ sót Bậc 1.
+- Acceptance catalog active là AC-01–AC-18 của CR-BPTN-03.
+- Dataset 12 ticket của v0.3 không còn là giới hạn test duy nhất; giữ fixture tương thích và bổ sung safety/priority/transition cases theo CR-03.
+
+## 7. Open decisions trước khi freeze
+
+- D-02: thời hạn safety review 4 giờ và bổ sung trong safety context 12 giờ.
+- D-03: ngưỡng ba phản ánh trùng để tăng priority.
+- D-05: tồn kho `UNKNOWN` có được route với `STOCK_CHECK_ON_ACCEPT` hay phải chờ xác minh.
+- D-08: tên người phê duyệt và bằng chứng sign-off CR-BPTN-03.
+- D-09: nguồn xác định `OUT_OF_HOURS` sau khi bỏ duty/lịch trực; phải dùng cấu hình mô phỏng rõ ràng hoặc bỏ reason này.
+
+---
+
+# Historical appendix — Lean PRD v0.3
+
+> Phần dưới chỉ để truy vết. Các FR về duty/team routing, bốn state, draft-without-route, ảnh không bắt buộc và READY là điểm cuối không còn active trong candidate.
 
 # Phase 3 — Lean PRD
 
