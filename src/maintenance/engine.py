@@ -152,7 +152,6 @@ TRANSITIONS: dict[tuple[TicketStatus, TicketStatus], TransitionRule] = {
 }
 
 BLOCKER_OWNERS: dict[ReasonCode, BlockerOwner] = {
-    R.MISSING_INFO: BlockerOwner.RESIDENT,
     **{code: BlockerOwner.BPTN for code in BPTN_REASONS},
     R.WAITING_MATERIAL: BlockerOwner.WAREHOUSE,
     R.OUT_OF_HOURS: BlockerOwner.SYSTEM,
@@ -409,32 +408,36 @@ class MaintenanceEngine:
                 raise GuardError("Phản ánh không cần bổ sung thông tin lúc này")
             if _blank(content):
                 raise GuardError("Nội dung bổ sung không được rỗng")
-            addition = ResidentAddition(
-                addition_id=f"SIM-ADD-{_suffix(ticket_id)}-{len(work.additions) + 1:02d}",
-                ticket_id=ticket_id,
-                content=content.strip(),
-                submitted_by=actor_id,
-                submitted_at=now,
-            )
-            work.additions.append(addition)
-            if work.ticket.status == S.NEED_INFO and work.ticket.locked_fields.category is None:
-                work.classification = None  # new content: classify again from original + additions
-            self._audit(
-                work,
-                Action.ADD_RESIDENT_INFO,
-                "ResidentAddition",
-                addition.addition_id,
-                actor_id,
-                Role.RESIDENT,
-                "additions",
-                None,
-                addition.content,
-                "Cư dân bổ sung thông tin",
-                now=now,
-            )
+            self._append_addition(work, content, actor_id, Role.RESIDENT, "Cư dân bổ sung thông tin", now)
             self._resume(work, now)
 
         return self._mutate(ticket_id, actor_id, Action.ADD_RESIDENT_INFO, op)
+
+    def _append_addition(self, work: Case, content: str, actor_id: str, role: ActorRole, reason: str, now: datetime):
+        """Append to what the Agent reads (the original never changes). `submitted_by` tells resident from BPTN."""
+        addition = ResidentAddition(
+            addition_id=f"SIM-ADD-{_suffix(work.ticket.ticket_id)}-{len(work.additions) + 1:02d}",
+            ticket_id=work.ticket.ticket_id,
+            content=content.strip(),
+            submitted_by=actor_id,
+            submitted_at=now,
+        )
+        work.additions.append(addition)
+        if work.ticket.status == S.NEED_INFO and work.ticket.locked_fields.category is None:
+            work.classification = None  # new content: classify again from original + additions
+        self._audit(
+            work,
+            Action.ADD_RESIDENT_INFO,
+            "ResidentAddition",
+            addition.addition_id,
+            actor_id,
+            role,
+            "additions",
+            None,
+            addition.content,
+            reason,
+            now=now,
+        )
 
     def add_resident_photo(self, ticket_id: str, actor_id: str, file_ref: str) -> Case:
         """Optional photo the resident attaches to their own report. Kept as original evidence: never edited, never
@@ -515,8 +518,13 @@ class MaintenanceEngine:
         location: str | None = None,
         asset_id: str | None = None,
         asset_onsite: bool = False,
+        info: str | None = None,
     ) -> Case:
-        """Event `bptn_resolved`. BPTN answers the open VERIFYING blocker; chosen values go to `locked_fields`.
+        """Event `bptn_resolved`. BPTN answers the open blocker; chosen values go to `locked_fields`.
+
+        MISSING_INFO (status NEED_INFO): BPTN contacted the resident and enters a `location` and/or `info` (what the
+            resident said, appended as an addition by BPTN; the original report never changes). Reason required.
+            Every missing field must be covered, otherwise nothing is saved; then the pipeline resumes at step 2.
 
         DUPLICATE: merge=True → MERGED; merge=False → pipeline resumes at step 5 (BPTN review, then asset).
         CATEGORY_UNCLEAR / OUT_OF_SCOPE: `category` required → review CONFIRMED, resume at step 4 (duplicate
@@ -531,9 +539,15 @@ class MaintenanceEngine:
         def op(work: Case, now: datetime) -> None:
             ticket = work.ticket
             blocker = ticket.blocker
-            if ticket.status != S.VERIFYING or blocker is None or blocker.code not in BPTN_REASONS:
+            if blocker is None or blocker.code not in BPTN_REASONS:
                 raise GuardError("Không có blocker nào chờ BPTN", {"status": ticket.status})
             code = blocker.code
+            if ticket.status != (S.NEED_INFO if code == R.MISSING_INFO else S.VERIFYING):
+                raise GuardError("Không có blocker nào chờ BPTN", {"status": ticket.status})
+            if info is not None and code != R.MISSING_INFO:
+                raise GuardError("`info` chỉ dùng cho MISSING_INFO", {"reason_code": code})
+            if code == R.MISSING_INFO and _blank(location) and _blank(info):
+                raise GuardError("MISSING_INFO: nhập vị trí hoặc thông tin thu thập từ cư dân")
             if (merge is not None) != (code == R.DUPLICATE):
                 raise GuardError("`merge` chỉ dùng và bắt buộc với DUPLICATE", {"reason_code": code})
             if code == R.DUPLICATE and merge:
@@ -577,7 +591,7 @@ class MaintenanceEngine:
                 if not any(a.asset_id == asset_id for a in self.catalog.assets):
                     raise GuardError(f"Không có asset {asset_id} trong catalog")
                 locks["asset_id"] = asset_id
-            if (locks or asset_onsite) and _blank(note):
+            if (locks or asset_onsite or info is not None) and _blank(note):
                 raise GuardError("BPTN thay đổi giá trị hoặc chọn xác định tại hiện trường thì bắt buộc ghi lý do")
 
             category_changed = category is not None and category != self._category(work)
@@ -592,6 +606,10 @@ class MaintenanceEngine:
             ticket.locked_fields = LockedFields(**{**current_locks, **locks})
             if asset_onsite and TicketFlag.ASSET_CHECK_ONSITE not in ticket.flags:
                 ticket.flags = [*ticket.flags, TicketFlag.ASSET_CHECK_ONSITE]
+            if not _blank(info):
+                self._append_addition(work, info, actor_id, Role.BPTN, "BPTN ghi thông tin thu thập từ cư dân", now)
+            if code == R.MISSING_INFO and (still_missing := self._missing_fields(work)):
+                raise GuardError(f"Vẫn thiếu: {', '.join(still_missing)}", {"fields": still_missing})
             if category is not None:
                 self._bind_category(work, category, "BPTN_LOCKED", now)
             elif department is not None:
@@ -1307,9 +1325,7 @@ class MaintenanceEngine:
     ) -> Blocker:
         sla = self.catalog.sla_config
         next_retry_at, escalate_at, dispatch_at = self._schedule(work, code, now, eta), None, None
-        if code == R.MISSING_INFO:
-            escalate_at = now + timedelta(hours=sla.missing_info.escalate_after_hours)
-        elif code in BPTN_REASONS:
+        if code in BPTN_REASONS:
             escalate_at = self.catalog.business_hours.add(now, sla.bptn.escalate_after_business_hours)
         elif code == R.WAITING_MATERIAL:
             escalate_at = now + timedelta(hours=sla.waiting_material.escalate_after_hours)
@@ -1342,8 +1358,6 @@ class MaintenanceEngine:
     def _schedule(self, work: Case, code: ReasonCode, now: datetime, eta: datetime | None = None) -> datetime | None:
         """When the job should next retry / remind for this blocker. None = no automatic retry."""
         sla = self.catalog.sla_config
-        if code == R.MISSING_INFO:
-            return now + timedelta(hours=sla.missing_info.retry_every_hours)
         if code in BPTN_REASONS:
             return self.catalog.business_hours.add(now, sla.bptn.retry_every_business_hours)
         if code in (R.WAITING_MATERIAL, R.OUT_OF_HOURS):

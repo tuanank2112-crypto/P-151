@@ -368,8 +368,9 @@ class BptnResolveRequest(BaseModel):
     location: str | None = None
     asset_id: str | None = None
     asset_onsite: bool = Field(default=False, description="ASSET_UNCLEAR: xác định tại hiện trường (bắt buộc note)")
+    info: str | None = Field(default=None, description="Chỉ với MISSING_INFO: thông tin BPTN thu thập từ cư dân")
 
-    @field_validator("note", "location", "asset_id")
+    @field_validator("note", "location", "asset_id", "info")
     @classmethod
     def _check(cls, value: str | None) -> str | None:
         return _no_placeholder(value)
@@ -377,7 +378,8 @@ class BptnResolveRequest(BaseModel):
 
 @router.post("/tickets/{ticket_id}/bptn-resolve", response_model=Case)
 def bptn_resolve(ticket_id: str, body: BptnResolveRequest, actor: ActorDep, engine: EngineDep) -> Case:
-    """BPTN gỡ blocker VERIFYING. Giá trị BPTN chọn vào `locked_fields`; Agent không ghi đè."""
+    """BPTN gỡ blocker VERIFYING, hoặc MISSING_INFO (NEED_INFO) sau khi liên hệ cư dân. Giá trị BPTN chọn vào
+    `locked_fields`; Agent không ghi đè."""
     return _call(engine.bptn_resolve, ticket_id, actor, **body.model_dump())
 
 

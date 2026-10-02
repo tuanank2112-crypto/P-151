@@ -16,6 +16,7 @@
 - Data/State: fixture YAML `seed/maintenance_v1/` nạp in-memory, reset được; ảnh trên đĩa (`MO_UPLOAD_DIR`); Postgres trong compose chưa dùng.
 - Bất biến: mọi đổi status qua `_apply_transition` + bảng TRANSITIONS; mọi ghi qua `_mutate` (deep copy → audit sink → commit, fail closed); chỉ BQL đóng/hủy.
 - Pipeline (2026-10-01): 2 dữ liệu → 3 phân loại + đề xuất phòng ban → 4 trùng → 5 review → 6 tài sản → 7 vật tư/tồn kho → 8 giao. Hàm bước tên `_step_<số>_<việc>`; phân loại luôn trước trùng.
+- Thiếu dữ liệu (`NEED_INFO`/`MISSING_INFO`) giao BPTN: `bptn_resolve(location|info, note)`; cư dân vẫn tự bổ sung được. Flow theo biểu đồ người dùng, không theo CR-BPTN-03.
 - Đồng thời: ghi phải giữ `engine.lock`; `engine.at()` là thread-local (xem `-known-gotchas.md`).
 - Kiểm tra: `python -m pytest -q` + `python -m ruff check src tests` + `python -m ruff format --check src tests`.
 - Planning & RFCs: Thư mục `planning/` lưu trữ các bản kế hoạch theo định dạng `[STT]_[YYYY-MM-DD]_[Ten-Ngan]` (25-35 ký tự, cố định path).

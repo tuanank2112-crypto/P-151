@@ -44,7 +44,7 @@
 
 - Mọi screen nội bộ có banner cố định: **“DỮ LIỆU MÔ PHỎNG — Không phải hồ sơ/quy trình vận hành thật.”**
 - Trạng thái hiển thị bằng text + icon/pattern, không chỉ bằng màu. Cư dân thấy nhãn tiếng Việt (`Đã tiếp nhận`,
-  `Đang xác minh`, `Đã chuyển phòng ban`, `Đang xử lý`, `Chờ nghiệm thu`, `Hoàn thành`, `Chờ bạn bổ sung`, `Tạm hoãn`,
+  `Đang xác minh`, `Đã chuyển phòng ban`, `Đang xử lý`, `Chờ nghiệm thu`, `Hoàn thành`, `Chờ bổ sung thông tin`, `Tạm hoãn`,
   `Đã gộp`, `Đã hủy`); màn hình nội bộ thấy mã + nhãn.
 - Raw resident content/evidence luôn read-only, nhãn **“Nguồn gốc — bất biến”**; phần cư dân bổ sung hiện riêng, theo thứ tự thời gian.
 - CTA theo role; forbidden action không render hoặc disabled kèm lý do. Nếu vẫn gọi, UI hiển thị `ACTION_DENIED` (có audit).

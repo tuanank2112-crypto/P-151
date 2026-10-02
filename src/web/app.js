@@ -20,7 +20,7 @@ const ROLE_LABEL = {
 const VIEW_TEXT = {
   qa: ['Công cụ demo', 'Nạp lại dữ liệu mẫu, chạy job nhắc và leo thang, kiểm tra 12 phản ánh mẫu. Chỉ tài khoản QA dùng được.'],
   resident: ['Phản ánh của tôi', 'Gửi phản ánh về khu vực chung và theo dõi tiến độ xử lý như theo dõi đơn hàng.'],
-  bptn: ['Hàng chờ xác minh', 'Các phản ánh Agent chưa thể tự quyết. Chọn một phản ánh để xác nhận hoặc bổ sung thông tin.'],
+  bptn: ['Hàng chờ xác minh', 'Các phản ánh Agent chưa thể tự quyết hoặc còn thiếu thông tin. Chọn một phản ánh để xác nhận hoặc bổ sung thông tin.'],
   dept: ['Việc của phòng ban', 'Nhận việc, cập nhật tiến độ và báo hoàn thành. Chỉ hiện phản ánh đã được giao cho phòng ban.'],
   warehouse: ['Nhập kho vật tư', 'Phản ánh đang tạm hoãn vì thiếu vật tư sẽ tự chạy tiếp khi kho nhập đủ.'],
   bql: ['Bảng điều khiển BQL', 'Theo dõi toàn bộ phản ánh, nghiệm thu, trả làm lại hoặc hủy.'],
@@ -597,7 +597,7 @@ function ticketMeta(t) {
 async function renderBptn(list, detail) {
   await internalList(list, {
     title: 'Chờ BPTN xác minh',
-    filter: (t) => t.status === 'VERIFYING',
+    filter: (t) => t.status === 'VERIFYING' || t.status === 'NEED_INFO',
     meta: ticketMeta,
     empty: ['Không có phản ánh nào cần xác minh', 'Agent tự xử lý được các phản ánh hiện có.'],
   });
@@ -642,6 +642,17 @@ function bptnForm(c) {
   const categories = Object.entries(CATEGORY_LABEL);
   const send = (body, message) => act(api(`/mo/tickets/${id}/bptn-resolve`, { method: 'POST', body: compact(body) }), message);
 
+  if (code === 'MISSING_INFO') {
+    return actionForm([
+      callout('warn', 'Phản ánh còn thiếu thông tin', `${c.ticket.blocker.internal_note || ''}. Liên hệ cư dân rồi nhập phần còn thiếu; cư dân cũng có thể tự bổ sung trên app.`),
+      field('Vị trí', el('input', { name: 'location', type: 'text', class: INPUT, placeholder: 'Tòa SIM-A / Tầng 3 / Hành lang' }), 'Nhập đủ tòa, tầng, khu vực.'),
+      field('Thông tin cư dân cung cấp', el('textarea', { name: 'info', rows: '2', maxlength: '500', class: INPUT }), 'Ghi nguyên lời cư dân nếu còn thiếu nội dung phản ánh. Nội dung gốc không bị sửa.'),
+      field('Lý do', Object.assign(note(), { required: true }), 'Bắt buộc, ví dụ: đã gọi cư dân lúc 09:10.'),
+    ], 'Lưu và xử lý tiếp', (data) => {
+      if (!data.get('location') && !data.get('info')) return toast('Nhập vị trí hoặc thông tin cư dân cung cấp', 'error');
+      return send({ location: data.get('location'), info: data.get('info'), note: data.get('note') }, 'Đã bổ sung thông tin');
+    });
+  }
   if (code === 'DUPLICATE') {
     const other = c.ticket.blocker.related_ticket_id;
     return el('div', { class: 'space-y-4' },

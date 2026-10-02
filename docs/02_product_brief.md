@@ -35,7 +35,7 @@ phòng ban báo hoàn thành, để BQL nghiệm thu; cư dân theo dõi trạng
 ## 3. Target users và actors
 
 - **Cư dân (`CR-BPTN-02` (v0.5 candidate)):** gửi phản ánh, xem trạng thái công khai, bổ sung thông tin, đánh giá, báo chưa xong.
-- **BPTN:** gỡ blocker cần người quyết định (trùng, loại việc, review, tài sản, sai phòng ban); không sửa phản ánh gốc.
+- **BPTN:** liên hệ cư dân khi phản ánh thiếu dữ liệu và nhập phần thiếu; gỡ blocker cần người quyết định (trùng, loại việc, review, tài sản, sai phòng ban); không sửa phản ánh gốc.
 - **Phòng ban (thay "Nhân sự thực hiện"):** nhận việc, tự phân công, cập nhật checklist/vật tư/ghi chú, báo hoàn thành,
   trả về khi sai phòng ban, tạm hoãn tại hiện trường.
 - **Kho (`CR-BPTN-02` (v0.5 candidate)):** nhập vật tư mô phỏng.
@@ -151,7 +151,7 @@ Ghi chú: việc hiển thị non-blocking warning và reason tối thiểu là 
 
 | Tình huống | Trạng thái / blocker | Người gỡ |
 |---|---|---|
-| Thiếu nội dung/vị trí | `NEED_INFO` / `MISSING_INFO` | Cư dân |
+| Thiếu nội dung/vị trí | `NEED_INFO` / `MISSING_INFO` | BPTN (liên hệ cư dân); cư dân tự bổ sung được |
 | Trùng ticket đang mở (48h) | `VERIFYING` / `DUPLICATE` | BPTN |
 | Loại việc không rõ / ngoài phạm vi | `VERIFYING` / `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE` | BPTN |
 | Playbook chỉ do LLM đề xuất | `VERIFYING` / `PENDING_REVIEW` | BPTN |
@@ -183,7 +183,7 @@ Leo thang chỉ bật cờ và thông báo BQL; không đổi trạng thái, kh�
 ## 13. State model
 
 `CR-BPTN-02` (v0.5 candidate): chính `RECEIVED` (Đã tiếp nhận), `VERIFYING` (Đang xác minh), `ROUTED` (Đã chuyển phòng ban), `IN_PROGRESS`
-(Đang xử lý), `READY_FOR_REVIEW` (Chờ nghiệm thu), `CLOSED` (Hoàn thành); phụ `NEED_INFO` (Chờ bạn bổ sung), `ON_HOLD`
+(Đang xử lý), `READY_FOR_REVIEW` (Chờ nghiệm thu), `CLOSED` (Hoàn thành); phụ `NEED_INFO` (Chờ bổ sung thông tin), `ON_HOLD`
 (Tạm hoãn); kết thúc `MERGED` (Đã gộp), `CANCELLED` (Đã hủy). Cư dân và BQL xem cùng trạng thái ở hai mức chi tiết.
 
 Chỉ BQL chuyển sang `CLOSED` hoặc `CANCELLED`. Không ticket nào vào `ROUTED` khi `can_route` sai. Chi tiết transition ở

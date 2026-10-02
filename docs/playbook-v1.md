@@ -57,7 +57,7 @@ Fixture validation dùng 12 ticket mô phỏng: 6 vệ sinh, 6 kỹ thuật. B�
 | Actor/layer | Được làm trong playbook | Không được làm |
 |---|---|---|
 | Cư dân (`CR-BPTN-02` (v0.5 candidate)) | Gửi phản ánh; bổ sung thông tin (append-only); xem trạng thái công khai; đánh giá; báo chưa xong trong 7 ngày | Sửa phản ánh gốc; xem dữ liệu nội bộ; xem ticket của người khác |
-| BPTN | Gỡ blocker `VERIFYING`: gộp/bác trùng, chọn loại việc, sửa/xác nhận review, chọn asset hoặc xác định tại hiện trường (kèm lý do), chọn lại loại việc/phòng ban sau `WRONG_DEPT`. Giá trị chọn vào `locked_fields` | Sửa raw; suy đoán dữ kiện; đóng/hủy ticket; tạo/hoàn tất work order thật |
+| BPTN | Liên hệ cư dân khi thiếu dữ liệu (`MISSING_INFO`) và nhập vị trí/thông tin kèm lý do; gỡ blocker `VERIFYING`: gộp/bác trùng, chọn loại việc, sửa/xác nhận review, chọn asset hoặc xác định tại hiện trường (kèm lý do), chọn lại loại việc/phòng ban sau `WRONG_DEPT`. Giá trị chọn vào `locked_fields` | Sửa raw; suy đoán dữ kiện; đóng/hủy ticket; tạo/hoàn tất work order thật |
 | Agent | Kiểm tra dữ liệu, trùng; phân loại; đề xuất phòng ban; quyết định review; tra tài sản; so vật tư; tạo draft; giao phòng ban khi `can_route`; đối soát bước 10 | Sửa nguồn; ghi đè `locked_fields`; ghi `assignee_id`; tự bỏ qua tra tài sản; tự hoàn tất checklist; đóng/hủy; duyệt vật tư; tự viết lời cho cư dân |
 | Phòng ban (`DEPARTMENT`, thay "Nhân sự thực hiện") | Nhận việc; tự phân công (`assignee_id`); cập nhật checklist, material, ghi chú xử lý; báo hoàn thành; trả về khi sai phòng ban; tạm hoãn tại hiện trường kèm eta | Thao tác ticket chưa giao cho mình; sửa nguồn; tự đổi rule/trạng thái; đóng ticket |
 | Kho (`WAREHOUSE`, `CR-BPTN-02` (v0.5 candidate)) | Nhập vật tư mô phỏng (`stock_received`) | Mọi thao tác khác trên ticket |
@@ -72,7 +72,7 @@ Fixture validation dùng 12 ticket mô phỏng: 6 vệ sinh, 6 kỹ thuật. B�
 
 1. Ingest raw ticket bất biến → `RECEIVED`.
 2. Kiểm tra dữ liệu: `ticket_id`, `created_at`, nội dung, vị trí sơ bộ (tính cả phần cư dân bổ sung). Thiếu →
-   `NEED_INFO`/`MISSING_INFO`, liệt kê đúng field thiếu.
+   `NEED_INFO`/`MISSING_INFO`, liệt kê đúng field thiếu, giao BPTN liên hệ cư dân (cư dân vẫn tự bổ sung được).
 3. Phân loại + **đề xuất** phòng ban (`proposed_department_id` từ bảng playbook → phòng ban). Bỏ qua phân loại nếu
    `locked_fields.category`. Không rõ → `CATEGORY_UNCLEAR`/`OUT_OF_SCOPE`: BPTN chọn loại việc, `review_status=CONFIRMED`,
    chạy lại từ bước 4.
@@ -105,7 +105,7 @@ reset `asset_resolution`, chạy lại từ bước 6; cùng loại việc → c
 
 | Gate (`CR-BPTN-02` (v0.5 candidate)) | Field/điều kiện bắt buộc | Owner/source | Nếu không đạt |
 |---|---|---|---|
-| `GATE-DATA` (bước 2) | `ticket_id`, `created_at`, nội dung, vị trí sơ bộ (tính cả phần bổ sung) | System ingest / cư dân | `NEED_INFO`/`MISSING_INFO` |
+| `GATE-DATA` (bước 2) | `ticket_id`, `created_at`, nội dung, vị trí sơ bộ (tính cả phần bổ sung) | System ingest / BPTN / cư dân | `NEED_INFO`/`MISSING_INFO` |
 | `GATE-DUPLICATE` (bước 4) | Không trùng ticket đang mở cùng vị trí/loại trong 48h | Agent | `VERIFYING`/`DUPLICATE` |
 | `GATE-CLASSIFY` (bước 4) | Một `playbook_id` trong allowlist → `proposed_department_id` | Agent; BPTN khi không rõ | `VERIFYING`/`CATEGORY_UNCLEAR` hoặc `OUT_OF_SCOPE` |
 | `GATE-REVIEW` (bước 5) | `review_status ∈ {NOT_REQUIRED, CONFIRMED}` | Agent; BPTN khi `PENDING_REVIEW` | `VERIFYING`/`PENDING_REVIEW` |
@@ -355,7 +355,7 @@ Các label trên chỉ kiểm tra hồ sơ; không quy định cách vệ sinh.
 | AC ID | Given | When | Then |
 |---|---|---|---|
 | `AC-PB-CLN-01` | Nội dung vệ sinh, vị trí rõ, trong giờ | Pipeline chạy | `ROUTED` tới `DEPT_CLEANING`; không cần BPTN; draft `assignee_id=null` |
-| `AC-PB-CLN-02` | Thiếu vị trí | Pipeline chạy | `NEED_INFO`/`MISSING_INFO`; cư dân bổ sung thì chạy lại từ bước 2; nội dung gốc không đổi |
+| `AC-PB-CLN-02` | Thiếu vị trí | Pipeline chạy | `NEED_INFO`/`MISSING_INFO`, giao BPTN; BPTN nhập vị trí hoặc cư dân bổ sung thì chạy lại từ bước 2; nội dung gốc không đổi |
 | `AC-PB-CLN-03` | Ngoài ca phòng ban | Bước 8 | `ROUTED` + `OUT_OF_HOURS`; đầu ca tự gỡ và thông báo phòng ban |
 | `AC-PB-CLN-04` | Phòng ban vệ sinh trả `WRONG_DEPT`, BPTN đổi sang đèn | Resume | Qua tra tài sản rồi mới `ROUTED` tới `DEPT_TECHNICAL` |
 | `AC-PB-CLN-05` | Checklist xong nhưng không có ghi chú xử lý | Báo hoàn thành | `READY_FOR_REVIEW`; `processing_note_present=false` |

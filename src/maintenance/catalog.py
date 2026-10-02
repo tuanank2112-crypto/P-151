@@ -77,11 +77,6 @@ class BusinessHours(Frozen):
         raise ValueError("business_hours không có ngày làm việc nào")
 
 
-class MissingInfoSla(Frozen):
-    retry_every_hours: float
-    escalate_after_hours: float
-
-
 class BptnSla(Frozen):
     retry_every_business_hours: float
     escalate_after_business_hours: float
@@ -107,7 +102,6 @@ class SlaConfig(Frozen):
     job_interval_minutes: float = Field(gt=0)
     duplicate_window_hours: float = Field(gt=0)
     reopen_window_days: float = Field(gt=0)
-    missing_info: MissingInfoSla
     bptn: BptnSla
     waiting_material: WaitingMaterialSla
     not_accepted: NotAcceptedSla

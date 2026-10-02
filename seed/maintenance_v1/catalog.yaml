@@ -91,7 +91,7 @@ sla_config:
   job_interval_minutes: 5
   duplicate_window_hours: 48
   reopen_window_days: 7
-  missing_info: {retry_every_hours: 24, escalate_after_hours: 72}
+  # Mọi blocker BPTN gỡ, kể cả MISSING_INFO (BPTN liên hệ cư dân để bổ sung)
   bptn: {retry_every_business_hours: 1, escalate_after_business_hours: 4}
   waiting_material: {escalate_after_hours: 24}  # kiểm lại tồn kho ở đầu mỗi ca
   not_accepted: {start_after_hours: 2, retry_every_hours: 2}

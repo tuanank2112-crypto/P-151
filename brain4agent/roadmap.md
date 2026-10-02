@@ -22,3 +22,5 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
   khóa đăng nhập theo username + client, `/chat` không lộ lỗi, `llm.py` nhận `OPENAI_BASE_URL`, ruff sạch toàn repo.
 - [x] **Flow 2026-10-01:** phân loại (bước 3) trước kiểm tra trùng (bước 4); hàm bước đặt tên `_step_<số>_<việc>`;
   `WAITING_MATERIAL` chạy lại từ tra tài sản. 142 test xanh.
+- [x] **Thiếu dữ liệu giao BPTN (2026-10-01):** `MISSING_INFO` do BPTN gỡ (nhập vị trí/thông tin sau khi gọi cư dân), cư
+  dân vẫn tự bổ sung được; UI BPTN có hàng chờ `NEED_INFO`. 146 test xanh.
