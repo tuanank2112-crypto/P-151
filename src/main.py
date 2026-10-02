@@ -11,7 +11,11 @@ from fastapi.staticfiles import StaticFiles
 
 from src.api import auth
 from src.api.routers import maintenance
-from src.api.routes import router
+
+try:
+    from src.api.routes import router
+except (ImportError, ModuleNotFoundError):
+    router = None
 from src.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -62,7 +66,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router, prefix="/api/v1")
+if router:
+    app.include_router(router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(maintenance.router, prefix="/api/v1")
 app.include_router(maintenance.resident_router, prefix="/api/v1")

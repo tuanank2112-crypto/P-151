@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field, ValidationError, field_validator
 from src.api import photos
 from src.api.auth import get_actor
 from src.config import get_settings
+from src.maintenance.ai_logger import AILogEntry, AILogStatus, ai_logger
 from src.maintenance.demo import EvaluationReport, evaluate, run_fixture
 from src.maintenance.engine import (
     MAX_EXECUTION_PHOTOS,
@@ -199,6 +200,34 @@ def run_evaluation(actor: ActorDep, engine: EngineDep) -> EvaluationReport:
     return evaluate(engine)
 
 
+@router.get("/ai-logs", response_model=list[AILogEntry])
+def get_ai_logs(
+    actor: ActorDep,
+    engine: EngineDep,
+    status: AILogStatus | None = None,
+    since: datetime | None = None,
+    until: datetime | None = None,
+    ticket_id: str | None = None,
+    limit: int = 100,
+) -> list[AILogEntry]:
+    """Lấy danh sách các lượt gọi LLM (AI Logs), hỗ trợ lọc theo trạng thái, khoảng thời gian và ticket_id."""
+    _require_role(engine, actor, *STAFF)
+    logs = ai_logger.get_logs(ticket_id=ticket_id, limit=limit)
+    if status is not None:
+        logs = [entry for entry in logs if entry.status == status]
+    if since is not None:
+        logs = [entry for entry in logs if entry.timestamp >= since]
+    if until is not None:
+        logs = [entry for entry in logs if entry.timestamp <= until]
+    return logs
+
+
+@router.post("/ai-logs/reset")
+def reset_ai_logs(actor: ActorDep, engine: EngineDep) -> dict[str, Any]:
+    """Reset toàn bộ dữ liệu AI logs phục vụ QA và kịch bản demo."""
+    _require_role(engine, actor, ActorRole.QA_INTERNAL)
+    ai_logger.clear()
+    return {"message": "Đã reset dữ liệu AI logs"}
 # ------------------------------------------------------------------ tickets (internal, full detail)
 
 
