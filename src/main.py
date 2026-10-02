@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from src.api import auth
 from src.api.routers import maintenance
+
 try:
     from src.api.routes import router
 except (ImportError, ModuleNotFoundError):

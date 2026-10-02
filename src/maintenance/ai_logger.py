@@ -4,17 +4,17 @@ Maintains a sliding window of the most recent 100 AI log entries.
 Designed for low-overhead logging, auditing, and real-time dashboard inspection.
 """
 
-from collections import deque
-from datetime import datetime, timezone
-from enum import Enum
 import threading
-from typing import Any
 import uuid
+from collections import deque
+from datetime import UTC, datetime
+from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-class AILogStatus(str, Enum):
+class AILogStatus(StrEnum):
     """Execution status of an LLM call."""
     SUCCESS = "SUCCESS"                      # Model responded successfully with valid schema
     FALLBACK_RULE = "FALLBACK_RULE"          # Model error/timeout -> Graceful fallback to deterministic rule
@@ -31,7 +31,7 @@ class AILogEntry(BaseModel):
         description="Unique identifier for the log entry"
     )
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="UTC timestamp when the request was initiated"
     )
     ticket_id: str = Field(

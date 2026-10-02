@@ -1,14 +1,15 @@
 """Unit tests for the in-memory AI Logger, proposer integration, and endpoints."""
 
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+
 import pytest
 from fastapi.testclient import TestClient
 
 from src.api.auth import actor_header_allowed
 from src.api.routers.maintenance import get_engine
 from src.main import app
-from src.maintenance.ai_logger import AILogEntry, AILogStatus, InMemoryAILogger, ai_logger
+from src.maintenance.ai_logger import AILogStatus, InMemoryAILogger, ai_logger
 from src.maintenance.engine import MaintenanceEngine
 from src.maintenance.proposer import LLMAssessment, propose
 
@@ -80,7 +81,7 @@ def test_in_memory_logger_sliding_window():
     logs = logger.get_logs()
     assert len(logs) == 5
     # Most recent first
-    assert [l.ticket_id for l in logs] == ["TK-009", "TK-008", "TK-007", "TK-006", "TK-005"]
+    assert [entry.ticket_id for entry in logs] == ["TK-009", "TK-008", "TK-007", "TK-006", "TK-005"]
 
 
 def test_in_memory_logger_thread_safety():
@@ -176,7 +177,7 @@ def test_api_get_ai_logs_permissions(client):
 
 
 def test_api_get_ai_logs_filtering(client):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     ai_logger.log(ticket_id="T1", prompt_sent={"q": "1"}, status=AILogStatus.SUCCESS)
     ai_logger.log(ticket_id="T2", prompt_sent={"q": "2"}, status=AILogStatus.FALLBACK_RULE)
 
