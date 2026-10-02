@@ -2,7 +2,7 @@
 
 | Trường | Giá trị |
 |---|---|
-| WP | WP5 (🟠 worker-sonnet), phần A — sau WP4 |
+| WP | WP5 (🟠 worker-sonnet, ✅ R04), phần A — sau WP4 · WP3b (✅ R06: phủ định theo mệnh đề, Q27) · **WP3c: phủ định lối đi dùng CÙNG hàm phạm vi R1 với tầng an toàn (plan.md Q29; sửa hồi quy R07 M11)** |
 | Nguồn | CR-03 §5.1 bước 3, §7 (trừ PRI-U1/U2 — P1), §12.1, §13 (sắp xếp), AC-10 (phần H/M/L/D0 + sửa tay + sắp xếp); Q01, Q07, Q14 |
 | Hợp đồng | [`01-CONTRACTS.md`](01-CONTRACTS.md) §1 (`Priority`, `PrioritySource`, `Action.SET_PRIORITY`), §2 (4 trường), §3.1 (`PERMISSIONS`), §5 (`PriorityLexicon`), §7 (`set_priority`), §8 (views), §9 (demo) |
 | File được ghi | `src/maintenance/priority.py` (mới), `src/maintenance/engine.py` (chỉ §3), `src/maintenance/views.py` (§4), `src/maintenance/demo.py` (`observe` + `priority`, nếu WP3 chưa thêm), `seed/maintenance_v1/tickets.yaml` (chỉ thêm dòng `priority:` vào `expected` — §5), `tests/test_maintenance/test_priority.py` (mới) |
@@ -18,7 +18,7 @@ from dataclasses import dataclass
 
 from src.maintenance.catalog import PriorityLexicon, compile_pattern
 from src.maintenance.enums import Priority, ServiceCategory
-from src.maintenance.safety import normalize_with_map
+from src.maintenance.safety import TextContext, build_context, scope_before   # [ĐỔI WP3c] bỏ is_negated (WP3b)
 
 
 @dataclass(frozen=True)
@@ -29,25 +29,45 @@ class PriorityProposal:
 
 
 def propose_priority(category: ServiceCategory | None, location: str | None, text: str,
-                     lexicon: PriorityLexicon) -> PriorityProposal: ...
-```
+                     lexicon: PriorityLexicon) -> PriorityProposal: ...          # chữ ký GIỮ
 
-### 1.1 Luật (đúng thứ tự; `area = location.split(" / ")[-1]`; `norm = normalize_with_map(text)[0]`)
+
+def _first_match(patterns: tuple[str, ...], ctx: TextContext, lexicon: PriorityLexicon) -> str | None:
+    """[ĐỔI WP3c] Cụm đầu tiên (theo thứ tự khai báo pattern, rồi vị trí) KHÔNG bị phủ định theo R1:
+    s = scope_before(ctx, m.start(), m.start(), lexicon.negation_prefixes, lexicon.negation_fillers,
+                     max_fillers=lexicon.scope_max_fillers, max_chars=lexicon.scope_max_chars)
+    cụm tính khi `s is None or s.double`."""
+```
+`ctx = build_context(text, lexicon.clause_conjunctions)` (biến thể A, không chạy biến thể R8 — priority không phải lớp an toàn). `scope_before` là **CÙNG một hàm** với tầng an toàn (SPEC-P01 §1, §3.2.1): cue + 0..`scope_max_fillers` token đệm `negation_fillers` kết thúc ĐÚNG ngay trước cụm khớp, cửa sổ `[max(đầu mệnh đề, start − scope_max_chars), start)`. Không có từ dẫn (`LEAD`) ở priority: `hi = start`. Kết quả `double` (phủ định kép) ⇒ coi như **không** bị phủ định (cụm vẫn tính — nghiêng về ưu tiên cao).
+
+### 1.1 Luật (đúng thứ tự; `area = location.split(" / ")[-1]`; "khớp" = `_first_match(...) is not None`)
 | Bước | Điều kiện | Kết quả | `reason` (mẫu) |
 |---|---|---|---|
 | 0 | `location is None` **hoặc** `category ∉ {KY_THUAT, VE_SINH}` | `MEDIUM`, `PRI-D0` | `"PRI-D0: chưa rõ vị trí hoặc loại việc; mặc định MEDIUM"` |
 | 1 | `category == KY_THUAT` và `area ∈ lexicon.high_areas` | `HIGH`, `PRI-H1` | `"PRI-H1: đèn tại lối đi chung (Hành lang)"` |
 | 2 | `category == KY_THUAT` (khu vực khác) | `MEDIUM`, `PRI-M1` | `"PRI-M1: đèn tại khu vực khác (Phòng rác)"` |
-| 3 | `category == VE_SINH` và `norm` khớp `obstruction_patterns` | `HIGH`, `PRI-H2` | `"PRI-H2: cản trở lối đi ('tron truot')"` |
-| 4 | `category == VE_SINH` và `norm` khớp `usage_impact_patterns` | `MEDIUM`, `PRI-M2` | `"PRI-M2: ảnh hưởng sử dụng ('nhieu rac')"` |
+| 3 | `category == VE_SINH` và `_first_match(obstruction_patterns)` (cụm không bị phủ định R1) | `HIGH`, `PRI-H2` | `"PRI-H2: cản trở lối đi ('tron truot')"` |
+| 4 | `category == VE_SINH` và `_first_match(usage_impact_patterns)` | `MEDIUM`, `PRI-M2` | `"PRI-M2: ảnh hưởng sử dụng ('nhieu rac')"` |
 | 5 | `category == VE_SINH` còn lại | `LOW`, `PRI-L1` | `"PRI-L1: chưa ảnh hưởng trực tiếp"` |
-Pattern: `compile_pattern` (01 §5); duyệt theo thứ tự khai báo, lấy cụm khớp đầu tiên làm bằng chứng. Khớp trên toàn nội dung (original + additions), vì text truyền vào là `engine._content(work)`.
+Pattern: `compile_pattern` (01 §5); duyệt theo thứ tự khai báo, lấy cụm khớp đầu tiên KHÔNG bị phủ định làm bằng chứng (cụm bị phủ định thì xét match tiếp theo của cùng pattern, rồi pattern sau). Khớp trên toàn nội dung (original + additions), vì text truyền vào là `engine._content(work)`.
+
+Ví dụ R1 (đo trên bản thử architect, `category=VE_SINH`, `location="Tòa SIM-A / Tầng 3 / Hành lang"`):
+| Câu | Kết quả | Vì sao |
+|---|---|---|
+| `Rác chưa được dọn chắn hết lối đi` | `HIGH PRI-H2 ('chan het loi')` | `chua` + đệm `duoc` + **`don`** (không phải đệm) ⇒ không phủ định — **sửa hồi quy R07 M11** (HEAD: `LOW PRI-L1`) |
+| `Sàn chưa lau nên trơn trượt` | `HIGH PRI-H2 ('tron truot')` | `lau nen` không phải đệm — sửa M11 |
+| `Không ai dọn rác tràn ra lối đi` | `HIGH PRI-H2 ('tran ra loi')` | `ai don rac` không phải đệm |
+| `Hành lang không chắn lối đi, không bị trơn.` | `LOW PRI-L1` | `khong` + 0 đệm; `khong` + `bi` — phủ định đúng (Q27, N-10 giữ) |
+| `Hành lang tầng 3 tòa SIM-A có nhiều rác, không chắn lối đi, không trơn trượt.` | `MEDIUM PRI-M2 ('nhieu rac')` | (test WP3b giữ) |
+| `Không chắn lối đi nhưng sàn trơn trượt` | `HIGH PRI-H2 ('tron truot')` | "nhưng" cắt mệnh đề |
+| `Không có rác chắn lối đi` | `HIGH PRI-H2 ('chan loi')` | **đánh đổi đã biết** (P3-06): `rac` là đối tượng của cue, không phải đệm |
 
 Ghi chú thực tế (đo trên `rules.AREA_PATTERNS` hiện có): 5 khu vực mà `extract_location` nhận ra **đều** thuộc `high_areas` ⇒ PRI-M1 **không** tới được end-to-end ở P0 (chỉ qua unit test với `location` tự đặt). Giữ luật để không phải sửa code khi thêm khu vực (Q07).
 
-## 2. Dữ liệu (`lexicon.yaml` phần `priority:` — đã nằm trong `LEXICON-P0.yaml`)
+## 2. Dữ liệu (`lexicon.yaml` phần `priority:`; nguồn chân lý = `seed/maintenance_v1/lexicon.yaml`, 01 §5.0)
 - `high_areas`: đúng 5 nhãn chuỗi của `rules.AREA_PATTERNS` (có dấu): `Hành lang`, `Sảnh chính`, `Sảnh thang máy`, `Cầu thang bộ`, `Hầm xe`.
 - `obstruction_patterns` (H2) 14 cụm; `usage_impact_patterns` (M2) 17 cụm — xem file. Trường sửa không chạm code.
+- **[WP3c]** `negation_prefixes: [khong, ko, chang, chua]` (giữ WP3b), `negation_fillers`, `scope_max_fillers`, `scope_max_chars`, `clause_conjunctions` — 4 khoá sau PHẢI bằng khối `safety` (validator V-12, 01 §5.4); `negation_window_words` BỎ (01 §5.2–§5.3).
 
 ## 3. Nối vào engine
 
@@ -135,12 +155,16 @@ TEC-002 (dừng `ASSET_UNCLEAR` ở bước 6) và TEC-003 (`ON_HOLD` ở bướ
 3. `HUMAN_OVERRIDE` thắng mọi lần chạy lại pipeline (đổi category, WRONG_DEPT, resume…).
 4. Audit: luật ⇒ `CREATE_PROPOSAL` (`field_name="priority"`, `rule_id=PRI-*`); người ⇒ `SET_PRIORITY` (`reason` = note).
 5. Ghi 4 trường bằng `_set_ticket` (atomic).
+6. **[WP3c]** Phủ định của PRI-H2/PRI-M2 đi qua `safety.scope_before` (R1) — cùng hàm, cùng đệm, cùng ngưỡng với tầng an toàn (V-12 ép dữ liệu bằng nhau).
+7. **[WP3c]** `propose_priority` giữ chữ ký; `test_negated_obstruction_is_not_h2` (WP3b) giữ xanh không sửa.
 
 **CẤM**
 1. Gửi notification khi priority = HIGH (CR-03 §7 "HIGH không gửi thông báo khi tạo").
 2. Dùng `priority` để quyết định route/blocker; dùng `risk_level` để tính priority (hai trục độc lập).
 3. Cho RESIDENT/DEPARTMENT/AGENT gọi `set_priority` (PERMISSIONS = {BPTN, BQL}).
 4. Hardcode danh sách khu vực/cụm từ trong `.py`.
+5. **[WP3c]** Giữ `is_negated`/cửa sổ "N từ" của WP3b hoặc viết hàm phủ định riêng cho priority.
+6. **[WP3c]** Chạy biến thể R8 hay lưới R9 trong priority (priority không phải lớp an toàn; 2b đã chạy trước).
 
 **Vùng cấm**
 | # | Không làm | Lý do |
@@ -150,6 +174,8 @@ TEC-002 (dừng `ASSET_UNCLEAR` ở bước 6) và TEC-003 (`ON_HOLD` ở bướ
 | P3-03 | Không xếp Bậc 2 lên nhóm đầu cùng EMERGENCY | CR-03 §7 chỉ ghim EMERGENCY; Bậc 2 có hạn 4 h và hộp việc riêng của BPTN |
 | P3-04 | Không trả về `reason` chứa nguyên văn dài của cư dân | audit đã có; `reason` chỉ nêu cụm khớp (chuẩn hoá) để không nhân bản nội dung |
 | P3-05 | Không bỏ PRI-M1/PRI-D0 dù không tới được end-to-end | luật là hợp đồng với Trường; unit test giữ chúng sống |
+| P3-06 | **[WP3c]** Không thêm luật riêng cho "không có <vật> chắn lối đi" (`Không có rác chắn lối đi` ⇒ `HIGH PRI-H2`) | R1 hẹp là quyết định của judge (Q29) cho CẢ safety và priority; nới đệm để bắt "rác" sẽ làm phủ định lan lại (R07 M1). Priority cao nhầm chỉ đẩy ticket lên đầu hàng — không chặn, không mất ticket. Đo: `g_prio` 1/18 (đúng g10) |
+| P3-07 | **[WP3c]** Không thêm `khong phai` vào `priority.negation_prefixes` chỉ để bắt phủ định kép | `Không phải không chắn lối đi` ⇒ `LOW PRI-L1` (đo) — hiếm; thêm cue làm "không phải chắn lối đi" thành phủ định (đúng) nhưng chưa có ca thật. Trường quyết khi có dữ liệu |
 
 ## 7. Phân loại lỗi (riêng P03; bảng chung 00 §7)
 | Tình huống | Lớp / HTTP | Caller |
@@ -158,6 +184,8 @@ TEC-002 (dừng `ASSET_UNCLEAR` ở bước 6) và TEC-003 (`ON_HOLD` ở bướ
 | `set_priority` bởi RESIDENT/DEPARTMENT/AGENT/SYSTEM | `ActionDeniedError` 403 + audit | ẩn nút |
 | BPTN `set_priority` trên ticket `EMERGENCY_PENDING_BQL` | 403 + audit (I-11) | chỉ BQL |
 | `lexicon.priority` thiếu khoá | `ValidationError` lúc nạp | sửa YAML |
+| **[WP3c]** `priority.negation_fillers/scope_max_fillers/scope_max_chars/clause_conjunctions` khác `safety` | `ValidationError` (V-12) lúc nạp | sửa YAML cho bằng nhau — không tách luật |
+| **[WP3c]** Câu thật bị H2 nhầm vì phủ định có đối tượng (`không có rác chắn…`) | không lỗi (P3-06) | BPTN/BQL `set_priority` tay có lý do (§3.2) |
 
 ## 8. Số đo nghiệm thu (THẬT)
 | # | Lệnh / kịch bản | Kỳ vọng |
@@ -168,4 +196,6 @@ TEC-002 (dừng `ASSET_UNCLEAR` ở bước 6) và TEC-003 (`ON_HOLD` ở bướ
 | R-04 | `set_priority(t1, BPTN, "HIGH", note="Lối đi chính giờ cao điểm")` rồi `return_wrong_department(t1, CLN, note=…)` + `bptn_resolve(t1, BPTN, category="KY_THUAT", note=…)` | sau mọi chạy lại: `priority == HIGH`, `priority_source == HUMAN_OVERRIDE`, `priority_rule_id is None`; audit có đúng 1 `SET_PRIORITY` |
 | R-05 | `set_priority(t1, BPTN, "LOW", note="")` / `set_priority(t1, CLN, "LOW", note="x")` | `GuardError` / `ActionDeniedError` + `audit[-1].action_result == ACTION_DENIED`; priority không đổi |
 | R-06 | `receive("Sảnh chính tòa SIM-A nước tràn ra lối đi, trơn trượt, chắn lối, cần vệ sinh.")` | `priority == HIGH`, `priority_rule_id == "PRI-H2"`, status `ROUTED` |
-| R-07 | `python -m pytest -q -p no:cacheprovider tests/test_maintenance/test_priority.py` | 0 fail; ≥ 7 test (TESTING §5) |
+| R-07 | `python -m pytest -q -p no:cacheprovider tests/test_maintenance/test_priority.py` | 0 fail; ≥ 7 test (TESTING §5) — sau WP3c: 20 test cũ + `test_priority_uses_shared_scope` (TESTING §4.1) |
+| R-08 (WP3c) | bảng ví dụ §1.1 (7 câu) qua `propose_priority(ServiceCategory.VE_SINH, "Tòa SIM-A / Tầng 3 / Hành lang", text, load_lexicon().priority)` | đúng từng `(priority, rule_id)` ở bảng §1.1 (đo trên bản thử architect 2026-10-02) |
+| R-09 (WP3c) | script R07 `g_prio.py` qua khối lệnh TESTING §11.5 (`AUDIT_ROOT=D:\P151`) | `FAILS 1` và dòng FAIL duy nhất là `g10` (HEAD `01c3506`: `FAILS 3` = g6, g7, g8 — đo 2026-10-02) |

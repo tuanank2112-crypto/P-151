@@ -82,7 +82,7 @@ class RiskSignal(Entity):
     status: SignalStatus
     source_quote: str = Field(min_length=1)   # NGUYÊN VĂN có dấu, cắt từ nội dung; S-14 nối hai đoạn bằng " | "
     detected_by: DetectedBy
-    rule_id: str = Field(min_length=1)        # S-xx | T2-xx | B-01 | B-02 | B-04 | LLM
+    rule_id: str = Field(min_length=1)        # S-xx | T2-xx | B-01 | B-02 | B-02D | B-03 | B-03N | B-04 | LLM  [ĐỔI WP3c: chỉ chú thích — kiểu giữ]
 
 
 BLOCKER_CODES_BY_STATUS[TicketStatus.VERIFYING] = frozenset({
@@ -303,15 +303,27 @@ sla_config:
 
 `dataset_version` của `catalog.yaml` giữ `maintenanceops-sim-v1.1`; `tickets.yaml` bump `maintenanceops-sim-v1.3` (SPEC-P04 §6).
 
-## 5. Từ vựng là DỮ LIỆU (Q07): `seed/maintenance_v1/lexicon.yaml` + loader
+## 5. Từ vựng là DỮ LIỆU (Q07): `seed/maintenance_v1/lexicon.yaml` + loader — **bản WP3c (luật R1–R10, plan.md Q29)**
 
-Bản chuẩn: [`LEXICON-P0.yaml`](LEXICON-P0.yaml) — worker WP3 **chép nguyên văn** thành `seed/maintenance_v1/lexicon.yaml` (chỉ đổi 2 dòng chú thích đầu nếu muốn). Ngữ nghĩa pattern: chuỗi thường = khớp nguyên cụm có ranh giới từ (`\b` + `re.escape` + `\b`); tiền tố `re:` = regex Python thô. Mọi pattern khớp trên văn bản đã chuẩn hoá (SPEC-P01 §3.1).
+### 5.0 Nguồn chân lý và ngữ nghĩa
+- WP3 (2026-10-01): worker chép [`LEXICON-P0.yaml`](LEXICON-P0.yaml) thành `seed/maintenance_v1/lexicon.yaml`. **Từ WP3c, nguồn chân lý là `seed/maintenance_v1/lexicon.yaml`**; `LEXICON-P0.yaml` đóng băng làm lịch sử WP3 và **không còn nạp được** bằng `Lexicon` (có khoá đã bỏ, thiếu khoá mới) — đúng ý đồ, CẤM "sửa cho nạp được".
+- Ngữ nghĩa pattern (giữ): chuỗi thường = khớp nguyên cụm có ranh giới từ (`\b` + `re.escape` + `\b`); tiền tố `re:` = regex Python thô. Mọi pattern khớp trên văn bản đã chuẩn hoá (SPEC-P01 §3.1).
+- **Cụm thường** (dùng cho cue, đệm, tập đóng, tiểu từ, token nối, gốc R9): khớp `^[a-z0-9]+(?: [a-z0-9]+)*$` — chữ thường KHÔNG dấu, cách nhau đúng MỘT khoảng trắng, không `re:`. **Token** = cụm thường không có khoảng trắng.
+- **Dạng có dấu** (giá trị của `homographs`, `homograph_intended`, `tier2_net_roots`, `benign_lamp_noun_forms`): chuỗi NFC chữ thường, `_fold(dạng) == khoá` (`_fold` = NFKC → lower → `đ→d` → NFD → bỏ `Mn`, như SPEC-P01 §3.1).
 
+### 5.1 Code (`catalog.py`)
 ```python
 # catalog.py
+@cache
 def compile_pattern(pattern: str) -> re.Pattern[str]:
-    """'re:<regex>' = regex thô; còn lại = cụm từ, khớp nguyên cụm có ranh giới từ."""
+    """'re:<regex>' = regex thô; còn lại = cụm từ, khớp nguyên cụm có ranh giới từ."""   # giữ
     return re.compile(pattern[3:]) if pattern.startswith("re:") else re.compile(r"\b" + re.escape(pattern) + r"\b")
+
+
+PHRASE = re.compile(r"[a-z0-9]+(?: [a-z0-9]+)*")      # [MỚI WP3c] cụm thường (dùng fullmatch)
+
+
+def _fold(text: str) -> str: ...                         # [MỚI WP3c] NFKC → lower → đ→d → NFD → bỏ Mn (cho validator)
 
 
 class SignalDef(Frozen):
@@ -330,32 +342,61 @@ class ComponentDef(Frozen):
     patterns: tuple[str, ...] = Field(min_length=1)
 
 
-class SafetyLexicon(Frozen):
+class SafetyLexicon(Frozen):                         # extra="forbid" (Frozen) — khoá thừa/khoá cũ ⇒ ValidationError
     active_phases: tuple[Literal["P0", "P1"], ...] = Field(min_length=1)
-    negation_window_words: int = Field(ge=1)
-    negation_prefixes: tuple[str, ...] = Field(min_length=1)
-    hedge_window_words: int = Field(ge=1)
-    hedges: tuple[str, ...] = Field(min_length=1)
-    resolved_markers: tuple[str, ...]
-    benign_phrases: tuple[str, ...]
-    benign_lamp_nouns: tuple[str, ...]
-    benign_with_lamp_noun: tuple[str, ...]
-    ambiguous_terms: tuple[str, ...]
-    ambiguous_exclusions: tuple[str, ...]
+    # ---- R1/R3/R4/R5: phạm vi cue (thay cửa sổ N từ)
+    # negation_window_words: [BỎ WP3c]   hedge_window_words: [BỎ WP3c]
+    scope_max_fillers: int = Field(ge=0, le=3)                    # [MỚI] R1: số token đệm tối đa giữa cue và span (= 2)
+    scope_max_chars: int = Field(ge=40, le=200)                   # [MỚI] R1: độ dài cửa sổ tối đa, ký tự norm (= 80)
+    negation_prefixes: tuple[str, ...] = Field(min_length=1)      # [ĐỔI nội dung] cue chung — R3: KHÔNG chứa đối tượng
+    negation_fillers: tuple[str, ...] = Field(min_length=1)       # [MỚI] R1: token đệm
+    person_negation_cues: tuple[str, ...]                         # [MỚI] R3: cue chứa đối tượng NGƯỜI
+    person_signal_ids: tuple[str, ...]                            # [MỚI] R3: tín hiệu được dùng cue người
+    coordination_conjunctions: tuple[str, ...]                    # [MỚI] R4: hay/hoặc/lẫn
+    coordination_hazard_tokens: tuple[str, ...]                   # [MỚI] R4 (A3): vế trước phải chứa một token này
+    hedges: tuple[str, ...] = Field(min_length=1)                 # giữ (cue R5)
+    hedge_fillers: tuple[str, ...]                                # [MỚI] R5
+    resolved_markers: tuple[str, ...]                             # giữ (pattern)
+    final_particles: tuple[str, ...]                              # [MỚI] R5: sau marker chỉ được còn các token này
+    resolved_bridge_tokens: tuple[str, ...]                       # [MỚI] R5 (A2): token được chen giữa tín hiệu và marker
+    # ---- B-01 (R6, A1)
+    benign_phrases: tuple[str, ...]                               # giữ (pattern)
+    benign_lamp_nouns: tuple[str, ...] = Field(min_length=1)      # [ĐỔI] chỉ cụm thường (bỏ mục "re:")
+    benign_lamp_noun_forms: dict[str, tuple[str, ...]]            # [MỚI] A1: token danh từ đèn → dạng có dấu được chấp nhận
+    b01_prefix_words: tuple[str, ...]                             # [MỚI] R6: tập đóng vị trí + trợ từ (ngoài danh từ đèn)
+    b01_code_token_regex: str                                     # [MỚI] R6: regex (fullmatch) cho MỘT token mã: "3", "b1", "a"
+    b01_max_prefix_tokens: int = Field(ge=1, le=40)               # [MỚI] R6: = 20
+    benign_with_lamp_noun: tuple[str, ...]                        # giữ
+    # non_lamp_electrical: [BỎ WP3c] (R6)
+    # ---- B-03, R7, R9
+    ambiguous_terms: tuple[str, ...]                              # giữ (pattern)
+    ambiguous_exclusions: tuple[str, ...]                         # giữ (pattern; + mục mới §5.3)
+    homographs: dict[str, tuple[str, ...]]                        # [MỚI] R7: token → dạng có dấu KHÔNG phải rủi ro
+    homograph_intended: dict[str, dict[str, tuple[str, ...]]]     # [MỚI] R7: pattern → {token → dạng có dấu chính pattern muốn nói}
+    tier2_net_roots: dict[str, tuple[str, ...]]                   # [MỚI] R9: gốc (cụm thường) → dạng có dấu kích hoạt lưới
+    # ---- B-04 (WP3b) — BẮT BUỘC có mặt, BỎ giá trị mặc định rỗng của WP3b
     khet_benign_contexts: tuple[str, ...]
+    khet_benign_contexts_accented: tuple[str, ...]
+    khet_electric_contexts: tuple[str, ...]
+    clause_conjunctions: tuple[str, ...] = Field(min_length=1)    # giữ (WP3b), BẮT BUỘC có mặt; phải chứa "va"
     components: tuple[ComponentDef, ...]
     signals: tuple[SignalDef, ...] = Field(min_length=1)
 
     @model_validator(mode="after")
     def _consistent(self):
-        """Mọi pattern compile được (re.error ⇒ ValueError); signal_id duy nhất; all_of/any_of trỏ component có thật;
-        signal có all_of/any_of thì không có patterns và ngược lại (trừ T2-03: patterns rỗng, sinh từ ambiguous_terms)."""
+        """§5.4 V-01…V-12. Mọi vi phạm ⇒ ValueError (pydantic gói thành ValidationError)."""
 
 
 class PriorityLexicon(Frozen):
-    high_areas: tuple[str, ...] = Field(min_length=1)            # nhãn khu vực đúng chuỗi rules.AREA_PATTERNS
-    obstruction_patterns: tuple[str, ...] = Field(min_length=1)  # PRI-H2
-    usage_impact_patterns: tuple[str, ...] = Field(min_length=1) # PRI-M2
+    high_areas: tuple[str, ...] = Field(min_length=1)            # nhãn khu vực đúng chuỗi rules.AREA_PATTERNS (giữ)
+    obstruction_patterns: tuple[str, ...] = Field(min_length=1)  # PRI-H2 (giữ)
+    usage_impact_patterns: tuple[str, ...] = Field(min_length=1) # PRI-M2 (giữ)
+    negation_prefixes: tuple[str, ...] = Field(min_length=1)     # [ĐỔI] bắt buộc (WP3b có mặc định rỗng); cụm thường
+    negation_fillers: tuple[str, ...] = Field(min_length=1)      # [MỚI] R1 — PHẢI bằng safety.negation_fillers
+    scope_max_fillers: int = Field(ge=0, le=3)                   # [MỚI] R1 — PHẢI bằng safety
+    scope_max_chars: int = Field(ge=40, le=200)                  # [MỚI] R1 — PHẢI bằng safety
+    clause_conjunctions: tuple[str, ...] = Field(min_length=1)   # [ĐỔI] bắt buộc — PHẢI bằng safety
+    # negation_window_words: [BỎ WP3c]
 
 
 class Lexicon(Frozen):
@@ -364,13 +405,165 @@ class Lexicon(Frozen):
     safety: SafetyLexicon
     priority: PriorityLexicon
 
+    @model_validator(mode="after")
+    def _same_scope(self):
+        """V-12 (R1 dùng chung): priority.(negation_fillers, scope_max_fillers, scope_max_chars, clause_conjunctions)
+        == safety.(…) ⇒ ngược lại ValueError."""
+
 
 @lru_cache
 def load_lexicon(directory: Path = FIXTURE_DIR) -> Lexicon:
     return Lexicon.model_validate(_read(directory / "lexicon.yaml"))
 ```
 
-Số đo nạp (LEXICON-P0): `len(lexicon.safety.signals) == 17`; số signal `phase == "P0"` = **10** (S-01, S-02, S-03, S-04, S-05, S-09, S-14, T2-03, T2-04, T2-05); `components` = 2 (`unknown_substance`, `hazard_sign`).
+Số đo nạp (giữ qua WP3c): `len(lexicon.safety.signals) == 17`; số signal `phase == "P0"` = **10** (S-01, S-02, S-03, S-04, S-05, S-09, S-14, T2-03, T2-04, T2-05); `components` = 2 (`unknown_substance`, `hazard_sign`).
+
+### 5.2 Khoá bỏ / thêm / đổi (WP3c) — so với `seed/maintenance_v1/lexicon.yaml` tại HEAD `01c3506`
+| Khối | Bỏ | Thêm | Đổi nội dung |
+|---|---|---|---|
+| `safety` | `negation_window_words`, `hedge_window_words`, `non_lamp_electrical` | `scope_max_fillers`, `scope_max_chars`, `negation_fillers`, `person_negation_cues`, `person_signal_ids`, `coordination_conjunctions`, `coordination_hazard_tokens`, `hedge_fillers`, `final_particles`, `resolved_bridge_tokens`, `benign_lamp_noun_forms`, `b01_prefix_words`, `b01_code_token_regex`, `b01_max_prefix_tokens`, `homographs`, `homograph_intended`, `tier2_net_roots` (17) | `negation_prefixes` (+4), `benign_lamp_nouns` (bỏ 3 mục `re:`, +3 cụm thường), `ambiguous_exclusions` (+5), `signals` S-03/S-04/S-05/S-09 (R10) |
+| `priority` | `negation_window_words` | `negation_fillers`, `scope_max_fillers`, `scope_max_chars` | — |
+| gốc | — | — | `lexicon_version: "2026-10-02.p0c"` |
+Mọi khoá khác (`active_phases`, `hedges`, `resolved_markers`, `benign_phrases`, `benign_with_lamp_noun`, `ambiguous_terms`, `khet_*`, `clause_conjunctions`, `components`, các signal khác, `priority.high_areas/obstruction_patterns/usage_impact_patterns/negation_prefixes/clause_conjunctions`) **giữ nguyên từng chữ**.
+
+### 5.3 Giá trị chính xác — đã đo trên bản thử architect (SPEC-P01 §9.3); hai khối dưới là YAML hợp lệ (đã nạp bằng `yaml.safe_load` và so từng giá trị với lexicon của bản thử ⇒ khớp 100%)
+```yaml
+safety:
+  # ---- R1/R3/R4 (phủ định)
+  scope_max_fillers: 2
+  scope_max_chars: 80
+  negation_prefixes: [khong co, khong thay, khong he, khong hai, khong con, chua thay, khong ngui thay, khong nghe thay,
+                      khong phai, chang co, khong bi, khong co dau hieu, ko co, k co, ko thay, k thay, hok co,
+                      khong phat hien, chang thay,          # Q29 (cue thêm của judge)
+                      khong phai la, chang phai]            # A4: phủ định kép "không phải là không có khói" ⇒ UNCLEAR
+  negation_fillers: [co, thay, bi, he, duoc, con]          # R1 (Q29, từng chữ)
+  person_negation_cues: [khong ai, khong co ai, khong thay ai, khong thay nguoi nao, khong co nguoi nao, khong nguoi nao,
+                         chua thay ai, chua co ai, khong co nguoi, khong thay nguoi, khong thay co nguoi]   # R3 (+A4: 5 mục cuối)
+  person_signal_ids: [S-09]
+  coordination_conjunctions: [hay, hoac, lan]               # R4
+  coordination_hazard_tokens: [khoi, lua, khet, chay, "no", xet, ho]   # R4/A3 — "no" PHẢI có nháy (YAML 1.1: no ⇒ False)
+  # ---- R5
+  hedge_fillers: [co, thay, bi, la, nhu, dang]
+  final_particles: [roi, a, nhe, nha, thoi, nua, ha, day, luon]
+  resolved_bridge_tokens: [ra, len, xuong, gio, bay, hien, luc, nay, thi, cung, da]   # A2
+  # ---- R6/A1 (B-01)
+  benign_lamp_nouns: [bong den, bong tuyp, den tuyp, den led, bong, den, tuyp, chieu sang]
+  benign_lamp_noun_forms: {bong: [bóng], den: [đèn], tuyp: [tuýp, tuyp], chieu: [chiếu], sang: [sáng]}
+  b01_prefix_words: [sanh thang may, sanh chinh, sanh, hanh lang, cau thang bo, cau thang, thang bo, thang may, ham xe, ham,
+                     phong rac, phong, khu vuc, khu, tang, toa, lau, block, sim, o, tai, cua, tren, duoi, trong, ngoai, truoc,
+                     he thong, loi di, loi thoat hiem, nha xe,
+                     bi, da, lai, cung, vua, moi, hay, thi, cai, cac, may, mot, hai, nhung, deu, dang]
+  b01_code_token_regex: "[a-z]?\\d+[a-z]?|[a-z]"
+  b01_max_prefix_tokens: 20
+  # ---- R7
+  homographs:
+    chay: [chảy, chạy]
+    ngat: [ngắt]
+    ho: [hộ, hồ, họ, hổ, hố, hô, hò]
+    khoi: [khối, khỏi, khơi]
+    lua: [lựa, lúa, lừa, lụa]
+    day: [dãy, đầy, dạy, dày, đây, đẩy, dậy, dấy, đày]
+    giat: [giặt]
+  homograph_intended:                                      # judge: 5 mục đầu; A4: pattern chắc nghĩa (gõ sai dấu không làm mất match)
+    chay mau: {chay: [chảy]}
+    nga khong day: {day: [dậy]}
+    khong day duoc: {day: [dậy]}
+    khong dung day duoc: {day: [dậy]}
+    day khoi: {day: [đầy]}
+    tia lua: {lua: [lựa, lúa, lừa, lụa]}
+    toe lua: {lua: [lựa, lúa, lừa, lụa]}
+    xet lua: {lua: [lựa, lúa, lừa, lụa]}
+    ngon lua: {lua: [lựa, lúa, lừa, lụa]}
+    ban tia lua: {lua: [lựa, lúa, lừa, lụa]}
+    phat tia lua: {lua: [lựa, lúa, lừa, lụa]}
+    ngat xiu: {ngat: [ngắt]}
+  # ---- R9 (+ R10/A4 loại trừ)
+  tier2_net_roots: {khoi: [khói], lua: [lửa], mau: [máu], bat dong: [bất động]}
+  ambiguous_exclusions: [nuoc chay, chay nuoc, chay ra, chay xuong, chay tran, chay lenh lang, chay dai, ro ri chay, chay nhua,
+                         phong chay, chua chay,              # R10: "phòng/chữa cháy"
+                         khoi thuoc, khoi huong, khoi nhang] # A4: nguồn khói lành tính (R9 coi là span loại trừ)
+  # ---- R10: pattern tín hiệu — CHỈ 4 phần tử đổi, ghi NGUYÊN danh sách sau sửa; giữ vị trí cũ trong `signals`, phần tử khác giữ nguyên
+  signals:
+    # S-03 (exposed_wire) thêm 4: day dien tran, day dien thong, day dien bi loi, day dien loi
+    - {signal_id: S-03, name: exposed_wire, tier: 1, phase: P0, scope: [KY_THUAT],
+       patterns: [day dien ho, day tran, day dut loi ra, lo day, ho day, day dien bi dut, day dien loi ra, day dien dut, loi day dien, day ho,
+                  day dien bi ho, day bi ho, ho dien, dien ho, day dien ho ra, day dien tran, day dien thong, day dien bi loi, day dien loi]}
+    # S-04 (smoke) thêm 6: day khoi, con khoi, khoi um, khoi lan, toan khoi, khoi nghi ngut
+    - {signal_id: S-04, name: smoke, tier: 1, phase: P0, scope: [COMMON],
+       patterns: [co khoi, boc khoi, khoi bay, khoi den, khoi trang, kem khoi, xi khoi, toa khoi, nhieu khoi, thay khoi, khoi boc, khoi bay ra, mui khoi,
+                  khoi mu, mu khoi, khoi dac, ngap khoi, khoi cuon, day khoi, con khoi, khoi um, khoi lan, toan khoi, khoi nghi ngut]}
+    # S-05 (fire) thêm 5 + đuôi lookahead cho regex thiết bị (không khớp "chạy chậm/liên tục/suốt/thử/ổn/…")
+    - {signal_id: S-05, name: fire, tier: 1, phase: P0, scope: [COMMON],
+       patterns: [boc chay, dang chay, co lua, chay hop dien, hop dien chay, hop dien boc chay, hop den chay, chay hop den, lua chay, ngon lua, chay lon, chay bung, phat no, chay no, chap chay, bat lua, chay thanh ngon,
+                  hoa hoan, chay nha, dam chay, chay lan, lua boc, thay lua,
+                  "re:\\b(tu dien|o cam|day dien|cong tac|hop dien|cau dao)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b|den\\b|bong\\b|tuyp\\b)\\w+){0,8}(?: (?:dang|bi|da))* chay\\b(?! (cham|lien tuc|suot|thu|on|binh thuong|manh|yeu|ngam|tot|lai))",
+                  lua to, lua bung, lua lan, boc lua, phong lua]}
+    # S-09 (person) — "kẹt" chỉ với người/thang máy: BỎ ket trong, bi ket, thang may ket, thang may bi ket; THÊM 9; regex "ngat" thêm 7 loại trừ
+    - {signal_id: S-09, name: person_hurt_or_trapped, tier: 1, phase: P0, scope: [COMMON],
+       patterns: [bi thuong, chay mau, nga dap dau, ngat xiu, bi ngat, ngat di, bat tinh, mac ket, ket nguoi, cap cuu, nguoi bi nga, gay chan, gay tay,
+                  "re:\\bngat\\b(?! (dien|cau dao|nguon|mach|may|quang|ket noi|dong|nuoc|den|wifi|mang|he thong|nguong|ngay))",
+                  bi xiu, xiu di, ket thang may,
+                  dot quy, co giat, nga khong day, khong dung day duoc, khong day duoc,
+                  nguoi bi ket, bi ket trong thang may, ket trong thang may, ket ben trong]}
+```
+```yaml
+priority:
+  # high_areas, obstruction_patterns, usage_impact_patterns: giữ
+  negation_prefixes: [khong, ko, chang, chua]      # giữ (WP3b)
+  negation_fillers: [co, thay, bi, he, duoc, con]  # [MỚI] = safety (V-12)
+  scope_max_fillers: 2                             # [MỚI] = safety
+  scope_max_chars: 80                              # [MỚI] = safety
+  clause_conjunctions: [va, nhung, ma, roi]        # giữ (WP3b) = safety
+```
+Ghi chú:
+- Trong file YAML, regex nằm trong chuỗi nháy kép nên `\\b` là MỘT dấu `\` + `b` sau khi nạp (như HEAD). Kiểm sau khi ghi: `grep -cP '[\x08\x0b\x0c]' seed/maintenance_v1/lexicon.yaml` ⇒ `0` (gotcha WP3b + bản thử judge: công cụ ghi biến `\b` thành backspace).
+- **Bẫy YAML 1.1** (PyYAML): token trần `no`, `yes`, `on`, `off`, `y`, `n`, `true`, `false` bị đọc thành bool ⇒ PHẢI đặt trong nháy (`"no"`). Đo: khối trên khi `no` không nháy ⇒ `coordination_hazard_tokens` chứa `False`. Model `tuple[str, ...]` từ chối bool ⇒ `ValidationError` (không im lặng), nhưng phải sửa YAML chứ không nới model.
+
+### 5.4 Validator (`SafetyLexicon._consistent`, `PriorityLexicon._compile`, `Lexicon._same_scope`) — đã chạy thử trên dữ liệu giả (bản phát hành nạp được; 18 biến thể hỏng đều bị từ chối — `scratchpad\arch3\validator_check.py`)
+| # | Luật | Áp cho |
+|---|---|---|
+| V-01 | mọi pattern compile được (`compile_pattern`, `re.error` ⇒ lỗi) | `resolved_markers`, `benign_phrases`, `ambiguous_terms`, `ambiguous_exclusions`, `khet_*`, `components[*].patterns`, `signals[*].patterns`, `priority.obstruction_patterns`, `priority.usage_impact_patterns` |
+| V-02 | là **cụm thường** (`PHRASE.fullmatch`) | `negation_prefixes`, `negation_fillers`, `person_negation_cues`, `coordination_conjunctions`, `coordination_hazard_tokens`, `hedges`, `hedge_fillers`, `final_particles`, `resolved_bridge_tokens`, `benign_lamp_nouns`, `b01_prefix_words`, `clause_conjunctions`, `priority.negation_prefixes`, `priority.negation_fillers`, `priority.clause_conjunctions` |
+| V-03 | là **token** (không khoảng trắng) | `negation_fillers`, `hedge_fillers`, `final_particles`, `resolved_bridge_tokens`, `coordination_hazard_tokens`, `coordination_conjunctions`, khoá `homographs` |
+| V-04 | `"va" ∈ clause_conjunctions` và `coordination_conjunctions ∩ clause_conjunctions = ∅` (R4: cấm kế thừa qua "và") | safety |
+| V-05 | `re.compile(b01_code_token_regex)` thành công | safety |
+| V-06 | mỗi khoá `benign_lamp_noun_forms` là token xuất hiện trong một cụm của `benign_lamp_nouns`; mỗi dạng là "dạng có dấu" của khoá (§5.0) | A1 |
+| V-07 | mỗi `homographs[t]` không rỗng, mỗi dạng là "dạng có dấu" của `t` | R7 |
+| V-08 | mỗi khoá `homograph_intended` là một pattern **cụm thường** có thật (trong `signals[*].patterns` hoặc `ambiguous_terms`); mỗi token con ∈ `homographs` và ∈ `pattern.split()`; mỗi dạng là "dạng có dấu" của token | R7 |
+| V-09 | mỗi khoá `tier2_net_roots` là cụm thường; mỗi dạng là "dạng có dấu" của khoá | R9 |
+| V-10 | `person_signal_ids ⊆ {signal_id}` | R3 |
+| V-11 | `signal_id` duy nhất; `all_of/any_of` trỏ component có thật; tổ hợp không có `patterns`; tín hiệu không tổ hợp phải có `patterns` (trừ T2-03) | giữ WP3 |
+| V-12 | `priority.(negation_fillers, scope_max_fillers, scope_max_chars, clause_conjunctions) == safety.(…)` | `Lexicon` — R1 là MỘT luật |
+Khoá thừa (vd còn `negation_window_words`) hoặc thiếu khoá mới ⇒ `ValidationError` do `extra="forbid"`/trường bắt buộc.
+
+### 5.5 BẮT BUỘC / CẤM / Vùng cấm / Phân loại lỗi (riêng §5)
+**BẮT BUỘC**
+1. Giá trị §5.3 chép **từng chữ** (thứ tự danh sách giữ — `assess` duyệt theo thứ tự khai báo).
+2. Khoá mới không có giá trị mặc định trong model (fail fast); lexicon phát hành phải nạp được (`load_lexicon()` trong test).
+3. Mọi sửa từ vựng sau WP3c (Trường, thẩm định lần 3) chạy lại bộ dừng TESTING §11 và ghi số trước/sau vào report.
+
+**CẤM**
+1. Đặt cue/đệm/tập đóng/đồng tự/gốc R9/ngưỡng vào `.py` (I-13, Q07).
+2. Dùng tiền tố `re:` trong danh sách cụm thường (V-02) — regex làm vỡ quy hoạch động B-01 và tail-regex R1.
+3. Thêm token nối A2 là danh từ (vd `den`, `quat`) — làm sống lại lỗ "Có tia lửa…, đèn đã tắt" ⇒ UNCLEAR.
+4. Thêm `va` vào `coordination_conjunctions` hoặc bỏ `va` khỏi `clause_conjunctions` (V-04).
+5. Thêm mục `ambiguous_exclusions` chứa gốc R9 ở dạng gây che tín hiệu Bậc 1 (vd `co khoi`) — loại trừ chỉ áp cho B-03 và R9, nhưng sửa sai dễ che lưới.
+
+**Vùng cấm**
+| # | Không làm | Lý do |
+|---|---|---|
+| C-06 | Không gộp `person_negation_cues` vào `negation_prefixes` | R3: "không thấy ai có khói bốc ra" phải EMERGENCY — cue người chỉ áp cho S-09 |
+| C-07 | Không đưa `den` vào `homographs` | `khoi den` (khói đen) và `hop den` (hộp đèn) đều là pattern Bậc 1; A1 xử lý "đến/đen" bằng danh sách DƯƠNG chỉ trong B-01 |
+| C-08 | Không thêm dạng không dấu `den`/`bong` vào `benign_lamp_noun_forms` | P1-11 của SPEC-P01: "chay den tang 3" (cháy đến tầng 3) sẽ thành NONE |
+| C-09 | Không giữ khoá cũ "cho tương thích" với `LEXICON-P0.yaml` | `LEXICON-P0.yaml` là lịch sử đóng băng; hai bộ khoá song song = hai luật |
+
+**Phân loại lỗi**
+| Lỗi | Lớp | Caller |
+|---|---|---|
+| Vi phạm V-01…V-12, khoá thừa/thiếu | `pydantic.ValidationError` lúc `load_lexicon()` ⇒ engine không khởi tạo (500 lifespan) | sửa YAML; không bọc try/except, không fallback |
+| Dạng có dấu không bỏ dấu ra đúng khoá (vd `chả` cho khoá `chay`) | V-06/V-07/V-08/V-09 ⇒ `ValidationError` | sửa YAML |
+| Dạng sai chính tả nhưng vẫn bỏ dấu ra đúng khoá (vd `chẩy` cho `chay` — đo: được chấp nhận) | KHÔNG bị validator bắt (không có từ điển chính tả) | Trường rà tay; hậu quả: R7/R9/A1 im lặng không khớp dạng đúng — test §4.1 R7/R9 phải đỏ nếu dạng chuẩn bị gõ sai |
+| Thứ tự danh sách đổi ⇒ quote/thứ tự bản ghi đổi | không lỗi nạp; test quote/thứ tự đỏ | khôi phục thứ tự §5.3 |
 
 ## 6. `src/maintenance/i18n/vi.yaml` — thêm đúng các khoá sau (không đổi khoá cũ)
 
@@ -500,6 +693,9 @@ class Expected(Frozen):   # catalog.py
 | M-06 | `grep -rn "reopen_until\|reopen_window_days" src/maintenance seed; echo "exit=$?"` | không dòng nào; `exit=1` |
 | M-07 | `python -c "from src.maintenance.models import Ticket; import pydantic; f=Ticket.model_fields; print(f['assignee_id'].annotation, 'closure_kind' in f, 'risk_level' in f, 'priority' in f, 'reopen_until' in f)"` | `<class 'NoneType'> True True True False` |
 | M-08 | `grep -c "safety_status_label\|SAFETY_REVIEW_REQUIRED:\|EMERGENCY_PENDING_BQL:\|safety_details:" src/maintenance/i18n/vi.yaml` | `4` |
+| M-09 (WP3c) | `python -c "from src.maintenance.catalog import load_lexicon as l; s=l().safety; p=l().priority; print(s.scope_max_fillers, s.scope_max_chars, s.b01_max_prefix_tokens, s.negation_fillers, s.person_signal_ids, sorted(s.tier2_net_roots), p.negation_fillers == s.negation_fillers, hasattr(s, 'non_lamp_electrical'), l().lexicon_version)"` | `2 80 20 ('co', 'thay', 'bi', 'he', 'duoc', 'con') ('S-09',) ['bat dong', 'khoi', 'lua', 'mau'] True False 2026-10-02.p0c` (đo trên bản thử architect) |
+| M-10 (WP3c) | `grep -cP '[\x08\x0b\x0c]' seed/maintenance_v1/lexicon.yaml src/maintenance/safety.py src/maintenance/priority.py src/maintenance/catalog.py` | mỗi file `:0` |
+| M-04 (giữ sau WP3c) | như M-04 | `17 10 2` (đo trên bản thử) |
 
 ## 12. Dự phòng (KHÔNG tính vào §3.2; chỉ dùng khi Q-A = "có")
 

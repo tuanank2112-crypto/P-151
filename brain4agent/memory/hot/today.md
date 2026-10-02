@@ -59,3 +59,4 @@
 - WP3b ✅ (R06, 352 pass, 0 bỏ sót Bậc 1 trên 52 ca, 0 báo nhầm trên 46 ca NONE, 24 KB 0,3 s). Phóng thẩm định lại bằng auditor mới.
 - Thẩm định lần 2 🔁 (R07): còn bỏ sót Bậc 1 (M1 phủ định lan không dấu câu, M13 B-01, M14 từ vựng) + báo nhầm mới. Fail ×2 ⇒ leo judge (Q28).
 - Judge (Opus) phán Q29: sửa thiết kế phạm vi phủ định/B-01 theo R1–R10, tiêu chí dừng đo được, không bật LLM ở P0. Phóng architect (Opus, không Fable) sửa SPEC-P01 + 01 §5.
+- SPEC sửa đổi (architect Opus) ✅ Q30; phóng WP3c theo H06.
