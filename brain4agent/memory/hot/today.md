@@ -69,3 +69,4 @@
 - Hồ sơ 01 ĐÓNG ✅ (R11). Push nhánh feature/nhuy-cr03-p0.
 - Đồng bộ não sau đóng hồ sơ (2026-10-02): thêm gotcha log AI (python3 alias ⇒ .ai-log trống; .env có key), roadmap (log AI, đồng bộ 01-CONTRACTS §5), kernel trạng thái remote/develop.
 - Tắt alias Python Store (đổi tên *.disabled) ⇒ hook log AI dùng Python313; từ prompt kế tiếp có log, push kế tiếp nộp BTC.
+- Mở hồ sơ 02 (merge develop): plan.md Q01–Q07, handoff H01; worker Opus.
