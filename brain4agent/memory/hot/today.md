@@ -66,3 +66,4 @@
 - WP3d (siết cue/đồng tự/ký tự điều khiển theo thẩm định lần 3) xong: 1462 test pass (nền 1378, +84), ruff sạch; atk1-atk4 ca A-D, G, từ vựng đúng mức Q31; bộ dừng + ngưỡng báo nhầm Q29 không hồi quy; RED A,B,C,D,G có cặp đỏ/xanh; nền `a37926a`.
 - WP3d ✅ (R10, 1462 pass, holdout NONE 2/39) ⇒ cổng WP6 đóng ✅ (Q32). Giao H08 đóng hồ sơ + đồng bộ + v1.1.0.
 - H08 đóng hồ sơ 01 (2026-10-02 20:04 +0700): đồng bộ chữ SPEC-P01 (§0.1 WP3d), TESTING (X-2 = 403, §4.3, Exit Gates local ✅ / server ⬜), OPERATIONS (WP3b/c/d/H08), 00-ARCHITECTURE (D14–D16), CR-03 §5.2 + D-10 (Q17); `docs/maintenance.md` mới; não 6 điểm + project-intro + data-architecture; brain `current_version` 1.0.1 → 1.1.0 (KHÔNG đổi version app). Số đo cuối: 1462 test pass, ruff sạch, bộ dừng 1065 ca xanh, holdout NONE 2/39.
+- Hồ sơ 01 ĐÓNG ✅ (R11). Push nhánh feature/nhuy-cr03-p0.
