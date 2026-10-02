@@ -17,11 +17,11 @@ Rules that hold everywhere:
 
 import logging
 import threading
-from collections.abc import Callable, Iterator, Mapping, MutableMapping
+from collections.abc import Callable, Iterator, Mapping, MutableMapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from src.maintenance.catalog import Catalog, TicketDataset, load_catalog, load_dataset
 from src.maintenance.enums import (
@@ -86,6 +86,9 @@ from src.maintenance.store.base import (  # the error hierarchy lives with the s
     Tx,
 )
 from src.maintenance.store.memory import InMemoryRepository
+
+if TYPE_CHECKING:
+    from src.config import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -366,6 +369,10 @@ class MaintenanceEngine:
     def seed(self) -> None:
         """Ingest the fixture tickets, each at its own created_at, and run the Agent on each."""
         with self.lock:
+            present = self.repo.stock()
+            for item_code, qty in initial_stock(self.catalog).items():
+                if item_code not in present:  # a new database starts with an empty stock table; never overwrite
+                    self.repo.set_stock(item_code, qty)
             for fixture in self.dataset.tickets:
                 planned = list(fixture.materials) if fixture.materials is not None else None
                 with self.at(_created_at(fixture.raw) or self.clock()):
@@ -1035,6 +1042,17 @@ class MaintenanceEngine:
             )
 
         def op(work: Case, now: datetime) -> None:
+            locked = work.ticket.status  # the copy read under the row lock: another backend may have moved it
+            locked_rule = TRANSITIONS.get((locked, to))
+            if (
+                locked_rule is None
+                or locked_rule.pipeline_only
+                or role not in locked_rule.actors
+                or expected_from not in (None, locked)
+            ):
+                raise InvalidTransitionError(
+                    f"Không chuyển được {locked} → {to}", {"from": locked, "to": to, "actor_role": role}
+                )
             self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
 
         return self._mutate(
@@ -1116,13 +1134,18 @@ class MaintenanceEngine:
         tx.save(work)
         new_rows = [*work.audit[audit_from:], *work.events[events_from:]]
         new_notifications = work.notifications[notes_from:]
+        tx.append_log(new_rows)  # a store failure surfaces as itself (409/503/403), never as AuditWriteError
+        self._sink(self.audit_sink, new_rows)
+        if new_notifications:
+            tx.append_notifications(new_notifications)
+            self._sink(self.notify_sink, new_notifications)
+
+    @staticmethod
+    def _sink(sink: Callable[[Any], None], rows: Sequence[Any]) -> None:
+        """Only the external callback is wrapped: its failure means nothing is committed (D3)."""
         try:
-            tx.append_log(new_rows)
-            self.audit_sink(new_rows)
-            if new_notifications:
-                tx.append_notifications(new_notifications)
-                self.notify_sink(new_notifications)
-        except Exception as exc:  # audit failure → nothing is committed
+            sink(rows)
+        except Exception as exc:  # audit/notify failure → nothing is committed
             raise AuditWriteError("Không ghi được audit; thay đổi bị huỷ", {"error": str(exc)}) from exc
 
     def _scope_error(self, case: Case, actor_id: str, role: ActorRole | None) -> str | None:
@@ -1170,8 +1193,8 @@ class MaintenanceEngine:
             denied = fresh.model_copy(deep=True)
             denied.audit.append(event)
             tx.save(denied)
+            tx.append_log([event])
             try:
-                tx.append_log([event])
                 self.audit_sink([event])
             except Exception as exc:
                 raise AuditWriteError("Không ghi được audit cho lần từ chối", {"error": str(exc)}) from exc
@@ -2212,15 +2235,32 @@ def _plain(value: Any) -> Any:
     return str(value) if hasattr(value, "value") else value
 
 
-def build_engine() -> MaintenanceEngine:
-    """Engine configured from settings: LLM_MODE=openai with a key adds the OpenAI proposer, otherwise rules only."""
+def build_engine(settings: "Settings | None" = None) -> MaintenanceEngine:
+    """Engine configured from settings: MO_STORE picks the repository (postgres is checked before use, a wrong URL or
+    schema revision raises RuntimeError); LLM_MODE=openai with a key adds the OpenAI proposer, otherwise rules only."""
     from src.config import get_settings
     from src.maintenance.proposer import openai_client
 
-    settings = get_settings()
+    settings = settings or get_settings()
+    repo = None
+    if settings.mo_store == "postgres":
+        from src.maintenance.store.postgres import PostgresRepository  # lazy: memory mode needs no psycopg2
+
+        repo = PostgresRepository(settings.database_url)
+        repo.check()
     if settings.llm_mode == "openai" and settings.openai_api_key:
         return MaintenanceEngine(
+            repo=repo,
             llm=openai_client(settings.model_name, settings.openai_api_key, settings.openai_base_url),
             llm_label=settings.model_name,
         )
-    return MaintenanceEngine()
+    return MaintenanceEngine(repo=repo)
+
+
+def seed_if_empty(engine: MaintenanceEngine) -> bool:
+    """Startup seeding: the fixture goes in only when the store holds no ticket. True if this call seeded."""
+    with engine.lock, engine.repo.seed_lease() as leader:  # engine.lock first, the DB lease second (I-9)
+        if not leader or engine.repo.count() > 0:
+            return False
+        engine.seed()
+        return True

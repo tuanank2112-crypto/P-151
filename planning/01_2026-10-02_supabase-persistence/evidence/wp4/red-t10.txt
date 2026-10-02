@@ -1,0 +1,43 @@
+R6 — broken file: src/api/routers/maintenance.py
+sha256 before: 61545ea1725f3705e7108f3c6196caaa7d617b94e5f169e0567a3e71059ca779
+sha256 after restore: 61545ea1725f3705e7108f3c6196caaa7d617b94e5f169e0567a3e71059ca779
+restored: True
+
+--- diff applied ---
+--- a/src/api/routers/maintenance.py
++++ b/src/api/routers/maintenance.py
+@@ -218,7 +218,6 @@
+ def run_evaluation(actor: ActorDep, engine: EngineDep) -> EvaluationReport:
+     """Chỉ QA. Reset rồi chạy cả 12 ticket, so với expected outcome. Acceptance nội bộ trên dữ liệu mô phỏng."""
+     _require_role(engine, actor, ActorRole.QA_INTERNAL)
+-    _require_reset_allowed()  # evaluate starts with engine.reset()
+     return evaluate(engine)
+ 
+ 
+
+--- command ---
+MO_TEST_DATABASE_URL=<local p151_test> python -m pytest -q -p no:cacheprovider tests/test_maintenance/test_persistence_api.py::test_t10_reset_and_evaluate_are_gated_on_a_shared_database
+exit=1
+
+--- pytest output (last 60 lines) ---
+F                                                                        [100%]
+================================== FAILURES ===================================
+_________ test_t10_reset_and_evaluate_are_gated_on_a_shared_database __________
+
+flaky = (<src.maintenance.engine.MaintenanceEngine object at 0x000001EF7BDF8750>, <tests.test_maintenance.test_persistence_api.FlakyRepository object at 0x000001EF7BDEF4D0>, <starlette.testclient.TestClient object at 0x000001EF7BE17A90>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001EF7BE31F50>
+
+    def test_t10_reset_and_evaluate_are_gated_on_a_shared_database(flaky, monkeypatch):
+        engine, _, api = flaky
+        _settings(monkeypatch, mo_store="postgres", mo_allow_reset=False)
+        for path in ("/api/v1/mo/reset", "/api/v1/mo/evaluate"):
+            response = api.post(path)
+>           assert response.status_code == 403 and response.json()["detail"]["code"] == "RESET_DISABLED", path
+E           AssertionError: /api/v1/mo/evaluate
+E           assert (200 == 403)
+E            +  where 200 = <Response [200 OK]>.status_code
+
+tests\test_maintenance\test_persistence_api.py:78: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_persistence_api.py::test_t10_reset_and_evaluate_are_gated_on_a_shared_database
+1 failed in 0.25s

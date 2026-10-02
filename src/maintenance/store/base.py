@@ -44,6 +44,18 @@ class StoreUnavailableError(EngineError):
     code = "STORE_UNAVAILABLE"
 
 
+class StorePermissionError(EngineError):
+    """The database user may not run this operation (for example TRUNCATE for reset). Nothing is written."""
+
+    code = "STORE_PERMISSION_DENIED"
+
+
+class UnstorableTextError(GuardError):
+    """Text the store cannot hold (a NUL character). Nothing is written."""
+
+    code = "UNSTORABLE_TEXT"
+
+
 class Tx(Protocol):
     """One open transaction. Every write becomes visible together at commit, or not at all."""
 
