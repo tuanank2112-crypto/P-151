@@ -57,3 +57,4 @@
 - WP6 thẩm định 🔁 (R05): quyền/audit/đồng thời PASS nhưng bỏ sót Bậc 1 (phủ định lan qua dấu phẩy, thiếu từ vựng, ký tự lạ) + DoS O(n²). Kỳ vọng Q24–Q27; phóng WP3b theo H05.
 - WP3b (safety hardening) xong: 352 test pass (nền 313, +39), ruff sạch; 0 bỏ sót Bậc 1 / 0 báo nhầm trên 52 ca Bậc 1 và 46 ca NONE; N-01..N-10 sửa; assess 24 KB < 0,35 s, mô tả > 5000 ký tự => 422; nền `a23a85f`.
 - WP3b ✅ (R06, 352 pass, 0 bỏ sót Bậc 1 trên 52 ca, 0 báo nhầm trên 46 ca NONE, 24 KB 0,3 s). Phóng thẩm định lại bằng auditor mới.
+- Thẩm định lần 2 🔁 (R07): còn bỏ sót Bậc 1 (M1 phủ định lan không dấu câu, M13 B-01, M14 từ vựng) + báo nhầm mới. Fail ×2 ⇒ leo judge (Q28).
