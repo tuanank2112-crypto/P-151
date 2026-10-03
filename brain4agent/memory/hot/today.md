@@ -144,3 +144,8 @@
 - Router: `/safety {decision}` rẽ sang `safety_confirm_safe` / `safety_request_info` / `safety_escalate`; giữ `/priority`, `/emergency/close|downgrade`; sắp hàng chờ bằng `_queue_key` trong router (develop chưa có `priority.sort_key`); bỏ `reason`/`into` khỏi TransitionRequest.
 - Tạm gỡ route chưa có engine: `/unmerge`, `/report-wrong-dept`, `/material-short`, `/bql/safety-clearances`, `/bql/…/follow-up`, `/bql/…/merge`, `/bql/…/wrong-dept`.
 - Đo: pytest 1600 passed + 29 deselected exit 0; ruff check exit 0; smoke API 6/6 route. Chưa chạy `--pg`.
+
+## v1.1.2 — chặn `/close` thường trên ticket khẩn cấp — 2026-10-03
+- Đo trước sửa: `POST /bql/tickets/SIM-TKT-TEC-005/close` kèm note → 200 CLOSED/EMERGENCY_HANDLED (trái OPERATIONS §5.3 mục 1). Người dùng chọn (a): chỉ còn `/emergency/close`.
+- Sửa `engine.close` ghim `expected_from=READY_FOR_REVIEW`; test mới đỏ 2 → xanh; pytest 1601 passed/29 deselected exit 0; ruff check/format exit 0. Field đúng là `safety_clear_reason` (repo không có `safety_cleared_reason`).
+- Tiêu đề OPERATIONS §5 vẫn ghi "TARGET BLOCKED — UNIMPLEMENTED" dù route emergency đã có — chưa sửa (hồ sơ của Trường). Chưa commit.

@@ -180,6 +180,8 @@ def test_close_by_anyone_but_bql_is_403_and_audited(api, headers):
 def test_invalid_transition_is_409(api):
     response = api.post("/api/v1/bql/tickets/SIM-TKT-TEC-002/close", json={}, headers=BQL)
     assert response.status_code == 409 and response.json()["detail"]["code"] == "INVALID_TRANSITION"
+    emergency = api.post("/api/v1/bql/tickets/SIM-TKT-TEC-005/close", json={"note": "Đã xử lý"}, headers=BQL)
+    assert emergency.status_code == 409 and emergency.json()["detail"]["code"] == "INVALID_TRANSITION"
 
 
 def test_bql_filters(api):

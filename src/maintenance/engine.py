@@ -1196,7 +1196,8 @@ class MaintenanceEngine:
     # ------------------------------------------------------------------ BQL
 
     def close(self, ticket_id: str, actor_id: str, *, note: str | None = None) -> Case:
-        return self.transition(ticket_id, S.CLOSED, actor_id, note=note)
+        """Normal close after review. An emergency (VERIFYING) is closed by `emergency_close` only."""
+        return self.transition(ticket_id, S.CLOSED, actor_id, note=note, expected_from=S.READY_FOR_REVIEW)
 
     def rework(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
         return self.transition(ticket_id, S.IN_PROGRESS, actor_id, note=note, expected_from=S.READY_FOR_REVIEW)

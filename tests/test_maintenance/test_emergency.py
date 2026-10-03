@@ -225,6 +225,16 @@ def test_bql_emergency_close(engine):
     assert view.status_label == "Hoàn thành" and view.allowed_actions == ["RATE"]
 
 
+def test_plain_close_rejects_emergency(engine):
+    """OPERATIONS §5.3: `close` only closes from READY_FOR_REVIEW; an emergency is closed by `emergency_close` alone."""
+    before = engine.get(TEC005)
+    with pytest.raises(InvalidTransitionError):
+        engine.close(TEC005, BQL, note="Đã xử lý tại chỗ")
+    after = engine.get(TEC005)
+    assert (after.ticket.status, after.ticket.blocker.code) == ("VERIFYING", "EMERGENCY_PENDING_BQL")
+    assert count(after, Action.EMERGENCY_CLOSE) == 0 and len(after.events) == len(before.events)
+
+
 def test_bql_downgrade_routes_normally(engine):
     """E-12, AC-09: a false alarm goes back to the normal flow (two assets at that spot: ASSET_UNCLEAR)."""
     related = engine.get(TEC005).ticket.related_ticket_ids

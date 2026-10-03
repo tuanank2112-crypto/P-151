@@ -1,10 +1,10 @@
 {
-  "current_version": "1.1.1",
+  "current_version": "1.1.2",
   "brain_template_version": "1.7.1",
   "system_status": "active",
   "last_verification": {
-    "timestamp": "2026-10-02T15:27:53.402Z",
-    "grade": "plan 02 merge develop: 1514 pytest pass, ruff clean, holdout NONE 2/39"
+    "timestamp": "2026-10-03T13:25:12.000Z",
+    "grade": "v1.1.2 close guard: 1601 pytest pass (29 deselected), ruff check+format clean"
   },
   "active_plans_completed": 2,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
