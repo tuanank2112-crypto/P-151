@@ -30,3 +30,17 @@
 - Sự cố: G1 đầu tiên (trước khi ép env trong conftest) mở kết nối Supabase chỉ-đọc — đã chặn, ghi gotcha.
 - Còn: WP4b, WP5 (owner chạy migration Supabase + M-SB1/M-SB2), WP6; R02 chờ người duyệt; chưa commit.
 - Owner đã migrate Supabase (`0001_maintops_initial`, kiểm chỉ-đọc PASS, TLSv1.3 client). Chạy alembic phải bằng `.venv\Scripts\python.exe` (conda base không có alembic).
+
+## Trường MVP preparation — 2026-10-03
+- Thực hiện lúc 2026-10-03T09:39:18+07:00; đầu việc giao cho 01/10–02/10, không dựng lại lịch sử.
+- User yêu cầu 5 sub-agent cho 5 gói; giới hạn 4 slot (root +3) nên chạy hai lượt.
+- D-01 được user xác nhận delta + structured persisted context, safety luôn chạy, risk không tự hạ. D-02–07 defaults; D-08 group approval pending.
+- Boot exit1 MODULE_NOT_FOUND hub; không sửa managed rules.
+- Python offline3.11.16 + archive cache: baseline185passed20deselected exit0. Ruff check sạch; format baseline đỏ2file ngoài scope.
+- Chưa commit/push/deploy; chưa tích hợp safety hoặc D-01 runtime.
+
+- Chốt đầu ra local lúc 2026-10-03T09:50:39+07:00: 5/5 sub-agent nộp report, 5 gói chuẩn bị đã hoàn thành; kế hoạch chưa đóng.
+- Root đo lại: 266 passed / 20 Postgres deselected, exit0; gồm 72 safety và 9 fixture target. Ruff check exit0; format 3 file mới exit0; hồ sơ 57/57 pass, skip0, exit0.
+- Format toàn repo vẫn exit1 do 2 file baseline ngoài scope; boot hub exit1; không chạy Postgres/online trong phiên này.
+- Review đã sửa false positive phủ định liên tiếp, giữ risk cũ; bằng chứng red-negation → green-negation. Contract đích thêm nguồn ticket và clearance residual-risk guard.
+- Group approval, runtime integration và online acceptance pending. Không tăng version ứng dụng, không stage/commit/push/deploy.

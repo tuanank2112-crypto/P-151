@@ -19,3 +19,7 @@ Chi tiết hợp đồng: `planning/01_2026-10-02_supabase-persistence/specs/01-
   sổ + outbox cùng commit. Lỗi DB ⇒ `ConcurrencyError` 409 / `StoreUnavailableError` 503 / `StorePermissionError` 403.
 - Startup: `check_photo_store` → `build_engine` (kiểm kết nối + revision, sai ⇒ exit 3) → `seed_if_empty` (advisory lock một
   leader). Job 5 phút xin `pg_try_advisory_xact_lock(151001)` — một backend chạy mỗi lượt.
+
+## Trường MVP preparation — 2026-10-03
+- D-01 là target contract trong plan02 `specs/01-CONTRACTS.md`: persisted structured snapshot + event/version identifiers; payload LLM chỉ delta + snapshot, raw/audit vẫn append-only.
+- Chưa thêm cột/schema hoặc nối vào engine/storage. `seed/maintenance_cr03/` là target/gold data riêng, startup vẫn `maintenance_v1`.
