@@ -28,8 +28,11 @@
 
 - 2026-10-03: người dùng chốt D-01 (delta + snapshot) NGOÀI phạm vi MVP 04/10 (làm ở mốc 19/10); chi phí lật: Như Ý code D-01 rồi chạy lại D01-A/C. Root rà lại WORD-04 trên develop f46a53c (sau Châm Anh ff4f4ca, Trí 9207db2, Như Ý PR #10): PASS; pytest 1641 passed. D3-05 và D3-06 tick [x] với điều kiện đã ghi: D01-A/C giữ BLOCKED trong results để minh bạch. Xem [day03q-results](deliverables/day03q-results.json), [day03ter-summary](deliverables/day03ter-summary.md). Runtime/online gates vẫn mở.
 
+- 2026-10-03: người dùng xác nhận flow là AN TOÀN TRƯỚC, PHÂN LOẠI SAU (CR-03 §5.1). Sửa fixture `seed/maintenance_cr03/tickets.yaml`: CLN-004/TEC-005 bỏ playbook_id/proposed_department_id/review_status; `test_cr03_targets.py` đổi assertion thành khẳng định các trường đó vắng mặt (guard vẫn đỏ khi thêm lại). Kết quả: evaluate fixture CR03 12/12, 4 demo; pytest 1641 passed, ruff đạt. Chi phí lật: khôi phục 3 trường và assertion cũ.
+
 ### Quyết định bị thay thế
 
+- Câu 'classification-before-safety' trong TESTING-ACCEPTANCE (WP5) bị thay bởi quyết định an toàn trước phân loại 2026-10-03 (xem nhật ký).
 - Trạng thái D-08 PENDING ở nhật ký và reports trước bản ghi này là lịch sử đã được thay thế bởi APPROVED; giữ nguyên report và evidence cũ.
 - D-01 cũ gửi lại toàn bộ nội dung khi chạy pipeline: thay bằng hợp đồng delta + snapshot cho bản đích, không tuyên bố runtime đã đổi.
 - CR-03 §16 ghi T16/T17/E02 P0: phạm vi đích theo Notion dời sau MVP.
