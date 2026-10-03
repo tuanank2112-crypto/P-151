@@ -1,0 +1,6 @@
+$ python -m ruff check src tests
+All checks passed!
+ruff check EXIT=0
+$ python -m ruff format --check src tests
+67 files already formatted
+ruff format EXIT=0

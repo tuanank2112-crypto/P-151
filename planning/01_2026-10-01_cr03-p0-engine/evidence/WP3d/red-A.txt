@@ -1,0 +1,5 @@
+E       AssertionError: (<RiskLevel.NONE: 'NONE'>, ['EMERGENCY'])
+E       AssertionError: (<RiskLevel.NONE: 'NONE'>, ['EMERGENCY'])
+E       AssertionError: (<RiskLevel.NONE: 'NONE'>, ['EMERGENCY'])
+E       AssertionError: (<RiskLevel.NONE: 'NONE'>, ['EMERGENCY'])
+EXIT=1

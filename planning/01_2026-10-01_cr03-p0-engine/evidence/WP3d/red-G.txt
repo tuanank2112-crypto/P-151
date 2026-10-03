@@ -1,0 +1,4 @@
+E           AssertionError: '\x08'
+FAILED tests/test_maintenance/test_safety.py::test_wp3d_control_characters_are_invisible
+1 failed, 1263 deselected in 0.57s
+EXIT=1

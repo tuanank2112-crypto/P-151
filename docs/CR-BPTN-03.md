@@ -1,9 +1,9 @@
 # CR-BPTN-03 — Flow lai: giao phòng ban + đường an toàn/khẩn cấp + ưu tiên + gộp ticket an toàn
 
 > **Status:** PROPOSED — chưa được duyệt. Chưa có Product approver ghi tên (xem §17).
-> **Baseline bị tác động:** MaintenanceOps MVP v0.3 (FROZEN) + [CR-BPTN-01](CR-BPTN-01.md) + [CR-BPTN-02](CR-BPTN-02.md), cả hai cũng `PROPOSED`.
-> **Target candidate:** MaintenanceOps MVP v0.6 (flow lai: lõi CR-BPTN-02, bù bằng điểm mạnh của v0.3/v0.4).
-> **Phạm vi nhánh:** `feature/chamanh` (code nền: commit `a305fc0`; **đồng bộ flow với code 2026-10-01**, xem §19).
+> **Baseline bị tác động:** code MaintenanceOps tại commit `a305fc0`. CR-BPTN-01 và CR-BPTN-02 **đã bỏ** (xoá khỏi repo 2026-10-01): tài liệu này là **spec duy nhất**; mọi nhãn `[GIỮ]`/`[ĐỔI]`/`[BỎ]` so với code ở `a305fc0`. Bản cũ chỉ còn để tra lịch sử: `git show a305fc0:docs/CR-BPTN-02.md`.
+> **Target candidate:** MaintenanceOps MVP v0.6 (flow lai: lõi giao phòng ban của code `a305fc0`, bù bằng điểm mạnh của v0.3/v0.4).
+> **Phạm vi nhánh:** `feature/chamanh` (code nền: commit `a305fc0`; **đồng bộ flow với code 2026-10-01**, xem §19). CR-03 P0 cài trên `feature/nhuy-cr03-p0` (hồ sơ `planning/01_2026-10-01_cr03-p0-engine/`), hợp với `develop` ở hồ sơ `planning/02_2026-10-02_merge-develop/` (§19.1).
 > **Data classification:** chỉ dữ liệu mô phỏng; không phải quy trình, dữ liệu hay hiệu quả vận hành thật của Vinhomes.
 > **Đối tượng đọc:** reviewer (Product/BA) và **coding agent**. Mọi mục có nhãn `[MỚI]`, `[ĐỔI]`, `[BỎ]`, `[GIỮ]` so với code hiện tại trên `feature/chamanh` (2026-10-01). `[GIỮ]` = code đã làm đúng như vậy.
 > **Nguồn chân lý về thứ tự flow:** biểu đồ swimlane người dùng chốt 2026-10-01 (Cư dân / Hệ thống / Agent / BPTN / Phòng ban / BQL). Chỗ nào tài liệu này khác biểu đồ đó thì theo biểu đồ.
@@ -23,9 +23,9 @@ Flow đầy đủ:
 
 ```text
 Cư dân gửi phản ánh
-→ Hệ thống kiểm tra dữ liệu (thiếu → NEED_INFO, giao BPTN liên hệ cư dân; cư dân vẫn tự bổ sung được)
-→ Agent phân loại, đề xuất phòng ban
-   └─ TẦNG AN TOÀN (mọi ticket): Bậc 1 → nhánh khẩn cấp, BQL thực hiện | Bậc 2 → BPTN | không có: đi tiếp
+→ kiểm tra dữ liệu tối thiểu (thiếu → NEED_INFO, giao BPTN liên hệ cư dân; cư dân vẫn tự bổ sung được)
+→ TẦNG AN TOÀN (mọi ticket, kể cả ngoài phạm vi) → Bậc 1: BQL | Bậc 2: BPTN | không có: đi tiếp
+→ Agent phân loại, đề xuất phòng ban và priority
 → kiểm tra trùng → BPTN xác nhận gộp khi cần
 → cần review? → BPTN review và chốt
 → tra tài sản (kỹ thuật) → tra vật tư và tồn kho
@@ -77,7 +77,7 @@ Quy tắc chung: mọi thao tác ngoài quyền → `ACTION_DENIED`, ghi audit, 
 
 | Mã | Chủ | Trạng thái đi kèm | Ghi chú |
 |---|---|---|---|
-| `MISSING_INFO` | **BPTN** | `NEED_INFO` | `[GIỮ]` BPTN liên hệ cư dân và nhập phần thiếu; cư dân vẫn tự bổ sung được; SLA như mọi blocker BPTN |
+| `MISSING_INFO` | **BPTN** | `NEED_INFO` | `[GIỮ]` BPTN liên hệ cư dân và nhập phần thiếu; cư dân vẫn tự bổ sung được; SLA như mọi blocker BPTN. **Ngoại lệ (plan 02 Q04):** NEED_INFO do tầng an toàn (T06, `safety_context`) có chủ **RESIDENT**, BPTN không gỡ thay (§6.4) |
 | `DUPLICATE` | BPTN | `VERIFYING` | `[GIỮ]` |
 | `CATEGORY_UNCLEAR` | BPTN | `VERIFYING` | `[GIỮ]` |
 | `OUT_OF_SCOPE` | BPTN | `VERIFYING` | `[GIỮ]` |
@@ -154,17 +154,17 @@ Quy ước: `Actor` là vai trò được phép gọi. `Pipe` = chỉ pipeline h
 
 ## 5. Pipeline Agent
 
-### 5.1 Các bước (thứ tự `[GIỮ]` theo code; `[MỚI]`: thêm tầng an toàn 3b ngay sau phân loại, trước kiểm tra trùng)
+### 5.1 Các bước (`[ĐỔI]`: thêm bước an toàn chạy trước phân loại; phân loại **trước** kiểm tra trùng — D-09)
 
-Hàm bước trong code đặt tên `_step_<số>_<việc>` (`_step_3_classify_and_propose_department`, `_step_4_check_duplicate_ticket`, …). Bước mới đặt tên cùng kiểu, ví dụ `_step_3b_check_safety_signals`.
+Hàm bước trong code đặt tên `_step_<số>_<việc>` (`_step_2b_assess_safety`, `_step_3_classify_and_propose_department`, `_step_4_check_duplicate_ticket`, …). Tầng an toàn là **2b** (đã code, D-09); bản `develop` 2026-10-01 từng đánh số "3b sau phân loại" khi chưa có code — xem §19.1.
 
 | Bước | Nội dung | Khi không đạt |
 |---|---|---|
 | 1 | Nhận ticket; kiểm tra toàn vẹn dữ liệu gốc | |
-| 2 | Dữ liệu tối thiểu: `ticket_id`, `created_at`, nội dung; vị trí sơ bộ | `NEED_INFO` / `MISSING_INFO` (T02), chủ blocker **BPTN** `[GIỮ]` |
-| 3 | Phân loại → playbook → đề xuất phòng ban (`proposed_department_id`) `[GIỮ]`; **`[MỚI]`** đề xuất `priority` (§7) | `CATEGORY_UNCLEAR` hoặc `OUT_OF_SCOPE`, `resume_step=4` `[GIỮ]`. **`[ĐỔI]`** chỉ dừng sau khi 3b đã chạy |
-| **3b** `[MỚI]` | **Tầng an toàn (§6): chạy cho MỌI ticket, kể cả loại việc không rõ hoặc ngoài phạm vi.** Nhánh khẩn cấp của biểu đồ rẽ ra từ đây | Bậc 1 → `VERIFYING`/`EMERGENCY_PENDING_BQL` và **dừng** (bỏ qua bước 5–8; bước 4 chỉ chạy để liên kết ticket trùng, không dừng). Bậc 2 → `VERIFYING`/`SAFETY_REVIEW_REQUIRED` và dừng |
-| 4 | Kiểm tra trùng (§8): chỉ so ticket cùng category; chỉ đọc vị trí của ticket cùng category trong cửa sổ `[GIỮ]` | `VERIFYING`/`DUPLICATE`, `resume_step=5` `[GIỮ]` |
+| 2 | Dữ liệu tối thiểu: `ticket_id`, `created_at`, nội dung; vị trí sơ bộ | `NEED_INFO` / `MISSING_INFO` (T02), chủ blocker **BPTN** (liên hệ cư dân, D-11); NEED_INFO do tầng an toàn (T06) chờ cư dân — §6.4 |
+| **2b** `[MỚI]` | **Tầng an toàn (§6): chạy cho MỌI ticket, kể cả ngoài phạm vi hai loại việc** | Bậc 1 → `VERIFYING`/`EMERGENCY_PENDING_BQL` và **dừng** (bỏ qua bước 3 và 5–8; vẫn chạy bước 4 ở chế độ **chỉ liên kết**, so theo vị trí + cửa sổ thời gian vì chưa có category). Bậc 2 → `VERIFYING`/`SAFETY_REVIEW_REQUIRED` và dừng |
+| 3 | Phân loại → playbook → đề xuất phòng ban (`proposed_department_id`); **`[MỚI]`** đề xuất `priority` (§7) | `CATEGORY_UNCLEAR` hoặc `OUT_OF_SCOPE`, `resume_step=4` |
+| 4 | Kiểm tra trùng (§8), chỉ quét ticket cùng category trong cửa sổ | `VERIFYING`/`DUPLICATE`, `resume_step=5` |
 | 5 | `review_status` (chỉ `PENDING_REVIEW` khi playbook do LLM đề xuất mà luật không thấy) | `VERIFYING`/`PENDING_REVIEW` |
 | 6 | Asset (kỹ thuật): đúng 1 asset hoặc `locked_fields.asset_id`; vệ sinh `NOT_APPLICABLE` | `VERIFYING`/`ASSET_UNCLEAR` (§9.1) |
 | 7 | Vật tư dự kiến (`_plan_materials_for_playbook`) so với tồn kho mô phỏng (`_check_material_lines_against_stock`) (§9.5) | Thiếu: `ON_HOLD`/`WAITING_MATERIAL`, `resume_step=6`; không rõ: cờ `STOCK_CHECK_ON_ACCEPT`, đi tiếp |
@@ -175,17 +175,17 @@ Hàm bước trong code đặt tên `_step_<số>_<việc>` (`_step_3_classify_a
 
 | Blocker được gỡ | Chạy lại từ |
 |---|---|
-| `MISSING_INFO` (cư dân bổ sung hoặc BPTN nhập đủ phần thiếu) | Bước 2 **kể cả 3b** `[GIỮ]` bước 2 |
-| `SAFETY_REVIEW_REQUIRED` (BPTN xác nhận an toàn) | Bước 3 nếu loại việc chưa rõ (để dừng `CATEGORY_UNCLEAR`), ngược lại bước 4; **bỏ qua 3b** nếu `safety_cleared_by` đã đặt và chưa có bổ sung mới sau đó |
-| `EMERGENCY_PENDING_BQL` (BQL hạ) | Như dòng trên, bỏ qua 3b theo cùng điều kiện |
-| `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE` (BPTN chọn loại việc) | Bước 4: loại việc BPTN chọn vẫn được kiểm tra trùng `[GIỮ]` |
-| `DUPLICATE` (BPTN bác) | Bước 5: review nếu cần, rồi tra tài sản `[GIỮ]` |
-| `PENDING_REVIEW`, `ASSET_UNCLEAR` | Bước 6 `[GIỮ]` |
-| `WRONG_DEPT` | Bước 6 nếu đổi loại việc; bước 7 nếu giữ loại việc. Không bao giờ nhảy thẳng bước 8 `[GIỮ]` |
-| `WAITING_MATERIAL` (kho nhập đủ) | Bước 6: tra lại tài sản rồi vật tư, như biểu đồ "Tạm hoãn, chờ nhập kho → Tra tài sản" `[GIỮ]` |
+| `MISSING_INFO` (cư dân bổ sung, hoặc BPTN nhập đủ phần thiếu — chỉ NEED_INFO thường) | Bước 2 **kể cả 2b** (nội dung BPTN nhập cũng qua tầng an toàn) |
+| `SAFETY_REVIEW_REQUIRED` (BPTN xác nhận an toàn) | Bước 2 (bước 2b **tự bỏ qua** vì `safety_cleared_by` đã đặt và chưa có bổ sung mới sau đó; bước 2 vẫn kiểm tra vị trí) — tương đương "bước 3, bỏ qua 2b" nhưng bảo đảm có vị trí (đồng bộ theo code, plan 01 Q17/D2) |
+| `EMERGENCY_PENDING_BQL` (BQL hạ) | Bước 2, 2b tự bỏ qua theo cùng điều kiện |
+| `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE` (BPTN chọn loại việc) | Bước 4 (kiểm tra trùng với category vừa chốt) |
+| `DUPLICATE` (BPTN bác) | Bước 5 |
+| `PENDING_REVIEW`, `ASSET_UNCLEAR` | Bước 6 |
+| `WRONG_DEPT` | Bước 6 nếu đổi loại việc; bước 7 nếu giữ loại việc. Không bao giờ nhảy thẳng bước 8 |
+| `WAITING_MATERIAL` | Bước 6 (tra asset lại rồi vật tư — khớp "chạy lại toàn bộ điều kiện giao" của T12) |
 | Hoàn tác gộp (T09) | Bước 4 (bỏ qua cặp trong `duplicate_rejected_of`) |
 
-Sau mọi bổ sung của cư dân hoặc BPTN (text hoặc ảnh), **luôn chạy lại 3b** trên phần mới; `safety_cleared_*` chỉ có hiệu lực với nội dung tại thời điểm xác nhận.
+Sau mọi bổ sung **văn bản** của cư dân hoặc BPTN, **luôn chạy lại 2b** trên phần mới (ảnh không đổi kết quả 2b: §1 không phân tích ảnh bằng AI); `safety_cleared_*` chỉ có hiệu lực với nội dung tại thời điểm xác nhận.
 
 ### 5.3 `can_route` `[GIỮ]`
 
@@ -248,11 +248,11 @@ Không có Bậc 1 mà có Bậc 2 → `UNCLEAR`. Không có gì → `NONE`.
 |---|---|---|
 | **Xác nhận an toàn** | T05 → `RECEIVED`; đặt `safety_cleared_by/at/reason` | Ghi chú lý do bắt buộc; audit; **chỉ áp cho Bậc 2**, không dùng hạ ticket Bậc 1 |
 | **Nâng thành khẩn cấp** | E01: blocker → `EMERGENCY_PENDING_BQL`, chủ BQL | Audit; BPTN không rút lại |
-| **Yêu cầu cư dân bổ sung** | T06 → `NEED_INFO` (`safety_context=true`), chủ blocker vẫn là BPTN | Khi có bổ sung: T03, chạy lại 3b |
+| **Yêu cầu cư dân bổ sung** | T06 → `NEED_INFO` (`safety_context=true`), chủ blocker là **cư dân** (code P0; bản `develop` ghi "vẫn là BPTN", §19.1) | Khi cư dân bổ sung: T03, chạy lại 2b. BPTN **không** gỡ thay bằng `bptn_resolve` (`GUARD_FAILED`, plan 02 Q04); chỉ BQL T03/T07 |
 
 **Thời hạn (giá trị mô phỏng, trong `sla_config`):**
 - `SAFETY_REVIEW_REQUIRED` không được BPTN xử lý sau `safety_review.escalate_after_hours` (**đề xuất 4 giờ lịch, không tính giờ hành chính**) → E03 leo thang BQL. BQL được làm đúng 3 lựa chọn trên (§2).
-- `NEED_INFO` với `safety_context=true`: `safety_context_need_info.escalate_after_hours` (**đề xuất 12 giờ lịch**). `NEED_INFO` thông thường: theo `sla_config.bptn` (nhắc mỗi 1 giờ hành chính, leo thang sau 4 giờ hành chính) `[GIỮ]`; khóa `missing_info` (72 giờ) đã bỏ khỏi code.
+- `NEED_INFO` với `safety_context=true`: `missing_info.safety_context.escalate_after_hours` (**đề xuất 12 giờ lịch**; không nhắc tự động). `NEED_INFO` thông thường: theo `sla_config.bptn` (nhắc mỗi 1 giờ hành chính, leo thang sau 4 giờ hành chính) `[GIỮ]`; khóa `missing_info` (72 giờ) đã bỏ khỏi code.
 - Khi leo thang vì cư dân không trả lời, **ticket không tự được coi là an toàn**. BQL chọn: nâng khẩn cấp (T07), xác nhận an toàn kèm lý do (T03), hoặc hủy (T23).
 - Mọi lần "xác nhận an toàn" của BPTN hiển thị trong danh sách để BQL xem lại (§13).
 
@@ -378,8 +378,8 @@ Bỏ: `reopen_until`. `assignee_id` `[GIỮ]`: phòng ban tự ghi khi phân cô
 ### 12.2 `sla_config` (catalog.yaml)
 | Khóa | Giá trị | Trạng thái |
 |---|---|---|
-| `bptn` (áp cả cho `MISSING_INFO`) | nhắc 1 giờ hành chính / leo thang 4 giờ hành chính | `[GIỮ]`, đã chốt; khóa `missing_info` (72 giờ) `[BỎ]` khỏi code |
-| `safety_context_need_info.escalate_after_hours` | 12 (giờ lịch) | **đề xuất, cần duyệt (D-02)** |
+| `bptn` (áp cả cho `MISSING_INFO` thường) | nhắc 1 giờ hành chính / leo thang 4 giờ hành chính | `[GIỮ]`, đã chốt; khóa `missing_info.retry_every_hours`/`escalate_after_hours` (72 giờ) `[BỎ]` khỏi code |
+| `missing_info.safety_context.escalate_after_hours` | 12 (giờ lịch) | **đề xuất, cần duyệt (D-02)** |
 | `safety_review.escalate_after_hours` | 4 (giờ lịch) | **đề xuất, cần duyệt (D-02)** |
 | `rework.escalate_at_count` | 3 | `[GIỮ]`, đã chốt |
 | `wrong_dept_return.escalate_at_count` | 2 | đã chốt |
@@ -403,8 +403,8 @@ Bỏ: `reopen_until`. `assignee_id` `[GIỮ]`: phòng ban tự ghi khi phân cô
 | `enums.py` | Thêm 3 `ReasonCode`, `RiskLevel`, `Priority`, `ClosureKind`, các `Action` mới (§12.1); cập nhật `BPTN_REASONS` (+`SAFETY_REVIEW_REQUIRED`) và thêm tập lý do chủ BQL |
 | `models.py` | Thêm trường §12.1; sửa lý do hợp lệ theo trạng thái; ngoại lệ `CLOSED` không cần `department_id` khi `EMERGENCY_HANDLED` |
 | `engine.py` `TRANSITIONS` | Thêm/sửa T03, T04, T05, T06, T07, T08, T09, T10, T16, T17, T18, T19, T23 (bắt buộc lý do); **xóa** `(CLOSED, READY_FOR_REVIEW)`; sửa `BLOCKER_OWNERS` |
-| `engine.py` pipeline | Thêm bước 3b (`_step_3b_check_safety_signals`) giữa `_step_3_classify_and_propose_department` và `_step_4_check_duplicate_ticket`; bước 3 dừng `CATEGORY_UNCLEAR` sau 3b; thêm `priority` ở bước 3; sửa `can_route`; thêm các dòng an toàn vào bảng chạy lại (§5.2); chặn `resume()` và job gỡ `EMERGENCY_PENDING_BQL` |
-| `engine.py` hành động | Thêm: xác nhận an toàn, nâng khẩn cấp, hạ khẩn cấp, đóng khẩn cấp, tạo ticket tiếp theo, hoàn tác gộp, báo sai phòng ban sau khi làm, BQL chuyển về BPTN, đặt priority; **xóa** `reopen()`; guard rating một lần |
+| `engine.py` pipeline | Thêm bước 2b (trước `_step_3_classify_and_propose_department`); thêm `priority` ở bước 3; sửa `can_route`; sửa bảng chạy lại (§5.2); chặn `resume()` và job gỡ `EMERGENCY_PENDING_BQL` |
+| `engine.py` hành động | Thêm: xác nhận an toàn, nâng khẩn cấp, hạ khẩn cấp, đóng khẩn cấp, tạo ticket tiếp theo, hoàn tác gộp, báo sai phòng ban sau khi làm, BQL chuyển về BPTN, đặt priority; **xóa** `reopen()`; `set_assignee` → `ACTION_DENIED` (code P0; **mâu thuẫn với D-13**, §19.1); guard rating một lần |
 | Mới `src/maintenance/safety.py` | Bộ nhận diện §6 (luật, chuẩn hóa không dấu, phủ định, bẫy B-01…B-05, LLM chỉ nâng mức); có thể tham khảo từ lịch sử commit `4c2d07f` (`rules.py`, `proposer.py`, `services/safety.py`) — **cần xác minh còn chạy được** |
 | `catalog.yaml`, `catalog.py` | Cập nhật `sla_config` §12.2 |
 | `views.py`, `i18n/vi.yaml` | Nhãn và thông điệp công khai §13 |
@@ -424,7 +424,7 @@ Bỏ: `reopen_until`. `assignee_id` `[GIỮ]`: phòng ban tự ghi khi phân cô
 | AC-05 | LLM không thể đổi `PRESENT` thành `ABSENT` |
 | AC-06 | BPTN xác nhận an toàn Bậc 2 cần lý do; BPTN không tác động được lên Bậc 1 (`ACTION_DENIED`) |
 | AC-07 | `resume()`/job không gỡ `EMERGENCY_PENDING_BQL` |
-| AC-08 | Cư dân hoặc BPTN bổ sung → chạy lại 3b; quá hạn → leo thang BQL, không tự an toàn |
+| AC-08 | Cư dân hoặc BPTN bổ sung → chạy lại 2b; NEED_INFO an toàn chỉ cư dân/BQL gỡ; quá hạn → leo thang BQL, không tự an toàn |
 | AC-09 | BQL đóng khẩn cấp cần ghi chú; `closure_kind=EMERGENCY_HANDLED`; BQL hạ báo nhầm → flow thường; tạo ticket tiếp theo liên kết `follow_up_of` |
 | AC-10 | Mỗi luật priority PRI-* có ≥ 1 ticket mẫu; sửa tay cần lý do + audit; sắp xếp đúng ở BPTN/BQL/phòng ban |
 | AC-11 | Gộp: liên kết hai chiều; nối bổ sung vào ticket gốc; hoàn tác gộp; hủy ticket gốc → các ticket gộp quay lại `RECEIVED` |
@@ -458,10 +458,11 @@ Bỏ: `reopen_until`. `assignee_id` `[GIỮ]`: phòng ban tự ghi khi phân cô
 | D-06 | Tín hiệu mở rộng ngoài v0.3 (S-04…S-13, C-01) | Có, dưới dạng giả định mô phỏng |
 | D-07 | Ảnh bằng chứng bắt buộc, không miễn | Có (đã khớp code hiện tại) |
 | D-08 | Ai duyệt CR-BPTN-01/02/03 | **GROUP_PENDING; approver=null; approved_at=null**. Chưa có người duyệt chính thức; xác nhận phạm vi của người dùng không phải official approval |
-| D-09 | Thứ tự phân loại / kiểm tra trùng | **Đã chốt 2026-10-01 (người dùng, theo biểu đồ):** phân loại (bước 3) trước kiểm tra trùng (bước 4). Đã code |
-| D-10 | Ai xử lý ticket thiếu dữ liệu | **Đã chốt 2026-10-01:** giao BPTN liên hệ cư dân; cư dân vẫn tự bổ sung được. Đã code |
-| D-11 | BQL trả làm lại | **Đã chốt 2026-10-01:** về chính phòng ban đang giữ, không qua BPTN đối chiếu lại. Đã code |
-| D-12 | Phân công nhân sự | **MVP đích 04/10 theo Notion, user confirmed 2026-10-03:** không gán nhân viên. Baseline code cho phòng ban ghi assignee là drift, chưa sửa runtime. Quyết định theo biểu đồ 2026-10-01 được giữ trong lịch sử bị thay thế dưới đây |
+| D-09 | Thứ tự phân loại và kiểm tra trùng | **Đã chốt 2026-10-01 (Như Ý), theo code `1e2f42b` của Châm Anh:** phân loại (bước 3) **trước** kiểm tra trùng (bước 4), để quét trùng có category và ticket không rõ loại việc dừng trước khi đọc ticket khác. Tầng an toàn 2b **vẫn trước** phân loại (giữ AC-02: ticket ngoài phạm vi có tín hiệu nguy hiểm vẫn bị bắt). Ticket Bậc 1 chưa có category nên bước 4 chỉ liên kết theo vị trí + cửa sổ thời gian. Bảng chạy lại §5.2 theo code: `CATEGORY_UNCLEAR`/`OUT_OF_SCOPE`→4, `DUPLICATE` bác→5, `WAITING_MATERIAL`→6 |
+| D-10 | Điểm chạy lại sau khi gỡ blocker an toàn | **Đồng bộ 2026-10-02 theo code (plan 01 Q17):** chạy lại từ **bước 2** (2b tự bỏ qua khi đã `safety_cleared_*`), không phải bước 3, vì bước 2 của code còn kiểm tra vị trí sơ bộ và 2b chạy trước bước 2 (Q08) |
+| D-11 | Ai xử lý ticket thiếu dữ liệu | **Đã chốt 2026-10-01 (bản `develop`, ghi là D-10 ở đó):** giao BPTN liên hệ cư dân; cư dân vẫn tự bổ sung được. Đã code (`f1c6ebf`). Riêng NEED_INFO do tầng an toàn (T06): BPTN không gỡ thay cư dân (plan 02 Q04, §6.4) |
+| D-12 | BQL trả làm lại | **Đã chốt 2026-10-01 (bản `develop`, ghi là D-11 ở đó):** về chính phòng ban đang giữ, không qua BPTN đối chiếu lại. Đã code |
+| D-13 | Phân công nhân sự | **MVP 04/10 theo Notion, user confirmed 2026-10-03 (§17.1; bản `develop` ghi là D-12):** không gán nhân viên. Khớp code CR-03 P0 trên nhánh này: `set_assignee` luôn `ACTION_DENIED` có audit, model chỉ nhận `assignee_id=null`. Mâu thuẫn plan 02 (merge lần 1) với biểu đồ 2026-10-01 (phòng ban "nhận việc và phân công") coi là quyết định bị thay thế cho MVP; nhóm vẫn pending (D-08) |
 
 ### 17.1 Sửa đổi có ngày 2026-10-03 — user confirmed, group pending
 
@@ -472,6 +473,8 @@ Bỏ: `reopen_until`. `assignee_id` `[GIỮ]`: phòng ban tự ghi khi phân cô
 BẮT BUỘC snapshot lưu bền chỉ có facts phân loại/safety dạng cấu trúc + refs/version/event ledger. Source quotes chính xác thuộc audit riêng append-only, không gửi lại LLM. Mỗi event mới quét safety; risk automatic và risk khi merge = max theo NONE < UNCLEAR < EMERGENCY. Hạ risk chỉ qua hành động human có quyền, reason và audit trước/sau; resident/agent/job không hạ. Replay không chạy lại scan/LLM/commit; thiếu snapshot/version sai thì fail closed. CẤM bỏ dữ liệu gốc, gửi lại raw/history vào LLM hoặc coi D-01 đã được code. D-09 phân loại trước trùng giữ nguyên.
 
 **Quyết định bị thay thế D-01:** bản trước mô tả chạy lại pipeline sau NEED_INFO bằng toàn bộ input original + additions trong code hiện tại; từ 2026-10-03 target dùng bổ sung mới + snapshot. Lịch sử NEED_INFO→VERIFYING rồi RECEIVED trong §18 được giữ để đối chiếu; chỉ sửa đổi này là hợp đồng target hiện hành. Runtime `_agent_text` vẫn nối original + all additions tại thời điểm chuẩn bị package, không phải delta contract đã triển khai.
+
+> Ghi chú merge 2026-10-03 (plan 02 Q09): bảng trên giữ số của nhánh CR-03 P0 (D-09…D-13). Số trong mục 17.1 theo bản `develop`: "D-12 cũ" = D-13 ở bảng trên. Câu "code baseline vẫn giữ assignee" đúng với `develop` trước merge; sau merge code chặn `set_assignee` (CR-03 P0).
 
 **Đã xác minh (2026-10-01):** (a) `receive_stock` và `resume()` (§9.5); (b) bộ test: 146 pass trên code hiện tại; (c) `models.py` ràng buộc lý do theo trạng thái bằng `BLOCKER_CODES_BY_STATUS`; (e) blocker có `escalated`, ticket có `flags` (`ASSET_CHECK_ONSITE`, `STOCK_CHECK_ON_ACCEPT`).
 **Còn cần xác minh:** (d) `services/safety.py` và `rules.py` ở `4c2d07f` còn dùng lại được không.
@@ -502,9 +505,20 @@ Theo yêu cầu người dùng, tài liệu được sửa cho khớp biểu đ�
 
 | Điểm | Bản trước | Nay (khớp code) |
 |---|---|---|
-| Thứ tự bước | 2b an toàn → 3 trùng → 4 phân loại | 3 phân loại + đề xuất phòng ban → 3b an toàn → 4 trùng |
+| Thứ tự bước | 2b an toàn → 3 trùng → 4 phân loại | 3 phân loại + đề xuất phòng ban → 3b an toàn → 4 trùng (**đã thay** bởi D-09: code giữ 2b trước phân loại, §19.1) |
 | Chạy lại sau gỡ blocker | Bác trùng → 4; loại việc không rõ → 6; thiếu vật tư → 7 | Bác trùng → 5; loại việc không rõ → 4; thiếu vật tư → 6 |
 | Thiếu dữ liệu | Chủ RESIDENT, 72 giờ | Chủ BPTN (liên hệ cư dân, nhập phần thiếu kèm lý do); cư dân vẫn tự bổ sung; SLA BPTN |
 | Phân công nhân sự | Không ai ghi `assignee_id`; `SET_ASSIGNEE` bị từ chối | Phòng ban tự phân công (theo biểu đồ); Agent không ghi |
 | BQL trả làm lại | Không nói rõ đi đâu | Về chính phòng ban đang giữ, không qua BPTN |
 | Kho nhập đủ | Chạy lại toàn bộ điều kiện | Chạy lại từ bước 6 (tra tài sản) |
+
+### 19.1 Hợp với `develop` (hồ sơ 02, 2026-10-02)
+
+Code sau merge = lưu trữ của `develop` (`CaseRepository`, transaction, `f1c6ebf`) làm nền + toàn bộ CR-03 P0 (hồ sơ 01).
+
+| Điểm | Code sau merge | Ghi chú |
+|---|---|---|
+| Tầng an toàn | **2b**, trước bước 2 dữ liệu và trước phân loại (D-09, Q08) | Số "3b" trong bản `develop` là đánh số tài liệu khi chưa có code; không có hành vi nào mất |
+| `MISSING_INFO` thường | Chủ BPTN, SLA `bptn`; BPTN nhập `location`/`info` qua `bptn_resolve`; gỡ xong chạy lại từ bước 2, **kể cả 2b** | `f1c6ebf` + Q04 |
+| NEED_INFO an toàn (T06) | Chủ cư dân; không nhắc tự động; leo thang BQL sau 12 giờ lịch; `bptn_resolve` → `GUARD_FAILED`; lời cho cư dân `safety_info_message` ("Vui lòng bổ sung: …") | Q04 |
+| Phân công nhân sự | Code giữ P0: `set_assignee` → `ACTION_DENIED`, `assignee_id` chỉ `null` | **Mâu thuẫn với D-13, chờ người quyết**; không có endpoint/UI nào ghi `assignee_id` |
