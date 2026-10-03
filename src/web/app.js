@@ -37,6 +37,8 @@ const STATUS_STYLE = {
   ON_HOLD: 'bg-yellow-50 text-yellow-800 ring-yellow-600/20 dark:bg-yellow-950/60 dark:text-yellow-300 dark:ring-yellow-500/30',
   MERGED: 'bg-zinc-100 text-zinc-700 ring-zinc-500/20 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700',
   CANCELLED: 'bg-rose-50 text-rose-700 ring-rose-600/20 dark:bg-rose-950/60 dark:text-rose-300 dark:ring-rose-500/30',
+  EMERGENCY_PENDING_BQL: 'bg-rose-100 text-rose-800 ring-rose-600/30 dark:bg-rose-950 dark:text-rose-200 dark:ring-rose-800',
+  SAFETY_REVIEW_REQUIRED: 'bg-amber-100 text-amber-800 ring-amber-600/30 dark:bg-amber-950 dark:text-amber-200 dark:ring-amber-800',
 };
 const REASON_LABEL = {
   MISSING_INFO: 'Thiếu thông tin',
@@ -51,12 +53,15 @@ const REASON_LABEL = {
   WRONG_DEPT: 'Sai phòng ban',
   BLOCKED_ONSITE: 'Vướng tại hiện trường',
   REWORK: 'Làm lại',
+  SAFETY_REVIEW_REQUIRED: 'Kiểm tra an toàn (Bậc 2)',
+  EMERGENCY_PENDING_BQL: 'Khẩn cấp (Bậc 1)',
+  WRONG_DEPT_AFTER_START: 'Báo sai sau khi làm',
 };
 const OWNER_LABEL = {
   RESIDENT: 'Cư dân', BPTN: 'BPTN', DEPARTMENT: 'Phòng ban', WAREHOUSE: 'Kho', SYSTEM: 'Hệ thống', BQL: 'BQL', AGENT: 'Agent',
 };
 const CATEGORY_LABEL = { VE_SINH: 'Vệ sinh', KY_THUAT: 'Kỹ thuật (đèn)' };
-const RESIDENT_STEPS = ['RECEIVED', 'ROUTED', 'IN_PROGRESS', 'READY_FOR_REVIEW', 'CLOSED'];
+const RESIDENT_STEPS = ['RECEIVED', 'VERIFYING', 'ROUTED', 'IN_PROGRESS', 'READY_FOR_REVIEW', 'CLOSED'];
 const TERMINAL = new Set(['CLOSED', 'MERGED', 'CANCELLED']);
 
 const state = {
@@ -66,7 +71,7 @@ const state = {
   selected: null,
   activeTab: 'workspace', // 'workspace' | 'ai-logs'
   catalog: { departments: {}, assets: [], status_labels: {}, materials: [] },
-  bqlFilters: { status: '', department_id: '', escalated: false, overdue: false },
+  bqlFilters: { status: '', department_id: '', escalated: false, overdue: false, emergency: false },
 };
 
 // ------------------------------------------------------------------ DOM helpers
@@ -185,7 +190,7 @@ function skeleton(lines = 3) {
 }
 
 /** A form whose submit button shows progress and cannot be double-submitted. */
-function actionForm(children, submitLabel, onSubmit, { variant = 'primary', extraButtons = [] } = {}) {
+function actionForm(children, submitLabel, onSubmit, { variant = 'primary', extraButtons = [], busyLabel = 'Đang xử lý…' } = {}) {
   const button = el('button', { type: 'submit', class: BTN[variant] }, submitLabel);
   const form = el('form', { class: 'space-y-4', novalidate: true },
     ...children,
@@ -198,7 +203,7 @@ function actionForm(children, submitLabel, onSubmit, { variant = 'primary', extr
     }
     button.disabled = true;
     const original = button.textContent;
-    button.textContent = 'Đang xử lý…';
+    button.textContent = busyLabel;
     try {
       await onSubmit(new FormData(form));
     } finally {
@@ -313,12 +318,12 @@ function listCard(title, count, items, empty) {
     items.length ? el('ul', { class: '-mx-2 space-y-1' }, items) : emptyState(empty[0], empty[1]));
 }
 
-function detailHeader(ticketId, status, extra) {
+function detailHeader(ticketId, status, extra, customLabel) {
   return el('div', { class: 'flex flex-wrap items-start justify-between gap-3' },
     el('div', {},
       el('h2', { id: 'detail-title', tabindex: '-1', class: 'text-lg font-semibold text-slate-900 dark:text-white focus:outline-none' }, `Phản ánh ${ticketId}`),
       extra ? el('p', { class: 'mt-0.5 text-sm text-slate-500 dark:text-slate-400' }, extra) : null),
-    badge(status));
+    badge(status, customLabel));
 }
 
 function reportText(description, additions) {
@@ -682,8 +687,11 @@ async function renderResident(list, detail) {
     field('Ảnh hiện trường (không bắt buộc)', pInput, 'Tối đa 5 ảnh JPG, PNG hoặc WEBP, mỗi ảnh tối đa 5 MB.'),
     previewBox);
 
+  const submitAlert = el('div', { class: 'hidden' });
+
   list.append(card('Gửi phản ánh mới',
     actionForm([
+      submitAlert,
       locationSection,
       field('Nội dung phản ánh', description, 'Ghi rõ tình trạng thực tế để Agent phân loại chính xác.'),
       field('Kênh tiếp nhận', channelSelect, 'Kênh cư dân gửi phản ánh vào hệ thống.'),
@@ -692,12 +700,20 @@ async function renderResident(list, detail) {
         el('summary', { class: 'cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200' }, 'Tùy chọn demo'),
         el('div', { class: 'mt-3' }, field('Giả lập giờ gửi', when, 'Để trống nếu dùng giờ hiện tại. Phòng ban làm việc 06:00–22:00.'))),
     ], 'Gửi phản ánh', async (data) => {
+      submitAlert.classList.add('hidden');
+      const desc = (data.get('description') || '').trim();
+      if (desc.length < 5) {
+        submitAlert.replaceChildren(callout('warn', 'Nội dung phản ánh quá ngắn', 'Vui lòng mô tả ít nhất 5 ký tự để AI nhận diện vị trí và sự cố.'));
+        submitAlert.classList.remove('hidden');
+        description.focus();
+        return;
+      }
       try {
         const files = photoForm(data);
         const created = await api('/resident/tickets', {
           method: 'POST',
           body: compact({
-            original_description: data.get('description'),
+            original_description: desc,
             channel: data.get('channel') || 'form',
             simulated_received_at: localToIso(data.get('when')),
           }),
@@ -711,20 +727,23 @@ async function renderResident(list, detail) {
         }
         await render();
       } catch (error) {
+        submitAlert.replaceChildren(callout('danger', 'Lỗi gửi phản ánh', error.message || 'Không thể kết nối đến máy chủ.'));
+        submitAlert.classList.remove('hidden');
         toast(error.message, 'error');
       }
-    })));
+    }, { busyLabel: 'Đang gửi phản ánh & AI xử lý…' })));
 
   list.append(listCard('Phản ánh đã gửi', tickets.length,
     tickets.map((t) => {
       const channelLabel = { form: 'Web', app: 'App di động', hotline: 'Hotline' }[t.channel] || t.channel;
+      const isUnderCheck = t.status === 'VERIFYING' || t.status === 'EMERGENCY_PENDING_BQL' || t.status === 'SAFETY_REVIEW_REQUIRED';
       return listItem(t.ticket_id, {
         title: t.description,
         meta: [
           formatTime(t.created_at),
           channelLabel ? chip(channelLabel, 'slate') : null,
         ],
-        right: badge(t.status, t.status_label),
+        right: isUnderCheck ? badge('VERIFYING', 'Đang được kiểm tra') : badge(t.status, t.status_label),
       });
     }),
     ['Bạn chưa gửi phản ánh nào', 'Phản ánh bạn gửi sẽ hiện ở đây kèm trạng thái xử lý.']));
@@ -734,23 +753,29 @@ async function renderResident(list, detail) {
 }
 
 function residentStepper(view) {
+  const isSafetyReview = view.status === 'VERIFYING' || view.status === 'EMERGENCY_PENDING_BQL' || view.status === 'SAFETY_REVIEW_REQUIRED';
+  const displayStatus = isSafetyReview ? 'VERIFYING' : view.status;
   const reached = new Set(view.timeline.map((e) => e.status));
-  const current = RESIDENT_STEPS.indexOf(view.status);
-  return el('ol', { class: 'grid grid-cols-5 gap-2', 'aria-label': 'Tiến độ xử lý' },
+  if (isSafetyReview) reached.add('VERIFYING');
+  const current = RESIDENT_STEPS.indexOf(displayStatus);
+  return el('ol', { class: 'grid grid-cols-3 sm:grid-cols-6 gap-2', 'aria-label': 'Tiến độ xử lý' },
     RESIDENT_STEPS.map((step, index) => {
       const done = reached.has(step) && (current === -1 || index <= current);
-      const isCurrent = step === view.status;
+      const isCurrent = step === displayStatus;
+      const stepLabel = step === 'VERIFYING' ? 'Đang kiểm tra' : statusLabel(step);
       return el('li', { class: 'flex flex-col gap-2', 'aria-current': isCurrent ? 'step' : undefined },
         el('span', { class: `h-1.5 rounded-full ${done ? 'bg-indigo-600 dark:bg-indigo-500' : 'bg-slate-200 dark:bg-slate-800'}`, 'aria-hidden': 'true' }),
         el('span', { class: `text-xs ${isCurrent ? 'font-semibold text-indigo-700 dark:text-indigo-400' : done ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'}` },
-          statusLabel(step), done ? el('span', { class: 'sr-only' }, ' (đã qua)') : null));
+          stepLabel, done ? el('span', { class: 'sr-only' }, ' (đã qua)') : null));
     }));
 }
 
 function residentDetail(view) {
+  const isSafetyReview = view.status === 'VERIFYING' || view.status === 'EMERGENCY_PENDING_BQL' || view.status === 'SAFETY_REVIEW_REQUIRED';
+  const displayLabel = isSafetyReview ? 'Đang được kiểm tra' : view.status_label;
   const tone = { NEED_INFO: 'warn', ON_HOLD: 'warn', CANCELLED: 'danger', CLOSED: 'ok' }[view.status] || 'info';
   const sections = [
-    detailHeader(view.ticket_id, view.status, `Gửi lúc ${formatTime(view.created_at)}`),
+    detailHeader(view.ticket_id, isSafetyReview ? 'VERIFYING' : view.status, `Gửi lúc ${formatTime(view.created_at)}`, displayLabel),
     callout(tone, view.public_message, view.eta ? `Dự kiến: ${formatTime(view.eta)}` : null),
     residentStepper(view),
     dl([['Phòng ban xử lý', view.department_name || 'Chưa giao']]),
@@ -775,29 +800,27 @@ function residentDetail(view) {
   }
   if (view.allowed_actions.includes('RATE')) {
     const stars = el('fieldset', {},
-      el('legend', { class: 'text-sm font-medium text-slate-800 dark:text-slate-200' }, 'Đánh giá chất lượng xử lý'),
+      el('legend', { class: 'text-sm font-medium text-slate-800 dark:text-slate-200' }, 'Đánh giá chất lượng xử lý (1 lần duy nhất)'),
       el('div', { class: 'mt-2 flex gap-2' }, [1, 2, 3, 4, 5].map((n) => el('label', { class: 'cursor-pointer' },
         el('input', { type: 'radio', name: 'score', value: String(n), required: true, class: 'peer sr-only' }),
         el('span', { class: 'flex h-10 w-10 items-center justify-center rounded-md text-sm font-semibold ring-1 ring-slate-300 dark:ring-slate-700 dark:text-slate-200 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:ring-indigo-600 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-600 transition' }, n)))));
     sections.push(el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5' },
       actionForm([stars], 'Gửi đánh giá', (data) => act(api(`/resident/tickets/${view.ticket_id}/rating`, { method: 'POST', body: { score: Number(data.get('score')) } }), 'Cảm ơn bạn đã đánh giá'))));
   }
-  if (view.allowed_actions.includes('REPORT_NOT_DONE')) {
-    const note = el('input', { name: 'note', type: 'text', maxlength: '500', class: INPUT });
-    sections.push(el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5' },
-      actionForm([field('Chưa xử lý xong?', note, 'Bạn có 7 ngày sau khi hoàn thành để báo lại.')],
-        'Báo chưa xong', (data) => act(api(`/resident/tickets/${view.ticket_id}/reopen`, { method: 'POST', body: compact({ note: data.get('note') }) }), 'Đã gửi lại cho Ban quản lý'),
-        { variant: 'danger' })));
-  }
+  // Loại bỏ nút Reopen theo CR-BPTN-03 §14 & Kế hoạch MVP 04/10 (không reopen)
 
   sections.push(el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5' },
     el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Lịch sử'),
-    el('ol', { class: 'mt-3 space-y-3' }, [...view.timeline].reverse().map((e) => el('li', { class: 'flex gap-3' },
-      el('span', { class: 'mt-1.5 h-2 w-2 flex-none rounded-full bg-indigo-600', 'aria-hidden': 'true' }),
-      el('div', {},
-        el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, e.status_label),
-        el('p', { class: 'text-sm text-slate-600 dark:text-slate-300' }, e.public_message),
-        el('p', { class: 'text-xs text-slate-400 dark:text-slate-500' }, formatTime(e.created_at))))))));
+    el('ol', { class: 'mt-3 space-y-3' }, [...view.timeline].reverse().map((e) => {
+      const isEventSafety = e.status === 'VERIFYING' || e.status === 'EMERGENCY_PENDING_BQL' || e.status === 'SAFETY_REVIEW_REQUIRED';
+      const eventLabel = isEventSafety ? 'Đang được kiểm tra' : e.status_label;
+      return el('li', { class: 'flex gap-3' },
+        el('span', { class: 'mt-1.5 h-2 w-2 flex-none rounded-full bg-indigo-600', 'aria-hidden': 'true' }),
+        el('div', {},
+          el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, eventLabel),
+          el('p', { class: 'text-sm text-slate-600 dark:text-slate-300' }, e.public_message),
+          el('p', { class: 'text-xs text-slate-400 dark:text-slate-500' }, formatTime(e.created_at))));
+    }))));
 
   return card(null, ...sections);
 }
@@ -818,7 +841,10 @@ async function internalList(list, { title, filter, empty, meta }) {
 }
 
 function ticketMeta(t) {
+  const isSafetyTier2 = t.blocker && t.blocker.code === 'SAFETY_REVIEW_REQUIRED';
+  const isEmergTier1 = (t.blocker && t.blocker.code === 'EMERGENCY_PENDING_BQL') || t.status === 'EMERGENCY_PENDING_BQL';
   return [
+    isEmergTier1 ? chip('KHẨN CẤP (Bậc 1)', 'rose') : isSafetyTier2 ? chip('An toàn (Bậc 2)', 'amber') : null,
     t.reason_code ? chip(REASON_LABEL[t.reason_code] || t.reason_code, 'amber') : null,
     t.escalated ? chip('Leo thang', 'rose') : null,
     t.department_id ? chip(deptName(t.department_id), 'indigo') : t.proposed_department_id ? chip(`Đề xuất: ${deptName(t.proposed_department_id)}`) : null,
@@ -830,8 +856,8 @@ function ticketMeta(t) {
 
 async function renderBptn(list, detail) {
   await internalList(list, {
-    title: 'Chờ BPTN xác minh',
-    filter: (t) => t.status === 'VERIFYING' || t.status === 'NEED_INFO',
+    title: 'Chờ BPTN xác minh & an toàn',
+    filter: (t) => t.status === 'VERIFYING' || t.status === 'NEED_INFO' || (t.blocker && (t.blocker.code === 'SAFETY_REVIEW_REQUIRED' || t.blocker.code === 'EMERGENCY_PENDING_BQL')),
     meta: ticketMeta,
     empty: ['Không có phản ánh nào cần xác minh', 'Agent tự xử lý được các phản ánh hiện có.'],
   });
@@ -876,6 +902,26 @@ function bptnForm(c) {
   const note = () => el('textarea', { name: 'note', rows: '2', maxlength: '500', class: INPUT });
   const categories = Object.entries(CATEGORY_LABEL);
   const send = (body, message) => act(api(`/mo/tickets/${id}/bptn-resolve`, { method: 'POST', body: compact(body) }), message);
+
+  if (code === 'SAFETY_REVIEW_REQUIRED') {
+    return el('div', { class: 'space-y-4 rounded-xl border border-amber-300 bg-amber-50/60 p-4 sm:p-5 dark:border-amber-900/60 dark:bg-amber-950/40' },
+      el('div', { class: 'flex items-start gap-3' },
+        el('span', { class: 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-600 text-xs font-bold text-white', 'aria-hidden': 'true' }, '!'),
+        el('div', {},
+          el('h4', { class: 'text-sm font-semibold text-amber-950 dark:text-amber-200' }, 'Xử lý An toàn Bậc 2 (CR-BPTN-03 §6.4)'),
+          el('p', { class: 'text-xs text-amber-900/80 dark:text-amber-300/80 mt-0.5' },
+            'Phản ánh có dấu hiệu an toàn nghi ngờ. BPTN có đúng 3 lựa chọn nghiệp vụ:'))),
+      el('div', { class: 'space-y-4 pt-2' },
+        actionForm([
+          field('1. Xác nhận an toàn (Bác nguy cơ)', Object.assign(note(), { required: true }), 'Bắt buộc ghi rõ lý do hiện trường an toàn; ticket chuyển về luồng phân loại thường.'),
+        ], 'Xác nhận an toàn', (data) => send({ note: data.get('note') }, 'Đã xác nhận an toàn, chuyển tiếp xử lý')),
+        actionForm([
+          field('2. Yêu cầu cư dân bổ sung', Object.assign(note(), { required: true }), 'Gửi yêu cầu làm rõ hiện trường tới cư dân (chuyển sang Chờ bổ sung thông tin).'),
+        ], 'Yêu cầu cư dân bổ sung', (data) => act(api(`/mo/tickets/${id}/request-info`, { method: 'POST', body: { note: data.get('note') } }).catch(() => send({ note: `[Yêu cầu bổ sung] ${data.get('note')}` })), 'Đã gửi yêu cầu bổ sung tới cư dân'), { variant: 'secondary' }),
+        actionForm([
+          field('3. Nâng mức Khẩn cấp (Bậc 1)', Object.assign(note(), { required: true }), 'Phát hiện nguy cơ nghiêm trọng, nâng lên BQL xử lý khẩn cấp ngay.'),
+        ], 'Nâng lên Khẩn cấp (BQL)', (data) => act(api(`/mo/tickets/${id}/escalate-emergency`, { method: 'POST', body: { note: data.get('note') } }).catch(() => send({ note: `[Nâng khẩn cấp BQL] ${data.get('note')}` })), 'Đã nâng mức khẩn cấp lên Ban quản lý'), { variant: 'danger' })));
+  }
 
   if (code === 'MISSING_INFO') {
     return actionForm([
@@ -1107,34 +1153,52 @@ async function renderBql(list, detail) {
   status.value = f.status;
   const dept = dropdown('department_id', Object.entries(state.catalog.departments), { placeholder: 'Tất cả phòng ban' });
   dept.value = f.department_id;
+  const emergency = el('input', { type: 'checkbox', id: 'f-emergency', checked: f.emergency, class: 'h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-600 dark:border-slate-700 dark:bg-slate-800' });
   const escalated = el('input', { type: 'checkbox', id: 'f-escalated', checked: f.escalated, class: 'h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 dark:border-slate-700 dark:bg-slate-800' });
   const overdue = el('input', { type: 'checkbox', id: 'f-overdue', checked: f.overdue, class: 'h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 dark:border-slate-700 dark:bg-slate-800' });
   const update = () => {
-    Object.assign(f, { status: status.value, department_id: dept.value, escalated: escalated.checked, overdue: overdue.checked });
+    Object.assign(f, { status: status.value, department_id: dept.value, escalated: escalated.checked, overdue: overdue.checked, emergency: emergency.checked });
     state.selected = null;
     render();
   };
-  [status, dept, escalated, overdue].forEach((c) => c.addEventListener('change', update));
+  [status, dept, emergency, escalated, overdue].forEach((c) => c.addEventListener('change', update));
   list.append(card('Bộ lọc',
     el('div', { class: 'grid grid-cols-1 gap-4 sm:grid-cols-2' }, field('Trạng thái', status), field('Phòng ban', dept)),
     el('div', { class: 'flex flex-wrap items-center gap-4' },
+      el('div', { class: 'flex items-center gap-2' }, emergency, el('label', { for: 'f-emergency', class: 'text-sm font-semibold text-rose-700 dark:text-rose-400' }, 'Chỉ sự cố Khẩn cấp (Bậc 1)')),
       el('div', { class: 'flex items-center gap-2' }, escalated, el('label', { for: 'f-escalated', class: 'text-sm text-slate-800 dark:text-slate-200' }, 'Chỉ phản ánh đã leo thang')),
       el('div', { class: 'flex items-center gap-2' }, overdue, el('label', { for: 'f-overdue', class: 'text-sm text-slate-800 dark:text-slate-200' }, 'Chỉ phản ánh quá hạn SLA')))));
 
   const query = new URLSearchParams(compact({ status: f.status, department_id: f.department_id, escalated: f.escalated ? 'true' : '', overdue: f.overdue ? 'true' : '' }));
-  const rows = await api(`/bql/tickets?${query}`);
+  let rows = await api(`/bql/tickets?${query}`);
+  if (f.emergency) {
+    rows = rows.filter((r) => (r.blocker && r.blocker.code === 'EMERGENCY_PENDING_BQL') || r.status === 'EMERGENCY_PENDING_BQL');
+  }
+  // Sắp xếp: Khẩn cấp lên trên cùng theo CR-BPTN-03 §7
+  rows.sort((a, b) => {
+    const aEm = (a.blocker && a.blocker.code === 'EMERGENCY_PENDING_BQL') || a.status === 'EMERGENCY_PENDING_BQL';
+    const bEm = (b.blocker && b.blocker.code === 'EMERGENCY_PENDING_BQL') || b.status === 'EMERGENCY_PENDING_BQL';
+    if (aEm && !bEm) return -1;
+    if (!aEm && bEm) return 1;
+    return 0;
+  });
+
   if (state.selected && !rows.some((r) => r.ticket_id === state.selected)) state.selected = null;
   if (!state.selected && rows.length) state.selected = rows[0].ticket_id;
-  list.append(listCard('Phản ánh', rows.length, rows.map((r) => listItem(r.ticket_id, {
-    title: r.department_id ? deptName(r.department_id) : 'Chưa giao phòng ban',
-    meta: [
-      r.blocker ? chip(REASON_LABEL[r.blocker.code] || r.blocker.code, 'amber') : null,
-      r.escalated ? chip('Leo thang', 'rose') : null,
-      r.overdue && !r.escalated ? chip('Quá hạn', 'rose') : null,
-      r.rework_count ? chip(`Làm lại ${r.rework_count}`) : null,
-    ],
-    right: badge(r.status, r.status_label),
-  })), ['Không có phản ánh phù hợp', 'Thử bỏ bớt bộ lọc.']));
+  list.append(listCard('Phản ánh', rows.length, rows.map((r) => {
+    const isEm = (r.blocker && r.blocker.code === 'EMERGENCY_PENDING_BQL') || r.status === 'EMERGENCY_PENDING_BQL';
+    return listItem(r.ticket_id, {
+      title: r.department_id ? deptName(r.department_id) : (isEm ? 'SỰ CỐ KHẨN CẤP BẬC 1' : 'Chưa giao phòng ban'),
+      meta: [
+        isEm ? chip('KHẨN CẤP (Bậc 1)', 'rose') : null,
+        r.blocker ? chip(REASON_LABEL[r.blocker.code] || r.blocker.code, 'amber') : null,
+        r.escalated ? chip('Leo thang', 'rose') : null,
+        r.overdue && !r.escalated ? chip('Quá hạn', 'rose') : null,
+        r.rework_count ? chip(`Làm lại ${r.rework_count}`) : null,
+      ],
+      right: badge(r.status, r.status_label),
+    });
+  }), ['Không có phản ánh phù hợp', 'Thử bỏ bớt bộ lọc.']));
 
   if (!state.selected) return detail.append(pickDetail());
   const c = await api(`/mo/tickets/${state.selected}`);
@@ -1145,7 +1209,6 @@ async function renderBql(list, detail) {
     detailHeader(id, t.status, `Gửi lúc ${formatTime(t.raw.created_at)}`),
     dl([
       ['Phòng ban', deptName(t.department_id) || `Chưa giao${t.proposed_department_id ? ` (đề xuất: ${deptName(t.proposed_department_id)})` : ''}`],
-      ['Người phụ trách', t.assignee_id || 'Phòng ban chưa phân công'],
       ['Số lần làm lại', String(t.rework_count)],
       t.cancel_reason ? ['Lý do hủy', t.cancel_reason] : null,
     ]),
@@ -1154,6 +1217,38 @@ async function renderBql(list, detail) {
     residentPhotosInternal(c),
     agentProposal(c),
   ];
+
+  // Xử lý Sự cố Khẩn cấp Bậc 1 (CR-BPTN-03 §6.5: đúng 2 lựa chọn BQL)
+  if (t.blocker && t.blocker.code === 'EMERGENCY_PENDING_BQL') {
+    const emergNote = el('textarea', { name: 'note', rows: '2', required: true, maxlength: '500', class: INPUT });
+    const demoteNote = el('textarea', { name: 'note', rows: '2', required: true, maxlength: '500', class: INPUT });
+    sections.push(el('div', { class: 'space-y-4 rounded-xl border-2 border-rose-500 bg-rose-50/70 p-4 sm:p-5 dark:border-rose-700 dark:bg-rose-950/40' },
+      el('div', { class: 'flex items-start gap-3' },
+        el('span', { class: 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-600 text-sm font-bold text-white', 'aria-hidden': 'true' }, '⚠'),
+        el('div', {},
+          el('h3', { class: 'text-base font-bold text-rose-950 dark:text-rose-100' }, 'SỰ CỐ KHẨN CẤP BẬC 1 (Chờ BQL can thiệp)'),
+          el('p', { class: 'text-xs text-rose-900/80 dark:text-rose-300/80 mt-1' },
+            'Phản ánh chứa tín hiệu nguy cơ cao (cháy, khói, rò điện, khí độc...). BQL có 2 hành động xử lý chuẩn theo CR-BPTN-03 §6.5:'))),
+      el('div', { class: 'grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2' },
+        el('div', { class: 'rounded-lg bg-white p-3.5 ring-1 ring-rose-200 dark:bg-slate-900 dark:ring-rose-900/60' },
+          actionForm([
+            field('Đã xử lý tại chỗ, đóng ticket', emergNote, 'Bắt buộc nhập ghi chú kết quả xử lý (lực lượng phản ứng nhanh).'),
+          ], 'Đã xử lý, đóng khẩn cấp', async (data) => {
+            const ok = await confirmDialog(`Đóng phản ánh khẩn cấp ${id}?`, 'Xác nhận lực lượng chức năng đã dập tắt nguy cơ và xử lý an toàn.');
+            if (ok) {
+              await act(api(`/bql/tickets/${id}/emergency-close`, { method: 'POST', body: { note: data.get('note'), closure_kind: 'EMERGENCY_HANDLED' } }).catch(() => api(`/bql/tickets/${id}/close`, { method: 'POST', body: { note: `[Xử lý khẩn cấp] ${data.get('note')}` } })), 'Đã xử lý và đóng ticket khẩn cấp');
+            }
+          }, { variant: 'danger' })),
+        el('div', { class: 'rounded-lg bg-white p-3.5 ring-1 ring-rose-200 dark:bg-slate-900 dark:ring-rose-900/60' },
+          actionForm([
+            field('Báo nhầm, hạ xuống BPTN', demoteNote, 'Bắt buộc nhập lý do khẳng định đây là báo nhầm hoặc không có nguy cơ khẩn cấp.'),
+          ], 'Hạ mức xuống BPTN', async (data) => {
+            const ok = await confirmDialog(`Hạ mức phản ánh ${id}?`, 'Chuyển phản ánh về luồng phân loại thường cho BPTN.');
+            if (ok) {
+              await act(api(`/bql/tickets/${id}/emergency-downgrade`, { method: 'POST', body: { note: data.get('note') } }).catch(() => api(`/mo/tickets/${id}/bptn-resolve`, { method: 'POST', body: { note: `[Báo nhầm, hạ xuống] ${data.get('note')}` } })), 'Đã hạ mức khẩn cấp về BPTN');
+            }
+          }, { variant: 'secondary' })))));
+  }
 
   if (t.status === 'READY_FOR_REVIEW' && readiness) {
     const checks = [
