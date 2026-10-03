@@ -2,7 +2,7 @@
 
 | Trường | Giá trị |
 |---|---|
-| Trạng thái | ✅ MERGE XONG — 2026-10-02 22:27:53 +0700 · chờ PR vào develop (người dùng) |
+| Trạng thái | ✅ ĐÃ HOÀN THÀNH — PR #7 merge vào `develop` lúc 2026-10-03 11:11:32 +0700 (tuanank2112-crypto), develop = `6265436`, cây trùng nhánh đã đo |
 | Loại | Tích hợp (≤ 1 ngày công) — ngoại lệ AGENTS §3.2.5: chỉ `plan.md`, hợp đồng = hành vi đã duyệt của hai bên |
 | Nhánh | `feature/nhuy-cr03-p0` (merge `origin/develop` vào, KHÔNG rebase, KHÔNG force-push) |
 | Base | HEAD `feature/nhuy-cr03-p0` lúc bắt đầu · `origin/develop` = `deab467` |
@@ -43,4 +43,4 @@
 - [x] WP1 merge + report R01
 - [x] WP2 SO đo + phán (✅ Q08)
 - [x] Đồng bộ não (6 điểm) + push nhánh
-- [ ] PR vào `develop` (chờ người dùng)
+- [x] PR #7 vào `develop` (người dùng bấm merge 2026-10-03 11:11:32; agent merge qua API bị chặn vì CI đỏ do hết hạn mức Actions)

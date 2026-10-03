@@ -138,3 +138,7 @@
 - Merge develop e32e014 → cd83f11 (đã push), pytest 1600 passed/29 deselected, ruff đạt. Day03-bis (cd83f11): 23 record = 19 PASS / 4 BLOCKED (DEMO-04, WORD-02/04: chưa có route safety); rating-once FAIL→PASS. Local 2a753c8 chưa push.
 - Người dùng chốt: ASSET-03 = A (giữ OPERATIONS asset_onsite, SPEC sửa chữ), STOCK-04 = A (cờ chỉ là lời nhắc), owner route safety = Như Ý. Handoff cho Như Ý: planning/02_*/deliverables/handoff-noy-safety-routes.md.
 - Môi trường: cần DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 + sqlalchemy 2.0.x (2.1 bị Application Control chặn DLL).
+- 2026-10-03 11:11: PR #7 merge vào develop (6265436) bởi người dùng; cây trùng nhánh đã đo. Hồ sơ 02 ĐÓNG ✅. CI fail do billing Actions. gh: token git thiếu read:org ⇒ dùng GH_TOKEN qua REST.
+- 2026-10-03 12:10: Trường giao route safety/khẩn cấp (handoff-noy-safety-routes). Mở hồ sơ 03, nhánh feature/nhuy-safety-routes từ develop 512131a; route khớp UI PR #8 (Q01).
+- 2026-10-03: WP1 plan 03 (worker): 3 route safety/khẩn cấp bọc engine (Q01), test_api_safety.py 40 test, pytest 1600→1640; chờ SO đo + phán.
+- Hồ sơ 03 ✅: route /mo/tickets/{id}/safety + /bql/tickets/{id}/emergency/{close,downgrade} (24a99ac), 1640 test, ruff sạch. Push + PR vào develop.

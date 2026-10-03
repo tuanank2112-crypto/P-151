@@ -436,6 +436,21 @@ def bptn_resolve(ticket_id: str, body: BptnResolveRequest, actor: ActorDep, engi
     return _call(engine.bptn_resolve, ticket_id, actor, **body.model_dump())
 
 
+class SafetyRequest(NoteBody):
+    decision: Literal["CONFIRM_SAFE", "REQUEST_INFO", "ESCALATE"]
+
+
+@router.post("/tickets/{ticket_id}/safety", response_model=Case)
+def safety_decide(ticket_id: str, body: SafetyRequest, actor: ActorDep, engine: EngineDep) -> Case:
+    """BPTN chọn một trong ba hướng cho Bậc 2 (VERIFYING + SAFETY_REVIEW_REQUIRED): CONFIRM_SAFE, REQUEST_INFO,
+    ESCALATE. Chỉ bọc `engine.safety_*`; vai, trạng thái và `note` do engine kiểm."""
+    if body.decision == "CONFIRM_SAFE":
+        return _call(engine.safety_confirm_safe, ticket_id, actor, note=body.note)
+    if body.decision == "REQUEST_INFO":
+        return _call(engine.safety_request_info, ticket_id, actor, note=body.note)
+    return _call(engine.safety_escalate, ticket_id, actor, note=body.note)
+
+
 # ------------------------------------------------------------------ department
 
 
@@ -713,3 +728,19 @@ class CancelRequest(BaseModel):
 def bql_cancel(ticket_id: str, body: CancelRequest, actor: ActorDep, engine: EngineDep) -> Case:
     """Hủy ticket chưa kết thúc. Chỉ BQL, bắt buộc lý do."""
     return _call(engine.cancel, ticket_id, actor, cancel_reason=body.cancel_reason)
+
+
+class EmergencyNoteBody(NoteBody):
+    model_config = {"extra": "ignore"}  # a client-sent closure_kind is ignored: the engine sets EMERGENCY_HANDLED
+
+
+@bql_router.post("/tickets/{ticket_id}/emergency/close", response_model=Case)
+def bql_emergency_close(ticket_id: str, body: EmergencyNoteBody, actor: ActorDep, engine: EngineDep) -> Case:
+    """Bậc 1 đã xử lý ngoài hệ thống: VERIFYING + EMERGENCY_PENDING_BQL → CLOSED (EMERGENCY_HANDLED). Chỉ BQL."""
+    return _call(engine.emergency_close, ticket_id, actor, note=body.note)
+
+
+@bql_router.post("/tickets/{ticket_id}/emergency/downgrade", response_model=Case)
+def bql_emergency_downgrade(ticket_id: str, body: EmergencyNoteBody, actor: ActorDep, engine: EngineDep) -> Case:
+    """Báo động giả: hạ Bậc 1, luồng thường chạy lại. Chỉ BQL, bắt buộc `note`."""
+    return _call(engine.emergency_downgrade, ticket_id, actor, note=body.note)
