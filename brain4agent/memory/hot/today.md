@@ -108,6 +108,33 @@
 - Format toàn repo vẫn exit1 do 2 file baseline ngoài scope; boot hub exit1; không chạy Postgres/online trong phiên này.
 - Review đã sửa false positive phủ định liên tiếp, giữ risk cũ; bằng chứng red-negation → green-negation. Contract đích thêm nguồn ticket và clearance residual-risk guard.
 - Group approval, runtime integration và online acceptance pending. Không tăng version ứng dụng, không stage/commit/push/deploy.
+
+
+## D-08 approval recorded — 2026-10-03
+- D-08 APPROVED: người dùng thông báo leader Lê Thị Châm Anh duyệt phạm vi MVP 04/10 và D-01–D-07; ngày duyệt được báo là 2026-10-02, chưa cung cấp giờ. Ghi nhận ngày 2026-10-03; commit a5e2705/PR #6 là bản tham chiếu được người dùng xác nhận trong phiên này, không khẳng định commit đã tồn tại ngày 02/10. Nguồn: thông báo người dùng trong phiên; chưa có link biên bản ngoài. Không mở rộng thành duyệt mọi CR/backlog hoặc nghiệm thu runtime.
+- Không đổi engine/storage/API, không đóng runtime/online gates; chưa commit/push bản ghi này.
+- Kiểm tra bản ghi D-08: verify_package.py 57/57 pass, fail0, skip0, exit0; giữ nguyên bằng chứng nghiệm thu cũ.
+
+## Day03 tasks planned — 2026-10-03
+- 2026-10-03T10:43:10+07:00: tạo SPEC/checklist 7 task, chưa chạy. Phạm vi Trường: nghiệp vụ, dữ liệu/expected, kiểm thử, wording, demo; không sửa app safety/engine/API/UI. Không phát hành, không commit/push.
+
+## Tối ưu não cho Trường — 2026-10-03
+- Đọc Notion "Kế hoạch MaintenanceOps MVP" qua API public `loadCachedPageChunkV2` (WebFetch không render được trang JS).
+- Kernel thêm `<truong_focus>` (chủ việc, ranh giới không sửa, chỉ tiêu 19/10); sửa nhánh `feature/chamanh` → `feature/truong`.
+- Roadmap: lịch Trường 01/10–19/10 dạng checklist (01–02/10 ✅, còn lại mở). project-intro: sửa persistence cũ (in-memory → memory|postgres), thêm mốc/nhóm, ghi CR-BPTN-01/02 không có trên nhánh này. index: router việc Trường, dataset, deliverables; map src/seed/tests.
+- Bước 0 vẫn exit 1 MODULE_NOT_FOUND (không có `../brain4agent.release`). Chỉ sửa docs não, không chạm code; chưa commit.
+
+## Day03 kết quả — 2026-10-03
+- Chạy local cô lập (MO_STORE=memory, mock, MO_JOBS_ENABLED=false), nhánh feature/truong, SHA 0ea04ad. 23 record: 17 PASS / 1 FAIL / 5 BLOCKED / 0 NOT_RUN.
+- D3-02 asset 3/3 PASS; D3-03 vật tư 4/4 PASS; D3-04 trùng 4/4 PASS; D3-05 WORD-03 PASS, WORD-01/02/04 BLOCKED; D3-06 5 PASS, 1 FAIL (DEMO-01-RATING: engine.rate ghi đè rating, engine.py:548-553), 2 BLOCKED (DEMO-04 safety chưa tích hợp). Owner Như Ý.
+- Checklist plan.md: D3-01/02/03/04/07 [x] (D3-07 chỉ là đã lập báo cáo); D3-05/06 chưa [x]. Plan chưa đóng; không tăng version; runtime/online/group-runtime gates mở.
+- Chờ người quyết: ASSET-03 (SPEC §3 vs OPERATIONS §3.2.2), STOCK-04 (STOCK_CHECK_ON_ACCEPT chỉ đặt cờ), owner reopen/rating-once. Bước 0 vẫn exit 1 (thiếu ../brain4agent.release).
+- Harness tái hiện: planning/02_2026-10-03_truong-mvp-prep/evidence/d3-06/harness.py (PYTHONPATH=repo root). Chưa commit/push.
 - 2026-10-03: merge lần 2 develop 0cb16e2 (PR #6 Trường) theo H02 + SO Q10: giữ safety.py nhánh này, bộ nhãn Trường chạy trên assess (92 khớp/6 cao ghim ABOVE_LABEL), lexicon thêm giật (Bậc 2) + loại trừ giật nước; 1600 passed, ruff sạch.
 - 2026-10-03: merge lần 2 develop (0cb16e2, PR #6 Trường) ✅ 510f888: 1600 test; bộ nhãn Trường 92 khớp/0 thấp/6 cao. Push nhánh + Activity Diagram.
 - Thêm docs/Activity Diagram.png (bản nháp swimlane của Như Ý; còn lệch CR-03: thiếu 2b trước phân loại và nhánh Bậc 2 — xem roadmap).
+
+## Day03-bis + chốt quyết định — 2026-10-03
+- Merge develop e32e014 → cd83f11 (đã push), pytest 1600 passed/29 deselected, ruff đạt. Day03-bis (cd83f11): 23 record = 19 PASS / 4 BLOCKED (DEMO-04, WORD-02/04: chưa có route safety); rating-once FAIL→PASS. Local 2a753c8 chưa push.
+- Người dùng chốt: ASSET-03 = A (giữ OPERATIONS asset_onsite, SPEC sửa chữ), STOCK-04 = A (cờ chỉ là lời nhắc), owner route safety = Như Ý. Handoff cho Như Ý: planning/02_*/deliverables/handoff-noy-safety-routes.md.
+- Môi trường: cần DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 + sqlalchemy 2.0.x (2.1 bị Application Control chặn DLL).

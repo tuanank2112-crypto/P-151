@@ -1,0 +1,23 @@
+=== RESIDENT ENDPOINTS ===
+POST /resident/tickets - Cư dân gửi phản ánh (tạo ticket)
+GET /resident/tickets - Danh sách phản ánh của cư dân (mới nhất trước)
+GET /resident/tickets/{ticket_id} - Chi tiết phản ánh (trường công khai + actions)
+POST /resident/tickets/{ticket_id}/additions - Bổ sung thông tin (append-only)
+POST /resident/tickets/{ticket_id}/photos - Đính kèm ảnh
+GET /resident/tickets/{ticket_id}/photos/{evidence_id} - Xem ảnh của cư dân
+POST /resident/tickets/{ticket_id}/rating - Đánh giá (score 1-5)
+POST /resident/tickets/{ticket_id}/reopen - Báo chưa xong (nếu còn thời hạn)
+
+=== BQL ENDPOINTS ===
+GET /bql/tickets - Danh sách ticket với đầy đủ chi tiết (lọc: status, phòng ban, blocker, escalated, overdue)
+POST /bql/tickets/{ticket_id}/close - Nghiệm thu (READY_FOR_REVIEW → CLOSED)
+POST /bql/tickets/{ticket_id}/rework - Trả lại làm lại (READY_FOR_REVIEW → IN_PROGRESS, bắt buộc lý do)
+POST /bql/tickets/{ticket_id}/cancel - Hủy ticket (bắt buộc lý do)
+
+=== DEPARTMENT ENDPOINTS ===
+POST /mo/tickets/{ticket_id}/accept - Tiếp nhận (ROUTED → IN_PROGRESS)
+POST /mo/tickets/{ticket_id}/checklist/{template_item_id} - Cập nhật checklist item
+POST /mo/tickets/{ticket_id}/materials/{item_code} - Ghi nhận vật tư (issued_qty, used_qty, variance_reason)
+POST /mo/tickets/{ticket_id}/evidence - Thêm evidence (requirement_id, evidence_type, content)
+POST /mo/tickets/{ticket_id}/photos - Gửi ảnh kết quả
+POST /mo/tickets/{ticket_id}/complete - Báo hoàn thành (IN_PROGRESS → READY_FOR_REVIEW)

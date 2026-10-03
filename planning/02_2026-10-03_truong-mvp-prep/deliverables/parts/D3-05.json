@@ -1,0 +1,97 @@
+{
+  "schema_version": "day03-1",
+  "observed_at": "2026-10-03T11:12:43+07:00",
+  "branch": "feature/truong",
+  "commit": "0ea04adedd023654947e2e97e645043f0ba89159",
+  "environment": "local",
+  "base_url": null,
+  "records": [
+    {
+      "case_id": "WORD-01",
+      "task_id": "D3-05",
+      "actor_role": "RESIDENT",
+      "steps": [
+        "Xem ResidentTicketView allow-list (views.py:42-56): ticket_id, created_at, description, additions, photos, status, status_label, department_name, public_message, eta, timeline, allowed_actions",
+        "Kiểm i18n/vi.yaml (4-42): 10 status_labels, 10 status_messages, 12 reason_messages (không có safety Bậc 2)",
+        "Xem actions enum (views.py:24): ADD_INFO, RATE, REPORT_NOT_DONE",
+        "Xem engine.py (views.py:78-81): RATE append nếu rating=null (không guard lần 2), REPORT_NOT_DONE nếu reopen_until chưa hết (cấm target)",
+        "Xem engine.rate() (engine.py:548-553): ghi đè rating, không 409 lần 2"
+      ],
+      "input_ref": "src/maintenance/views.py:24,42-56,78-81; src/maintenance/i18n/vi.yaml:4-42; src/maintenance/engine.py",
+      "expected": "ResidentTicketView hiển thị trường công khai; safety Bậc 2 → wording 'đang kiểm tra tính an toàn' (không lộ risk); RATE action: lần 1 ok, lần 2 → 409; REPORT_NOT_DONE action: cấm (reopen disabled)",
+      "actual": "✅ allow-list ĐÚNG công khai (không lộ reason_code/internal_note/assignee/materials); 🔴 BLOCKED: (a) Safety Bậc 2: không có SAFETY_REVIEW_REQUIRED status, không có public_message trong vi.yaml; (b) Rating: views.py:79 append RATE không guard lần 2, engine.py:548-553 ghi đè; (c) Reopen: views.py:81 vẫn append REPORT_NOT_DONE (target cấm)",
+      "result": "BLOCKED",
+      "evidence_refs": [
+        "evidence/d3-05/i18n-vi.txt",
+        "evidence/d3-05/routes-endpoints.txt"
+      ],
+      "issue_owner": "Như Ý",
+      "block_reason": "Safety Bậc 2 status/message chưa tích hợp; rating-once guard chưa implement; reopen cấm chưa guard"
+    },
+    {
+      "case_id": "WORD-02",
+      "task_id": "D3-05",
+      "actor_role": "BPTN",
+      "steps": [
+        "Xem bptn_resolve route (src/api/routers/maintenance.py:431): body {location, info, note} hoặc {asset_onsite, note}",
+        "Xem i18n MISSING_INFO message (i18n/vi.yaml:31): 'Ban tiếp nhận thông tin...'",
+        "Xem i18n ASSET_UNCLEAR message (i18n/vi.yaml:36): 'Đang xác minh thiết bị...'",
+        "Kiểm: không có endpoint cho SAFETY_CONFIRM_SAFE, SAFETY_ESCALATE, SAFETY_NEED_INFO",
+        "Xem src/maintenance/safety.py: rules P0 độc lập, chưa gọi từ engine"
+      ],
+      "input_ref": "src/api/routers/maintenance.py:431; src/maintenance/i18n/vi.yaml:31,36; src/maintenance/safety.py; OPERATIONS.md §5.2",
+      "expected": "MISSING_INFO/ASSET_UNCLEAR: bptn-resolve endpoint ĐÚNG; Bậc 2 safety: BPTN có ba lựa chọn (confirm-safe/escalate/need-info) với endpoint riêng",
+      "actual": "✅ MISSING_INFO (vi.yaml:31) + ASSET_UNCLEAR (vi.yaml:36) workflow: bptn_resolve (route:431) ĐÚNG; 🔴 BLOCKED: Bậc 2 safety chưa implement — không có endpoint, không có engine action, safety.py độc lập chưa nối",
+      "result": "BLOCKED",
+      "evidence_refs": [
+        "evidence/d3-05/blocker-structure.txt",
+        "evidence/d3-05/routes-endpoints.txt"
+      ],
+      "issue_owner": "Như Ý",
+      "block_reason": "Bậc 2 safety (confirm-safe, escalate, need-info) chưa có route/endpoint/engine; baseline MISSING_INFO/ASSET_UNCLEAR ĐÚNG"
+    },
+    {
+      "case_id": "WORD-03",
+      "task_id": "D3-05",
+      "actor_role": "DEPARTMENT",
+      "steps": [
+        "Xem accept route (src/api/routers/maintenance.py:441): ROUTED → IN_PROGRESS",
+        "Xem update_checklist route (route:477): body {status, note}",
+        "Xem record_material route (route:490): body {issued_qty, used_qty, variance_reason}",
+        "Xem add_evidence route (route:502): body {requirement_id, evidence_type, content, readability_status}",
+        "Xem add_execution_photos route (route:506): multipart files",
+        "Xem report_complete route (route:535): IN_PROGRESS → READY_FOR_REVIEW"
+      ],
+      "input_ref": "src/api/routers/maintenance.py:441,477,490,502,535; src/maintenance/models.py",
+      "expected": "Workflow DEPARTMENT: accept → checklist → materials → evidence → photos → complete ĐÚNG quyền, không auto-assign/auto-complete, wording không hứa chức năng chưa có",
+      "actual": "✅ accept (441) ROUTED→IN_PROGRESS; checklist (477) per-item status; materials (490) issued+used+variance_reason; evidence (502) metadata per requirement; photos (506) metadata; complete (535) kiểm draft.readiness (all_pass=true → READY_FOR_REVIEW; failing → 409); chỉ DEPARTMENT được phép; wording không hứa gán nhân viên/auto-assign",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/d3-05/routes-endpoints.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "WORD-04",
+      "task_id": "D3-05",
+      "actor_role": "BQL",
+      "steps": [
+        "Xem GET /bql/tickets route (src/api/routers/maintenance.py:669): response BqlTicketRow (views.py:120-139)",
+        "Xem close route (route:693): READY_FOR_REVIEW → CLOSED, note required",
+        "Xem rework route (route:699): READY_FOR_REVIEW → IN_PROGRESS + REWORK blocker, note required",
+        "Xem cancel route (route:710): ANY → CANCELLED, cancel_reason required",
+        "Kiểm: không có endpoint cho EMERGENCY_CLOSE, EMERGENCY_DOWNGRADE, EMERGENCY_MERGE, EMERGENCY_CANCEL"
+      ],
+      "input_ref": "src/api/routers/maintenance.py:669,693,699,710; src/maintenance/views.py:120-139; OPERATIONS.md §5.3",
+      "expected": "close/rework/cancel: chỉ BQL được phép, note/reason bắt buộc; Bậc 1 khẩn cấp: BQL có bốn lựa chọn với endpoint riêng",
+      "actual": "✅ close (693) READY_FOR_REVIEW→CLOSED + note; rework (699) READY_FOR_REVIEW→IN_PROGRESS + REWORK blocker; cancel (710) ANY→CANCELLED + reason; chỉ BQL được; 🔴 BLOCKED: Bậc 1 khẩn cấp chưa implement — không có endpoint, không có engine action, safety.py độc lập chưa nối",
+      "result": "BLOCKED",
+      "evidence_refs": [
+        "evidence/d3-05/routes-endpoints.txt"
+      ],
+      "issue_owner": "Như Ý",
+      "block_reason": "Bậc 1 khẩn cấp (EMERGENCY_CLOSE/DOWNGRADE/MERGE/CANCEL) chưa có route/endpoint/engine; baseline close/rework/cancel ĐÚNG"
+    }
+  ]
+}

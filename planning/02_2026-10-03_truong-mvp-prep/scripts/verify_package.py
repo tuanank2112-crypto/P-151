@@ -1,4 +1,4 @@
-﻿"""Read-only package acceptance; run from repository root."""
+"""Read-only package acceptance; run from repository root."""
 import ast
 import json
 from pathlib import Path
@@ -21,7 +21,7 @@ s = (PACKAGE / "specs/01-CONTRACTS.md").read_text(encoding="utf-8-sig")
 check("signal vocabulary consistent", "UNCERTAIN" not in s)
 check("clearance residual floor", "INVALID_CLEARANCE" in s and "target_risk MUST NOT be lower" in s)
 check("cross-ticket provenance", "origin_ticket_id" in s)
-check("official approval remains pending", "approver=null" in s and "approved_at=null" in s)
+check("official approval recorded with day precision", "approver=Lê Thị Châm Anh" in s and "approved_date=2026-10-02" in s and "recorded_date=2026-10-03" in s and "approved_at=null" in s and "date_precision=day" in s)
 check("old input excluded", "LLM receives neither evidence records" in s)
 for i, tail in ((1, "scope"), (2, "decisions"), (3, "demos"), (4, "safety"), (5, "targets")):
     h = PACKAGE / "handoffs" / f"H{i:02d}_{tail}.md"
@@ -41,7 +41,8 @@ for relative in ("src/maintenance/safety.py", "tests/test_maintenance/test_safet
     check("syntax " + relative, True)
 check("kernel <100 lines", len((ROOT / "brain4agent/memory-distill.txt").read_text(encoding="utf-8-sig").splitlines()) < 100)
 state = json.loads((ROOT / "brain4agent/memory/hot/state.json").read_text(encoding="utf-8-sig"))
-check("state group pending", state["active_plan"]["group_approval"] == "pending")
+approval = state["active_plan"]["approval"]
+check("state group approved consistently", state["active_plan"]["group_approval"] == "approved" and approval["approver"] == "Lê Thị Châm Anh" and approval["approved_date"] == "2026-10-02" and approval["approved_at"] is None and approval["date_precision"] == "day" and approval["recorded_date"] == "2026-10-03" and approval["reference_commit"] == "a5e2705cf2ad1f57a896f5d3baf2f020ca96d45d" and approval["reference_pr"] == 6 and approval["decision"] == "approved")
 check("state runtime pending", state["active_plan"]["runtime_integration"] == "pending")
 check("state online pending", state["active_plan"]["online_acceptance"] == "pending")
 print(f"total={len(checks)} pass={sum(ok for _,ok in checks)} fail={sum(not ok for _,ok in checks)} skip=0")

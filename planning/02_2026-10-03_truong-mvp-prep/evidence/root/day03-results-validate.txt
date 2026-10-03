@@ -1,0 +1,4 @@
+records 23 {'PASS': 17, 'BLOCKED': 5, 'FAIL': 1}
+by_task {'D3-02': {'PASS': 3}, 'D3-03': {'PASS': 4}, 'D3-04': {'PASS': 4}, 'D3-05': {'BLOCKED': 3, 'PASS': 1}, 'D3-06': {'PASS': 5, 'FAIL': 1, 'BLOCKED': 2}}
+bad []
+exit=0

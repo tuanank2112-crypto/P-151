@@ -92,3 +92,18 @@ Hồ sơ gốc: [`planning/02_2026-10-03_truong-mvp-prep/`](../planning/02_2026-
 - `safety.py` độc lập của PR #6 (`assess_safety(text, previous_risk)`) KHÔNG giữ: chỉ có MỘT tầng an toàn là `assess(text, lexicon)` ở §3. Hàm `assess_safety` chỉ còn là adapter trong `tests/test_maintenance/test_safety_p0.py` (kiểm `RiskLevel`, ranh giới `RawTicket`, giữ mức cũ bằng max).
 - Bộ nhãn giữ nguyên: 62 câu trong `test_safety_p0.py`, 34 ca `seed/maintenance_cr03/safety_cases.json`, fixture đích `seed/maintenance_cr03/tickets.yaml` (startup vẫn `seed/maintenance_v1/`). Engine cao hơn nhãn ở 4 câu ⇒ ghim trong `ABOVE_LABEL` (không hạ); thấp hơn nhãn đã vá bằng từ vựng (`giật` đứng riêng ⇒ Bậc 2). Bảng đối chiếu: `planning/02_2026-10-02_merge-develop/evidence/`.
 - Lệch cơ chế còn mở (không sửa, xem `reports/R02_merge-develop-2.md`): fixture đích của Trường xếp phân loại TRƯỚC an toàn (CLN-004/TEC-005 có `playbook_id`/`proposed_department_id`) còn engine chạy 2b trước phân loại; `test_cr03_targets.py` so với baseline `maintenanceops-sim-v1.2` của `develop`, trong khi `seed/maintenance_v1/` của nhánh này là v1.3 (CR-03).
+
+## 11. Công việc của Trường (nhánh `feature/truong`)
+
+Hồ sơ: [plan 02](../planning/02_2026-10-03_truong-mvp-prep/plan.md).
+D-01 được người dùng xác nhận; D-02–D-07 dùng mặc định CR-03. D-08 APPROVED: người dùng thông báo leader Lê Thị Châm Anh duyệt phạm vi MVP 04/10 và D-01–D-07; ngày duyệt được báo là 2026-10-02, chưa cung cấp giờ. Ghi nhận ngày 2026-10-03; commit a5e2705/PR #6 là bản tham chiếu được người dùng xác nhận trong phiên này, không khẳng định commit đã tồn tại ngày 02/10. Nguồn: thông báo người dùng trong phiên; chưa có link biên bản ngoài. Không mở rộng thành duyệt mọi CR/backlog hoặc nghiệm thu runtime.
+
+### Kết quả chuẩn bị local ngày 2026-10-03
+
+5 gói đã có đầu ra và report. Root đo lại 266 tests pass, 20 Postgres deselected; 72 safety tests, 9 target tests; kiểm tra hồ sơ 57/57 pass. Lint và format 3 file Python mới đạt. Python syntax được kiểm tra; repo chưa cấu hình typechecker.
+Format toàn repo còn 2 file baseline ngoài phạm vi; Postgres và demo online chưa chạy trong phiên này. Bằng chứng [pytest](../planning/02_2026-10-03_truong-mvp-prep/evidence/root/final-pytest.txt), [hồ sơ](../planning/02_2026-10-03_truong-mvp-prep/evidence/root/package-check.txt).
+Hàm safety vẫn là rules độc lập; trạng thái này không có nghĩa API đã tích hợp safety/D-01 hoặc runtime đã được nghiệm thu. D-08 duyệt thiết kế được ghi nhận riêng theo thông báo người dùng.
+
+### Công việc ngày 03/10
+
+[Checklist và hợp đồng 7 task](../planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md): asset, vật tư, trùng cơ bản, wording/quyền và chạy thử 4 demo. Trường chuẩn bị/kiểm thử và bàn giao lỗi; Như Ý sở hữu engine/safety, Châm Anh sở hữu API/storage, Trí sở hữu UI. Kết quả chạy local cô lập (SHA 0ea04ad, nhánh feature/truong): 23 record = 17 PASS / 1 FAIL / 5 BLOCKED / 0 NOT_RUN. Asset 3/3, vật tư 4/4, trùng 4/4 PASS; wording WORD-03 PASS, WORD-01/02/04 BLOCKED (safety Bậc 2/Bậc 1, rating-once, reopen chưa tích hợp); demo 5 PASS, 1 FAIL (DEMO-01-RATING: `engine.rate` ghi đè rating, engine.py:548-553), 2 BLOCKED (DEMO-04). Owner lỗi/BLOCKED: Như Ý. Chờ người quyết: ASSET-03, STOCK-04, owner reopen/rating-once. D3-05/06 chưa đóng; runtime/online chưa nghiệm thu. Báo cáo: [tổng hợp](../planning/02_2026-10-03_truong-mvp-prep/deliverables/day03-summary.md), [wording](../planning/02_2026-10-03_truong-mvp-prep/deliverables/day03-wording.md), [kết quả](../planning/02_2026-10-03_truong-mvp-prep/deliverables/day03-results.json).

@@ -1,0 +1,59 @@
+PASS spec 00-ARCHITECTURE.md present
+PASS spec 00-ARCHITECTURE.md non-bootstrap
+PASS spec 00-ARCHITECTURE.md balanced fences
+PASS spec 01-CONTRACTS.md present
+PASS spec 01-CONTRACTS.md non-bootstrap
+PASS spec 01-CONTRACTS.md balanced fences
+PASS spec OPERATIONS.md present
+PASS spec OPERATIONS.md non-bootstrap
+PASS spec OPERATIONS.md balanced fences
+PASS spec SPEC-P04-SAFETY.md present
+PASS spec SPEC-P04-SAFETY.md non-bootstrap
+PASS spec SPEC-P04-SAFETY.md balanced fences
+PASS spec TESTING-ACCEPTANCE.md present
+PASS spec TESTING-ACCEPTANCE.md non-bootstrap
+PASS spec TESTING-ACCEPTANCE.md balanced fences
+PASS signal vocabulary consistent
+PASS clearance residual floor
+PASS cross-ticket provenance
+PASS official approval recorded with day precision
+PASS old input excluded
+PASS H01 exists
+PASS R01 exists
+PASS H01 <=80 lines
+PASS R01 provenance
+PASS R01 final verdict
+PASS WP1 machine evidence exists
+PASS H02 exists
+PASS R02 exists
+PASS H02 <=80 lines
+PASS R02 provenance
+PASS R02 final verdict
+PASS WP2 machine evidence exists
+PASS H03 exists
+PASS R03 exists
+PASS H03 <=80 lines
+PASS R03 provenance
+PASS R03 final verdict
+PASS WP3 machine evidence exists
+PASS H04 exists
+PASS R04 exists
+PASS H04 <=80 lines
+PASS R04 provenance
+PASS R04 final verdict
+PASS WP4 machine evidence exists
+PASS H05 exists
+PASS R05 exists
+PASS H05 <=80 lines
+PASS R05 provenance
+PASS R05 final verdict
+PASS WP5 machine evidence exists
+PASS syntax src/maintenance/safety.py
+PASS syntax tests/test_maintenance/test_safety_p0.py
+PASS syntax tests/test_maintenance/test_cr03_targets.py
+PASS kernel <100 lines
+PASS state group approved consistently
+PASS state runtime pending
+PASS state online pending
+total=57 pass=57 fail=0 skip=0
+exit=0
