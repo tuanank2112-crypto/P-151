@@ -92,6 +92,7 @@ safety:
     - giat dien
     - bi giat
     - giat tay
+    - "re:\\bgiat\\b"   # H02 (PR #6 Truong, gold "Giat" -> UNCLEAR): accented "giat" alone; "giat" (laundry) dropped by homographs
   # ---- R7: đồng tự theo token CÓ dấu, theo từng pattern
   homographs:
     chay: [chảy, chạy]
@@ -134,6 +135,7 @@ safety:
   # ---- R9: lưới Bậc 2 cho "khói/lửa/máu/bất động" (dạng có dấu) nằm ngoài mọi span
   tier2_net_roots: {khoi: [khói], lua: [lửa], mau: [máu], bat dong: [bất động]}
   ambiguous_exclusions:      # từ đồng tự không phải rủi ro (chảy nước, ...): bỏ qua, không ghi
+    - giat nuoc          # H02/SO Q10: bồn cầu/xả nước ("giật nước") không phải điện giật
     - nuoc chay
     - chay nuoc
     - chay ra

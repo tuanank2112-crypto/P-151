@@ -30,3 +30,7 @@ Chi tiết hợp đồng: `planning/01_2026-10-02_supabase-persistence/specs/01-
 - **Đã cài ở P0 (v1.1.0):** `risk_level`, `risk_signals[]` (kết quả 2b gần nhất), `safety_cleared_by/at/reason`, `safety_context`, `related_ticket_ids[]`, `priority`, `priority_source`, `priority_rule_id`, `priority_reason`, `closure_kind`; `assignee_id` kiểu `None`; bỏ `reopen_until`. Còn lại ở dòng dưới là P1.
 - **Ticket mới trường (§12.1):** `priority*`, `risk_level`, `risk_signals[]`, `safety_cleared_*`, `duplicate_count`, `merged_children[]`, `related_ticket_ids[]`, `duplicate_rejected_of[]`, `follow_up_of`, `closure_kind`, `wrong_department_return_count`. `assignee_id` luôn `null`.
 - Nội dung gốc và ảnh gốc của cư dân bất biến; bổ sung chỉ append. Cư dân chỉ thấy view allow-list (`views.py`), không thấy `risk_*`, `reason_code`, ghi chú nội bộ.
+
+## Trường MVP preparation — 2026-10-03
+- D-01 là target contract trong plan02 `specs/01-CONTRACTS.md`: persisted structured snapshot + event/version identifiers; payload LLM chỉ delta + snapshot, raw/audit vẫn append-only.
+- Chưa thêm cột/schema hoặc nối vào engine/storage. `seed/maintenance_cr03/` là target/gold data riêng, startup vẫn `maintenance_v1`.

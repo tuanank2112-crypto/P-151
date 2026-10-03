@@ -36,3 +36,9 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [x] **Hồ sơ 01 — CR-BPTN-03 P0 cho engine (2026-10-02, v1.1.0):** `planning/01_2026-10-01_cr03-p0-engine/` ✅. Tầng an toàn 2b hai bậc (`safety.py`, từ vựng `lexicon.yaml`, luật R1–R10), luồng khẩn cấp (5 method BPTN/BQL, chặn `resume()`/job gỡ khẩn cấp, hạn 4 giờ lịch/12 giờ), priority + `queue_sort_key`, bỏ reopen, `SET_ASSIGNEE` bị từ chối, rating một lần, seed CLN-004/TEC-005 Bậc 1. 1462 test; 3 vòng thẩm định cô lập + holdout (NONE 2/39). Tài liệu: `docs/maintenance.md`.
 - [x] **Thiếu dữ liệu giao BPTN (2026-10-01):** `MISSING_INFO` do BPTN gỡ (nhập vị trí/thông tin sau khi gọi cư dân), cư
   dân vẫn tự bổ sung được; UI BPTN có hàng chờ `NEED_INFO`. 146 test xanh.
+
+## Trường MVP preparation — 2026-10-03
+- [x] Plan 02: hoàn thiện 5 đầu ra chuẩn bị local 01/10–02/10; 266 tests pass, 57 kiểm tra hồ sơ pass; user-confirmed D-01–07. Toàn kế hoạch vẫn mở vì group/runtime/online pending.
+- [ ] Như Ý tích hợp safety P0 + D-01 delta/context có version/event id; no automatic risk downgrade; chặn job/resume gỡ emergency.
+- [ ] Nghiệm thu online 4 demo + persistence/restart theo plan Notion; T16/T17/E02 sau MVP.
+- [ ] Nhóm ghi người duyệt thật D-08; không backdate/giả approval.

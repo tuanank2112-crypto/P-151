@@ -100,3 +100,9 @@ project-root/
 ├── .agents/skills/                   # [WORKSPACE SKILLS] Kỹ năng chuyên dụng cục bộ dự án
 └── docs/                             # [MODULE DOCS] CR-BPTN-03.md, maintenance.md (module engine), 01–05, data-contract, playbook
 ```
+
+## Trường MVP preparation — 2026-10-03
+- Hồ sơ 5 gói Trường: `planning/02_2026-10-03_truong-mvp-prep/plan.md`, SPEC/handoffs/reports/evidence.
+- Module docs: `docs/maintenance.md`; decisions amendment: `docs/CR-BPTN-03.md`.
+- Rules P0 độc lập: `src/maintenance/safety.py`; dữ liệu đích `seed/maintenance_cr03/`; tests `test_safety_p0.py`, `test_cr03_targets.py`.
+- User xác nhận D-01 delta + persisted structured context; D-02–07 defaults. D-08 group approval pending; chưa tích hợp engine/runtime.

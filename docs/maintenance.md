@@ -86,3 +86,9 @@ Bộ dừng an toàn: `tests/test_maintenance/data/safety_stop_sets_p0.yaml` (v�
 
 ## 9. Chưa làm (bàn giao)
 Endpoint router cho 5 method + `set_priority` (gợi ý ở `specs/00-ARCHITECTURE.md` §4.1), UI, persistence/deploy, `develop` merge, Q22 (bộ phân loại cho "bóng đèn bị cháy" ⇒ `OUT_OF_SCOPE`, chủ rules/playbook), P1 (T16/T17/E02, gộp ticket, PRI-U1/U2, LLM an toàn).
+
+## 10. Bộ nhãn CR-03 của Trường (PR #6, merge lần 2 — plan 02 Q09, 2026-10-03)
+Hồ sơ gốc: [`planning/02_2026-10-03_truong-mvp-prep/`](../planning/02_2026-10-03_truong-mvp-prep/plan.md) (scope, quyết định D-01…D-08, bốn demo, [rules safety](../planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P04-SAFETY.md), [fixture/nghiệm thu](../planning/02_2026-10-03_truong-mvp-prep/specs/TESTING-ACCEPTANCE.md)). D-01 (bổ sung mới + snapshot có cấu trúc cho LLM) là contract ĐÍCH, CHƯA code; D-02…D-07 user confirmed; D-08 nhóm pending.
+- `safety.py` độc lập của PR #6 (`assess_safety(text, previous_risk)`) KHÔNG giữ: chỉ có MỘT tầng an toàn là `assess(text, lexicon)` ở §3. Hàm `assess_safety` chỉ còn là adapter trong `tests/test_maintenance/test_safety_p0.py` (kiểm `RiskLevel`, ranh giới `RawTicket`, giữ mức cũ bằng max).
+- Bộ nhãn giữ nguyên: 62 câu trong `test_safety_p0.py`, 34 ca `seed/maintenance_cr03/safety_cases.json`, fixture đích `seed/maintenance_cr03/tickets.yaml` (startup vẫn `seed/maintenance_v1/`). Engine cao hơn nhãn ở 4 câu ⇒ ghim trong `ABOVE_LABEL` (không hạ); thấp hơn nhãn đã vá bằng từ vựng (`giật` đứng riêng ⇒ Bậc 2). Bảng đối chiếu: `planning/02_2026-10-02_merge-develop/evidence/`.
+- Lệch cơ chế còn mở (không sửa, xem `reports/R02_merge-develop-2.md`): fixture đích của Trường xếp phân loại TRƯỚC an toàn (CLN-004/TEC-005 có `playbook_id`/`proposed_department_id`) còn engine chạy 2b trước phân loại; `test_cr03_targets.py` so với baseline `maintenanceops-sim-v1.2` của `develop`, trong khi `seed/maintenance_v1/` của nhánh này là v1.3 (CR-03).

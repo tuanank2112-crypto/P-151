@@ -908,6 +908,25 @@
 - "id": "wp3d:V16"
   "text": "Hộp đèn tầng 3 tòa SIM-A bốc khói đen"
   "expect": "EMERGENCY"
+- "id": "h02:giat-alone"
+  "text": "Giật"
+  "expect": "UNCLEAR"
+- "id": "h02:giat-hanh-lang"
+  "text": "Hành lang tầng 3 tòa SIM-A bị giật khi chạm tay vịn"
+  "expect_any":
+  - "EMERGENCY"
+  - "UNCLEAR"
+- "id": "h02:giat-laundry"
+  "text": "Phòng giặt đồ tầng 2 tòa SIM-A bẩn, cần vệ sinh"
+  "expect": "NONE"
+- "id": "h02:giat-nuoc-bon-cau"
+  "text": "bồn cầu không giật nước được"
+  "expect": "NONE"
+- "id": "h02:giat-cong-tac"
+  "text": "bị giật khi chạm công tắc"
+  "expect_any":
+  - "EMERGENCY"
+  - "UNCLEAR"
 "budgets":
   "b_fp":
     "max":
