@@ -20,7 +20,7 @@
 - Đồng thời: ghi phải giữ `engine.lock`; `engine.at()` là thread-local (xem `-known-gotchas.md`).
 - Kiểm tra: `python -m pytest -q` + `python -m ruff check src tests` + `python -m ruff format --check src tests`; Postgres: `MO_TEST_DATABASE_URL=…/p151_test python -m pytest --pg -q` (chỉ docker local).
 - Planning & RFCs: Thư mục `planning/` lưu trữ các bản kế hoạch theo định dạng `[STT]_[YYYY-MM-DD]_[Ten-Ngan]` (25-35 ký tự, cố định path).
-- Plan02 (2026-10-03): Trường chuẩn bị 5 gói theo Notion; safety P0 + fixture CR03 riêng, chưa tích hợp runtime. D-01 delta/context, D02–07 user confirmed; D08 approved theo user report: leader Châm Anh, ngày 02/10 (không có giờ), ghi nhận 03/10; runtime/online pending.
+- Plan02 (2026-10-03): Trường chuẩn bị 5 gói theo Notion; safety P0 + fixture CR03 riêng, chưa tích hợp runtime. D08 approved (leader Châm Anh, 02/10, ghi 03/10). Day03 local (0ea04ad): 23 record = 17 PASS/1 FAIL/5 BLOCKED (FAIL DEMO-01-RATING; BLOCKED safety/rating-once/reopen, owner Như Ý); D3-05/06 chưa [x]; runtime/online pending.
 </project_foundation>
 
 <truong_focus>
@@ -28,7 +28,7 @@
 - Trường SỞ HỮU: nghiệp vụ, dataset/nhãn chuẩn + kịch bản eval, rules/playbook, quyết định CR (D-xx), architecture/swimlane, user test, pitch 10 slide.
 - Chủ việc khác — Trường KHÔNG sửa, chỉ giao handoff/fixture/test đích: Như Ý = engine/state machine/safety integration/proposer/LangGraph; Châm Anh = API/persistence/CI/deploy/eval runner/chi phí; Trí = UI/UX, panel Agent, AI Logs, Phoenix.
 - Đầu ra của Trường nằm ở: `seed/maintenance_cr03/`, `src/maintenance/safety.py` (rules P0 độc lập, chưa nối engine), `tests/test_maintenance/test_safety_p0.py`+`test_cr03_targets.py`, `docs/CR-BPTN-03.md`, `planning/02_*/`.
-- Việc đang mở: Day03 D3-01..07 (SPEC-P06-DAY03, kiểm thử/wording/demo, không coding runtime) → 04/10 chạy 4 demo, đối chiếu expected, ghi thiếu sót.
+- Việc đang mở: Day03 đã chạy local (D3-05/06 còn BLOCKED/FAIL; chờ người quyết ASSET-03, STOCK-04, owner reopen/rating-once) → 04/10 chạy 4 demo online, đối chiếu expected, ghi thiếu sót.
 - Chỉ tiêu 19/10 Trường phải cấp dữ liệu: safety ≥40 câu nhãn, 0 bỏ sót Bậc 1; classification ≥90% held-out; user test 3–5 người độc lập (thiếu ⇒ ghi số thật, CẤM phản hồi giả); so sánh thủ công/sản phẩm đảo thứ tự.
 - Quyết định nghiệp vụ ghi tên người duyệt + kết quả thật; chưa đồng thuận ⇒ không triển khai phần tranh luận.
 </truong_focus>

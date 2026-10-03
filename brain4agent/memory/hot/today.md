@@ -59,3 +59,10 @@
 - Kernel thêm `<truong_focus>` (chủ việc, ranh giới không sửa, chỉ tiêu 19/10); sửa nhánh `feature/chamanh` → `feature/truong`.
 - Roadmap: lịch Trường 01/10–19/10 dạng checklist (01–02/10 ✅, còn lại mở). project-intro: sửa persistence cũ (in-memory → memory|postgres), thêm mốc/nhóm, ghi CR-BPTN-01/02 không có trên nhánh này. index: router việc Trường, dataset, deliverables; map src/seed/tests.
 - Bước 0 vẫn exit 1 MODULE_NOT_FOUND (không có `../brain4agent.release`). Chỉ sửa docs não, không chạm code; chưa commit.
+
+## Day03 kết quả — 2026-10-03
+- Chạy local cô lập (MO_STORE=memory, mock, MO_JOBS_ENABLED=false), nhánh feature/truong, SHA 0ea04ad. 23 record: 17 PASS / 1 FAIL / 5 BLOCKED / 0 NOT_RUN.
+- D3-02 asset 3/3 PASS; D3-03 vật tư 4/4 PASS; D3-04 trùng 4/4 PASS; D3-05 WORD-03 PASS, WORD-01/02/04 BLOCKED; D3-06 5 PASS, 1 FAIL (DEMO-01-RATING: engine.rate ghi đè rating, engine.py:548-553), 2 BLOCKED (DEMO-04 safety chưa tích hợp). Owner Như Ý.
+- Checklist plan.md: D3-01/02/03/04/07 [x] (D3-07 chỉ là đã lập báo cáo); D3-05/06 chưa [x]. Plan chưa đóng; không tăng version; runtime/online/group-runtime gates mở.
+- Chờ người quyết: ASSET-03 (SPEC §3 vs OPERATIONS §3.2.2), STOCK-04 (STOCK_CHECK_ON_ACCEPT chỉ đặt cờ), owner reopen/rating-once. Bước 0 vẫn exit 1 (thiếu ../brain4agent.release).
+- Harness tái hiện: planning/02_2026-10-03_truong-mvp-prep/evidence/d3-06/harness.py (PYTHONPATH=repo root). Chưa commit/push.

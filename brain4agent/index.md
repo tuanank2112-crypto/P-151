@@ -89,4 +89,4 @@ project-root/
 - Rules P0 độc lập: `src/maintenance/safety.py`; dữ liệu đích `seed/maintenance_cr03/`; tests `test_safety_p0.py`, `test_cr03_targets.py`.
 - User xác nhận D-01 delta + persisted structured context; D-02–07 defaults. D-08 group approval recorded (leader Lê Thị Châm Anh, reported date 2026-10-02, recorded 2026-10-03); chưa tích hợp engine/runtime.
 
-- Ngày 03: `planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md`; 7 task còn mở, kết quả đích trong deliverables/ của cùng package.
+- Ngày 03: `planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md`; đã chạy local (17 PASS/1 FAIL/5 BLOCKED); kết quả: `deliverables/day03-summary.md`, `day03-wording.md`, `day03-results.json` của cùng package; harness `evidence/d3-06/harness.py`.

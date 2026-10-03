@@ -1,0 +1,86 @@
+{
+  "records": [
+    {
+      "case_id": "STOCK-01",
+      "task_id": "D3-03",
+      "actor_role": "BPTN",
+      "steps": [
+        "Boot in-process TestClient with forced isolated env; GET /health + effective settings (memory/mock/local/development/reset=false)",
+        "Login qa01 and bptn01; GET /api/v1/mo/tickets/SIM-TKT-TEC-001 (+events, audit)",
+        "Read simulated stock of SIM-MAT-LAMP-01 before/after (in-process repo.stock_of, read-only)"
+      ],
+      "input_ref": "seed/maintenance_v1/tickets.yaml SIM-TKT-TEC-001 (planned SIM-MAT-LAMP-01 qty 1). Chosen because catalog stock=5 >= 1 (sufficient) and it is runbook OPERATIONS 2 fixture B; SIM-TKT-TEC-004 is an alternative.",
+      "expected": "Stock sufficient -> pipeline continues to ROUTED, blocker null, department DEPT_TECHNICAL, draft exists, assignee null, no STOCK_CHECK_ON_ACCEPT (SPEC-P06 3 D3-03; OPERATIONS 2.1)",
+      "actual": "ROUTED, blocker null, department_id DEPT_TECHNICAL, draft exists, assignee_id null, flags []. material_line SIM-MAT-LAMP-01 planned 1, stock 5, SUFFICIENT; audit has LOOKUP_ASSET -> CHECK_MATERIAL_STOCK -> CREATE_DRAFT; stock before 5 after 5 (unchanged). BPTN read 200. 7/7 checks OK.",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/d3-03/s01.txt",
+        "evidence/d3-03/s01-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "STOCK-02",
+      "task_id": "D3-03",
+      "actor_role": "WAREHOUSE",
+      "steps": [
+        "Fresh process; GET SIM-TKT-TEC-003 as qa01/bptn01/kho01 (+events, audit)",
+        "kythuat01 POST /mo/tickets/SIM-TKT-TEC-003/accept while ON_HOLD (must be refused)",
+        "qa01 POST /mo/tickets/SIM-TKT-TEC-003/resume with stock=0, twice; read stock before/after"
+      ],
+      "input_ref": "seed/maintenance_v1/tickets.yaml SIM-TKT-TEC-003 (SIM-MAT-LAMP-02 planned 2, catalog stock 0)",
+      "expected": "ON_HOLD/WAITING_MATERIAL, owner WAREHOUSE, department null, draft null, not dispatched; resume while stock=0 stays ON_HOLD and does not change stock (OPERATIONS 4.1-4.2)",
+      "actual": "ON_HOLD/WAITING_MATERIAL, blocker.owner_role WAREHOUSE, resume_step 6, department_id null, draft null, assignee null; material_line planned 2 stock 0 INSUFFICIENT. BPTN and WAREHOUSE read 200; department accept refused with 4xx. QA resume x2: 200, still ON_HOLD/WAITING_MATERIAL, dept/draft null; stock 0 -> 0. 11/11 checks OK. actor_role=WAREHOUSE is the owner of the blocker; the resume was triggered by qa01 (QA_INTERNAL, not in the schema enum).",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/d3-03/s02.txt",
+        "evidence/d3-03/s02-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "STOCK-03",
+      "task_id": "D3-03",
+      "actor_role": "WAREHOUSE",
+      "steps": [
+        "Fresh process; GET SIM-TKT-TEC-003 as qa01 -> ON_HOLD",
+        "Negatives: bptn01 POST /mo/warehouse/stock/SIM-MAT-LAMP-02 {qty:1}; kho01 {qty:0}; kho01 on SIM-MAT-NOPE-99 {qty:1}",
+        "kho01 POST /mo/warehouse/stock/SIM-MAT-LAMP-02 {qty:1} (receipt #1), read stock before/after, GET ticket/events/audit",
+        "kho01 same POST {qty:1} (receipt #2), read stock before/after, GET ticket/events/audit",
+        "qa01 POST /mo/tickets/SIM-TKT-TEC-003/resume once more"
+      ],
+      "input_ref": "seed/maintenance_v1/tickets.yaml SIM-TKT-TEC-003 (SIM-MAT-LAMP-02 planned 2, stock 0); bodies {\"qty\":1} then {\"qty\":1}",
+      "expected": "Receipt #1: stock 1, still ON_HOLD, not dispatched. Receipt #2: stock 2, auto re-run from asset lookup (audit lookup->stock->route), ROUTED, dispatched only when sufficient. Extra resume: no duplicate dispatch. Negatives: wrong role 403, qty=0 422, unknown item 404 (OPERATIONS 4.3-4.5)",
+      "actual": "Stock before/after: negatives 0 -> 0 (unchanged); receipt #1 0 -> 1 (200), ticket still ON_HOLD/WAITING_MATERIAL, dept/draft null, audit unchanged (no re-run); receipt #2 1 -> 2 (200), response list contains SIM-TKT-TEC-003, ticket ROUTED, blocker null, DEPT_TECHNICAL, draft exists; audit appended LOOKUP_ASSET -> CHECK_MATERIAL_STOCK -> CREATE_DRAFT with real timestamp 2026-10-03T11:06:18+07:00 (events RECEIVED, ROUTED added). Extra resume: 200, ROUTED unchanged, events count 4 -> 4, ROUTED events 1 -> 1. Negatives: 403 / 422 / 404. Re-run starts at step 6 (asset lookup): API docstring says step 7 (src/api/routers/maintenance.py:550) but code uses resume_step=6 (src/maintenance/engine.py:1587, 1922); actual recorded, expected not changed. 17/17 checks OK.",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/d3-03/s03.txt",
+        "evidence/d3-03/s03-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "STOCK-04",
+      "task_id": "D3-03",
+      "actor_role": "DEPARTMENT",
+      "steps": [
+        "Fresh process; GET SIM-TKT-TEC-006 as qa01 (+events, audit); GET as kythuat01",
+        "Read simulated stock of SIM-MAT-STARTER-01 (catalog null = UNKNOWN)",
+        "kythuat01 POST /mo/tickets/SIM-TKT-TEC-006/accept; read flags after"
+      ],
+      "input_ref": "seed/maintenance_v1/tickets.yaml SIM-TKT-TEC-006 (SIM-MAT-STARTER-01 planned 1, catalog simulated_stock_qty null). Existing fixture, catalog/DB not modified.",
+      "expected": "Stock UNKNOWN does not stop the ticket: ROUTED, department DEPT_TECHNICAL, draft exists, flag STOCK_CHECK_ON_ACCEPT (D-05)",
+      "actual": "ROUTED, blocker null, DEPT_TECHNICAL, draft exists, flags ['STOCK_CHECK_ON_ACCEPT'], material_line SIM-MAT-STARTER-01 planned 1 stock null UNKNOWN; stock before None after None. Acceptance condition = department checks stock itself when accepting (flag set at src/maintenance/engine.py:1916-1919; enum src/maintenance/enums.py:76). Source does NOT process the flag at accept: accept is a plain ROUTED->IN_PROGRESS transition (src/maintenance/engine.py:709-711); accept returned 200 -> IN_PROGRESS and the flag stays after accept; no other consumer in src/ (grep). So only the flag is machine-verified; the check-on-accept step is a human/UI instruction, runtime/online not accepted. 7/7 checks OK.",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/d3-03/s04.txt",
+        "evidence/d3-03/s04-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    }
+  ]
+}

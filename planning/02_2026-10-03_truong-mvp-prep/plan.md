@@ -18,6 +18,8 @@
 
 - 2026-10-03T10:43:10+07:00: lập 7 task ngày 03 theo Notion; Trường kiểm thử/nghiệp vụ/wording/demo, không mở rộng coding runtime safety. Các task chưa được thực hiện.
 
+- 2026-10-03T11:20:00+07:00: thực hiện Day03 theo SPEC-P06-DAY03 bằng 6 worker (H06–H12, R06–R12; D3-01/05/07 Haiku 🟢, D3-02/03/04/06 Sonnet 🟠). Kết quả local cô lập, SHA 0ea04adedd023654947e2e97e645043f0ba89159: 23 record = 17 PASS / 1 FAIL (rating-once, Như Ý) / 5 BLOCKED (safety/wording, Như Ý) / 0 NOT_RUN. D3-05 bị trả 🔁 một lần (evidence_refs, mốc giờ, phân loại BLOCKED) rồi ✅. Không đổi contract/oracle; hai điểm lệch chờ người quyết: ASSET-03 (SPEC vs OPERATIONS), STOCK-04 (cờ chỉ đặt). Không đổi trạng thái runtime/online gate.
+
 ### Quyết định bị thay thế
 
 - Trạng thái D-08 PENDING ở nhật ký và reports trước bản ghi này là lịch sử đã được thay thế bởi APPROVED; giữ nguyên report và evidence cũ.
@@ -65,12 +67,14 @@ Không đóng toàn kế hoạch khi runtime/online chưa đạt. Group gate đ�
 
 ## Checklist ngày 03/10 — Trường
 
-Hợp đồng: [SPEC-P06-DAY03](specs/SPEC-P06-DAY03.md). Các task dưới đây mới lập, chưa thực hiện. Tổng thời gian thao tác dự kiến 4 giờ 25 phút, chưa tính chờ tích hợp.
+Hợp đồng: [SPEC-P06-DAY03](specs/SPEC-P06-DAY03.md). Đã thực hiện ngày 2026-10-03; xem kết quả từng task bên dưới.
 
-- [ ] D3-01 🟢: chuẩn bị phiên bản/môi trường kiểm tra — §3 D3-01.
-- [ ] D3-02 🟠: kiểm tra asset, 3 ca — §3 D3-02.
-- [ ] D3-03 🟠: kiểm tra vật tư/tồn kho, 4 ca — §3 D3-03.
-- [ ] D3-04 🟠: kiểm tra trùng cơ bản, 4 ca — §3 D3-04.
-- [ ] D3-05 🟢: rà wording/quyền, 4 vai trò — §3 D3-05.
-- [ ] D3-06 🟠: chạy thử 4 nhóm script — §3 D3-06.
-- [ ] D3-07 🟢: tổng hợp lỗi/phụ thuộc và bàn giao ngày 04 — §3 D3-07.
+- [x] D3-01 🟢: manifest local, SHA 0ea04ad…, hub thiếu (Bước 0 exit 1) — [R06](reports/R06_day03-env.md).
+- [x] D3-02 🟠: asset 3 ca, 3 PASS — [R07](reports/R07_day03-asset.md); chờ người quyết ASSET-03.
+- [x] D3-03 🟠: vật tư 4 ca, 4 PASS — [R08](reports/R08_day03-stock.md); STOCK-04 chờ người quyết điều kiện nhận việc.
+- [x] D3-04 🟠: trùng cơ bản 4 ca, 4 PASS — [R09](reports/R09_day03-dup.md).
+- [ ] D3-05 🟢: rà wording 4 vai đã lập — [R10](reports/R10_day03-wording.md); WORD-03 PASS, WORD-01/02/04 BLOCKED (safety/rating-once/reopen chưa tích hợp, Như Ý) ⇒ chưa đạt phần kiểm thử.
+- [ ] D3-06 🟠: 4 nhóm script chạy thử — [R11](reports/R11_day03-demos.md); 5 PASS, 1 FAIL (rating-once, Như Ý), 2 BLOCKED (DEMO-04 safety, Như Ý) ⇒ chưa đạt.
+- [x] D3-07 🟢: tổng hợp và bàn giao ngày 04 — [R12](reports/R12_day03-summary.md); chỉ là đã lập báo cáo, không nghĩa chức năng đạt.
+
+Đầu ra: [results](deliverables/day03-results.json) · [summary](deliverables/day03-summary.md) · [wording](deliverables/day03-wording.md). Root đo lại: [validate](evidence/root/day03-results-validate.txt), [rerun g1r/g4a/g4b](evidence/root/day03-rerun-g1r.txt). Runtime/online gates vẫn mở.
