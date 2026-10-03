@@ -1,0 +1,2 @@
+2026-10-03T11:32:49+07:00 python harness.py g4a exit=1
+checks_total=10 ok=2 mismatch=8

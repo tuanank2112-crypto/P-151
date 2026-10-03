@@ -8,5 +8,6 @@ def get_llm() -> ChatOpenAI:
     return ChatOpenAI(
         model=settings.model_name,
         api_key=settings.openai_api_key,
+        base_url=settings.openai_base_url or None,  # e.g. OpenRouter; empty = api.openai.com
         temperature=settings.llm_temperature,
     )

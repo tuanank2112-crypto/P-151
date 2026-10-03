@@ -1,0 +1,7 @@
+Dataset source: seed/maintenance_v1/tickets.yaml
+Total tickets: 12 (6 cleaning, 6 technical)
+Dataset version: maintenanceops-sim-v1.2
+Fixture date: 2026-09-27
+Sample tickets: SIM-TKT-CLN-001, SIM-TKT-CLN-002, SIM-TKT-TEC-001, SIM-TKT-TEC-002
+
+LLM mode default: mock (set via LLM_MODE=mock environment variable)

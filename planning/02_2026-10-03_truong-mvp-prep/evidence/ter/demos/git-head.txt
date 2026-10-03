@@ -1,0 +1,4 @@
+worktree HEAD: 92649a6152737154cca606f3ce94d3f0ec0e0273
+branch:  (empty = detached)
+describe: * (no branch)   remotes/origin/feature/nhuy-safety-routes 
+2026-10-03T12:39:54+07:00

@@ -1,0 +1,86 @@
+{
+  "records": [
+    {
+      "case_id": "STOCK-01",
+      "task_id": "D3-03",
+      "actor_role": "BPTN",
+      "steps": [
+        "Fresh python process (in-process TestClient), env forced: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1 PYTHONPATH=repo; GET /health 200 + effective settings confirmed before mutation (harness.py s01)",
+        "qa01 GET SIM-TKT-TEC-001 (+events,audit); bptn01 GET; read stock SIM-MAT-LAMP-01 before/after"
+      ],
+      "input_ref": "fixture SIM-TKT-TEC-001, planned SIM-MAT-LAMP-01 qty 1, catalog stock 5 (sufficient); OPERATIONS 4",
+      "expected": "stock sufficient -> proceeds to ROUTED, no STOCK_CHECK_ON_ACCEPT flag, stock unchanged",
+      "actual": "ROUTED, blocker null, DEPT_TECHNICAL, draft present, assignee null, flags []; material line LAMP-01 planned 1 stock 5 SUFFICIENT; stock before 5 after 5; BPTN read 200. 7/7 checks OK.",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/bis/core/s01.txt",
+        "evidence/bis/core/s01-exit.txt",
+        "evidence/bis/core/git-head.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "STOCK-02",
+      "task_id": "D3-03",
+      "actor_role": "WAREHOUSE",
+      "steps": [
+        "Fresh python process (in-process TestClient), env forced: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1 PYTHONPATH=repo; GET /health 200 + effective settings confirmed before mutation (harness.py s02)",
+        "GET SIM-TKT-TEC-003 as qa01/bptn01/kho01",
+        "kythuat01 accept while ON_HOLD; qa01 resume twice with stock=0"
+      ],
+      "input_ref": "fixture SIM-TKT-TEC-003 (SIM-MAT-LAMP-02 planned 2, stock 0); OPERATIONS 4.1-4.2",
+      "expected": "ON_HOLD/WAITING_MATERIAL owner WAREHOUSE, department and draft null, not assigned; resume at stock=0 stays ON_HOLD",
+      "actual": "ON_HOLD, blocker WAITING_MATERIAL owner WAREHOUSE resume_step 6, department null, draft null, assignee null; line planned 2 stock 0 INSUFFICIENT; dept accept refused 4xx; resume x2 200 still ON_HOLD; stock 0 before and after. 11/11 checks OK.",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/bis/core/s02.txt",
+        "evidence/bis/core/s02-exit.txt",
+        "evidence/bis/core/git-head.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "STOCK-03",
+      "task_id": "D3-03",
+      "actor_role": "WAREHOUSE",
+      "steps": [
+        "Fresh python process (in-process TestClient), env forced: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1 PYTHONPATH=repo; GET /health 200 + effective settings confirmed before mutation (harness.py s03)",
+        "negatives: bptn01 POST /mo/warehouse/stock/SIM-MAT-LAMP-02 {qty:1}; kho01 {qty:0}; kho01 SIM-MAT-NOPE-99",
+        "kho01 POST {qty:1} (#1) then {qty:1} (#2), reading stock before/after each; GET ticket/events/audit; qa01 resume again"
+      ],
+      "input_ref": "fixture SIM-TKT-TEC-003, item SIM-MAT-LAMP-02 (need 2, stock 0); OPERATIONS 4.3-4.5",
+      "expected": "each receipt +1; after #1 still ON_HOLD (not dispatched); after #2 rerun from asset (lookup->stock->route) -> ROUTED, dispatched only when sufficient; resume again no duplicate dispatch; wrong role 403, qty=0 422, unknown item 404",
+      "actual": "Stock before/after: negatives 0->0; receipt #1 0->1 (200) ticket still ON_HOLD/WAITING_MATERIAL, dept/draft null; receipt #2 1->2 (200) ticket ROUTED, blocker null, DEPT_TECHNICAL, draft present; audit last LOOKUP_ASSET precedes last CHECK_MATERIAL_STOCK (rerun from asset); resume keeps ROUTED, ROUTED events and total events unchanged; negatives 403/422/404; final stock 2. 17/17 checks OK.",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/bis/core/s03.txt",
+        "evidence/bis/core/s03-exit.txt",
+        "evidence/bis/core/git-head.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "STOCK-04",
+      "task_id": "D3-03",
+      "actor_role": "DEPARTMENT",
+      "steps": [
+        "Fresh python process (in-process TestClient), env forced: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1 PYTHONPATH=repo; GET /health 200 + effective settings confirmed before mutation (harness.py s04)",
+        "qa01 + kythuat01 GET SIM-TKT-TEC-006; kythuat01 POST accept; read stock SIM-MAT-STARTER-01 before/after"
+      ],
+      "input_ref": "fixture SIM-TKT-TEC-006, item SIM-MAT-STARTER-01 (catalog stock null = UNKNOWN); OPERATIONS 4; D-05",
+      "expected": "UNKNOWN stock does not stop: ROUTED with flag STOCK_CHECK_ON_ACCEPT (department checks stock when accepting)",
+      "actual": "ROUTED, blocker null, DEPT_TECHNICAL, draft present, flags [STOCK_CHECK_ON_ACCEPT]; line planned 1 stock null UNKNOWN; department sees flag; accept 200 -> IN_PROGRESS (no stock gate at accept), flag kept; stock before None after None. Source sets the flag at src/maintenance/engine.py:2506-2508 (enum enums.py:128); no code gate on accept. 7/7 checks OK.",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/bis/core/s04.txt",
+        "evidence/bis/core/s04-exit.txt",
+        "evidence/bis/core/git-head.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    }
+  ]
+}

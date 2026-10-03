@@ -1,0 +1,8 @@
+# R-02
+{'CLN-001': ('MEDIUM', 'PRI-M2'), 'CLN-002': ('MEDIUM', 'PRI-M2'), 'CLN-003': ('None', None), 'CLN-004': ('None', None), 'CLN-005': ('LOW', 'PRI-L1'), 'CLN-006': ('MEDIUM', 'PRI-M2'), 'TEC-001': ('HIGH', 'PRI-H1'), 'TEC-002': ('HIGH', 'PRI-H1'), 'TEC-003': ('HIGH', 'PRI-H1'), 'TEC-004': ('HIGH', 'PRI-H1'), 'TEC-005': ('None', None), 'TEC-006': ('HIGH', 'PRI-H1')}
+# G-04 + lock
+GuardError GUARD_FAILED
+rating 5
+set_priority uses self._mutate(: True
+# G-05
+12 4 []

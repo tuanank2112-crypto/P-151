@@ -1,0 +1,141 @@
+{
+  "current_version": "1.1.2",
+  "brain_template_version": "1.7.1",
+  "system_status": "active",
+  "last_verification": {
+    "timestamp": "2026-10-03T13:39:09.000Z",
+    "grade": "develop = nhuy-safety-routes + feature/chamanh (v1.1.2): 1641 pytest pass (29 deselected), ruff src+tests clean"
+  },
+  "active_plans_completed": 2,
+  "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
+  "engine_version": "1.13.1",
+  "lang": {
+    "rules": "vi",
+    "reply": {
+      "ngon_ngu": "",
+      "xung_ho": {
+        "goi_user": "",
+        "tu_xung": ""
+      }
+    }
+  },
+  "hub": {
+    "path": ""
+  },
+  "roles": {
+    "family": "",
+    "profiles": {}
+  },
+  "owner": {
+    "name": "",
+    "license": ""
+  },
+  "active_spec": "docs/CR-BPTN-03.md",
+  "working_branch": "feature/nhuy-cr03-p0",
+  "code_baseline": "6265436 (develop)",
+  "last_benchmark": {
+    "pytest": "1462 passed, 0 skip",
+    "safety_stop_sets": "1065 green",
+    "false_alarm_budget": {
+      "b_fp": "EM 0 / UNCLEAR 4",
+      "jx_negfp": "EM 0",
+      "b_fp2": "EM 3"
+    },
+    "holdout_none": "2/39",
+    "assess_24kb_seconds": 0.28
+  },
+  "last_sync": "2026-10-02T13:09:52.176Z",
+  "next_step": "router/UI for safety actions (Châm Anh/Trí); CR-03 P1 + LangGraph; fix Actions billing",
+  "active_plan": {
+    "id": "02_2026-10-03_truong-mvp-prep",
+    "status": "in_progress",
+    "team_plan_url": "https://storm-jade-f74.notion.site/K-ho-ch-MaintenanceOps-MVP-3e43b68a924d80d7a81fe0579e1eddb9",
+    "deadlines": {
+      "mvp_online": "2026-10-04T23:59:00+07:00",
+      "feature_freeze": "2026-10-12T21:00:00+07:00",
+      "final_handoff": "2026-10-19T23:59:00+07:00"
+    },
+    "group_approval": "approved",
+    "runtime_integration": "pending",
+    "online_acceptance": "pending",
+    "local_outputs": "verified",
+    "approval": {
+      "decision": "approved",
+      "approver": "Lê Thị Châm Anh",
+      "role": "leader",
+      "approved_date": "2026-10-02",
+      "approved_at": null,
+      "date_precision": "day",
+      "recorded_date": "2026-10-03",
+      "recorded_at": "2026-10-03T10:25:01+07:00",
+      "source": "user report in this session",
+      "reference_commit": "a5e2705cf2ad1f57a896f5d3baf2f020ca96d45d",
+      "reference_pr": 6,
+      "scope": "MVP 04/10 and D-01-D-07",
+      "external_minutes_url": null,
+      "chronology_note": "Reference commit created after the reported approval date; reference mapping confirmed by user on 2026-10-03."
+    },
+    "day03": {
+      "status": "closed_local_d01_out_of_mvp",
+      "recorded_at": "2026-10-03",
+      "sha": "f46a53c607a0ac9a0038346980abf26419206d57",
+      "results": {
+        "total": 23,
+        "pass": 17,
+        "fail": 1,
+        "blocked": 5,
+        "not_run": 0
+      },
+      "task_ids": [
+        "D3-01",
+        "D3-02",
+        "D3-03",
+        "D3-04",
+        "D3-05",
+        "D3-06",
+        "D3-07"
+      ],
+      "completed": 7,
+      "runtime_changes_allowed": false,
+      "spec": "planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md"
+    }
+  },
+  "last_session": {
+    "date": "2026-10-03",
+    "timestamp": "2026-10-03T09:50:39+07:00",
+    "boot_exit": 1,
+    "agents_requested": 5,
+    "baseline_tests": {
+      "passed": 185,
+      "deselected": 20,
+      "exit": 0
+    },
+    "baseline_format": "2 pre-existing files need formatting",
+    "local_verification": {
+      "pytest": {
+        "passed": 266,
+        "deselected": 20,
+        "exit": 0
+      },
+      "safety_tests": 72,
+      "target_tests": 9,
+      "package_checks": {
+        "passed": 57,
+        "failed": 0,
+        "skip": 0,
+        "exit": 0
+      },
+      "lint_exit": 0,
+      "new_files_format_exit": 0,
+      "full_format_exit": 1,
+      "full_format_preexisting_files": [
+        "src/api/routers/maintenance.py",
+        "src/maintenance/ai_logger.py"
+      ],
+      "syntax": "passed",
+      "typechecker": "not configured",
+      "postgres": "not run this session"
+    },
+    "local_work_packages_completed": 5
+  }
+}

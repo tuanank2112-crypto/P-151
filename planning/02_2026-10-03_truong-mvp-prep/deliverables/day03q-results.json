@@ -1,0 +1,78 @@
+{
+  "schema_version": "day03-1",
+  "observed_at": "2026-10-03T20:52:50+07:00",
+  "branch": "origin/develop",
+  "commit": "f46a53c607a0ac9a0038346980abf26419206d57",
+  "environment": "local",
+  "base_url": null,
+  "records": [
+    {
+      "case_id": "WORD-04",
+      "task_id": "D3-05",
+      "actor_role": "BQL",
+      "steps": [
+        "Root đọc src/web/app.js trên develop f46a53c: mục Bậc 1 chỉ gọi /bql/tickets/{id}/emergency/close và /emergency/downgrade (app.js:1465, 1474, 1497, 1506); 0 chỗ .catch(() => api(...)), 0 chuỗi emergency-close",
+        "Root chạy lại harness tgen: POST /bql/tickets/{id}/close với ticket khẩn cấp → 409 (2/2 check)",
+        "Root chạy lại t1close 13/13, t1down 13/13, neg403 34/34"
+      ],
+      "input_ref": "src/web/app.js trên develop f46a53c; engine fix ff4f4ca (Châm Anh)",
+      "expected": "UI BQL chỉ có hai hành động khẩn cấp qua route emergency riêng; lỗi hiện ra, không đóng bằng route khác; route đóng thường từ chối ticket khẩn cấp",
+      "actual": "app.js:1455-1474 tiêu đề 'SỰ CỐ KHẨN CẤP BẬC 1 (Chờ BQL can thiệp)', nút 'Đã xử lý, đóng khẩn cấp' và 'Báo nhầm, hạ xuống BPTN' gọi đúng route emergency, không còn fallback; backend /close trả 409 INVALID_TRANSITION cho VERIFYING+EMERGENCY_PENDING_BQL (commit ff4f4ca). Chưa đo UI render và chưa đo quyền API ở gói rà wording này.",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/root/day03q-word04-grep.txt",
+        "evidence/root/day03q-rerun-tgen.txt",
+        "evidence/root/day03q-rerun-t1close.txt",
+        "evidence/root/day03q-rerun-neg403.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DEMO-04-D01-A-AFTER-CONFIRM-SAFE",
+      "task_id": "D3-06",
+      "actor_role": "RESIDENT",
+      "steps": [
+        "In-process TestClient, fresh interpreter per case; env forced: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1; cwd/PYTHONPATH = isolated worktree HEAD 92649a6152737154cca606f3ce94d3f0ec0e0273 (detached, origin/feature/nhuy-safety-routes, PR #10); /health 200 + effective settings asserted before mutation",
+        "Ingest Bậc 2; bptn01 CONFIRM_SAFE -> 200",
+        "cudan01 POST /resident/tickets/{id}/additions {'Tòa SIM-B, đèn có khói và mùi khét'} -> HTTP 409 (additions route only accepts NEED_INFO)",
+        "read ticket: VERIFYING/OUT_OF_SCOPE, not emergency"
+      ],
+      "input_ref": "OPERATIONS 5.4 A",
+      "expected": "After human confirm-safe, new hazard content must re-run safety; clearance valid for old snapshot only",
+      "actual": "Delta cannot be submitted via any route (add_resident_info requires NEED_INFO) -> 409; no re-run; state VERIFYING/OUT_OF_SCOPE. Engine has _safety_scope_text (post-clearance delta) but it is unreachable by API; no snapshot field is exposed.",
+      "result": "BLOCKED",
+      "evidence_refs": [
+        "evidence/root/day03q-rerun-d01a.txt",
+        "evidence/ter/demos/d01a.txt",
+        "evidence/ter/demos/d01a-exit.txt",
+        "evidence/ter/demos/git-head.txt"
+      ],
+      "issue_owner": "Như Ý",
+      "block_reason": "No API/engine contract accepts post-clearance additions (resident additions only in NEED_INFO) and no delta/snapshot output to measure; OPERATIONS 5.4 A forbids DB tampering. | 2026-10-03 người dùng chốt D-01 (delta + snapshot) NGOÀI phạm vi MVP 04/10: record giữ BLOCKED để minh bạch, không dùng làm điều kiện tick D3-06."
+    },
+    {
+      "case_id": "DEMO-04-D01-C-DELTA-ON-EMERGENCY",
+      "task_id": "D3-06",
+      "actor_role": "RESIDENT",
+      "steps": [
+        "In-process TestClient, fresh interpreter per case; env forced: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1; cwd/PYTHONPATH = isolated worktree HEAD 92649a6152737154cca606f3ce94d3f0ec0e0273 (detached, origin/feature/nhuy-safety-routes, PR #10); /health 200 + effective settings asserted before mutation",
+        "Ingest Bậc 1",
+        "cudan01 additions {'Ở tầng 2 hành lang tòa SIM-B, hiện không thấy khói'} -> HTTP 409",
+        "read ticket: unchanged VERIFYING/EMERGENCY_PENDING_BQL"
+      ],
+      "input_ref": "OPERATIONS 5.4 C",
+      "expected": "Delta accepted, risk not auto-lowered, BQL decides; snapshot/source_quote/delta-only input measured",
+      "actual": "Additions route rejects the delta (409, additions only in NEED_INFO) so the delta contract is not exercised; state unchanged (trivially not lowered). Delta/snapshot not measurable.",
+      "result": "BLOCKED",
+      "evidence_refs": [
+        "evidence/root/day03q-rerun-d01c.txt",
+        "evidence/ter/demos/d01c.txt",
+        "evidence/ter/demos/d01c-exit.txt",
+        "evidence/ter/demos/git-head.txt"
+      ],
+      "issue_owner": "Như Ý",
+      "block_reason": "Delta/snapshot contract for emergency tickets not implemented/exposed; cannot measure risk-not-lowered via a delta, only that the route refuses it. | 2026-10-03 người dùng chốt D-01 (delta + snapshot) NGOÀI phạm vi MVP 04/10: record giữ BLOCKED để minh bạch, không dùng làm điều kiện tick D3-06."
+    }
+  ]
+}

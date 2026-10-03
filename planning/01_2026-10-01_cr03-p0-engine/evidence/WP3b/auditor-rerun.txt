@@ -1,0 +1,17 @@
+# a_text
+FAIL A4 double neg -> UNCLEAR (exp EMERGENCY) | [('S-04', 'UNCLEAR', 'B-02D')]
+BAD 1
+# a_text2
+BAD 0
+# a_fuzz
+combos 900 issues 0
+# a_dos (original: the 6 KB report is now rejected, so the script has no 'big' timing)
+                                                                                                       ~~~~^^^^^^^
+KeyError: 'big'
+# dos2 (assess 24 KB, receive 5000/5001)
+assess 24KB one clause     24027 chars 0.310s -> EMERGENCY
+assess 24KB many clauses   25228 chars 0.163s -> EMERGENCY
+assess 24KB no signal      24050 chars 0.122s -> NONE
+receive 5000 chars 0.044s status ROUTED
+receive 5001 chars: ('ValidationError', None)
+receive 6027 chars: ('ValidationError', None)
