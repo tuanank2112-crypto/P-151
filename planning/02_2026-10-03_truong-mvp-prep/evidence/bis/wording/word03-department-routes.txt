@@ -1,0 +1,38 @@
+Evidence for WORD-03 DEPARTMENT workflow routes audit
+Observed at: 2026-10-03T11:33:39+07:00
+Branch: feature/truong
+Commit: cd83f1148e256bb34b0b26d80c16ec7011acb3db
+Environment: code review (routes inspection)
+
+=== DEPARTMENT ENDPOINTS (unchanged from D-08) ===
+File: src/api/routers/maintenance.py
+
+✅ Line 442: POST /tickets/{ticket_id}/accept
+   → ROUTED → IN_PROGRESS (only correct department via role guard)
+
+✅ Line 478: POST /tickets/{ticket_id}/checklist/{template_item_id}
+   body: {status, note}
+   → Checklist items per template (CLN-CHK-01..03 or TEC-CHK-01..03)
+
+✅ Line 491: POST /tickets/{ticket_id}/materials/{item_code}
+   body: {issued_qty, used_qty, variance_reason}
+   → Materials line items (SIM-MAT-LAMP-01, etc)
+
+✅ Line 503: POST /tickets/{ticket_id}/evidence
+   body: {requirement_id, evidence_type, content_or_metadata, readability_status}
+   → Evidence per requirement (CLN-EVD-PROCESSING-NOTE, TEC-EVD-RESULT-NOTE)
+
+✅ Line 508: POST /tickets/{ticket_id}/photos
+   multipart files: files={<image files>}
+   → Execution photos (metadata or actual files)
+
+✅ Line 536: POST /tickets/{ticket_id}/complete
+   → IN_PROGRESS → READY_FOR_REVIEW (readiness check: all_pass or failing_items)
+
+All endpoints checked:
+- Role guard: only DEPARTMENT role (not BPTN, not agent) ✅
+- No auto-assignment of assignee_id (remains null) ✅
+- No auto-completion without full draft ✅
+- Wording correct: workflow matches CR-03 §5.1 and playbook
+
+Status: PASS - No changes from D3-05 day03 audit. All 6 DEPARTMENT actions present and guarded correctly.

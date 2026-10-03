@@ -20,6 +20,8 @@
 
 - 2026-10-03T11:20:00+07:00: thực hiện Day03 theo SPEC-P06-DAY03 bằng 6 worker (H06–H12, R06–R12; D3-01/05/07 Haiku 🟢, D3-02/03/04/06 Sonnet 🟠). Kết quả local cô lập, SHA 0ea04adedd023654947e2e97e645043f0ba89159: 23 record = 17 PASS / 1 FAIL (rating-once, Như Ý) / 5 BLOCKED (safety/wording, Như Ý) / 0 NOT_RUN. D3-05 bị trả 🔁 một lần (evidence_refs, mốc giờ, phân loại BLOCKED) rồi ✅. Không đổi contract/oracle; hai điểm lệch chờ người quyết: ASSET-03 (SPEC vs OPERATIONS), STOCK-04 (cờ chỉ đặt). Không đổi trạng thái runtime/online gate.
 
+- 2026-10-03: Day03-bis trên commit cd83f11 (merge develop e32e014; pytest 1600 passed/29 deselected, ruff đạt): 23 record = 19 PASS / 4 BLOCKED. DEMO-01-RATING FAIL→PASS, WORD-01 BLOCKED→PASS; DEMO-04 và WORD-02/04 vẫn BLOCKED (engine có method safety nhưng chưa có route API). Kết quả Day03 SHA 0ea04ad giữ nguyên làm lịch sử. Xem [day03bis-summary](deliverables/day03bis-summary.md), H13–H15/R13–R15.
+
 ### Quyết định bị thay thế
 
 - Trạng thái D-08 PENDING ở nhật ký và reports trước bản ghi này là lịch sử đã được thay thế bởi APPROVED; giữ nguyên report và evidence cũ.
@@ -76,5 +78,7 @@ Hợp đồng: [SPEC-P06-DAY03](specs/SPEC-P06-DAY03.md). Đã thực hiện ng�
 - [ ] D3-05 🟢: rà wording 4 vai đã lập — [R10](reports/R10_day03-wording.md); WORD-03 PASS, WORD-01/02/04 BLOCKED (safety/rating-once/reopen chưa tích hợp, Như Ý) ⇒ chưa đạt phần kiểm thử.
 - [ ] D3-06 🟠: 4 nhóm script chạy thử — [R11](reports/R11_day03-demos.md); 5 PASS, 1 FAIL (rating-once, Như Ý), 2 BLOCKED (DEMO-04 safety, Như Ý) ⇒ chưa đạt.
 - [x] D3-07 🟢: tổng hợp và bàn giao ngày 04 — [R12](reports/R12_day03-summary.md); chỉ là đã lập báo cáo, không nghĩa chức năng đạt.
+
+Day03-bis (SHA cd83f11): [summary](deliverables/day03bis-summary.md) · [results](deliverables/day03bis-results.json); D3-05/06 vẫn chưa [x] vì WORD-02/04, DEMO-04 BLOCKED.
 
 Đầu ra: [results](deliverables/day03-results.json) · [summary](deliverables/day03-summary.md) · [wording](deliverables/day03-wording.md). Root đo lại: [validate](evidence/root/day03-results-validate.txt), [rerun g1r/g4a/g4b](evidence/root/day03-rerun-g1r.txt). Runtime/online gates vẫn mở.
