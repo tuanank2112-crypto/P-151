@@ -1,0 +1,7 @@
+safety_confirm_safe lock=True transition_or_mutate=True
+safety_escalate lock=True transition_or_mutate=True
+safety_request_info lock=True transition_or_mutate=True
+emergency_downgrade lock=True transition_or_mutate=True
+emergency_close lock=True transition_or_mutate=True
+violations=0
+EXIT=0

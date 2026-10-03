@@ -38,5 +38,11 @@ def public_message(status: TicketStatus, reason: ReasonCode | None = None, **val
     return template.format(**{key: _fmt(value) for key, value in values.items()})
 
 
+def safety_info_message(fields: str) -> str:
+    """NEED_INFO raised by the safety layer (T06): only the resident's answer moves it, so the ordinary MISSING_INFO
+    wording ("BPTN sẽ liên hệ bạn", f1c6ebf) does not apply (plan 02 Q04)."""
+    return _templates()["safety_info_message"].format(fields=fields)
+
+
 def overdue_eta_message(eta: datetime) -> str:
     return _templates()["overdue_eta_message"].format(eta=_fmt(eta))

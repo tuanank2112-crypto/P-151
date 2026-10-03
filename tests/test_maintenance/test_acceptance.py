@@ -205,18 +205,36 @@ def test_08_only_bql_closes_or_cancels(fresh, actor, target):
     assert fresh.transition(tid, target, BQL, **reason).ticket.status == target
 
 
-def test_09_reopen_window(fresh, clock):
-    early = report(fresh, CLEANING)
-    late = report(fresh, LIGHTING)
-    for tid in (early, late):
-        to_ready(fresh, tid)
-        fresh.close(tid, BQL)
-    clock.advance(days=6)
-    assert fresh.reopen(early, "SIM-ACTOR-RESIDENT-01", note="Vẫn còn rác").ticket.status == "READY_FOR_REVIEW"
-    clock.advance(days=2)
+def test_09_no_reopen_and_closure_kind(fresh, clock):
+    """CR-BPTN-03 §4.3 / AC-15: a closed ticket cannot be reopened; closing records closure_kind=NORMAL."""
+    tid = report(fresh, CLEANING)
+    to_ready(fresh, tid)
+    case = fresh.close(tid, BQL)
+    assert case.ticket.closure_kind == "NORMAL"
+    with pytest.raises(InvalidTransitionError):
+        fresh.reopen(tid, "SIM-ACTOR-RESIDENT-01", note="Vẫn còn rác")
+    assert fresh.get(tid).ticket.status == "CLOSED"
+    assert resident_view(fresh, fresh.get(tid), clock.now).allowed_actions == ["RATE"]
+
+
+def test_15_rating_only_once(fresh):
+    """AC-15, CR-03 §11: a second rating is a GuardError and the first one stays."""
+    tid = report(fresh, CLEANING)
+    to_ready(fresh, tid)
+    fresh.close(tid, BQL)
+    assert fresh.rate(tid, "SIM-ACTOR-RESIDENT-01", 5).ticket.rating == 5
     with pytest.raises(GuardError):
-        fresh.reopen(late, "SIM-ACTOR-RESIDENT-01")
-    assert fresh.get(late).ticket.status == "CLOSED"
+        fresh.rate(tid, "SIM-ACTOR-RESIDENT-01", 4)
+    case = fresh.get(tid)
+    assert case.ticket.rating == 5 and [a.action for a in case.audit].count("RATE_TICKET") == 1
+
+
+def test_15_emergency_closed_ticket_can_be_rated_once(engine):
+    """AC-15: an emergency-closed ticket accepts exactly one rating from its resident."""
+    engine.emergency_close("SIM-TKT-TEC-005", BQL, note="Đã cắt điện hộp đèn")
+    assert engine.rate("SIM-TKT-TEC-005", "SIM-ACTOR-RESIDENT-01", 3).ticket.rating == 3
+    with pytest.raises(GuardError):
+        engine.rate("SIM-TKT-TEC-005", "SIM-ACTOR-RESIDENT-01", 5)
 
 
 def test_10_duplicate_is_merged_and_the_resident_sees_the_original(fresh, clock):
@@ -241,7 +259,9 @@ def test_10b_rejected_duplicate_resumes_at_step_5(fresh, clock):
     assert fresh.get(second).ticket.blocker.resume_step == 5
     case = fresh.bptn_resolve(second, BPTN, merge=False, note="Hai đèn khác nhau")
     assert case.ticket.status == "ROUTED" and case.not_duplicate_of == [first]
-    assert [a.action for a in case.audit].count("CREATE_PROPOSAL") == 2  # classified once, not again on resume
+    assert [a.action for a in case.audit].count(
+        "CREATE_PROPOSAL"
+    ) == 3  # classified once (classification, department, priority), not again on resume
 
 
 def test_10d_classification_runs_before_the_duplicate_check(fresh, clock, monkeypatch):

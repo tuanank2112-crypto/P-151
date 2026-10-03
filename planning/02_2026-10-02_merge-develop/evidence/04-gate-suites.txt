@@ -1,0 +1,16 @@
+$ python -m pytest -q -p no:cacheprovider test_safety.py test_emergency.py test_priority.py test_store_memory.py test_persistence_api.py test_persistence_guards.py test_photo_store.py test_cr03_store.py
+......................................................                   [100%]
+1350 passed, 17 deselected in 12.28s
+pytest EXIT=0
+$ python -m pytest -q -p no:cacheprovider tests/test_maintenance/test_cr03_store.py -v
+tests/test_maintenance/test_cr03_store.py::test_q04_bptn_clearing_missing_info_reruns_safety_layer[memory] PASSED [ 11%]
+tests/test_maintenance/test_cr03_store.py::test_q04_bptn_cannot_clear_a_safety_need_info[memory] PASSED [ 22%]
+tests/test_maintenance/test_cr03_store.py::test_q04_safety_need_info_has_no_reminder_and_escalates_at_12h[memory] PASSED [ 33%]
+tests/test_maintenance/test_cr03_store.py::test_q04_resident_answer_still_reruns_safety_layer[memory] PASSED [ 44%]
+tests/test_maintenance/test_cr03_store.py::test_q04_deny_inside_a_write_never_nests_transactions[memory] PASSED [ 55%]
+tests/test_maintenance/test_cr03_store.py::test_store_round_trip_safety_confirm_safe_and_request_info[memory] PASSED [ 66%]
+tests/test_maintenance/test_cr03_store.py::test_store_round_trip_safety_escalate_and_emergency_downgrade[memory] PASSED [ 77%]
+tests/test_maintenance/test_cr03_store.py::test_store_round_trip_emergency_close_and_rating_once[memory] PASSED [ 88%]
+tests/test_maintenance/test_cr03_store.py::test_store_round_trip_set_priority[memory] PASSED [100%]
+======================= 9 passed, 9 deselected in 0.19s =======================
+pytest EXIT=0
