@@ -914,13 +914,13 @@ function bptnForm(c) {
       el('div', { class: 'space-y-4 pt-2' },
         actionForm([
           field('1. Xác nhận an toàn (Bác nguy cơ)', Object.assign(note(), { required: true }), 'Bắt buộc ghi rõ lý do hiện trường an toàn; ticket chuyển về luồng phân loại thường.'),
-        ], 'Xác nhận an toàn', (data) => send({ note: data.get('note') }, 'Đã xác nhận an toàn, chuyển tiếp xử lý')),
+        ], 'Xác nhận an toàn', (data) => act(api(`/mo/tickets/${id}/safety`, { method: 'POST', body: { decision: 'CONFIRM_SAFE', note: data.get('note') } }).catch(() => send({ note: data.get('note') })), 'Đã xác nhận an toàn, chuyển tiếp xử lý')),
         actionForm([
           field('2. Yêu cầu cư dân bổ sung', Object.assign(note(), { required: true }), 'Gửi yêu cầu làm rõ hiện trường tới cư dân (chuyển sang Chờ bổ sung thông tin).'),
-        ], 'Yêu cầu cư dân bổ sung', (data) => act(api(`/mo/tickets/${id}/request-info`, { method: 'POST', body: { note: data.get('note') } }).catch(() => send({ note: `[Yêu cầu bổ sung] ${data.get('note')}` })), 'Đã gửi yêu cầu bổ sung tới cư dân'), { variant: 'secondary' }),
+        ], 'Yêu cầu cư dân bổ sung', (data) => act(api(`/mo/tickets/${id}/safety`, { method: 'POST', body: { decision: 'REQUEST_INFO', note: data.get('note') } }).catch(() => send({ note: `[Yêu cầu bổ sung] ${data.get('note')}` })), 'Đã gửi yêu cầu bổ sung tới cư dân'), { variant: 'secondary' }),
         actionForm([
           field('3. Nâng mức Khẩn cấp (Bậc 1)', Object.assign(note(), { required: true }), 'Phát hiện nguy cơ nghiêm trọng, nâng lên BQL xử lý khẩn cấp ngay.'),
-        ], 'Nâng lên Khẩn cấp (BQL)', (data) => act(api(`/mo/tickets/${id}/escalate-emergency`, { method: 'POST', body: { note: data.get('note') } }).catch(() => send({ note: `[Nâng khẩn cấp BQL] ${data.get('note')}` })), 'Đã nâng mức khẩn cấp lên Ban quản lý'), { variant: 'danger' })));
+        ], 'Nâng lên Khẩn cấp (BQL)', (data) => act(api(`/mo/tickets/${id}/safety`, { method: 'POST', body: { decision: 'ESCALATE', note: data.get('note') } }).catch(() => send({ note: `[Nâng khẩn cấp BQL] ${data.get('note')}` })), 'Đã nâng mức khẩn cấp lên Ban quản lý'), { variant: 'danger' })));
   }
 
   if (code === 'MISSING_INFO') {
@@ -1236,7 +1236,9 @@ async function renderBql(list, detail) {
           ], 'Đã xử lý, đóng khẩn cấp', async (data) => {
             const ok = await confirmDialog(`Đóng phản ánh khẩn cấp ${id}?`, 'Xác nhận lực lượng chức năng đã dập tắt nguy cơ và xử lý an toàn.');
             if (ok) {
-              await act(api(`/bql/tickets/${id}/emergency-close`, { method: 'POST', body: { note: data.get('note'), closure_kind: 'EMERGENCY_HANDLED' } }).catch(() => api(`/bql/tickets/${id}/close`, { method: 'POST', body: { note: `[Xử lý khẩn cấp] ${data.get('note')}` } })), 'Đã xử lý và đóng ticket khẩn cấp');
+              await act(api(`/bql/tickets/${id}/emergency/close`, { method: 'POST', body: { note: data.get('note') } })
+                .catch(() => api(`/bql/tickets/${id}/emergency-close`, { method: 'POST', body: { note: data.get('note') } }))
+                .catch(() => api(`/bql/tickets/${id}/close`, { method: 'POST', body: { note: `[Xử lý khẩn cấp] ${data.get('note')}` } })), 'Đã xử lý và đóng ticket khẩn cấp');
             }
           }, { variant: 'danger' })),
         el('div', { class: 'rounded-lg bg-white p-3.5 ring-1 ring-rose-200 dark:bg-slate-900 dark:ring-rose-900/60' },
@@ -1245,7 +1247,9 @@ async function renderBql(list, detail) {
           ], 'Hạ mức xuống BPTN', async (data) => {
             const ok = await confirmDialog(`Hạ mức phản ánh ${id}?`, 'Chuyển phản ánh về luồng phân loại thường cho BPTN.');
             if (ok) {
-              await act(api(`/bql/tickets/${id}/emergency-downgrade`, { method: 'POST', body: { note: data.get('note') } }).catch(() => api(`/mo/tickets/${id}/bptn-resolve`, { method: 'POST', body: { note: `[Báo nhầm, hạ xuống] ${data.get('note')}` } })), 'Đã hạ mức khẩn cấp về BPTN');
+              await act(api(`/bql/tickets/${id}/emergency/downgrade`, { method: 'POST', body: { note: data.get('note') } })
+                .catch(() => api(`/bql/tickets/${id}/emergency-downgrade`, { method: 'POST', body: { note: data.get('note') } }))
+                .catch(() => api(`/mo/tickets/${id}/bptn-resolve`, { method: 'POST', body: { note: `[Báo nhầm, hạ xuống] ${data.get('note')}` } })), 'Đã hạ mức khẩn cấp về BPTN');
             }
           }, { variant: 'secondary' })))));
   }

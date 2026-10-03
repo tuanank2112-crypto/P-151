@@ -103,10 +103,10 @@ def test_t05_pg_stale_save_raises_concurrency_error(pg_repo, clock):
         with pg_repo.transaction() as tx:
             stale = tx.get_for_update(tid).model_copy(deep=True)
             tx.conn.execute(text("update maintops.cases set version = version + 1 where ticket_id = :id"), {"id": tid})
-            stale.ticket.assignee_id = "SIM-LOSER"
+            stale.ticket.cancel_reason = "SIM-LOSER"
             tx.save(stale)
     assert pg_repo.version_of(tid) == before
-    assert pg_repo.get(tid).ticket.assignee_id is None
+    assert pg_repo.get(tid).ticket.cancel_reason is None
 
 
 def test_nested_transaction_on_one_thread_is_refused(pg_repo):

@@ -74,6 +74,8 @@ def observe(engine: MaintenanceEngine, case: Case) -> dict[str, Any]:
         "flags": tuple(f.value for f in ticket.flags),
         "warnings": tuple(w.warning_type for w in draft.non_blocking_warnings) if draft else (),
         "failing_items": tuple(readiness.failing_items) if readiness else (),
+        "risk_level": ticket.risk_level.value,
+        "priority": ticket.priority.value if ticket.priority else None,
     }
 
 

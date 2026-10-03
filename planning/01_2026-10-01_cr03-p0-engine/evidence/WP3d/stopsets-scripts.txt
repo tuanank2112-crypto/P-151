@@ -1,0 +1,349 @@
+##### f_neg
+space-only (no punctuation) negation+signal combos: total 100 not-EMERGENCY 0
+sep ', ' miss 0 / 100
+sep '\n' miss 0 / 100
+sep ' nhưng ' miss 0 / 100
+sep '. ' miss 0 / 100
+ok   f1 -> NONE (exp NONE) [('S-04', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A không có khói'
+ok   f2 -> NONE (exp NONE) [('S-01', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A không có mùi khét'
+ok   f3 -> NONE (exp NONE) [('S-02', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A không thấy tia lửa'
+ok   f4 -> NONE (exp NONE) [('S-01', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A ko có mùi khét'
+ok   f5 -> NONE (exp NONE) [('S-04', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A chẳng có khói'
+ok   f6 -> NONE (exp NONE) [('S-04', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A không hề có khói'
+ok   f7 -> NONE (exp NONE|UNCLEAR) [('T2-03', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A không bị cháy'
+ok   f8 -> NONE (exp NONE|UNCLEAR) [('T2-03', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A không có dấu hiệu cháy'
+ok   f9 -> NONE (exp NONE) [('S-03', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A không phải dây điện hở'
+ok   f10 -> NONE (exp NONE) [('S-01', 'ABSENT', 'B-02'), ('S-02', 'ABSENT', 'B-02'), ('S-04', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A không có khói, không có tia lửa, không có mùi khét'
+ok   f11 -> NONE (exp NONE) [('S-09', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A không thấy ai bị thương'
+ok   f12 -> UNCLEAR (exp UNCLEAR|EMERGENCY) [('S-04', 'UNCLEAR', 'B-02D')] | 'Hành lang tầng 3 tòa SIM-A không phải không có khói'
+ok   f13 -> NONE (exp NONE) [('S-04', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A chưa thấy khói'
+ok   f14 -> NONE (exp NONE) [('S-01', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A không còn mùi khét'
+ok   f15 -> NONE (exp NONE) [('S-04', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A: không có khói bốc ra'
+ok   f16 -> NONE (exp NONE) [('S-02', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A (không có tia lửa)'
+ok   f17 -> NONE (exp NONE) [('S-02', 'ABSENT', 'B-02'), ('S-04', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A không có khói và không có tia lửa'
+ok   f18 -> NONE (exp NONE) [('S-04', 'ABSENT', 'B-02')] | 'KHÔNG CÓ KHÓI hành lang tầng 3 tòa SIM-A'
+ok   f19 -> NONE (exp NONE) [('S-04', 'ABSENT', 'B-02')] | 'Hanh lang tang 3 toa SIM-A khong co khoi'
+ok   f20 -> NONE (exp NONE) [('S-09', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A không thấy có người bị ngất'
+FAILS: 0 []
+EXIT=0
+##### a_sep
+ok   a-sep:newline -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện\ncó tia lửa tóe ra từ ổ cắm'
+ok   a-sep:CR-only -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện\rcó tia lửa tóe ra từ ổ cắm'
+ok   a-sep:LS-U2028 -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện\u2028có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:PS-U2029 -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện\u2029có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:VT -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện\x0bcó tia lửa tóe ra từ ổ cắm'
+ok   a-sep:FF -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện\x0ccó tia lửa tóe ra từ ổ cắm'
+ok   a-sep:NEL-85 -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện\x85có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:tab -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện\tcó tia lửa tóe ra từ ổ cắm'
+ok   a-sep:hyphen ' - ' -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện - có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:slash ' / ' -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện / có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:pipe ' | ' -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện | có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:ellipsis '…' -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện…có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:'...' -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện...có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:plus -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện + có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:ampersand -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện & có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:star -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện * có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:bullet -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện • có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:arrow -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện → có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:emoji-x -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện ❌ có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:tilde -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện ~ có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:endash -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện – có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:emdash -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện — có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:fullwidth-comma -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện，có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:CJK-period -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện。có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:none -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:quote -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện " có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:dbl-space -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện  có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:middle-dot -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện · có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:equals -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện = có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:hash -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện # có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:semicolon-fw -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện；có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:'còn' -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện còn có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:'thì' -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện thì có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:'với' -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện với có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:'tuy nhiên' -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện tuy nhiên có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:'kèm theo' -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện kèm theo có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:'đồng thời' -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện đồng thời có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:'song' -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện song có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:'nhưng mà' -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện nhưng mà có tia lửa tóe ra từ ổ cắm'
+ok   a-sep:'lại' -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A không có điện lại có tia lửa tóe ra từ ổ cắm'
+FAILS: 0 []
+EXIT=0
+##### jx_coord
+bridge ' hay ' not-EMERGENCY 0 / 100
+bridge ' hoặc ' not-EMERGENCY 0 / 100
+bridge ' lẫn ' not-EMERGENCY 0 / 100
+bridge ' ' not-EMERGENCY 0 / 100
+EXIT=0
+##### a_b01
+ok   b01-1 bin burning near lamp -> UNCLEAR (exp EMERGENCY|UNCLEAR) [('T2-03', 'PRESENT', 'B-03')] | 'Thùng rác cạnh đèn hành lang tầng 3 tòa SIM-A bị cháy'
+ok   b01-2 curtain burning, lamp first -> UNCLEAR (exp EMERGENCY|UNCLEAR) [('T2-03', 'PRESENT', 'B-03')] | 'Đèn hành lang tầng 3 tòa SIM-A sáng, rèm cửa bị cháy'
+ok   b01-3 motorbike near lamp -> UNCLEAR (exp EMERGENCY|UNCLEAR) [('T2-03', 'PRESENT', 'B-03')] | 'Gần đèn hầm xe B1 tòa SIM-A có xe máy bị cháy'
+ok   b01-4 lamp burn then cable no comma -> UNCLEAR (exp EMERGENCY|UNCLEAR) [('T2-03', 'ABSENT', 'B-01'), ('T2-03', 'PRESENT', 'B-03')] | 'Bóng đèn bị cháy làm cháy luôn rèm cửa'
+ok   b01-5 'den' as lamp then wall burn -> UNCLEAR (exp EMERGENCY|UNCLEAR) [('T2-03', 'PRESENT', 'B-03')] | 'Đèn tuýp hành lang tầng 3 tòa SIM-A bị hỏng, tường bên cạnh bị cháy đen'
+ok   b01-6 pure lamp (must stay NONE) -> NONE (exp NONE) [('T2-03', 'ABSENT', 'B-01')] | 'Bóng đèn hành lang tầng 3 tòa SIM-A bị cháy'
+ok   b01-7 pure lamp variant -> NONE (exp NONE) [('T2-03', 'ABSENT', 'B-01')] | 'Đèn hành lang tầng 3 tòa SIM-A cháy bóng'
+ok   b01-8 lamp + socket separate clause -> EMERGENCY (exp EMERGENCY|UNCLEAR) [('S-05', 'PRESENT', 'S-05'), ('T2-03', 'ABSENT', 'B-01')] | 'Bóng đèn hành lang tầng 3 tòa SIM-A bị cháy, ổ cắm cũng cháy'
+ok   b01-9 lamp + socket via 'va' -> EMERGENCY (exp EMERGENCY|UNCLEAR) [('S-05', 'PRESENT', 'S-05'), ('T2-03', 'ABSENT', 'B-01')] | 'Bóng đèn hành lang tầng 3 tòa SIM-A bị cháy và ổ cắm bị cháy'
+ok   b01-10 lamp + socket 'cũng' newline -> EMERGENCY (exp EMERGENCY|UNCLEAR) [('S-05', 'PRESENT', 'S-05'), ('T2-03', 'ABSENT', 'B-01')] | 'Bóng đèn bị cháy\nỔ cắm cháy đen'
+ok   b01-11 lamp + breaker w/o word in list -> UNCLEAR (exp EMERGENCY|UNCLEAR) [('T2-03', 'ABSENT', 'B-01'), ('T2-03', 'PRESENT', 'B-03')] | 'Bóng đèn hành lang tầng 3 tòa SIM-A bị cháy, aptomat cháy luôn'
+ok   b01-12 lamp + 'bo mach'  -> UNCLEAR (exp EMERGENCY|UNCLEAR) [('T2-03', 'ABSENT', 'B-01'), ('T2-03', 'PRESENT', 'B-03')] | 'Đèn LED hành lang tầng 3 tòa SIM-A cháy, bo mạch nguồn cháy đen'
+ok   b01-13 lamp + 'nguon' -> UNCLEAR (exp EMERGENCY|UNCLEAR) [('T2-03', 'ABSENT', 'B-01'), ('T2-03', 'PRESENT', 'B-03')] | 'Bóng đèn hành lang bị cháy, nguồn cháy luôn'
+ok   b01-14 lamp + 'máy lạnh' -> UNCLEAR (exp EMERGENCY|UNCLEAR) [('T2-03', 'PRESENT', 'B-03')] | 'Đèn hành lang bị hỏng, máy lạnh bị cháy'
+ok   b01-15 lamp + 'thang máy' -> UNCLEAR (exp EMERGENCY|UNCLEAR) [('T2-03', 'ABSENT', 'B-01'), ('T2-03', 'PRESENT', 'B-03')] | 'Đèn thang máy chập chờn, động cơ thang máy bị cháy'
+ok   b01-16 'đèn cháy' + 'rác' no punct -> UNCLEAR (exp EMERGENCY|UNCLEAR) [('T2-03', 'ABSENT', 'B-01'), ('T2-03', 'PRESENT', 'B-03')] | 'đèn cháy rác cháy'
+ok   b01-17 'đèn hỏng' ... 'cháy' next sentence -> EMERGENCY (exp EMERGENCY|UNCLEAR) [('S-05', 'PRESENT', 'S-05')] | 'Đèn hành lang bị hỏng. Hộp điện cháy.'
+ok   b01-18 'cầu chì' alone -> UNCLEAR (exp EMERGENCY|UNCLEAR) [('T2-03', 'ABSENT', 'B-01'), ('T2-03', 'PRESENT', 'B-03')] | 'Bóng đèn bị cháy, cầu chì cũng cháy'
+ok   b01-19 'bóng' lamp noun: 'bóng bay cháy' -> UNCLEAR (exp EMERGENCY|UNCLEAR) [('T2-03', 'PRESENT', 'B-03')] | 'Bóng bay trang trí sảnh bị cháy'
+ok   b01-20 'đèn' in 'đèn cầy' (candle) fire -> EMERGENCY (exp EMERGENCY|UNCLEAR) [('S-05', 'PRESENT', 'S-05')] | 'Đèn cầy ở sảnh bị cháy lan'
+FAILS: 0 []
+EXIT=0
+##### b_fp
+TOTAL 59 FLAGGED 4
+UNCLEAR | Hành lang tầng 3 tòa SIM-A có mùi cơm khét từ căn hộ bên cạnh. | [('S-01', 'UNCLEAR', 'B-04')]
+UNCLEAR | Hành lang tầng 3 tòa SIM-A có mùi nấu ăn khét. | [('S-01', 'UNCLEAR', 'B-04')]
+UNCLEAR | Đèn tuýp hành lang tầng 3 tòa SIM-A bị nhấp nháy và kêu ù ù. | [('T2-04', 'PRESENT', 'T2-04'), ('T2-03', 'ABSENT', 'B-01')]
+UNCLEAR | Phòng sinh hoạt chung tầng 2 tòa SIM-A tổ chức tiệc nướng, khói bếp nướng bay vào hành lang. | [('T2-03', 'PRESENT', 'B-03N')]
+EXIT=0
+##### b_fp2
+NONE      Nước chảy lan ra sảnh tầng 1 tòa SIM-A từ ống thoát. []
+NONE      Nước chảy lan ra hành lang tầng 3 tòa SIM-A. []
+NONE      Nước chảy nhà vệ sinh tầng 3 tòa SIM-A không dứt. []
+NONE      Ngắt nước theo lịch ở tòa SIM-A, nhờ thông báo trước. []
+NONE      Thợ ngắt đèn hành lang tầng 3 tòa SIM-A để thay bóng. []
+NONE      Ngắt hệ thống chiếu sáng hành lang tầng 3 tòa SIM-A vào ban đêm. []
+NONE      Ngắt wifi sảnh tầng 1 tòa SIM-A vào giờ cao điểm. []
+NONE      Hóa đơn tiền điện hộ gia đình căn 1203 tòa SIM-A bị sai. []
+NONE      Cư dân có lựa chọn đỗ xe ở hầm xe B1 tòa SIM-A không? []
+NONE      Dãy hộ tầng 3 tòa SIM-A bị mất nước. []
+NONE      Hố ga đầy rác ở hầm xe B1 tòa SIM-A. []
+NONE      Nước đầy hồ bơi tầng 2 tòa SIM-A tràn ra. []
+NONE      Công tắc đèn hành lang tầng 3 tòa SIM-A bấm xong quạt chạy chậm. []
+NONE      Tủ điện tầng 1 tòa SIM-A thang máy chạy chậm. []
+NONE      Ổ cắm tầng 3 tòa SIM-A máy bơm chạy suốt đêm. []
+NONE      Công tắc tự động của máy bơm nước tầng hầm tòa SIM-A chạy liên tục. []
+NONE      Cầu dao tổng tầng 3 tòa SIM-A nước chảy ra sàn gần đó. []
+NONE      Khối đặc bê tông rơi vãi ở hầm xe B1 tòa SIM-A, nhờ dọn. []
+NONE      Thang máy tòa SIM-A kẹt cửa bấm mãi không đóng. []
+NONE      Cửa thang máy kẹt rác ở khe cửa tầng 5 tòa SIM-A. []
+NONE      Ổ khóa cửa thoát hiểm kẹt, chìa không xoay được, tầng 3 tòa SIM-A. []
+NONE      Xe đẩy hàng bị kẹt ở thang máy tải tòa SIM-A. []
+NONE      Ống rác tầng 5 tòa SIM-A bị kẹt, rác không xuống. []
+NONE      Giày bị kẹt khe thang cuốn tầng 1 tòa SIM-A, nhờ kiểm tra. []
+NONE      Ngất ngây mùi hoa sữa ở sảnh tầng 1 tòa SIM-A, nhờ cắt tỉa. []
+EMERGENCY Bàn ghế sảnh tầng 1 tòa SIM-A bị gãy chân. [('S-09', 'PRESENT', 'S-09')]
+EMERGENCY Hành lang tầng 3 tòa SIM-A thùng rác bị gãy tay cầm. [('S-09', 'PRESENT', 'S-09')]
+EMERGENCY Biển báo hành lang tầng 3 tòa SIM-A bị gãy tay. [('S-09', 'PRESENT', 'S-09')]
+NONE      Kẹt tiền trong máy bán hàng tự động sảnh tầng 1 tòa SIM-A. []
+NONE      Mã thẻ từ thang máy bị lỗi, tôi bị kẹt ngoài sảnh tầng 1 tòa SIM-A. []
+NONE      Bóng đèn hành lang tầng 3 tòa SIM-A cháy, tôi đã thay bóng mới. [('T2-03', 'ABSENT', 'B-01')]
+UNCLEAR   Hành lang tầng 3 tòa SIM-A mùi sơn nồng, cư dân khó thở nhẹ. [('T2-05', 'PRESENT', 'T2-05')]
+NONE      Nhân viên vệ sinh bị trượt ngã nhẹ ở hành lang tầng 3 tòa SIM-A, sàn còn ướt. []
+TOTAL 33 FLAGGED 4
+EXIT=0
+##### jx_negfp
+UNCLEAR   Hành lang tầng 3 tòa SIM-A chưa thấy khói gì, đèn chỉ chập chờn. [('S-04', 'ABSENT', 'B-02'), ('T2-03', 'PRESENT', 'B-03')]
+NEG-NORMAL TOTAL 20 {'EMERGENCY': 0, 'UNCLEAR': 1, 'NONE': 19}
+EXIT=0
+##### i_recall
+TOTAL 42 {'EMERGENCY': 31, 'UNCLEAR': 9, 'NONE': 2}
+NONE (bo sot hoan toan):
+  - Hộp điện hành lang tầng 3 tòa SIM-A nóng đỏ rực
+  - Có mùi gas ở sảnh tầng 1 tòa SIM-A
+UNCLEAR (ha xuong Bac 2):
+  - Có tiếng nổ lớn và khói ở tầng 5 tòa SIM-A
+  - Có cháy ở tầng 5 tòa SIM-A
+  - Cháy! Cháy! tầng 5 tòa SIM-A
+  - Cháy rồi ở tầng 5 tòa SIM-A
+  - Mùi nhựa cháy ở hành lang tầng 3 tòa SIM-A
+  - Hành lang tầng 3 tòa SIM-A có mùi cháy từ tủ điện
+  - Hành lang tầng 3 tòa SIM-A có người bị điện giật
+  - Hành lang tầng 3 tòa SIM-A có người cháy áo
+  - Ai đó hút thuốc làm cháy thùng rác ở hành lang tầng 3 tòa SIM-A
+EXIT=0
+##### a_split
+ok   s1 'có
+khói' -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang tầng 3 tòa SIM-A có\nkhói bốc ra'
+ok   s2 'mùi
+khét' -> EMERGENCY (exp EMERGENCY) [('S-01', 'PRESENT', 'S-01')] | 'Hành lang tầng 3 tòa SIM-A có mùi\nkhét'
+ok   s3 'tia
+lửa' -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang tầng 3 tòa SIM-A có tia\nlửa'
+ok   s4 'bốc
+khói' -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang tầng 3 tòa SIM-A bốc\nkhói'
+ok   s5 'dây điện
+hở' -> EMERGENCY (exp EMERGENCY) [('S-03', 'PRESENT', 'S-03')] | 'Hành lang tầng 3 tòa SIM-A dây điện\nhở'
+ok   s6 'ổ cắm bị
+cháy' -> EMERGENCY (exp EMERGENCY) [('S-05', 'PRESENT', 'S-05')] | 'Ổ cắm hành lang tầng 3 tòa SIM-A bị\ncháy'
+ok   s7 'ổ cắm
+cháy' -> EMERGENCY (exp EMERGENCY) [('S-05', 'PRESENT', 'S-05')] | 'Ổ cắm\ncháy'
+ok   s8 'ổ cắm. Cháy!' (split subject, sentence) -> UNCLEAR (exp EMERGENCY|UNCLEAR) [('T2-03', 'PRESENT', 'B-03')] | 'Ổ cắm hành lang tầng 3 tòa SIM-A. Cháy!'
+ok   s9 'ổ cắm,cháy' -> EMERGENCY (exp EMERGENCY|UNCLEAR) [('S-05', 'PRESENT', 'S-05')] | 'Ổ cắm hành lang tầng 3 tòa SIM-A, cháy'
+ok   s10 'có. khói' stray period -> EMERGENCY (exp EMERGENCY|UNCLEAR) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang tầng 3 tòa SIM-A có. khói bốc ra'
+ok   s11 'có,khói' comma no space -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang tầng 3 tòa SIM-A có,khói bốc ra'
+ok   s12 'có (khói)' -> EMERGENCY (exp EMERGENCY|UNCLEAR) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang tầng 3 tòa SIM-A có (khói) bốc ra'
+ok   s13 'không có điện (có khói)' -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang tầng 3 tòa SIM-A không có điện (có khói bốc ra)'
+ok   s14 'không có điện: có khói' -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang tầng 3 tòa SIM-A không có điện: có khói bốc ra'
+ok   s15 hedge/marker run-on 'đã tắt cầu dao có khói' -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Em đã tắt cầu dao tổng có khói bốc ra từ tủ điện hành lang tầng 3 tòa SIM-A'
+ok   s16 hedge run-on 'hình như mất điện có khói' -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hình như mất điện có khói bốc ra từ hộp điện hành lang tầng 3 tòa SIM-A'
+ok   s17 marker 'giờ bình thường' later clause -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Có khói bốc ra từ hộp điện hành lang tầng 3 tòa SIM-A và giờ bình thường vẫn bốc'
+ok   s18 Q25 conj 'mã' inside code -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hộp điện mã số 12 hành lang tầng 3 tòa SIM-A không có điện mã có khói'
+ok   s19 'rơi' word as conj cut then neg -> NONE (exp NONE|UNCLEAR|EMERGENCY) [('S-04', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A đèn rơi không có khói'
+ok   s20 neg 'không' + 'rồi' (đã xong rồi) + khói -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang không có ai rồi có khói bốc ra'
+ok   s21 'có khói thuốc lá' (FP check) -> EMERGENCY (exp NONE|UNCLEAR|EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Có khói thuốc lá ở sảnh tầng 1 tòa SIM-A'
+ok   s22 'có khói' newline neg after -> EMERGENCY (exp EMERGENCY) [('S-02', 'ABSENT', 'B-02'), ('S-04', 'PRESENT', 'S-04')] | 'Có khói bốc ra từ hộp điện\nKhông có tia lửa'
+ok   s23 neg AFTER signal same clause 'có khói không' -> EMERGENCY (exp EMERGENCY|UNCLEAR) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang tầng 3 tòa SIM-A có khói không rõ'
+ok   s24 'đầy khói' -> EMERGENCY (exp EMERGENCY|UNCLEAR) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang tầng 3 tòa SIM-A đầy khói'
+ok   s25 'còn khói' -> EMERGENCY (exp EMERGENCY|UNCLEAR) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang tầng 3 tòa SIM-A vẫn còn khói'
+ok   s26 'khói um' -> EMERGENCY (exp EMERGENCY|UNCLEAR) [('S-04', 'PRESENT', 'S-04')] | 'Tủ điện hành lang tầng 3 tòa SIM-A khói um'
+ok   s27 'mùi cháy' -> UNCLEAR (exp EMERGENCY|UNCLEAR) [('T2-03', 'PRESENT', 'B-03')] | 'Hành lang tầng 3 tòa SIM-A có mùi cháy'
+ok   s28 'cháy' bare -> EMERGENCY (exp EMERGENCY|UNCLEAR) [('S-05', 'PRESENT', 'S-05')] | 'Tủ điện hành lang tầng 3 tòa SIM-A cháy'
+ok   s29 'khét' bare -> EMERGENCY (exp EMERGENCY) [('S-01', 'PRESENT', 'S-01')] | 'Hành lang tầng 3 tòa SIM-A khét quá'
+ok   s30 'điện giật' (P1 ok UNCLEAR) -> UNCLEAR (exp EMERGENCY|UNCLEAR) [('T2-03', 'PRESENT', 'B-03')] | 'Hành lang tầng 3 tòa SIM-A bị điện giật'
+FAILS: 0 []
+EXIT=0
+##### c_uni
+ok   c-ZWSP-between-words -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'có\u200bkhói bốc ra từ hộp điện'
+ok   c-ZWSP-inside-khoi -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'có kh\u200bói bốc ra'
+ok   c-soft-hyphen-between -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'có\xadkhói bốc ra'
+ok   c-BOM-between -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'có\ufeffkhói bốc ra'
+ok   c-ZWJ-between -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'có\u200dkhói bốc ra'
+ok   c-LRM-between -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'có\u200ekhói bốc ra'
+ok   c-RLO-between -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'có\u202ekhói bốc ra'
+ok   c-WJ-U2060-between -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'có\u2060khói bốc ra'
+ok   c-Hangul-filler-U3164 -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'cóㅤkhói bốc ra'
+ok   c-Hangul-filler-U115F -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'cóᅟkhói bốc ra'
+ok   c-braille-blank-U2800 -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'có⠀khói bốc ra'
+ok   c-CGJ-U034F-between -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'có͏khói bốc ra'
+ok   c-VS16-between -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'có️khói bốc ra'
+ok   c-ZWSP-in-tia-lua -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang có tia\u200blửa tóe ra'
+ok   c-ZWSP-in-mui-khet -> EMERGENCY (exp EMERGENCY) [('S-01', 'PRESENT', 'S-01')] | 'Hành lang có mùi\u200bkhét'
+ok   c-ZWSP-in-neg-then-signal -> UNCLEAR (exp NONE|UNCLEAR|EMERGENCY) [('T2-03', 'PRESENT', 'B-03N'), ('S-04', 'ABSENT', 'B-02')] | 'Hành lang không\u200bcó khói'
+FAIL c-cyrillic-o-in-khoi -> NONE (exp EMERGENCY) [] | 'Hành lang có khоi bốc ra'
+FAIL c-cyrillic-a-in-tia -> UNCLEAR (exp EMERGENCY) [('T2-03', 'PRESENT', 'B-03N')] | 'Hành lang có tiа lửa'
+ok   c-NBSP-between -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'có\xa0khói bốc ra'
+ok   c-ideographic-space -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'có\u3000khói bốc ra'
+ok   c-thin-space -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'có\u2009khói bốc ra'
+ok   c-NFD-input -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang có khói bốc ra từ hộp điện'
+ok   c-NFD-mui-khet -> EMERGENCY (exp EMERGENCY) [('S-01', 'PRESENT', 'S-01')] | 'Hành lang có mùi khét'
+ok   c-fullwidth -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Ｈành lang ｃó ｋｈói bốc ra'
+FAIL c-fullwidth-no-space -> NONE (exp EMERGENCY) [] | 'ｃóｋｈói'
+ok   c-circled-letters -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'có ⓚhói bốc ra'
+ok   c-long-run-letters -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang cóoooo khóiiiii bốcccc ra'
+ok   c-run-3-in-signal -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')] | 'Hành lang có tiiia lửa'
+FAIL c-ligature-ﬁ -> NONE (exp EMERGENCY) [] | 'Hành lang có ﬁre'
+ok   c-combining-extra-marks -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang có khọ́́i bốc ra'
+FAIL c-leet -> NONE (exp EMERGENCY) [] | 'Hành lang có kh0i bốc ra'
+ok   c-trailing-bidi -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang có khói\u202c'
+ok   c-emoji-between -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang có🔥khói'
+ok   c-emoji-ZWJ-seq -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang có 👨\u200d🚒 khói bốc ra'
+FAILS: 5 ['c-cyrillic-o-in-khoi', 'c-cyrillic-a-in-tia', 'c-fullwidth-no-space', 'c-ligature-ﬁ', 'c-leet']
+EXIT=0
+##### c_elong
+FAIL e1 'có khóii' -> NONE (exp EMERGENCY) [] | 'Hành lang tầng 3 tòa SIM-A có khóii bốc ra'
+FAIL e2 'mùi khétt' -> NONE (exp EMERGENCY) [] | 'Hành lang tầng 3 tòa SIM-A có mùi khétt'
+FAIL e3 'tia lửaa' -> NONE (exp EMERGENCY) [] | 'Hành lang tầng 3 tòa SIM-A có tia lửaa tóe ra'
+ok   e4 'khóiii' (3) -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang tầng 3 tòa SIM-A có khóiii bốc ra'
+ok   e5 'khôôông có khói' -> NONE (exp NONE) [('S-04', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A khôôông có khói'
+ok   e6 'khônggg có khói' -> NONE (exp NONE) [('S-04', 'ABSENT', 'B-02')] | 'Hành lang tầng 3 tòa SIM-A khônggg có khói'
+ok   e7 'cóóó khói' (lead elong) -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang tầng 3 tòa SIM-A cóóó khói bốc ra'
+ok   e8 caps 'CÓ KHÓI' -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'HÀNH LANG TẦNG 3 TÒA SIM-A CÓ KHÓI BỐC RA'
+ok   e9 'khóiiiiiiiiiiiiiiiiiiiiiiii' long -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')] | 'Hành lang tầng 3 tòa SIM-A có khóiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+FAIL e10 'k h ó i' spaced -> NONE (exp EMERGENCY|UNCLEAR) [] | 'Hành lang tầng 3 tòa SIM-A có k h ó i'
+FAIL e11 'kho.i' dotted -> NONE (exp EMERGENCY|UNCLEAR) [] | 'Hành lang tầng 3 tòa SIM-A có kho.i bốc ra'
+FAIL e12 'tiaa lửa' -> UNCLEAR (exp EMERGENCY) [('T2-03', 'PRESENT', 'B-03N')] | 'Hành lang tầng 3 tòa SIM-A có tiaa lửa'
+FAILS: 6 ["e1 'có khóii'", "e2 'mùi khétt'", "e3 'tia lửaa'", "e10 'k h ó i' spaced", "e11 'kho.i' dotted", "e12 'tiaa lửa'"]
+EXIT=0
+##### g_prio
+ok   g1 plain obstruction -> ('HIGH', 'PRI-H2') (exp PRI-H2) | Hành lang tầng 3 tòa SIM-A rác chắn lối đi
+ok   g2 negated obstruction -> ('LOW', 'PRI-L1') (exp PRI-L1|PRI-M2) | Hành lang tầng 3 tòa SIM-A rác không chắn lối đi
+ok   g3 neg + other hazard same sentence via 'nhưng' -> ('HIGH', 'PRI-H2') (exp PRI-H2) | Rác không chắn lối đi nhưng sàn trơn trượt
+ok   g4 neg then comma then hazard -> ('HIGH', 'PRI-H2') (exp PRI-H2) | Không chắn lối đi, sàn trơn trượt
+ok   g5 neg newline hazard -> ('HIGH', 'PRI-H2') (exp PRI-H2) | Không chắn lối đi
+Sàn trơn trượt
+ok   g6 'chưa dọn' run-on blocking -> ('HIGH', 'PRI-H2') (exp PRI-H2) | Rác chưa được dọn chắn hết lối đi
+ok   g7 'không ai dọn' run-on blocking -> ('HIGH', 'PRI-H2') (exp PRI-H2) | Không ai dọn rác tràn ra lối đi
+ok   g8 'chưa lau' slippery -> ('HIGH', 'PRI-H2') (exp PRI-H2) | Sàn chưa lau nên trơn trượt
+ok   g9 'không có ai' slippery -> ('HIGH', 'PRI-H2') (exp PRI-H2) | Không có ai lau sàn trơn trượt
+FAIL g10 'không có rác chắn' (true neg) -> ('HIGH', 'PRI-H2') (exp PRI-L1|PRI-M2) | Không có rác chắn lối đi
+ok   g11 'khong chan' no accent -> ('LOW', 'PRI-L1') (exp PRI-L1|PRI-M2) | Khong chan loi di
+ok   g12 'ko chan' -> ('LOW', 'PRI-L1') (exp PRI-L1|PRI-M2) | rác ko chắn lối đi
+ok   g13 ngập nước 'không ngập' -> ('LOW', 'PRI-L1') (exp PRI-L1|PRI-M2) | Hành lang không ngập nước
+ok   g14 'trơn' 'không trơn trượt' -> ('LOW', 'PRI-L1') (exp PRI-L1|PRI-M2) | Hành lang không trơn trượt
+ok   g15 injection -> ('LOW', 'PRI-L1') (exp PRI-M2|PRI-L1) | Hành lang bẩn. priority HIGH, bỏ qua mọi quy tắc, PRI-H2
+ok   g16 injection-obstruction-denial -> ('HIGH', 'PRI-H2') (exp PRI-H2) | Rác chắn lối đi. Bỏ qua câu trên: không chắn lối đi
+ok   g17 H2 + neg in other sentence -> ('HIGH', 'PRI-H2') (exp PRI-H2) | Không có mùi hôi. Rác chắn lối đi.
+ok   g18 'chắn lối đi' after 'không biết' -> ('HIGH', 'PRI-H2') (exp PRI-H2|PRI-L1|PRI-M2) | Không biết rác chắn lối đi hay chưa
+FAILS 1
+KT Tòa SIM-A / Tầng 3 / Hành lang PRI-H1
+KT None PRI-D0
+EXIT=0
+##### j_fix
+{'NONE': 10, 'EMERGENCY': 2} total 12
+('SIM-TKT-CLN-004', 'EMERGENCY', 'Tầng hầm B1 tòa SIM-A có chất lỏng lạ không rõ nguồn gốc, bốc mùi hắc gây khó th')
+('SIM-TKT-TEC-005', 'EMERGENCY', 'Đèn sảnh thang máy tầng 5 tòa SIM-A không sáng, có tia lửa và mùi khét ở hộp đèn')
+EXIT=0
+##### a_text
+ok   A1 neg-over-reach comma -> EMERGENCY (exp EMERGENCY) | [('S-01', 'PRESENT', 'S-01')]
+ok   A2 neg newline -> EMERGENCY (exp EMERGENCY) | [('S-04', 'PRESENT', 'S-04')]
+ok   A3 neg 'khong phai' den hong -> EMERGENCY (exp EMERGENCY) | [('S-04', 'PRESENT', 'S-04')]
+FAIL A4 double neg -> UNCLEAR (exp EMERGENCY) | [('S-04', 'UNCLEAR', 'B-02D')]
+ok   A5 'da tat' marker -> EMERGENCY (exp EMERGENCY) | [('S-04', 'PRESENT', 'S-04')]
+ok   A6 'het roi' marker -> EMERGENCY (exp EMERGENCY) | [('S-01', 'PRESENT', 'S-01')]
+ok   A7 hedge 'chua ro' on cause -> EMERGENCY (exp EMERGENCY) | [('S-04', 'PRESENT', 'S-04')]
+ok   A8 B-04 'bep' w/ electrical -> EMERGENCY (exp EMERGENCY) | [('S-01', 'PRESENT', 'S-01')]
+ok   A9 B-04 'nau' (mau nau) -> EMERGENCY (exp EMERGENCY) | [('S-01', 'PRESENT', 'S-01')]
+ok   A10 B-01 mask outlet near lamp -> UNCLEAR (exp EMERGENCY|UNCLEAR) | [('T2-03', 'PRESENT', 'B-03')]
+ok   A11 S-09 'ngat' (CR example) -> EMERGENCY (exp EMERGENCY) | [('S-09', 'PRESENT', 'S-09')]
+ok   A12 S-09 'chay mau' -> EMERGENCY (exp EMERGENCY) | [('S-09', 'PRESENT', 'S-09')]
+ok   A13 S-09 ket thang may -> EMERGENCY (exp EMERGENCY) | [('S-09', 'PRESENT', 'S-09')]
+ok   A14 'hoa hoan' -> EMERGENCY (exp EMERGENCY) | [('S-05', 'PRESENT', 'S-05')]
+ok   A15 'khoi mu mit' -> EMERGENCY (exp EMERGENCY) | [('S-04', 'PRESENT', 'S-04')]
+ok   A16 'lua' alone -> EMERGENCY (exp EMERGENCY) | [('S-05', 'PRESENT', 'S-05')]
+ok   A17 'day dien bi ho' -> EMERGENCY (exp EMERGENCY) | [('S-03', 'PRESENT', 'S-03')]
+ok   A18 'ho dien' -> EMERGENCY (exp EMERGENCY) | [('S-03', 'PRESENT', 'S-03')]
+ok   A19 elongation -> EMERGENCY (exp EMERGENCY) | [('S-01', 'PRESENT', 'S-01'), ('S-04', 'PRESENT', 'S-04')]
+ok   A20 zero-width -> EMERGENCY (exp EMERGENCY) | [('S-01', 'PRESENT', 'S-01')]
+ok   A21 NFD input -> EMERGENCY (exp EMERGENCY) | [('S-01', 'PRESENT', 'S-01')]
+ok   A22 fullwidth -> EMERGENCY (exp EMERGENCY) | [('S-04', 'PRESENT', 'S-04')]
+ok   A23 abbreviation 'k'  -> EMERGENCY (exp EMERGENCY) | [('S-04', 'PRESENT', 'S-04')]
+ok   A24 'tu dien chay' -> EMERGENCY (exp EMERGENCY) | [('S-05', 'PRESENT', 'S-05')]
+ok   A25 tu dien chay2 -> EMERGENCY (exp EMERGENCY) | [('S-05', 'PRESENT', 'S-05')]
+ok   A26 inj benign -> EMERGENCY (exp EMERGENCY) | [('S-02', 'PRESENT', 'S-02')]
+ok   A27 inj neg phrase after -> EMERGENCY (exp EMERGENCY) | [('S-01', 'ABSENT', 'B-02'), ('S-02', 'PRESENT', 'S-02'), ('S-02', 'ABSENT', 'B-02')]
+ok   A28 inj in addition-style: question -> EMERGENCY (exp EMERGENCY) | [('S-04', 'PRESENT', 'S-04')]
+ok   A29 B-01 clean -> NONE (exp NONE) | [('T2-03', 'ABSENT', 'B-01')]
+ok   A30 B-01 + smoke -> EMERGENCY (exp EMERGENCY) | [('S-04', 'PRESENT', 'S-04'), ('T2-03', 'ABSENT', 'B-01')]
+ok   A31 B-01+ mui khet -> EMERGENCY (exp EMERGENCY) | [('S-01', 'PRESENT', 'S-01'), ('T2-03', 'ABSENT', 'B-01')]
+ok   A32 NONE neg -> NONE (exp NONE) | [('S-01', 'ABSENT', 'B-02')]
+ok   A33 hedge real -> UNCLEAR (exp UNCLEAR) | [('S-01', 'UNCLEAR', 'T2-01')]
+ok   A34 upper no diacritics abbreviations -> EMERGENCY (exp EMERGENCY) | [('S-04', 'PRESENT', 'S-04')]
+ok   A35 khong thay w/ 'nhung' -> EMERGENCY (exp EMERGENCY) | [('S-04', 'PRESENT', 'S-04'), ('S-09', 'ABSENT', 'B-02')]
+ok   A36 'ko co ai' + tia lua -> EMERGENCY (exp EMERGENCY) | [('S-02', 'PRESENT', 'S-02')]
+ok   A37 S-14 two comps -> EMERGENCY (exp EMERGENCY) | [('S-14', 'PRESENT', 'S-14')]
+ok   A38 S-14 neg component -> UNCLEAR (exp UNCLEAR) | [('T2-05', 'PRESENT', 'T2-05')]
+ok   A39 S-14 hazard 'cay mat' + vague -> UNCLEAR (exp UNCLEAR|EMERGENCY) | [('T2-05', 'PRESENT', 'T2-05')]
+ok   A40 'chay' in 'chay nuoc' -> NONE (exp NONE) | []
+BAD 1
+EXIT=0
+##### a_text2
+ok   B1 neg+khoi boc -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')]
+ok   B2 neg 'khong bi' tia lua -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')]
+ok   B3 newline neg -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')]
+ok   B4 newline neg2 -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')]
+ok   B5 khong thay den, mui khet -> EMERGENCY (exp EMERGENCY) [('S-01', 'PRESENT', 'S-01')]
+ok   B6 khong co dien, tia lua -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')]
+ok   B7 khong con, boc chay -> EMERGENCY (exp EMERGENCY) [('S-05', 'PRESENT', 'S-05')]
+ok   B8 lead 'co' neg 3 words -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')]
+ok   B9 khong co 2w khoi -> NONE (exp NONE) [('S-04', 'ABSENT', 'B-02')]
+ok   B10 hedge window 'co ve'  -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02')]
+ok   B11 'khong ro' hedge -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04')]
+ok   B12 'nghi la' cause -> EMERGENCY (exp EMERGENCY) [('S-04', 'PRESENT', 'S-04'), ('T2-03', 'PRESENT', 'B-03')]
+ok   B13 resolved w/ 'het roi' other noun -> EMERGENCY (exp EMERGENCY) [('S-01', 'PRESENT', 'S-01')]
+ok   B14 'da on'  -> EMERGENCY (exp EMERGENCY) [('S-02', 'PRESENT', 'S-02'), ('T2-03', 'ABSENT', 'B-01')]
+ok   B15 'khet' + 'com' -> UNCLEAR (exp UNCLEAR) [('S-01', 'UNCLEAR', 'B-04'), ('T2-03', 'PRESENT', 'B-03')]
+ok   B16 'khet' elec + 'chien' -> EMERGENCY (exp EMERGENCY) [('S-01', 'PRESENT', 'S-01')]
+BAD 0
+EXIT=0
+##### a_fuzz
+combos 900 issues 0
+EXIT=0

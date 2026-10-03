@@ -1,0 +1,4 @@
+E           AssertionError: Căn hộ cô Lệ có khói bốc ra từ ổ cắm.
+FAILED tests/test_maintenance/test_safety.py::test_wp3d_hedge_cue_needs_accents
+1 failed, 1263 deselected in 0.56s
+EXIT=1
