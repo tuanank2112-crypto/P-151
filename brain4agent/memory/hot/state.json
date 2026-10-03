@@ -76,9 +76,9 @@
       "chronology_note": "Reference commit created after the reported approval date; reference mapping confirmed by user on 2026-10-03."
     },
     "day03": {
-      "status": "executed_local_with_blockers",
+      "status": "closed_local_d01_out_of_mvp",
       "recorded_at": "2026-10-03",
-      "sha": "0ea04adedd023654947e2e97e645043f0ba89159",
+      "sha": "f46a53c607a0ac9a0038346980abf26419206d57",
       "results": {
         "total": 23,
         "pass": 17,
@@ -95,7 +95,7 @@
         "D3-06",
         "D3-07"
       ],
-      "completed": 5,
+      "completed": 7,
       "runtime_changes_allowed": false,
       "spec": "planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md"
     }

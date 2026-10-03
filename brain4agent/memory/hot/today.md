@@ -138,3 +138,6 @@
 - Merge develop e32e014 → cd83f11 (đã push), pytest 1600 passed/29 deselected, ruff đạt. Day03-bis (cd83f11): 23 record = 19 PASS / 4 BLOCKED (DEMO-04, WORD-02/04: chưa có route safety); rating-once FAIL→PASS. Local 2a753c8 chưa push.
 - Người dùng chốt: ASSET-03 = A (giữ OPERATIONS asset_onsite, SPEC sửa chữ), STOCK-04 = A (cờ chỉ là lời nhắc), owner route safety = Như Ý. Handoff cho Như Ý: planning/02_*/deliverables/handoff-noy-safety-routes.md.
 - Môi trường: cần DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 + sqlalchemy 2.0.x (2.1 bị Application Control chặn DLL).
+
+## Day03 đóng — 2026-10-03
+- Người dùng chốt D-01 ngoài phạm vi MVP 04/10. Rà lại WORD-04 trên develop f46a53c: PASS (UI hết fallback, /close trả 409 với khẩn cấp). D3-01..07 tick [x]; D01-A/C giữ BLOCKED trong results. Runtime/online gates vẫn mở.

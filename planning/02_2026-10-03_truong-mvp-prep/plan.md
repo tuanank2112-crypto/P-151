@@ -24,6 +24,10 @@
 
 - 2026-10-03: người dùng chốt ASSET-03 = phương án A (giữ OPERATIONS §3.2.2 `asset_onsite`, sửa chữ SPEC-P06-DAY03 §3 D3-02) và STOCK-04 = phương án A (cờ `STOCK_CHECK_ON_ACCEPT` chỉ là lời nhắc, `accept` không chặn; ghi làm rõ vào D-05). Owner route safety/khẩn cấp = Như Ý (đổi DEMO-04 từ Châm Anh). Không đổi kết quả đo: ASSET-03 và STOCK-04 giữ PASS.
 
+- 2026-10-03: Day03-ter trên nhánh Như Ý `feature/nhuy-safety-routes` 92649a6 (PR #10, chưa merge; pytest 1640 passed): 17 record đo lại = 14 PASS / 1 FAIL (WORD-04: UI fallback + route /close vẫn đóng được ticket khẩn cấp) / 2 BLOCKED (D01-A/C chưa code). DEMO-04 BLOCKED→PASS, WORD-02 BLOCKED→PASS. Sửa chữ OPERATIONS §5.2.3: NEED_INFO an toàn chủ cư dân (theo CR-03 §6.4). Xem [day03ter-summary](deliverables/day03ter-summary.md), H16–H17/R16–R17. D3-05/06 vẫn chưa [x].
+
+- 2026-10-03: người dùng chốt D-01 (delta + snapshot) NGOÀI phạm vi MVP 04/10 (làm ở mốc 19/10); chi phí lật: Như Ý code D-01 rồi chạy lại D01-A/C. Root rà lại WORD-04 trên develop f46a53c (sau Châm Anh ff4f4ca, Trí 9207db2, Như Ý PR #10): PASS; pytest 1641 passed. D3-05 và D3-06 tick [x] với điều kiện đã ghi: D01-A/C giữ BLOCKED trong results để minh bạch. Xem [day03q-results](deliverables/day03q-results.json), [day03ter-summary](deliverables/day03ter-summary.md). Runtime/online gates vẫn mở.
+
 ### Quyết định bị thay thế
 
 - Trạng thái D-08 PENDING ở nhật ký và reports trước bản ghi này là lịch sử đã được thay thế bởi APPROVED; giữ nguyên report và evidence cũ.
@@ -77,9 +81,11 @@ Hợp đồng: [SPEC-P06-DAY03](specs/SPEC-P06-DAY03.md). Đã thực hiện ng�
 - [x] D3-02 🟠: asset 3 ca, 3 PASS — [R07](reports/R07_day03-asset.md); chờ người quyết ASSET-03.
 - [x] D3-03 🟠: vật tư 4 ca, 4 PASS — [R08](reports/R08_day03-stock.md); STOCK-04 chờ người quyết điều kiện nhận việc.
 - [x] D3-04 🟠: trùng cơ bản 4 ca, 4 PASS — [R09](reports/R09_day03-dup.md).
-- [ ] D3-05 🟢: rà wording 4 vai đã lập — [R10](reports/R10_day03-wording.md); WORD-03 PASS, WORD-01/02/04 BLOCKED (safety/rating-once/reopen chưa tích hợp, Như Ý) ⇒ chưa đạt phần kiểm thử.
-- [ ] D3-06 🟠: 4 nhóm script chạy thử — [R11](reports/R11_day03-demos.md); 5 PASS, 1 FAIL (rating-once, Như Ý), 2 BLOCKED (DEMO-04 safety, Như Ý) ⇒ chưa đạt.
+- [x] D3-05 🟢: rà wording 4 vai — [R10](reports/R10_day03-wording.md), Day03-bis/ter R15/R17; cuối cùng WORD-01/02/03/04 PASS trên develop f46a53c (WORD-04 sau khi bỏ fallback UI và chặn /close khẩn cấp).
+- [x] D3-06 🟠: 4 nhóm script chạy thử — [R11](reports/R11_day03-demos.md), R14, R16; DEMO-01..04 PASS trên develop; D01-A/C (delta + snapshot) BLOCKED nhưng ngoài phạm vi MVP 04/10 theo quyết định 2026-10-03, giữ trong results.
 - [x] D3-07 🟢: tổng hợp và bàn giao ngày 04 — [R12](reports/R12_day03-summary.md); chỉ là đã lập báo cáo, không nghĩa chức năng đạt.
+
+Day03-ter (SHA 92649a6, nhánh Như Ý): [summary](deliverables/day03ter-summary.md) · [results](deliverables/day03ter-results.json).
 
 Day03-bis (SHA cd83f11): [summary](deliverables/day03bis-summary.md) · [results](deliverables/day03bis-results.json); D3-05/06 vẫn chưa [x] vì WORD-02/04, DEMO-04 BLOCKED.
 
