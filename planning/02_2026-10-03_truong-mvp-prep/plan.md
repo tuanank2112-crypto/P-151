@@ -22,6 +22,8 @@
 
 - 2026-10-03: Day03-bis trên commit cd83f11 (merge develop e32e014; pytest 1600 passed/29 deselected, ruff đạt): 23 record = 19 PASS / 4 BLOCKED. DEMO-01-RATING FAIL→PASS, WORD-01 BLOCKED→PASS; DEMO-04 và WORD-02/04 vẫn BLOCKED (engine có method safety nhưng chưa có route API). Kết quả Day03 SHA 0ea04ad giữ nguyên làm lịch sử. Xem [day03bis-summary](deliverables/day03bis-summary.md), H13–H15/R13–R15.
 
+- 2026-10-03: người dùng chốt ASSET-03 = phương án A (giữ OPERATIONS §3.2.2 `asset_onsite`, sửa chữ SPEC-P06-DAY03 §3 D3-02) và STOCK-04 = phương án A (cờ `STOCK_CHECK_ON_ACCEPT` chỉ là lời nhắc, `accept` không chặn; ghi làm rõ vào D-05). Owner route safety/khẩn cấp = Như Ý (đổi DEMO-04 từ Châm Anh). Không đổi kết quả đo: ASSET-03 và STOCK-04 giữ PASS.
+
 ### Quyết định bị thay thế
 
 - Trạng thái D-08 PENDING ở nhật ký và reports trước bản ghi này là lịch sử đã được thay thế bởi APPROVED; giữ nguyên report và evidence cũ.

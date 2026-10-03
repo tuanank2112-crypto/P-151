@@ -23,7 +23,7 @@
 - Bất biến code: mọi đổi status qua `_apply_transition` + `TRANSITIONS` (25 dòng); mọi ghi qua `_mutate` (deep copy → audit → commit, fail closed) và giữ `engine.lock`; `engine.at()` thread-local; hàm bước `_step_<số>_<việc>`.
 - Kiểm tra: `python -m pytest -q -p no:cacheprovider` + `python -m ruff check src tests` + `python -m ruff format --check src tests` (venv Python 3.11, `LLM_MODE=mock`, `PYTHONUTF8=1`). File data test mới: `git add -f`. Postgres: `MO_TEST_DATABASE_URL=…/p151_test python -m pytest --pg -q` (chỉ docker local).
 - Planning & RFCs: `planning/[STT]_[YYYY-MM-DD]_[Ten-Ngan]` (25-35 ký tự, cố định path); hồ sơ 01 có specs/reports/evidence đầy đủ.
-- Plan02 (2026-10-03): Trường chuẩn bị 5 gói theo Notion; safety P0 + fixture CR03 riêng, chưa tích hợp runtime. D08 approved (leader Châm Anh, 02/10, ghi 03/10). Day03 local (0ea04ad): 23 record = 17 PASS/1 FAIL/5 BLOCKED (FAIL DEMO-01-RATING; BLOCKED safety/rating-once/reopen, owner Như Ý); D3-05/06 chưa [x]; runtime/online pending. Sau merge develop e32e014 (2026-10-03): rating-once đã sửa, safety nối engine nhưng CHƯA có route/UI ⇒ kết quả Day03 (SHA 0ea04ad) cũ cho các mục đó; cần Day03-bis.
+- Plan02 (2026-10-03): Trường chuẩn bị 5 gói theo Notion; safety P0 + fixture CR03 riêng, chưa tích hợp runtime. D08 approved (leader Châm Anh, 02/10, ghi 03/10). Day03 local (0ea04ad): 23 record = 17 PASS/1 FAIL/5 BLOCKED (FAIL DEMO-01-RATING; BLOCKED safety/rating-once/reopen, owner Như Ý); D3-05/06 chưa [x]; runtime/online pending. Sau merge develop (cd83f11): Day03-bis 23 record = 19 PASS/4 BLOCKED; rating-once đã PASS; safety có method engine nhưng CHƯA có route API (DEMO-04, WORD-02/04 BLOCKED, owner Như Ý). Chốt: ASSET-03=A, STOCK-04=A.
 </project_foundation>
 
 <truong_focus>

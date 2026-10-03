@@ -13,7 +13,7 @@
 | D-02 | Bậc 2: 4 giờ lịch review; 12 giờ lịch bổ sung safety; NEED_INFO thường SLA BPTN | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
 | D-03 | Ngưỡng báo trùng nâng ưu tiên = 3 | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
 | D-04 | Đèn/bóng cháy đứng riêng = NONE, B-01 | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
-| D-05 | Stock UNKNOWN đi tiếp với STOCK_CHECK_ON_ACCEPT | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
+| D-05 | Stock UNKNOWN đi tiếp với STOCK_CHECK_ON_ACCEPT (làm rõ 2026-10-03, người dùng chốt: cờ chỉ là lời nhắc, phòng ban tự kiểm kho khi nhận việc; `accept` không phải chặn) | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
 | D-06 | Tín hiệu mở rộng trong giả định mô phỏng; phase theo §16 CR-03 | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
 | D-07 | Ảnh bằng chứng bắt buộc, không miễn | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
 | D-08 | Leader duyệt phạm vi MVP và D-01–D-07 theo thông báo người dùng | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |

@@ -483,7 +483,7 @@
         "evidence/bis/demos/openapi-safety-scan.txt",
         "evidence/bis/demos/git-head.txt"
       ],
-      "issue_owner": "Châm Anh",
+      "issue_owner": "Như Ý",
       "block_reason": "TARGET BLOCKED - UNIMPLEMENTED (API): OpenAPI (45 paths) has 0 safety/emergency/hazard routes; no route calls engine.safety_confirm_safe/safety_escalate/safety_request_info/emergency_downgrade/emergency_close (engine.py:765-886 exist). TransitionRequest takes only to/note/eta/cancel_reason; bptn-resolve is not a safety route; Action enum (SAFETY_*/EMERGENCY_*) appears in schema but the only route using it is /attempt. Engine methods NOT invoked directly (not API demo). D01 additions-delta and BQL actions/negatives/deadline jobs therefore not run."
     },
     {
@@ -505,7 +505,7 @@
         "evidence/bis/demos/openapi-safety-scan.txt",
         "evidence/bis/demos/git-head.txt"
       ],
-      "issue_owner": "Châm Anh",
+      "issue_owner": "Như Ý",
       "block_reason": "TARGET BLOCKED - UNIMPLEMENTED (API): OpenAPI (45 paths) has 0 safety/emergency/hazard routes; no route calls engine.safety_confirm_safe/safety_escalate/safety_request_info/emergency_downgrade/emergency_close (engine.py:765-886 exist). TransitionRequest takes only to/note/eta/cancel_reason; bptn-resolve is not a safety route; Action enum (SAFETY_*/EMERGENCY_*) appears in schema but the only route using it is /attempt. Engine methods NOT invoked directly (not API demo). D01 additions-delta and BQL actions/negatives/deadline jobs therefore not run."
     }
   ]

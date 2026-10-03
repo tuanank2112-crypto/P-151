@@ -51,7 +51,7 @@ Task chỉ check [x] khi đầu ra và các ca yêu cầu đã được ghi nh�
 - Xong khi: summary có SHA/môi trường/ngày kiểm tra/nguồn dataset; ghi rõ chức năng thiếu. Phụ thuộc: không có; mọi kiểm thử sau dùng cùng manifest hoặc ghi một run mới.
 
 ### D3-02 — Kiểm tra asset (40 phút, 🟠)
-- ASSET-01: tài sản đèn xác định được → asset đúng; ASSET-02: chưa rõ tài sản → VERIFYING/ASSET_UNCLEAR, chưa giao; ASSET-03: BPTN bổ sung asset hợp lệ → tiếp tục đúng bước theo OPERATIONS §3.
+- ASSET-01: tài sản đèn xác định được → asset đúng; ASSET-02: chưa rõ tài sản → VERIFYING/ASSET_UNCLEAR, chưa giao; ASSET-03: BPTN xác nhận asset onsite (`asset_onsite=true` + note; 2026-10-03 người dùng chốt phương án A, thay chữ cũ "bổ sung asset hợp lệ") → ROUTED với cờ ASSET_CHECK_ONSITE theo OPERATIONS §3.
 - Xong khi: 3 record có input, expected, actual và evidence hoặc blocker được nêu rõ. Lỗi engine giao Như Ý; UI giao Trí; API/storage giao Châm Anh. Phụ thuộc D3-01.
 
 ### D3-03 — Kiểm tra vật tư/tồn kho (45 phút, 🟠)

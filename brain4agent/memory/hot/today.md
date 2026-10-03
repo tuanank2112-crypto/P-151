@@ -133,3 +133,8 @@
 - 2026-10-03: merge lần 2 develop 0cb16e2 (PR #6 Trường) theo H02 + SO Q10: giữ safety.py nhánh này, bộ nhãn Trường chạy trên assess (92 khớp/6 cao ghim ABOVE_LABEL), lexicon thêm giật (Bậc 2) + loại trừ giật nước; 1600 passed, ruff sạch.
 - 2026-10-03: merge lần 2 develop (0cb16e2, PR #6 Trường) ✅ 510f888: 1600 test; bộ nhãn Trường 92 khớp/0 thấp/6 cao. Push nhánh + Activity Diagram.
 - Thêm docs/Activity Diagram.png (bản nháp swimlane của Như Ý; còn lệch CR-03: thiếu 2b trước phân loại và nhánh Bậc 2 — xem roadmap).
+
+## Day03-bis + chốt quyết định — 2026-10-03
+- Merge develop e32e014 → cd83f11 (đã push), pytest 1600 passed/29 deselected, ruff đạt. Day03-bis (cd83f11): 23 record = 19 PASS / 4 BLOCKED (DEMO-04, WORD-02/04: chưa có route safety); rating-once FAIL→PASS. Local 2a753c8 chưa push.
+- Người dùng chốt: ASSET-03 = A (giữ OPERATIONS asset_onsite, SPEC sửa chữ), STOCK-04 = A (cờ chỉ là lời nhắc), owner route safety = Như Ý. Handoff cho Như Ý: planning/02_*/deliverables/handoff-noy-safety-routes.md.
+- Môi trường: cần DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 + sqlalchemy 2.0.x (2.1 bị Application Control chặn DLL).
