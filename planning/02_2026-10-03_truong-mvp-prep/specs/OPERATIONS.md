@@ -2,7 +2,7 @@
 
 ## 1. Trạng thái và setup cô lập
 
-Ngày lập 2026-10-03; dữ liệu **SIMULATED**, group approval **pending**. D01 đã chốt delta + snapshot: LLM chỉ nhận phần bổ sung mới và snapshot, không raw cũ; safety luôn chạy; risk không tự giảm khi chưa có quyết định người có quyền. D02–D07 dùng mặc định của CONTRACTS. Đây là runbook chuẩn bị, chưa chạy runtime/online.
+Ngày lập 2026-10-03; dữ liệu **SIMULATED**, group approval **APPROVED** theo thông báo người dùng (leader Lê Thị Châm Anh, ngày được báo 2026-10-02, ghi nhận 2026-10-03). D01 đã chốt delta + snapshot: LLM chỉ nhận phần bổ sung mới và snapshot, không raw cũ; safety luôn chạy; risk không tự giảm khi chưa có quyết định người có quyền. D02–D07 dùng mặc định của CONTRACTS. Đây là runbook chuẩn bị, chưa chạy runtime/online.
 
 Đối chiếu `src/api/routers/maintenance.py`, `src/main.py`, `src/maintenance/{engine,demo}.py`, `seed/maintenance_v1/{tickets,catalog,accounts}.yaml`. CURRENT có ingest/additions, BPTN info/asset, department execution, BQL close, warehouse stock, jobs. **TARGET BLOCKED — UNIMPLEMENTED**: CR03 safety, delta/snapshot D01, rating một lần, cấm reopen. Hiện `rate()` ghi đè rating, additions phân loại lại raw+additions, route reopen còn có. CẤM trình diễn target như đã chạy đạt.
 
@@ -107,5 +107,5 @@ CẤM sửa raw (truy vết), gán nhân viên trong MVP (baseline department t�
 - ✅ local readiness tài liệu: 4 nhóm; happy path 2 nhánh; Bậc 2 đủ 3, Bậc 1 phân biệt đóng/hạ MVP và follow-up sau MVP; D01 thiếu location vẫn hazard; CURRENT route/body đối chiếu source bằng contract-check exit 0. Đây không phải runtime acceptance.
 - ⬜ local preflight/runtime baseline: hub thiếu, demo chưa chạy; E(G,S) chưa sinh. Root đo lại độc lập, không tin report.
 - ⬜ local target: safety/D01/rating-once/no-reopen chưa implement; cần 0 emergency auto-clear, 0 old raw resubmit, deny từng role và evidence mỗi nhánh fresh.
-- ⬜ online: chưa mở UI/deploy/gọi API chung, group approval pending; chỉ chạy khi người dùng duyệt môi trường thật, không remote reset.
+- ⬜ online: chưa mở UI/deploy/gọi API chung, group approval recorded (leader Lê Thị Châm Anh, reported date 2026-10-02); chỉ chạy khi người dùng duyệt môi trường thật, không remote reset.
 - ⬜ full repo format: root đo exit 1 do hai file có sẵn ngoài phạm vi; không tự sửa trong WP3. Chỉ chốt readiness WP3, không đóng package.

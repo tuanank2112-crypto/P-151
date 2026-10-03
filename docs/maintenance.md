@@ -6,7 +6,7 @@ Bộ đầu ra cho việc 01/10–02/10 được thực hiện ngày 2026-10-03,
 https://storm-jade-f74.notion.site/K-ho-ch-MaintenanceOps-MVP-3e43b68a924d80d7a81fe0579e1eddb9
 
 Hồ sơ: [plan 02](../planning/02_2026-10-03_truong-mvp-prep/plan.md).
-D-01 được người dùng xác nhận; D-02–D-07 dùng mặc định CR-03. Nhóm chưa duyệt chính thức, D-08 chưa có người duyệt/thời điểm.
+D-01 được người dùng xác nhận; D-02–D-07 dùng mặc định CR-03. D-08 APPROVED: người dùng thông báo leader Lê Thị Châm Anh duyệt phạm vi MVP 04/10 và D-01–D-07; ngày duyệt được báo là 2026-10-02, chưa cung cấp giờ. Ghi nhận ngày 2026-10-03; commit a5e2705/PR #6 là bản tham chiếu được người dùng xác nhận trong phiên này, không khẳng định commit đã tồn tại ngày 02/10. Nguồn: thông báo người dùng trong phiên; chưa có link biên bản ngoài. Không mở rộng thành duyệt mọi CR/backlog hoặc nghiệm thu runtime.
 
 ## Phân biệt ba tầng
 
@@ -46,4 +46,8 @@ Không tăng phiên bản ứng dụng hoặc gắn release mới khi plan chưa
 
 5 gói đã có đầu ra và report. Root đo lại 266 tests pass, 20 Postgres deselected; 72 safety tests, 9 target tests; kiểm tra hồ sơ 57/57 pass. Lint và format 3 file Python mới đạt. Python syntax được kiểm tra; repo chưa cấu hình typechecker.
 Format toàn repo còn 2 file baseline ngoài phạm vi; Postgres và demo online chưa chạy trong phiên này. Bằng chứng [pytest](../planning/02_2026-10-03_truong-mvp-prep/evidence/root/final-pytest.txt), [hồ sơ](../planning/02_2026-10-03_truong-mvp-prep/evidence/root/package-check.txt).
-Hàm safety vẫn là rules độc lập; trạng thái này không có nghĩa API đã tích hợp safety/D-01 hoặc nhóm đã duyệt chính thức.
+Hàm safety vẫn là rules độc lập; trạng thái này không có nghĩa API đã tích hợp safety/D-01 hoặc runtime đã được nghiệm thu. D-08 duyệt thiết kế được ghi nhận riêng theo thông báo người dùng.
+
+## Công việc ngày 03/10
+
+[Checklist và hợp đồng 7 task](../planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md): asset, vật tư, trùng cơ bản, wording/quyền và chạy thử 4 demo. Trường chuẩn bị/kiểm thử và bàn giao lỗi; Như Ý sở hữu engine/safety, Châm Anh sở hữu API/storage, Trí sở hữu UI. Chưa có kết quả chạy các task này.

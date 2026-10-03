@@ -1,6 +1,6 @@
-# Trường — công việc 01/10 và 02/10
+# Trường — chuẩn bị MVP và kiểm tra ngày 03/10
 
-- Status: LOCAL_OUTPUTS_READY; overall plan: IN_PROGRESS; group approval: PENDING
+- Status: LOCAL_OUTPUTS_READY; overall plan: IN_PROGRESS; group approval: APPROVED
 - Local outputs verified: 2026-10-03T09:50:39+07:00
 - Created: 2026-10-03 (Asia/Saigon)
 - Base: 10a1d54 (verify with git rev-parse HEAD in reports)
@@ -14,8 +14,13 @@
 - 2026-10-03: giao 5 gói cho 5 sub-agent; tối đa 3 sub-agent đồng thời do giới hạn 4 slot bao gồm root.
 - 2026-10-03: engine hiện chưa có safety CR-03; chuẩn bị rules độc lập và dataset đích, bảo toàn dataset baseline đang chạy. Chỉ tích hợp runtime sau quy trình duyệt của nhóm và gói Như Ý.
 
+- 2026-10-03T10:25:01+07:00: D-08 APPROVED: người dùng thông báo leader Lê Thị Châm Anh duyệt phạm vi MVP 04/10 và D-01–D-07; ngày duyệt được báo là 2026-10-02, chưa cung cấp giờ. Ghi nhận ngày 2026-10-03; commit a5e2705/PR #6 là bản tham chiếu được người dùng xác nhận trong phiên này, không khẳng định commit đã tồn tại ngày 02/10. Nguồn: thông báo người dùng trong phiên; chưa có link biên bản ngoài. Không mở rộng thành duyệt mọi CR/backlog hoặc nghiệm thu runtime.
+
+- 2026-10-03T10:43:10+07:00: lập 7 task ngày 03 theo Notion; Trường kiểm thử/nghiệp vụ/wording/demo, không mở rộng coding runtime safety. Các task chưa được thực hiện.
+
 ### Quyết định bị thay thế
 
+- Trạng thái D-08 PENDING ở nhật ký và reports trước bản ghi này là lịch sử đã được thay thế bởi APPROVED; giữ nguyên report và evidence cũ.
 - D-01 cũ gửi lại toàn bộ nội dung khi chạy pipeline: thay bằng hợp đồng delta + snapshot cho bản đích, không tuyên bố runtime đã đổi.
 - CR-03 §16 ghi T16/T17/E02 P0: phạm vi đích theo Notion dời sau MVP.
 
@@ -37,11 +42,11 @@ Mỗi WP có handoffs/HNN_*.md, reports/RNN_*.md và evidence/wpN/*.txt do lện
 
 - [x] local preparation: 266 passed / 20 Postgres deselected; 72 safety + 9 target tests; lint và format 3 file mới đạt; 57/57 kiểm tra hồ sơ đạt; Python syntax đạt. Không có typechecker được cấu hình.
 - [ ] repository-wide format: 2 file có từ baseline chưa đạt (`src/api/routers/maintenance.py`, `src/maintenance/ai_logger.py`), ngoài phạm vi gói này.
-- [ ] group: D-08 người duyệt thật + ngày giờ + quyết định.
+- [x] group: D-08 APPROVED theo thông báo người dùng; leader Lê Thị Châm Anh; approved_date=2026-10-02; time chưa cung cấp; ghi nhận 2026-10-03. Phạm vi: MVP 04/10 và D-01–D-07 tại bản tham chiếu a5e2705/PR #6.
 - [ ] runtime: Như Ý tích hợp safety + D-01 vào engine.
 - [ ] online: bốn demo UI + restart persistence tại MVP.
 
-Không đóng toàn kế hoạch khi group/runtime/online chưa đạt.
+Không đóng toàn kế hoạch khi runtime/online chưa đạt. Group gate đã duyệt theo bản ghi D-08 dưới đây.
 
 
 ## Nghiệm thu local và bằng chứng
@@ -52,3 +57,20 @@ Không đóng toàn kế hoạch khi group/runtime/online chưa đạt.
 - 5 handoff đã có 5 report tương ứng. Root đã kiểm tra và đo lại đầu ra; không thay thế quyết định duyệt nhóm D-08.
 - Boot không chạy được vì thiếu hub `C:/brain4agent.release/.../init_brain.js` (exit 1, MODULE_NOT_FOUND); không sửa tay luật managed.
 - Không phát hành hoặc tăng version ứng dụng khi group/runtime/online gates còn mở; không stage/commit/push/deploy.
+
+## Kiểm tra bản ghi D-08
+
+- [Approval consistency](evidence/root/approval-check.txt): 57/57 pass, fail0, skip0, exit0. Đây là kiểm tra hồ sơ, không phải test tích hợp hoặc xác minh độc lập biên bản của leader.
+
+
+## Checklist ngày 03/10 — Trường
+
+Hợp đồng: [SPEC-P06-DAY03](specs/SPEC-P06-DAY03.md). Các task dưới đây mới lập, chưa thực hiện. Tổng thời gian thao tác dự kiến 4 giờ 25 phút, chưa tính chờ tích hợp.
+
+- [ ] D3-01 🟢: chuẩn bị phiên bản/môi trường kiểm tra — §3 D3-01.
+- [ ] D3-02 🟠: kiểm tra asset, 3 ca — §3 D3-02.
+- [ ] D3-03 🟠: kiểm tra vật tư/tồn kho, 4 ca — §3 D3-03.
+- [ ] D3-04 🟠: kiểm tra trùng cơ bản, 4 ca — §3 D3-04.
+- [ ] D3-05 🟢: rà wording/quyền, 4 vai trò — §3 D3-05.
+- [ ] D3-06 🟠: chạy thử 4 nhóm script — §3 D3-06.
+- [ ] D3-07 🟢: tổng hợp lỗi/phụ thuộc và bàn giao ngày 04 — §3 D3-07.

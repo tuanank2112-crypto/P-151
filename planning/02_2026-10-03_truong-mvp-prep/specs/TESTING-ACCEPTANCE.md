@@ -34,7 +34,7 @@ Evidence under evidence/wp5/: initial-red.txt (2 failed/7 passed before repair, 
 ## 5. Environment-specific gates
 - Local target: measured pytest/Ruff result in R05; 0fail/0skip required.
 - Baseline startup: FIXTURE_DIR/load_dataset() remain maintenance_v1, no engine/config mutation here; full regression root reviewer responsibility.
-- Group: ⬜ GROUP_PENDING, approver=null, approved_at=null. User confirmation D01 delta+structured persisted context and D02–07 defaults does not close approval.
+- Group: ✅ APPROVED cho phạm vi MVP và D-01–D-07 theo thông báo người dùng; approver=Lê Thị Châm Anh (leader), approved_date=2026-10-02, approved_at=null (giờ chưa cung cấp), recorded_date=2026-10-03. Commit a5e2705/PR #6 là bản tham chiếu được xác nhận trong phiên ghi nhận. Không chứng nhận runtime/online.
 - Runtime: ⬜ BLOCKED_PENDING_INTEGRATION. Engine does not call safety or implement emergency blocker. No test claims old runtime meets new target.
 - Online/deploy: ⬜ no remote/production action; local evidence cannot close online gate.
 Planned integration command after runtime implementation, isolated in-memory engine only:
