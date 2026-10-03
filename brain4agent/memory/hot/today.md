@@ -44,3 +44,18 @@
 - Format toàn repo vẫn exit1 do 2 file baseline ngoài scope; boot hub exit1; không chạy Postgres/online trong phiên này.
 - Review đã sửa false positive phủ định liên tiếp, giữ risk cũ; bằng chứng red-negation → green-negation. Contract đích thêm nguồn ticket và clearance residual-risk guard.
 - Group approval, runtime integration và online acceptance pending. Không tăng version ứng dụng, không stage/commit/push/deploy.
+
+
+## D-08 approval recorded — 2026-10-03
+- D-08 APPROVED: người dùng thông báo leader Lê Thị Châm Anh duyệt phạm vi MVP 04/10 và D-01–D-07; ngày duyệt được báo là 2026-10-02, chưa cung cấp giờ. Ghi nhận ngày 2026-10-03; commit a5e2705/PR #6 là bản tham chiếu được người dùng xác nhận trong phiên này, không khẳng định commit đã tồn tại ngày 02/10. Nguồn: thông báo người dùng trong phiên; chưa có link biên bản ngoài. Không mở rộng thành duyệt mọi CR/backlog hoặc nghiệm thu runtime.
+- Không đổi engine/storage/API, không đóng runtime/online gates; chưa commit/push bản ghi này.
+- Kiểm tra bản ghi D-08: verify_package.py 57/57 pass, fail0, skip0, exit0; giữ nguyên bằng chứng nghiệm thu cũ.
+
+## Day03 tasks planned — 2026-10-03
+- 2026-10-03T10:43:10+07:00: tạo SPEC/checklist 7 task, chưa chạy. Phạm vi Trường: nghiệp vụ, dữ liệu/expected, kiểm thử, wording, demo; không sửa app safety/engine/API/UI. Không phát hành, không commit/push.
+
+## Tối ưu não cho Trường — 2026-10-03
+- Đọc Notion "Kế hoạch MaintenanceOps MVP" qua API public `loadCachedPageChunkV2` (WebFetch không render được trang JS).
+- Kernel thêm `<truong_focus>` (chủ việc, ranh giới không sửa, chỉ tiêu 19/10); sửa nhánh `feature/chamanh` → `feature/truong`.
+- Roadmap: lịch Trường 01/10–19/10 dạng checklist (01–02/10 ✅, còn lại mở). project-intro: sửa persistence cũ (in-memory → memory|postgres), thêm mốc/nhóm, ghi CR-BPTN-01/02 không có trên nhánh này. index: router việc Trường, dataset, deliverables; map src/seed/tests.
+- Bước 0 vẫn exit 1 MODULE_NOT_FOUND (không có `../brain4agent.release`). Chỉ sửa docs não, không chạm code; chưa commit.

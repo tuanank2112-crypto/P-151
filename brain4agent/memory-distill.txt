@@ -11,7 +11,7 @@
 </agent_startup_protocol>
 
 <project_foundation>
-- Dự án: P-151 MaintenanceOps Agent — prototype MÔ PHỎNG, v0.5 candidate (CR-BPTN-02) trên nhánh feature/chamanh.
+- Dự án: P-151 MaintenanceOps Agent — prototype MÔ PHỎNG, v0.5 candidate (CR-BPTN-02). Worktree này: nhánh `feature/truong` (chủ: Trường).
 - Tech Stack: Python 3.11 + FastAPI; engine thuần Python `src/maintenance/engine.py`; LLM tùy chọn (LangChain ChatOpenAI, `LLM_MODE=mock|openai`); UI tĩnh `src/web/` (Tailwind CDN).
 - Data/State: `CaseRepository` theo `MO_STORE` (memory mặc định | postgres schema `maintops`, Alembic, Supabase); ảnh theo `MO_PHOTO_STORE` (local | supabase). Startup chỉ seed khi rỗng, không reset; reset/evaluate trên DB chung cần `MO_ALLOW_RESET=true`. Kế hoạch 01 đang chạy (WP2–WP4 xong local).
 - Bất biến: mọi đổi status qua `_apply_transition` + bảng TRANSITIONS; mọi ghi qua `_mutate` (deep copy → audit sink → commit, fail closed); chỉ BQL đóng/hủy.
@@ -20,8 +20,18 @@
 - Đồng thời: ghi phải giữ `engine.lock`; `engine.at()` là thread-local (xem `-known-gotchas.md`).
 - Kiểm tra: `python -m pytest -q` + `python -m ruff check src tests` + `python -m ruff format --check src tests`; Postgres: `MO_TEST_DATABASE_URL=…/p151_test python -m pytest --pg -q` (chỉ docker local).
 - Planning & RFCs: Thư mục `planning/` lưu trữ các bản kế hoạch theo định dạng `[STT]_[YYYY-MM-DD]_[Ten-Ngan]` (25-35 ký tự, cố định path).
-- Plan02 (2026-10-03): Trường chuẩn bị 5 gói theo Notion; safety P0 + fixture CR03 riêng, chưa tích hợp runtime. D-01 delta/context, D02–07 user confirmed; D08 nhóm pending.
+- Plan02 (2026-10-03): Trường chuẩn bị 5 gói theo Notion; safety P0 + fixture CR03 riêng, chưa tích hợp runtime. D-01 delta/context, D02–07 user confirmed; D08 approved theo user report: leader Châm Anh, ngày 02/10 (không có giờ), ghi nhận 03/10; runtime/online pending.
 </project_foundation>
+
+<truong_focus>
+- Nguồn phân công: Notion "Kế hoạch MaintenanceOps MVP" (link + lịch từng ngày: `roadmap.md` §Trường). Mốc: MVP online 23:59 04/10; bàn giao cuối 23:59 19/10; nghiệm thu 21:00 cùng ngày; họp nhóm 21:00 hằng ngày.
+- Trường SỞ HỮU: nghiệp vụ, dataset/nhãn chuẩn + kịch bản eval, rules/playbook, quyết định CR (D-xx), architecture/swimlane, user test, pitch 10 slide.
+- Chủ việc khác — Trường KHÔNG sửa, chỉ giao handoff/fixture/test đích: Như Ý = engine/state machine/safety integration/proposer/LangGraph; Châm Anh = API/persistence/CI/deploy/eval runner/chi phí; Trí = UI/UX, panel Agent, AI Logs, Phoenix.
+- Đầu ra của Trường nằm ở: `seed/maintenance_cr03/`, `src/maintenance/safety.py` (rules P0 độc lập, chưa nối engine), `tests/test_maintenance/test_safety_p0.py`+`test_cr03_targets.py`, `docs/CR-BPTN-03.md`, `planning/02_*/`.
+- Việc đang mở: Day03 D3-01..07 (SPEC-P06-DAY03, kiểm thử/wording/demo, không coding runtime) → 04/10 chạy 4 demo, đối chiếu expected, ghi thiếu sót.
+- Chỉ tiêu 19/10 Trường phải cấp dữ liệu: safety ≥40 câu nhãn, 0 bỏ sót Bậc 1; classification ≥90% held-out; user test 3–5 người độc lập (thiếu ⇒ ghi số thật, CẤM phản hồi giả); so sánh thủ công/sản phẩm đảo thứ tự.
+- Quyết định nghiệp vụ ghi tên người duyệt + kết quả thật; chưa đồng thuận ⇒ không triển khai phần tranh luận.
+</truong_focus>
 
 <brain_file_roles>
 - `memory-distill.txt`: kernel hiện trạng, đọc đầu tiên.

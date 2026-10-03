@@ -19,6 +19,10 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | **Lộ trình nâng cấp & Ý tưởng** | [`roadmap.md`](roadmap.md) | Active tasks, Kho Ý Tưởng (Idea Vault) và các mốc đã hoàn thành. |
 | **Lịch sử cập nhật** | [`changelog.md`](changelog.md) | Lịch sử Semantic Releases (vX.Y.Z). |
 | **Tài liệu kỹ thuật module** | [`docs/`](../docs/) | Thư mục chứa tài liệu chuyên trách 1-1 cho từng module. |
+| **Việc của Trường hôm nay / phân công nhóm** | [`roadmap.md` §Trường](roadmap.md) + [`memory-distill.txt` `<truong_focus>`](memory-distill.txt) | Lịch 01/10–19/10 theo Notion, chủ việc từng người, chỉ tiêu 19/10. |
+| **Nghiệp vụ CR-03 / quyết định D-xx** | [`docs/CR-BPTN-03.md`](../docs/CR-BPTN-03.md) | Safety 2 bậc, priority, gộp, follow-up, D-01–D-12, AC-01–AC-20. |
+| **Dataset / nhãn / fixture đích** | [`seed/maintenance_cr03/`](../seed/maintenance_cr03/) | `safety_cases.json` (nhãn safety), `tickets.yaml` (expected outcome). |
+| **Deliverables cuối (10 mục)** | [`docs/guide/chapter-09.md`](../docs/guide/chapter-09.md) | Checklist bàn giao 19/10. |
 
 ---
 
@@ -46,7 +50,9 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | `src/maintenance/{rules,proposer}.py` | Phân loại bằng luật + LLM có guard |
 | `src/maintenance/views.py` | View cư dân (allow-list) và bảng BQL |
 | `src/maintenance/{catalog,models,enums}.py` | Catalog mô phỏng, model Pydantic, enum |
+| `src/maintenance/safety.py` | Rules safety P0 độc lập (Trường), CHƯA nối engine — Như Ý tích hợp |
 | `seed/maintenance_v1/` | Fixture: tickets, catalog, accounts |
+| `seed/maintenance_cr03/` | Fixture đích CR-03: nhãn safety + expected outcome (Trường) |
 | `tests/test_maintenance/` | Test engine, API, auth, acceptance, store (pg chỉ chạy `--pg` trên docker `*_test`) |
 
 ---
@@ -68,13 +74,19 @@ project-root/
 │   ├── -known-gotchas.md             # [GOTCHAS] Tổng hợp lỗi dị biệt & bẫy kỹ thuật
 │   ├── -data-architecture.md         # [DATA ARCH] Kiến trúc dữ liệu & Data Flow
 │   └── project-intro.md              # [INTRO] Tổng quan dự án & Tech stack
-├── planning/                         # [QUẢN LÝ KẾ HOẠCH NÂNG CẤP] Chứa các bản kế hoạch RFCs
+├── planning/                         # [QUẢN LÝ KẾ HOẠCH NÂNG CẤP] 01 supabase-persistence, 02 truong-mvp-prep
 ├── .agents/skills/                   # [WORKSPACE SKILLS] Kỹ năng chuyên dụng cục bộ dự án
-└── docs/                             # [MODULE DOCS] Tài liệu kỹ thuật chi tiết
+├── src/                              # main.py, api/, maintenance/ (engine, store, safety), web/ (UI tĩnh)
+├── seed/                             # maintenance_v1 (seed chạy), maintenance_cr03 (fixture đích)
+├── tests/test_maintenance/           # pytest; Postgres chỉ chạy với --pg
+├── scripts/                          # script tiện ích (CI chưa format-check)
+└── docs/                             # [MODULE DOCS] maintenance.md, CR-BPTN-03.md, 01–05, guide/
 ```
 
 ## Trường MVP preparation — 2026-10-03
 - Hồ sơ 5 gói Trường: `planning/02_2026-10-03_truong-mvp-prep/plan.md`, SPEC/handoffs/reports/evidence.
 - Module docs: `docs/maintenance.md`; decisions amendment: `docs/CR-BPTN-03.md`.
 - Rules P0 độc lập: `src/maintenance/safety.py`; dữ liệu đích `seed/maintenance_cr03/`; tests `test_safety_p0.py`, `test_cr03_targets.py`.
-- User xác nhận D-01 delta + persisted structured context; D-02–07 defaults. D-08 group approval pending; chưa tích hợp engine/runtime.
+- User xác nhận D-01 delta + persisted structured context; D-02–07 defaults. D-08 group approval recorded (leader Lê Thị Châm Anh, reported date 2026-10-02, recorded 2026-10-03); chưa tích hợp engine/runtime.
+
+- Ngày 03: `planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md`; 7 task còn mở, kết quả đích trong deliverables/ của cùng package.
