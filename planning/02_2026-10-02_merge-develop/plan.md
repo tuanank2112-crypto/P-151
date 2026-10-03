@@ -27,6 +27,8 @@
 
 | Q09 | 2026-10-03 | **Merge lần 2: `origin/develop` = `0cb16e2`** (PR #6 Trường: `src/maintenance/safety.py` độc lập chưa nối engine, bộ nhãn `seed/maintenance_cr03/`, `test_safety_p0.py`, `test_cr03_targets.py`, hồ sơ `planning/02_2026-10-03_truong-mvp-prep/`). 8 xung đột. Luật: **`safety.py` giữ bản nhánh này** (đã nối engine, 3 vòng thẩm định); **bộ nhãn + test của Trường GIỮ**, viết lại phần gọi cho chạy trên API/engine của nhánh này, **KHÔNG đổi nhãn**. Nhãn Bậc 1 mà engine ra thấp hơn ⇒ lỗ từ vựng ⇒ thêm `lexicon.yaml` (Q29) rồi chạy lại bộ dừng; engine ra CAO hơn nhãn ⇒ ghi danh sách cho Trường, không hạ. `docs/maintenance.md`, CR-03, não: hợp hai bên. Hai thư mục `planning/02_*` cùng STT giữ nguyên (Path Invariant). Người dùng yêu cầu push hết (kể cả `docs/Activity Diagram.png`). | Người dùng duyệt; rules/nhãn là việc của Trường | — |
 
+| Q10 | 2026-10-03 | **Merge lần 2 — câu hỏi mở (R02):** bộ nhãn Trường 98 ca ⇒ 92 khớp / 0 thấp / 6 cao (sau khi thêm "giật"). (1) 2 test `test_cr03_targets.py` đỏ vì kỳ vọng seed `maintenance_v1` bản cũ (CLN-004 ROUTED) ⇒ **cho sửa đúng phần kỳ vọng baseline** sang seed CR-03 (CR-03 §14 + Q20), không đổi nhãn an toàn, comment để Trường review. (2) Fixture Trường xếp phân loại trước an toàn — lệch D-09, không sửa engine, chuyển Trường. (3) Ca engine CAO hơn nhãn giữ nguyên, danh sách cho Trường. (4) "giật" đứng riêng = Bậc 2 (CR-03 B-03); thêm loại trừ dữ liệu "giật nước" (bồn cầu) ⇒ NONE. | CR-03 thắng; nghiêng an toàn | Trường đổi baseline/nhãn · rẻ |
+
 ### Quyết định bị thay thế
 - (chưa có)
 
