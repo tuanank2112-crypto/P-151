@@ -141,3 +141,4 @@
 - 2026-10-03 11:11: PR #7 merge vào develop (6265436) bởi người dùng; cây trùng nhánh đã đo. Hồ sơ 02 ĐÓNG ✅. CI fail do billing Actions. gh: token git thiếu read:org ⇒ dùng GH_TOKEN qua REST.
 - 2026-10-03 12:10: Trường giao route safety/khẩn cấp (handoff-noy-safety-routes). Mở hồ sơ 03, nhánh feature/nhuy-safety-routes từ develop 512131a; route khớp UI PR #8 (Q01).
 - 2026-10-03: WP1 plan 03 (worker): 3 route safety/khẩn cấp bọc engine (Q01), test_api_safety.py 40 test, pytest 1600→1640; chờ SO đo + phán.
+- Hồ sơ 03 ✅: route /mo/tickets/{id}/safety + /bql/tickets/{id}/emergency/{close,downgrade} (24a99ac), 1640 test, ruff sạch. Push + PR vào develop.

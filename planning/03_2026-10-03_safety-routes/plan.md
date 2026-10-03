@@ -2,7 +2,7 @@
 
 | Trường | Giá trị |
 |---|---|
-| Trạng thái | 🚀 ĐANG THI CÔNG |
+| Trạng thái | ✅ ĐÃ HOÀN THÀNH — 2026-10-03 12:15:47 +0700 · route `24a99ac` · PR vào develop |
 | Loại | PATCH (≤ 1 ngày, route mỏng bọc method có sẵn) — AGENTS §3.2.5: chỉ `plan.md` |
 | Yêu cầu | Trường (2026-10-03): `planning/02_2026-10-03_truong-mvp-prep/deliverables/handoff-noy-safety-routes.md` — owner Như Ý |
 | Nhánh | `feature/nhuy-safety-routes` từ `origin/develop` `512131a` (+ cherry-pick ghi chú não `264077a`) |
@@ -25,7 +25,7 @@
 | WP2 | SO đo lại + phán; push; PR vào `develop`; báo Trường SHA + pytest/ruff | 🔴 | SO |
 
 ## §4. Checklist
-- [ ] WP1 report R01
-- [ ] WP2 SO đo + phán
+- [x] WP1 report R01
+- [x] WP2 SO đo + phán ✅
 - [ ] Push + PR + báo Trường
-- [ ] Đồng bộ não
+- [x] Đồng bộ não
