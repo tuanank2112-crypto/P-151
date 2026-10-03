@@ -16,60 +16,43 @@ from pydantic import BaseModel, Field
 
 class AILogStatus(StrEnum):
     """Execution status of an LLM call."""
-    SUCCESS = "SUCCESS"                      # Model responded successfully with valid schema
-    FALLBACK_RULE = "FALLBACK_RULE"          # Model error/timeout -> Graceful fallback to deterministic rule
-    SCHEMA_ERROR = "SCHEMA_ERROR"            # Model response failed schema validation
-    RATE_LIMIT = "RATE_LIMIT"                # HTTP 429 quota exhausted
-    TIMEOUT = "TIMEOUT"                      # Request exceeded maximum allowable timeout
+
+    SUCCESS = "SUCCESS"  # Model responded successfully with valid schema
+    FALLBACK_RULE = "FALLBACK_RULE"  # Model error/timeout -> Graceful fallback to deterministic rule
+    SCHEMA_ERROR = "SCHEMA_ERROR"  # Model response failed schema validation
+    RATE_LIMIT = "RATE_LIMIT"  # HTTP 429 quota exhausted
+    TIMEOUT = "TIMEOUT"  # Request exceeded maximum allowable timeout
 
 
 class AILogEntry(BaseModel):
     """Detailed record for an individual LLM prompt and response cycle."""
 
     log_id: str = Field(
-        default_factory=lambda: f"ailog_{uuid.uuid4().hex[:12]}",
-        description="Unique identifier for the log entry"
+        default_factory=lambda: f"ailog_{uuid.uuid4().hex[:12]}", description="Unique identifier for the log entry"
     )
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(UTC),
-        description="UTC timestamp when the request was initiated"
+        default_factory=lambda: datetime.now(UTC), description="UTC timestamp when the request was initiated"
     )
     ticket_id: str = Field(
-        default="PENDING",
-        description="Associated ticket identifier (e.g. TK-20260930-001 or PENDING during ingest)"
+        default="PENDING", description="Associated ticket identifier (e.g. TK-20260930-001 or PENDING during ingest)"
     )
     prompt_sent: dict[str, str] = Field(
-        ...,
-        description="Payload sent to the model, containing system prompt and user input"
+        ..., description="Payload sent to the model, containing system prompt and user input"
     )
     raw_output: str | None = Field(
-        default=None,
-        description="Raw completion text/JSON received from the model prior to parsing"
+        default=None, description="Raw completion text/JSON received from the model prior to parsing"
     )
     structured_output: dict[str, Any] | None = Field(
-        default=None,
-        description="Validated structured dictionary adhering to LLMAssessment schema"
+        default=None, description="Validated structured dictionary adhering to LLMAssessment schema"
     )
     model_name: str = Field(
-        default="unknown",
-        description="Identifier of the model used (e.g. gpt-4o-mini, gemini-1.5-flash)"
+        default="unknown", description="Identifier of the model used (e.g. gpt-4o-mini, gemini-1.5-flash)"
     )
-    latency_ms: float = Field(
-        default=0.0,
-        ge=0.0,
-        description="Round-trip latency in milliseconds"
-    )
-    status: AILogStatus = Field(
-        default=AILogStatus.SUCCESS,
-        description="Execution status of the invocation"
-    )
-    error_message: str | None = Field(
-        default=None,
-        description="Error details or exception message if the call failed"
-    )
+    latency_ms: float = Field(default=0.0, ge=0.0, description="Round-trip latency in milliseconds")
+    status: AILogStatus = Field(default=AILogStatus.SUCCESS, description="Execution status of the invocation")
+    error_message: str | None = Field(default=None, description="Error details or exception message if the call failed")
     token_usage: dict[str, int] | None = Field(
-        default=None,
-        description="Token consumption metrics: prompt_tokens, completion_tokens, total_tokens"
+        default=None, description="Token consumption metrics: prompt_tokens, completion_tokens, total_tokens"
     )
 
 

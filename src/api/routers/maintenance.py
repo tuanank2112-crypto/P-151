@@ -250,6 +250,8 @@ def reset_ai_logs(actor: ActorDep, engine: EngineDep) -> dict[str, Any]:
     _require_role(engine, actor, ActorRole.QA_INTERNAL)
     ai_logger.clear()
     return {"message": "Đã reset dữ liệu AI logs"}
+
+
 # ------------------------------------------------------------------ tickets (internal, full detail)
 
 

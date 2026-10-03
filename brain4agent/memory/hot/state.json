@@ -1,12 +1,12 @@
 {
-  "current_version": "1.0.0",
+  "current_version": "1.1.1",
   "brain_template_version": "1.7.1",
-  "system_status": "initialized",
+  "system_status": "active",
   "last_verification": {
-    "timestamp": "2026-10-02T00:00:00+07:00",
-    "grade": "pytest 185 passed + 20 deselected; pytest --pg 205 passed; ruff check clean; live restart PASS"
+    "timestamp": "2026-10-02T15:27:53.402Z",
+    "grade": "plan 02 merge develop: 1514 pytest pass, ruff clean, holdout NONE 2/39"
   },
-  "active_plans_completed": 0,
+  "active_plans_completed": 2,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
   "engine_version": "1.13.1",
   "lang": {
@@ -29,5 +29,67 @@
   "owner": {
     "name": "",
     "license": ""
+  },
+  "active_spec": "docs/CR-BPTN-03.md",
+  "working_branch": "feature/nhuy-cr03-p0",
+  "code_baseline": "b4f8a5d",
+  "last_benchmark": {
+    "pytest": "1462 passed, 0 skip",
+    "safety_stop_sets": "1065 green",
+    "false_alarm_budget": {
+      "b_fp": "EM 0 / UNCLEAR 4",
+      "jx_negfp": "EM 0",
+      "b_fp2": "EM 3"
+    },
+    "holdout_none": "2/39",
+    "assess_24kb_seconds": 0.28
+  },
+  "last_sync": "2026-10-02T13:09:52.176Z",
+  "next_step": "PR feature/nhuy-cr03-p0 -> develop (needs user OK); wire router/UI for 6 new engine methods; run --pg tests",
+  "active_plan": {
+    "id": "02_2026-10-03_truong-mvp-prep",
+    "status": "in_progress",
+    "group_approval": "pending",
+    "runtime_integration": "pending",
+    "online_acceptance": "pending",
+    "local_outputs": "verified"
+  },
+  "last_session": {
+    "date": "2026-10-03",
+    "timestamp": "2026-10-03T09:50:39+07:00",
+    "boot_exit": 1,
+    "agents_requested": 5,
+    "baseline_tests": {
+      "passed": 185,
+      "deselected": 20,
+      "exit": 0
+    },
+    "baseline_format": "2 pre-existing files need formatting",
+    "local_verification": {
+      "pytest": {
+        "passed": 266,
+        "deselected": 20,
+        "exit": 0
+      },
+      "safety_tests": 72,
+      "target_tests": 9,
+      "package_checks": {
+        "passed": 57,
+        "failed": 0,
+        "skip": 0,
+        "exit": 0
+      },
+      "lint_exit": 0,
+      "new_files_format_exit": 0,
+      "full_format_exit": 1,
+      "full_format_preexisting_files": [
+        "src/api/routers/maintenance.py",
+        "src/maintenance/ai_logger.py"
+      ],
+      "syntax": "passed",
+      "typechecker": "not configured",
+      "postgres": "not run this session"
+    },
+    "local_work_packages_completed": 5
   }
 }
