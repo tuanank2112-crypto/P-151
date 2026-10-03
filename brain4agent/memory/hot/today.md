@@ -110,3 +110,4 @@
 - Group approval, runtime integration và online acceptance pending. Không tăng version ứng dụng, không stage/commit/push/deploy.
 - 2026-10-03: merge lần 2 develop 0cb16e2 (PR #6 Trường) theo H02 + SO Q10: giữ safety.py nhánh này, bộ nhãn Trường chạy trên assess (92 khớp/6 cao ghim ABOVE_LABEL), lexicon thêm giật (Bậc 2) + loại trừ giật nước; 1600 passed, ruff sạch.
 - 2026-10-03: merge lần 2 develop (0cb16e2, PR #6 Trường) ✅ 510f888: 1600 test; bộ nhãn Trường 92 khớp/0 thấp/6 cao. Push nhánh + Activity Diagram.
+- Thêm docs/Activity Diagram.png (bản nháp swimlane của Như Ý; còn lệch CR-03: thiếu 2b trước phân loại và nhánh Bậc 2 — xem roadmap).
