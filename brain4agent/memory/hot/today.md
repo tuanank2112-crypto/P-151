@@ -92,3 +92,4 @@
 - Còn: WP4b, WP5 (owner chạy migration Supabase + M-SB1/M-SB2), WP6; R02 chờ người duyệt; chưa commit.
 - Owner đã migrate Supabase (`0001_maintops_initial`, kiểm chỉ-đọc PASS, TLSv1.3 client). Chạy alembic phải bằng `.venv\Scripts\python.exe` (conda base không có alembic).
 - Hồ sơ 02: merge develop ✅ (b4f8a5d, 1514 test, an toàn không hồi quy). Brain v1.1.1. Push nhánh; PR chờ người dùng.
+- 2026-10-03: develop có PR #5 của Trí (2f00a2c, chỉ src/web/app.js) ⇒ merge vào nhánh, không xung đột. PR của nhánh này chưa merge vào develop.
