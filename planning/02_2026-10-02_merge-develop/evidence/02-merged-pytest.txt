@@ -1,0 +1,6 @@
+# merged tree (merge in progress, HEAD 853ed6f + origin/develop deab467)
+$ python -m pytest -q -p no:cacheprovider -rs
+........................................................................ [ 99%]
+..                                                                       [100%]
+1514 passed, 29 deselected in 22.24s
+pytest EXIT=0

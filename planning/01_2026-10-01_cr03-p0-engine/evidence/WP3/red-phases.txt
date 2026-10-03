@@ -1,0 +1,5 @@
+FAILED tests/test_maintenance/test_safety.py::test_no_hardcoded_thresholds - ...
+FAILED tests/test_maintenance/test_safety.py::test_tier2_deadline_is_calendar_time
+FAILED tests/test_maintenance/test_safety.py::test_safety_blockers_are_not_cleared_by_resume_or_jobs
+65 failed, 52 passed in 2.64s
+EXIT=1

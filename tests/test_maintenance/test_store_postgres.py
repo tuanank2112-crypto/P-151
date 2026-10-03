@@ -103,10 +103,10 @@ def test_t05_pg_stale_save_raises_concurrency_error(pg_repo, clock):
         with pg_repo.transaction() as tx:
             stale = tx.get_for_update(tid).model_copy(deep=True)
             tx.conn.execute(text("update maintops.cases set version = version + 1 where ticket_id = :id"), {"id": tid})
-            stale.ticket.assignee_id = "SIM-LOSER"
+            stale.ticket.cancel_reason = "SIM-LOSER"
             tx.save(stale)
     assert pg_repo.version_of(tid) == before
-    assert pg_repo.get(tid).ticket.assignee_id is None
+    assert pg_repo.get(tid).ticket.cancel_reason is None
 
 
 def test_nested_transaction_on_one_thread_is_refused(pg_repo):
@@ -265,28 +265,3 @@ def test_t28_nul_text_is_refused_and_nothing_is_written(pg_api):
     )
     assert response.status_code == 409 and response.json()["detail"]["code"] == "UNSTORABLE_TEXT"
     assert engine.repo.count() == before
-
-
-def test_cr03_writes_on_two_tickets_land_together(pg_repo, pg_url, clock):
-    """Plan 02 I-9: merge, cancel of the original and the follow-up ticket write two rows in ONE transaction."""
-    from tests.test_maintenance.helpers import BPTN, LIGHTING, OTHER_RESIDENT
-
-    engine = MaintenanceEngine(clock=clock, repo=pg_repo)
-    first = report(engine, LIGHTING)
-    clock.advance(hours=1)
-    second = report(engine, LIGHTING, resident=OTHER_RESIDENT)
-    engine.bptn_resolve(second, BPTN, merge=True)
-    engine.cancel(first, BQL, cancel_reason="Cư dân rút phản ánh")
-
-    restart_pg(pg_url)
-    reread = MaintenanceEngine(clock=clock, repo=PostgresRepository(pg_url))
-    assert reread.get(first).ticket.status == "CANCELLED"
-    child = reread.get(second).ticket
-    assert child.status == "ROUTED" and child.merged_into is None and first in reread.get(second).not_duplicate_of
-
-    hot = report(reread, "Đèn sảnh chính tòa SIM-B không sáng, hộp đèn bốc khói")
-    follow = reread.create_follow_up(hot, BQL, note="Thay bộ đèn sau khi xử lý khẩn cấp")
-    restart_pg(pg_url)
-    again = MaintenanceEngine(clock=clock, repo=PostgresRepository(pg_url))
-    assert again.get(follow.ticket.ticket_id).ticket.follow_up_of == hot
-    assert again.get(hot).audit[-1].action == "CREATE_FOLLOW_UP"

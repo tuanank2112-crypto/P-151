@@ -1,13 +1,8 @@
 """Fixture dataset integrity: 12 synthetic tickets, 6/6 split, 4 demo flows + 8 regression, SIM- IDs only."""
 
-from pathlib import Path
-
 from src.maintenance.catalog import load_catalog, load_dataset
 from src.maintenance.demo import evaluate
 from src.maintenance.engine import MaintenanceEngine
-
-# seed/maintenance_v1 stays the CR-02 baseline (v1.2); the CR-03 engine is judged on the CR-03 target oracle.
-CR03_DIR = Path("seed/maintenance_cr03")
 
 
 def test_dataset_shape():
@@ -42,7 +37,7 @@ def test_department_table_is_config_not_code():
 
 
 def test_all_twelve_tickets_match_expected_outcome():
-    report = evaluate(MaintenanceEngine(dataset=load_dataset(CR03_DIR)))
+    report = evaluate(MaintenanceEngine())
     failures = {r.ticket_id: r.mismatches for r in report.results if not r.passed}
     assert failures == {}
     assert report.passed == 12 and report.demo_flows_passed == 4

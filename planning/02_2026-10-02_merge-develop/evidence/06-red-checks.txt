@@ -1,0 +1,19 @@
+== RED1 Q04 guard removed (BPTN may clear a safety NEED_INFO)
+FAILED tests/test_maintenance/test_cr03_store.py::test_q04_bptn_cannot_clear_a_safety_need_info[memory]
+1 failed, 8 passed, 9 deselected in 0.65s
+pytest EXIT=1
+== RED2 safety NEED_INFO gets the hourly BPTN reminder
+FAILED tests/test_maintenance/test_cr03_store.py::test_q04_safety_need_info_has_no_reminder_and_escalates_at_12h[memory]
+1 failed, 8 passed, 9 deselected in 0.62s
+pytest EXIT=1
+== RED3 _deny inside op opens a nested transaction
+FAILED tests/test_maintenance/test_cr03_store.py::test_q04_deny_inside_a_write_never_nests_transactions[memory]
+1 failed, 8 passed, 9 deselected in 0.60s
+pytest EXIT=1
+== RED4 safety NEED_INFO owner back to BPTN (BLOCKER_OWNERS)
+FAILED tests/test_maintenance/test_cr03_store.py::test_q04_bptn_cannot_clear_a_safety_need_info[memory]
+1 failed, 8 passed, 9 deselected in 0.61s
+pytest EXIT=1
+== restored
+engine.py identical to merged copy
+9 passed, 9 deselected in 0.17s

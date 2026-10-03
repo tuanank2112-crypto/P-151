@@ -1,0 +1,2 @@
+1 passed, 1263 deselected in 0.30s
+EXIT=0

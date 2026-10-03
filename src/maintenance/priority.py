@@ -1,91 +1,60 @@
-"""Priority from fixed rules (CR-BPTN-03 §7). Separate from the risk level: an emergency is sorted first on its own.
+"""Priority (CR-BPTN-03 §7): fixed rules, top to bottom, the first match wins. Pure functions, no IO.
 
-First matching rule wins, then the +1 adjustments (capped at HIGH). The engine never overwrites a priority that a
-person set (`priority_source=HUMAN_OVERRIDE`).
+Priority is separate from `risk_level`: it is only computed at step 3, so a tier-1 or tier-2 ticket (stopped at 2b)
+has none until a person has cleared it. PRI-U1 (duplicate count) and PRI-U2 (vulnerable person) are P1.
 """
 
-from collections.abc import Sequence
 from dataclasses import dataclass
 
-from src.maintenance.enums import Priority, RiskLevel, ServiceCategory
-from src.maintenance.safety import clean, vi_any
-
-# Every area the location rules recognise is a shared passage, plus emergency exits (PRI-H1)
-COMMON_PASSAGES = ("Hành lang", "Sảnh thang máy", "Sảnh chính", "Cầu thang bộ", "Hầm xe")
-_EXIT = vi_any([r"\blối thoát hiểm\b", r"\blối đi\b"])
-_OBSTRUCTING = vi_any(
-    [
-        r"\b(?:chắn|cản|chặn|lấp) (?:hết )?(?:lối|đường)\b",
-        r"\btrơn (?:trượt|trợt)\b",
-        r"\bdễ (?:trượt|ngã)\b",
-        r"\btràn (?:ra )?(?:lối|đường) đi\b",
-        r"\btrượt ngã\b",
-    ]
-)
-_AFFECTS_USE = vi_any(
-    [
-        r"\bẩm ướt\b",
-        r"\bướt\b",
-        r"\bvũng nước\b",
-        r"\bđổ nước\b",
-        r"\btràn\b",
-        r"\bnhiều rác\b",
-        r"\brác vương vãi\b",
-        r"\bmùi\b",
-        r"\bhôi\b",
-        r"\bdính\b",
-        r"\bbãi nôn\b",
-        r"\bchất thải\b",
-    ]
-)
-
-_ORDER = [Priority.LOW, Priority.MEDIUM, Priority.HIGH]
-SORT_RANK = {Priority.HIGH: 0, Priority.MEDIUM: 1, None: 1, Priority.LOW: 2}
+from src.maintenance.catalog import PriorityLexicon, compile_pattern
+from src.maintenance.enums import Priority, ServiceCategory
+from src.maintenance.safety import TextContext, build_context, scope_before
 
 
 @dataclass(frozen=True)
-class PriorityDecision:
+class PriorityProposal:
     priority: Priority
-    rule_id: str
-    reason: str
+    rule_id: str  # "PRI-H1" | "PRI-H2" | "PRI-M1" | "PRI-M2" | "PRI-L1" | "PRI-D0"
+    reason: str  # one Vietnamese sentence: the rule and its evidence (area, or the first matching phrase)
 
 
-def decide(
-    category: ServiceCategory | None,
-    location: str | None,
-    text: str,
-    *,
-    duplicate_count: int,
-    raise_at: int,
-    amplifiers: Sequence[str],
-) -> PriorityDecision:
-    cleaned = clean(text)
-    area = location.rsplit(" / ", 1)[-1] if location else None
-    passage = area in COMMON_PASSAGES or bool(_EXIT.search(cleaned))
-    if category is None or location is None:
-        base, rule_id, reason = Priority.MEDIUM, "PRI-D0", "Chưa rõ loại việc hoặc vị trí: mặc định"
-    elif category == ServiceCategory.KY_THUAT:
-        if passage:
-            base, rule_id, reason = Priority.HIGH, "PRI-H1", f"Đèn ở lối đi chung ({area})"
-        else:
-            base, rule_id, reason = Priority.MEDIUM, "PRI-M1", "Đèn ở vị trí khác lối đi chung"
-    elif _OBSTRUCTING.search(cleaned):
-        base, rule_id, reason = Priority.HIGH, "PRI-H2", "Vệ sinh cản trở lối đi"
-    elif _AFFECTS_USE.search(cleaned):
-        base, rule_id, reason = Priority.MEDIUM, "PRI-M2", "Vệ sinh ảnh hưởng sử dụng, không cản lối đi"
-    else:
-        base, rule_id, reason = Priority.LOW, "PRI-L1", "Vệ sinh chưa ảnh hưởng trực tiếp"
+def _first_match(patterns: tuple[str, ...], ctx: TextContext, lexicon: PriorityLexicon) -> str | None:
+    """The first phrase (lexicon order, then position) NOT negated by the shared R1 rule, as the evidence.
 
-    level = _ORDER.index(base)
-    if duplicate_count >= raise_at:
-        level += 1
-        reason += f"; PRI-U1: {duplicate_count} báo trùng (ngưỡng {raise_at})"
-    if "vulnerable_person" in amplifiers:
-        level += 1
-        reason += "; PRI-U2: có người dễ tổn thương"
-    return PriorityDecision(_ORDER[min(level, 2)], rule_id, reason)
+    A double negation counts as not negated: the phrase stays (priority leans high).
+    """
+    for pattern in patterns:
+        for found in compile_pattern(pattern).finditer(ctx.norm):
+            scope = scope_before(
+                ctx,
+                found.start(),
+                found.start(),
+                lexicon.negation_prefixes,
+                lexicon.negation_fillers,
+                max_fillers=lexicon.scope_max_fillers,
+                max_chars=lexicon.scope_max_chars,
+            )
+            if scope is None or scope.double:
+                return found.group(0)
+    return None
 
 
-def sort_key(risk_level: RiskLevel | None, priority: Priority | None, created_at: str) -> tuple:
-    """CR-BPTN-03 §7: emergency first, then priority (unset counts as MEDIUM), then oldest first."""
-    return (0 if risk_level == RiskLevel.EMERGENCY else 1, SORT_RANK[priority], created_at)
+def propose_priority(
+    category: ServiceCategory | None, location: str | None, text: str, lexicon: PriorityLexicon
+) -> PriorityProposal:
+    """CR-03 §7: PRI-D0 / H1 / M1 for lighting by area, PRI-H2 / M2 / L1 for cleaning by the report's wording."""
+    if location is None or category not in (ServiceCategory.KY_THUAT, ServiceCategory.VE_SINH):
+        return PriorityProposal(Priority.MEDIUM, "PRI-D0", "PRI-D0: chưa rõ vị trí hoặc loại việc; mặc định MEDIUM")
+    if category == ServiceCategory.KY_THUAT:
+        area = location.split(" / ")[-1]
+        if area in lexicon.high_areas:
+            return PriorityProposal(Priority.HIGH, "PRI-H1", f"PRI-H1: đèn tại lối đi chung ({area})")
+        return PriorityProposal(Priority.MEDIUM, "PRI-M1", f"PRI-M1: đèn tại khu vực khác ({area})")
+    ctx = build_context(text, lexicon.clause_conjunctions)
+    evidence = _first_match(lexicon.obstruction_patterns, ctx, lexicon)
+    if evidence:
+        return PriorityProposal(Priority.HIGH, "PRI-H2", f"PRI-H2: cản trở lối đi ('{evidence}')")
+    evidence = _first_match(lexicon.usage_impact_patterns, ctx, lexicon)
+    if evidence:
+        return PriorityProposal(Priority.MEDIUM, "PRI-M2", f"PRI-M2: ảnh hưởng sử dụng ('{evidence}')")
+    return PriorityProposal(Priority.LOW, "PRI-L1", "PRI-L1: chưa ảnh hưởng trực tiếp")

@@ -1,18 +1,20 @@
-"""Two levels of detail over the same ticket (CR-BPTN-02 §6, CR-BPTN-03 §13).
+"""Two levels of detail over the same ticket (CR-BPTN-02 §6).
 
-The resident view is built field by field from an allow-list, so internal data (reason_code, risk level and signals,
-priority, internal_note, assignee_id, staff, materials, retries, escalation) cannot leak through a new model field.
-Internal lists are sorted emergency first, then priority, then oldest first (CR-BPTN-03 §7).
+The resident view is built field by field from an allow-list, so internal data (reason_code, internal_note,
+assignee_id, staff, materials, retries, escalation) cannot leak through a new model field.
 """
 
-from datetime import datetime
+from collections.abc import Iterable
+from datetime import UTC, datetime
 from typing import Literal
 
 from pydantic import BaseModel
 
 from src.maintenance.engine import MaintenanceEngine, resident_photos
 from src.maintenance.enums import (
+    SAFETY_REASONS,
     AssetResolution,
+    BlockerOwner,
     ClosureKind,
     Department,
     Priority,
@@ -23,11 +25,30 @@ from src.maintenance.enums import (
     TicketFlag,
     TicketStatus,
 )
-from src.maintenance.messages import overdue_eta_message, status_label
-from src.maintenance.models import Blocker, Case, RiskSignal
-from src.maintenance.priority import sort_key
+from src.maintenance.messages import _templates, overdue_eta_message, status_label
+from src.maintenance.models import Blocker, Case, Ticket
 
-ResidentAction = Literal["ADD_INFO", "RATE"]  # CR-BPTN-03 §4.3: no reopen
+ResidentAction = Literal["ADD_INFO", "RATE"]
+
+PRIORITY_RANK: dict[Priority | None, int] = {Priority.HIGH: 0, Priority.MEDIUM: 1, Priority.LOW: 2, None: 3}
+
+
+def _created_key(created_at: str) -> str:
+    try:
+        parsed = datetime.fromisoformat(created_at)
+    except ValueError:
+        return created_at
+    return parsed.astimezone(UTC).isoformat() if parsed.tzinfo else created_at
+
+
+def queue_sort_key(ticket: Ticket) -> tuple[int, int, str, str]:
+    """CR-BPTN-03 §7 (Q14): EMERGENCY on top, then priority high to low, then oldest first, then ticket_id."""
+    emergency = 0 if ticket.risk_level == RiskLevel.EMERGENCY else 1
+    return (emergency, PRIORITY_RANK[ticket.priority], _created_key(ticket.raw.created_at), ticket.ticket_id)
+
+
+def sort_queue(cases: Iterable[Case]) -> list[Case]:
+    return sorted(cases, key=lambda c: queue_sort_key(c.ticket))
 
 
 class TimelineEntry(BaseModel):
@@ -75,13 +96,22 @@ def _current_message(case: Case) -> str:
     return public[-1].public_message
 
 
+def _resident_status_label(case: Case) -> str:
+    """CR-BPTN-03 §13: tier 1 and tier 2 tickets share one neutral label."""
+    blocker = case.ticket.blocker
+    if blocker is not None and blocker.code in SAFETY_REASONS:
+        return _templates()["safety_status_label"]
+    return status_label(case.ticket.status)
+
+
 def resident_view(engine: MaintenanceEngine, case: Case, now: datetime) -> ResidentTicketView:
     ticket = case.ticket
     actions: list[ResidentAction] = []
     if ticket.status == TicketStatus.NEED_INFO:  # BPTN follows up, but the resident may still add it directly
         actions.append("ADD_INFO")
-    if ticket.rating is None and engine.can_rate(case):  # once; a merged ticket when its original is closed
-        actions.append("RATE")
+    if ticket.status == TicketStatus.CLOSED:
+        if ticket.rating is None:
+            actions.append("RATE")
     eta = ticket.blocker.eta if ticket.blocker else None
     eta_passed = eta is not None and eta <= now
     merged = None
@@ -101,7 +131,7 @@ def resident_view(engine: MaintenanceEngine, case: Case, now: datetime) -> Resid
         additions=[a.content for a in case.additions],
         photos=[e.evidence_id for e in resident_photos(case)],
         status=ticket.status,
-        status_label=status_label(ticket.status),
+        status_label=_resident_status_label(case),
         department_name=_department_name(engine, case),
         public_message=overdue_eta_message(eta) if eta_passed else _current_message(case),
         eta=None if eta_passed else eta,
@@ -139,20 +169,12 @@ class BqlTicketRow(BaseModel):
     closed_at: datetime | None
     merged_into: str | None
     cancel_reason: str | None
-    closure_kind: ClosureKind | None
-    risk_level: RiskLevel | None
-    risk_signals: list[RiskSignal]
+    risk_level: RiskLevel
     priority: Priority | None
     priority_source: PrioritySource | None
-    priority_reason: str | None
+    blocker_owner_role: BlockerOwner | None  # the "needs me" box of BQL/BPTN
     safety_cleared_by: str | None
-    safety_clear_reason: str | None
-    safety_context: bool
-    duplicate_count: int
-    merged_children: list[str]
-    related_ticket_ids: list[str]
-    follow_up_of: str | None
-    wrong_department_return_count: int
+    closure_kind: ClosureKind | None
 
 
 def _overdue(case: Case, now: datetime) -> bool:
@@ -173,9 +195,11 @@ def bql_rows(
     overdue: bool | None = None,
     risk_level: RiskLevel | None = None,
     priority: Priority | None = None,
+    blocker_owner_role: BlockerOwner | None = None,
 ) -> list[BqlTicketRow]:
     rows = []
-    for case in list(engine.cases.values()):  # snapshot: a new ticket may arrive from another thread
+    # snapshot: a new ticket may arrive from another thread; sorted by the CR-BPTN-03 §7 queue key
+    for case in sort_queue(list(engine.cases.values())):
         ticket, blocker = case.ticket, case.ticket.blocker
         row = BqlTicketRow(
             ticket_id=ticket.ticket_id,
@@ -196,20 +220,12 @@ def bql_rows(
             closed_at=ticket.closed_at,
             merged_into=ticket.merged_into,
             cancel_reason=ticket.cancel_reason,
-            closure_kind=ticket.closure_kind,
             risk_level=ticket.risk_level,
-            risk_signals=ticket.risk_signals,
             priority=ticket.priority,
             priority_source=ticket.priority_source,
-            priority_reason=ticket.priority_reason,
+            blocker_owner_role=blocker.owner_role if blocker else None,
             safety_cleared_by=ticket.safety_cleared_by,
-            safety_clear_reason=ticket.safety_clear_reason,
-            safety_context=ticket.safety_context,
-            duplicate_count=ticket.duplicate_count,
-            merged_children=ticket.merged_children,
-            related_ticket_ids=ticket.related_ticket_ids,
-            follow_up_of=ticket.follow_up_of,
-            wrong_department_return_count=ticket.wrong_department_return_count,
+            closure_kind=ticket.closure_kind,
         )
         if status is not None and row.status != status:
             continue
@@ -225,34 +241,7 @@ def bql_rows(
             continue
         if priority is not None and row.priority != priority:
             continue
+        if blocker_owner_role is not None and row.blocker_owner_role != blocker_owner_role:
+            continue
         rows.append(row)
-    rows.sort(key=lambda r: sort_key(r.risk_level, r.priority, r.created_at))
-    return rows
-
-
-class SafetyClearance(BaseModel):
-    """CR-BPTN-03 §6.4 / §13: every 'confirmed safe' so BQL can look at them again."""
-
-    ticket_id: str
-    status: TicketStatus
-    cleared_by: str
-    cleared_at: datetime
-    reason: str | None
-    signals: list[RiskSignal]
-
-
-def safety_clearances(engine: MaintenanceEngine) -> list[SafetyClearance]:
-    rows = [
-        SafetyClearance(
-            ticket_id=c.ticket.ticket_id,
-            status=c.ticket.status,
-            cleared_by=c.ticket.safety_cleared_by,
-            cleared_at=c.ticket.safety_cleared_at,
-            reason=c.ticket.safety_clear_reason,
-            signals=[s for s in c.ticket.risk_signals if s.status != "ABSENT"],
-        )
-        for c in list(engine.cases.values())
-        if c.ticket.safety_cleared_by is not None
-    ]
-    rows.sort(key=lambda r: r.cleared_at, reverse=True)
     return rows

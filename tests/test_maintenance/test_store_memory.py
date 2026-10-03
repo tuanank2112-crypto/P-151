@@ -112,14 +112,14 @@ def test_t03_guard_error_in_op_changes_nothing(repo, clock):
     assert _snapshot(repo, tid) == before
 
     def half_done(work: Case, now) -> None:  # changes the case, then a guard fails
-        work.ticket.assignee_id = "SIM-HALF-DONE"
+        work.ticket.cancel_reason = "SIM-HALF-DONE"
         work.audit.append(work.audit[-1].model_copy(update={"event_id": "SIM-AUD-HALF"}))
         raise GuardError("Điều kiện nghiệp vụ không đạt")
 
     with pytest.raises(GuardError):
         engine._mutate(tid, SYSTEM, Action.RUN_PIPELINE, half_done)
     assert _snapshot(repo, tid) == before
-    assert repo.get(tid).ticket.assignee_id is None
+    assert repo.get(tid).ticket.cancel_reason is None
 
 
 def test_t05_stale_save_raises_concurrency_error(memory_repo, clock):
@@ -131,14 +131,14 @@ def test_t05_stale_save_raises_concurrency_error(memory_repo, clock):
         stale = first.get_for_update(tid).model_copy(deep=True)
         with repo.transaction() as second:
             winner = second.get_for_update(tid).model_copy(deep=True)
-            winner.ticket.assignee_id = "SIM-WINNER"
+            winner.ticket.cancel_reason = "SIM-WINNER"
             second.save(winner)
         after_winner = _snapshot(repo, tid)
-        stale.ticket.assignee_id = "SIM-LOSER"
+        stale.ticket.cancel_reason = "SIM-LOSER"
         with pytest.raises(ConcurrencyError):
             first.save(stale)
     assert _snapshot(repo, tid) == after_winner
-    assert repo.get(tid).ticket.assignee_id == "SIM-WINNER"
+    assert repo.get(tid).ticket.cancel_reason == "SIM-WINNER"
 
 
 def test_engine_cases_is_read_only(repo, clock):

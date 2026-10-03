@@ -1,10 +1,13 @@
-"""Engine behaviour under CR-BPTN-02 as amended by CR-BPTN-03: invariants (§3), pipeline steps (§4), retry and escalation (§5)."""
+"""Engine behaviour under CR-BPTN-02: invariants (§3), pipeline steps (§4), retry and escalation (§5)."""
 
 from datetime import datetime, timedelta
 
 import pytest
+from pydantic import ValidationError
 
 from src.maintenance.engine import (
+    BLOCKER_OWNERS,
+    PERMISSIONS,
     TRANSITIONS,
     ActionDeniedError,
     AuditWriteError,
@@ -12,9 +15,23 @@ from src.maintenance.engine import (
     InvalidTransitionError,
     MaintenanceEngine,
     _compare,
+    route_blockers,
 )
-from src.maintenance.enums import Action, ChecklistStatus, ComparisonType, EvidenceType, ReadabilityStatus
+from src.maintenance.enums import (
+    BPTN_REASONS,
+    BQL_REASONS,
+    SAFETY_REASONS,
+    Action,
+    ChecklistStatus,
+    ComparisonType,
+    EvidenceType,
+    ReadabilityStatus,
+    ReasonCode,
+    RiskLevel,
+)
+from src.maintenance.models import BLOCKER_CODES_BY_STATUS, Ticket
 from src.maintenance.proposer import LLMAssessment
+from src.maintenance.views import bql_rows, queue_sort_key, resident_view
 from tests.test_maintenance.helpers import (
     AGENT,
     BPTN,
@@ -58,18 +75,22 @@ def test_invariant_5_event_chain_over_every_fixture_and_scenario(engine, fresh, 
     assert_event_chain(fresh.get(tid))
 
 
-def test_invariant_2_agent_never_writes_assignee(fresh):
+def test_invariant_2_nobody_writes_assignee(fresh):
+    """CR-BPTN-03 §4.4.2 / AC-15: no role assigns a person; each attempt is denied and audited."""
     tid = report(fresh, CLEANING)
     fresh.accept(tid, CLN)
-    fresh.set_assignee(tid, CLN, "NV-CLN-07")
+    for actor in (CLN, AGENT, BPTN, BQL):
+        with pytest.raises(ActionDeniedError):
+            fresh.set_assignee(tid, actor, "NV-CLN-07")
+        case = fresh.get(tid)
+        assert case.audit[-1].action_result == "ACTION_DENIED"
+        assert case.audit[-1].field_name == "assignee_id"
+        assert case.ticket.assignee_id is None
     case = finish(fresh, tid)
-    assert case.ticket.status == "READY_FOR_REVIEW" and case.ticket.assignee_id == "NV-CLN-07"
+    assert case.ticket.status == "READY_FOR_REVIEW" and case.ticket.assignee_id is None
     assert case.draft.assignee_id is None
-    writers = {e.actor_role for e in case.audit if e.field_name == "assignee_id" and e.action_result == "ALLOWED"}
-    assert writers == {"DEPARTMENT"}
-    with pytest.raises(ActionDeniedError):
-        fresh.set_assignee(tid, AGENT, None)
-    assert fresh.get(tid).ticket.assignee_id == "NV-CLN-07"
+    with pytest.raises(ValidationError):
+        fresh.get(tid).ticket.assignee_id = "x"
 
 
 def test_invariant_3_locked_fields_survive_a_rerun(fresh):
@@ -108,8 +129,9 @@ def test_invariant_4_raw_is_read_only(engine):
 def test_transition_table_matches_the_cr():
     assert all(rule.actors == {"BQL"} for (_, to), rule in TRANSITIONS.items() if to in ("CLOSED", "CANCELLED"))
     assert ("CLOSED", "CANCELLED") not in TRANSITIONS and ("MERGED", "CANCELLED") not in TRANSITIONS
+    assert len(TRANSITIONS) == 18 + 7  # 18 rows + cancel from the 7 non-terminal statuses
     assert ("CLOSED", "READY_FOR_REVIEW") not in TRANSITIONS  # CR-BPTN-03 §4.3: no reopen
-    assert len(TRANSITIONS) == 21 + 7  # T02–T22 (21 rows) + T23 cancel from the 7 non-terminal statuses
+    assert set(BLOCKER_OWNERS) == set(ReasonCode)
 
 
 def test_wrong_source_status_is_invalid_not_silent(fresh):
@@ -446,3 +468,108 @@ def test_run_jobs_skips_tickets_with_nothing_due(fresh, clock, monkeypatch):
     calls = []
     monkeypatch.setattr(fresh, "_tick", lambda work, now: calls.append(work.ticket.ticket_id))
     assert fresh.run_jobs(clock()) == [] and calls == []
+
+
+def test_p0_contract_blocker_groups_and_owners():
+    """CR-03 P0 contract (01 §1, §3.3): safety/BQL blocker groups, owners, VERIFYING accepts the new codes."""
+    assert SAFETY_REASONS == {"SAFETY_REVIEW_REQUIRED", "EMERGENCY_PENDING_BQL"}
+    assert BQL_REASONS == {"EMERGENCY_PENDING_BQL", "WRONG_DEPT_AFTER_START"}
+    assert not (SAFETY_REASONS & BPTN_REASONS) and len(BPTN_REASONS) == 7  # drift D1 + f1c6ebf (develop):
+    assert ReasonCode.MISSING_INFO in BPTN_REASONS  # BPTN also clears an ordinary MISSING_INFO (plan 02 Q04)
+    assert BLOCKER_OWNERS[ReasonCode.SAFETY_REVIEW_REQUIRED] == "BPTN"
+    assert BLOCKER_OWNERS[ReasonCode.EMERGENCY_PENDING_BQL] == "BQL"
+    assert BLOCKER_OWNERS[ReasonCode.WRONG_DEPT_AFTER_START] == "BQL"
+    assert {"SAFETY_REVIEW_REQUIRED", "EMERGENCY_PENDING_BQL", "WRONG_DEPT_AFTER_START"} <= BLOCKER_CODES_BY_STATUS[
+        "VERIFYING"
+    ]
+    assert "SAFETY_REVIEW_REQUIRED" not in BLOCKER_CODES_BY_STATUS["NEED_INFO"]
+
+
+def test_p0_contract_new_transition_rows():
+    """CR-03 P0 contract (01 §3.2): T03/T05 are not pipeline-only, T06/T07/T10 exist, nobody routes by hand."""
+    for pair in (("NEED_INFO", "RECEIVED"), ("VERIFYING", "RECEIVED")):
+        assert not TRANSITIONS[pair].pipeline_only and "BQL" in TRANSITIONS[pair].actors
+    assert TRANSITIONS[("VERIFYING", "NEED_INFO")].actors == {"BPTN", "BQL"}
+    assert TRANSITIONS[("NEED_INFO", "VERIFYING")].actors == {"BQL"}
+    assert TRANSITIONS[("NEED_INFO", "VERIFYING")].reasons == {"EMERGENCY_PENDING_BQL"}
+    assert TRANSITIONS[("VERIFYING", "CLOSED")].actors == {"BQL"}
+    assert {"SAFETY_REVIEW_REQUIRED", "EMERGENCY_PENDING_BQL"} <= TRANSITIONS[("RECEIVED", "VERIFYING")].reasons
+    assert all(rule.pipeline_only for (_, to), rule in TRANSITIONS.items() if to == "ROUTED")
+
+
+def test_p0_contract_permissions():
+    """CR-03 P0 contract (01 §3.1, M-05): SET_ASSIGNEE leaves the matrix; six new actions are listed."""
+    assert Action.SET_ASSIGNEE not in PERMISSIONS
+    new = {a.value for a in PERMISSIONS if a.value.startswith(("SAFETY", "EMERGENCY", "SET_PRIORITY"))}
+    assert new == {
+        "EMERGENCY_CLOSE",
+        "EMERGENCY_DOWNGRADE",
+        "SAFETY_CONFIRM_SAFE",
+        "SAFETY_ESCALATE",
+        "SAFETY_REQUEST_INFO",
+        "SET_PRIORITY",
+    }
+    assert Action.ASSESS_SAFETY not in PERMISSIONS  # the Agent writes it through `_agent`, not an entry point
+    assert PERMISSIONS[Action.EMERGENCY_CLOSE] == {"BQL"} and PERMISSIONS[Action.EMERGENCY_DOWNGRADE] == {"BQL"}
+
+
+def test_p0_contract_ticket_cross_field_validators(fresh):
+    """CR-03 P0 contract (01 §2): closure_kind iff CLOSED, paired priority/safety fields, safety_context only NEED_INFO."""
+    ticket = fresh.get(report(fresh, CLEANING)).ticket
+    base = ticket.model_dump()
+    assert ticket.risk_level == RiskLevel.NONE and ticket.risk_signals == [] and ticket.closure_kind is None
+    for bad in (
+        {"closure_kind": "NORMAL"},  # not CLOSED
+        {"priority": "HIGH", "priority_source": None},  # priority without source
+        {"priority": "HIGH", "priority_source": "HUMAN_OVERRIDE", "priority_reason": None},  # override without a reason
+        {"safety_cleared_by": "SIM-ACTOR-BPTN-01"},  # cleared_* must be set together
+        {"safety_context": True},  # not NEED_INFO
+    ):
+        with pytest.raises(ValidationError):
+            Ticket.model_validate({**base, **bad})
+    ok = Ticket.model_validate(
+        {**base, "priority": "HIGH", "priority_source": "AGENT_RULE", "priority_rule_id": "PRI-H1"}
+    )
+    assert ok.priority == "HIGH"
+
+
+def test_p0_contract_route_blockers_flag_emergency(fresh):
+    """CR-03 P0 contract (01 §3.4, I-09): can_route is false while risk_level=EMERGENCY."""
+    ticket = fresh.get(report(fresh, CLEANING)).ticket
+    assert route_blockers(ticket) == []
+    flagged = Ticket.model_validate({**ticket.model_dump(), "risk_level": "EMERGENCY"})
+    assert route_blockers(flagged) == ["risk_level=EMERGENCY"]
+
+
+def test_p0_contract_sla_config_and_i18n_keys():
+    """CR-03 P0 contract (01 §4, §6): sla_config carries the safety deadlines; vi.yaml carries the neutral wording."""
+    sla = MaintenanceEngine().catalog.sla_config
+    assert (sla.safety_review.escalate_after_hours, sla.missing_info.safety_context.escalate_after_hours) == (4, 12)
+    assert sla.priority.duplicate_raise_at_count == 3
+    from src.maintenance.messages import _templates, field_label, public_message
+
+    assert _templates()["safety_status_label"] == "Đang được kiểm tra"
+    for code in (ReasonCode.SAFETY_REVIEW_REQUIRED, ReasonCode.EMERGENCY_PENDING_BQL):
+        assert public_message("VERIFYING", code) == "Phản ánh đang được kiểm tra."
+    assert field_label("safety_details").startswith("mô tả rõ hơn")
+
+
+def test_p0_contract_queue_sort_key_and_bql_row_fields(engine):
+    """CR-03 P0 contract (01 §8): EMERGENCY first, then priority, then oldest; BQL rows expose the new fields."""
+    ticket = engine.get("SIM-TKT-CLN-001").ticket
+    unset = {"priority": None, "priority_source": None}
+    emergency = ticket.model_copy(update={**unset, "risk_level": RiskLevel.EMERGENCY, "ticket_id": "SIM-TKT-Z"})
+    high = ticket.model_copy(update={"priority": "HIGH", "priority_source": "AGENT_RULE", "ticket_id": "SIM-TKT-Y"})
+    low = ticket.model_copy(update={"priority": "LOW", "priority_source": "AGENT_RULE", "ticket_id": "SIM-TKT-X"})
+    none = ticket.model_copy(update={**unset, "ticket_id": "SIM-TKT-W"})
+    order = sorted([none, low, high, emergency], key=queue_sort_key)
+    assert [t.ticket_id for t in order] == ["SIM-TKT-Z", "SIM-TKT-Y", "SIM-TKT-X", "SIM-TKT-W"]
+    rows = bql_rows(engine, engine.clock(), risk_level=RiskLevel.NONE)
+    assert len(rows) == 10 and rows[0].closure_kind is None  # CLN-004/TEC-005 are tier 1
+    emergency_rows = bql_rows(engine, engine.clock(), risk_level=RiskLevel.EMERGENCY)
+    assert [r.ticket_id for r in emergency_rows] == ["SIM-TKT-CLN-004", "SIM-TKT-TEC-005"]
+    assert {r.ticket_id for r in bql_rows(engine, engine.clock(), blocker_owner_role="BQL")} == {
+        "SIM-TKT-CLN-004",
+        "SIM-TKT-TEC-005",
+    }
+    assert resident_view(engine, engine.get("SIM-TKT-CLN-001"), engine.clock()).allowed_actions == []

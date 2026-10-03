@@ -1,0 +1,6 @@
+E           AssertionError: (24027, 3.543356700000004)
+E           assert (24027 >= 24000 and 3.543356700000004 < 1.0)
+E            +  where 24027 = len('Hành lang tầng 3 tòa SIM-A có mùi khét có mùi khét có mùi khét có mùi khét có mùi khét có mùi khét có mùi khét có mùi... mùi khét có mùi khét có mùi khét có mùi khét có mùi khét có mùi khét có mùi khét có mùi khét có mùi khét có mùi khét ')
+FAILED tests/test_maintenance/test_safety.py::test_assess_is_linear_on_adversarial_24kb_texts
+1 failed, 1179 deselected in 4.04s
+EXIT=1

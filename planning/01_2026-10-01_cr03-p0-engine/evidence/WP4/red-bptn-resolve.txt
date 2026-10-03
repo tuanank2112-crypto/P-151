@@ -1,0 +1,5 @@
+src\maintenance\engine.py:573: GuardError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_emergency.py::test_bptn_resolve_rejects_safety_blockers
+1 failed, 25 passed in 1.17s
+EXIT=1

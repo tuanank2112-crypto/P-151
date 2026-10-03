@@ -1,12 +1,12 @@
 {
-  "current_version": "1.0.0",
+  "current_version": "1.1.1",
   "brain_template_version": "1.7.1",
-  "system_status": "initialized",
+  "system_status": "active",
   "last_verification": {
-    "timestamp": "2026-10-02T00:00:00+07:00",
-    "grade": "plan 02 local: pytest 290 passed + 21 deselected; pytest --pg 311 passed; ruff check+format clean; evaluate 12/12 (sim-v1.3); safety set 50: tier-1 miss 0, false alarm 0"
+    "timestamp": "2026-10-02T15:27:53.402Z",
+    "grade": "plan 02 merge develop: 1514 pytest pass, ruff clean, holdout NONE 2/39"
   },
-  "active_plans_completed": 0,
+  "active_plans_completed": 2,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
   "engine_version": "1.13.1",
   "lang": {
@@ -30,6 +30,22 @@
     "name": "",
     "license": ""
   },
+  "active_spec": "docs/CR-BPTN-03.md",
+  "working_branch": "feature/nhuy-cr03-p0",
+  "code_baseline": "b4f8a5d",
+  "last_benchmark": {
+    "pytest": "1462 passed, 0 skip",
+    "safety_stop_sets": "1065 green",
+    "false_alarm_budget": {
+      "b_fp": "EM 0 / UNCLEAR 4",
+      "jx_negfp": "EM 0",
+      "b_fp2": "EM 3"
+    },
+    "holdout_none": "2/39",
+    "assess_24kb_seconds": 0.28
+  },
+  "last_sync": "2026-10-02T13:09:52.176Z",
+  "next_step": "PR feature/nhuy-cr03-p0 -> develop (needs user OK); wire router/UI for 6 new engine methods; run --pg tests",
   "active_plan": {
     "id": "02_2026-10-03_truong-mvp-prep",
     "status": "in_progress",

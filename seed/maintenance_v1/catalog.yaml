@@ -66,7 +66,7 @@ actors:
   - {actor_id: SIM-ACTOR-QA-01, actor_role: QA_INTERNAL}  # công cụ demo: nạp lại dữ liệu, chạy job
 
 # ---------------------------------------------------------------------------
-# CR-BPTN-02/03: phòng ban, lịch làm việc và SLA. Giá trị ghi "đề xuất" là MẶC ĐỊNH TẠM, chờ chốt.
+# CR-BPTN-02: phòng ban, lịch làm việc và SLA. Mọi giá trị là MẶC ĐỊNH TẠM, chờ chốt (CR-BPTN-02 §8).
 # ---------------------------------------------------------------------------
 
 # Bảng playbook → phòng ban. Thêm phòng ban mới bằng cách thêm dòng ở đây và trong `departments`.
@@ -90,13 +90,14 @@ sla_config:
   max_auto_retries: 3
   job_interval_minutes: 5
   duplicate_window_hours: 48
-  # Mọi blocker BPTN gỡ, kể cả MISSING_INFO (BPTN liên hệ cư dân để bổ sung)
+  # Cửa sổ mở lại ticket: BỎ (CR-BPTN-03 §4.3 — không reopen)
+  # Mọi blocker BPTN gỡ, kể cả MISSING_INFO (BPTN liên hệ cư dân để bổ sung) — theo `bptn` bên dưới.
+  # Riêng NEED_INFO do tầng an toàn (safety_context, T06): không nhắc tự động, leo thang BQL sau 12 giờ lịch.
+  missing_info:
+    safety_context: {escalate_after_hours: 12}  # CR-03 §6.4 / D-02: NEED_INFO khi nghi nguy hiểm
+  safety_review: {escalate_after_hours: 4}  # CR-03 §6.4 / D-02: GIỜ LỊCH, không tính giờ hành chính
   bptn: {retry_every_business_hours: 1, escalate_after_business_hours: 4}
   waiting_material: {escalate_after_hours: 24}  # kiểm lại tồn kho ở đầu mỗi ca
   not_accepted: {start_after_hours: 2, retry_every_hours: 2}
   rework: {escalate_at_count: 3}
-  # CR-BPTN-03 §12.2. "đề xuất" = giá trị mô phỏng tạm của CR-03, CHỜ NGƯỜI DÙNG CHỐT (D-02, D-03)
-  safety_review: {escalate_after_hours: 4}              # đề xuất D-02: BPTN chưa xử lý Bậc 2 sau 4 giờ lịch → leo thang BQL
-  safety_context_need_info: {escalate_after_hours: 12}  # đề xuất D-02: hỏi cư dân vì nghi nguy hiểm, 12 giờ lịch
-  wrong_dept_return: {escalate_at_count: 2}             # đã chốt: trả sai phòng ban lần 2 → báo BQL
-  priority: {duplicate_raise_at_count: 3}               # đề xuất D-03: 3 báo trùng → nâng priority một mức
+  priority: {duplicate_raise_at_count: 3}  # CR-03 §7 / D-03: P0 chỉ nạp (PRI-U1 là P1)
