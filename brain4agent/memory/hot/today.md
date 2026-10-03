@@ -149,3 +149,4 @@
 - Đo trước sửa: `POST /bql/tickets/SIM-TKT-TEC-005/close` kèm note → 200 CLOSED/EMERGENCY_HANDLED (trái OPERATIONS §5.3 mục 1). Người dùng chọn (a): chỉ còn `/emergency/close`.
 - Sửa `engine.close` ghim `expected_from=READY_FOR_REVIEW`; test mới đỏ 2 → xanh; pytest 1601 passed/29 deselected exit 0; ruff check/format exit 0. Field đúng là `safety_clear_reason` (repo không có `safety_cleared_reason`).
 - Tiêu đề OPERATIONS §5 vẫn ghi "TARGET BLOCKED — UNIMPLEMENTED" dù route emergency đã có — chưa sửa (hồ sơ của Trường). Chưa commit.
+- Merge origin/develop (a68513e, PR feature/tri UI readiness/6 gates) vào feature/chamanh: chỉ đổi src/web/app.js, 0 xung đột; pytest 1601 passed/29 deselected, ruff src+tests exit 0, node --check app.js exit 0. UI chỉ gọi /close ở nút Nghiệm thu (READY_FOR_REVIEW).
