@@ -40,12 +40,15 @@ def test_01_happy_path_has_five_resident_milestones(fresh):
     assert timeline(fresh, tid) == ["RECEIVED", "ROUTED", "IN_PROGRESS", "READY_FOR_REVIEW", "CLOSED"]
 
 
-def test_02_missing_location_waits_for_the_resident_then_continues(fresh):
+def test_02_missing_location_goes_to_bptn_and_the_resident_can_still_add_it(fresh):
     tid = report(fresh, "Nhiều rác quá, cần dọn gấp.")
     case = fresh.get(tid)
     assert case.ticket.status == "NEED_INFO" and case.ticket.blocker.code == "MISSING_INFO"
-    assert case.ticket.blocker.resume_step == 2
-    assert case.ticket.blocker.public_message == "Vui lòng bổ sung: vị trí (tòa, tầng, khu vực)."
+    assert case.ticket.blocker.owner_role == "BPTN" and case.ticket.blocker.resume_step == 2
+    assert (
+        case.ticket.blocker.public_message
+        == "Ban tiếp nhận thông tin sẽ liên hệ bạn để bổ sung: vị trí (tòa, tầng, khu vực). Bạn cũng có thể bổ sung ngay tại đây."
+    )
     original, marker = case.ticket.raw.original_description, case.ticket.raw_integrity_marker
 
     case = fresh.add_resident_info(tid, "SIM-ACTOR-RESIDENT-01", "Ở hành lang tầng 3 tòa SIM-A")
@@ -54,6 +57,40 @@ def test_02_missing_location_waits_for_the_resident_then_continues(fresh):
     assert case.ticket.raw.original_description == original
     assert case.ticket.raw.integrity_marker() == marker
     assert [a.content for a in case.additions] == ["Ở hành lang tầng 3 tòa SIM-A"]
+
+
+def test_02b_bptn_enters_the_missing_location_after_calling_the_resident(fresh):
+    tid = report(fresh, "Nhiều rác quá, cần dọn gấp.")
+    with pytest.raises(GuardError):  # a location or what the resident said is required
+        fresh.bptn_resolve(tid, BPTN, note="Đã gọi cư dân")
+    with pytest.raises(GuardError):  # entering a value needs a reason
+        fresh.bptn_resolve(tid, BPTN, location="Tòa SIM-A / Tầng 3 / Hành lang")
+
+    case = fresh.bptn_resolve(tid, BPTN, location="Tòa SIM-A / Tầng 3 / Hành lang", note="Gọi cư dân lúc 09:10")
+    assert case.ticket.status == "ROUTED" and case.ticket.department_id == "DEPT_CLEANING"
+    assert case.ticket.locked_fields.location == "Tòa SIM-A / Tầng 3 / Hành lang"
+    assert case.ticket.blocker is None and case.additions == []
+    assert [e.to_status for e in case.events][-3:] == ["NEED_INFO", "RECEIVED", "ROUTED"]
+
+
+def test_02c_bptn_records_what_the_resident_said_and_must_cover_every_missing_part(fresh):
+    tid = report(fresh, "Nhiều rác quá, cần dọn gấp.")
+    with pytest.raises(GuardError, match="Vẫn thiếu"):  # floor and area still missing: nothing is saved
+        fresh.bptn_resolve(tid, BPTN, info="Ở tòa SIM-A", note="Gọi cư dân")
+    assert fresh.get(tid).additions == [] and fresh.get(tid).ticket.status == "NEED_INFO"
+
+    case = fresh.bptn_resolve(tid, BPTN, info="Hành lang tầng 3 tòa SIM-A", note="Gọi cư dân lúc 09:10")
+    assert case.ticket.status == "ROUTED" and case.draft.location == "Tòa SIM-A / Tầng 3 / Hành lang"
+    assert [(a.content, a.submitted_by) for a in case.additions] == [("Hành lang tầng 3 tòa SIM-A", BPTN)]
+    assert case.ticket.raw.original_description == "Nhiều rác quá, cần dọn gấp."
+
+
+def test_02d_info_is_only_for_missing_info(fresh, clock):
+    report(fresh, LIGHTING)
+    clock.advance(hours=1)
+    second = report(fresh, LIGHTING)
+    with pytest.raises(GuardError):
+        fresh.bptn_resolve(second, BPTN, merge=False, info="x", note="y")
 
 
 def test_03_bptn_category_is_locked_and_never_reclassified(fresh, monkeypatch):

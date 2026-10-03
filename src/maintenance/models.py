@@ -155,7 +155,8 @@ class RawTicket(Entity):
 
 
 class ResidentAddition(Entity):
-    """`ticket_resident_additions`: append-only information added by the resident after the report."""
+    """`ticket_resident_additions`: append-only information added after the report, by the resident or by BPTN
+    on the resident's behalf (`submitted_by` tells which)."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 

@@ -37,16 +37,17 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 
 | Đường dẫn | Vai trò |
 | :--- | :--- |
-| `src/main.py` | FastAPI app, lifespan (khởi tạo engine, job retry/leo thang), mount `/ui` |
+| `src/main.py` | FastAPI app, lifespan (kiểm cấu hình ảnh → dựng engine + seed khi rỗng, KHÔNG reset; job), handler 503/403 lỗi store, mount `/ui` |
 | `src/api/auth.py` | Đăng nhập, session in-memory, `get_actor` |
 | `src/api/routers/maintenance.py` | Router `/mo` (nội bộ), `/resident`, `/bql` |
-| `src/api/photos.py` | Kiểm tra magic bytes, lưu/đọc ảnh |
-| `src/maintenance/engine.py` | State machine, pipeline bước 2–8, đối soát bước 10, jobs |
+| `src/api/photos.py` | Kiểm tra magic bytes; `save`/`discard`/`load` qua `PhotoStore` (502 `PHOTO_STORE_FAILED`) |
+| `src/maintenance/engine.py` | State machine, pipeline bước 2–8, đối soát bước 10, jobs; `build_engine(settings)`, `seed_if_empty` |
+| `src/maintenance/store/` | `base.py` (Protocol + lỗi), `memory.py`, `postgres.py` (`MO_STORE=postgres`, schema `maintops`), `photos.py` (local/Supabase Storage), Alembic `alembic.ini` + `migrations/` |
 | `src/maintenance/{rules,proposer}.py` | Phân loại bằng luật + LLM có guard |
 | `src/maintenance/views.py` | View cư dân (allow-list) và bảng BQL |
 | `src/maintenance/{catalog,models,enums}.py` | Catalog mô phỏng, model Pydantic, enum |
 | `seed/maintenance_v1/` | Fixture: tickets, catalog, accounts |
-| `tests/test_maintenance/` | Test engine, API, auth, acceptance |
+| `tests/test_maintenance/` | Test engine, API, auth, acceptance, store (pg chỉ chạy `--pg` trên docker `*_test`) |
 
 ---
 

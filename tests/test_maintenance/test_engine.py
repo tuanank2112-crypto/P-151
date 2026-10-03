@@ -147,7 +147,10 @@ def test_cancel_needs_a_reason_and_only_non_terminal(fresh):
 
 def test_step2_lists_every_missing_field(fresh):
     case = fresh.get(report(fresh, "   "))
-    assert case.ticket.blocker.public_message == ("Vui lòng bổ sung: nội dung phản ánh, vị trí (tòa, tầng, khu vực).")
+    assert (
+        case.ticket.blocker.public_message
+        == "Ban tiếp nhận thông tin sẽ liên hệ bạn để bổ sung: nội dung phản ánh, vị trí (tòa, tầng, khu vực). Bạn cũng có thể bổ sung ngay tại đây."
+    )
     assert case.proposal is None and case.classification is None
 
 
@@ -155,8 +158,8 @@ def test_step2_names_only_the_missing_location_parts(fresh):
     case = fresh.get(report(fresh, "Tầng 3 ở S4 quá nhiều rác"))
     assert case.ticket.status == "NEED_INFO"
     assert case.ticket.blocker.public_message == (
-        'Vui lòng bổ sung: tòa (ghi kèm chữ "tòa", ví dụ: tòa SIM-A), '
-        "khu vực (hành lang, sảnh thang máy, sảnh chính, cầu thang bộ hoặc hầm xe)."
+        'Ban tiếp nhận thông tin sẽ liên hệ bạn để bổ sung: tòa (ghi kèm chữ "tòa", ví dụ: tòa SIM-A), '
+        "khu vực (hành lang, sảnh thang máy, sảnh chính, cầu thang bộ hoặc hầm xe). Bạn cũng có thể bổ sung ngay tại đây."
     )
 
 
@@ -280,17 +283,19 @@ def test_execution_updates_need_acceptance_first(fresh):
 # ---------------------------------------------------------------- retry and escalation (CR §5)
 
 
-def test_missing_info_reminds_daily_and_escalates_at_72h(fresh, clock):
+def test_missing_info_reminds_bptn_hourly_and_escalates_after_four_business_hours(fresh, clock):
     tid = report(fresh, "Nhiều rác quá")
     start = clock.now
-    for hours in (24, 48):
+    assert fresh.get(tid).ticket.blocker.escalate_at == start + timedelta(hours=4)
+    for hours in (1, 2):
         fresh.run_jobs(start + timedelta(hours=hours))
     blocker = fresh.get(tid).ticket.blocker
     assert blocker.auto_retry_count == 2 and not blocker.escalated
-    fresh.run_jobs(start + timedelta(hours=72))
+    fresh.run_jobs(start + timedelta(hours=4))
     case = fresh.get(tid)
     assert case.ticket.status == "NEED_INFO" and case.ticket.blocker.escalated
-    assert [n.type for n in case.notifications].count("reminder") == 3
+    reminders = [n for n in case.notifications if n.type == "reminder"]
+    assert len(reminders) == 3 and all(n.audience == "BPTN" for n in reminders)
     assert case.notifications[-1].type == "escalation"
 
 

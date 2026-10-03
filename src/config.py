@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -35,6 +35,15 @@ class Settings(BaseSettings):
     mo_allow_actor_header: bool = False
     # Resident and department photos (the folder is mounted as a volume in docker-compose)
     mo_upload_dir: str = "./data/uploads/maintenance"
+
+    # MaintenanceOps persistence (plan 01)
+    mo_store: Literal["memory", "postgres"] = "memory"
+    mo_seed_on_empty: bool = True
+    mo_allow_reset: bool = False
+    mo_photo_store: Literal["local", "supabase"] = "local"
+    supabase_url: str = ""
+    supabase_service_role_key: SecretStr = SecretStr("")
+    supabase_storage_bucket: str = "maintenance-photos"
 
     # Database
     database_url: str = "postgresql+psycopg2://p151:p151@localhost:5432/p151"

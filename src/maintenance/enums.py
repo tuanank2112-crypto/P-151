@@ -42,9 +42,11 @@ class ReasonCode(StrEnum):
     REWORK = "REWORK"
 
 
-# Blockers BPTN clears (event `bptn_resolved`)
+# Blockers BPTN clears (event `bptn_resolved`). MISSING_INFO too: BPTN contacts the resident and enters what is
+# missing, while the resident can still add it directly (whichever comes first clears the blocker).
 BPTN_REASONS = frozenset(
     {
+        ReasonCode.MISSING_INFO,
         ReasonCode.DUPLICATE,
         ReasonCode.CATEGORY_UNCLEAR,
         ReasonCode.OUT_OF_SCOPE,
