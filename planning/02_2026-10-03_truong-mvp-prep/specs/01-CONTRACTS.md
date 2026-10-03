@@ -1,22 +1,22 @@
 # 01 — Decision and delta-context target contracts
 
-- Status: USER_CONFIRMED / GROUP_PENDING, 2026-10-03 (Asia/Saigon).
+- Status: GROUP_APPROVED (MVP scope and D-01–D-07), 2026-10-03 (Asia/Saigon).
 - Target only: chưa có runtime D-01/safety CR-03; CẤM tuyên bố đã tích hợp.
-- Official approval: `approver=null`, `approved_at=null`; xác nhận của người dùng không phải phê duyệt chính thức của nhóm.
+- Official approval reported: `approver=Lê Thị Châm Anh`, `role=leader`, `approved_date=2026-10-02`, `approved_at=null` (giờ chưa cung cấp), `recorded_date=2026-10-03`, `date_precision=day`. D-08 APPROVED: người dùng thông báo leader Lê Thị Châm Anh duyệt phạm vi MVP 04/10 và D-01–D-07; ngày duyệt được báo là 2026-10-02, chưa cung cấp giờ. Ghi nhận ngày 2026-10-03; commit a5e2705/PR #6 là bản tham chiếu được người dùng xác nhận trong phiên này, không khẳng định commit đã tồn tại ngày 02/10. Nguồn: thông báo người dùng trong phiên; chưa có link biên bản ngoài. Không mở rộng thành duyệt mọi CR/backlog hoặc nghiệm thu runtime.
 - Source: [CR-BPTN-03 §17](../../../docs/CR-BPTN-03.md#17-quyết-định-cần-duyệt-và-điều-chưa-xác-minh), [plan](../plan.md).
 
 ## 1. Decision register and superseded history
 
 | ID | User confirmation (2026-10-03) | Group status | approver / approved_at |
 |---|---|---|---|
-| D-01 | Mỗi bổ sung mới + persisted structured context; safety scan mới; agent/job không hạ risk | PENDING | null / null |
-| D-02 | Bậc 2: 4 giờ lịch review; 12 giờ lịch bổ sung safety; NEED_INFO thường SLA BPTN | PENDING | null / null |
-| D-03 | Ngưỡng báo trùng nâng ưu tiên = 3 | PENDING | null / null |
-| D-04 | Đèn/bóng cháy đứng riêng = NONE, B-01 | PENDING | null / null |
-| D-05 | Stock UNKNOWN đi tiếp với STOCK_CHECK_ON_ACCEPT | PENDING | null / null |
-| D-06 | Tín hiệu mở rộng trong giả định mô phỏng; phase theo §16 CR-03 | PENDING | null / null |
-| D-07 | Ảnh bằng chứng bắt buộc, không miễn | PENDING | null / null |
-| D-08 | Chưa cung cấp người duyệt chính thức; user xác nhận giữ pending | PENDING | null / null |
+| D-01 | Mỗi bổ sung mới + persisted structured context; safety scan mới; agent/job không hạ risk | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
+| D-02 | Bậc 2: 4 giờ lịch review; 12 giờ lịch bổ sung safety; NEED_INFO thường SLA BPTN | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
+| D-03 | Ngưỡng báo trùng nâng ưu tiên = 3 | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
+| D-04 | Đèn/bóng cháy đứng riêng = NONE, B-01 | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
+| D-05 | Stock UNKNOWN đi tiếp với STOCK_CHECK_ON_ACCEPT (làm rõ 2026-10-03, người dùng chốt: cờ chỉ là lời nhắc, phòng ban tự kiểm kho khi nhận việc; `accept` không phải chặn) | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
+| D-06 | Tín hiệu mở rộng trong giả định mô phỏng; phase theo §16 CR-03 | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
+| D-07 | Ảnh bằng chứng bắt buộc, không miễn | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
+| D-08 | Leader duyệt phạm vi MVP và D-01–D-07 theo thông báo người dùng | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
 
 D-09 giữ nguyên: phân loại trước kiểm tra trùng; safety scan bổ sung độc lập với việc category chưa rõ. Hai fixture CLN-004/TEC-005 và bốn demo giữ theo package. Quote/bối cảnh từ người dùng là nguồn lựa chọn phạm vi, CẤM coi là biên bản review risk hoặc official approval.
 
@@ -173,11 +173,11 @@ BẮT BUỘC addition/history retention append-only, commit all effects atomical
 
 ## 5. Forbidden scope and local acceptance
 
-CẤM runtime change in this WP (engine/models/proposer/API/store), deleting old evidence, moving classification after duplicate, manufacturing approver/time, claiming official sign-off. Reason: this package prepares reviewable target contracts; deployment/integration and group gates remain pending.
+CẤM runtime change in this WP (engine/models/proposer/API/store), deleting old evidence, moving classification after duplicate, manufacturing approval time or claiming runtime acceptance. Reason: approval is recorded only at day precision from the user report; deployment/integration and online gates remain pending.
 
-Document acceptance: code fences balanced, all eight decision rows pending/null, required function/error tokens present, local Markdown file links resolve; exact output in [wp2 checks](../evidence/wp2/checks.txt). Command: `python -c "... document assertions ..."` as recorded verbatim by machine in checks.txt; exit 0 is a documentation check only. Report links [R02](../reports/R02_decisions.md). Target future runtime acceptance (NOT run here): duplicate replay scan/LLM/audit/outbox increments=0; conflicting ID 409; CAS race exactly one commit; stale/gap no effects; restart receipts retained; old raw absent from recorded LLM payload; added negation cannot lower EMERGENCY; missing snapshot no route; LLM failure deterministic scan increments=1; child EMERGENCY merge holds parent EMERGENCY; denied clearance 403 with unchanged state; authorized clearance preserves quotes and emits one before/after audit.
+Historical document acceptance before the D-08 update: code fences balanced, all eight decision rows pending/null, required function/error tokens present, local Markdown file links resolve; exact output in [wp2 checks](../evidence/wp2/checks.txt). Command: `python -c "... document assertions ..."` as recorded verbatim by machine in checks.txt; exit 0 is a documentation check only. Report links [R02](../reports/R02_decisions.md). Target future runtime acceptance (NOT run here): duplicate replay scan/LLM/audit/outbox increments=0; conflicting ID 409; CAS race exactly one commit; stale/gap no effects; restart receipts retained; old raw absent from recorded LLM payload; added negation cannot lower EMERGENCY; missing snapshot no route; LLM failure deterministic scan increments=1; child EMERGENCY merge holds parent EMERGENCY; denied clearance 403 with unchanged state; authorized clearance preserves quotes and emits one before/after audit.
 
-Runtime, group and online acceptance: ⬜ pending. Local doc measurements do not substitute for those gates.
+Group approval: ✅ APPROVED as reported by user, date precision day; runtime and online acceptance: ⬜ pending. Approval-record consistency is checked by scripts/verify_package.py; historical WP2 evidence remains unchanged.
 
 ## 6. Adversarial contract examples (target expectations; no runtime pass claim)
 

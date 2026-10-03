@@ -49,10 +49,56 @@
   "active_plan": {
     "id": "02_2026-10-03_truong-mvp-prep",
     "status": "in_progress",
-    "group_approval": "pending",
+    "team_plan_url": "https://storm-jade-f74.notion.site/K-ho-ch-MaintenanceOps-MVP-3e43b68a924d80d7a81fe0579e1eddb9",
+    "deadlines": {
+      "mvp_online": "2026-10-04T23:59:00+07:00",
+      "feature_freeze": "2026-10-12T21:00:00+07:00",
+      "final_handoff": "2026-10-19T23:59:00+07:00"
+    },
+    "group_approval": "approved",
     "runtime_integration": "pending",
     "online_acceptance": "pending",
-    "local_outputs": "verified"
+    "local_outputs": "verified",
+    "approval": {
+      "decision": "approved",
+      "approver": "Lê Thị Châm Anh",
+      "role": "leader",
+      "approved_date": "2026-10-02",
+      "approved_at": null,
+      "date_precision": "day",
+      "recorded_date": "2026-10-03",
+      "recorded_at": "2026-10-03T10:25:01+07:00",
+      "source": "user report in this session",
+      "reference_commit": "a5e2705cf2ad1f57a896f5d3baf2f020ca96d45d",
+      "reference_pr": 6,
+      "scope": "MVP 04/10 and D-01-D-07",
+      "external_minutes_url": null,
+      "chronology_note": "Reference commit created after the reported approval date; reference mapping confirmed by user on 2026-10-03."
+    },
+    "day03": {
+      "status": "executed_local_with_blockers",
+      "recorded_at": "2026-10-03",
+      "sha": "0ea04adedd023654947e2e97e645043f0ba89159",
+      "results": {
+        "total": 23,
+        "pass": 17,
+        "fail": 1,
+        "blocked": 5,
+        "not_run": 0
+      },
+      "task_ids": [
+        "D3-01",
+        "D3-02",
+        "D3-03",
+        "D3-04",
+        "D3-05",
+        "D3-06",
+        "D3-07"
+      ],
+      "completed": 5,
+      "runtime_changes_allowed": false,
+      "spec": "planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md"
+    }
   },
   "last_session": {
     "date": "2026-10-03",

@@ -1,0 +1,190 @@
+{
+ "records": [
+  {
+   "case_id": "DEMO-01A-CLEANING",
+   "task_id": "D3-06",
+   "actor_role": "BQL",
+   "steps": [
+    "In-process TestClient, fresh interpreter per case; env forced in command: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1; /health 200 + effective settings asserted before mutation; HEAD cd83f1148e256bb34b0b26d80c16ec7011acb3db on feature/truong",
+    "QA GET SIM-TKT-CLN-001 (+events/audit/notifications, resident view) -> ROUTED/null/dept/draft/assignee null; neg: BQL close while ROUTED 409, BPTN accept 403",
+    "neg: kythuat01 accept -> refused, state still ROUTED; then vesinh01 POST /mo/tickets/SIM-TKT-CLN-001/accept -> IN_PROGRESS",
+    "vesinh01 POST checklist x3 COMPLETED; materials; evidence note + SIMULATED_IMAGE metadata",
+    "vesinh01 POST /mo/tickets/SIM-TKT-CLN-001/complete -> READY_FOR_REVIEW, readiness failing_items []",
+    "neg: vesinh01 close 403, bptn01 close 403, state still READY_FOR_REVIEW; bql01 POST /bql/tickets/SIM-TKT-CLN-001/close -> CLOSED"
+   ],
+   "input_ref": "seed fixture SIM-TKT-CLN-001 (DEPT_CLEANING, PB-CLN-01); OPERATIONS 2 steps 1-7",
+   "expected": "ROUTED -> accept (wrong dept refused) -> IN_PROGRESS -> checklist/materials(incl. explained variance)/evidence -> READY_FOR_REVIEW all pass -> BQL CLOSED; department/BPTN cannot close; assignee_id null throughout",
+   "actual": "26/26 checks OK, harness exit 0 (same as Day03).",
+   "result": "PASS",
+   "evidence_refs": [
+    "evidence/bis/demos/g1a.txt",
+    "evidence/bis/demos/g1a-exit.txt",
+    "evidence/bis/demos/git-head.txt"
+   ],
+   "issue_owner": null,
+   "block_reason": null
+  },
+  {
+   "case_id": "DEMO-01B-LIGHT",
+   "task_id": "D3-06",
+   "actor_role": "BQL",
+   "steps": [
+    "In-process TestClient, fresh interpreter per case; env forced in command: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1; /health 200 + effective settings asserted before mutation; HEAD cd83f1148e256bb34b0b26d80c16ec7011acb3db on feature/truong",
+    "QA GET SIM-TKT-TEC-001 (+events/audit/notifications, resident view) -> ROUTED/null/dept/draft/assignee null; neg: BQL close while ROUTED 409, BPTN accept 403",
+    "neg: vesinh01 accept -> refused, state still ROUTED; then kythuat01 POST /mo/tickets/SIM-TKT-TEC-001/accept -> IN_PROGRESS",
+    "kythuat01 POST checklist x3 COMPLETED; materials; evidence note + SIMULATED_IMAGE metadata",
+    "kythuat01 POST /mo/tickets/SIM-TKT-TEC-001/complete -> READY_FOR_REVIEW, readiness failing_items []",
+    "neg: kythuat01 close 403, bptn01 close 403, state still READY_FOR_REVIEW; bql01 POST /bql/tickets/SIM-TKT-TEC-001/close -> CLOSED"
+   ],
+   "input_ref": "seed fixture SIM-TKT-TEC-001 (DEPT_TECHNICAL, PB-TEC-01, asset SIM-ASSET-LIGHT-001); OPERATIONS 2 steps 1-7",
+   "expected": "same as DEMO-01A on technical branch; draft asset SIM-ASSET-LIGHT-001; BQL CLOSED",
+   "actual": "26/26 checks OK, harness exit 0 (same as Day03).",
+   "result": "PASS",
+   "evidence_refs": [
+    "evidence/bis/demos/g1b.txt",
+    "evidence/bis/demos/g1b-exit.txt",
+    "evidence/bis/demos/git-head.txt"
+   ],
+   "issue_owner": null,
+   "block_reason": null
+  },
+  {
+   "case_id": "DEMO-01-RATING",
+   "task_id": "D3-06",
+   "actor_role": "RESIDENT",
+   "steps": [
+    "In-process TestClient, fresh interpreter per case; env forced in command: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1; /health 200 + effective settings asserted before mutation; HEAD cd83f1148e256bb34b0b26d80c16ec7011acb3db on feature/truong",
+    "Re-run full DEMO-01A flow to CLOSED on a fresh process (SIM-TKT-CLN-001)",
+    "cudan01 POST /api/v1/resident/tickets/SIM-TKT-CLN-001/rating {\"score\":5} -> 200; again {\"score\":1}",
+    "read engine ticket.rating + audit RATE_TICKET count after each call"
+   ],
+   "input_ref": "seed fixture SIM-TKT-CLN-001 driven to CLOSED (DEMO-01A flow); OPERATIONS 2 step 8",
+   "expected": "rating #1 ok; rating #2 -> 409, rating stays 5, no new rating audit mutation",
+   "actual": "31/31 checks OK, exit 0. Rating #1 200 rating=5; rating #2 now 409, rating stays 5, RATE_TICKET audit count unchanged. Day03 was FAIL (200, overwritten 5->1); engine.py guard now present.",
+   "result": "PASS",
+   "evidence_refs": [
+    "evidence/bis/demos/g1r.txt",
+    "evidence/bis/demos/g1r-exit.txt",
+    "evidence/bis/demos/git-head.txt"
+   ],
+   "issue_owner": null,
+   "block_reason": null
+  },
+  {
+   "case_id": "DEMO-02-NEED-INFO",
+   "task_id": "D3-06",
+   "actor_role": "BPTN",
+   "steps": [
+    "In-process TestClient, fresh interpreter per case; env forced in command: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1; /health 200 + effective settings asserted before mutation; HEAD cd83f1148e256bb34b0b26d80c16ec7011acb3db on feature/truong",
+    "QA GET SIM-TKT-CLN-003 (raw blank) -> NEED_INFO/MISSING_INFO; neg BPTN accept 403",
+    "bptn01 POST /mo/tickets/SIM-TKT-CLN-003/bptn-resolve {location,info,note} -> 200 ROUTED",
+    "Separate fresh process (g2neg): only location 409; info without location 409; state NEED_INFO and no addition appended; kythuat01/cudan01 bptn-resolve 403"
+   ],
+   "input_ref": "seed fixture SIM-TKT-CLN-003 raw '   '; OPERATIONS 3.1 steps 1-3",
+   "expected": "NEED_INFO/MISSING_INFO, dept/draft null; after BPTN resolve ROUTED/null, raw still blank, addition submitted_by BPTN, locked location set; negatives 409 (no partial append) and 403 (wrong role) with state unchanged",
+   "actual": "g2 13/13 OK exit 0; g2neg 10/10 OK exit 0 (same as Day03).",
+   "result": "PASS",
+   "evidence_refs": [
+    "evidence/bis/demos/g2.txt",
+    "evidence/bis/demos/g2-exit.txt",
+    "evidence/bis/demos/g2neg.txt",
+    "evidence/bis/demos/g2neg-exit.txt",
+    "evidence/bis/demos/git-head.txt"
+   ],
+   "issue_owner": null,
+   "block_reason": null
+  },
+  {
+   "case_id": "DEMO-02-ASSET-UNCLEAR",
+   "task_id": "D3-06",
+   "actor_role": "BPTN",
+   "steps": [
+    "In-process TestClient, fresh interpreter per case; env forced in command: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1; /health 200 + effective settings asserted before mutation; HEAD cd83f1148e256bb34b0b26d80c16ec7011acb3db on feature/truong",
+    "QA GET SIM-TKT-TEC-002 -> VERIFYING/ASSET_UNCLEAR; neg kythuat01 accept 409",
+    "bptn01 POST bptn-resolve {asset_onsite:true, note} -> ROUTED, DEPT_TECHNICAL, ASSET_CHECK_ONSITE, ONSITE_BY_BPTN",
+    "Separate fresh process (g2neg): onsite without note 409, state unchanged; wrong role 403; invented asset id 409"
+   ],
+   "input_ref": "seed fixture SIM-TKT-TEC-002; OPERATIONS 3.2 steps 1-3",
+   "expected": "VERIFYING/ASSET_UNCLEAR, dept/draft null, accept refused; onsite with note -> ROUTED/null, DEPT_TECHNICAL, flag ASSET_CHECK_ONSITE, ONSITE_BY_BPTN; negatives 409/403 leave state unchanged; no invented asset",
+   "actual": "g2 13/13 OK exit 0; g2neg 10/10 OK exit 0 (same as Day03).",
+   "result": "PASS",
+   "evidence_refs": [
+    "evidence/bis/demos/g2.txt",
+    "evidence/bis/demos/g2-exit.txt",
+    "evidence/bis/demos/g2neg.txt",
+    "evidence/bis/demos/g2neg-exit.txt",
+    "evidence/bis/demos/git-head.txt"
+   ],
+   "issue_owner": null,
+   "block_reason": null
+  },
+  {
+   "case_id": "DEMO-03-STOCK",
+   "task_id": "D3-06",
+   "actor_role": "WAREHOUSE",
+   "steps": [
+    "In-process TestClient, fresh interpreter per case; env forced in command: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1; /health 200 + effective settings asserted before mutation; HEAD cd83f1148e256bb34b0b26d80c16ec7011acb3db on feature/truong",
+    "QA GET SIM-TKT-TEC-003 -> ON_HOLD/WAITING_MATERIAL, SIM-MAT-LAMP-02 planned 2 stock 0; neg dept accept refused",
+    "QA POST resume at stock 0 -> unchanged; negatives: BPTN stock 403, qty 0 422, unknown item 404 (stock unchanged)",
+    "kho01 POST /mo/warehouse/stock/SIM-MAT-LAMP-02 {qty:1} -> stock 0->1, still ON_HOLD; again {qty:1} -> stock 1->2, auto-resume lookup->stock->draft, ROUTED",
+    "QA resume again -> ROUTED unchanged, events length unchanged"
+   ],
+   "input_ref": "seed fixture SIM-TKT-TEC-003; OPERATIONS 4 steps 1-5",
+   "expected": "ON_HOLD/WAITING_MATERIAL resume_step 6 -> stock 0->1 still held -> stock 1->2 resume from asset lookup, ROUTED/null DEPT_TECHNICAL with draft; repeat resume no duplicate dispatch; negatives 403/422/404",
+   "actual": "21/21 checks OK, exit 0 (same as Day03).",
+   "result": "PASS",
+   "evidence_refs": [
+    "evidence/bis/demos/g3.txt",
+    "evidence/bis/demos/g3-exit.txt",
+    "evidence/bis/demos/git-head.txt"
+   ],
+   "issue_owner": null,
+   "block_reason": null
+  },
+  {
+   "case_id": "DEMO-04-SAFETY-TIER2",
+   "task_id": "D3-06",
+   "actor_role": "BPTN",
+   "steps": [
+    "In-process TestClient, fresh interpreter per case; env forced in command: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1; /health 200 + effective settings asserted before mutation; HEAD cd83f1148e256bb34b0b26d80c16ec7011acb3db on feature/truong",
+    "GET /openapi.json: list paths, scan for safety/emergency/hazard and target action/blocker names; inspect engine.py for safety use",
+    "BASELINE only (not target): cudan01 POST /api/v1/resident/tickets with the Bac 2 sentence (simulated_received_at 2026-10-03T10:00:00+07:00); QA GET ticket",
+    "Planned (NOT RUN, no contract): BPTN SAFETY_CONFIRM_SAFE / SAFETY_ESCALATE / T06 need-info (3 choices, note required); QA jobs/run deadlines 4h (now 2026-10-03T14:01:00+07:00) and NEED_INFO safety 12h (now 2026-10-03T22:01:00+07:00); D01 delta+snapshot additions"
+   ],
+   "input_ref": "OPERATIONS 5.1-5.2: Bac 2 sentence 'Hình như có mùi khét ở đèn hành lang tầng 3 tòa SIM-A.'",
+   "expected": "Target: VERIFYING/SAFETY_REVIEW_REQUIRED owner BPTN, dept/draft null, then exactly three BPTN choices.",
+   "actual": "Decision step BLOCKED (no route). Ingest-only sub-observation (new vs Day03): resident POST Bậc 2 sentence now -> VERIFYING/SAFETY_REVIEW_REQUIRED owner BPTN, dept/draft null (Day03: VERIFYING/OUT_OF_SCOPE). g4a exit 1 only because stale harness 'absent' checks (8 of 10) now see enum/engine safety presence; not a product failure.",
+   "result": "BLOCKED",
+   "evidence_refs": [
+    "evidence/bis/demos/g4a.txt",
+    "evidence/bis/demos/g4a-exit.txt",
+    "evidence/bis/demos/openapi-safety-scan.txt",
+    "evidence/bis/demos/git-head.txt"
+   ],
+   "issue_owner": "Lê Thị Châm Anh",
+   "block_reason": "TARGET BLOCKED - UNIMPLEMENTED (API): OpenAPI (45 paths) has 0 safety/emergency/hazard routes; no route calls engine.safety_confirm_safe/safety_escalate/safety_request_info/emergency_downgrade/emergency_close (engine.py:765-886 exist). TransitionRequest takes only to/note/eta/cancel_reason; bptn-resolve is not a safety route; Action enum (SAFETY_*/EMERGENCY_*) appears in schema but the only route using it is /attempt. Engine methods NOT invoked directly (not API demo). D01 additions-delta and BQL actions/negatives/deadline jobs therefore not run."
+  },
+  {
+   "case_id": "DEMO-04-SAFETY-TIER1",
+   "task_id": "D3-06",
+   "actor_role": "BQL",
+   "steps": [
+    "In-process TestClient, fresh interpreter per case; env forced in command: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1; /health 200 + effective settings asserted before mutation; HEAD cd83f1148e256bb34b0b26d80c16ec7011acb3db on feature/truong",
+    "BASELINE only (not target): cudan01 POST /api/v1/resident/tickets with the Bac 1 sentence; QA GET ticket; BQL GET notifications",
+    "Planned (NOT RUN, no contract): BQL EMERGENCY_CLOSE (MVP gate), EMERGENCY_DOWNGRADE (MVP gate), CREATE_FOLLOW_UP (post-MVP), merge T08, cancel T23; negatives BPTN/department 403, resume/jobs do not clear"
+   ],
+   "input_ref": "OPERATIONS 5.1/5.3: Bac 1 sentence 'Đèn hành lang tầng 3 tòa SIM-A có khói và mùi khét.'",
+   "expected": "Target: VERIFYING/EMERGENCY_PENDING_BQL owner BQL, dept/draft null, immediate BQL notification pinned; BQL-only close/downgrade.",
+   "actual": "Decision step (BQL EMERGENCY_CLOSE/DOWNGRADE) BLOCKED (no route). Ingest-only sub-observation (new vs Day03): Bậc 1 sentence now -> VERIFYING/EMERGENCY_PENDING_BQL owner BQL, dept/draft null, BQL-audience notification present; g4b 2/2 OK exit 0 (Day03: OUT_OF_SCOPE, no BQL notification).",
+   "result": "BLOCKED",
+   "evidence_refs": [
+    "evidence/bis/demos/g4b.txt",
+    "evidence/bis/demos/g4b-exit.txt",
+    "evidence/bis/demos/openapi-safety-scan.txt",
+    "evidence/bis/demos/git-head.txt"
+   ],
+   "issue_owner": "Lê Thị Châm Anh",
+   "block_reason": "TARGET BLOCKED - UNIMPLEMENTED (API): OpenAPI (45 paths) has 0 safety/emergency/hazard routes; no route calls engine.safety_confirm_safe/safety_escalate/safety_request_info/emergency_downgrade/emergency_close (engine.py:765-886 exist). TransitionRequest takes only to/note/eta/cancel_reason; bptn-resolve is not a safety route; Action enum (SAFETY_*/EMERGENCY_*) appears in schema but the only route using it is /attempt. Engine methods NOT invoked directly (not API demo). D01 additions-delta and BQL actions/negatives/deadline jobs therefore not run."
+  }
+ ]
+}

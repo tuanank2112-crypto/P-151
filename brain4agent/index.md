@@ -24,6 +24,9 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | **Sản phẩm (nền v0.3, lệch thì CR-03 thắng)** | [`../docs/01_problem_statement.md`](../docs/01_problem_statement.md) … [`05_traceability_and_review.md`](../docs/05_traceability_and_review.md), [`data-contract-v1.md`](../docs/data-contract-v1.md), [`playbook-v1.md`](../docs/playbook-v1.md) | Bài toán, PRD, UI flow, data contract, playbook. |
 | **Swimlane / sơ đồ flow** | [`../docs/Activity Diagram.png`](../docs/Activity%20Diagram.png) | Bản nháp, CHƯA khớp CR-03 (thiếu Bậc 2, sai thứ tự an toàn). `flow_maintenanceops_v04.png` là flow cũ. |
 | **Chạy app / API hiện có** | [`../README.md`](../README.md) | Docker, endpoints `/api/v1/mo`, `/resident`, `/bql`. |
+| **Việc của Trường hôm nay / phân công nhóm** | [`roadmap.md` §Trường](roadmap.md) + [`memory-distill.txt` `<truong_focus>`](memory-distill.txt) | Lịch 01/10–19/10 theo Notion, chủ việc từng người, chỉ tiêu 19/10. |
+| **Dataset / nhãn / fixture đích** | [`seed/maintenance_cr03/`](../seed/maintenance_cr03/) | `safety_cases.json` (nhãn safety), `tickets.yaml` (expected outcome). |
+| **Deliverables cuối (10 mục)** | [`docs/guide/chapter-09.md`](../docs/guide/chapter-09.md) | Checklist bàn giao 19/10. |
 
 ---
 
@@ -54,6 +57,7 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | `src/maintenance/{catalog,models,enums}.py` | Catalog mô phỏng, model Pydantic, enum |
 | `seed/maintenance_v1/` | Fixture: tickets, catalog (`sla_config`), accounts, `lexicon.yaml` (từ vựng an toàn + priority) |
 | `tests/test_maintenance/` | Test engine, API, auth, acceptance, safety/emergency/priority (CR-03), store (pg chỉ chạy `--pg` trên docker `*_test`), `test_cr03_store.py` (CR-03 qua repository + Q04) |
+| `seed/maintenance_cr03/` | Fixture đích CR-03: nhãn safety + expected outcome (Trường) |
 
 ---
 
@@ -96,7 +100,7 @@ project-root/
 │   ├── -known-gotchas.md             # [GOTCHAS] Tổng hợp lỗi dị biệt & bẫy kỹ thuật
 │   ├── -data-architecture.md         # [DATA ARCH] Kiến trúc dữ liệu & Data Flow
 │   └── project-intro.md              # [INTRO] Tổng quan dự án & Tech stack
-├── planning/                         # [QUẢN LÝ KẾ HOẠCH NÂNG CẤP] Chứa các bản kế hoạch RFCs
+├── planning/                         # [QUẢN LÝ KẾ HOẠCH NÂNG CẤP] 01 supabase-persistence, 02 truong-mvp-prep
 ├── .agents/skills/                   # [WORKSPACE SKILLS] Kỹ năng chuyên dụng cục bộ dự án
 └── docs/                             # [MODULE DOCS] CR-BPTN-03.md, maintenance.md (module engine), 01–05, data-contract, playbook
 ```
@@ -105,4 +109,6 @@ project-root/
 - Hồ sơ 5 gói Trường: `planning/02_2026-10-03_truong-mvp-prep/plan.md`, SPEC/handoffs/reports/evidence.
 - Module docs: `docs/maintenance.md`; decisions amendment: `docs/CR-BPTN-03.md`.
 - Rules P0 độc lập: `src/maintenance/safety.py`; dữ liệu đích `seed/maintenance_cr03/`; tests `test_safety_p0.py`, `test_cr03_targets.py`.
-- User xác nhận D-01 delta + persisted structured context; D-02–07 defaults. D-08 group approval pending; chưa tích hợp engine/runtime.
+- User xác nhận D-01 delta + persisted structured context; D-02–07 defaults. D-08 group approval recorded (leader Lê Thị Châm Anh, reported date 2026-10-02, recorded 2026-10-03); chưa tích hợp engine/runtime.
+
+- Ngày 03: `planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md`; đã chạy local (17 PASS/1 FAIL/5 BLOCKED); kết quả: `deliverables/day03-summary.md`, `day03-wording.md`, `day03-results.json` của cùng package; harness `evidence/d3-06/harness.py`.
