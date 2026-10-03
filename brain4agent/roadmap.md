@@ -43,10 +43,8 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [x] 01/10 — Phiên duyệt CR-03, phạm vi P0/P1, mặc định D-01–D-07, ghi người duyệt D-08, chốt 4 luồng demo (plan 02 WP1–WP3).
   D-08: leader Lê Thị Châm Anh duyệt MVP 04/10 + D-01–D-07; ngày báo 2026-10-02, ghi nhận 2026-10-03; tham chiếu a5e2705/PR #6.
 - [x] 02/10 — Rules P0 + ví dụ phủ định/không dấu/nghi ngờ; sửa expected CLN-004, TEC-005 (plan 02 WP4–WP5; 266 test, 57/57 hồ sơ).
-- [~] 03/10 — Kiểm tra asset/vật tư, trùng cơ bản, 4 script demo, rà wording theo quyền vai trò → D3-01..07 (SPEC-P06-DAY03).
-  Chạy local cô lập (SHA 0ea04ad): 23 record = 17 PASS / 1 FAIL / 5 BLOCKED / 0 NOT_RUN. D3-01/02/03/04/07 [x] (D3-07 = đã lập báo cáo); D3-05/06 chưa [x].
-  Asset 3/3, vật tư 4/4, trùng 4/4 PASS. Wording: WORD-03 PASS; WORD-01/02/04 BLOCKED (safety Bậc 2/Bậc 1, rating-once, reopen chưa tích hợp). Demo: 5 PASS, 1 FAIL (DEMO-01-RATING: `engine.rate` ghi đè rating, engine.py:548-553), 2 BLOCKED (DEMO-04 safety chưa tích hợp). Owner lỗi/BLOCKED: Như Ý.
-  Chờ người quyết: ASSET-03 (SPEC §3 vs OPERATIONS §3.2.2), STOCK-04 (cờ `STOCK_CHECK_ON_ACCEPT` chỉ đặt, accept không xử lý), owner reopen/rating-once.
+- [x] 03/10 — Kiểm tra asset/vật tư, trùng cơ bản, 4 script demo, rà wording theo quyền vai trò → D3-01..07 ĐÓNG (SPEC-P06-DAY03).
+  Kết quả cuối trên develop f46a53c (local cô lập): DEMO-01..04 và WORD-01..04 PASS; asset 3/3, vật tư 4/4, trùng 4/4 PASS. D-01 delta+snapshot NGOÀI phạm vi MVP 04/10 (D01-A/C giữ BLOCKED, Như Ý). ASSET-03 theo OPERATIONS (asset_onsite), STOCK-04 cờ chỉ là lời nhắc. Fixture CR03 đã khớp thứ tự an toàn trước phân loại (12/12). Runtime/online gate vẫn mở.
 - [ ] 04/10 — Chạy demo theo script trên bản online, đối chiếu expected, ghi phần chưa xong + giới hạn mô phỏng. 21:00 nghiệm thu MVP.
   (Chờ: Như Ý nối safety P0 + D-01 vào engine; Châm Anh deploy + persistence/restart.)
 - [ ] 05/10 — Chốt backlog sau MVP; mở rộng bộ câu gán nhãn, tách nhãn classification và safety.
