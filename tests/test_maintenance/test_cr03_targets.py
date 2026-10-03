@@ -11,10 +11,12 @@ from src.maintenance.safety import assess
 
 TARGET_DIR = Path("seed/maintenance_cr03")
 EMERGENCIES = {
-    "SIM-TKT-CLN-004": ("PB-CLN-01", "DEPT_CLEANING", {"S-14"}),
-    "SIM-TKT-TEC-005": ("PB-TEC-01", "DEPT_TECHNICAL", {"S-01", "S-02"}),
+    "SIM-TKT-CLN-004": {"S-14"},
+    "SIM-TKT-TEC-005": {"S-01", "S-02"},
 }
 DOWNSTREAM_FIELDS = {"asset_resolution", "asset_lookup_status", "asset_id", "material_stock_status"}
+# CR-03 §5.1: step 2b (safety) runs before step 3, so a tier-1 ticket is never classified (user ruling 2026-10-03)
+CLASSIFICATION_FIELDS = {"playbook_id", "proposed_department_id", "review_status"}
 
 
 def read_rows(directory):
@@ -44,13 +46,11 @@ def assert_target_integrity(target, baseline):
         assert {k: v for k, v in row.items() if k not in {"expected", "purpose"}} == {
             k: v for k, v in source.items() if k not in {"expected", "purpose"}
         }
-        playbook, proposed_department, _ = EMERGENCIES[ticket_id]
         expected = row["expected"]
-        gold = {k: v for k, v in source["expected"].items() if k not in DOWNSTREAM_FIELDS}
+        gold = {k: v for k, v in source["expected"].items() if k not in DOWNSTREAM_FIELDS | CLASSIFICATION_FIELDS}
         gold.update(status="VERIFYING", reason_code="EMERGENCY_PENDING_BQL", department_id=None, draft_exists=False)
         assert expected == gold
-        assert expected["playbook_id"] == playbook
-        assert expected["proposed_department_id"] == proposed_department
+        assert not CLASSIFICATION_FIELDS.intersection(expected)
         assert not DOWNSTREAM_FIELDS.intersection(expected)
         assert "risk_level" not in expected
         assert "CR03 P0" in row["purpose"] and "EMERGENCY" in row["purpose"]
@@ -58,15 +58,11 @@ def assert_target_integrity(target, baseline):
 
 def test_target_twelve_rows_preserve_source_and_ten_unchanged_oracles():
     # CR-03 §14/Q20: baseline v1.3 — Trường review. The branch fixture adds `priority`/`risk_level` (CR-03) and keeps
-    # tier 1 unclassified (2b before step 3); the order mismatch with this target is open (plan 02 R02 §7), so the
-    # three classification fields of the two emergencies are taken from the target, everything else is compared.
+    # tier 1 unclassified (2b before step 3), same as this target since the 2026-10-03 ruling.
     target, baseline = read_rows(TARGET_DIR), read_rows(FIXTURE_DIR)
     for row, target_row in zip(baseline["tickets"], target["tickets"], strict=True):
         row["expected"].pop("priority", None)
         row["expected"].pop("risk_level", None)
-        if row["raw"]["ticket_id"] in EMERGENCIES:
-            for key in ("playbook_id", "proposed_department_id", "review_status"):
-                row["expected"][key] = target_row["expected"][key]
     assert_target_integrity(target, baseline)
 
 
@@ -88,7 +84,7 @@ def test_target_raw_has_independent_emergency_safety_evidence(ticket_id):
     fixture = load_dataset(TARGET_DIR).get(ticket_id)
     assessment = assess(fixture.raw.original_description, load_lexicon().safety)  # plan 02 Q09: this branch's rules
     assert assessment.risk_level == "EMERGENCY"
-    required = EMERGENCIES[ticket_id][2]
+    required = EMERGENCIES[ticket_id]
     assert required <= {s.signal_id for s in assessment.signals if s.status == "PRESENT"}
     text = fixture.raw.original_description
     assert all(part in text for s in assessment.signals for part in s.source_quote.split(" | "))  # S-14: 2 spans

@@ -10,10 +10,10 @@ BẮT BUỘC keep 12 ordered unique IDs, all raw mappings and identical UTF-8 de
 
 ## 2. Exact mapping and forbidden downstream claims
 Both emergencies: status=VERIFYING, reason_code=EMERGENCY_PENDING_BQL, department_id=null, draft_exists=false, review_status=NOT_REQUIRED. Delete asset_resolution, asset_lookup_status, asset_id, material_stock_status expectations because safety stops before these stages. CẤM invent downstream null/ready observations. Purpose states CR03 P0/EMERGENCY/BQL handling.
-- CLN-004: retain playbook_id=PB-CLN-01, proposed_department_id=DEPT_CLEANING, location="Tòa SIM-A / Tầng B1 / Hầm xe". Independent risk EMERGENCY with PRESENT S-14.
-- TEC-005: retain playbook_id=PB-TEC-01, proposed_department_id=DEPT_TECHNICAL; add no location assertion (baseline omitted it). Independent risk EMERGENCY with PRESENT S-01/S-02.
+- CLN-004: classification fields (playbook_id, proposed_department_id, review_status) REMOVED 2026-10-03 (safety runs before classification, CR-03 §5.1); location="Tòa SIM-A / Tầng B1 / Hầm xe". Independent risk EMERGENCY with PRESENT S-14.
+- TEC-005: classification fields REMOVED 2026-10-03 (same ruling); add no location assertion (baseline omitted it). Independent risk EMERGENCY with PRESENT S-01/S-02.
 - Ten unchanged rows: CLN001 READY_FOR_REVIEW; CLN002 ROUTED/OUT_OF_HOURS; CLN003 NEED_INFO/MISSING_INFO; CLN005 ROUTED; CLN006 IN_PROGRESS; TEC001 READY_FOR_REVIEW; TEC002 VERIFYING/ASSET_UNCLEAR; TEC003 ON_HOLD/WAITING_MATERIAL; TEC004 ROUTED; TEC006 ROUTED. All remaining expected fields equal baseline.
-Gold comes from CR-BPTN-03 §6/14 and classification-before-safety contract. Source raw/history is immutable; audit quotes and retained context do not license modifying source data.
+Gold comes from CR-BPTN-03 §6/14 and safety-before-classification flow (user ruling 2026-10-03, supersedes the earlier classification-before-safety wording). Source raw/history is immutable; audit quotes and retained context do not license modifying source data.
 
 ## 3. Errors and caller behavior
 - Missing/malformed/schema-invalid fixture: propagate FileNotFoundError/YAML error/Pydantic ValidationError; caller refuses dataset use, CẤM silently fallback to pass acceptance.

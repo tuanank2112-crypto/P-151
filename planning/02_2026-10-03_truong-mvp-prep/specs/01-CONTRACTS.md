@@ -9,7 +9,7 @@
 
 | ID | User confirmation (2026-10-03) | Group status | approver / approved_at |
 |---|---|---|---|
-| D-01 | Mỗi bổ sung mới + persisted structured context; safety scan mới; agent/job không hạ risk | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
+| D-01 | Mỗi bổ sung mới + persisted structured context; safety scan mới; agent/job không hạ risk (2026-10-03 người dùng chốt: phần delta + snapshot NGOÀI phạm vi MVP 04/10, làm ở 19/10; hazard-trong-bổ-sung đã có) | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
 | D-02 | Bậc 2: 4 giờ lịch review; 12 giờ lịch bổ sung safety; NEED_INFO thường SLA BPTN | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
 | D-03 | Ngưỡng báo trùng nâng ưu tiên = 3 | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
 | D-04 | Đèn/bóng cháy đứng riêng = NONE, B-01 | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
