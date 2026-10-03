@@ -75,7 +75,7 @@ Timeout nhánh Bậc 2 không xử lý: **QA** CURRENT POST `/mo/jobs/run` `{"no
 
 Mỗi action trên case emergency mới, E(4,1-action). Đóng khẩn cấp/hạ báo nhầm là cổng MVP; CREATE_FOLLOW_UP là SAU MVP theo Notion, không yêu cầu để chốt 04/10. Gộp/hủy mô tả hợp đồng CR03 để review; chỉ chạy nếu phạm vi ứng viên hỗ trợ, không mở rộng gate bốn demo. Tất cả giữ cấm BPTN/department/Agent/job quyết thay BQL; note/audit theo CR03.
 
-1. **BQL đã xử lý, đóng**, target `EMERGENCY_CLOSE`, note kết quả bắt buộc: `CLOSED`, closure_kind=`EMERGENCY_HANDLED`; không fake draft/department. CURRENT `/bql/tickets/T/close` có nhưng không hỗ trợ nguồn emergency VERIFYING; không gọi như API safety.
+1. **BQL đã xử lý, đóng**, target `EMERGENCY_CLOSE`, note kết quả bắt buộc: `CLOSED`, closure_kind=`EMERGENCY_HANDLED`; không fake draft/department. CURRENT route DUY NHẤT: POST `/bql/tickets/T/emergency/close` `{"note":"<kết quả>"}`. `/bql/tickets/T/close` chỉ đóng từ `READY_FOR_REVIEW`; gọi trên emergency VERIFYING → 409 `INVALID_TRANSITION`, case không đổi (đo 2026-10-03, `test_plain_close_rejects_emergency`).
 2. **BQL báo nhầm, hạ xuống**, target `EMERGENCY_DOWNGRADE`, note bắt buộc: clearance ghi đúng người/thời điểm; `RECEIVED`→flow bảo trì; BPTN downgrade bị cấm.
 3. **SAU MVP — BQL tạo sửa chữa tiếp theo**, target `CREATE_FOLLOW_UP`: ticket mới follow_up_of=T, kế thừa nội dung/ảnh cần thiết và clearance đúng snapshot; BQL sau đó emergency-close cha. Evidence có hai ID/audit; cấm copy clearance để bỏ qua hazard của delta mới.
 4. **BQL gộp**, target T08: hai emergency cùng sự cố, con `MERGED`, cha vẫn `VERIFYING`/`EMERGENCY_PENDING_BQL`, risk không giảm, liên kết nguồn/audit; cấm BPTN gộp emergency.

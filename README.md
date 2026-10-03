@@ -226,7 +226,7 @@ Mục này mô tả API **code hiện có** (bản cài đặt CR-BPTN-02 cũ, �
 | POST | `/mo/tickets/{id}/complete` | Phòng ban | Báo hoàn thành → Agent đối soát (bước 10) |
 | POST | `/mo/warehouse/stock/{item_code}` | Kho | Nhập vật tư; ticket chờ vật tư đó tự chạy lại |
 | GET | `/bql/tickets` | BQL | Đầy đủ; lọc `status`, `department_id`, `blocker_code`, `escalated`, `overdue` |
-| POST | `/bql/tickets/{id}/close`, `/rework`, `/cancel` | BQL | Nghiệm thu; trả làm lại; hủy |
+| POST | `/bql/tickets/{id}/close`, `/rework`, `/cancel` | BQL | Nghiệm thu (chỉ từ `READY_FOR_REVIEW`; ticket khẩn cấp dùng `/emergency/close`); trả làm lại; hủy |
 | POST | `/mo/tickets/{id}/transition` | theo bảng | Hàm chuyển trạng thái chung (403 nếu vai trò không bao giờ được vào trạng thái đích, 409 nếu sai trạng thái nguồn) |
 | POST | `/mo/tickets/{id}/resume`, `/mo/jobs/run` | Hệ thống | Chạy lại nếu blocker đã gỡ (idempotent); chạy job retry/leo thang (có thể giả lập `now`) |
 | GET | `/mo/tickets`, `/mo/tickets/{id}`, `.../events`, `.../audit`, `.../notifications` | nội bộ | Work queue, case đầy đủ, timeline, audit, outbox thông báo |

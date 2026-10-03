@@ -141,3 +141,24 @@
 
 ## Day03 đóng — 2026-10-03
 - Người dùng chốt D-01 ngoài phạm vi MVP 04/10. Rà lại WORD-04 trên develop f46a53c: PASS (UI hết fallback, /close trả 409 với khẩn cấp). D3-01..07 tick [x]; D01-A/C giữ BLOCKED trong results. Runtime/online gates vẫn mở.
+
+- 2026-10-03 11:11: PR #7 merge vào develop (6265436) bởi người dùng; cây trùng nhánh đã đo. Hồ sơ 02 ĐÓNG ✅. CI fail do billing Actions. gh: token git thiếu read:org ⇒ dùng GH_TOKEN qua REST.
+- 2026-10-03 12:10: Trường giao route safety/khẩn cấp (handoff-noy-safety-routes). Mở hồ sơ 03, nhánh feature/nhuy-safety-routes từ develop 512131a; route khớp UI PR #8 (Q01).
+- 2026-10-03: WP1 plan 03 (worker): 3 route safety/khẩn cấp bọc engine (Q01), test_api_safety.py 40 test, pytest 1600→1640; chờ SO đo + phán.
+- Hồ sơ 03 ✅: route /mo/tickets/{id}/safety + /bql/tickets/{id}/emergency/{close,downgrade} (24a99ac), 1640 test, ruff sạch. Push + PR vào develop.
+
+## 🔀 Phiên 2026-10-03 (chiều) — feature/chamanh đặt router lên engine CR-03 của Như Ý (PR #7)
+- Người dùng chốt: engine/safety/priority/models/views/enums, test, brain4agent/ theo develop; Châm Anh chỉ giữ `src/api/`, `src/main.py`, hồ sơ `planning/02_…`. Bản CR-03 cũ ở nhánh `backup/chamanh-cr03-full` (d562973).
+- Router: `/safety {decision}` rẽ sang `safety_confirm_safe` / `safety_request_info` / `safety_escalate`; giữ `/priority`, `/emergency/close|downgrade`; sắp hàng chờ bằng `_queue_key` trong router (develop chưa có `priority.sort_key`); bỏ `reason`/`into` khỏi TransitionRequest.
+- Tạm gỡ route chưa có engine: `/unmerge`, `/report-wrong-dept`, `/material-short`, `/bql/safety-clearances`, `/bql/…/follow-up`, `/bql/…/merge`, `/bql/…/wrong-dept`.
+- Đo: pytest 1600 passed + 29 deselected exit 0; ruff check exit 0; smoke API 6/6 route. Chưa chạy `--pg`.
+
+## v1.1.2 — chặn `/close` thường trên ticket khẩn cấp — 2026-10-03
+- Đo trước sửa: `POST /bql/tickets/SIM-TKT-TEC-005/close` kèm note → 200 CLOSED/EMERGENCY_HANDLED (trái OPERATIONS §5.3 mục 1). Người dùng chọn (a): chỉ còn `/emergency/close`.
+- Sửa `engine.close` ghim `expected_from=READY_FOR_REVIEW`; test mới đỏ 2 → xanh; pytest 1601 passed/29 deselected exit 0; ruff check/format exit 0. Field đúng là `safety_clear_reason` (repo không có `safety_cleared_reason`).
+- Tiêu đề OPERATIONS §5 vẫn ghi "TARGET BLOCKED — UNIMPLEMENTED" dù route emergency đã có — chưa sửa (hồ sơ của Trường). Chưa commit.
+- Merge origin/develop (a68513e, PR feature/tri UI readiness/6 gates) vào feature/chamanh: chỉ đổi src/web/app.js, 0 xung đột; pytest 1601 passed/29 deselected, ruff src+tests exit 0, node --check app.js exit 0. UI chỉ gọi /close ở nút Nghiệm thu (READY_FOR_REVIEW).
+
+## Merge develop ← nhuy-safety-routes + feature/chamanh — 2026-10-03
+- Router: route `/safety` và `/emergency/{close,downgrade}` giữ bản Như Ý (`EmergencyNoteBody` bỏ qua field lạ như `closure_kind`); thêm từ chamanh `/priority`, hàng chờ `_queue_key`, lọc BQL risk_level/priority, bỏ `/resident/.../reopen`, v1.1.2 chặn `/close` trên ticket khẩn cấp.
+- Đo: pytest 1641 passed/29 deselected exit 0 (gồm 40 test test_api_safety.py), ruff check + format src/tests exit 0.

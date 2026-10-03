@@ -4,7 +4,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 ## Mục tiêu hiện tại (Active)
 - [ ] **MVP online 04/10/2026:** engine CR-03 P0 đã xong (xem Done); còn nối router/UI cho 5 method khẩn cấp + `set_priority` (Châm Anh/Trí — gợi ý ở `planning/01_2026-10-01_cr03-p0-engine/specs/00-ARCHITECTURE.md` §4.1), deploy Render, gpt-4o thật (persistence PostgreSQL/Supabase đã có từ `develop`, hồ sơ lưu trữ 01).
-- [ ] **Tích hợp (hồ sơ 02 `planning/02_2026-10-02_merge-develop/`):** merge `develop` ✅ (`b4f8a5d`, SO đo 1514 test) + đã merge thêm PR #5 của Trí (`2f00a2c`, chỉ `src/web/app.js`); nhánh đã push. Còn: PR `feature/nhuy-cr03-p0` → `develop` (người dùng mở trên GitHub, chờ Trường merge), chạy G1–G4, G7 trên CI/Render, bump version app.
+- [ ] **Sau tích hợp:** engine CR-03 P0 ĐÃ VÀO `develop` (PR #7, `6265436`). Còn: CI không chạy vì tổ chức hết hạn mức GitHub Actions (mọi run fail "job was not started") — người quản lý tổ chức xử lý; chạy test `--pg` với DB thật; bump version app khi nhóm phát hành.
 - [ ] **Câu hỏi mở hồ sơ 02:** phân công nhân sự — `develop` D-12 (phòng ban ghi `assignee_id`) mâu thuẫn CR-03 P0 (`set_assignee` bị chặn, `assignee_id` chỉ `null`); người quyết.
 - [ ] **Q22 cho Trường (chủ rules/playbook):** "Bóng đèn … bị cháy" qua 2b ra NONE đúng nhưng `rules.py`/`proposer.py` phân loại `OUT_OF_SCOPE` ⇒ ticket đèn phổ biến nhất dừng chờ BPTN.
 - [ ] Log AI cho BTC: tắt alias Python trên máy Như Ý hoặc merge `_pyrun.sh` của Trí từ `develop` (xem gotchas); kiểm `.ai-log/session.jsonl` có dòng mới.
@@ -29,6 +29,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [ ] CI chạy `pytest --pg` với service Postgres trong GitHub Actions.
 
 ## Đã hoàn thành (Done)
+- [x] **v1.1.2 (2026-10-03, Châm Anh):** `/bql/tickets/{id}/close` chỉ đóng từ `READY_FOR_REVIEW`; ticket khẩn cấp chỉ đóng qua `/emergency/close` (409 `INVALID_TRANSITION` nếu dùng `/close`). 1601 test xanh.
 - [x] **Lắp brain4agent (2026-09-30):** Chạy engine V5.2, tạo các phân vùng nhớ, luật `AGENTS.md`, skill và shim cho agent.
 - [x] **Rà soát backend 2026-09-30 (Châm Anh):** an toàn đồng thời cho engine, job không chặn event loop, chặn cư dân lùi ngày ở production, khóa đăng nhập theo username + client, `/chat` không lộ lỗi, `llm.py` nhận `OPENAI_BASE_URL`, ruff sạch toàn repo.
 - [x] **Flow 2026-10-01 (Châm Anh, `1e2f42b`):** phân loại (bước 3) trước kiểm tra trùng (bước 4); hàm bước `_step_<số>_<việc>`; `WAITING_MATERIAL` chạy lại từ tra tài sản. 142 test xanh.

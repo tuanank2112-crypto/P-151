@@ -154,6 +154,8 @@ Merge parent risk=max(parent risk, child risk); union facts+provenance, append a
 
 BẮT BUỘC addition/history retention append-only, commit all effects atomically using existing fail-closed repository pattern. Persist snapshot and ledger across restart; no in-memory-only dedupe. Pending addition accepted into source ledger must remain retryable and cannot be routed before safety is committed. No success acknowledged for partial audit/context write.
 
+Route (plan 03, Q01, owner Như Ý): `POST /api/v1/mo/tickets/{id}/safety` body `{decision: CONFIRM_SAFE|REQUEST_INFO|ESCALATE, note}` wraps `safety_confirm_safe|safety_request_info|safety_escalate`; `POST /api/v1/bql/tickets/{id}/emergency/close` and `/emergency/downgrade` body `{note}` wrap `emergency_close` / `emergency_downgrade`. Thin wrappers only; role/state/note checks stay in the engine.
+
 ## 4. Errors and caller behavior
 
 | Error/outcome | Required caller action | Forbidden / reason |
