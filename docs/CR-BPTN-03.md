@@ -438,28 +438,40 @@ Bỏ: `reopen_until`. `assignee_id` `[GIỮ]`: phòng ban tự ghi khi phân cô
 | AC-19 | Phân loại chạy trước kiểm tra trùng: ticket loại việc không rõ không quét ticket khác; ticket khác loại không bị đọc vị trí `[GIỮ]` (`test_10d`, `test_10e`) |
 | AC-20 | Thiếu dữ liệu → chủ blocker BPTN; BPTN nhập vị trí/thông tin kèm lý do → chạy tiếp; nhập thiếu phần nào → lỗi, không lưu; cư dân vẫn tự bổ sung được `[GIỮ]` (`test_02`–`test_02d`) |
 
-## 16. Phân giai đoạn (đề xuất; ngân sách ước tính 32–48 giờ công đến 04/10, 128–192 giờ công đến 20/10)
+## 16. Phân giai đoạn — sửa phạm vi 2026-10-03 theo Notion
 
-**P0 — đến 04/10:** chạy được test hiện có và ghi kết quả; tầng an toàn với S-01…S-05, S-09, S-14, Bậc 2 và các bẫy B-01…B-04; blocker `EMERGENCY_PENDING_BQL` + chặn `resume()`; T10 đóng khẩn cấp và hạ báo nhầm; thời hạn Bậc 2; ưu tiên 3 mức với PRI-H1/H2/M/L/D0 và sắp xếp; xóa reopen; T16/T17 và E02; rating một lần; cập nhật kết quả CLN-004, TEC-005.
+**P0 — MVP 04/10/2026:** test baseline và evidence; safety S-01…S-05, S-09, S-14, Bậc 2 và B-01…B-04; blocker `EMERGENCY_PENDING_BQL`, chặn `resume()`/job; T10 đóng khẩn cấp/hạ báo nhầm; thời hạn Bậc 2; ưu tiên PRI-H1/H2/M/L/D0 và sắp xếp; bỏ reopen; không gán nhân viên trong MVP (Agent và phòng ban); rating một lần; fixture đích CLN-004/TEC-005 và bốn demo theo package. D-01 delta + snapshot là contract đích, chưa tích hợp runtime trong gói chuẩn bị này.
 
-**P1 — đến 20/10:** các tín hiệu còn lại (S-06…S-08, S-10…S-13, C-01); điều chỉnh PRI-U1/U2; hoàn tác gộp, nối bổ sung, xử lý hủy ticket gốc; tạo ticket tiếp theo; bộ ≥ 40 câu đánh giá an toàn; danh sách xác nhận an toàn cho BQL; sơ đồ swimlane hợp nhất, ADR, bằng chứng đánh giá.
+**P1 — sau 04/10, mục tiêu 19/10/2026 theo kế hoạch:** T16/T17 và E02; tín hiệu còn lại S-06…S-08, S-10…S-13, C-01; PRI-U1/U2; hoàn tác gộp/nối bổ sung/hủy ticket gốc; follow-up; bộ ≥40 câu safety; danh sách xác nhận an toàn cho BQL; swimlane, ADR và evaluation evidence. Mốc cũ 20/10 thuộc lịch sử CR; Notion hiện chọn 19/10. Không mốc nào là bằng chứng gate đã đạt.
+
+**Quyết định bị thay thế:** bản §16 trước 2026-10-03 đưa T16/T17/E02 vào P0, P1 đến 20/10 với ngân sách 32–48/128–192 giờ. Giữ mốc này như lịch sử; phạm vi đang áp dụng là sửa đổi ngày 2026-10-03 ở trên. User confirmed không đồng nghĩa nhóm đã duyệt; official approval vẫn null theo §17.
 
 ## 17. Quyết định cần duyệt và điều chưa xác minh
 
 | ID | Nội dung | Mặc định trong tài liệu này |
 |---|---|---|
-| D-01 | Quay lại sau `NEED_INFO` | Quay về `RECEIVED` rồi pipeline chạy lại (không về thẳng `VERIFYING`) để bảo đảm chạy lại tầng an toàn; bản nháp trước viết "quay lại VERIFYING" |
+| D-01 | Quay lại sau `NEED_INFO` | **Sửa đổi 2026-10-03, user confirmed / group pending:** về `RECEIVED`; mỗi lần chỉ bổ sung mới + persisted structured snapshot cho LLM, không full raw/old additions; safety quét mọi bổ sung mới; agent/job không tự hạ risk; raw/history append-only. Contract đích xem liên kết dưới; chưa đổi runtime |
 | D-02 | Thời hạn Bậc 2 | 4 giờ lịch (BPTN xử lý), 12 giờ lịch (bổ sung khi nghi nguy hiểm); `NEED_INFO` thường theo SLA BPTN (4 giờ hành chính, đã code) |
 | D-03 | Ngưỡng nâng ưu tiên theo số báo trùng | 3 |
 | D-04 | "Đèn/bóng bị cháy" đứng riêng | `NONE` (B-01). Bản nháp trước xếp vào Bậc 2; tôi đổi vì làm nghẽn BPTN |
 | D-05 | Tồn kho **không rõ** | Đi tiếp kèm cờ `STOCK_CHECK_ON_ACCEPT` (khớp code); lựa chọn thay thế: dừng chờ xác minh |
 | D-06 | Tín hiệu mở rộng ngoài v0.3 (S-04…S-13, C-01) | Có, dưới dạng giả định mô phỏng |
 | D-07 | Ảnh bằng chứng bắt buộc, không miễn | Có (đã khớp code hiện tại) |
-| D-08 | Ai duyệt CR-BPTN-01/02/03 | **Chưa có người duyệt ghi tên**; không tạo hoặc giả định |
+| D-08 | Ai duyệt CR-BPTN-01/02/03 | **GROUP_PENDING; approver=null; approved_at=null**. Chưa có người duyệt chính thức; xác nhận phạm vi của người dùng không phải official approval |
 | D-09 | Thứ tự phân loại / kiểm tra trùng | **Đã chốt 2026-10-01 (người dùng, theo biểu đồ):** phân loại (bước 3) trước kiểm tra trùng (bước 4). Đã code |
 | D-10 | Ai xử lý ticket thiếu dữ liệu | **Đã chốt 2026-10-01:** giao BPTN liên hệ cư dân; cư dân vẫn tự bổ sung được. Đã code |
 | D-11 | BQL trả làm lại | **Đã chốt 2026-10-01:** về chính phòng ban đang giữ, không qua BPTN đối chiếu lại. Đã code |
-| D-12 | Phân công nhân sự | **Theo biểu đồ:** phòng ban "nhận việc và phân công" (`assignee_id` do phòng ban ghi). Đã code |
+| D-12 | Phân công nhân sự | **MVP đích 04/10 theo Notion, user confirmed 2026-10-03:** không gán nhân viên. Baseline code cho phòng ban ghi assignee là drift, chưa sửa runtime. Quyết định theo biểu đồ 2026-10-01 được giữ trong lịch sử bị thay thế dưới đây |
+
+### 17.1 Sửa đổi có ngày 2026-10-03 — user confirmed, group pending
+
+**Ưu tiên sửa đổi:** scope Notion MVP không gán nhân viên thay các mô tả giữ assignee ở §1/§13 và D-12 cũ; code baseline vẫn giữ assignee. Chỉ sửa đổi này là scope đích hiện hành; không sửa hoặc xóa lịch sử. Bản biểu đồ 2026-10-01 cho phòng ban tự phân công là quyết định bị thay thế đối với MVP 04/10.
+
+[Contract đích D-01 và register D-01…D-08](../planning/02_2026-10-03_truong-mvp-prep/specs/01-CONTRACTS.md) quy định schema/signatures, version/event idempotency, error/caller và evidence. D-02…D-07 giữ mặc định trong bảng trên; hai fixture và bốn demo giữ theo package. Toàn bộ D-01…D-08 vẫn chờ nhóm, `approver=null`, `approved_at=null`; không bịa người duyệt hoặc timestamp. Xác nhận user/bối cảnh quote không phải biên bản risk review chính thức.
+
+BẮT BUỘC snapshot lưu bền chỉ có facts phân loại/safety dạng cấu trúc + refs/version/event ledger. Source quotes chính xác thuộc audit riêng append-only, không gửi lại LLM. Mỗi event mới quét safety; risk automatic và risk khi merge = max theo NONE < UNCLEAR < EMERGENCY. Hạ risk chỉ qua hành động human có quyền, reason và audit trước/sau; resident/agent/job không hạ. Replay không chạy lại scan/LLM/commit; thiếu snapshot/version sai thì fail closed. CẤM bỏ dữ liệu gốc, gửi lại raw/history vào LLM hoặc coi D-01 đã được code. D-09 phân loại trước trùng giữ nguyên.
+
+**Quyết định bị thay thế D-01:** bản trước mô tả chạy lại pipeline sau NEED_INFO bằng toàn bộ input original + additions trong code hiện tại; từ 2026-10-03 target dùng bổ sung mới + snapshot. Lịch sử NEED_INFO→VERIFYING rồi RECEIVED trong §18 được giữ để đối chiếu; chỉ sửa đổi này là hợp đồng target hiện hành. Runtime `_agent_text` vẫn nối original + all additions tại thời điểm chuẩn bị package, không phải delta contract đã triển khai.
 
 **Đã xác minh (2026-10-01):** (a) `receive_stock` và `resume()` (§9.5); (b) bộ test: 146 pass trên code hiện tại; (c) `models.py` ràng buộc lý do theo trạng thái bằng `BLOCKER_CODES_BY_STATUS`; (e) blocker có `escalated`, ticket có `flags` (`ASSET_CHECK_ONSITE`, `STOCK_CHECK_ON_ACCEPT`).
 **Còn cần xác minh:** (d) `services/safety.py` và `rules.py` ở `4c2d07f` còn dùng lại được không.

@@ -8,11 +8,9 @@
 #                  Chỉ chạy khi ticket ROUTED và không có blocker. Không kịch bản nào đóng ticket: chỉ BQL đóng.
 #   expected     — oracle kết quả cuối cùng sau khi chạy hết kịch bản
 #
-# CR-BPTN-02 (v0.5 candidate): Agent đề xuất phòng ban ở bước 3 (proposed_department_id), chỉ giao
-# (department_id) ở bước 8 khi can_route đúng; bỏ tra ca trực và capacity theo team.
-# CR-BPTN-03 (v0.6 candidate): tầng an toàn bước 3b cho mọi ticket (CLN-004, TEC-005 → EMERGENCY_PENDING_BQL,
-# chỉ BQL xử lý) và mức ưu tiên PRI-*. Nội dung raw giữ nguyên để thấy rõ thay đổi hành vi.
-dataset_version: maintenanceops-sim-v1.3
+# CR-BPTN-02 (v0.5 candidate): Agent đề xuất phòng ban ở bước 4 (proposed_department_id), chỉ giao
+# (department_id) ở bước 8 khi can_route đúng; bỏ luật an toàn/EXCEPTION, bỏ tra ca trực và capacity theo team. Nội dung raw giữ nguyên để thấy rõ thay đổi hành vi.
+dataset_version: maintenanceops-sim-v1.2
 synthetic: true
 
 tickets:
@@ -37,8 +35,6 @@ tickets:
     expected:
       status: READY_FOR_REVIEW
       reason_code: null
-      risk_level: NONE
-      priority: MEDIUM
       playbook_id: PB-CLN-01
       proposed_department_id: DEPT_CLEANING
       department_id: DEPT_CLEANING
@@ -63,8 +59,6 @@ tickets:
     expected:
       status: ROUTED
       reason_code: OUT_OF_HOURS
-      risk_level: NONE
-      priority: MEDIUM
       playbook_id: PB-CLN-01
       proposed_department_id: DEPT_CLEANING
       department_id: DEPT_CLEANING
@@ -83,8 +77,6 @@ tickets:
     expected:
       status: NEED_INFO
       reason_code: MISSING_INFO
-      risk_level: null
-      priority: null
       playbook_id: null
       proposed_department_id: null
       department_id: null
@@ -95,18 +87,16 @@ tickets:
       created_at: "2026-09-27T09:20:00+07:00"
       original_description: "Tầng hầm B1 tòa SIM-A có chất lỏng lạ không rõ nguồn gốc, bốc mùi hắc gây khó thở, cần vệ sinh."
     flow: REGRESSION
-    purpose: "Chất lạ kèm mùi hắc, khó thở (S-14): CR-BPTN-03 tầng an toàn → VERIFYING / EMERGENCY_PENDING_BQL, chỉ BQL xử lý; không draft, không giao phòng ban"
+    purpose: "Chất lạ, mùi hắc: CR-BPTN-02 bỏ luật an toàn nên không còn EXCEPTION; chuyển Phòng Vệ sinh như ticket thường"
     expected:
-      status: VERIFYING
-      reason_code: EMERGENCY_PENDING_BQL
-      risk_level: EMERGENCY
-      priority: MEDIUM
+      status: ROUTED
+      reason_code: null
       playbook_id: PB-CLN-01
       proposed_department_id: DEPT_CLEANING
-      department_id: null
-      review_status: null
-      asset_resolution: null
-      draft_exists: false
+      department_id: DEPT_CLEANING
+      review_status: NOT_REQUIRED
+      asset_resolution: NOT_APPLICABLE
+      draft_exists: true
       location: "Tòa SIM-A / Tầng B1 / Hầm xe"
 
   - raw:
@@ -120,8 +110,6 @@ tickets:
     expected:
       status: ROUTED
       reason_code: null
-      risk_level: NONE
-      priority: LOW
       playbook_id: PB-CLN-01
       proposed_department_id: DEPT_CLEANING
       department_id: DEPT_CLEANING
@@ -143,8 +131,6 @@ tickets:
     expected:
       status: IN_PROGRESS
       reason_code: null
-      risk_level: NONE
-      priority: MEDIUM
       playbook_id: PB-CLN-01
       proposed_department_id: DEPT_CLEANING
       department_id: DEPT_CLEANING
@@ -174,8 +160,6 @@ tickets:
     expected:
       status: READY_FOR_REVIEW
       reason_code: null
-      risk_level: NONE
-      priority: HIGH
       playbook_id: PB-TEC-01
       proposed_department_id: DEPT_TECHNICAL
       department_id: DEPT_TECHNICAL
@@ -200,8 +184,6 @@ tickets:
     expected:
       status: VERIFYING
       reason_code: ASSET_UNCLEAR
-      risk_level: NONE
-      priority: HIGH
       playbook_id: PB-TEC-01
       proposed_department_id: DEPT_TECHNICAL
       department_id: null
@@ -223,8 +205,6 @@ tickets:
     expected:
       status: ON_HOLD
       reason_code: WAITING_MATERIAL
-      risk_level: NONE
-      priority: HIGH
       playbook_id: PB-TEC-01
       proposed_department_id: DEPT_TECHNICAL
       department_id: null
@@ -245,8 +225,6 @@ tickets:
     expected:
       status: ROUTED
       reason_code: null
-      risk_level: NONE
-      priority: HIGH
       playbook_id: PB-TEC-01
       proposed_department_id: DEPT_TECHNICAL
       department_id: DEPT_TECHNICAL
@@ -262,19 +240,17 @@ tickets:
       created_at: "2026-09-27T10:45:00+07:00"
       original_description: "Đèn sảnh thang máy tầng 5 tòa SIM-A không sáng, có tia lửa và mùi khét ở hộp đèn."
     flow: REGRESSION
-    purpose: "Tia lửa và mùi khét ở hộp đèn (S-02, S-01): CR-BPTN-03 → VERIFYING / EMERGENCY_PENDING_BQL trước cả bước tra tài sản"
+    purpose: "Tia lửa, mùi khét: không còn EXCEPTION; hai asset cùng vị trí → VERIFYING / ASSET_UNCLEAR"
     expected:
       status: VERIFYING
-      reason_code: EMERGENCY_PENDING_BQL
-      risk_level: EMERGENCY
-      priority: HIGH
+      reason_code: ASSET_UNCLEAR
       playbook_id: PB-TEC-01
       proposed_department_id: DEPT_TECHNICAL
       department_id: null
-      review_status: null
+      review_status: NOT_REQUIRED
       asset_resolution: null
       draft_exists: false
-      asset_lookup_status: NOT_APPLICABLE
+      asset_lookup_status: AMBIGUOUS
       asset_id: null
 
   - raw:
@@ -288,8 +264,6 @@ tickets:
     expected:
       status: ROUTED
       reason_code: null
-      risk_level: NONE
-      priority: HIGH
       playbook_id: PB-TEC-01
       proposed_department_id: DEPT_TECHNICAL
       department_id: DEPT_TECHNICAL

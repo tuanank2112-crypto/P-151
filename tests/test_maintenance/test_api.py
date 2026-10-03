@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -7,6 +8,7 @@ from src.api import photos
 from src.api.auth import actor_header_allowed
 from src.api.routers.maintenance import get_engine
 from src.main import app
+from src.maintenance.catalog import load_dataset
 from src.maintenance.engine import MaintenanceEngine
 
 RESIDENT = {"X-Actor-Id": "SIM-ACTOR-RESIDENT-01"}
@@ -55,7 +57,8 @@ def test_queue_lists_twelve_fixture_tickets(api):
     assert {r["flow"] for r in rows} == {"DEMO-1", "DEMO-2", "DEMO-3", "DEMO-4", "REGRESSION"}
 
 
-def test_evaluate_endpoint_passes_all(api):
+def test_evaluate_endpoint_passes_all(api, engine):
+    engine.dataset = load_dataset(Path("seed/maintenance_cr03"))  # CR-03 target oracle; v1 stays the baseline
     report = api.post("/api/v1/mo/evaluate").json()
     assert report["passed"] == 12 and report["demo_flows_passed"] == 4
 

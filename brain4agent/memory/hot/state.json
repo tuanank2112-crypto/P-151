@@ -29,5 +29,51 @@
   "owner": {
     "name": "",
     "license": ""
+  },
+  "active_plan": {
+    "id": "02_2026-10-03_truong-mvp-prep",
+    "status": "in_progress",
+    "group_approval": "pending",
+    "runtime_integration": "pending",
+    "online_acceptance": "pending",
+    "local_outputs": "verified"
+  },
+  "last_session": {
+    "date": "2026-10-03",
+    "timestamp": "2026-10-03T09:50:39+07:00",
+    "boot_exit": 1,
+    "agents_requested": 5,
+    "baseline_tests": {
+      "passed": 185,
+      "deselected": 20,
+      "exit": 0
+    },
+    "baseline_format": "2 pre-existing files need formatting",
+    "local_verification": {
+      "pytest": {
+        "passed": 266,
+        "deselected": 20,
+        "exit": 0
+      },
+      "safety_tests": 72,
+      "target_tests": 9,
+      "package_checks": {
+        "passed": 57,
+        "failed": 0,
+        "skip": 0,
+        "exit": 0
+      },
+      "lint_exit": 0,
+      "new_files_format_exit": 0,
+      "full_format_exit": 1,
+      "full_format_preexisting_files": [
+        "src/api/routers/maintenance.py",
+        "src/maintenance/ai_logger.py"
+      ],
+      "syntax": "passed",
+      "typechecker": "not configured",
+      "postgres": "not run this session"
+    },
+    "local_work_packages_completed": 5
   }
 }

@@ -1,0 +1,102 @@
+﻿command=PowerShell content contract measurement
+scope=document-only
+timestamp=2026-10-03T09:32:19.7137137+07:00
+checks=23
+passed=23
+failed=0
+runtime_tests=not_run
+head=10a1d5452b37e2421ed6a5efec6be82b9179115b
+[
+    {
+        "id":  "D-01",
+        "pass":  true
+    },
+    {
+        "id":  "D-02",
+        "pass":  true
+    },
+    {
+        "id":  "D-03",
+        "pass":  true
+    },
+    {
+        "id":  "D-04",
+        "pass":  true
+    },
+    {
+        "id":  "D-05",
+        "pass":  true
+    },
+    {
+        "id":  "D-06",
+        "pass":  true
+    },
+    {
+        "id":  "D-07",
+        "pass":  true
+    },
+    {
+        "id":  "D-08",
+        "pass":  true
+    },
+    {
+        "id":  "DEMO-01",
+        "pass":  true
+    },
+    {
+        "id":  "DEMO-02",
+        "pass":  true
+    },
+    {
+        "id":  "DEMO-03",
+        "pass":  true
+    },
+    {
+        "id":  "DEMO-04",
+        "pass":  true
+    },
+    {
+        "id":  "local documents",
+        "pass":  true
+    },
+    {
+        "id":  "group",
+        "pass":  true
+    },
+    {
+        "id":  "runtime local",
+        "pass":  true
+    },
+    {
+        "id":  "online",
+        "pass":  true
+    },
+    {
+        "id":  "BẮT BUỘC",
+        "pass":  true
+    },
+    {
+        "id":  "CẤM",
+        "pass":  true
+    },
+    {
+        "id":  "Caller",
+        "pass":  true
+    },
+    {
+        "id":  "USER_CONFIRMED",
+        "pass":  true
+    },
+    {
+        "id":  "PENDING",
+        "pass":  true
+    },
+    {
+        "id":  "approver=null",
+        "pass":  true
+    },
+    {
+        "id":  "2026-10-03",
+        "pass":  true
+    }
+]

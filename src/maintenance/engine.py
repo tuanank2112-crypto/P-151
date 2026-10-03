@@ -2387,6 +2387,7 @@ class MaintenanceEngine:
         quotes = "; ".join(f"{s.signal_id}: {s.source_quote}" for s in result.signals if s.status != "ABSENT")
         if result.risk_level == RiskLevel.EMERGENCY:
             self._link_same_place(work)  # §8.6: link only, never stop or merge on its own
+            work.ticket.review_status = ReviewStatus.NOT_REQUIRED  # no draft to review; seed/maintenance_cr03 oracle
             self._stop(work, S.VERIFYING, R.EMERGENCY_PENDING_BQL, now, resume_step=None, note=quotes)
             self._notify(work, "emergency.created", BlockerOwner.BQL, now, {"signals": quotes})
             return True

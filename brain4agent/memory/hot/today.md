@@ -41,3 +41,24 @@
 - Đo: pytest 290 passed + 21 deselected; `--pg` 311 passed; ruff check/format sạch; evaluate 12/12; bộ 50 câu: 0 bỏ sót
   Bậc 1, 0 báo nhầm; 3 bằng chứng đỏ I-4/I-5/I-8 exit 1 (`evidence/wp-red/`).
 - Còn: người dùng chốt D-02/D-03; deploy Supabase (ticket cũ đọc được, muốn áp 3b cho dữ liệu demo cũ phải reset); chưa commit.
+
+## Trường MVP preparation — 2026-10-03
+- Thực hiện lúc 2026-10-03T09:39:18+07:00; đầu việc giao cho 01/10–02/10, không dựng lại lịch sử.
+- User yêu cầu 5 sub-agent cho 5 gói; giới hạn 4 slot (root +3) nên chạy hai lượt.
+- D-01 được user xác nhận delta + structured persisted context, safety luôn chạy, risk không tự hạ. D-02–07 defaults; D-08 group approval pending.
+- Boot exit1 MODULE_NOT_FOUND hub; không sửa managed rules.
+- Python offline3.11.16 + archive cache: baseline185passed20deselected exit0. Ruff check sạch; format baseline đỏ2file ngoài scope.
+- Chưa commit/push/deploy; chưa tích hợp safety hoặc D-01 runtime.
+
+- Chốt đầu ra local lúc 2026-10-03T09:50:39+07:00: 5/5 sub-agent nộp report, 5 gói chuẩn bị đã hoàn thành; kế hoạch chưa đóng.
+- Root đo lại: 266 passed / 20 Postgres deselected, exit0; gồm 72 safety và 9 fixture target. Ruff check exit0; format 3 file mới exit0; hồ sơ 57/57 pass, skip0, exit0.
+- Format toàn repo vẫn exit1 do 2 file baseline ngoài scope; boot hub exit1; không chạy Postgres/online trong phiên này.
+- Review đã sửa false positive phủ định liên tiếp, giữ risk cũ; bằng chứng red-negation → green-negation. Contract đích thêm nguồn ticket và clearance residual-risk guard.
+- Group approval, runtime integration và online acceptance pending. Không tăng version ứng dụng, không stage/commit/push/deploy.
+
+## 🔀 Phiên 2026-10-03 — Merge develop (PR #5 Trí, PR #6 Trường) vào feature/chamanh
+- Backup trước merge: nhánh `backup/chamanh-cr03-full` = `d562973`.
+- Conflict: `src/web/app.js` lấy bản Trí; `today.md` giữ cả hai mục; `safety.py` giữ bản Châm Anh (engine dùng) + nối P0 `assess_safety` của Trường, tên trùng thêm tiền tố P0.
+- Người dùng chốt "test theo Trường": `seed/maintenance_v1` về v1.2 (baseline CR-02); `test_fixtures`/`/evaluate` chấm engine CR-03 theo `seed/maintenance_cr03`; engine ghi `review_status=NOT_REQUIRED` khi dừng khẩn cấp (khớp oracle Trường).
+- Đo: pytest 371 passed + 21 deselected exit 0; ruff check exit 0; chưa chạy `--pg`. `/evaluate` runtime mặc định (v1.2) chỉ 10/12 với engine CR-03 — đúng thiết kế "runtime integration là gate riêng" của Trường.
+- Chờ: PR engine của Như Ý (cũng nâng fixture v1.3 → sẽ va test Trường); chưa push.

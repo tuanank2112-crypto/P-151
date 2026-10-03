@@ -65,3 +65,10 @@ Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên 
 ## [v1.0.0] - 2026-09-30: Initial Project Scaffolding
 ### Added
 - Khởi tạo kiến trúc dự án và thiết lập hệ thống Bộ Nhớ Não Bộ `brain4agent/` Đa Tầng thế hệ mới.
+
+## Trường MVP preparation — 2026-10-03
+### Unreleased — chưa đóng gate nhóm/runtime/online
+- Chuẩn bị scope/decisions/demo/rules/target fixtures; không đổi baseline runtime hay startup fixture.
+- D-01 đích dùng new addition + persisted structured snapshot; không đưa full old raw vào LLM, safety scan và risk monotone.
+- D-02–07 user confirmed defaults, nhóm chưa duyệt chính thức; T16/T17/E02 sau 04/10 theo Notion.
+- Chưa phát hành hoặc tăng app version; không ghi bộ chuẩn bị thành runtime đã triển khai.
