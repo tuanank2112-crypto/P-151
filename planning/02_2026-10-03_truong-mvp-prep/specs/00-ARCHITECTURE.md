@@ -1,7 +1,7 @@
 # 00 — Architecture: Trường MVP preparation
 
 > Thực hiện: 2026-10-03 (Asia/Saigon). Gói đầu ra giao cho 01/10–02/10; MVP dự kiến 04/10. Không backdate ngày thực hiện.
-> `group_status=PENDING`, `approver=null`, `approved_at=null`. D-01 USER_CONFIRMED; chưa phải duyệt nhóm. Đây là hợp đồng đích, không chứng nhận runtime.
+> `group_status=APPROVED`, `approver=Lê Thị Châm Anh`, `approved_date=2026-10-02`, `approved_at=null` (giờ chưa cung cấp), `recorded_date=2026-10-03`. D-08 APPROVED: người dùng thông báo leader Lê Thị Châm Anh duyệt phạm vi MVP 04/10 và D-01–D-07; ngày duyệt được báo là 2026-10-02, chưa cung cấp giờ. Ghi nhận ngày 2026-10-03; commit a5e2705/PR #6 là bản tham chiếu được người dùng xác nhận trong phiên này, không khẳng định commit đã tồn tại ngày 02/10. Nguồn: thông báo người dùng trong phiên; chưa có link biên bản ngoài. Không mở rộng thành duyệt mọi CR/backlog hoặc nghiệm thu runtime.
 
 ## 1. Mục tiêu và router
 
@@ -10,14 +10,14 @@ Thứ tự đọc: `00-ARCHITECTURE.md` → `01-CONTRACTS.md` → SPEC trong rou
 
 | Decision | Router hợp đồng | Xác nhận |
 |---|---|---|
-| D-01 | `01-CONTRACTS.md`: new addition + persisted structured context; safety scan; risk monotone | USER_CONFIRMED / GROUP_PENDING / runtime chưa nghiệm thu |
-| D-02 | `01-CONTRACTS.md`: Bậc 2, 4/12 giờ lịch theo CR03 §17 | USER_CONFIRMED_DEFAULT / GROUP_PENDING |
+| D-01 | `01-CONTRACTS.md`: new addition + persisted structured context; safety scan; risk monotone | GROUP_APPROVED / runtime chưa nghiệm thu |
+| D-02 | `01-CONTRACTS.md`: Bậc 2, 4/12 giờ lịch theo CR03 §17 | GROUP_APPROVED |
 | D-03 | `01-CONTRACTS.md`: duplicate raise threshold 3 | USER_CONFIRMED_DEFAULT / sau MVP |
-| D-04 | `01-CONTRACTS.md`: bóng/đèn cháy đứng riêng NONE, B-01 | USER_CONFIRMED_DEFAULT / GROUP_PENDING |
+| D-04 | `01-CONTRACTS.md`: bóng/đèn cháy đứng riêng NONE, B-01 | GROUP_APPROVED |
 | D-05 | `01-CONTRACTS.md`: kho không rõ đi tiếp với STOCK_CHECK_ON_ACCEPT | USER_CONFIRMED_DEFAULT / cần đo runtime |
 | D-06 | `01-CONTRACTS.md`: mở rộng safety mô phỏng | USER_CONFIRMED_DEFAULT / theo phân kỳ §2 |
 | D-07 | `01-CONTRACTS.md`: ảnh bằng chứng bắt buộc, không miễn | USER_CONFIRMED_DEFAULT / code hiện có phải đo lại |
-| D-08 | `01-CONTRACTS.md`: approver và thời điểm duyệt | PENDING / approver=null / approved_at=null |
+| D-08 | `01-CONTRACTS.md`: approver và thời điểm duyệt | APPROVED / Lê Thị Châm Anh / 2026-10-02 (day only) |
 
 ## 2. Phạm vi và non-goals
 
@@ -67,7 +67,7 @@ Target không reopen và không assignee là scope mới. Code cũ còn hai kh�
 | Gate | Điều kiện chính xác | Trạng thái gói chuẩn bị |
 |---|---|---|
 | local documents | Router D-01..D-08; P0/post-MVP; invariants; errors/caller; 4 lớp gate; measurements tại evidence/wp1/measurements.txt | Chờ root review; chỉ đo tài liệu |
-| group | D-01..08 có quyết định; D-08 có người và thời điểm duyệt thật | ⬜ PENDING |
+| group | Phạm vi MVP + D-01–07; người duyệt và ngày duyệt được người dùng cung cấp; giờ không được suy diễn | ✅ APPROVED; ngày 2026-10-02, ghi nhận 2026-10-03 |
 | runtime local | Implement hợp đồng; chạy TESTING-ACCEPTANCE với evidence độc lập | ⬜ Chưa triển khai/nghiệm thu trong WP1 |
 | online | Deploy/runbook + 4 demo môi trường thật có evidence và kiểm bảo toàn dữ liệu | ⬜ Chưa chạy; thao tác remote cần duyệt |
 

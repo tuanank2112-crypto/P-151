@@ -1,0 +1,32 @@
+=== BPTN REASONS ===
+BPTN_REASONS = frozenset(
+    {
+        ReasonCode.MISSING_INFO,
+        ReasonCode.DUPLICATE,
+        ReasonCode.CATEGORY_UNCLEAR,
+        ReasonCode.OUT_OF_SCOPE,
+        ReasonCode.PENDING_REVIEW,
+        ReasonCode.ASSET_UNCLEAR,
+        ReasonCode.WRONG_DEPT,
+    }
+)
+
+
+class Department(StrEnum):
+    DEPT_CLEANING = "DEPT_CLEANING"
+    DEPT_TECHNICAL = "DEPT_TECHNICAL"
+
+
+class BlockerOwner(StrEnum):
+    RESIDENT = "RESIDENT"
+    BPTN = "BPTN"
+
+=== BlockerOwner ===
+class BlockerOwner(StrEnum):
+    RESIDENT = "RESIDENT"
+    BPTN = "BPTN"
+    DEPARTMENT = "DEPARTMENT"
+    WAREHOUSE = "WAREHOUSE"
+    SYSTEM = "SYSTEM"
+    BQL = "BQL"
+

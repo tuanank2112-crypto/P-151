@@ -1,0 +1,90 @@
+{
+  "records": [
+    {
+      "case_id": "DUP-01",
+      "task_id": "D3-04",
+      "actor_role": "RESIDENT",
+      "steps": [
+        "Fresh python process (in-process TestClient), env forced: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1 PYTHONPATH=repo; GET /health 200 + effective settings confirmed before mutation (harness.py dup01)",
+        "cudan01 POST /resident/tickets T1 then T2 same type + location",
+        "bptn01 GET both tickets (+events,audit); bptn01 POST accept on child"
+      ],
+      "input_ref": "simulated times 2026-10-05T09:00:00+07:00 (T1), 2026-10-06T09:00:00+07:00 (T2 = +24h), 2026-10-08T09:30:00+07:00 (T3 = +72.5h) via simulated_received_at; no hazard wording; engine duplicate window 48h at src/maintenance/engine.py:2307,2326",
+      "expected": "second ticket within 48h, same type+location -> stops at BPTN (blocker DUPLICATE), not dispatched",
+      "actual": "Parent ROUTED. Child VERIFYING, blocker DUPLICATE related -> parent, department null, draft null; BPTN accept refused (4xx); child still VERIFYING. 4/4 checks OK.",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/bis/core/dup01.txt",
+        "evidence/bis/core/dup01-exit.txt",
+        "evidence/bis/core/git-head.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DUP-02",
+      "task_id": "D3-04",
+      "actor_role": "BPTN",
+      "steps": [
+        "Fresh python process (in-process TestClient), env forced: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1 PYTHONPATH=repo; GET /health 200 + effective settings confirmed before mutation (harness.py dup02)",
+        "cudan01 POST T1, T2",
+        "bptn01 POST /mo/tickets/{child}/bptn-resolve {merge:true, note}",
+        "GET both tickets events/audit; resident view of child"
+      ],
+      "input_ref": "simulated times 2026-10-05T09:00:00+07:00 (T1), 2026-10-06T09:00:00+07:00 (T2 = +24h), 2026-10-08T09:30:00+07:00 (T3 = +72.5h) via simulated_received_at; no hazard wording; route maintenance.py:432, engine.bptn_resolve engine.py:622",
+      "expected": "BPTN confirms -> child MERGED, link to parent + audit retained",
+      "actual": "merge 200; child MERGED; audit BPTN_RESOLVE contains parent id (merged_into); parent unchanged ROUTED; resident view fetched. 5/5 checks OK.",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/bis/core/dup02.txt",
+        "evidence/bis/core/dup02-exit.txt",
+        "evidence/bis/core/git-head.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DUP-03",
+      "task_id": "D3-04",
+      "actor_role": "BPTN",
+      "steps": [
+        "Fresh python process (in-process TestClient), env forced: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1 PYTHONPATH=repo; GET /health 200 + effective settings confirmed before mutation (harness.py dup03)",
+        "cudan01 POST T1, T2",
+        "bptn01 POST bptn-resolve {merge:false, note}",
+        "GET both tickets"
+      ],
+      "input_ref": "simulated times 2026-10-05T09:00:00+07:00 (T1), 2026-10-06T09:00:00+07:00 (T2 = +24h), 2026-10-08T09:30:00+07:00 (T3 = +72.5h) via simulated_received_at; no hazard wording; engine.py:721 (not_duplicate_of)",
+      "expected": "BPTN rejects duplicate -> continues at next step (not merged)",
+      "actual": "reject 200; child ROUTED, DEPT_CLEANING, blocker null, draft present; not MERGED; audit BPTN_RESOLVE. 4/4 checks OK.",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/bis/core/dup03.txt",
+        "evidence/bis/core/dup03-exit.txt",
+        "evidence/bis/core/git-head.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DUP-04",
+      "task_id": "D3-04",
+      "actor_role": "RESIDENT",
+      "steps": [
+        "Fresh python process (in-process TestClient), env forced: MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false DISABLE_SQLALCHEMY_CEXT_RUNTIME=1 PYTHONUTF8=1 PYTHONPATH=repo; GET /health 200 + effective settings confirmed before mutation (harness.py dup04)",
+        "cudan01 POST T1 (tang 4); variant a: tang 5 at T2 (+24h); variant b: tang 4 at T3 (+72.5h > 48h)",
+        "bptn01 GET each (+events,audit)"
+      ],
+      "input_ref": "simulated times 2026-10-05T09:00:00+07:00 (T1), 2026-10-06T09:00:00+07:00 (T2 = +24h), 2026-10-08T09:30:00+07:00 (T3 = +72.5h) via simulated_received_at; no hazard wording; variants (a) different floor, (b) same location outside window",
+      "expected": "no duplicate flagged, no merge (both variants)",
+      "actual": "Variant a and variant b both ROUTED to DEPT_CLEANING, blocker null, not MERGED, no DUPLICATE blocker. 4/4 checks OK.",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/bis/core/dup04.txt",
+        "evidence/bis/core/dup04-exit.txt",
+        "evidence/bis/core/git-head.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    }
+  ]
+}

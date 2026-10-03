@@ -11,5 +11,12 @@ Repo P-151 (AI20K Build Phase) xây **MaintenanceOps Agent** cho BQL một cụm
 ## 2. Công nghệ cốt lõi (Tech Stack)
 - **Frontend / Web:** UI tĩnh `src/web/` (index.html, app.js), FastAPI phục vụ chung; đăng nhập tài khoản mô phỏng theo vai trò.
 - **Backend / Engine:** Python 3.11, FastAPI, Pydantic. Lõi `src/maintenance/`: `engine.py` (state machine + pipeline), luật `rules.py` + LLM `proposer.py` (LangChain/OpenAI; `LLM_MODE=mock` cho test). LangGraph ở `src/agents/` vẫn là mẫu; kế hoạch đưa lên đường chạy thật trước 19/10.
-- **Data Persistence:** chưa có — in-memory, nạp lại seed YAML khi khởi động; ảnh lưu đĩa tại `MO_UPLOAD_DIR`. Kế hoạch MVP: PostgreSQL + Storage trên Supabase, deploy Render.
+- **Data Persistence:** `MO_STORE=memory` (mặc định) | `postgres` (schema `maintops`, Alembic, Supabase); ảnh `MO_PHOTO_STORE=local|supabase`. Seed `seed/maintenance_v1/` chỉ nạp khi DB rỗng. Fixture đích CR-03: `seed/maintenance_cr03/`.
 - **Kiểm thử và vận hành:** pytest, ruff, Docker Compose, GitHub Actions.
+
+**Mốc (kế hoạch Notion của nhóm):** 23:59 04/10 — MVP online, LLM thật, UI theo vai trò, dữ liệu bền, 4 kịch bản demo;
+23:59 19/10 — đủ flow CR-03, LangGraph trên đường chạy thật, eval + bằng chứng UX, 10 deliverables `docs/guide/chapter-09.md`.
+
+**Nhóm & chủ việc:** Như Ý (engine/safety integration/LangGraph) · Trường (nghiệp vụ, dataset/nhãn, rules/playbook, quyết
+định CR, architecture, user test, pitch) · Châm Anh (API/persistence/CI/deploy/eval runner/chi phí, leader) · Trí (UI/UX,
+AI Logs, Phoenix).

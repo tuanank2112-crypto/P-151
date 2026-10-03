@@ -23,7 +23,18 @@
 - Bất biến code: mọi đổi status qua `_apply_transition` + `TRANSITIONS` (25 dòng); mọi ghi qua `_mutate` (deep copy → audit → commit, fail closed) và giữ `engine.lock`; `engine.at()` thread-local; hàm bước `_step_<số>_<việc>`.
 - Kiểm tra: `python -m pytest -q -p no:cacheprovider` + `python -m ruff check src tests` + `python -m ruff format --check src tests` (venv Python 3.11, `LLM_MODE=mock`, `PYTHONUTF8=1`). File data test mới: `git add -f`. Postgres: `MO_TEST_DATABASE_URL=…/p151_test python -m pytest --pg -q` (chỉ docker local).
 - Planning & RFCs: `planning/[STT]_[YYYY-MM-DD]_[Ten-Ngan]` (25-35 ký tự, cố định path); hồ sơ 01 có specs/reports/evidence đầy đủ.
+- Plan02 (2026-10-03): Trường chuẩn bị 5 gói theo Notion; safety P0 + fixture CR03 riêng, chưa tích hợp runtime. D08 approved (leader Châm Anh, 02/10, ghi 03/10). Day03 local (0ea04ad): 23 record = 17 PASS/1 FAIL/5 BLOCKED (FAIL DEMO-01-RATING; BLOCKED safety/rating-once/reopen, owner Như Ý); D3-05/06 chưa [x]; runtime/online pending. Sau merge develop (cd83f11): Day03-bis 23 record = 19 PASS/4 BLOCKED; rating-once đã PASS; safety có method engine nhưng CHƯA có route API (DEMO-04, WORD-02/04 BLOCKED, owner Như Ý). Chốt: ASSET-03=A, STOCK-04=A.
 </project_foundation>
+
+<truong_focus>
+- Nguồn phân công: Notion "Kế hoạch MaintenanceOps MVP" (link + lịch từng ngày: `roadmap.md` §Trường). Mốc: MVP online 23:59 04/10; bàn giao cuối 23:59 19/10; nghiệm thu 21:00 cùng ngày; họp nhóm 21:00 hằng ngày.
+- Trường SỞ HỮU: nghiệp vụ, dataset/nhãn chuẩn + kịch bản eval, rules/playbook, quyết định CR (D-xx), architecture/swimlane, user test, pitch 10 slide.
+- Chủ việc khác — Trường KHÔNG sửa, chỉ giao handoff/fixture/test đích: Như Ý = engine/state machine/safety integration/proposer/LangGraph; Châm Anh = API/persistence/CI/deploy/eval runner/chi phí; Trí = UI/UX, panel Agent, AI Logs, Phoenix.
+- Đầu ra của Trường nằm ở: `seed/maintenance_cr03/`, `src/maintenance/safety.py` (rules P0 độc lập, chưa nối engine), `tests/test_maintenance/test_safety_p0.py`+`test_cr03_targets.py`, `docs/CR-BPTN-03.md`, `planning/02_*/`.
+- Việc đang mở: Day03 đã chạy local (D3-05/06 còn BLOCKED/FAIL; chờ người quyết ASSET-03, STOCK-04, owner reopen/rating-once) → 04/10 chạy 4 demo online, đối chiếu expected, ghi thiếu sót.
+- Chỉ tiêu 19/10 Trường phải cấp dữ liệu: safety ≥40 câu nhãn, 0 bỏ sót Bậc 1; classification ≥90% held-out; user test 3–5 người độc lập (thiếu ⇒ ghi số thật, CẤM phản hồi giả); so sánh thủ công/sản phẩm đảo thứ tự.
+- Quyết định nghiệp vụ ghi tên người duyệt + kết quả thật; chưa đồng thuận ⇒ không triển khai phần tranh luận.
+</truong_focus>
 
 <brain_file_roles>
 - `memory-distill.txt`: kernel hiện trạng, đọc đầu tiên.

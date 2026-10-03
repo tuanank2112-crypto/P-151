@@ -450,25 +450,25 @@ Bỏ: `reopen_until`. `assignee_id` `[GIỮ]`: phòng ban tự ghi khi phân cô
 
 | ID | Nội dung | Mặc định trong tài liệu này |
 |---|---|---|
-| D-01 | Quay lại sau `NEED_INFO` | **Sửa đổi 2026-10-03, user confirmed / group pending:** về `RECEIVED`; mỗi lần chỉ bổ sung mới + persisted structured snapshot cho LLM, không full raw/old additions; safety quét mọi bổ sung mới; agent/job không tự hạ risk; raw/history append-only. Contract đích xem liên kết dưới; chưa đổi runtime |
+| D-01 | Quay lại sau `NEED_INFO` | **Sửa đổi 2026-10-03, group approval recorded (D-08):** về `RECEIVED`; mỗi lần chỉ bổ sung mới + persisted structured snapshot cho LLM, không full raw/old additions; safety quét mọi bổ sung mới; agent/job không tự hạ risk; raw/history append-only. Contract đích xem liên kết dưới; chưa đổi runtime |
 | D-02 | Thời hạn Bậc 2 | 4 giờ lịch (BPTN xử lý), 12 giờ lịch (bổ sung khi nghi nguy hiểm); `NEED_INFO` thường theo SLA BPTN (4 giờ hành chính, đã code) |
 | D-03 | Ngưỡng nâng ưu tiên theo số báo trùng | 3 |
 | D-04 | "Đèn/bóng bị cháy" đứng riêng | `NONE` (B-01). Bản nháp trước xếp vào Bậc 2; tôi đổi vì làm nghẽn BPTN |
 | D-05 | Tồn kho **không rõ** | Đi tiếp kèm cờ `STOCK_CHECK_ON_ACCEPT` (khớp code); lựa chọn thay thế: dừng chờ xác minh |
 | D-06 | Tín hiệu mở rộng ngoài v0.3 (S-04…S-13, C-01) | Có, dưới dạng giả định mô phỏng |
 | D-07 | Ảnh bằng chứng bắt buộc, không miễn | Có (đã khớp code hiện tại) |
-| D-08 | Ai duyệt CR-BPTN-01/02/03 | **GROUP_PENDING; approver=null; approved_at=null**. Chưa có người duyệt chính thức; xác nhận phạm vi của người dùng không phải official approval |
+| D-08 | Ai duyệt CR-BPTN-01/02/03 | **APPROVED cho phạm vi MVP 04/10 và D-01–D-07** theo thông báo người dùng: leader Lê Thị Châm Anh, ngày duyệt 2026-10-02, giờ chưa cung cấp; ghi nhận 2026-10-03; bản tham chiếu a5e2705/PR #6. Không suy rộng thành duyệt toàn bộ CR-BPTN-01/02/03 |
 | D-09 | Thứ tự phân loại và kiểm tra trùng | **Đã chốt 2026-10-01 (Như Ý), theo code `1e2f42b` của Châm Anh:** phân loại (bước 3) **trước** kiểm tra trùng (bước 4), để quét trùng có category và ticket không rõ loại việc dừng trước khi đọc ticket khác. Tầng an toàn 2b **vẫn trước** phân loại (giữ AC-02: ticket ngoài phạm vi có tín hiệu nguy hiểm vẫn bị bắt). Ticket Bậc 1 chưa có category nên bước 4 chỉ liên kết theo vị trí + cửa sổ thời gian. Bảng chạy lại §5.2 theo code: `CATEGORY_UNCLEAR`/`OUT_OF_SCOPE`→4, `DUPLICATE` bác→5, `WAITING_MATERIAL`→6 |
 | D-10 | Điểm chạy lại sau khi gỡ blocker an toàn | **Đồng bộ 2026-10-02 theo code (plan 01 Q17):** chạy lại từ **bước 2** (2b tự bỏ qua khi đã `safety_cleared_*`), không phải bước 3, vì bước 2 của code còn kiểm tra vị trí sơ bộ và 2b chạy trước bước 2 (Q08) |
 | D-11 | Ai xử lý ticket thiếu dữ liệu | **Đã chốt 2026-10-01 (bản `develop`, ghi là D-10 ở đó):** giao BPTN liên hệ cư dân; cư dân vẫn tự bổ sung được. Đã code (`f1c6ebf`). Riêng NEED_INFO do tầng an toàn (T06): BPTN không gỡ thay cư dân (plan 02 Q04, §6.4) |
 | D-12 | BQL trả làm lại | **Đã chốt 2026-10-01 (bản `develop`, ghi là D-11 ở đó):** về chính phòng ban đang giữ, không qua BPTN đối chiếu lại. Đã code |
 | D-13 | Phân công nhân sự | **MVP 04/10 theo Notion, user confirmed 2026-10-03 (§17.1; bản `develop` ghi là D-12):** không gán nhân viên. Khớp code CR-03 P0 trên nhánh này: `set_assignee` luôn `ACTION_DENIED` có audit, model chỉ nhận `assignee_id=null`. Mâu thuẫn plan 02 (merge lần 1) với biểu đồ 2026-10-01 (phòng ban "nhận việc và phân công") coi là quyết định bị thay thế cho MVP; nhóm vẫn pending (D-08) |
 
-### 17.1 Sửa đổi có ngày 2026-10-03 — user confirmed, group pending
+### 17.1 Sửa đổi có ngày 2026-10-03 — group approval recorded
 
 **Ưu tiên sửa đổi:** scope Notion MVP không gán nhân viên thay các mô tả giữ assignee ở §1/§13 và D-12 cũ; code baseline vẫn giữ assignee. Chỉ sửa đổi này là scope đích hiện hành; không sửa hoặc xóa lịch sử. Bản biểu đồ 2026-10-01 cho phòng ban tự phân công là quyết định bị thay thế đối với MVP 04/10.
 
-[Contract đích D-01 và register D-01…D-08](../planning/02_2026-10-03_truong-mvp-prep/specs/01-CONTRACTS.md) quy định schema/signatures, version/event idempotency, error/caller và evidence. D-02…D-07 giữ mặc định trong bảng trên; hai fixture và bốn demo giữ theo package. Toàn bộ D-01…D-08 vẫn chờ nhóm, `approver=null`, `approved_at=null`; không bịa người duyệt hoặc timestamp. Xác nhận user/bối cảnh quote không phải biên bản risk review chính thức.
+[Contract đích D-01 và register D-01…D-08](../planning/02_2026-10-03_truong-mvp-prep/specs/01-CONTRACTS.md) quy định schema/signatures, version/event idempotency, error/caller và evidence. D-02…D-07 giữ mặc định trong bảng trên; hai fixture và bốn demo giữ theo package. D-08 APPROVED: người dùng thông báo leader Lê Thị Châm Anh duyệt phạm vi MVP 04/10 và D-01–D-07; ngày duyệt được báo là 2026-10-02, chưa cung cấp giờ. Ghi nhận ngày 2026-10-03; commit a5e2705/PR #6 là bản tham chiếu được người dùng xác nhận trong phiên này, không khẳng định commit đã tồn tại ngày 02/10. Nguồn: thông báo người dùng trong phiên; chưa có link biên bản ngoài. Không mở rộng thành duyệt mọi CR/backlog hoặc nghiệm thu runtime. Bản duyệt thiết kế không phải risk clearance của ticket hay nghiệm thu runtime.
 
 BẮT BUỘC snapshot lưu bền chỉ có facts phân loại/safety dạng cấu trúc + refs/version/event ledger. Source quotes chính xác thuộc audit riêng append-only, không gửi lại LLM. Mỗi event mới quét safety; risk automatic và risk khi merge = max theo NONE < UNCLEAR < EMERGENCY. Hạ risk chỉ qua hành động human có quyền, reason và audit trước/sau; resident/agent/job không hạ. Replay không chạy lại scan/LLM/commit; thiếu snapshot/version sai thì fail closed. CẤM bỏ dữ liệu gốc, gửi lại raw/history vào LLM hoặc coi D-01 đã được code. D-09 phân loại trước trùng giữ nguyên.
 
