@@ -26,11 +26,33 @@ def _any(patterns: list[str], text: str) -> bool:
 
 # --- Classification triggers ------------------------------------------------
 
+# Accented words that collide with other words once diacritics are stripped. They are swapped for an ASCII
+# marker BEFORE normalize(), so the accent still tells them apart ("đèn"/"đến", "bụi"/"Bùi", "bẩn"/"bận").
+ACCENT_MARKERS: list[tuple[str, str]] = [
+    (r"\bđèn\b", "luminaire"),
+    (r"\bđến\b", "arrive"),
+    (r"\bcháy\b", "burnt"),  # "cháy" (burnt out), not "chạy"/"chảy"; step 2b already stopped any real fire
+    (r"\bbùi\b", "surname"),
+    (r"\bbận\b", "busy"),
+    (r"\b(?:bẩn|dơ)\b", "dirty"),
+    (r"\bphân\b", "feces"),
+    (r"\bnôn\b", "vomit"),
+]
+
+
+def _classification_text(description: str) -> str:
+    """Normalize for classification only; `extract_location` keeps using plain `normalize`."""
+    text = unicodedata.normalize("NFC", description).lower()
+    for pattern, marker in ACCENT_MARKERS:
+        text = re.sub(pattern, marker, text)
+    return normalize(text)
+
+
 CLEANING_PATTERNS = [
     r"\bve sinh\b",
     r"\bdon dep\b",
     r"\brac\b",
-    r"\bbui\b",
+    r"\bbui\b(?! van\b| thi\b)",  # not a surname ("Bui Van An"); accented "Bùi" is already a marker
     r"\bvet ban\b",
     r"\bdinh ban\b",
     r"\bbi ban\b",
@@ -40,13 +62,47 @@ CLEANING_PATTERNS = [
     r"\bbai non\b",
     r"\bdo tran\b",
 ]
-# "đèn" and "đến" both normalize to "den", so a bare "den" is never enough
-LIGHTING_PATTERNS = [
-    r"\bbong den\b",
-    r"\bchieu sang\b",
-    r"\bden (hanh lang|sanh|cau thang|ham|tang|khu vuc)\b",
+# Softer words ("bẩn", "phân", "nôn"...) only count when a common area is named, so chatter about anything
+# else cannot trigger the cleaning playbook
+SOFT_CLEANING_PATTERNS = [r"\bdirty\b", r"\bfeces\b", r"\bvomit\b", r"\bnuoc tieu\b"]
+COMMON_AREA_PATTERNS = [
+    r"\bhanh lang\b",
+    r"\bsanh\b",
+    r"\bcau thang\b",
+    r"\bthang bo\b",
+    r"\bham\b",
+    r"\bkhu vuc\b",
+    r"\bphong rac\b",
+    r"\bbai (?:do |dau )?xe\b",
+    r"\bnha xe\b",
+    r"\bsan (?:choi|thuong)\b",
+    r"\bloi di\b",
 ]
-NOT_WORKING_PATTERNS = [r"\bkhong sang\b", r"\bkhong hoat dong\b", r"\bhong\b", r"\bchap chon\b", r"\btat\b"]
+# Unaccented "den" is ambiguous ("đèn"/"đến"/"đen"): it needs an area right after and no arrival verb before it
+LIGHTING_PATTERNS = [
+    r"\bbong (?:den|luminaire)\b",
+    r"\bchieu sang\b",
+    r"(?<!khi )(?<!di )(?<!toi )\bden (hanh lang|sanh|cau thang|ham|tang|khu vuc)\b",
+]
+# Accented "đèn" is unambiguous: with a common area named anywhere in the report it is a common-area lamp
+# ("Cầu thang bộ tầng 6 đèn bị hỏng", "Hầm B2 đèn tắt hết"). A report with dirt as well is CATEGORY_UNCLEAR.
+LUMINAIRE = r"\bluminaire\b"
+LUMINAIRE_LOST = r"\bmat luminaire\b"
+# Q22: "bóng đèn … bị cháy" is a burnt-out lamp (2b ran first: a real fire never reaches classification)
+LAMP_BURNT = r"\b(?:bong|luminaire|tuyp)\b(?: [a-z0-9-]+){0,10}? (?:burnt|(?:bi|da) chay)\b"
+NOT_WORKING_PATTERNS = [
+    LAMP_BURNT,
+    r"\bkhong sang\b",
+    r"\bkhong len\b",
+    r"\bkhong hoat dong\b",
+    r"\bhong\b",
+    r"\bhu\b",
+    r"\bvo\b",
+    r"\bnhap nhay\b",
+    LUMINAIRE_LOST,
+    r"\bchap chon\b",
+    r"\btat\b",
+]
 
 
 @dataclass(frozen=True)
@@ -64,9 +120,11 @@ def classify(description: str) -> Classification:
 
     Matching both playbooks is CATEGORY_UNCLEAR (BPTN picks one); matching none is OUT_OF_SCOPE.
     """
-    text = normalize(description)
-    cleaning = _any(CLEANING_PATTERNS, text)
-    lighting = _any(LIGHTING_PATTERNS, text) and _any(NOT_WORKING_PATTERNS, text)
+    text = _classification_text(description)
+    in_common_area = _any(COMMON_AREA_PATTERNS, text)
+    cleaning = _any(CLEANING_PATTERNS, text) or (in_common_area and _any(SOFT_CLEANING_PATTERNS, text))
+    lit_subject = _any(LIGHTING_PATTERNS, text) or (in_common_area and re.search(LUMINAIRE, text))
+    lighting = bool(lit_subject) and _any(NOT_WORKING_PATTERNS, text)
     if cleaning and not lighting:
         return Classification(
             PlaybookId.CLN,
@@ -94,15 +152,27 @@ def classify(description: str) -> Classification:
 
 # --- Location proposal ------------------------------------------------------
 
-BUILDING_PATTERN = r"\btoa ([a-z0-9]+(?:-[a-z0-9]+)*)\b"
-FLOOR_PATTERN = r"\b(?:tang(?: ham)?|ham) (b?\d+)\b"
-# Ordered: the longer area name must win ("sảnh thang máy" before "sảnh chính")
+# "tòa nhà SIM-A" and "block SIM-A" name the building too; "nhà" and the words that start another location part
+# ("tòa nhà tầng 3", "tòa hành lang") are never the building code
+BUILDING_PATTERN = (
+    r"\b(?:toa(?: nha)?|block) (?!(?:nha|tang|lau|ham|hanh|sanh|cau|thang|khu|phong|bai|san|loi|nay|do|kia)\b)"
+    r"([a-z0-9]+(?:-[a-z0-9]+)*)\b"
+)
+FLOOR_PATTERN = r"\b(?:tang(?: ham)?|ham|lau) (b?\d+|tret)\b"
+FLOOR_LABELS = {"TRET": "Trệt"}  # "tầng trệt" (ground floor)
+# Ordered: the longer area name must win ("sảnh thang máy" before "sảnh chính"; "hầm" before "bãi đỗ xe", so
+# "Tầng hầm B1 / Bãi đỗ xe" keeps the label the asset catalog uses). The labels the UI used to offer are all here.
 AREA_PATTERNS: list[tuple[str, str]] = [
     (r"\bsanh thang may\b", "Sảnh thang máy"),
     (r"\bsanh chinh\b", "Sảnh chính"),
     (r"\bhanh lang\b", "Hành lang"),
-    (r"\bcau thang bo\b", "Cầu thang bộ"),
+    (r"\b(?:cau )?thang bo\b", "Cầu thang bộ"),
     (r"\bham( xe)?\b", "Hầm xe"),
+    (r"\bphong rac\b", "Phòng rác"),
+    (r"\b(?:bai (?:do |dau )?xe|nha xe)\b", "Bãi đỗ xe"),
+    (r"\bsan choi\b", "Sân chơi"),
+    (r"\bsan thuong\b", "Sân thượng"),
+    (r"\bloi di\b", "Lối đi"),
 ]
 IMPLIED_FLOOR = {"Sảnh chính": "1"}
 
@@ -129,5 +199,5 @@ def _location_parts(description: str) -> tuple[str | None, str | None, str | Non
     building = re.search(BUILDING_PATTERN, text)
     area = next((label for pattern, label in AREA_PATTERNS if re.search(pattern, text)), None)
     floor = re.search(FLOOR_PATTERN, text)
-    floor_label = floor.group(1).upper() if floor else IMPLIED_FLOOR.get(area)
+    floor_label = FLOOR_LABELS.get(floor.group(1).upper(), floor.group(1).upper()) if floor else IMPLIED_FLOOR.get(area)
     return (building.group(1).upper() if building else None), floor_label, area

@@ -1,0 +1,35 @@
+# Live API corpus (34 resident reports via POST /resident/tickets, server 127.0.0.1:8765, LLM_MODE=mock) — after agent round
+ROUTED      None                    risk=NONE      cat=KY_THUAT pri=HIGH   loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: đèn → ROUTED KY_THUAT 
+ROUTED      None                    risk=NONE      cat=VE_SINH  pri=MEDIUM loc=Tòa SIM-B / Tầng 5 / Sảnh thang máy      | want: vệ sinh → ROUTED 
+ROUTED      None                    risk=NONE      cat=VE_SINH  pri=LOW    loc=Tòa SIM-A / Tầng 2 / Cầu thang bộ        | want: vệ sinh → ROUTED 
+ROUTED      None                    risk=NONE      cat=VE_SINH  pri=MEDIUM loc=Tòa SIM-C / Tầng 4 / Phòng rác           | want: vệ sinh → ROUTED 
+ROUTED      None                    risk=NONE      cat=KY_THUAT pri=HIGH   loc=Tòa SIM-A / Tầng B1 / Hầm xe             | want: đèn → ROUTED 
+ROUTED      None                    risk=NONE      cat=VE_SINH  pri=LOW    loc=Tòa SIM-B / Tầng Trệt / Sân chơi         | want: vệ sinh → ROUTED 
+ROUTED      None                    risk=NONE      cat=VE_SINH  pri=MEDIUM loc=Tòa SIM-B / Tầng 7 / Hành lang           | want: vệ sinh → ROUTED 
+VERIFYING   DUPLICATE               risk=NONE      cat=KY_THUAT pri=HIGH   loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: đèn → ROUTED 
+ROUTED      None                    risk=NONE      cat=VE_SINH  pri=LOW    loc=Tòa SIM-A / Tầng 1 / Sảnh chính          | want: vệ sinh → ROUTED 
+VERIFYING   ASSET_UNCLEAR           risk=NONE      cat=KY_THUAT pri=HIGH   loc=Tòa SIM-C / Tầng 6 / Cầu thang bộ        | want: đèn → ROUTED 
+ROUTED      None                    risk=NONE      cat=VE_SINH  pri=HIGH   loc=Tòa SIM-B / Tầng 4 / Hành lang           | want: vệ sinh → ROUTED 
+ROUTED      None                    risk=NONE      cat=VE_SINH  pri=MEDIUM loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: vệ sinh không dấu → ROUTED 
+VERIFYING   ASSET_UNCLEAR           risk=NONE      cat=KY_THUAT pri=HIGH   loc=Tòa SIM-B / Tầng 5 / Hành lang           | want: đèn không dấu → ROUTED 
+VERIFYING   DUPLICATE               risk=NONE      cat=VE_SINH  pri=LOW    loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: toà (dấu cũ) → ROUTED 
+VERIFYING   DUPLICATE               risk=NONE      cat=VE_SINH  pri=MEDIUM loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: tòa nhà → ROUTED 
+VERIFYING   DUPLICATE               risk=NONE      cat=VE_SINH  pri=LOW    loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: block/lầu → ? 
+VERIFYING   DUPLICATE               risk=NONE      cat=VE_SINH  pri=LOW    loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: khu vực → ROUTED 
+VERIFYING   ASSET_UNCLEAR           risk=NONE      cat=KY_THUAT pri=HIGH   loc=Tòa SIM-A / Tầng B2 / Hầm xe             | want: đèn hầm → ROUTED 
+VERIFYING   ASSET_UNCLEAR           risk=NONE      cat=KY_THUAT pri=HIGH   loc=Tòa SIM-B / Tầng 9 / Sảnh thang máy      | want: đèn → ROUTED 
+ROUTED      None                    risk=NONE      cat=VE_SINH  pri=LOW    loc=Tòa SIM-C / Tầng 10 / Hành lang          | want: vệ sinh → ROUTED 
+NEED_INFO   MISSING_INFO            risk=NONE      cat=None     pri=None   loc=None                                     | want: thiếu tòa → NEED_INFO 
+NEED_INFO   MISSING_INFO            risk=NONE      cat=None     pri=None   loc=None                                     | want: thiếu tòa → NEED_INFO 
+NEED_INFO   MISSING_INFO            risk=NONE      cat=None     pri=None   loc=None                                     | want: thiếu vị trí → NEED_INFO 
+NEED_INFO   MISSING_INFO            risk=NONE      cat=None     pri=None   loc=None                                     | want: thiếu tầng → NEED_INFO 
+NEED_INFO   MISSING_INFO            risk=NONE      cat=None     pri=None   loc=None                                     | want: ngoài phạm vi → OUT_OF_SCOPE 
+NEED_INFO   MISSING_INFO            risk=NONE      cat=None     pri=None   loc=None                                     | want: ngoài phạm vi 
+NEED_INFO   MISSING_INFO            risk=NONE      cat=None     pri=None   loc=None                                     | want: ngoài phạm vi 
+VERIFYING   DUPLICATE               risk=NONE      cat=KY_THUAT pri=HIGH   loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: Q22 bóng đèn cháy 
+VERIFYING   CATEGORY_UNCLEAR        risk=NONE      cat=UNKNOWN  pri=None   loc=None                                     | want: cả hai → CATEGORY_UNCLEAR 
+VERIFYING   EMERGENCY_PENDING_BQL   risk=EMERGENCY cat=None     pri=None   loc=None                                     | want: Bậc 1 → EMERGENCY 
+VERIFYING   SAFETY_REVIEW_REQUIRED  risk=UNCLEAR   cat=None     pri=None   loc=None                                     | want: Bậc 2 → SAFETY_REVIEW 
+VERIFYING   EMERGENCY_PENDING_BQL   risk=EMERGENCY cat=None     pri=None   loc=None                                     | want: Bậc 1 
+VERIFYING   EMERGENCY_PENDING_BQL   risk=EMERGENCY cat=None     pri=None   loc=None                                     | want: Bậc 1 
+VERIFYING   DUPLICATE               risk=NONE      cat=VE_SINH  pri=LOW    loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: vệ sinh, không bị điều khiển 

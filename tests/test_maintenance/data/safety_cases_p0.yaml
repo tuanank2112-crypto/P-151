@@ -82,6 +82,154 @@ safety_cases:
   - {id: SC-74, text: "Tủ điện hành lang tầng 3 tòa SIM-A đang bị cháy", expect: EMERGENCY, signals: [S-05]}   # R05 A24
   - {id: SC-75, text: "Hành lang tầng 3 tòa SIM-A không có khói, không có mùi khét", expect: NONE, absent: [S-04, S-01]}   # giữ phủ định cùng mệnh đề
   - {id: SC-76, text: "Máy tính xách tay tầng 3 tòa SIM-A tắt đột ngột, ngắt điện cả dãy", expect: NONE}   # 'ngắt' không phải 'ngất'
+  # ---- plan 04 (rà soát 2026-10-04) S1: câu Bậc 1 phổ biến từng rơi về NONE/UNCLEAR
+  - {id: SC-77, text: "Thang máy kẹt, có người bên trong", expect: EMERGENCY, signals: [S-09]}
+  - {id: SC-78, text: "thang may bi ket, co 2 nguoi o trong", expect: EMERGENCY, signals: [S-09]}
+  - {id: SC-79, text: "Thang máy bị kẹt giữa tầng 7 và 8, bên trong có 3 người", expect: EMERGENCY, signals: [S-09]}
+  - {id: SC-80, text: "Có người kêu cứu trong thang máy", expect: EMERGENCY, signals: [S-09]}
+  - {id: SC-81, text: "Có người té xỉu ở sảnh chính", expect: EMERGENCY, signals: [S-09]}
+  - {id: SC-82, text: "co nguoi te xiu o sanh chinh", expect: EMERGENCY, signals: [S-09]}
+  - {id: SC-83, text: "Có cụ bà ngã ở cầu thang bộ, đang nằm dưới sàn không nhúc nhích", expect: EMERGENCY, signals: [S-09]}
+  - {id: SC-84, text: "Dây điện rơi xuống lối đi hành lang tầng 7", expect: EMERGENCY, signals: [S-03]}
+  - {id: SC-85, text: "Dây điện bị tróc vỏ ở hành lang tầng 3", expect: EMERGENCY, signals: [S-03]}
+  - {id: SC-86, text: "dây điện bị bong vỏ ở hành lang", expect: EMERGENCY, signals: [S-03]}
+  - {id: SC-87, text: "Dây điện bị lủng lẳng ở hành lang tầng 4", expect: EMERGENCY, signals: [S-03]}
+  - {id: SC-88, text: "Hộp điện đang bốc hỏa ở tầng 3", expect: EMERGENCY, signals: [S-05]}
+  - {id: SC-89, text: "Khói nhiều lắm ở hành lang tầng 5, không thở được", expect: EMERGENCY, signals: [S-04]}
+  - {id: SC-90, text: "Lửa lớn lắm ở tầng 4, cứu với", expect: EMERGENCY, signals: [S-05]}
+  # ---- plan 04 S1: ít nhất Bậc 2 (người xem lại)
+  - {id: SC-91, text: "Ông cụ bị té cầu thang bộ", expect_any: [UNCLEAR, EMERGENCY]}
+  - {id: SC-92, text: "Bé bị đứt tay do kính vỡ ở sảnh", expect_any: [UNCLEAR, EMERGENCY]}
+  - {id: SC-93, text: "tang 5 khoi nhieu lam", expect_any: [UNCLEAR, EMERGENCY]}   # không dấu: giữ mức cao
+  - {id: SC-94, text: "Đèn hành lang cháy đen cả trần nhà", expect_any: [UNCLEAR, EMERGENCY]}   # "cháy đen" không phải B-01
+  # ---- plan 04 S2: câu lành tính từng bị nâng mức
+  - {id: SC-95, text: "Điện hành lang tầng 3 bị ngắt từ sáng nên đèn không sáng", expect: NONE}   # 'ngắt' (cắt điện)
+  - {id: SC-96, text: "Cầu dao tổng bị ngắt", expect: NONE}
+  - {id: SC-97, text: "Đèn hành lang bị ngắt", expect: NONE}
+  - {id: SC-98, text: "Wifi bị ngắt", expect: NONE}
+  - {id: SC-99, text: "Sảnh có khối rác chưa dọn", expect: NONE}   # 'khối' không phải 'khói'
+  - {id: SC-100, text: "Có ai để quên cái bật lửa ở sảnh chính", expect: NONE}   # 'bật lửa' (cái quẹt) không phải 'bắt lửa'
+  - {id: SC-101, text: "Đèn hành lang cháy sáng suốt đêm không tắt", expect: NONE, absent: [T2-03]}   # 'cháy sáng' không phải 'cháy sang'
+  - {id: SC-102, text: "Bóng đèn hành lang gần căn 1205 bị cháy", expect: NONE, absent: [T2-03]}   # B-01
+  - {id: SC-103, text: "Bóng đèn chỗ thang máy tầng 5 bị cháy", expect: NONE, absent: [T2-03]}   # B-01
+  - {id: SC-104, text: "Xin báo bóng đèn hành lang tầng 12 bị cháy", expect: NONE, absent: [T2-03]}   # B-01
+  - {id: SC-105, text: "Tôi bị giật mình khi thấy rác nhiều ở sảnh", expect: NONE}   # 'giật mình' không phải điện giật
+  # ---- plan 04 vòng 2: bộ thẩm định đối kháng (redteam_lex.py) + dò thêm; chỉ câu lexicon mới xử lý đúng
+  - {id: SC-106, text: "Thang máy số 2 tòa SIM-B bị kẹt, có người bên trong", expect: EMERGENCY, signals: [S-09]}   # M01
+  - {id: SC-107, text: "Thang máy kẹt không mở được cửa, có người bên trong", expect: EMERGENCY, signals: [S-09]}   # M02
+  - {id: SC-108, text: "Thang máy bị kẹt, con tôi đang ở trong đó", expect: EMERGENCY, signals: [S-09]}   # M03
+  - {id: SC-109, text: "Thang máy kẹt, có hai bác lớn tuổi đang ở trong", expect: EMERGENCY, signals: [S-09]}   # M04
+  - {id: SC-110, text: "Thang máy kẹt, nhiều người đang ở trong", expect: EMERGENCY, signals: [S-09]}   # M05
+  - {id: SC-111, text: "Thang máy tòa SIM-A kẹt, có người đứng trong đó la hét", expect: EMERGENCY, signals: [S-09]}   # M06
+  - {id: SC-112, text: "Hai mẹ con bị nhốt trong thang máy tầng 9", expect: EMERGENCY, signals: [S-09]}   # M07
+  - {id: SC-113, text: "Thang máy kẹt từ nãy giờ chưa ai tới, bên trong có người", expect: EMERGENCY, signals: [S-09]}   # M09
+  - {id: SC-114, text: "Mẹ con em bị kẹt thang máy tầng 9 hơn 20 phút rồi", expect: EMERGENCY, signals: [S-09]}   # M10
+  - {id: SC-115, text: "thang may ket tang 12, ben trong co em be dang khoc", expect: EMERGENCY, signals: [S-09]}   # M11
+  - {id: SC-116, text: "Có cháu bé bị kẹt trong thang máy tòa SIM-A", expect: EMERGENCY, signals: [S-09]}   # M12
+  - {id: SC-117, text: "Có người lớn tuổi bị choáng rồi ngã nằm im dưới sàn sảnh", expect: EMERGENCY, signals: [S-09]}   # M13
+  - {id: SC-118, text: "co ba cu bi nga o cau thang, nam bat dong", expect: EMERGENCY, signals: [S-09]}   # M14
+  - {id: SC-119, text: "Có bà cụ bị ngã ở cầu thang, nằm bất động", expect: EMERGENCY, signals: [S-09]}   # M15
+  - {id: SC-120, text: "Cụ ông ngã ở sảnh, nằm im không cử động được", expect: EMERGENCY, signals: [S-09]}   # M16
+  - {id: SC-121, text: "Có người đột nhiên ngã gục ở hành lang tầng 2", expect: EMERGENCY, signals: [S-09]}   # M17
+  - {id: SC-122, text: "Có anh thanh niên té xỉu ngoài sảnh", expect: EMERGENCY, signals: [S-09]}   # M18
+  - {id: SC-123, text: "Bé trai ngã từ cầu thang xuống, nằm không nhúc nhích", expect: EMERGENCY, signals: [S-09]}   # M19
+  - {id: SC-124, text: "Một chị bị ngất ở thang bộ tầng 6", expect: EMERGENCY, signals: [S-09]}   # M20
+  - {id: SC-125, text: "Cụ bà té ngã chảy rất nhiều máu ở sảnh", expect: EMERGENCY, signals: [S-09]}   # M21
+  - {id: SC-126, text: "co nguoi te nga nam im o ham xe", expect: EMERGENCY, signals: [S-09]}   # M22
+  - {id: SC-127, text: "Bà cụ bị ngắt xỉu ở sảnh", expect: EMERGENCY, signals: [S-09]}   # M23
+  - {id: SC-128, text: "Ông cụ tầng 3 bị ngắt ở hành lang", expect: EMERGENCY, signals: [S-09]}   # M24
+  - {id: SC-129, text: "Dây điện ở hành lang bị tróc vỏ", expect: EMERGENCY, signals: [S-03]}   # M25
+  - {id: SC-130, text: "Dây điện bị tróc hết vỏ, lòi lõi đồng ra ngoài", expect: EMERGENCY, signals: [S-03]}   # M26
+  - {id: SC-131, text: "Đoạn dây điện trên trần bị rơi xuống, đang lủng lẳng ngay lối đi", expect: EMERGENCY, signals: [S-03]}   # M27
+  - {id: SC-132, text: "Dây điện treo lơ lửng ngang đầu người ở sảnh", expect: EMERGENCY, signals: [S-03]}   # M28
+  - {id: SC-133, text: "dây cáp điện lủng lẳng sát đầu người đi", expect: EMERGENCY, signals: [S-03]}   # M29
+  - {id: SC-134, text: "Dây điện bị tuột vỏ ngay cửa thang máy", expect: EMERGENCY, signals: [S-03]}   # M30
+  - {id: SC-135, text: "day dien o tang ham bi troc vo", expect: EMERGENCY, signals: [S-03]}   # M31
+  - {id: SC-136, text: "Mấy sợi dây điện cũ đang lủng lẳng ở hành lang", expect: EMERGENCY, signals: [S-03]}   # M32
+  - {id: SC-137, text: "Cầu thang bộ toàn là khói", expect: EMERGENCY, signals: [S-04]}   # M35
+  - {id: SC-138, text: "Hành lang tầng 5 có khỏi đen", expect: EMERGENCY, signals: [S-04]}   # M37
+  - {id: SC-139, text: "Lửa đang lan rất nhanh ở tầng 5", expect: EMERGENCY, signals: [S-05]}   # M38
+  - {id: SC-140, text: "Phòng rác tầng 6 bốc hỏa dữ dội", expect: EMERGENCY, signals: [S-05]}   # M39
+  - {id: SC-141, text: "lua lon o phong rac tang 3", expect: EMERGENCY, signals: [S-05]}   # M40
+  - {id: SC-142, text: "Cháy sáng rực trong phòng rác tầng 2", expect: EMERGENCY, signals: [S-05]}   # M41
+  - {id: SC-143, text: "Ổ cắm ở hành lang bật lửa khi cắm sạc", expect: EMERGENCY, signals: [S-05]}   # M42
+  - {id: SC-144, text: "Căn hộ 1205 cháy, đèn tắt hết rồi", expect_any: [UNCLEAR, EMERGENCY]}   # M43
+  - {id: SC-145, text: "Xin báo cháy, đèn hành lang tầng 3 tắt hết", expect_any: [UNCLEAR, EMERGENCY]}   # M44
+  - {id: SC-146, text: "Chỗ thang máy cháy, đèn tắt hết", expect_any: [UNCLEAR, EMERGENCY]}   # M45
+  - {id: SC-147, text: "Phòng rác bốc hoả", expect: EMERGENCY, signals: [S-05]}   # M46
+  - {id: SC-148, text: "Nghe tiếng kêu cứu ở cầu thang bộ tầng 11", expect: EMERGENCY, signals: [S-09]}   # M48
+  - {id: SC-149, text: "Cứu tôi với, thang máy kẹt rồi", expect: EMERGENCY, signals: [S-09]}   # M49
+  - {id: SC-150, text: "Có tiếng la cứu ở tầng hầm", expect: EMERGENCY, signals: [S-09]}   # M50
+  - {id: SC-151, text: "cuu voi, co nguoi bi ket trong phong rac", expect: EMERGENCY, signals: [S-09]}   # M51
+  - {id: SC-152, text: "Có người kêu cứu, không rõ ở tầng mấy", expect: EMERGENCY, signals: [S-09]}   # M52
+  - {id: SC-153, text: "Bình cứu hỏa hành lang tầng 5 hết hạn rồi", expect: NONE}   # F01
+  - {id: SC-154, text: "Xe cứu hộ đậu chắn lối vào hầm", expect: NONE}   # F02
+  - {id: SC-155, text: "Hộp cứu hỏa ở sảnh bị mất kính", expect: NONE}   # F03
+  - {id: SC-156, text: "Có con mèo kêu cứu trên mái tầng thượng", expect_any: [NONE, UNCLEAR]}   # F06
+  - {id: SC-157, text: "Ngồi chờ thang máy lâu quá bị tê chân", expect: NONE}   # F07
+  - {id: SC-158, text: "Bị té nước vào người khi đi qua bồn cây ở sảnh", expect: NONE}   # F08
+  - {id: SC-159, text: "Bé bị tè ra sàn thang máy, cần lau", expect: NONE}   # F09
+  - {id: SC-160, text: "Nhà ai nấu ăn để lửa lớn quá, mùi đồ ăn bay ra hành lang", expect_any: [NONE, UNCLEAR]}   # F10
+  - {id: SC-161, text: "Bếp nướng trên sân thượng để lửa lớn, mùi thịt nướng bay khắp tầng", expect_any: [NONE, UNCLEAR]}   # F11
+  - {id: SC-162, text: "Hút thuốc trong thang máy khói nhiều lắm", expect_any: [NONE, UNCLEAR]}   # F12
+  - {id: SC-163, text: "Nhà bên đốt nhang khói nhiều quá, hành lang ám mùi", expect_any: [NONE, UNCLEAR]}   # F13
+  - {id: SC-164, text: "Khói nhang nhiều quá ở hành lang tầng 8", expect_any: [NONE, UNCLEAR]}   # F14
+  - {id: SC-165, text: "Nước bị ngắt cả tòa từ sáng", expect: NONE}   # F15
+  - {id: SC-166, text: "Người dân phàn nàn điện bị ngắt liên tục", expect: NONE}   # F16
+  - {id: SC-167, text: "Ban quản lý báo người dân là nước sẽ bị ngắt từ 8h", expect: NONE}   # F17
+  - {id: SC-168, text: "Wifi người dùng bị ngắt liên tục", expect: NONE}   # F18
+  - {id: SC-169, text: "Thang máy bị ngắt, nhiều người phải đi bộ", expect: NONE}   # F19
+  - {id: SC-170, text: "Em bé bị ngắt quãng giấc ngủ vì tiếng khoan", expect: NONE}   # F20
+  - {id: SC-171, text: "Con mèo nằm không nhúc nhích ở góc hầm xe, chắc chết rồi", expect_any: [NONE, UNCLEAR]}   # F21
+  - {id: SC-172, text: "Chiếc xe đạp nằm không nhúc nhích ở đó cả tháng nay", expect: NONE}   # F22
+  - {id: SC-173, text: "Cả năm nay thang máy không nhúc nhích, đề nghị sửa", expect: NONE}   # F23
+  - {id: SC-174, text: "Gọi anh Nam bảo vệ mà ảnh không nhúc nhích", expect: NONE}   # F24
+  - {id: SC-175, text: "Nghe tiếng khoan cả ngày mà tôi bốc hỏa", expect: NONE}   # F25
+  - {id: SC-176, text: "Chị ấy bốc hoả vì rác để trước cửa", expect: NONE}   # F26
+  - {id: SC-177, text: "Có ai để quên bọc hoa ở sảnh chính", expect: NONE}   # F27
+  - {id: SC-178, text: "Dây phơi đồ rơi xuống sân tầng 2", expect: NONE}   # F28
+  - {id: SC-179, text: "Dây điện thoại rơi xuống hành lang tầng 4", expect_any: [NONE, UNCLEAR]}   # F29
+  - {id: SC-180, text: "Dây cáp mạng lủng lẳng ở hành lang", expect: NONE}   # F30
+  - {id: SC-181, text: "Dây phơi lủng lẳng ngoài ban công", expect: NONE}   # F31
+  - {id: SC-182, text: "Thang máy kẹt cả tuần rồi, người già phải đi thang bộ", expect_any: [NONE, UNCLEAR]}   # F32
+  - {id: SC-183, text: "Thang máy số 3 kẹt hoài, nhờ BQL gọi người sửa", expect_any: [NONE, UNCLEAR]}   # F33
+  - {id: SC-184, text: "Thang máy kẹt cửa, ảnh hưởng người đi làm buổi sáng", expect_any: [NONE, UNCLEAR]}   # F34
+  - {id: SC-185, text: "Thang máy kẹt hoài, người dân bức xúc lắm", expect_any: [NONE, UNCLEAR]}   # F35
+  - {id: SC-186, text: "Thang máy hôm qua bị kẹt, may là không có người bên trong", expect_any: [NONE, UNCLEAR]}   # F36
+  - {id: SC-187, text: "Không có ai kêu cứu cả, chỉ là trẻ con chơi đùa", expect: NONE}   # F37
+  - {id: SC-188, text: "Đèn hành lang bị ngắt, người đi lại tối om", expect: NONE}   # F38
+  - {id: SC-189, text: "Tôi suýt té vì sàn sảnh trơn", expect_any: [NONE, UNCLEAR]}   # F39
+  - {id: SC-190, text: "Nhân viên vệ sinh té nước bẩn ra hành lang", expect: NONE}   # F40
+  - {id: SC-191, text: "bi te nuoc tu tren lau xuong", expect_any: [NONE, UNCLEAR]}   # F41
+  - {id: SC-192, text: "Cuối tuần có đốt lửa trại lớn ở sân chung", expect_any: [NONE, UNCLEAR]}   # F42
+  - {id: SC-193, text: "Con chó nằm im không nhúc nhích trước cửa thang máy", expect_any: [NONE, UNCLEAR]}   # F43
+  - {id: SC-194, text: "Dây phơi bị đứt rơi xuống", expect: NONE}   # F44
+  - {id: SC-195, text: "Mọi người ơi, điện bị ngắt rồi", expect: NONE}   # F45
+  - {id: SC-196, text: "Hộp điện bật lửa", expect: EMERGENCY, signals: [S-05]}   # X01
+  - {id: SC-197, text: "Công tắc đèn hành lang bật lửa xẹt xẹt", expect: EMERGENCY, signals: [S-05]}   # X02
+  - {id: SC-198, text: "Gần căn 1205 cháy, đèn hành lang tắt hết", expect_any: [UNCLEAR, EMERGENCY]}   # X03
+  - {id: SC-199, text: "Cứu em với, thang máy kẹt", expect: EMERGENCY, signals: [S-09]}   # X04
+  - {id: SC-200, text: "Cứu mẹ con em với", expect: EMERGENCY, signals: [S-09]}   # X05
+  - {id: SC-201, text: "Thang máy kẹt, bên trong có khách", expect: EMERGENCY, signals: [S-09]}   # X06
+  - {id: SC-202, text: "Thang máy kẹt, cả nhà tôi ở trong", expect: EMERGENCY, signals: [S-09]}   # X07
+  # ---- plan 04 vòng 3: khói nhiều (trừ thuốc/nhang/nướng), kẹt người, hedge 'nghe như có tiếng', B-01 khác mệnh đề
+  - {id: SC-203, text: "Có người bị nhốt trong thang máy", expect: EMERGENCY, signals: [S-09]}   # R3-02
+  - {id: SC-204, text: "Bé bị kẹt trong thang máy không ra được", expect: EMERGENCY, signals: [S-09]}   # R3-03
+  - {id: SC-205, text: "Khói rất nhiều ở hành lang tầng 9", expect: EMERGENCY, signals: [S-04]}   # R3-04
+  - {id: SC-206, text: "khoi rat nhieu o tang ham", expect: EMERGENCY, signals: [S-04]}   # R3-05
+  - {id: SC-207, text: "Hành lang tầng 9 khói rất nhiều, mọi người chạy hết xuống", expect: EMERGENCY, signals: [S-04]}   # R3-07
+  - {id: SC-208, text: "khoi nhieu o hanh lang tang 4", expect: EMERGENCY, signals: [S-04]}   # R3-08
+  - {id: SC-209, text: "Nhà bên đốt vàng mã khói nhiều quá", expect_any: [NONE, UNCLEAR]}   # R3-12
+  - {id: SC-210, text: "Nhà ai nướng thịt khói nhiều quá", expect_any: [NONE, UNCLEAR]}   # R3-13
+  - {id: SC-211, text: "Hành lang tầng 3 nhiều khói thuốc lá do có người hút", expect_any: [NONE, UNCLEAR]}   # R3-14
+  - {id: SC-212, text: "Thang máy hay bị kẹt, người dùng phản ánh nhiều", expect_any: [NONE, UNCLEAR]}   # R3-15
+  - {id: SC-213, text: "Thang máy kẹt, người dân bức xúc", expect_any: [NONE, UNCLEAR]}   # R3-16
+  - {id: SC-214, text: "Hình như nghe như có tiếng xẹt điện ở hộp điện", expect: UNCLEAR}   # R3-17
+  - {id: SC-215, text: "Thang máy cháy, đèn tắt hết", expect_any: [UNCLEAR, EMERGENCY]}   # R3-21
+  - {id: SC-216, text: "Bóng đèn cầu thang tầng 9 bị cháy, nhờ thay", expect: NONE}   # R3-24
+  - {id: SC-217, text: "Có người kẹt thang máy không ra được", expect: EMERGENCY, signals: [S-09]}   # R3-25
+  - {id: SC-218, text: "Kẹt người trong thang máy", expect: EMERGENCY, signals: [S-09]}   # R3-27
+  - {id: SC-219, text: "Thang máy kẹt người", expect: EMERGENCY, signals: [S-09]}   # R3-28
 
 
 # Mọi chuỗi phản ánh đang dùng trong fixture và test hiện có: chỉ CLN-004 và TEC-005 được phép lên Bậc 1.

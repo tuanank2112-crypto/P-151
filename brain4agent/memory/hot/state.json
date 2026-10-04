@@ -1,10 +1,10 @@
 {
-  "current_version": "1.1.2",
+  "current_version": "1.1.3",
   "brain_template_version": "1.7.1",
   "system_status": "active",
   "last_verification": {
-    "timestamp": "2026-10-03T13:39:09.000Z",
-    "grade": "develop = nhuy-safety-routes + feature/chamanh (v1.1.2): 1641 pytest pass (29 deselected), ruff src+tests clean"
+    "timestamp": "2026-10-04T00:00:00.000Z",
+    "grade": "fix/nhuy-logic-review (plan 04 agent part, backend split to H03): 1843 pytest pass (29 deselected), ruff clean"
   },
   "active_plans_completed": 2,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
@@ -31,10 +31,10 @@
     "license": ""
   },
   "active_spec": "docs/CR-BPTN-03.md",
-  "working_branch": "feature/nhuy-cr03-p0",
+  "working_branch": "fix/nhuy-logic-review",
   "code_baseline": "6265436 (develop)",
   "last_benchmark": {
-    "pytest": "1462 passed, 0 skip",
+    "pytest": "1843 passed, 29 deselected, 0 skip",
     "safety_stop_sets": "1065 green",
     "false_alarm_budget": {
       "b_fp": "EM 0 / UNCLEAR 4",
@@ -42,12 +42,13 @@
       "b_fp2": "EM 3"
     },
     "holdout_none": "2/39",
-    "assess_24kb_seconds": 0.28
+    "assess_24kb_seconds": 0.28,
+    "review_set_2026_10_04": "adversarial 107: HEAD 50 errors -> 7; SO holdout 18/18; live API corpus 34: only out-of-scope-asks-location left (spec)"
   },
   "last_sync": "2026-10-02T13:09:52.176Z",
-  "next_step": "router/UI for safety actions (Châm Anh/Trí); CR-03 P1 + LangGraph; fix Actions billing",
+  "next_step": "PR #14 (fix/nhuy-logic-review -> develop) chờ review/merge; handoffs H03 Châm Anh, H04 Trí, H05 Trường",
   "active_plan": {
-    "id": "02_2026-10-03_truong-mvp-prep",
+    "id": "04_2026-10-04_logic-review-fix",
     "status": "in_progress",
     "team_plan_url": "https://storm-jade-f74.notion.site/K-ho-ch-MaintenanceOps-MVP-3e43b68a924d80d7a81fe0579e1eddb9",
     "deadlines": {
