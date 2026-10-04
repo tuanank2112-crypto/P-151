@@ -1,0 +1,2 @@
+2026-10-03T12:41:51+07:00 python harness.py d01a exit=1
+checks_total=3 ok=2 mismatch=1

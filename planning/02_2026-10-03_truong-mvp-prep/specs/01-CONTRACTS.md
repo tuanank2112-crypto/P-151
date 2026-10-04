@@ -9,7 +9,7 @@
 
 | ID | User confirmation (2026-10-03) | Group status | approver / approved_at |
 |---|---|---|---|
-| D-01 | Mỗi bổ sung mới + persisted structured context; safety scan mới; agent/job không hạ risk | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
+| D-01 | Mỗi bổ sung mới + persisted structured context; safety scan mới; agent/job không hạ risk (2026-10-03 người dùng chốt: phần delta + snapshot NGOÀI phạm vi MVP 04/10, làm ở 19/10; hazard-trong-bổ-sung đã có) | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
 | D-02 | Bậc 2: 4 giờ lịch review; 12 giờ lịch bổ sung safety; NEED_INFO thường SLA BPTN | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
 | D-03 | Ngưỡng báo trùng nâng ưu tiên = 3 | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
 | D-04 | Đèn/bóng cháy đứng riêng = NONE, B-01 | APPROVED | Lê Thị Châm Anh / 2026-10-02 (day only) |
@@ -153,6 +153,8 @@ BẮT BUỘC process: validate input → load durable context/ledger → detect 
 Merge parent risk=max(parent risk, child risk); union facts+provenance, append audit and ledger entry, atomic CAS on both versions. CẤM routing emergency child into ordinary parent and losing its safety hold; human clearance must be separate explicit action. Repeated merge event performs no second merge/outbox/audit; different payload same ID fails.
 
 BẮT BUỘC addition/history retention append-only, commit all effects atomically using existing fail-closed repository pattern. Persist snapshot and ledger across restart; no in-memory-only dedupe. Pending addition accepted into source ledger must remain retryable and cannot be routed before safety is committed. No success acknowledged for partial audit/context write.
+
+Route (plan 03, Q01, owner Như Ý): `POST /api/v1/mo/tickets/{id}/safety` body `{decision: CONFIRM_SAFE|REQUEST_INFO|ESCALATE, note}` wraps `safety_confirm_safe|safety_request_info|safety_escalate`; `POST /api/v1/bql/tickets/{id}/emergency/close` and `/emergency/downgrade` body `{note}` wrap `emergency_close` / `emergency_downgrade`. Thin wrappers only; role/state/note checks stay in the engine.
 
 ## 4. Errors and caller behavior
 

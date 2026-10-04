@@ -92,10 +92,7 @@ tickets:
     expected:
       status: VERIFYING
       reason_code: EMERGENCY_PENDING_BQL
-      playbook_id: PB-CLN-01
-      proposed_department_id: DEPT_CLEANING
       department_id: null
-      review_status: NOT_REQUIRED
       draft_exists: false
       location: "Tòa SIM-A / Tầng B1 / Hầm xe"
 
@@ -244,10 +241,7 @@ tickets:
     expected:
       status: VERIFYING
       reason_code: EMERGENCY_PENDING_BQL
-      playbook_id: PB-TEC-01
-      proposed_department_id: DEPT_TECHNICAL
       department_id: null
-      review_status: NOT_REQUIRED
       draft_exists: false
 
   - raw:

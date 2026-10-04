@@ -1,0 +1,2 @@
+records=17 {'PASS': 14, 'FAIL': 1, 'BLOCKED': 2} bad=[]
+exit=0

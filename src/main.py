@@ -57,8 +57,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="MaintenanceOps Agent",
-    description="Prototype mô phỏng v0.5 candidate (CR-BPTN-02): phân loại ticket vệ sinh/kỹ thuật, chuyển phòng "
-    "ban, trạng thái công khai cho cư dân, retry/leo thang, BQL nghiệm thu",
+    description="Prototype mô phỏng v0.6 candidate (CR-BPTN-03): phân loại ticket vệ sinh/kỹ thuật, tầng an toàn, "
+    "mức ưu tiên, chuyển phòng ban, trạng thái công khai cho cư dân, retry/leo thang, BQL nghiệm thu",
     version="0.5.0-candidate",
     lifespan=lifespan,
 )

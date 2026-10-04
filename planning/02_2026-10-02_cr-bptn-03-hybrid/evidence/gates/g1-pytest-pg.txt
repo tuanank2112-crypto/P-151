@@ -1,0 +1,4 @@
+# MO_TEST_DATABASE_URL=...localhost:5432/p151_test pytest --pg -q
+.......................                                                  [100%]
+311 passed in 21.06s
+exit=0

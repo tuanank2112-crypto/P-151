@@ -57,6 +57,13 @@ Mọi method nhận `ticket_id, actor_id` đầu tiên, trả `Case` đã commit
 | `emergency_downgrade(tid, actor, *, note)` | BQL (T05) | VERIFYING + `EMERGENCY_PENDING_BQL` | báo nhầm: về flow thường |
 | `emergency_close(tid, actor, *, note)` | BQL (T10) | như trên | `CLOSED`, `closure_kind=EMERGENCY_HANDLED`, không cần phòng ban |
 Lỗi: sai vai / BPTN trên blocker thuộc BQL (kể cả `bptn_resolve`, CR-03 §4.4.5) ⇒ `ActionDeniedError` 403 + audit, trạng thái không đổi; BQL dùng 3 lựa chọn Bậc 2 trước khi leo thang ⇒ 403 (Q19); sai trạng thái/blocker ⇒ `InvalidTransitionError` 409; thiếu `note` ⇒ `GuardError` 409; blocker an toàn của BPTN + `bptn_resolve` ⇒ `GuardError` 409.
+Route API (prefix `/api/v1`; router chỉ bọc method trên, không kiểm vai/logic; lỗi qua `_call`: 403/404/409; `decision` lạ ⇒ 422; `closure_kind` client gửi bị bỏ qua):
+
+| Route | Body | Method engine |
+|---|---|---|
+| `POST /mo/tickets/{id}/safety` | `{decision: CONFIRM_SAFE \| REQUEST_INFO \| ESCALATE, note}` | `safety_confirm_safe` \| `safety_request_info` \| `safety_escalate` |
+| `POST /bql/tickets/{id}/emergency/close` | `{note}` | `emergency_close` |
+| `POST /bql/tickets/{id}/emergency/downgrade` | `{note}` | `emergency_downgrade` |
 Bất biến: `resume()`/job KHÔNG BAO GIỜ gỡ blocker an toàn (`_cleared` False); Bậc 2 leo thang đúng một lần sau 4 giờ LỊCH (`escalated=True`, outbox `safety.review_escalated`); NEED_INFO an toàn leo thang sau 12 h (outbox `escalation`).
 Chặn khác: `reopen()` luôn `InvalidTransitionError`; `set_assignee()` luôn `ActionDeniedError` có audit; `rate()` một lần (`GuardError` lần hai).
 Cư dân chỉ thấy nhãn "Đang được kiểm tra" và lời trong `i18n/vi.yaml` (không `risk_*`, `reason_code`, `priority`).
