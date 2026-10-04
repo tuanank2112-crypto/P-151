@@ -162,3 +162,7 @@
 ## Merge develop ← nhuy-safety-routes + feature/chamanh — 2026-10-03
 - Router: route `/safety` và `/emergency/{close,downgrade}` giữ bản Như Ý (`EmergencyNoteBody` bỏ qua field lạ như `closure_kind`); thêm từ chamanh `/priority`, hàng chờ `_queue_key`, lọc BQL risk_level/priority, bỏ `/resident/.../reopen`, v1.1.2 chặn `/close` trên ticket khẩn cấp.
 - Đo: pytest 1641 passed/29 deselected exit 0 (gồm 40 test test_api_safety.py), ruff check + format src/tests exit 0.
+
+## Đóng lệch thứ tự phân loại/an toàn (plan 02 Q11) — 2026-10-04
+- Trường sửa fixture `954dcab` (PR #12, develop `dff898e`): CLN-004/TEC-005 bỏ 3 trường phân loại; engine không đổi.
+- Đo lại (evidence/13 của plan 02): evaluate CR03 12/12, 4 demo; target 9 passed; phá thử 3/3 đều đỏ; pytest 1641 passed/29 deselected, ruff sạch. Ghi Q11 vào plan 02, sửa `docs/maintenance.md` §10, thêm Idea Vault.
