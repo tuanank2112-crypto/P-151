@@ -242,3 +242,8 @@
 - Snapshot 5f7c354 and integration worktree created without touching original branch/index/files. Three brain-file conflicts resolved by retaining both sections. Python 3.11.16 discovered via uv; tests use mock/memory and existing site-packages read-only. Validation pending.
 
 - Isolated validation 2026-10-04T22:01:39+07:00: pytest1843/0/0 (29 pg deselected); ruff check/format exit0; README4/4 + evaluate12/12. Original872 file hashes/index/protected refs unchanged; concurrent docs/submission/ excluded. mypy unavailable, no Docker/Postgres checks. Evidence: plan06/evidence/integration/.
+
+## 2026-10-04T22:22:24+07:00 — Feature branch adoption
+- User explicitly requested working on feature/truong. Adopted snapshot5f7c354 without rewriting working files, then fast-forwarded to tested integration f4155d6. No develop change and no push.
+- Re-ran tests in C:/P-151-truong: 1843 pass/0 fail/0 skip/29 pg deselected; ruff check+format exit0. 853 unaffected original/local paths verified, including diagrams, submission files and venv config.
+- Three docs/submission files remain untracked and unchanged. Backup branches retained. Earlier isolated-original-unchanged statements describe the preparation phase; feature/truong is now updated.

@@ -96,3 +96,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 ## Isolated integration — 2026-10-04
 - [x] Preserve local work on backup/truong-local-20261004 and merge develop on separate integration branch.
 - [x] Tests and preservation verified on integration branch (1843 passed, ruff clean, README4/4, evaluate12/12). Original feature/truong/develop remain unchanged; no push. PostgreSQL/Docker/typecheck gates remain open.
+
+## Feature/truong update — 2026-10-04
+- [x] Adopt tested develop integration on feature/truong; rerun pytest1843 and ruff in original worktree. Preserve diagrams and untracked submission files. No push.
+- [ ] PostgreSQL/Docker and mypy checks remain unavailable/not run.

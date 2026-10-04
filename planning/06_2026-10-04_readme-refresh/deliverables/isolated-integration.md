@@ -11,3 +11,7 @@
 - Limits: mypy unavailable; PostgreSQL/Docker and browser render not verified. Incoming develop evidence/patch whitespace retained; local docs whitespace clean.
 - No push, reset, rebase, stash or checkout in original worktree. Use this worktree to review/test; moving original branch requires a later instruction.
 - Evidence: ../evidence/integration/
+
+## Later adoption on feature/truong
+
+The user subsequently authorized adopting this integration. C:/P-151-truong now runs feature/truong with integration f4155d6 and a documentation status commit. develop and remote feature ref remain unchanged; no push. Tests were rerun on the actual target workspace: 1843 passed, 29 pg deselected, ruff clean. Three new docs/submission files remain untracked and unchanged. Evidence is in feature-update-checks.txt and feature-*.txt next to the earlier isolated evidence.

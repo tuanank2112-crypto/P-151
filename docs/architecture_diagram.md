@@ -136,3 +136,5 @@ SVG/draw.io giữ nguyên bản gốc, không tự thay bố cục. Components M
 ## 5. Ghi chú bản tích hợp develop 37a0fb3
 
 Bố cục hai hình vẫn giữ nguyên. Code mới yêu cầu ảnh/ghi chú mới cho mỗi vòng REWORK; giữ quyền BQL sau leo thang; receive tính trước proposal phân loại ngoài engine.lock; job có thể phục hồi RECEIVED không blocker quá 2 phút. Những thay đổi này được giải thích bằng văn bản, không dùng để vẽ lại hình mục tiêu.
+
+Bản tích hợp đã được đưa về feature/truong theo yêu cầu người dùng ngày 04/10/2026; kiểm tra lại 1843 test và ruff đạt. Hai sơ đồ vẫn giữ nguyên. Các kết quả này áp dụng đường memory/mock, không phải bằng chứng PostgreSQL/Docker hay triển khai online.

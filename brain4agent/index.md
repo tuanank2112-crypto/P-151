@@ -131,3 +131,6 @@ project-root/
 
 ## Isolated integration workspace
 - integration/truong-develop-20261004 combines local documentation snapshot 5f7c354 with develop 37a0fb3. Original feature/truong worktree remains unchanged. Evidence is in planning/06_2026-10-04_readme-refresh/evidence/integration/.
+
+## Current working branch — 2026-10-04
+- Work in feature/truong at C:/P-151-truong: tested integration f4155d6 adopted locally. Integration worktree remains a preparation reference; source is develop37a0fb3. Details and evidence: planning/06_2026-10-04_readme-refresh/.

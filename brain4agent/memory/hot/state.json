@@ -237,5 +237,31 @@
     "postgres": "not_run",
     "docker": "not_run",
     "evidence": "planning/06_2026-10-04_readme-refresh/evidence/integration/"
+  },
+  "feature_update": {
+    "status": "completed_local",
+    "at": "2026-10-04T22:22:24+07:00",
+    "branch": "feature/truong",
+    "integrated_commit": "f4155d6b842b3b90846e14d486965a71e6da6db7",
+    "develop_commit": "37a0fb3863e86fb21496e4f0be8ef6750c72a47c",
+    "pre_update_backup": "backup/truong-before-update-20261004",
+    "local_snapshot_backup": "backup/truong-local-20261004",
+    "tests": {
+      "passed": 1843,
+      "failed": 0,
+      "skipped": 0,
+      "deselected": 29
+    },
+    "ruff_check": "pass",
+    "ruff_format": "pass",
+    "diagrams": "preserved",
+    "submission_files": "3 new untracked files preserved",
+    "remote_push": false,
+    "develop_ref_changed": false,
+    "evidence": "planning/06_2026-10-04_readme-refresh/evidence/integration/feature-update-checks.txt",
+    "limits": [
+      "PostgreSQL/Docker not tested",
+      "mypy unavailable"
+    ]
   }
 }

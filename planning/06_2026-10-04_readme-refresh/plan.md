@@ -54,3 +54,12 @@
 
 - Verified at 2026-10-04T22:01:39+07:00; original branch/head/index/files preserved. Concurrent docs/submission/ appeared during execution and was not touched or included.
 - Open environment gates: PostgreSQL/Docker not run; mypy unavailable. Incoming develop machine evidence/patch has pre-existing trailing whitespace; local documentation diff check exit0, preserved incoming evidence unchanged.
+
+## Feature branch adoption — 2026-10-04T22:22:24+07:00
+- User explicitly authorized safe update of feature/truong. The prior isolated-only stop is superseded for the target workspace; develop/remote refs remain protected.
+- [x] Verify old files match snapshot, three new submission files have no incoming collision.
+- [x] Create backup/truong-before-update-20261004 (b937956); align index with saved snapshot and fast-forward feature/truong to f4155d6.
+- [x] Verify unaffected files/diagrams/new submission files; source/tests/seed match develop.
+- [x] Re-run tests on feature/truong: 1843 pass, 29 pg deselected; ruff check/format exit0.
+- [x] Update current-workspace memory; preserve three submission files as untracked; no push.
+- Evidence: evidence/integration/feature-update-checks.txt, feature-pytest.txt, feature-ruff-check.txt, feature-ruff-format.txt.

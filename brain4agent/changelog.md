@@ -147,3 +147,7 @@ Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên 
 
 ## [docs] — 2026-10-04: Isolated develop integration
 - Merge develop 37a0fb3 with the preserved local documentation snapshot on integration/truong-develop-20261004 only. Both sides of brain-memory conflicts retained. Original feature/truong and develop refs are protected; no remote push.
+
+## [docs] — 2026-10-04: Adopt tested develop integration on feature/truong
+- User authorized feature/truong update; branch fast-forwarded from saved local snapshot5f7c354 to integrationf4155d6 (develop37a0fb3). Source already validated, no new runtime implementation.
+- Tests rerun on actual feature worktree: 1843 passed, 29 pg deselected; ruff check/format pass. Diagrams and three new submission files preserved; develop and remote feature ref unchanged, no push.
