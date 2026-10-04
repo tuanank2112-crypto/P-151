@@ -175,3 +175,6 @@
 - Vòng Agent (người dùng: "fix agent", chỉ giữ phần Agent, không giữ backend/UI): rules.py tách vị trí mở rộng + đèn sau khu vực + Q22 bóng đèn cháy; từ vựng an toàn vòng 3 + `_b01_ok`. pytest 1848 passed, ruff sạch; đối kháng 107 câu 50 → 7 lỗi; holdout 18/18; kho phản ánh thật 34 câu chỉ còn "ngoài phạm vi bị hỏi vị trí" (spec). Lỗi backend/UI của thẩm định E2E chuyển Châm Anh/Trí (roadmap). Chưa commit.
 - Q16: tách phần backend (router/auth + 5 test) sang `planning/04_.../handoffs/H03_backend-api.patch` + ghi chú H03 (Châm Anh), H04 (Trí, UI), H05 (Trường, rules/spec). Phần Agent/engine còn lại: pytest 1843 passed, ruff sạch. Người dùng duyệt push phần Agent.
 - PR #14 mở vào develop (commit 1516309, phần Agent + engine; backend ở H03).
+
+## Plan 05 — làm cứng Agent bằng kiểm thử biến thể — 2026-10-04
+- Demo trên develop lộ 'Sảnh thang máy tầng 2 tòa SIM-C có khối rác' ⇒ khẩn cấp (confirmer khoi: toa khớp chữ 'tòa'); plan 04 chỉ sửa câu không tên tòa. Người dùng: 'sửa toàn diện phần agent'. Mở planning/05_2026-10-04_agent-hardening (nhánh fix/nhuy-agent-hardening từ develop 37a0fb3, đã gỡ upstream): WP1 an toàn + WP2 phân loại/vị trí bằng bộ biến thể vị trí, WP3 thẩm định độc lập câu có vị trí.
