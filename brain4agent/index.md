@@ -112,3 +112,18 @@ project-root/
 - User xác nhận D-01 delta + persisted structured context; D-02–07 defaults. D-08 group approval recorded (leader Lê Thị Châm Anh, reported date 2026-10-02, recorded 2026-10-03); chưa tích hợp engine/runtime.
 
 - Ngày 03: `planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md`; đã chạy local (17 PASS/1 FAIL/5 BLOCKED); kết quả: `deliverables/day03-summary.md`, `day03-wording.md`, `day03-results.json` của cùng package; harness `evidence/d3-06/harness.py`.
+
+## Target component diagram — 2026-10-04
+- [Hồ sơ 05](../planning/05_2026-10-04_component-diagram/plan.md), router [Architecture](../planning/05_2026-10-04_component-diagram/specs/00-ARCHITECTURE.md): target 19/10, LangGraph/Phoenix confirmed; GPT-4o + vision proposed; SPEC approved; đã bàn giao local [draw.io/SVG](../docs/architecture_diagram.md), chờ user visual review.
+
+## Day04 online acceptance — 2026-10-04
+- [Hồ sơ 07](../planning/07_2026-10-04_online-acceptance/plan.md): PROPOSED, 8 task/15 ca; manifest/build QA pending, chưa thực thi online; Trường phụ trách nghiệp vụ, Châm Anh thực hiện restart.
+
+- 2026-10-04, hồ sơ07 cập nhật theo người dùng: chỉ localhost, chưa có online. Kiểm14 ca nghiệp vụ local; R01 postgres kiểm trước/sau restart, memory ghi BLOCKED_MEMORY_STORE. Online BLOCKED_NO_DEPLOYMENT; chưa chạy test trong lượt điều chỉnh kế hoạch.
+
+## Architecture data flow diagram — 2026-10-04
+- [Hồ sơ 08](../planning/08_2026-10-04_data-flow/plan.md), router [Architecture](../planning/08_2026-10-04_data-flow/specs/00-ARCHITECTURE.md): target 19/10, CR-BPTN-03 pipeline; bố cục 3 Hành lang Tuyến tính (Upper Escalation, Central Highway 6 trạm, Lower Feedback 4 loops, Bottom Data Stores bar) tỷ lệ 16:9 Zero-Crossing; SPEC approved; đã bàn giao [Mermaid/draw.io/SVG](../docs/diagrams/maintenanceops-data-flow-20261019/README.md), chờ user visual review.
+
+
+## Documentation correction — 2026-10-04
+- Restored target components: `docs/diagrams/Diagrams Components.drawio.svg` (original embedded source) + extracted `.drawio`; data flow restored at its existing path. Replaces the implementation-view redraw. `docs/architecture_diagram.md` explains differences with running code.

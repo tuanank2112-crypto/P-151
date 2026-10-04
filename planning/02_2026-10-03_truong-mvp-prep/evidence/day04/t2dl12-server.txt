@@ -1,0 +1,26 @@
+INFO:     Started server process [11872]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8184 (Press CTRL+C to quit)
+Starting AI20K Agent in development mode (LLM_MODE=mock, MO_STORE=memory, MO_PHOTO_STORE=local)
+INFO:     127.0.0.1:60170 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "GET /api/v1/auth/demo-accounts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "POST /api/v1/resident/tickets HTTP/1.1" 201 Created
+INFO:     127.0.0.1:57229 - "GET /api/v1/mo/tickets/SIM-TKT-0001 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "POST /api/v1/mo/tickets/SIM-TKT-0001/safety HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "GET /api/v1/mo/tickets/SIM-TKT-0001 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "POST /api/v1/mo/jobs/run HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "GET /api/v1/mo/tickets/SIM-TKT-0001 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "POST /api/v1/mo/jobs/run HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "GET /api/v1/mo/tickets/SIM-TKT-0001 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "POST /api/v1/mo/jobs/run HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "GET /api/v1/mo/tickets/SIM-TKT-0001 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "GET /api/v1/mo/tickets/SIM-TKT-0001 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "GET /api/v1/mo/tickets/SIM-TKT-0001/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "GET /api/v1/mo/tickets/SIM-TKT-0001/audit HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57229 - "GET /api/v1/mo/tickets/SIM-TKT-0001/notifications HTTP/1.1" 200 OK

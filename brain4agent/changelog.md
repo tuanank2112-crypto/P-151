@@ -2,6 +2,15 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [docs] - 2026-10-04: Sơ đồ kiến trúc thành phần Target v0.6 (3-Tier Enterprise) nhúng README
+- Hoàn thành thiết kế và nghiệm thu Architecture Component Diagram (Target v0.6) theo chuẩn `docs/CR-BPTN-03.md`.
+- Tái cấu trúc theo chuẩn Enterprise 3-Tier (Clients/Gateway, Safety & Agent Decision Pipeline 5 trạm & Human Operations, Persistence & Telemetry) triệt tiêu hoàn toàn hiện tượng dây nối chồng chéo và cắt ngang chữ.
+- Nhúng SVG vector và mã nguồn Mermaid collapsible vào mục "## Kiến trúc hệ thống (System Architecture)" trong root `README.md`.
+- Xuất xưởng đầy đủ bộ artifact tại `docs/diagrams/maintenanceops-target-20261019/`: SVG, .drawio, .mmd và tài liệu hướng dẫn. Hồ sơ `planning/05_2026-10-04_component-diagram/`.
+
+## [docs] - 2026-10-04: Làm mới README (không đổi version app)
+- Viết lại `README.md` cho giảng viên chấm: chạy nhanh Docker không khoá, bảng biến môi trường đủ, câu phản ánh mẫu + curl/PowerShell, API theo code đang chạy (không phải CR-03 đích), Supabase là tuỳ chọn. Bỏ mục `log_manual.py` sai, `/reopen` không còn, Deliverables Checklist, các dòng Team `[Tên]`. Hồ sơ `planning/06_2026-10-04_readme-refresh/`.
+
 ## [v1.1.2] - 2026-10-03: `/close` thường không còn đóng được ticket khẩn cấp
 ### Fixed
 - `engine.close` gắn `expected_from=READY_FOR_REVIEW`. Trước đây `POST /bql/tickets/{id}/close` kèm note trên ticket
@@ -99,3 +108,20 @@ Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên 
 ## Day03 results recorded — 2026-10-03
 - Day03 chạy local cô lập, nhánh feature/truong, SHA 0ea04adedd023654947e2e97e645043f0ba89159: 23 record = 17 PASS / 1 FAIL / 5 BLOCKED / 0 NOT_RUN. Asset 3/3, vật tư 4/4, trùng 4/4 PASS; wording WORD-03 PASS, WORD-01/02/04 BLOCKED; demo 5 PASS / 1 FAIL (DEMO-01-RATING, engine.py:548-553) / 2 BLOCKED (DEMO-04).
 - Không đổi code/runtime, không tăng version ứng dụng, không đóng plan; runtime/online/group-runtime gates vẫn mở. Chờ người quyết: ASSET-03, STOCK-04, owner reopen/rating-once (Như Ý). Bước 0 vẫn exit 1 (thiếu hub).
+
+## [docs draft] - 2026-10-04: Target component diagram specification
+- User confirmed: target 19/10; LangGraph, Render/Supabase/OpenAI, Phoenix, human review. GPT-4o + vision proposed.
+- Hồ sơ 05: plan + 5 SPEC, 10 components/12 edges, draw.io+SVG 16:9; pending approval, chưa dựng hình. Không release/bump app ở bước draft, không sửa CR-03/API/code.
+
+## [docs] - 2026-10-04: Target component diagram delivered locally
+- Spec05 được người dùng duyệt; draw.io native editable + SVG1920×1080 đã dựng, draw.io31.7.0 export exit0.
+- 10 components/12 edges; 3 negative checks đỏ đúng exit1; final exit0; 0 overlap/clipping/node crossing, 2 connector crossings; Phoenix/HITL rõ, GPT-4o+vision proposed.
+- Nguồn/usage tại docs/diagrams/maintenanceops-target-20261019/README.md; artifacts cũ và root README giữ nguyên. Không app release/version bump; user visual review pending.
+
+## [docs] — 2026-10-04: README and architecture consistency correction
+- Correct broken components paths, clone URL, sample ticket ID and APP_HOST/APP_PORT documentation.
+- Current artifacts are implementation views; LangGraph/Phoenix/GPT-4o remain targets. Add step 5, safety-first ordering, REWORK and persistence throughout processing. Previous target-only and Zero-Crossing statements describe superseded artifacts. No application version change (docs-only scope of plan 06).
+
+## [docs] — 2026-10-04: Restore user-selected diagram layouts
+- Restored components SVG from Downloads and extracted its embedded draw.io source; restored exact data-flow SVG/draw.io/Mermaid from VS Code history.
+- Supersedes replacement implementation layouts introduced in the correction. README keeps setup/link fixes; current-code differences remain in text next to target diagrams. App version unchanged.

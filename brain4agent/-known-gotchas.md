@@ -68,3 +68,6 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 - Harness tái hiện Day03: `planning/02_2026-10-03_truong-mvp-prep/evidence/d3-06/harness.py`, chạy với `PYTHONPATH` = repo root.
 - **`gh` CLI trên máy Như Ý:** token trong Git Credential Manager (tài khoản `tuanank2112-crypto`) có scope `repo, workflow, gist`, THIẾU `read:org` ⇒ `gh auth login --with-token` và `gh pr edit` (GraphQL) lỗi. Dùng `GH_TOKEN=$(git credential fill ...)` + `gh api` (REST) cho từng lệnh. Agent KHÔNG được merge PR khi CI đỏ (chốt quyền "CI Bypass") ⇒ người bấm merge.
 - **CI GitHub Actions fail không do code (2026-10-03):** "job was not started because recent account payments have failed or your spending limit needs to be increased" — mọi run trên `develop` cũng vậy. Kiểm bằng `gh api .../actions/runs/<id>/jobs` (steps rỗng) + annotations.
+
+## curl tiếng Việt trên Git Bash Windows (2026-10-04)
+- `curl -d '{"original_description":"...có dấu..."}'` trả 422 `There was an error parsing the body` do mã hoá tham số; truyền qua file `--data-binary @body.json`, PowerShell dùng UTF-8 bytes, hoặc Swagger. Không phải bug API.

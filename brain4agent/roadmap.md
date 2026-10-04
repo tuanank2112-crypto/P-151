@@ -16,7 +16,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 ## Tương lai (Upcoming)
 - [ ] **Bàn giao 19/10/2026 — CR-BPTN-03 P1:** T16/T17/E02 (08/10), gộp an toàn + hoàn tác (09/10), tín hiệu P1 + PRI-U1/U2 (10/10), follow-up + danh sách xác nhận an toàn (11/10); LangGraph trên đường chạy thật (05–07/10), thay boilerplate `src/agents/`; eval: an toàn ≥40 câu, 0 bỏ sót Bậc 1, classification ≥90% held-out, coverage ≥60%.
-- [ ] Cập nhật docs `01`–`05`, `data-contract-v1.md`, `playbook-v1.md`, README theo CR-03 (hiện còn ghi v0.3/CR-02, có link gãy tới CR-02).
+- [ ] Cập nhật docs `01`–`05`, `data-contract-v1.md`, `playbook-v1.md` theo CR-03 (hiện còn ghi v0.3/CR-02, có link gãy tới CR-02). README đã làm xong 2026-10-04 (hồ sơ 06).
 - [ ] Audit cho `receive_stock` (kho nhập vật tư): hiện không có dòng audit vì `AuditEvent` bắt buộc `ticket_id`.
 - [ ] Nếu deploy sau reverse proxy (Render): lấy IP client từ header tin cậy, nếu không khóa đăng nhập sẽ dồn về IP của proxy.
 
@@ -29,6 +29,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [ ] CI chạy `pytest --pg` với service Postgres trong GitHub Actions.
 
 ## Đã hoàn thành (Done)
+- [x] **README refresh (2026-10-04, Trường, docs-only, không bump version):** `planning/06_2026-10-04_readme-refresh/`. Đường chạy chính Docker + `MO_STORE=memory`, bảng biến môi trường đầy đủ, câu mẫu + curl/PowerShell đã chạy thật, API theo code đang chạy. Docker KHÔNG kiểm được trên máy (không có Docker Desktop): đã kiểm bằng uvicorn + pytest 1641 pass.
 - [x] **v1.1.2 (2026-10-03, Châm Anh):** `/bql/tickets/{id}/close` chỉ đóng từ `READY_FOR_REVIEW`; ticket khẩn cấp chỉ đóng qua `/emergency/close` (409 `INVALID_TRANSITION` nếu dùng `/close`). 1601 test xanh.
 - [x] **Lắp brain4agent (2026-09-30):** Chạy engine V5.2, tạo các phân vùng nhớ, luật `AGENTS.md`, skill và shim cho agent.
 - [x] **Rà soát backend 2026-09-30 (Châm Anh):** an toàn đồng thời cho engine, job không chặn event loop, chặn cư dân lùi ngày ở production, khóa đăng nhập theo username + client, `/chat` không lộ lỗi, `llm.py` nhận `OPENAI_BASE_URL`, ruff sạch toàn repo.
@@ -65,3 +66,23 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 **Chỉ tiêu 19/10 phụ thuộc dữ liệu của Trường:** safety ≥40 câu nhãn, 0 bỏ sót Bậc 1 (báo false positive); classification
 ≥90% held-out; AC-01–AC-18 map test/kịch bản; user test 3–5 người độc lập (thiếu ⇒ ghi số thật).
+
+## Component diagram — 2026-10-04 (✅ Hoàn thành & Nhúng README)
+- [x] Đọc repo, phỏng vấn và soạn bộ SPEC target 19/10: [hồ sơ 05](../planning/05_2026-10-04_component-diagram/plan.md).
+- [x] Duyệt SPEC, dựng và kiểm local draw.io/SVG 16:9; native export exit0.
+- [x] Tái cấu trúc theo Phương án A (Bố cục 3 tầng Enterprise: Clients/Gateway, Safety/LangGraph/Human, Persistence/Telemetry) loại bỏ hoàn toàn hiện tượng dây nối chồng chéo và cắt ngang chữ.
+- [x] Người dùng nghiệm thu thị giác; đã nhúng trực tiếp sơ đồ SVG và mã nguồn Mermaid collapsible vào root `README.md`.
+- [x] Bàn giao đầy đủ các artifacts: SVG vector, .drawio native, Mermaid .mmd và tài liệu hướng dẫn tại [`docs/diagrams/maintenanceops-target-20261019/`](../docs/diagrams/).
+
+## Kế hoạch ngày 04 — Trường (2026-10-04)
+- [ ] [Hồ sơ07](../planning/07_2026-10-04_online-acceptance/plan.md): PROPOSED, 8 task/15 ca; preflight, 4 nhóm demo, guard/wording, đối chiếu restart và tổng hợp trước21:00. Chưa xác nhận URL/build QA, chưa chạy online.
+- Cập nhật hiện trạng: safety routes và rating đã PASS local Day03; không coi là online đạt. D-01 delta/snapshot ngoài MVP04/10, không còn là điều kiện chờ của ngày04.
+
+- 2026-10-04, hồ sơ07 cập nhật theo người dùng: chỉ localhost, chưa có online. Kiểm14 ca nghiệp vụ local; R01 postgres kiểm trước/sau restart, memory ghi BLOCKED_MEMORY_STORE. Online BLOCKED_NO_DEPLOYMENT; chưa chạy test trong lượt điều chỉnh kế hoạch.
+
+## README / diagram correction — 2026-10-04
+- [x] Fix two broken component links, real clone URL, response-derived ticket ID and port semantics. Synchronize implementation diagrams: 2b before 2, BPTN step 5, REWORK, lifecycle persistence, optional integrations. Supersedes earlier target-only / Zero-Crossing delivery claims for the current artifacts.
+- [ ] Re-run Docker/runtime and inspect SVG render on an available local renderer. Team details pending user input.
+
+## Diagram restoration — 2026-10-04
+- [x] Restore user-selected target layouts. Supersedes implementation-view replacement in previous correction; preserve layout and explain runtime discrepancies in surrounding text.

@@ -1,0 +1,45 @@
+PASS exact backup hash data-flow.svg 85D8218CBDA82D7375A805F0F43D132D769E4F2901D403C2DCCEA974EEF399FF
+PASS exact backup hash data-flow.mmd E1BDD775866AAA84339873B326B3EBAA2D74089CA038EE58796B47B053128D7D
+PASS exact backup hash data-flow.drawio B7DFA177EEB1F2057ABD00D6CA7EF3EED9712BAB9ABDE3262FD751E0C378AF77
+PASS exact components backup docs/diagrams/Diagrams Components.drawio.svg 3BBD9A0A3709DA58D0536A977FE3B0F20026C3C44D5F934FD26682C78466719F
+PASS exact components backup docs/diagrams/Diagrams Components.svg 3BBD9A0A3709DA58D0536A977FE3B0F20026C3C44D5F934FD26682C78466719F
+PASS link README.md docs/CR-BPTN-03.md
+PASS link README.md docs/architecture_diagram.md
+PASS link README.md docs/diagrams/Diagrams%20Components.drawio.svg
+PASS link README.md docs/diagrams/maintenanceops-data-flow-20261019/data-flow.svg
+PASS link README.md docs/architecture_diagram.md
+PASS link README.md docs/diagrams/Diagrams%20Components.drawio
+PASS link README.md docs/diagrams/Diagrams%20Components.mmd
+PASS link README.md docs/diagrams/maintenanceops-data-flow-20261019/README.md
+PASS link README.md docs/CR-BPTN-03.md
+PASS link README.md .env.example
+PASS link README.md docs/CR-BPTN-03.md
+PASS link README.md docs/maintenance.md
+PASS link README.md docs/CR-BPTN-03.md
+PASS link README.md docs/maintenance.md
+PASS link README.md docs/architecture_diagram.md
+PASS link README.md docs/diagrams/
+PASS link README.md docs/01_problem_statement.md
+PASS link README.md docs/05_traceability_and_review.md
+PASS link README.md ARCHITECTURE.md
+PASS link README.md ARCHITECTURE.md
+PASS link README.md docs/guide/
+PASS link README.md CONTRIBUTING.md
+PASS link docs/architecture_diagram.md CR-BPTN-03.md
+PASS link docs/architecture_diagram.md diagrams/Diagrams%20Components.drawio.svg
+PASS link docs/architecture_diagram.md diagrams/Diagrams%20Components.drawio
+PASS link docs/architecture_diagram.md diagrams/Diagrams%20Components.mmd
+PASS link docs/architecture_diagram.md diagrams/maintenanceops-data-flow-20261019/data-flow.svg
+PASS link docs/architecture_diagram.md diagrams/maintenanceops-data-flow-20261019/README.md
+PASS link docs/diagrams/maintenanceops-data-flow-20261019/README.md data-flow.svg
+PASS link docs/diagrams/maintenanceops-data-flow-20261019/README.md data-flow.svg
+PASS link docs/diagrams/maintenanceops-data-flow-20261019/README.md data-flow.drawio
+PASS link docs/diagrams/maintenanceops-data-flow-20261019/README.md data-flow.mmd
+PASS link docs/diagrams/maintenanceops-data-flow-20261019/README.md ../../architecture_diagram.md
+PASS setup and dynamic sample ID retained
+PASS no replacement implementation graph
+Local links checked: 33
+Failures: 0
+Runtime/visual: not re-tested (original layouts restored)
+Exit: 0
+XML parsing: 4/4 PASS; extracted source equals original embedded mxfile

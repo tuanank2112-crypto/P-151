@@ -162,3 +162,65 @@
 ## Merge develop ← nhuy-safety-routes + feature/chamanh — 2026-10-03
 - Router: route `/safety` và `/emergency/{close,downgrade}` giữ bản Như Ý (`EmergencyNoteBody` bỏ qua field lạ như `closure_kind`); thêm từ chamanh `/priority`, hàng chờ `_queue_key`, lọc BQL risk_level/priority, bỏ `/resident/.../reopen`, v1.1.2 chặn `/close` trên ticket khẩn cấp.
 - Đo: pytest 1641 passed/29 deselected exit 0 (gồm 40 test test_api_safety.py), ruff check + format src/tests exit 0.
+
+## Component diagram interview/spec — 2026-10-04
+- Repo b937956, feature/truong; boot exit 1 MODULE_NOT_FOUND, không sửa vùng luật.
+- Sinh viên/giám khảo; target 19/10; gọn, nền sáng, nhãn Anh; README/slide 16:9, draw.io+SVG. LangGraph, Render/Supabase/OpenAI, Phoenix, human review confirmed; GPT-4o + vision proposed, giữ nguyên CR-03.
+- Hồ sơ 05: plan + 5 SPEC; pending approval, chưa dựng hình/commit/push.
+- Kiểm cấu trúc SPEC: 33/33 pass, 0 fail, exit 0; chưa có kiểm render/artifact. Python/py không có interpreter; dùng Node local kiểm hồ sơ.
+
+## Diagram local delivery — 2026-10-04T10:46:25+07:00
+- User approved SPEC; draw.io+SVG tại docs/diagrams/maintenanceops-target-20261019/. Native export31.7.0 exit0, page1920×1080, plain SVG text53, 0 foreignObject.
+- Contracts10/12 pass; negative fixtures exit1/1/1, final exit0. Visual minfont20/minmargin49, overlap0/clipped0, nodecross0/edgecross2; opened1280×720 and960×540.
+- Native sandbox launch crash → retry outside sandbox succeeded; fonts/wrap/page corrected at source then native export, no SVG-only edits.
+- Boot exit1 missing hub; no runtime/code/CR/version changes; no stage/commit/push; root README/user visual sign-off pending.
+
+## 2026-10-04 — README refresh (Trường, hồ sơ 06)
+- Phỏng vấn 2 vòng → spec `planning/06_2026-10-04_readme-refresh/` → viết lại `README.md`. Quyết định: giảng viên là người đọc, tiếng Việt, API theo code đang chạy, đường chính Docker + memory, Supabase tuỳ chọn.
+- Đo: Docker daemon KHÔNG có trên máy (không có Docker Desktop) ⇒ A1 kiểm bằng uvicorn: /health 200, login 200, `/mo/evaluate` 12/12, demo CLN-001 `READY_FOR_REVIEW`, pytest 1641 pass, ruff sạch. Evidence: `evidence/readme/verify.txt`.
+- Gotcha: `curl -d` tiếng Việt trên Git Bash Windows → 422 `error parsing the body`; dùng `--data-binary @file`. Gửi trùng nội dung → `VERIFYING` (kiểm trùng).
+- Bước 0 vẫn lỗi: `../brain4agent.release` không tồn tại trên máy này.
+
+## 2026-10-04 — Component Architecture Diagram Target v0.6 (Trường, hoàn thành & nhúng README)
+- Người dùng phỏng vấn và duyệt bản SPEC kiến trúc Target v0.6 chuẩn theo `docs/CR-BPTN-03.md`.
+- Nhận phản hồi về hiện tượng rối mắt do dây nối chồng chéo/cắt ngang chữ ở bản ban đầu. Người dùng chọn Phương án A: Tái cấu trúc theo bố cục 3 Tầng Enterprise (Top-to-Bottom Flow):
+  + Tầng 1: Clients & API Gateway Boundary (Users, Web App, FastAPI Gateway, Auth & RBAC).
+  + Tầng 2: MaintenanceOps Core (Tầng an toàn 2 bậc, LangGraph 5 trạm xử lý, Human-in-the-Loop Operations).
+  + Tầng 3: Persistence, Storage & Telemetry Foundation (PostgreSQL Supabase, Supabase Storage, OpenAI GPT-4o, Phoenix & LangSmith).
+- Tất cả các đường kết nối được định tuyến qua các hành lang mở riêng biệt (zero-crossing):
+  + 🟠 Thẩm tra 4h chạy qua hành lang trên đỉnh y=294.
+  + 🔴 Báo động khẩn cấp chạy qua hành lang dưới đáy y=745.
+  + Invoke Proposer và Telemetry Spans chạy thẳng đứng xuống Tầng 3.
+  + Sửa ký tự lỗi mũi tên Unicode `→` tại BQL nghiệm thu.
+- Đo & kiểm tra trực quan: 1920×1080 (16:9), 0 text overlap, 0 node crossing, mở preview trên OS và được người dùng nghiệm thu thị giác.
+- Đã nhúng sơ đồ SVG vector cùng mã nguồn Mermaid collapsible vào root `README.md` tại mục "## Kiến trúc hệ thống (System Architecture)".
+- Hồ sơ hoàn tất và bàn giao đầy đủ: SVG, .drawio, .mmd, preview PNG và tài liệu hướng dẫn tại `docs/diagrams/maintenanceops-target-20261019/`.
+
+## 2026-10-04 — Tái Thiết Kế Bố Cục 4 Cột Tuyến Tính (4-Pillar Zero-Crossing) Sơ Đồ Kiến Trúc
+- Tiếp nhận phản hồi từ người dùng về các đường nối chồng chéo và rối mắt ở bản vẽ cũ.
+- Thực hiện tái thiết kế toàn diện theo **Bố cục 4 Cột Tuyến Tính (4-Pillar Flow)** trên lưới tỷ lệ vàng 1920 × 1080 (16:9):
+  + **Cột 1: Clients & Gateway** (Users, Web App, FastAPI Gateway).
+  + **Cột 2: Multi-Layer Safety Guard (Hero)** (Safety Interceptor, Bậc 2 Warning, Bậc 1 Emergency).
+  + **Cột 3: AI Decision Engine & Human Operations** (Khối trên: LangGraph 5 Stages; Khối dưới: BPTN, Phòng Ban Xử Lý, BQL Nghiệm Thu).
+  + **Cột 4: Persistence & External Telemetry** (OpenAI GPT-4o, Phoenix & LangSmith, Supabase Storage, PostgreSQL Supabase).
+- Đột phá triệt tiêu giao cắt (Zero-Crossing):
+  + Loại bỏ hộp ảo "Nhánh an toàn" gây cản trở tầm nhìn. Luồng hợp lệ (An toàn) đi thẳng ngang từ Safety Interceptor sang Trạm 1 LangGraph.
+  + Nhánh Khẩn cấp (Bậc 1) và Nghi ngờ (Bậc 2) chạy theo hành lang riêng biệt không chạm khối.
+  + Toàn bộ 4 kết nối hạ tầng sang Cột 4 được sắp xếp chuẩn xác 100% Horizontal song song, phân bố qua hành lang thoáng 120px, loại bỏ hoàn toàn các đường cắt nhau hình chữ X.
+- Đã export SVG vector chuẩn (`docs/diagrams/maintenanceops-target-20261019/architecture-components.svg`), file draw.io native, preview PNG 1280px và cập nhật mã nguồn Mermaid trong root `README.md`.
+- Đã kích hoạt hiển thị trực tiếp ảnh `preview-1280.png` trên màn hình người dùng qua lệnh `Invoke-Item`.
+
+## 2026-10-04 — lập kế hoạch nghiệm thu ngày04 của Trường
+- Hồ sơ07 PROPOSED: 6 file Markdown, 8 task/15 case. Kiểm cấu trúc/link exit0, evidence/planning/structure-check.txt; chưa chạy online, không deploy/push/restart.
+- Không thay code/version hoặc active_plan cũ. URL/build QA và quyền thao tác chưa xác nhận; restart do Châm Anh. D-01 ngoài MVP; safety/rating đã PASS local theo kết luận cuối Day03.
+- Bước0 exit1 MODULE_NOT_FOUND do hub thiếu, không sửa luật managed. Các thay đổi chưa commit từ trước ở README/brain/diagram được giữ nguyên nội dung.
+
+- 2026-10-04, hồ sơ07 cập nhật theo người dùng: chỉ localhost, chưa có online. Kiểm14 ca nghiệp vụ local; R01 postgres kiểm trước/sau restart, memory ghi BLOCKED_MEMORY_STORE. Online BLOCKED_NO_DEPLOYMENT; chưa chạy test trong lượt điều chỉnh kế hoạch.
+
+## 2026-10-04T19:41:03+07:00 — README / diagram correction
+- User authorized README and diagram fixes; Team remains pending. Components sources now docs/diagrams/Diagrams Components.{svg,drawio,mmd}; .drawio.svg alias retained.
+- Updated current/target distinction, safety before minimum data, BPTN review, REWORK and lifecycle repository writes. Boot blocked: missing hub (exit 1). Runtime unavailable: Python venv broken, Docker absent. Browser file protocol rejected; no workaround attempted. Static checks recorded in plan06 evidence.
+
+## 2026-10-04T21:08:19+07:00 — Restore original architecture layouts
+- User rejected layout replacement and authorized restoration. Components recovered from Downloads (embedded draw.io intact); data-flow recovered from Code/User/History, exact SHA256 verified. Setup fixes remain; no runtime changes.
+- Prior correction static evidence applies to superseded artifacts; restoration evidence: plan06/evidence/readme/layout-restoration-checks.txt.

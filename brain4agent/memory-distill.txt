@@ -34,6 +34,7 @@
 - Việc đang mở: Day03 đã chạy local (D3-05/06 còn BLOCKED/FAIL; chờ người quyết ASSET-03, STOCK-04, owner reopen/rating-once) → 04/10 chạy 4 demo online, đối chiếu expected, ghi thiếu sót.
 - Chỉ tiêu 19/10 Trường phải cấp dữ liệu: safety ≥40 câu nhãn, 0 bỏ sót Bậc 1; classification ≥90% held-out; user test 3–5 người độc lập (thiếu ⇒ ghi số thật, CẤM phản hồi giả); so sánh thủ công/sản phẩm đảo thứ tự.
 - Quyết định nghiệp vụ ghi tên người duyệt + kết quả thật; chưa đồng thuận ⇒ không triển khai phần tranh luận.
+- Diagrams (04/10 restoration): user-selected target layouts restored from Downloads/VS Code history; README setup/link fixes retained. Current-code differences documented beside diagrams; no new runtime/render verification.
 </truong_focus>
 
 <brain_file_roles>

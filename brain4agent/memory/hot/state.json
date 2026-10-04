@@ -137,5 +137,78 @@
       "postgres": "not run this session"
     },
     "local_work_packages_completed": 5
+  },
+  "diagram_spec": {
+    "id": "05_2026-10-04_component-diagram",
+    "status": "local_delivered",
+    "approval": "approved",
+    "target_date": "2026-10-19",
+    "artifacts": "verified_local",
+    "vision_gpt4o": "proposed",
+    "phoenix": "user_confirmed_target",
+    "base": "b9379563891be415e3531743b85f65a8d60b206b",
+    "boot_exit": 1,
+    "verification": {
+      "native_drawio_version": "31.7.0",
+      "export_exit": 0,
+      "artifact_check_exit": 0,
+      "components": 10,
+      "edges": 12,
+      "negative_exits": [
+        1,
+        1,
+        1
+      ],
+      "min_font": 20,
+      "min_text_margin": 49,
+      "text_overlap": 0,
+      "clipped": 0,
+      "node_crossings": 0,
+      "edge_crossings": 2,
+      "previews_opened": [
+        "1280x720",
+        "960x540"
+      ],
+      "evidence": "planning/05_2026-10-04_component-diagram/evidence/build/"
+    },
+    "user_visual_acceptance": "pending",
+    "local_delivered_at": "2026-10-04T10:46:25+07:00",
+    "output_dir": "docs/diagrams/maintenanceops-target-20261019"
+  },
+  "day04_acceptance_plan": {
+    "id": "07_2026-10-04_online-acceptance",
+    "status": "proposed",
+    "tasks": 8,
+    "required_cases": 15,
+    "online_tested": false,
+    "environment_confirmation": "pending",
+    "structure_check": "passed",
+    "execution_environment": "local-qa",
+    "online_status": "blocked_no_deployment",
+    "local_tested": false,
+    "core_cases": 14,
+    "persistence_case": "conditional_on_actual_store"
+  },
+  "documentation_correction": {
+    "at": "2026-10-04T19:41:03+07:00",
+    "status": "layout_replacement_superseded",
+    "components": "docs/diagrams/Diagrams Components.svg",
+    "flow": "docs/diagrams/maintenanceops-data-flow-20261019/data-flow.svg",
+    "runtime": "blocked_python_docker_unavailable",
+    "visual": "blocked_browser_file_protocol",
+    "team": "pending_user",
+    "app_version_changed": false,
+    "evidence": "planning/06_2026-10-04_readme-refresh/evidence/readme/correction-checks.txt"
+  },
+  "diagram_restoration": {
+    "at": "2026-10-04T21:08:19+07:00",
+    "status": "restored_exact_backup_verified",
+    "components": "docs/diagrams/Diagrams Components.drawio.svg",
+    "component_source": "Downloads SVG embedded mxfile",
+    "flow_source": "VS Code local history 8VJO.svg / tSzP.mmd / e4lQ.drawio",
+    "evidence": "planning/06_2026-10-04_readme-refresh/evidence/readme/layout-restoration-checks.txt",
+    "layout": "original_target",
+    "runtime_retested": false,
+    "visual_retested": false
   }
 }
