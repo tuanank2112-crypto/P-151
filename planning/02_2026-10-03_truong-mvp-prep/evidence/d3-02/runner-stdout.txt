@@ -1,1 +1,0 @@
-{"cfg_ok_a": true, "a1_status": 200, "a2_status": 200, "a2_accept": 409, "a2_accept_bptn": 403, "cfg_ok_b": true, "a3_status": 200, "cfg_ok_c": true, "a3n_status": 409}

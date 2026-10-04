@@ -1,2 +1,0 @@
-2026-10-03T12:41:44+07:00 python harness.py neg403 exit=0
-checks_total=34 ok=34 mismatch=0

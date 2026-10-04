@@ -1,9 +1,0 @@
-FAILED tests/test_maintenance/test_safety.py::test_tier1_never_missed_on_the_labelled_set
-FAILED tests/test_maintenance/test_safety.py::test_negation_window_is_four_words_same_sentence
-FAILED tests/test_maintenance/test_safety.py::test_hedge_only_counts_before_signal
-FAILED tests/test_maintenance/test_safety.py::test_resolved_marker_requires_same_sentence
-FAILED tests/test_maintenance/test_safety.py::test_emergency_ticket_has_no_draft_no_department[S-02]
-FAILED tests/test_maintenance/test_safety.py::test_assess_safety_audit_and_emergency_notification
-FAILED tests/test_maintenance/test_safety.py::test_fixture_cln004_tec005_are_emergency
-13 failed, 104 passed in 1.54s
-EXIT=1

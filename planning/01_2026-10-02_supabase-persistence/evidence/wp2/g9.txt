@@ -1,2 +1,0 @@
-$ git grep -nE "sb_secret_[A-Za-z0-9]{8,}|eyJhbGci[A-Za-z0-9_-]{20,}" -- src tests scripts docs planning
-exit=1

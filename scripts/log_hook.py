@@ -5,62 +5,19 @@ Reads JSON from stdin, normalizes to common format, appends to .ai-log/session.j
 """
 import json
 import os
-import subprocess
 import sys
-from datetime import datetime, timedelta, timezone
+import subprocess
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 VN_TZ = timezone(timedelta(hours=7))
 
 
-def git(cmd, cwd=None):
+def git(cmd):
     try:
-        return subprocess.check_output(
-            cmd,
-            shell=True,
-            text=True,
-            cwd=cwd or None,
-            stderr=subprocess.DEVNULL,
-        ).strip()
+        return subprocess.check_output(cmd, shell=True, text=True, stderr=subprocess.DEVNULL).strip()
     except Exception:
         return ""
-
-
-def _hook_cwd(data: dict) -> str | None:
-    """Return the session directory supplied by a hook, when available."""
-    cwd = data.get("cwd")
-    return cwd if isinstance(cwd, str) and cwd else None
-
-
-def _repo_root(data: dict) -> Path | None:
-    """Find the repository root from the hook session directory."""
-    session_cwd = _hook_cwd(data)
-    root = git("git rev-parse --show-toplevel", session_cwd)
-    if root:
-        return Path(root)
-    if session_cwd:
-        return Path(session_cwd)
-    return None
-
-
-def _log_file(data: dict) -> Path:
-    """Resolve the log file relative to the hook's session, not the launcher.
-
-    Codex can start a session from a repository subdirectory. Hook commands are
-    then run with that directory as their cwd, while the shared log must still
-    land in the repository's `.ai-log` directory. The hook payload's `cwd` is
-    the stable source of truth for that session.
-    """
-    configured_dir = Path(os.environ.get("AI_LOG_DIR", ".ai-log"))
-    if configured_dir.is_absolute():
-        log_dir = configured_dir
-    else:
-        repo_root = _repo_root(data)
-        if repo_root:
-            log_dir = repo_root / configured_dir
-        else:
-            log_dir = configured_dir
-    return log_dir / "session.jsonl"
 
 
 def detect_tool(data: dict) -> str:
@@ -102,8 +59,7 @@ def normalize(data: dict, tool: str) -> dict | None:
     # origin isn't set), skip the event entirely — these entries can't be
     # tied back to a team on the server and would just clutter the pending
     # queue forever.
-    hook_cwd = _hook_cwd(data)
-    origin = git("git remote get-url origin", hook_cwd)
+    origin = git("git remote get-url origin")
     if not origin:
         return None
     repo = origin.rstrip("/").split("/")[-1]
@@ -121,9 +77,9 @@ def normalize(data: dict, tool: str) -> dict | None:
         ),
         "model": data.get("model", ""),
         "repo": repo,
-        "branch": git("git rev-parse --abbrev-ref HEAD", hook_cwd),
-        "commit": git("git rev-parse --short HEAD", hook_cwd),
-        "student": git("git config user.email", hook_cwd),
+        "branch": git("git rev-parse --abbrev-ref HEAD"),
+        "commit": git("git rev-parse --short HEAD"),
+        "student": git("git config user.email"),
     }
 
     if tool == "claude":
@@ -189,11 +145,11 @@ def normalize(data: dict, tool: str) -> dict | None:
     # this only checked `prompt`, which dropped Claude Bash/Edit events (their
     # tool_input has `command` / `file_path`, not `prompt` or `content`) and
     # any Gemini/Cursor/Copilot turn that carried context but no plain prompt.
-    payload_keys = ("prompt", "tool_input", "response_summary",
+    _PAYLOAD_KEYS = ("prompt", "tool_input", "response_summary",
                      "tool_response", "tool_args", "files_context")
-    lifecycle_events = ("Stop", "stop", "SessionEnd", "sessionEnd", "AfterModel")
-    has_payload = any(base.get(k) for k in payload_keys)
-    if not has_payload and event not in lifecycle_events:
+    _LIFECYCLE_EVENTS = ("Stop", "stop", "SessionEnd", "sessionEnd", "AfterModel")
+    has_payload = any(base.get(k) for k in _PAYLOAD_KEYS)
+    if not has_payload and event not in _LIFECYCLE_EVENTS:
         return None
 
     return base
@@ -217,8 +173,9 @@ def main():
     if not entry:
         sys.exit(0)
 
-    log_file = _log_file(data)
-    log_file.parent.mkdir(parents=True, exist_ok=True)
+    log_dir = Path(os.environ.get("AI_LOG_DIR", ".ai-log"))
+    log_dir.mkdir(exist_ok=True)
+    log_file = log_dir / "session.jsonl"
 
     with open(log_file, "a", encoding="utf-8") as f:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")

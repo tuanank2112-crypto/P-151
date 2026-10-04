@@ -1,3 +1,0 @@
-0ea04ad docs(brain): align brain4agent with Truong's MVP plan from Notion
-6a30ffd docs(planning): record D-08 approval and Day03 task plan
-0cb16e2 Merge pull request #6 from AI20K-Build-Phase-Cohort-4/feature/truong

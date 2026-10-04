@@ -1,11 +1,8 @@
-import logging
-
 from fastapi import APIRouter, HTTPException
 
 from src.agents.graph import agent
 from src.models.schemas import ChatRequest, ChatResponse
 
-logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -19,9 +16,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
             analysis=result.get("analysis", ""),
         )
     except Exception as e:
-        # the details stay in the server log; the client only learns that it failed
-        logger.exception("chat agent failed")
-        raise HTTPException(status_code=500, detail="Agent gặp lỗi, thử lại sau") from e
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/status")

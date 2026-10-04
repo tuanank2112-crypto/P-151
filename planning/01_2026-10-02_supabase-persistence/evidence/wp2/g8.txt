@@ -1,2 +1,0 @@
-$ git diff --numstat f2da6cb -- <11 old test files>
-exit=0 lines=0

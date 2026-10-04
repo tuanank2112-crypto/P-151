@@ -1,2 +1,0 @@
-COMMAND: git diff --check -- docs/CR-BPTN-03.md planning\02_2026-10-03_truong-mvp-prep\specs\01-CONTRACTS.md planning\02_2026-10-03_truong-mvp-prep\handoffs\H02_decisions.md planning\02_2026-10-03_truong-mvp-prep\reports\R02_decisions.md planning\02_2026-10-03_truong-mvp-prep\evidence\wp2
-EXIT: 0

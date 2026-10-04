@@ -1,39 +1,15 @@
-name: p151
+version: "3.8"
 
 services:
-  # Local Postgres for `pytest --pg` (database p151_test) and debugging only; the backend does not use it
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-p151}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-p151}
-      POSTGRES_DB: ${POSTGRES_DB:-p151}
-      TZ: Asia/Ho_Chi_Minh
-    ports:
-      # Expose for local tools (psql, DBeaver) and running uvicorn outside Docker
-      - "${POSTGRES_PORT:-5432}:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   backend:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "${APP_PORT:-8000}:8000"
+      - "8000:8000"
     env_file:
       - .env
-    environment:
-      # DATABASE_URL comes from .env as is: the shared Supabase DB (Session pooler 5432), never the local "db"
-      TZ: Asia/Ho_Chi_Minh
     volumes:
-      # Uploaded ticket photos and other local data
       - ./data:/app/data
     restart: unless-stopped
     healthcheck:
@@ -41,6 +17,3 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
-volumes:
-  pgdata:

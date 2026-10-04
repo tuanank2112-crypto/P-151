@@ -1,7 +1,0 @@
-E       AssertionError: assert <RiskLevel.NONE: 'NONE'> == <RiskLevel.UNCLEAR: 'UNCLEAR'>
-E         
-E         - UNCLEAR
-E         + NONE
-FAILED tests/test_maintenance/test_safety.py::test_b01_closed_prefix_twenty_tokens_and_lamp_accent
-1 failed, 1179 deselected in 0.58s
-EXIT=1

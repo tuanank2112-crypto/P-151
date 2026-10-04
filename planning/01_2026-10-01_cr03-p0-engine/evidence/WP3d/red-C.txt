@@ -1,4 +1,0 @@
-E           AssertionError: Hộp điện tầng 3 tòa SIM-A có lúa
-FAILED tests/test_maintenance/test_safety.py::test_wp3d_homograph_typos_keep_the_signal
-1 failed, 1263 deselected in 0.52s
-EXIT=1

@@ -1,2 +1,0 @@
-valid ['DUP-01', 'DUP-02', 'DUP-03', 'DUP-04']
-exit=0

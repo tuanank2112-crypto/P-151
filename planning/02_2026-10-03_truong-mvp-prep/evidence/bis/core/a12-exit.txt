@@ -1,2 +1,0 @@
-2026-10-03T11:33:20+07:00 python harness.py a12 exit=0
-checks_total=8 ok=8 mismatch=0

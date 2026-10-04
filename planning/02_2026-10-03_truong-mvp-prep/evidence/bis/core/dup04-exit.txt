@@ -1,2 +1,0 @@
-2026-10-03T11:33:39+07:00 python harness.py dup04 exit=0
-checks_total=4 ok=4 mismatch=0

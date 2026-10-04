@@ -1,5 +1,0 @@
-total paths 48
-/api/v1/bql/tickets/{ticket_id}/emergency/close ['post']
-/api/v1/bql/tickets/{ticket_id}/emergency/downgrade ['post']
-/api/v1/mo/tickets/{ticket_id}/safety ['post']
-EXIT=0

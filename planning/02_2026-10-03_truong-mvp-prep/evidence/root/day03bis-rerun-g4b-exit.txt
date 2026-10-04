@@ -1,2 +1,0 @@
-2026-10-03T11:36:52+07:00 python harness.py g4b exit=0
-checks_total=2 ok=2 mismatch=0

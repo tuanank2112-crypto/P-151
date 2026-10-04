@@ -1,9 +1,0 @@
-ok   PR-01 expect=HIGH/PRI-H1 got=HIGH/PRI-H1 | Đèn hành lang tầng 3 tòa SIM-A không sáng từ tối q
-ok   PR-02 expect=MEDIUM/PRI-M1 got=MEDIUM/PRI-M1 | Đèn phòng rác không sáng.
-ok   PR-03 expect=HIGH/PRI-H2 got=HIGH/PRI-H2 | Sảnh chính tòa SIM-A nước tràn ra lối đi, trơn trư
-ok   PR-04 expect=MEDIUM/PRI-M2 got=MEDIUM/PRI-M2 | Hành lang tầng 3 tòa SIM-A có nhiều rác và vết bẩn
-ok   PR-05 expect=LOW/PRI-L1 got=LOW/PRI-L1 | Cầu thang bộ tầng 6 tòa SIM-A nhiều bụi bẩn, cần v
-ok   PR-06 expect=MEDIUM/PRI-D0 got=MEDIUM/PRI-D0 | Nhiều rác quá
-ok   PR-07 expect=MEDIUM/PRI-M2 got=MEDIUM/PRI-M2 | Sảnh chính tòa SIM-B bị đổ nước ngọt, sàn dính bẩn
-ok   PR-08 expect=MEDIUM/PRI-M2 got=MEDIUM/PRI-M2 | Khu sảnh thang máy tầng 2 tòa SIM-B có rác vương v
-TOTAL=84 BAD=0 TIER1_MISS=0 levels={'EMERGENCY': 22, 'UNCLEAR': 10, 'NONE': 44}

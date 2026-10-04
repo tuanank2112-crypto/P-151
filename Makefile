@@ -1,4 +1,4 @@
-.PHONY: run test lint format typecheck check clean up down logs db-shell
+.PHONY: run test lint format typecheck check clean
 
 run:
 	uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
@@ -21,15 +21,3 @@ clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type d -name .pytest_cache -exec rm -rf {} +
 	find . -type d -name .ruff_cache -exec rm -rf {} +
-
-up:
-	docker compose up -d --build
-
-down:
-	docker compose down
-
-logs:
-	docker compose logs -f backend
-
-db-shell:
-	docker compose exec db psql -U p151 -d p151
