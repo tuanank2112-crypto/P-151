@@ -1,4 +1,0 @@
-branch=feature/truong
-HEAD=0ea04adedd023654947e2e97e645043f0ba89159
-observed=2026-10-03T11:11:02+07:00
-env=local in-process FastAPI TestClient, MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local APP_ENV=development MO_ALLOW_RESET=false MO_JOBS_ENABLED=false; no port bound, no process to stop

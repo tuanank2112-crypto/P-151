@@ -1,2 +1,0 @@
-2026-10-03T11:13:54+07:00 python harness.py g1r exit=1
-checks_total=31 ok=28 mismatch=3

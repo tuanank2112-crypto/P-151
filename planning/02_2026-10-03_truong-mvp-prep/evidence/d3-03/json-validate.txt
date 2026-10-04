@@ -1,2 +1,0 @@
-valid; records=4; all evidence_refs exist
-exit=0

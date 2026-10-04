@@ -1,7 +1,0 @@
-2026-10-03T11:33:17+07:00
-cd83f1148e256bb34b0b26d80c16ec7011acb3db
-feature/truong
-?? planning/02_2026-10-03_truong-mvp-prep/evidence/bis/
-?? planning/02_2026-10-03_truong-mvp-prep/handoffs/H13_day03bis-core.md
-?? planning/02_2026-10-03_truong-mvp-prep/handoffs/H14_day03bis-demos.md
-?? planning/02_2026-10-03_truong-mvp-prep/handoffs/H15_day03bis-wording.md

@@ -1,7 +1,0 @@
-
-tests\test_maintenance\test_acceptance.py:199: Failed
-=========================== short test summary info ===========================
-FAILED tests/test_maintenance/test_acceptance.py::test_15_rating_only_once - ...
-FAILED tests/test_maintenance/test_acceptance.py::test_15_emergency_closed_ticket_can_be_rated_once
-2 failed, 311 passed in 8.88s
-EXIT=1

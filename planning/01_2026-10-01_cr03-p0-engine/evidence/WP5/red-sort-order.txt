@@ -1,7 +1,0 @@
-=========================== short test summary info ===========================
-FAILED tests/test_maintenance/test_emergency.py::test_bql_rows_expose_risk_owner_and_filters
-FAILED tests/test_maintenance/test_engine.py::test_p0_contract_queue_sort_key_and_bql_row_fields
-FAILED tests/test_maintenance/test_priority.py::test_queue_sort_order_and_related_ids
-FAILED tests/test_maintenance/test_priority.py::test_bql_rows_sorted - Assert...
-4 failed, 309 passed in 8.80s
-EXIT=1

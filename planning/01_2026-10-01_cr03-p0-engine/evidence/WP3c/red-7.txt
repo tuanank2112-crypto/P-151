@@ -1,7 +1,0 @@
-E       AssertionError: assert <RiskLevel.EM...: 'EMERGENCY'> == <RiskLevel.NONE: 'NONE'>
-E         
-E         - NONE
-E         + EMERGENCY
-FAILED tests/test_maintenance/test_safety.py::test_overlapping_matches_are_judged_once
-1 failed, 1179 deselected in 0.52s
-EXIT=1

@@ -58,5 +58,3 @@ out/
 # AI logs — tracked structure, ignored content
 .ai-log/*.jsonl
 .ai-log/archive/
-
-/integration/maintenanceops/

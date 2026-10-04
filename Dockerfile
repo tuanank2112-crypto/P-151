@@ -3,13 +3,8 @@ FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
-# Install deps into a venv so the non-root user can read them
-# (/root/.local is not accessible to appuser)
-RUN python -m venv /opt/venv
-ENV PATH=/opt/venv/bin:$PATH
-
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir --user -r requirements.txt
 
 # ---- Stage 2: Production ----
 FROM python:3.11-slim
@@ -17,9 +12,8 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Copy installed packages from builder
-COPY --from=builder /opt/venv /opt/venv
-ENV PATH=/opt/venv/bin:$PATH \
-    PYTHONUNBUFFERED=1
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
 
 # Security: run as non-root user
 RUN useradd -m appuser

@@ -1,5 +1,0 @@
-# pytest tests/test_maintenance/test_safety.py -s -k tier1
-
-safety set: 50 sentences | tier-1 missed 0/25 | false alarms 0/16 | wrong label 0/50
-.
-1 passed, 55 deselected in 0.13s

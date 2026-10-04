@@ -14,6 +14,3 @@ eval/
 .dockerignore
 Dockerfile
 docker-compose.yml
-data/
-node_modules/
-tests/

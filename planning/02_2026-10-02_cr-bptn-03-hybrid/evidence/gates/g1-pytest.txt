@@ -1,4 +1,0 @@
-# .venv/Scripts/python.exe -m pytest -q  (2026-10-02T17:05:51+07:00)
-..                                                                       [100%]
-290 passed, 21 deselected in 10.79s
-exit=0

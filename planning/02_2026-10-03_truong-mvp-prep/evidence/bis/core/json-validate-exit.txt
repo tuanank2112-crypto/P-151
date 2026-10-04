@@ -1,1 +1,0 @@
-2026-10-03T11:34:41+07:00 json validate D3-02/03/04 bis: 11 records, evidence_refs all exist, exit=0

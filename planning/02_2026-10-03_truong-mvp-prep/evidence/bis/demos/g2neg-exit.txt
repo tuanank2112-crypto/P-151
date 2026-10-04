@@ -1,2 +1,0 @@
-2026-10-03T11:32:44+07:00 python harness.py g2neg exit=0
-checks_total=10 ok=10 mismatch=0

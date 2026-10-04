@@ -1,5 +1,0 @@
-tests\test_maintenance\test_emergency.py:357: Failed
-=========================== short test summary info ===========================
-FAILED tests/test_maintenance/test_emergency.py::test_bql_tier2_choices_need_escalation
-1 failed, 25 passed in 0.97s
-EXIT=1
