@@ -1,0 +1,42 @@
+%% Semantic companion derived from restored embedded draw.io; SVG/draw.io retain original geometry.
+flowchart LR
+    subgraph N3["1. Clients & Gateway"]
+        direction TB
+    end
+    N0["👥 Users & Roles"]
+    N1["💻 Web App (/ui)"]
+    N2["⚡ FastAPI Gateway"]
+    N4["Safety Interceptor"]
+    N5["Bậc 2: Nghi Ngờ (Warning)"]
+    N6["Bậc 1: Khẩn Cấp (Emergency)"]
+    N7["① Data Validation & Completeness"]
+    N10["② Hybrid Categorization & Priority"]
+    N11["③ Duplicate Detection"]
+    N12["④ Asset & Inventory Check"]
+    N13["⑤ Work Order Packaging & Routing"]
+    N8["📋 BPTN Tiếp Nhận & Thẩm Định"]
+    N14["🛠️ Phòng Ban Xử Lý (PB-CLN-01 / PB-TEC-01)"]
+    N9["✅ Ban Quản Lý (BQL) Nghiệm Thu"]
+    N15["🤖 OpenAI API (GPT-4o)"]
+    N16["📊 Phoenix & LangSmith"]
+    N17["🪣 Supabase Storage"]
+    N18["🐘 PostgreSQL (Supabase)"]
+    N0 -->|Thao tác| N1
+    N1 -->|HTTPS / REST| N2
+    N3 -->|Quét an toàn| N4
+    N4 -->|Nghi vấn| N5
+    N4 -->|Khẩn cấp| N6
+    N4 -->|An toàn| N7
+    N5 -->|Thẩm tra 4h| N8
+    N6 -->|Báo động BQL| N9
+    N7 --> N10
+    N10 --> N11
+    N11 --> N12
+    N12 --> N13
+    N13 -->|WorkOrderDraft Bundle| N8
+    N8 -->|Giao việc thi công| N14
+    N14 -->|Nộp hồ sơ + Ảnh nghiệm thu| N9
+    N10 -->|Invoke Proposer| N15
+    N13 -->|Telemetry Spans| N16
+    N14 -->|Tải ảnh bằng chứng| N17
+    N9 -->|Commit CLOSED| N18
