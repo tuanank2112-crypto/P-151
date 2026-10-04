@@ -1,0 +1,29 @@
+# HEAD dff898e (origin/develop, gồm 954dcab Trường); Python 3.11 venv, LLM_MODE=mock, 2026-10-04 10:00:34 +0700
+$ git show --stat --format=%h%x20%an%x20%s 954dcab
+954dcab TruonghocAI fix(maintenance): align CR03 target fixture with safety-before-classification flow
+ planning/02_2026-10-03_truong-mvp-prep/plan.md       |  3 +++
+ .../specs/TESTING-ACCEPTANCE.md                      |  6 +++---
+ seed/maintenance_cr03/tickets.yaml                   |  6 ------
+ tests/test_maintenance/test_cr03_targets.py          | 20 ++++++++------------
+ 4 files changed, 14 insertions(+), 21 deletions(-)
+$ evaluate(MaintenanceEngine(dataset=load_dataset('seed/maintenance_cr03')))
+maintenanceops-sim-cr03-p0-v1 12/12 demo 4
+EXIT=0
+$ pytest -q -p no:cacheprovider tests/test_maintenance/test_cr03_targets.py
+9 passed in 0.77s
+EXIT=0
+$ [phá thử] thêm 'playbook_id: X' vào CLN-004 expected rồi chạy test_cr03_targets.py
+1 failed, 8 passed in 1.34s
+EXIT=1
+$ [phá thử] thêm 'proposed_department_id: X' vào CLN-004 expected rồi chạy test_cr03_targets.py
+1 failed, 8 passed in 0.99s
+EXIT=1
+$ [phá thử] thêm 'review_status: X' vào CLN-004 expected rồi chạy test_cr03_targets.py
+1 failed, 8 passed in 0.90s
+EXIT=1
+$ pytest -q -p no:cacheprovider
+1641 passed, 29 deselected in 26.13s
+EXIT=0
+$ ruff check src tests
+All checks passed!
+EXIT=0

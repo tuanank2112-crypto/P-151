@@ -132,3 +132,7 @@ Hiện có: FastAPI, engine Python, luật + LLM proposer tuỳ chọn, reposito
 ## 4. Đồng bộ và kiểm tra
 
 SVG/draw.io giữ nguyên bản gốc, không tự thay bố cục. Components Mermaid được suy ra từ nguồn draw.io nhúng; data flow SVG/draw.io/Mermaid được phục hồi cùng bộ backup. Khi cần chỉnh nội dung, giữ geometry và đối chiếu các ghi chú hiện trạng. Bằng chứng phục hồi là hash với backup, không phải phép đo render/runtime mới.
+
+## 5. Ghi chú bản tích hợp develop 37a0fb3
+
+Bố cục hai hình vẫn giữ nguyên. Code mới yêu cầu ảnh/ghi chú mới cho mỗi vòng REWORK; giữ quyền BQL sau leo thang; receive tính trước proposal phân loại ngoài engine.lock; job có thể phục hồi RECEIVED không blocker quá 2 phút. Những thay đổi này được giải thích bằng văn bản, không dùng để vẽ lại hình mục tiêu.

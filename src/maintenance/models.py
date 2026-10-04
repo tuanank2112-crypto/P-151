@@ -608,6 +608,9 @@ class Case(Entity):
     checklist_items: list[ChecklistItem] = Field(default_factory=list)
     material_lines: list[MaterialLine] = Field(default_factory=list)
     evidence: list[EvidenceRecord] = Field(default_factory=list)
+    # Index in `evidence` where the current round of work starts: a BQL rework (T22) moves it, so step 10 needs
+    # new photos and notes (plan 04 Q02). 0 on every case stored before the field existed.
+    evidence_round_start: int = Field(default=0, ge=0)
     additions: list[ResidentAddition] = Field(default_factory=list)
     events: list[StatusEvent] = Field(default_factory=list)
     notifications: list[Notification] = Field(default_factory=list)

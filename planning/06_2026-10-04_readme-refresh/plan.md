@@ -43,3 +43,14 @@
 - [x] Restore original artifacts and embedded components source.
 - [x] Move current-vs-target caveats to documentation; preserve Team.
 - Evidence: evidence/readme/layout-restoration-checks.txt. No new runtime/render acceptance claimed.
+
+## Isolated develop integration — 2026-10-04
+- User authorized safe integration while preserving develop and feature/truong. Snapshot backup/truong-local-20261004 (5f7c354); merge origin/develop 37a0fb3 only on integration/truong-develop-20261004 in a separate worktree.
+- [x] Snapshot 12 modified + 103 untracked paths with a temporary Git index; original index unchanged.
+- [x] Resolve changelog/today/roadmap conflicts, retaining both local and incoming content.
+- [x] Run pytest/ruff plus structural preservation checks: 1843 pass / 0 fail / 0 skip / 29 pg deselected; ruff check/format exit0; 4 README queries, evaluate12/12.
+- [x] Verify protected refs/index and 872 original file hashes unchanged; finalize isolated merge commit only on integration branch.
+- No push, rebase, checkout, reset or stash in original worktree. Runtime code must equal develop; diagrams must equal snapshot.
+
+- Verified at 2026-10-04T22:01:39+07:00; original branch/head/index/files preserved. Concurrent docs/submission/ appeared during execution and was not touched or included.
+- Open environment gates: PostgreSQL/Docker not run; mypy unavailable. Incoming develop machine evidence/patch has pre-existing trailing whitespace; local documentation diff check exit0, preserved incoming evidence unchanged.

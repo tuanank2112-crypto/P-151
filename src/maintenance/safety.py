@@ -494,6 +494,8 @@ def _proven_lamp(lk: _Lookups, match: re.Match[str]) -> bool:
 
 def _b01_ok(lk: _Lookups, c0: int, p: int, e: int) -> bool:
     """R6: candidate [p, e) in the clause starting at c0 is a benign lamp phrase."""
+    if e > p and lk.ctx.clause(e - 1)[0] != c0:  # the candidate itself crosses a clause break ("cháy, đèn")
+        return False
     if not _closed_prefix(lk, c0, p):
         return False
     norm = lk.ctx.norm
@@ -501,7 +503,8 @@ def _b01_ok(lk: _Lookups, c0: int, p: int, e: int) -> bool:
         return True
     after = e + 1 if e < len(norm) and norm[e] == " " else e
     following = lk.lamp_re.match(norm, after)
-    return following is not None and _proven_lamp(lk, following)
+    # R6: the lamp noun right after the candidate counts only inside the same clause ("cháy, đèn tắt" is two clauses)
+    return following is not None and lk.ctx.clause(after)[0] == c0 and _proven_lamp(lk, following)
 
 
 # ---------------------------------------------------------------- 3 assess

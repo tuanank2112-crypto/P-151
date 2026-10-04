@@ -2,6 +2,25 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.1.3] - 2026-10-04: Sửa logic sai sau rà soát toàn dự án (plan 04)
+### Fixed
+- An toàn 2b (`lexicon.yaml` `2026-10-04.p0d`): bắt Bậc 1 thang máy kẹt + người, té xỉu, dây điện rơi/tróc vỏ/lủng lẳng, bốc hỏa,
+  khói nhiều, lửa lớn, kêu cứu; hết báo nhầm Bậc 1 "điện/cầu dao bị ngắt", "khối rác", "bật lửa", "đèn cháy sáng"; B-01 nhận
+  "gần căn…", "xin báo…". Priority: "tròn"/"hỏi" không còn kích H2/M2. Bộ dừng 1065 ca giữ xanh, ngân sách báo nhầm không đổi.
+- Engine: REWORK bắt ảnh + ghi chú mới (`Case.evidence_round_start`); ticket an toàn đã leo thang giữ quyền BQL khi Bậc 2 tạo
+  lại; AI Log có `ticket_id`; LLM phân loại gọi ngoài `engine.lock` trong `receive`; job chạy pipeline cho ticket mồ côi.
+- Engine (A1): lỗi 403 cho người ngoài phạm vi không lộ `unchanged_status`; giá trị ghi audit khi từ chối bị cắt 500 ký tự.
+- TÁCH RA (chủ API, chưa trong code): chặn loại ảnh ở `/evidence`, route ảnh không chặn event loop, `/mo/ai-logs` theo vai +
+  lọc trước `limit`, `/mo/tickets` cùng thứ tự, giới hạn chữ tự do ở route, khoá session — bản vá
+  `planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch`; ghi chú cho Trí (H04) và Trường (H05).
+- Phân loại luật: đèn/đến, Bùi/bụi, bận/bẩn phân biệt trên chữ có dấu; thêm triệu chứng đèn và từ vệ sinh phổ biến; đèn +
+  khu vực chung ở bất kỳ đâu trong câu ⇒ KY_THUAT; Q22 "bóng đèn bị cháy" ⇒ KY_THUAT. Tách vị trí: thang bộ, phòng rác, bãi
+  đỗ xe, sân chơi, sân thượng, lối đi, tầng trệt, lầu, block, "tòa nhà". Tầng an toàn: B-01 không áp qua chỗ ngắt mệnh đề. Proposer:
+  enum LLM lạ ⇒ fallback luật; `reason` cắt 500 ký tự.
+### Decided
+- Giữ contract "ngoài phạm vi ⇒ 403 + audit" (8 test đã duyệt); đổi sang 404 cần nhóm quyết. Ghi chú kết quả bắt buộc, ảnh cư
+  dân ngoài NEED_INFO, đánh giá ticket MERGED: giữ nguyên (Idea Vault).
+
 ## [docs] - 2026-10-04: Sơ đồ kiến trúc thành phần Target v0.6 (3-Tier Enterprise) nhúng README
 - Hoàn thành thiết kế và nghiệm thu Architecture Component Diagram (Target v0.6) theo chuẩn `docs/CR-BPTN-03.md`.
 - Tái cấu trúc theo chuẩn Enterprise 3-Tier (Clients/Gateway, Safety & Agent Decision Pipeline 5 trạm & Human Operations, Persistence & Telemetry) triệt tiêu hoàn toàn hiện tượng dây nối chồng chéo và cắt ngang chữ.
@@ -125,3 +144,6 @@ Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên 
 ## [docs] — 2026-10-04: Restore user-selected diagram layouts
 - Restored components SVG from Downloads and extracted its embedded draw.io source; restored exact data-flow SVG/draw.io/Mermaid from VS Code history.
 - Supersedes replacement implementation layouts introduced in the correction. README keeps setup/link fixes; current-code differences remain in text next to target diagrams. App version unchanged.
+
+## [docs] — 2026-10-04: Isolated develop integration
+- Merge develop 37a0fb3 with the preserved local documentation snapshot on integration/truong-develop-20261004 only. Both sides of brain-memory conflicts retained. Original feature/truong and develop refs are protected; no remote push.

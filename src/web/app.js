@@ -310,6 +310,22 @@ function listItem(ticket, { title, meta, right }) {
     meta ? el('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400' }, meta) : null));
 }
 
+function residentListItem(ticketId, { title, meta, right }) {
+  const selected = state.selected === ticketId;
+  return el('li', {},
+    el('button', {
+      type: 'button',
+      class: `w-full rounded-lg px-4 py-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${selected ? 'bg-indigo-50 ring-1 ring-indigo-200 dark:bg-indigo-950/50 dark:ring-indigo-500/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'}`,
+      'aria-current': selected ? 'true' : undefined,
+      onclick: () => select(ticketId),
+    },
+    el('div', { class: 'flex items-start justify-between gap-3' },
+      el('div', { class: 'min-w-0' },
+        el('p', { class: 'text-sm font-semibold text-slate-900 dark:text-white line-clamp-2' }, title || '(không có nội dung)')),
+      right),
+    meta ? el('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400' }, meta) : null));
+}
+
 function listCard(title, count, items, empty) {
   return card(null,
     el('div', { class: 'flex items-center justify-between' },
@@ -321,7 +337,7 @@ function listCard(title, count, items, empty) {
 function detailHeader(ticketId, status, extra, customLabel) {
   return el('div', { class: 'flex flex-wrap items-start justify-between gap-3' },
     el('div', {},
-      el('h2', { id: 'detail-title', tabindex: '-1', class: 'text-lg font-semibold text-slate-900 dark:text-white focus:outline-none' }, `Phản ánh ${ticketId}`),
+      el('h2', { id: 'detail-title', tabindex: '-1', class: 'text-lg font-semibold text-slate-900 dark:text-white focus:outline-none' }, ticketId ? `Phản ánh ${ticketId}` : 'Chi tiết phản ánh'),
       extra ? el('p', { class: 'mt-0.5 text-sm text-slate-500 dark:text-slate-400' }, extra) : null),
     badge(status, customLabel));
 }
@@ -699,68 +715,7 @@ async function renderResident(list, detail) {
   const tickets = await api('/resident/tickets');
   if (!state.selected && tickets.length) state.selected = tickets[0].ticket_id;
 
-  const description = el('textarea', { name: 'description', rows: '4', required: true, maxlength: '1000', class: INPUT, placeholder: 'Ví dụ: Tòa SIM-A / Tầng 3 / Hành lang: bóng đèn chập chờn không sáng.' });
-  const when = el('input', { name: 'when', type: 'datetime-local', class: INPUT });
-
-  // 3-tier Location Selector (Tòa / Tầng / Khu vực)
-  const bldgSelect = dropdown('building', [
-    ['Tòa SIM-A', 'Tòa SIM-A'],
-    ['Tòa SIM-B', 'Tòa SIM-B'],
-    ['Tòa SIM-C', 'Tòa SIM-C'],
-    ['Khuôn viên ngoài trời', 'Khuôn viên ngoài trời'],
-  ], { placeholder: 'Chọn tòa nhà…' });
-
-  const floorSelect = dropdown('floor', [
-    ['Tầng 1', 'Tầng 1'], ['Tầng 2', 'Tầng 2'], ['Tầng 3', 'Tầng 3'],
-    ['Tầng 4', 'Tầng 4'], ['Tầng 5', 'Tầng 5'], ['Tầng 6', 'Tầng 6'],
-    ['Tầng 7', 'Tầng 7'], ['Tầng hầm B1', 'Tầng hầm B1'], ['Tầng hầm B2', 'Tầng hầm B2'],
-    ['Tầng trệt', 'Tầng trệt'],
-  ], { placeholder: 'Chọn tầng…' });
-
-  const zoneSelect = dropdown('zone', [
-    ['Hành lang', 'Hành lang'],
-    ['Sảnh thang máy', 'Sảnh thang máy'],
-    ['Thang bộ', 'Thang bộ'],
-    ['Phòng rác tầng', 'Phòng rác tầng'],
-    ['Bãi đỗ xe', 'Bãi đỗ xe'],
-    ['Sân chơi', 'Sân chơi'],
-  ], { placeholder: 'Chọn khu vực…' });
-
-  const insertLocBtn = el('button', {
-    type: 'button',
-    class: 'inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-750 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600',
-    onclick: () => {
-      const parts = [bldgSelect.value, floorSelect.value, zoneSelect.value].filter(Boolean);
-      if (!parts.length) {
-        toast('Vui lòng chọn ít nhất Tòa, Tầng hoặc Khu vực trước khi chèn', 'error');
-        return;
-      }
-      const locTag = parts.join(' / ');
-      const cur = description.value.trim();
-      description.value = cur ? `${locTag}: ${cur}` : `${locTag}: `;
-      description.focus();
-      toast('Đã chèn vị trí chuẩn vào mô tả');
-    },
-  },
-    el('svg', { class: 'h-4 w-4 text-indigo-600 dark:text-indigo-400', 'aria-hidden': 'true', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' },
-      el('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z' })),
-    el('span', {}, 'Chèn vị trí chuẩn vào mô tả'));
-
-  const locationSection = el('fieldset', { class: 'rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 space-y-3 dark:border-slate-800 dark:bg-slate-800/40' },
-    el('legend', { class: 'text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 px-1' }, 'Bộ chọn vị trí chuẩn (Hỗ trợ AI trích xuất)'),
-    el('div', { class: 'grid grid-cols-1 sm:grid-cols-3 gap-3' },
-      field('Tòa nhà', bldgSelect),
-      field('Tầng', floorSelect),
-      field('Khu vực cụ thể', zoneSelect)),
-    el('div', { class: 'flex justify-end' }, insertLocBtn));
-
-  // Channel dropdown
-  const channelSelect = dropdown('channel', [
-    ['form', 'Cổng cư dân trực tuyến (Web Portal)'],
-    ['app', 'Ứng dụng di động (Resident App)'],
-    ['hotline', 'Tổng đài CSKH / Zalo tiếp nhận'],
-  ], { placeholder: 'Chọn kênh gửi…' });
-  channelSelect.value = 'form';
+  const description = el('textarea', { name: 'description', rows: '4', required: true, maxlength: '1000', class: INPUT, placeholder: 'Mô tả chi tiết vị trí và sự cố cần xử lý (Ví dụ: Tòa SIM-A / Tầng 3 / Hành lang: bóng đèn chập chờn không sáng).' });
 
   // Photo Input + Live Preview
   const pInput = photoInput();
@@ -797,13 +752,8 @@ async function renderResident(list, detail) {
   list.append(card('Gửi phản ánh mới',
     actionForm([
       submitAlert,
-      locationSection,
       field('Nội dung phản ánh', description, 'Ghi rõ tình trạng thực tế để Agent phân loại chính xác.'),
-      field('Kênh tiếp nhận', channelSelect, 'Kênh cư dân gửi phản ánh vào hệ thống.'),
       photoField,
-      el('details', { class: 'group rounded-md' },
-        el('summary', { class: 'cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200' }, 'Tùy chọn demo'),
-        el('div', { class: 'mt-3' }, field('Giả lập giờ gửi', when, 'Để trống nếu dùng giờ hiện tại. Phòng ban làm việc 06:00–22:00.'))),
     ], 'Gửi phản ánh', async (data) => {
       submitAlert.classList.add('hidden');
       const desc = (data.get('description') || '').trim();
@@ -819,16 +769,15 @@ async function renderResident(list, detail) {
           method: 'POST',
           body: compact({
             original_description: desc,
-            channel: data.get('channel') || 'form',
-            simulated_received_at: localToIso(data.get('when')),
+            channel: 'form',
           }),
         });
         state.selected = created.ticket_id;
         try {
           if (files) await api(`/resident/tickets/${created.ticket_id}/photos`, { method: 'POST', body: files });
-          toast(`Đã gửi phản ánh ${created.ticket_id}`);
+          toast('Đã gửi phản ánh thành công');
         } catch (error) {
-          toast(`Đã gửi phản ánh ${created.ticket_id} nhưng chưa tải được ảnh: ${error.message}`, 'error');
+          toast(`Đã gửi phản ánh thành công nhưng chưa tải được ảnh: ${error.message}`, 'error');
         }
         await render();
       } catch (error) {
@@ -842,7 +791,7 @@ async function renderResident(list, detail) {
     tickets.map((t) => {
       const channelLabel = { form: 'Web', app: 'App di động', hotline: 'Hotline' }[t.channel] || t.channel;
       const isUnderCheck = t.status === 'VERIFYING' || t.status === 'EMERGENCY_PENDING_BQL' || t.status === 'SAFETY_REVIEW_REQUIRED';
-      return listItem(t.ticket_id, {
+      return residentListItem(t.ticket_id, {
         title: t.description,
         meta: [
           formatTime(t.created_at),
@@ -880,11 +829,11 @@ function residentDetail(view) {
   const displayLabel = isSafetyReview ? 'Đang được kiểm tra' : view.status_label;
   const tone = { NEED_INFO: 'warn', ON_HOLD: 'warn', CANCELLED: 'danger', CLOSED: 'ok' }[view.status] || 'info';
   const sections = [
-    detailHeader(view.ticket_id, isSafetyReview ? 'VERIFYING' : view.status, `Gửi lúc ${formatTime(view.created_at)}`, displayLabel),
+    detailHeader(null, isSafetyReview ? 'VERIFYING' : view.status, `Gửi lúc ${formatTime(view.created_at)}`, displayLabel),
     callout(tone, view.public_message, view.eta ? `Dự kiến: ${formatTime(view.eta)}` : null),
     residentStepper(view),
     dl([['Phòng ban xử lý', view.department_name || 'Chưa giao']]),
-    view.merged_into ? callout('info', `Đã gộp vào phản ánh ${view.merged_into.ticket_id}`,
+    view.merged_into ? callout('info', 'Đã gộp vào phản ánh khác',
       `${view.merged_into.status_label}: ${view.merged_into.public_message}`) : null,
     reportText(view.description, view.additions),
     photoGallery('Ảnh bạn đã gửi', view.photos.map((id) => `/resident/tickets/${view.ticket_id}/photos/${id}`)),
@@ -1712,14 +1661,17 @@ function renderUserMenu() {
       el('span', {}, 'Lịch sử AI Logs'),
       el('span', { class: 'inline-flex items-center rounded-full bg-indigo-100 px-1.5 py-0.2 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' }, 'LLM'))) : null;
 
-  $('user-menu').replaceChildren(
+  const menuChildren = [
     navTabs,
     el('div', { class: 'hidden text-right sm:block' },
       el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, user.display_name),
       el('p', { class: 'text-xs text-slate-500 dark:text-slate-400' },
         `${ROLE_LABEL[user.role] || user.role}${user.department_id ? ` · ${deptName(user.department_id)}` : ''} · ${user.username}`)),
     el('span', { class: 'flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200', 'aria-hidden': 'true' }, initials),
-    el('button', { type: 'button', class: BTN.secondary, onclick: () => signOut() }, 'Đăng xuất'));
+    el('button', { type: 'button', class: BTN.secondary, onclick: () => signOut() }, 'Đăng xuất'),
+  ].filter(Boolean);
+
+  $('user-menu').replaceChildren(...menuChildren);
 }
 
 async function loadCatalog() {

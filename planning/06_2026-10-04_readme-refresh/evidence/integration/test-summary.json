@@ -1,0 +1,17 @@
+[
+  {
+    "name": "pytest",
+    "exit": 0,
+    "seconds": "47.69"
+  },
+  {
+    "name": "ruff-check",
+    "exit": 0,
+    "seconds": "0.52"
+  },
+  {
+    "name": "ruff-format",
+    "exit": 0,
+    "seconds": "0.48"
+  }
+]

@@ -224,3 +224,21 @@
 ## 2026-10-04T21:08:19+07:00 — Restore original architecture layouts
 - User rejected layout replacement and authorized restoration. Components recovered from Downloads (embedded draw.io intact); data-flow recovered from Code/User/History, exact SHA256 verified. Setup fixes remain; no runtime changes.
 - Prior correction static evidence applies to superseded artifacts; restoration evidence: plan06/evidence/readme/layout-restoration-checks.txt.
+
+## Đóng lệch thứ tự phân loại/an toàn (plan 02 Q11) — 2026-10-04
+- Trường sửa fixture `954dcab` (PR #12, develop `dff898e`): CLN-004/TEC-005 bỏ 3 trường phân loại; engine không đổi.
+- Đo lại (evidence/13 của plan 02): evaluate CR03 12/12, 4 demo; target 9 passed; phá thử 3/3 đều đỏ; pytest 1641 passed/29 deselected, ruff sạch. Ghi Q11 vào plan 02, sửa `docs/maintenance.md` §10, thêm Idea Vault.
+
+## Rà soát toàn dự án + mở plan 04 sửa logic — 2026-10-04
+- Rà engine (tự đọc) + 2 thẩm định Opus (an toàn/phân loại; API/quyền/lưu trữ): pytest 1641 pass/29 deselected, ruff sạch, nhưng 16 lỗi đo được (plan 04 §1): bỏ sót Bậc 1 (thang máy kẹt người, té xỉu, dây điện rơi), báo nhầm "bị ngắt"; cư dân dò/phình ticket người khác qua route hành động; ảnh giả qua cổng bước 10; REWORK dùng lại ảnh cũ; BQL bị khoá sau T06; AI Log luôn `PENDING`; LLM trong `engine.lock`; ticket mồ côi.
+- Mở `planning/04_2026-10-04_logic-review-fix/` (PATCH, nhánh `fix/nhuy-logic-review`): WP1 lexicon (Opus worktree), WP2 rules/proposer (Sonnet worktree), WP3 engine/router (SO).
+- Thực thi plan 04 (v1.1.3): WP3 engine/router/auth (SO) + WP2 rules/proposer (Sonnet) + WP1 lexicon (Opus, 2 vòng sau thẩm định đối kháng 🔁: 57 → 10 lỗi/107 câu). Gộp: pytest 1808 passed/29 deselected, ruff sạch; evidence/01–05.
+- Q10: ngoài phạm vi giữ 403 + audit (8 test đã duyệt) nhưng không lộ `unchanged_status`; 404 chờ nhóm. Bẫy mới: heredoc bash biến `\b` thành backspace khi Python ghi file (đã ghi gotchas). Chưa commit/push — chờ người dùng gật.
+- Vòng Agent (người dùng: "fix agent", chỉ giữ phần Agent, không giữ backend/UI): rules.py tách vị trí mở rộng + đèn sau khu vực + Q22 bóng đèn cháy; từ vựng an toàn vòng 3 + `_b01_ok`. pytest 1848 passed, ruff sạch; đối kháng 107 câu 50 → 7 lỗi; holdout 18/18; kho phản ánh thật 34 câu chỉ còn "ngoài phạm vi bị hỏi vị trí" (spec). Lỗi backend/UI của thẩm định E2E chuyển Châm Anh/Trí (roadmap). Chưa commit.
+- Q16: tách phần backend (router/auth + 5 test) sang `planning/04_.../handoffs/H03_backend-api.patch` + ghi chú H03 (Châm Anh), H04 (Trí, UI), H05 (Trường, rules/spec). Phần Agent/engine còn lại: pytest 1843 passed, ruff sạch. Người dùng duyệt push phần Agent.
+- PR #14 mở vào develop (commit 1516309, phần Agent + engine; backend ở H03).
+
+## Isolated integration — 2026-10-04
+- Snapshot 5f7c354 and integration worktree created without touching original branch/index/files. Three brain-file conflicts resolved by retaining both sections. Python 3.11.16 discovered via uv; tests use mock/memory and existing site-packages read-only. Validation pending.
+
+- Isolated validation 2026-10-04T22:01:39+07:00: pytest1843/0/0 (29 pg deselected); ruff check/format exit0; README4/4 + evaluate12/12. Original872 file hashes/index/protected refs unchanged; concurrent docs/submission/ excluded. mypy unavailable, no Docker/Postgres checks. Evidence: plan06/evidence/integration/.
