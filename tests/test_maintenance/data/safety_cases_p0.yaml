@@ -230,6 +230,30 @@ safety_cases:
   - {id: SC-217, text: "Có người kẹt thang máy không ra được", expect: EMERGENCY, signals: [S-09]}   # R3-25
   - {id: SC-218, text: "Kẹt người trong thang máy", expect: EMERGENCY, signals: [S-09]}   # R3-27
   - {id: SC-219, text: "Thang máy kẹt người", expect: EMERGENCY, signals: [S-09]}   # R3-28
+  # ---- plan 05 (2026-10-04): vị trí kiểu cư dân thật — từ xác nhận/đệm trùng chữ vị trí (tòa, tầng bảy, phòng rác…)
+  - {id: SC-220, text: "Sảnh thang máy tầng 2 tòa SIM-C có khối rác chưa dọn", expect: NONE}   # demo: confirmers.khoi "toa"
+  - {id: SC-221, text: "Hành lang tầng 3 tòa SIM-A có khói tỏa ra từ hộp điện", expect: EMERGENCY, signals: [S-04]}
+  - {id: SC-222, text: "khói tỏa khắp hành lang tầng 5 tòa SIM-B", expect: EMERGENCY, signals: [S-04]}   # S-04 "khoi toa"
+  - {id: SC-223, text: "Hành lang tầng bảy tòa SIM-A có khối rác", expect: NONE}   # "bảy" không xác nhận "khói bay"
+  - {id: SC-224, text: "Sảnh có khối rác bốc mùi", expect: NONE}   # "bốc mùi" không xác nhận "khói bốc"
+  - {id: SC-225, text: "Có khối rác bọc nilon ở sảnh", expect: NONE}
+  - {id: SC-226, text: "Có khối rác lên tới tầng 3", expect: NONE}   # "lên tầng"
+  - {id: SC-227, text: "Có khối bọc nilon ở sảnh", expect: NONE}   # intended "khoi boc" chỉ khỏi/khơi
+  - {id: SC-228, text: "Tầng 3 tòa SIM-A có khối bốc ra từ hộp điện", expect: EMERGENCY, signals: [S-04]}   # gõ sai dấu, cụm "boc ra"
+  - {id: SC-229, text: "Khỏi lan ra cả hành lang", expect: EMERGENCY, signals: [S-04]}   # gõ sai dấu, cụm "khoi lan"
+  - {id: SC-230, text: "Có lừa đảo lên tầng 5 tòa SIM-A", expect: NONE}   # confirmers.lua "len" -> "lua len"
+  - {id: SC-231, text: "Cầu dao bị ngắt bật mãi không lên", expect: NONE}   # confirmers.ngat "bat" -> "bat tinh"
+  - {id: SC-232, text: "Điện bị ngắt nên có người phải đi bộ", expect: NONE}   # confirmers.ngat "co nguoi" -> "nguoi ngat"
+  - {id: SC-233, text: "Có người ngắt ở sảnh", expect: EMERGENCY, signals: [S-09]}   # gõ sai dấu vẫn giữ
+  - {id: SC-234, text: "Đèn phòng rác tầng 2 tòa SIM-A cháy sáng suốt đêm", expect: NONE}   # confirmers.sang bỏ "phong rac"
+  - {id: SC-235, text: "Phòng rác tầng 2 cháy sáng", expect: EMERGENCY, signals: [S-05]}   # regex S-05 phòng/thùng rác … cháy sáng
+  - {id: SC-236, text: "Block SIM-B lầu 6 phòng rác: Chị ấy bốc hoả vì rác để trước cửa", expect: NONE}   # bốc hỏa: chủ ngữ là người
+  - {id: SC-237, text: "Hôm qua có tia lửa, giờ hết rồi ở hành lang tầng 4 tòa SIM-B", expect: UNCLEAR, signals: [S-02]}   # T2-02 + vị trí sau marker
+  - {id: SC-238, text: "Có khói, giờ hết rồi lại bốc khói ở tầng 3", expect: EMERGENCY, signals: [S-04]}   # tín hiệu mới sau marker
+  - {id: SC-239, text: "Nước màu vàng chảy ra từ trần hầm xe", expect: NONE}   # confirmers.chay "mau" -> "chay mau"
+  - {id: SC-240, text: "Ống nước bọc nilon chảy ra sàn hầm xe", expect: NONE}   # confirmers.chay "boc" -> "boc chay"
+  - {id: SC-241, text: "Ban quản lý thông báo cắt điện hộ dân tầng 3", expect: NONE}   # confirmers.ho "thong" -> "thong ra"
+  - {id: SC-242, text: "Bãi đỗ xe tầng hầm B1 tòa SIM-A bóng đèn bị cháy", expect: NONE, absent: [T2-03]}   # B-01: "bai do xe"
 
 
 # Mọi chuỗi phản ánh đang dùng trong fixture và test hiện có: chỉ CLN-004 và TEC-005 được phép lên Bậc 1.

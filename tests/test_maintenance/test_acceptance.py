@@ -333,7 +333,7 @@ def actions_after(case, action):
 @pytest.mark.parametrize("actor", ["SIM-ACTOR-SYSTEM", "SIM-ACTOR-AGENT", BPTN, TEC, BQL])
 def test_13_pending_review_cannot_be_routed(clock, actor):
     e = llm_only_engine(clock)
-    tid = report(e, "Hành lang tầng 3 tòa SIM-A tối om, bóng tuýp chết rồi")
+    tid = report(e, "Hành lang tầng 3 tòa SIM-A tối om, không thấy đường")
     case = e.get(tid)
     assert case.ticket.blocker.code == "PENDING_REVIEW" and not can_route(case.ticket)
     with pytest.raises(ActionDeniedError):
@@ -344,7 +344,7 @@ def test_13_pending_review_cannot_be_routed(clock, actor):
 def test_13b_the_guard_itself_refuses_routing_without_review(clock):
     """Even the internal path (pipeline/system) cannot hand over while review is pending."""
     e = llm_only_engine(clock)
-    tid = report(e, "Hành lang tầng 3 tòa SIM-A tối om, bóng tuýp chết rồi")
+    tid = report(e, "Hành lang tầng 3 tòa SIM-A tối om, không thấy đường")
     work = e.get(tid).model_copy(deep=True)
     e._set_ticket(work, status="RECEIVED", blocker=None)
     with pytest.raises(InvalidTransitionError) as err:

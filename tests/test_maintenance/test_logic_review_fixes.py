@@ -202,3 +202,33 @@ def test_job_runs_the_pipeline_on_an_orphaned_ticket(fresh, clock):
     clock.advance(minutes=2)
     assert fresh.run_jobs() == ["SIM-TKT-0099"]
     assert fresh.get("SIM-TKT-0099").ticket.status == "ROUTED"
+
+
+# ---------------------------------------------------------------------- plan 05: one broken ticket never stops the job
+
+
+def test_a_ticket_at_the_end_of_the_calendar_does_not_stop_the_job(fresh, clock):
+    """Backend audit 2026-10-04 (A1): a created_at of 9999-12-31 23:59:59 overflowed in `_orphaned` (plan 04 E5)
+    and the error, not an EngineError, stopped every run of the job for all tickets."""
+    from datetime import datetime, timedelta, timezone
+
+    far = datetime(9999, 12, 31, 23, 59, 59, tzinfo=timezone(timedelta(hours=7)))
+    fresh.ingest(
+        RawTicket(
+            ticket_id="SIM-TKT-0098",
+            created_at=far.isoformat(timespec="seconds"),
+            original_description=CLEANING,
+            channel="form",
+        )
+    )
+    fresh.ingest(
+        RawTicket(
+            ticket_id="SIM-TKT-0099",
+            created_at=clock.now.isoformat(timespec="seconds"),
+            original_description=CLEANING,
+            channel="form",
+        )
+    )
+    clock.advance(minutes=3)
+    assert fresh.run_jobs() == ["SIM-TKT-0099"]  # the other orphan is still picked up
+    assert fresh.get("SIM-TKT-0098").ticket.status == "RECEIVED"

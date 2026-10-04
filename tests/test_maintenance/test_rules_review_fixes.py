@@ -98,3 +98,48 @@ def test_location_wording_residents_use(text, location):
 
 def test_tòa_nhà_alone_is_not_a_building_code():
     assert "building" in missing_location_parts("Tòa nhà tầng 3 hành lang có rác")
+
+
+# ---------------------------------------------------------------------- plan 05 (H02): the location never picks the
+# job type; lamps typed without accents; private / street lamps; the full metamorphic suite is
+# test_classify_metamorphic.py
+
+
+@pytest.mark.parametrize(
+    ("text", "playbook", "reason_code"),
+    [
+        # "phòng rác" is where the resident stands, not rubbish
+        ("Block SIM-B lầu 6 phòng rác: đèn chập chờn", "PB-TEC-01", None),
+        ("Tòa SIM-A / Tầng 3 / Phòng rác: thang máy hỏng", None, "OUT_OF_SCOPE"),
+        # ...but the garbage room overflowing is still cleaning
+        ("Phòng rác tầng 4 tòa SIM-A đầy tràn", "PB-CLN-01", None),
+        ("phong rac tang 4 toa SIM-A bi day", "PB-CLN-01", None),
+        # unaccented lamp before its symptom; arrival is not a lamp
+        ("Hanh lang tang 3 toa SIM-A den chap chon", "PB-TEC-01", None),
+        ("Toa SIM-A / Tang 3 / Hanh lang: vua co rac vua co den khong sang", None, "CATEGORY_UNCLEAR"),
+        ("Khi den hanh lang tang 3 thi thay thang may hong", None, "OUT_OF_SCOPE"),
+        ("Hanh lang tang 3 den sang roi, cam on", None, "OUT_OF_SCOPE"),
+        ("Hành lang tầng 3 đèn sáng rồi, cảm ơn", None, "OUT_OF_SCOPE"),  # "rồi" is not "rơi"
+        # a lamp inside a flat or on the street outside the gate, even with the resident's location
+        ("Tòa SIM-A tầng 3 hành lang: đèn trong căn hộ tôi bị hỏng", None, "OUT_OF_SCOPE"),
+        ("Toa SIM-A tang 3 hanh lang: bong den phong ngu nha toi bi chay", None, "OUT_OF_SCOPE"),
+        ("Hành lang tầng 3 tòa SIM-A: đèn đường ngoài cổng không sáng", None, "OUT_OF_SCOPE"),
+        ("Đèn hành lang trước căn hộ 305 tầng 3 tòa SIM-A không sáng", "PB-TEC-01", None),
+        # new resident wording, accented and not
+        ("Tòa SIM-A / Tầng 3 / Hành lang: đèn sáng lờ mờ", "PB-TEC-01", None),
+        ("Tòa SIM-A / Tầng 3 / Hành lang: đèn rớt xuống vỡ tan", "PB-TEC-01", None),
+        ("Toa SIM-A / Tang 3 / Hanh lang: bong den chay roi", "PB-TEC-01", None),
+        ("Toa SIM-A / Tang 3 / Hanh lang: mat den tu toi qua", "PB-TEC-01", None),
+        ("Tòa SIM-A / Tầng 3 / Hành lang: nước đọng thành vũng", "PB-CLN-01", None),
+        ("Tòa SIM-A / Tầng 3 / Hành lang: mùi hôi nồng nặc", "PB-CLN-01", None),
+        ("Toa SIM-A / Tang 3 / Hanh lang: san do qua", "PB-CLN-01", None),
+        ("Tòa SIM-A / Tầng 3 / Hành lang: sơn đổ ra sàn chưa ai lau", "PB-CLN-01", None),
+        # look-alikes of the new cleaning words
+        ("Toa SIM-A / Tang 3 / Hanh lang: toi ban qua, thang may hong", None, "OUT_OF_SCOPE"),
+        ("Hành lang tầng 3: không lâu sau thang máy lại hỏng", None, "OUT_OF_SCOPE"),
+        ("Phan Văn Tài, hành lang tầng 3: đèn không sáng", "PB-TEC-01", None),
+    ],
+)
+def test_plan05_location_and_wording(text, playbook, reason_code):
+    result = classify(text)
+    assert (result.playbook_id, result.reason_code) == (playbook, reason_code), result

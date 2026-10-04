@@ -1274,12 +1274,12 @@ class MaintenanceEngine:
                 return []  # another process runs the job this round
             for case in self.repo.list():
                 ticket_id = case.ticket.ticket_id
-                if not self._due(case.ticket, moment):
-                    continue  # nothing for _tick to do: skip the deep copy
                 before = len(case.events)
                 try:
+                    if not self._due(case.ticket, moment):
+                        continue  # nothing for _tick to do: skip the deep copy
                     self._mutate(ticket_id, SYSTEM_ID, Action.RUN_JOBS, lambda work, now: self._tick(work, now))
-                except EngineError:  # one broken ticket must not stop the job for all the others
+                except Exception:  # noqa: BLE001 - one broken ticket (any error) must not stop the job for the others
                     logger.exception("run_jobs: ticket %s failed", ticket_id)
                     continue
                 if len(self.repo.get(ticket_id).events) != before:
@@ -1308,12 +1308,12 @@ class MaintenanceEngine:
         """E5 (plan 04 Q07): a stored RECEIVED ticket without a blocker never had its pipeline committed (`receive`
         commits the ingest first). Past a grace period, so a `receive` still running elsewhere is left alone."""
         created = _created_at(ticket.raw)
-        return (
-            ticket.status == S.RECEIVED
-            and ticket.blocker is None
-            and created is not None
-            and now >= created + ORPHAN_GRACE
-        )
+        if ticket.status != S.RECEIVED or ticket.blocker is not None or created is None:
+            return False
+        try:
+            return now >= created + ORPHAN_GRACE
+        except OverflowError:  # a created_at at the very end of the calendar is never "past the grace period"
+            return False
 
     # ------------------------------------------------------------------ the one transition entry point
 

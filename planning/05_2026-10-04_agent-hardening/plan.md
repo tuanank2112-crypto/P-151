@@ -20,8 +20,12 @@ Câu thử của plan 04 (cả 3 vòng worker + thẩm định) gần như khôn
 | Q03 | 2026-10-04 | KHÔNG đổi spec: CR §5.1 (bước 2 hỏi vị trí trước phân loại), B-03 ("cháy" đứng riêng = Bậc 2), "kêu cứu" nghĩa bóng = Bậc 1 (plan 04 Q12). Được sửa `safety.py` chỉ theo hướng KHÔNG hạ mức an toàn | Spec của Trường/nhóm; an toàn trước | — |
 | Q04 | 2026-10-04 | Thẩm định độc lập bắt buộc viết câu như cư dân thật, CÓ vị trí đầy đủ; làm đỏ trước khi SO gộp | Lỗ của plan 04 | — |
 
+| Q05 | 2026-10-04 | **Người dùng duyệt ("ừ có nhé") đổi điều phối ngoài phạm vi:** phản ánh mà phân loại ra OUT_OF_SCOPE rõ ràng (không khớp playbook nào, không phải CATEGORY_UNCLEAR) và CHỈ thiếu vị trí ⇒ dừng VERIFYING/OUT_OF_SCOPE (chủ BPTN) ngay ở bước 2, không hỏi cư dân vị trí. Tầng an toàn 2b vẫn chạy trước. Blocker này `resume_step=2`: BPTN chọn loại việc xong thì chạy lại từ bước 2 ⇒ nếu vẫn thiếu vị trí thì MISSING_INFO (chủ BPTN) — không bao giờ giao việc thiếu vị trí. Thay thứ tự CR §5.1 cho trường hợp này; báo Trường cập nhật spec | Agent phải điều phối đúng người: câu hỏi phí/căn hộ không cần vị trí khu vực chung | Bỏ nhánh · rẻ |
+| Q06 | 2026-10-04 | Duyệt hai đánh đổi của WP1: "…tia lửa, giờ hết rồi + vị trí" ⇒ UNCLEAR (đúng T2-02, trước đây chỉ lệch khi thêm vị trí); "khối/khỏi" gõ sai dấu chỉ là "khói" khi có cặp chữ chắc nghĩa. Duyệt WP2: luật bắt "bóng tuýp", câu trộn giữ CATEGORY_UNCLEAR kể cả khi LLM chọn một; 3 test cũ chỉ đổi câu ví dụ | Nhất quán với spec; không lộ phần việc bị giấu | — |
+| Q07 | 2026-10-04 | Sửa lỗi job định kỳ chết do ticket có `created_at` cuối lịch (thẩm định backend A1, lỗi do plan 04 E5): `_orphaned` chặn tràn số, vòng job bắt mọi lỗi theo từng ticket và ghi log | Engine (chủ Như Ý); lỗi do SO gây ra | — |
+
 ### Quyết định bị thay thế
-- (chưa có)
+- CR §5.1 thứ tự "bước 2 hỏi vị trí trước phân loại" → thay một phần bởi Q05 (chỉ cho phản ánh ngoài phạm vi rõ ràng).
 
 ## §3. Work Packages
 | WP | Việc | Tầng | Vai | Handoff |

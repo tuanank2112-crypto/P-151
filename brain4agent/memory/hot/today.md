@@ -178,3 +178,4 @@
 
 ## Plan 05 — làm cứng Agent bằng kiểm thử biến thể — 2026-10-04
 - Demo trên develop lộ 'Sảnh thang máy tầng 2 tòa SIM-C có khối rác' ⇒ khẩn cấp (confirmer khoi: toa khớp chữ 'tòa'); plan 04 chỉ sửa câu không tên tòa. Người dùng: 'sửa toàn diện phần agent'. Mở planning/05_2026-10-04_agent-hardening (nhánh fix/nhuy-agent-hardening từ develop 37a0fb3, đã gỡ upstream): WP1 an toàn + WP2 phân loại/vị trí bằng bộ biến thể vị trí, WP3 thẩm định độc lập câu có vị trí.
+- Plan 05 vòng 1 gộp (WP1 an toàn 33→0 vi phạm biến thể; WP2 phân loại 1483→0; sửa job chết do plan 04 E5): pytest 2780 passed, ruff sạch. Thẩm định end-to-end 🔁: vị trí chèn giữa câu làm sót Bậc 1, S-03 lộ/lòi dây, 'day tran' không dấu, tách vị trí lấy tầng đầu tiên, B-01 'cứ/gần căn'. Mở H03 (an toàn vòng 2), H04 (phân loại vòng 2); SO làm engine (Q05 ngoài phạm vi không hỏi vị trí, vị trí bổ sung ưu tiên, chuẩn hoá vị trí BPTN).

@@ -347,13 +347,38 @@ class _Lookups:
         if s0 not in self._valid_markers:
             inside = [(a, b) for a, b in self.markers if s0 <= a < s1]
             tail = s0
-            if inside:  # end of the last token of the sentence that is not a final particle
-                for token in reversed(list(TOKEN.finditer(self.ctx.norm, s0, s1))):
-                    if token.group(0) not in self.particles:
-                        tail = token.end()
-                        break
+            if inside:  # end of the last token that is not a final particle nor part of a trailing place phrase
+                tokens = list(TOKEN.finditer(self.ctx.norm, s0, s1))
+                k = self._strip_particles(tokens, len(tokens))
+                k = self._strip_particles(tokens, self._place_tail(tokens, k))
+                tail = tokens[k - 1].end() if k else s0
             self._valid_markers[s0] = [(a, b) for a, b in inside if b >= tail]
         return self._valid_markers[s0]
+
+    def _strip_particles(self, tokens: list[re.Match[str]], k: int) -> int:
+        while k and tokens[k - 1].group(0) in self.particles:
+            k -= 1
+        return k
+
+    def _place_tail(self, tokens: list[re.Match[str]], k: int) -> int:
+        """Plan 05: start of the longest run tokens[j:k] that is a place written after the marker ("giờ hết rồi ở hành
+        lang tầng 4 tòa SIM-B"): the B-01 closed set of place words and codes (R6), at most `b01_max_prefix_tokens`
+        tokens, holding a code or a phrase of two or more words (so helper words alone never count). No match: k."""
+        words = [t.group(0) for t in tokens[:k]]
+        ok = [False] * (k + 1)  # ok[j]: words[j:k] decomposes into the closed set
+        strong = [False] * (k + 1)  # strong[j]: ... with at least one code or multi-word phrase
+        ok[k] = True
+        best = k
+        for j in range(k - 1, max(-1, k - 1 - self.lexicon.b01_max_prefix_tokens), -1):
+            if self.code_re.fullmatch(words[j]) and ok[j + 1]:
+                ok[j], strong[j] = True, True
+            for length in range(1, min(self.longest, k - j) + 1):
+                if ok[j + length] and tuple(words[j : j + length]) in self.phrases:
+                    ok[j] = True
+                    strong[j] = strong[j] or length > 1 or strong[j + length]
+            if ok[j] and strong[j]:
+                best = j
+        return best
 
     # -- R7 ------------------------------------------------------------------------------------------------
     def clause_grams(self, pos: int) -> frozenset[str]:

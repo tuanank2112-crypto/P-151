@@ -37,7 +37,15 @@ ACCENT_MARKERS: list[tuple[str, str]] = [
     (r"\b(?:bẩn|dơ)\b", "dirty"),
     (r"\bphân\b", "feces"),
     (r"\bnôn\b", "vomit"),
+    (r"\bmờ\b", "dim"),  # not "mở" (a lamp left on)
+    (r"\b(?:rơi|rớt)\b", "fall"),  # not "rồi"
+    (r"\bnổ\b", "explode"),  # not "nó"
+    (r"\bđầy\b", "full"),  # not "dãy" (a row of lamps)
+    (r"\btràn\b", "overflow"),  # not "trần" (ceiling)
 ]
+# Location names that contain a trigger word: they are swapped for a neutral area marker, so where the resident
+# stands never picks the job type ("Phòng rác: đèn chập chờn" is a lamp, not rubbish). Plan 05 Q01.
+LOCATION_MARKERS: list[tuple[str, str]] = [(r"\bphong rac\b", "garbageroom")]
 
 
 def _classification_text(description: str) -> str:
@@ -45,7 +53,10 @@ def _classification_text(description: str) -> str:
     text = unicodedata.normalize("NFC", description).lower()
     for pattern, marker in ACCENT_MARKERS:
         text = re.sub(pattern, marker, text)
-    return normalize(text)
+    text = normalize(text)
+    for pattern, marker in LOCATION_MARKERS:
+        text = re.sub(pattern, marker, text)
+    return text
 
 
 CLEANING_PATTERNS = [
@@ -60,11 +71,55 @@ CLEANING_PATTERNS = [
     r"\bvung nuoc\b",
     r"\bchat thai\b",
     r"\bbai non\b",
-    r"\bdo tran\b",
+    r"\bdo (?:tran|overflow)\b",
 ]
 # Softer words ("bẩn", "phân", "nôn"...) only count when a common area is named, so chatter about anything
 # else cannot trigger the cleaning playbook
-SOFT_CLEANING_PATTERNS = [r"\bdirty\b", r"\bfeces\b", r"\bvomit\b", r"\bnuoc tieu\b"]
+# Things spilt on the floor: "sơn đổ", "sữa đổ ra sàn", "dầu mỡ đổ loang" (also typed without accents)
+SPILT = r"\b(?:son|sua|ca phe|nuoc(?: ngot| canh)?|dau(?: mo| an)?|bia|chao)(?: [a-z]+)?? (?:do|tran|overflow|loang)\b"
+SOFT_CLEANING_PATTERNS = [
+    r"\bdirty\b",
+    r"\bfeces\b",
+    r"\bvomit\b",
+    r"\bnuoc tieu\b",
+    # plan 05: what residents actually write (accented or not); every one still needs a common area named
+    r"(?<!toi )(?<!em )(?<!minh )(?<!anh )(?<!chi )\b(?:ban|do) (?:qua|lam|thiu|kinh khung)\b",  # not "tôi bận quá"
+    r"\brat (?:ban|do)\b",
+    r"\bban thiu\b",
+    r"\b(?:nuoc|vung) dong\b",
+    r"\bdong nuoc\b",
+    r"\bnuoc (?:ban|thai)\b",
+    r"\blenh lang\b",
+    r"\bsan (?:[a-z]+ )?tron\b",
+    r"\btron truot\b",
+    r"\bmui (?:hoi|thoi|khai|tanh|kho chiu)\b",
+    r"\bboc mui\b",
+    r"\bhoi thoi\b",
+    r"\bphan (?:cho|meo|chim|chuot|nguoi)\b",  # unaccented "phân"; "Phan Văn Tài" is not followed by these
+    r"\bnon (?:ra|mua)\b",
+    r"\bla (?:cay|kho|rung)\b",
+    r"\bmang nhen\b",
+    r"\bdau mo\b",
+    SPILT,
+    r"\bkinh\b(?: [a-z]+){0,3}? (?:dirty|ban|bam bui)\b",
+    r"\bvo (?:chai|lon|hop|banh|keo)\b",
+    r"\b(?:dau loc|tan|mau|dau) thuoc\b",
+    r"\bgiay vun\b",
+    r"\bvuong vai\b",
+    r"\bvut (?:bua|lung tung|day|full)\b",
+    r"\bkeo cao su\b",
+    r"\b(?:dat cat|bun dat|dat bun)\b",
+    r"\blong (?:cho|meo)\b",
+    r"\breu\b",
+    r"\bthung carton\b",
+    r"\bnhop(?: nhap)?\b",
+    r"\b(?:khong|chua) ai (?:lau|don)\b",  # not "không lâu sau"
+    r"\bchua (?:duoc )?don\b",
+    # the garbage room itself overflowing: accented "đầy"/"tràn" anywhere, unaccented only right after it
+    r"\bgarbageroom\b.*\b(?:full|overflow)\b",
+    r"\b(?:full|overflow)\b.*\bgarbageroom\b",
+    r"\bgarbageroom (?:(?:tang|lau|toa|block|ham) [a-z0-9-]+ )*(?:bi |da |qua )?(?:day|tran|ngap)\b",
+]
 COMMON_AREA_PATTERNS = [
     r"\bhanh lang\b",
     r"\bsanh\b",
@@ -72,7 +127,7 @@ COMMON_AREA_PATTERNS = [
     r"\bthang bo\b",
     r"\bham\b",
     r"\bkhu vuc\b",
-    r"\bphong rac\b",
+    r"\bgarbageroom\b",
     r"\bbai (?:do |dau )?xe\b",
     r"\bnha xe\b",
     r"\bsan (?:choi|thuong)\b",
@@ -84,10 +139,27 @@ LIGHTING_PATTERNS = [
     r"\bchieu sang\b",
     r"(?<!khi )(?<!di )(?<!toi )\bden (hanh lang|sanh|cau thang|ham|tang|khu vuc)\b",
 ]
+# Unaccented "den" a few words before a lamp symptom ("den chap chon", "den exit thoat hiem khong sang") is a lamp
+# too when a common area is named; arrival ("khi den", "toi den noi") is excluded as above.
+NOT_WORKING_WORDS = (
+    r"(?:chap chon|nhap nhay|nhay nhay|chop|tat|hong|hu|vo|chet|dut|khong (?:sang|len|bat|hoat dong)"
+    r"|bat khong (?:len|sang)|sang (?:yeu|lo mo)|lo mo|mo qua|toi (?:om|thui|mu)|roi xuong|rot|bi no|lung lang|re re|bi chay|chay bong)"
+)
+UNACCENTED_LAMP = rf"(?<!khi )(?<!di )(?<!toi )(?<!moi )(?<!vua )\bden(?: [a-z]+){{0,3}}? {NOT_WORKING_WORDS}\b"
+# A lamp inside a flat or out on the street is not a common-area lamp (Playbook §7.1), even when the resident
+# also names where they live ("Tòa SIM-A tầng 3 hành lang: đèn trong căn hộ tôi bị hỏng")
+PRIVATE_LAMP_PATTERNS = [
+    r"\b(?:luminaire|den|tuyp) (?:(?:trong|cua|o|tai) )?(?:can ho|nha (?:toi|minh|em)|phong (?:ngu|khach|tam)|nha tam|nha bep)\b",
+    r"\b(?:can ho|nha) (?:toi|minh|em),? (?:luminaire|bong (?:den|luminaire))\b",
+]
+# A fluorescent tube is a lamp even without "đèn" ("bóng tuýp chết", "tuýp chập chờn"); like the other lamp words
+# it needs a common area. Darkness alone ("tối om") is NOT a lamp: it may be a power cut, so it stays with the LLM.
+TUBE_LAMP = r"\btuyp\b"
+OUTSIDE_PATTERNS = [r"\bngoai (?:cong|khuon vien)\b", r"\bduong pho\b", r"\bvia he\b"]
 # Accented "đèn" is unambiguous: with a common area named anywhere in the report it is a common-area lamp
 # ("Cầu thang bộ tầng 6 đèn bị hỏng", "Hầm B2 đèn tắt hết"). A report with dirt as well is CATEGORY_UNCLEAR.
 LUMINAIRE = r"\bluminaire\b"
-LUMINAIRE_LOST = r"\bmat luminaire\b"
+LUMINAIRE_LOST = r"\bmat (?:luminaire|den)\b"  # "mất đèn", also typed without accents (needs a common area)
 # Q22: "bóng đèn … bị cháy" is a burnt-out lamp (2b ran first: a real fire never reaches classification)
 LAMP_BURNT = r"\b(?:bong|luminaire|tuyp)\b(?: [a-z0-9-]+){0,10}? (?:burnt|(?:bi|da) chay)\b"
 NOT_WORKING_PATTERNS = [
@@ -102,6 +174,18 @@ NOT_WORKING_PATTERNS = [
     LUMINAIRE_LOST,
     r"\bchap chon\b",
     r"\btat\b",
+    # plan 05: flicker / dim / dead / fallen lamps as residents write them
+    r"\b(?:nhay nhay|chop)\b",
+    r"\bkhong (?:chiu |tu )?bat\b",
+    r"\bbat khong (?:len|sang|duoc)\b",
+    r"\b(?:sang )?yeu\b",
+    r"\b(?:dim|lo mo|mo qua)\b",
+    r"\btoi (?:om|thui|mu)\b",
+    r"\b(?:explode|bi no|no tung)\b",
+    r"\b(?:fall|roi xuong|rot)\b",
+    r"\b(?:dut|chet)\b",
+    r"\b(?:lung lang|re re)\b",
+    r"\b(?:bong (?:den|luminaire) chay|chay bong)\b",  # Q22 typed without accents: "bong den chay roi"
 ]
 
 
@@ -123,8 +207,11 @@ def classify(description: str) -> Classification:
     text = _classification_text(description)
     in_common_area = _any(COMMON_AREA_PATTERNS, text)
     cleaning = _any(CLEANING_PATTERNS, text) or (in_common_area and _any(SOFT_CLEANING_PATTERNS, text))
-    lit_subject = _any(LIGHTING_PATTERNS, text) or (in_common_area and re.search(LUMINAIRE, text))
-    lighting = bool(lit_subject) and _any(NOT_WORKING_PATTERNS, text)
+    lit_subject = _any(LIGHTING_PATTERNS, text) or (
+        in_common_area and _any([LUMINAIRE, UNACCENTED_LAMP, LUMINAIRE_LOST, TUBE_LAMP], text)
+    )
+    not_common_lamp = _any(PRIVATE_LAMP_PATTERNS, text) or _any(OUTSIDE_PATTERNS, text)
+    lighting = bool(lit_subject) and _any(NOT_WORKING_PATTERNS, text) and not not_common_lamp
     if cleaning and not lighting:
         return Classification(
             PlaybookId.CLN,

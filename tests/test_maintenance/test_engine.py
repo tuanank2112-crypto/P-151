@@ -205,7 +205,7 @@ def test_step5_llm_only_proposal_waits_for_bptn(clock):
 
     e = MaintenanceEngine(clock=clock, llm=llm, llm_label="fake")
     e.reset(with_fixtures=False)
-    tid = report(e, "Hành lang tầng 3 tòa SIM-A tối om, bóng tuýp chết rồi")
+    tid = report(e, "Hành lang tầng 3 tòa SIM-A tối om, không thấy đường")
     case = e.get(tid)
     assert case.ticket.blocker.code == "PENDING_REVIEW" and case.ticket.review_status == "PENDING_REVIEW"
     assert case.ticket.department_id is None and case.ticket.asset_resolution is None  # review comes before assets
