@@ -1,0 +1,20 @@
+# SO holdout (18 fresh sentences), round 3
+ok  EMERGENCY  want=['EMERGENCY'] | Thang máy tòa SIM-C kẹt giữa tầng 3 và 4, bên trong có một bà cụ
+ok  EMERGENCY  want=['EMERGENCY'] | Có một anh bảo vệ ngất xỉu ở cổng hầm xe
+ok  EMERGENCY  want=['EMERGENCY'] | Ổ điện hành lang tầng 6 tóe lửa liên tục
+ok  EMERGENCY  want=['EMERGENCY'] | Phòng rác tầng 7 bốc cháy rồi
+ok  EMERGENCY  want=['EMERGENCY'] | Khói đen bốc ra từ phòng kỹ thuật tầng hầm
+ok  EMERGENCY  want=['EMERGENCY'] | Dây điện đứt rơi xuống vũng nước ở sảnh
+ok  EMERGENCY  want=['EMERGENCY'] | Có em bé bị kẹt trong thang máy tòa SIM-A
+ok  EMERGENCY  want=['EMERGENCY'] | Một cụ ông té ngã ở cầu thang bộ, đang chảy máu đầu
+ok  EMERGENCY  want=['EMERGENCY', 'UNCLEAR'] | Mùi khét rất nặng ở tủ điện tầng 4
+ok  NONE       want=['NONE'] | Đèn hành lang tầng 4 tòa SIM-B không sáng từ tối qua
+ok  NONE       want=['NONE'] | Sảnh chính có nhiều rác sau buổi tiệc
+ok  NONE       want=['NONE', 'UNCLEAR'] | Thang máy kẹt cửa, phải bấm nhiều lần mới đóng
+ok  NONE       want=['NONE'] | Cầu dao tầng 2 bị ngắt nên hành lang tối
+ok  NONE       want=['NONE'] | Có người để quên áo khoác ở sảnh
+ok  NONE       want=['NONE'] | Bóng đèn cầu thang tầng 9 bị cháy, nhờ thay
+ok  NONE       want=['NONE', 'UNCLEAR'] | Hành lang tầng 3 nhiều khói thuốc lá do có người hút
+ok  UNCLEAR    want=['NONE', 'UNCLEAR'] | Nhà bên cạnh nấu ăn mùi hơi khét
+ok  NONE       want=['NONE'] | Xe cứu thương đỗ chắn lối ra hầm
+TOTAL=18 BAD=0

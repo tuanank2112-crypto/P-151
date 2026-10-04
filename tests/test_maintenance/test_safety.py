@@ -318,7 +318,8 @@ def test_benign_lamp_report_routes_normally(fresh):
     case = fresh.get(report(fresh, "Bóng đèn hành lang tầng 3 tòa SIM-A bị cháy."))
     assert case.ticket.risk_level == RiskLevel.NONE
     assert case.classification is not None  # step 3 ran: the safety layer did not stop it
-    assert case.ticket.blocker.code == "OUT_OF_SCOPE"  # the classifier's own verdict (proposer unchanged, V-10)
+    # Q22 closed (plan 04): a burnt-out lamp is the lighting playbook, routed like any other lamp report
+    assert case.classification.playbook_id == "PB-TEC-01" and case.ticket.status == "ROUTED"
     assert [(s.signal_id, s.status, s.rule_id) for s in case.ticket.risk_signals] == [("T2-03", "ABSENT", "B-01")]
     normal = fresh.get(report(fresh, "Đèn hành lang tầng 3 tòa SIM-B không sáng."))
     assert normal.ticket.risk_level == RiskLevel.NONE and normal.classification is not None  # step 3 ran
@@ -744,7 +745,7 @@ def test_lexicon_wp3c_keys_and_validator():
         "S-09",
     )
     assert sorted(safety.tier2_net_roots) == ["bat dong", "khoi", "lua", "mau"]
-    assert priority.negation_fillers == safety.negation_fillers and lexicon.lexicon_version == "2026-10-02.p0c"
+    assert priority.negation_fillers == safety.negation_fillers and lexicon.lexicon_version == "2026-10-04.p0d"
     assert not hasattr(safety, "non_lamp_electrical") and not hasattr(safety, "negation_window_words")
     assert (len(safety.signals), sum(s.phase == "P0" for s in safety.signals), len(safety.components)) == (17, 10, 2)
     data = yaml.safe_load((FIXTURE_DIR / "lexicon.yaml").read_text(encoding="utf-8"))

@@ -40,9 +40,9 @@ def test_rules_and_llm_disagreeing_is_ambiguous():
 
 
 def test_llm_abstaining_on_a_rules_match_is_ambiguous():
-    """Mixed report: rules only caught the cleaning part, the LLM saw both and returned UNKNOWN."""
+    """Mixed report: the LLM saw both and returned UNKNOWN. Since plan 04 the rules see both parts too."""
     text = "Hành lang đầy rác và đèn cũng hỏng luôn"
-    assert propose(text).classification.playbook_id == "PB-CLN-01"
+    assert propose(text).classification.reason_code == "CATEGORY_UNCLEAR"
     result = propose(text, fake(assessment(service="UNKNOWN", ticket_type="UNKNOWN")))
     assert result.classification.playbook_id is None
     assert result.classification.rule_id == "PB-COM-R-CLS-01"
@@ -75,3 +75,21 @@ def test_engine_calls_llm_once_and_traces_the_proposer():
     assert len(llm.calls) == 1  # resuming after review does not ask the model again
     proposal_event = next(a for a in engine.get(case.ticket.ticket_id).audit if a.action == "CREATE_PROPOSAL")
     assert proposal_event.new_value["proposer"] == "rules+llm:gpt-test"
+
+
+def test_enum_conversion_failure_falls_back_to_rules():
+    bad = LLMAssessment.model_construct(service_category="HACK", ticket_type="UNKNOWN", reason="x")
+    result = propose("Hành lang tầng 3 nhiều rác, cần vệ sinh", fake(bad), "gpt-test")
+    assert result.proposer == "rules"
+    assert result.classification.playbook_id == "PB-CLN-01"
+    assert result.notes and "LLM lỗi (ValueError)" in result.notes[0]
+
+
+def test_llm_reason_is_capped():
+    long_reason = "a" * 20000
+    llm_says = LLMAssessment.model_construct(
+        service_category="KY_THUAT", ticket_type="COMMON_AREA_LIGHTING", reason=long_reason
+    )
+    result = propose("Hành lang tầng 3 tối om, bóng tuýp chết rồi", fake(llm_says), "gpt-test")
+    assert result.classification.playbook_id == "PB-TEC-01"
+    assert len(result.classification.reason) <= len("Đề xuất từ LLM: ") + 500
