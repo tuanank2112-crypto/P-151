@@ -46,7 +46,7 @@
     "review_set_2026_10_04": "adversarial 107: HEAD 50 errors -> 7; SO holdout 18/18; live API corpus 34: only out-of-scope-asks-location left (spec)"
   },
   "last_sync": "2026-10-02T13:09:52.176Z",
-  "next_step": "PR fix/nhuy-logic-review -> develop; handoffs H03 Châm Anh (backend patch), H04 Trí (UI), H05 Trường (rules/spec)",
+  "next_step": "PR #14 (fix/nhuy-logic-review -> develop) chờ review/merge; handoffs H03 Châm Anh, H04 Trí, H05 Trường",
   "active_plan": {
     "id": "04_2026-10-04_logic-review-fix",
     "status": "in_progress",

@@ -70,7 +70,7 @@
 - [x] WP4 pytest + ruff check + ruff format toàn repo xanh trên nhánh gộp (1843 passed sau khi tách backend, 29 deselected; `evidence/01`, `02`)
 - [x] Đồng bộ não (6 điểm) + `docs/maintenance.md` §12
 - [x] Người dùng duyệt push phần Agent (Q16)
-- [ ] Push `fix/nhuy-logic-review` + PR vào `develop`
+- [x] Push `fix/nhuy-logic-review` + PR vào `develop` — PR #14 (https://github.com/AI20K-Build-Phase-Cohort-4/P-151/pull/14), commit `1516309`
 - [ ] H03 (Châm Anh) · H04 (Trí) · H05 (Trường) có report R03–R05
 
 ## §5. Exit Gates
