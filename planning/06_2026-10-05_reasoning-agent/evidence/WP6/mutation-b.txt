@@ -1,0 +1,36 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+__ test_a07_a_level_only_a_person_can_lower_stays_after_the_resident_answers __
+
+    def test_a07_a_level_only_a_person_can_lower_stays_after_the_resident_answers():
+        text = "Hành lang tầng 3 tòa S1 có tiếng lạ phát ra từ hộp đèn"
+        unclear = {
+            "risk_level": "UNCLEAR",
+            "signals": [{"signal_id": "T2-04", "status": "UNCLEAR", "quote": "tiếng lạ"}],
+            "reason": "Có tiếng lạ phát ra từ hộp đèn",
+        }
+        answer = "Đã kiểm tra lại, không còn tiếng"
+        client = ScriptedClient(
+            {
+                answer: reply(job(JOB_KT, quote="hộp đèn", asset_id=None, materials=[])),
+                "tiếng lạ": reply(job(JOB_KT, quote="hộp đèn", asset_id=None, materials=[]), safety=unclear),
+            }
+        )
+        engine, _ = make(client)
+        ticket_id = report(engine, text)
+        ticket = engine.get(ticket_id).ticket
+        assert (ticket.status, ticket.blocker.code, ticket.risk_level) == ("VERIFYING", "SAFETY_REVIEW_REQUIRED", "UNCLEAR")
+        engine.safety_request_info(ticket_id, BPTN, note="Hỏi lại cư dân về tiếng lạ")
+        engine.add_resident_info(ticket_id, RESIDENT, answer)
+        ticket = engine.get(ticket_id).ticket
+>       assert (ticket.status, ticket.blocker.code, ticket.risk_level) == ("VERIFYING", "SAFETY_REVIEW_REQUIRED", "UNCLEAR")
+E       AssertionError: assert (<TicketStatu...NONE: 'NONE'>) == ('VERIFYING',...D', 'UNCLEAR')
+E         
+E         At index 1 diff: <ReasonCode.PENDING_REVIEW: 'PENDING_REVIEW'> != 'SAFETY_REVIEW_REQUIRED'
+E         Use -v to get more diff
+
+tests\test_maintenance\test_agent_engine.py:121: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_agent_engine.py::test_a07_a_level_only_a_person_can_lower_stays_after_the_resident_answers
+1 failed, 18 deselected in 1.14s
+EXIT=1

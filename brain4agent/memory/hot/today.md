@@ -67,3 +67,4 @@
 - Plan 06 WP3 (gói agent suy luận: agent/graph/client/prompt/validate/reconcile/baseline + bằng chứng luật) gộp: 3096 pass, --pg 3144. SO phát hiện lỗi B-01: "thay bóng đèn đã cháy" ra UNCLEAR (Q24) → giao WP2.
 - Sửa test phụ thuộc giờ test_partial_delivery_… (fixture engine dùng đồng hồ thật, đỏ sau 22:00): cố định Clock(MONDAY_9AM); ghi gotcha.
 - Plan 06 WP2 (lớp an toàn P1, lexicon p1d: S-00, S-08 nước vào thiết bị điện, sửa B-01 "thay bóng đèn đã cháy") gộp: 3226 pass, --pg 3274, meter 0. Q25 ghi cho WP12.
+- Plan 06 WP6 (tích hợp Agent vào engine: agent=, build_engine, tính ngoài khoá, vân tay, áp từng bước, run_jobs hai pha) gộp: 3248 pass, --pg 3296. Q26.

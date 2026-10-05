@@ -1,0 +1,23 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_ test_a25_a_request_that_slips_in_makes_the_decision_stale_and_it_is_asked_again _
+
+    def test_a25_a_request_that_slips_in_makes_the_decision_stale_and_it_is_asked_again():
+        interferer = _Interferer(times=1)
+        engine, ticket_id = _need_info_ticket(interferer)
+        engine.add_resident_info(ticket_id, RESIDENT, "ở hành lang tầng 3 tòa S1")
+        case = engine.get(ticket_id)
+        assert case.ticket.status == "ROUTED" and len(case.additions) == 2
+        assert case.agent_decision.source == "AGENT"
+>       assert case.agent_decision.fingerprint == engine._content_fingerprint(case)  # the content after the slip-in
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'sha256:79234...f5eb5a7371ffd' == 'sha256:9b13f...f8fe0b7134c76'
+E         
+E         - sha256:9b13fcd75a643b75c13fd86f5d5280a55b6e19067b6340a3e17f8fe0b7134c76
+E         + sha256:79234e55b904c495400cba33e2b08c52def1c9ff4676c05266ef5eb5a7371ffd
+
+tests\test_maintenance\test_agent_engine.py:323: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_agent_engine.py::test_a25_a_request_that_slips_in_makes_the_decision_stale_and_it_is_asked_again
+1 failed, 18 deselected in 0.57s
+EXIT=1
