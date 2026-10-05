@@ -22,6 +22,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 ## 💡 Kho Ý Tưởng & Backlog (Idea Vault)
 *Nơi lưu trữ các ý tưởng hay, kiến trúc mở rộng chưa ưu tiên làm ngay nhưng cần giữ lại để tham khảo.*
+- [ ] **(2026-10-05) Mở rộng tòa ngoài Ocean Park S1/S2:** thêm mã vào `catalog.yaml` `site.buildings` + `field_labels.location_building`; cân nhắc kiểm cả vị trí BPTN nhập tay và mã con (vd `S1.01`).
 - [ ] Chạy ruff format cho `scripts/` (hiện CI không kiểm).
 - [ ] **(2026-10-01) n8n đẩy sự kiện nhập kho vào MaintenanceOps** — NGOÀI scope MVP (CR-03 §1: không tích hợp kho thật); chỉ xét qua change request. Điều kiện tối thiểu: khoá chống trùng (`event_id`) vì `receive_stock` đang cộng dồn, tài khoản máy riêng vai WAREHOUSE (không dùng mật khẩu `kho01`, không bật `MO_ALLOW_ACTOR_HEADER`), tồn kho lưu bền thay vì bộ nhớ, dữ liệu vẫn chỉ mã `SIM-`.
 - [ ] **(2026-10-02) Idea Vault từ hồ sơ 01:** `cancel_reason` hiển thị nguyên văn cho cư dân và `cancel` thiếu `AuditEvent` (có từ trước, R05 N-13/N-14); tổng bổ sung của cư dân chưa giới hạn (R07 M8, mỗi bổ sung <= 5000 ký tự); `>=` với đồng hồ cố định có thể chặn gỡ Bậc 2 trong mô phỏng (R07 M12); LLM an toàn raise-only ở P1 (cần chạy ngoài `engine.lock`); giới hạn đã biết của 2b: Cyrillic/leet/ligature/chữ tách rời/lặp đúng 2 chữ, "Tòa KO có khói", tín hiệu P1 (S-06…S-08, S-10…S-13), B-04 trùng tên riêng có dấu.
@@ -29,6 +30,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [ ] CI chạy `pytest --pg` với service Postgres trong GitHub Actions.
 
 ## Đã hoàn thành (Done)
+- [x] **Phản hồi demo 2026-10-05 (Unreleased):** nút Nghiệm thu một lần; thí điểm Ocean Park S1/S2 + Sảnh cư dân Tầng 1 + tòa con S1.12; BPTN thấy phần thiếu trên thẻ an toàn; phòng ban xác nhận vật tư tại hiện trường (`/material-plan`). 1649 test xanh.
 - [x] **v1.1.2 (2026-10-03, Châm Anh):** `/bql/tickets/{id}/close` chỉ đóng từ `READY_FOR_REVIEW`; ticket khẩn cấp chỉ đóng qua `/emergency/close` (409 `INVALID_TRANSITION` nếu dùng `/close`). 1601 test xanh.
 - [x] **Lắp brain4agent (2026-09-30):** Chạy engine V5.2, tạo các phân vùng nhớ, luật `AGENTS.md`, skill và shim cho agent.
 - [x] **Rà soát backend 2026-09-30 (Châm Anh):** an toàn đồng thời cho engine, job không chặn event loop, chặn cư dân lùi ngày ở production, khóa đăng nhập theo username + client, `/chat` không lộ lỗi, `llm.py` nhận `OPENAI_BASE_URL`, ruff sạch toàn repo.
