@@ -45,6 +45,13 @@ class Settings(BaseSettings):
     supabase_service_role_key: SecretStr = SecretStr("")
     supabase_storage_bucket: str = "maintenance-photos"
 
+    # MaintenanceOps reasoning agent (plan 06). It runs only with LLM_MODE=openai and a key; otherwise the rules decide.
+    # The agent always calls the model with temperature=0 (llm_temperature does not apply to it).
+    mo_agent_enabled: bool = True
+    mo_agent_timeout_seconds: float = Field(default=25.0, gt=0, le=120)
+    mo_agent_max_output_tokens: int = Field(default=2500, ge=500, le=8000)
+    mo_agent_json_mode: Literal["json_object", "prompt_only"] = "json_object"
+
     # Database
     database_url: str = "postgresql+psycopg2://p151:p151@localhost:5432/p151"
 

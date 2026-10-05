@@ -75,7 +75,7 @@ Song song: Wave 1 = WP2 ∥ WP3 ∥ WP4 (WP1 trước WP3); Wave 4 = WP7 ∥ WP8
 ## §4. Checklist thực thi
 - [x] SPEC package (00, 01, P01–P07, OPERATIONS, TESTING, 3 REF chạy được) — 2026-10-05 20:36:03 +0700
 - [x] Người dùng duyệt SPEC 2026-10-05 21:02:30 +0700: Q09 LangGraph CÓ · Q11 S-00 CÓ · Q18 KHÔNG giữ (chỉ liên kết) · Q19 = 3 · Q17 khoá đã ghi `.env` (thiếu base URL/model ⇒ G-LIVE chờ)
-- [ ] WP0 · [ ] WP1 · [ ] WP2 · [ ] WP3 · [ ] WP4
+- [ ] WP0 · [ ] WP1 · [ ] WP2 · [ ] WP3 · [x] WP4 (SO đo lại 2026-10-05 21:20:52 +0700: 2975 passed, --pg 34 passed, ruff sạch)
 - [ ] WP5 · [ ] WP6
 - [ ] WP7 · [ ] WP8 · [ ] WP9 · [ ] WP10 · [ ] WP11
 - [ ] WP12 thẩm định ✅
