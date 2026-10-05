@@ -1385,25 +1385,57 @@ async function renderWarehouse(list, detail) {
     meta: ticketMeta,
     empty: ['Không có phản ánh nào chờ vật tư', null],
   });
+  const [stock, c] = await Promise.all([
+    api('/mo/warehouse/stock'),
+    state.selected ? api(`/mo/tickets/${state.selected}`) : null,
+  ]);
+  const onHand = Object.fromEntries(stock.map((s) => [s.item_code, s.qty]));
+  // what the selected ticket still lacks, from the live stock (the line snapshot may be older)
+  const shortages = c ? c.material_lines.map((line) => {
+    const have = onHand[line.item_code];
+    return { line, have, missing: have == null ? null : Math.max(0, line.planned_qty - have) };
+  }) : [];
+  const firstShort = shortages.find((s) => s.missing > 0);
+
   const item = dropdown('item', state.catalog.materials.map((m) => [m.item_code, `${m.item_name} (${m.item_code})`]), { required: true });
-  const qty = el('input', { name: 'qty', type: 'number', min: '1', step: '1', required: true, value: '5', class: INPUT });
-  const sections = [card('Nhập kho', actionForm([field('Vật tư', item), field('Số lượng', qty)], 'Nhập kho', async (data) => {
+  const qty = el('input', { name: 'qty', type: 'number', min: '1', step: '1', required: true, value: firstShort ? String(firstShort.missing) : '1', class: INPUT });
+  if (firstShort) item.value = firstShort.line.item_code;
+
+  const sections = [card('Nhập kho', actionForm([field('Vật tư', item), field('Số lượng nhập thêm', qty, 'Cộng dồn vào tồn kho hiện có.')], 'Nhập kho', async (data) => {
     try {
-      const resumed = await api(`/mo/warehouse/stock/${data.get('item')}`, { method: 'POST', body: { qty: Number(data.get('qty')) } });
-      toast(resumed.length ? `Đã nhập kho; ${resumed.length} phản ánh chạy tiếp` : 'Đã nhập kho');
-      state.selected = null;
+      const code = data.get('item');
+      const cases = await api(`/mo/warehouse/stock/${code}`, { method: 'POST', body: { qty: Number(data.get('qty')) } });
+      const stillWaiting = cases.filter((x) => x.ticket.blocker && x.ticket.blocker.code === 'WAITING_MATERIAL');
+      const resumed = cases.length - stillWaiting.length;
+      const short = stillWaiting.map((x) => {
+        const line = x.material_lines.find((l) => l.item_code === code);
+        return line ? `${x.ticket.ticket_id} còn thiếu ${Math.max(0, line.planned_qty - (line.simulated_stock_qty ?? 0))}` : x.ticket.ticket_id;
+      });
+      toast([
+        'Đã nhập kho',
+        resumed ? `${resumed} phản ánh chạy tiếp` : null,
+        short.length ? `vẫn chờ: ${short.join(', ')}` : null,
+      ].filter(Boolean).join('; '));
+      if (state.selected && !stillWaiting.some((x) => x.ticket.ticket_id === state.selected)) state.selected = null;
       await render();
     } catch (error) {
       toast(error.message, 'error');
     }
   }))];
-  if (state.selected) {
-    const c = await api(`/mo/tickets/${state.selected}`);
+
+  if (c) {
     sections.push(card(`Vật tư cần cho ${c.ticket.ticket_id}`,
-      el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 text-sm' }, c.material_lines.map((line) => el('li', { class: 'flex justify-between py-2' },
+      el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 text-sm' }, shortages.map(({ line, have, missing }) => el('li', { class: 'flex flex-wrap items-center justify-between gap-2 py-2' },
         el('span', { class: 'text-slate-900 dark:text-slate-200' }, line.item_name),
-        el('span', { class: 'font-medium text-slate-700 dark:text-slate-300' }, `cần ${line.planned_qty} · tồn ${line.simulated_stock_qty ?? 'không rõ'}`))))));
+        el('span', { class: 'flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300' },
+          `cần ${line.planned_qty} · tồn ${have ?? 'không rõ'}`,
+          missing == null ? chip('Tồn kho không rõ', 'amber') : missing > 0 ? chip(`còn thiếu ${missing}`, 'rose') : chip('Đủ', 'green')))))));
   }
+
+  sections.push(card('Tồn kho hiện tại',
+    el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 text-sm' }, stock.map((s) => el('li', { class: 'flex justify-between gap-2 py-2' },
+      el('span', { class: 'text-slate-900 dark:text-slate-200' }, `${s.item_name} (${s.item_code})`),
+      el('span', { class: 'font-medium tabular-nums text-slate-700 dark:text-slate-300' }, s.qty == null ? 'không rõ' : `${s.qty}${s.unit ? ` ${s.unit}` : ''}`))))));
   detail.append(el('div', { class: 'space-y-6' }, sections));
 }
 

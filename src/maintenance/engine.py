@@ -1320,6 +1320,17 @@ class MaintenanceEngine:
             ]
             return [self.resume(ticket_id) for ticket_id in waiting]
 
+    def stock_levels(self, actor_id: str) -> list[dict[str, Any]]:
+        """Current simulated stock of every catalog item (staff only; residents never see materials, CR-03 §2)."""
+        role = self.catalog.actor_role(actor_id)
+        if role is None or role == Role.RESIDENT:
+            raise ActionDeniedError("Chỉ nhân viên được xem tồn kho", {"code": "ACTION_DENIED", "actor_id": actor_id})
+        stock = self.repo.stock()
+        return [
+            {"item_code": m.item_code, "item_name": m.item_name, "unit": m.unit, "qty": stock.get(m.item_code)}
+            for m in self.catalog.materials
+        ]
+
     # ------------------------------------------------------------------ system: resume + scheduled job
 
     def resume(self, ticket_id: str) -> Case:
@@ -2163,6 +2174,8 @@ class MaintenanceEngine:
 
     def _resume(self, work: Case, now: datetime) -> bool:
         blocker = work.ticket.blocker
+        if blocker is not None and blocker.code == R.WAITING_MATERIAL:
+            self._refresh_line_stock(work)  # a partial delivery must show, not the stock of the first check
         if blocker is None or not self._cleared(work, blocker, now):
             return False
         code = blocker.code
@@ -2655,6 +2668,14 @@ class MaintenanceEngine:
         if status in (AssetLookupStatus.NOT_FOUND, AssetLookupStatus.AMBIGUOUS):
             return self._stop(work, S.VERIFYING, R.ASSET_UNCLEAR, now, resume_step=6, note=reason)
         return False
+
+    def _refresh_line_stock(self, work: Case) -> None:
+        """Re-read the stock snapshot of every material line (and the draft's aggregate) from the store."""
+        for line in work.material_lines:
+            line.simulated_stock_qty = self.repo.stock_of(line.item_code)
+            line.material_stock_status = self._line_stock(line.item_code, line.planned_qty)
+        if work.draft is not None:
+            work.draft.material_stock_status = _aggregate_stock(work.material_lines)
 
     def _line_stock(self, item_code: str, planned_qty: float) -> MaterialStockStatus:
         stock = self.repo.stock_of(item_code)

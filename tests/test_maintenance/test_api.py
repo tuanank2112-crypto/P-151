@@ -301,3 +301,14 @@ def test_department_confirms_material_plan(api, engine):
     )
     case = api.post(url, json=body, headers=TEC).json()
     assert [(m["item_code"], m["planned_qty"]) for m in case["material_lines"]] == [("SIM-MAT-LAMP-02", 2)]
+
+
+def test_warehouse_reads_stock(api):
+    rows = api.get("/api/v1/mo/warehouse/stock", headers=WAREHOUSE)
+    assert rows.status_code == 200
+    assert {r["item_code"]: r["qty"] for r in rows.json()}["SIM-MAT-LAMP-02"] == 0
+    api.post("/api/v1/mo/warehouse/stock/SIM-MAT-LAMP-02", json={"qty": 1}, headers=WAREHOUSE)
+    assert {r["item_code"]: r["qty"] for r in api.get("/api/v1/mo/warehouse/stock", headers=WAREHOUSE).json()}[
+        "SIM-MAT-LAMP-02"
+    ] == 1
+    assert api.get("/api/v1/mo/warehouse/stock", headers=RESIDENT).status_code == 403

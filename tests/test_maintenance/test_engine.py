@@ -43,6 +43,7 @@ from tests.test_maintenance.helpers import (
     RESIDENT,
     TEC,
     TZ,
+    WAREHOUSE,
     Clock,
     do_work,
     finish,
@@ -666,3 +667,25 @@ def test_p0_contract_queue_sort_key_and_bql_row_fields(engine):
         "SIM-TKT-TEC-005",
     }
     assert resident_view(engine, engine.get("SIM-TKT-CLN-001"), engine.clock()).allowed_actions == []
+
+
+def test_partial_delivery_updates_the_stock_the_waiting_ticket_shows(engine):
+    """Needs 2, stock 0: receiving 1 keeps the ticket waiting but shows stock 1 (it used to stay at 0)."""
+    tid = "SIM-TKT-TEC-003"
+    assert [(m.item_code, m.planned_qty, m.simulated_stock_qty) for m in engine.get(tid).material_lines] == [
+        ("SIM-MAT-LAMP-02", 2, 0)
+    ]
+    [case] = engine.receive_stock(WAREHOUSE, "SIM-MAT-LAMP-02", 1)
+    assert case.ticket.blocker.code == "WAITING_MATERIAL"
+    assert case.material_lines[0].simulated_stock_qty == 1
+    assert case.material_lines[0].material_stock_status == "INSUFFICIENT"
+    [case] = engine.receive_stock(WAREHOUSE, "SIM-MAT-LAMP-02", 1)
+    assert case.ticket.status == "ROUTED" and case.ticket.blocker is None
+
+
+def test_stock_levels_for_staff_only(engine):
+    rows = {r["item_code"]: r["qty"] for r in engine.stock_levels(WAREHOUSE)}
+    assert rows["SIM-MAT-LAMP-02"] == 0 and rows["SIM-MAT-STARTER-01"] is None
+    assert len(rows) == len(engine.catalog.materials)
+    with pytest.raises(ActionDeniedError):
+        engine.stock_levels(RESIDENT)

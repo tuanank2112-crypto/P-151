@@ -604,6 +604,19 @@ class StockRequest(BaseModel):
     qty: float = Field(gt=0)
 
 
+class StockRow(BaseModel):
+    item_code: str
+    item_name: str
+    unit: str | None = None
+    qty: float | None = None  # null = tồn kho không rõ
+
+
+@router.get("/warehouse/stock", response_model=list[StockRow])
+def read_stock(actor: ActorDep, engine: EngineDep) -> list[StockRow]:
+    """Tồn kho mô phỏng hiện tại của mọi vật tư (chỉ nhân viên)."""
+    return _call(engine.stock_levels, actor)
+
+
 @router.post("/warehouse/stock/{item_code}", response_model=list[Case])
 def receive_stock(item_code: str, body: StockRequest, actor: ActorDep, engine: EngineDep) -> list[Case]:
     """Kho nhập vật tư (sự kiện `stock_received`): ticket chờ vật tư đó tự chạy lại từ bước 6 (chưa nhận việc)
