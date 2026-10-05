@@ -180,7 +180,7 @@ def api(tmp_path, monkeypatch):
 def _create(client) -> str:
     response = client.post(
         "/api/v1/resident/tickets",
-        json={"original_description": "Cầu thang bộ tầng 4 tòa SIM-B nhiều rác"},
+        json={"original_description": "Cầu thang bộ tầng 4 tòa S2 nhiều rác"},
         headers=RESIDENT,
     )
     assert response.status_code == 201, response.text

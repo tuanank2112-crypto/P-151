@@ -15,6 +15,7 @@ Rules that hold everywhere:
     deep copy and commits only after the audit sink accepted the new rows (audit failure = fail closed).
 """
 
+import json
 import logging
 import threading
 from collections.abc import Callable, Iterator, Mapping, MutableMapping, Sequence
@@ -84,9 +85,9 @@ from src.maintenance.models import (
     WorkOrderDraft,
 )
 from src.maintenance.priority import propose_priority
-from src.maintenance.proposer import LLMClient, propose
-from src.maintenance.rules import extract_location, missing_location_parts
-from src.maintenance.safety import SafetyLLMClient, assess_with_llm
+from src.maintenance.proposer import LLMClient, ProposalResult, propose
+from src.maintenance.rules import extract_location, mentions_playbook_subject, missing_location_parts
+from src.maintenance.safety import SafetyLLMClient, assess, assess_with_llm
 from src.maintenance.store.base import (  # the error hierarchy lives with the store
     CaseRepository,
     EngineError,
@@ -110,6 +111,8 @@ MAX_RESIDENT_PHOTOS = 5
 MAX_EXECUTION_PHOTOS = 10
 EXECUTION_PHOTO = "execution_photo"  # failing_items entry when the department sent no photo
 SOURCE_REVISION = "SRC-001"
+DENIED_TEXT_MAX = 500  # a denied request cannot grow the ticket's audit by more than this per field (plan 04 A1)
+ORPHAN_GRACE = timedelta(minutes=2)  # a RECEIVED ticket left without a pipeline run is picked up by the job after this
 
 S = TicketStatus
 R = ReasonCode
@@ -434,17 +437,46 @@ class MaintenanceEngine:
         if self.catalog.actor_role(resident_id) != Role.RESIDENT:
             raise ActionDeniedError(f"{resident_id} không phải cư dân", {"code": "ACTION_DENIED"})
         moment = (received_at or self.clock()).astimezone(LOCAL_TZ)
-        with self.lock:
-            number = self.repo.next_ticket_number()  # never handed out twice, even across processes
-            raw = RawTicket(
-                ticket_id=f"SIM-TKT-{number:04d}",
-                created_at=moment.isoformat(timespec="seconds"),
-                original_description=original_description,
-                channel=channel,
-            )
-            with self.at(moment):
-                self.ingest(raw, resident_id=resident_id)
-                return self.run_agent(raw.ticket_id)
+        number = self.repo.next_ticket_number()  # never handed out twice, even across processes: no engine lock
+        raw = RawTicket(
+            ticket_id=f"SIM-TKT-{number:04d}",
+            created_at=moment.isoformat(timespec="seconds"),
+            original_description=original_description,
+            channel=channel,
+        )
+        # E4 (plan 04 Q06): the slow LLM call runs before the engine lock, so other requests are not held up
+        hint = self._early_proposal(raw)
+        with self.lock, self.at(moment), self._proposal_hint(raw.ticket_id, original_description, hint):
+            self.ingest(raw, resident_id=resident_id)
+            return self.run_agent(raw.ticket_id)
+
+    def _early_proposal(self, raw: RawTicket) -> ProposalResult | None:
+        """The classification the pipeline will ask for, computed outside the lock. Skipped when there is no LLM or when
+        the safety layer stops the ticket first, so no call is wasted. A report without a location is still classified:
+        step 2 needs to know whether it is out of scope (plan 05 Q05)."""
+        text = raw.original_description
+        if self.llm is None or _blank(text):
+            return None
+        if assess(text, self.lexicon.safety).risk_level != RiskLevel.NONE:
+            return None
+        return propose(text, self.llm, self.llm_label, ticket_id=raw.ticket_id)
+
+    @contextmanager
+    def _proposal_hint(self, ticket_id: str, content: str, outcome: ProposalResult | None) -> Iterator[None]:
+        """Offer `outcome` to `_classification` for this ticket on this thread, while the content is unchanged."""
+        previous = getattr(self._local, "proposal_hint", None)
+        self._local.proposal_hint = (ticket_id, content, outcome) if outcome is not None else None
+        try:
+            yield
+        finally:
+            self._local.proposal_hint = previous
+
+    def _take_proposal_hint(self, ticket_id: str, content: str) -> ProposalResult | None:
+        hint = getattr(self._local, "proposal_hint", None)
+        if hint is None or hint[:2] != (ticket_id, content):
+            return None
+        self._local.proposal_hint = None  # used once
+        return hint[2]
 
     def ingest(
         self,
@@ -708,7 +740,9 @@ class MaintenanceEngine:
             if location is not None:
                 if _blank(location):
                     raise GuardError("location không được rỗng")
-                locks["location"] = location.strip()
+                # Plan 05: a location BPTN types freely ("tầng 3 tòa SIM-A hành lang") is stored in the standard form, so
+                # asset lookup and duplicate checks compare like with like; text that does not parse is kept as typed
+                locks["location"] = extract_location(location, self.catalog.site.buildings) or location.strip()
             if asset_id is not None:
                 if not any(a.asset_id == asset_id for a in self.catalog.assets):
                     raise GuardError(f"Không có asset {asset_id} trong catalog")
@@ -1096,6 +1130,65 @@ class MaintenanceEngine:
 
         return self._mutate(ticket_id, actor_id, Action.UPDATE_MATERIAL, op)
 
+    def confirm_materials(self, ticket_id: str, actor_id: str, *, lines: list[PlannedMaterial], note: str) -> Case:
+        """The department replaces the Agent's planned materials with what the site really needs (IN_PROGRESS).
+
+        Step 7 can only guess from the playbook defaults (e.g. an asset checked on site). An empty list means no
+        material is used (mode N_A). Issued/used quantities already entered are kept for an unchanged item_code.
+        Stock is shown per line but never stops the work here: a shortage goes through `block` (WAITING_MATERIAL).
+        """
+
+        def op(work: Case, now: datetime) -> None:
+            self._require_in_progress(work)
+            if _blank(note):
+                raise GuardError("Xác nhận vật tư bắt buộc ghi lý do")
+            codes = [line.item_code for line in lines]
+            unknown = sorted({code for code in codes if self.catalog.material(code) is None})
+            if unknown:
+                raise GuardError("Vật tư không có trong catalog", {"item_codes": unknown})
+            if len(set(codes)) != len(codes):
+                raise GuardError("Mỗi vật tư chỉ được một dòng")
+            if any(line.planned_qty <= 0 for line in lines):
+                raise GuardError("Số lượng vật tư phải lớn hơn 0; bỏ dòng nếu không dùng")
+            draft = work.draft
+            suffix = _suffix(ticket_id)
+            entered = {line.item_code: line for line in work.material_lines}
+            old = [{"item_code": m.item_code, "planned_qty": m.planned_qty} for m in work.material_lines]
+            new_lines = []
+            for index, planned in enumerate(lines, start=1):
+                line = self._material_line(draft.work_order_draft_id, suffix, index, planned)
+                kept = entered.get(planned.item_code)
+                if kept is not None:
+                    line.issued_qty, line.used_qty, line.variance_reason = (
+                        kept.issued_qty,
+                        kept.used_qty,
+                        kept.variance_reason,
+                    )
+                new_lines.append(line)
+            work.planned_materials = list(lines)
+            work.material_lines = new_lines
+            draft.material_line_ids = [m.material_line_id for m in new_lines]
+            draft.material_stock_status = _aggregate_stock(new_lines)
+            draft.material_requirement_mode = (
+                MaterialRequirementMode.TRACKED if new_lines else MaterialRequirementMode.N_A
+            )
+            draft.material_gate_status = MaterialGateStatus.NEEDS_CLARIFICATION if new_lines else MaterialGateStatus.NA
+            self._audit(
+                work,
+                Action.UPDATE_MATERIAL,
+                "WorkOrderDraft",
+                draft.work_order_draft_id,
+                actor_id,
+                Role.DEPARTMENT,
+                "planned_materials",
+                old,
+                [{"item_code": m.item_code, "planned_qty": m.planned_qty} for m in new_lines],
+                note.strip(),
+                now=now,
+            )
+
+        return self._mutate(ticket_id, actor_id, Action.UPDATE_MATERIAL, op)
+
     def add_evidence(
         self,
         ticket_id: str,
@@ -1227,6 +1320,17 @@ class MaintenanceEngine:
             ]
             return [self.resume(ticket_id) for ticket_id in waiting]
 
+    def stock_levels(self, actor_id: str) -> list[dict[str, Any]]:
+        """Current simulated stock of every catalog item (staff only; residents never see materials, CR-03 §2)."""
+        role = self.catalog.actor_role(actor_id)
+        if role is None or role == Role.RESIDENT:
+            raise ActionDeniedError("Chỉ nhân viên được xem tồn kho", {"code": "ACTION_DENIED", "actor_id": actor_id})
+        stock = self.repo.stock()
+        return [
+            {"item_code": m.item_code, "item_name": m.item_name, "unit": m.unit, "qty": stock.get(m.item_code)}
+            for m in self.catalog.materials
+        ]
+
     # ------------------------------------------------------------------ system: resume + scheduled job
 
     def resume(self, ticket_id: str) -> Case:
@@ -1243,12 +1347,12 @@ class MaintenanceEngine:
                 return []  # another process runs the job this round
             for case in self.repo.list():
                 ticket_id = case.ticket.ticket_id
-                if not self._due(case.ticket, moment):
-                    continue  # nothing for _tick to do: skip the deep copy
                 before = len(case.events)
                 try:
+                    if not self._due(case.ticket, moment):
+                        continue  # nothing for _tick to do: skip the deep copy
                     self._mutate(ticket_id, SYSTEM_ID, Action.RUN_JOBS, lambda work, now: self._tick(work, now))
-                except EngineError:  # one broken ticket must not stop the job for all the others
+                except Exception:  # noqa: BLE001 - one broken ticket (any error) must not stop the job for the others
                     logger.exception("run_jobs: ticket %s failed", ticket_id)
                     continue
                 if len(self.repo.get(ticket_id).events) != before:
@@ -1258,6 +1362,8 @@ class MaintenanceEngine:
     def _due(self, ticket: Ticket, now: datetime) -> bool:
         """Whether `_tick` would change anything: the same conditions it checks, without copying the case."""
         blocker = ticket.blocker
+        if blocker is None and self._orphaned(ticket, now):
+            return True
         if blocker is None:
             wait = timedelta(hours=self.catalog.sla_config.not_accepted.start_after_hours)
             return (
@@ -1269,6 +1375,18 @@ class MaintenanceEngine:
         retry_due = blocker.next_retry_at is not None and blocker.next_retry_at <= now
         escalation_due = blocker.escalate_at is not None and blocker.escalate_at <= now and not blocker.escalated
         return retry_due or escalation_due
+
+    @staticmethod
+    def _orphaned(ticket: Ticket, now: datetime) -> bool:
+        """E5 (plan 04 Q07): a stored RECEIVED ticket without a blocker never had its pipeline committed (`receive`
+        commits the ingest first). Past a grace period, so a `receive` still running elsewhere is left alone."""
+        created = _created_at(ticket.raw)
+        if ticket.status != S.RECEIVED or ticket.blocker is not None or created is None:
+            return False
+        try:
+            return now >= created + ORPHAN_GRACE
+        except OverflowError:  # a created_at at the very end of the calendar is never "past the grace period"
+            return False
 
     # ------------------------------------------------------------------ the one transition entry point
 
@@ -1305,6 +1423,9 @@ class MaintenanceEngine:
         case = self.get(ticket_id)
         now = self.clock()
         role = self._role(actor_id)
+        scope_error = self._scope_error(case, actor_id, role)
+        if scope_error:  # plan 04 A1: before the 409 below, which names the current status
+            self._deny(case, actor_id, role, Action.TRANSITION, "status", to, note, now, message=scope_error)
         current = case.ticket.status
         reachable = {
             actor
@@ -1456,11 +1577,12 @@ class MaintenanceEngine:
 
     def _scope_error(self, case: Case, actor_id: str, role: ActorRole | None) -> str | None:
         """A department acts only on its own tickets; a resident only on the tickets they reported."""
+        ticket = case.ticket
         if role == Role.DEPARTMENT:
             actor = self.catalog.actor(actor_id)
-            if actor.department_id is None or actor.department_id != case.ticket.department_id:
+            if actor.department_id is None or actor.department_id != ticket.department_id:
                 return f"Ticket không thuộc phòng ban của {actor_id}"
-        if role == Role.RESIDENT and actor_id != case.ticket.resident_id:
+        if role == Role.RESIDENT and actor_id != ticket.resident_id:
             return f"Ticket không do {actor_id} phản ánh"
         return None
 
@@ -1506,10 +1628,10 @@ class MaintenanceEngine:
                 fresh.ticket.ticket_id,
                 actor_id,
                 role or Role.SYSTEM,
-                field_name,
+                field_name[:DENIED_TEXT_MAX],
                 None,
-                new_value,
-                reason or message or f"Yêu cầu {action} ngoài quyền",
+                _clip(new_value),
+                _clip(reason or message or f"Yêu cầu {action} ngoài quyền"),
                 now=now,
                 result=ActionResult.ACTION_DENIED,
                 rule_id="PB-COM-R-PERM-01",
@@ -1523,19 +1645,18 @@ class MaintenanceEngine:
                 self.audit_sink([event])
             except Exception as exc:
                 raise AuditWriteError("Không ghi được audit cho lần từ chối", {"error": str(exc)}) from exc
-        raise ActionDeniedError(
-            message or f"{action} ngoài quyền của {role or 'actor không xác định'}",
-            {
-                "decision": "DENY",
-                "code": "ACTION_DENIED",
-                "requested_action": action,
-                "actor_id": actor_id,
-                "actor_role": role,
-                "target_field": field_name,
-                "unchanged_status": fresh.ticket.status,
-                "audit_event_id": event.event_id,
-            },
-        )
+        detail = {
+            "decision": "DENY",
+            "code": "ACTION_DENIED",
+            "requested_action": action,
+            "actor_id": actor_id,
+            "actor_role": role,
+            "target_field": field_name[:DENIED_TEXT_MAX],
+            "audit_event_id": event.event_id,
+        }
+        if not self._scope_error(fresh, actor_id, role):  # plan 04 A1: no status for a ticket they may not see
+            detail["unchanged_status"] = fresh.ticket.status
+        raise ActionDeniedError(message or f"{action} ngoài quyền của {role or 'actor không xác định'}", detail)
 
     # ------------------------------------------------------------------ audit, events, notifications
 
@@ -1896,6 +2017,7 @@ class MaintenanceEngine:
             rework.escalated = escalate
             for item in work.checklist_items:
                 item.status, item.updated_by, item.updated_at = ChecklistStatus.PENDING, None, None
+            work.evidence_round_start = len(work.evidence)  # Q02: step 10 needs this round's own photos and notes
             self._apply_transition(work, to, actor_id, role, now, blocker=rework, note=note, rework_count=count)
             if escalate:
                 self._notify(
@@ -2052,6 +2174,8 @@ class MaintenanceEngine:
 
     def _resume(self, work: Case, now: datetime) -> bool:
         blocker = work.ticket.blocker
+        if blocker is not None and blocker.code == R.WAITING_MATERIAL:
+            self._refresh_line_stock(work)  # a partial delivery must show, not the stock of the first check
         if blocker is None or not self._cleared(work, blocker, now):
             return False
         code = blocker.code
@@ -2070,6 +2194,9 @@ class MaintenanceEngine:
         ticket = work.ticket
         sla = self.catalog.sla_config
         blocker = ticket.blocker
+        if blocker is None and self._orphaned(ticket, now):
+            self._run_pipeline(work, 2, now)  # the Agent never ran on it: run it now
+            return
         if blocker is None:
             waited = ticket.dispatched_at and now >= ticket.dispatched_at + timedelta(
                 hours=sla.not_accepted.start_after_hours
@@ -2140,7 +2267,15 @@ class MaintenanceEngine:
         return "\n".join(p for p in parts if p and p.strip())
 
     def effective_location(self, work: Case) -> str | None:
-        return work.ticket.locked_fields.location or extract_location(self._content(work))
+        return work.ticket.locked_fields.location or extract_location(
+            self._location_text(work), self.catalog.site.buildings
+        )
+
+    def _location_text(self, work: Case) -> str:
+        """What the location is read from: the newest addition first, the original report last, so a resident's
+        correction ("Ở hầm B1 ạ") wins over the floor of their own flat in the original (plan 05)."""
+        parts = [*(a.content for a in reversed(work.additions)), work.ticket.raw.original_description]
+        return "\n".join(p for p in parts if p and p.strip())
 
     def _category(self, work: Case) -> ServiceCategory | None:
         locked = work.ticket.locked_fields.category
@@ -2159,7 +2294,7 @@ class MaintenanceEngine:
         if _blank(self._content(work)):
             missing.append("description")
         if self.effective_location(work) is None:
-            parts = missing_location_parts(self._content(work))
+            parts = missing_location_parts(self._location_text(work), self.catalog.site.buildings)
             # name only the parts still missing; a report with none of them gets the general request
             missing.extend(["location"] if len(parts) == 3 else [f"location_{part}" for part in parts])
         return missing
@@ -2220,7 +2355,12 @@ class MaintenanceEngine:
         if result.risk_level == RiskLevel.EMERGENCY:
             ticket.related_ticket_ids = self._related_ticket_ids(work)  # Q11: link, never merge
             self._stop(
-                work, S.VERIFYING, R.EMERGENCY_PENDING_BQL, now, resume_step=2, note=f"Bậc 1: {', '.join(present)}"
+                work,
+                S.VERIFYING,
+                R.EMERGENCY_PENDING_BQL,
+                now,
+                resume_step=2,
+                note=self._with_missing(work, f"Bậc 1: {', '.join(present)}"),
             )
             self._notify(
                 work,
@@ -2236,13 +2376,49 @@ class MaintenanceEngine:
             return True
         if result.risk_level == RiskLevel.UNCLEAR:
             unclear = sorted({s.signal_id for s in result.signals if s.status != SignalStatus.ABSENT})
-            return self._stop(
-                work, S.VERIFYING, R.SAFETY_REVIEW_REQUIRED, now, resume_step=2, note="Bậc 2: " + ", ".join(unclear)
+            escalated_before = _safety_escalated_before(work)
+            self._stop(
+                work,
+                S.VERIFYING,
+                R.SAFETY_REVIEW_REQUIRED,
+                now,
+                resume_step=2,
+                note=self._with_missing(work, "Bậc 2: " + ", ".join(unclear)),
             )
+            if escalated_before:
+                # Q04 (plan 04): BQL already took this safety decision over; a new tier-2 stop (e.g. after the
+                # resident answered a T06 request) stays with BQL instead of locking BQL out for another 4 hours.
+                work.ticket.blocker.escalated = True
+                self._notify(
+                    work,
+                    "safety.review_escalated",
+                    BlockerOwner.BQL,
+                    now,
+                    {"reason_code": R.SAFETY_REVIEW_REQUIRED, "why": "Đã leo thang trước đó; có nội dung mới"},
+                )
+            return True
         return False
+
+    def _with_missing(self, work: Case, note: str) -> str:
+        """Q08 puts safety before the minimum data, so the reviewer is told here what step 2 will still ask for."""
+        missing = self._missing_fields(work)
+        return f"{note} · Thiếu: {', '.join(missing)}" if missing else note
 
     def _step_2_check_required_data(self, work: Case, now: datetime) -> bool:
         missing = self._missing_fields(work)
+        if (
+            missing
+            and self._only_location_missing(missing)
+            and work.ticket.locked_fields.category is None
+            and not mentions_playbook_subject(self._content(work))  # "Đèn tầng 3 hỏng": ask the resident
+        ):
+            cls = self._classification(work, now)  # cached: step 3 reuses it
+            if cls.playbook_id is None and cls.reason_code == R.OUT_OF_SCOPE:
+                # Plan 05 Q05: clearly outside both playbooks, so a common-area location is not worth asking for.
+                # BPTN answers the resident. resume_step=2: if BPTN picks a category, step 2 asks for the location.
+                return self._stop(
+                    work, S.VERIFYING, R.OUT_OF_SCOPE, now, resume_step=2, note=f"{cls.reason}; thiếu vị trí, không hỏi"
+                )
         if missing:
             return self._stop(
                 work,
@@ -2257,9 +2433,20 @@ class MaintenanceEngine:
             )
         return False
 
+    @staticmethod
+    def _only_location_missing(missing: list[str]) -> bool:
+        """Only location parts are missing, and no common area is named at all ("phí quản lý", "vòi nước trong căn
+        hộ"). A report that names a common area ("Ở hành lang có vấn đề") is about the building: the resident is still
+        asked for what is missing and can add the details themselves (plan 05 Q05, audit C05/D11)."""
+        only_location = all(field.startswith("location") for field in missing)
+        return only_location and ("location" in missing or "location_area" in missing)
+
     def _classification(self, work: Case, now: datetime) -> ClassificationRecord:
         if work.classification is None:
-            outcome = propose(self._content(work), self.llm, self.llm_label)  # the only place the LLM is called
+            content, ticket_id = self._content(work), work.ticket.ticket_id
+            outcome = self._take_proposal_hint(ticket_id, content) or propose(
+                content, self.llm, self.llm_label, ticket_id=ticket_id
+            )  # the only place the LLM is called
             result = outcome.classification
             work.classification = ClassificationRecord(
                 playbook_id=result.playbook_id,
@@ -2481,6 +2668,14 @@ class MaintenanceEngine:
         if status in (AssetLookupStatus.NOT_FOUND, AssetLookupStatus.AMBIGUOUS):
             return self._stop(work, S.VERIFYING, R.ASSET_UNCLEAR, now, resume_step=6, note=reason)
         return False
+
+    def _refresh_line_stock(self, work: Case) -> None:
+        """Re-read the stock snapshot of every material line (and the draft's aggregate) from the store."""
+        for line in work.material_lines:
+            line.simulated_stock_qty = self.repo.stock_of(line.item_code)
+            line.material_stock_status = self._line_stock(line.item_code, line.planned_qty)
+        if work.draft is not None:
+            work.draft.material_stock_status = _aggregate_stock(work.material_lines)
 
     def _line_stock(self, item_code: str, planned_qty: float) -> MaterialStockStatus:
         stock = self.repo.stock_of(item_code)
@@ -2730,10 +2925,11 @@ class MaintenanceEngine:
         """Processing/result note per requirement. Returns the requirement IDs still missing. Images never count."""
         missing = []
         draft = work.draft
+        this_round = current_round_evidence(work)
         for requirement in draft.evidence_requirements:
             records = [
                 e
-                for e in work.evidence
+                for e in this_round
                 if e.requirement_id == requirement.requirement_id and e.work_order_draft_id == draft.work_order_draft_id
             ]
             for record in records:
@@ -2787,16 +2983,30 @@ def _aggregate_stock(lines: list[MaterialLine]) -> MaterialStockStatus:
     return MaterialStockStatus.SUFFICIENT
 
 
+def _safety_escalated_before(case: Case) -> bool:
+    """Whether BQL already took over a safety decision on this ticket: a tier-2 review or a safety NEED_INFO that
+    passed its deadline (both notify BQL once)."""
+    return any(
+        n.type == "safety.review_escalated" or (n.type == "escalation" and n.payload.get("safety_context") is True)
+        for n in case.notifications
+    )
+
+
 def resident_photos(case: Case) -> list[EvidenceRecord]:
     return [e for e in case.evidence if e.source == EvidenceSource.RESIDENT_ORIGINAL]
 
 
+def current_round_evidence(case: Case) -> list[EvidenceRecord]:
+    """Evidence sent since the last BQL rework (T22), or all of it before any rework (plan 04 Q02)."""
+    return case.evidence[case.evidence_round_start :]
+
+
 def execution_photos(case: Case) -> list[EvidenceRecord]:
-    """Photos the department took for the current work order (a new draft after rework needs its own)."""
+    """Photos the department took for the current work order in the current round (a rework needs new ones)."""
     draft_id = case.draft.work_order_draft_id if case.draft else None
     return [
         e
-        for e in case.evidence
+        for e in current_round_evidence(case)
         if e.evidence_type == EvidenceType.SIMULATED_IMAGE
         and e.source == EvidenceSource.DEPARTMENT_EXECUTION
         and e.work_order_draft_id == draft_id
@@ -2811,6 +3021,15 @@ def _evidence_status(record: EvidenceRecord, allowed: list[EvidenceType]) -> Evi
     if not record.content_or_metadata.strip() or record.readability_status == ReadabilityStatus.UNREADABLE:
         return EvidenceValidationStatus.MISSING
     return EvidenceValidationStatus.PRESENT
+
+
+def _clip(value: Any) -> Any:
+    """A denied caller's value, bounded before it goes into the audit row."""
+    plain = _plain(value)
+    text = plain if isinstance(plain, str) else json.dumps(plain, ensure_ascii=False, default=str)
+    if len(text) <= DENIED_TEXT_MAX:
+        return plain
+    return text[:DENIED_TEXT_MAX] + "…"
 
 
 def _plain(value: Any) -> Any:

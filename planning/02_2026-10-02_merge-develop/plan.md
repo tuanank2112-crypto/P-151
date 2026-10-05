@@ -29,8 +29,10 @@
 
 | Q10 | 2026-10-03 | **Merge lần 2 — câu hỏi mở (R02):** bộ nhãn Trường 98 ca ⇒ 92 khớp / 0 thấp / 6 cao (sau khi thêm "giật"). (1) 2 test `test_cr03_targets.py` đỏ vì kỳ vọng seed `maintenance_v1` bản cũ (CLN-004 ROUTED) ⇒ **cho sửa đúng phần kỳ vọng baseline** sang seed CR-03 (CR-03 §14 + Q20), không đổi nhãn an toàn, comment để Trường review. (2) Fixture Trường xếp phân loại trước an toàn — lệch D-09, không sửa engine, chuyển Trường. (3) Ca engine CAO hơn nhãn giữ nguyên, danh sách cho Trường. (4) "giật" đứng riêng = Bậc 2 (CR-03 B-03); thêm loại trừ dữ liệu "giật nước" (bồn cầu) ⇒ NONE. | CR-03 thắng; nghiêng an toàn | Trường đổi baseline/nhãn · rẻ |
 
+| Q11 | 2026-10-04 | **Đóng câu hỏi mở Q10(2) / R02 §7.2, §8.2** (lệch thứ tự phân loại/an toàn). Trường sửa ở phía fixture, `954dcab` (PR #12, develop `dff898e`): CLN-004/TEC-005 bỏ `playbook_id`/`proposed_department_id`/`review_status` khỏi expected; `test_cr03_targets.py` khẳng định ba trường này vắng mặt. Engine, `safety.py`, baseline v1.3 không đổi. SO đo lại trên `dff898e` (evidence/13): evaluate fixture CR03 12/12, 4 demo; target 9 passed; thêm lại từng trường ⇒ 1 failed (3/3 lần phá đều đỏ); pytest 1641 passed / 29 pg deselected, ruff sạch. Hệ quả: hai ca khẩn cấp không còn kiểm phân loại (đúng CR-03 §5.1). Muốn kiểm phân loại cho ticket khẩn cấp thì phải có ca riêng (Idea Vault). | Fixture khớp D-09 · engine không đổi | Khôi phục 3 trường + assertion cũ · rẻ |
+
 ### Quyết định bị thay thế
-- (chưa có)
+- Q10(2) "lệch D-09 … chuyển Trường" (mở) ⇒ đóng bởi Q11 (2026-10-04). R02 giữ nguyên làm lịch sử; §7.2 và §8.2 của R02 không còn là câu hỏi mở.
 
 ## §3. Work Packages
 | WP | Việc | Tầng | Vai |

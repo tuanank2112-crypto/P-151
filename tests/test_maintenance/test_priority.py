@@ -17,7 +17,7 @@ from tests.test_maintenance.helpers import BPTN, BQL, CLEANING, CLN, LIGHTING, R
 DATA = yaml.safe_load((Path(__file__).parent / "data" / "safety_cases_p0.yaml").read_text(encoding="utf-8"))
 CASES = DATA["priority_cases"]
 LEX = load_lexicon().priority
-EMERGENCY_TEXT = "Có mùi khét ở hành lang tầng 3 tòa SIM-A."
+EMERGENCY_TEXT = "Có mùi khét ở hành lang tầng 3 tòa S1."
 EXPECTED_FIXTURES = {
     "SIM-TKT-CLN-001": ("MEDIUM", "PRI-M2"),
     "SIM-TKT-CLN-002": ("MEDIUM", "PRI-M2"),
@@ -44,9 +44,9 @@ def test_each_rule_has_a_sample(case):
 
 def test_d0_when_location_or_category_is_missing():
     """P03 §1.1 step 0 (PRI-D0): no location or no category defaults to MEDIUM."""
-    assert propose_priority(None, "Tòa SIM-A / Tầng 3 / Hành lang", "x", LEX).rule_id == "PRI-D0"
+    assert propose_priority(None, "Tòa S1 / Tầng 3 / Hành lang", "x", LEX).rule_id == "PRI-D0"
     assert propose_priority(ServiceCategory.VE_SINH, None, "nhiều rác", LEX).rule_id == "PRI-D0"
-    assert propose_priority(ServiceCategory.UNKNOWN, "Tòa SIM-A / Tầng 3 / Hành lang", "x", LEX).priority == "MEDIUM"
+    assert propose_priority(ServiceCategory.UNKNOWN, "Tòa S1 / Tầng 3 / Hành lang", "x", LEX).priority == "MEDIUM"
 
 
 def test_fixture_priorities(engine):
@@ -58,7 +58,7 @@ def test_fixture_priorities(engine):
 
 def test_h2_end_to_end(fresh):
     """AC-10, R-06: an obstructing spill is HIGH by PRI-H2 and is still routed."""
-    case = fresh.get(report(fresh, "Sảnh chính tòa SIM-A nước tràn ra lối đi, trơn trượt, chắn lối, cần vệ sinh."))
+    case = fresh.get(report(fresh, "Sảnh chính tòa S1 nước tràn ra lối đi, trơn trượt, chắn lối, cần vệ sinh."))
     assert (case.ticket.priority, case.ticket.priority_rule_id, case.ticket.status) == ("HIGH", "PRI-H2", "ROUTED")
     rows = [e for e in case.audit if e.action == Action.CREATE_PROPOSAL and e.field_name == "priority"]
     assert len(rows) == 1 and rows[0].rule_id == "PRI-H2" and rows[0].new_value == "HIGH"
@@ -132,7 +132,7 @@ def test_queue_sort_order_and_related_ids(fresh, clock):
     clock.advance(minutes=1)
     t3 = report(fresh, EMERGENCY_TEXT)
     clock.advance(minutes=1)
-    t4 = report(fresh, "Cầu thang bộ tầng 6 tòa SIM-A nhiều bụi bẩn, cần vệ sinh.")
+    t4 = report(fresh, "Cầu thang bộ tầng 6 tòa S1 nhiều bụi bẩn, cần vệ sinh.")
     assert [r.ticket_id for r in bql_rows(fresh, clock())] == [t3, t2, t1, t4]
     assert fresh.get(t3).ticket.related_ticket_ids == sorted([t1, t2])
     assert fresh.get(t3).ticket.priority is None  # tier 1: priority is not computed
@@ -173,8 +173,8 @@ def test_priority_never_notifies_and_ignores_risk(fresh):
 
 def test_negated_obstruction_is_not_h2():
     """R05 N-10 / Q27: 'không chắn lối đi, không trơn trượt' does not trigger PRI-H2; the plain wording still does."""
-    where = "Tòa SIM-A / Tầng 3 / Hành lang"
-    negated = "Hành lang tầng 3 tòa SIM-A có nhiều rác, không chắn lối đi, không trơn trượt."
+    where = "Tòa S1 / Tầng 3 / Hành lang"
+    negated = "Hành lang tầng 3 tòa S1 có nhiều rác, không chắn lối đi, không trơn trượt."
     proposal = propose_priority(ServiceCategory.VE_SINH, where, negated, LEX)
     assert proposal.rule_id != "PRI-H2" and proposal.priority != "HIGH"
     assert proposal.rule_id == "PRI-M2"  # the real impact ("nhiều rác") is kept
@@ -193,13 +193,13 @@ def test_priority_uses_shared_scope():
     import src.maintenance.safety as safety_module
 
     assert priority_module.scope_before is safety_module.scope_before
-    where = "Tòa SIM-A / Tầng 3 / Hành lang"
+    where = "Tòa S1 / Tầng 3 / Hành lang"
     table = [
         ("Rác chưa được dọn chắn hết lối đi", "HIGH", "PRI-H2"),
         ("Sàn chưa lau nên trơn trượt", "HIGH", "PRI-H2"),
         ("Không ai dọn rác tràn ra lối đi", "HIGH", "PRI-H2"),
         ("Hành lang không chắn lối đi, không bị trơn.", "LOW", "PRI-L1"),
-        ("Hành lang tầng 3 tòa SIM-A có nhiều rác, không chắn lối đi, không trơn trượt.", "MEDIUM", "PRI-M2"),
+        ("Hành lang tầng 3 tòa S1 có nhiều rác, không chắn lối đi, không trơn trượt.", "MEDIUM", "PRI-M2"),
         ("Không chắn lối đi nhưng sàn trơn trượt", "HIGH", "PRI-H2"),
         ("Không có rác chắn lối đi", "HIGH", "PRI-H2"),  # known trade-off P3-06: "rác" is the cue's object
     ]

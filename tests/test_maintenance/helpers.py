@@ -18,8 +18,8 @@ BQL = "SIM-ACTOR-BQL-01"
 AGENT = "SIM-ACTOR-AGENT"
 SYSTEM = "SIM-ACTOR-SYSTEM"
 
-CLEANING = "Hành lang tầng 3 tòa SIM-A nhiều rác, cần vệ sinh."
-LIGHTING = "Đèn hành lang tầng 3 tòa SIM-A không sáng."
+CLEANING = "Hành lang tầng 3 tòa S1 nhiều rác, cần vệ sinh."
+LIGHTING = "Đèn hành lang tầng 3 tòa S1 không sáng."
 
 
 class Clock:

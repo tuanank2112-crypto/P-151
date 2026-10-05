@@ -20,6 +20,7 @@ from src.maintenance.ai_logger import AILogStatus, ai_logger
 from src.maintenance.enums import PLAYBOOK_PAIRS, PlaybookId, ReasonCode, ServiceCategory, TicketType
 from src.maintenance.rules import Classification, classify
 
+MAX_REASON_CHARS = 500  # model text is untrusted: bound what reaches the ticket and the AI log
 TRIGGER_RULES = {PlaybookId.CLN: "PB-CLN-R-TRG-01", PlaybookId.TEC: "PB-TEC-R-TRG-01"}
 
 
@@ -82,11 +83,14 @@ def propose(
     start_time = time.perf_counter()
     try:
         assessment = llm(description)
+        reason = str(assessment.reason)[:MAX_REASON_CHARS]
+        # Enum conversion lives inside the try: a value outside v1.1 is an LLM failure, not a crash
+        pair = (ServiceCategory(assessment.service_category), TicketType(assessment.ticket_type))
         latency_ms = (time.perf_counter() - start_time) * 1000
         ai_logger.log(
             ticket_id=ticket_id,
             prompt_sent=prompt_dict,
-            structured_output=assessment.model_dump(),
+            structured_output={**assessment.model_dump(), "reason": reason},
             model_name=model_label,
             latency_ms=latency_ms,
             status=AILogStatus.SUCCESS,
@@ -104,7 +108,6 @@ def propose(
         return ProposalResult(rules_cls, "rules", notes=[f"LLM lỗi ({type(exc).__name__}); dùng luật cố định"])
 
     notes: list[str] = []
-    pair = (ServiceCategory(assessment.service_category), TicketType(assessment.ticket_type))
     llm_playbook = PLAYBOOK_PAIRS.get(pair)
     if llm_playbook is None and pair != (ServiceCategory.UNKNOWN, TicketType.UNKNOWN):
         notes.append(f"LLM trả cặp service/type không hợp lệ {pair}; coi như không có playbook")
@@ -119,10 +122,15 @@ def propose(
         )
     elif rules_cls.playbook_id:
         classification = rules_cls  # both agree
+    elif rules_cls.reason_code == ReasonCode.CATEGORY_UNCLEAR:
+        # The rules saw BOTH playbooks (mixed report): the LLM picking one must not hide the other part (plan 05)
+        if llm_playbook:
+            notes.append(f"Luật thấy cả hai playbook; LLM chọn {llm_playbook} — BPTN quyết")
+        classification = rules_cls
     elif llm_playbook:
         service, ticket_type = pair
         classification = Classification(
-            llm_playbook, service, ticket_type, TRIGGER_RULES[llm_playbook], f"Đề xuất từ LLM: {assessment.reason}"
+            llm_playbook, service, ticket_type, TRIGGER_RULES[llm_playbook], f"Đề xuất từ LLM: {reason}"
         )
         return ProposalResult(classification, label, needs_review=True, notes=notes)
     else:

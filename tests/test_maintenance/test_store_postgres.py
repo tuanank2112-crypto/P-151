@@ -26,7 +26,7 @@ pytestmark = pytest.mark.pg
 
 NEEDS_INFO = "Tầng 3 ở S4 quá nhiều rác"  # no building, no area: the ticket stops at NEED_INFO
 PNG_REF = "0123456789abcdef0123456789abcdef.png"
-FRESH_CLEANING = "Sảnh thang máy tầng 9 tòa SIM-C nhiều rác, cần vệ sinh."  # no fixture ticket like it: ROUTED
+FRESH_CLEANING = "Sảnh thang máy tầng 9 tòa S2 nhiều rác, cần vệ sinh."  # no fixture ticket like it: ROUTED
 
 
 def _pg_settings(url: str, **changes):
