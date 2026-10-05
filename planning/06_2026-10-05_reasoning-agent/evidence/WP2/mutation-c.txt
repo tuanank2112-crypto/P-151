@@ -1,0 +1,22 @@
+# MUTATION c (SPEC-P03 §10c) on lexicon 2026-10-05.p1d, base 3e3a3f8: structural subject + filler run removed from the head of the three S-11 span patterns (signals and homograph_intended keys, 6 places), restored afterwards (git checkout from index, git diff empty)
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. C:/Users/lenku/AppData/Local/Temp/claude/d--P151/640e8089-3b43-4a75-9055-cbb167391b76/scratchpad/venv311/Scripts/python.exe -m pytest -q -p no:cacheprovider --tb=line tests/test_maintenance/test_safety_p1.py -k "HED-03 or FP-05"
+ seed/maintenance_v1/lexicon.yaml | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+FF                                                                       [100%]
+================================== FAILURES ===================================
+E   AssertionError: (<RiskLevel.EMERGENCY: 'EMERGENCY'>, [('S-11', <SignalStatus.PRESENT: 'PRESENT'>)])
+    assert <RiskLevel.EMERGENCY: 'EMERGENCY'> in ['UNCLEAR']
+     +  where <RiskLevel.EMERGENCY: 'EMERGENCY'> = SafetyAssessment(risk_level=<RiskLevel.EMERGENCY: 'EMERGENCY'>, signals=(RiskSignal(signal_id='S-11', status=<SignalSt...RESENT'>, source_quote='sắp rơi', detected_by=<DetectedBy.RULE: 'RULE'>, rule_id='S-11'),), notes=(), proposer='rules').risk_level
+     +  and   ['UNCLEAR'] = accepted({'id': 'P1-HED-03', 'text': 'Có vẻ đèn hành lang tầng 7 tòa S2 sắp rơi', 'expect': 'UNCLEAR', 'signals': ['S-11']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:73: AssertionError: (<RiskLevel.EMERGENCY: 'EMERGENCY'>, [('S-11', <SignalStatus.PRESENT: 'PRESENT'>)])
+E   AssertionError: (<RiskLevel.EMERGENCY: 'EMERGENCY'>, [('S-11', <SignalStatus.PRESENT: 'PRESENT'>)])
+    assert <RiskLevel.EMERGENCY: 'EMERGENCY'> in ['NONE']
+     +  where <RiskLevel.EMERGENCY: 'EMERGENCY'> = SafetyAssessment(risk_level=<RiskLevel.EMERGENCY: 'EMERGENCY'>, signals=(RiskSignal(signal_id='S-11', status=<SignalSt...SENT'>, source_quote='rơi xuống', detected_by=<DetectedBy.RULE: 'RULE'>, rule_id='S-11'),), notes=(), proposer='rules').risk_level
+     +  and   ['NONE'] = accepted({'id': 'P1-FP-05', 'text': 'Lá cây rơi xuống đầy sân chơi tòa S1 tầng trệt', 'expect': 'NONE'})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:85: AssertionError: (<RiskLevel.EMERGENCY: 'EMERGENCY'>, [('S-11', <SignalStatus.PRESENT: 'PRESENT'>)])
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-HED-03]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_not_raise[P1-FP-05]
+2 failed, 115 deselected in 0.24s
+EXIT=1
+RESTORED: git checkout -- lexicon.yaml from index; git diff (worktree vs index) empty

@@ -129,6 +129,8 @@ def labelled_texts() -> list[str]:
     texts += [text for text, _ in gold.args[1]]
     dataset = json.loads((ROOT / "seed/maintenance_cr03/safety_cases.json").read_text(encoding="utf-8"))
     texts += [c["text"] for c in dataset["cases"]]
+    p1 = yaml.safe_load((Path(__file__).parent / "data" / "safety_cases_p1.yaml").read_text(encoding="utf-8"))
+    texts += [c["text"] for c in p1["must_catch"] + p1["must_not_raise"]]  # plan 06 SPEC-P03 §5: P1 sentences too
     return [t for t in dict.fromkeys(texts) if t.strip()]
 
 

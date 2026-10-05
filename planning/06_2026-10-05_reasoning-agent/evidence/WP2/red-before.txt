@@ -1,0 +1,443 @@
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. $PY -m pytest -q -p no:cacheprovider --tb=line tests/test_maintenance/test_safety_p1.py
+# lexicon_version=lexicon_version: "2026-10-05.p0g"  # plan 05 WP1: location-variant hardening (confirmers as word pairs, B-01 prefixes, resolved-marker place tail)
+.FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFFFFFFFFF.FFF.FF.FFF.FFF. [ 64%]
+FFF...F................F........FFFF....                                 [100%]
+================================== FAILURES ===================================
+E   AssertionError: assert ('P0',) == ('P0', 'P1')
+      
+      Right contains one more item: 'P1'
+      Use -v to get more diff
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:55: AssertionError: assert ('P0',) == ('P0', 'P1')
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S10-01', 'text': 'Hành lang tầng 5 tòa S1 có mùi gas nồng nặc', 'expect': 'EMERGENCY', 'signals': ['S-10']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S10-02', 'text': 'Ngửi thấy mùi gas ở sảnh thang máy tầng 2 tòa S2, sợ quá', 'expect': 'EMERGENCY', 'signals': ['S-10']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S10-03', 'text': 'mui gas o ham B1 toa S1', 'expect': 'EMERGENCY', 'signals': ['S-10']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S10-04', 'text': 'Tầng hầm B1 tòa S1, bãi đỗ xe: nghe mùi khí đốt rất nặng', 'expect': 'EMERGENCY', 'signals': ['S-10']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S10-05', 'text': 'Cầu thang bộ tầng 4 tòa S2 nồng mùi ga, sợ rò rỉ', 'expect': 'EMERGENCY', 'signals': ['S-10']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S10-06', 'text': 'Có mùi gas', 'expect': 'EMERGENCY', 'signals': ['S-10']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S10-07', 'text': 'Bình gas ở phòng rác tầng 3 tòa S2 bị rò rỉ, xì gas ra', 'expect': 'EMERGENCY', 'signals': ['S-10']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S13-01', 'text': 'Có kim tiêm vứt bừa ở cầu thang bộ tầng 4 tòa S1', 'expect': 'EMERGENCY', 'signals': ['S-13']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S13-02', 'text': 'Phòng rác tầng 3 tòa S2 có ống kim tiêm đã dùng vứt bừa bãi', 'expect': 'EMERGENCY', 'signals': ['S-13']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S13-03', 'text': 'kim tiem vut bua o san choi toa S1 tang tret', 'expect': 'EMERGENCY', 'signals': ['S-13']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+    assert <RiskLevel.UNCLEAR: 'UNCLEAR'> in ['EMERGENCY']
+     +  where <RiskLevel.UNCLEAR: 'UNCLEAR'> = SafetyAssessment(risk_level=<RiskLevel.UNCLEAR: 'UNCLEAR'>, signals=(RiskSignal(signal_id='T2-03', status=<SignalStatu... 'PRESENT'>, source_quote='máu', detected_by=<DetectedBy.RULE: 'RULE'>, rule_id='B-03N'),), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S13-04', 'text': 'Cầu thang bộ tầng 3 tòa S1 có vết máu loang trên sàn', 'expect': 'EMERGENCY', 'signals': ['S-13']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+E   AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+    assert <RiskLevel.UNCLEAR: 'UNCLEAR'> in ['EMERGENCY']
+     +  where <RiskLevel.UNCLEAR: 'UNCLEAR'> = SafetyAssessment(risk_level=<RiskLevel.UNCLEAR: 'UNCLEAR'>, signals=(RiskSignal(signal_id='T2-03', status=<SignalStatu... 'PRESENT'>, source_quote='máu', detected_by=<DetectedBy.RULE: 'RULE'>, rule_id='B-03N'),), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S13-05', 'text': 'Sân chơi tầng trệt tòa S2 có bông băng dính máu vứt ở góc', 'expect': 'EMERGENCY', 'signals': ['S-13']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S13-06', 'text': 'Thùng rác hành lang tầng 7 tòa S1 có chất thải y tế', 'expect': 'EMERGENCY', 'signals': ['S-13']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S08-01', 'text': 'Nước tràn vào tủ điện ở hầm B1 tòa S1', 'expect': 'EMERGENCY', 'signals': ['S-08']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S08-02', 'text': 'Hành lang tầng 3 tòa S1 nước ngập ổ cắm', 'expect': 'EMERGENCY', 'signals': ['S-08']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S08-03', 'text': 'Nước mưa hắt vào ngập cả ổ cắm hành lang tầng 7 tòa S2', 'expect': 'EMERGENCY', 'signals': ['S-08']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S08-04', 'text': 'Tòa S2 tầng 2 sảnh thang máy, nước nhỏ vào hộp điện', 'expect': 'EMERGENCY', 'signals': ['S-08']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S08-05', 'text': 'nuoc tran vao tu dien ham B1 toa S1', 'expect': 'EMERGENCY', 'signals': ['S-08']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S08-06', 'text': 'Tủ điện hành lang tầng 4 tòa S2 bị ngập nước', 'expect': 'EMERGENCY', 'signals': ['S-08']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S07-01', 'text': 'Đèn hành lang tầng 3 tòa S1 nóng ran, chạm vào bỏng tay', 'expect': 'EMERGENCY', 'signals': ['S-07']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S07-02', 'text': 'Hộp đèn sảnh thang máy tầng 2 tòa S2 nóng bỏng tay', 'expect': 'EMERGENCY', 'signals': ['S-07']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S07-03', 'text': 'Bóng đèn cầu thang bộ tầng 6 tòa S1 nóng ran, chảy cả nhựa', 'expect': 'EMERGENCY', 'signals': ['S-07']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+    assert <RiskLevel.UNCLEAR: 'UNCLEAR'> in ['EMERGENCY']
+     +  where <RiskLevel.UNCLEAR: 'UNCLEAR'> = SafetyAssessment(risk_level=<RiskLevel.UNCLEAR: 'UNCLEAR'>, signals=(RiskSignal(signal_id='T2-03', status=<SignalStatu... 'PRESENT'>, source_quote='cháy', detected_by=<DetectedBy.RULE: 'RULE'>, rule_id='B-03'),), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S07-04', 'text': 'Ổ cắm hành lang tầng 5 tòa S2 nóng chảy nhựa, cháy xém', 'expect': 'EMERGENCY', 'signals': ['S-07']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S07-05', 'text': 'den hanh lang tang 3 toa S1 nong ran', 'expect': 'EMERGENCY', 'signals': ['S-07']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S07-06', 'text': 'Công tắc đèn sảnh chính tòa S1 quá nóng, chạm vào không được', 'expect': 'EMERGENCY', 'signals': ['S-07']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+    assert <RiskLevel.UNCLEAR: 'UNCLEAR'> in ['EMERGENCY']
+     +  where <RiskLevel.UNCLEAR: 'UNCLEAR'> = SafetyAssessment(risk_level=<RiskLevel.UNCLEAR: 'UNCLEAR'>, signals=(RiskSignal(signal_id='T2-03', status=<SignalStatu...SENT'>, source_quote='điện giật', detected_by=<DetectedBy.RULE: 'RULE'>, rule_id='B-03'),), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S06-01', 'text': 'Bị điện giật khi chạm vào tay vịn cầu thang bộ tầng 4 tòa S1', 'expect': 'EMERGENCY', 'signals': ['S-06']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+E   AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+    assert <RiskLevel.UNCLEAR: 'UNCLEAR'> in ['EMERGENCY']
+     +  where <RiskLevel.UNCLEAR: 'UNCLEAR'> = SafetyAssessment(risk_level=<RiskLevel.UNCLEAR: 'UNCLEAR'>, signals=(RiskSignal(signal_id='T2-03', status=<SignalStatu...RESENT'>, source_quote='bị giật', detected_by=<DetectedBy.RULE: 'RULE'>, rule_id='B-03'),), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S06-02', 'text': 'Chạm vào cột đèn sân chơi tầng trệt tòa S2 bị giật tê tay, rò điện', 'expect': 'EMERGENCY', 'signals': ['S-06']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+E   AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+    assert <RiskLevel.UNCLEAR: 'UNCLEAR'> in ['EMERGENCY']
+     +  where <RiskLevel.UNCLEAR: 'UNCLEAR'> = SafetyAssessment(risk_level=<RiskLevel.UNCLEAR: 'UNCLEAR'>, signals=(RiskSignal(signal_id='T2-03', status=<SignalStatu...SENT'>, source_quote='điện giật', detected_by=<DetectedBy.RULE: 'RULE'>, rule_id='B-03'),), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S06-03', 'text': 'Có bị điện giật nhẹ khi chạm vào hộp đèn tầng 4 tòa S1.', 'expect': 'EMERGENCY', 'signals': ['S-06']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+E   AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+    assert <RiskLevel.UNCLEAR: 'UNCLEAR'> in ['EMERGENCY']
+     +  where <RiskLevel.UNCLEAR: 'UNCLEAR'> = SafetyAssessment(risk_level=<RiskLevel.UNCLEAR: 'UNCLEAR'>, signals=(RiskSignal(signal_id='T2-03', status=<SignalStatu...SENT'>, source_quote='dien giat', detected_by=<DetectedBy.RULE: 'RULE'>, rule_id='B-03'),), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S06-04', 'text': 'bi dien giat o cong tac den hanh lang tang 2 toa S2', 'expect': 'EMERGENCY', 'signals': ['S-06']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S11-01', 'text': 'Đèn ốp trần sảnh chính tòa S2 sắp rơi, lủng lẳng', 'expect': 'EMERGENCY', 'signals': ['S-11']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S11-02', 'text': 'Trần thạch cao hành lang tầng 9 tòa S1 sắp sập', 'expect': 'EMERGENCY', 'signals': ['S-11']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S11-03', 'text': 'Kính lan can tầng 5 tòa S2 vỡ rơi xuống lối đi', 'expect': 'EMERGENCY', 'signals': ['S-11']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S11-04', 'text': 'Đèn rơi xuống sàn ở hành lang tầng 4 tòa S2', 'expect': 'EMERGENCY', 'signals': ['S-11']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S11-05', 'text': 'Bóng đèn hầm B1 tòa S1 rơi rồi, nhờ thay', 'expect': 'EMERGENCY', 'signals': ['S-11']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S11-06', 'text': 'Đèn rớt xuống vỡ tan ở sảnh thang máy tầng 3 tòa S1', 'expect': 'EMERGENCY', 'signals': ['S-11']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S11-07', 'text': 'Den hanh lang tang 3 toa S1 roi xuong san', 'expect': 'EMERGENCY', 'signals': ['S-11']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-05', <SignalStatus.PRESENT: 'PRESENT'>)])
+    assert <RiskLevel.UNCLEAR: 'UNCLEAR'> in ['EMERGENCY']
+     +  where <RiskLevel.UNCLEAR: 'UNCLEAR'> = SafetyAssessment(risk_level=<RiskLevel.UNCLEAR: 'UNCLEAR'>, signals=(RiskSignal(signal_id='T2-05', status=<SignalStatu...ESENT'>, source_quote='mùi hắc', detected_by=<DetectedBy.RULE: 'RULE'>, rule_id='T2-05'),), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S12-01', 'text': 'Hóa chất tẩy rửa đổ ra sàn hành lang tầng 3 tòa S1, mùi hắc cay mắt', 'expect': 'EMERGENCY', 'signals': ['S-12']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-05', <SignalStatus.PRESENT: 'PRESENT'>)])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S12-02', 'text': 'Ai làm đổ hóa chất ở phòng rác tầng 2 tòa S2', 'expect': 'EMERGENCY', 'signals': ['S-12']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S12-03', 'text': 'Can axit bị đổ ở hầm B1 tòa S1', 'expect': 'EMERGENCY', 'signals': ['S-12']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-05', <SignalStatus.PRESENT: 'PRESENT'>)])
+    assert <RiskLevel.UNCLEAR: 'UNCLEAR'> in ['EMERGENCY']
+     +  where <RiskLevel.UNCLEAR: 'UNCLEAR'> = SafetyAssessment(risk_level=<RiskLevel.UNCLEAR: 'UNCLEAR'>, signals=(RiskSignal(signal_id='T2-05', status=<SignalStatu...ESENT'>, source_quote='cay mắt', detected_by=<DetectedBy.RULE: 'RULE'>, rule_id='T2-05'),), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S12-04', 'text': 'Lối đi tầng 5 tòa S2 có hóa chất đổ loang, cay mắt', 'expect': 'EMERGENCY', 'signals': ['S-12']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-05', <SignalStatus.PRESENT: 'PRESENT'>)])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['UNCLEAR']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['UNCLEAR'] = accepted({'id': 'P1-HED-01', 'text': 'Hình như có mùi gas ở hành lang tầng 3 tòa S1', 'expect': 'UNCLEAR', 'signals': ['S-10']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['UNCLEAR']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['UNCLEAR'] = accepted({'id': 'P1-HED-02', 'text': 'Hôm qua tủ điện hầm B1 tòa S1 bị nước tràn vào, giờ hết rồi', 'expect': 'UNCLEAR', 'signals': ['S-08']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['UNCLEAR']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['UNCLEAR'] = accepted({'id': 'P1-HED-03', 'text': 'Có vẻ đèn hành lang tầng 7 tòa S2 sắp rơi', 'expect': 'UNCLEAR', 'signals': ['S-11']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-UNA-01', 'text': 'mui ga o hanh lang tang 3 toa S1', 'expect': 'EMERGENCY', 'signals': ['S-10']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-UNA-02', 'text': 'vet mau o cau thang bo tang 3 toa S1', 'expect': 'EMERGENCY', 'signals': ['S-13']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S06-M1', 'text': 'Tay vịn ở cầu thang bộ tầng 4 tòa S1 bị rò điện, chạm vào tê tay', 'expect': 'EMERGENCY', 'signals': ['S-06']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+    assert <RiskLevel.UNCLEAR: 'UNCLEAR'> in ['EMERGENCY']
+     +  where <RiskLevel.UNCLEAR: 'UNCLEAR'> = SafetyAssessment(risk_level=<RiskLevel.UNCLEAR: 'UNCLEAR'>, signals=(RiskSignal(signal_id='T2-03', status=<SignalStatu...SENT'>, source_quote='điện giật', detected_by=<DetectedBy.RULE: 'RULE'>, rule_id='B-03'),), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S06-M2', 'text': 'Công tắc đèn ở sảnh thang máy tầng 2 tòa S2 bị điện giật khi bấm', 'expect': 'EMERGENCY', 'signals': ['S-06']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S06-A1', 'text': 'o cam hanh lang tang 5 toa S2 bi ro dien', 'expect': 'EMERGENCY', 'signals': ['S-06']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.ABSENT: 'ABSENT'>), ('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+    assert <RiskLevel.UNCLEAR: 'UNCLEAR'> in ['NONE']
+     +  where <RiskLevel.UNCLEAR: 'UNCLEAR'> = SafetyAssessment(risk_level=<RiskLevel.UNCLEAR: 'UNCLEAR'>, signals=(RiskSignal(signal_id='T2-03', status=<SignalStatu...: 'PRESENT'>, source_quote='giật', detected_by=<DetectedBy.RULE: 'RULE'>, rule_id='B-03')), notes=(), proposer='rules').risk_level
+     +  and   ['NONE'] = accepted({'id': 'P1-S06-N1', 'text': 'Chạm vào công tắc đèn hành lang tầng 3 tòa S1 không bị điện giật', 'expect': 'NONE', 'negates': 'S-06'})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.ABSENT: 'ABSENT'>), ('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S07-M1', 'text': 'Đèn ở hành lang tầng 3 tòa S1 nóng ran', 'expect': 'EMERGENCY', 'signals': ['S-07']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S07-M2', 'text': 'Ổ cắm ở sảnh chính tòa S1 nóng chảy nhựa', 'expect': 'EMERGENCY', 'signals': ['S-07']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S07-A1', 'text': 'o cam sanh thang may tang 2 toa S2 nong bong tay', 'expect': 'EMERGENCY', 'signals': ['S-07']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S08-M1', 'text': 'Ổ cắm ở hành lang tầng 3 tòa S2 bị nước mưa tràn vào', 'expect': 'EMERGENCY', 'signals': ['S-08']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S08-M2', 'text': 'Nước ở hầm B1 tòa S1 tràn vào tủ điện', 'expect': 'EMERGENCY', 'signals': ['S-08']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S08-A1', 'text': 'o cam hanh lang tang 7 toa S2 bi ngap nuoc', 'expect': 'EMERGENCY', 'signals': ['S-08']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S10-M1', 'text': 'Bình gas ở phòng rác tầng 3 tòa S2 bị rò rỉ', 'expect': 'EMERGENCY', 'signals': ['S-10']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S10-M2', 'text': 'Mùi gas ở hành lang tầng 3 tòa S1 nồng lắm', 'expect': 'EMERGENCY', 'signals': ['S-10']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S11-M1', 'text': 'Đèn ở hành lang tầng 3 tòa S1 sắp rơi', 'expect': 'EMERGENCY', 'signals': ['S-11']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S11-M2', 'text': 'Tấm trần ở sảnh chính tòa S2 rơi xuống', 'expect': 'EMERGENCY', 'signals': ['S-11']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S11-A1', 'text': 'tran thach cao ham B1 toa S1 sap sap', 'expect': 'EMERGENCY', 'signals': ['S-11']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S12-M1', 'text': 'Hóa chất ở phòng rác tầng 2 tòa S2 bị đổ loang ra sàn', 'expect': 'EMERGENCY', 'signals': ['S-12']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S12-A1', 'text': 'hoa chat tay rua tran ra san hanh lang tang 3 toa S1', 'expect': 'EMERGENCY', 'signals': ['S-12']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S12-X1', 'text': 'Axit ở hầm B1 tòa S1 bị đổ ra lối đi', 'expect': 'EMERGENCY', 'signals': ['S-12']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['EMERGENCY']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S13-M1', 'text': 'Ống kim tiêm ở sân chơi tầng trệt tòa S2 bị vứt bừa', 'expect': 'EMERGENCY', 'signals': ['S-13']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+    assert <RiskLevel.UNCLEAR: 'UNCLEAR'> in ['EMERGENCY']
+     +  where <RiskLevel.UNCLEAR: 'UNCLEAR'> = SafetyAssessment(risk_level=<RiskLevel.UNCLEAR: 'UNCLEAR'>, signals=(RiskSignal(signal_id='T2-03', status=<SignalStatu... 'PRESENT'>, source_quote='máu', detected_by=<DetectedBy.RULE: 'RULE'>, rule_id='B-03N'),), notes=(), proposer='rules').risk_level
+     +  and   ['EMERGENCY'] = accepted({'id': 'P1-S13-M2', 'text': 'Thấy máu ở cầu thang bộ tầng 3 tòa S1', 'expect': 'EMERGENCY', 'signals': ['S-13']})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+E   AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+    assert <RiskLevel.UNCLEAR: 'UNCLEAR'> in ['NONE']
+     +  where <RiskLevel.UNCLEAR: 'UNCLEAR'> = SafetyAssessment(risk_level=<RiskLevel.UNCLEAR: 'UNCLEAR'>, signals=(RiskSignal(signal_id='T2-03', status=<SignalStatu... 'PRESENT'>, source_quote='máu', detected_by=<DetectedBy.RULE: 'RULE'>, rule_id='B-03N'),), notes=(), proposer='rules').risk_level
+     +  and   ['NONE'] = accepted({'id': 'P1-S13-N1', 'text': 'Cầu thang bộ tầng 3 tòa S1 không có vết máu nào', 'expect': 'NONE', 'negates': 'S-13'})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:66: AssertionError: (<RiskLevel.UNCLEAR: 'UNCLEAR'>, [('T2-03', <SignalStatus.PRESENT: 'PRESENT'>)])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['UNCLEAR']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['UNCLEAR'] = accepted({'id': 'P1-FP-04', 'text': 'Hanh lang tang 3 toa S1 tat den roi, toi qua', 'expect': 'UNCLEAR'})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:78: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+    assert <RiskLevel.NONE: 'NONE'> in ['UNCLEAR']
+     +  where <RiskLevel.NONE: 'NONE'> = SafetyAssessment(risk_level=<RiskLevel.NONE: 'NONE'>, signals=(), notes=(), proposer='rules').risk_level
+     +  and   ['UNCLEAR'] = accepted({'id': 'P1-FP-21', 'text': 'do hoa chat o phong rac tang 2 toa S2', 'expect': 'UNCLEAR'})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:78: AssertionError: (<RiskLevel.NONE: 'NONE'>, [])
+E   AssertionError: assert (<TicketStatu...UT_OF_SCOPE'>) == ('VERIFYING',..._PENDING_BQL')
+      
+      At index 1 diff: <ReasonCode.OUT_OF_SCOPE: 'OUT_OF_SCOPE'> != 'EMERGENCY_PENDING_BQL'
+      Use -v to get more diff
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:111: AssertionError: assert (<TicketStatu...UT_OF_SCOPE'>) == ('VERIFYING',..._PENDING_BQL')
+E   AttributeError: 'NoneType' object has no attribute 'code'
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:128: AttributeError: 'NoneType' object has no attribute 'code'
+E   AssertionError: assert (<TicketStatu...NONE: 'NONE'>) == ('VERIFYING',... 'EMERGENCY'>)
+      
+      At index 1 diff: <ReasonCode.OUT_OF_SCOPE: 'OUT_OF_SCOPE'> != 'EMERGENCY_PENDING_BQL'
+      Use -v to get more diff
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:128: AssertionError: assert (<TicketStatu...NONE: 'NONE'>) == ('VERIFYING',... 'EMERGENCY'>)
+E   AssertionError: assert (<TicketStatu...NONE: 'NONE'>) == ('VERIFYING',... 'EMERGENCY'>)
+      
+      At index 1 diff: <ReasonCode.OUT_OF_SCOPE: 'OUT_OF_SCOPE'> != 'EMERGENCY_PENDING_BQL'
+      Use -v to get more diff
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:128: AssertionError: assert (<TicketStatu...NONE: 'NONE'>) == ('VERIFYING',... 'EMERGENCY'>)
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_phase_is_active - As...
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S10-01]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S10-02]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S10-03]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S10-04]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S10-05]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S10-06]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S10-07]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S13-01]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S13-02]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S13-03]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S13-04]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S13-05]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S13-06]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S08-01]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S08-02]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S08-03]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S08-04]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S08-05]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S08-06]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S07-01]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S07-02]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S07-03]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S07-04]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S07-05]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S07-06]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S06-01]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S06-02]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S06-03]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S06-04]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S11-01]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S11-02]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S11-03]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S11-04]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S11-05]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S11-06]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S11-07]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S12-01]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S12-02]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S12-03]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S12-04]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-HED-01]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-HED-02]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-HED-03]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-UNA-01]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-UNA-02]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S06-M1]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S06-M2]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S06-A1]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S06-N1]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S07-M1]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S07-M2]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S07-A1]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S08-M1]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S08-M2]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S08-A1]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S10-M1]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S10-M2]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S11-M1]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S11-M2]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S11-A1]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S12-M1]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S12-A1]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S12-X1]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S13-M1]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S13-M2]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_catch[P1-S13-N1]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_not_raise[P1-FP-04]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_not_raise[P1-FP-21]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_ac02_gas_without_location_is_an_emergency
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_engine_emergencies[C\xf3 kim ti\xeam v\u1ee9t b\u1eeba \u1edf c\u1ea7u thang b\u1ed9 t\u1ea7ng 4 t\xf2a S1-S-13]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_engine_emergencies[N\u01b0\u1edbc tr\xe0n v\xe0o t\u1ee7 \u0111i\u1ec7n \u1edf h\u1ea7m B1 t\xf2a S1-S-08]
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_engine_emergencies[\u0110\xe8n h\xe0nh lang t\u1ea7ng 3 t\xf2a S1 n\xf3ng ran, ch\u1ea1m v\xe0o b\u1ecfng tay-S-07]
+73 failed, 39 passed in 23.46s
+EXIT=1

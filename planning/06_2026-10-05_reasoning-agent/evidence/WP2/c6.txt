@@ -1,0 +1,5 @@
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. C:/Users/lenku/AppData/Local/Temp/claude/d--P151/640e8089-3b43-4a75-9055-cbb167391b76/scratchpad/venv311/Scripts/python.exe -m pytest -q -s -p no:cacheprovider tests/test_maintenance/test_safety_p1.py -k corpus   # lexicon 2026-10-05.p1d, base 3e3a3f8
+corpus texts changed by P1: 259, neither a falling lamp nor water in electrics: 0
+.
+1 passed, 116 deselected in 16.00s
+EXIT=0

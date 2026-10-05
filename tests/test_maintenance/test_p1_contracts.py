@@ -297,6 +297,7 @@ def test_c12_signal_def_agent_only_rules():
     assert SignalDef(signal_id="S-01", name="x", tier=1, phase="P0", patterns=("khet",)).agent_only is False
     raw = yaml.safe_load((FIXTURE_DIR / "lexicon.yaml").read_text(encoding="utf-8"))["safety"]
     SafetyLexicon.model_validate(raw)  # positive control
+    raw = {**raw, "signals": [s for s in raw["signals"] if s["signal_id"] != "S-00"]}  # plan 06 WP2 ships S-00
     s00 = {"signal_id": "S-00", "name": "agent_other_hazard", "tier": 1, "phase": "P1", "scope": ["COMMON"]}
     ok = {**raw, "signals": [*raw["signals"], {**s00, "agent_only": True}]}
     SafetyLexicon.model_validate(ok)  # S-00 without patterns is fine when agent_only

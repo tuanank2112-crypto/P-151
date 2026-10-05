@@ -140,14 +140,12 @@ def test_a_01b_mirror_follows_the_rules_for_one_job_two_jobs_and_no_job():
     split_count = 0
     for text in SPLIT_REF.MUST_SPLIT:
         two = mirror_decision(new_input(text, assets=()), CATALOG, LEXICON)
-        if rule_view(new_input(text), CATALOG, LEXICON).safety.risk_level != RiskLevel.NONE:
-            # "...bóng đèn đã cháy": the safety net reads "cháy" as Tier 2, and the rules never split such a ticket
-            assert (two.jobs, two.next_step, two.bptn_reason) == ([], "TO_BPTN", "CATEGORY_UNCLEAR"), text
-            continue
+        # plan 06 Q24: "thay bóng đèn đã cháy" is a broken lamp (B-01, NONE), so every MUST_SPLIT sentence is safe
+        assert rule_view(new_input(text), CATALOG, LEXICON).safety.risk_level == RiskLevel.NONE, text
         split_count += 1
         assert [j.category for j in two.jobs] == ["VE_SINH", "KY_THUAT"], text
         assert two.next_step == "PROCEED"
-    assert split_count == 31
+    assert split_count == 32
     unclear = mirror_decision(
         new_input("Hành lang tầng 3 tòa S1 nhiều rác vì bóng đèn hành lang không sáng"), CATALOG, LEXICON
     )
@@ -282,13 +280,15 @@ def test_a_05_rule_emergency_skips_the_model_and_rule_unclear_stays_unclear():
 
 
 def test_a_06_an_agent_signal_the_rules_missed_raises_the_level_to_emergency():
-    report = "Hành lang tầng 3 tòa S1 nhiều rác, bình gas nghe xì xì"
+    # plan 06 WP2: lexicon p1d catches "bình gas … xì" (S-10); the hiss heard first and the cylinder named after is
+    # a real leak the rules miss (measured NONE: evidence/WP2/a06.txt)
+    report = "Hành lang tầng 3 tòa S1 nhiều rác, nghe tiếng xì xì từ bình gas"
     reply = one_job_decision(
         job(JOB_VS, quote="nhiều rác"),
         scope="IN_SCOPE",
         safety={
             "risk_level": "EMERGENCY",
-            "signals": [{"signal_id": "S-10", "status": "PRESENT", "quote": "bình gas nghe xì xì"}],
+            "signals": [{"signal_id": "S-10", "status": "PRESENT", "quote": "tiếng xì xì từ bình gas"}],
             "reason": "Bình gas rò",
         },
     )
