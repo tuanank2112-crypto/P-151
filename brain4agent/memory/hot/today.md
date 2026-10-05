@@ -55,3 +55,4 @@
 ## Plan 06 — Agent suy luận làm trung tâm điều phối + P1 — 2026-10-05
 - Người dùng: Agent phải suy luận, không bắt từ khoá; AI toàn quyền điều phối; AI KHÔNG tự hạ mức (khẩn cấp ⇒ BQL, chỉ BQL hạ); dùng DeepSeek (khoá đã ghi .env, thiếu base URL/model). Architect viết SPEC planning/06_2026-10-05_reasoning-agent (00/01/P01–P07/OPERATIONS/TESTING, 3 REF chạy được); người dùng duyệt với mặc định Q09 LangGraph, Q11 S-00, Q18 không giữ, Q19=3. Bắt đầu thi công Wave 0–4.
 - Thi công plan 06 (SO orchestrator, 2026-10-05 21:09): handoff H00 (WP0), H01 (WP1), H02 (WP2) + Q20 (WP1 tạo hợp đồng Agent thuần agent/schema.py + agent/inputs.py); phóng Wave 0–1 song song trong worktree.
+- Ghi Q20 vào plan.md (commit trước thiếu dòng do Edit hụt).

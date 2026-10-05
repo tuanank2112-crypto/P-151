@@ -33,6 +33,7 @@ Mốc = thời điểm architect ghi nhận, lấy bằng `date "+%Y-%m-%d %H:%M
 | Q14 | 2026-10-05 20:36:03 +0700 | Engine tách điều phối P1 ra mixin `src/maintenance/coordination/` để Wave 4 chạy song song không sửa chéo `engine.py`; lỗi/hằng chung chuyển sang `errors.py`/`common.py` (re-export giữ đường import cũ) | Architect | Gộp lại · trung bình |
 | Q15 | 2026-10-05 20:36:03 +0700 | `seed`/`reset`/`evaluate`/demo luôn chế độ luật (0 lần gọi mô hình) — fixture tất định | Architect (I-24) | — |
 | Q16 | 2026-10-05 20:36:03 +0700 | Mức an toàn chỉ người hạ: bước 2b lấy `max(kết quả, risk_level đang có)` cho MỌI đường (kể cả không Agent) | Q02 + CR §17.1 "agent/job không hạ" (I-17) | — |
+| Q20 | 2026-10-05 21:09:06 +0700 | Hợp đồng Agent thuần do WP1 tạo (thi công): `Case.agent_decision` (01 §2.3, WP1) cần `AgentDecisionRecord` (01 §3.3, file của WP3) ⇒ WP1 tạo `src/maintenance/agent/__init__.py` (CHỈ docstring), `agent/schema.py` (REF mục A nguyên văn + `Disagreement` + `AgentDecisionRecord`; chỉ import pydantic/`enums`), `agent/inputs.py` (`DuplicateCandidate`, `AssetCandidate`, `DecisionInput` — cần `models.LockedFields`; đặt trong `schema.py` sẽ vòng import `models ↔ schema`). WP3 dùng, không viết lại. Tên/kiểu không đổi | Orchestrator; SPEC giao `schema.py` cho WP3 nhưng WP1 cần trước — mâu thuẫn thứ tự | gộp `inputs.py` vào `schema.py` bằng import trễ · rẻ |
 
 ### Quyết định CHỜ NGƯỜI DÙNG (mặc định đang dùng trong SPEC)
 | # | Câu hỏi | Mặc định | Đổi thì sao |
