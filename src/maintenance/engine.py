@@ -763,7 +763,14 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
 
     def rate(self, ticket_id: str, actor_id: str, score: int) -> Case:
         def op(work: Case, now: datetime) -> None:
-            if work.ticket.status != S.CLOSED:
+            if work.ticket.status == S.MERGED:  # P04 §7: rates once the root it was merged into is done
+                try:
+                    root_status = self._case_view(work.ticket.merged_into).ticket.status
+                except NotFoundError:
+                    root_status = None
+                if root_status != S.CLOSED:
+                    raise GuardError("Chỉ đánh giá khi phản ánh gốc đã hoàn thành", {"root_status": root_status})
+            elif work.ticket.status != S.CLOSED:
                 raise GuardError("Chỉ đánh giá được khi ticket đã hoàn thành")
             if work.ticket.rating is not None:
                 raise GuardError(
@@ -969,6 +976,9 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
 
             if code == R.DUPLICATE:
                 work.not_duplicate_of.append(blocker.related_ticket_id)
+                self._count_if_open(  # P04 §3: the root no longer counts this report
+                    blocker.related_ticket_id, -1, ticket_id, actor_id, Role.BPTN, now, why="BPTN bác trùng"
+                )
             current_locks = ticket.locked_fields.model_dump()
             if category_changed:
                 # A new kind of work: the old asset and department choices no longer apply; step 6 runs again

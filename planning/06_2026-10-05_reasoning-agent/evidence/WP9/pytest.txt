@@ -1,0 +1,116 @@
+........................................................................ [  2%]
+........................................................................ [  4%]
+........................................................................ [  6%]
+........................................................................ [  8%]
+........................................................................ [ 11%]
+........................................................................ [ 13%]
+........................................................................ [ 15%]
+........................................................................ [ 17%]
+........................................................................ [ 19%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 26%]
+........................................................................ [ 28%]
+........................................................................ [ 30%]
+........................................................................ [ 33%]
+........................................................................ [ 35%]
+........................................................................ [ 37%]
+........................................................................ [ 39%]
+.................................................F...................... [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 46%]
+........................................................................ [ 48%]
+........................................................................ [ 50%]
+........................................................................ [ 52%]
+........................................................................ [ 55%]
+........................................................................ [ 57%]
+........................................................................ [ 59%]
+........................................................................ [ 61%]
+........................................................................ [ 63%]
+........................................................................ [ 66%]
+........................................................................ [ 68%]
+........................................................................ [ 70%]
+........................................................................ [ 72%]
+........................................................................ [ 75%]
+........................................................................ [ 77%]
+........................................................................ [ 79%]
+........................................................................ [ 81%]
+........................................................................ [ 83%]
+........................................................................ [ 86%]
+........................................................................ [ 88%]
+........................................................................ [ 90%]
+........................................................................ [ 92%]
+........................................................................ [ 94%]
+........................................................................ [ 97%]
+........................................................................ [ 99%]
+........................                                                 [100%]
+================================== FAILURES ===================================
+_____________ test_hook_stubs_have_their_stage_one_bodies[memory] _____________
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001549C7F5350>
+
+    def test_hook_stubs_have_their_stage_one_bodies(engine):
+        a, b = report(engine, SWEEP), report(engine, LAMP_4)
+        case_a, case_b = engine.get(a).model_copy(deep=True), engine.get(b).model_copy(deep=True)
+        now = engine.clock()
+        assert engine._on_duplicate_detected(case_a, case_b, now) is None
+        assert engine._release_duplicate_count(case_a, None, now) is None
+        assert engine._unmerge_children_of(case_a, now) is None
+        assert engine._apply_pri_u1(case_a, "MEDIUM", "why") == ("MEDIUM", "why")
+        assert engine._try_split(case_a, now) is False
+        assert engine._carry_over_material_qty([], []) is None
+        assert engine._link_emergency_both_ways(case_a, [b], now) is None
+        assert engine._hold_for_emergency(case_a, now) is False
+        assert engine._release_waiting_for(case_a, now) is None
+        for stub, args, kwargs in (
+            (engine._t09_unmerge_by_person, (case_a, BQL, ActorRole.BQL, now), {"note": "n"}),
+            (engine._unmerge, (case_a, BQL, ActorRole.BQL, now), {"note": "n"}),
+            (engine._t16_report_wrong_department, (case_a, CLN, ActorRole.DEPARTMENT, now), {"note": "n"}),
+            (engine._t17_keep_department, (case_a, BQL, ActorRole.BQL, now), {"note": "n"}),
+        ):
+            with pytest.raises(NotImplementedError, match="plan 06 WP"):
+>               stub(*args, **kwargs)
+
+tests\test_maintenance\test_p1_infra.py:411: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\maintenance\coordination\department.py:73: in _t16_report_wrong_department
+    self._apply_transition(work, TicketStatus.VERIFYING, actor_id, role, now, blocker=blocker, note=note)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x000001549C7F5350>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+to = <TicketStatus.VERIFYING: 'VERIFYING'>, actor_id = 'SIM-ACTOR-DEPT-CLN-01'
+role = <ActorRole.DEPARTMENT: 'DEPARTMENT'>
+now = datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+blocker = Blocker(code=<ReasonCode.WRONG_DEPT_AFTER_START: 'WRONG_DEPT_AFTER_START'>, owner_role=<BlockerOwner.BQL: 'BQL'>, sinc...Đang xác minh lại phòng ban phụ trách.', internal_note='n', related_ticket_id=None, resolved_at=None, resolved_by=None)
+note = 'n', changes = {}
+
+    def _apply_transition(
+        self,
+        work: Case,
+        to: TicketStatus,
+        actor_id: str,
+        role: ActorRole,
+        now: datetime,
+        *,
+        blocker: Blocker | None = None,
+        note: str | None = None,
+        **changes: Any,
+    ) -> None:
+        """The only place a status changes: validate against TRANSITIONS, write one event, notify."""
+        current = work.ticket.status
+        rule = TRANSITIONS.get((current, to))
+        if rule is None:
+            raise InvalidTransitionError(f"Transition {current} → {to} không hợp lệ", {"from": current, "to": to})
+        if role not in rule.actors:
+            raise InvalidTransitionError(f"{role} không được chuyển {current} → {to}", {"actor_role": role})
+        reason = blocker.code if blocker else None
+        if (rule.reason_required and reason is None) or (reason is not None and reason not in rule.reasons):
+>           raise InvalidTransitionError(f"Lý do {reason} không hợp lệ cho {current} → {to}")
+E           src.maintenance.errors.InvalidTransitionError: Lý do WRONG_DEPT_AFTER_START không hợp lệ cho ROUTED → VERIFYING
+
+src\maintenance\engine.py:2266: InvalidTransitionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_infra.py::test_hook_stubs_have_their_stage_one_bodies[memory]
+1 failed, 3263 passed, 49 deselected in 120.16s (0:02:00)
+EXIT=1

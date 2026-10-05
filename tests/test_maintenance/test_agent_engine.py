@@ -346,17 +346,19 @@ def test_a27_two_valid_jobs_split_when_the_split_hook_accepts_and_stop_when_it_d
     text = "Hành lang tầng 3 tòa S1 nhiều rác, đèn cũng không sáng"
     engine, _ = make(mirror())
     ticket_id = report(engine, text)
-    ticket = engine.get(ticket_id).ticket
-    # WP8 fills `_try_split`; until then the stub answers False and the Agent's two jobs stop the ticket
-    assert (ticket.status, ticket.blocker.code, ticket.blocker.resume_step) == ("VERIFYING", "CATEGORY_UNCLEAR", 4)
-    assert "Agent thấy hai việc" in ticket.blocker.internal_note
-
-    engine, _ = make(mirror())
-    engine._try_split = lambda work, now: True  # what WP8 will do for a valid split
-    ticket_id = report(engine, text)
     case = engine.get(ticket_id)
+    # WP8: the split hook accepts, this ticket keeps the first job and a child ticket takes the second
     assert case.proposal.category_source == "AGENT_SPLIT" and case.proposal.playbook_id == "PB-CLN-01"
     assert case.ticket.status == "ROUTED"
+    [child_id] = case.ticket.split_children
+    child = engine.get(child_id)
+    assert child.ticket.split_from == ticket_id and child.proposal.category_source == "AGENT_SPLIT"
+
+    engine, _ = make(mirror())
+    engine._try_split = lambda work, now: False  # a split the hook refuses: the Agent's two jobs stop the ticket
+    ticket = engine.get(report(engine, text)).ticket
+    assert (ticket.status, ticket.blocker.code, ticket.blocker.resume_step) == ("VERIFYING", "CATEGORY_UNCLEAR", 4)
+    assert "Agent thấy hai việc" in ticket.blocker.internal_note
 
 
 # ---------------------------------------------------------------------------------------------------- A-28, A-29

@@ -1,0 +1,40 @@
+.FF.............                                                         [100%]
+================================== FAILURES ===================================
+___________________ test_d02_second_return_escalates_to_bql ___________________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x00000135E600FC50>
+
+    def test_d02_second_return_escalates_to_bql(fresh):
+        tid = report(fresh, SWEEP)
+        fresh.return_wrong_department(tid, CLN, note="Lần một")
+        fresh.bptn_resolve(tid, BPTN, department="DEPT_TECHNICAL", note="Giao phòng kỹ thuật")
+        case = fresh.return_wrong_department(tid, TEC, note="Lần hai")
+        assert case.ticket.status == "VERIFYING" and case.ticket.wrong_department_return_count == 2
+>       assert case.ticket.blocker.escalated is True
+E       AssertionError: assert False is True
+E        +  where False = Blocker(code=<ReasonCode.WRONG_DEPT: 'WRONG_DEPT'>, owner_role=<BlockerOwner.BPTN: 'BPTN'>, since=datetime.datetime(20...ác minh lại phòng ban phụ trách.', internal_note='Lần hai', related_ticket_id=None, resolved_at=None, resolved_by=None).escalated
+E        +    where Blocker(code=<ReasonCode.WRONG_DEPT: 'WRONG_DEPT'>, owner_role=<BlockerOwner.BPTN: 'BPTN'>, since=datetime.datetime(20...ác minh lại phòng ban phụ trách.', internal_note='Lần hai', related_ticket_id=None, resolved_at=None, resolved_by=None) = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=2, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).blocker
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=2, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_department.py:65: AssertionError
+__________________ test_d02b_threshold_comes_from_sla_config __________________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x00000135E600F390>
+
+    def test_d02b_threshold_comes_from_sla_config(fresh):
+        sla = fresh.catalog.sla_config.model_copy(update={"wrong_dept_return": WrongDeptReturnSla(escalate_at_count=1)})
+        fresh.catalog = fresh.catalog.model_copy(update={"sla_config": sla})  # never hardcoded 2
+        tid = report(fresh, SWEEP)
+        case = fresh.return_wrong_department(tid, CLN, note="Lần một")
+>       assert case.ticket.blocker.escalated is True and len(escalations(case)) == 1
+E       AssertionError: assert (False is True)
+E        +  where False = Blocker(code=<ReasonCode.WRONG_DEPT: 'WRONG_DEPT'>, owner_role=<BlockerOwner.BPTN: 'BPTN'>, since=datetime.datetime(20...ác minh lại phòng ban phụ trách.', internal_note='Lần một', related_ticket_id=None, resolved_at=None, resolved_by=None).escalated
+E        +    where Blocker(code=<ReasonCode.WRONG_DEPT: 'WRONG_DEPT'>, owner_role=<BlockerOwner.BPTN: 'BPTN'>, since=datetime.datetime(20...ác minh lại phòng ban phụ trách.', internal_note='Lần một', related_ticket_id=None, resolved_at=None, resolved_by=None) = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=1, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).blocker
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=1, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_department.py:76: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_department.py::test_d02_second_return_escalates_to_bql
+FAILED tests/test_maintenance/test_p1_department.py::test_d02b_threshold_comes_from_sla_config
+2 failed, 14 passed, 1 deselected in 0.74s
+EXIT=1

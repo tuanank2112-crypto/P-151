@@ -7,6 +7,7 @@ The hook stubs of the mixins are asserted too, so that a later wave cannot chang
 
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -388,35 +389,12 @@ def test_mixin_layout_and_import_paths(engine):
     assert done.returncode == 0, done.stderr
 
 
-def test_hook_stubs_have_their_stage_one_bodies(engine):
-    a, b = report(engine, SWEEP), report(engine, LAMP_4)
-    case_a, case_b = engine.get(a).model_copy(deep=True), engine.get(b).model_copy(deep=True)
-    now = engine.clock()
-    assert engine._on_duplicate_detected(case_a, case_b, now) is None
-    assert engine._release_duplicate_count(case_a, None, now) is None
-    assert engine._unmerge_children_of(case_a, now) is None
-    assert engine._apply_pri_u1(case_a, "MEDIUM", "why") == ("MEDIUM", "why")
-    assert engine._try_split(case_a, now) is False
-    assert engine._carry_over_material_qty([], []) is None
-    assert engine._link_emergency_both_ways(case_a, [b], now) is None
-    assert engine._hold_for_emergency(case_a, now) is False
-    assert engine._release_waiting_for(case_a, now) is None
-    for stub, args, kwargs in (
-        (engine._t09_unmerge_by_person, (case_a, BQL, ActorRole.BQL, now), {"note": "n"}),
-        (engine._unmerge, (case_a, BQL, ActorRole.BQL, now), {"note": "n"}),
-        (engine._t16_report_wrong_department, (case_a, CLN, ActorRole.DEPARTMENT, now), {"note": "n"}),
-        (engine._t17_keep_department, (case_a, BQL, ActorRole.BQL, now), {"note": "n"}),
-    ):
-        with pytest.raises(NotImplementedError, match="plan 06 WP"):
-            stub(*args, **kwargs)
-    for call in (
-        lambda: engine.bql_merge(a, BQL, into=b, note="n"),
-        lambda: engine.undo_split(a, BQL, note="n"),
-        lambda: engine.bql_wrong_department(a, BQL, decision="KEEP", note="n"),
-        lambda: engine.create_follow_up(a, BQL, note="n"),
-    ):
-        with pytest.raises(NotImplementedError, match="plan 06 WP"):
-            call()
+def test_no_plan_06_stub_is_left():
+    """WP7–WP10 filled every hook WP5 left as a stub; their behaviour is pinned in test_p1_{merge,split,department,
+    neighbors,follow_up}.py. A stub left behind would surface as a NotImplementedError in production."""
+    src = Path(__file__).resolve().parents[2] / "src" / "maintenance"
+    left = [p.name for p in src.rglob("*.py") if 'NotImplementedError("plan 06' in p.read_text(encoding="utf-8")]
+    assert left == []
 
 
 def test_transition_guards_added_by_wp5(engine):
