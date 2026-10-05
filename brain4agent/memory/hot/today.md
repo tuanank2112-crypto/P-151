@@ -57,3 +57,4 @@
 - Thi công plan 06 (SO orchestrator, 2026-10-05 21:09): handoff H00 (WP0), H01 (WP1), H02 (WP2) + Q20 (WP1 tạo hợp đồng Agent thuần agent/schema.py + agent/inputs.py); phóng Wave 0–1 song song trong worktree.
 - Ghi Q20 vào plan.md (commit trước thiếu dòng do Edit hụt).
 - Q21: Bước 0 trong worktree ra BRN-002 do CRLF (root exit 0) ⇒ worker ghi exit, đi tiếp; thêm handoff H03 (WP4).
+- Viết sẵn handoff H04 (WP3), H05 (WP5), H06 (WP6), H07–H10 (WP7–WP10), H11 (WP11 phần không khoá); container Postgres tạm p151-pgtest (127.0.0.1:55433) cho cổng --pg, mỗi worker một DB riêng.
