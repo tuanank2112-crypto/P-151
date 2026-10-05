@@ -22,7 +22,7 @@ function parseLocationParts(locationStr) {
     return { building: null, floor: null, zone: null, raw: 'Chưa có thông tin' };
   }
   const str = locationStr.trim();
-  // Standard format: "Tòa SIM-A / Tầng 3 / Hành lang"
+  // Standard format: "Tòa S1 / Tầng 3 / Hành lang"
   if (str.includes('/')) {
     const parts = str.split('/').map((s) => s.trim());
     return {

@@ -16,6 +16,8 @@ import pytest
 from src.maintenance.proposer import LLMAssessment, propose
 from src.maintenance.rules import classify, extract_location, missing_location_parts
 
+BUILDINGS = ("S1", "S2")  # catalog site.buildings (Ocean Park pilot)
+
 TEC, CLN, UNCLEAR, OUT = "TEC", "CLN", "UNCLEAR", "OUT"
 
 LIGHTING = [
@@ -196,25 +198,25 @@ RESIDUAL: dict[str, tuple[str, str]] = {}
 
 # (template, expected location). "{s}" is the sentence; the first five come from H01/H02.
 TEMPLATES: list[tuple[str, str]] = [
-    ("Tòa SIM-A / Tầng 3 / Hành lang: {s}", "Tòa SIM-A / Tầng 3 / Hành lang"),
-    ("{s} ở hành lang tầng 4 tòa SIM-B", "Tòa SIM-B / Tầng 4 / Hành lang"),
-    ("Tòa SIM-C tầng 2 sảnh thang máy, {s}", "Tòa SIM-C / Tầng 2 / Sảnh thang máy"),
-    ("Block SIM-B lầu 6 phòng rác: {s}", "Tòa SIM-B / Tầng 6 / Phòng rác"),
-    ("Tầng hầm B1 tòa SIM-A, bãi đỗ xe: {s}", "Tòa SIM-A / Tầng B1 / Hầm xe"),  # asset label kept (plan 04)
-    ("{s}. Tòa nhà SIM-C, tầng 7, cầu thang bộ", "Tòa SIM-C / Tầng 7 / Cầu thang bộ"),
-    ("Em ở tòa SIM-B tầng 9 hành lang, báo: {s}", "Tòa SIM-B / Tầng 9 / Hành lang"),
-    ("Sảnh chính tòa SIM-A: {s}", "Tòa SIM-A / Tầng 1 / Sảnh chính"),
-    ("Tòa SIM-B / Tầng trệt / Sân chơi: {s}", "Tòa SIM-B / Tầng Trệt / Sân chơi"),
-    ("{s} - lối đi tầng 5 tòa SIM-C", "Tòa SIM-C / Tầng 5 / Lối đi"),
-    ("Tòa SIM-A tầng 12 sân thượng: {s}", "Tòa SIM-A / Tầng 12 / Sân thượng"),
+    ("Tòa S1 / Tầng 3 / Hành lang: {s}", "Tòa S1 / Tầng 3 / Hành lang"),
+    ("{s} ở hành lang tầng 4 tòa S2", "Tòa S2 / Tầng 4 / Hành lang"),
+    ("Tòa S2 tầng 2 sảnh thang máy, {s}", "Tòa S2 / Tầng 2 / Sảnh thang máy"),
+    ("Block S2 lầu 6 phòng rác: {s}", "Tòa S2 / Tầng 6 / Phòng rác"),
+    ("Tầng hầm B1 tòa S1, bãi đỗ xe: {s}", "Tòa S1 / Tầng B1 / Hầm xe"),  # asset label kept (plan 04)
+    ("{s}. Tòa nhà S2, tầng 7, cầu thang bộ", "Tòa S2 / Tầng 7 / Cầu thang bộ"),
+    ("Em ở tòa S2 tầng 9 hành lang, báo: {s}", "Tòa S2 / Tầng 9 / Hành lang"),
+    ("Sảnh chính tòa S1: {s}", "Tòa S1 / Tầng 1 / Sảnh chính"),
+    ("Tòa S2 / Tầng trệt / Sân chơi: {s}", "Tòa S2 / Tầng Trệt / Sân chơi"),
+    ("{s} - lối đi tầng 5 tòa S2", "Tòa S2 / Tầng 5 / Lối đi"),
+    ("Tòa S1 tầng 12 sân thượng: {s}", "Tòa S1 / Tầng 12 / Sân thượng"),
     # H04: the resident's home named first is not where the problem is; spaced codes; "03"; areas added in round 2
-    ("Căn 1508 tầng 15 tòa SIM-A, báo giúp hành lang tầng 3: {s}", "Tòa SIM-A / Tầng 3 / Hành lang"),
-    ("Em ở tòa SIM-B, đi qua hành lang tầng 3 tòa SIM-A thấy {s}", "Tòa SIM-A / Tầng 3 / Hành lang"),
-    ("{s}. Em ở căn 1203 tòa SIM-B, chỗ sảnh thang máy tầng 2", "Tòa SIM-B / Tầng 2 / Sảnh thang máy"),
-    ("Chị Hoa phòng 1208 tòa SIM-C nhờ báo hành lang tầng 4 tòa SIM-A: {s}", "Tòa SIM-A / Tầng 4 / Hành lang"),
-    ("Hành lang tầng 03 toà SIM A: {s}", "Tòa SIM-A / Tầng 3 / Hành lang"),
-    ("toa sim b cau thang tang 5, {s}", "Tòa SIM-B / Tầng 5 / Cầu thang bộ"),
-    ("Lối thoát hiểm tầng 9 tòa SIM-C: {s}", "Tòa SIM-C / Tầng 9 / Lối thoát hiểm"),
+    ("Căn 1508 tầng 15 tòa S1, báo giúp hành lang tầng 3: {s}", "Tòa S1 / Tầng 3 / Hành lang"),
+    ("Em ở tòa S2, đi qua hành lang tầng 3 tòa S1 thấy {s}", "Tòa S1 / Tầng 3 / Hành lang"),
+    ("{s}. Em ở căn 1203 tòa S2, chỗ sảnh thang máy tầng 2", "Tòa S2 / Tầng 2 / Sảnh thang máy"),
+    ("Chị Hoa phòng 1208 tòa S2 nhờ báo hành lang tầng 4 tòa S1: {s}", "Tòa S1 / Tầng 4 / Hành lang"),
+    ("Hành lang tầng 03 toà S1: {s}", "Tòa S1 / Tầng 3 / Hành lang"),
+    ("toa s2 cau thang tang 5, {s}", "Tòa S2 / Tầng 5 / Cầu thang bộ"),
+    ("Lối thoát hiểm tầng 9 tòa S2: {s}", "Tòa S2 / Tầng 9 / Lối thoát hiểm"),
 ]
 
 
@@ -254,7 +256,7 @@ def violations() -> list[tuple[str, str, str, str]]:
         for text, location in variants(sentence):
             if (got := label(text)) != want:
                 found.append((text, "type", want, got))
-            if (loc := extract_location(text)) != location:
+            if (loc := extract_location(text, BUILDINGS)) != location:
                 found.append((text, "location", location, str(loc)))
     return found
 
@@ -269,8 +271,8 @@ def test_corpus_size_and_shape():
 @pytest.mark.parametrize(("sentence", "expected"), CORPUS)
 def test_corpus_sentences_carry_no_location(sentence, expected):
     """So the location of a variant can only come from its template."""
-    assert missing_location_parts(sentence) == ["building", "floor", "area"], sentence
-    assert missing_location_parts(strip_accents(sentence)) == ["building", "floor", "area"], sentence
+    assert missing_location_parts(sentence, BUILDINGS) == ["building", "floor", "area"], sentence
+    assert missing_location_parts(strip_accents(sentence), BUILDINGS) == ["building", "floor", "area"], sentence
 
 
 @pytest.mark.parametrize(("sentence", "expected"), CORPUS)
@@ -286,7 +288,7 @@ def test_location_is_extracted_from_every_template(template, location):
     for sentence, _ in CORPUS:
         text = template.format(s=sentence.rstrip(".?! "))
         for variant in (text, strip_accents(text)):
-            if (got := extract_location(variant)) != location:
+            if (got := extract_location(variant, BUILDINGS)) != location:
                 wrong.append((variant, got))
     assert not wrong, wrong
 

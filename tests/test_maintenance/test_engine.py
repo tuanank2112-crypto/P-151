@@ -29,7 +29,7 @@ from src.maintenance.enums import (
     ReasonCode,
     RiskLevel,
 )
-from src.maintenance.models import BLOCKER_CODES_BY_STATUS, Ticket
+from src.maintenance.models import BLOCKER_CODES_BY_STATUS, PlannedMaterial, Ticket
 from src.maintenance.proposer import LLMAssessment
 from src.maintenance.views import bql_rows, queue_sort_key, resident_view
 from tests.test_maintenance.helpers import (
@@ -43,6 +43,7 @@ from tests.test_maintenance.helpers import (
     RESIDENT,
     TEC,
     TZ,
+    WAREHOUSE,
     Clock,
     do_work,
     finish,
@@ -94,13 +95,13 @@ def test_invariant_2_nobody_writes_assignee(fresh):
 
 
 def test_invariant_3_locked_fields_survive_a_rerun(fresh):
-    tid = report(fresh, "Đèn cầu thang bộ tầng 9 tòa SIM-A không sáng")  # no asset at that location
+    tid = report(fresh, "Đèn cầu thang bộ tầng 9 tòa S1 không sáng")  # no asset at that location
     assert fresh.get(tid).ticket.blocker.code == "ASSET_UNCLEAR"
     fresh.bptn_resolve(
         tid,
         BPTN,
         asset_id="SIM-ASSET-LIGHT-001",
-        location="Tòa SIM-A / Tầng 3 / Hành lang",
+        location="Tòa S1 / Tầng 3 / Hành lang",
         note="Kiểm tra lại: cư dân nhầm tầng",
     )
     fresh.return_wrong_department(tid, TEC, note="Thử trả lại để chạy lại pipeline")
@@ -108,11 +109,11 @@ def test_invariant_3_locked_fields_survive_a_rerun(fresh):
     locked = case.ticket.locked_fields
     assert (locked.category, locked.location, locked.asset_id) == (
         "KY_THUAT",
-        "Tòa SIM-A / Tầng 3 / Hành lang",
+        "Tòa S1 / Tầng 3 / Hành lang",
         "SIM-ASSET-LIGHT-001",
     )
     assert case.proposal.asset_id == "SIM-ASSET-LIGHT-001" and case.proposal.asset_lookup_status == "LOCKED_BY_BPTN"
-    assert case.draft.location == "Tòa SIM-A / Tầng 3 / Hành lang"
+    assert case.draft.location == "Tòa S1 / Tầng 3 / Hành lang"
 
 
 def test_invariant_4_raw_is_read_only(engine):
@@ -179,22 +180,56 @@ def test_step2_names_only_the_missing_location_parts(fresh):
     case = fresh.get(report(fresh, "Tầng 3 ở S4 quá nhiều rác"))
     assert case.ticket.status == "NEED_INFO"
     assert case.ticket.blocker.public_message == (
-        'Ban tiếp nhận thông tin sẽ liên hệ bạn để bổ sung: tòa (ghi kèm chữ "tòa", ví dụ: tòa SIM-A), '
-        "khu vực (hành lang, sảnh thang máy, sảnh chính, cầu thang bộ, hầm xe, bãi đỗ xe, phòng rác, sân chơi, "
-        "sân thượng, lối đi hoặc lối thoát hiểm). Bạn cũng có thể bổ sung ngay tại đây."
+        "Ban tiếp nhận thông tin sẽ liên hệ bạn để bổ sung: tòa (hiện chỉ nhận tòa S1 hoặc S2 – Ocean Park), "
+        "khu vực (hành lang, sảnh cư dân, sảnh thang máy, sảnh chính, cầu thang bộ, hầm xe, bãi đỗ xe, phòng rác, "
+        "sân chơi, sân thượng, lối đi hoặc lối thoát hiểm). Bạn cũng có thể bổ sung ngay tại đây."
     )
+
+
+def test_step2_building_outside_the_pilot_scope_counts_as_missing(fresh):
+    """Only catalog `site.buildings` (Ocean Park S1, S2) are accepted; another building is asked again."""
+    case = fresh.get(report(fresh, "Hành lang tầng 3 tòa S3 nhiều rác"))
+    assert case.ticket.status == "NEED_INFO"
+    assert case.ticket.blocker.public_message.startswith(
+        "Ban tiếp nhận thông tin sẽ liên hệ bạn để bổ sung: tòa (hiện chỉ nhận tòa S1 hoặc S2 – Ocean Park)."
+    )
+
+
+def test_step2_resident_lobby_implies_floor_one(fresh):
+    tid = report(fresh, "Sảnh cư dân S2 nhiều rác, cần vệ sinh")  # bare code, no floor
+    assert fresh.effective_location(fresh.get(tid)) == "Tòa S2 / Tầng 1 / Sảnh cư dân"
+    assert fresh.get(tid).ticket.status != "NEED_INFO"
+
+
+def test_step2_keeps_the_sub_building_of_a_zone(fresh):
+    """Ocean Park S1 is a zone; "S1.12" is the building and must not be cut to "S1"."""
+    assert fresh.effective_location(fresh.get(report(fresh, "Hành lang tầng 3 tòa S1.12 nhiều rác"))) == (
+        "Tòa S1.12 / Tầng 3 / Hành lang"
+    )
+    assert fresh.effective_location(fresh.get(report(fresh, "Hành lang tầng 3 tòa S1.123 nhiều rác"))) is None
+
+
+def test_safety_stop_tells_bptn_the_missing_location_and_request_info_asks_for_it(fresh):
+    """Q08 runs 2b before step 2: BPTN sees what is missing, and REQUEST_INFO asks the resident for it too."""
+    tid = report(fresh, "Tòa S1.12 tầng 3 nghe tiếng thấy tiếng nổ")
+    blocker = fresh.get(tid).ticket.blocker
+    assert blocker.code == "SAFETY_REVIEW_REQUIRED"
+    assert blocker.internal_note == "Bậc 2: T2-04 · Thiếu: location_area"
+    case = fresh.safety_request_info(tid, BPTN, note="Hỏi rõ vị trí")
+    assert case.ticket.status == "NEED_INFO"
+    assert "khu vực (hành lang, sảnh cư dân" in case.ticket.blocker.public_message
 
 
 def test_step2_blank_report_is_classified_from_the_addition(fresh):
     tid = report(fresh, "   ")
-    case = fresh.add_resident_info(tid, RESIDENT, "Đèn sảnh chính tòa SIM-B không sáng")
+    case = fresh.add_resident_info(tid, RESIDENT, "Đèn sảnh chính tòa S2 không sáng")
     assert case.ticket.status == "VERIFYING" and case.ticket.blocker.code == "ASSET_UNCLEAR"
     assert case.ticket.proposed_department_id == "DEPT_TECHNICAL" and case.ticket.department_id is None
     assert case.ticket.raw.original_description == "   "
 
 
 def test_step4_out_of_scope(fresh):
-    case = fresh.get(report(fresh, "Sảnh thang máy tầng 3 tòa SIM-A: thang máy kêu rất to"))
+    case = fresh.get(report(fresh, "Sảnh thang máy tầng 3 tòa S1: thang máy kêu rất to"))
     assert case.ticket.status == "VERIFYING" and case.ticket.blocker.code == "OUT_OF_SCOPE"
     assert case.ticket.blocker.owner_role == "BPTN" and case.ticket.department_id is None
 
@@ -205,7 +240,7 @@ def test_step5_llm_only_proposal_waits_for_bptn(clock):
 
     e = MaintenanceEngine(clock=clock, llm=llm, llm_label="fake")
     e.reset(with_fixtures=False)
-    tid = report(e, "Hành lang tầng 3 tòa SIM-A tối om, không thấy đường")
+    tid = report(e, "Hành lang tầng 3 tòa S1 tối om, không thấy đường")
     case = e.get(tid)
     assert case.ticket.blocker.code == "PENDING_REVIEW" and case.ticket.review_status == "PENDING_REVIEW"
     assert case.ticket.department_id is None and case.ticket.asset_resolution is None  # review comes before assets
@@ -223,6 +258,64 @@ def test_step6_bptn_chooses_onsite_check_with_a_reason(engine):
     assert case.ticket.status == "ROUTED" and "ASSET_CHECK_ONSITE" in case.ticket.flags
     assert case.ticket.asset_resolution == "ONSITE_BY_BPTN"
     assert case.proposal.asset_lookup_status == "CHECK_ONSITE" and case.draft.flags == ["ASSET_CHECK_ONSITE"]
+
+
+def _onsite_in_progress(engine):
+    tid = "SIM-TKT-TEC-002"
+    engine.bptn_resolve(tid, BPTN, asset_onsite=True, note="Không có trong sổ tài sản")
+    engine.accept(tid, TEC)
+    return tid
+
+
+def test_department_confirms_onsite_materials_and_can_finish(engine):
+    """Step 7 guessed the playbook default (LED); on site it is a tube lamp: the department replaces the plan."""
+    tid = _onsite_in_progress(engine)
+    assert [m.item_code for m in engine.get(tid).material_lines] == ["SIM-MAT-LAMP-01"]
+    lines = [
+        PlannedMaterial(item_code="SIM-MAT-LAMP-02", planned_qty=2),
+        PlannedMaterial(item_code="SIM-MAT-STARTER-01", planned_qty=1),
+    ]
+    case = engine.confirm_materials(tid, TEC, lines=lines, note="Kiểm tại chỗ: đèn tuýp")
+    assert [(m.item_code, m.planned_qty) for m in case.material_lines] == [
+        ("SIM-MAT-LAMP-02", 2),
+        ("SIM-MAT-STARTER-01", 1),
+    ]
+    assert case.planned_materials == lines
+    assert case.draft.material_line_ids == [m.material_line_id for m in case.material_lines]
+    audit = case.audit[-1]
+    assert (audit.field_name, audit.actor_id, audit.reason) == ("planned_materials", TEC, "Kiểm tại chỗ: đèn tuýp")
+    assert audit.old_value == [{"item_code": "SIM-MAT-LAMP-01", "planned_qty": 1}]
+    assert finish(engine, tid).ticket.status == "READY_FOR_REVIEW"
+
+
+def test_confirm_materials_keeps_entered_quantities_and_guards(engine):
+    tid = _onsite_in_progress(engine)
+    engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=1, used_qty=1)
+    lamp = PlannedMaterial(item_code="SIM-MAT-LAMP-01", planned_qty=1)
+    case = engine.confirm_materials(
+        tid, TEC, lines=[lamp, PlannedMaterial(item_code="SIM-MAT-STARTER-01", planned_qty=1)], note="Thêm tắc te"
+    )
+    assert [(m.issued_qty, m.used_qty) for m in case.material_lines] == [(1, 1), (None, None)]
+    for bad, note in [
+        ([lamp], " "),
+        ([PlannedMaterial(item_code="SIM-MAT-NOPE", planned_qty=1)], "x"),
+        ([lamp, lamp], "x"),
+        ([PlannedMaterial(item_code="SIM-MAT-LAMP-01", planned_qty=0)], "x"),
+    ]:
+        with pytest.raises(GuardError):
+            engine.confirm_materials(tid, TEC, lines=bad, note=note)
+    for actor in (BPTN, CLN):
+        with pytest.raises(ActionDeniedError):
+            engine.confirm_materials(tid, actor, lines=[lamp], note="x")
+    with pytest.raises(GuardError):  # not accepted yet
+        engine.confirm_materials("SIM-TKT-TEC-001", TEC, lines=[lamp], note="x")
+
+
+def test_confirm_no_materials_sets_mode_na(engine):
+    tid = _onsite_in_progress(engine)
+    case = engine.confirm_materials(tid, TEC, lines=[], note="Chỉ cần siết lại chuôi đèn")
+    assert case.material_lines == [] and case.draft.material_requirement_mode == "N_A"
+    assert finish(engine, tid).ticket.status == "READY_FOR_REVIEW"
 
 
 def test_step7_unknown_stock_does_not_block(engine):
@@ -322,7 +415,7 @@ def test_missing_info_reminds_bptn_hourly_and_escalates_after_four_business_hour
 
 
 def test_bptn_escalates_after_four_business_hours(fresh, clock):
-    tid = report(fresh, "Sảnh thang máy tầng 3 tòa SIM-A: thang máy kêu rất to")
+    tid = report(fresh, "Sảnh thang máy tầng 3 tòa S1: thang máy kêu rất to")
     assert fresh.get(tid).ticket.blocker.escalate_at == clock.now + timedelta(hours=4)
     fresh.run_jobs(clock.now + timedelta(hours=4))
     assert fresh.get(tid).ticket.blocker.escalated and fresh.get(tid).ticket.status == "VERIFYING"
@@ -371,7 +464,7 @@ def test_waiting_material_is_not_the_departments_ticket_yet(fresh):
 
 
 def test_escalation_never_changes_status(fresh, clock):
-    tids = [report(fresh, "Nhiều rác quá"), report(fresh, "Sảnh thang máy tầng 3 tòa SIM-A: thang máy kêu to")]
+    tids = [report(fresh, "Nhiều rác quá"), report(fresh, "Sảnh thang máy tầng 3 tòa S1: thang máy kêu to")]
     before = {t: fresh.get(t).ticket.status for t in tids}
     for day in range(1, 8):
         fresh.run_jobs(clock.now + timedelta(days=day))
@@ -574,3 +667,25 @@ def test_p0_contract_queue_sort_key_and_bql_row_fields(engine):
         "SIM-TKT-TEC-005",
     }
     assert resident_view(engine, engine.get("SIM-TKT-CLN-001"), engine.clock()).allowed_actions == []
+
+
+def test_partial_delivery_updates_the_stock_the_waiting_ticket_shows(engine):
+    """Needs 2, stock 0: receiving 1 keeps the ticket waiting but shows stock 1 (it used to stay at 0)."""
+    tid = "SIM-TKT-TEC-003"
+    assert [(m.item_code, m.planned_qty, m.simulated_stock_qty) for m in engine.get(tid).material_lines] == [
+        ("SIM-MAT-LAMP-02", 2, 0)
+    ]
+    [case] = engine.receive_stock(WAREHOUSE, "SIM-MAT-LAMP-02", 1)
+    assert case.ticket.blocker.code == "WAITING_MATERIAL"
+    assert case.material_lines[0].simulated_stock_qty == 1
+    assert case.material_lines[0].material_stock_status == "INSUFFICIENT"
+    [case] = engine.receive_stock(WAREHOUSE, "SIM-MAT-LAMP-02", 1)
+    assert case.ticket.status == "ROUTED" and case.ticket.blocker is None
+
+
+def test_stock_levels_for_staff_only(engine):
+    rows = {r["item_code"]: r["qty"] for r in engine.stock_levels(WAREHOUSE)}
+    assert rows["SIM-MAT-LAMP-02"] == 0 and rows["SIM-MAT-STARTER-01"] is None
+    assert len(rows) == len(engine.catalog.materials)
+    with pytest.raises(ActionDeniedError):
+        engine.stock_levels(RESIDENT)

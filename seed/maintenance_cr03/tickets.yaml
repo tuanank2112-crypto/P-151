@@ -19,7 +19,7 @@ tickets:
   - raw:
       ticket_id: SIM-TKT-CLN-001
       created_at: "2026-09-27T08:00:00+07:00"
-      original_description: "Hành lang tầng 3 tòa SIM-A có nhiều rác và vết bẩn, cần vệ sinh."
+      original_description: "Hành lang tầng 3 tòa S1 có nhiều rác và vết bẩn, cần vệ sinh."
     flow: DEMO-1
     purpose: "Vệ sinh 08:00: chuyển Phòng Vệ sinh, nhận việc, báo hoàn thành; chênh lệch vật tư có lý do → READY kèm warning không chặn"
     materials:
@@ -42,7 +42,7 @@ tickets:
       review_status: NOT_REQUIRED
       asset_resolution: NOT_APPLICABLE
       draft_exists: true
-      location: "Tòa SIM-A / Tầng 3 / Hành lang"
+      location: "Tòa S1 / Tầng 3 / Hành lang"
       asset_lookup_status: NOT_APPLICABLE
       material_stock_status: SUFFICIENT
       flags: []
@@ -52,7 +52,7 @@ tickets:
   - raw:
       ticket_id: SIM-TKT-CLN-002
       created_at: "2026-09-27T23:30:00+07:00"
-      original_description: "Sảnh chính tòa SIM-B bị đổ nước ngọt, sàn dính bẩn, cần dọn dẹp."
+      original_description: "Sảnh chính tòa S2 bị đổ nước ngọt, sàn dính bẩn, cần dọn dẹp."
     flow: DEMO-2
     purpose: "Vệ sinh lúc 23:30, ngoài ca phòng ban → ROUTED + OUT_OF_HOURS, tự chuyển đầu ca 06:00"
     materials:
@@ -66,7 +66,7 @@ tickets:
       review_status: NOT_REQUIRED
       asset_resolution: NOT_APPLICABLE
       draft_exists: true
-      location: "Tòa SIM-B / Tầng 1 / Sảnh chính"
+      location: "Tòa S2 / Tầng 1 / Sảnh chính"
       material_stock_status: SUFFICIENT
 
   - raw:
@@ -86,7 +86,7 @@ tickets:
   - raw:
       ticket_id: SIM-TKT-CLN-004
       created_at: "2026-09-27T09:20:00+07:00"
-      original_description: "Tầng hầm B1 tòa SIM-A có chất lỏng lạ không rõ nguồn gốc, bốc mùi hắc gây khó thở, cần vệ sinh."
+      original_description: "Tầng hầm B1 tòa S1 có chất lỏng lạ không rõ nguồn gốc, bốc mùi hắc gây khó thở, cần vệ sinh."
     flow: REGRESSION
     purpose: "CR03 P0: chất lạ + mùi hắc/khó thở → EMERGENCY; BQL xử lý, không giao phòng ban, không draft"
     expected:
@@ -94,12 +94,12 @@ tickets:
       reason_code: EMERGENCY_PENDING_BQL
       department_id: null
       draft_exists: false
-      location: "Tòa SIM-A / Tầng B1 / Hầm xe"
+      location: "Tòa S1 / Tầng B1 / Hầm xe"
 
   - raw:
       ticket_id: SIM-TKT-CLN-005
       created_at: "2026-09-27T15:00:00+07:00"
-      original_description: "Cầu thang bộ tầng 6 tòa SIM-A nhiều bụi bẩn, cần vệ sinh."
+      original_description: "Cầu thang bộ tầng 6 tòa S1 nhiều bụi bẩn, cần vệ sinh."
     flow: REGRESSION
     purpose: "Ca chiều: không còn tra ca trực theo team; trong ca phòng ban → ROUTED"
     materials:
@@ -113,13 +113,13 @@ tickets:
       review_status: NOT_REQUIRED
       asset_resolution: NOT_APPLICABLE
       draft_exists: true
-      location: "Tòa SIM-A / Tầng 6 / Cầu thang bộ"
+      location: "Tòa S1 / Tầng 6 / Cầu thang bộ"
       material_stock_status: SUFFICIENT
 
   - raw:
       ticket_id: SIM-TKT-CLN-006
       created_at: "2026-09-27T09:00:00+07:00"
-      original_description: "Khu sảnh thang máy tầng 2 tòa SIM-B có rác vương vãi, cần dọn dẹp."
+      original_description: "Khu sảnh thang máy tầng 2 tòa S2 có rác vương vãi, cần dọn dẹp."
     flow: REGRESSION
     purpose: "Phòng ban báo hoàn thành không kèm ảnh (ảnh bắt buộc, ghi chú thì không) → đối soát không đạt, giữ IN_PROGRESS, không blocker; vật tư N/A"
     materials: []
@@ -142,7 +142,7 @@ tickets:
   - raw:
       ticket_id: SIM-TKT-TEC-001
       created_at: "2026-09-27T10:00:00+07:00"
-      original_description: "Đèn hành lang tầng 3 tòa SIM-A không sáng từ tối qua."
+      original_description: "Đèn hành lang tầng 3 tòa S1 không sáng từ tối qua."
     flow: DEMO-3
     purpose: "Kỹ thuật: đúng 1 asset, vật tư đủ → Phòng Kỹ thuật nhận việc, báo hoàn thành → READY"
     materials:
@@ -163,7 +163,7 @@ tickets:
       review_status: NOT_REQUIRED
       asset_resolution: FOUND
       draft_exists: true
-      location: "Tòa SIM-A / Tầng 3 / Hành lang"
+      location: "Tòa S1 / Tầng 3 / Hành lang"
       asset_lookup_status: MATCHED
       asset_id: SIM-ASSET-LIGHT-001
       material_stock_status: SUFFICIENT
@@ -173,7 +173,7 @@ tickets:
   - raw:
       ticket_id: SIM-TKT-TEC-002
       created_at: "2026-09-27T10:30:00+07:00"
-      original_description: "Đèn cầu thang bộ tầng 9 tòa SIM-A bị hỏng, không sáng."
+      original_description: "Đèn cầu thang bộ tầng 9 tòa S1 bị hỏng, không sáng."
     flow: DEMO-4
     purpose: "Kỹ thuật không tìm thấy asset → VERIFYING / ASSET_UNCLEAR, chờ BPTN; chưa giao phòng ban, chưa có draft"
     materials:
@@ -187,14 +187,14 @@ tickets:
       review_status: NOT_REQUIRED
       asset_resolution: null
       draft_exists: false
-      location: "Tòa SIM-A / Tầng 9 / Cầu thang bộ"
+      location: "Tòa S1 / Tầng 9 / Cầu thang bộ"
       asset_lookup_status: NOT_FOUND
       asset_id: null
 
   - raw:
       ticket_id: SIM-TKT-TEC-003
       created_at: "2026-09-27T11:00:00+07:00"
-      original_description: "Bóng đèn hành lang tầng 2 tòa SIM-B không hoạt động."
+      original_description: "Bóng đèn hành lang tầng 2 tòa S2 không hoạt động."
     flow: REGRESSION
     purpose: "Asset khớp nhưng tồn kho không đủ → ON_HOLD / WAITING_MATERIAL, chờ nhập kho"
     materials:
@@ -207,14 +207,14 @@ tickets:
       department_id: null
       asset_resolution: FOUND
       draft_exists: false
-      location: "Tòa SIM-B / Tầng 2 / Hành lang"
+      location: "Tòa S2 / Tầng 2 / Hành lang"
       asset_lookup_status: MATCHED
       asset_id: SIM-ASSET-LIGHT-004
 
   - raw:
       ticket_id: SIM-TKT-TEC-004
       created_at: "2026-09-27T16:00:00+07:00"
-      original_description: "Đèn hành lang tầng 7 tòa SIM-B không sáng."
+      original_description: "Đèn hành lang tầng 7 tòa S2 không sáng."
     flow: REGRESSION
     purpose: "Ca chiều: không còn capacity theo team; trong ca phòng ban → ROUTED"
     materials:
@@ -235,7 +235,7 @@ tickets:
   - raw:
       ticket_id: SIM-TKT-TEC-005
       created_at: "2026-09-27T10:45:00+07:00"
-      original_description: "Đèn sảnh thang máy tầng 5 tòa SIM-A không sáng, có tia lửa và mùi khét ở hộp đèn."
+      original_description: "Đèn sảnh thang máy tầng 5 tòa S1 không sáng, có tia lửa và mùi khét ở hộp đèn."
     flow: REGRESSION
     purpose: "CR03 P0: tia lửa + mùi khét → EMERGENCY; BQL xử lý trước tra tài sản, không giao phòng ban, không draft"
     expected:
@@ -247,7 +247,7 @@ tickets:
   - raw:
       ticket_id: SIM-TKT-TEC-006
       created_at: "2026-09-27T09:30:00+07:00"
-      original_description: "Hệ thống chiếu sáng hầm B1 tòa SIM-A không hoạt động."
+      original_description: "Hệ thống chiếu sáng hầm B1 tòa S1 không hoạt động."
     flow: REGRESSION
     purpose: "Tồn kho không rõ: không chặn, gắn cờ STOCK_CHECK_ON_ACCEPT → ROUTED"
     materials:

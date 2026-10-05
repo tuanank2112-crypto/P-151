@@ -11,7 +11,7 @@ from tests.test_maintenance.helpers import BPTN, RESIDENT, report
 OUT_OF_SCOPE_NO_LOCATION = [
     "Cho hỏi phí quản lý tháng này bao nhiêu?",
     "Vòi nước trong căn hộ 1205 bị rỉ.",
-    "Thang máy tòa SIM-A hỏng rồi, kẹt cửa không mở",
+    "Thang máy tòa S1 hỏng rồi, kẹt cửa không mở",
     "Xin hỏi giờ làm việc của văn phòng ban quản lý",
 ]
 
@@ -40,7 +40,7 @@ def test_a_report_about_the_building_without_location_still_asks_the_resident(fr
 
 def test_the_resident_can_then_add_the_details_themselves(fresh):
     tid = report(fresh, "Ở hành lang có vấn đề, nhờ BQL xem giúp")
-    case = fresh.add_resident_info(tid, RESIDENT, "tầng 3 tòa SIM-A, sàn có bãi nôn")
+    case = fresh.add_resident_info(tid, RESIDENT, "tầng 3 tòa S1, sàn có bãi nôn")
     assert case.ticket.status == "ROUTED" and case.ticket.department_id == "DEPT_CLEANING"
 
 
@@ -54,21 +54,21 @@ def test_bptn_picking_a_category_then_asks_for_the_missing_location(fresh):
     tid = report(fresh, "Cho hỏi phí quản lý tháng này bao nhiêu?")
     case = fresh.bptn_resolve(tid, BPTN, category="VE_SINH", note="Cư dân gọi lại: thực ra hỏi về rác ở sảnh")
     assert case.ticket.status == "NEED_INFO" and case.ticket.blocker.code == "MISSING_INFO"
-    case = fresh.bptn_resolve(tid, BPTN, location="sảnh chính tòa SIM-A", note="Đã hỏi cư dân")
+    case = fresh.bptn_resolve(tid, BPTN, location="sảnh chính tòa S1", note="Đã hỏi cư dân")
     assert case.ticket.status == "ROUTED" and case.ticket.department_id == "DEPT_CLEANING"
 
 
 def test_bptn_category_and_location_in_one_answer_routes(fresh):
     tid = report(fresh, "Cho hỏi phí quản lý tháng này bao nhiêu?")
-    case = fresh.bptn_resolve(tid, BPTN, category="VE_SINH", location="hành lang tầng 7 tòa SIM-B", note="Gọi lại")
+    case = fresh.bptn_resolve(tid, BPTN, category="VE_SINH", location="hành lang tầng 7 tòa S2", note="Gọi lại")
     assert case.ticket.status == "ROUTED"
-    assert case.ticket.locked_fields.location == "Tòa SIM-B / Tầng 7 / Hành lang"
+    assert case.ticket.locked_fields.location == "Tòa S2 / Tầng 7 / Hành lang"
 
 
 def test_location_typed_by_bptn_is_stored_in_the_standard_form(fresh):
     tid = report(fresh, "Nhiều rác quá, nhờ dọn giúp")
-    case = fresh.bptn_resolve(tid, BPTN, location="tầng 3 tòa SIM-A hành lang", note="Gọi cư dân")
-    assert case.ticket.locked_fields.location == "Tòa SIM-A / Tầng 3 / Hành lang"
+    case = fresh.bptn_resolve(tid, BPTN, location="tầng 3 tòa S1 hành lang", note="Gọi cư dân")
+    assert case.ticket.locked_fields.location == "Tòa S1 / Tầng 3 / Hành lang"
     assert case.ticket.status == "ROUTED"
 
 
@@ -80,9 +80,9 @@ def test_unparseable_bptn_location_is_kept_as_typed(fresh):
 
 
 def test_the_location_a_resident_adds_wins_over_the_original(fresh):
-    tid = report(fresh, "Rác vứt bừa bãi quá, em ở tòa SIM-A tầng 12")
+    tid = report(fresh, "Rác vứt bừa bãi quá, em ở tòa S1 tầng 12")
     case = fresh.get(tid)
     if case.ticket.status == "NEED_INFO":  # depends on whether the flat's floor counts as the place
         case = fresh.add_resident_info(tid, RESIDENT, "Ở hầm B1 ạ")
     assert case.ticket.status in ("ROUTED", "VERIFYING")
-    assert fresh.effective_location(case) == "Tòa SIM-A / Tầng B1 / Hầm xe"
+    assert fresh.effective_location(case) == "Tòa S1 / Tầng B1 / Hầm xe"

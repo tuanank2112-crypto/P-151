@@ -4,27 +4,29 @@ import pytest
 
 from src.maintenance.rules import classify, extract_location, missing_location_parts
 
+BUILDINGS = ("S1", "S2")  # catalog site.buildings (Ocean Park pilot)
+
 LIGHTING = [
-    "Đèn cầu thang bộ tầng 3 tòa SIM-A nhấp nháy",
-    "Đèn hành lang tầng 3 tòa SIM-A bị hư",
-    "Đèn ở hành lang tầng 5 tòa SIM-A không sáng",
-    "Đèn trong hầm xe B1 tòa SIM-A không sáng",
-    "Đèn led sảnh chính tòa SIM-A bị vỡ",
-    "Hành lang tầng 3 tòa SIM-A mất đèn",
+    "Đèn cầu thang bộ tầng 3 tòa S1 nhấp nháy",
+    "Đèn hành lang tầng 3 tòa S1 bị hư",
+    "Đèn ở hành lang tầng 5 tòa S1 không sáng",
+    "Đèn trong hầm xe B1 tòa S1 không sáng",
+    "Đèn led sảnh chính tòa S1 bị vỡ",
+    "Hành lang tầng 3 tòa S1 mất đèn",
     "Đèn hành lang tầng 3 không lên",
     # surname / "busy" must not pull the cleaning playbook in
     "Tôi là Bùi Văn An, đèn hành lang tầng 3 không sáng",
     "Tôi bị bận nên báo muộn: đèn hành lang tầng 3 không sáng",
 ]
 CLEANING = [
-    "Sảnh chính tòa SIM-B bẩn quá",
+    "Sảnh chính tòa S2 bẩn quá",
     "Hành lang tầng 3 dơ quá",
-    "Có phân chó ở sảnh chính tòa SIM-A",
+    "Có phân chó ở sảnh chính tòa S1",
     "Có người nôn ra sàn hành lang tầng 4",
     "Nước tiểu ở góc cầu thang bộ tầng 2",
 ]
 NO_PLAYBOOK = [
-    "Khi đến tầng 5 tòa SIM-A tôi thấy cửa thoát hiểm bị hỏng",
+    "Khi đến tầng 5 tòa S1 tôi thấy cửa thoát hiểm bị hỏng",
     "Tôi đến sảnh chính thì thấy thang máy hỏng",
     "Đi đến hầm xe thì barrier tắt nguồn",
 ]
@@ -56,11 +58,11 @@ def test_arriving_somewhere_is_not_a_lamp(text):
 
 
 LAMP_AFTER_AREA = [
-    "Cầu thang bộ tầng 6 tòa SIM-C đèn bị hỏng.",
-    "Hầm B2 tòa SIM-A đèn tắt hết, rất tối",
-    "Tòa SIM-A / Tầng hầm B1 / Bãi đỗ xe: đèn không sáng.",
-    "Bóng đèn hành lang tầng 3 tòa SIM-A bị cháy, nhờ thay.",  # Q22
-    "bong den hanh lang tang 3 toa SIM-A bi chay",
+    "Cầu thang bộ tầng 6 tòa S2 đèn bị hỏng.",
+    "Hầm B2 tòa S1 đèn tắt hết, rất tối",
+    "Tòa S1 / Tầng hầm B1 / Bãi đỗ xe: đèn không sáng.",
+    "Bóng đèn hành lang tầng 3 tòa S1 bị cháy, nhờ thay.",  # Q22
+    "bong den hanh lang tang 3 toa S1 bi chay",
     "Bóng đèn cầu thang tầng 9 bị cháy, nhờ thay",
 ]
 
@@ -71,7 +73,7 @@ def test_lamp_named_after_the_area_or_burnt_out_is_lighting(text):
 
 
 def test_dirt_and_a_broken_lamp_in_one_report_is_unclear():
-    result = classify("Hành lang tầng 3 tòa SIM-A vừa có rác vừa có đèn không sáng.")
+    result = classify("Hành lang tầng 3 tòa S1 vừa có rác vừa có đèn không sáng.")
     assert result.playbook_id is None and result.reason_code == "CATEGORY_UNCLEAR"
 
 
@@ -82,22 +84,22 @@ def test_a_lamp_without_any_common_area_is_not_enough():
 @pytest.mark.parametrize(
     ("text", "location"),
     [
-        ("Tòa SIM-A / Tầng 2 / Thang bộ: có rác và bụi.", "Tòa SIM-A / Tầng 2 / Cầu thang bộ"),
-        ("Tòa SIM-C / Tầng 4 / Phòng rác tầng: rác tràn ra ngoài.", "Tòa SIM-C / Tầng 4 / Phòng rác"),
-        ("Tòa SIM-A / Tầng hầm B1 / Bãi đỗ xe: đèn không sáng.", "Tòa SIM-A / Tầng B1 / Hầm xe"),  # asset label kept
-        ("Tòa SIM-B / Tầng trệt / Sân chơi: nhiều lá cây.", "Tòa SIM-B / Tầng Trệt / Sân chơi"),
-        ("Tòa nhà SIM-A, tầng 3, hành lang: nhiều rác", "Tòa SIM-A / Tầng 3 / Hành lang"),
-        ("Block SIM-A lầu 3 hành lang có rác", "Tòa SIM-A / Tầng 3 / Hành lang"),
-        ("Tòa SIM-B tầng 6 sân thượng có rác", "Tòa SIM-B / Tầng 6 / Sân thượng"),
-        ("Hành lang tầng 3 tòa SIM-A có rác", "Tòa SIM-A / Tầng 3 / Hành lang"),  # unchanged
+        ("Tòa S1 / Tầng 2 / Thang bộ: có rác và bụi.", "Tòa S1 / Tầng 2 / Cầu thang bộ"),
+        ("Tòa S2 / Tầng 4 / Phòng rác tầng: rác tràn ra ngoài.", "Tòa S2 / Tầng 4 / Phòng rác"),
+        ("Tòa S1 / Tầng hầm B1 / Bãi đỗ xe: đèn không sáng.", "Tòa S1 / Tầng B1 / Hầm xe"),  # asset label kept
+        ("Tòa S2 / Tầng trệt / Sân chơi: nhiều lá cây.", "Tòa S2 / Tầng Trệt / Sân chơi"),
+        ("Tòa nhà S1, tầng 3, hành lang: nhiều rác", "Tòa S1 / Tầng 3 / Hành lang"),
+        ("Block S1 lầu 3 hành lang có rác", "Tòa S1 / Tầng 3 / Hành lang"),
+        ("Tòa S2 tầng 6 sân thượng có rác", "Tòa S2 / Tầng 6 / Sân thượng"),
+        ("Hành lang tầng 3 tòa S1 có rác", "Tòa S1 / Tầng 3 / Hành lang"),  # unchanged
     ],
 )
 def test_location_wording_residents_use(text, location):
-    assert extract_location(text) == location
+    assert extract_location(text, BUILDINGS) == location
 
 
 def test_tòa_nhà_alone_is_not_a_building_code():
-    assert "building" in missing_location_parts("Tòa nhà tầng 3 hành lang có rác")
+    assert "building" in missing_location_parts("Tòa nhà tầng 3 hành lang có rác", BUILDINGS)
 
 
 # ---------------------------------------------------------------------- plan 05 (H02): the location never picks the
@@ -153,38 +155,37 @@ def test_plan05_location_and_wording(text, playbook, reason_code):
 @pytest.mark.parametrize(
     ("text", "location"),
     [
-        ("Căn 1508 tầng 15 tòa SIM-A, báo giúp hành lang tầng 3 có rác", "Tòa SIM-A / Tầng 3 / Hành lang"),
-        ("Em ở tòa SIM-B, đi qua hành lang tầng 3 tòa SIM-A thấy nhiều rác", "Tòa SIM-A / Tầng 3 / Hành lang"),
-        ("Em o toa SIM-B di qua hanh lang tang 3 toa SIM-A thay nhieu rac", "Tòa SIM-A / Tầng 3 / Hành lang"),
-        ("Cô Đào phòng 1508 tòa SIM-A nhờ báo hành lang tầng 15 lá cây rụng", "Tòa SIM-A / Tầng 15 / Hành lang"),
-        ("Em ở căn 2-07 tòa SIM-B, đèn hành lang tầng 2 nhấp nháy", "Tòa SIM-B / Tầng 2 / Hành lang"),
-        ("Hành lang tầng 3 tòa SIM-A, đèn hỏng. Tòa SIM-B tầng 7 thì ổn", "Tòa SIM-A / Tầng 3 / Hành lang"),
-        ("Rác vứt bừa bãi quá, em ở tòa SIM-A tầng 12\nỞ hầm B1 ạ", "Tòa SIM-A / Tầng B1 / Hầm xe"),
-        ("Em ở tòa SIM-B tầng 9 hành lang, báo: rác chất đống", "Tòa SIM-B / Tầng 9 / Hành lang"),  # stands there
-        ("Hành lang tầng 3 toà SIM A nhiều rác", "Tòa SIM-A / Tầng 3 / Hành lang"),
-        ("Hành lang tầng 3 toà SIM B nhiều rác", "Tòa SIM-B / Tầng 3 / Hành lang"),
-        ("hanh lang tang 3 toa sim b nhieu rac", "Tòa SIM-B / Tầng 3 / Hành lang"),
-        ("Hành lang tầng 03 tòa SIM-A đèn hỏng", "Tòa SIM-A / Tầng 3 / Hành lang"),
-        ("Tầng hầm B01 tòa SIM-A có rác", "Tòa SIM-A / Tầng B1 / Hầm xe"),
-        ("Cầu thang tầng 5 tòa SIM-B đèn hỏng", "Tòa SIM-B / Tầng 5 / Cầu thang bộ"),
-        ("Lối thoát hiểm tầng 9 tòa SIM-C đèn exit không sáng", "Tòa SIM-C / Tầng 9 / Lối thoát hiểm"),
+        ("Căn 1508 tầng 15 tòa S1, báo giúp hành lang tầng 3 có rác", "Tòa S1 / Tầng 3 / Hành lang"),
+        ("Em ở tòa S2, đi qua hành lang tầng 3 tòa S1 thấy nhiều rác", "Tòa S1 / Tầng 3 / Hành lang"),
+        ("Em o toa S2 di qua hanh lang tang 3 toa S1 thay nhieu rac", "Tòa S1 / Tầng 3 / Hành lang"),
+        ("Cô Đào phòng 1508 tòa S1 nhờ báo hành lang tầng 15 lá cây rụng", "Tòa S1 / Tầng 15 / Hành lang"),
+        ("Em ở căn 2-07 tòa S2, đèn hành lang tầng 2 nhấp nháy", "Tòa S2 / Tầng 2 / Hành lang"),
+        ("Hành lang tầng 3 tòa S1, đèn hỏng. Tòa S2 tầng 7 thì ổn", "Tòa S1 / Tầng 3 / Hành lang"),
+        ("Rác vứt bừa bãi quá, em ở tòa S1 tầng 12\nỞ hầm B1 ạ", "Tòa S1 / Tầng B1 / Hầm xe"),
+        ("Em ở tòa S2 tầng 9 hành lang, báo: rác chất đống", "Tòa S2 / Tầng 9 / Hành lang"),  # stands there
+        ("Hành lang tầng 3 toà S1 nhiều rác", "Tòa S1 / Tầng 3 / Hành lang"),
+        ("Hành lang tầng 3 toà S2 nhiều rác", "Tòa S2 / Tầng 3 / Hành lang"),
+        ("hanh lang tang 3 toa s2 nhieu rac", "Tòa S2 / Tầng 3 / Hành lang"),
+        ("Hành lang tầng 03 tòa S1 đèn hỏng", "Tòa S1 / Tầng 3 / Hành lang"),
+        ("Tầng hầm B01 tòa S1 có rác", "Tòa S1 / Tầng B1 / Hầm xe"),
+        ("Cầu thang tầng 5 tòa S2 đèn hỏng", "Tòa S2 / Tầng 5 / Cầu thang bộ"),
+        ("Lối thoát hiểm tầng 9 tòa S2 đèn exit không sáng", "Tòa S2 / Tầng 9 / Lối thoát hiểm"),
     ],
 )
 def test_round2_location_is_where_the_problem_is(text, location):
-    assert extract_location(text) == location
+    assert extract_location(text, BUILDINGS) == location
 
 
 def test_a_floor_named_only_as_the_residents_home_is_not_the_problem_floor():
-    text = "Rác vứt bừa bãi quá, em ở tòa SIM-A tầng 12"
-    assert extract_location(text) is None
-    assert missing_location_parts(text) == ["floor", "area"]
+    text = "Rác vứt bừa bãi quá, em ở tòa S1 tầng 12"
+    assert extract_location(text, BUILDINGS) is None
+    assert missing_location_parts(text, BUILDINGS) == ["floor", "area"]
 
 
-def test_spaced_building_codes_are_told_apart_and_ở_is_not_a_code_letter():
-    a = extract_location("Hành lang tầng 3 toà SIM A nhiều rác")
-    b = extract_location("Hành lang tầng 3 toà SIM B nhiều rác")
-    assert a != b
-    assert extract_location("Hành lang tầng 3 tòa SIM ở gần cổng có rác") == "Tòa SIM / Tầng 3 / Hành lang"
+def test_buildings_outside_the_pilot_are_not_codes_and_ở_is_not_a_code_letter():
+    """Plan 05 joined spaced codes ("toà SIM A"); with the Ocean Park allow-list only S1/S2 are buildings."""
+    assert extract_location("Hành lang tầng 3 toà SIM A nhiều rác", BUILDINGS) is None
+    assert extract_location("Hành lang tầng 3 tòa S1 ở gần cổng có rác", BUILDINGS) == "Tòa S1 / Tầng 3 / Hành lang"
 
 
 @pytest.mark.parametrize(

@@ -90,7 +90,7 @@ def test_residents_are_separate(client):
     first, second = login(client, "cudan01"), login(client, "cudan02")
     created = client.post(
         "/api/v1/resident/tickets",
-        json={"original_description": "Hành lang tầng 7 tòa SIM-B nhiều rác", "simulated_received_at": MORNING},
+        json={"original_description": "Hành lang tầng 7 tòa S2 nhiều rác", "simulated_received_at": MORNING},
         headers=first,
     ).json()
     assert created["ticket_id"] in [

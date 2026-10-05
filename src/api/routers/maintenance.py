@@ -51,7 +51,7 @@ from src.maintenance.enums import (
     TicketStatus,
 )
 from src.maintenance.messages import status_label
-from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent
+from src.maintenance.models import AuditEvent, Case, Notification, PlannedMaterial, StatusEvent
 from src.maintenance.store.base import ConcurrencyError, StorePermissionError, StoreUnavailableError
 from src.maintenance.views import (
     BqlTicketRow,
@@ -265,7 +265,7 @@ def reset_ai_logs(actor: ActorDep, engine: EngineDep) -> dict[str, Any]:
 class IngestRequest(BaseModel):
     """Chỉ những gì cư dân gửi. ticket_id và created_at do hệ thống tạo."""
 
-    original_description: str = Field(examples=["Hành lang tầng 3 tòa SIM-A nhiều rác, cần vệ sinh."])
+    original_description: str = Field(examples=["Hành lang tầng 3 tòa S1 nhiều rác, cần vệ sinh."])
     channel: Literal["form", "app", "hotline"] = "form"
     simulated_received_at: datetime | None = Field(
         default=None,
@@ -539,6 +539,17 @@ def record_material(ticket_id: str, item_code: str, body: MaterialRequest, actor
     return _call(engine.record_material, ticket_id, actor, item_code, **body.model_dump())
 
 
+class MaterialPlanRequest(BaseModel):
+    lines: list[PlannedMaterial] = Field(examples=[[{"item_code": "SIM-MAT-LAMP-02", "planned_qty": 2}]])
+    note: str = Field(examples=["Kiểm tại chỗ: đèn tuýp, không phải LED"])
+
+
+@router.post("/tickets/{ticket_id}/material-plan", response_model=Case)
+def confirm_materials(ticket_id: str, body: MaterialPlanRequest, actor: ActorDep, engine: EngineDep) -> Case:
+    """Phòng ban xác nhận vật tư thực tế tại hiện trường (thay đề xuất của Agent); `lines` rỗng = không dùng vật tư."""
+    return _call(engine.confirm_materials, ticket_id, actor, lines=body.lines, note=body.note)
+
+
 class EvidenceRequest(BaseModel):
     requirement_id: str | None = Field(examples=["CLN-EVD-PROCESSING-NOTE"])
     evidence_type: EvidenceType
@@ -591,6 +602,19 @@ def report_complete(ticket_id: str, actor: ActorDep, engine: EngineDep) -> Case:
 
 class StockRequest(BaseModel):
     qty: float = Field(gt=0)
+
+
+class StockRow(BaseModel):
+    item_code: str
+    item_name: str
+    unit: str | None = None
+    qty: float | None = None  # null = tồn kho không rõ
+
+
+@router.get("/warehouse/stock", response_model=list[StockRow])
+def read_stock(actor: ActorDep, engine: EngineDep) -> list[StockRow]:
+    """Tồn kho mô phỏng hiện tại của mọi vật tư (chỉ nhân viên)."""
+    return _call(engine.stock_levels, actor)
 
 
 @router.post("/warehouse/stock/{item_code}", response_model=list[Case])
@@ -663,7 +687,7 @@ def resident_read(ticket_id: str, actor: ActorDep, engine: EngineDep) -> Residen
 
 
 class AdditionRequest(BaseModel):
-    content: str = Field(min_length=1, examples=["Ở hành lang tầng 3 tòa SIM-A"])
+    content: str = Field(min_length=1, examples=["Ở hành lang tầng 3 tòa S1"])
 
 
 @resident_router.post("/tickets/{ticket_id}/additions", response_model=ResidentTicketView)

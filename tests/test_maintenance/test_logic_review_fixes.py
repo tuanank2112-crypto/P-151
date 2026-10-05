@@ -29,7 +29,7 @@ from tests.test_maintenance.helpers import (
     to_ready,
 )
 
-TIER2 = "Hành lang tầng 3 tòa SIM-A hình như có mùi khét."
+TIER2 = "Hành lang tầng 3 tòa S1 hình như có mùi khét."
 H = {name: {"X-Actor-Id": actor} for name, actor in {
     "resident": RESIDENT, "other": OTHER_RESIDENT, "bptn": BPTN, "bql": BQL, "tec": TEC,
     "cln": "SIM-ACTOR-DEPT-CLN-01", "warehouse": "SIM-ACTOR-WAREHOUSE-01",
@@ -181,7 +181,7 @@ def test_ai_log_carries_the_ticket_id(llm_engine):
 
 def test_no_early_llm_call_when_the_safety_layer_stops_the_ticket(llm_engine):
     engine, llm = llm_engine
-    engine.receive("Có khói bốc ra từ hộp điện hành lang tầng 3 tòa SIM-A", resident_id=RESIDENT)  # tier 1
+    engine.receive("Có khói bốc ra từ hộp điện hành lang tầng 3 tòa S1", resident_id=RESIDENT)  # tier 1
     assert llm.calls == 0
 
 

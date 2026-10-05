@@ -61,6 +61,20 @@ const OWNER_LABEL = {
   RESIDENT: 'Cư dân', BPTN: 'BPTN', DEPARTMENT: 'Phòng ban', WAREHOUSE: 'Kho', SYSTEM: 'Hệ thống', BQL: 'BQL', AGENT: 'Agent',
 };
 const CATEGORY_LABEL = { VE_SINH: 'Vệ sinh', KY_THUAT: 'Kỹ thuật (đèn)' };
+// Field codes the engine writes after "Thiếu:" in blocker.internal_note (step 2, and safety stops since Q08)
+const MISSING_LABEL = {
+  description: 'nội dung phản ánh',
+  location: 'vị trí (tòa, tầng, khu vực)',
+  location_building: 'tòa (S1 hoặc S2, ví dụ S1.12)',
+  location_floor: 'tầng',
+  location_area: 'khu vực (hành lang, sảnh cư dân, sảnh thang máy…)',
+};
+
+/** Human labels of what the minimum data still lacks, read from the blocker's internal note. */
+function missingFromNote(note) {
+  const match = /Thiếu: (.+)$/.exec(note || '');
+  return match ? match[1].split(', ').map((code) => MISSING_LABEL[code] || code) : [];
+}
 const RESIDENT_STEPS = ['RECEIVED', 'VERIFYING', 'ROUTED', 'IN_PROGRESS', 'READY_FOR_REVIEW', 'CLOSED'];
 const TERMINAL = new Set(['CLOSED', 'MERGED', 'CANCELLED']);
 
@@ -275,11 +289,32 @@ async function api(path, { method = 'GET', body } = {}) {
 async function act(promise, success) {
   try {
     await promise;
-    toast(success);
+  } catch (error) {
+    toast(error.message, 'error');
+    return false;
+  }
+  toast(success);
+  try {
     await render();
   } catch (error) {
     toast(error.message, 'error');
   }
+  return true;
+}
+
+/** A button that fires once: dims on the first click, re-enables only if the action fails. */
+function oneShotButton(label, run, { variant = 'primary', busyLabel = 'Đang xử lý…' } = {}) {
+  const button = el('button', { type: 'button', class: BTN[variant] }, label);
+  button.addEventListener('click', async () => {
+    if (button.disabled) return;
+    button.disabled = true;
+    button.textContent = busyLabel;
+    if (!(await run())) {
+      button.disabled = false;
+      button.textContent = label;
+    }
+  });
+  return button;
 }
 
 /** Only send fields that have a value. */
@@ -715,7 +750,7 @@ async function renderResident(list, detail) {
   const tickets = await api('/resident/tickets');
   if (!state.selected && tickets.length) state.selected = tickets[0].ticket_id;
 
-  const description = el('textarea', { name: 'description', rows: '4', required: true, maxlength: '1000', class: INPUT, placeholder: 'Mô tả chi tiết vị trí và sự cố cần xử lý (Ví dụ: Tòa SIM-A / Tầng 3 / Hành lang: bóng đèn chập chờn không sáng).' });
+  const description = el('textarea', { name: 'description', rows: '4', required: true, maxlength: '1000', class: INPUT, placeholder: 'Mô tả chi tiết vị trí và sự cố cần xử lý (Ví dụ: Tòa S1 / Tầng 3 / Hành lang: bóng đèn chập chờn không sáng).' });
 
   // Photo Input + Live Preview
   const pInput = photoInput();
@@ -965,6 +1000,9 @@ function bptnForm(c) {
   const send = (body, message) => act(api(`/mo/tickets/${id}/bptn-resolve`, { method: 'POST', body: compact(body) }), message);
 
   if (code === 'SAFETY_REVIEW_REQUIRED') {
+    const missing = missingFromNote(c.ticket.blocker.internal_note);
+    const askNote = Object.assign(note(), { required: true });
+    if (missing.length) askNote.value = `Vui lòng mô tả rõ hiện tượng và bổ sung ${missing.join(', ')}.`;
     return el('div', { class: 'space-y-4 rounded-xl border border-amber-300 bg-amber-50/60 p-4 sm:p-5 dark:border-amber-900/60 dark:bg-amber-950/40' },
       el('div', { class: 'flex items-start gap-3' },
         el('span', { class: 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-600 text-xs font-bold text-white', 'aria-hidden': 'true' }, '!'),
@@ -972,12 +1010,14 @@ function bptnForm(c) {
           el('h4', { class: 'text-sm font-semibold text-amber-950 dark:text-amber-200' }, 'Xử lý An toàn Bậc 2 (CR-BPTN-03 §6.4)'),
           el('p', { class: 'text-xs text-amber-900/80 dark:text-amber-300/80 mt-0.5' },
             'Phản ánh có dấu hiệu an toàn nghi ngờ. BPTN có đúng 3 lựa chọn nghiệp vụ:'))),
+      missing.length ? callout('warn', `Phản ánh còn thiếu: ${missing.join(', ')}`,
+        'Kiểm tra an toàn được xét trước nên cư dân CHƯA được hỏi. Chọn "Yêu cầu cư dân bổ sung" để hỏi luôn phần còn thiếu; nếu "Xác nhận an toàn", hệ thống sẽ tự hỏi cư dân sau đó.') : null,
       el('div', { class: 'space-y-4 pt-2' },
         actionForm([
           field('1. Xác nhận an toàn (Bác nguy cơ)', Object.assign(note(), { required: true }), 'Bắt buộc ghi rõ lý do hiện trường an toàn; ticket chuyển về luồng phân loại thường.'),
         ], 'Xác nhận an toàn', (data) => act(api(`/mo/tickets/${id}/safety`, { method: 'POST', body: { decision: 'CONFIRM_SAFE', note: data.get('note') } }), 'Đã xác nhận an toàn, chuyển tiếp xử lý')),
         actionForm([
-          field('2. Yêu cầu cư dân bổ sung', Object.assign(note(), { required: true }), 'Gửi yêu cầu làm rõ hiện trường tới cư dân (chuyển sang Chờ bổ sung thông tin).'),
+          field('2. Yêu cầu cư dân bổ sung', askNote, 'Gửi yêu cầu làm rõ hiện trường tới cư dân (chuyển sang Chờ bổ sung thông tin). Hệ thống tự hỏi kèm phần vị trí còn thiếu.'),
         ], 'Yêu cầu cư dân bổ sung', (data) => act(api(`/mo/tickets/${id}/safety`, { method: 'POST', body: { decision: 'REQUEST_INFO', note: data.get('note') } }), 'Đã gửi yêu cầu bổ sung tới cư dân'), { variant: 'secondary' }),
         actionForm([
           field('3. Nâng mức Khẩn cấp (Bậc 1)', Object.assign(note(), { required: true }), 'Phát hiện nguy cơ nghiêm trọng, nâng lên BQL xử lý khẩn cấp ngay.'),
@@ -987,7 +1027,7 @@ function bptnForm(c) {
   if (code === 'MISSING_INFO') {
     return actionForm([
       callout('warn', 'Phản ánh còn thiếu thông tin', `${c.ticket.blocker.internal_note || ''}. Liên hệ cư dân rồi nhập phần còn thiếu; cư dân cũng có thể tự bổ sung trên app.`),
-      field('Vị trí', el('input', { name: 'location', type: 'text', class: INPUT, placeholder: 'Tòa SIM-A / Tầng 3 / Hành lang' }), 'Nhập đủ tòa, tầng, khu vực.'),
+      field('Vị trí', el('input', { name: 'location', type: 'text', class: INPUT, placeholder: 'Tòa S1 / Tầng 3 / Hành lang' }), 'Nhập đủ tòa, tầng, khu vực.'),
       field('Thông tin cư dân cung cấp', el('textarea', { name: 'info', rows: '2', maxlength: '500', class: INPUT }), 'Ghi nguyên lời cư dân nếu còn thiếu nội dung phản ánh. Nội dung gốc không bị sửa.'),
       field('Lý do', Object.assign(note(), { required: true }), 'Bắt buộc, ví dụ: đã gọi cư dân lúc 09:10.'),
     ], 'Lưu và xử lý tiếp', (data) => {
@@ -1012,7 +1052,7 @@ function bptnForm(c) {
   if (code === 'PENDING_REVIEW') {
     return actionForm([
       field('Đổi loại việc (không bắt buộc)', dropdown('category', categories, { placeholder: 'Giữ đề xuất của Agent' })),
-      field('Sửa vị trí (không bắt buộc)', el('input', { name: 'location', type: 'text', class: INPUT, placeholder: 'Tòa SIM-A / Tầng 3 / Hành lang' })),
+      field('Sửa vị trí (không bắt buộc)', el('input', { name: 'location', type: 'text', class: INPUT, placeholder: 'Tòa S1 / Tầng 3 / Hành lang' })),
       field('Lý do', note(), 'Bắt buộc nếu thay đổi giá trị.'),
     ], 'Xác nhận', (data) => send({ category: data.get('category'), location: data.get('location'), note: data.get('note') }, 'Đã xác nhận'));
   }
@@ -1188,6 +1228,53 @@ function renderPrecheckCard(precheck) {
       : null);
 }
 
+/** The department confirms the materials the site really needs, replacing the Agent's playbook guess. */
+function materialPlanCard(c) {
+  const id = c.ticket.ticket_id;
+  const onsite = c.ticket.flags.includes('ASSET_CHECK_ONSITE');
+  const confirmed = (c.audit || []).some((a) => a.field_name === 'planned_materials');
+  const options = state.catalog.materials.map((m) => [m.item_code, `${m.item_name} (${m.item_code})`]);
+  const rows = el('div', { class: 'space-y-2' });
+  const addRow = (code = '', qty = 1) => {
+    const select = dropdown('item_code', options, { required: true, placeholder: 'Chọn vật tư…' });
+    select.value = code;
+    const amount = el('input', { name: 'planned_qty', type: 'number', min: '1', step: '1', required: true, value: qty, class: INPUT, 'aria-label': 'Số lượng' });
+    const row = el('div', { class: 'grid grid-cols-[1fr_5.5rem_auto] items-center gap-2' }, select, amount,
+      el('button', { type: 'button', class: BTN.secondary, onclick: () => row.remove() }, 'Bỏ'));
+    rows.append(row);
+  };
+  c.material_lines.forEach((line) => addRow(line.item_code, line.planned_qty));
+  const note = el('textarea', { name: 'note', rows: '2', required: true, maxlength: '500', class: INPUT, placeholder: 'Ví dụ: kiểm tại chỗ là đèn tuýp 1m2, cần 2 bóng tuýp, không cần LED.' });
+
+  const form = actionForm([
+    rows,
+    el('button', { type: 'button', class: BTN.secondary, onclick: () => addRow() }, '+ Thêm vật tư'),
+    field('Lý do / kết quả kiểm tra tại hiện trường', note, 'Bắt buộc. Bỏ hết các dòng nếu không dùng vật tư nào.'),
+  ], confirmed ? 'Cập nhật vật tư' : 'Xác nhận vật tư', async (data) => {
+    const lines = [...rows.children].map((row) => ({
+      item_code: row.querySelector('select').value,
+      planned_qty: Number(row.querySelector('input').value),
+    }));
+    if (!lines.length && !(await confirmDialog('Không dùng vật tư?', 'Phản ánh sẽ được ghi nhận là không dùng vật tư nào.'))) return;
+    await act(api(`/mo/tickets/${id}/material-plan`, { method: 'POST', body: { lines, note: data.get('note') } }), 'Đã xác nhận vật tư');
+  }, { variant: onsite && !confirmed ? 'primary' : 'secondary' });
+
+  const title = el('div', { class: 'flex flex-wrap items-center gap-2' },
+    el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Xác nhận vật tư tại hiện trường'),
+    confirmed ? chip('Đã xác nhận', 'green') : chip('Đang dùng đề xuất của Agent', 'amber'));
+  if (onsite) {
+    return el('div', { class: 'space-y-3 rounded-xl border border-amber-300 bg-amber-50/60 p-4 sm:p-5 dark:border-amber-900/60 dark:bg-amber-950/40' },
+      title,
+      el('p', { class: 'text-xs text-amber-900/80 dark:text-amber-300/80' },
+        'Chưa xác định được thiết bị nên vật tư dưới đây chỉ là đề xuất mặc định của Agent. Kiểm tra thực tế rồi chọn đúng loại và số lượng.'),
+      form);
+  }
+  return el('details', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5' },
+    el('summary', { class: 'cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200' },
+      confirmed ? 'Vật tư đã xác nhận — sửa lại?' : 'Vật tư thực tế khác đề xuất của Agent?'),
+    el('div', { class: 'mt-3 space-y-3' }, title, form));
+}
+
 function workSections(c) {
   const id = c.ticket.ticket_id;
   const readiness = c.draft && c.draft.readiness_evaluation;
@@ -1208,6 +1295,7 @@ function workSections(c) {
       return el('li', { class: 'flex items-start gap-3' }, box, el('label', { for: box.id, class: 'text-sm text-slate-800 dark:text-slate-200' }, item.label_snapshot));
     }))));
 
+  out.push(materialPlanCard(c));
   if (c.material_lines.length) {
     out.push(el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5' },
       el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Vật tư'),
@@ -1217,7 +1305,7 @@ function workSections(c) {
         const reason = el('input', { name: 'reason', type: 'text', maxlength: '300', value: line.variance_reason || '', class: INPUT });
         return el('div', { class: 'rounded-lg p-4 ring-1 ring-inset ring-slate-200 dark:ring-slate-800 dark:bg-slate-800/40' },
           el('div', { class: 'flex items-center justify-between gap-2' },
-            el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, `${line.item_name} · dự kiến ${line.planned_qty}${line.norm_qty != null ? ` · định mức ${line.norm_qty}` : ''}`),
+            el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, `${line.item_name} · dự kiến ${line.planned_qty}${line.norm_qty != null ? ` · định mức ${line.norm_qty}` : ''}${line.simulated_stock_qty != null ? ` · tồn kho ${line.simulated_stock_qty}` : ' · tồn kho chưa rõ'}`),
             line.issued_qty == null || line.used_qty == null ? chip('Chưa lưu', 'amber') : chip('Đã lưu', 'green')),
           el('div', { class: 'mt-3' }, actionForm([
             el('div', { class: 'grid grid-cols-2 gap-3' }, field('Đã xuất', issued), field('Đã dùng', used)),
@@ -1297,25 +1385,57 @@ async function renderWarehouse(list, detail) {
     meta: ticketMeta,
     empty: ['Không có phản ánh nào chờ vật tư', null],
   });
+  const [stock, c] = await Promise.all([
+    api('/mo/warehouse/stock'),
+    state.selected ? api(`/mo/tickets/${state.selected}`) : null,
+  ]);
+  const onHand = Object.fromEntries(stock.map((s) => [s.item_code, s.qty]));
+  // what the selected ticket still lacks, from the live stock (the line snapshot may be older)
+  const shortages = c ? c.material_lines.map((line) => {
+    const have = onHand[line.item_code];
+    return { line, have, missing: have == null ? null : Math.max(0, line.planned_qty - have) };
+  }) : [];
+  const firstShort = shortages.find((s) => s.missing > 0);
+
   const item = dropdown('item', state.catalog.materials.map((m) => [m.item_code, `${m.item_name} (${m.item_code})`]), { required: true });
-  const qty = el('input', { name: 'qty', type: 'number', min: '1', step: '1', required: true, value: '5', class: INPUT });
-  const sections = [card('Nhập kho', actionForm([field('Vật tư', item), field('Số lượng', qty)], 'Nhập kho', async (data) => {
+  const qty = el('input', { name: 'qty', type: 'number', min: '1', step: '1', required: true, value: firstShort ? String(firstShort.missing) : '1', class: INPUT });
+  if (firstShort) item.value = firstShort.line.item_code;
+
+  const sections = [card('Nhập kho', actionForm([field('Vật tư', item), field('Số lượng nhập thêm', qty, 'Cộng dồn vào tồn kho hiện có.')], 'Nhập kho', async (data) => {
     try {
-      const resumed = await api(`/mo/warehouse/stock/${data.get('item')}`, { method: 'POST', body: { qty: Number(data.get('qty')) } });
-      toast(resumed.length ? `Đã nhập kho; ${resumed.length} phản ánh chạy tiếp` : 'Đã nhập kho');
-      state.selected = null;
+      const code = data.get('item');
+      const cases = await api(`/mo/warehouse/stock/${code}`, { method: 'POST', body: { qty: Number(data.get('qty')) } });
+      const stillWaiting = cases.filter((x) => x.ticket.blocker && x.ticket.blocker.code === 'WAITING_MATERIAL');
+      const resumed = cases.length - stillWaiting.length;
+      const short = stillWaiting.map((x) => {
+        const line = x.material_lines.find((l) => l.item_code === code);
+        return line ? `${x.ticket.ticket_id} còn thiếu ${Math.max(0, line.planned_qty - (line.simulated_stock_qty ?? 0))}` : x.ticket.ticket_id;
+      });
+      toast([
+        'Đã nhập kho',
+        resumed ? `${resumed} phản ánh chạy tiếp` : null,
+        short.length ? `vẫn chờ: ${short.join(', ')}` : null,
+      ].filter(Boolean).join('; '));
+      if (state.selected && !stillWaiting.some((x) => x.ticket.ticket_id === state.selected)) state.selected = null;
       await render();
     } catch (error) {
       toast(error.message, 'error');
     }
   }))];
-  if (state.selected) {
-    const c = await api(`/mo/tickets/${state.selected}`);
+
+  if (c) {
     sections.push(card(`Vật tư cần cho ${c.ticket.ticket_id}`,
-      el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 text-sm' }, c.material_lines.map((line) => el('li', { class: 'flex justify-between py-2' },
+      el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 text-sm' }, shortages.map(({ line, have, missing }) => el('li', { class: 'flex flex-wrap items-center justify-between gap-2 py-2' },
         el('span', { class: 'text-slate-900 dark:text-slate-200' }, line.item_name),
-        el('span', { class: 'font-medium text-slate-700 dark:text-slate-300' }, `cần ${line.planned_qty} · tồn ${line.simulated_stock_qty ?? 'không rõ'}`))))));
+        el('span', { class: 'flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300' },
+          `cần ${line.planned_qty} · tồn ${have ?? 'không rõ'}`,
+          missing == null ? chip('Tồn kho không rõ', 'amber') : missing > 0 ? chip(`còn thiếu ${missing}`, 'rose') : chip('Đủ', 'green')))))));
   }
+
+  sections.push(card('Tồn kho hiện tại',
+    el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 text-sm' }, stock.map((s) => el('li', { class: 'flex justify-between gap-2 py-2' },
+      el('span', { class: 'text-slate-900 dark:text-slate-200' }, `${s.item_name} (${s.item_code})`),
+      el('span', { class: 'font-medium tabular-nums text-slate-700 dark:text-slate-300' }, s.qty == null ? 'không rõ' : `${s.qty}${s.unit ? ` ${s.unit}` : ''}`))))));
   detail.append(el('div', { class: 'space-y-6' }, sections));
 }
 
@@ -1487,7 +1607,7 @@ async function renderBql(list, detail) {
     const note = el('textarea', { name: 'note', rows: '2', required: true, maxlength: '500', class: INPUT, placeholder: reworkIsThird ? 'Ghi rõ chi tiết lý do trả làm lại lần 3 để kích hoạt quy trình leo thang...' : 'Nêu rõ lý do chưa đạt yêu cầu...' });
 
     sections.push(el('div', { class: 'space-y-5 border-t border-slate-200 dark:border-slate-800 pt-5' },
-      el('button', { type: 'button', class: BTN.primary, onclick: () => act(api(`/bql/tickets/${id}/close`, { method: 'POST', body: {} }), 'Đã nghiệm thu') }, 'Nghiệm thu'),
+      oneShotButton('Nghiệm thu', () => act(api(`/bql/tickets/${id}/close`, { method: 'POST', body: {} }), 'Đã nghiệm thu'), { busyLabel: 'Đang nghiệm thu…' }),
       el('details', {},
         el('summary', { class: 'cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200' }, 'Chưa đạt, trả làm lại'),
         el('div', { class: 'mt-3 space-y-3' },

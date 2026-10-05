@@ -8,6 +8,7 @@ fixed patterns, so any instruction embedded in it has no effect (FR-SECURITY-001
 
 import re
 import unicodedata
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from src.maintenance.enums import PlaybookId, ReasonCode, ServiceCategory, TicketType
@@ -275,14 +276,6 @@ def mentions_playbook_subject(description: str) -> bool:
 
 # --- Location proposal ------------------------------------------------------
 
-# "tòa nhà SIM-A" and "block SIM-A" name the building too; "nhà" and the words that start another location part
-# ("tòa nhà tầng 3", "tòa hành lang") are never the building code. "toà SIM A" / "toa sim b" (a space instead of
-# the hyphen) is the same code: a word of 2+ letters followed by ONE letter or digit is joined with "-" ("ở" is
-# never that letter: "tòa SIM ở tầng 3").
-BUILDING_PATTERN = (
-    r"\b(?:toa(?: nha)?|block) (?!(?:nha|tang|lau|ham|hanh|sanh|cau|thang|khu|phong|bai|san|loi|nay|do|kia)\b)"
-    r"([a-z]{2,} (?!o\b)[a-z0-9](?![a-z0-9-])|[a-z0-9]+(?:-[a-z0-9]+)*)\b"
-)
 FLOOR_PATTERN = r"\b(?:tang(?: ham)?|ham|lau) (b?\d+|tret)\b"
 FLOOR_LABELS = {"TRET": "Trệt"}  # "tầng trệt" (ground floor)
 # Ordered: the longer area name must win ("sảnh thang máy" before "sảnh chính"; "hầm" before "bãi đỗ xe", so
@@ -291,6 +284,7 @@ FLOOR_LABELS = {"TRET": "Trệt"}  # "tầng trệt" (ground floor)
 AREA_PATTERNS: list[tuple[str, str]] = [
     (r"\bsanh thang may\b", "Sảnh thang máy"),
     (r"\bsanh chinh\b", "Sảnh chính"),
+    (r"\bsanh cu dan\b", "Sảnh cư dân"),
     (r"\bhanh lang\b", "Hành lang"),
     (r"\bloi thoat hiem\b", "Lối thoát hiểm"),
     (r"\b(?:cau thang(?! may\b)|thang bo)\b", "Cầu thang bộ"),
@@ -301,24 +295,36 @@ AREA_PATTERNS: list[tuple[str, str]] = [
     (r"\bsan thuong\b", "Sân thượng"),
     (r"\bloi di\b", "Lối đi"),
 ]
-IMPLIED_FLOOR = {"Sảnh chính": "1"}
+# Areas that only exist on one floor: the resident does not have to name the floor
+IMPLIED_FLOOR = {"Sảnh chính": "1", "Sảnh cư dân": "1"}
 
 
-def extract_location(description: str) -> str | None:
+def extract_location(description: str, buildings: Sequence[str]) -> str | None:
     """Propose `Tòa X / Tầng N / Khu vực` from the resident text, or None unless all three parts are found.
 
+    Only a building in `buildings` (catalog `site.buildings`) counts; any other one is treated as missing.
     A preliminary location: pipeline step 2 asks the resident for more when this is None.
     """
-    building, floor, area = _location_parts(description)
+    building, floor, area = _location_parts(description, buildings)
     if not (building and floor and area):
         return None
     return f"Tòa {building} / Tầng {floor} / {area}"
 
 
-def missing_location_parts(description: str) -> list[str]:
+def missing_location_parts(description: str, buildings: Sequence[str]) -> list[str]:
     """Which of building / floor / area the resident still has to give, so the request can name just those."""
-    parts = _location_parts(description)
+    parts = _location_parts(description, buildings)
     return [name for name, value in zip(("building", "floor", "area"), parts) if value is None]
+
+
+def _building_pattern(buildings: Sequence[str]) -> str:
+    """A known building code, with or without "tòa"/"tòa nhà"/"block" in front ("tòa S1", "S1"), keeping a
+    sub-building ("S1.12"). Only catalog codes match, so words like "tòa nhà tầng 3" never become a building.
+
+    Longer codes are tried first.
+    """
+    codes = sorted((re.escape(normalize(b)) for b in buildings), key=len, reverse=True)
+    return rf"(?<![a-z0-9-])(?:(?:toa(?: nha)?|block) )?((?:{'|'.join(codes)})(?:\.\d{{1,2}})?)(?![a-z0-9-]|\.\d)"
 
 
 # Where the resident LIVES is not where the problem is (plan 05 H04): "Căn 1508 tầng 15 tòa SIM-A, báo giúp hành
@@ -359,11 +365,12 @@ def _floor_label(raw: str) -> str:
     return f"{prefix}{int(digits)}"
 
 
-def _location_parts(description: str) -> tuple[str | None, str | None, str | None]:
+def _location_parts(description: str, buildings: Sequence[str]) -> tuple[str | None, str | None, str | None]:
     """Building / floor / area of the PROBLEM.
 
     Rules (plan 05 H04 a): the area is the first label in AREA_PATTERNS order; building and floor are the mentions
-    closest to that area, skipping mentions inside a residence clause (RESIDENCE_CUE). A residence building is still
+    closest to that area, skipping mentions inside a residence clause (RESIDENCE_CUE). Only `buildings`
+    (catalog `site.buildings`) are building mentions. A residence building is still
     used when no other building is named (residents report in their own building); a residence floor never is: the
     resident is asked instead of the job being sent to their flat's floor.
     """
@@ -373,9 +380,9 @@ def _location_parts(description: str) -> tuple[str | None, str | None, str | Non
     )
     areas = [m for pattern, _ in AREA_PATTERNS for m in re.finditer(pattern, text)]
     spans = _residence_spans(text, areas)
-    buildings = list(re.finditer(BUILDING_PATTERN, text))
-    building = _pick(buildings, spans, area_match) or _pick(buildings, [], area_match)
+    mentions = list(re.finditer(_building_pattern(buildings), text))
+    building = _pick(mentions, spans, area_match) or _pick(mentions, [], area_match)
     floor = _pick(list(re.finditer(FLOOR_PATTERN, text)), spans, area_match)
     floor_label = _floor_label(floor.group(1)) if floor else IMPLIED_FLOOR.get(area)
-    code = building.group(1).upper().replace(" ", "-") if building else None
+    code = building.group(1).upper() if building else None
     return code, floor_label, area

@@ -64,6 +64,7 @@ Route API (prefix `/api/v1`; router chỉ bọc method trên, không kiểm vai/
 | `POST /mo/tickets/{id}/safety` | `{decision: CONFIRM_SAFE \| REQUEST_INFO \| ESCALATE, note}` | `safety_confirm_safe` \| `safety_request_info` \| `safety_escalate` |
 | `POST /bql/tickets/{id}/emergency/close` | `{note}` | `emergency_close` |
 | `POST /bql/tickets/{id}/emergency/downgrade` | `{note}` | `emergency_downgrade` |
+Ghi chú nội bộ của blocker an toàn kèm phần dữ liệu tối thiểu còn thiếu (`Bậc 2: T2-04 · Thiếu: location_area`, `_with_missing`): Q08 xét an toàn TRƯỚC bước 2 nên cư dân chưa được hỏi; UI BPTN hiện cảnh báo + điền sẵn câu hỏi, `REQUEST_INFO` tự hỏi kèm phần vị trí còn thiếu, `CONFIRM_SAFE` ⇒ bước 2 hỏi tiếp.
 Bất biến: `resume()`/job KHÔNG BAO GIỜ gỡ blocker an toàn (`_cleared` False); Bậc 2 leo thang đúng một lần sau 4 giờ LỊCH (`escalated=True`, outbox `safety.review_escalated`); NEED_INFO an toàn leo thang sau 12 h (outbox `escalation`).
 Chặn khác: `reopen()` luôn `InvalidTransitionError`; `set_assignee()` luôn `ActionDeniedError` có audit; `rate()` một lần (`GuardError` lần hai).
 Cư dân chỉ thấy nhãn "Đang được kiểm tra" và lời trong `i18n/vi.yaml` (không `risk_*`, `reason_code`, `priority`).
@@ -73,7 +74,14 @@ Cư dân chỉ thấy nhãn "Đang được kiểm tra" và lời trong `i18n/vi
 `set_priority(tid, actor, priority, *, note)` (BPTN/BQL): ghi `HUMAN_OVERRIDE`, audit `SET_PRIORITY`, không StatusEvent/notification; lần chạy lại pipeline không ghi đè.
 `queue_sort_key(ticket)` = (EMERGENCY trước, priority HIGH→MEDIUM→LOW→None, `created_at` UTC tăng dần, `ticket_id`); `bql_rows` sắp theo khoá này và lọc `risk_level`/`priority`/`blocker_owner_role`.
 
+### Kho: tồn kho và nhập thiếu (2026-10-05)
+`stock_levels(actor)` — route `GET /mo/warehouse/stock` → `[{item_code, item_name, unit, qty}]` (`qty` null = không rõ); mọi vai trừ cư dân (cư dân ⇒ 403). `_resume` của ticket `WAITING_MATERIAL` luôn gọi `_refresh_line_stock` trước khi xét gỡ: nhập thiếu (cần 2, có 1) ⇒ ticket vẫn chờ nhưng dòng vật tư hiện tồn mới. `POST /mo/warehouse/stock/{item}` trả MỌI ticket đã xét (kể cả còn chờ) — UI đếm "chạy tiếp" theo blocker, không theo độ dài mảng. Màn Kho: bảng tồn kho, "cần · tồn · còn thiếu" theo tồn hiện tại, điền sẵn số còn thiếu.
+
+### Xác nhận vật tư tại hiện trường (2026-10-05)
+`confirm_materials(tid, actor, *, lines: list[PlannedMaterial], note)` — route `POST /mo/tickets/{id}/material-plan` `{lines: [{item_code, planned_qty}], note}`. Chỉ DEPARTMENT đúng phòng ban, ticket `IN_PROGRESS`; `note` bắt buộc. Thay `planned_materials` + dựng lại `material_lines` (giữ `issued_qty`/`used_qty`/`variance_reason` của item_code không đổi), cập nhật `draft.material_line_ids`/`material_stock_status`/`material_requirement_mode` (rỗng ⇒ `N_A`). Audit `UPDATE_MATERIAL` field `planned_materials`. Lỗi: item không có trong catalog / trùng dòng / qty ≤ 0 / note rỗng / chưa nhận việc ⇒ `GuardError` (409); sai vai/phòng ban ⇒ 403; item_code sai mẫu `SIM-` ⇒ 422. **Vùng cấm:** KHÔNG chặn khi tồn kho thiếu (đi `block` → `WAITING_MATERIAL`), KHÔNG thêm điều kiện nghiệm thu mới (6 gate §9.4 giữ nguyên). Lý do: bước 7 chỉ đoán vật tư mặc định của playbook; khi tài sản `ASSET_CHECK_ONSITE` UI phòng ban hiện khung này nổi bật, ca khác để thu gọn.
+
 ## 6. Cấu hình
+- `seed/maintenance_v1/catalog.yaml` `site` (2026-10-05, thí điểm): `{name: Ocean Park, buildings: [S1, S2]}`. `rules.extract_location(text, buildings)` chỉ nhận tòa trong danh sách (viết "tòa S1" hoặc "S1"; giữ tòa con "S1.12", từ chối "S1.123"); tòa khác = thiếu `location_building` ⇒ hỏi lại cư dân. Khu vực "Sảnh cư dân" và "Sảnh chính" mặc định Tầng 1 (`IMPLIED_FLOOR`), không cần nêu tầng. Mở rộng tòa: thêm mã vào `buildings` + sửa `field_labels.location_building` trong `i18n/vi.yaml`. Vị trí BPTN nhập tay (`bptn_resolve location`) KHÔNG bị kiểm danh sách.
 - `seed/maintenance_v1/catalog.yaml` `sla_config`: `safety_review.escalate_after_hours` (4, giờ lịch), `missing_info.safety_context.escalate_after_hours` (12), `priority.duplicate_raise_at_count` (3, P1), cùng các khoá cũ (`duplicate_window_hours`, `bptn`, `waiting_material`, `not_accepted`, `rework`). Không còn `reopen_window_days`.
 - `seed/maintenance_v1/lexicon.yaml`: `safety` (cue, đệm, tập đóng B-01, đồng tự, confirmers, hedge_forms, gốc R9, signals S-01…S-14/T2-03…05) và `priority`. Sửa từ vựng KHÔNG cần đụng code nhưng PHẢI chạy bộ dừng.
 - `tickets.yaml` (12 ca): CLN-004 và TEC-005 là Bậc 1 (`EMERGENCY_PENDING_BQL`); `priority:` trong `expected`.
