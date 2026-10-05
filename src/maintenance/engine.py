@@ -20,17 +20,28 @@ import logging
 import threading
 from collections.abc import Callable, Iterator, Mapping, MutableMapping, Sequence
 from contextlib import contextmanager
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Any
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, Any, Literal
 
 from src.maintenance.catalog import Catalog, Lexicon, TicketDataset, load_catalog, load_dataset, load_lexicon
+from src.maintenance.common import (  # noqa: F401 - re-exported: `from src.maintenance.engine import AGENT_ID, ...`
+    AGENT_ID,
+    DEFAULT_RESIDENT_ID,
+    LOCAL_TZ,
+    SYSTEM_ID,
+    _blank,
+    _created_at,
+    _suffix,
+)
+from src.maintenance.coordination import DepartmentMixin, MergeMixin, NeighborMixin, SplitMixin
 from src.maintenance.enums import (
     BPTN_REASONS,
     BQL_REASONS,
     PLAYBOOK_BY_CATEGORY,
     PLAYBOOK_VERSION,
     SAFETY_REASONS,
+    SPLIT_PAIR,
     TERMINAL_STATUSES,
     Action,
     ActionResult,
@@ -62,6 +73,7 @@ from src.maintenance.enums import (
     TicketFlag,
     TicketStatus,
 )
+from src.maintenance.errors import ActionDeniedError, AuditWriteError, InvalidTransitionError
 from src.maintenance.messages import field_label, public_message, safety_info_message
 from src.maintenance.models import (
     AgentClassificationProposal,
@@ -102,10 +114,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-LOCAL_TZ = timezone(timedelta(hours=7))
-AGENT_ID = "SIM-ACTOR-AGENT"
-SYSTEM_ID = "SIM-ACTOR-SYSTEM"
-DEFAULT_RESIDENT_ID = "SIM-ACTOR-RESIDENT-01"
 # Photos: optional for the resident, required from the department before step 10 passes
 MAX_RESIDENT_PHOTOS = 5
 MAX_EXECUTION_PHOTOS = 10
@@ -113,6 +121,7 @@ EXECUTION_PHOTO = "execution_photo"  # failing_items entry when the department s
 SOURCE_REVISION = "SRC-001"
 DENIED_TEXT_MAX = 500  # a denied request cannot grow the ticket's audit by more than this per field (plan 04 A1)
 ORPHAN_GRACE = timedelta(minutes=2)  # a RECEIVED ticket left without a pipeline run is picked up by the job after this
+_COPY_VERB = {"merge": "Nối", "copy": "Chép"}  # audit wording of `_copy_additions` / `_copy_resident_photos`
 
 S = TicketStatus
 R = ReasonCode
@@ -225,20 +234,6 @@ SCOPE_LABELS = {
 }
 
 
-class InvalidTransitionError(GuardError):
-    code = "INVALID_TRANSITION"
-
-
-class ActionDeniedError(EngineError):
-    """Permission rejection (canonical code ACTION_DENIED). The denial itself is audited."""
-
-    code = "ACTION_DENIED"
-
-
-class AuditWriteError(EngineError):
-    code = "AUDIT_WRITE_FAILED"
-
-
 AuditSink = Callable[[list[AuditEvent | StatusEvent]], None]
 NotifySink = Callable[[list[Notification]], None]
 
@@ -330,23 +325,28 @@ def can_route(ticket: Ticket) -> bool:
     return not route_blockers(ticket)
 
 
-def _blank(value: str | None) -> bool:
-    return value is None or not value.strip() or value.strip().upper() == "UNKNOWN"
+@dataclass
+class _Touched:
+    """A ticket other than the main one that the running operation reads or writes (SPEC-P02 §2)."""
+
+    work: Case  # the working copy, saved at commit
+    marks: tuple[int, int, int]  # len(audit), len(events), len(notifications) when first touched; (0, 0, 0) if inserted
+    original: Case | None  # the copy read under the row lock (None if inserted): unchanged means not saved (I-26)
+    inserted: bool
 
 
-def _suffix(ticket_id: str) -> str:
-    return ticket_id.removeprefix("SIM-TKT-")
+@dataclass
+class _OpScope:
+    """What one `_mutate_locked` transaction has touched. Order of insertion = order of locking = order of commit."""
+
+    tx: Tx
+    main: Case
+    touched: dict[str, _Touched] = field(default_factory=dict)
+    committed: list[Case] | None = None  # the cases written, main first; set once the commit loop ends
+    listing: list[Case] | None = None  # `repo.list()` read once per operation (`_cases_snapshot`)
 
 
-def _created_at(raw: RawTicket) -> datetime | None:
-    try:
-        moment = datetime.fromisoformat(raw.created_at)
-    except ValueError:
-        return None
-    return moment if moment.tzinfo else None
-
-
-class MaintenanceEngine:
+class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
     def __init__(
         self,
         catalog: Catalog | None = None,
@@ -508,6 +508,25 @@ class MaintenanceEngine:
 
     def _ingest(self, raw: RawTicket, planned_materials: list[PlannedMaterial] | None, resident_id: str) -> Case:
         now = self.clock()
+        work = self._build_case(raw, planned_materials, resident_id, now)
+        with self.repo.transaction() as tx:
+            tx.insert(work)  # a duplicate ticket_id raises GuardError("... đã được ingest")
+            self._commit(tx, work, 0, 0, 0)
+        return work
+
+    def _build_case(
+        self,
+        raw: RawTicket,
+        planned_materials: list[PlannedMaterial] | None,
+        resident_id: str,
+        now: datetime,
+        *,
+        public_message: str | None = None,
+        notify_extra: dict[str, Any] | None = None,
+        reason: str = "Ingest raw ticket mô phỏng",
+    ) -> Case:
+        """A new RECEIVED case with its INGEST audit row, first event and notification. No transaction: `_ingest`
+        stores it, an operation that creates a second ticket hands it to `_insert_case`."""
         marker = raw.integrity_marker()
         ticket = Ticket(
             ticket_id=raw.ticket_id,
@@ -529,14 +548,15 @@ class MaintenanceEngine:
             "ticket",
             None,
             {"raw_integrity_marker": marker},
-            "Ingest raw ticket mô phỏng",
+            reason,
             now=now,
         )
-        self._record_event(work, None, S.RECEIVED, None, SYSTEM_ID, Role.SYSTEM, now, public=True)
-        self._notify(work, "ticket.status_changed", BlockerOwner.RESIDENT, now, {"to": S.RECEIVED})
-        with self.repo.transaction() as tx:
-            tx.insert(work)  # a duplicate ticket_id raises GuardError("... đã được ingest")
-            self._commit(tx, work, 0, 0, 0)
+        self._record_event(
+            work, None, S.RECEIVED, None, SYSTEM_ID, Role.SYSTEM, now, public=True, public_message=public_message
+        )
+        self._notify(
+            work, "ticket.status_changed", BlockerOwner.RESIDENT, now, {"to": S.RECEIVED, **(notify_extra or {})}
+        )
         return work
 
     def run_agent(self, ticket_id: str) -> Case:
@@ -574,7 +594,11 @@ class MaintenanceEngine:
             submitted_at=now,
         )
         work.additions.append(addition)
-        if work.ticket.status == S.NEED_INFO and work.ticket.locked_fields.category is None:
+        if (
+            work.ticket.status == S.NEED_INFO
+            and work.ticket.locked_fields.category is None
+            and work.ticket.split_category is None
+        ):
             work.classification = None  # new content: classify again from original + additions
         self._audit(
             work,
@@ -1061,7 +1085,7 @@ class MaintenanceEngine:
         return self.transition(ticket_id, S.IN_PROGRESS, actor_id, expected_from=S.ROUTED)
 
     def return_wrong_department(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
-        return self.transition(ticket_id, S.VERIFYING, actor_id, note=note)
+        return self.transition(ticket_id, S.VERIFYING, actor_id, note=note, expected_from=S.ROUTED)
 
     def block_onsite(self, ticket_id: str, actor_id: str, *, note: str, eta: datetime) -> Case:
         return self.transition(ticket_id, S.ON_HOLD, actor_id, note=note, eta=eta)
@@ -1555,8 +1579,19 @@ class MaintenanceEngine:
 
                 work = case.model_copy(deep=True)
                 marks = (len(work.audit), len(work.events), len(work.notifications))
-                op(work, now)
-                self._commit(tx, work, *marks)
+                with self._op_scope(tx, work) as scope:
+                    op(work, now)
+                    self._commit(tx, work, *marks)  # the main ticket first
+                    written = [work]
+                    for other in scope.touched.values():  # then the related ones, in the order they were touched
+                        if other.inserted:
+                            # the cases row comes before its audit_log/notifications rows (foreign keys)
+                            tx.insert(other.work)
+                        elif other.work == other.original:
+                            continue  # read under the row lock, never changed: not saved (I-26)
+                        self._commit(tx, other.work, *other.marks)
+                        written.append(other.work)
+                    scope.committed = written
         except _Denied as denied:  # the transaction above rolled back; the denial is written in its own
             if denied.deny_kwargs is not None:  # raised by `_deny` inside `op` (e.g. the Q19 gate of T06/T07)
                 self._deny(**denied.deny_kwargs)
@@ -1572,6 +1607,158 @@ class MaintenanceEngine:
             yield
         finally:
             self._local.tx_depth = depth
+
+    # ------------------------------------------------------------------ more than one ticket in one transaction
+
+    @contextmanager
+    def _op_scope(self, tx: Tx, main: Case) -> Iterator[_OpScope]:
+        """Opens the scope in which `op` may lock, edit or insert other tickets (SPEC-P02 §2). Thread-local, and the
+        previous value is restored: the transaction of `_mutate_locked` is never nested."""
+        previous = getattr(self._local, "op_scope", None)
+        scope = _OpScope(tx=tx, main=main)
+        self._local.op_scope = scope
+        try:
+            yield scope
+        finally:
+            self._local.op_scope = previous
+
+    def _scope(self) -> _OpScope | None:
+        return getattr(self._local, "op_scope", None)
+
+    def _related_case(self, ticket_id: str) -> Case:
+        """The working copy of a ticket other than the main one (locked now, saved at commit if it changed).
+
+        The main ticket and a ticket already touched come back as the same object. A ticket that does not exist is a
+        NotFoundError, which cancels the whole transaction."""
+        scope = self._scope()
+        if scope is None:
+            raise EngineError("Ghi ticket liên quan ngoài một thao tác", {"ticket_id": ticket_id})
+        if ticket_id == scope.main.ticket.ticket_id:
+            return scope.main
+        touched = scope.touched.get(ticket_id)
+        if touched is not None:
+            return touched.work
+        case = scope.tx.get_for_update(ticket_id)  # row lock (I-3), after the main ticket's
+        if case.ticket.raw.integrity_marker() != case.ticket.raw_integrity_marker:
+            raise EngineError("Raw integrity marker không khớp; dừng xử lý (fail closed)", {"ticket_id": ticket_id})
+        work = case.model_copy(deep=True)
+        marks = (len(work.audit), len(work.events), len(work.notifications))
+        scope.touched[ticket_id] = _Touched(work=work, marks=marks, original=case, inserted=False)
+        return work
+
+    def _insert_case(self, work: Case) -> None:
+        """A ticket this operation creates (built by `_build_case`); stored at commit, after the main ticket."""
+        scope = self._scope()
+        ticket_id = work.ticket.ticket_id
+        if scope is None:
+            raise EngineError("Ghi ticket liên quan ngoài một thao tác", {"ticket_id": ticket_id})
+        if ticket_id == scope.main.ticket.ticket_id or ticket_id in scope.touched:
+            raise GuardError(f"Ticket {ticket_id} đã có trong thao tác này", {"ticket_id": ticket_id})
+        scope.touched[ticket_id] = _Touched(work=work, marks=(0, 0, 0), original=None, inserted=True)
+
+    def _case_view(self, ticket_id: str) -> Case:
+        """Read only: the operation's own copy if it has one, else the stored case. Never edit what this returns
+        unless it came from `_related_case`."""
+        scope = self._scope()
+        if scope is not None:
+            if ticket_id == scope.main.ticket.ticket_id:
+                return scope.main
+            touched = scope.touched.get(ticket_id)
+            if touched is not None:
+                return touched.work
+        return self.repo.get(ticket_id)
+
+    def _cases_snapshot(self) -> list[Case]:
+        """Every ticket as this operation sees it: the stored list (read once per operation) with the operation's own
+        copies in place of the stored ones, and the tickets it inserted at the end."""
+        scope = self._scope()
+        if scope is None:
+            return self.repo.list()
+        if scope.listing is None:
+            scope.listing = self.repo.list()
+        own = {scope.main.ticket.ticket_id: scope.main, **{tid: t.work for tid, t in scope.touched.items()}}
+        stored = {case.ticket.ticket_id for case in scope.listing}
+        return [
+            *(own.get(case.ticket.ticket_id, case) for case in scope.listing),
+            *(work for tid, work in own.items() if tid not in stored),
+        ]
+
+    def _copy_additions(self, src: Case, dst: Case, now: datetime, *, mode: Literal["merge", "copy"]) -> list[str]:
+        """Copy the resident's additions of `src` onto `dst`. Additions that were themselves merged in from elsewhere
+        or copied from `dst` are left out. Returns the new addition ids; one LINK_TICKETS audit row on `dst`."""
+        added: list[str] = []
+        for addition in src.additions:
+            if addition.merged_from is not None or addition.copied_from == dst.ticket.ticket_id:
+                continue
+            origin = {"merged_from" if mode == "merge" else "copied_from": src.ticket.ticket_id}
+            copy = ResidentAddition(
+                addition_id=f"SIM-ADD-{_suffix(dst.ticket.ticket_id)}-{len(dst.additions) + 1:02d}",
+                ticket_id=dst.ticket.ticket_id,
+                content=addition.content,
+                submitted_by=addition.submitted_by,
+                submitted_at=addition.submitted_at,
+                **origin,
+            )
+            dst.additions.append(copy)
+            added.append(copy.addition_id)
+        if added:
+            self._link_audit(dst, "additions", added, f"{_COPY_VERB[mode]} bổ sung của {src.ticket.ticket_id}", now)
+        return added
+
+    def _copy_resident_photos(
+        self, src: Case, dst: Case, now: datetime, *, mode: Literal["merge", "copy"]
+    ) -> list[str]:
+        """Same as `_copy_additions` for the resident's photos: a new evidence_id, the same file reference."""
+        added: list[str] = []
+        for photo in resident_photos(src):
+            if photo.copied_from == dst.ticket.ticket_id:
+                continue
+            origin = {"merged_from" if mode == "merge" else "copied_from": src.ticket.ticket_id}
+            copy = EvidenceRecord(
+                evidence_id=f"SIM-EVD-{_suffix(dst.ticket.ticket_id)}-{len(dst.evidence) + 1:02d}",
+                ticket_id=dst.ticket.ticket_id,
+                work_order_draft_id=None,
+                requirement_id=None,
+                evidence_type=EvidenceType.RESIDENT_ORIGINAL,
+                content_or_metadata=photo.content_or_metadata,
+                source=EvidenceSource.RESIDENT_ORIGINAL,
+                submitted_by=photo.submitted_by,
+                submitted_at=photo.submitted_at,
+                readability_status=photo.readability_status,
+                immutable=True,
+                **origin,
+            )
+            dst.evidence.append(copy)
+            added.append(copy.evidence_id)
+        if added:
+            self._link_audit(dst, "evidence", added, f"{_COPY_VERB[mode]} ảnh của {src.ticket.ticket_id}", now)
+        return added
+
+    def _link_audit(self, work: Case, field_name: str, new: Any, why: str, now: datetime) -> None:
+        self._agent(work, Action.LINK_TICKETS, "Ticket", work.ticket.ticket_id, field_name, None, new, why, now=now)
+
+    def _link_pair(self, a: Case, b: Case, now: datetime, actor_id: str, role: ActorRole, *, why: str) -> None:
+        """Each ticket lists the other in `related_ticket_ids` (append only, once). A finished ticket is not written
+        (I-26); the other side still gets its link."""
+        for mine, other in ((a, b), (b, a)):
+            other_id = other.ticket.ticket_id
+            if mine.ticket.status in TERMINAL_STATUSES or other_id in mine.ticket.related_ticket_ids:
+                continue
+            old = list(mine.ticket.related_ticket_ids)
+            self._audit(
+                mine,
+                Action.LINK_TICKETS,
+                "Ticket",
+                mine.ticket.ticket_id,
+                actor_id,
+                role,
+                "related_ticket_ids",
+                old,
+                [*old, other_id],
+                why,
+                now=now,
+            )
+            self._set_ticket(mine, related_ticket_ids=[*old, other_id])
 
     def _commit(self, tx: Tx, work: Case, audit_from: int, events_from: int, notes_from: int) -> None:
         """Save `work` and append its new rows inside `tx`. A failing append or sink rolls everything back."""
@@ -1758,9 +1945,10 @@ class MaintenanceEngine:
         *,
         public: bool,
         note: str | None = None,
+        public_message: str | None = None,
     ) -> None:
         blocker = work.ticket.blocker
-        message = blocker.public_message if blocker else self._status_message(work)
+        message = public_message or (blocker.public_message if blocker else self._status_message(work))
         work.events.append(
             StatusEvent(
                 id=f"SIM-EVT-{_suffix(work.ticket.ticket_id)}-{len(work.events) + 1:04d}",
@@ -1992,16 +2180,17 @@ class MaintenanceEngine:
             if _blank(cancel_reason):
                 raise GuardError("cancel_reason bắt buộc khi hủy")
             self._apply_transition(work, to, actor_id, role, now, note=note, cancel_reason=cancel_reason.strip())
+            self._after_cancel(work, blocker, now)
         elif key == (S.ROUTED, S.IN_PROGRESS):
             self._apply_transition(work, to, actor_id, role, now, note=note, accepted_at=now)
-        elif key == (S.ROUTED, S.VERIFYING):
-            if _blank(note):
-                raise GuardError("Trả lại sai phòng ban phải có lý do")
-            # resume_step is decided by BPTN's answer: 6 if the category changes, 7 if not (never 8)
-            wrong = self._new_blocker(work, R.WRONG_DEPT, now, resume_step=6, note=note)
-            self._apply_transition(
-                work, to, actor_id, role, now, blocker=wrong, note=note, department_id=None, dispatched_at=None
-            )
+        elif key == (S.ROUTED, S.VERIFYING):  # T15
+            self._t15_return_wrong_department(work, actor_id, role, now, note=note)
+        elif key == (S.IN_PROGRESS, S.VERIFYING):  # T16
+            self._t16_report_wrong_department(work, actor_id, role, now, note=note)
+        elif key == (S.VERIFYING, S.IN_PROGRESS):  # T17
+            self._t17_keep_department(work, actor_id, role, now, note=note)
+        elif key == (S.MERGED, S.RECEIVED):  # T09 by a person
+            self._t09_unmerge_by_person(work, actor_id, role, now, note=note)
         elif key == (S.IN_PROGRESS, S.ON_HOLD):
             if _blank(note) or eta is None:
                 raise GuardError("BLOCKED_ONSITE bắt buộc lý do và eta")
@@ -2070,6 +2259,8 @@ class MaintenanceEngine:
                 risk_level=RiskLevel.NONE,
             )
             self._run_pipeline(work, 2, now)  # 2b skips itself (cleared); step 2 checks the location; then 3...
+            if blocker.code == R.EMERGENCY_PENDING_BQL:  # P1-E (WP10): tickets waiting for this emergency may go on
+                self._release_waiting_for(work, now)
         elif key == (S.NEED_INFO, S.RECEIVED):  # T03: BQL confirms a safety NEED_INFO is safe
             if role != Role.BQL or not ticket.safety_context:
                 raise InvalidTransitionError("NEED_INFO → RECEIVED do người chỉ với BQL khi safety_context=true (T03)")
@@ -2113,6 +2304,7 @@ class MaintenanceEngine:
                 risk_level=RiskLevel.EMERGENCY,
                 safety_context=False,
             )
+            self._link_emergency_both_ways(work, list(work.ticket.related_ticket_ids), now)  # P1-E (WP10)
             self._notify(
                 work,
                 "emergency.created",
@@ -2161,12 +2353,27 @@ class MaintenanceEngine:
                 closed_at=now,
                 closure_kind=ClosureKind.EMERGENCY_HANDLED,
             )
-        elif key == (S.VERIFYING, S.MERGED):
+            self._release_waiting_for(work, now)  # P1-E (WP10)
+        elif key == (S.VERIFYING, S.MERGED):  # T08: only BPTN confirming a duplicate; BQL has bql_merge (P04)
+            if role != Role.BPTN:
+                raise InvalidTransitionError(
+                    "Gộp qua transition chỉ cho BPTN xác nhận trùng; BQL dùng bql_merge, tách sai dùng undo_split"
+                )
             if blocker is None or blocker.code != R.DUPLICATE:
                 raise InvalidTransitionError("Chỉ gộp được ticket đang chờ xác nhận trùng (DUPLICATE)")
-            self._apply_transition(work, to, actor_id, role, now, note=note, merged_into=blocker.related_ticket_id)
+            self._merge_into(work, blocker.related_ticket_id, actor_id, role, now, note=note, counted=False)
+        elif to == S.MERGED:  # T08S-a / T08S-b: the table has the rows for `undo_split` (P05); no other entry
+            raise InvalidTransitionError("Chỉ hoàn tác tách (undo_split) được gộp ticket ở trạng thái này")
         else:
             raise InvalidTransitionError(f"Không chuyển được {ticket.status} → {to}")
+
+    def _after_cancel(self, work: Case, previous_blocker: Blocker | None, now: datetime) -> None:
+        """What a cancelled ticket leaves behind for the other tickets (P04 duplicate count + merged children, P07
+        tickets waiting for an emergency). Each hook is a no-op until its wave."""
+        self._release_duplicate_count(work, previous_blocker, now)
+        self._unmerge_children_of(work, now)
+        if previous_blocker is not None and previous_blocker.code == R.EMERGENCY_PENDING_BQL:
+            self._release_waiting_for(work, now)
 
     # ------------------------------------------------------------------ resume and scheduled checks
 
@@ -2279,8 +2486,9 @@ class MaintenanceEngine:
         raise EngineError("Pipeline kết thúc mà không route hoặc dừng")
 
     def _content(self, work: Case) -> str:
-        """Original report plus resident additions: what the Agent reads. The original itself never changes."""
-        parts = [work.ticket.raw.original_description, *(a.content for a in work.additions)]
+        """Original report plus resident additions: what the Agent reads. The original itself never changes.
+        What was merged in from another ticket (`merged_from`) is staff-only and is not read (I-28)."""
+        parts = [work.ticket.raw.original_description, *(a.content for a in work.additions if a.merged_from is None)]
         return "\n".join(p for p in parts if p and p.strip())
 
     def effective_location(self, work: Case) -> str | None:
@@ -2291,11 +2499,14 @@ class MaintenanceEngine:
     def _location_text(self, work: Case) -> str:
         """What the location is read from: the newest addition first, the original report last, so a resident's
         correction ("Ở hầm B1 ạ") wins over the floor of their own flat in the original (plan 05)."""
-        parts = [*(a.content for a in reversed(work.additions)), work.ticket.raw.original_description]
+        parts = [
+            *(a.content for a in reversed(work.additions) if a.merged_from is None),
+            work.ticket.raw.original_description,
+        ]
         return "\n".join(p for p in parts if p and p.strip())
 
     def _category(self, work: Case) -> ServiceCategory | None:
-        locked = work.ticket.locked_fields.category
+        locked = work.ticket.locked_fields.category or work.ticket.split_category  # a split pins the category (P05)
         if locked:
             return locked
         cls = work.classification
@@ -2321,7 +2532,7 @@ class MaintenanceEngine:
         cleared_at = work.ticket.safety_cleared_at
         if cleared_at is None:
             return self._content(work)
-        return "\n".join(a.content for a in work.additions if a.submitted_at >= cleared_at)
+        return "\n".join(a.content for a in work.additions if a.merged_from is None and a.submitted_at >= cleared_at)
 
     def _related_ticket_ids(self, work: Case) -> list[str]:
         """Open tickets at the same location, created earlier and inside the duplicate window (Q11). Link only."""
@@ -2330,7 +2541,7 @@ class MaintenanceEngine:
             return []
         earliest = created - timedelta(hours=self.catalog.sla_config.duplicate_window_hours)
         found = []
-        for other in self.repo.list():
+        for other in self._cases_snapshot():
             ticket = other.ticket
             if ticket.ticket_id == work.ticket.ticket_id or ticket.status in TERMINAL_STATUSES:
                 continue
@@ -2379,6 +2590,7 @@ class MaintenanceEngine:
                 resume_step=2,
                 note=self._with_missing(work, f"Bậc 1: {', '.join(present)}"),
             )
+            self._link_emergency_both_ways(work, list(work.ticket.related_ticket_ids), now)  # P1-E (WP10)
             self._notify(
                 work,
                 "emergency.created",
@@ -2496,6 +2708,12 @@ class MaintenanceEngine:
         if locked:
             self._bind_category(work, locked, "BPTN_LOCKED", now)  # BPTN already chose; never reclassify
             return False
+        if work.ticket.split_category:  # a ticket born from a split (or its root) keeps the category the split gave it
+            self._bind_category(work, work.ticket.split_category, "AGENT_SPLIT", now)
+            return False
+        if self._try_split(work, now):  # P05 (WP8): the report names two jobs, this ticket keeps the first
+            self._bind_category(work, SPLIT_PAIR[0], "AGENT_SPLIT", now)
+            return False
         cls = self._classification(work, now)
         if cls.playbook_id is None:
             return self._stop(
@@ -2509,6 +2727,9 @@ class MaintenanceEngine:
         duplicate_of = self._find_duplicate_ticket_id(work)
         if duplicate_of is None:
             return False
+        root = self._related_case(duplicate_of)  # locked for the rest of the operation; saved only if a hook edits it
+        if root.ticket.status not in TERMINAL_STATUSES:
+            self._on_duplicate_detected(root, work, now)  # P04 (WP7): count the report on the root
         window = timedelta(hours=self.catalog.sla_config.duplicate_window_hours)
         return self._stop(
             work,
@@ -2530,7 +2751,7 @@ class MaintenanceEngine:
         mine = (created, work.ticket.ticket_id)
         earliest = created - timedelta(hours=self.catalog.sla_config.duplicate_window_hours)
         matches = []
-        for other in self.repo.list():
+        for other in self._cases_snapshot():
             ticket = other.ticket
             if (
                 ticket.ticket_id == work.ticket.ticket_id
@@ -2586,7 +2807,8 @@ class MaintenanceEngine:
         if ticket.priority_source == PrioritySource.HUMAN_OVERRIDE:
             return
         proposal = propose_priority(category, self.effective_location(work), self._content(work), self.lexicon.priority)
-        if (ticket.priority, ticket.priority_rule_id) == (proposal.priority, proposal.rule_id):
+        priority, reason = self._apply_pri_u1(work, proposal.priority, proposal.reason)  # P04 (WP7): PRI-U1
+        if (ticket.priority, ticket.priority_rule_id) == (priority, proposal.rule_id):
             return  # a pipeline rerun adds no audit row
         self._agent(
             work,
@@ -2595,17 +2817,17 @@ class MaintenanceEngine:
             ticket.ticket_id,
             "priority",
             ticket.priority,
-            proposal.priority,
-            proposal.reason,
+            priority,
+            reason,
             now=now,
             rule_id=proposal.rule_id,
         )
         self._set_ticket(
             work,
-            priority=proposal.priority,
+            priority=priority,
             priority_source=PrioritySource.AGENT_RULE,
             priority_rule_id=proposal.rule_id,
-            priority_reason=proposal.reason,
+            priority_reason=reason,
         )
 
     def _propose_department(self, work: Case, now: datetime) -> None:
@@ -2741,10 +2963,12 @@ class MaintenanceEngine:
 
     def _check_material_lines_against_stock(self, work: Case) -> MaterialStockStatus:
         suffix = _suffix(work.ticket.ticket_id)
+        old_lines = work.material_lines
         work.material_lines = [
             self._material_line(f"SIM-WOD-{suffix}", suffix, index, planned)
             for index, planned in enumerate(work.planned_materials, start=1)
         ]
+        self._carry_over_material_qty(old_lines, work.material_lines)  # P06 (WP9): keep issued/used of the same item
         return _aggregate_stock(work.material_lines)
 
     def _step_8_route_to_department(self, work: Case, now: datetime) -> bool:
@@ -2752,6 +2976,8 @@ class MaintenanceEngine:
         failing = route_blockers(ticket)
         if failing:  # the step order should make this impossible; refuse rather than hand over
             raise EngineError("Bước 8 chạy khi can_route sai", {"failing": failing})
+        if self._hold_for_emergency(work, now):  # P1-E (WP10): an emergency is open at the same place
+            return True
         self._build_draft(work, now)
         department = self.catalog.department(ticket.proposed_department_id)
         handover = {"department_id": department.department_id}
@@ -3010,7 +3236,8 @@ def _safety_escalated_before(case: Case) -> bool:
 
 
 def resident_photos(case: Case) -> list[EvidenceRecord]:
-    return [e for e in case.evidence if e.source == EvidenceSource.RESIDENT_ORIGINAL]
+    """The resident's own photos. Photos merged in from another ticket are staff-only and not listed (I-28)."""
+    return [e for e in case.evidence if e.source == EvidenceSource.RESIDENT_ORIGINAL and e.merged_from is None]
 
 
 def current_round_evidence(case: Case) -> list[EvidenceRecord]:

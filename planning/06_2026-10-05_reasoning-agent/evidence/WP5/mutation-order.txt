@@ -1,0 +1,63 @@
+................FF................                                       [100%]
+================================== FAILURES ===================================
+_ test_c10b_the_main_ticket_is_committed_before_the_related_and_inserted_ones[memory] _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000021A785A5790>
+
+    def test_c10b_the_main_ticket_is_committed_before_the_related_and_inserted_ones(engine):
+        a, b = report(engine, SWEEP), report(engine, LAMP_4)
+        ledger = len(engine.repo.log_rows())
+        made = {}
+    
+        def op(work, now):
+            engine._link_pair(work, engine._related_case(b), now, AGENT_ID, ActorRole.AGENT, why="test")
+            fresh = new_ticket(engine, now)
+            engine._insert_case(fresh)
+            made["id"] = fresh.ticket.ticket_id
+    
+        run_op(engine, a, op)
+        order = []
+        for row in engine.repo.log_rows()[ledger:]:
+            if row.ticket_id not in order:
+                order.append(row.ticket_id)
+>       assert order == [a, b, made["id"]]  # main, then touched in touch order, inserted ones in insert order
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert ['SIM-TKT-000...SIM-TKT-0001'] == ['SIM-TKT-000...SIM-TKT-0003']
+E         
+E         At index 0 diff: 'SIM-TKT-0002' != 'SIM-TKT-0001'
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_infra.py:227: AssertionError
+_ test_c10b_the_main_ticket_is_committed_before_the_related_and_inserted_ones[postgres] _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000021A785B4B50>
+
+    def test_c10b_the_main_ticket_is_committed_before_the_related_and_inserted_ones(engine):
+        a, b = report(engine, SWEEP), report(engine, LAMP_4)
+        ledger = len(engine.repo.log_rows())
+        made = {}
+    
+        def op(work, now):
+            engine._link_pair(work, engine._related_case(b), now, AGENT_ID, ActorRole.AGENT, why="test")
+            fresh = new_ticket(engine, now)
+            engine._insert_case(fresh)
+            made["id"] = fresh.ticket.ticket_id
+    
+        run_op(engine, a, op)
+        order = []
+        for row in engine.repo.log_rows()[ledger:]:
+            if row.ticket_id not in order:
+                order.append(row.ticket_id)
+>       assert order == [a, b, made["id"]]  # main, then touched in touch order, inserted ones in insert order
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert ['SIM-TKT-000...SIM-TKT-0001'] == ['SIM-TKT-000...SIM-TKT-0003']
+E         
+E         At index 0 diff: 'SIM-TKT-0002' != 'SIM-TKT-0001'
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_infra.py:227: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_infra.py::test_c10b_the_main_ticket_is_committed_before_the_related_and_inserted_ones[memory]
+FAILED tests/test_maintenance/test_p1_infra.py::test_c10b_the_main_ticket_is_committed_before_the_related_and_inserted_ones[postgres]
+2 failed, 32 passed in 4.79s
+EXIT=1
