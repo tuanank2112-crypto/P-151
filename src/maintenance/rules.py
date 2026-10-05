@@ -145,7 +145,8 @@ LIGHTING_PATTERNS = [
 # too when a common area is named; arrival ("khi den", "toi den noi") is excluded as above.
 NOT_WORKING_WORDS = (
     r"(?:chap chon|nhap nhay|nhay nhay|chop|tat|hong|hu|vo|chet|dut|khong (?:sang|len|bat|hoat dong)"
-    r"|bat khong (?:len|sang)|sang (?:yeu|lo mo)|lo mo|mo qua|toi (?:om|thui|mu)|roi xuong|rot|bi no|lung lang|re re|bi chay|chay bong)"
+    r"|bat khong (?:len|sang)|sang (?:yeu|lo mo)|lo mo|mo qua|toi (?:om|thui|mu)|roi xuong|rot|bi no|lung lang|re re|bi chay|chay bong"
+    r"|bi chap|chap(?: dien| mach)?)"
 )
 UNACCENTED_LAMP = rf"(?<!khi )(?<!di )(?<!toi )(?<!moi )(?<!vua )\bden(?: [a-z]+){{0,3}}? {NOT_WORKING_WORDS}\b"
 # A lamp inside a flat or out on the street is not a common-area lamp (Playbook §7.1), even when the resident
@@ -188,6 +189,8 @@ NOT_WORKING_PATTERNS = [
     r"\b(?:dut|chet)\b",
     r"\b(?:lung lang|re re)\b",
     r"\b(?:bong (?:den|luminaire) chay|chay bong)\b",  # Q22 typed without accents: "bong den chay roi"
+    r"\bchap(?: dien| mach)?\b(?! chon\b| nhan\b| hanh\b)",  # plan 05b: "đèn bị chập" = broken lamp (not "chấp nhận")
+    r"\b(?:bi|da) chay\b",  # plan 05b: "den hanh lang ... bi chay" typed without accents (2b already caught a real fire)
 ]
 # Plan 05 H04 (d): liquid reaching electrical equipment, or bare wires, is neither a spill to mop up nor an ordinary
 # broken lamp. The report gets no playbook (OUT_OF_SCOPE, BPTN reads it); the safety step 2b runs first and is the

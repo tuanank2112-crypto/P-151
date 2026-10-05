@@ -632,7 +632,10 @@ def test_b01_closed_prefix_twenty_tokens_and_lamp_accent():
     assert level(twenty.replace(" bị cháy", " tòa bị cháy")) == RiskLevel.UNCLEAR  # 21 tokens
     assert level("Cháy đến tầng 3 tòa SIM-A rồi") == RiskLevel.UNCLEAR
     assert level("Bông bị cháy ở hành lang") == RiskLevel.UNCLEAR
-    assert level("Bong den hanh lang tang 3 bi chay") == RiskLevel.UNCLEAR  # unaccented lamp noun is not proven (P1-11)
+    # P1-11 replaced (user decision 2026-10-05, plan 05b: "đèn cháy / đèn chập = đèn hỏng"): a report typed entirely
+    # without accents cannot prove the accent, its lamp noun is taken as written. Mixed text still needs the accent.
+    assert level("Bong den hanh lang tang 3 bi chay") == RiskLevel.NONE
+    assert level("Bông bị cháy ở hanh lang") == RiskLevel.UNCLEAR  # accented elsewhere: "bông" is not a lamp
     nobble = assess("Nổ bóng đèn hành lang tầng 7 tòa SIM-B, cần thay bóng.", LEX)
     assert triple(nobble, "T2-03", SignalStatus.ABSENT) == ("B-01", "Nổ bóng")
 
@@ -745,7 +748,7 @@ def test_lexicon_wp3c_keys_and_validator():
         "S-09",
     )
     assert sorted(safety.tier2_net_roots) == ["bat dong", "khoi", "lua", "mau"]
-    assert priority.negation_fillers == safety.negation_fillers and lexicon.lexicon_version == "2026-10-04.p0f"
+    assert priority.negation_fillers == safety.negation_fillers and lexicon.lexicon_version == "2026-10-05.p0g"
     assert not hasattr(safety, "non_lamp_electrical") and not hasattr(safety, "negation_window_words")
     assert (len(safety.signals), sum(s.phase == "P0" for s in safety.signals), len(safety.components)) == (17, 10, 2)
     data = yaml.safe_load((FIXTURE_DIR / "lexicon.yaml").read_text(encoding="utf-8"))
