@@ -210,3 +210,27 @@ def test_spaced_building_codes_are_told_apart_and_ở_is_not_a_code_letter():
 def test_round2_classification(text, playbook, reason_code):
     result = classify(text)
     assert (result.playbook_id, result.reason_code) == (playbook, reason_code), result
+
+
+# ---------------------------------------------------------------------- plan 05b: "đèn cháy / đèn chập = đèn hỏng"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Đèn hành lang tầng 3 tòa SIM-A bị chập",
+        "Đèn hành lang tầng 3 tòa SIM-A chập rồi",
+        "Hành lang tầng 3 tòa SIM-A đèn bị chập, không sáng",
+        "Bóng đèn sảnh chính tòa SIM-B bị chập điện",
+        "den hanh lang tang 3 toa SIM-A bi chay",
+        "den hanh lang tang 3 toa SIM-A bi chap",
+        "Đèn hành lang tầng 3 tòa SIM-A bị cháy",
+    ],
+)
+def test_a_burnt_or_shorted_lamp_is_a_lighting_job(text):
+    assert classify(text).playbook_id == "PB-TEC-01", classify(text)
+
+
+@pytest.mark.parametrize("text", ["Chấp nhận phí gửi xe ở hầm", "Ổ điện hành lang tầng 3 tòa SIM-A bị chập"])
+def test_chap_without_a_lamp_is_not_a_lighting_job(text):
+    assert classify(text).playbook_id is None

@@ -2,6 +2,12 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.1.5] - 2026-10-05: Đèn cháy / đèn chập là đèn hỏng, không phải nguy hiểm (plan 05 Q11)
+### Fixed
+- "Đèn hành lang … bị chập / chập rồi / chập điện" và câu gõ không dấu "den hanh lang … bi chay / bi chap" không còn bị
+  coi là nghi nguy hiểm (chuyển BPTN); giờ là việc đèn giao Phòng Kỹ thuật. Có khói, tóe lửa, khét kèm thì vẫn khẩn cấp;
+  "ổ điện bị chập" vẫn cần người xem. Lexicon `2026-10-05.p0g`; test P1-11 đổi theo quyết định người dùng.
+
 ## [v1.1.4] - 2026-10-05: Làm cứng Agent bằng kiểm thử biến thể vị trí (plan 05)
 ### Fixed
 - Tầng an toàn (`lexicon.yaml` `2026-10-04.p0f` + `safety.py`): vị trí đặt đầu/cuối/GIỮA câu không còn làm đổi mức

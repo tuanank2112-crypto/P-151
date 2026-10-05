@@ -140,4 +140,5 @@ Hồ sơ: [`planning/05_2026-10-04_agent-hardening/`](../planning/05_2026-10-04_
 - **Job (Q07):** `run_jobs` bắt mọi lỗi theo từng ticket; `_orphaned` chặn tràn số với `created_at` cuối lịch (lỗi do plan 04 E5).
 - Giới hạn của luật cố định: câu hỏi ngoài phạm vi có nhắc khu vực chung ("giờ mở cửa hầm xe") vẫn bị hỏi vị trí — nghiêng về hỏi cư dân; câu mơ hồ có khu vực ("Ở hành lang có vấn đề") nhờ vậy cư dân tự bổ sung được.
 - Test: `test_agent_coordination.py` (điều phối), hai file biến thể, ca SC-220… trong `safety_cases_p0.yaml`.
+- **Bản vá 05b (Q11):** "đèn cháy / đèn chập = đèn hỏng": `benign_phrases`/`benign_with_lamp_noun` thêm "chập (điện/mạch)" sau danh từ đèn; `safety._proven_lamp` nhận "den"/"bong" không dấu khi chính triệu chứng ("bi chay", "bi chap") cũng gõ không dấu — xét từng chữ, vị trí có dấu xung quanh không ảnh hưởng; chữ có dấu khác ("đen", "bông") vẫn không phải đèn; `rules.py` thêm "chập", "bị/đã cháy" vào triệu chứng đèn hỏng. Có khói/tóe lửa/khét kèm thì vẫn khẩn cấp.
 - Để P1: tín hiệu an toàn P1 (gas, kim tiêm, nước vào tủ điện, đèn nóng), luồng trùng đầy đủ (CR §8), tách ticket khi một phản ánh có hai việc, đếm trả sai phòng ban.

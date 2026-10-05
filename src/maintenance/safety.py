@@ -515,14 +515,29 @@ def _closed_prefix(lk: _Lookups, c0: int, p: int) -> bool:
     return reach[len(tokens)]
 
 
-def _proven_lamp(lk: _Lookups, match: re.Match[str]) -> bool:
-    """A1: every token of the lamp noun that has accented forms is written with one of them."""
+def _proven_lamp(lk: _Lookups, match: re.Match[str], unaccented_symptom: bool = False) -> bool:
+    """A1: every token of the lamp noun that has accented forms is written with one of them.
+
+    Plan 05b (user decision 2026-10-05: "đèn cháy / đèn chập = đèn hỏng"): when the symptom itself is typed without
+    accents ("bi chay", "bi chap"), a lamp token typed without accents ("den", "bong") is taken as the lamp; a token
+    written with OTHER accents ("đen" in "khói đen", "bông") still proves it is not a lamp. Location text with accents
+    around it does not matter (a resident may paste "Tòa SIM-A / Tầng 3 / Hành lang:" before an unaccented report)."""
     forms = lk.lexicon.benign_lamp_noun_forms
     for token in TOKEN.finditer(match.group(0)):
         accepted = forms.get(token.group(0))
-        if accepted and lk.ctx.original(match.start() + token.start(), match.start() + token.end()) not in accepted:
-            return False
+        if not accepted:
+            continue
+        written = lk.ctx.original(match.start() + token.start(), match.start() + token.end())
+        if written in accepted or (unaccented_symptom and _typed_without_accents(written)):
+            continue
+        return False
     return True
+
+
+def _typed_without_accents(text: str) -> bool:
+    """No Vietnamese diacritic anywhere (no combining mark after NFD, no "đ"): the writer never types accents."""
+    decomposed = unicodedata.normalize("NFD", text)
+    return "đ" not in text.lower() and not any(unicodedata.category(c) == "Mn" for c in decomposed)
 
 
 def _b01_ok(lk: _Lookups, c0: int, p: int, e: int) -> bool:
@@ -532,12 +547,13 @@ def _b01_ok(lk: _Lookups, c0: int, p: int, e: int) -> bool:
     if not _closed_prefix(lk, c0, p):
         return False
     norm = lk.ctx.norm
-    if any(_proven_lamp(lk, m) for m in lk.lamp_re.finditer(norm, c0, e)):
+    unaccented = _typed_without_accents(lk.ctx.original(p, e))  # plan 05b: "bi chay" typed without accents
+    if any(_proven_lamp(lk, m, unaccented) for m in lk.lamp_re.finditer(norm, c0, e)):
         return True
     after = e + 1 if e < len(norm) and norm[e] == " " else e
     following = lk.lamp_re.match(norm, after)
     # R6: the lamp noun right after the candidate counts only inside the same clause ("cháy, đèn tắt" is two clauses)
-    return following is not None and lk.ctx.clause(after)[0] == c0 and _proven_lamp(lk, following)
+    return following is not None and lk.ctx.clause(after)[0] == c0 and _proven_lamp(lk, following, unaccented)
 
 
 # ---------------------------------------------------------------- plan 05 H03: a place phrase is transparent (Q01)

@@ -1,10 +1,10 @@
 {
-  "current_version": "1.1.4",
+  "current_version": "1.1.5",
   "brain_template_version": "1.7.1",
   "system_status": "active",
   "last_verification": {
     "timestamp": "2026-10-05T00:00:00.000Z",
-    "grade": "fix/nhuy-agent-hardening (plan 05, v1.1.4): 2941 pytest pass (29 deselected), ruff clean, location variants 0 violations"
+    "grade": "fix/nhuy-lamp-burnt-short (v1.1.5): 2941 pytest pass, ruff clean, location variants 0 violations"
   },
   "active_plans_completed": 2,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
@@ -31,7 +31,7 @@
     "license": ""
   },
   "active_spec": "docs/CR-BPTN-03.md",
-  "working_branch": "fix/nhuy-agent-hardening",
+  "working_branch": "fix/nhuy-lamp-burnt-short",
   "code_baseline": "6265436 (develop)",
   "last_benchmark": {
     "pytest": "2941 passed, 29 deselected, 0 skip (pg: 1872 passed on develop 37a0fb3, 2026-10-04)",
@@ -47,7 +47,7 @@
     "agent_audit_2026_10_05": "independent E2E audit scripts rerun: 77 sentences 16->7 errors, group D 9->2; rest P1/spec"
   },
   "last_sync": "2026-10-02T13:09:52.176Z",
-  "next_step": "PR plan 05 -> develop; then P1: duplicate flow CR §8, split mixed reports, P1 safety signals",
+  "next_step": "PR lamp fix -> develop; resume P1 SPEC (planning/06, architect stopped by session limit)",
   "active_plan": {
     "id": "05_2026-10-04_agent-hardening",
     "status": "in_progress",
