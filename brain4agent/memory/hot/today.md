@@ -58,3 +58,4 @@
 - Ghi Q20 vào plan.md (commit trước thiếu dòng do Edit hụt).
 - Q21: Bước 0 trong worktree ra BRN-002 do CRLF (root exit 0) ⇒ worker ghi exit, đi tiếp; thêm handoff H03 (WP4).
 - Viết sẵn handoff H04 (WP3), H05 (WP5), H06 (WP6), H07–H10 (WP7–WP10), H11 (WP11 phần không khoá); container Postgres tạm p151-pgtest (127.0.0.1:55433) cho cổng --pg, mỗi worker một DB riêng.
+- DỪNG GIỮA CHỪNG 21:17 (SO bị buộc nộp report): CHƯA WP nào gộp/commit. Đang chạy nền trong worktree: WP0 lần 2 (.claude/worktrees/agent-a308b53f50055d95a), WP1 (agent-ab1fd4bc145dfa1ca), WP2 (agent-a3198662536f091e1, opus), WP4 (agent-a316ebd4bc3288a2d). Worktree agent-a99ca0507891d2397 = WP0 lần 1 bỏ (lệnh chạy script converter bị hệ thống quyền từ chối). Container p151-pgtest đang chạy (127.0.0.1:55433) — xoá khi xong. Tiếp: đo lại + gộp WP0/WP1/WP2/WP4 theo patch git diff --cached, rồi phóng H04 (WP3), H05 (WP5), H06, H07–H11.
