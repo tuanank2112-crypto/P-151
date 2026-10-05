@@ -64,3 +64,4 @@
 - Plan 06 WP1 gộp (hợp đồng: enum/model/catalog/TRANSITIONS 23+7/view/i18n + agent/schema.py, inputs.py): SO đo 2999 passed, --pg 3030 passed.
 - Plan 06 WP2 báo cáo: C6/C7 đỏ do mâu thuẫn SPEC (S-08 phải bắt 'nước tràn vào tủ điện'). SO quyết Q22: sửa SPEC-P03 C6 + REF gate_corpus chấp nhận S-08; duyệt dòng version + 17→18.
 - Plan 06 WP5 (hạ tầng engine: giao dịch nhiều ticket, mixin coordination/, hook) gộp: SO đo lại 3016 pass, --pg 3064 pass, ruff sạch. Q23 chốt câu hỏi mở R05.
+- Plan 06 WP3 (gói agent suy luận: agent/graph/client/prompt/validate/reconcile/baseline + bằng chứng luật) gộp: 3096 pass, --pg 3144. SO phát hiện lỗi B-01: "thay bóng đèn đã cháy" ra UNCLEAR (Q24) → giao WP2.

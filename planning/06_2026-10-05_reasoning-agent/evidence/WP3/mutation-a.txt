@@ -1,0 +1,27 @@
+.............FF....................................                      [100%]
+================================== FAILURES ===================================
+_____________ test_a_08_a_job_with_an_ungrounded_quote_is_dropped _____________
+
+    def test_a_08_a_job_with_an_ungrounded_quote_is_dropped():
+        record, _ = run(decision(**{"jobs.1.quote": "bóng đèn nổ tung"}))
+>       assert "jobs[1]" in record.rejected
+E       AssertionError: assert 'jobs[1]' in []
+E        +  where [] = AgentDecisionRecord(record_version='agent-record/1', source='AGENT', model='fake-model', fingerprint='fp-1', safety_fi...ation='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[0, 1], prompt_version='agent-prompt/1').rejected
+
+tests\test_maintenance\test_agent_unit.py:368: AssertionError
+_______ test_a_08b_all_jobs_dropped_while_in_scope_leaves_no_valid_job ________
+
+    def test_a_08b_all_jobs_dropped_while_in_scope_leaves_no_valid_job():
+        record, _ = run(decision(**{"jobs.0.quote": "rác khắp nơi", "jobs.1.quote": "bóng đèn nổ tung"}))
+>       assert record.valid_job_indexes == [] and {"jobs[0]", "jobs[1]"} <= set(record.rejected)
+E       assert ([0, 1] == []
+E         
+E         Left contains 2 more items, first extra item: 0
+E         Use -v to get more diff)
+
+tests\test_maintenance\test_agent_unit.py:375: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_08_a_job_with_an_ungrounded_quote_is_dropped
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_08b_all_jobs_dropped_while_in_scope_leaves_no_valid_job
+2 failed, 49 passed in 3.13s
+EXIT=1

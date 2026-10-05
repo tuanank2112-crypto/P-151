@@ -1,0 +1,22 @@
+.......................................F...........                      [100%]
+================================== FAILURES ===================================
+__________________ test_a_18_serious_disagreements_g1_g2_g3 ___________________
+
+    def test_a_18_serious_disagreements_g1_g2_g3():
+        g1_report = "Hành lang tầng 3 tòa S1 tối om, không thấy đường"
+        assert rule_view(new_input(g1_report), CATALOG, LEXICON).categories == frozenset()
+        reply = one_job_decision(
+            job(JOB_KT, quote="tối om, không thấy đường"), scope="IN_SCOPE", **{"location.quote": "Hành lang tầng 3 tòa S1"}
+        )
+        record, _ = run(reply, new_input(g1_report))
+>       assert serious(record) == ["category"] and record.valid_job_indexes == [0]
+E       AssertionError: assert ([] == ['category']
+E         
+E         Right contains one more item: 'category'
+E         Use -v to get more diff)
+
+tests\test_maintenance\test_agent_unit.py:588: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_18_serious_disagreements_g1_g2_g3
+1 failed, 50 passed in 3.07s
+EXIT=1

@@ -1,0 +1,29 @@
+......F............................................                      [100%]
+================================== FAILURES ===================================
+___________ test_a_04_an_ungrounded_safety_quote_is_at_most_unclear ___________
+
+    def test_a_04_an_ungrounded_safety_quote_is_at_most_unclear():
+        report = "Hành lang tầng 3 tòa S1 nhiều rác"
+        reply = one_job_decision(
+            job(JOB_VS, quote="nhiều rác"),
+            scope="IN_SCOPE",
+            safety={
+                "risk_level": "EMERGENCY",
+                "signals": [{"signal_id": "S-02", "status": "PRESENT", "quote": "tia lửa bay"}],
+                "reason": "Có tia lửa",
+            },
+        )
+        record, data = run(reply, new_input(report))
+        merged = reconcile.safety_for(record, data.safety_text, LEXICON, "fake-model")
+        llm = [s for s in merged.signals if s.detected_by.value == "LLM"]
+>       assert [(s.signal_id, s.status.value) for s in llm] == [("S-02", "UNCLEAR")]
+E       AssertionError: assert [('S-02', 'PRESENT')] == [('S-02', 'UNCLEAR')]
+E         
+E         At index 0 diff: ('S-02', 'PRESENT') != ('S-02', 'UNCLEAR')
+E         Use -v to get more diff
+
+tests\test_maintenance\test_agent_unit.py:264: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_04_an_ungrounded_safety_quote_is_at_most_unclear
+1 failed, 50 passed in 3.08s
+EXIT=1
