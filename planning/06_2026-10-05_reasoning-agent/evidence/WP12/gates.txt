@@ -1,0 +1,20 @@
+$ PYTHONPATH=. PYTHONUTF8=1 python planning/06_2026-10-05_reasoning-agent/specs/REF-p1-safety-meter.py   # G4
+MUST_CATCH total=47 failures=0
+MUST_NOT_RAISE total=21 failures=0
+P1_LOCATION_VARIANTS total=980 violations=0
+CORPUS changed_by_P1=259 not_lamp_fall=0
+GATES_FAILED=0
+EXIT=0
+$ PYTHONPATH=. PYTHONUTF8=1 python planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py --selftest   # G5
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+ungrounded_detected=['jobs[1].quote']
+SELFTEST_FAILURES=0
+EXIT=0
+$ PYTHONPATH=. PYTHONUTF8=1 python planning/06_2026-10-05_reasoning-agent/specs/REF-split-verdict.py --variants   # G5
+  OK  36/36 (want 36) | Bóng tuýp chết, rác thì chất đống
+SINGLE_JOB_VARIANTS_SPLIT=0
+VARIANT_FAILURES=0
+EXIT=0
+$ grep -rc 'NotImplementedError("plan 06' src/maintenance (sum)   # G-STUB
+TOTAL=0
+EXIT=0

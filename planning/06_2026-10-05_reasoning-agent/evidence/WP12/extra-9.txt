@@ -1,0 +1,10 @@
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/extra_resident_leak.py
+SIM-TKT-0001 ROUTED/None staff-doc-has-marker=True resident-view-leaks=[]
+SIM-TKT-0002 ROUTED/None staff-doc-has-marker=True resident-view-leaks=[]
+SIM-TKT-0003 VERIFYING/PENDING_REVIEW staff-doc-has-marker=True resident-view-leaks=[]
+SIM-TKT-0004 VERIFYING/OUT_OF_SCOPE staff-doc-has-marker=True resident-view-leaks=[]
+SIM-TKT-0005 VERIFYING/SAFETY_REVIEW_REQUIRED staff-doc-has-marker=True resident-view-leaks=[]
+SIM-TKT-0006 NEED_INFO/MISSING_INFO staff-doc-has-marker=True resident-view-leaks=[]
+SIM-TKT-0007 ROUTED/None staff-doc-has-marker=True resident-view-leaks=[]
+RESULT tickets=7 resident_views_with_leak=0
+EXIT=0

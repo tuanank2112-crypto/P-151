@@ -70,3 +70,4 @@
 - Plan 06 WP6 (tích hợp Agent vào engine: agent=, build_engine, tính ngoài khoá, vân tay, áp từng bước, run_jobs hai pha) gộp: 3248 pass, --pg 3296. Q26.
 - Plan 06 wave 4 gộp: WP7 gộp trùng, WP8 Agent tự tách, WP9 sai phòng ban, WP10 hàng xóm khẩn cấp + follow-up. Sửa 2 test ghim stub (người dùng cho phép). 3338 pass, --pg 3413. Q27. Tắt container zalo-crm/lenqclaw theo yêu cầu người dùng.
 - Plan 06: viết H12 thẩm định đối kháng WP12, phóng auditor cô lập.
+- Plan 06 WP12 thẩm định: 🔁 SỬA F1 (bổ sung Bậc 1 khi thiếu vị trí không chạy lại 2b — SO tái hiện 6/6) + 10 GHI. Q28: SPEC-P08, H13 (WP14 🔴) + H14 (WP15 🟠).

@@ -50,6 +50,7 @@ Mốc = thời điểm architect ghi nhận, lấy bằng `date "+%Y-%m-%d %H:%M
 | Q25 | 2026-10-05 22:25:36 +0700 | SO ghi cho WP12 soi đối kháng: "xin cứu, nhà cháy" / "giúp tôi với, cháy rồi" ra UNCLEAR (có từ trước WP2, không do Q24) — xét có nên là EMERGENCY ở tầng luật hay để Agent nâng; tiền tố B-01 mới `nho/xin/giup` đứng riêng — tìm câu nguy hiểm mà tiền tố này làm hạ | SO đo `safety.assess` | — |
 | Q26 | 2026-10-05 22:29:36 +0700 | WP6 câu hỏi mở (SO quyết, chấp nhận cả 4): (1) Agent đề xuất job nhưng engine loại hết ⇒ coi như không có quyết định ở bước 2/3, luật quyết (I-20); (2) ghi chú MINOR bước 4 nằm trong audit `CREATE_PROPOSAL` field `duplicate_check`, reason mở đầu "MINOR ·"; (3) helper chỉ đọc `_gate(ticket_id, check)` cho `_with_decision`; (4) A-20/A-13/A-07 dùng câu có vị trí (câu không vị trí là OUT_OF_SCOPE ở cả hai đường — đúng Q05). Bổ sung SPEC-P02 ở WP13 | Báo cáo R06 | — |
 | Q27 | 2026-10-05 23:08:37 +0700 | Wave 4 câu hỏi mở (SO quyết): (1) test ghim stub WP5 `test_hook_stubs_have_their_stage_one_bodies` thay bằng bất biến `test_no_plan_06_stub_is_left` (đỏ trên f1f3725: 8 stub); A-27 nửa đầu khẳng định tách thật (`split_children`/`split_from`), nửa sau ép hook từ chối ⇒ CATEGORY_UNCLEAR — người dùng cho phép sửa 2 test; (2) WP8 câu chữ Q23(3): gieo proposal `AGENT_SPLIT` + `PB-COM-R-SPLIT-01` trước bind — chấp nhận; (3) WP8 đổi 2 câu ví dụ `test_acceptance.py` "và"→"vì" (SPEC-P05 §8 cho phép, giữ assert) — chấp nhận; (4) WP7: chạy lại pipeline từ bước ≤4 trên ticket từng DUPLICATE có thể đếm +1 lần nữa (chưa có đường nào gây ra) ⇒ WP12 soi; (5) WP10: `create_follow_up` không retry khi vân tay lệch (luật quyết, như `receive`) — chấp nhận | R07–R10 | — |
+| Q28 | 2026-10-05 23:46:22 +0700 | R12 (SO quyết, cổng 🔴): F1 sửa TRONG hồ sơ 06 (đường Agent `add_resident_info` dựa vào nó) — bổ sung của cư dân luôn chạy lại 2b, có dấu hiệu ⇒ chạy pipeline từ bước 2; F3 vị trí Agent không trích dẫn ⇒ loại (sửa P01 §3.2); F8 điều kiện 6 "hai nơi" cho mọi đường tách (sửa P05 §3); F9 follow-up chép khoá vị trí (sửa P07 §6); F4–F7 theo bất biến P04 §2.1; F10 vai sai ⇒ 403 + ACTION_DENIED; Q25/F11 kêu cứu + cháy ⇒ Bậc 1 ở tầng luật (chỉ nâng, đúng "AI không tự hạ; suy ra khẩn cấp thì gửi BQL"), F2 không hạ câu Bậc 1 vì câu đèn đứng trước — cả hai CHỈ bằng dữ liệu (V-13), thiếu cơ chế ⇒ dừng hỏi. Thiết kế: SPEC-P08; sau WP14/WP15 thẩm định lại bằng agent mới | R12 + SO tái hiện F1 | — |
 
 ### Quyết định bị thay thế
 | Mốc | Quyết định cũ | Thay bằng |
@@ -75,6 +76,8 @@ Mốc = thời điểm architect ghi nhận, lấy bằng `date "+%Y-%m-%d %H:%M
 | WP10 | Khẩn cấp lân cận + ticket tiếp theo | 🟠 | 4 | WP6 | SPEC-P07 |
 | WP11 | Eval harness + eval DeepSeek thật + chỉnh prompt | 🔴 | 4–5 | WP6, khoá (Q17) | SPEC-P01 §4.4, TESTING §6 |
 | WP12 | Thẩm định đối kháng cô lập (agent khác, không thừa kế ngữ cảnh) | 🔴 | 5 | WP7–WP11 | TESTING §8 |
+| WP14 | Sửa sau R12 phần an toàn/quyền: F1 bổ sung luôn chạy lại 2b, F3 vị trí Agent phải trích dẫn, F10 vai sai ⇒ 403, F2/F11 từ vựng (kêu cứu + cháy) | 🔴 | 5b | WP12 | SPEC-P08 §1–§4 |
+| WP15 | Sửa sau R12 phần phối hợp: F4–F7 số đếm trùng/hoàn tác tách, F8 không tách khi hai nơi, F9 follow-up giữ khoá vị trí | 🟠 | 5b | WP12 | SPEC-P08 §5–§7 |
 | WP13 | Đồng bộ docs/não (Ma Trận 6 Điểm + `project-intro`, `-data-architecture` vì thêm LangGraph trên đường chạy) + version | 🟢 | 6 | WP12 ✅ | OPERATIONS §2 |
 Song song: Wave 1 = WP2 ∥ WP3 ∥ WP4 (WP1 trước WP3); Wave 4 = WP7 ∥ WP8 ∥ WP9 ∥ WP10 ∥ WP11 — mỗi WP một file mixin/test riêng (OPERATIONS §2).
 
@@ -84,7 +87,7 @@ Song song: Wave 1 = WP2 ∥ WP3 ∥ WP4 (WP1 trước WP3); Wave 4 = WP7 ∥ WP8
 - [ ] WP0 (bước a ✅ fixture; bước b eval chờ quyền) · [x] WP1 (SO đo lại 2026-10-05 21:32:46 +0700: 2999 passed, --pg 3030 passed, ruff sạch, selftest 0) · [x] WP2 (SO đo lại 2026-10-05 22:25:36 +0700: lexicon p1d, 3226 passed/48 deselected, --pg 3274 passed, ruff sạch, meter GATES_FAILED=0, split variants 0; SO tự phá 10 câu dùng tiền tố mới nhờ/xin/giúp/thay — không câu nguy hiểm nào bị hạ) · [x] WP3 (SO đo lại 2026-10-05 22:00:49 +0700: 3096 passed/48 deselected, --pg 3144 passed, ruff sạch, REF contract selftest 0, REF split variants 0) · [x] WP4 (SO đo lại 2026-10-05 21:20:52 +0700: 2975 passed, --pg 34 passed, ruff sạch)
 - [x] WP5 (SO đo lại 2026-10-05 21:53:14 +0700: 3016 passed/48 deselected, --pg 3064 passed, ruff sạch; còn 8 stub cho Wave 4) · [x] WP6 (SO đo lại 2026-10-05 22:29:36 +0700: 3248 passed/48 deselected, --pg 3296 passed, ruff sạch; đột biến a/b/c đỏ A-20/A-07/A-25)
 - [x] WP7 · [x] WP8 · [x] WP9 · [x] WP10 (SO đo lại 2026-10-05 23:08:37 +0700: 3338 passed/75 deselected, --pg 3413 passed, ruff sạch, meter GATES_FAILED=0, split variants 0; mỗi gói 3 đột biến đều đỏ) · [ ] WP11
-- [ ] WP12 thẩm định ✅
+- [x] WP12 thẩm định lần 1 2026-10-05 23:46:22 +0700: 🔁 SỬA F1 (SO tái hiện: 6/6 bổ sung Bậc 1 để NEED_INFO risk=NONE) + 10 GHI ⇒ WP14/WP15 · [ ] WP14 · [ ] WP15 · [ ] WP12 thẩm định lại ✅
 - [ ] Exit Gates local ✅ (TESTING §7) · [ ] `--pg` ✅ · [ ] live ✅ · [ ] server ✅
 - [ ] WP13 đồng bộ não + `changelog.md` + version · [ ] Sign-off `✅ ĐÃ HOÀN THÀNH` + mốc giây
 
@@ -100,6 +103,7 @@ Song song: Wave 1 = WP2 ∥ WP3 ∥ WP4 (WP1 trước WP3); Wave 4 = WP7 ∥ WP8
 | [`specs/SPEC-P05-split-two-jobs.md`](specs/SPEC-P05-split-two-jobs.md) | Tự tách hai việc, bằng chứng luật, hoàn tác |
 | [`specs/SPEC-P06-department.md`](specs/SPEC-P06-department.md) | T15 đếm, T16, T17, E02, snapshot |
 | [`specs/SPEC-P07-neighbors-follow-up.md`](specs/SPEC-P07-neighbors-follow-up.md) | Khẩn cấp lân cận (chờ duyệt), ticket tiếp theo |
+| [`specs/SPEC-P08-audit-fixes.md`](specs/SPEC-P08-audit-fixes.md) | Sửa sau thẩm định R12 (F1–F11), sửa P01 §3.2, P05 §3, P07 §6 |
 | [`specs/OPERATIONS.md`](specs/OPERATIONS.md) | Môi trường, wave/ranh giới file, DeepSeek, triển khai JSONB, rollback |
 | [`specs/TESTING-ACCEPTANCE.md`](specs/TESTING-ACCEPTANCE.md) | Client giả, ma trận test, câu thật, test phải đỏ, eval thật, Exit Gates |
 | `specs/REF-agent-contract.py`, `REF-split-verdict.py`, `REF-p1-safety-meter.py` | Máy đo/tham chiếu chạy được (lệnh ở OPERATIONS §1) |
