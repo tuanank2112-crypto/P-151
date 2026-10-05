@@ -213,7 +213,10 @@ def gate_corpus(lex, base) -> int:
             low = text.lower()
             lamp_fall = any(w in low for w in LAMP_NOUNS) and any(w in low for w in LAMP_FALL_WORDS)
             s11 = any(s.signal_id == "S-11" and s.status.value == "PRESENT" for s in after.signals)
-            if not (lamp_fall and s11):
+            # Q22 (SO, 2026-10-05): water reaching electrical equipment is meant to rise (S-08 MUST_CATCH; the user
+            # flagged "nước tràn vào tủ điện" being routed to cleaning) — such a corpus change is intended, not drift
+            s08 = any(s.signal_id == "S-08" and s.status.value == "PRESENT" for s in after.signals)
+            if not ((lamp_fall and s11) or s08):
                 bad += 1
                 if bad <= 15:
                     print(f"  CORPUS FAIL {before}->{after.risk_level.value} | {text}")

@@ -80,7 +80,7 @@ PHẢI giữ xanh không sửa (bật thô làm đỏ): `test_labelled_case[SC-1
 | C3 | Ca nhãn P0 + vàng + CR03 | `pytest -q tests/test_maintenance/test_safety.py tests/test_maintenance/test_safety_p0.py tests/test_maintenance/test_cr03_targets.py` | 0 fail |
 | C4 | Ca P1 | `pytest -q tests/test_maintenance/test_safety_p1.py` | 0 fail; ≥ 68 ca + ca engine |
 | C5 | Biến thể vị trí (P0 + P1) | `pytest -q tests/test_maintenance/test_safety_metamorphic.py` | 0 vi phạm |
-| C6 | Kho phân loại chỉ đổi qua S-11 "đèn rơi" | test trong `test_safety_p1.py` (logic như `gate_corpus` của meter) | mọi câu đổi mức đều có S-11 `PRESENT` + danh từ đèn + rơi/rớt |
+| C6 | Kho phân loại chỉ đổi qua S-11 "đèn rơi" hoặc S-08 "nước vào thiết bị điện" (Q22) | test trong `test_safety_p1.py` (logic như `gate_corpus` của meter) | mọi câu đổi mức đều có (S-11 `PRESENT` + danh từ đèn + rơi/rớt) HOẶC S-08 `PRESENT` (Q22) |
 | C7 | Meter tổng | `PYTHONPATH=. PYTHONUTF8=1 python planning/06_2026-10-05_reasoning-agent/specs/REF-p1-safety-meter.py; echo "EXIT=$?"` | `GATES_FAILED=0`, `EXIT=0` |
 | C8 | Hiệu năng | `test_assess_is_linear_on_a_24kb_text`, `..._adversarial_24kb_texts` | < 1 s như cũ |
 

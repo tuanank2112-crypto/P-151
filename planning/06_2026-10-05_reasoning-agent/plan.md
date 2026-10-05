@@ -44,6 +44,7 @@ Mốc = thời điểm architect ghi nhận, lấy bằng `date "+%Y-%m-%d %H:%M
 | Q09 | Dùng LangGraph cho Agent? | ĐỀ XUẤT CÓ — đồ thị tối giản `src/maintenance/agent/graph.py`, một lượt gọi mô hình (lý do SPEC-P01 §8) | KHÔNG ⇒ bỏ `graph.py`, gọi tuần tự các hàm nút (không đổi hợp đồng khác) |
 | Q11 (xác nhận) | Xác nhận thêm `S-00` (mở rộng bảng CR §6.2) | có | bỏ ⇒ Agent chỉ nâng mức bằng S-01…S-14 |
 | Q17 | Cấp khoá DeepSeek + ngân sách token cho eval thật (G-LIVE) | chưa có ⇒ G-LIVE ⬜ | — |
+| Q22 | 2026-10-05 21:48:01 +0700 | WP2 câu hỏi mở (SO quyết, cổng 🔴): (1) C6/`gate_corpus` chấp nhận câu kho phân loại đổi mức khi có S-08 `PRESENT` — "nước tràn vào tủ điện" phải là khẩn cấp (người dùng đã nêu), mâu thuẫn SPEC cũ, sửa SPEC-P03 §6 C6 + REF; (2) duyệt dòng `lexicon_version` trong `test_safety.py` và `17 → 18` khi thêm S-00 (bổ sung SPEC-P03 §5); (3) FP-03/FP-06 so với engine tắt P1 thay vì ép ROUTED; (4) homographs `ga/mau/roi/do`, `ambiguous_exclusions: dien giat`, "Đến trưa hành lang quá nóng" ⇒ WP12 soi | Báo cáo R02 | — |
 
 ### Quyết định bị thay thế
 | Mốc | Quyết định cũ | Thay bằng |
