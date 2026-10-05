@@ -4,7 +4,7 @@
 # Pattern là cụm thường (khớp nguyên cụm, có ranh giới từ) trừ khi bắt đầu bằng "re:" (regex Python thô).
 # Dạng CÓ dấu (homographs, homograph_intended, tier2_net_roots, benign_lamp_noun_forms) = NFC chữ thường, bỏ dấu ra đúng khoá.
 # Bẫy YAML 1.1: token trần no/yes/on/off/y/n/true/false bị đọc thành bool => phải đặt trong nháy.
-lexicon_version: "2026-10-02.p0c"
+lexicon_version: "2026-10-04.p0d"  # plan 04 WP1 (2 rounds + adversarial audit): S-09/S-03/S-04/S-05 phrases, false alarms "bị ngắt"/"khối"/"bật lửa", priority tròn/hỏi
 synthetic: true
 
 safety:
@@ -54,7 +54,7 @@ safety:
     khong biet co phai: [không biết có phải]
     khong ro co phai: [không rõ có phải]
     duong nhu: [dường như]
-  hedge_fillers: [co, thay, bi, la, nhu, dang]
+  hedge_fillers: [co, thay, bi, la, nhu, dang, tieng]   # plan 04 vòng 3: "nghe như có tiếng xẹt" (CR §6.3 T2-01)
   resolved_markers:          # T2-02: sự việc đã xảy ra và đã hết (đứng SAU tín hiệu, sau nó chỉ còn tiểu từ)
     - gio het roi
     - het roi
@@ -81,6 +81,7 @@ safety:
   b01_prefix_words: [sanh thang may, sanh chinh, sanh cu dan, sanh, hanh lang, cau thang bo, cau thang, thang bo, thang may, ham xe, ham,
                      phong rac, phong, khu vuc, khu, tang, toa, lau, block, sim, o, tai, cua, tren, duoi, trong, ngoai, truoc,
                      he thong, loi di, loi thoat hiem, nha xe,
+                     den hanh lang gan can, bong den cho, xin bao bong den, xin bao den,   # plan 04 S2 (vòng 2): chỉ trong cụm có danh từ đèn; "Căn hộ 1205 cháy, đèn ..." không phải B-01
                      bi, da, lai, cung, vua, moi, hay, thi, cai, cac, may, mot, hai, nhung, deu, dang]
   b01_code_token_regex: "[a-z]?\\d+[a-z]?|[a-z]"
   b01_max_prefix_tokens: 20
@@ -92,6 +93,12 @@ safety:
     - giat dien
     - bi giat
     - giat tay
+    - bi te                 # plan 04 S1: té ngã chưa rõ thương tích -> Bậc 2 (tê/tè bị loại theo homographs.te)
+    - te nga                # (không thêm "bi nga": "bị ngã xe đạp ... không sao" làm b_fp chạm trần 5)
+    - bi dut tay
+    - bi dut chan
+    - "re:\\bkhoi (?:rat |qua |that )?nhieu\\b"   # plan 04 vòng 2: "khói nhiều" -> Bậc 2 (thuốc lá, nhang cũng nói vậy)
+    - "re:\\bchay den (?:ca|het|thui|xi|tran|tuong|sam)\\b"   # plan 04 S1: "cháy đen cả trần" là dấu cháy thật, không phải B-01
     - "re:\\bgiat\\b"   # H02 (PR #6 Truong, gold "Giat" -> UNCLEAR): accented "giat" alone; "giat" (laundry) dropped by homographs
   # ---- R7: đồng tự theo token CÓ dấu, theo từng pattern
   homographs:
@@ -104,12 +111,18 @@ safety:
     giat: [giặt]
     "no": [nó, nò, nỏ, nõ, nọ]                              # Q31 vocabulary: "nổ" khác "nó" (PHẢI có nháy: YAML 1.1)
     bong: [bong, bóng, bòng, bõng, bọng, bông, bống, bồng, bổng, bỗng, bộng]   # Q31 vocabulary: "bỏng" (burn) khác các dạng khác
+    bat: [bật]                                               # plan 04 S2: "bật lửa" (cái quẹt) khác "bắt lửa"
+    sang: [sáng]                                             # plan 04 S2: "cháy sáng" (đèn sáng) khác "cháy sang" (lan sang)
+    te: [tê, tế, tề, tể, tệ, tè, tẻ]                         # plan 04 S1: "bị tê/tè" khác "bị té"
+    nam: [năm, nấm, nắm, nậm, nạm, nám]                      # plan 04 vòng 2: "nằm" phải đúng dấu ("cả năm nay")
   homograph_confirmers:      # Q31.C: từ đồng hiện trong cùng mệnh đề giữ lại match đồng tự (gõ sai dấu vẫn là tín hiệu)
     khoi: [boc, bay, len, toa, mui, mu, um]
     lua: [boc, len, toe, bung, hop dien, tu dien, o cam]
-    ngat: [nguoi, bi, xiu, nga, bat]
+    ngat: [co nguoi, nguoi bi, xiu, nga, bat, cu ba, cu ong, ba cu, ong cu, em be, tre em]                            # plan 04 S2: bỏ "bi" ("bị ngắt" là cắt điện/mạng)
     ho: [ra, day, lo, tran, thong]
     chay: [lua, khoi, khet, boc, mau]
+    bat: [o cam, hop dien, tu dien, cong tac, cau dao, cam sac, day dien, xet]   # plan 04 vòng 2: "ổ cắm bật lửa" vẫn là S-05
+    sang: [ruc, lua, khoi, phong rac, thung rac]               # plan 04 vòng 2: "cháy sáng rực" vẫn là S-05
   homograph_intended:                                      # judge: 5 mục đầu; A4: pattern chắc nghĩa (gõ sai dấu không làm mất match)
     chay mau: {chay: [chảy]}
     nga khong day: {day: [dậy]}
@@ -123,19 +136,34 @@ safety:
     ban tia lua: {lua: [lựa, lúa, lừa, lụa]}
     phat tia lua: {lua: [lựa, lúa, lừa, lụa]}
     ngat xiu: {ngat: [ngắt]}
-    co khoi: {khoi: [khối, khỏi, khơi]}                      # Q31.C
+    "re:(?:^|(?<=[.;!?] )|(?<=[.;!?]))(?:(?!\\b(?:thuoc|nhang|huong|vang ma|nuong|bep|nau|khong|ko|chua|chang|hok|hinh nhu|co ve|nghe nhu|nghi la|nghi co|co le|giong nhu|cam giac nhu|co the la|duong nhu)\\b)[^.;!?])*?\\bkhoi (?:rat |qua |that |la )?nhieu\\b(?![^.;!?]*\\b(?:thuoc|nhang|huong|vang ma|nuong|bep)\\b)": {chay: [chảy, chạy], ngat: [ngắt], ho: [hộ, hồ, họ, hổ, hố, hô, hò], lua: [lựa, lúa, lừa, lụa], day: [dãy, đầy, dạy, dày, đây, đẩy, dậy, dấy, đày], giat: [giặt], "no": [nó, nò, nỏ, nõ, nọ], bong: [bong, bóng, bòng, bõng, bọng, bông, bống, bồng, bổng, bỗng, bộng], bat: [bật], sang: [sáng], te: [tê, tế, tề, tể, tệ, tè, tẻ], nam: [năm, nấm, nắm, nậm, nạm, nám]}   # plan 04 vòng 3: span từ đầu câu, chỉ chữ khói quyết
+    co khoi: {khoi: [khỏi, khơi]}                            # plan 04 vòng 2: "có khỏi đen" (gõ sai) giữ; "có khối rác" thì không
     boc khoi: {khoi: [khối, khỏi, khơi]}
     khoi boc: {khoi: [khối, khỏi, khơi]}
     lua boc: {lua: [lựa, lúa, lừa, lụa]}
-    "re:\\bbi ngat\\b(?! (dien|cau dao|nguon|mach|may|quang|ket noi|dong|nuoc|den|wifi|mang|he thong|nguong|ngay))": {ngat: [ngắt]}
+    # plan 04 S2: bỏ intended của "bi ngat" ("cầu dao bị ngắt"); "có người bị ngắt" vẫn giữ nhờ confirmers.ngat (nguoi)
     ngat di: {ngat: [ngắt]}
     day dien ho: {ho: [hộ, hồ, họ, hổ, hố, hô, hò]}
     day dien ho ra: {ho: [hộ, hồ, họ, hổ, hố, hô, hò]}
     bi bong: {bong: [bỏng]}                                  # Q31 vocabulary: không có trong homographs.bong => giữ
+    "re:\\bday (?:dien|cap dien)(?! thoai)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b)\\w+){0,4} (?:troc|tuot|bong)(?: het| ca)? vo\\b": {chay: [chảy, chạy], ngat: [ngắt], ho: [hộ, hồ, họ, hổ, hố, hô, hò], khoi: [khối, khỏi, khơi], lua: [lựa, lúa, lừa, lụa], day: [dãy, đầy, dạy, dày, đây, đẩy, dậy, dấy, đày], giat: [giặt], "no": [nó, nò, nỏ, nõ, nọ], bong: [bong, bóng, bòng, bõng, bọng, bông, bống, bồng, bổng, bỗng, bộng], bat: [bật], sang: [sáng], te: [tê, tế, tề, tể, tệ, tè, tẻ], nam: [năm, nấm, nắm, nậm, nạm, nám]}   # plan 04: span dài, chỉ chữ khoá quyết
+    "re:\\bday (?:dien|cap dien)(?! thoai)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b)\\w+){0,4} (?:lung lang|tong teng|roi xuong|lo lung)\\b": {chay: [chảy, chạy], ngat: [ngắt], ho: [hộ, hồ, họ, hổ, hố, hô, hò], khoi: [khối, khỏi, khơi], lua: [lựa, lúa, lừa, lụa], day: [dãy, đầy, dạy, dày, đây, đẩy, dậy, dấy, đày], giat: [giặt], "no": [nó, nò, nỏ, nõ, nọ], bong: [bong, bóng, bòng, bõng, bọng, bông, bống, bồng, bổng, bỗng, bộng], bat: [bật], sang: [sáng], te: [tê, tế, tề, tể, tệ, tè, tẻ], nam: [năm, nấm, nắm, nậm, nạm, nám]}
+    "re:\\bthang may(?: \\w+){0,6} ket\\b(?: \\w+){0,10} (?:(?<!khong )(?<!ko )(?<!chua )(?<!chang )(?:co|con)(?: \\w+){0,2} (?:nguoi|khach|tre em|tre con|em be|be|chau|bac|cu|me|ba|ong|anh|chi|con|ca nha|me con)\\b|(?<!co )(?<!thay )(?:nguoi|khach|tre em|tre con|em be|be|chau|bac|cu|me|ba|ong|anh|chi|con|ca nha|me con)(?: \\w+){0,2} (?:o trong|ben trong|trong do|dung trong)\\b|(?:ben trong|o trong|trong do) co\\b)": {chay: [chảy, chạy], ngat: [ngắt], ho: [hộ, hồ, họ, hổ, hố, hô, hò], khoi: [khối, khỏi, khơi], lua: [lựa, lúa, lừa, lụa], day: [dãy, đầy, dạy, dày, đây, đẩy, dậy, dấy, đày], giat: [giặt], "no": [nó, nò, nỏ, nõ, nọ], bong: [bong, bóng, bòng, bõng, bọng, bông, bống, bồng, bổng, bỗng, bộng], bat: [bật], sang: [sáng], te: [tê, tế, tề, tể, tệ, tè, tẻ], nam: [năm, nấm, nắm, nậm, nạm, nám]}
+    "re:\\b(?:nga|te)\\b(?: \\w+){0,6} nam(?: \\w+){0,3} (?:im|khong nhuc nhich|khong cu dong|bat dong|bat tinh)\\b": {chay: [chảy, chạy], ngat: [ngắt], ho: [hộ, hồ, họ, hổ, hố, hô, hò], khoi: [khối, khỏi, khơi], lua: [lựa, lúa, lừa, lụa], day: [dãy, đầy, dạy, dày, đây, đẩy, dậy, dấy, đày], giat: [giặt], "no": [nó, nò, nỏ, nõ, nọ], bong: [bong, bóng, bòng, bõng, bọng, bông, bống, bồng, bổng, bỗng, bộng], bat: [bật], sang: [sáng]}
+    "re:\\b(?:nguoi|cu ba|ba cu|cu ong|ong cu|em be|be|chau|tre em)(?: \\w+){0,3} nam(?: \\w+){0,3} (?:im|khong nhuc nhich|khong cu dong)\\b": {chay: [chảy, chạy], ngat: [ngắt], ho: [hộ, hồ, họ, hổ, hố, hô, hò], khoi: [khối, khỏi, khơi], lua: [lựa, lúa, lừa, lụa], day: [dãy, đầy, dạy, dày, đây, đẩy, dậy, dấy, đày], giat: [giặt], "no": [nó, nò, nỏ, nõ, nọ], bong: [bong, bóng, bòng, bõng, bọng, bông, bống, bồng, bổng, bỗng, bộng], bat: [bật], sang: [sáng], te: [tê, tế, tề, tể, tệ, tè, tẻ]}
+    "re:\\b(?:hop dien|tu dien|o cam|cong tac|cau dao|day dien|may bien ap|phong rac|thung rac|can ho|nha|xe|tang ham|ham xe)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b)\\w+){0,3} (?:dang |bi )?boc hoa\\b(?! don)": {chay: [chảy, chạy], ngat: [ngắt], ho: [hộ, hồ, họ, hổ, hố, hô, hò], khoi: [khối, khỏi, khơi], lua: [lựa, lúa, lừa, lụa], day: [dãy, đầy, dạy, dày, đây, đẩy, dậy, dấy, đày], giat: [giặt], "no": [nó, nò, nỏ, nõ, nọ], bong: [bong, bóng, bòng, bõng, bọng, bông, bống, bồng, bổng, bỗng, bộng], bat: [bật], sang: [sáng], te: [tê, tế, tề, tể, tệ, tè, tẻ], nam: [năm, nấm, nắm, nậm, nạm, nám]}
+    "re:\\bkhoi(?: (?!khong\\b|ko\\b|chua\\b|chang\\b)\\w+){0,8} khong tho duoc\\b": {chay: [chảy, chạy], ngat: [ngắt], ho: [hộ, hồ, họ, hổ, hố, hô, hò], lua: [lựa, lúa, lừa, lụa], day: [dãy, đầy, dạy, dày, đây, đẩy, dậy, dấy, đày], giat: [giặt], "no": [nó, nò, nỏ, nõ, nọ], bong: [bong, bóng, bòng, bõng, bọng, bông, bống, bồng, bổng, bỗng, bộng], bat: [bật], sang: [sáng], te: [tê, tế, tề, tể, tệ, tè, tẻ], nam: [năm, nấm, nắm, nậm, nạm, nám]}
+    "re:\\bchay(?: rat| qua| nhieu| that){1,3} mau\\b": {chay: [chảy]}
+    te dien: {te: [tê]}                                      # plan 04: "tê điện" là tín hiệu S-06 (P1)
   # ---- R9: lưới Bậc 2 cho "khói/lửa/máu/bất động" (dạng có dấu) nằm ngoài mọi span
   tier2_net_roots: {khoi: [khói], lua: [lửa], mau: [máu], bat dong: [bất động]}
   ambiguous_exclusions:      # từ đồng tự không phải rủi ro (chảy nước, ...): bỏ qua, không ghi
     - giat nuoc          # H02/SO Q10: bồn cầu/xả nước ("giật nước") không phải điện giật
+    - bi giat minh       # plan 04 S2: "giật mình" (hết hồn) không phải điện giật
+    - giat minh
+    - bi te nuoc         # plan 04 vòng 2: "té nước" (bắn nước) không phải té ngã
+    - te nuoc
+    - bat lua            # plan 04 S2: "bật lửa" (cái quẹt) không vào lưới R9; "bắt lửa" vẫn là S-05 (homographs.bat)
     - nuoc chay
     - chay nuoc
     - chay ra
@@ -207,15 +235,21 @@ safety:
     - {signal_id: S-03, name: exposed_wire, tier: 1, phase: P0, scope: [KY_THUAT],
        patterns: [day dien ho, day tran, day dut loi ra, lo day, ho day, day dien bi dut, day dien loi ra, day dien dut, loi day dien, day ho,
                   day dien bi ho, day bi ho, ho dien, dien ho, day dien ho ra, day dien tran, day dien thong, day dien bi loi, day dien loi,
-                  day dien bi tran, day dien bi tran ra]}
+                  day dien bi tran, day dien bi tran ra,
+                  "re:\\bday (?:dien|cap dien)(?! thoai)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b)\\w+){0,4} (?:troc|tuot|bong)(?: het| ca)? vo\\b",   # plan 04 S1 + vòng 2
+                  "re:\\bday (?:dien|cap dien)(?! thoai)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b)\\w+){0,4} (?:lung lang|tong teng|roi xuong|lo lung)\\b",
+                  loi loi dong, lo loi dong]}
     - {signal_id: S-04, name: smoke, tier: 1, phase: P0, scope: [COMMON],
-       patterns: [co khoi, boc khoi, khoi bay, khoi den, khoi trang, kem khoi, xi khoi, toa khoi, nhieu khoi, thay khoi, khoi boc, khoi bay ra, mui khoi,
-                  khoi mu, mu khoi, khoi dac, ngap khoi, khoi cuon, day khoi, con khoi, khoi um, khoi lan, toan khoi, khoi nghi ngut]}
+       patterns: [co khoi, boc khoi, khoi bay, khoi den, khoi trang, kem khoi, xi khoi, toa khoi, "re:\\bnhieu khoi\\b(?! (?:thuoc|nhang|huong|vang ma|nuong|bep)\\b)", thay khoi, khoi boc, khoi bay ra, mui khoi,
+                  khoi mu, mu khoi, khoi dac, ngap khoi, khoi cuon, day khoi, con khoi, khoi um, khoi lan, toan khoi, khoi nghi ngut,
+                  toan la khoi, "re:(?:^|(?<=[.;!?] )|(?<=[.;!?]))(?:(?!\\b(?:thuoc|nhang|huong|vang ma|nuong|bep|nau|khong|ko|chua|chang|hok|hinh nhu|co ve|nghe nhu|nghi la|nghi co|co le|giong nhu|cam giac nhu|co the la|duong nhu)\\b)[^.;!?])*?\\bkhoi (?:rat |qua |that |la )?nhieu\\b(?![^.;!?]*\\b(?:thuoc|nhang|huong|vang ma|nuong|bep)\\b)",   # plan 04 vòng 3: "khói rất nhiều" trừ khi trước đó trong câu có thuốc/nhang/nướng, phủ định, hedge
+                  "re:\\bkhoi(?: (?!khong\\b|ko\\b|chua\\b|chang\\b)\\w+){0,8} khong tho duoc\\b"]}   # plan 04 vòng 2: "khói nhiều" chuyển sang Bậc 2 (ambiguous_terms)
     - {signal_id: S-05, name: fire, tier: 1, phase: P0, scope: [COMMON],
        patterns: [boc chay, dang chay, co lua, chay hop dien, hop dien chay, hop dien boc chay, hop den chay, chay hop den, lua chay, ngon lua, chay lon, chay bung, phat no, chay no, chap chay, bat lua, chay thanh ngon,
                   hoa hoan, chay nha, dam chay, chay lan, lua boc, thay lua,
                   "re:\\b(tu dien|o cam|day dien|cong tac|hop dien|cau dao)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b|den\\b|bong\\b|tuyp\\b)\\w+){0,8}(?: (?:dang|bi|da))* chay\\b(?! (cham|lien tuc|suot|thu|on|binh thuong|manh|yeu|ngam|tot|lai))",
                   lua to, lua bung, lua lan, boc lua, phong lua,
+                  "re:(?<!de )(?<!nau )\\blua lon\\b", lua dang lan, "re:\\b(?:hop dien|tu dien|o cam|cong tac|cau dao|day dien|may bien ap|phong rac|thung rac|can ho|nha|xe|tang ham|ham xe)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b)\\w+){0,3} (?:dang |bi )?boc hoa\\b(?! don)",   # plan 04: không "để lửa lớn" (nấu), "bốc hỏa" chỉ khi chủ ngữ là chỗ/vật
                   "re:(?<!nuoc )\\bchay (?:sang|ra)\\b",
                   "re:\\b(hop dien|tu dien|o cam|cong tac|cau dao|day dien|may bien ap)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b|den\\b|bong\\b|tuyp\\b)\\w+){0,8} no\\b"]}
     - {signal_id: S-06, name: electric_shock, tier: 1, phase: P1, scope: [COMMON],
@@ -227,12 +261,18 @@ safety:
     - {signal_id: S-09, name: person_hurt_or_trapped, tier: 1, phase: P0, scope: [COMMON],
        patterns: [bi thuong, chay mau, nga dap dau, ngat xiu,
                   "re:\\bbi ngat\\b(?! (dien|cau dao|nguon|mach|may|quang|ket noi|dong|nuoc|den|wifi|mang|he thong|nguong|ngay))",   # Q31.C: "bị ngắt điện/nước" không phải ngất
-                  ngat di, bat tinh, mac ket, ket nguoi, cap cuu, nguoi bi nga, gay chan, gay tay,
+                  ngat di, bat tinh, mac ket, "re:\\bket nguoi\\b(?! (?:dung|dan|gia|ta|lon|di|phan|bao|than|nao|khac|lam|ngoai|tre|quen)\\b)", cap cuu,   # plan 04 vòng 3: không "kẹt, người dùng/dân ..."
+                  nguoi bi nga, gay chan, gay tay,
                   "re:\\bngat\\b(?! (dien|cau dao|nguon|mach|may|quang|ket noi|dong|nuoc|den|wifi|mang|he thong|nguong|ngay))",
                   bi xiu, xiu di, ket thang may,
                   dot quy, co giat, nga khong day, khong dung day duoc, khong day duoc,
                   nguoi bi ket, bi ket trong thang may, ket trong thang may, ket ben trong,
-                  bi bong, nguoi ben trong khong ra duoc]}
+                  bi bong, nguoi ben trong khong ra duoc,
+                  te xiu, "re:(?<!meo )(?<!cho )\\bkeu cuu\\b", la cuu, cuu voi, "re:\\bcuu (?!ho\\b|hoa\\b|thuong\\b)(?:\\w+ ){1,3}voi\\b",   # plan 04
+                  nga guc, guc nga, bi nhot trong thang may, bi nhot trong, "re:\\bchay(?: rat| qua| nhieu| that){1,3} mau\\b",
+                  "re:\\bthang may(?: \\w+){0,6} ket\\b(?: \\w+){0,10} (?:(?<!khong )(?<!ko )(?<!chua )(?<!chang )(?:co|con)(?: \\w+){0,2} (?:nguoi|khach|tre em|tre con|em be|be|chau|bac|cu|me|ba|ong|anh|chi|con|ca nha|me con)\\b|(?<!co )(?<!thay )(?:nguoi|khach|tre em|tre con|em be|be|chau|bac|cu|me|ba|ong|anh|chi|con|ca nha|me con)(?: \\w+){0,2} (?:o trong|ben trong|trong do|dung trong)\\b|(?:ben trong|o trong|trong do) co\\b)",
+                  "re:\\b(?:nga|te)\\b(?: \\w+){0,6} nam(?: \\w+){0,3} (?:im|khong nhuc nhich|khong cu dong|bat dong|bat tinh)\\b",
+                  "re:\\b(?:nguoi|cu ba|ba cu|cu ong|ong cu|em be|be|chau|tre em)(?: \\w+){0,3} nam(?: \\w+){0,3} (?:im|khong nhuc nhich|khong cu dong)\\b"]}
     - {signal_id: S-10, name: gas_smell, tier: 1, phase: P1, scope: [COMMON],
        patterns: [mui gas, mui ga, mui khi dot, ro ri gas, xi gas]}
     - {signal_id: S-11, name: falling_object, tier: 1, phase: P1, scope: [COMMON],
@@ -252,14 +292,14 @@ safety:
     # (rule_id ghi T2-01 / T2-02 trên RiskSignal của S-xx).
 
 priority:
-  high_areas: ["Hành lang", "Sảnh chính", "Sảnh cư dân", "Sảnh thang máy", "Cầu thang bộ", "Hầm xe"]   # PRI-H1: lối đi chung
+  high_areas: ["Hành lang", "Sảnh chính", "Sảnh cư dân", "Sảnh thang máy", "Cầu thang bộ", "Hầm xe", "Bãi đỗ xe", "Lối đi"]   # PRI-H1: lối đi chung (plan 04: + bãi đỗ xe, lối đi; 05/10: + sảnh cư dân)
   obstruction_patterns:      # PRI-H2: cản trở lối đi
     - chan loi
     - chan het loi
     - chan ngang
     - can loi
     - tron truot
-    - "re:\\btron\\b"
+    - "re:(?<!hinh )(?<!vong )\\btron\\b(?! tr)"   # plan 04 P1: "trơn", không phải "hình/vòng tròn", "tròn trịa"
     - tran ra loi
     - khong di duoc
     - khong qua duoc
@@ -278,7 +318,13 @@ priority:
     - am uot
     - "re:\\buot\\b"
     - "re:\\bmui\\b"
-    - "re:\\bhoi\\b"
+    - hoi thoi              # plan 04 P1: "hôi" theo cụm (bỏ re hoi trần: khớp "hỏi", "hơi")
+    - hoi ham
+    - hoi khai
+    - hoi qua
+    - hoi lam
+    - rat hoi
+    - bi hoi
     - vung nuoc
     - do tran
     - do nuoc

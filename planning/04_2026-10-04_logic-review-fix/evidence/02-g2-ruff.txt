@@ -1,0 +1,5 @@
+# G2 ruff
+All checks passed!
+check exit=0
+73 files already formatted
+format exit=0

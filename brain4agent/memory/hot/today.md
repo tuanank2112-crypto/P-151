@@ -28,6 +28,17 @@
 - Phát hiện (đọc code `feature/tri`): tồn kho mô phỏng CHỈ có 2 chỗ ghi — `_reset_stock` (engine.py:264) và `receive_stock` cộng dồn (engine.py:817). Không trừ khi route, không trừ khi phòng ban ghi `issued_qty` ⇒ nhiều ticket cùng qua cổng kho trên một lượng hàng. Chưa rõ là lỗi hay giản lược có chủ ý (non-goal "quản lý tồn kho đầy đủ") — cần hỏi nhóm. Là điều kiện tiên quyết nếu tự động hoá nguồn kho.
 - Đo (worktree tạm `feature/tri`, probe + 3 test sẵn có, 4 pass exit 0): nhập kho `POST /api/v1/mo/warehouse/stock/SIM-MAT-LAMP-02` ⇒ SIM-TKT-TEC-003 `ON_HOLD`→`ROUTED`, blocker=None, rời hàng chờ kho (chi tiết 200→404), BPTN thấy ROUTED. Dự phòng: job kiểm lại kho đầu mỗi ca (`next_shift_start`), ≤3 lần, 24h leo thang BQL. Khoảng trống duy nhất: AI GỌI API nhập kho — n8n (login `/api/v1/auth/login` → POST stock) làm được KHÔNG sửa backend.
 
+## Đóng lệch thứ tự phân loại/an toàn (plan 02 Q11) — 2026-10-04
+- Trường sửa fixture `954dcab` (PR #12, develop `dff898e`): CLN-004/TEC-005 bỏ 3 trường phân loại; engine không đổi.
+- Đo lại (evidence/13 của plan 02): evaluate CR03 12/12, 4 demo; target 9 passed; phá thử 3/3 đều đỏ; pytest 1641 passed/29 deselected, ruff sạch. Ghi Q11 vào plan 02, sửa `docs/maintenance.md` §10, thêm Idea Vault.
+## Rà soát toàn dự án + mở plan 04 sửa logic — 2026-10-04
+- Rà engine (tự đọc) + 2 thẩm định Opus (an toàn/phân loại; API/quyền/lưu trữ): pytest 1641 pass/29 deselected, ruff sạch, nhưng 16 lỗi đo được (plan 04 §1): bỏ sót Bậc 1 (thang máy kẹt người, té xỉu, dây điện rơi), báo nhầm "bị ngắt"; cư dân dò/phình ticket người khác qua route hành động; ảnh giả qua cổng bước 10; REWORK dùng lại ảnh cũ; BQL bị khoá sau T06; AI Log luôn `PENDING`; LLM trong `engine.lock`; ticket mồ côi.
+- Mở `planning/04_2026-10-04_logic-review-fix/` (PATCH, nhánh `fix/nhuy-logic-review`): WP1 lexicon (Opus worktree), WP2 rules/proposer (Sonnet worktree), WP3 engine/router (SO).
+- Thực thi plan 04 (v1.1.3): WP3 engine/router/auth (SO) + WP2 rules/proposer (Sonnet) + WP1 lexicon (Opus, 2 vòng sau thẩm định đối kháng 🔁: 57 → 10 lỗi/107 câu). Gộp: pytest 1808 passed/29 deselected, ruff sạch; evidence/01–05.
+- Q10: ngoài phạm vi giữ 403 + audit (8 test đã duyệt) nhưng không lộ `unchanged_status`; 404 chờ nhóm. Bẫy mới: heredoc bash biến `\b` thành backspace khi Python ghi file (đã ghi gotchas). Chưa commit/push — chờ người dùng gật.
+- Vòng Agent (người dùng: "fix agent", chỉ giữ phần Agent, không giữ backend/UI): rules.py tách vị trí mở rộng + đèn sau khu vực + Q22 bóng đèn cháy; từ vựng an toàn vòng 3 + `_b01_ok`. pytest 1848 passed, ruff sạch; đối kháng 107 câu 50 → 7 lỗi; holdout 18/18; kho phản ánh thật 34 câu chỉ còn "ngoài phạm vi bị hỏi vị trí" (spec). Lỗi backend/UI của thẩm định E2E chuyển Châm Anh/Trí (roadmap). Chưa commit.
+- Q16: tách phần backend (router/auth + 5 test) sang `planning/04_.../handoffs/H03_backend-api.patch` + ghi chú H03 (Châm Anh), H04 (Trí, UI), H05 (Trường, rules/spec). Phần Agent/engine còn lại: pytest 1843 passed, ruff sạch. Người dùng duyệt push phần Agent.
+- PR #14 mở vào develop (commit 1516309, phần Agent + engine; backend ở H03).
 ## 🛠 Phiên 2026-10-05 — Sửa luồng UI/engine theo phản hồi demo (develop)
 - Nút Nghiệm thu BQL bấm một lần (`oneShotButton`, `act()` trả bool).
 - Thí điểm Ocean Park: `catalog.yaml` `site.buildings: [S1, S2]`; tòa khác ⇒ thiếu `location_building`; giữ tòa con `S1.12`; "Sảnh cư dân" mặc định Tầng 1. Seed/test `SIM-A`→`S1`, `SIM-B`→`S2` (giữ bộ nhãn an toàn).

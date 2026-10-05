@@ -180,8 +180,8 @@ def test_step2_names_only_the_missing_location_parts(fresh):
     assert case.ticket.status == "NEED_INFO"
     assert case.ticket.blocker.public_message == (
         "Ban tiếp nhận thông tin sẽ liên hệ bạn để bổ sung: tòa (hiện chỉ nhận tòa S1 hoặc S2 – Ocean Park), "
-        "khu vực (hành lang, sảnh cư dân, sảnh thang máy, sảnh chính, cầu thang bộ hoặc hầm xe). "
-        "Bạn cũng có thể bổ sung ngay tại đây."
+        "khu vực (hành lang, sảnh cư dân, sảnh thang máy, sảnh chính, cầu thang bộ, hầm xe, bãi đỗ xe, phòng rác, "
+        "sân chơi, sân thượng hoặc lối đi). Bạn cũng có thể bổ sung ngay tại đây."
     )
 
 

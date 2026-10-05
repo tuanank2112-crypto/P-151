@@ -1,0 +1,470 @@
+diff --git a/src/api/auth.py b/src/api/auth.py
+index 2ac76eb..f44026c 100644
+--- a/src/api/auth.py
++++ b/src/api/auth.py
+@@ -11,6 +11,7 @@ so the UI cannot be bypassed by setting a header.
+ import hashlib
+ import hmac
+ import secrets
++import threading
+ import time
+ from collections.abc import Callable
+ from dataclasses import dataclass, field
+@@ -85,42 +86,49 @@ class AuthService:
+     # (username, client address) -> (count, locked_until). Keyed by client too, so failures from elsewhere
+     # cannot lock the real user out of their own account.
+     failures: dict[tuple[str, str], tuple[int, float]] = field(default_factory=dict)
++    # Sync routes run in a thread pool: every read-modify-write of the two dicts holds this lock (plan 04 L1)
++    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False, compare=False)
+ 
+     def login(self, username: str, password: str, client: str = "") -> tuple[str, Account]:
+         now = self.clock()
+         username = username.strip().lower()
+         key = (username, client)
+-        count, locked_until = self.failures.get(key, (0, 0.0))
++        with self._lock:
++            count, locked_until = self.failures.get(key, (0, 0.0))
+         if locked_until > now:
+             raise HTTPException(status_code=429, detail="Đăng nhập sai quá nhiều lần. Thử lại sau vài phút.")
+         account = self.accounts.get(username)
+-        # Always hash, so a wrong username takes as long as a wrong password
++        # Always hash, so a wrong username takes as long as a wrong password (outside the lock: it is slow)
+         ok = verify_password(password, account.password_hash if account else _DUMMY_HASH) and account is not None
+-        if not ok:
+-            if len(self.failures) >= MAX_TRACKED_FAILURES:  # bound memory: keep only live lockouts
+-                self.failures = {k: v for k, v in self.failures.items() if v[1] > now}
+-            count += 1
+-            self.failures[key] = (count, now + LOCKOUT_SECONDS if count >= MAX_FAILED_LOGINS else 0.0)
+-            raise HTTPException(status_code=401, detail="Tên đăng nhập hoặc mật khẩu không đúng")
+-        self.failures.pop(key, None)
+-        # drop expired sessions here, since a token nobody uses again is never looked up
+-        self.sessions = {t: s for t, s in self.sessions.items() if s[1] > now}
+-        token = secrets.token_urlsafe(32)
+-        self.sessions[token] = (account.username, now + SESSION_TTL_SECONDS)
++        with self._lock:
++            if not ok:
++                if len(self.failures) >= MAX_TRACKED_FAILURES:  # bound memory: keep only live lockouts
++                    self.failures = {k: v for k, v in self.failures.items() if v[1] > now}
++                count, _ = self.failures.get(key, (0, 0.0))
++                count += 1
++                self.failures[key] = (count, now + LOCKOUT_SECONDS if count >= MAX_FAILED_LOGINS else 0.0)
++                raise HTTPException(status_code=401, detail="Tên đăng nhập hoặc mật khẩu không đúng")
++            self.failures.pop(key, None)
++            # drop expired sessions here, since a token nobody uses again is never looked up
++            self.sessions = {t: s for t, s in self.sessions.items() if s[1] > now}
++            token = secrets.token_urlsafe(32)
++            self.sessions[token] = (account.username, now + SESSION_TTL_SECONDS)
+         return token, account
+ 
+     def account_for(self, token: str) -> Account | None:
+-        entry = self.sessions.get(token)
+-        if entry is None:
+-            return None
+-        username, expires_at = entry
+-        if expires_at <= self.clock():
+-            self.sessions.pop(token, None)
+-            return None
++        with self._lock:
++            entry = self.sessions.get(token)
++            if entry is None:
++                return None
++            username, expires_at = entry
++            if expires_at <= self.clock():
++                self.sessions.pop(token, None)
++                return None
+         return self.accounts.get(username)
+ 
+     def logout(self, token: str) -> None:
+-        self.sessions.pop(token, None)
++        with self._lock:
++            self.sessions.pop(token, None)
+ 
+ 
+ _service: AuthService | None = None
+diff --git a/src/api/routers/maintenance.py b/src/api/routers/maintenance.py
+index fc18bd2..208d202 100644
+--- a/src/api/routers/maintenance.py
++++ b/src/api/routers/maintenance.py
+@@ -10,11 +10,13 @@ the simulated actor catalog. Reads are scoped too: a department only sees ticket
+ tickets waiting for material, residents only their own tickets (via /resident), and demo control is QA-only.
+ """
+ 
++import json
+ import threading
+ from datetime import datetime
+ from typing import Annotated, Any, Literal
+ 
+ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
++from fastapi.concurrency import run_in_threadpool
+ from fastapi.responses import Response
+ from pydantic import BaseModel, Field, ValidationError, field_validator
+ 
+@@ -57,6 +59,7 @@ from src.maintenance.views import (
+     BqlTicketRow,
+     ResidentTicketView,
+     bql_rows,
++    queue_sort_key,
+     resident_view,
+ )
+ 
+@@ -85,6 +88,9 @@ EngineDep = Annotated[MaintenanceEngine, Depends(get_engine)]
+ ActorDep = Annotated[str, Depends(get_actor)]
+ 
+ STAFF = {ActorRole.BPTN, ActorRole.DEPARTMENT, ActorRole.WAREHOUSE, ActorRole.BQL, ActorRole.QA_INTERNAL}
++SEE_ALL = (ActorRole.BPTN, ActorRole.BQL, ActorRole.QA_INTERNAL)  # roles that may read every ticket
++AI_LOG_SCAN = 10_000  # more than the logger ever keeps: filters see every entry before `limit` cuts
++TEXT_MAX = 2000  # free text a person types (note, reason, evidence): bounds what one request adds to a ticket
+ 
+ 
+ def _call(fn, *args, **kwargs):
+@@ -162,7 +168,7 @@ def _no_placeholder(value: str | None) -> str | None:
+ class NoteBody(BaseModel):
+     model_config = {"extra": "forbid"}
+ 
+-    note: str | None = None
++    note: str | None = Field(default=None, max_length=TEXT_MAX)
+ 
+     @field_validator("note")
+     @classmethod
+@@ -171,15 +177,16 @@ class NoteBody(BaseModel):
+ 
+ 
+ class RequiredNoteBody(NoteBody):
+-    note: str = Field(min_length=1)
++    note: str = Field(min_length=1, max_length=TEXT_MAX)
+ 
+ 
+ PhotoFiles = Annotated[list[UploadFile], File(description="Ảnh JPG, PNG hoặc WEBP, tối đa 5 MB mỗi ảnh")]
+ 
+ 
+-async def _attach_photos(files: list[UploadFile], room: int, limit: int, attach) -> Case:
+-    """Validate all files, then store and record them one by one. A file whose record is refused is deleted."""
+-    batch = await photos.read_photos(files)
++def _attach_photos(batch: list[tuple[bytes, str]], room: int, limit: int, attach) -> Case:
++    """Store and record validated files one by one. A file whose record is refused is deleted.
++
++    Blocking (photo store, engine lock): routes run it with `run_in_threadpool`, never on the event loop."""
+     if len(batch) > room:
+         raise HTTPException(status_code=409, detail=f"Tối đa {limit} ảnh; còn gửi thêm được {room} ảnh")
+     case = None
+@@ -239,16 +246,17 @@ def get_ai_logs(
+     ticket_id: str | None = None,
+     limit: int = 100,
+ ) -> list[AILogEntry]:
+-    """Lấy danh sách các lượt gọi LLM (AI Logs), hỗ trợ lọc theo trạng thái, khoảng thời gian và ticket_id."""
+-    _require_role(engine, actor, *STAFF)
+-    logs = ai_logger.get_logs(ticket_id=ticket_id, limit=limit)
++    """Lấy danh sách các lượt gọi LLM (AI Logs), lọc theo trạng thái, khoảng thời gian và ticket_id.
++    Chỉ BPTN/BQL/QA: log chứa nguyên văn phản ánh của mọi ticket. Lọc trước, rồi mới cắt `limit`."""
++    _require_role(engine, actor, *SEE_ALL)
++    logs = ai_logger.get_logs(ticket_id=ticket_id, limit=AI_LOG_SCAN)
+     if status is not None:
+         logs = [entry for entry in logs if entry.status == status]
+     if since is not None:
+         logs = [entry for entry in logs if entry.timestamp >= since]
+     if until is not None:
+         logs = [entry for entry in logs if entry.timestamp <= until]
+-    return logs
++    return logs[: max(limit, 0)]
+ 
+ 
+ @router.post("/ai-logs/reset")
+@@ -309,21 +317,14 @@ class TicketSummary(BaseModel):
+     synthetic: bool = True
+ 
+ 
+-_PRIORITY_RANK = {Priority.HIGH: 0, Priority.MEDIUM: 1, None: 1, Priority.LOW: 2}
+-
+-
+-def _queue_key(row: TicketSummary) -> tuple:
+-    """CR-BPTN-03 §7: emergency first, then priority (unset counts as MEDIUM), then oldest first."""
+-    return (0 if row.risk_level == RiskLevel.EMERGENCY else 1, _PRIORITY_RANK[row.priority], row.created_at)
+-
+-
+ @router.get("/tickets", response_model=list[TicketSummary])
+ def list_tickets(actor: ActorDep, engine: EngineDep, status: TicketStatus | None = None) -> list[TicketSummary]:
+     """Work queue nội bộ, chỉ gồm ticket vai trò của bạn được xem (phòng ban: ticket đã giao; kho: chờ vật tư).
+     Sắp xếp: khẩn cấp trước, rồi mức ưu tiên, rồi cũ trước (CR-BPTN-03 §7)."""
+     _require_role(engine, actor, *STAFF)
+     rows = []
+-    for case in list(engine.cases.values()):  # snapshot: a new ticket may arrive from another thread
++    cases = list(engine.cases.values())  # snapshot: a new ticket may arrive from another thread
++    for case in sorted(cases, key=lambda c: queue_sort_key(c.ticket)):  # the same order as every other queue
+         ticket = case.ticket
+         if (status is not None and ticket.status != status) or not _visible(engine, actor, case):
+             continue
+@@ -344,7 +345,6 @@ def list_tickets(actor: ActorDep, engine: EngineDep, status: TicketStatus | None
+                 flow=fixture.flow if fixture else None,
+             )
+         )
+-    rows.sort(key=_queue_key)
+     return rows
+ 
+ 
+@@ -392,9 +392,9 @@ class TransitionRequest(BaseModel):
+     model_config = {"extra": "forbid"}
+ 
+     to: TicketStatus
+-    note: str | None = None
++    note: str | None = Field(default=None, max_length=TEXT_MAX)
+     eta: datetime | None = None
+-    cancel_reason: str | None = None
++    cancel_reason: str | None = Field(default=None, max_length=TEXT_MAX)
+ 
+ 
+ @router.post("/tickets/{ticket_id}/transition", response_model=Case)
+@@ -435,14 +435,16 @@ class BptnResolveRequest(BaseModel):
+         },
+     }
+ 
+-    note: str | None = None
++    note: str | None = Field(default=None, max_length=TEXT_MAX)
+     merge: bool | None = Field(default=None, description="Chỉ với DUPLICATE: true = gộp, false = không trùng")
+     category: ServiceCategory | None = None
+     department: Department | None = Field(default=None, description="Chỉ với WRONG_DEPT, khi giữ nguyên loại việc")
+-    location: str | None = None
+-    asset_id: str | None = None
++    location: str | None = Field(default=None, max_length=TEXT_MAX)
++    asset_id: str | None = Field(default=None, max_length=100)
+     asset_onsite: bool = Field(default=False, description="ASSET_UNCLEAR: xác định tại hiện trường (bắt buộc note)")
+-    info: str | None = Field(default=None, description="Chỉ với MISSING_INFO: thông tin BPTN thu thập từ cư dân")
++    info: str | None = Field(
++        default=None, max_length=TEXT_MAX, description="Chỉ với MISSING_INFO: thông tin BPTN thu thập từ cư dân"
++    )
+ 
+     @field_validator("note", "location", "asset_id", "info")
+     @classmethod
+@@ -500,7 +502,7 @@ def return_wrong_department(ticket_id: str, body: RequiredNoteBody, actor: Actor
+ class BlockRequest(BaseModel):
+     model_config = {"extra": "forbid"}
+ 
+-    note: str = Field(min_length=1)
++    note: str = Field(min_length=1, max_length=TEXT_MAX)
+     eta: datetime
+ 
+ 
+@@ -518,7 +520,7 @@ def resume_work(ticket_id: str, actor: ActorDep, engine: EngineDep) -> Case:
+ 
+ class ChecklistRequest(BaseModel):
+     status: ChecklistStatus
+-    note: str | None = None
++    note: str | None = Field(default=None, max_length=TEXT_MAX)
+ 
+ 
+ @router.post("/tickets/{ticket_id}/checklist/{template_item_id}", response_model=Case)
+@@ -531,7 +533,7 @@ def update_checklist(
+ class MaterialRequest(BaseModel):
+     issued_qty: float = Field(ge=0)
+     used_qty: float = Field(ge=0)
+-    variance_reason: str | None = None
++    variance_reason: str | None = Field(default=None, max_length=TEXT_MAX)
+ 
+ 
+ @router.post("/tickets/{ticket_id}/materials/{item_code}", response_model=Case)
+@@ -540,22 +542,30 @@ def record_material(ticket_id: str, item_code: str, body: MaterialRequest, actor
+ 
+ 
+ class EvidenceRequest(BaseModel):
+-    requirement_id: str | None = Field(examples=["CLN-EVD-PROCESSING-NOTE"])
++    requirement_id: str | None = Field(examples=["CLN-EVD-PROCESSING-NOTE"], max_length=100)
+     evidence_type: EvidenceType
+-    content_or_metadata: str
++    content_or_metadata: str = Field(max_length=TEXT_MAX)
+     readability_status: ReadabilityStatus = ReadabilityStatus.NOT_APPLICABLE
+ 
++    @field_validator("evidence_type")
++    @classmethod
++    def _no_photo(cls, value: EvidenceType) -> EvidenceType:
++        # CR-03 §9.4(4): the photo gate counts real image files only, sent through POST /tickets/{id}/photos
++        if value in (EvidenceType.SIMULATED_IMAGE, EvidenceType.RESIDENT_ORIGINAL):
++            raise ValueError("Ảnh phải gửi qua POST /tickets/{id}/photos (tệp ảnh thật)")
++        return value
++
+ 
+ @router.post("/tickets/{ticket_id}/evidence", response_model=Case)
+ def add_evidence(ticket_id: str, body: EvidenceRequest, actor: ActorDep, engine: EngineDep) -> Case:
++    """Ghi chú xử lý/kết quả của phòng ban. Ảnh KHÔNG gửi ở đây: dùng POST /tickets/{id}/photos."""
+     return _call(engine.add_evidence, ticket_id, actor, **body.model_dump())
+ 
+ 
+ @router.post("/tickets/{ticket_id}/photos", response_model=Case)
+ async def add_execution_photos(ticket_id: str, files: PhotoFiles, actor: ActorDep, engine: EngineDep) -> Case:
+     """Phòng ban gửi ảnh sau khi xử lý (bắt buộc ít nhất một ảnh trước khi báo hoàn thành)."""
+-    case = _staff_case(engine, actor, ticket_id)
+-    room = MAX_EXECUTION_PHOTOS - len(execution_photos(case))
++    batch = await photos.read_photos(files)
+ 
+     def attach(ref: str) -> Case:
+         return engine.add_evidence(
+@@ -567,7 +577,12 @@ async def add_execution_photos(ticket_id: str, files: PhotoFiles, actor: ActorDe
+             readability_status=ReadabilityStatus.READABLE,
+         )
+ 
+-    return await _attach_photos(files, room, MAX_EXECUTION_PHOTOS, attach)
++    def store() -> Case:
++        case = _staff_case(engine, actor, ticket_id)
++        room = MAX_EXECUTION_PHOTOS - len(execution_photos(case))
++        return _attach_photos(batch, room, MAX_EXECUTION_PHOTOS, attach)
++
++    return await run_in_threadpool(store)
+ 
+ 
+ @router.get("/tickets/{ticket_id}/photos/{evidence_id}", response_class=Response)
+@@ -605,9 +620,16 @@ def receive_stock(item_code: str, body: StockRequest, actor: ActorDep, engine: E
+ 
+ class AttemptRequest(BaseModel):
+     action: Action = Field(examples=[Action.EDIT_RAW])
+-    field_name: str = Field(examples=["original_description"])
++    field_name: str = Field(examples=["original_description"], max_length=100)
+     new_value: Any = None
+-    reason: str = "Thử hành động ngoài quyền"
++    reason: str = Field(default="Thử hành động ngoài quyền", max_length=TEXT_MAX)
++
++    @field_validator("new_value")
++    @classmethod
++    def _small(cls, value: Any) -> Any:
++        if len(json.dumps(value, ensure_ascii=False, default=str)) > TEXT_MAX:
++            raise ValueError(f"new_value tối đa {TEXT_MAX} ký tự khi ghi audit")
++        return value
+ 
+ 
+ @router.post("/tickets/{ticket_id}/attempt", response_model=Case)
+@@ -679,12 +701,17 @@ async def resident_add_photos(
+     ticket_id: str, files: PhotoFiles, actor: ActorDep, engine: EngineDep
+ ) -> ResidentTicketView:
+     """Đính kèm ảnh (không bắt buộc) vào phản ánh của chính mình."""
+-    case = _own_case(engine, ticket_id, actor)
+-    room = MAX_RESIDENT_PHOTOS - len(resident_photos(case))
+-    case = await _attach_photos(
+-        files, room, MAX_RESIDENT_PHOTOS, lambda ref: engine.add_resident_photo(ticket_id, actor, ref)
+-    )
+-    return resident_view(engine, case, engine.clock())
++    batch = await photos.read_photos(files)
++
++    def store() -> ResidentTicketView:
++        case = _own_case(engine, ticket_id, actor)
++        room = MAX_RESIDENT_PHOTOS - len(resident_photos(case))
++        case = _attach_photos(
++            batch, room, MAX_RESIDENT_PHOTOS, lambda ref: engine.add_resident_photo(ticket_id, actor, ref)
++        )
++        return resident_view(engine, case, engine.clock())
++
++    return await run_in_threadpool(store)
+ 
+ 
+ @resident_router.get("/tickets/{ticket_id}/photos/{evidence_id}", response_class=Response)
+@@ -750,7 +777,7 @@ def bql_rework(ticket_id: str, body: RequiredNoteBody, actor: ActorDep, engine:
+ class CancelRequest(BaseModel):
+     model_config = {"extra": "forbid"}
+ 
+-    cancel_reason: str = Field(min_length=1)
++    cancel_reason: str = Field(min_length=1, max_length=TEXT_MAX)
+ 
+ 
+ @bql_router.post("/tickets/{ticket_id}/cancel", response_model=Case)
+diff --git a/tests/test_maintenance/test_backend_review_fixes.py b/tests/test_maintenance/test_backend_review_fixes.py
+new file mode 100644
+index 0000000..0e6f29e
+--- /dev/null
++++ b/tests/test_maintenance/test_backend_review_fixes.py
+@@ -0,0 +1,100 @@
++"""Plan 04 backend part (owner: API/Châm Anh): route limits, photo guard on /evidence, AI-log access and
++filtering, one queue order. Needs the router/auth changes of handoffs/H03_backend-api.patch."""
++
++import pytest
++from fastapi.testclient import TestClient
++
++from src.api.auth import actor_header_allowed
++from src.api.routers.maintenance import get_engine
++from src.main import app
++from src.maintenance.ai_logger import ai_logger
++from src.maintenance.views import queue_sort_key
++from tests.test_maintenance.helpers import (
++    BPTN,
++    BQL,
++    CLEANING,
++    OTHER_RESIDENT,
++    RESIDENT,
++    TEC,
++    dept_of,
++    do_work,
++    report,
++)
++
++TIER2 = "Hành lang tầng 3 tòa SIM-A hình như có mùi khét."
++H = {name: {"X-Actor-Id": actor} for name, actor in {
++    "resident": RESIDENT, "other": OTHER_RESIDENT, "bptn": BPTN, "bql": BQL, "tec": TEC,
++    "cln": "SIM-ACTOR-DEPT-CLN-01", "warehouse": "SIM-ACTOR-WAREHOUSE-01",
++}.items()}  # fmt: skip
++
++
++@pytest.fixture
++def api_engine(fresh):
++    app.dependency_overrides[get_engine] = lambda: fresh
++    app.dependency_overrides[actor_header_allowed] = lambda: True
++    yield TestClient(app), fresh
++    app.dependency_overrides.pop(get_engine, None)
++    app.dependency_overrides.pop(actor_header_allowed, None)
++
++
++def test_attempt_route_rejects_oversized_values(api_engine):
++    api, engine = api_engine
++    tid = report(engine, CLEANING)
++    version_before = len(engine.get(tid).audit)
++    body = {"action": "EDIT_RAW", "field_name": "x", "new_value": "y" * 1_000_000}
++    assert api.post(f"/api/v1/mo/tickets/{tid}/attempt", json=body, headers=H["resident"]).status_code == 422
++    assert len(engine.get(tid).audit) == version_before
++
++
++# ---------------------------------------------------------------------- A2: no text "photo"
++
++
++def test_evidence_route_refuses_photo_types(api_engine):
++    api, engine = api_engine
++    tid = report(engine, CLEANING)
++    engine.accept(tid, dept_of(engine, tid))
++    for kind in ("SIMULATED_IMAGE", "RESIDENT_ORIGINAL"):
++        body = {"requirement_id": None, "evidence_type": kind, "content_or_metadata": "chữ"}
++        assert api.post(f"/api/v1/mo/tickets/{tid}/evidence", json=body, headers=H["cln"]).status_code == 422
++    do_work(engine, tid, photo=False)
++    r = api.post(f"/api/v1/mo/tickets/{tid}/complete", headers=H["cln"])
++    assert r.json()["ticket"]["status"] == "IN_PROGRESS"
++    assert "execution_photo" in r.json()["draft"]["readiness_evaluation"]["failing_items"]
++
++
++# ---------------------------------------------------------------------- A4: AI logs
++
++
++def test_ai_logs_only_for_roles_that_see_every_ticket(api_engine):
++    api, _ = api_engine
++    for who in ("cln", "warehouse"):
++        assert api.get("/api/v1/mo/ai-logs", headers=H[who]).status_code == 403
++    for who in ("bptn", "bql"):
++        assert api.get("/api/v1/mo/ai-logs", headers=H[who]).status_code == 200
++
++
++def test_ai_logs_filter_before_limit(api_engine):
++    api, _ = api_engine
++    ai_logger.clear()
++    ai_logger.log(ticket_id="SIM-TKT-0001", prompt_sent={}, model_name="m", latency_ms=1, status="SUCCESS")
++    for _ in range(3):
++        ai_logger.log(ticket_id="SIM-TKT-0002", prompt_sent={}, model_name="m", latency_ms=1, status="FALLBACK_RULE")
++    rows = api.get("/api/v1/mo/ai-logs?status=SUCCESS&limit=1", headers=H["bql"]).json()
++    assert [r["ticket_id"] for r in rows] == ["SIM-TKT-0001"]
++    ai_logger.clear()
++
++
++# ---------------------------------------------------------------------- L2: one queue order
++
++
++def test_internal_queue_uses_the_shared_sort_key(api_engine):
++    api, engine = api_engine
++    report(engine, CLEANING)
++    report(engine, "Đèn hành lang tầng 3 tòa SIM-A không sáng.")
++    tier2 = report(engine, TIER2)  # no priority yet
++    low = report(engine, "Sảnh chính tòa SIM-B có ít bụi ở góc tường.")  # PRI-L1
++    report(engine, "Có khói bốc ra từ hộp điện hành lang tầng 5 tòa SIM-B")
++    ids = [r["ticket_id"] for r in api.get("/api/v1/mo/tickets", headers=H["bql"]).json()]
++    expected = [c.ticket.ticket_id for c in sorted(engine.cases.values(), key=lambda c: queue_sort_key(c.ticket))]
++    assert ids == expected
++    assert ids.index(low) < ids.index(tier2)  # an unset priority goes after LOW, as in the BQL queue

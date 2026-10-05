@@ -1,0 +1,211 @@
+# Adversarial set (independent auditor script), lexicon round 3 vs HEAD
+===== MISS (52)
+M01 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Thang máy số 2 tòa SIM-B bị kẹt, có người bên trong
+      new: S-09/PRESENT/S-09:'Thang máy số 2 tòa SIM-B bị kẹt, có người'
+      head: -
+M02 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Thang máy kẹt không mở được cửa, có người bên trong
+      new: S-09/PRESENT/S-09:'Thang máy kẹt không mở được cửa, có người'
+      head: -
+M03 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Thang máy bị kẹt, con tôi đang ở trong đó
+      new: S-09/PRESENT/S-09:'Thang máy bị kẹt, con tôi đang ở trong'
+      head: -
+M04 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Thang máy kẹt, có hai bác lớn tuổi đang ở trong
+      new: S-09/PRESENT/S-09:'Thang máy kẹt, có hai bác'
+      head: -
+M05 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Thang máy kẹt, nhiều người đang ở trong
+      new: S-09/PRESENT/S-09:'Thang máy kẹt, nhiều người đang ở trong'
+      head: -
+M06 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Thang máy tòa SIM-A kẹt, có người đứng trong đó la hét
+      new: S-09/PRESENT/S-09:'Thang máy tòa SIM-A kẹt, có người'
+      head: -
+M07 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Hai mẹ con bị nhốt trong thang máy tầng 9
+      new: S-09/PRESENT/S-09:'bị nhốt trong thang máy'
+      head: -
+M08 MISS-T1     got=NONE      want=EMERGENCY | thang may dung giua tang 5 va 6, nguoi ben trong dap cua keu
+      new: -
+M09 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Thang máy kẹt từ nãy giờ chưa ai tới, bên trong có người
+      new: S-09/PRESENT/S-09:'Thang máy kẹt từ nãy giờ chưa ai tới, bên trong có người'
+      head: -
+M10 ok          got=EMERGENCY want=EMERGENCY | Mẹ con em bị kẹt thang máy tầng 9 hơn 20 phút rồi
+M11 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | thang may ket tang 12, ben trong co em be dang khoc
+      new: S-09/PRESENT/S-09:'thang may ket tang 12, ben trong co em be'
+      head: -
+M12 ok          got=EMERGENCY want=EMERGENCY | Có cháu bé bị kẹt trong thang máy tòa SIM-A
+M13 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Có người lớn tuổi bị choáng rồi ngã nằm im dưới sàn sảnh
+      new: S-09/PRESENT/S-09:'ngã nằm im'
+      head: -
+M14 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | co ba cu bi nga o cau thang, nam bat dong
+      new: S-09/PRESENT/S-09:'nga o cau thang, nam bat dong'
+      head: -
+M15 ok          got=EMERGENCY want=EMERGENCY [HEAD=UNCLEAR] | Có bà cụ bị ngã ở cầu thang, nằm bất động
+      new: S-09/PRESENT/S-09:'ngã ở cầu thang, nằm bất động'
+      head: T2-03/PRESENT/B-03N:'bất động'
+M16 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Cụ ông ngã ở sảnh, nằm im không cử động được
+      new: S-09/PRESENT/S-09:'Cụ ông ngã ở sảnh, nằm im không cử động'
+      head: -
+M17 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Có người đột nhiên ngã gục ở hành lang tầng 2
+      new: S-09/PRESENT/S-09:'ngã gục'
+      head: -
+M18 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Có anh thanh niên té xỉu ngoài sảnh
+      new: S-09/PRESENT/S-09:'té xỉu'
+      head: -
+M19 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Bé trai ngã từ cầu thang xuống, nằm không nhúc nhích
+      new: S-09/PRESENT/S-09:'ngã từ cầu thang xuống, nằm không nhúc nhích'
+      head: -
+M20 ok          got=EMERGENCY want=EMERGENCY | Một chị bị ngất ở thang bộ tầng 6
+M21 ok          got=EMERGENCY want=EMERGENCY [HEAD=UNCLEAR] | Cụ bà té ngã chảy rất nhiều máu ở sảnh
+      new: S-09/PRESENT/S-09:'chảy rất nhiều máu'; T2-03/PRESENT/B-03:'té ngã'
+      head: T2-03/PRESENT/B-03:'chảy'
+M22 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | co nguoi te nga nam im o ham xe
+      new: S-09/PRESENT/S-09:'nguoi te nga nam im'
+      head: -
+M23 ok          got=EMERGENCY want=EMERGENCY | Bà cụ bị ngắt xỉu ở sảnh
+M24 ok          got=EMERGENCY want=EMERGENCY | Ông cụ tầng 3 bị ngắt ở hành lang
+M25 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Dây điện ở hành lang bị tróc vỏ
+      new: S-03/PRESENT/S-03:'Dây điện ở hành lang bị tróc vỏ'
+      head: -
+M26 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Dây điện bị tróc hết vỏ, lòi lõi đồng ra ngoài
+      new: S-03/PRESENT/S-03:'Dây điện bị tróc hết vỏ'
+      head: -
+M27 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Đoạn dây điện trên trần bị rơi xuống, đang lủng lẳng ngay lối đi
+      new: S-03/PRESENT/S-03:'dây điện trên trần bị rơi xuống'
+      head: -
+M28 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Dây điện treo lơ lửng ngang đầu người ở sảnh
+      new: S-03/PRESENT/S-03:'Dây điện treo lơ lửng'
+      head: -
+M29 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | dây cáp điện lủng lẳng sát đầu người đi
+      new: S-03/PRESENT/S-03:'dây cáp điện lủng lẳng'
+      head: -
+M30 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Dây điện bị tuột vỏ ngay cửa thang máy
+      new: S-03/PRESENT/S-03:'Dây điện bị tuột vỏ'
+      head: -
+M31 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | day dien o tang ham bi troc vo
+      new: S-03/PRESENT/S-03:'day dien o tang ham bi troc vo'
+      head: -
+M32 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Mấy sợi dây điện cũ đang lủng lẳng ở hành lang
+      new: S-03/PRESENT/S-03:'dây điện cũ đang lủng lẳng'
+      head: -
+M33 ok          got=EMERGENCY want=EMERGENCY [HEAD=UNCLEAR] | Hành lang tầng 9 khói rất nhiều, mọi người chạy hết xuống
+      new: S-04/PRESENT/S-04:'Hành lang tầng 9 khói rất nhiều'
+      head: T2-03/PRESENT/B-03N:'khói'
+M34 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | khoi rat nhieu o tang ham
+      new: S-04/PRESENT/S-04:'khoi rat nhieu'
+      head: -
+M35 ok          got=EMERGENCY want=EMERGENCY [HEAD=UNCLEAR] | Cầu thang bộ toàn là khói
+      new: S-04/PRESENT/S-04:'toàn là khói'
+      head: T2-03/PRESENT/B-03N:'khói'
+M36 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | khoi nhieu o hanh lang tang 4
+      new: S-04/PRESENT/S-04:'khoi nhieu'
+      head: -
+M37 ok          got=EMERGENCY want=EMERGENCY | Hành lang tầng 5 có khỏi đen
+M38 ok          got=EMERGENCY want=EMERGENCY [HEAD=UNCLEAR] | Lửa đang lan rất nhanh ở tầng 5
+      new: S-05/PRESENT/S-05:'Lửa đang lan'
+      head: T2-03/PRESENT/B-03N:'Lửa'
+M39 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Phòng rác tầng 6 bốc hỏa dữ dội
+      new: S-05/PRESENT/S-05:'Phòng rác tầng 6 bốc hỏa'
+      head: -
+M40 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | lua lon o phong rac tang 3
+      new: S-05/PRESENT/S-05:'lua lon'
+      head: -
+M41 ok          got=EMERGENCY want=EMERGENCY | Cháy sáng rực trong phòng rác tầng 2
+M42 ok          got=EMERGENCY want=EMERGENCY | Ổ cắm ở hành lang bật lửa khi cắm sạc
+M43 MISS-T1     got=UNCLEAR   want=EMERGENCY | Căn hộ 1205 cháy, đèn tắt hết rồi
+      new: T2-03/PRESENT/B-03:'cháy'
+M44 MISS-T1     got=UNCLEAR   want=EMERGENCY | Xin báo cháy, đèn hành lang tầng 3 tắt hết
+      new: T2-03/PRESENT/B-03:'cháy'
+M45 MISS-T1     got=UNCLEAR   want=EMERGENCY | Chỗ thang máy cháy, đèn tắt hết
+      new: T2-03/PRESENT/B-03:'cháy'
+M46 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Phòng rác bốc hoả
+      new: S-05/PRESENT/S-05:'Phòng rác bốc hoả'
+      head: -
+M47 MISS-T1     got=UNCLEAR   want=EMERGENCY | Cháy rồi! Hành lang tầng 4 mọi người ơi
+      new: T2-03/PRESENT/B-03:'Cháy'
+M48 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Nghe tiếng kêu cứu ở cầu thang bộ tầng 11
+      new: S-09/PRESENT/S-09:'kêu cứu'
+      head: -
+M49 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Cứu tôi với, thang máy kẹt rồi
+      new: S-09/PRESENT/S-09:'Cứu tôi với'
+      head: -
+M50 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Có tiếng la cứu ở tầng hầm
+      new: S-09/PRESENT/S-09:'la cứu'
+      head: -
+M51 ok          got=EMERGENCY want=EMERGENCY | cuu voi, co nguoi bi ket trong phong rac
+M52 ok          got=EMERGENCY want=EMERGENCY [HEAD=NONE] | Có người kêu cứu, không rõ ở tầng mấy
+      new: S-09/PRESENT/S-09:'kêu cứu'
+      head: -
+===== FP (45)
+F01 ok          got=NONE      want=NONE | Bình cứu hỏa hành lang tầng 5 hết hạn rồi
+F02 ok          got=NONE      want=NONE | Xe cứu hộ đậu chắn lối vào hầm
+F03 ok          got=NONE      want=NONE | Hộp cứu hỏa ở sảnh bị mất kính
+F04 FALSE-ALARM got=EMERGENCY want=NONE/UNCLEAR [HEAD=NONE] | Ban quản lý cứu với, rác để mấy ngày rồi không ai dọn
+      new: S-09/PRESENT/S-09:'cứu với'
+      head: -
+F05 FALSE-ALARM got=EMERGENCY want=NONE/UNCLEAR [HEAD=NONE] | Cư dân kêu cứu vì thang máy hỏng cả tuần không ai sửa
+      new: S-09/PRESENT/S-09:'kêu cứu'
+      head: -
+F06 ok          got=NONE      want=NONE/UNCLEAR | Có con mèo kêu cứu trên mái tầng thượng
+F07 ok          got=NONE      want=NONE | Ngồi chờ thang máy lâu quá bị tê chân
+F08 ok          got=NONE      want=NONE | Bị té nước vào người khi đi qua bồn cây ở sảnh
+F09 ok          got=NONE      want=NONE | Bé bị tè ra sàn thang máy, cần lau
+F10 ok          got=UNCLEAR   want=NONE/UNCLEAR | Nhà ai nấu ăn để lửa lớn quá, mùi đồ ăn bay ra hành lang
+F11 ok          got=UNCLEAR   want=NONE/UNCLEAR | Bếp nướng trên sân thượng để lửa lớn, mùi thịt nướng bay khắp tầng
+F12 ok          got=UNCLEAR   want=NONE/UNCLEAR | Hút thuốc trong thang máy khói nhiều lắm
+F13 ok          got=UNCLEAR   want=NONE/UNCLEAR | Nhà bên đốt nhang khói nhiều quá, hành lang ám mùi
+F14 ok          got=NONE      want=NONE/UNCLEAR | Khói nhang nhiều quá ở hành lang tầng 8
+F15 ok          got=NONE      want=NONE [HEAD=EMERGENCY] | Nước bị ngắt cả tòa từ sáng
+      new: -
+      head: S-09/PRESENT/S-09:'bị ngắt'
+F16 ok          got=NONE      want=NONE [HEAD=EMERGENCY] | Người dân phàn nàn điện bị ngắt liên tục
+      new: -
+      head: S-09/PRESENT/S-09:'bị ngắt'
+F17 ok          got=NONE      want=NONE [HEAD=EMERGENCY] | Ban quản lý báo người dân là nước sẽ bị ngắt từ 8h
+      new: -
+      head: S-09/PRESENT/S-09:'bị ngắt'
+F18 ok          got=NONE      want=NONE [HEAD=EMERGENCY] | Wifi người dùng bị ngắt liên tục
+      new: -
+      head: S-09/PRESENT/S-09:'bị ngắt'
+F19 ok          got=NONE      want=NONE [HEAD=EMERGENCY] | Thang máy bị ngắt, nhiều người phải đi bộ
+      new: -
+      head: S-09/PRESENT/S-09:'bị ngắt'
+F20 ok          got=NONE      want=NONE | Em bé bị ngắt quãng giấc ngủ vì tiếng khoan
+F21 ok          got=NONE      want=NONE/UNCLEAR | Con mèo nằm không nhúc nhích ở góc hầm xe, chắc chết rồi
+F22 ok          got=NONE      want=NONE | Chiếc xe đạp nằm không nhúc nhích ở đó cả tháng nay
+F23 ok          got=NONE      want=NONE | Cả năm nay thang máy không nhúc nhích, đề nghị sửa
+F24 ok          got=NONE      want=NONE | Gọi anh Nam bảo vệ mà ảnh không nhúc nhích
+F25 ok          got=NONE      want=NONE | Nghe tiếng khoan cả ngày mà tôi bốc hỏa
+F26 ok          got=NONE      want=NONE | Chị ấy bốc hoả vì rác để trước cửa
+F27 ok          got=NONE      want=NONE | Có ai để quên bọc hoa ở sảnh chính
+F28 ok          got=NONE      want=NONE | Dây phơi đồ rơi xuống sân tầng 2
+F29 ok          got=NONE      want=NONE/UNCLEAR | Dây điện thoại rơi xuống hành lang tầng 4
+F30 ok          got=NONE      want=NONE | Dây cáp mạng lủng lẳng ở hành lang
+F31 ok          got=NONE      want=NONE | Dây phơi lủng lẳng ngoài ban công
+F32 ok          got=NONE      want=NONE/UNCLEAR | Thang máy kẹt cả tuần rồi, người già phải đi thang bộ
+F33 ok          got=NONE      want=NONE/UNCLEAR | Thang máy số 3 kẹt hoài, nhờ BQL gọi người sửa
+F34 ok          got=NONE      want=NONE/UNCLEAR | Thang máy kẹt cửa, ảnh hưởng người đi làm buổi sáng
+F35 ok          got=NONE      want=NONE/UNCLEAR | Thang máy kẹt hoài, người dân bức xúc lắm
+F36 ok          got=NONE      want=NONE/UNCLEAR | Thang máy hôm qua bị kẹt, may là không có người bên trong
+F37 ok          got=NONE      want=NONE | Không có ai kêu cứu cả, chỉ là trẻ con chơi đùa
+F38 ok          got=NONE      want=NONE [HEAD=EMERGENCY] | Đèn hành lang bị ngắt, người đi lại tối om
+      new: -
+      head: S-09/PRESENT/S-09:'bị ngắt'
+F39 ok          got=NONE      want=NONE/UNCLEAR | Tôi suýt té vì sàn sảnh trơn
+F40 ok          got=NONE      want=NONE | Nhân viên vệ sinh té nước bẩn ra hành lang
+F41 ok          got=NONE      want=NONE/UNCLEAR | bi te nuoc tu tren lau xuong
+F42 ok          got=UNCLEAR   want=NONE/UNCLEAR | Cuối tuần có đốt lửa trại lớn ở sân chung
+F43 ok          got=NONE      want=NONE/UNCLEAR | Con chó nằm im không nhúc nhích trước cửa thang máy
+F44 ok          got=NONE      want=NONE | Dây phơi bị đứt rơi xuống
+F45 ok          got=NONE      want=NONE [HEAD=EMERGENCY] | Mọi người ơi, điện bị ngắt rồi
+      new: -
+      head: S-09/PRESENT/S-09:'bị ngắt'
+===== BASE (10)
+N01 ok          got=NONE      want=NONE | Đèn hành lang tầng 8 tòa SIM-B nhấp nháy cả tuần nay
+N02 ok          got=NONE      want=NONE | Bóng đèn sảnh thang máy tầng 4 bị hỏng, nhờ thay giúp
+N03 ok          got=NONE      want=NONE | Hành lang tầng 10 có nhiều lá cây và bụi, cần quét
+N04 ok          got=NONE      want=NONE | Thùng rác cạnh thang bộ tầng 6 đầy tràn, bốc mùi
+N05 ok          got=NONE      want=NONE | Đèn cầu thang bộ tầng 2 lúc sáng lúc tắt
+N06 ok          got=NONE      want=NONE | Sàn sảnh chính dính bẩn sau khi mưa, nhờ lau
+N07 ok          got=NONE      want=NONE | Đèn hầm B2 khu để xe máy không sáng, rất tối
+N08 ok          got=NONE      want=NONE | Phòng rác tầng 5 có gián và chuột, cần phun thuốc
+N09 ok          got=NONE      want=NONE | Kính cửa sảnh bị dính vết tay, cần lau chùi
+N10 ok          got=NONE      want=NONE | Đèn led hành lang tầng 12 bị chết hai bóng
+TOTAL=107 ERRORS=7
