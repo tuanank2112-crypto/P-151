@@ -139,6 +139,12 @@ PERMISSIONS: dict[Action, frozenset[ActorRole]] = {
     Action.EMERGENCY_DOWNGRADE: frozenset({Role.BQL}),  # §6.5
     Action.EMERGENCY_CLOSE: frozenset({Role.BQL}),  # T10
     Action.SET_PRIORITY: frozenset({Role.BPTN, Role.BQL}),  # §7
+    # Plan 06 (01 §5.3). AGENT_DECISION, SPLIT_TICKET and LINK_TICKETS are deliberately absent: written internally
+    # through _agent/_audit, no role may request them.
+    Action.BQL_MERGE: frozenset({Role.BQL}),
+    Action.CREATE_FOLLOW_UP: frozenset({Role.BQL}),
+    Action.BQL_REASSIGN_TO_BPTN: frozenset({Role.BQL}),
+    Action.SPLIT_UNDO: frozenset({Role.BPTN, Role.BQL}),
 }
 
 
@@ -154,7 +160,7 @@ def _rule(*actors: ActorRole, reasons=(), required=False, pipeline=False) -> Tra
     return TransitionRule(frozenset(actors), frozenset(reasons), required, pipeline)
 
 
-# CR-BPTN-03 §4.1. The only allowed status changes: 18 rows + cancel from the 7 non-terminal statuses.
+# CR-BPTN-03 §4.1. The only allowed status changes: 23 rows + cancel from the 7 non-terminal statuses.
 TRANSITIONS: dict[tuple[TicketStatus, TicketStatus], TransitionRule] = {
     (S.RECEIVED, S.NEED_INFO): _rule(Role.SYSTEM, reasons=[R.MISSING_INFO], required=True, pipeline=True),  # T02
     (S.NEED_INFO, S.RECEIVED): _rule(Role.SYSTEM, Role.BQL),  # T03: not pipeline-only, BQL clears a safety NEED_INFO
@@ -172,12 +178,14 @@ TRANSITIONS: dict[tuple[TicketStatus, TicketStatus], TransitionRule] = {
         required=True,
         pipeline=True,
     ),
-    (S.VERIFYING, S.MERGED): _rule(Role.BPTN),  # T08 (BQL merge is P1)
+    (S.VERIFYING, S.MERGED): _rule(Role.BPTN, Role.BQL),  # T08 (plan 06: BQL merges an emergency ticket too)
     (S.VERIFYING, S.RECEIVED): _rule(Role.SYSTEM, Role.BPTN, Role.BQL),  # T05: not pipeline-only
     (S.VERIFYING, S.NEED_INFO): _rule(Role.BPTN, Role.BQL, reasons=[R.MISSING_INFO], required=True),  # T06
     (S.NEED_INFO, S.VERIFYING): _rule(Role.BQL, reasons=[R.EMERGENCY_PENDING_BQL], required=True),  # T07
     (S.VERIFYING, S.CLOSED): _rule(Role.BQL),  # T10
-    (S.RECEIVED, S.ON_HOLD): _rule(Role.AGENT, reasons=[R.WAITING_MATERIAL], required=True, pipeline=True),
+    (S.RECEIVED, S.ON_HOLD): _rule(  # T11
+        Role.AGENT, reasons=[R.WAITING_MATERIAL, R.WAITING_EMERGENCY], required=True, pipeline=True
+    ),
     (S.ON_HOLD, S.RECEIVED): _rule(Role.SYSTEM, pipeline=True),
     (S.RECEIVED, S.ROUTED): _rule(Role.SYSTEM, reasons=[R.OUT_OF_HOURS], pipeline=True),
     (S.ROUTED, S.IN_PROGRESS): _rule(Role.DEPARTMENT),
@@ -187,6 +195,14 @@ TRANSITIONS: dict[tuple[TicketStatus, TicketStatus], TransitionRule] = {
     (S.IN_PROGRESS, S.READY_FOR_REVIEW): _rule(Role.AGENT, pipeline=True),
     (S.READY_FOR_REVIEW, S.CLOSED): _rule(Role.BQL),
     (S.READY_FOR_REVIEW, S.IN_PROGRESS): _rule(Role.BQL, reasons=[R.REWORK], required=True),
+    # Plan 06 (01 §5.1): 5 more rows
+    (S.MERGED, S.RECEIVED): _rule(Role.BPTN, Role.BQL, Role.SYSTEM),  # T09: undo a merge / root cancelled
+    (S.IN_PROGRESS, S.VERIFYING): _rule(  # T16: department reports a wrong department after it accepted
+        Role.DEPARTMENT, reasons=[R.WRONG_DEPT_AFTER_START], required=True
+    ),
+    (S.VERIFYING, S.IN_PROGRESS): _rule(Role.BQL),  # T17: BQL keeps the department
+    (S.ON_HOLD, S.MERGED): _rule(Role.BPTN, Role.BQL),  # T08S-a: only undo_split
+    (S.ROUTED, S.MERGED): _rule(Role.BPTN, Role.BQL),  # T08S-b: only undo_split
     **{(status, S.CANCELLED): _rule(Role.BQL) for status in S if status not in TERMINAL_STATUSES},
 }
 
@@ -196,6 +212,7 @@ BLOCKER_OWNERS: dict[ReasonCode, BlockerOwner] = {
     R.EMERGENCY_PENDING_BQL: BlockerOwner.BQL,
     R.WRONG_DEPT_AFTER_START: BlockerOwner.BQL,  # Q-A: declared only, nothing creates it in P0
     R.WAITING_MATERIAL: BlockerOwner.WAREHOUSE,
+    R.WAITING_EMERGENCY: BlockerOwner.SYSTEM,  # plan 06 P1-E: released when the emergency next to it is handled
     R.OUT_OF_HOURS: BlockerOwner.SYSTEM,
     R.NOT_ACCEPTED: BlockerOwner.DEPARTMENT,
     R.BLOCKED_ONSITE: BlockerOwner.DEPARTMENT,

@@ -130,7 +130,7 @@ def test_invariant_4_raw_is_read_only(engine):
 def test_transition_table_matches_the_cr():
     assert all(rule.actors == {"BQL"} for (_, to), rule in TRANSITIONS.items() if to in ("CLOSED", "CANCELLED"))
     assert ("CLOSED", "CANCELLED") not in TRANSITIONS and ("MERGED", "CANCELLED") not in TRANSITIONS
-    assert len(TRANSITIONS) == 18 + 7  # 18 rows + cancel from the 7 non-terminal statuses
+    assert len(TRANSITIONS) == 23 + 7  # 23 rows + cancel from the 7 non-terminal statuses
     assert ("CLOSED", "READY_FOR_REVIEW") not in TRANSITIONS  # CR-BPTN-03 §4.3: no reopen
     assert set(BLOCKER_OWNERS) == set(ReasonCode)
 

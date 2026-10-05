@@ -11,6 +11,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
+from src.maintenance.agent.schema import AgentDecisionRecord
 from src.maintenance.enums import (
     PLAYBOOK_VERSION,
     SCHEMA_VERSION,
@@ -172,6 +173,16 @@ class ResidentAddition(Entity):
     content: str = Field(min_length=1, max_length=MAX_DESCRIPTION_CHARS)
     submitted_by: str
     submitted_at: AwareDatetime
+    # Plan 06 (01 §2.2). merged_from: merged INTO this ticket from another one; staff only, rules/Agent never read it.
+    # copied_from: copied onto a split child or follow-up ticket; the Agent and rules DO read it.
+    merged_from: str | None = None
+    copied_from: str | None = None
+
+    @model_validator(mode="after")
+    def _one_origin(self):
+        if self.merged_from is not None and self.copied_from is not None:
+            raise ValueError("merged_from và copied_from không được cùng đặt")
+        return self
 
 
 class LockedFields(Entity):
@@ -245,7 +256,9 @@ BLOCKER_CODES_BY_STATUS: dict[TicketStatus, frozenset[ReasonCode]] = {
             ReasonCode.WRONG_DEPT_AFTER_START,
         }
     ),
-    TicketStatus.ON_HOLD: frozenset({ReasonCode.WAITING_MATERIAL, ReasonCode.BLOCKED_ONSITE}),
+    TicketStatus.ON_HOLD: frozenset(
+        {ReasonCode.WAITING_MATERIAL, ReasonCode.BLOCKED_ONSITE, ReasonCode.WAITING_EMERGENCY}
+    ),
     TicketStatus.ROUTED: frozenset({ReasonCode.OUT_OF_HOURS, ReasonCode.NOT_ACCEPTED}),
     TicketStatus.IN_PROGRESS: frozenset({ReasonCode.REWORK}),
 }
@@ -295,7 +308,34 @@ class Ticket(Entity):
     priority_source: PrioritySource | None = None
     priority_rule_id: str | None = None  # PRI-H1|PRI-H2|PRI-M1|PRI-M2|PRI-L1|PRI-D0; None for HUMAN_OVERRIDE
     priority_reason: str | None = None
+    # Plan 06 (01 §2.1): duplicate / split / follow-up links. Link lists are append-only (engine), see V-T1..V-T5.
+    duplicate_count: int = Field(default=0, ge=0)
+    merged_children: list[str] = Field(default_factory=list)
+    wrong_department_return_count: int = Field(default=0, ge=0)
+    follow_up_of: str | None = None
+    split_from: str | None = None
+    split_children: list[str] = Field(default_factory=list)
+    split_category: ServiceCategory | None = None
     synthetic: Synthetic = True
+
+    @model_validator(mode="after")
+    def _link_rules(self):
+        if self.split_category not in (None, ServiceCategory.VE_SINH, ServiceCategory.KY_THUAT):  # V-T1
+            raise ValueError("split_category chỉ được là VE_SINH hoặc KY_THUAT")
+        if (self.split_category is None) != (self.split_from is None and not self.split_children):  # V-T2
+            raise ValueError("split_category đặt iff ticket là gốc hoặc con của một lần tách")
+        if self.split_from is not None and self.split_children:  # V-T3
+            raise ValueError("ticket không thể đồng thời có split_from và split_children")
+        linked = (self.merged_children, self.split_children, self.related_ticket_ids)
+        if any(self.ticket_id in ids for ids in linked) or self.ticket_id in (
+            self.merged_into,
+            self.split_from,
+            self.follow_up_of,
+        ):  # V-T4
+            raise ValueError("ticket không được tự liên kết với chính nó")
+        if any(len(ids) != len(set(ids)) for ids in linked):  # V-T5
+            raise ValueError("danh sách liên kết không được lặp id")
+        return self
 
     @model_validator(mode="after")
     def _status_rules(self):
@@ -392,7 +432,7 @@ class AgentClassificationProposal(Entity):
     ticket_type_proposed: TicketType
     playbook_id: PlaybookId
     playbook_version: Literal["1.1"] = PLAYBOOK_VERSION
-    category_source: Literal["AGENT", "BPTN_LOCKED"] = "AGENT"
+    category_source: Literal["AGENT", "BPTN_LOCKED", "AGENT_SPLIT", "AGENT_LLM"] = "AGENT"
     asset_type: Literal["LIGHTING"] | None = None
     reported_symptom: Literal["NOT_WORKING"] | None = None
     location_proposed: str | None = None
@@ -481,7 +521,19 @@ class EvidenceRecord(Entity):
     readability_status: ReadabilityStatus
     evidence_validation_status: EvidenceValidationStatus = EvidenceValidationStatus.MISSING
     immutable: bool = False
+    merged_from: str | None = None  # plan 06 01 §2.2: same meaning as on ResidentAddition
+    copied_from: str | None = None
     synthetic: Synthetic = True
+
+    @model_validator(mode="after")
+    def _one_origin(self):
+        if self.merged_from is not None and self.copied_from is not None:
+            raise ValueError("merged_from và copied_from không được cùng đặt")
+        if (self.merged_from is not None or self.copied_from is not None) and (
+            self.source != EvidenceSource.RESIDENT_ORIGINAL
+        ):
+            raise ValueError("merged_from/copied_from chỉ dùng cho bằng chứng source=RESIDENT_ORIGINAL")
+        return self
 
 
 class ReadinessEvaluation(Entity):
@@ -594,6 +646,25 @@ class PlannedMaterial(Entity):
     planned_qty: float = Field(ge=0)
 
 
+class ExecutionSnapshot(Entity):
+    """E02 (SPEC-P06 §5): deep copy of the execution data when BQL sends a started ticket back to BPTN."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    snapshot_id: Annotated[str, _sim_id("SIM-SNP-")]  # f"SIM-SNP-{_suffix(tid)}-{len(case.execution_snapshots)+1:02d}"
+    ticket_id: str
+    reason: Literal["BQL_REASSIGN_TO_BPTN"]
+    taken_at: AwareDatetime
+    taken_by: str
+    department_id: Department
+    work_order_draft_id: str | None
+    playbook_id: PlaybookId | None
+    checklist_items: list[ChecklistItem]
+    material_lines: list[MaterialLine]
+    evidence_ids: list[str]  # every evidence_id at the time (photos, notes)
+    synthetic: Synthetic = True
+
+
 class Case(Entity):
     """Everything the engine holds for one ticket. Mutated only through MaintenanceEngine."""
 
@@ -615,3 +686,6 @@ class Case(Entity):
     events: list[StatusEvent] = Field(default_factory=list)
     notifications: list[Notification] = Field(default_factory=list)
     audit: list[AuditEvent] = Field(default_factory=list)
+    # Plan 06: E02 snapshots, and the Agent decision currently applied to the ticket (01 §2.3; history is in the audit)
+    execution_snapshots: list[ExecutionSnapshot] = Field(default_factory=list)
+    agent_decision: AgentDecisionRecord | None = None

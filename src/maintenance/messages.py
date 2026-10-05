@@ -44,5 +44,15 @@ def safety_info_message(fields: str) -> str:
     return _templates()["safety_info_message"].format(fields=fields)
 
 
+def split_created_message(parent: str) -> str:
+    """Public wording of a ticket created by splitting a report that holds two jobs (plan 06 P05)."""
+    return _templates()["split_created_message"].format(parent=parent)
+
+
+def follow_up_created_message(source: str) -> str:
+    """Public wording of a follow-up repair ticket created by BQL (plan 06 P07)."""
+    return _templates()["follow_up_created_message"].format(source=source)
+
+
 def overdue_eta_message(eta: datetime) -> str:
     return _templates()["overdue_eta_message"].format(eta=_fmt(eta))
