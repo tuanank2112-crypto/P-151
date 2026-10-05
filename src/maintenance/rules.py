@@ -132,6 +132,7 @@ COMMON_AREA_PATTERNS = [
     r"\bnha xe\b",
     r"\bsan (?:choi|thuong)\b",
     r"\bloi di\b",
+    r"\bloi thoat hiem\b",
 ]
 # Unaccented "den" is ambiguous ("đèn"/"đến"/"đen"): it needs an area right after and no arrival verb before it
 LIGHTING_PATTERNS = [
@@ -187,6 +188,17 @@ NOT_WORKING_PATTERNS = [
     r"\b(?:lung lang|re re)\b",
     r"\b(?:bong (?:den|luminaire) chay|chay bong)\b",  # Q22 typed without accents: "bong den chay roi"
 ]
+# Plan 05 H04 (d): liquid reaching electrical equipment, or bare wires, is neither a spill to mop up nor an ordinary
+# broken lamp. The report gets no playbook (OUT_OF_SCOPE, BPTN reads it); the safety step 2b runs first and is the
+# real guard, this is the second line of defence so such a report is never dispatched as routine work.
+ELECTRICAL_EQUIPMENT = r"(?:tu dien|o dien|hop dien|o cam|cong tac|cau dao|bang dien)"
+LIQUID = r"(?:nuoc|chat long|overflow|tran|ngap|ro ri|ri nuoc|tham)"
+ELECTRICAL_HAZARD_PATTERNS = [
+    rf"\b{LIQUID}\b(?: [a-z]+){{0,5}}? {ELECTRICAL_EQUIPMENT}\b",  # "nước tràn vào tủ điện", "ngập gần tới ổ cắm"
+    rf"\b{ELECTRICAL_EQUIPMENT}(?: [a-z]+){{0,4}}? (?:bi )?(?:ngap|uot|dong nuoc|ngam nuoc|vao nuoc)\b",
+    r"\b(?:loi|lo|ho)(?: ca| ra| het)? (?:ca )?day dien\b",  # "lòi cả dây điện", "lộ dây điện"
+    r"\bday dien(?: [a-z]+){0,5}? (?:loi|lo|ho|bi ho)\b",  # "dây điện chỗ đèn lòi ra ngoài"
+]
 
 
 @dataclass(frozen=True)
@@ -205,6 +217,15 @@ def classify(description: str) -> Classification:
     Matching both playbooks is CATEGORY_UNCLEAR (BPTN picks one); matching none is OUT_OF_SCOPE.
     """
     text = _classification_text(description)
+    if _any(ELECTRICAL_HAZARD_PATTERNS, text):
+        return Classification(
+            None,
+            ServiceCategory.UNKNOWN,
+            TicketType.UNKNOWN,
+            "PB-COM-R-CLS-01",
+            "Nội dung có chất lỏng ở thiết bị điện hoặc dây điện hở: không thuộc playbook nào trong v1.1",
+            ReasonCode.OUT_OF_SCOPE,
+        )
     in_common_area = _any(COMMON_AREA_PATTERNS, text)
     cleaning = _any(CLEANING_PATTERNS, text) or (in_common_area and _any(SOFT_CLEANING_PATTERNS, text))
     lit_subject = _any(LIGHTING_PATTERNS, text) or (
@@ -237,23 +258,39 @@ def classify(description: str) -> Classification:
     )
 
 
+def mentions_playbook_subject(description: str) -> bool:
+    """Whether the report talks about a lamp or about dirt at all, even with no common area named yet ("Đèn tầng 3
+    hỏng", "Nhiều rác quá"). Such a report is in scope once located, so the resident is asked for the location;
+    only a report about neither may skip that question (plan 05 Q05)."""
+    text = _classification_text(description)
+    if _any(ELECTRICAL_HAZARD_PATTERNS, text) or _any(PRIVATE_LAMP_PATTERNS, text) or _any(OUTSIDE_PATTERNS, text):
+        return False
+    dirt = _any(CLEANING_PATTERNS, text) or _any(SOFT_CLEANING_PATTERNS, text)
+    lamp = _any([*LIGHTING_PATTERNS, LUMINAIRE, UNACCENTED_LAMP, LUMINAIRE_LOST, TUBE_LAMP], text)
+    return bool(dirt or lamp)
+
+
 # --- Location proposal ------------------------------------------------------
 
 # "tòa nhà SIM-A" and "block SIM-A" name the building too; "nhà" and the words that start another location part
-# ("tòa nhà tầng 3", "tòa hành lang") are never the building code
+# ("tòa nhà tầng 3", "tòa hành lang") are never the building code. "toà SIM A" / "toa sim b" (a space instead of
+# the hyphen) is the same code: a word of 2+ letters followed by ONE letter or digit is joined with "-" ("ở" is
+# never that letter: "tòa SIM ở tầng 3").
 BUILDING_PATTERN = (
     r"\b(?:toa(?: nha)?|block) (?!(?:nha|tang|lau|ham|hanh|sanh|cau|thang|khu|phong|bai|san|loi|nay|do|kia)\b)"
-    r"([a-z0-9]+(?:-[a-z0-9]+)*)\b"
+    r"([a-z]{2,} (?!o\b)[a-z0-9](?![a-z0-9-])|[a-z0-9]+(?:-[a-z0-9]+)*)\b"
 )
 FLOOR_PATTERN = r"\b(?:tang(?: ham)?|ham|lau) (b?\d+|tret)\b"
 FLOOR_LABELS = {"TRET": "Trệt"}  # "tầng trệt" (ground floor)
 # Ordered: the longer area name must win ("sảnh thang máy" before "sảnh chính"; "hầm" before "bãi đỗ xe", so
 # "Tầng hầm B1 / Bãi đỗ xe" keeps the label the asset catalog uses). The labels the UI used to offer are all here.
+# "cầu thang" alone is the staircase ("cầu thang tầng 5"), never "cầu thang máy".
 AREA_PATTERNS: list[tuple[str, str]] = [
     (r"\bsanh thang may\b", "Sảnh thang máy"),
     (r"\bsanh chinh\b", "Sảnh chính"),
     (r"\bhanh lang\b", "Hành lang"),
-    (r"\b(?:cau )?thang bo\b", "Cầu thang bộ"),
+    (r"\bloi thoat hiem\b", "Lối thoát hiểm"),
+    (r"\b(?:cau thang(?! may\b)|thang bo)\b", "Cầu thang bộ"),
     (r"\bham( xe)?\b", "Hầm xe"),
     (r"\bphong rac\b", "Phòng rác"),
     (r"\b(?:bai (?:do |dau )?xe|nha xe)\b", "Bãi đỗ xe"),
@@ -281,10 +318,61 @@ def missing_location_parts(description: str) -> list[str]:
     return [name for name, value in zip(("building", "floor", "area"), parts) if value is None]
 
 
+# Where the resident LIVES is not where the problem is (plan 05 H04): "Căn 1508 tầng 15 tòa SIM-A, báo giúp hành
+# lang tầng 3 có rác", "Em ở tòa SIM-B, đi qua hành lang tầng 3 tòa SIM-A". A residence clause starts at one of
+# these cues and ends at punctuation, a line break or a reporting verb.
+RESIDENCE_CUE = r"\b(?:can(?: ho)?(?: so)? [a-z]?\d[a-z0-9-]*|can ho|phong \d[a-z0-9-]*|(?:em|toi|minh|anh|chi) o|nha (?:toi|em|minh))\b"
+CLAUSE_END = r"[,.;:!?]| - |\b(?:bao|nho|thay|di qua|di ngang|nhan|phan anh|xin|va)\b"
+
+
+def _residence_spans(text: str, areas: list[re.Match]) -> list[tuple[int, int]]:
+    """Clauses naming the resident's home. A clause that also names a common area is where the resident stands
+    ("Em ở tòa SIM-B tầng 9 hành lang, báo: …"), so it is not a residence clause."""
+    spans = []
+    for cue in re.finditer(RESIDENCE_CUE, text):
+        end = re.compile(CLAUSE_END).search(text, cue.end())
+        span = (cue.start(), end.start() if end else len(text))
+        if not any(span[0] <= a.start() < span[1] for a in areas):
+            spans.append(span)
+    return spans
+
+
+def _pick(matches: list[re.Match], spans: list[tuple[int, int]], anchor: re.Match | None) -> re.Match | None:
+    """The mention closest to the area, outside the residence clauses; the first one when no area is named."""
+    candidates = [m for m in matches if not any(s <= m.start() < e for s, e in spans)]
+    if not candidates:
+        return None
+    if anchor is None:
+        return candidates[0]
+    return min(candidates, key=lambda m: abs(m.start() - anchor.start()))
+
+
+def _floor_label(raw: str) -> str:
+    """'03' -> '3', 'b01' -> 'B1', 'tret' -> 'Trệt'."""
+    raw = raw.upper()
+    if raw in FLOOR_LABELS:
+        return FLOOR_LABELS[raw]
+    prefix, digits = ("B", raw[1:]) if raw.startswith("B") else ("", raw)
+    return f"{prefix}{int(digits)}"
+
+
 def _location_parts(description: str) -> tuple[str | None, str | None, str | None]:
-    text = normalize(description)
-    building = re.search(BUILDING_PATTERN, text)
-    area = next((label for pattern, label in AREA_PATTERNS if re.search(pattern, text)), None)
-    floor = re.search(FLOOR_PATTERN, text)
-    floor_label = FLOOR_LABELS.get(floor.group(1).upper(), floor.group(1).upper()) if floor else IMPLIED_FLOOR.get(area)
-    return (building.group(1).upper() if building else None), floor_label, area
+    """Building / floor / area of the PROBLEM.
+
+    Rules (plan 05 H04 a): the area is the first label in AREA_PATTERNS order; building and floor are the mentions
+    closest to that area, skipping mentions inside a residence clause (RESIDENCE_CUE). A residence building is still
+    used when no other building is named (residents report in their own building); a residence floor never is: the
+    resident is asked instead of the job being sent to their flat's floor.
+    """
+    text = normalize(description.replace("\n", ". "))
+    area_match, area = next(
+        ((m, label) for pattern, label in AREA_PATTERNS if (m := re.search(pattern, text))), (None, None)
+    )
+    areas = [m for pattern, _ in AREA_PATTERNS for m in re.finditer(pattern, text)]
+    spans = _residence_spans(text, areas)
+    buildings = list(re.finditer(BUILDING_PATTERN, text))
+    building = _pick(buildings, spans, area_match) or _pick(buildings, [], area_match)
+    floor = _pick(list(re.finditer(FLOOR_PATTERN, text)), spans, area_match)
+    floor_label = _floor_label(floor.group(1)) if floor else IMPLIED_FLOOR.get(area)
+    code = building.group(1).upper().replace(" ", "-") if building else None
+    return code, floor_label, area

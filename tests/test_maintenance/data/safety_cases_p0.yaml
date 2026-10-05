@@ -254,6 +254,20 @@ safety_cases:
   - {id: SC-240, text: "Ống nước bọc nilon chảy ra sàn hầm xe", expect: NONE}   # confirmers.chay "boc" -> "boc chay"
   - {id: SC-241, text: "Ban quản lý thông báo cắt điện hộ dân tầng 3", expect: NONE}   # confirmers.ho "thong" -> "thong ra"
   - {id: SC-242, text: "Bãi đỗ xe tầng hầm B1 tòa SIM-A bóng đèn bị cháy", expect: NONE, absent: [T2-03]}   # B-01: "bai do xe"
+  # ---- plan 05 H03: vị trí chèn GIỮA câu (thẩm định độc lập 2026-10-04)
+  - {id: SC-243, text: "Cụ ông ngã ở hành lang tầng 3 tòa SIM-A, nằm im không cử động được", expect: EMERGENCY, signals: [S-09]}
+  - {id: SC-244, text: "Phòng rác tầng 6 tòa SIM-A bốc hỏa dữ dội", expect: EMERGENCY, signals: [S-05]}
+  - {id: SC-245, text: "Dây điện ở hành lang tầng 3 tòa SIM-A bị tróc vỏ", expect: EMERGENCY, signals: [S-03]}
+  - {id: SC-246, text: "Dây điện ở sảnh thang máy tầng 5 tòa SIM-A treo lơ lửng ngang đầu người", expect: EMERGENCY, signals: [S-03]}
+  - {id: SC-247, text: "Phòng rác ở sảnh thang máy tầng 5 tòa SIM-A bốc hoả", expect: EMERGENCY, signals: [S-05]}
+  - {id: SC-248, text: "Dây điện lộ ra ngoài", expect: EMERGENCY, signals: [S-03]}
+  - {id: SC-249, text: "Đèn hành lang tầng 3 tòa SIM-A rơi ra, lòi cả dây điện", expect: EMERGENCY, signals: [S-03]}
+  - {id: SC-250, text: "dây điện tuột ra", expect: EMERGENCY, signals: [S-03]}
+  - {id: SC-251, text: "thung rac hanh lang tang 5 toa SIM-B day tran roi", expect: NONE}   # đầy tràn, không phải dây trần
+  - {id: SC-252, text: "Mấy hôm nay đèn hành lang tầng 7 tòa SIM-B cứ chập chờn", expect: NONE}
+  - {id: SC-254, text: "bóng đèn gần căn 705 tầng 7 tòa SIM-B bị cháy", expect: NONE, absent: [T2-03]}
+  - {id: SC-255, text: "Bóng đèn, ngay sảnh thang máy tầng 2 tòa SIM-C, bị cháy", expect: NONE, absent: [T2-03]}
+  - {id: SC-256, text: "Không có ai ở hành lang tầng 3 tòa SIM-A bị kẹt", expect: NONE}   # vị trí không làm mất phủ định ở đọc B
 
 
 # Mọi chuỗi phản ánh đang dùng trong fixture và test hiện có: chỉ CLN-004 và TEC-005 được phép lên Bậc 1.

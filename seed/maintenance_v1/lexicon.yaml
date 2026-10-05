@@ -4,7 +4,7 @@
 # Pattern là cụm thường (khớp nguyên cụm, có ranh giới từ) trừ khi bắt đầu bằng "re:" (regex Python thô).
 # Dạng CÓ dấu (homographs, homograph_intended, tier2_net_roots, benign_lamp_noun_forms) = NFC chữ thường, bỏ dấu ra đúng khoá.
 # Bẫy YAML 1.1: token trần no/yes/on/off/y/n/true/false bị đọc thành bool => phải đặt trong nháy.
-lexicon_version: "2026-10-04.p0e"  # plan 05 WP1: location-variant hardening (confirmers as word pairs, B-01 prefixes, resolved-marker place tail)
+lexicon_version: "2026-10-04.p0f"  # plan 05 WP1: location-variant hardening (confirmers as word pairs, B-01 prefixes, resolved-marker place tail)
 synthetic: true
 
 safety:
@@ -83,6 +83,7 @@ safety:
                      he thong, loi di, loi thoat hiem, nha xe,
                      bai do xe, bai xe, bai giu xe, toa nha, san thuong, san choi, tret,   # plan 05: vị trí kiểu cư dân
                      ba, bon, tu, nam, sau, bay, tam, chin, muoi,
+                     ngay, gan, can, can ho,   # plan 05 H03: "gần căn 705", "trước cửa căn 1205", ", ngay sảnh …,"
                      den hanh lang gan can, bong den cho, xin bao bong den, xin bao den,   # plan 04 S2 (vòng 2): chỉ trong cụm có danh từ đèn; "Căn hộ 1205 cháy, đèn ..." không phải B-01
                      bi, da, lai, cung, vua, moi, hay, thi, cai, cac, may, mot, hai, nhung, deu, dang]
   b01_code_token_regex: "[a-z]?\\d+[a-z]?|[a-z]"
@@ -90,7 +91,7 @@ safety:
   benign_with_lamp_noun: [chay]
   ambiguous_terms:           # B-03 / T2-03: đứng riêng (không benign, không có Bậc 1 kèm) -> Bậc 2
     - "re:\\bchay\\b"
-    - "re:\\bchap( dien| mach| chay)?\\b"
+    - "re:\\bchap( dien| mach| chay)?\\b(?! chon\\b)"   # plan 05 H03: "chập chờn" (đèn, wifi) không phải "chập"
     - dien giat
     - giat dien
     - bi giat
@@ -141,7 +142,8 @@ safety:
     phat tia lua: {lua: [lựa, lúa, lừa, lụa]}
     ngat xiu: {ngat: [ngắt]}
     "re:(?:^|(?<=[.;!?] )|(?<=[.;!?]))(?:(?!\\b(?:thuoc|nhang|huong|vang ma|nuong|bep|nau|khong|ko|chua|chang|hok|hinh nhu|co ve|nghe nhu|nghi la|nghi co|co le|giong nhu|cam giac nhu|co the la|duong nhu)\\b)[^.;!?])*?\\bkhoi (?:rat |qua |that |la )?nhieu\\b(?![^.;!?]*\\b(?:thuoc|nhang|huong|vang ma|nuong|bep)\\b)": {chay: [chảy, chạy], ngat: [ngắt], ho: [hộ, hồ, họ, hổ, hố, hô, hò], lua: [lựa, lúa, lừa, lụa], day: [dãy, đầy, dạy, dày, đây, đẩy, dậy, dấy, đày], giat: [giặt], "no": [nó, nò, nỏ, nõ, nọ], bong: [bong, bóng, bòng, bõng, bọng, bông, bống, bồng, bổng, bỗng, bộng], bat: [bật], sang: [sáng], te: [tê, tế, tề, tể, tệ, tè, tẻ], nam: [năm, nấm, nắm, nậm, nạm, nám]}   # plan 04 vòng 3: span từ đầu câu, chỉ chữ khói quyết
-    co khoi: {khoi: [khỏi, khơi]}                            # plan 04 vòng 2: "có khỏi đen" (gõ sai) giữ; "có khối rác" thì không
+    "re:(?:^|(?<=[.;!?] )|(?<=[.;!?]))(?:(?!\\b(?:den|bong|tuyp|khong|ko|chua|chang)\\b)[^.;!?])*?\\bchay roi (?:moi nguoi|ca nha|ba con|anh chi em|ae) oi\\b": {ngat: [ngắt], ho: [hộ, hồ, họ, hổ, hố, hô, hò], khoi: [khối, khỏi, khơi], lua: [lựa, lúa, lừa, lụa], day: [dãy, đầy, dạy, dày, đây, đẩy, dậy, dấy, đày], giat: [giặt], "no": [nó, nò, nỏ, nõ, nọ], bong: [bong, bóng, bòng, bõng, bọng, bông, bống, bồng, bổng, bỗng, bộng], bat: [bật], sang: [sáng], te: [tê, tế, tề, tể, tệ, tè, tẻ], nam: [năm, nấm, nắm, nậm, nạm, nám]}   # plan 05 H03: span từ đầu câu, chỉ chữ cháy quyết
+    co khoi: {khoi: [khỏi, khơi]}                        # plan 04 vòng 2: "có khỏi đen" (gõ sai) giữ; "có khối rác" thì không
     boc khoi: {khoi: [khối, khỏi, khơi]}
     khoi boc: {khoi: [khỏi, khơi]}                          # plan 05: "khối bọc nilon" không phải khói; "khối bốc ra/lên" giữ nhờ confirmers
     lua boc: {lua: [lựa, lúa, lừa, lụa]}
@@ -216,6 +218,7 @@ safety:
         - dung dich la
         - bot la
         - chat long khong ro
+        - "re:\\bchat (?:long|bot|ran|nhon|ban)(?: \\w+)? (?:la|khong ro)\\b"   # plan 05 H03: "chất bột trắng không rõ"
     - component_id: hazard_sign
       patterns:
         - mui hac
@@ -231,6 +234,7 @@ safety:
         - buon non
         - rat da
         - bong rat
+        - ho sac sua           # plan 05 H03
   signals:
     # ---- Bậc 1 (tier 1) ----
     - {signal_id: S-01, name: burning_smell, tier: 1, phase: P0, scope: [KY_THUAT, COMMON],
@@ -238,7 +242,10 @@ safety:
     - {signal_id: S-02, name: spark, tier: 1, phase: P0, scope: [KY_THUAT, COMMON],
        patterns: [tia lua, toe lua, xet dien, xet lua, ban tia lua, phat tia lua]}
     - {signal_id: S-03, name: exposed_wire, tier: 1, phase: P0, scope: [KY_THUAT],
-       patterns: [day dien ho, day tran, day dut loi ra, lo day, ho day, day dien bi dut, day dien loi ra, day dien dut, loi day dien, day ho,
+       patterns: [day dien ho, "re:\\bday tran\\b(?! (?:roi|ra(?! ngoai)|het|ca|lan|lenh lang|nuoc|rac|xuong|ngap)\\b)", day dut loi ra,   # plan 05 H03: "day tran roi/ra ca hanh lang" = đầy tràn
+                  "re:\\bday (?:dien|cap dien)(?! thoai)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b)\\w+){0,4} (?:lo|loi|tuot|thong|ho) ra\\b",   # plan 05 H03: lộ/lòi/tuột ra
+                  "re:\\b(?:loi|lo|ho)(?: ca| het| ra| nguyen| mot| may| doan| soi){0,2} day (?:dien|cap dien)\\b(?! thoai)",   # "lòi cả dây điện"
+                  lo day, ho day, day dien bi dut, day dien loi ra, day dien dut, loi day dien, day ho,
                   day dien bi ho, day bi ho, ho dien, dien ho, day dien ho ra, day dien tran, day dien thong, day dien bi loi, day dien loi,
                   day dien bi tran, day dien bi tran ra,
                   "re:\\bday (?:dien|cap dien)(?! thoai)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b)\\w+){0,4} (?:troc|tuot|bong)(?: het| ca)? vo\\b",   # plan 04 S1 + vòng 2
@@ -248,7 +255,8 @@ safety:
        patterns: [co khoi, boc khoi, khoi bay, khoi den, khoi trang, kem khoi, xi khoi, toa khoi, "re:\\bkhoi toa\\b(?! nha\\b| sim\\b)", "re:\\bnhieu khoi\\b(?! (?:thuoc|nhang|huong|vang ma|nuong|bep)\\b)", thay khoi, khoi boc, khoi bay ra, mui khoi,
                   khoi mu, mu khoi, khoi dac, ngap khoi, khoi cuon, day khoi, con khoi, khoi um, khoi lan, toan khoi, khoi nghi ngut,
                   toan la khoi, "re:(?:^|(?<=[.;!?] )|(?<=[.;!?]))(?:(?!\\b(?:thuoc|nhang|huong|vang ma|nuong|bep|nau|khong|ko|chua|chang|hok|hinh nhu|co ve|nghe nhu|nghi la|nghi co|co le|giong nhu|cam giac nhu|co the la|duong nhu)\\b)[^.;!?])*?\\bkhoi (?:rat |qua |that |la )?nhieu\\b(?![^.;!?]*\\b(?:thuoc|nhang|huong|vang ma|nuong|bep)\\b)",   # plan 04 vòng 3: "khói rất nhiều" trừ khi trước đó trong câu có thuốc/nhang/nướng, phủ định, hedge
-                  "re:\\bkhoi(?: (?!khong\\b|ko\\b|chua\\b|chang\\b)\\w+){0,8} khong tho duoc\\b"]}   # plan 04 vòng 2: "khói nhiều" chuyển sang Bậc 2 (ambiguous_terms)
+                  "re:\\bkhoi(?: (?!khong\\b|ko\\b|chua\\b|chang\\b)\\w+){0,8} khong tho duoc\\b",
+                  "re:\\bkhoi tu(?: (?!khong\\b|ko\\b|chua\\b|chang\\b)\\w+){1,4} (?:bay|boc|toa|tuon|phut|lan|cuon) (?:ra|len)\\b"]}   # plan 05 H03: "khói từ phòng rác bay ra"   # plan 04 vòng 2: "khói nhiều" chuyển sang Bậc 2 (ambiguous_terms)
     - {signal_id: S-05, name: fire, tier: 1, phase: P0, scope: [COMMON],
        patterns: [boc chay, dang chay, co lua, chay hop dien, hop dien chay, hop dien boc chay, hop den chay, chay hop den, lua chay, ngon lua, chay lon, chay bung, phat no, chay no, chap chay, bat lua, chay thanh ngon,
                   hoa hoan, chay nha, dam chay, chay lan, lua boc, thay lua,
@@ -256,6 +264,7 @@ safety:
                   lua to, lua bung, lua lan, boc lua, phong lua, "re:(?<!den )(?<!bong )(?<!tuyp )\\b(?:phong rac|thung rac|xe rac)(?: (?!den\\b|bong\\b|tuyp\\b|khong\\b|ko\\b|chua\\b|chang\\b)\\w+){0,3} chay sang\\b",   # plan 05: confirmers.sang bỏ phong rac
                   "re:(?<!de )(?<!nau )\\blua lon\\b", lua dang lan, "re:\\b(?:hop dien|tu dien|o cam|cong tac|cau dao|day dien|may bien ap|phong rac|thung rac|can ho|nha|xe|tang ham|ham xe)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b|toi\\b|minh\\b|ay\\b|em\\b|anh\\b|chi\\b|nguoi\\b)\\w+){0,3} (?:dang |bi )?boc hoa\\b(?! don)",   # plan 04: không "để lửa lớn" (nấu), "bốc hỏa" chỉ khi chủ ngữ là chỗ/vật
                   "re:(?<!nuoc )\\bchay (?:sang|ra)\\b",
+                  "re:(?:^|(?<=[.;!?] )|(?<=[.;!?]))(?:(?!\\b(?:den|bong|tuyp|khong|ko|chua|chang)\\b)[^.;!?])*?\\bchay roi (?:moi nguoi|ca nha|ba con|anh chi em|ae) oi\\b",   # plan 05 H03: lời báo cháy, câu không có danh từ đèn
                   "re:\\b(hop dien|tu dien|o cam|cong tac|cau dao|day dien|may bien ap)(?: (?!khong\\b|ko\\b|chua\\b|chang\\b|den\\b|bong\\b|tuyp\\b)\\w+){0,8} no\\b"]}
     - {signal_id: S-06, name: electric_shock, tier: 1, phase: P1, scope: [COMMON],
        patterns: [bi dien giat, dien giat, giat tay khi cham, ro dien, ro ri dien, te dien]}
@@ -297,7 +306,7 @@ safety:
     # (rule_id ghi T2-01 / T2-02 trên RiskSignal của S-xx).
 
 priority:
-  high_areas: ["Hành lang", "Sảnh chính", "Sảnh thang máy", "Cầu thang bộ", "Hầm xe", "Bãi đỗ xe", "Lối đi"]   # PRI-H1: lối đi chung (plan 04: + bãi đỗ xe, lối đi)
+  high_areas: ["Hành lang", "Sảnh chính", "Sảnh thang máy", "Cầu thang bộ", "Hầm xe", "Bãi đỗ xe", "Lối đi", "Lối thoát hiểm"]   # PRI-H1: lối đi chung (plan 04: + bãi đỗ xe, lối đi)
   obstruction_patterns:      # PRI-H2: cản trở lối đi
     - chan loi
     - chan het loi

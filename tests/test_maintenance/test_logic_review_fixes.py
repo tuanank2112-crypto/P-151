@@ -179,11 +179,17 @@ def test_ai_log_carries_the_ticket_id(llm_engine):
     ai_logger.clear()
 
 
-def test_no_early_llm_call_when_the_pipeline_stops_before_classification(llm_engine):
+def test_no_early_llm_call_when_the_safety_layer_stops_the_ticket(llm_engine):
     engine, llm = llm_engine
     engine.receive("Có khói bốc ra từ hộp điện hành lang tầng 3 tòa SIM-A", resident_id=RESIDENT)  # tier 1
-    engine.receive("Nhiều rác quá", resident_id=RESIDENT)  # no location: NEED_INFO
     assert llm.calls == 0
+
+
+def test_a_report_without_location_is_classified_once_outside_the_lock(llm_engine):
+    """Plan 05 Q05: step 2 needs the category to know whether to ask for a location, so the call happens early."""
+    engine, llm = llm_engine
+    engine.receive("Nhiều rác quá", resident_id=RESIDENT)  # no location: classified, then NEED_INFO (in scope)
+    assert llm.calls == 1 and llm.lock_free == [True]
 
 
 # ---------------------------------------------------------------------- E5: orphaned RECEIVED ticket

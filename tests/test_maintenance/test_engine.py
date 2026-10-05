@@ -181,7 +181,7 @@ def test_step2_names_only_the_missing_location_parts(fresh):
     assert case.ticket.blocker.public_message == (
         'Ban tiếp nhận thông tin sẽ liên hệ bạn để bổ sung: tòa (ghi kèm chữ "tòa", ví dụ: tòa SIM-A), '
         "khu vực (hành lang, sảnh thang máy, sảnh chính, cầu thang bộ, hầm xe, bãi đỗ xe, phòng rác, sân chơi, "
-        "sân thượng hoặc lối đi). Bạn cũng có thể bổ sung ngay tại đây."
+        "sân thượng, lối đi hoặc lối thoát hiểm). Bạn cũng có thể bổ sung ngay tại đây."
     )
 
 

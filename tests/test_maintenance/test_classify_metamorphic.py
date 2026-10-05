@@ -152,6 +152,15 @@ OUT_OF_SCOPE = [
     "Khi đến thì thấy thang máy hỏng",
     "Tối om, không thấy đường",  # darkness without a lamp may be a power cut: left to the LLM (SO round 2)
     "Bóng tuýp trong căn hộ tôi bị hỏng",
+    # liquid on electrical equipment / bare wires: never a routine spill or broken lamp, BPTN reads it (H04 d)
+    "Nước tràn vào tủ điện",
+    "Nước ngập gần tới ổ cắm",
+    "Tủ điện bị ngập nước",
+    "Nước mưa thấm vào hộp điện",
+    "Đèn rơi ra, lòi cả dây điện",
+    "Đèn hỏng, dây điện chỗ đèn lòi ra ngoài",
+    "Bóng đèn rớt xuống, lộ dây điện",
+    "Sàn đầy nước, tràn tới ổ cắm",
 ]
 
 MIXED = [
@@ -198,6 +207,14 @@ TEMPLATES: list[tuple[str, str]] = [
     ("Tòa SIM-B / Tầng trệt / Sân chơi: {s}", "Tòa SIM-B / Tầng Trệt / Sân chơi"),
     ("{s} - lối đi tầng 5 tòa SIM-C", "Tòa SIM-C / Tầng 5 / Lối đi"),
     ("Tòa SIM-A tầng 12 sân thượng: {s}", "Tòa SIM-A / Tầng 12 / Sân thượng"),
+    # H04: the resident's home named first is not where the problem is; spaced codes; "03"; areas added in round 2
+    ("Căn 1508 tầng 15 tòa SIM-A, báo giúp hành lang tầng 3: {s}", "Tòa SIM-A / Tầng 3 / Hành lang"),
+    ("Em ở tòa SIM-B, đi qua hành lang tầng 3 tòa SIM-A thấy {s}", "Tòa SIM-A / Tầng 3 / Hành lang"),
+    ("{s}. Em ở căn 1203 tòa SIM-B, chỗ sảnh thang máy tầng 2", "Tòa SIM-B / Tầng 2 / Sảnh thang máy"),
+    ("Chị Hoa phòng 1208 tòa SIM-C nhờ báo hành lang tầng 4 tòa SIM-A: {s}", "Tòa SIM-A / Tầng 4 / Hành lang"),
+    ("Hành lang tầng 03 toà SIM A: {s}", "Tòa SIM-A / Tầng 3 / Hành lang"),
+    ("toa sim b cau thang tang 5, {s}", "Tòa SIM-B / Tầng 5 / Cầu thang bộ"),
+    ("Lối thoát hiểm tầng 9 tòa SIM-C: {s}", "Tòa SIM-C / Tầng 9 / Lối thoát hiểm"),
 ]
 
 
