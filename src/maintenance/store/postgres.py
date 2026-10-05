@@ -33,6 +33,7 @@ from src.maintenance.store.base import (
     StorePermissionError,
     StoreUnavailableError,
     UnstorableTextError,
+    short_stock_error,
 )
 
 logger = logging.getLogger(__name__)
@@ -307,6 +308,25 @@ class _PgTx:
                 ),
                 {"c": item_code, "q": qty},
             ).scalar_one()
+
+    def take_stock(self, item_code: str, qty: float) -> float | None:
+        with _db_errors():
+            # One conditional UPDATE: two workers can never both issue the last units (the row lock serialises).
+            new = self.conn.execute(
+                text(
+                    "update maintops.stock set qty = qty - :q "
+                    "where item_code = :c and qty is not null and qty >= :q returning qty"
+                ),
+                {"c": item_code, "q": qty},
+            ).scalar()
+            if new is not None:
+                return new
+            current = self.conn.execute(
+                text("select qty from maintops.stock where item_code = :c"), {"c": item_code}
+            ).scalar()
+        if current is None:
+            return None
+        raise short_stock_error(item_code, current, qty)
 
 
 # ---------------------------------------------------------------------- repository

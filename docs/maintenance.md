@@ -77,6 +77,17 @@ Cư dân chỉ thấy nhãn "Đang được kiểm tra" và lời trong `i18n/vi
 ### Kho: tồn kho và nhập thiếu (2026-10-05)
 `stock_levels(actor)` — route `GET /mo/warehouse/stock` → `[{item_code, item_name, unit, qty}]` (`qty` null = không rõ); mọi vai trừ cư dân (cư dân ⇒ 403). `_resume` của ticket `WAITING_MATERIAL` luôn gọi `_refresh_line_stock` trước khi xét gỡ: nhập thiếu (cần 2, có 1) ⇒ ticket vẫn chờ nhưng dòng vật tư hiện tồn mới. `POST /mo/warehouse/stock/{item}` trả MỌI ticket đã xét (kể cả còn chờ) — UI đếm "chạy tiếp" theo blocker, không theo độ dài mảng. Màn Kho: bảng tồn kho, "cần · tồn · còn thiếu" theo tồn hiện tại, điền sẵn số còn thiếu.
 
+### Xuất kho khi phòng ban ghi vật tư (2026-10-05)
+`record_material(tid, actor, item, *, issued_qty, used_qty, variance_reason)` trừ kho **phần chênh** `issued_qty − issued_qty cũ` (sửa giảm ⇒ hoàn kho) bằng `Tx.take_stock(item, qty)` trong CÙNG transaction của `_mutate` (`engine._issue_stock`): ticket và tồn kho cùng commit hoặc cùng huỷ. `confirm_materials` bỏ một dòng đã xuất ⇒ hoàn lại số đã xuất. Audit `UPDATE_MATERIAL` ghi thêm `stock_qty` (tồn sau khi xuất; null = không rõ).
+
+| Lỗi | Hành vi |
+| :--- | :--- |
+| Xuất thêm > tồn hiện tại | `GuardError` 409 "Kho chỉ còn X …", không ghi gì; phòng ban dùng `block` → `WAITING_MATERIAL` |
+| `used_qty > issued_qty` | `GuardError` 409 — chỉ được dùng hàng đã xuất kho |
+| Tồn không rõ (`null`, D-05) | Không trừ, không chặn, tồn vẫn `null` |
+
+Postgres: một `UPDATE … WHERE qty >= :q` có điều kiện (hai worker không cùng lấy được phần cuối); bảng `maintops.stock` còn `check (qty >= 0)`. **Vùng cấm:** KHÔNG giữ chỗ (reserve) ở bước 7/khi giao việc — bước 7 chỉ đoán theo playbook, giữ chỗ sẽ khoá hàng của ticket chưa chắc dùng; huỷ ticket sau khi đã xuất KHÔNG tự hoàn kho (hàng có thể đã dùng; chưa có luồng trả hàng).
+
 ### Xác nhận vật tư tại hiện trường (2026-10-05)
 `confirm_materials(tid, actor, *, lines: list[PlannedMaterial], note)` — route `POST /mo/tickets/{id}/material-plan` `{lines: [{item_code, planned_qty}], note}`. Chỉ DEPARTMENT đúng phòng ban, ticket `IN_PROGRESS`; `note` bắt buộc. Thay `planned_materials` + dựng lại `material_lines` (giữ `issued_qty`/`used_qty`/`variance_reason` của item_code không đổi), cập nhật `draft.material_line_ids`/`material_stock_status`/`material_requirement_mode` (rỗng ⇒ `N_A`). Audit `UPDATE_MATERIAL` field `planned_materials`. Lỗi: item không có trong catalog / trùng dòng / qty ≤ 0 / note rỗng / chưa nhận việc ⇒ `GuardError` (409); sai vai/phòng ban ⇒ 403; item_code sai mẫu `SIM-` ⇒ 422. **Vùng cấm:** KHÔNG chặn khi tồn kho thiếu (đi `block` → `WAITING_MATERIAL`), KHÔNG thêm điều kiện nghiệm thu mới (6 gate §9.4 giữ nguyên). Lý do: bước 7 chỉ đoán vật tư mặc định của playbook; khi tài sản `ASSET_CHECK_ONSITE` UI phòng ban hiện khung này nổi bật, ca khác để thu gọn.
 

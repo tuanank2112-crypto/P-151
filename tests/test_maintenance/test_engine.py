@@ -285,7 +285,11 @@ def test_department_confirms_onsite_materials_and_can_finish(engine):
     audit = case.audit[-1]
     assert (audit.field_name, audit.actor_id, audit.reason) == ("planned_materials", TEC, "Kiểm tại chỗ: đèn tuýp")
     assert audit.old_value == [{"item_code": "SIM-MAT-LAMP-01", "planned_qty": 1}]
+    with pytest.raises(GuardError, match="Kho chỉ còn 0"):  # tube lamps are out of stock: nothing to issue yet
+        finish(engine, tid)
+    engine.receive_stock(WAREHOUSE, "SIM-MAT-LAMP-02", 2)
     assert finish(engine, tid).ticket.status == "READY_FOR_REVIEW"
+    assert engine.repo.stock_of("SIM-MAT-LAMP-02") == 0
 
 
 def test_confirm_materials_keeps_entered_quantities_and_guards(engine):
@@ -689,3 +693,39 @@ def test_stock_levels_for_staff_only(engine):
     assert len(rows) == len(engine.catalog.materials)
     with pytest.raises(ActionDeniedError):
         engine.stock_levels(RESIDENT)
+
+
+def test_recording_issued_materials_takes_them_out_of_stock(engine):
+    """'Đã xuất' moves stock: a first entry takes it, a correction takes or gives back only the difference."""
+    tid = _onsite_in_progress(engine)
+    start = engine.repo.stock_of("SIM-MAT-LAMP-01")
+    engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=2, used_qty=1, variance_reason="Dự phòng")
+    assert engine.repo.stock_of("SIM-MAT-LAMP-01") == start - 2
+    case = engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=1, used_qty=1)
+    assert engine.repo.stock_of("SIM-MAT-LAMP-01") == start - 1
+    assert case.audit[-1].new_value["stock_qty"] == start - 1
+
+
+def test_issuing_more_than_the_stock_or_using_more_than_issued_is_refused(engine):
+    tid = _onsite_in_progress(engine)
+    start = engine.repo.stock_of("SIM-MAT-LAMP-01")
+    with pytest.raises(GuardError, match="Kho chỉ còn"):
+        engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=start + 1, used_qty=start + 1)
+    with pytest.raises(GuardError, match="lớn hơn số đã xuất"):
+        engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=0, used_qty=1)
+    assert engine.repo.stock_of("SIM-MAT-LAMP-01") == start  # rolled back with the ticket
+    assert engine.get(tid).material_lines[0].issued_qty is None
+    engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=start, used_qty=start)
+    assert engine.repo.stock_of("SIM-MAT-LAMP-01") == 0
+
+
+def test_unknown_stock_is_not_counted_and_a_dropped_line_returns_its_stock(engine):
+    """Unknown stock (null, D-05) stays unknown; dropping a line in confirm_materials gives back what it issued."""
+    tid = _onsite_in_progress(engine)
+    lamp = engine.repo.stock_of("SIM-MAT-LAMP-01")
+    engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=1, used_qty=1)
+    starter = PlannedMaterial(item_code="SIM-MAT-STARTER-01", planned_qty=1)
+    engine.confirm_materials(tid, TEC, lines=[starter], note="Chỉ thay tắc te")
+    assert engine.repo.stock_of("SIM-MAT-LAMP-01") == lamp
+    engine.record_material(tid, TEC, "SIM-MAT-STARTER-01", issued_qty=3, used_qty=3, variance_reason="Hỏng thêm")
+    assert engine.repo.stock_of("SIM-MAT-STARTER-01") is None
