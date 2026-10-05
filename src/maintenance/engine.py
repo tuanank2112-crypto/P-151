@@ -86,7 +86,7 @@ from src.maintenance.models import (
 )
 from src.maintenance.priority import propose_priority
 from src.maintenance.proposer import LLMClient, ProposalResult, propose
-from src.maintenance.rules import extract_location, missing_location_parts
+from src.maintenance.rules import extract_location, mentions_playbook_subject, missing_location_parts
 from src.maintenance.safety import SafetyLLMClient, assess, assess_with_llm
 from src.maintenance.store.base import (  # the error hierarchy lives with the store
     CaseRepository,
@@ -451,10 +451,11 @@ class MaintenanceEngine:
             return self.run_agent(raw.ticket_id)
 
     def _early_proposal(self, raw: RawTicket) -> ProposalResult | None:
-        """The classification step 3 will ask for, computed outside the lock. Skipped when there is no LLM, or when the
-        pipeline will stop before step 3 anyway (a safety stop or a missing location), so no call is wasted."""
+        """The classification the pipeline will ask for, computed outside the lock. Skipped when there is no LLM or when
+        the safety layer stops the ticket first, so no call is wasted. A report without a location is still classified:
+        step 2 needs to know whether it is out of scope (plan 05 Q05)."""
         text = raw.original_description
-        if self.llm is None or _blank(text) or extract_location(text, self.catalog.site.buildings) is None:
+        if self.llm is None or _blank(text):
             return None
         if assess(text, self.lexicon.safety).risk_level != RiskLevel.NONE:
             return None
@@ -739,7 +740,9 @@ class MaintenanceEngine:
             if location is not None:
                 if _blank(location):
                     raise GuardError("location không được rỗng")
-                locks["location"] = location.strip()
+                # Plan 05: a location BPTN types freely ("tầng 3 tòa SIM-A hành lang") is stored in the standard form, so
+                # asset lookup and duplicate checks compare like with like; text that does not parse is kept as typed
+                locks["location"] = extract_location(location, self.catalog.site.buildings) or location.strip()
             if asset_id is not None:
                 if not any(a.asset_id == asset_id for a in self.catalog.assets):
                     raise GuardError(f"Không có asset {asset_id} trong catalog")
@@ -1333,12 +1336,12 @@ class MaintenanceEngine:
                 return []  # another process runs the job this round
             for case in self.repo.list():
                 ticket_id = case.ticket.ticket_id
-                if not self._due(case.ticket, moment):
-                    continue  # nothing for _tick to do: skip the deep copy
                 before = len(case.events)
                 try:
+                    if not self._due(case.ticket, moment):
+                        continue  # nothing for _tick to do: skip the deep copy
                     self._mutate(ticket_id, SYSTEM_ID, Action.RUN_JOBS, lambda work, now: self._tick(work, now))
-                except EngineError:  # one broken ticket must not stop the job for all the others
+                except Exception:  # noqa: BLE001 - one broken ticket (any error) must not stop the job for the others
                     logger.exception("run_jobs: ticket %s failed", ticket_id)
                     continue
                 if len(self.repo.get(ticket_id).events) != before:
@@ -1367,12 +1370,12 @@ class MaintenanceEngine:
         """E5 (plan 04 Q07): a stored RECEIVED ticket without a blocker never had its pipeline committed (`receive`
         commits the ingest first). Past a grace period, so a `receive` still running elsewhere is left alone."""
         created = _created_at(ticket.raw)
-        return (
-            ticket.status == S.RECEIVED
-            and ticket.blocker is None
-            and created is not None
-            and now >= created + ORPHAN_GRACE
-        )
+        if ticket.status != S.RECEIVED or ticket.blocker is not None or created is None:
+            return False
+        try:
+            return now >= created + ORPHAN_GRACE
+        except OverflowError:  # a created_at at the very end of the calendar is never "past the grace period"
+            return False
 
     # ------------------------------------------------------------------ the one transition entry point
 
@@ -2251,7 +2254,15 @@ class MaintenanceEngine:
         return "\n".join(p for p in parts if p and p.strip())
 
     def effective_location(self, work: Case) -> str | None:
-        return work.ticket.locked_fields.location or extract_location(self._content(work), self.catalog.site.buildings)
+        return work.ticket.locked_fields.location or extract_location(
+            self._location_text(work), self.catalog.site.buildings
+        )
+
+    def _location_text(self, work: Case) -> str:
+        """What the location is read from: the newest addition first, the original report last, so a resident's
+        correction ("Ở hầm B1 ạ") wins over the floor of their own flat in the original (plan 05)."""
+        parts = [*(a.content for a in reversed(work.additions)), work.ticket.raw.original_description]
+        return "\n".join(p for p in parts if p and p.strip())
 
     def _category(self, work: Case) -> ServiceCategory | None:
         locked = work.ticket.locked_fields.category
@@ -2270,7 +2281,7 @@ class MaintenanceEngine:
         if _blank(self._content(work)):
             missing.append("description")
         if self.effective_location(work) is None:
-            parts = missing_location_parts(self._content(work), self.catalog.site.buildings)
+            parts = missing_location_parts(self._location_text(work), self.catalog.site.buildings)
             # name only the parts still missing; a report with none of them gets the general request
             missing.extend(["location"] if len(parts) == 3 else [f"location_{part}" for part in parts])
         return missing
@@ -2382,6 +2393,19 @@ class MaintenanceEngine:
 
     def _step_2_check_required_data(self, work: Case, now: datetime) -> bool:
         missing = self._missing_fields(work)
+        if (
+            missing
+            and self._only_location_missing(missing)
+            and work.ticket.locked_fields.category is None
+            and not mentions_playbook_subject(self._content(work))  # "Đèn tầng 3 hỏng": ask the resident
+        ):
+            cls = self._classification(work, now)  # cached: step 3 reuses it
+            if cls.playbook_id is None and cls.reason_code == R.OUT_OF_SCOPE:
+                # Plan 05 Q05: clearly outside both playbooks, so a common-area location is not worth asking for.
+                # BPTN answers the resident. resume_step=2: if BPTN picks a category, step 2 asks for the location.
+                return self._stop(
+                    work, S.VERIFYING, R.OUT_OF_SCOPE, now, resume_step=2, note=f"{cls.reason}; thiếu vị trí, không hỏi"
+                )
         if missing:
             return self._stop(
                 work,
@@ -2395,6 +2419,14 @@ class MaintenanceEngine:
                 note=f"Thiếu: {', '.join(missing)}",
             )
         return False
+
+    @staticmethod
+    def _only_location_missing(missing: list[str]) -> bool:
+        """Only location parts are missing, and no common area is named at all ("phí quản lý", "vòi nước trong căn
+        hộ"). A report that names a common area ("Ở hành lang có vấn đề") is about the building: the resident is still
+        asked for what is missing and can add the details themselves (plan 05 Q05, audit C05/D11)."""
+        only_location = all(field.startswith("location") for field in missing)
+        return only_location and ("location" in missing or "location_area" in missing)
 
     def _classification(self, work: Case, now: datetime) -> ClassificationRecord:
         if work.classification is None:

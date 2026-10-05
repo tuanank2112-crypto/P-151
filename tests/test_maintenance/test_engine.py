@@ -181,7 +181,7 @@ def test_step2_names_only_the_missing_location_parts(fresh):
     assert case.ticket.blocker.public_message == (
         "Ban tiếp nhận thông tin sẽ liên hệ bạn để bổ sung: tòa (hiện chỉ nhận tòa S1 hoặc S2 – Ocean Park), "
         "khu vực (hành lang, sảnh cư dân, sảnh thang máy, sảnh chính, cầu thang bộ, hầm xe, bãi đỗ xe, phòng rác, "
-        "sân chơi, sân thượng hoặc lối đi). Bạn cũng có thể bổ sung ngay tại đây."
+        "sân chơi, sân thượng, lối đi hoặc lối thoát hiểm). Bạn cũng có thể bổ sung ngay tại đây."
     )
 
 
@@ -239,7 +239,7 @@ def test_step5_llm_only_proposal_waits_for_bptn(clock):
 
     e = MaintenanceEngine(clock=clock, llm=llm, llm_label="fake")
     e.reset(with_fixtures=False)
-    tid = report(e, "Hành lang tầng 3 tòa S1 tối om, bóng tuýp chết rồi")
+    tid = report(e, "Hành lang tầng 3 tòa S1 tối om, không thấy đường")
     case = e.get(tid)
     assert case.ticket.blocker.code == "PENDING_REVIEW" and case.ticket.review_status == "PENDING_REVIEW"
     assert case.ticket.department_id is None and case.ticket.asset_resolution is None  # review comes before assets

@@ -745,7 +745,7 @@ def test_lexicon_wp3c_keys_and_validator():
         "S-09",
     )
     assert sorted(safety.tier2_net_roots) == ["bat dong", "khoi", "lua", "mau"]
-    assert priority.negation_fillers == safety.negation_fillers and lexicon.lexicon_version == "2026-10-04.p0d"
+    assert priority.negation_fillers == safety.negation_fillers and lexicon.lexicon_version == "2026-10-04.p0f"
     assert not hasattr(safety, "non_lamp_electrical") and not hasattr(safety, "negation_window_words")
     assert (len(safety.signals), sum(s.phase == "P0" for s in safety.signals), len(safety.components)) == (17, 10, 2)
     data = yaml.safe_load((FIXTURE_DIR / "lexicon.yaml").read_text(encoding="utf-8"))
