@@ -1,5 +1,5 @@
 1. Bạn là worker của repo này. Vai + luật hành xử: đọc `.agents/skills/vai-thi-cong/SKILL.md`. Loại handoff: THI CÔNG.
-2. Bước 0: `node D:/brain4agent.release/.agents/skills/.xay-dung-nao-bo/scripts/init_brain.js --check` — exit khác 0 ⇒ DỪNG, báo (KHÔNG chạy chế độ ghi trong worktree).
+2. Bước 0: `node D:/brain4agent.release/.agents/skills/.xay-dung-nao-bo/scripts/init_brain.js --check` — trong worktree exit 1 với ĐÚNG MỘT dòng lệch `BRN-002 … khối luật: boot` là do checkout CRLF (Q21, SO đo ở root `D:/P151` = exit 0) ⇒ ghi exit vào report và ĐI TIẾP; lệch khác ⇒ DỪNG, báo. KHÔNG chạy chế độ ghi.
 3. Đọc theo thứ tự: `planning/06_2026-10-05_reasoning-agent/plan.md` §2 (gồm Q20) → `specs/00-ARCHITECTURE.md` → `specs/01-CONTRACTS.md` (toàn bộ) → `specs/SPEC-P06-department.md` §5 → `specs/REF-agent-contract.py` mục A → `specs/TESTING-ACCEPTANCE.md` §3.4, §5, §10 → `specs/OPERATIONS.md` §2 (dòng WP1), §7.
 
 ## 1. BỐI CẢNH TỰ CHỨA
