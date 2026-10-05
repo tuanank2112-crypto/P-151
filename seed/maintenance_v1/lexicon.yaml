@@ -78,7 +78,7 @@ safety:
   # ---- R6/A1 (B-01): tập đóng tiền tố <= b01_max_prefix_tokens token; danh từ đèn phải là dạng CÓ dấu đã chứng minh
   benign_lamp_nouns: [bong den, bong tuyp, den tuyp, den led, bong, den, tuyp, chieu sang]
   benign_lamp_noun_forms: {bong: [bóng], den: [đèn], tuyp: [tuýp, tuyp], chieu: [chiếu], sang: [sáng]}
-  b01_prefix_words: [sanh thang may, sanh chinh, sanh, hanh lang, cau thang bo, cau thang, thang bo, thang may, ham xe, ham,
+  b01_prefix_words: [sanh thang may, sanh chinh, sanh cu dan, sanh, hanh lang, cau thang bo, cau thang, thang bo, thang may, ham xe, ham,
                      phong rac, phong, khu vuc, khu, tang, toa, lau, block, sim, o, tai, cua, tren, duoi, trong, ngoai, truoc,
                      he thong, loi di, loi thoat hiem, nha xe,
                      bi, da, lai, cung, vua, moi, hay, thi, cai, cac, may, mot, hai, nhung, deu, dang]
@@ -252,7 +252,7 @@ safety:
     # (rule_id ghi T2-01 / T2-02 trên RiskSignal của S-xx).
 
 priority:
-  high_areas: ["Hành lang", "Sảnh chính", "Sảnh thang máy", "Cầu thang bộ", "Hầm xe"]   # PRI-H1: lối đi chung
+  high_areas: ["Hành lang", "Sảnh chính", "Sảnh cư dân", "Sảnh thang máy", "Cầu thang bộ", "Hầm xe"]   # PRI-H1: lối đi chung
   obstruction_patterns:      # PRI-H2: cản trở lối đi
     - chan loi
     - chan het loi

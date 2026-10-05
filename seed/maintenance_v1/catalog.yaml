@@ -3,14 +3,21 @@
 dataset_version: maintenanceops-sim-v1.1
 synthetic: true
 
+# Phạm vi thử nghiệm: chỉ nhận phản ánh ở các tòa liệt kê dưới đây (mở rộng sau bằng cách thêm mã tòa).
+# Tòa không có trong danh sách = coi như thiếu tòa (cư dân được hỏi lại). Sửa danh sách thì sửa cả
+# field_labels.location_building trong src/maintenance/i18n/vi.yaml.
+site:
+  name: Ocean Park
+  buildings: [S1, S2]
+
 assets:
-  - {asset_id: SIM-ASSET-LIGHT-001, asset_type: LIGHTING, location_normalized: "Tòa SIM-A / Tầng 3 / Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.001, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-001, asset_type: LIGHTING, location_normalized: "Tòa S1 / Tầng 3 / Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.001, synthetic: true, read_only: true}
   # Hai asset cùng vị trí: dùng cho test lookup AMBIGUOUS
-  - {asset_id: SIM-ASSET-LIGHT-002, asset_type: LIGHTING, location_normalized: "Tòa SIM-A / Tầng 5 / Sảnh thang máy", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.002, synthetic: true, read_only: true}
-  - {asset_id: SIM-ASSET-LIGHT-003, asset_type: LIGHTING, location_normalized: "Tòa SIM-A / Tầng 5 / Sảnh thang máy", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.003, synthetic: true, read_only: true}
-  - {asset_id: SIM-ASSET-LIGHT-004, asset_type: LIGHTING, location_normalized: "Tòa SIM-B / Tầng 2 / Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.004, synthetic: true, read_only: true}
-  - {asset_id: SIM-ASSET-LIGHT-005, asset_type: LIGHTING, location_normalized: "Tòa SIM-B / Tầng 7 / Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.005, synthetic: true, read_only: true}
-  - {asset_id: SIM-ASSET-LIGHT-006, asset_type: LIGHTING, location_normalized: "Tòa SIM-A / Tầng B1 / Hầm xe", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.006, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-002, asset_type: LIGHTING, location_normalized: "Tòa S1 / Tầng 5 / Sảnh thang máy", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.002, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-003, asset_type: LIGHTING, location_normalized: "Tòa S1 / Tầng 5 / Sảnh thang máy", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.003, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-004, asset_type: LIGHTING, location_normalized: "Tòa S2 / Tầng 2 / Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.004, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-005, asset_type: LIGHTING, location_normalized: "Tòa S2 / Tầng 7 / Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.005, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-006, asset_type: LIGHTING, location_normalized: "Tòa S1 / Tầng B1 / Hầm xe", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.006, synthetic: true, read_only: true}
 
 # Định mức (norm) và tồn kho mô phỏng. simulated_stock_qty=null nghĩa là tồn kho không rõ.
 materials:

@@ -1096,6 +1096,65 @@ class MaintenanceEngine:
 
         return self._mutate(ticket_id, actor_id, Action.UPDATE_MATERIAL, op)
 
+    def confirm_materials(self, ticket_id: str, actor_id: str, *, lines: list[PlannedMaterial], note: str) -> Case:
+        """The department replaces the Agent's planned materials with what the site really needs (IN_PROGRESS).
+
+        Step 7 can only guess from the playbook defaults (e.g. an asset checked on site). An empty list means no
+        material is used (mode N_A). Issued/used quantities already entered are kept for an unchanged item_code.
+        Stock is shown per line but never stops the work here: a shortage goes through `block` (WAITING_MATERIAL).
+        """
+
+        def op(work: Case, now: datetime) -> None:
+            self._require_in_progress(work)
+            if _blank(note):
+                raise GuardError("Xác nhận vật tư bắt buộc ghi lý do")
+            codes = [line.item_code for line in lines]
+            unknown = sorted({code for code in codes if self.catalog.material(code) is None})
+            if unknown:
+                raise GuardError("Vật tư không có trong catalog", {"item_codes": unknown})
+            if len(set(codes)) != len(codes):
+                raise GuardError("Mỗi vật tư chỉ được một dòng")
+            if any(line.planned_qty <= 0 for line in lines):
+                raise GuardError("Số lượng vật tư phải lớn hơn 0; bỏ dòng nếu không dùng")
+            draft = work.draft
+            suffix = _suffix(ticket_id)
+            entered = {line.item_code: line for line in work.material_lines}
+            old = [{"item_code": m.item_code, "planned_qty": m.planned_qty} for m in work.material_lines]
+            new_lines = []
+            for index, planned in enumerate(lines, start=1):
+                line = self._material_line(draft.work_order_draft_id, suffix, index, planned)
+                kept = entered.get(planned.item_code)
+                if kept is not None:
+                    line.issued_qty, line.used_qty, line.variance_reason = (
+                        kept.issued_qty,
+                        kept.used_qty,
+                        kept.variance_reason,
+                    )
+                new_lines.append(line)
+            work.planned_materials = list(lines)
+            work.material_lines = new_lines
+            draft.material_line_ids = [m.material_line_id for m in new_lines]
+            draft.material_stock_status = _aggregate_stock(new_lines)
+            draft.material_requirement_mode = (
+                MaterialRequirementMode.TRACKED if new_lines else MaterialRequirementMode.N_A
+            )
+            draft.material_gate_status = MaterialGateStatus.NEEDS_CLARIFICATION if new_lines else MaterialGateStatus.NA
+            self._audit(
+                work,
+                Action.UPDATE_MATERIAL,
+                "WorkOrderDraft",
+                draft.work_order_draft_id,
+                actor_id,
+                Role.DEPARTMENT,
+                "planned_materials",
+                old,
+                [{"item_code": m.item_code, "planned_qty": m.planned_qty} for m in new_lines],
+                note.strip(),
+                now=now,
+            )
+
+        return self._mutate(ticket_id, actor_id, Action.UPDATE_MATERIAL, op)
+
     def add_evidence(
         self,
         ticket_id: str,
@@ -2140,7 +2199,7 @@ class MaintenanceEngine:
         return "\n".join(p for p in parts if p and p.strip())
 
     def effective_location(self, work: Case) -> str | None:
-        return work.ticket.locked_fields.location or extract_location(self._content(work))
+        return work.ticket.locked_fields.location or extract_location(self._content(work), self.catalog.site.buildings)
 
     def _category(self, work: Case) -> ServiceCategory | None:
         locked = work.ticket.locked_fields.category
@@ -2159,7 +2218,7 @@ class MaintenanceEngine:
         if _blank(self._content(work)):
             missing.append("description")
         if self.effective_location(work) is None:
-            parts = missing_location_parts(self._content(work))
+            parts = missing_location_parts(self._content(work), self.catalog.site.buildings)
             # name only the parts still missing; a report with none of them gets the general request
             missing.extend(["location"] if len(parts) == 3 else [f"location_{part}" for part in parts])
         return missing
@@ -2220,7 +2279,12 @@ class MaintenanceEngine:
         if result.risk_level == RiskLevel.EMERGENCY:
             ticket.related_ticket_ids = self._related_ticket_ids(work)  # Q11: link, never merge
             self._stop(
-                work, S.VERIFYING, R.EMERGENCY_PENDING_BQL, now, resume_step=2, note=f"Bậc 1: {', '.join(present)}"
+                work,
+                S.VERIFYING,
+                R.EMERGENCY_PENDING_BQL,
+                now,
+                resume_step=2,
+                note=self._with_missing(work, f"Bậc 1: {', '.join(present)}"),
             )
             self._notify(
                 work,
@@ -2237,9 +2301,19 @@ class MaintenanceEngine:
         if result.risk_level == RiskLevel.UNCLEAR:
             unclear = sorted({s.signal_id for s in result.signals if s.status != SignalStatus.ABSENT})
             return self._stop(
-                work, S.VERIFYING, R.SAFETY_REVIEW_REQUIRED, now, resume_step=2, note="Bậc 2: " + ", ".join(unclear)
+                work,
+                S.VERIFYING,
+                R.SAFETY_REVIEW_REQUIRED,
+                now,
+                resume_step=2,
+                note=self._with_missing(work, "Bậc 2: " + ", ".join(unclear)),
             )
         return False
+
+    def _with_missing(self, work: Case, note: str) -> str:
+        """Q08 puts safety before the minimum data, so the reviewer is told here what step 2 will still ask for."""
+        missing = self._missing_fields(work)
+        return f"{note} · Thiếu: {', '.join(missing)}" if missing else note
 
     def _step_2_check_required_data(self, work: Case, now: datetime) -> bool:
         missing = self._missing_fields(work)

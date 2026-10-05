@@ -376,9 +376,15 @@ class Actor(Frozen):
     department_id: Department | None = None
 
 
+class Site(Frozen):
+    name: str
+    buildings: tuple[str, ...] = Field(min_length=1)  # mã tòa in hoa, vd "S1"; chỉ các tòa này được nhận
+
+
 class Catalog(Frozen):
     dataset_version: str
     synthetic: Literal[True]
+    site: Site
     assets: tuple[Asset, ...]
     materials: tuple[MaterialCatalogItem, ...]
     default_materials: dict[PlaybookId, tuple[PlannedMaterial, ...]]
