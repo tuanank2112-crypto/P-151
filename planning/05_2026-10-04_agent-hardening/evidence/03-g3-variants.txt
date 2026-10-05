@@ -1,0 +1,6 @@
+# G3 safety location variants
+VARIANTS=5669 VIOLATIONS=0
+# old adversarial set (107)
+TOTAL=107 ERRORS=7
+# SO holdout (18)
+TOTAL=18 BAD=0

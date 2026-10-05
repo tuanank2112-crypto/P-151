@@ -179,11 +179,17 @@ def test_ai_log_carries_the_ticket_id(llm_engine):
     ai_logger.clear()
 
 
-def test_no_early_llm_call_when_the_pipeline_stops_before_classification(llm_engine):
+def test_no_early_llm_call_when_the_safety_layer_stops_the_ticket(llm_engine):
     engine, llm = llm_engine
     engine.receive("Có khói bốc ra từ hộp điện hành lang tầng 3 tòa SIM-A", resident_id=RESIDENT)  # tier 1
-    engine.receive("Nhiều rác quá", resident_id=RESIDENT)  # no location: NEED_INFO
     assert llm.calls == 0
+
+
+def test_a_report_without_location_is_classified_once_outside_the_lock(llm_engine):
+    """Plan 05 Q05: step 2 needs the category to know whether to ask for a location, so the call happens early."""
+    engine, llm = llm_engine
+    engine.receive("Nhiều rác quá", resident_id=RESIDENT)  # no location: classified, then NEED_INFO (in scope)
+    assert llm.calls == 1 and llm.lock_free == [True]
 
 
 # ---------------------------------------------------------------------- E5: orphaned RECEIVED ticket
@@ -202,3 +208,33 @@ def test_job_runs_the_pipeline_on_an_orphaned_ticket(fresh, clock):
     clock.advance(minutes=2)
     assert fresh.run_jobs() == ["SIM-TKT-0099"]
     assert fresh.get("SIM-TKT-0099").ticket.status == "ROUTED"
+
+
+# ---------------------------------------------------------------------- plan 05: one broken ticket never stops the job
+
+
+def test_a_ticket_at_the_end_of_the_calendar_does_not_stop_the_job(fresh, clock):
+    """Backend audit 2026-10-04 (A1): a created_at of 9999-12-31 23:59:59 overflowed in `_orphaned` (plan 04 E5)
+    and the error, not an EngineError, stopped every run of the job for all tickets."""
+    from datetime import datetime, timedelta, timezone
+
+    far = datetime(9999, 12, 31, 23, 59, 59, tzinfo=timezone(timedelta(hours=7)))
+    fresh.ingest(
+        RawTicket(
+            ticket_id="SIM-TKT-0098",
+            created_at=far.isoformat(timespec="seconds"),
+            original_description=CLEANING,
+            channel="form",
+        )
+    )
+    fresh.ingest(
+        RawTicket(
+            ticket_id="SIM-TKT-0099",
+            created_at=clock.now.isoformat(timespec="seconds"),
+            original_description=CLEANING,
+            channel="form",
+        )
+    )
+    clock.advance(minutes=3)
+    assert fresh.run_jobs() == ["SIM-TKT-0099"]  # the other orphan is still picked up
+    assert fresh.get("SIM-TKT-0098").ticket.status == "RECEIVED"

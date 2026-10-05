@@ -24,7 +24,7 @@ def fake(result):
 
 
 def test_llm_classifies_what_the_rules_miss():
-    text = "Hành lang tầng 3 tòa SIM-A tối om, bóng tuýp chết rồi"
+    text = "Hành lang tầng 3 tòa SIM-A tối om, không thấy đường"
     assert propose(text).classification.playbook_id is None  # rules alone cannot tell
     result = propose(text, fake(assessment()), "gpt-test")
     assert result.classification.playbook_id == "PB-TEC-01"
@@ -67,7 +67,7 @@ def test_engine_calls_llm_once_and_traces_the_proposer():
     engine = MaintenanceEngine(llm=llm, llm_label="gpt-test")
     engine.reset(with_fixtures=False)
     monday = datetime(2026, 9, 28, 9, tzinfo=timezone(timedelta(hours=7)))
-    case = engine.receive("Bóng tuýp hành lang tầng 3 tòa SIM-A chết rồi", received_at=monday)
+    case = engine.receive("Hành lang tầng 3 tòa SIM-A tối om, không thấy đường", received_at=monday)
     assert len(llm.calls) == 1
     assert case.classification.proposer == "rules+llm:gpt-test" and case.classification.needs_review
     assert case.ticket.status == "VERIFYING" and case.ticket.blocker.code == "PENDING_REVIEW"
@@ -90,6 +90,6 @@ def test_llm_reason_is_capped():
     llm_says = LLMAssessment.model_construct(
         service_category="KY_THUAT", ticket_type="COMMON_AREA_LIGHTING", reason=long_reason
     )
-    result = propose("Hành lang tầng 3 tối om, bóng tuýp chết rồi", fake(llm_says), "gpt-test")
+    result = propose("Hành lang tầng 3 tối om, không thấy đường", fake(llm_says), "gpt-test")
     assert result.classification.playbook_id == "PB-TEC-01"
     assert len(result.classification.reason) <= len("Đề xuất từ LLM: ") + 500

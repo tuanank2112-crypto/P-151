@@ -98,3 +98,115 @@ def test_location_wording_residents_use(text, location):
 
 def test_tòa_nhà_alone_is_not_a_building_code():
     assert "building" in missing_location_parts("Tòa nhà tầng 3 hành lang có rác")
+
+
+# ---------------------------------------------------------------------- plan 05 (H02): the location never picks the
+# job type; lamps typed without accents; private / street lamps; the full metamorphic suite is
+# test_classify_metamorphic.py
+
+
+@pytest.mark.parametrize(
+    ("text", "playbook", "reason_code"),
+    [
+        # "phòng rác" is where the resident stands, not rubbish
+        ("Block SIM-B lầu 6 phòng rác: đèn chập chờn", "PB-TEC-01", None),
+        ("Tòa SIM-A / Tầng 3 / Phòng rác: thang máy hỏng", None, "OUT_OF_SCOPE"),
+        # ...but the garbage room overflowing is still cleaning
+        ("Phòng rác tầng 4 tòa SIM-A đầy tràn", "PB-CLN-01", None),
+        ("phong rac tang 4 toa SIM-A bi day", "PB-CLN-01", None),
+        # unaccented lamp before its symptom; arrival is not a lamp
+        ("Hanh lang tang 3 toa SIM-A den chap chon", "PB-TEC-01", None),
+        ("Toa SIM-A / Tang 3 / Hanh lang: vua co rac vua co den khong sang", None, "CATEGORY_UNCLEAR"),
+        ("Khi den hanh lang tang 3 thi thay thang may hong", None, "OUT_OF_SCOPE"),
+        ("Hanh lang tang 3 den sang roi, cam on", None, "OUT_OF_SCOPE"),
+        ("Hành lang tầng 3 đèn sáng rồi, cảm ơn", None, "OUT_OF_SCOPE"),  # "rồi" is not "rơi"
+        # a lamp inside a flat or on the street outside the gate, even with the resident's location
+        ("Tòa SIM-A tầng 3 hành lang: đèn trong căn hộ tôi bị hỏng", None, "OUT_OF_SCOPE"),
+        ("Toa SIM-A tang 3 hanh lang: bong den phong ngu nha toi bi chay", None, "OUT_OF_SCOPE"),
+        ("Hành lang tầng 3 tòa SIM-A: đèn đường ngoài cổng không sáng", None, "OUT_OF_SCOPE"),
+        ("Đèn hành lang trước căn hộ 305 tầng 3 tòa SIM-A không sáng", "PB-TEC-01", None),
+        # new resident wording, accented and not
+        ("Tòa SIM-A / Tầng 3 / Hành lang: đèn sáng lờ mờ", "PB-TEC-01", None),
+        ("Tòa SIM-A / Tầng 3 / Hành lang: đèn rớt xuống vỡ tan", "PB-TEC-01", None),
+        ("Toa SIM-A / Tang 3 / Hanh lang: bong den chay roi", "PB-TEC-01", None),
+        ("Toa SIM-A / Tang 3 / Hanh lang: mat den tu toi qua", "PB-TEC-01", None),
+        ("Tòa SIM-A / Tầng 3 / Hành lang: nước đọng thành vũng", "PB-CLN-01", None),
+        ("Tòa SIM-A / Tầng 3 / Hành lang: mùi hôi nồng nặc", "PB-CLN-01", None),
+        ("Toa SIM-A / Tang 3 / Hanh lang: san do qua", "PB-CLN-01", None),
+        ("Tòa SIM-A / Tầng 3 / Hành lang: sơn đổ ra sàn chưa ai lau", "PB-CLN-01", None),
+        # look-alikes of the new cleaning words
+        ("Toa SIM-A / Tang 3 / Hanh lang: toi ban qua, thang may hong", None, "OUT_OF_SCOPE"),
+        ("Hành lang tầng 3: không lâu sau thang máy lại hỏng", None, "OUT_OF_SCOPE"),
+        ("Phan Văn Tài, hành lang tầng 3: đèn không sáng", "PB-TEC-01", None),
+    ],
+)
+def test_plan05_location_and_wording(text, playbook, reason_code):
+    result = classify(text)
+    assert (result.playbook_id, result.reason_code) == (playbook, reason_code), result
+
+
+# ---------------------------------------------------------------------- plan 05 round 2 (H04): the location is where
+# the PROBLEM is, not the resident's home; spaced building codes; "cầu thang", "lối thoát hiểm"; liquid on electrical
+# equipment and bare wires get no playbook
+
+
+@pytest.mark.parametrize(
+    ("text", "location"),
+    [
+        ("Căn 1508 tầng 15 tòa SIM-A, báo giúp hành lang tầng 3 có rác", "Tòa SIM-A / Tầng 3 / Hành lang"),
+        ("Em ở tòa SIM-B, đi qua hành lang tầng 3 tòa SIM-A thấy nhiều rác", "Tòa SIM-A / Tầng 3 / Hành lang"),
+        ("Em o toa SIM-B di qua hanh lang tang 3 toa SIM-A thay nhieu rac", "Tòa SIM-A / Tầng 3 / Hành lang"),
+        ("Cô Đào phòng 1508 tòa SIM-A nhờ báo hành lang tầng 15 lá cây rụng", "Tòa SIM-A / Tầng 15 / Hành lang"),
+        ("Em ở căn 2-07 tòa SIM-B, đèn hành lang tầng 2 nhấp nháy", "Tòa SIM-B / Tầng 2 / Hành lang"),
+        ("Hành lang tầng 3 tòa SIM-A, đèn hỏng. Tòa SIM-B tầng 7 thì ổn", "Tòa SIM-A / Tầng 3 / Hành lang"),
+        ("Rác vứt bừa bãi quá, em ở tòa SIM-A tầng 12\nỞ hầm B1 ạ", "Tòa SIM-A / Tầng B1 / Hầm xe"),
+        ("Em ở tòa SIM-B tầng 9 hành lang, báo: rác chất đống", "Tòa SIM-B / Tầng 9 / Hành lang"),  # stands there
+        ("Hành lang tầng 3 toà SIM A nhiều rác", "Tòa SIM-A / Tầng 3 / Hành lang"),
+        ("Hành lang tầng 3 toà SIM B nhiều rác", "Tòa SIM-B / Tầng 3 / Hành lang"),
+        ("hanh lang tang 3 toa sim b nhieu rac", "Tòa SIM-B / Tầng 3 / Hành lang"),
+        ("Hành lang tầng 03 tòa SIM-A đèn hỏng", "Tòa SIM-A / Tầng 3 / Hành lang"),
+        ("Tầng hầm B01 tòa SIM-A có rác", "Tòa SIM-A / Tầng B1 / Hầm xe"),
+        ("Cầu thang tầng 5 tòa SIM-B đèn hỏng", "Tòa SIM-B / Tầng 5 / Cầu thang bộ"),
+        ("Lối thoát hiểm tầng 9 tòa SIM-C đèn exit không sáng", "Tòa SIM-C / Tầng 9 / Lối thoát hiểm"),
+    ],
+)
+def test_round2_location_is_where_the_problem_is(text, location):
+    assert extract_location(text) == location
+
+
+def test_a_floor_named_only_as_the_residents_home_is_not_the_problem_floor():
+    text = "Rác vứt bừa bãi quá, em ở tòa SIM-A tầng 12"
+    assert extract_location(text) is None
+    assert missing_location_parts(text) == ["floor", "area"]
+
+
+def test_spaced_building_codes_are_told_apart_and_ở_is_not_a_code_letter():
+    a = extract_location("Hành lang tầng 3 toà SIM A nhiều rác")
+    b = extract_location("Hành lang tầng 3 toà SIM B nhiều rác")
+    assert a != b
+    assert extract_location("Hành lang tầng 3 tòa SIM ở gần cổng có rác") == "Tòa SIM / Tầng 3 / Hành lang"
+
+
+@pytest.mark.parametrize(
+    ("text", "playbook", "reason_code"),
+    [
+        ("Cầu thang tầng 5 tòa SIM-B đèn hỏng", "PB-TEC-01", None),
+        ("Lối thoát hiểm tầng 9 tòa SIM-C đèn exit không sáng", "PB-TEC-01", None),
+        ("Lối thoát hiểm tầng 9 tòa SIM-C nhiều rác", "PB-CLN-01", None),
+        ("Cầu thang máy tầng 5 tòa SIM-B bị kẹt", None, "OUT_OF_SCOPE"),
+        # liquid on electrical equipment / bare wires: no playbook, BPTN reads it (step 2b is the first guard)
+        ("Tầng hầm B1 tòa SIM-A nước tràn vào tủ điện", None, "OUT_OF_SCOPE"),
+        ("Tầng hầm B1 tòa SIM-A nước tràn vào tủ điện, ngập gần tới ổ cắm", None, "OUT_OF_SCOPE"),
+        ("tang ham B1 toa SIM-A nuoc tran vao tu dien", None, "OUT_OF_SCOPE"),
+        ("Hành lang tầng 3 tòa SIM-A ổ cắm bị ngập nước", None, "OUT_OF_SCOPE"),
+        ("Đèn hành lang tầng 3 tòa SIM-A rơi ra, lòi cả dây điện", None, "OUT_OF_SCOPE"),
+        ("Đèn hành lang tầng 3 tòa SIM-A hỏng, à mà dây điện chỗ đèn lòi ra ngoài", None, "OUT_OF_SCOPE"),
+        ("Bóng đèn hành lang tầng 3 tòa SIM-A rớt xuống, lộ dây điện", None, "OUT_OF_SCOPE"),
+        # look-alikes stay as before: water on the floor, a lamp switch that does nothing
+        ("Hầm B1 tòa SIM-A nước đọng thành vũng", "PB-CLN-01", None),
+        ("Hành lang tầng 3 tòa SIM-A bấm công tắc mà đèn không sáng", "PB-TEC-01", None),
+    ],
+)
+def test_round2_classification(text, playbook, reason_code):
+    result = classify(text)
+    assert (result.playbook_id, result.reason_code) == (playbook, reason_code), result
