@@ -1,7 +1,7 @@
 # Evaluation Evidence — MaintenanceOps (kiểm thử thủ công)
 
 Người thực hiện: Cao Văn Trường · Ngày chạy: 2026-10-04 (22:25 → 23:33, Asia/Saigon)
-Ảnh bằng chứng: [planning/07_2026-10-04_online-acceptance/evidence/ui/](../planning/07_2026-10-04_online-acceptance/evidence/ui/)
+Ảnh bằng chứng: [planning/07_2026-10-04_online-acceptance/evidence/ui/](planning/07_2026-10-04_online-acceptance/evidence/ui/)
 
 ## 1. Môi trường đo
 
@@ -40,7 +40,7 @@ Người thực hiện: Cao Văn Trường · Ngày chạy: 2026-10-04 (22:25 �
   - Nhật ký kiểm toán: 16 sự kiện.
   - Timeline phía cư dân: đủ 6 mốc, trạng thái cuối "Hoàn thành — Phản ánh đã hoàn thành."
 - **Kết quả:** PASS.
-- **Bằng chứng:** [H01_01](../planning/07_2026-10-04_online-acceptance/evidence/ui/H01_01_cudan01_gui-phan-anh.png), [H01_02](../planning/07_2026-10-04_online-acceptance/evidence/ui/H01_02_vesinh01_nhan-ticket.png), [H01_03](../planning/07_2026-10-04_online-acceptance/evidence/ui/H01_03_vesinh01_checklist-anh.png), [H01_04](../planning/07_2026-10-04_online-acceptance/evidence/ui/H01_04_vesinh01_bao-hoan-thanh..png), [H01_05](../planning/07_2026-10-04_online-acceptance/evidence/ui/H01_05_bql01_nghiem-thu-dong.png), [H01_06](../planning/07_2026-10-04_online-acceptance/evidence/ui/H01_06_cudan01_timeline-cuoi.png)
+- **Bằng chứng:** [H01_01](planning/07_2026-10-04_online-acceptance/evidence/ui/H01_01_cudan01_gui-phan-anh.png), [H01_02](planning/07_2026-10-04_online-acceptance/evidence/ui/H01_02_vesinh01_nhan-ticket.png), [H01_03](planning/07_2026-10-04_online-acceptance/evidence/ui/H01_03_vesinh01_checklist-anh.png), [H01_04](planning/07_2026-10-04_online-acceptance/evidence/ui/H01_04_vesinh01_bao-hoan-thanh.png), [H01_05](planning/07_2026-10-04_online-acceptance/evidence/ui/H01_05_bql01_nghiem-thu-dong.png), [H01_06](planning/07_2026-10-04_online-acceptance/evidence/ui/H01_06_cudan01_timeline-cuoi.png)
 
 ### TC-02 · I01 — Thiếu thông tin
 - **Mục tiêu:** ticket thiếu địa điểm dừng ở chờ bổ sung; BPTN bổ sung đủ thì đi tiếp; nội dung gốc giữ nguyên.
@@ -52,7 +52,7 @@ Người thực hiện: Cao Văn Trường · Ngày chạy: 2026-10-04 (22:25 �
   - Nội dung gốc vẫn là `Hanh lang tang 3 nhieu rac` (nhãn "KHÔNG THỂ SỬA").
   - Phía phòng ban: ticket vào hàng đợi `Ngoài giờ phòng ban`, "Chạy lại từ: Bước 8".
 - **Kết quả:** PASS.
-- **Bằng chứng:** [I01_01](../planning/07_2026-10-04_online-acceptance/evidence/ui/I01_01_cudan01_thieu-thong-tin.png), [I01_02](../planning/07_2026-10-04_online-acceptance/evidence/ui/I01_02_bptn01_hang-cho.png), [I01_03](../planning/07_2026-10-04_online-acceptance/evidence/ui/I01_03_bptn01_gui-bo-sung.png), [I01_04](../planning/07_2026-10-04_online-acceptance/evidence/ui/I01_04_ket-qua.png)
+- **Bằng chứng:** [I01_01](planning/07_2026-10-04_online-acceptance/evidence/ui/I01_01_cudan01_thieu-thong-tin.png), [I01_02](planning/07_2026-10-04_online-acceptance/evidence/ui/I01_02_bptn01_hang-cho.png), [I01_03](planning/07_2026-10-04_online-acceptance/evidence/ui/I01_03_bptn01_gui-bo-sung.png), [I01_04](planning/07_2026-10-04_online-acceptance/evidence/ui/I01_04_ket-qua.png)
 
 ### TC-03 · U01 — Phản ánh trùng
 - **Mục tiêu:** phản ánh trùng bị giữ lại cho BPTN quyết định; nhánh "không gộp" cho ticket đi tiếp.
@@ -63,7 +63,7 @@ Người thực hiện: Cao Văn Trường · Ngày chạy: 2026-10-04 (22:25 �
   - BPTN thấy `SIM-TKT-0005`: "Đang dừng: Nghi trùng", người gỡ BPTN, chạy lại từ Bước 5, ghi chú nội bộ "Cùng vị trí và loại với SIM-TKT-0004 trong 2 days, 0:00:00". Hai nút: **Gộp vào SIM-TKT-0004** và **Không trùng, xử lý tiếp**.
   - Sau khi bấm "Không trùng, xử lý tiếp": `SIM-TKT-0005` ở trạng thái "Đã chuyển phòng ban" (Phòng Vệ sinh), cờ "Ngoài giờ phòng ban".
 - **Kết quả:** PASS.
-- **Bằng chứng:** [U01_01](../planning/07_2026-10-04_online-acceptance/evidence/ui/U01_01_cudan01_nghi-trung.png), [U01_02](../planning/07_2026-10-04_online-acceptance/evidence/ui/U01_02_bptn01_canh-bao-trung.png), [U01_03](../planning/07_2026-10-04_online-acceptance/evidence/ui/U01_03_bptn01_khong-gop.png), [U01_04](../planning/07_2026-10-04_online-acceptance/evidence/ui/U01_04_ket-qua.png)
+- **Bằng chứng:** [U01_01](planning/07_2026-10-04_online-acceptance/evidence/ui/U01_01_cudan01_nghi-trung.png), [U01_02](planning/07_2026-10-04_online-acceptance/evidence/ui/U01_02_bptn01_canh-bao-trung.png), [U01_03](planning/07_2026-10-04_online-acceptance/evidence/ui/U01_03_bptn01_khong-gop.png), [U01_04](planning/07_2026-10-04_online-acceptance/evidence/ui/U01_04_ket-qua.png)
 
 ### TC-04 · S04 — Khẩn cấp Bậc 1, BQL đóng
 - **Mục tiêu:** phản ánh có dấu hiệu nguy hiểm dừng chờ BQL, không giao phòng ban; BQL đóng khẩn cấp có ghi chú và audit.
@@ -75,7 +75,7 @@ Người thực hiện: Cao Văn Trường · Ngày chạy: 2026-10-04 (22:25 �
   - BQL đóng, ghi chú "Đã ngắt điện hộp đèn và kiểm tra an toàn tại chỗ". Lịch sử: `Hoàn thành` 23:18, BQL. Cư dân thấy "Hoàn thành" 23:18 và có form đánh giá "1 lần duy nhất".
   - Danh sách BQL sau đó: ticket khẩn cấp còn lại (`SIM-TKT-TEC-005`) vẫn "Đang xác minh", không bị ảnh hưởng.
 - **Kết quả:** PASS.
-- **Bằng chứng:** [S04_01](../planning/07_2026-10-04_online-acceptance/evidence/ui/S04_01_cudan01_trang-thai.png), [S04_02](../planning/07_2026-10-04_online-acceptance/evidence/ui/S04_02_bql01_lua-chon.png), [S04_03](../planning/07_2026-10-04_online-acceptance/evidence/ui/S04_03_bql01_ket-qua.png), [S04_04](../planning/07_2026-10-04_online-acceptance/evidence/ui/S04_04_bql01_audit.png)
+- **Bằng chứng:** [S04_01](planning/07_2026-10-04_online-acceptance/evidence/ui/S04_01_cudan01_trang-thai.png), [S04_02](planning/07_2026-10-04_online-acceptance/evidence/ui/S04_02_bql01_lua-chon.png), [S04_03](planning/07_2026-10-04_online-acceptance/evidence/ui/S04_03_bql01_ket-qua.png), [S04_04](planning/07_2026-10-04_online-acceptance/evidence/ui/S04_04_bql01_audit.png)
 
 ### TC-05 · G03 — Sai quyền bị từ chối
 - **Mục tiêu:** vai không có quyền bị backend từ chối và trạng thái ticket không đổi.
@@ -89,7 +89,7 @@ Người thực hiện: Cao Văn Trường · Ngày chạy: 2026-10-04 (22:25 �
 
 - **Trạng thái sau thử:** phản hồi bước 1 ghi `unchanged_status: VERIFYING`; danh sách BQL sau đó vẫn hiện `SIM-TKT-TEC-005` ở "Đang xác minh" (Khẩn cấp Bậc 1).
 - **Kết quả:** PASS. Cả hai lần đều có audit event.
-- **Bằng chứng:** [G03_01](../planning/07_2026-10-04_online-acceptance/evidence/ui/G03_01_bptn-ha-bac1-403.png), [G03_02](../planning/07_2026-10-04_online-acceptance/evidence/ui/G03_02_phong-sai-accept-403.png), [G03_03](../planning/07_2026-10-04_online-acceptance/evidence/ui/G03_03_khong-thay-doi.png)
+- **Bằng chứng:** [G03_01](planning/07_2026-10-04_online-acceptance/evidence/ui/G03_01_bptn-ha-bac1-403.png), [G03_02](planning/07_2026-10-04_online-acceptance/evidence/ui/G03_02_phong-sai-accept-403.png), [G03_03](planning/07_2026-10-04_online-acceptance/evidence/ui/G03_03_khong-thay-doi.png)
 
 ---
 
@@ -97,7 +97,7 @@ Người thực hiện: Cao Văn Trường · Ngày chạy: 2026-10-04 (22:25 �
 
 | Ca | Tính năng kiểm | Quy tắc tham chiếu |
 |---|---|---|
-| TC-01 H01 | Giao đúng phòng ban, vòng đời ticket, timeline cư dân, audit | [CR-BPTN-03](CR-BPTN-03.md) §4–5 |
+| TC-01 H01 | Giao đúng phòng ban, vòng đời ticket, timeline cư dân, audit | [CR-BPTN-03](docs/CR-BPTN-03.md) §4–5 |
 | TC-02 I01 | Chặn thiếu thông tin, BPTN bổ sung, giữ nội dung gốc | CR-BPTN-03 (BPTN `NEED_INFO`/`MISSING_INFO`) |
 | TC-03 U01 | Phát hiện trùng, BPTN quyết gộp / không gộp | CR-BPTN-03 (quy tắc trùng) |
 | TC-04 S04 | Tầng an toàn Bậc 1, BQL đóng khẩn cấp | CR-BPTN-03 §6.2, §6.5 |
@@ -115,6 +115,6 @@ Người thực hiện: Cao Văn Trường · Ngày chạy: 2026-10-04 (22:25 �
 1. **Ngoài giờ phòng ban:** ticket gửi sau 22:00 hiển thị "Phản ánh sẽ được xử lý từ 06:00 05/10/2026" nhưng phòng ban vẫn nhận việc và hoàn tất lúc 22:29 (H01). Cần xác nhận đây là thiết kế (cờ chỉ cảnh báo) hay lỗi.
 2. **Chữ "Agent" ở form cư dân:** "Ghi rõ tình trạng thực tế để Agent phân loại chính xác." — thuật ngữ nội bộ.
 3. **Mâu thuẫn chữ trong U01:** thẻ Agent ghi "Cùng vị trí và vấn đề trong vòng 4h", ghi chú nội bộ ghi "trong 2 days, 0:00:00".
-4. **S04 — bằng chứng audit:** ảnh [S04_02](../planning/07_2026-10-04_online-acceptance/evidence/ui/S04_02_bql01_lua-chon.png) và [S04_04](../planning/07_2026-10-04_online-acceptance/evidence/ui/S04_04_bql01_audit.png) đang hiển thị ticket mẫu `SIM-TKT-CLN-004` (cùng thao tác đóng khẩn cấp, 23:18), không phải `SIM-TKT-0006`. Việc đóng `SIM-TKT-0006` được xác nhận qua timeline cư dân (Hoàn thành 23:18) và danh sách BQL. Nên chụp thêm tab "Nhật ký kiểm toán" của `SIM-TKT-0006`.
-5. **G03 — bằng chứng "không đổi":** [G03_03](../planning/07_2026-10-04_online-acceptance/evidence/ui/G03_03_khong-thay-doi.png) chỉ chụp phần cuối phản hồi và schema, chưa phải `GET` ticket sau thử. Nên chụp thêm `GET` của `SIM-TKT-TEC-005`.
+4. **S04 — bằng chứng audit:** ảnh [S04_02](planning/07_2026-10-04_online-acceptance/evidence/ui/S04_02_bql01_lua-chon.png) và [S04_04](planning/07_2026-10-04_online-acceptance/evidence/ui/S04_04_bql01_audit.png) đang hiển thị ticket mẫu `SIM-TKT-CLN-004` (cùng thao tác đóng khẩn cấp, 23:18), không phải `SIM-TKT-0006`. Việc đóng `SIM-TKT-0006` được xác nhận qua timeline cư dân (Hoàn thành 23:18) và danh sách BQL. Nên chụp thêm tab "Nhật ký kiểm toán" của `SIM-TKT-0006`.
+5. **G03 — bằng chứng "không đổi":** [G03_03](planning/07_2026-10-04_online-acceptance/evidence/ui/G03_03_khong-thay-doi.png) chỉ chụp phần cuối phản hồi và schema, chưa phải `GET` ticket sau thử. Nên chụp thêm `GET` của `SIM-TKT-TEC-005`.
 6. **Bảo mật khi nộp:** ảnh G03 có chứa token đăng nhập demo cục bộ. Nên che hoặc chụp lại trước khi đẩy lên repo công khai.
