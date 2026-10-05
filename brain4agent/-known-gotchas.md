@@ -61,6 +61,7 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 
 ## Evidence và pytest (2026-10-03)
 - Pytest mặc định có thể collect `test*.txt` như doctest, kể cả output trong planning/evidence; output PowerShell UTF-16 làm collection lỗi UnicodeDecodeError. Đặt tên evidence không bắt đầu `test` (vd `scope-stat.txt`), không sửa tay nội dung output máy.
+- Fixture `engine` (tests/test_maintenance/conftest.py) dùng đồng hồ THẬT: test nào chạy lại pipeline tới bước 8 sẽ đỏ sau 22:00 (OUT_OF_HOURS) dù code đúng. Test cần giờ hành chính phải đặt `engine.clock = Clock(MONDAY_9AM)` hoặc dùng fixture `fresh` (2026-10-05, `test_partial_delivery_…`).
 - PowerShell pipe sang Python cần `$OutputEncoding` UTF-8 và `PYTHONIOENCODING=utf-8` để giữ tiếng Việt của input/output; tránh gold case bị biến thành dấu hỏi.
 
 ## Day03 đo local (2026-10-03)

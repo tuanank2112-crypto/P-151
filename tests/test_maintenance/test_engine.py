@@ -39,6 +39,7 @@ from tests.test_maintenance.helpers import (
     CLEANING,
     CLN,
     LIGHTING,
+    MONDAY_9AM,
     OTHER_RESIDENT,
     RESIDENT,
     TEC,
@@ -671,6 +672,7 @@ def test_p0_contract_queue_sort_key_and_bql_row_fields(engine):
 
 def test_partial_delivery_updates_the_stock_the_waiting_ticket_shows(engine):
     """Needs 2, stock 0: receiving 1 keeps the ticket waiting but shows stock 1 (it used to stay at 0)."""
+    engine.clock = Clock(MONDAY_9AM)  # the wall clock after 22:00 would park the ticket OUT_OF_HOURS instead
     tid = "SIM-TKT-TEC-003"
     assert [(m.item_code, m.planned_qty, m.simulated_stock_qty) for m in engine.get(tid).material_lines] == [
         ("SIM-MAT-LAMP-02", 2, 0)
