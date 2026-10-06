@@ -20,7 +20,7 @@ const ROLE_LABEL = {
 const VIEW_TEXT = {
   resident: ['Phản ánh của tôi', 'Theo dõi tiến độ xử lý và gửi phản ánh khu vực chung.'],
   bptn: ['Điều phối & Tiếp nhận (BPTN)', 'Xác minh và phê duyệt đề xuất điều phối của AI.'],
-  dept: ['Nhiệm vụ phòng ban', 'Tiếp nhận, xử lý hiện trường và cập nhật tiến độ thi công.'],
+  dept: ['Nhiệm vụ phòng ban', 'Tiếp nhận, xử lý hiện trường và cập nhật tiến độ công việc.'],
   warehouse: ['Quản lý kho vật tư', 'Điều phối và xuất nhập vật tư theo yêu cầu xử lý.'],
   bql: ['Bảng điều hành Ban Quản lý', 'Giám sát toàn diện, nghiệm thu chất lượng 6 Gates và xử lý sự cố.'],
 };
@@ -96,6 +96,11 @@ function formatResidentTicketId(ticketId) {
   return ticketId.replace(/^SIM-TKT-/, '#PA-').replace(/^SIM-/, '#PA-');
 }
 
+function isSeedTicket(ticketId) {
+  if (!ticketId) return false;
+  return /-(CLN|TEC)-/i.test(ticketId) || /^(TK|SIM-TKT)-(CLN|TEC)-/i.test(ticketId);
+}
+
 const REALISTIC_ACCOUNTS = {
   cudan01: { name: 'Nguyễn Văn Hùng', title: 'Cư dân · Căn hộ S2.05-1402' },
   cudan02: { name: 'Lê Thu Trang', title: 'Cư dân · Căn hộ S1.12-0805' },
@@ -141,12 +146,23 @@ function humanizeMaterialName(code, name) {
   return humanizeOperationalText(name);
 }
 
+function formatMaterialUnit(itemCode, rawUnit) {
+  if (!rawUnit || rawUnit === 'unit-sim' || rawUnit.includes('sim')) {
+    if (itemCode && itemCode.includes('CLEAN')) return 'can 5L';
+    if (itemCode && itemCode.includes('BAG')) return 'cuộn';
+    if (itemCode && itemCode.includes('LAMP')) return 'bóng';
+    if (itemCode && itemCode.includes('STARTER')) return 'bộ';
+    return 'đơn vị';
+  }
+  return rawUnit;
+}
+
 const CHECKLIST_HUMAN_LABELS = {
   'CLN-CHK-01': 'Khảo sát và xác nhận vị trí khu vực cần vệ sinh',
   'CLN-CHK-02': 'Thu gom toàn bộ rác thải và xử lý bề mặt sàn',
   'CLN-CHK-03': 'Kiểm tra hiện trường hoàn tất, khử khuẩn và thông thoáng',
   'TEC-CHK-01': 'Khảo sát vị trí và xác định thiết bị chiếu sáng gặp sự cố',
-  'TEC-CHK-02': 'Ngắt nguồn điện cục bộ và kiểm tra an toàn trước khi thi công',
+  'TEC-CHK-02': 'Ngắt nguồn điện cục bộ và kiểm tra an toàn trước khi thực hiện',
   'TEC-CHK-03': 'Lắp đặt thay thế thiết bị mới, đóng điện và nghiệm thu ánh sáng',
 };
 
@@ -156,11 +172,11 @@ function humanizeChecklistLabel(itemId, label) {
   let s = label
     .replace(/mô phỏng:?\s*/gi, '')
     .replace(/\s*mô phỏng/gi, '')
-    .replace(/execution update/gi, 'báo cáo thi công')
+    .replace(/execution update/gi, 'báo cáo xử lý')
     .replace(/location_normalized/gi, 'vị trí chuẩn hóa')
     .replace(/scope_summary/gi, 'phạm vi công việc')
     .replace(/draft/gi, 'đề xuất ban đầu');
-  if (s.includes('checklist an toàn')) return 'Kiểm tra ngắt điện và đảm bảo an toàn khu vực thi công';
+  if (s.includes('checklist an toàn')) return 'Kiểm tra ngắt điện và đảm bảo an toàn khu vực xử lý';
   if (s.includes('Kết quả xử lý')) return 'Thực hiện thay thế, vận hành thử và bàn giao hiện trường sạch sẽ';
   if (s.includes('Khu vực')) return 'Thu gom toàn bộ rác thải và lau sàn sạch sẽ theo tiêu chuẩn';
   return s;
@@ -454,15 +470,16 @@ function listItem(ticket, { title, meta, right }) {
       onclick: () => select(ticket),
     },
     el('div', { class: 'flex items-start justify-between gap-3' },
-      el('div', { class: 'min-w-0' },
+      el('div', { class: 'min-w-0 flex-1' },
         el('p', { class: 'font-mono text-xs font-bold tracking-tight text-slate-800 dark:text-slate-200' }, displayId),
-        el('p', { class: 'mt-0.5 truncate text-sm font-medium text-slate-700 dark:text-slate-200' }, humanizeOperationalText(title) || '(không có nội dung)')),
+        el('p', { class: 'mt-0.5 truncate text-sm font-medium text-slate-700 dark:text-slate-200' }, humanizeOperationalText(title) || 'Phản ánh thiếu mô tả sự cố (cần xác minh)')),
       right),
     meta ? el('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400' }, meta) : null));
 }
 
 function residentListItem(ticketId, { title, meta, right }) {
   const selected = state.selected === ticketId;
+  const displayId = formatResidentTicketId(ticketId);
   return el('li', {},
     el('button', {
       type: 'button',
@@ -472,7 +489,8 @@ function residentListItem(ticketId, { title, meta, right }) {
     },
     el('div', { class: 'flex items-start justify-between gap-3' },
       el('div', { class: 'min-w-0 flex-1' },
-        el('p', { class: 'text-sm font-semibold text-slate-900 dark:text-white line-clamp-2 leading-snug' }, humanizeOperationalText(title) || '(không có nội dung)')),
+        el('p', { class: 'font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-0.5' }, displayId),
+        el('p', { class: 'text-sm font-semibold text-slate-900 dark:text-white line-clamp-2 leading-snug' }, humanizeOperationalText(title) || 'Yêu cầu hỗ trợ phản ánh')),
       right),
     meta ? el('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400' }, meta) : null));
 }
@@ -498,7 +516,7 @@ function reportText(description, additions) {
   return el('div', { class: 'space-y-3' },
     el('div', { class: 'rounded-xl bg-slate-50/80 p-4 ring-1 ring-inset ring-slate-200/80 dark:bg-slate-950/50 dark:ring-slate-800' },
       el('p', { class: 'text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400' }, 'Nội dung phản ánh gốc'),
-      el('p', { class: 'mt-1.5 whitespace-pre-line text-sm text-slate-900 dark:text-slate-100 leading-relaxed' }, humanizeOperationalText(description) || '(trống)')),
+      el('p', { class: 'mt-1.5 whitespace-pre-line text-sm text-slate-900 dark:text-slate-100 leading-relaxed' }, humanizeOperationalText(description) || 'Cư dân chưa nhập chi tiết nội dung khi gửi yêu cầu (cần liên hệ bổ sung).')),
     additions.length
       ? el('div', { class: 'rounded-xl bg-white p-4 ring-1 ring-inset ring-slate-200/80 dark:bg-slate-900 dark:ring-slate-800' },
           el('p', { class: 'text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400' }, 'Thông tin bổ sung'),
@@ -608,7 +626,7 @@ function beforeAfterComparison(c) {
           : el('p', { class: 'text-xs italic text-slate-400 py-4 text-center' }, 'Không có ảnh đính kèm')),
       el('div', { class: 'rounded-lg bg-indigo-50/50 p-3 ring-1 ring-indigo-200/80 dark:bg-indigo-950/20 dark:ring-indigo-900/60' },
         el('div', { class: 'flex items-center justify-between mb-2' },
-          el('span', { class: 'text-xs font-bold text-indigo-900 dark:text-indigo-300' }, 'Sau xử lý (Phòng ban thi công)'),
+          el('span', { class: 'text-xs font-bold text-indigo-900 dark:text-indigo-300' }, 'Sau xử lý (Hiện trường hoàn tất)'),
           chip('Sau', 'indigo')),
         afterPhotos.length
           ? el('div', { class: 'flex flex-wrap gap-2' }, afterPhotos.map(photoThumb))
@@ -815,33 +833,17 @@ function auditTrailAndTimeline(c) {
       el('span', {}, 'Nhật ký kiểm toán (Audit Trail)'),
       el('span', { class: 'inline-flex items-center rounded-full bg-indigo-100 dark:bg-indigo-950 px-1.5 py-0.2 text-[10px] font-bold text-indigo-700 dark:text-indigo-300' }, String(audit.length)));
 
-    const aiBtn = el('button', {
-      type: 'button',
-      role: 'tab',
-      id: 'tab-ai-btn',
-      'aria-controls': 'tab-ai-panel',
-      'aria-selected': currentTab === 'ai' ? 'true' : 'false',
-      class: `flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${currentTab === 'ai' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-800' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'}`,
-      onclick: () => { currentTab = 'ai'; renderView(); },
-    },
-      el('span', {}, 'Dấu vết suy luận AI (Trace)'),
-      el('span', { class: 'inline-flex items-center rounded-full bg-purple-100 dark:bg-purple-950 px-1.5 py-0.2 text-[10px] font-bold text-purple-700 dark:text-purple-300' }, 'Pipeline'));
-
-    tabList.append(tBtn, aBtn, aiBtn);
+    tabList.append(tBtn, aBtn);
     panel.replaceChildren();
 
     if (currentTab === 'timeline') {
       panel.id = 'tab-timeline-panel';
       panel.setAttribute('aria-labelledby', 'tab-timeline-btn');
       panel.append(internalTimeline(events));
-    } else if (currentTab === 'audit') {
+    } else {
       panel.id = 'tab-audit-panel';
       panel.setAttribute('aria-labelledby', 'tab-audit-btn');
       panel.append(auditTable(audit));
-    } else {
-      panel.id = 'tab-ai-panel';
-      panel.setAttribute('aria-labelledby', 'tab-ai-btn');
-      panel.append(aiTracePanel(c));
     }
   }
 
@@ -865,15 +867,22 @@ function select(ticketId) {
   });
 }
 
-function pickDetail() {
-  return emptyState('Chưa chọn phản ánh', 'Chọn một phản ánh ở danh sách để xem chi tiết.');
+function pickDetail(hasTickets = true) {
+  return emptyState(
+    hasTickets ? 'Chưa chọn phản ánh' : 'Chưa có phản ánh nào',
+    hasTickets ? 'Chọn một phản ánh ở danh sách bên trái để xem chi tiết.' : 'Hãy gửi phản ánh đầu tiên của bạn ở biểu mẫu bên trái để bắt đầu theo dõi tiến độ xử lý.'
+  );
 }
 
 // ------------------------------------------------------------------ resident
 
 async function renderResident(list, detail) {
-  const tickets = await api('/resident/tickets');
-  if (!state.selected && tickets.length) state.selected = tickets[0].ticket_id;
+  const allTickets = await api('/resident/tickets');
+  // Loại bỏ toàn bộ phản ánh mẫu dữ liệu cứng (seed/fixture), chỉ giữ lại phản ánh thực tế cư dân gửi
+  const tickets = allTickets.filter((t) => !isSeedTicket(t.ticket_id));
+  if (!state.selected || !tickets.some((t) => t.ticket_id === state.selected)) {
+    state.selected = tickets.length ? tickets[0].ticket_id : null;
+  }
 
   const description = el('textarea', { name: 'description', rows: '4', required: true, maxlength: '1000', class: INPUT, placeholder: 'Mô tả chi tiết vị trí và sự cố cần xử lý (Ví dụ: Tòa S1 / Tầng 3 / Hành lang: bóng đèn chập chờn không sáng).' });
 
@@ -935,10 +944,10 @@ async function renderResident(list, detail) {
         },
       }, svgIcon('alert', 'h-5 w-5 text-rose-500'), el('span', { class: 'text-xs font-semibold text-rose-600 dark:text-rose-400' }, 'Khẩn cấp'))));
 
-  // Quick Location Suggestions
+  // Quick Location Suggestions (Khớp trực tiếp danh mục tài sản hệ thống để Agent tự động nhận diện)
   const locSuggestions = el('div', { class: 'flex flex-wrap items-center gap-1.5 mt-2.5' },
     el('span', { class: 'text-[11px] font-medium text-slate-400' }, 'Vị trí mẫu:'),
-    ['Tòa S1.12 / Tầng 3 / Hành lang', 'Tòa S2.05 / Sảnh đón khách A', 'Tòa S1.08 / Sảnh thang máy Tầng 12', 'Tòa S2.01 / Tầng hầm B1'].map((loc) =>
+    ['Tòa S1 / Tầng 3 / Hành lang', 'Tòa S2 / Tầng 2 / Hành lang', 'Tòa S1 / Tầng 5 / Sảnh thang máy', 'Tòa S2 / Tầng 7 / Hành lang'].map((loc) =>
       el('button', {
         type: 'button',
         class: 'rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-2.5 py-1 text-[11px] font-medium transition active:scale-[0.97]',
@@ -1024,7 +1033,7 @@ async function renderResident(list, detail) {
     ['Bạn chưa gửi phản ánh nào', 'Phản ánh bạn gửi sẽ hiện ở đây kèm trạng thái xử lý.']));
 
   const view = tickets.find((t) => t.ticket_id === state.selected);
-  detail.append(view ? residentDetail(view) : pickDetail());
+  detail.append(view ? residentDetail(view) : pickDetail(tickets.length > 0));
 }
 
 function residentStepper(view) {
@@ -1038,7 +1047,7 @@ function residentStepper(view) {
     RECEIVED: 'Tiếp nhận',
     VERIFYING: 'Thẩm định',
     ROUTED: 'Phân công',
-    IN_PROGRESS: 'Thi công',
+    IN_PROGRESS: 'Đang xử lý',
     READY_FOR_REVIEW: 'Nghiệm thu',
     CLOSED: 'Hoàn tất',
   };
@@ -1067,11 +1076,14 @@ function residentDetail(view) {
   const displayLabel = isSafetyReview ? 'Đang được kiểm tra' : view.status_label;
   const tone = { NEED_INFO: 'warn', ON_HOLD: 'warn', CANCELLED: 'danger', CLOSED: 'ok' }[view.status] || 'info';
 
+  const displayId = formatResidentTicketId(view.ticket_id);
   const issueTitle = humanizeOperationalText(view.description) || 'Chi tiết yêu cầu hỗ trợ';
   const residentHeader = el('div', { class: 'flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800' },
     el('div', { class: 'flex-1 min-w-0' },
-      el('h2', { id: 'detail-title', tabindex: '-1', class: 'text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-snug focus:outline-none' }, issueTitle),
-      el('p', { class: 'mt-1 text-xs text-slate-500 dark:text-slate-400' }, `Thời gian gửi: ${formatTime(view.created_at)}`)),
+      el('div', { class: 'flex items-center gap-2 mb-1' },
+        el('span', { class: 'font-mono text-xs font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md ring-1 ring-inset ring-indigo-200 dark:ring-indigo-800' }, displayId),
+        el('span', { class: 'text-xs text-slate-500 dark:text-slate-400' }, `Thời gian gửi: ${formatTime(view.created_at)}`)),
+      el('h2', { id: 'detail-title', tabindex: '-1', class: 'text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-snug focus:outline-none' }, issueTitle)),
     badge(isSafetyReview ? 'VERIFYING' : view.status, displayLabel));
 
   const sections = [
@@ -1133,11 +1145,12 @@ function residentDetail(view) {
 
 async function internalList(list, { title, filter, empty, meta, statsBuilder }) {
   const all = await api('/mo/tickets');
-  const tickets = all.filter(filter);
+  const realTickets = all.filter((t) => !isSeedTicket(t.ticket_id));
+  const tickets = realTickets.filter(filter);
   if (state.selected && !tickets.some((t) => t.ticket_id === state.selected)) state.selected = null;
   if (!state.selected && tickets.length) state.selected = tickets[0].ticket_id;
   if (statsBuilder) {
-    const statsNode = statsBuilder(tickets, all);
+    const statsNode = statsBuilder(tickets, realTickets);
     if (statsNode) list.append(statsNode);
   }
   list.append(listCard(title, tickets.length, tickets.map((t) => listItem(t.ticket_id, {
@@ -1149,11 +1162,12 @@ async function internalList(list, { title, filter, empty, meta, statsBuilder }) 
 }
 
 function ticketMeta(t) {
-  const isSafetyTier2 = t.blocker && t.blocker.code === 'SAFETY_REVIEW_REQUIRED';
-  const isEmergTier1 = (t.blocker && t.blocker.code === 'EMERGENCY_PENDING_BQL') || t.status === 'EMERGENCY_PENDING_BQL';
+  const code = t.reason_code || (t.blocker && t.blocker.code);
+  const isSafetyTier2 = code === 'SAFETY_REVIEW_REQUIRED';
+  const isEmergTier1 = code === 'EMERGENCY_PENDING_BQL' || t.status === 'EMERGENCY_PENDING_BQL';
   return [
     isEmergTier1 ? chip('KHẨN CẤP (Bậc 1)', 'rose') : isSafetyTier2 ? chip('An toàn (Bậc 2)', 'amber') : null,
-    t.reason_code ? chip(REASON_LABEL[t.reason_code] || t.reason_code, 'amber') : null,
+    code ? chip(REASON_LABEL[code] || code, 'amber') : null,
     t.escalated ? chip('Leo thang', 'rose') : null,
     t.department_id ? chip(deptName(t.department_id), 'indigo') : t.proposed_department_id ? chip(`Đề xuất: ${deptName(t.proposed_department_id)}`) : null,
     formatTime(t.created_at),
@@ -1175,12 +1189,15 @@ async function renderBptn(list, detail) {
   ]);
   await internalList(list, {
     title: 'Hàng chờ BPTN xử lý',
-    filter: (t) => t.status === 'NEED_INFO' || (t.blocker && BPTN_ACTION_BLOCKERS.has(t.blocker.code)),
+    filter: (t) => {
+      const code = t.reason_code || (t.blocker && t.blocker.code);
+      return t.status === 'NEED_INFO' || (code && BPTN_ACTION_BLOCKERS.has(code));
+    },
     meta: ticketMeta,
     empty: ['Không có phản ánh nào cần BPTN xử lý', 'Tất cả phản ánh đã được Agent xử lý tự động hoặc thuộc ban chuyên trách.'],
     statsBuilder: (tickets) => {
-      const safetyCount = tickets.filter((t) => t.blocker && t.blocker.code === 'SAFETY_REVIEW_REQUIRED').length;
-      const dupCount = tickets.filter((t) => t.blocker && t.blocker.code === 'DUPLICATE').length;
+      const safetyCount = tickets.filter((t) => (t.reason_code || t.blocker?.code) === 'SAFETY_REVIEW_REQUIRED').length;
+      const dupCount = tickets.filter((t) => (t.reason_code || t.blocker?.code) === 'DUPLICATE').length;
       return el('div', { class: 'grid grid-cols-3 gap-2.5 pb-1' },
         el('div', { class: 'rounded-xl bg-white dark:bg-slate-900 p-2.5 text-center ring-1 ring-slate-200/80 dark:ring-slate-800 shadow-2xs' },
           el('span', { class: 'block text-[11px] font-semibold text-slate-500 dark:text-slate-400' }, 'Hàng chờ BPTN'),
@@ -1200,32 +1217,13 @@ async function renderBptn(list, detail) {
     blockerCard(c.ticket.blocker),
     reportText(c.ticket.raw.original_description, c.additions.map((a) => a.content)),
     residentPhotosInternal(c),
-    agentProposal(c),
     routeChecklist(c.ticket),
     el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5' }, bptnForm(c)),
     auditTrailAndTimeline(c)));
 }
 
-function agentProposal(c) {
-  if (typeof window !== 'undefined' && typeof window.agentProposalComponent === 'function') {
-    return window.agentProposalComponent(c);
-  }
-  const p = c.proposal;
-  const locked = c.ticket.locked_fields;
-  const isTechnical = p && p.playbook_id === 'PB-TEC-01';
-  return el('div', { class: 'rounded-xl border border-indigo-100 bg-indigo-50/40 p-4 dark:border-indigo-950 dark:bg-slate-900/50 space-y-3' },
-    el('div', { class: 'flex items-center justify-between' },
-      el('div', { class: 'flex items-center gap-2' },
-        el('span', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Đề xuất tự động'),
-        p && p.playbook_id ? el('span', { class: 'rounded bg-indigo-100 px-2 py-0.5 text-xs font-mono font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' }, p.playbook_id) : null),
-      el('span', { class: 'text-xs text-indigo-700 dark:text-indigo-300 font-medium' }, isTechnical ? 'Kỹ thuật' : 'Vệ sinh')),
-    dl([
-      ['Loại việc', p ? CATEGORY_LABEL[p.service_category_proposed] || p.service_category_proposed : 'Chưa xác định'],
-      ['Phòng ban', p && p.proposed_department_id ? deptName(p.proposed_department_id) : '—'],
-      ['Vị trí đề xuất', locked.location || (p && p.location_proposed) || (c.draft && c.draft.location) || 'Chưa đọc được'],
-      ['Tài sản', p && p.asset_id ? `${p.asset_id}` : (p && p.asset_lookup_status === 'ONSITE_CHECK_NEEDED' ? 'Cần kiểm tra tại hiện trường' : 'Khu vực chung / N/A')],
-      ['Cơ sở đề xuất', (p && p.classification_reason) || (c.classification && c.classification.reason) || '—'],
-    ]));
+function agentProposal() {
+  return null;
 }
 
 function dropdown(name, options, { required = false, placeholder = 'Chọn…' } = {}) {
@@ -1346,7 +1344,7 @@ async function renderDepartment(list, detail) {
           el('span', { class: 'block text-[11px] font-semibold text-slate-500 dark:text-slate-400' }, 'Chờ nhận việc'),
           el('span', { class: 'text-base font-bold text-slate-900 dark:text-white' }, String(routedCount))),
         el('div', { class: 'rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 p-2.5 text-center ring-1 ring-indigo-200/80 dark:ring-indigo-800/60 shadow-2xs' },
-          el('span', { class: 'block text-[11px] font-semibold text-indigo-700 dark:text-indigo-400' }, 'Đang thi công'),
+          el('span', { class: 'block text-[11px] font-semibold text-indigo-700 dark:text-indigo-400' }, 'Đang xử lý'),
           el('span', { class: 'text-base font-bold text-indigo-800 dark:text-indigo-200' }, String(inProgCount))),
         el('div', { class: 'rounded-xl bg-violet-50/70 dark:bg-violet-950/40 p-2.5 text-center ring-1 ring-violet-200/80 dark:ring-violet-800/60 shadow-2xs' },
           el('span', { class: 'block text-[11px] font-semibold text-violet-700 dark:text-violet-400' }, 'Chờ nghiệm thu'),
@@ -1362,11 +1360,10 @@ async function renderDepartment(list, detail) {
     detailHeader(t.ticket_id, t.status, c.draft ? `Vị trí: ${c.draft.location}` : null),
     t.flags.length ? el('div', { class: 'flex flex-wrap gap-2' }, t.flags.map((f) => chip(f === 'ASSET_CHECK_ONSITE' ? 'Kiểm tra tài sản tại hiện trường' : 'Kiểm tra tồn kho khi nhận', 'amber'))) : null,
     onsiteFlag ? callout('warn', 'Yêu cầu kiểm tra tài sản tại hiện trường (ASSET_CHECK_ONSITE)', 'BPTN chưa xác định được mã thiết bị trong sổ tài sản BMS. Kỹ thuật viên cần khảo sát, đối chiếu thực tế tem mác/vị trí trước khi báo hoàn thành.') : null,
-    stockFlag ? callout('warn', 'Yêu cầu kiểm tra tồn kho khi nhận việc (STOCK_CHECK_ON_ACCEPT)', 'Kỹ thuật viên cần kiểm tra số lượng tồn kho thực tế của các vật tư được chỉ định trước khi xuất kho thi công.') : null,
+    stockFlag ? callout('warn', 'Yêu cầu kiểm tra tồn kho khi nhận việc (STOCK_CHECK_ON_ACCEPT)', 'Kỹ thuật viên cần kiểm tra số lượng tồn kho thực tế của các vật tư được chỉ định trước khi xuất kho xử lý.') : null,
     blockerCard(t.blocker),
     reportText(t.raw.original_description, c.additions.map((a) => a.content)),
     residentPhotosInternal(c),
-    agentProposal(c),
   ];
   const id = t.ticket_id;
 
@@ -1555,7 +1552,7 @@ function workSections(c) {
   out.push(materialPlanCard(c));
   if (c.material_lines.length) {
     out.push(el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5' },
-      el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Vật tư thi công'),
+      el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Vật tư sử dụng'),
       el('div', { class: 'mt-3 space-y-4' }, c.material_lines.map((line) => {
         const issued = el('input', { name: 'issued', type: 'number', min: '0', step: '1', required: true, value: line.issued_qty ?? line.planned_qty, class: INPUT });
         const used = el('input', { name: 'used', type: 'number', min: '0', step: '1', required: true, value: line.used_qty ?? line.planned_qty, class: INPUT });
@@ -1568,9 +1565,10 @@ function workSections(c) {
           },
         }, '+ Điền nhanh: "Theo khối lượng thực tế tại hiện trường"');
         const lineName = humanizeMaterialName(line.item_code, line.item_name);
+        const unitStr = formatMaterialUnit(line.item_code, line.unit);
         return el('div', { class: 'rounded-lg p-4 ring-1 ring-inset ring-slate-200 dark:ring-slate-800 dark:bg-slate-800/40' },
           el('div', { class: 'flex items-center justify-between gap-2' },
-            el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, `${lineName} · dự kiến ${line.planned_qty}${line.norm_qty != null ? ` · định mức ${line.norm_qty}` : ''}${line.simulated_stock_qty != null ? ` · tồn kho ${line.simulated_stock_qty}` : ''}`),
+            el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, `${lineName} · dự kiến ${line.planned_qty} ${unitStr}${line.norm_qty != null ? ` · định mức ${line.norm_qty}` : ''}${line.simulated_stock_qty != null ? ` · tồn kho ${line.simulated_stock_qty} ${unitStr}` : ''}`),
             line.issued_qty == null || line.used_qty == null ? chip('Chưa lưu', 'amber') : chip('Đã lưu', 'green')),
           el('div', { class: 'mt-3' }, actionForm([
             el('div', { class: 'grid grid-cols-2 gap-3' }, field('Đã xuất', issued), field('Đã dùng', used)),
@@ -1633,7 +1631,7 @@ function workSections(c) {
           (data) => act(api(`/mo/tickets/${id}/return`, { method: 'POST', body: { note: data.get('note') } }), 'Đã gửi báo sai phòng ban'),
           { variant: 'danger' }))),
       el('details', {},
-        el('summary', { class: 'cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200' }, 'Báo thiếu vật tư thi công?'),
+        el('summary', { class: 'cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200' }, 'Báo thiếu vật tư cần dùng?'),
         el('div', { class: 'mt-3' }, actionForm([field('Chi tiết vật tư thiếu', materialShortNote, 'Nêu rõ loại vật tư thiếu để yêu cầu kho hoặc mua sắm bổ sung.'), field('Dự kiến có vật tư', materialShortEta)], 'Báo thiếu vật tư',
           (data) => act(api(`/mo/tickets/${id}/block`, { method: 'POST', body: { note: `[Thiếu vật tư] ${data.get('note')}`, eta: localToIso(data.get('eta')) } }), 'Đã ghi nhận thiếu vật tư'),
           { variant: 'danger' })))),
@@ -1690,17 +1688,23 @@ async function renderWarehouse(list, detail) {
 
   if (c) {
     sections.push(card(`Vật tư cần cho ${formatTicketId(c.ticket.ticket_id)}`,
-      el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 text-sm' }, shortages.map(({ line, have, missing }) => el('li', { class: 'flex flex-wrap items-center justify-between gap-2 py-2' },
-        el('span', { class: 'text-slate-900 dark:text-slate-200' }, humanizeMaterialName(line.item_code, line.item_name)),
-        el('span', { class: 'flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300' },
-          `cần ${line.planned_qty} · tồn ${have ?? 'không rõ'}`,
-          missing == null ? chip('Tồn kho không rõ', 'amber') : missing > 0 ? chip(`còn thiếu ${missing}`, 'rose') : chip('Đủ', 'green')))))));
+      el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 text-sm' }, shortages.map(({ line, have, missing }) => {
+        const u = formatMaterialUnit(line.item_code, line.unit);
+        return el('li', { class: 'flex flex-wrap items-center justify-between gap-2 py-2' },
+          el('span', { class: 'text-slate-900 dark:text-slate-200' }, humanizeMaterialName(line.item_code, line.item_name)),
+          el('span', { class: 'flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300' },
+            `cần ${line.planned_qty} ${u} · tồn ${have != null ? `${have} ${u}` : 'không rõ'}`,
+            missing == null ? chip('Tồn kho không rõ', 'amber') : missing > 0 ? chip(`còn thiếu ${missing} ${u}`, 'rose') : chip('Đủ', 'green')));
+      }))));
   }
 
   sections.push(card('Tồn kho hiện tại',
-    el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 text-sm' }, stock.map((s) => el('li', { class: 'flex justify-between gap-2 py-2' },
-      el('span', { class: 'text-slate-900 dark:text-slate-200' }, `${humanizeMaterialName(s.item_code, s.item_name)} (${s.item_code})`),
-      el('span', { class: 'font-medium tabular-nums text-slate-700 dark:text-slate-300' }, s.qty == null ? 'không rõ' : `${s.qty}${s.unit ? ` ${s.unit}` : ''}`))))));
+    el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 text-sm' }, stock.map((s) => el('li', { class: 'flex items-center justify-between gap-3 py-2.5' },
+      el('div', { class: 'min-w-0' },
+        el('p', { class: 'font-medium text-slate-900 dark:text-slate-100' }, humanizeMaterialName(s.item_code, s.item_name)),
+        el('p', { class: 'text-[11px] text-slate-400 font-mono mt-0.5' }, `Mã kho: ${s.item_code}`)),
+      el('span', { class: 'font-semibold tabular-nums text-slate-800 dark:text-slate-200 text-sm' },
+        s.qty == null ? 'Chưa nhập kho' : `${s.qty} ${formatMaterialUnit(s.item_code, s.unit)}`))))));
   detail.append(el('div', { class: 'space-y-6' }, sections));
 }
 
@@ -1729,7 +1733,12 @@ async function renderBql(list, detail) {
       el('div', { class: 'flex items-center gap-2' }, overdue, el('label', { for: 'f-overdue', class: 'text-sm text-slate-800 dark:text-slate-200' }, 'Chỉ phản ánh quá hạn SLA')))));
 
   const query = new URLSearchParams(compact({ status: f.status, department_id: f.department_id, escalated: f.escalated ? 'true' : '', overdue: f.overdue ? 'true' : '' }));
-  let rows = await api(`/bql/tickets?${query}`);
+  const [bqlRows, allMoTickets] = await Promise.all([
+    api(`/bql/tickets?${query}`),
+    api('/mo/tickets').catch(() => []),
+  ]);
+  const descMap = new Map((allMoTickets || []).map((t) => [t.ticket_id, t.description]));
+  let rows = bqlRows.filter((r) => !isSeedTicket(r.ticket_id));
   if (f.emergency) {
     rows = rows.filter((r) => (r.blocker && r.blocker.code === 'EMERGENCY_PENDING_BQL') || r.status === 'EMERGENCY_PENDING_BQL');
   }
@@ -1764,12 +1773,13 @@ async function renderBql(list, detail) {
   list.append(bqlStatsBar);
 
   list.append(listCard('Phản ánh', rows.length, rows.map((r) => {
-    const isEm = (r.blocker && r.blocker.code === 'EMERGENCY_PENDING_BQL') || r.status === 'EMERGENCY_PENDING_BQL';
+    const rawDesc = descMap.get(r.ticket_id) || r.description;
+    const rowTitle = rawDesc ? humanizeOperationalText(rawDesc) : (r.department_id ? deptName(r.department_id) : 'Phản ánh cư dân');
     return listItem(r.ticket_id, {
-      title: r.department_id ? deptName(r.department_id) : (isEm ? 'SỰ CỐ KHẨN CẤP BẬC 1' : 'Chưa giao phòng ban'),
+      title: rowTitle,
       meta: [
-        isEm ? chip('KHẨN CẤP (Bậc 1)', 'rose') : null,
-        r.blocker ? chip(REASON_LABEL[r.blocker.code] || r.blocker.code, 'amber') : null,
+        r.department_id ? chip(deptName(r.department_id), 'indigo') : null,
+        r.blocker && r.blocker.code !== 'EMERGENCY_PENDING_BQL' ? chip(REASON_LABEL[r.blocker.code] || r.blocker.code, 'amber') : null,
         r.escalated ? chip('Leo thang', 'rose') : null,
         r.overdue && !r.escalated ? chip('Quá hạn', 'rose') : null,
         r.rework_count ? chip(`Làm lại ${r.rework_count}`) : null,
@@ -1794,7 +1804,6 @@ async function renderBql(list, detail) {
     reportText(t.raw.original_description, c.additions.map((a) => a.content)),
     beforeAfterComparison(c),
     residentPhotosInternal(c),
-    agentProposal(c),
   ];
 
   // Xử lý Sự cố Khẩn cấp Bậc 1 (CR-BPTN-03 §6.5: đúng 2 lựa chọn BQL)
@@ -2159,35 +2168,37 @@ function renderUserMenu() {
   const displayName = humanizeDisplayName(user.username, user.display_name);
   const initials = displayName.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
-  const isDebugEnabled = typeof window !== 'undefined' && (window.location.search.includes('debug=true') || user.username === 'admin');
-  const isAiLogsActive = state.activeTab === 'ai-logs';
-
-  const navTabs = isDebugEnabled ? el('div', { class: 'flex items-center rounded-lg bg-slate-100 p-1 text-xs font-medium dark:bg-slate-800' },
-    el('button', {
-      type: 'button',
-      class: `rounded-md px-3 py-1.5 transition ${!isAiLogsActive ? 'bg-white font-semibold text-indigo-700 shadow-xs dark:bg-slate-700 dark:text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'}`,
-      onclick: () => {
-        state.activeTab = 'workspace';
-        render();
-      },
-    }, 'Bảng làm việc'),
-    el('button', {
-      type: 'button',
-      class: `flex items-center gap-1.5 rounded-md px-3 py-1.5 transition ${isAiLogsActive ? 'bg-white font-semibold text-indigo-700 shadow-xs dark:bg-slate-700 dark:text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'}`,
-      onclick: () => {
-        state.activeTab = 'ai-logs';
-        render();
-      },
-    },
-      el('span', {}, 'Lịch sử AI Logs'),
-      el('span', { class: 'inline-flex items-center rounded-full bg-indigo-100 px-1.5 py-0.2 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' }, 'LLM'))) : null;
-
   const userMeta = REALISTIC_ACCOUNTS[user.username]
     ? REALISTIC_ACCOUNTS[user.username].title
     : `${ROLE_LABEL[user.role] || user.role}${user.department_id ? ` · ${deptName(user.department_id)}` : ''} · ${user.username}`;
 
+  const roleSelect = el('select', {
+    class: 'hidden md:inline-block rounded-xl border-0 py-1.5 pl-3 pr-8 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 ring-1 ring-inset ring-slate-200/90 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-600 cursor-pointer transition',
+    'aria-label': 'Đổi vai trò kiểm thử',
+    onchange: (e) => {
+      const selectedUsername = e.target.value;
+      if (selectedUsername && selectedUsername !== user.username) {
+        quickSwitchUser(selectedUsername);
+      }
+    },
+  },
+    [
+      ['cudan01', 'Vai trò: Cư dân (Hùng)'],
+      ['cudan02', 'Vai trò: Cư dân (Trang)'],
+      ['bptn01', 'Vai trò: Điều phối BPTN'],
+      ['kythuat01', 'Vai trò: Đội Kỹ thuật'],
+      ['vesinh01', 'Vai trò: Đội Vệ sinh'],
+      ['kho01', 'Vai trò: Kho Vật tư'],
+      ['bql01', 'Vai trò: Ban Quản lý BQL'],
+    ].map(([u, label]) => {
+      const opt = el('option', { value: u }, label);
+      if (u === user.username) opt.selected = true;
+      return opt;
+    })
+  );
+
   const menuChildren = [
-    navTabs,
+    roleSelect,
     el('div', { class: 'hidden text-right sm:block' },
       el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, displayName),
       el('p', { class: 'text-xs text-slate-500 dark:text-slate-400' }, userMeta)),
@@ -2214,23 +2225,6 @@ async function render() {
   const listPane = $('list-pane');
   const detailPane = $('detail-pane');
 
-  if (state.activeTab === 'ai-logs') {
-    $('view-title').textContent = 'Lịch sử AI Logs (LLM Observability)';
-    $('view-subtitle').textContent = 'Theo dõi chi tiết các lượt gọi LLM, độ trễ và prompt phục vụ kiểm thử và đánh giá mô hình.';
-    listPane.classList.add('hidden');
-    detailPane.className = 'lg:col-span-12';
-    detailPane.replaceChildren(skeleton(3));
-    const container = el('div');
-    if (typeof window !== 'undefined' && typeof window.renderAiLogsView === 'function') {
-      await window.renderAiLogsView(container);
-    }
-    if (token !== renderToken || !state.user) return;
-    detailPane.replaceChildren(container);
-    renderUserMenu();
-    return;
-  }
-
-  // Restore regular layout
   listPane.classList.remove('hidden');
   listPane.className = 'space-y-4 sm:space-y-6 lg:col-span-5';
   detailPane.className = 'lg:col-span-7';
