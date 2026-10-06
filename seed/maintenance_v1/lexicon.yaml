@@ -4,7 +4,7 @@
 # Pattern là cụm thường (khớp nguyên cụm, có ranh giới từ) trừ khi bắt đầu bằng "re:" (regex Python thô).
 # Dạng CÓ dấu (homographs, homograph_intended, tier2_net_roots, benign_lamp_noun_forms) = NFC chữ thường, bỏ dấu ra đúng khoá.
 # Bẫy YAML 1.1: token trần no/yes/on/off/y/n/true/false bị đọc thành bool => phải đặt trong nháy.
-lexicon_version: "2026-10-04.p0f"  # plan 05 WP1: location-variant hardening (confirmers as word pairs, B-01 prefixes, resolved-marker place tail)
+lexicon_version: "2026-10-05.p0g"  # plan 05 WP1: location-variant hardening (confirmers as word pairs, B-01 prefixes, resolved-marker place tail)
 synthetic: true
 
 safety:
@@ -69,7 +69,7 @@ safety:
   final_particles: [roi, a, nhe, nha, thoi, nua, ha, day, luon]
   resolved_bridge_tokens: [ra, len, xuong, gio, bay, hien, luc, nay, thi, cung, da]   # A2
   benign_phrases:            # B-01: cụm lành tính của đèn -> NONE, ghi T2-03 ABSENT (rule B-01) kèm trích dẫn
-    - "re:\\b(bong|den|bong den|den tuyp|bong tuyp|tuyp)( bi| da| cung| lai)? ?(chay|hong|chap chon|nhap nhay|no)\\b"
+    - "re:\\b(bong|den|bong den|den tuyp|bong tuyp|tuyp)( bi| da| cung| lai)? ?(chay|hong|chap chon|nhap nhay|no|chap(?: dien| mach)?)\\b"   # plan 05b: đèn chập = đèn hỏng (người dùng 2026-10-05)
     - "re:\\b(chay|no|hong) (bong|den|bong den|tuyp)\\b"
     - chap chon
     - nhap nhay
@@ -88,7 +88,7 @@ safety:
                      bi, da, lai, cung, vua, moi, hay, thi, cai, cac, may, mot, hai, nhung, deu, dang]
   b01_code_token_regex: "[a-z]?\\d+[a-z]?|[a-z]"
   b01_max_prefix_tokens: 20
-  benign_with_lamp_noun: [chay]
+  benign_with_lamp_noun: [chay, chap, chap dien, chap mach]   # plan 05b: "đèn cháy" / "đèn chập" = đèn hỏng, không phải nguy hiểm
   ambiguous_terms:           # B-03 / T2-03: đứng riêng (không benign, không có Bậc 1 kèm) -> Bậc 2
     - "re:\\bchay\\b"
     - "re:\\bchap( dien| mach| chay)?\\b(?! chon\\b)"   # plan 05 H03: "chập chờn" (đèn, wifi) không phải "chập"

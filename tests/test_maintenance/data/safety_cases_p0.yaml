@@ -268,6 +268,17 @@ safety_cases:
   - {id: SC-254, text: "bóng đèn gần căn 705 tầng 7 tòa SIM-B bị cháy", expect: NONE, absent: [T2-03]}
   - {id: SC-255, text: "Bóng đèn, ngay sảnh thang máy tầng 2 tòa SIM-C, bị cháy", expect: NONE, absent: [T2-03]}
   - {id: SC-256, text: "Không có ai ở hành lang tầng 3 tòa SIM-A bị kẹt", expect: NONE}   # vị trí không làm mất phủ định ở đọc B
+  # plan 05b (người dùng 2026-10-05): đèn cháy / đèn chập = đèn hỏng, không phải nguy hiểm; có dấu hiệu nguy hiểm kèm thì vẫn khẩn cấp
+  - {id: SC-257, text: "Đèn hành lang tầng 3 tòa SIM-A bị chập", expect: NONE}
+  - {id: SC-258, text: "Đèn hành lang tầng 3 tòa SIM-A chập rồi", expect: NONE}
+  - {id: SC-259, text: "Hành lang tầng 3 tòa SIM-A đèn bị chập, không sáng", expect: NONE}
+  - {id: SC-260, text: "Bóng đèn sảnh chính tòa SIM-B bị chập điện", expect: NONE}
+  - {id: SC-261, text: "den hanh lang tang 3 toa SIM-A bi chay", expect: NONE}
+  - {id: SC-262, text: "den hanh lang tang 3 toa SIM-A bi chap", expect: NONE}
+  - {id: SC-263, text: "bong den hanh lang tang 7 toa SIM-B bi chay roi", expect: NONE}
+  - {id: SC-264, text: "Đèn hành lang tầng 3 tòa SIM-A chập, tóe lửa", expect: EMERGENCY}
+  - {id: SC-265, text: "den hanh lang tang 3 toa SIM-A bi chap, co khoi boc ra", expect: EMERGENCY}
+  - {id: SC-266, text: "Ổ điện hành lang tầng 3 tòa SIM-A bị chập", expect: UNCLEAR}   # không phải đèn: vẫn cần người xem
 
 
 # Mọi chuỗi phản ánh đang dùng trong fixture và test hiện có: chỉ CLN-004 và TEC-005 được phép lên Bậc 1.
