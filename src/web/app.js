@@ -18,11 +18,11 @@ const ROLE_LABEL = {
   RESIDENT: 'Cư dân', BPTN: 'BPTN', DEPARTMENT: 'Phòng ban', WAREHOUSE: 'Kho', BQL: 'Ban quản lý',
 };
 const VIEW_TEXT = {
-  resident: ['Phản ánh của tôi', 'Gửi phản ánh về khu vực chung và theo dõi tiến độ xử lý như theo dõi đơn hàng.'],
-  bptn: ['Hàng chờ xác minh', 'Các phản ánh Agent chưa thể tự quyết hoặc còn thiếu thông tin. Chọn một phản ánh để xác nhận hoặc bổ sung thông tin.'],
-  dept: ['Việc của phòng ban', 'Nhận việc, cập nhật tiến độ và báo hoàn thành. Chỉ hiện phản ánh đã được giao cho phòng ban.'],
-  warehouse: ['Nhập kho vật tư', 'Phản ánh đang tạm hoãn vì thiếu vật tư sẽ tự chạy tiếp khi kho nhập đủ.'],
-  bql: ['Bảng điều khiển BQL', 'Theo dõi toàn bộ phản ánh, nghiệm thu, trả làm lại hoặc hủy.'],
+  resident: ['Phản ánh của tôi', 'Theo dõi tiến độ xử lý và gửi phản ánh khu vực chung.'],
+  bptn: ['Điều phối & Tiếp nhận (BPTN)', 'Xác minh và phê duyệt đề xuất điều phối của AI.'],
+  dept: ['Nhiệm vụ phòng ban', 'Tiếp nhận, xử lý hiện trường và cập nhật tiến độ thi công.'],
+  warehouse: ['Quản lý kho vật tư', 'Điều phối và xuất nhập vật tư theo yêu cầu xử lý.'],
+  bql: ['Bảng điều hành Ban Quản lý', 'Giám sát toàn diện, nghiệm thu chất lượng 6 Gates và xử lý sự cố.'],
 };
 
 // Status → badge colours. Colour is never the only signal: every badge also carries the label text.
@@ -58,9 +58,15 @@ const REASON_LABEL = {
   WRONG_DEPT_AFTER_START: 'Báo sai sau khi làm',
 };
 const OWNER_LABEL = {
-  RESIDENT: 'Cư dân', BPTN: 'BPTN', DEPARTMENT: 'Phòng ban', WAREHOUSE: 'Kho', SYSTEM: 'Hệ thống', BQL: 'BQL', AGENT: 'Agent',
+  RESIDENT: 'Cư dân',
+  BPTN: 'Tiếp nhận BPTN',
+  DEPARTMENT: 'Phòng ban Kỹ thuật / Vệ sinh',
+  WAREHOUSE: 'Kho Vật tư',
+  SYSTEM: 'Hệ thống Tự động',
+  BQL: 'Ban Quản lý',
+  AGENT: 'Trợ lý AI (Agent)',
 };
-const CATEGORY_LABEL = { VE_SINH: 'Vệ sinh', KY_THUAT: 'Kỹ thuật (đèn)' };
+const CATEGORY_LABEL = { VE_SINH: 'Dịch vụ Vệ sinh', KY_THUAT: 'Kỹ thuật & Chiếu sáng' };
 // Field codes the engine writes after "Thiếu:" in blocker.internal_note (step 2, and safety stops since Q08)
 const MISSING_LABEL = {
   description: 'nội dung phản ánh',
@@ -77,6 +83,110 @@ function missingFromNote(note) {
 }
 const RESIDENT_STEPS = ['RECEIVED', 'VERIFYING', 'ROUTED', 'IN_PROGRESS', 'READY_FOR_REVIEW', 'CLOSED'];
 const TERMINAL = new Set(['CLOSED', 'MERGED', 'CANCELLED']);
+
+// ------------------------------------------------------------------ Operational De-mocking Helpers (Taste Skill)
+
+function formatTicketId(ticketId) {
+  if (!ticketId) return '';
+  return ticketId.replace(/^SIM-TKT-/, '#TK-').replace(/^SIM-/, '#');
+}
+
+function formatResidentTicketId(ticketId) {
+  if (!ticketId) return '';
+  return ticketId.replace(/^SIM-TKT-/, '#PA-').replace(/^SIM-/, '#PA-');
+}
+
+const REALISTIC_ACCOUNTS = {
+  cudan01: { name: 'Nguyễn Văn Hùng', title: 'Cư dân · Căn hộ S2.05-1402' },
+  cudan02: { name: 'Lê Thu Trang', title: 'Cư dân · Căn hộ S1.12-0805' },
+  bptn01: { name: 'Trần Mai Anh', title: 'Điều phối viên · Bộ phận Tiếp nhận BPTN' },
+  vesinh01: { name: 'Đội Vệ sinh Môi trường', title: 'Phòng ban chuyên trách · Ca 1' },
+  kythuat01: { name: 'Đội Kỹ thuật Tòa nhà', title: 'Phòng ban chuyên trách (M&E) · Ca 1' },
+  kho01: { name: 'Kho Vật tư Kỹ thuật', title: 'Quản lý Kho trung tâm' },
+  bql01: { name: 'Ban Quản lý Tòa nhà', title: 'Hội đồng Vận hành BQL' },
+};
+
+function humanizeDisplayName(username, originalName) {
+  if (REALISTIC_ACCOUNTS[username]) return REALISTIC_ACCOUNTS[username].name;
+  if (!originalName) return username;
+  return originalName.replace(/\s*\(mô phỏng\)/gi, '').replace(/\s*mô phỏng/gi, '').trim();
+}
+
+function humanizeOperationalText(text) {
+  if (!text || typeof text !== 'string') return text;
+  return text
+    .replace(/mô phỏng:?\s*/gi, '')
+    .replace(/\s*\(mô phỏng\)/gi, '')
+    .replace(/\s*mô phỏng/gi, '')
+    .replace(/\(dữ liệu mẫu\)/gi, '')
+    .replace(/dữ liệu mẫu/gi, 'thực tế')
+    .replace(/Khối lượng rác mô phỏng/gi, 'Khối lượng rác phát sinh')
+    .replace(/Ghi chú xử lý mô phỏng/gi, 'Ghi chú xử lý')
+    .replace(/Ảnh mô phỏng/gi, 'Ảnh hiện trường')
+    .replace(/^SIM-TKT-/gi, '#TK-')
+    .trim();
+}
+
+const REALISTIC_MATERIAL_NAMES = {
+  'SIM-MAT-CLEAN-01': 'Dung dịch tẩy rửa chuyên dụng Ecolab (Can 5L)',
+  'SIM-MAT-BAG-01': 'Túi rác công nghiệp PE 120L (Cuộn)',
+  'SIM-MAT-LAMP-01': 'Bóng đèn LED Tuýp T8 18W Duhal/Rạng Đông',
+  'SIM-MAT-LAMP-02': 'Bóng đèn Huỳnh quang T8 36W 1.2m Philips',
+  'SIM-MAT-STARTER-01': 'Tắc te điện tử / Chấn lưu Philips S10',
+};
+
+function humanizeMaterialName(code, name) {
+  if (REALISTIC_MATERIAL_NAMES[code]) return REALISTIC_MATERIAL_NAMES[code];
+  if (!name) return code;
+  return humanizeOperationalText(name);
+}
+
+const CHECKLIST_HUMAN_LABELS = {
+  'CLN-CHK-01': 'Khảo sát và xác nhận vị trí khu vực cần vệ sinh',
+  'CLN-CHK-02': 'Thu gom toàn bộ rác thải và xử lý bề mặt sàn',
+  'CLN-CHK-03': 'Kiểm tra hiện trường hoàn tất, khử khuẩn và thông thoáng',
+  'TEC-CHK-01': 'Khảo sát vị trí và xác định thiết bị chiếu sáng gặp sự cố',
+  'TEC-CHK-02': 'Ngắt nguồn điện cục bộ và kiểm tra an toàn trước khi thi công',
+  'TEC-CHK-03': 'Lắp đặt thay thế thiết bị mới, đóng điện và nghiệm thu ánh sáng',
+};
+
+function humanizeChecklistLabel(itemId, label) {
+  if (CHECKLIST_HUMAN_LABELS[itemId]) return CHECKLIST_HUMAN_LABELS[itemId];
+  if (!label) return '';
+  let s = label
+    .replace(/mô phỏng:?\s*/gi, '')
+    .replace(/\s*mô phỏng/gi, '')
+    .replace(/execution update/gi, 'báo cáo thi công')
+    .replace(/location_normalized/gi, 'vị trí chuẩn hóa')
+    .replace(/scope_summary/gi, 'phạm vi công việc')
+    .replace(/draft/gi, 'đề xuất ban đầu');
+  if (s.includes('checklist an toàn')) return 'Kiểm tra ngắt điện và đảm bảo an toàn khu vực thi công';
+  if (s.includes('Kết quả xử lý')) return 'Thực hiện thay thế, vận hành thử và bàn giao hiện trường sạch sẽ';
+  if (s.includes('Khu vực')) return 'Thu gom toàn bộ rác thải và lau sàn sạch sẽ theo tiêu chuẩn';
+  return s;
+}
+
+// Clean SVG Icon Provider (Anti-Emoji Taste Skill policy)
+function svgIcon(name, className = 'h-4 w-4') {
+  const icons = {
+    broom: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m15.75 3.75-9.5 9.5a1.5 1.5 0 0 0 0 2.12l2.38 2.38a1.5 1.5 0 0 0 2.12 0l9.5-9.5M14 6l4 4M3 21l3-3m0 0 3-1-2-2-1 3Z"/>',
+    bulb: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 2a7 7 0 0 0-4.5 12.38V17a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-2.62A7 7 0 0 0 12 2Zm-2 19a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-1h-4v1Z"/>',
+    alert: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 18h.008v.008H12V18Z"/>',
+    camera: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"/>',
+    check: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m4.5 12.75 6 6 9-13.5"/>',
+    spark: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/>',
+    arrowRight: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>',
+  };
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', className);
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = icons[name] || '';
+  return svg;
+}
+if (typeof window !== 'undefined') window.svgIcon = svgIcon;
 
 const state = {
   token: null,
@@ -120,21 +230,26 @@ function statusLabel(status) {
   return state.catalog.status_labels[status] || status;
 }
 function deptName(id) {
-  return id ? state.catalog.departments[id] || id : null;
+  if (!id) return null;
+  const names = {
+    DEPT_CLEANING: 'Đội Vệ sinh Môi trường',
+    DEPT_TECHNICAL: 'Đội Kỹ thuật Tòa nhà (M&E)',
+  };
+  return names[id] || (state.catalog.departments[id] || id);
 }
 
 // ------------------------------------------------------------------ UI building blocks
 
 const BTN = {
-  primary: 'inline-flex min-h-[42px] sm:min-h-0 items-center justify-center gap-2 rounded-md bg-indigo-600 px-3.5 py-2 text-base sm:text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 active:scale-[0.98] transition-all disabled:cursor-not-allowed disabled:opacity-60',
-  secondary: 'inline-flex min-h-[42px] sm:min-h-0 items-center justify-center gap-2 rounded-md bg-white px-3.5 py-2 text-base sm:text-sm font-semibold text-slate-800 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 active:scale-[0.98] transition-all dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700 dark:hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60',
-  danger: 'inline-flex min-h-[42px] sm:min-h-0 items-center justify-center gap-2 rounded-md bg-white px-3.5 py-2 text-base sm:text-sm font-semibold text-rose-700 shadow-sm ring-1 ring-inset ring-rose-300 hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-600 active:scale-[0.98] transition-all dark:bg-slate-800 dark:text-rose-400 dark:ring-rose-900/60 dark:hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60',
+  primary: 'inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 active:scale-[0.98] transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60',
+  secondary: 'inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-2xs ring-1 ring-inset ring-slate-200/90 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 active:scale-[0.98] transition-all duration-150 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-800 dark:hover:bg-slate-800/80 disabled:cursor-not-allowed disabled:opacity-60',
+  danger: 'inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-rose-700 shadow-2xs ring-1 ring-inset ring-rose-200 hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-600 active:scale-[0.98] transition-all duration-150 dark:bg-slate-900 dark:text-rose-400 dark:ring-rose-900/60 dark:hover:bg-slate-800/80 disabled:cursor-not-allowed disabled:opacity-60',
 };
-const INPUT = 'block w-full min-h-[42px] rounded-md border-0 py-2 px-3 text-base sm:text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500 dark:focus:ring-indigo-500 transition-colors';
+const INPUT = 'block w-full min-h-[42px] rounded-xl border-0 py-2.5 px-3.5 text-sm text-slate-900 shadow-2xs ring-1 ring-inset ring-slate-200/90 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-800 dark:placeholder:text-slate-500 dark:focus:ring-indigo-500 transition-colors';
 
 function card(title, ...children) {
-  return el('div', { class: 'rounded-xl bg-white p-4 sm:p-5 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 transition-colors' },
-    title ? el('h2', { class: 'text-base font-semibold text-slate-900 dark:text-white' }, title) : null,
+  return el('div', { class: 'rounded-2xl bg-white p-4 sm:p-5 shadow-2xs ring-1 ring-slate-200/80 dark:bg-slate-900 dark:ring-slate-800/90 transition-colors' },
+    title ? el('h2', { class: 'text-base font-semibold tracking-tight text-slate-900 dark:text-white' }, title) : null,
     el('div', { class: title ? 'mt-4 space-y-4' : 'space-y-4' }, ...children));
 }
 
@@ -142,7 +257,7 @@ function badge(status, label) {
   const style = STATUS_STYLE[status] || STATUS_STYLE.RECEIVED;
   const text = label || statusLabel(status);
   return el('span', {
-    class: `inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${style}`,
+    class: `inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${style}`,
     role: 'status',
     'aria-label': `Trạng thái: ${text}`,
   },
@@ -330,17 +445,18 @@ function localToIso(value) {
 
 function listItem(ticket, { title, meta, right }) {
   const selected = state.selected === ticket;
+  const displayId = formatTicketId(ticket);
   return el('li', {},
     el('button', {
       type: 'button',
-      class: `w-full rounded-lg px-4 py-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${selected ? 'bg-indigo-50 ring-1 ring-indigo-200 dark:bg-indigo-950/50 dark:ring-indigo-500/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'}`,
+      class: `w-full rounded-xl px-4 py-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${selected ? 'bg-indigo-50/80 ring-1 ring-indigo-200/90 dark:bg-indigo-950/40 dark:ring-indigo-500/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`,
       'aria-current': selected ? 'true' : undefined,
       onclick: () => select(ticket),
     },
     el('div', { class: 'flex items-start justify-between gap-3' },
       el('div', { class: 'min-w-0' },
-        el('p', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, ticket),
-        el('p', { class: 'mt-0.5 truncate text-sm text-slate-600 dark:text-slate-300' }, title || '(không có nội dung)')),
+        el('p', { class: 'font-mono text-xs font-bold tracking-tight text-slate-800 dark:text-slate-200' }, displayId),
+        el('p', { class: 'mt-0.5 truncate text-sm font-medium text-slate-700 dark:text-slate-200' }, humanizeOperationalText(title) || '(không có nội dung)')),
       right),
     meta ? el('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400' }, meta) : null));
 }
@@ -350,42 +466,43 @@ function residentListItem(ticketId, { title, meta, right }) {
   return el('li', {},
     el('button', {
       type: 'button',
-      class: `w-full rounded-lg px-4 py-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${selected ? 'bg-indigo-50 ring-1 ring-indigo-200 dark:bg-indigo-950/50 dark:ring-indigo-500/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'}`,
+      class: `w-full rounded-xl px-4 py-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${selected ? 'bg-indigo-50/80 ring-1 ring-indigo-200/90 dark:bg-indigo-950/40 dark:ring-indigo-500/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`,
       'aria-current': selected ? 'true' : undefined,
       onclick: () => select(ticketId),
     },
     el('div', { class: 'flex items-start justify-between gap-3' },
-      el('div', { class: 'min-w-0' },
-        el('p', { class: 'text-sm font-semibold text-slate-900 dark:text-white line-clamp-2' }, title || '(không có nội dung)')),
+      el('div', { class: 'min-w-0 flex-1' },
+        el('p', { class: 'text-sm font-semibold text-slate-900 dark:text-white line-clamp-2 leading-snug' }, humanizeOperationalText(title) || '(không có nội dung)')),
       right),
     meta ? el('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400' }, meta) : null));
 }
 
 function listCard(title, count, items, empty) {
   return card(null,
-    el('div', { class: 'flex items-center justify-between' },
-      el('h2', { class: 'text-base font-semibold text-slate-900 dark:text-white' }, title),
+    el('div', { class: 'flex items-center justify-between pb-1' },
+      el('h2', { class: 'text-base font-semibold tracking-tight text-slate-900 dark:text-white' }, title),
       el('span', { class: 'text-xs font-medium text-slate-500 dark:text-slate-400' }, `${count} phản ánh`)),
     items.length ? el('ul', { class: '-mx-2 space-y-1' }, items) : emptyState(empty[0], empty[1]));
 }
 
 function detailHeader(ticketId, status, extra, customLabel) {
+  const displayId = formatTicketId(ticketId);
   return el('div', { class: 'flex flex-wrap items-start justify-between gap-3' },
     el('div', {},
-      el('h2', { id: 'detail-title', tabindex: '-1', class: 'text-lg font-semibold text-slate-900 dark:text-white focus:outline-none' }, ticketId ? `Phản ánh ${ticketId}` : 'Chi tiết phản ánh'),
-      extra ? el('p', { class: 'mt-0.5 text-sm text-slate-500 dark:text-slate-400' }, extra) : null),
+      el('h2', { id: 'detail-title', tabindex: '-1', class: 'text-lg font-bold tracking-tight text-slate-900 dark:text-white focus:outline-none' }, displayId ? `Phản ánh ${displayId}` : 'Chi tiết phản ánh'),
+      extra ? el('p', { class: 'mt-0.5 text-xs text-slate-500 dark:text-slate-400 font-mono' }, extra) : null),
     badge(status, customLabel));
 }
 
 function reportText(description, additions) {
   return el('div', { class: 'space-y-3' },
-    el('div', { class: 'rounded-lg bg-slate-50 p-4 ring-1 ring-inset ring-slate-200 dark:bg-slate-950/60 dark:ring-slate-800' },
-      el('p', { class: 'text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400' }, 'Nội dung gốc · không thể sửa'),
-      el('p', { class: 'mt-1 whitespace-pre-line text-sm text-slate-900 dark:text-slate-100' }, description.trim() || '(trống)')),
+    el('div', { class: 'rounded-xl bg-slate-50/80 p-4 ring-1 ring-inset ring-slate-200/80 dark:bg-slate-950/50 dark:ring-slate-800' },
+      el('p', { class: 'text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400' }, 'Nội dung phản ánh gốc'),
+      el('p', { class: 'mt-1.5 whitespace-pre-line text-sm text-slate-900 dark:text-slate-100 leading-relaxed' }, humanizeOperationalText(description) || '(trống)')),
     additions.length
-      ? el('div', { class: 'rounded-lg bg-white p-4 ring-1 ring-inset ring-slate-200 dark:bg-slate-900 dark:ring-slate-800' },
-          el('p', { class: 'text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400' }, 'Thông tin bổ sung'),
-          el('ul', { class: 'mt-1 list-disc space-y-1 pl-5 text-sm text-slate-900 dark:text-slate-100' }, additions.map((a) => el('li', {}, a))))
+      ? el('div', { class: 'rounded-xl bg-white p-4 ring-1 ring-inset ring-slate-200/80 dark:bg-slate-900 dark:ring-slate-800' },
+          el('p', { class: 'text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400' }, 'Thông tin bổ sung'),
+          el('ul', { class: 'mt-1.5 list-disc space-y-1 pl-5 text-sm text-slate-900 dark:text-slate-100' }, additions.map((a) => el('li', {}, humanizeOperationalText(a)))))
       : null);
 }
 
@@ -396,7 +513,7 @@ const PHOTO_ACCEPT = 'image/jpeg,image/png,image/webp';
 function photoInput({ required = false } = {}) {
   return el('input', {
     name: 'files', type: 'file', multiple: true, accept: PHOTO_ACCEPT, required,
-    class: 'block w-full text-sm text-slate-700 dark:text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-800 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-200 dark:hover:file:bg-slate-700 transition',
+    class: 'block w-full text-sm text-slate-700 dark:text-slate-300 file:mr-3 file:rounded-xl file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-800 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-200 dark:hover:file:bg-slate-700 transition',
   });
 }
 
@@ -415,11 +532,19 @@ function photoForm(data) {
 
 /** Photo URLs need the login token, so an <img src> cannot load them directly: fetch, then show the blob. */
 function photoThumb(item) {
-  const tile = 'flex h-24 w-24 items-center justify-center rounded-lg bg-slate-100 p-2 text-center text-xs text-slate-500 ring-1 ring-inset ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700';
-  if (typeof item !== 'string') return el('span', { class: tile, title: item.text }, 'Ảnh mô phỏng (dữ liệu mẫu)');
+  if (typeof item !== 'string') {
+    const caption = humanizeOperationalText(item.text) || 'Ảnh hiện trường';
+    return el('div', {
+      class: 'group relative flex h-24 w-28 flex-col items-center justify-between rounded-xl border border-slate-200/80 bg-slate-50/90 p-2 text-center text-xs dark:border-slate-800 dark:bg-slate-900/80 shadow-2xs transition-all hover:border-indigo-400 dark:hover:border-indigo-500',
+      title: caption,
+    },
+      el('span', { class: 'text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500' }, 'Minh chứng'),
+      svgIcon('camera', 'h-6 w-6 text-indigo-600 dark:text-indigo-400'),
+      el('span', { class: 'w-full truncate text-[11px] font-medium text-slate-700 dark:text-slate-300' }, caption));
+  }
   const path = item;
   const img = el('img', { alt: 'Ảnh đính kèm', class: 'h-full w-full object-cover', loading: 'lazy' });
-  const link = el('a', { target: '_blank', rel: 'noopener', class: 'block h-24 w-24 overflow-hidden rounded-lg bg-slate-100 ring-1 ring-inset ring-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 dark:bg-slate-800 dark:ring-slate-700' }, img);
+  const link = el('a', { target: '_blank', rel: 'noopener', class: 'block h-24 w-24 overflow-hidden rounded-xl bg-slate-100 ring-1 ring-inset ring-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 dark:bg-slate-800 dark:ring-slate-700' }, img);
   fetch(API + path, { headers: state.token ? { Authorization: `Bearer ${state.token}` } : {} })
     .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
     .then((blob) => {
@@ -470,7 +595,7 @@ function beforeAfterComparison(c) {
   return el('div', { class: 'rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 shadow-2xs space-y-3' },
     el('div', { class: 'flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5' },
       el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2' },
-        el('span', {}, '📸'),
+        el('span', { class: 'text-indigo-600 dark:text-indigo-400' }, svgIcon('camera', 'h-4 w-4')),
         el('span', {}, 'Đối chiếu hiện trường Trước & Sau (Before & After)')),
       el('span', { class: 'text-xs text-slate-500 dark:text-slate-400' }, `${beforePhotos.length} ảnh trước · ${afterPhotos.length} ảnh sau`)),
     el('div', { class: 'grid grid-cols-1 sm:grid-cols-2 gap-4' },
@@ -517,7 +642,7 @@ function routeChecklist(ticket) {
     el('p', { class: 'text-sm font-medium text-slate-800 dark:text-slate-200' }, 'Điều kiện giao phòng ban'),
     el('ul', { class: 'mt-2 space-y-1.5' }, checks.map(([name, ok, value]) =>
       el('li', { class: 'flex items-center gap-2 text-sm' },
-        el('span', { class: `inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${ok ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}`, 'aria-hidden': 'true' }, ok ? '✓' : '·'),
+        el('span', { class: `inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${ok ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}`, 'aria-hidden': 'true' }, ok ? svgIcon('check', 'h-3 w-3') : '·'),
         el('span', { class: 'font-medium text-slate-800 dark:text-slate-200' }, name),
         el('span', { class: 'text-slate-500 dark:text-slate-400' }, `— ${value}${ok ? '' : ' (chưa đạt)'}`)))));
 }
@@ -645,7 +770,7 @@ function aiTracePanel(c) {
         const isDone = st.status === 'DONE';
         const isWarn = st.status === 'WARNING';
         return el('li', { class: 'relative' },
-          el('span', { class: `absolute -left-[1.6rem] top-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white ${isWarn ? 'bg-amber-500 ring-4 ring-amber-100 dark:ring-amber-950' : isDone ? 'bg-indigo-600 ring-4 ring-indigo-100 dark:ring-indigo-950' : 'bg-slate-400 ring-4 ring-slate-100 dark:ring-slate-800'}` }, isWarn ? '!' : isDone ? '✓' : '·'),
+          el('span', { class: `absolute -left-[1.6rem] top-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white ${isWarn ? 'bg-amber-500 ring-4 ring-amber-100 dark:ring-amber-950' : isDone ? 'bg-indigo-600 ring-4 ring-indigo-100 dark:ring-indigo-950' : 'bg-slate-400 ring-4 ring-slate-100 dark:ring-slate-800'}` }, isWarn ? '!' : isDone ? svgIcon('check', 'h-2.5 w-2.5') : '·'),
           el('p', { class: 'text-xs font-bold text-slate-900 dark:text-white' }, st.title),
           el('p', { class: 'mt-0.5 text-xs text-slate-600 dark:text-slate-300' }, st.desc),
           st.extra ? el('p', { class: 'mt-1 text-xs italic text-slate-500 dark:text-slate-400' }, st.extra) : null,
@@ -778,45 +903,45 @@ async function renderResident(list, detail) {
     previewBox.append(summaryText, thumbsRow);
   });
 
-  // Quick Category Selector (Taste Skill Chip Grid)
+  // Quick Category Selector (Taste Skill Anti-Slop Segmented Buttons)
   const categoryContainer = el('div', { class: 'mb-4' },
-    el('label', { class: 'block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5' }, 'Loại sự cố / dịch vụ'),
-    el('div', { class: 'grid grid-cols-3 gap-2' },
+    el('label', { class: 'block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2' }, 'Loại sự cố / dịch vụ đề nghị'),
+    el('div', { class: 'grid grid-cols-3 gap-2.5' },
       el('button', {
         type: 'button',
-        class: 'cat-pill rounded-xl border border-indigo-500/40 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 p-2 text-center transition flex flex-col items-center gap-1 hover:border-indigo-500',
+        class: 'cat-pill rounded-xl border border-indigo-500/40 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 p-2.5 text-center transition flex flex-col items-center gap-1.5 hover:border-indigo-500 active:scale-[0.98]',
         onclick: (e) => {
           document.querySelectorAll('.cat-pill').forEach((b) => b.classList.remove('border-indigo-500', 'ring-2', 'ring-indigo-400'));
           e.currentTarget.classList.add('border-indigo-500', 'ring-2', 'ring-indigo-400');
           if (!description.value.includes('Vệ sinh')) description.value = `[Vệ sinh] ${description.value}`;
         },
-      }, el('span', { class: 'text-base' }, '🧹'), el('span', { class: 'text-xs font-semibold' }, 'Vệ sinh')),
+      }, svgIcon('broom', 'h-5 w-5'), el('span', { class: 'text-xs font-semibold' }, 'Vệ sinh')),
       el('button', {
         type: 'button',
-        class: 'cat-pill rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 p-2 text-center transition flex flex-col items-center gap-1 hover:border-indigo-400',
+        class: 'cat-pill rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 p-2.5 text-center transition flex flex-col items-center gap-1.5 hover:border-indigo-400 active:scale-[0.98]',
         onclick: (e) => {
           document.querySelectorAll('.cat-pill').forEach((b) => b.classList.remove('border-indigo-500', 'ring-2', 'ring-indigo-400'));
           e.currentTarget.classList.add('border-indigo-500', 'ring-2', 'ring-indigo-400');
           if (!description.value.includes('Chiếu sáng')) description.value = `[Chiếu sáng] ${description.value}`;
         },
-      }, el('span', { class: 'text-base' }, '💡'), el('span', { class: 'text-xs font-semibold' }, 'Chiếu sáng')),
+      }, svgIcon('bulb', 'h-5 w-5'), el('span', { class: 'text-xs font-semibold' }, 'Chiếu sáng')),
       el('button', {
         type: 'button',
-        class: 'cat-pill rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 p-2 text-center transition flex flex-col items-center gap-1 hover:border-rose-400',
+        class: 'cat-pill rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 p-2.5 text-center transition flex flex-col items-center gap-1.5 hover:border-rose-400 active:scale-[0.98]',
         onclick: (e) => {
           document.querySelectorAll('.cat-pill').forEach((b) => b.classList.remove('border-indigo-500', 'ring-2', 'ring-indigo-400'));
           e.currentTarget.classList.add('border-indigo-500', 'ring-2', 'ring-indigo-400');
           if (!description.value.includes('Khẩn cấp')) description.value = `[Khẩn cấp] ${description.value}`;
         },
-      }, el('span', { class: 'text-base' }, '🚨'), el('span', { class: 'text-xs font-semibold' }, 'Khẩn cấp'))));
+      }, svgIcon('alert', 'h-5 w-5 text-rose-500'), el('span', { class: 'text-xs font-semibold text-rose-600 dark:text-rose-400' }, 'Khẩn cấp'))));
 
   // Quick Location Suggestions
-  const locSuggestions = el('div', { class: 'flex flex-wrap items-center gap-1.5 mt-2' },
-    el('span', { class: 'text-[11px] text-slate-400' }, 'Gợi ý:'),
-    ['Tòa S1.12 / Sảnh chính', 'Tòa S1.12 / Tầng 3', 'Tòa S1 / Thang máy', 'Tòa S2 / Hành lang'].map((loc) =>
+  const locSuggestions = el('div', { class: 'flex flex-wrap items-center gap-1.5 mt-2.5' },
+    el('span', { class: 'text-[11px] font-medium text-slate-400' }, 'Vị trí mẫu:'),
+    ['Tòa S1.12 / Tầng 3 / Hành lang', 'Tòa S2.05 / Sảnh đón khách A', 'Tòa S1.08 / Sảnh thang máy Tầng 12', 'Tòa S2.01 / Tầng hầm B1'].map((loc) =>
       el('button', {
         type: 'button',
-        class: 'rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 text-[11px] font-medium transition',
+        class: 'rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-2.5 py-1 text-[11px] font-medium transition active:scale-[0.97]',
         onclick: () => {
           description.value = description.value ? `${loc}: ${description.value.replace(/^[^:]+:\s*/, '')}` : `${loc}: `;
           description.focus();
@@ -835,7 +960,7 @@ async function renderResident(list, detail) {
       submitAlert,
       field('Nội dung phản ánh', el('div', {}, description, locSuggestions)),
       photoField,
-    ], 'Gửi phản ánh ➔', async (data) => {
+    ], 'Gửi phản ánh', async (data) => {
       submitAlert.classList.add('hidden');
       const desc = (data.get('description') || '').trim();
       if (desc.length < 5) {
@@ -856,7 +981,7 @@ async function renderResident(list, detail) {
         state.selected = created.ticket_id;
         try {
           if (files) await api(`/resident/tickets/${created.ticket_id}/photos`, { method: 'POST', body: files });
-          toast('Đã gửi phản ánh thành công');
+          toast('Đã gửi phản ánh thành công! Ban Quản lý đã tiếp nhận.');
         } catch (error) {
           toast(`Đã gửi phản ánh thành công nhưng chưa tải được ảnh: ${error.message}`, 'error');
         }
@@ -868,6 +993,21 @@ async function renderResident(list, detail) {
       }
     }, { busyLabel: 'Đang gửi phản ánh…' })));
 
+  const totalCount = tickets.length;
+  const inProgressCount = tickets.filter((t) => !['CLOSED', 'CANCELLED', 'MERGED'].includes(t.status)).length;
+  const closedCount = tickets.filter((t) => t.status === 'CLOSED').length;
+  const statsBar = el('div', { class: 'grid grid-cols-3 gap-2.5 pb-1' },
+    el('div', { class: 'rounded-xl bg-white dark:bg-slate-900 p-2.5 text-center ring-1 ring-slate-200/80 dark:ring-slate-800 shadow-2xs' },
+      el('span', { class: 'block text-[11px] font-semibold text-slate-500 dark:text-slate-400' }, 'Tổng phản ánh'),
+      el('span', { class: 'text-base font-bold text-slate-900 dark:text-white' }, String(totalCount))),
+    el('div', { class: 'rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 p-2.5 text-center ring-1 ring-indigo-200/80 dark:ring-indigo-800/60 shadow-2xs' },
+      el('span', { class: 'block text-[11px] font-semibold text-indigo-700 dark:text-indigo-400' }, 'Đang xử lý'),
+      el('span', { class: 'text-base font-bold text-indigo-800 dark:text-indigo-200' }, String(inProgressCount))),
+    el('div', { class: 'rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 p-2.5 text-center ring-1 ring-emerald-200/80 dark:ring-emerald-800/60 shadow-2xs' },
+      el('span', { class: 'block text-[11px] font-semibold text-emerald-700 dark:text-emerald-400' }, 'Đã xử lý xong'),
+      el('span', { class: 'text-base font-bold text-emerald-800 dark:text-emerald-200' }, String(closedCount))));
+
+  list.append(statsBar);
   list.append(listCard('Phản ánh đã gửi', tickets.length,
     tickets.map((t) => {
       const channelLabel = { form: 'Web', app: 'App di động', hotline: 'Hotline' }[t.channel] || t.channel;
@@ -893,31 +1033,60 @@ function residentStepper(view) {
   const reached = new Set(view.timeline.map((e) => e.status));
   if (isSafetyReview) reached.add('VERIFYING');
   const current = RESIDENT_STEPS.indexOf(displayStatus);
-  return el('ol', { class: 'grid grid-cols-3 sm:grid-cols-6 gap-2', 'aria-label': 'Tiến độ xử lý' },
-    RESIDENT_STEPS.map((step, index) => {
-      const done = reached.has(step) && (current === -1 || index <= current);
-      const isCurrent = step === displayStatus;
-      const stepLabel = step === 'VERIFYING' ? 'Đang kiểm tra' : statusLabel(step);
-      return el('li', { class: 'flex flex-col gap-2', 'aria-current': isCurrent ? 'step' : undefined },
-        el('span', { class: `h-1.5 rounded-full ${done ? 'bg-indigo-600 dark:bg-indigo-500' : 'bg-slate-200 dark:bg-slate-800'}`, 'aria-hidden': 'true' }),
-        el('span', { class: `text-xs ${isCurrent ? 'font-semibold text-indigo-700 dark:text-indigo-400' : done ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'}` },
-          stepLabel, done ? el('span', { class: 'sr-only' }, ' (đã qua)') : null));
-    }));
+
+  const stepLabels = {
+    RECEIVED: 'Tiếp nhận',
+    VERIFYING: 'Thẩm định',
+    ROUTED: 'Phân công',
+    IN_PROGRESS: 'Thi công',
+    READY_FOR_REVIEW: 'Nghiệm thu',
+    CLOSED: 'Hoàn tất',
+  };
+
+  return el('div', { class: 'rounded-2xl bg-slate-50/70 p-3.5 ring-1 ring-slate-200/80 dark:bg-slate-900/60 dark:ring-slate-800 shadow-2xs' },
+    el('div', { class: 'mb-2.5 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400' },
+      el('span', { class: 'font-semibold text-slate-700 dark:text-slate-300' }, 'Tiến độ xử lý yêu cầu'),
+      el('span', { class: 'font-mono text-[11px] font-semibold text-indigo-600 dark:text-indigo-400' }, `Bước ${Math.max(1, current + 1)}/6`)),
+    el('ol', { class: 'grid grid-cols-3 sm:grid-cols-6 gap-2', 'aria-label': 'Tiến độ xử lý' },
+      RESIDENT_STEPS.map((step, index) => {
+        const done = reached.has(step) && (current === -1 || index <= current);
+        const isCurrent = step === displayStatus;
+        return el('li', { class: 'flex flex-col gap-1.5', 'aria-current': isCurrent ? 'step' : undefined },
+          el('div', { class: 'flex items-center gap-1.5' },
+            el('span', { class: `flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${
+              done ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+            }` }, done ? (isCurrent ? '•' : svgIcon('check', 'h-2.5 w-2.5')) : String(index + 1)),
+            el('span', { class: `h-1 flex-1 rounded-full ${done ? 'bg-indigo-600 dark:bg-indigo-500' : 'bg-slate-200 dark:bg-slate-800'}` })),
+          el('span', { class: `text-[11px] truncate ${isCurrent ? 'font-bold text-indigo-700 dark:text-indigo-400' : done ? 'font-medium text-slate-700 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'}` },
+            stepLabels[step] || statusLabel(step)));
+      })));
 }
 
 function residentDetail(view) {
   const isSafetyReview = view.status === 'VERIFYING' || view.status === 'EMERGENCY_PENDING_BQL' || view.status === 'SAFETY_REVIEW_REQUIRED';
   const displayLabel = isSafetyReview ? 'Đang được kiểm tra' : view.status_label;
   const tone = { NEED_INFO: 'warn', ON_HOLD: 'warn', CANCELLED: 'danger', CLOSED: 'ok' }[view.status] || 'info';
+
+  const issueTitle = humanizeOperationalText(view.description) || 'Chi tiết yêu cầu hỗ trợ';
+  const residentHeader = el('div', { class: 'flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800' },
+    el('div', { class: 'flex-1 min-w-0' },
+      el('h2', { id: 'detail-title', tabindex: '-1', class: 'text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-snug focus:outline-none' }, issueTitle),
+      el('p', { class: 'mt-1 text-xs text-slate-500 dark:text-slate-400' }, `Thời gian gửi: ${formatTime(view.created_at)}`)),
+    badge(isSafetyReview ? 'VERIFYING' : view.status, displayLabel));
+
   const sections = [
-    detailHeader(null, isSafetyReview ? 'VERIFYING' : view.status, `Gửi lúc ${formatTime(view.created_at)}`, displayLabel),
-    callout(tone, view.public_message, view.eta ? `Dự kiến: ${formatTime(view.eta)}` : null),
+    residentHeader,
+    callout(tone, humanizeOperationalText(view.public_message), view.eta ? `Dự kiến: ${formatTime(view.eta)}` : null),
     residentStepper(view),
-    dl([['Phòng ban xử lý', view.department_name || 'Chưa giao']]),
+    dl([['Phòng ban tiếp nhận', deptName(view.department_id) || view.department_name || 'Đang điều phối phân công']]),
     view.merged_into ? callout('info', 'Đã gộp vào phản ánh khác',
-      `${view.merged_into.status_label}: ${view.merged_into.public_message}`) : null,
-    reportText(view.description, view.additions),
-    photoGallery('Ảnh bạn đã gửi', view.photos.map((id) => `/resident/tickets/${view.ticket_id}/photos/${id}`)),
+      `${view.merged_into.status_label}: ${humanizeOperationalText(view.merged_into.public_message)}`) : null,
+    (view.additions && view.additions.length)
+      ? el('div', { class: 'rounded-xl bg-slate-50/80 p-4 ring-1 ring-inset ring-slate-200/80 dark:bg-slate-900 dark:ring-slate-800' },
+          el('p', { class: 'text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400' }, 'Thông tin bổ sung từ bạn'),
+          el('ul', { class: 'mt-1.5 list-disc space-y-1 pl-5 text-sm text-slate-900 dark:text-slate-100' }, view.additions.map((a) => el('li', {}, humanizeOperationalText(a)))))
+      : null,
+    photoGallery('Ảnh hiện trường đính kèm', view.photos.map((id) => `/resident/tickets/${view.ticket_id}/photos/${id}`)),
   ];
 
   if (view.allowed_actions.includes('ADD_INFO')) {
@@ -938,14 +1107,14 @@ function residentDetail(view) {
       el('legend', { class: 'text-sm font-medium text-slate-800 dark:text-slate-200' }, 'Đánh giá chất lượng xử lý (1 lần duy nhất)'),
       el('div', { class: 'mt-2 flex gap-2' }, [1, 2, 3, 4, 5].map((n) => el('label', { class: 'cursor-pointer' },
         el('input', { type: 'radio', name: 'score', value: String(n), required: true, class: 'peer sr-only' }),
-        el('span', { class: 'flex h-10 w-10 items-center justify-center rounded-md text-sm font-semibold ring-1 ring-slate-300 dark:ring-slate-700 dark:text-slate-200 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:ring-indigo-600 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-600 transition' }, n)))));
+        el('span', { class: 'flex h-10 w-10 items-center justify-center rounded-xl text-sm font-semibold ring-1 ring-slate-300 dark:ring-slate-700 dark:text-slate-200 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:ring-indigo-600 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-600 transition' }, n)))));
     sections.push(el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5' },
       actionForm([stars], 'Gửi đánh giá', (data) => act(api(`/resident/tickets/${view.ticket_id}/rating`, { method: 'POST', body: { score: Number(data.get('score')) } }), 'Cảm ơn bạn đã đánh giá'))));
   }
   // Loại bỏ nút Reopen theo CR-BPTN-03 §14 & Kế hoạch MVP 04/10 (không reopen)
 
   sections.push(el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5' },
-    el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Lịch sử'),
+    el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Lịch sử xử lý'),
     el('ol', { class: 'mt-3 space-y-3' }, [...view.timeline].reverse().map((e) => {
       const isEventSafety = e.status === 'VERIFYING' || e.status === 'EMERGENCY_PENDING_BQL' || e.status === 'SAFETY_REVIEW_REQUIRED';
       const eventLabel = isEventSafety ? 'Đang được kiểm tra' : e.status_label;
@@ -953,8 +1122,8 @@ function residentDetail(view) {
         el('span', { class: 'mt-1.5 h-2 w-2 flex-none rounded-full bg-indigo-600', 'aria-hidden': 'true' }),
         el('div', {},
           el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, eventLabel),
-          el('p', { class: 'text-sm text-slate-600 dark:text-slate-300' }, e.public_message),
-          el('p', { class: 'text-xs text-slate-400 dark:text-slate-500' }, formatTime(e.created_at))));
+          el('p', { class: 'text-sm text-slate-600 dark:text-slate-300' }, humanizeOperationalText(e.public_message)),
+          el('p', { class: 'text-xs text-slate-400 dark:text-slate-500 font-mono mt-0.5' }, formatTime(e.created_at))));
     }))));
 
   return card(null, ...sections);
@@ -962,11 +1131,15 @@ function residentDetail(view) {
 
 // ------------------------------------------------------------------ internal lists (BPTN, department, warehouse)
 
-async function internalList(list, { title, filter, empty, meta }) {
+async function internalList(list, { title, filter, empty, meta, statsBuilder }) {
   const all = await api('/mo/tickets');
   const tickets = all.filter(filter);
   if (state.selected && !tickets.some((t) => t.ticket_id === state.selected)) state.selected = null;
   if (!state.selected && tickets.length) state.selected = tickets[0].ticket_id;
+  if (statsBuilder) {
+    const statsNode = statsBuilder(tickets, all);
+    if (statsNode) list.append(statsNode);
+  }
   list.append(listCard(title, tickets.length, tickets.map((t) => listItem(t.ticket_id, {
     title: t.description,
     meta: meta(t),
@@ -1005,6 +1178,20 @@ async function renderBptn(list, detail) {
     filter: (t) => t.status === 'NEED_INFO' || (t.blocker && BPTN_ACTION_BLOCKERS.has(t.blocker.code)),
     meta: ticketMeta,
     empty: ['Không có phản ánh nào cần BPTN xử lý', 'Tất cả phản ánh đã được Agent xử lý tự động hoặc thuộc ban chuyên trách.'],
+    statsBuilder: (tickets) => {
+      const safetyCount = tickets.filter((t) => t.blocker && t.blocker.code === 'SAFETY_REVIEW_REQUIRED').length;
+      const dupCount = tickets.filter((t) => t.blocker && t.blocker.code === 'DUPLICATE').length;
+      return el('div', { class: 'grid grid-cols-3 gap-2.5 pb-1' },
+        el('div', { class: 'rounded-xl bg-white dark:bg-slate-900 p-2.5 text-center ring-1 ring-slate-200/80 dark:ring-slate-800 shadow-2xs' },
+          el('span', { class: 'block text-[11px] font-semibold text-slate-500 dark:text-slate-400' }, 'Hàng chờ BPTN'),
+          el('span', { class: 'text-base font-bold text-slate-900 dark:text-white' }, String(tickets.length))),
+        el('div', { class: 'rounded-xl bg-amber-50/70 dark:bg-amber-950/40 p-2.5 text-center ring-1 ring-amber-200/80 dark:ring-amber-800/60 shadow-2xs' },
+          el('span', { class: 'block text-[11px] font-semibold text-amber-700 dark:text-amber-400' }, 'An toàn Bậc 2'),
+          el('span', { class: 'text-base font-bold text-amber-800 dark:text-amber-200' }, String(safetyCount))),
+        el('div', { class: 'rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 p-2.5 text-center ring-1 ring-indigo-200/80 dark:ring-indigo-800/60 shadow-2xs' },
+          el('span', { class: 'block text-[11px] font-semibold text-indigo-700 dark:text-indigo-400' }, 'Nghi trùng lặp'),
+          el('span', { class: 'text-base font-bold text-indigo-800 dark:text-indigo-200' }, String(dupCount))));
+    },
   });
   if (!state.selected) return detail.append(pickDetail());
   const c = await api(`/mo/tickets/${state.selected}`);
@@ -1140,7 +1327,6 @@ function bptnForm(c) {
   }
   return callout('success', 'Phản ánh đang được tự động phân bổ', 'Không có hành động bổ sung cần thực hiện từ BPTN.');
 }
-}
 
 // ------------------------------------------------------------------ department
 
@@ -1151,6 +1337,21 @@ async function renderDepartment(list, detail) {
     filter: () => true,
     meta: (t) => [t.reason_code ? chip(REASON_LABEL[t.reason_code] || t.reason_code, 'amber') : null, formatTime(t.created_at)],
     empty: ['Chưa có việc nào được giao', 'Phản ánh chỉ hiện ở đây sau khi đã review và xác định tài sản.'],
+    statsBuilder: (tickets) => {
+      const routedCount = tickets.filter((t) => t.status === 'ROUTED').length;
+      const inProgCount = tickets.filter((t) => t.status === 'IN_PROGRESS').length;
+      const readyCount = tickets.filter((t) => t.status === 'READY_FOR_REVIEW').length;
+      return el('div', { class: 'grid grid-cols-3 gap-2.5 pb-1' },
+        el('div', { class: 'rounded-xl bg-white dark:bg-slate-900 p-2.5 text-center ring-1 ring-slate-200/80 dark:ring-slate-800 shadow-2xs' },
+          el('span', { class: 'block text-[11px] font-semibold text-slate-500 dark:text-slate-400' }, 'Chờ nhận việc'),
+          el('span', { class: 'text-base font-bold text-slate-900 dark:text-white' }, String(routedCount))),
+        el('div', { class: 'rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 p-2.5 text-center ring-1 ring-indigo-200/80 dark:ring-indigo-800/60 shadow-2xs' },
+          el('span', { class: 'block text-[11px] font-semibold text-indigo-700 dark:text-indigo-400' }, 'Đang thi công'),
+          el('span', { class: 'text-base font-bold text-indigo-800 dark:text-indigo-200' }, String(inProgCount))),
+        el('div', { class: 'rounded-xl bg-violet-50/70 dark:bg-violet-950/40 p-2.5 text-center ring-1 ring-violet-200/80 dark:ring-violet-800/60 shadow-2xs' },
+          el('span', { class: 'block text-[11px] font-semibold text-violet-700 dark:text-violet-400' }, 'Chờ nghiệm thu'),
+          el('span', { class: 'text-base font-bold text-violet-800 dark:text-violet-200' }, String(readyCount))));
+    },
   });
   if (!state.selected) return detail.append(pickDetail());
   const c = await api(`/mo/tickets/${state.selected}`);
@@ -1160,8 +1361,8 @@ async function renderDepartment(list, detail) {
   const sections = [
     detailHeader(t.ticket_id, t.status, c.draft ? `Vị trí: ${c.draft.location}` : null),
     t.flags.length ? el('div', { class: 'flex flex-wrap gap-2' }, t.flags.map((f) => chip(f === 'ASSET_CHECK_ONSITE' ? 'Kiểm tra tài sản tại hiện trường' : 'Kiểm tra tồn kho khi nhận', 'amber'))) : null,
-    onsiteFlag ? callout('warn', '⚠️ Yêu cầu kiểm tra tài sản tại hiện trường (ASSET_CHECK_ONSITE)', 'BPTN chưa xác định được mã thiết bị trong sổ tài sản BMS. Kỹ thuật viên cần khảo sát, đối chiếu thực tế tem mác/vị trí trước khi báo hoàn thành.') : null,
-    stockFlag ? callout('warn', '⚠️ Yêu cầu kiểm tra tồn kho khi nhận việc (STOCK_CHECK_ON_ACCEPT)', 'Kỹ thuật viên cần kiểm tra số lượng tồn kho thực tế của các vật tư được chỉ định trước khi xuất kho thi công.') : null,
+    onsiteFlag ? callout('warn', 'Yêu cầu kiểm tra tài sản tại hiện trường (ASSET_CHECK_ONSITE)', 'BPTN chưa xác định được mã thiết bị trong sổ tài sản BMS. Kỹ thuật viên cần khảo sát, đối chiếu thực tế tem mác/vị trí trước khi báo hoàn thành.') : null,
+    stockFlag ? callout('warn', 'Yêu cầu kiểm tra tồn kho khi nhận việc (STOCK_CHECK_ON_ACCEPT)', 'Kỹ thuật viên cần kiểm tra số lượng tồn kho thực tế của các vật tư được chỉ định trước khi xuất kho thi công.') : null,
     blockerCard(t.blocker),
     reportText(t.raw.original_description, c.additions.map((a) => a.content)),
     residentPhotosInternal(c),
@@ -1272,10 +1473,10 @@ function renderPrecheckCard(precheck) {
         el('span', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Hộp kiểm tra danh sách còn thiếu khi nộp (Pre-check)'),
         el('span', { class: 'text-xs text-slate-500 dark:text-slate-400' }, 'Đối soát điều kiện hoàn thành')),
       el('span', { class: `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${precheck.isReady ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}` },
-        precheck.isReady ? '✓ Sẵn sàng báo hoàn thành' : `Còn thiếu ${precheck.missingList.length} điều kiện`)),
+        precheck.isReady ? el('span', { class: 'inline-flex items-center gap-1' }, svgIcon('check', 'h-3 w-3'), 'Sẵn sàng báo hoàn thành') : `Còn thiếu ${precheck.missingList.length} điều kiện`)),
     el('ul', { class: 'grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs' },
       criteria.map((cr) => el('li', { class: 'flex items-center gap-2 text-slate-800 dark:text-slate-200' },
-        el('span', { class: `inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold ${cr.ok ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300'}` }, cr.ok ? '✓' : '!'),
+        el('span', { class: `inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold ${cr.ok ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300'}` }, cr.ok ? svgIcon('check', 'h-2.5 w-2.5') : '!'),
         el('span', { class: cr.ok ? 'font-medium' : 'text-slate-600 dark:text-slate-400' }, cr.label)))),
     !precheck.isReady
       ? el('div', { class: 'rounded-lg bg-white/80 p-2.5 text-xs text-amber-900 ring-1 ring-amber-300 dark:bg-slate-900 dark:text-amber-200 dark:ring-amber-900/80 mt-2' },
@@ -1289,7 +1490,7 @@ function materialPlanCard(c) {
   const id = c.ticket.ticket_id;
   const onsite = c.ticket.flags.includes('ASSET_CHECK_ONSITE');
   const confirmed = (c.audit || []).some((a) => a.field_name === 'planned_materials');
-  const options = state.catalog.materials.map((m) => [m.item_code, `${m.item_name} (${m.item_code})`]);
+  const options = state.catalog.materials.map((m) => [m.item_code, `${humanizeMaterialName(m.item_code, m.item_name)} (${m.item_code})`]);
   const rows = el('div', { class: 'space-y-2' });
   const addRow = (code = '', qty = 1) => {
     const select = dropdown('item_code', options, { required: true, placeholder: 'Chọn vật tư…' });
@@ -1331,15 +1532,6 @@ function materialPlanCard(c) {
     el('div', { class: 'mt-3 space-y-3' }, title, form));
 }
 
-function humanizeChecklistLabel(label) {
-  if (!label) return '';
-  return label
-    .replace(/execution update/gi, 'báo cáo thi công')
-    .replace(/location_normalized/gi, 'vị trí chuẩn hóa')
-    .replace(/scope_summary/gi, 'phạm vi công việc')
-    .replace(/draft/gi, 'đề xuất ban đầu');
-}
-
 function workSections(c) {
   const id = c.ticket.ticket_id;
   const readiness = c.draft && c.draft.readiness_evaluation;
@@ -1357,7 +1549,7 @@ function workSections(c) {
         class: 'mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 dark:border-slate-700 dark:bg-slate-800',
         onchange: (e) => act(api(`/mo/tickets/${id}/checklist/${item.template_item_id}`, { method: 'POST', body: { status: e.target.checked ? 'COMPLETED' : 'PENDING' } }), 'Đã cập nhật danh mục'),
       });
-      return el('li', { class: 'flex items-start gap-3' }, box, el('label', { for: box.id, class: 'text-sm text-slate-800 dark:text-slate-200' }, humanizeChecklistLabel(item.label_snapshot)));
+      return el('li', { class: 'flex items-start gap-3' }, box, el('label', { for: box.id, class: 'text-sm text-slate-800 dark:text-slate-200' }, humanizeChecklistLabel(item.template_item_id, item.label_snapshot)));
     }))));
 
   out.push(materialPlanCard(c));
@@ -1375,9 +1567,10 @@ function workSections(c) {
             reason.value = 'Theo khối lượng thực tế tại hiện trường';
           },
         }, '+ Điền nhanh: "Theo khối lượng thực tế tại hiện trường"');
+        const lineName = humanizeMaterialName(line.item_code, line.item_name);
         return el('div', { class: 'rounded-lg p-4 ring-1 ring-inset ring-slate-200 dark:ring-slate-800 dark:bg-slate-800/40' },
           el('div', { class: 'flex items-center justify-between gap-2' },
-            el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, `${line.item_name} · dự kiến ${line.planned_qty}${line.norm_qty != null ? ` · định mức ${line.norm_qty}` : ''}${line.simulated_stock_qty != null ? ` · tồn kho ${line.simulated_stock_qty}` : ''}`),
+            el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, `${lineName} · dự kiến ${line.planned_qty}${line.norm_qty != null ? ` · định mức ${line.norm_qty}` : ''}${line.simulated_stock_qty != null ? ` · tồn kho ${line.simulated_stock_qty}` : ''}`),
             line.issued_qty == null || line.used_qty == null ? chip('Chưa lưu', 'amber') : chip('Đã lưu', 'green')),
           el('div', { class: 'mt-3' }, actionForm([
             el('div', { class: 'grid grid-cols-2 gap-3' }, field('Đã xuất', issued), field('Đã dùng', used)),
@@ -1469,7 +1662,7 @@ async function renderWarehouse(list, detail) {
   }) : [];
   const firstShort = shortages.find((s) => s.missing > 0);
 
-  const item = dropdown('item', state.catalog.materials.map((m) => [m.item_code, `${m.item_name} (${m.item_code})`]), { required: true });
+  const item = dropdown('item', state.catalog.materials.map((m) => [m.item_code, `${humanizeMaterialName(m.item_code, m.item_name)} (${m.item_code})`]), { required: true });
   const qty = el('input', { name: 'qty', type: 'number', min: '1', step: '1', required: true, value: firstShort ? String(firstShort.missing) : '1', class: INPUT });
   if (firstShort) item.value = firstShort.line.item_code;
 
@@ -1481,7 +1674,7 @@ async function renderWarehouse(list, detail) {
       const resumed = cases.length - stillWaiting.length;
       const short = stillWaiting.map((x) => {
         const line = x.material_lines.find((l) => l.item_code === code);
-        return line ? `${x.ticket.ticket_id} còn thiếu ${Math.max(0, line.planned_qty - (line.simulated_stock_qty ?? 0))}` : x.ticket.ticket_id;
+        return line ? `${formatTicketId(x.ticket.ticket_id)} còn thiếu ${Math.max(0, line.planned_qty - (line.simulated_stock_qty ?? 0))}` : formatTicketId(x.ticket.ticket_id);
       });
       toast([
         'Đã nhập kho',
@@ -1496,9 +1689,9 @@ async function renderWarehouse(list, detail) {
   }))];
 
   if (c) {
-    sections.push(card(`Vật tư cần cho ${c.ticket.ticket_id}`,
+    sections.push(card(`Vật tư cần cho ${formatTicketId(c.ticket.ticket_id)}`,
       el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 text-sm' }, shortages.map(({ line, have, missing }) => el('li', { class: 'flex flex-wrap items-center justify-between gap-2 py-2' },
-        el('span', { class: 'text-slate-900 dark:text-slate-200' }, line.item_name),
+        el('span', { class: 'text-slate-900 dark:text-slate-200' }, humanizeMaterialName(line.item_code, line.item_name)),
         el('span', { class: 'flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300' },
           `cần ${line.planned_qty} · tồn ${have ?? 'không rõ'}`,
           missing == null ? chip('Tồn kho không rõ', 'amber') : missing > 0 ? chip(`còn thiếu ${missing}`, 'rose') : chip('Đủ', 'green')))))));
@@ -1506,7 +1699,7 @@ async function renderWarehouse(list, detail) {
 
   sections.push(card('Tồn kho hiện tại',
     el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 text-sm' }, stock.map((s) => el('li', { class: 'flex justify-between gap-2 py-2' },
-      el('span', { class: 'text-slate-900 dark:text-slate-200' }, `${s.item_name} (${s.item_code})`),
+      el('span', { class: 'text-slate-900 dark:text-slate-200' }, `${humanizeMaterialName(s.item_code, s.item_name)} (${s.item_code})`),
       el('span', { class: 'font-medium tabular-nums text-slate-700 dark:text-slate-300' }, s.qty == null ? 'không rõ' : `${s.qty}${s.unit ? ` ${s.unit}` : ''}`))))));
   detail.append(el('div', { class: 'space-y-6' }, sections));
 }
@@ -1551,6 +1744,25 @@ async function renderBql(list, detail) {
 
   if (state.selected && !rows.some((r) => r.ticket_id === state.selected)) state.selected = null;
   if (!state.selected && rows.length) state.selected = rows[0].ticket_id;
+
+  const emergCount = rows.filter((r) => (r.blocker && r.blocker.code === 'EMERGENCY_PENDING_BQL') || r.status === 'EMERGENCY_PENDING_BQL').length;
+  const reviewCount = rows.filter((r) => r.status === 'READY_FOR_REVIEW').length;
+  const reworkCount = rows.filter((r) => r.escalated || (r.rework_count && r.rework_count > 0)).length;
+  const bqlStatsBar = el('div', { class: 'grid grid-cols-4 gap-2 pb-1' },
+    el('div', { class: 'rounded-xl bg-white dark:bg-slate-900 p-2 text-center ring-1 ring-slate-200/80 dark:ring-slate-800 shadow-2xs' },
+      el('span', { class: 'block text-[10px] font-semibold text-slate-500 dark:text-slate-400' }, 'Tổng hồ sơ'),
+      el('span', { class: 'text-sm font-bold text-slate-900 dark:text-white' }, String(rows.length))),
+    el('div', { class: 'rounded-xl bg-rose-50/70 dark:bg-rose-950/40 p-2 text-center ring-1 ring-rose-200/80 dark:ring-rose-800/60 shadow-2xs' },
+      el('span', { class: 'block text-[10px] font-semibold text-rose-700 dark:text-rose-400' }, 'Khẩn cấp B1'),
+      el('span', { class: 'text-sm font-bold text-rose-800 dark:text-rose-200' }, String(emergCount))),
+    el('div', { class: 'rounded-xl bg-violet-50/70 dark:bg-violet-950/40 p-2 text-center ring-1 ring-violet-200/80 dark:ring-violet-800/60 shadow-2xs' },
+      el('span', { class: 'block text-[10px] font-semibold text-violet-700 dark:text-violet-400' }, 'Nghiệm thu'),
+      el('span', { class: 'text-sm font-bold text-violet-800 dark:text-violet-200' }, String(reviewCount))),
+    el('div', { class: 'rounded-xl bg-amber-50/70 dark:bg-amber-950/40 p-2 text-center ring-1 ring-amber-200/80 dark:ring-amber-800/60 shadow-2xs' },
+      el('span', { class: 'block text-[10px] font-semibold text-amber-700 dark:text-amber-400' }, 'Làm lại / Esc'),
+      el('span', { class: 'text-sm font-bold text-amber-800 dark:text-amber-200' }, String(reworkCount))));
+  list.append(bqlStatsBar);
+
   list.append(listCard('Phản ánh', rows.length, rows.map((r) => {
     const isEm = (r.blocker && r.blocker.code === 'EMERGENCY_PENDING_BQL') || r.status === 'EMERGENCY_PENDING_BQL';
     return listItem(r.ticket_id, {
@@ -1591,7 +1803,7 @@ async function renderBql(list, detail) {
     const demoteNote = el('textarea', { name: 'note', rows: '2', required: true, maxlength: '500', class: INPUT });
     sections.push(el('div', { class: 'space-y-4 rounded-xl border-2 border-rose-500 bg-rose-50/70 p-4 sm:p-5 dark:border-rose-700 dark:bg-rose-950/40' },
       el('div', { class: 'flex items-start gap-3' },
-        el('span', { class: 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-600 text-sm font-bold text-white', 'aria-hidden': 'true' }, '⚠'),
+        el('span', { class: 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-600 text-white', 'aria-hidden': 'true' }, svgIcon('alert', 'h-4 w-4')),
         el('div', {},
           el('h3', { class: 'text-base font-bold text-rose-950 dark:text-rose-100' }, 'SỰ CỐ KHẨN CẤP BẬC 1 (Chờ BQL can thiệp)'),
           el('p', { class: 'text-xs text-rose-900/80 dark:text-rose-300/80 mt-1' },
@@ -1651,27 +1863,44 @@ async function renderBql(list, detail) {
 
   if (t.status === 'READY_FOR_REVIEW' && readiness) {
     const gates = [
-      { name: 'Gate 1: Phòng ban tiếp nhận đúng thẩm quyền', ok: readiness.department_accepted },
-      { name: 'Gate 2: Checklist kỹ thuật hoàn tất 100%', ok: readiness.checklist_complete },
-      { name: 'Gate 3: Số lượng vật tư đã ghi nhận đầy đủ', ok: readiness.materials_entered },
-      { name: 'Gate 4: Giải trình chênh lệch vật tư hợp lệ', ok: readiness.variance_explained },
-      { name: 'Gate 5: Ảnh minh chứng hiện trường sau xử lý', ok: readiness.photo_present },
-      { name: 'Gate 6: Hiện trường thông suốt, không còn vướng mắc', ok: readiness.no_open_blocker },
+      { id: 1, name: 'Gate 1: Tiếp nhận', desc: 'Đúng thẩm quyền chuyên trách', ok: readiness.department_accepted },
+      { id: 2, name: 'Gate 2: Checklist', desc: '100% hạng mục đạt chuẩn', ok: readiness.checklist_complete },
+      { id: 3, name: 'Gate 3: Vật tư', desc: 'Đầy đủ định mức xuất dùng', ok: readiness.materials_entered },
+      { id: 4, name: 'Gate 4: Chênh lệch', desc: 'Khớp định mức / Có giải trình', ok: readiness.variance_explained },
+      { id: 5, name: 'Gate 5: Minh chứng', desc: 'Có ảnh hiện trường hoàn tất', ok: readiness.photo_present },
+      { id: 6, name: 'Gate 6: Hiện trường', desc: 'Thông suốt, không vướng mắc', ok: readiness.no_open_blocker },
     ];
     const passedGates = gates.filter((g) => g.ok).length;
     const allPassed = passedGates === 6;
 
-    sections.push(el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5 space-y-4' },
+    const scorecardGrid = el('div', { class: 'grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-3' },
+      gates.map((g) => el('div', {
+        class: `rounded-xl p-3 border transition-all ${
+          g.ok
+            ? 'bg-emerald-50/70 border-emerald-200/90 text-emerald-950 dark:bg-emerald-950/30 dark:border-emerald-800/60 dark:text-emerald-200 shadow-2xs'
+            : 'bg-rose-50/70 border-rose-200/90 text-rose-950 dark:bg-rose-950/30 dark:border-rose-800/60 dark:text-rose-200 shadow-2xs'
+        }`,
+      },
+        el('div', { class: 'flex items-center justify-between' },
+          el('span', { class: 'text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400' }, `Gate ${g.id}`),
+          el('span', { class: `inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold ${g.ok ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}` },
+            g.ok ? svgIcon('check', 'h-2.5 w-2.5') : '!')),
+        el('p', { class: 'mt-1 text-xs font-bold truncate' }, g.name),
+        el('p', { class: 'text-[11px] opacity-80 mt-0.5 truncate' }, g.desc))));
+
+    sections.push(el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5 space-y-3' },
       el('div', { class: 'flex items-center justify-between' },
         el('div', {},
-          el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Thẩm định Nghiệm thu (6 Gates Validation)'),
+          el('h3', { class: 'text-sm font-bold text-slate-900 dark:text-white' }, 'Thẩm định Nghiệm thu (6 Gates Validation)'),
           el('p', { class: 'text-xs text-slate-500 dark:text-slate-400 mt-0.5' }, 'Tiêu chuẩn đối soát nghiệm thu và bàn giao hiện trường')),
-        el('span', { class: `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${allPassed ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}` },
-          allPassed ? '✓ Đạt 6/6 Gates' : `Đạt ${passedGates}/6 Gates`)),
-      el('ul', { class: 'grid grid-cols-1 gap-2.5 sm:grid-cols-2' }, gates.map((g) => el('li', { class: 'flex items-center gap-2 text-xs text-slate-800 dark:text-slate-200' },
-        el('span', { class: `inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${g.ok ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'}`, 'aria-hidden': 'true' }, g.ok ? '✓' : '!'),
-        el('span', { class: g.ok ? 'font-medium' : 'text-slate-600 dark:text-slate-400' }, g.name),
-        el('span', { class: 'sr-only' }, g.ok ? 'đạt' : 'chưa đạt')))),
+        el('span', { class: `inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ring-inset ${
+          allPassed
+            ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-950/60 dark:text-emerald-300'
+            : 'bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-950/60 dark:text-amber-300'
+        }` },
+          svgIcon(allPassed ? 'check' : 'alert', 'h-3.5 w-3.5'),
+          allPassed ? 'ĐẠT 6/6 GATES CHUẨN' : `${passedGates}/6 GATES ĐẠT`)),
+      scorecardGrid,
       readiness.processing_note_present ? null : el('p', { class: 'mt-1 text-xs text-slate-500 dark:text-slate-400' }, 'Phòng ban không để lại ghi chú xử lý (không bắt buộc).'),
       c.draft.non_blocking_warnings.map((w) => el('div', { class: 'mt-2' }, callout('warn', 'Lưu ý', w.reason)))));
 
@@ -1684,7 +1913,7 @@ async function renderBql(list, detail) {
         el('summary', { class: 'cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200' }, 'Chưa đạt, trả làm lại'),
         el('div', { class: 'mt-3 space-y-3' },
           reworkIsThird
-            ? callout('danger', '⚠️ CẢNH BÁO LEO THANG (LẦN THỨ 3)', `Ticket đã qua ${t.rework_count} lần làm lại. Trả lại lần này sẽ tự động KÍCH HOẠT CỜ LEO THANG (ESCALATED) lên cấp quản lý cao hơn và ghi nhận vào hồ sơ chất lượng vận hành.`)
+            ? callout('danger', 'CẢNH BÁO LEO THANG (LẦN THỨ 3)', `Ticket đã qua ${t.rework_count} lần làm lại. Trả lại lần này sẽ tự động KÍCH HOẠT CỜ LEO THANG (ESCALATED) lên cấp quản lý cao hơn và ghi nhận vào hồ sơ chất lượng vận hành.`)
             : null,
           actionForm([
             field('Lý do trả làm lại', note, reworkIsThird ? 'Đây là lần thứ 3: phản ánh sẽ tự động leo thang.' : null),
@@ -1713,31 +1942,118 @@ async function renderBql(list, detail) {
 
 // ------------------------------------------------------------------ login
 
-async function demoAccountList(onPick) {
+async function quickSwitchUser(username) {
+  if (state.user && state.user.username === username) return;
+  try {
+    const res = await api('/auth/login', {
+      method: 'POST',
+      body: { username, password: 'Demo@2026' },
+    });
+    signIn(res.access_token, res.user);
+    toast(`Đã chuyển sang: ${ROLE_LABEL[res.user.role] || res.user.role} (${humanizeDisplayName(username, res.user.display_name)})`);
+  } catch (err) {
+    toast(`Không chuyển được tài khoản: ${err.message}`, 'error');
+  }
+}
+
+async function demoAccountList(onSelect, onDirectSignIn) {
   let data;
   try {
     data = await api('/auth/demo-accounts');
   } catch {
-    return el('p', { class: 'text-sm text-slate-500 dark:text-slate-400' }, 'Không có danh sách tài khoản thử nghiệm.');
+    data = {
+      shared_test_password: 'Demo@2026',
+      accounts: [
+        { username: 'cudan01', display_name: 'Nguyễn Văn Hùng (S2.05-1402)', role: 'RESIDENT' },
+        { username: 'cudan02', display_name: 'Lê Thu Trang (S1.12-0805)', role: 'RESIDENT' },
+        { username: 'bptn01', display_name: 'Trần Mai Anh (BPTN)', role: 'BPTN' },
+        { username: 'vesinh01', display_name: 'Đội Vệ sinh Tòa nhà', role: 'DEPARTMENT' },
+        { username: 'kythuat01', display_name: 'Đội Kỹ thuật Tòa nhà', role: 'DEPARTMENT' },
+        { username: 'kho01', display_name: 'Kho Vật tư Kỹ thuật', role: 'WAREHOUSE' },
+        { username: 'bql01', display_name: 'Ban Quản lý Tòa nhà', role: 'BQL' },
+      ],
+    };
   }
   const accounts = (data.accounts || []).filter((a) => a.role !== 'QA_INTERNAL' && a.username !== 'qa01');
-  return el('div', { class: 'space-y-3' },
-    data.shared_test_password ? el('p', { class: 'text-sm text-slate-600 dark:text-slate-400' }, 'Mật khẩu chung: ',
-      el('code', { class: 'rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 font-mono text-slate-900 dark:text-slate-200' }, data.shared_test_password)) : null,
-    el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 rounded-lg ring-1 ring-slate-200 dark:ring-slate-800' }, accounts.map((a) => el('li', {},
-      el(onPick ? 'button' : 'div', {
-        type: onPick ? 'button' : undefined,
-        class: `flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm ${onPick ? 'hover:bg-slate-50 dark:hover:bg-slate-800/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-600' : ''}`,
-        onclick: onPick ? () => onPick(a.username, data.shared_test_password) : undefined,
+  const sharedPassword = data.shared_test_password || 'Demo@2026';
+
+  let activeRoleFilter = 'ALL';
+  const container = el('div', { class: 'space-y-3' });
+
+  const filterTabs = [
+    ['ALL', 'Tất cả'],
+    ['RESIDENT', 'Cư dân'],
+    ['BPTN', 'BPTN'],
+    ['DEPARTMENT', 'Phòng ban'],
+    ['WAREHOUSE', 'Kho'],
+    ['BQL', 'BQL'],
+  ];
+
+  const filterBar = el('div', { class: 'flex flex-wrap gap-1.5 pb-1' });
+  const listContainer = el('div', { class: 'space-y-2' });
+
+  function renderList() {
+    filterBar.replaceChildren();
+    for (const [key, label] of filterTabs) {
+      const isSelected = activeRoleFilter === key;
+      const pill = el('button', {
+        type: 'button',
+        class: `rounded-lg px-2.5 py-1 text-xs font-semibold transition active:scale-[0.97] ${
+          isSelected
+            ? 'bg-indigo-600 text-white shadow-2xs ring-1 ring-indigo-600'
+            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+        }`,
+        onclick: () => {
+          activeRoleFilter = key;
+          renderList();
+        },
+      }, label);
+      filterBar.append(pill);
+    }
+
+    listContainer.replaceChildren();
+    const filtered = activeRoleFilter === 'ALL'
+      ? accounts
+      : accounts.filter((a) => a.role === activeRoleFilter);
+
+    for (const a of filtered) {
+      const displayName = humanizeDisplayName(a.username, a.display_name);
+      const initials = displayName.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+      const meta = REALISTIC_ACCOUNTS[a.username] ? REALISTIC_ACCOUNTS[a.username].title : `${ROLE_LABEL[a.role] || a.role}`;
+
+      const cardEl = el('div', {
+        class: 'group flex items-center justify-between gap-3 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-2.5 text-left transition hover:border-indigo-400 hover:shadow-2xs dark:hover:border-indigo-500/50',
       },
-      el('span', {}, el('span', { class: 'font-mono font-medium text-slate-900 dark:text-white' }, a.username),
-        el('span', { class: 'ml-2 text-slate-500 dark:text-slate-400' }, a.display_name)),
-      chip(ROLE_LABEL[a.role] || a.role, 'indigo'))))));
+        el('button', {
+          type: 'button',
+          class: 'flex items-center gap-2.5 min-w-0 flex-1 text-left focus:outline-none',
+          onclick: () => onSelect(a.username, sharedPassword),
+        },
+          el('span', { class: 'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 font-mono text-xs font-bold ring-1 ring-indigo-500/20' }, initials),
+          el('div', { class: 'min-w-0' },
+            el('div', { class: 'flex items-center gap-1.5' },
+              el('span', { class: 'font-semibold text-xs text-slate-900 dark:text-white truncate' }, displayName),
+              chip(ROLE_LABEL[a.role] || a.role, 'slate')),
+            el('p', { class: 'text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5' }, meta))),
+        el('button', {
+          type: 'button',
+          class: 'shrink-0 rounded-lg bg-slate-100 hover:bg-indigo-600 hover:text-white dark:bg-slate-800 dark:hover:bg-indigo-600 text-slate-700 dark:text-slate-300 px-2.5 py-1 text-xs font-semibold transition active:scale-[0.96]',
+          onclick: () => onDirectSignIn(a.username, sharedPassword),
+        }, 'Vào ngay'));
+
+      listContainer.append(cardEl);
+    }
+  }
+
+  renderList();
+  container.append(filterBar, listContainer);
+  return container;
 }
 
 async function showLogin(message) {
   $('app-view').classList.add('hidden');
   $('user-menu').replaceChildren();
+
   const view = $('login-view');
   view.classList.remove('hidden');
 
@@ -1749,37 +2065,49 @@ async function showLogin(message) {
   });
   const error = el('div', { role: 'alert' }, message ? callout('warn', message, null) : null);
 
+  async function performLogin(u, p) {
+    try {
+      const result = await api('/auth/login', { method: 'POST', body: { username: u, password: p } });
+      signIn(result.access_token, result.user);
+    } catch (err) {
+      const msg = (err.message && err.message.includes('fetch'))
+        ? 'Không thể kết nối đến máy chủ API (cổng 8000). Vui lòng đảm bảo server FastAPI đang chạy.'
+        : err.message;
+      error.replaceChildren(callout('danger', msg, null));
+      password.value = '';
+      password.focus();
+    }
+  }
+
   const form = actionForm([
     error,
     field('Tên đăng nhập', username),
     field('Mật khẩu', password),
     el('div', { class: 'flex items-center gap-2' }, show, el('label', { for: 'login-show', class: 'text-sm text-slate-700 dark:text-slate-300' }, 'Hiện mật khẩu')),
   ], 'Đăng nhập', async (data) => {
-    try {
-      const result = await api('/auth/login', { method: 'POST', body: { username: data.get('username'), password: data.get('password') } });
-      signIn(result.access_token, result.user);
-    } catch (err) {
-      error.replaceChildren(callout('danger', err.message, null));
-      password.value = '';
-      password.focus();
-    }
+    await performLogin(data.get('username'), data.get('password'));
   });
   form.querySelector('button[type=submit]').classList.add('w-full');
 
-  const accounts = await demoAccountList((name, shared) => {
-    username.value = name;
-    if (shared) password.value = shared;
-    password.focus();
-  });
+  const accounts = await demoAccountList(
+    (name, shared) => {
+      username.value = name;
+      if (shared) password.value = shared;
+      password.focus();
+    },
+    (name, shared) => {
+      performLogin(name, shared);
+    }
+  );
 
   view.replaceChildren(el('div', { class: 'mx-auto grid max-w-4xl grid-cols-1 gap-6 py-6 md:grid-cols-2' },
-    el('div', { class: 'rounded-xl bg-white dark:bg-slate-900 p-6 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 sm:p-8 transition-colors' },
-      el('h1', { class: 'text-xl font-semibold tracking-tight text-slate-900 dark:text-white' }, 'Đăng nhập'),
-      el('p', { class: 'mt-1 text-sm text-slate-600 dark:text-slate-400' }, 'Mỗi tài khoản chỉ thấy màn hình và thao tác của vai trò mình.'),
+    el('div', { class: 'rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xs ring-1 ring-slate-200/90 dark:ring-slate-800 sm:p-7 transition-colors' },
+      el('h1', { class: 'text-xl font-bold tracking-tight text-slate-900 dark:text-white' }, 'Đăng nhập hệ thống'),
+      el('p', { class: 'mt-1 text-xs text-slate-500 dark:text-slate-400' }, 'Hệ thống Quản lý Vận hành & Bảo trì Tòa nhà'),
       el('div', { class: 'mt-6' }, form)),
-    el('div', { class: 'rounded-xl bg-white dark:bg-slate-900 p-6 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 sm:p-8 transition-colors' },
-      el('h2', { class: 'text-base font-semibold text-slate-900 dark:text-white' }, 'Tài khoản thử nghiệm'),
-      el('p', { class: 'mt-1 text-sm text-slate-600 dark:text-slate-400' }, 'Chọn một tài khoản để điền sẵn. Chỉ có ở môi trường thử nghiệm.'),
+    el('div', { class: 'rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xs ring-1 ring-slate-200/90 dark:ring-slate-800 sm:p-7 transition-colors' },
+      el('h2', { class: 'text-base font-bold text-slate-900 dark:text-white' }, 'Tài khoản thử nghiệm'),
+      el('p', { class: 'mt-1 text-xs text-slate-500 dark:text-slate-400' }, 'Bấm "Vào ngay" để đăng nhập nhanh theo từng vai trò'),
       el('div', { class: 'mt-4' }, accounts))));
   username.focus();
 }
@@ -1828,7 +2156,8 @@ function signOut({ remote = true, message = null } = {}) {
 function renderUserMenu() {
   const user = state.user;
   if (!user) return;
-  const initials = user.display_name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+  const displayName = humanizeDisplayName(user.username, user.display_name);
+  const initials = displayName.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
   const isDebugEnabled = typeof window !== 'undefined' && (window.location.search.includes('debug=true') || user.username === 'admin');
   const isAiLogsActive = state.activeTab === 'ai-logs';
@@ -1853,12 +2182,15 @@ function renderUserMenu() {
       el('span', {}, 'Lịch sử AI Logs'),
       el('span', { class: 'inline-flex items-center rounded-full bg-indigo-100 px-1.5 py-0.2 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' }, 'LLM'))) : null;
 
+  const userMeta = REALISTIC_ACCOUNTS[user.username]
+    ? REALISTIC_ACCOUNTS[user.username].title
+    : `${ROLE_LABEL[user.role] || user.role}${user.department_id ? ` · ${deptName(user.department_id)}` : ''} · ${user.username}`;
+
   const menuChildren = [
     navTabs,
     el('div', { class: 'hidden text-right sm:block' },
-      el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, user.display_name),
-      el('p', { class: 'text-xs text-slate-500 dark:text-slate-400' },
-        `${ROLE_LABEL[user.role] || user.role}${user.department_id ? ` · ${deptName(user.department_id)}` : ''} · ${user.username}`)),
+      el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, displayName),
+      el('p', { class: 'text-xs text-slate-500 dark:text-slate-400' }, userMeta)),
     el('span', { class: 'flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200', 'aria-hidden': 'true' }, initials),
     el('button', { type: 'button', class: BTN.secondary, onclick: () => signOut() }, 'Đăng xuất'),
   ].filter(Boolean);
@@ -1924,6 +2256,17 @@ async function render() {
 }
 
 async function boot() {
+  const params = new URLSearchParams(window.location.search);
+  const autoUser = params.get('autologin');
+  if (autoUser) {
+    try {
+      const res = await api('/auth/login', { method: 'POST', body: { username: autoUser, password: 'Demo@2026' } });
+      signIn(res.access_token, res.user);
+      return;
+    } catch (e) {
+      console.warn('Autologin error:', e);
+    }
+  }
   let token = null;
   try { token = sessionStorage.getItem(TOKEN_KEY); } catch { /* storage unavailable */ }
   if (!token) return showLogin();

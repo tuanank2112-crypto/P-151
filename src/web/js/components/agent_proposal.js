@@ -10,6 +10,26 @@
  */
 'use strict';
 
+function svgIcon(name, className = 'h-4 w-4') {
+  if (typeof window !== 'undefined' && typeof window.svgIcon === 'function') {
+    return window.svgIcon(name, className);
+  }
+  const icons = {
+    spark: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/>',
+    alert: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 18h.008v.008H12V18Z"/>',
+    check: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m4.5 12.75 6 6 9-13.5"/>',
+    x: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12"/>',
+  };
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', className);
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = icons[name] || '';
+  return svg;
+}
+
 function parseLocationParts(locationStr) {
   if (!locationStr || typeof locationStr !== 'string') {
     return { building: null, floor: null, zone: null, raw: 'Chưa có thông tin' };
@@ -95,7 +115,9 @@ async function openAiRawModal(ticketId, c) {
           <p class="text-xs text-slate-500 dark:text-slate-400">Phản ánh: <span class="font-mono font-medium">${ticketId}</span></p>
         </div>
       </div>
-      <button type="button" id="ai-modal-close-btn" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200">✕</button>
+      <button type="button" id="ai-modal-close-btn" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12"/></svg>
+      </button>
     </div>
     <div class="animate-pulse space-y-3 py-4">
       <div class="h-4 bg-slate-200 rounded w-1/3 dark:bg-slate-800"></div>
@@ -124,7 +146,7 @@ async function openAiRawModal(ticketId, c) {
     el('div', { class: 'flex items-center gap-2' },
       el('span', { class: 'flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 font-mono text-xs font-bold' }, '{ }'),
       el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, `Nhật ký mô hình · ${ticketId}`)),
-    el('button', { type: 'button', class: 'rounded-lg p-1 text-slate-400 hover:text-slate-200', onclick: () => modal.close() }, '✕'));
+    el('button', { type: 'button', class: 'rounded-lg p-1 text-slate-400 hover:text-slate-200', onclick: () => modal.close() }, svgIcon('x', 'h-4 w-4')));
 
   const content = el('div', { class: 'space-y-3 text-xs max-h-[60vh] overflow-y-auto pr-1' });
 
@@ -168,11 +190,12 @@ function agentProposal(c) {
   const isMerged = t.status === 'MERGED';
 
   const assetId = locked.asset_id || (p && p.asset_id) || (c.draft && c.draft.asset_id);
+  const cleanAssetId = assetId ? assetId.replace(/^SIM-/, '') : null;
   const materialLabel = blocker && blocker.code === 'WAITING_MATERIAL' ? 'Thiếu vật tư' : 'Đủ vật tư';
-  const materialTone = blocker && blocker.code === 'WAITING_MATERIAL' ? 'text-rose-400' : 'text-emerald-400';
+  const materialTone = blocker && blocker.code === 'WAITING_MATERIAL' ? 'text-rose-500 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400';
 
   const container = el('div', {
-    class: 'group rounded-xl border border-indigo-500/20 bg-gradient-to-r from-indigo-950/40 via-slate-900 to-slate-900 p-3 text-xs shadow-xs transition hover:border-indigo-500/40',
+    class: 'group rounded-2xl border border-indigo-200/90 bg-indigo-50/50 p-3.5 text-xs shadow-2xs transition hover:border-indigo-300 dark:border-indigo-500/20 dark:bg-slate-900 dark:hover:border-indigo-500/40',
     role: 'region',
     'aria-label': 'Đề xuất tự động của hệ thống',
   });
@@ -180,52 +203,56 @@ function agentProposal(c) {
   // Top Compact Pill Row
   const topRow = el('div', { class: 'flex flex-wrap items-center justify-between gap-2' },
     el('div', { class: 'flex items-center gap-2' },
-      el('span', { class: 'flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-600/30 text-indigo-400 text-xs' }, '✨'),
+      el('span', { class: 'flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400', 'aria-hidden': 'true' },
+        svgIcon('spark', 'h-3.5 w-3.5')),
       el('div', { class: 'flex items-center gap-1.5' },
-        el('span', { class: 'font-semibold text-white' }, `Đề xuất: ${categoryTitle}`),
-        el('span', { class: 'text-slate-400' }, `(${deptTitle})`)),
-      el('span', { class: `inline-flex items-center gap-1 rounded-full px-2 py-0.2 text-[10px] font-semibold ${conf.badgeClass}` },
+        el('span', { class: 'font-semibold text-slate-900 dark:text-white' }, `Đề xuất: ${categoryTitle}`),
+        el('span', { class: 'text-slate-500 dark:text-slate-400 font-medium' }, `(${deptTitle})`)),
+      el('span', { class: `inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${conf.badgeClass}` },
         el('span', { class: `h-1.5 w-1.5 rounded-full ${conf.dotClass}` }),
         conf.label)),
-    el('div', { class: 'flex items-center gap-1.5' },
+    el('div', { class: 'flex items-center gap-2' },
       isDuplicate
-        ? el('span', { class: 'rounded-full bg-amber-500/20 text-amber-300 px-2 py-0.5 text-[10px] font-semibold' }, '⚠️ Nghi trùng vé')
+        ? el('span', { class: 'inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 px-2 py-0.5 text-[10px] font-semibold' },
+            svgIcon('alert', 'h-3 w-3 text-amber-500'),
+            'Nghi trùng vé')
         : isMerged
-          ? el('span', { class: 'rounded-full bg-slate-800 text-slate-300 px-2 py-0.5 text-[10px] font-medium' }, `Đã gộp #${t.merged_into}`)
-          : el('span', { class: 'rounded-full bg-emerald-500/10 text-emerald-400 px-2 py-0.5 text-[10px] font-medium' }, '✓ Không trùng lặp'),
+          ? el('span', { class: 'rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-2 py-0.5 text-[10px] font-medium' }, `Đã gộp #${t.merged_into ? t.merged_into.replace(/^SIM-TKT-/, 'TK-') : ''}`)
+          : el('span', { class: 'inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-medium' },
+              svgIcon('check', 'h-3 w-3 text-emerald-500'),
+              'Không trùng lặp'),
       el('span', { class: `font-medium text-[10px] ${materialTone}` }, `• ${materialLabel}`),
       el('button', {
         type: 'button',
-        class: 'ml-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 px-2 py-0.5 text-[11px] font-medium text-indigo-300 transition flex items-center gap-1',
+        class: 'ml-1 rounded-lg bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 px-2 py-1 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 transition flex items-center gap-1 shadow-2xs active:scale-[0.98]',
         onclick: (e) => {
           const detailBox = container.querySelector('.taste-ai-details');
           const isHidden = detailBox.classList.toggle('hidden');
-          e.currentTarget.querySelector('.arrow').textContent = isHidden ? '▾' : '▴';
+          e.currentTarget.querySelector('.indicator').textContent = isHidden ? 'Mở rộng' : 'Thu gọn';
         },
       },
-        el('span', {}, 'Chi tiết'),
-        el('span', { class: 'arrow font-mono' }, '▾')),
+        el('span', { class: 'indicator' }, 'Chi tiết')),
       el('button', {
         type: 'button',
-        title: 'Xem raw prompt & logs',
-        class: 'h-6 w-6 rounded-lg bg-slate-800/60 hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center font-mono text-[10px]',
+        title: 'Xem raw prompt & logs AI',
+        class: 'h-6 w-6 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center font-mono text-[10px] font-bold shadow-2xs active:scale-[0.96]',
         onclick: () => openAiRawModal(t.ticket_id, c),
       }, '{ }')));
 
   // Expandable Detail Drawer (Clean 3-column micro card)
-  const detailBox = el('div', { class: 'taste-ai-details hidden mt-3 pt-3 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs' },
-    el('div', { class: 'rounded-lg bg-slate-800/50 p-2.5 border border-slate-700/50' },
-      el('span', { class: 'text-[10px] font-bold text-slate-400 uppercase tracking-wide block' }, 'Vị trí nhận diện'),
-      el('p', { class: 'font-medium text-slate-200 mt-1' }, `${loc.building || 'Tòa S1'} • ${loc.floor || 'Tầng 1'}`),
-      el('p', { class: 'text-[11px] text-slate-400 mt-0.5 truncate', title: rawLocation }, loc.zone || rawLocation || 'Khu vực chung')),
-    el('div', { class: 'rounded-lg bg-slate-800/50 p-2.5 border border-slate-700/50' },
-      el('span', { class: 'text-[10px] font-bold text-slate-400 uppercase tracking-wide block' }, 'Tài sản & Hiện trường'),
-      el('p', { class: 'font-medium text-slate-200 mt-1 truncate' }, assetId ? `${assetId}` : (isTechnical ? 'Kiểm tra hiện trường' : 'Khu vực chung')),
-      el('p', { class: 'text-[11px] text-emerald-400 mt-0.5' }, isTechnical ? 'Bóng đèn LED T8 1.2m' : 'Dụng cụ vệ sinh sẵn có')),
-    el('div', { class: 'rounded-lg bg-slate-800/50 p-2.5 border border-slate-700/50' },
-      el('span', { class: 'text-[10px] font-bold text-slate-400 uppercase tracking-wide block' }, 'Căn cứ đề xuất'),
-      el('p', { class: 'text-[11px] text-slate-300 italic mt-1 line-clamp-2' },
-        `"${(p && p.classification_reason) || 'Khớp từ khóa phản ánh và quy tắc phân loại.'}"`)));
+  const detailBox = el('div', { class: 'taste-ai-details hidden mt-3 pt-3 border-t border-indigo-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs' },
+    el('div', { class: 'rounded-xl bg-white/90 p-3 border border-slate-200/80 dark:bg-slate-800/60 dark:border-slate-700/60 shadow-2xs' },
+      el('span', { class: 'text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block' }, 'Vị trí nhận diện'),
+      el('p', { class: 'font-semibold text-slate-900 dark:text-slate-100 mt-1' }, `${loc.building || 'Tòa S1.12'} • ${loc.floor || 'Tầng 3'}`),
+      el('p', { class: 'text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate', title: rawLocation }, loc.zone || rawLocation || 'Khu vực chung')),
+    el('div', { class: 'rounded-xl bg-white/90 p-3 border border-slate-200/80 dark:bg-slate-800/60 dark:border-slate-700/60 shadow-2xs' },
+      el('span', { class: 'text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block' }, 'Tài sản & Hiện trường'),
+      el('p', { class: 'font-semibold text-slate-900 dark:text-slate-100 mt-1 truncate' }, cleanAssetId ? `Mã: ${cleanAssetId}` : (isTechnical ? 'Khảo sát hiện trường' : 'Khu vực chung')),
+      el('p', { class: 'text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5' }, isTechnical ? 'Đèn LED Tuýp T8 18W' : 'Dụng cụ & Hóa chất chuyên dụng')),
+    el('div', { class: 'rounded-xl bg-white/90 p-3 border border-slate-200/80 dark:bg-slate-800/60 dark:border-slate-700/60 shadow-2xs' },
+      el('span', { class: 'text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block' }, 'Căn cứ đề xuất'),
+      el('p', { class: 'text-[11px] text-slate-700 dark:text-slate-300 italic mt-1 line-clamp-2 leading-relaxed' },
+        `"${(p && p.classification_reason) || 'Khớp nội dung phản ánh và quy tắc phân loại vận hành.'}"`)));
 
   container.append(topRow, detailBox);
   return container;
