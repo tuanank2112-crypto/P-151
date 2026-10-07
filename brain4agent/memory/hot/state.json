@@ -31,8 +31,8 @@
     "license": ""
   },
   "active_spec": "docs/CR-BPTN-03.md",
-  "working_branch": "fix/nhuy-lamp-burnt-short",
-  "code_baseline": "6265436 (develop)",
+  "working_branch": "feature/nhuy-reasoning-agent",
+  "code_baseline": "aafdf6a (feature/nhuy-reasoning-agent)",
   "last_benchmark": {
     "pytest": "2941 passed, 29 deselected, 0 skip (pg: 1872 passed on develop 37a0fb3, 2026-10-04)",
     "safety_stop_sets": "1065 green",
@@ -44,13 +44,14 @@
     "holdout_none": "2/39",
     "assess_24kb_seconds": 0.28,
     "review_set_2026_10_04": "adversarial 107: HEAD 50 errors -> 7; SO holdout 18/18; live API corpus 34: only out-of-scope-asks-location left (spec)",
-    "agent_audit_2026_10_05": "independent E2E audit scripts rerun: 77 sentences 16->7 errors, group D 9->2; rest P1/spec"
+    "agent_audit_2026_10_05": "independent E2E audit scripts rerun: 77 sentences 16->7 errors, group D 9->2; rest P1/spec",
+    "spec_p09_v6_probes": "27/27 passed (B1 interval overlap, B2 3-part overrides & shared location, B3 next_step, B4 cardinality & quiesce)"
   },
-  "last_sync": "2026-10-02T13:09:52.176Z",
-  "next_step": "PR lamp fix -> develop; resume P1 SPEC (planning/06, architect stopped by session limit)",
+  "last_sync": "2026-10-07T12:20:00.000Z",
+  "next_step": "Chờ người duyệt SPEC-P09 (PROPOSED -> APPROVED); nhận H16 thi công runtime WP17",
   "active_plan": {
-    "id": "05_2026-10-04_agent-hardening",
-    "status": "in_progress",
+    "id": "06_2026-10-05_reasoning-agent",
+    "status": "in_progress_spec_review",
     "team_plan_url": "https://storm-jade-f74.notion.site/K-ho-ch-MaintenanceOps-MVP-3e43b68a924d80d7a81fe0579e1eddb9",
     "deadlines": {
       "mvp_online": "2026-10-04T23:59:00+07:00",

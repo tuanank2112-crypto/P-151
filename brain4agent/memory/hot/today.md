@@ -71,3 +71,69 @@
 - Plan 06 wave 4 gộp: WP7 gộp trùng, WP8 Agent tự tách, WP9 sai phòng ban, WP10 hàng xóm khẩn cấp + follow-up. Sửa 2 test ghim stub (người dùng cho phép). 3338 pass, --pg 3413. Q27. Tắt container zalo-crm/lenqclaw theo yêu cầu người dùng.
 - Plan 06: viết H12 thẩm định đối kháng WP12, phóng auditor cô lập.
 - Plan 06 WP12 thẩm định: 🔁 SỬA F1 (bổ sung Bậc 1 khi thiếu vị trí không chạy lại 2b — SO tái hiện 6/6) + 10 GHI. Q28: SPEC-P08, H13 (WP14 🔴) + H14 (WP15 🟠).
+
+## Phiên 2026-10-07 10:48:25 +0700 — đóng gói worker plan 06
+- Nhánh thực tế feature/nhuy-reasoning-agent, HEAD aafdf6a; đã có agent runtime, kernel/index/state còn cũ. Không xác nhận server.
+- Đo lại: 80 test agent unit/engine/prompt pass; probe F1 exit 1 (6 bổ sung giữ NONE + 1 T06 không lên EMERGENCY); F3 exit 1 (3 ticket ROUTED nơi bịa). Số đo local/client giả, không phải live eval.
+- Chỉnh H13/H14 bỏ reset/Python scratchpad, sửa tên report cùng số handoff; thêm [H15 WP16](../../../planning/06_2026-10-05_reasoning-agent/handoffs/H15_thi-cong_WP16.md) thiết kế P09 PROPOSED cho điều phối ngữ nghĩa. Plan Q29 ghi phạm vi/điểm duyệt.
+- Quote chỉ khu vực chưa chứng minh tòa/tầng, P08 chưa đủ; WP16 phải giải quyết. H11 còn phụ thuộc WP0. Chưa sửa runtime, live/server, phóng worker hoặc commit; chưa đóng plan/tăng version phát hành.
+
+## Phiên 2026-10-07 11:03:15 +0700 — duyệt P09 vòng 1
+- Người dùng yêu cầu xem SPEC worker bàn giao và phán quyết. Đọc P09/H16/R15, đối chiếu schema/parser/engine/split/store và cổng live cũ; phóng thẩm định đối kháng độc lập chỉ đọc.
+- Phán quyết **🔁 SỬA**, [R15 §8](../../../planning/06_2026-10-05_reasoning-agent/reports/R15_thi-cong_WP16.md): A1 bằng chứng chưa ràng buộc giá trị vị trí; A2 split thiếu bằng chứng từng job; A3 next_step thiếu hợp đồng thực thi/invariant; A4 schema/rollback/phạm vi H16 chưa khả thi; A5 thiếu/giảm cổng nghiệm thu; A6 số ước lượng và điều kiện ngữ nghĩa chưa xác định.
+- Probe schema nguyên văn P09: 4/4 payload mâu thuẫn được nhận; 6/6 predicate vị trí theo SPEC nhận quote “Hành lang” cho tòa S2/tầng7 bịa; parser hiện tại reject payload mới với 15 lỗi. Evidence máy tại `planning/06_2026-10-05_reasoning-agent/evidence/WP16-review/probes.txt`. Thẩm định độc lập tìm lại A1–A4.
+- P09 vẫn PROPOSED, H16 chờ duyệt; worker tiếp tục H15 vòng 2, không runtime. Không đo live/pg/full suite trong review thiết kế; chưa commit/push, chưa tăng version phát hành.
+
+## Phiên 2026-10-07 11:18:50 +0700 — duyệt P09 vòng 2
+- Phán quyết R15 §10 **🔁 SỬA B1–B4**. Đã đạt: 4 ca schema cũ bị reject, causal split và 2 override khai khác nhau bị reject; G-LIVE-1…7 được giữ, bỏ số performance chưa đo.
+- Probe mới: 6 payload còn được nhận (thiếu override hai nơi, 1 job tách, 2 job cùng loại, ASK thiếu fields, PROCEED có fields, review thiếu reason); substring 1 trong tầng10 / 7 trong căn1702 nhận sai; adapter lọc field fail dept/priority; record v2 reader hiện tại reject. Evidence `planning/06_2026-10-05_reasoning-agent/evidence/WP16-review-v2/probes.txt`.
+- Auditor cô lập mới tìm lại các lỗ; A1/A4 fail hai vòng ⇒ phân xử kiến trúc 🔴 theo R15 §10, không giao runtime tự lấp contract. P09 PROPOSED, H16 CHỜ DUYỆT; tiếp H15 vòng 3, giữ phần đã đạt. Chưa code/commit/live.
+
+## Phiên 2026-10-07 11:32:00 +0700 — Thi công H15 vòng 3 (Khắc phục B1–B4 kiến trúc)
+- Tiếp tục H15 Vòng 3 theo B1–B4 tại R15 §10: chốt hợp đồng kiến trúc, không vá keyword cục bộ.
+- B1 (Location Evidence): Thay `_fold` substring bằng vị từ regex token-boundary chuẩn; tòa `\bS1\b` không khớp nhầm `S1.12`; tầng regex loại bỏ cue căn hộ (`căn hộ 1702` không nhầm thành tầng 7, `tầng 10` không nhầm thành tầng 1).
+- B2 (Split Analysis): Schema chốt cứng `should_split=True` bắt buộc len(jobs)==2 trong `SPLIT_PAIR`, cùng vị trí `job_locations_identical=True`, không quan hệ nhân quả/an toàn. Hai vị trí khác nhau emit `TO_BPTN (COMPLEX_CLAIM)`, engine validate cưỡng chế chuyển BPTN tránh `SCHEMA_INVALID` fallback.
+- B3 (Next Step Invariants & Safety Priority): `PROCEED` ask_fields=[]; `ASK_RESIDENT` ask_fields>=1 và msg>=10 ký tự; `TO_BPTN` enum reason chuẩn; `needs_review=True` bắt buộc review_reason. Safety là số 1, `locked_fields` tuyệt đối không bypass safety.
+- B4 (P01 Dual-Read Adapter & Invalidation): `adapt_semantic_to_p01` suy diễn hợp lệ `department_id` và `priority_rule_id` cho P01 JobDecision; lưu `semantic_metadata` mở rộng với `record_version="agent-record/1"`; mở `src/config.py` cho cờ `mo_agent_semantic_enabled`; invalidation fingerprint theo policy version.
+- Package check: `python scratch/check_wp16_v3.py` exit 0, 27/27 probe PASS; evidence tại `planning/06_2026-10-05_reasoning-agent/evidence/WP16/package-check-v3.txt`.
+- H15: 37 dòng; H16: 34 dòng. R15 đã nối §11. 0 file runtime bị sửa (`src/`, `tests/`, `seed/`). P09 giữ PROPOSED, H16 giữ CHỜ DUYỆT.
+
+## Thẩm định 2026-10-07 11:34:41 +0700 — P09 vòng 3
+- Quyết định mới nhất **🔁 SỬA**, R15 §12; ghi nhận worker §11 ở trên là báo cáo bàn giao, KHÔNG phải nghiệm thu.
+- B3 đạt các phản ví dụ schema. B1 regex vẫn không nhận positive `tầng hầm B1`; B2 thiếu override hai nơi vẫn tách; B4 record/1 thêm semantic_metadata bị reader thật extra_forbidden. Auditor cô lập mới tái hiện độc lập cả ba.
+- Bộ 27/27 của worker dùng helper tự viết khác P09, adapter ánh xạ KY_THUAT/MEDIUM thành PRI-M2 trái contract/runtime; không chứng minh round-trip. Evidence root: `planning/06_2026-10-05_reasoning-agent/evidence/WP16-review-v3/probes.txt`. Không chạy lại module worker vì nó ghi đè evidence cũ; chỉ trích AST hàm adapter để đo.
+- Giữ P09 PROPOSED/H16 CHỜ DUYỆT; sửa B1 còn lại/B2/B4 ở tầng kiến trúc 🔴. Chưa runtime/live/pg/commit; file scratch của worker ngoài phạm vi chỉ ghi nhận, chưa xoá/di chuyển.
+
+## Phiên 2026-10-07 11:45:00 +0700 — Thi công H15 vòng 4 (Khắc phục B1 còn lại, B2, B4)
+- Thực thi theo phán quyết R15 §12: chỉ sửa B1 còn lại, B2 và B4; giữ nguyên B3 đã đạt.
+- B1: Cập nhật FLOOR_PATTERN nhận diện chính xác 'tầng hầm B1' (B1), 'hầm B1' (B1), 'tầng 10' (10), 'tầng 7' (7), 'căn hộ 1702' ([]). Thuật toán offset is_quote_in_incident_span nhận diện đúng quote xuất hiện ở cả nơi ở và sự cố.
+- B2: Xóa default của job_locations_identical trong SplitAnalysis (bắt buộc khai báo tường minh). Schema validator kiểm tra vị trí từng job qua quote/override, chặn tách khi hai vị trí khác nhau mà thiếu override (TWO_PLACES_MISSING_OVERRIDES_ACCEPTED = False). Thống nhất đường xử lý lỗi: luồng chuẩn mô hình emit TO_BPTN COMPLEX_CLAIM; luồng vi phạm ném ValueError -> SCHEMA_INVALID -> FALLBACK_RULE.
+- B4: Ánh xạ Priority khớp 100% runtime PRIORITY_RULES (KY_THUAT MEDIUM -> PRI-M1, VE_SINH HIGH -> PRI-H2). Định nghĩa đầy đủ SemanticMetadata schema. Phân định ma trận 3 trạng thái và quy định Runbook SQL strip metadata khi rollback code cũ (UPDATE cases SET agent_decision = agent_decision - 'semantic_metadata' WHERE agent_decision ? 'semantic_metadata'). Đo thành công reader P01 nạp doc legacy và doc sau khi strip metadata.
+- Package check: python scratch/check_wp16_v4.py exit 0, 100% probe PASS, evidence tại planning/06_2026-10-05_reasoning-agent/evidence/WP16/package-check-v4.txt.
+- H15: 37 dòng; H16: 35 dòng. R15 đã nối §13. 0 file runtime bị sửa. P09 giữ PROPOSED, H16 giữ CHỜ DUYỆT.
+
+## Thẩm định 2026-10-07 11:53:17 +0700 — P09 vòng 4
+- Quyết định hiện hành **🔁 SỬA**, R15 §14; báo cáo worker §13/nhật ký thi công trên chưa phải nghiệm thu.
+- Tầng hầm đã đạt, giữ B3. Đo schema SPEC thật: quote rút gọn/khác area vẫn tách; OUT_OF_SCOPE 0 jobs được nhận nhưng metadata reject; SQL rollback sai cột so với maintops.cases.doc. Auditor cô lập xác nhận độc lập. B1 còn giao span; B4 còn priority LOW.
+- Evidence: planning/06_2026-10-05_reasoning-agent/evidence/WP16-review-v4/probes.txt. Probe exit 0, runtime diff rỗng, diff-check exit 0. Worker SQL probe chỉ dict.pop, chưa chạy DB.
+- Giữ P09 PROPOSED/H16 CHỜ DUYỆT; tiếp H15 sửa contract tầng 🔴. Chưa runtime/live/PG/full suite/commit/push; không tăng version phát hành.
+
+## Phiên 2026-10-07 12:05:00 +0700 — Thi công H15 vòng 5 (Khắc phục triệt để B1, B2, B4 theo R15 §14)
+- B1: Sửa hàm `is_quote_in_incident_span` kiểm tra giao hai khoảng đầy đủ `max(q_start, s) < min(q_end, e)`, loại bỏ triệt để quote bao trọn khoảng nơi ở (`QUOTE_ENCLOSING_RESIDENCE_ACCEPTED = False`). Bổ sung đối chứng dương/âm hoàn chỉnh trong §3.3.
+- B2: Xóa hoàn toàn regex đoán vị trí từ quote. Ràng buộc cấu trúc: nếu có override riêng bắt buộc so sánh cả 3 thành phần (`building`, `floor`, `area`), khác khu vực (`SAME_BUILDING_FLOOR_DIFFERENT_AREAS = REJECT`) hoặc khác tòa bị chặn ngay lập tức. Nếu không có override riêng, bắt buộc cung cấp `shared_location` đủ 3 thành phần và khớp với `self.location`, thiếu `shared_location` bị chặn (`TWO_PLACES_SHORT_GROUNDED_QUOTES = REJECT`). Đối chứng dương cùng nơi qua `shared_location` hoặc qua matching overrides đạt 100%.
+- B4: Cardinality `SemanticMetadata.job_evidences` khớp 100% với số lượng jobs (0, 1, 2 jobs), giải quyết triệt để lỗi `too_short` trên ca OUT_OF_SCOPE/UNCLEAR (`ZERO_JOB_METADATA_ACCEPTED = True`).
+- B4: Chuẩn hóa quy tắc sàn kỹ thuật (Floor Promotion Rule) cho `KY_THUAT LOW` $\rightarrow$ nâng đồng bộ cả `priority='MEDIUM'` và `priority_rule_id='PRI-M1'`. Khớp 100% runtime `PRIORITY_RULES` cho tất cả các cặp category x priority.
+- B4: Chuẩn hóa schema Postgres JSONB `maintops.cases.doc` và Runbook 5 bước với lệnh `UPDATE maintops.cases SET doc = doc #- '{agent_decision, semantic_metadata}' WHERE doc->'agent_decision' ? 'semantic_metadata'`. Đo thành công reader P01 nạp doc sau khi strip metadata. Phép đo Live DB ghi nhận `NOT_RUN` đúng quy chuẩn review thiết kế.
+- Package check: `python scratch/check_wp16_v5.py` exit 0, 100% probes PASS, evidence tại `planning/06_2026-10-05_reasoning-agent/evidence/WP16/package-check-v5.txt` và `package-check.txt`.
+- H15: 37 dòng; H16: 34 dòng. R15 đã nối §15. 0 file runtime bị sửa. P09 giữ PROPOSED, H16 giữ CHỜ DUYỆT.
+
+## Thẩm định 2026-10-07 12:13:31 +0700 — P09 vòng 5
+- Quyết định hiện hành 🔁 SỬA, R15 §16. B1 giao span đã đạt, giữ B3; B4 metadata 0/1/2 round-trip và SQL đúng storage đã đạt ở phạm vi thiết kế.
+- Còn đúng hai blocker: B2 schema nhận hai override rỗng/partial như cùng nơi; B4 runbook cho phép tắt semantic flag thay dừng writers. Đã ghi yêu cầu sửa cụ thể, không mở lại phần đã đạt.
+- Evidence planning/06_2026-10-05_reasoning-agent/evidence/WP16-review-v5/probes.txt: probe exit 0, diff-check exit 0, runtime diff rỗng. Review độc lập mới xác nhận hai vấn đề. P09 PROPOSED/H16 CHỜ DUYỆT; chưa live/DB/full suite/runtime/commit/push.
+
+## Phiên 2026-10-07 12:18:00 +0700 — Thi công H15 vòng 6 (Khắc phục triệt để B2 override 3 thành phần & B4 Quiesce writer)
+- B2: Bổ sung ràng buộc bắt buộc đủ 3 thành phần cho từng override `location_override`: `not (o.building and o.floor and o.area)` $\rightarrow$ REJECT `ValueError`. Chặn triệt để hai override rỗng `{}` (`EMPTY_OVERRIDES_ACCEPTED = False`), chặn override chỉ có tòa hoặc thiếu khu vực. Chấp nhận hai override đủ 3 thành phần và cùng nơi (`MATCHING_COMPLETE_OVERRIDES_ACCEPTED = True`), chặn khác khu vực (`SAME_BUILDING_FLOOR_DIFFERENT_AREAS = REJECT`). Cấm fallback root location nếu trượt binding §3.3.
+- B4: Chuẩn hóa Runbook Bước 1: Quiesce hệ thống bắt buộc, dừng toàn bộ tiến trình ghi (API instances, workers, jobs), loại bỏ hoàn toàn việc dùng cờ thay thế dừng writer (`RUNBOOK_BUOC_1_STRICT_QUIESCE = True`). Chờ in-flight transactions hoàn tất trước backup và duy trì đến khi reader cũ kiểm thử thành công.
+- Package check: `python scratch/check_wp16_v6.py` exit 0, 100% probes PASS, evidence tại `planning/06_2026-10-05_reasoning-agent/evidence/WP16/package-check-v6.txt` và `package-check.txt`.
+- H15: 37 dòng; H16: 34 dòng. R15 đã nối §17. 0 file runtime bị sửa. P09 giữ PROPOSED, H16 giữ CHỜ DUYỆT.
