@@ -1,0 +1,55 @@
+================================================================================
+WP16 VÒNG 4 VERIFICATION & PACKAGE CHECK — 2026-10-07T04:46:27.293495+00:00
+================================================================================
+
+--- 1. KIỂM TRA MÃ NGUỒN & GIT WORKSPACE ---
+git diff --check exit code: 0
+git diff --check: PASS (không có lỗi whitespace/conflict)
+Runtime files changed (src/, tests/, seed/): 0
+BẢO TOÀN RUNTIME: PASS (0 file runtime bị thay đổi, giữ nguyên nguyên tắc SPEC-first)
+
+--- 2. KIỂM TRA ĐỘ DÀI HANDOFF (<= 80 DÒNG) ---
+planning/06_2026-10-05_reasoning-agent/handoffs/H15_thi-cong_WP16.md: 37 dòng (giới hạn <= 80) -> PASS
+planning/06_2026-10-05_reasoning-agent/handoffs/H16_thi-cong_WP17.md: 34 dòng (giới hạn <= 80) -> PASS
+
+--- 3. KIỂM TRA TÍNH TOÀN VẸN SPEC-P09 ---
+SPEC-P09 Status: PROPOSED -> PASS (chưa thay thế P01/P08, đúng quy chuẩn)
+SPEC-P09 Internal Markdown Links: 0 broken links
+SPEC-P09 Anchor Links: 100% PASS
+
+--- 4. BỘ PROBE KIỂM CHỨNG KIẾN TRÚC B1–B4 (THEO R15 §12) ---
+>>> Probe B1: Kiểm tra FLOOR_PATTERN & Incident Spans (Positive control 'tầng hầm B1')
+  [PASS] SPEC_FLOOR_MATCH 'tầng 10' = ['10'] (expected: ['10'])
+  [PASS] SPEC_FLOOR_MATCH 'tầng 7' = ['7'] (expected: ['7'])
+  [PASS] SPEC_FLOOR_MATCH 'căn hộ 1702' = [] (expected: [])
+  [PASS] SPEC_FLOOR_MATCH 'tầng hầm B1' = ['B1'] (expected: ['B1'])
+  [PASS] SPEC_FLOOR_MATCH 'hầm B1' = ['B1'] (expected: ['B1'])
+  [PASS] SPEC_FLOOR_MATCH 'lầu 3' = ['3'] (expected: ['3'])
+  [PASS] Incident span: Nhận tòa S1 khi xuất hiện cả ở nơi ở và sự cố
+  [PASS] Incident span: Nhận tầng 7 ở sự cố
+  [PASS] Incident span: Chặn tầng 3 vì chỉ xuất hiện ở nơi ở
+
+>>> Probe B2: Phân tích Tách việc (Bắt buộc Khai báo Cùng nơi, Chặn Tách khi Thiếu Override ở Hai Nơi)
+  [PASS] DEFAULT_JOB_LOCATIONS_IDENTICAL=False (bắt buộc khai báo tường minh)
+  [PASS] TWO_PLACES_MISSING_OVERRIDES_ACCEPTED=False (chặn tách 2 nơi khi thiếu override)
+  [PASS] SAME_PLACE_MISSING_OVERRIDES_ACCEPTED=True (cho phép tách khi cùng nơi)
+
+>>> Probe B3: Bất biến next_step & Phản ví dụ Schema
+  [PASS] ASK_EMPTY_FIELDS_ACCEPTED=False
+  [PASS] PROCEED_FIELDS_ACCEPTED=False
+  [PASS] ZERO_JOBS_PROCEED_ACCEPTED=False
+
+>>> Probe B4: Ánh xạ Priority Rules & Tương thích Ba Trạng thái
+  [PASS] WORKER_ADAPTER_KY_THUAT_MEDIUM=PRI-M1 (khớp PRI-M1)
+  [PASS] WORKER_PRIORITY_ACCEPTED_BY_RUNTIME=True (KY_THUAT MEDIUM qua runtime PRIORITY_RULES)
+  [PASS] WORKER_PRIORITY_ACCEPTED_BY_RUNTIME=True (VE_SINH HIGH qua runtime PRIORITY_RULES)
+  [PASS] Reader P01 nạp doc legacy không có metadata thành công
+  [PASS] Reader P01 nạp doc sau khi chạy Runbook strip SQL thành công (Rollback sạch)
+
+================================================================================
+KẾT LUẬN TOÀN DIỆN VÒNG 4:
+- 100% Probe kiến trúc B1, B2, B3, B4 PASS theo yêu cầu R15 §12.
+- 0 file runtime bị thay đổi trong gói WP16.
+- Handoff H15, H16 đạt chuẩn độ dài <= 80 dòng.
+- SPEC-P09 bảo toàn trạng thái PROPOSED, liên kết nội bộ 100% hợp lệ.
+================================================================================

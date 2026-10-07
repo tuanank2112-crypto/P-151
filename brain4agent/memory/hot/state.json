@@ -47,7 +47,7 @@
     "agent_audit_2026_10_05": "independent E2E audit scripts rerun: 77 sentences 16->7 errors, group D 9->2; rest P1/spec",
     "spec_p09_v6_probes": "27/27 passed (B1 interval overlap, B2 3-part overrides & shared location, B3 next_step, B4 cardinality & quiesce)"
   },
-  "last_sync": "2026-10-07T12:20:00.000Z",
+  "last_sync": "2026-10-07T12:30:00.000Z",
   "next_step": "Chờ người duyệt SPEC-P09 (PROPOSED -> APPROVED); nhận H16 thi công runtime WP17",
   "active_plan": {
     "id": "06_2026-10-05_reasoning-agent",

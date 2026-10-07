@@ -52,6 +52,8 @@ Mốc = thời điểm architect ghi nhận, lấy bằng `date "+%Y-%m-%d %H:%M
 | Q27 | 2026-10-05 23:08:37 +0700 | Wave 4 câu hỏi mở (SO quyết): (1) test ghim stub WP5 `test_hook_stubs_have_their_stage_one_bodies` thay bằng bất biến `test_no_plan_06_stub_is_left` (đỏ trên f1f3725: 8 stub); A-27 nửa đầu khẳng định tách thật (`split_children`/`split_from`), nửa sau ép hook từ chối ⇒ CATEGORY_UNCLEAR — người dùng cho phép sửa 2 test; (2) WP8 câu chữ Q23(3): gieo proposal `AGENT_SPLIT` + `PB-COM-R-SPLIT-01` trước bind — chấp nhận; (3) WP8 đổi 2 câu ví dụ `test_acceptance.py` "và"→"vì" (SPEC-P05 §8 cho phép, giữ assert) — chấp nhận; (4) WP7: chạy lại pipeline từ bước ≤4 trên ticket từng DUPLICATE có thể đếm +1 lần nữa (chưa có đường nào gây ra) ⇒ WP12 soi; (5) WP10: `create_follow_up` không retry khi vân tay lệch (luật quyết, như `receive`) — chấp nhận | R07–R10 | — |
 | Q28 | 2026-10-05 23:46:22 +0700 | R12 (SO quyết, cổng 🔴): F1 sửa TRONG hồ sơ 06 (đường Agent `add_resident_info` dựa vào nó) — bổ sung của cư dân luôn chạy lại 2b, có dấu hiệu ⇒ chạy pipeline từ bước 2; F3 vị trí Agent không trích dẫn ⇒ loại (sửa P01 §3.2); F8 điều kiện 6 "hai nơi" cho mọi đường tách (sửa P05 §3); F9 follow-up chép khoá vị trí (sửa P07 §6); F4–F7 theo bất biến P04 §2.1; F10 vai sai ⇒ 403 + ACTION_DENIED; Q25/F11 kêu cứu + cháy ⇒ Bậc 1 ở tầng luật (chỉ nâng, đúng "AI không tự hạ; suy ra khẩn cấp thì gửi BQL"), F2 không hạ câu Bậc 1 vì câu đèn đứng trước — cả hai CHỈ bằng dữ liệu (V-13), thiếu cơ chế ⇒ dừng hỏi. Thiết kế: SPEC-P08; sau WP14/WP15 thẩm định lại bằng agent mới | R12 + SO tái hiện F1 | — |
 
+| Q29 | 2026-10-07 10:48:25 +0700 | Người dùng yêu cầu agent điều phối/phân loại theo ngữ nghĩa, không code cứng/word by word và đóng gói cho worker. H13/H14 sửa theo P08; H15/WP16 thiết kế P09 PROPOSED giải quyết G-1, bằng chứng vị trí và quyền chọn bước. Chưa duyệt thay bảng G hoặc kiến trúc runtime; H16 thi công phải chờ duyệt P09. H11 chờ WP0 dữ liệu eval (agent_eval chưa có), không coi Mirror là nghiệm thu LLM. | Người dùng 2026-10-07 + kiểm mã aafdf6a | P09 nêu chính xác mục bị thay thế trước thi công |
+
 ### Quyết định bị thay thế
 | Mốc | Quyết định cũ | Thay bằng |
 |---|---|---|
@@ -78,6 +80,7 @@ Mốc = thời điểm architect ghi nhận, lấy bằng `date "+%Y-%m-%d %H:%M
 | WP12 | Thẩm định đối kháng cô lập (agent khác, không thừa kế ngữ cảnh) | 🔴 | 5 | WP7–WP11 | TESTING §8 |
 | WP14 | Sửa sau R12 phần an toàn/quyền: F1 bổ sung luôn chạy lại 2b, F3 vị trí Agent phải trích dẫn, F10 vai sai ⇒ 403, F2/F11 từ vựng (kêu cứu + cháy) | 🔴 | 5b | WP12 | SPEC-P08 §1–§4 |
 | WP15 | Sửa sau R12 phần phối hợp: F4–F7 số đếm trùng/hoàn tác tách, F8 không tách khi hai nơi, F9 follow-up giữ khoá vị trí | 🟠 | 5b | WP12 | SPEC-P08 §5–§7 |
+| WP16 | Thiết kế điều phối ngữ nghĩa, bằng chứng vị trí, quyền chọn bước; P09 PROPOSED + H16 chờ duyệt | 🔴 | 5b | code hiện tại + Q29 | H15 → P01 §1/§3/§6/§8, P08 §2/§6 |
 | WP13 | Đồng bộ docs/não (Ma Trận 6 Điểm + `project-intro`, `-data-architecture` vì thêm LangGraph trên đường chạy) + version | 🟢 | 6 | WP12 ✅ | OPERATIONS §2 |
 Song song: Wave 1 = WP2 ∥ WP3 ∥ WP4 (WP1 trước WP3); Wave 4 = WP7 ∥ WP8 ∥ WP9 ∥ WP10 ∥ WP11 — mỗi WP một file mixin/test riêng (OPERATIONS §2).
 
@@ -89,6 +92,7 @@ Song song: Wave 1 = WP2 ∥ WP3 ∥ WP4 (WP1 trước WP3); Wave 4 = WP7 ∥ WP8
 - [x] WP7 · [x] WP8 · [x] WP9 · [x] WP10 (SO đo lại 2026-10-05 23:08:37 +0700: 3338 passed/75 deselected, --pg 3413 passed, ruff sạch, meter GATES_FAILED=0, split variants 0; mỗi gói 3 đột biến đều đỏ) · [ ] WP11
 - [x] WP12 thẩm định lần 1 2026-10-05 23:46:22 +0700: 🔁 SỬA F1 (SO tái hiện: 6/6 bổ sung Bậc 1 để NEED_INFO risk=NONE) + 10 GHI ⇒ WP14/WP15 · [ ] WP14 · [ ] WP15 · [ ] WP12 thẩm định lại ✅
 - [ ] Exit Gates local ✅ (TESTING §7) · [ ] `--pg` ✅ · [ ] live ✅ · [ ] server ✅
+- [x] Đóng gói H13/H14/H15 ngày 2026-10-07 (chỉ tài liệu, chưa thi công) · [ ] WP16 thiết kế P09 — đã nộp vòng 1, 🔁 SỬA A1–A6 tại [R15 §8](reports/R15_thi-cong_WP16.md#8-phán-quyết-người-duyệt--2026-10-07-110315-0700) · [ ] duyệt P09 trước H16
 - [ ] WP13 đồng bộ não + `changelog.md` + version · [ ] Sign-off `✅ ĐÃ HOÀN THÀNH` + mốc giây
 
 ## §5. Bảng trỏ SPEC
@@ -107,3 +111,15 @@ Song song: Wave 1 = WP2 ∥ WP3 ∥ WP4 (WP1 trước WP3); Wave 4 = WP7 ∥ WP8
 | [`specs/OPERATIONS.md`](specs/OPERATIONS.md) | Môi trường, wave/ranh giới file, DeepSeek, triển khai JSONB, rollback |
 | [`specs/TESTING-ACCEPTANCE.md`](specs/TESTING-ACCEPTANCE.md) | Client giả, ma trận test, câu thật, test phải đỏ, eval thật, Exit Gates |
 | `specs/REF-agent-contract.py`, `REF-split-verdict.py`, `REF-p1-safety-meter.py` | Máy đo/tham chiếu chạy được (lệnh ở OPERATIONS §1) |
+
+## §6. Giao worker — cập nhật 2026-10-07
+- Quyết định mới nhất 2026-10-07 12:13:31 +0700: **🔁 SỬA P09 vòng 5**, [R15 §16](reports/R15_thi-cong_WP16.md), [probe](evidence/WP16-review-v5/probes.txt). B1 giao span đã đạt; metadata 0/1/2 và đường dẫn SQL đã đạt. Còn B2 override rỗng/thiếu thành phần được nhận và B4 dùng tắt cờ thay dừng writer. Chỉ sửa hai điểm này; P09 PROPOSED/H16 CHỜ DUYỆT.
+- Quyết định lịch sử 2026-10-07 11:53:17 +0700: **🔁 SỬA P09 vòng 4**, [R15 §14](reports/R15_thi-cong_WP16.md), [probe](evidence/WP16-review-v4/probes.txt). Tầng hầm đã đạt; B2 vẫn tách sai khi quote rút gọn/khác khu vực; B4 metadata 0 jobs bị reject và SQL rollback sai storage. B1 còn kiểm giao span, B4 còn miền priority LOW. Giữ B3; P09 PROPOSED/H16 CHỜ DUYỆT. Các phán quyết dưới là lịch sử, §14 là quyết định hiện hành.
+- Quyết định lịch sử 2026-10-07 11:34:41 +0700: **🔁 SỬA P09 vòng 3**, [R15 §12](reports/R15_thi-cong_WP16.md), [probe](evidence/WP16-review-v3/probes.txt). B3 đạt các phản ví dụ; B1 còn positive tầng hầm mâu thuẫn, B2 còn thiếu override, B4 metadata bị reader cũ reject. Probe worker dùng helper khác schema và priority mapping sai. Giữ P09 PROPOSED/H16 CHỜ DUYỆT; sửa thiết kế 🔴, không thi công runtime.
+- Phán quyết lịch sử 2026-10-07 11:18:50 +0700: vòng 2 **🔁 SỬA B1–B4**, xem [R15 §10](reports/R15_thi-cong_WP16.md) và [probe vòng 2](evidence/WP16-review-v2/probes.txt). Giữ các mục đã đạt; A1/A4 chưa đạt hai vòng ⇒ chốt lại contract ở tầng 🔴, không giao runtime tự quyết. P09 PROPOSED, H16 CHỜ DUYỆT, tiếp H15 vòng 3.
+- Phán quyết 2026-10-07 11:03:15 +0700: P09 **PROPOSED**, H16 **CHỜ DUYỆT**; [R15 §8](reports/R15_thi-cong_WP16.md) yêu cầu sửa A1–A6 trong cùng WP16. [Đo lại contract/schema](evidence/WP16-review/probes.txt): quote thật vẫn nhận vị trí bịa; 4 payload mâu thuẫn qua schema; parser hiện tại từ chối payload P09 (15 lỗi). Đã có thẩm định đối kháng độc lập; không thi công runtime trước khi duyệt lại.
+- Ưu tiên yêu cầu agent theo ngữ nghĩa: [H15 / WP16](handoffs/H15_thi-cong_WP16.md), architect 🔴, chỉ thiết kế P09 và handoff kế tiếp. Không sửa runtime.
+- Sửa an toàn/quyền: [H13 / WP14](handoffs/H13_thi-cong_WP14.md), 🔴; F3 bằng chứng từng phần vị trí có lỗ SPEC, ghi BLOCKED nếu probe còn đỏ và chờ P09.
+- Sửa gộp/tách/follow-up: [H14 / WP15](handoffs/H14_thi-cong_WP15.md), 🟠; P08 vẫn hiệu lực, P09 nếu duyệt sẽ nêu mục thay thế.
+- H13/H14 dùng worktree riêng; H15 chỉ ghi tài liệu riêng. Chưa phóng worker trong lượt đóng gói.
+- [H11 / WP11](handoffs/H11_thi-cong_WP11.md) chưa sẵn sàng: hoàn tất WP0 chuyển dữ liệu trước; không lách lần từ chối quyền cũ. Thẩm định lại sau sửa bằng phiên độc lập, không dùng test giả để đóng live/server.

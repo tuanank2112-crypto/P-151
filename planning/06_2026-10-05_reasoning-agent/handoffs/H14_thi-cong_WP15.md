@@ -3,13 +3,13 @@
 3. Đọc theo thứ tự: `planning/06_2026-10-05_reasoning-agent/plan.md` §2 (Q28) → `specs/SPEC-P08-audit-fixes.md` §5–§9 → `reports/R12_tham-dinh_WP12.md` §5 (F4–F9) → `specs/SPEC-P04-duplicate-merge.md` §2.1, §8 → `specs/SPEC-P05-split-two-jobs.md` §3, §5, §7 → `specs/SPEC-P07-neighbors-follow-up.md` §6.
 
 ## 1. BỐI CẢNH TỰ CHỨA
-- Repo `D:/P151`. Đầu tiên `git rev-parse HEAD`; khác base giao (SHA trong prompt phóng) và cây sạch ⇒ `git reset --hard <base>`; cây bẩn ⇒ DỪNG, báo.
+- Repo `D:/P151`, nhánh `feature/nhuy-reasoning-agent`. Đo Base bằng `git rev-parse HEAD`, ghi `git status --porcelain` trước sửa. Không reset/stash; không sửa thay đổi có sẵn hoặc `.claude/worktrees/`. File cần sửa đã bẩn ⇒ dừng phần xung đột, báo người giao. Hai worker dùng worktree riêng.
 - Thẩm định R12 tìm ra lỗi ở luồng gộp/tách/follow-up (số đếm trùng sai sau hoàn tác tách, hoàn tác tách lần 2 ném lỗi 422, gộp dây chuyền, tách câu nhắc hai nơi, follow-up mất khoá vị trí). Probe tái hiện ở `planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/` (chỉ đọc).
-- Python: gọi NGUYÊN VĂN `C:/Users/lenku/AppData/Local/Temp/claude/d--P151/640e8089-3b43-4a75-9055-cbb167391b76/scratchpad/venv311/Scripts/python.exe` (KHÔNG dùng biến làm tên lệnh), env `LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=.`. Không mạng, không đọc/in `.env`.
+- Python 3.11: tìm interpreter/venv có sẵn, đo phiên bản và import pytest/ruff/langgraph; dùng cùng interpreter cho mọi lệnh. Env `LLM_MODE=mock MO_STORE=memory MO_PHOTO_STORE=local PYTHONUTF8=1 PYTHONPATH=.`. Không mạng, không đọc/in `.env`; thiếu môi trường ghi BLOCKED, không cài ngầm.
 - `--pg`: chỉ `MO_TEST_DATABASE_URL=postgresql+psycopg2://p151:p151@127.0.0.1:55433/p151_wp15_test` (container `p151-pgtest`; tạo DB nếu chưa có).
 
 ## 2. PHẠM VI
-- ĐƯỢC GHI: `src/maintenance/coordination/split.py`, `merge.py`, `neighbors.py`, `tests/test_maintenance/test_p1_audit_fixes_coord.py` (mới), test cũ mà §5–§7 buộc đổi khẳng định (liệt kê trong report), `…/evidence/WP15/*`, `…/reports/R15_thi-cong_WP15.md`.
+- ĐƯỢC GHI: `src/maintenance/coordination/split.py`, `merge.py`, `neighbors.py`, `tests/test_maintenance/test_p1_audit_fixes_coord.py` (mới), test cũ mà §5–§7 buộc đổi khẳng định (liệt kê trong report), `…/evidence/WP15/*`, `…/reports/R14_thi-cong_WP15.md`.
 - CẤM: `engine.py`, `agent/**`, `safety.py`, `lexicon.yaml` (WP14 đang sửa song song), `src/api/**`, `src/web/**`, SPEC, `plan.md`, `git stash`, commit, push, `git add -A`. Cần đổi `engine.py` ⇒ DỪNG, báo SO.
 
 ## 3. VIỆC PHẢI LÀM
@@ -26,5 +26,7 @@ e. Cổng chung SPEC-P08 §9: pytest toàn bộ, `--pg` toàn bộ, ruff check +
 
 ## 5. TẦNG: 🟠 (có SPEC + test tự biết đúng/sai; tự làm, không giao con).
 
-## 6. MẪU REPORT `reports/R15_thi-cong_WP15.md`
-Dòng 1 `Vai · thi công · họ/model · Bước 0 exit · hiểu việc`; dòng 2–4 `Handoff: handoffs/H14_thi-cong_WP15.md` / `Base: <sha>` / `Head: chưa commit (SO gộp)`; bảng lệnh + exit + kết quả; test tổng/pass/fail/skip; `git diff --cached --stat`; test cũ đã đổi khẳng định + lý do; bảng phân công; việc không làm; câu hỏi mở; dòng cuối `⏳ Chờ người duyệt.`
+## 6. MẪU REPORT `reports/R14_thi-cong_WP15.md`
+Dòng 1 `Vai · thi công · họ/model · Bước 0 exit · hiểu việc`; dòng 2–4 `Handoff: handoffs/H14_thi-cong_WP15.md` / `Base: <sha>` / `Head: <SHA hiện tại; working tree chưa commit>`; bảng lệnh + exit + kết quả; test tổng/pass/fail/skip; `git diff --stat` + danh sách file untracked trong phạm vi; test cũ đã đổi khẳng định + lý do; bảng phân công; việc không làm; câu hỏi mở; dòng cuối `⏳ Chờ người duyệt.`
+
+Report: `planning/06_2026-10-05_reasoning-agent/reports/R14_thi-cong_WP15.md` · Evidence: `planning/06_2026-10-05_reasoning-agent/evidence/WP15/<ten-do>.txt`

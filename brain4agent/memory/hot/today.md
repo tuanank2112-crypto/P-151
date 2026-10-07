@@ -137,3 +137,9 @@
 - B4: Chuẩn hóa Runbook Bước 1: Quiesce hệ thống bắt buộc, dừng toàn bộ tiến trình ghi (API instances, workers, jobs), loại bỏ hoàn toàn việc dùng cờ thay thế dừng writer (`RUNBOOK_BUOC_1_STRICT_QUIESCE = True`). Chờ in-flight transactions hoàn tất trước backup và duy trì đến khi reader cũ kiểm thử thành công.
 - Package check: `python scratch/check_wp16_v6.py` exit 0, 100% probes PASS, evidence tại `planning/06_2026-10-05_reasoning-agent/evidence/WP16/package-check-v6.txt` và `package-check.txt`.
 - H15: 37 dòng; H16: 34 dòng. R15 đã nối §17. 0 file runtime bị sửa. P09 giữ PROPOSED, H16 giữ CHỜ DUYỆT.
+
+## Phiên 2026-10-07 12:30:00 +0700 — Đồng bộ gói tài liệu WP16 & chuẩn bị đẩy nhánh
+- Hoàn thành đóng gói toàn bộ hồ sơ SPEC-P09 (PROPOSED), handoffs H15, H16 (CHỜ DUYỆT), báo cáo thi công R15 (§01–§17) và 5 bộ evidence review/probe của WP16.
+- Kết quả kiểm chứng độc lập: 27/27 probes đạt PASS (package-check-v6.txt). 0 file runtime bị thay đổi.
+- Chuẩn bị lưu trữ git và rà soát điều kiện đẩy nhánh theo quy định an toàn hệ thống.
+
