@@ -1,0 +1,125 @@
+# 06 — Agent suy luận làm trung tâm điều phối + P1 (trùng/gộp, tách hai việc, an toàn P1, phòng ban, khẩn cấp lân cận, ticket tiếp theo)
+
+| Trường | Giá trị |
+|---|---|
+| Trạng thái | 🟢 ĐÃ DUYỆT 2026-10-05 21:02:30 +0700 (người dùng: "ok làm đi cho quyết đó") — đang thi công |
+| Loại SemVer | MINOR (Agent quyết định + tính năng P1; giữ API cũ, thêm method/trường; dữ liệu JSONB mới cần revision đánh dấu) |
+| Spec nghiệp vụ | [`docs/CR-BPTN-03.md`](../../docs/CR-BPTN-03.md) (§4, §5, §6, §7, §8, §9.2–9.3, §11, §12, §15, §16 P1) — drift D-01…D-16 ở [`specs/00-ARCHITECTURE.md`](specs/00-ARCHITECTURE.md) §8 |
+| Chủ việc | Như Ý (Agent/engine). Bàn giao route cho Châm Anh, UI cho Trí, nhãn/fixture cho Trường ([`specs/01-CONTRACTS.md`](specs/01-CONTRACTS.md) §13) |
+| Nhánh | `feature/nhuy-reasoning-agent` từ `origin/develop` `82f01f0` (không upstream; KHÔNG push khi chưa duyệt) |
+| Base đo | `82f01f002d729c276ecd0b8bf5ad78fa377c79e9` — `pytest -q` 2971 passed / 29 deselected; ruff sạch |
+| Hạn | bàn giao nhóm 2026-10-19 23:59 (Notion: "P1 + LangGraph thật + eval") |
+| Điều phối | super orchestrator (🔴); architect viết SPEC |
+
+**Mục tiêu một câu:** Agent (LLM DeepSeek, OpenAI-compatible) suy luận từng bước và quyết định mọi bước điều phối kèm lý do + trích dẫn; engine kiểm hợp lệ, giữ giao dịch/khoá/audit/kho/SLA; luật cố định là lưới sàn an toàn (Agent chỉ được nâng mức) và phương án dự phòng — cộng toàn bộ phạm vi P1 đã chốt.
+
+## §2. Nhật ký quyết định
+Mốc = thời điểm architect ghi nhận, lấy bằng `date "+%Y-%m-%d %H:%M:%S %z"`.
+
+| # | Mốc | Quyết định | Nguồn / lý do | Lật · chi phí |
+|---|---|---|---|---|
+| Q01 | 2026-10-05 20:02:09 +0700 | **Agent là trung tâm điều phối:** LLM suy luận từng bước (dữ kiện → đối chiếu playbook/spec → quyết định) và TOÀN QUYỀN quyết: mức nguy hiểm (chỉ nâng), loại việc (gồm tách), vị trí, hỏi cư dân/chuyển BPTN, trùng (trong ứng viên), phòng ban, ưu tiên, tài sản (trong ứng viên), vật tư (trong danh mục), cần người duyệt; mỗi quyết định có lý do + trích dẫn nguyên văn | Người dùng (Như Ý): "Không thể bắt key rồi suy ra kết quả, cần có bước suy luận" | Tắt bằng `MO_AGENT_ENABLED=false` · rẻ |
+| Q02 | 2026-10-05 20:02:09 +0700 | **AI KHÔNG được tự hạ mức an toàn;** AI suy ra khẩn cấp ⇒ BQL ngay; chỉ BQL/người hạ; mức cuối = max(luật, AI, mức đang có); AI không xoá tín hiệu luật | Người dùng | — |
+| Q03 | ≤ 2026-10-05 12:15:13 +0700 | **Agent TỰ TÁCH** phản ánh hai việc (không cần BPTN xác nhận) | Người dùng chốt (nhắn qua điều phối, trước khi tạo thư mục hồ sơ lúc 12:15:13) | Tắt `agent_policy.auto_split_mixed_reports` · rẻ |
+| Q04 | ≤ 2026-10-05 12:15:13 +0700 | Quy tắc chọn khi tách: gốc giữ VE_SINH, con nhận KY_THUAT (`SPLIT_PAIR`); hai ticket chạy pipeline độc lập; hoàn tác bằng `undo_split`/`cancel` | Điều phối chuyển yêu cầu người dùng; architect cố định thứ tự | Đổi `SPLIT_PAIR` · rẻ |
+| Q05 | 2026-10-05 20:02:09 +0700 | Engine giữ: kiểm hợp lệ (danh mục, trích dẫn, `TRANSITIONS`, quyền, khoá BPTN/`HUMAN_OVERRIDE`/`not_duplicate_of`), giao dịch/khoá/audit, kho, ca, SLA, chủ blocker; mọi quyết định AI ghi audit + `ai_logger` | Người dùng | — |
+| Q06 | 2026-10-05 20:02:09 +0700 | AI lỗi/timeout/JSON hoặc schema sai ⇒ luật hiện có (`FALLBACK_RULE`) + cờ `AGENT_FALLBACK`; bất đồng NGHIÊM TRỌNG với luật ⇒ ghi chú + `PENDING_REVIEW` (bảng đóng SPEC-P01 §6) | Người dùng; architect cụ thể hoá bảng G-1…G-9 | Sửa bảng · trung bình |
+| Q07 | 2026-10-05 20:02:09 +0700 | LLM gọi NGOÀI `engine.lock` ở mọi đường (receive, cư dân bổ sung, BPTN gỡ, xác nhận an toàn, ticket tiếp theo, job mồ côi): tính trước theo nội dung SẼ CÓ, áp trong giao dịch, vân tay lệch ⇒ tính lại 1 lần rồi luật | Người dùng; mẫu `_early_proposal` plan 04 Q06 | — |
+| Q08 | 2026-10-05 20:02:09 +0700 | Nhà cung cấp DeepSeek qua `OPENAI_BASE_URL`/`OPENAI_API_KEY`/`MODEL_NAME`, `LLM_MODE=openai`; JSON mode (`response_format=json_object`) + Pydantic, không function calling; client giả tất định cho test | Người dùng; architect chọn JSON mode (SPEC-P01 §4.2) | `MO_AGENT_JSON_MODE=prompt_only` · rẻ |
+| Q10 | 2026-10-05 20:02:09 +0700 | Giữ phạm vi P1 cũ, thiết kế lại theo AI quyết: CR §8 đầy đủ + PRI-U1; tách; tín hiệu P1 (AI hiểu nghĩa, luật P1 làm sàn); T15/T16/T17/E02; ticket cạnh khẩn cấp; follow-up. Route/UI chỉ bàn giao | Người dùng | — |
+| Q11 | 2026-10-05 20:36:03 +0700 | Thêm tín hiệu `S-00` (Bậc 1, chỉ Agent ghi, bắt buộc trích dẫn) cho nguy hiểm ngoài S-01…S-14 | Architect, theo Q02 "AI được nâng mức" (D-12) | Bỏ mục lexicon · rẻ |
+| Q12 | 2026-10-05 20:36:03 +0700 | Bộ eval lấy từ scratchpad (`agent_audit/` audit_a/c/d, p3, p6; `redteam_lex.py`) chuyển vào repo (WP0, đổi tòa SIM-A/B/C → S1/S2/S2); **audit_a + audit_d là HELD-OUT** — không dùng khi chỉnh prompt | Điều phối giao; architect định held-out | Đổi tập held-out · rẻ |
+| Q13 | 2026-10-05 20:36:03 +0700 | Tương thích JSONB: revision Alembic đánh dấu `0002_p1_doc_shape` (không DDL) để code cũ TỪ CHỐI KHỞI ĐỘNG; rollback chính = tắt cờ (R1); quay code về trước P1 trên DB chung là phá huỷ, cần người duyệt | Thẩm định backend A2; architect (OPERATIONS §5–§6) | — |
+| Q14 | 2026-10-05 20:36:03 +0700 | Engine tách điều phối P1 ra mixin `src/maintenance/coordination/` để Wave 4 chạy song song không sửa chéo `engine.py`; lỗi/hằng chung chuyển sang `errors.py`/`common.py` (re-export giữ đường import cũ) | Architect | Gộp lại · trung bình |
+| Q15 | 2026-10-05 20:36:03 +0700 | `seed`/`reset`/`evaluate`/demo luôn chế độ luật (0 lần gọi mô hình) — fixture tất định | Architect (I-24) | — |
+| Q16 | 2026-10-05 20:36:03 +0700 | Mức an toàn chỉ người hạ: bước 2b lấy `max(kết quả, risk_level đang có)` cho MỌI đường (kể cả không Agent) | Q02 + CR §17.1 "agent/job không hạ" (I-17) | — |
+| Q20 | 2026-10-05 21:09:06 +0700 | Hợp đồng Agent thuần do WP1 tạo (thi công): `Case.agent_decision` (01 §2.3, WP1) cần `AgentDecisionRecord` (01 §3.3, file của WP3) ⇒ WP1 tạo `src/maintenance/agent/__init__.py` (CHỈ docstring), `agent/schema.py` (REF mục A nguyên văn + `Disagreement` + `AgentDecisionRecord`; chỉ import pydantic/`enums`), `agent/inputs.py` (`DuplicateCandidate`, `AssetCandidate`, `DecisionInput` — cần `models.LockedFields`; đặt trong `schema.py` sẽ vòng import `models ↔ schema`). WP3 dùng, không viết lại. Tên/kiểu không đổi | Orchestrator; SPEC giao `schema.py` cho WP3 nhưng WP1 cần trước — mâu thuẫn thứ tự | gộp `inputs.py` vào `schema.py` bằng import trễ · rẻ |
+| Q21 | 2026-10-05 21:11:37 +0700 | Bước 0 trong worktree của worker: `--check` ra exit 1 với đúng `BRN-002 AGENTS.md thiếu/cũ khối luật: boot` vì worktree checkout CRLF (`core.autocrlf=true`; nội dung `AGENTS.md` trùng root, đo `git diff --no-index` rỗng); root `D:/P151` exit 0 ⇒ worker ghi exit và đi tiếp, lệch khác vẫn DỪNG; KHÔNG chạy chế độ ghi trong worktree | Orchestrator (đo 2 worker WP0/WP1 dừng 21:10) | sửa engine ở hub bỏ qua khác biệt CRLF · ngoài repo |
+
+### Quyết định CHỜ NGƯỜI DÙNG (mặc định đang dùng trong SPEC)
+| # | Câu hỏi | Mặc định | Đổi thì sao |
+|---|---|---|---|
+| Q18 | Ticket thường cùng vị trí với khẩn cấp đang mở: GIỮ (không giao phòng ban) đến khi BQL xử lý? (bổ sung, không có trong CR) | `agent_policy.hold_near_open_emergency: false` — chỉ liên kết hai chiều | bật cờ ⇒ ticket vào `ON_HOLD/WAITING_EMERGENCY` (chủ SYSTEM, BQL xử lý khẩn cấp thì nhả); Trường sửa `expected` TEC-006 (SPEC-P07 §4.3) |
+| Q19 | `priority.duplicate_raise_at_count` (PRI-U1, CR D-03) | 3 | sửa số trong `catalog.yaml` |
+| Q09 | Dùng LangGraph cho Agent? | ĐỀ XUẤT CÓ — đồ thị tối giản `src/maintenance/agent/graph.py`, một lượt gọi mô hình (lý do SPEC-P01 §8) | KHÔNG ⇒ bỏ `graph.py`, gọi tuần tự các hàm nút (không đổi hợp đồng khác) |
+| Q11 (xác nhận) | Xác nhận thêm `S-00` (mở rộng bảng CR §6.2) | có | bỏ ⇒ Agent chỉ nâng mức bằng S-01…S-14 |
+| Q17 | Cấp khoá DeepSeek + ngân sách token cho eval thật (G-LIVE) | chưa có ⇒ G-LIVE ⬜ | — |
+| Q22 | 2026-10-05 21:48:01 +0700 | WP2 câu hỏi mở (SO quyết, cổng 🔴): (1) C6/`gate_corpus` chấp nhận câu kho phân loại đổi mức khi có S-08 `PRESENT` — "nước tràn vào tủ điện" phải là khẩn cấp (người dùng đã nêu), mâu thuẫn SPEC cũ, sửa SPEC-P03 §6 C6 + REF; (2) duyệt dòng `lexicon_version` trong `test_safety.py` và `17 → 18` khi thêm S-00 (bổ sung SPEC-P03 §5); (3) FP-03/FP-06 so với engine tắt P1 thay vì ép ROUTED; (4) homographs `ga/mau/roi/do`, `ambiguous_exclusions: dien giat`, "Đến trưa hành lang quá nóng" ⇒ WP12 soi | Báo cáo R02 | — |
+| Q23 | 2026-10-05 21:53:14 +0700 | WP5 câu hỏi mở (SO quyết): (1) audit `LINK_TICKETS` của `_copy_additions`/`_copy_resident_photos` ghi actor AGENT (`SIM-ACTOR-AGENT`) — chấp nhận; (2) hook `_link_emergency_both_ways` ở E01/T07: WP10 TÍNH danh sách `_related_ticket_ids` tại hook (P07 §1 liên kết hai chiều, chỉ thêm liên kết + audit, KHÔNG đổi trạng thái); nếu `expected` của fixture đổi ngoài `related_ticket_ids`/audit ⇒ WP10 dừng báo SO; (3) `_bind_category` với `AGENT_SPLIT` để WP8 quyết câu chữ | Báo cáo R05 | — |
+| Q24 | 2026-10-05 22:00:49 +0700 | WP3 câu hỏi mở (SO quyết): (1) A-06 dùng câu "bình gas nghe xì xì" với lexicon P0+P1 — chấp nhận, sửa TESTING §3.1 ở WP13; (2) A-18 G-3 kiểm "đúng một" bằng câu "…nhiều rác, ổ cắm bị ướt" — chấp nhận; (3) S-00 LLM-UNGROUNDED đặt mức tối thiểu UNCLEAR (AI nói khẩn cấp mà không trích được ⇒ BQL xem, AI không tự hạ) — chấp nhận; (4) 1/32 câu MUST_SPLIT không tách vì "thay bóng đèn đã cháy" ra T2-03 UNCLEAR: căn nguyên là LỖI LỚP AN TOÀN — tiền tố B-01 (R6) chỉ nhận từ chỉ vị trí, động từ "thay" làm hỏng ("bóng đèn đã cháy" ra NONE, "thay bóng đèn đã cháy" ra UNCLEAR), trái quyết định người dùng "đèn cháy = đèn hỏng"; giao WP2 sửa dữ liệu `b01_prefix_words` + ca dừng + biến thể, rồi đổi khẳng định `split_count == 31` → 32 | Báo cáo R04 + SO đo `safety.assess` | — |
+| Q25 | 2026-10-05 22:25:36 +0700 | SO ghi cho WP12 soi đối kháng: "xin cứu, nhà cháy" / "giúp tôi với, cháy rồi" ra UNCLEAR (có từ trước WP2, không do Q24) — xét có nên là EMERGENCY ở tầng luật hay để Agent nâng; tiền tố B-01 mới `nho/xin/giup` đứng riêng — tìm câu nguy hiểm mà tiền tố này làm hạ | SO đo `safety.assess` | — |
+| Q26 | 2026-10-05 22:29:36 +0700 | WP6 câu hỏi mở (SO quyết, chấp nhận cả 4): (1) Agent đề xuất job nhưng engine loại hết ⇒ coi như không có quyết định ở bước 2/3, luật quyết (I-20); (2) ghi chú MINOR bước 4 nằm trong audit `CREATE_PROPOSAL` field `duplicate_check`, reason mở đầu "MINOR ·"; (3) helper chỉ đọc `_gate(ticket_id, check)` cho `_with_decision`; (4) A-20/A-13/A-07 dùng câu có vị trí (câu không vị trí là OUT_OF_SCOPE ở cả hai đường — đúng Q05). Bổ sung SPEC-P02 ở WP13 | Báo cáo R06 | — |
+| Q27 | 2026-10-05 23:08:37 +0700 | Wave 4 câu hỏi mở (SO quyết): (1) test ghim stub WP5 `test_hook_stubs_have_their_stage_one_bodies` thay bằng bất biến `test_no_plan_06_stub_is_left` (đỏ trên f1f3725: 8 stub); A-27 nửa đầu khẳng định tách thật (`split_children`/`split_from`), nửa sau ép hook từ chối ⇒ CATEGORY_UNCLEAR — người dùng cho phép sửa 2 test; (2) WP8 câu chữ Q23(3): gieo proposal `AGENT_SPLIT` + `PB-COM-R-SPLIT-01` trước bind — chấp nhận; (3) WP8 đổi 2 câu ví dụ `test_acceptance.py` "và"→"vì" (SPEC-P05 §8 cho phép, giữ assert) — chấp nhận; (4) WP7: chạy lại pipeline từ bước ≤4 trên ticket từng DUPLICATE có thể đếm +1 lần nữa (chưa có đường nào gây ra) ⇒ WP12 soi; (5) WP10: `create_follow_up` không retry khi vân tay lệch (luật quyết, như `receive`) — chấp nhận | R07–R10 | — |
+| Q28 | 2026-10-05 23:46:22 +0700 | R12 (SO quyết, cổng 🔴): F1 sửa TRONG hồ sơ 06 (đường Agent `add_resident_info` dựa vào nó) — bổ sung của cư dân luôn chạy lại 2b, có dấu hiệu ⇒ chạy pipeline từ bước 2; F3 vị trí Agent không trích dẫn ⇒ loại (sửa P01 §3.2); F8 điều kiện 6 "hai nơi" cho mọi đường tách (sửa P05 §3); F9 follow-up chép khoá vị trí (sửa P07 §6); F4–F7 theo bất biến P04 §2.1; F10 vai sai ⇒ 403 + ACTION_DENIED; Q25/F11 kêu cứu + cháy ⇒ Bậc 1 ở tầng luật (chỉ nâng, đúng "AI không tự hạ; suy ra khẩn cấp thì gửi BQL"), F2 không hạ câu Bậc 1 vì câu đèn đứng trước — cả hai CHỈ bằng dữ liệu (V-13), thiếu cơ chế ⇒ dừng hỏi. Thiết kế: SPEC-P08; sau WP14/WP15 thẩm định lại bằng agent mới | R12 + SO tái hiện F1 | — |
+
+| Q29 | 2026-10-07 10:48:25 +0700 | Người dùng yêu cầu agent điều phối/phân loại theo ngữ nghĩa, không code cứng/word by word và đóng gói cho worker. H13/H14 sửa theo P08; H15/WP16 thiết kế P09 PROPOSED giải quyết G-1, bằng chứng vị trí và quyền chọn bước. Chưa duyệt thay bảng G hoặc kiến trúc runtime; H16 thi công phải chờ duyệt P09. H11 chờ WP0 dữ liệu eval (agent_eval chưa có), không coi Mirror là nghiệm thu LLM. | Người dùng 2026-10-07 + kiểm mã aafdf6a | P09 nêu chính xác mục bị thay thế trước thi công |
+
+### Quyết định bị thay thế
+| Mốc | Quyết định cũ | Thay bằng |
+|---|---|---|
+| 2026-10-05 (giao việc lần 1) | P1-B mặc định "BPTN xác nhận tách" | Q03 Agent tự tách |
+| 2026-10-05 12:15:13 | Hồ sơ `planning/06_2026-10-05_p1-coordination/` trên `feature/nhuy-p1-coordination` (base `db8bf0b`), Agent = luật + LLM đề xuất có guard | Q01 Agent quyết; thư mục đổi tên `06_2026-10-05_reasoning-agent` (chưa commit nên không vi phạm Path Invariant), nhánh `feature/nhuy-reasoning-agent` từ `develop` `82f01f0` (có PR #17 và thí điểm Ocean Park) |
+| CR §6.1 / plan 01 Q09 | LLM chỉ đề xuất/nâng mức an toàn, luật quyết phân loại | Q01 (an toàn vẫn chỉ nâng — Q02) |
+| plan 05 Q05/Q09 | Bỏ hỏi vị trí cho phản ánh ngoài phạm vi theo luật `mentions_playbook_subject` | Agent quyết `next_step`; luật cũ thành dự phòng + nền Mirror (SPEC-P02 §6.2) |
+
+## §3. Work Packages (tầng theo AGENTS §3.3 / K.3 — không ghi tên mô hình)
+| WP | Việc | Tầng | Wave | Phụ thuộc | SPEC |
+|---|---|---|---|---|---|
+| WP0 | Đo nền, đóng băng `case_pre_p1.json`, chuyển bộ eval từ scratchpad (đổi tòa) | 🟢 | 0 | — | OPERATIONS §3 |
+| WP1 | Hợp đồng: enum, model, catalog/policy, `TRANSITIONS`, view, i18n | 🟠 | 1 | WP0 | 01-CONTRACTS |
+| WP2 | Lưới sàn luật an toàn P1 + `S-00` | 🔴 | 1 | (S-00 sau WP1) | SPEC-P03 |
+| WP3 | Gói `src/maintenance/agent/` (schema, prompt, client JSON, LangGraph, kiểm, hợp nhất, dự phòng) + bằng chứng luật | 🟠 | 1 | WP1 | SPEC-P01, SPEC-P05 §2 |
+| WP4 | Cấu hình Agent + revision JSONB + test store | 🟠 | 1 | — | 01 §4.1, §12; OPERATIONS §4–§6 |
+| WP5 | Hạ tầng engine: giao dịch nhiều ticket, mixin, hook | 🟠 | 2 | WP1 | SPEC-P02 §2–§3 |
+| WP6 | Tích hợp Agent: tính ngoài khoá, áp từng bước, entry point, job | 🟠 | 3 | WP3, WP4, WP5 | SPEC-P02 §4–§6 |
+| WP7 | Trùng/gộp + PRI-U1 | 🟠 | 4 | WP6 | SPEC-P04 |
+| WP8 | Tách hai việc | 🟠 | 4 | WP6 | SPEC-P05 |
+| WP9 | Phòng ban T15/T16/T17/E02 | 🟠 | 4 | WP6 | SPEC-P06 |
+| WP10 | Khẩn cấp lân cận + ticket tiếp theo | 🟠 | 4 | WP6 | SPEC-P07 |
+| WP11 | Eval harness + eval DeepSeek thật + chỉnh prompt | 🔴 | 4–5 | WP6, khoá (Q17) | SPEC-P01 §4.4, TESTING §6 |
+| WP12 | Thẩm định đối kháng cô lập (agent khác, không thừa kế ngữ cảnh) | 🔴 | 5 | WP7–WP11 | TESTING §8 |
+| WP14 | Sửa sau R12 phần an toàn/quyền: F1 bổ sung luôn chạy lại 2b, F3 vị trí Agent phải trích dẫn, F10 vai sai ⇒ 403, F2/F11 từ vựng (kêu cứu + cháy) | 🔴 | 5b | WP12 | SPEC-P08 §1–§4 |
+| WP15 | Sửa sau R12 phần phối hợp: F4–F7 số đếm trùng/hoàn tác tách, F8 không tách khi hai nơi, F9 follow-up giữ khoá vị trí | 🟠 | 5b | WP12 | SPEC-P08 §5–§7 |
+| WP16 | Thiết kế điều phối ngữ nghĩa, bằng chứng vị trí, quyền chọn bước; P09 PROPOSED + H16 chờ duyệt | 🔴 | 5b | code hiện tại + Q29 | H15 → P01 §1/§3/§6/§8, P08 §2/§6 |
+| WP13 | Đồng bộ docs/não (Ma Trận 6 Điểm + `project-intro`, `-data-architecture` vì thêm LangGraph trên đường chạy) + version | 🟢 | 6 | WP12 ✅ | OPERATIONS §2 |
+Song song: Wave 1 = WP2 ∥ WP3 ∥ WP4 (WP1 trước WP3); Wave 4 = WP7 ∥ WP8 ∥ WP9 ∥ WP10 ∥ WP11 — mỗi WP một file mixin/test riêng (OPERATIONS §2).
+
+## §4. Checklist thực thi
+- [x] SPEC package (00, 01, P01–P07, OPERATIONS, TESTING, 3 REF chạy được) — 2026-10-05 20:36:03 +0700
+- [x] Người dùng duyệt SPEC 2026-10-05 21:02:30 +0700: Q09 LangGraph CÓ · Q11 S-00 CÓ · Q18 KHÔNG giữ (chỉ liên kết) · Q19 = 3 · Q17 khoá đã ghi `.env` (thiếu base URL/model ⇒ G-LIVE chờ)
+- [ ] WP0 (bước a ✅ fixture; bước b eval chờ quyền) · [x] WP1 (SO đo lại 2026-10-05 21:32:46 +0700: 2999 passed, --pg 3030 passed, ruff sạch, selftest 0) · [x] WP2 (SO đo lại 2026-10-05 22:25:36 +0700: lexicon p1d, 3226 passed/48 deselected, --pg 3274 passed, ruff sạch, meter GATES_FAILED=0, split variants 0; SO tự phá 10 câu dùng tiền tố mới nhờ/xin/giúp/thay — không câu nguy hiểm nào bị hạ) · [x] WP3 (SO đo lại 2026-10-05 22:00:49 +0700: 3096 passed/48 deselected, --pg 3144 passed, ruff sạch, REF contract selftest 0, REF split variants 0) · [x] WP4 (SO đo lại 2026-10-05 21:20:52 +0700: 2975 passed, --pg 34 passed, ruff sạch)
+- [x] WP5 (SO đo lại 2026-10-05 21:53:14 +0700: 3016 passed/48 deselected, --pg 3064 passed, ruff sạch; còn 8 stub cho Wave 4) · [x] WP6 (SO đo lại 2026-10-05 22:29:36 +0700: 3248 passed/48 deselected, --pg 3296 passed, ruff sạch; đột biến a/b/c đỏ A-20/A-07/A-25)
+- [x] WP7 · [x] WP8 · [x] WP9 · [x] WP10 (SO đo lại 2026-10-05 23:08:37 +0700: 3338 passed/75 deselected, --pg 3413 passed, ruff sạch, meter GATES_FAILED=0, split variants 0; mỗi gói 3 đột biến đều đỏ) · [ ] WP11
+- [x] WP12 thẩm định lần 1 2026-10-05 23:46:22 +0700: 🔁 SỬA F1 (SO tái hiện: 6/6 bổ sung Bậc 1 để NEED_INFO risk=NONE) + 10 GHI ⇒ WP14/WP15 · [ ] WP14 · [ ] WP15 · [ ] WP12 thẩm định lại ✅
+- [ ] Exit Gates local ✅ (TESTING §7) · [ ] `--pg` ✅ · [ ] live ✅ · [ ] server ✅
+- [x] Đóng gói H13/H14/H15 ngày 2026-10-07 (chỉ tài liệu, chưa thi công) · [ ] WP16 thiết kế P09 — đã nộp vòng 1, 🔁 SỬA A1–A6 tại [R15 §8](reports/R15_thi-cong_WP16.md#8-phán-quyết-người-duyệt--2026-10-07-110315-0700) · [ ] duyệt P09 trước H16
+- [ ] WP13 đồng bộ não + `changelog.md` + version · [ ] Sign-off `✅ ĐÃ HOÀN THÀNH` + mốc giây
+
+## §5. Bảng trỏ SPEC
+| File | Nội dung |
+|---|---|
+| [`specs/00-ARCHITECTURE.md`](specs/00-ARCHITECTURE.md) | Mục tiêu, non-goals, bất biến I-16…I-30, ranh giới, luồng, vùng cấm, lỗi chung, drift D-01…D-16 |
+| [`specs/01-CONTRACTS.md`](specs/01-CONTRACTS.md) | Enum, model, schema `AgentDecision`/`DecisionInput`/`AgentDecisionRecord`, cấu hình, `TRANSITIONS` (23+7), method, view, i18n, JSONB, bàn giao API/UI |
+| [`specs/SPEC-P01-reasoning-agent.md`](specs/SPEC-P01-reasoning-agent.md) | Gói Agent: luồng nút, nền luật, kiểm hợp lệ, an toàn chỉ nâng, prompt/client DeepSeek, dự phòng, bảng bất đồng, LangGraph |
+| [`specs/SPEC-P02-engine-integration.md`](specs/SPEC-P02-engine-integration.md) | Giao dịch nhiều ticket, mixin/hook, vân tay, tính ngoài khoá, áp từng bước, entry point |
+| [`specs/SPEC-P03-safety-floor-p1.md`](specs/SPEC-P03-safety-floor-p1.md) | Lưới sàn luật P1 + S-00, chính sách từ hai nghĩa, cổng C1–C8 |
+| [`specs/SPEC-P04-duplicate-merge.md`](specs/SPEC-P04-duplicate-merge.md) | Trùng/gộp CR §8, PRI-U1, hoàn tác, hủy gốc, đánh giá MERGED |
+| [`specs/SPEC-P05-split-two-jobs.md`](specs/SPEC-P05-split-two-jobs.md) | Tự tách hai việc, bằng chứng luật, hoàn tác |
+| [`specs/SPEC-P06-department.md`](specs/SPEC-P06-department.md) | T15 đếm, T16, T17, E02, snapshot |
+| [`specs/SPEC-P07-neighbors-follow-up.md`](specs/SPEC-P07-neighbors-follow-up.md) | Khẩn cấp lân cận (chờ duyệt), ticket tiếp theo |
+| [`specs/SPEC-P08-audit-fixes.md`](specs/SPEC-P08-audit-fixes.md) | Sửa sau thẩm định R12 (F1–F11), sửa P01 §3.2, P05 §3, P07 §6 |
+| [`specs/OPERATIONS.md`](specs/OPERATIONS.md) | Môi trường, wave/ranh giới file, DeepSeek, triển khai JSONB, rollback |
+| [`specs/TESTING-ACCEPTANCE.md`](specs/TESTING-ACCEPTANCE.md) | Client giả, ma trận test, câu thật, test phải đỏ, eval thật, Exit Gates |
+| `specs/REF-agent-contract.py`, `REF-split-verdict.py`, `REF-p1-safety-meter.py` | Máy đo/tham chiếu chạy được (lệnh ở OPERATIONS §1) |
+
+## §6. Giao worker — cập nhật 2026-10-07
+- Quyết định mới nhất 2026-10-07 12:13:31 +0700: **🔁 SỬA P09 vòng 5**, [R15 §16](reports/R15_thi-cong_WP16.md), [probe](evidence/WP16-review-v5/probes.txt). B1 giao span đã đạt; metadata 0/1/2 và đường dẫn SQL đã đạt. Còn B2 override rỗng/thiếu thành phần được nhận và B4 dùng tắt cờ thay dừng writer. Chỉ sửa hai điểm này; P09 PROPOSED/H16 CHỜ DUYỆT.
+- Quyết định lịch sử 2026-10-07 11:53:17 +0700: **🔁 SỬA P09 vòng 4**, [R15 §14](reports/R15_thi-cong_WP16.md), [probe](evidence/WP16-review-v4/probes.txt). Tầng hầm đã đạt; B2 vẫn tách sai khi quote rút gọn/khác khu vực; B4 metadata 0 jobs bị reject và SQL rollback sai storage. B1 còn kiểm giao span, B4 còn miền priority LOW. Giữ B3; P09 PROPOSED/H16 CHỜ DUYỆT. Các phán quyết dưới là lịch sử, §14 là quyết định hiện hành.
+- Quyết định lịch sử 2026-10-07 11:34:41 +0700: **🔁 SỬA P09 vòng 3**, [R15 §12](reports/R15_thi-cong_WP16.md), [probe](evidence/WP16-review-v3/probes.txt). B3 đạt các phản ví dụ; B1 còn positive tầng hầm mâu thuẫn, B2 còn thiếu override, B4 metadata bị reader cũ reject. Probe worker dùng helper khác schema và priority mapping sai. Giữ P09 PROPOSED/H16 CHỜ DUYỆT; sửa thiết kế 🔴, không thi công runtime.
+- Phán quyết lịch sử 2026-10-07 11:18:50 +0700: vòng 2 **🔁 SỬA B1–B4**, xem [R15 §10](reports/R15_thi-cong_WP16.md) và [probe vòng 2](evidence/WP16-review-v2/probes.txt). Giữ các mục đã đạt; A1/A4 chưa đạt hai vòng ⇒ chốt lại contract ở tầng 🔴, không giao runtime tự quyết. P09 PROPOSED, H16 CHỜ DUYỆT, tiếp H15 vòng 3.
+- Phán quyết 2026-10-07 11:03:15 +0700: P09 **PROPOSED**, H16 **CHỜ DUYỆT**; [R15 §8](reports/R15_thi-cong_WP16.md) yêu cầu sửa A1–A6 trong cùng WP16. [Đo lại contract/schema](evidence/WP16-review/probes.txt): quote thật vẫn nhận vị trí bịa; 4 payload mâu thuẫn qua schema; parser hiện tại từ chối payload P09 (15 lỗi). Đã có thẩm định đối kháng độc lập; không thi công runtime trước khi duyệt lại.
+- Ưu tiên yêu cầu agent theo ngữ nghĩa: [H15 / WP16](handoffs/H15_thi-cong_WP16.md), architect 🔴, chỉ thiết kế P09 và handoff kế tiếp. Không sửa runtime.
+- Sửa an toàn/quyền: [H13 / WP14](handoffs/H13_thi-cong_WP14.md), 🔴; F3 bằng chứng từng phần vị trí có lỗ SPEC, ghi BLOCKED nếu probe còn đỏ và chờ P09.
+- Sửa gộp/tách/follow-up: [H14 / WP15](handoffs/H14_thi-cong_WP15.md), 🟠; P08 vẫn hiệu lực, P09 nếu duyệt sẽ nêu mục thay thế.
+- H13/H14 dùng worktree riêng; H15 chỉ ghi tài liệu riêng. Chưa phóng worker trong lượt đóng gói.
+- [H11 / WP11](handoffs/H11_thi-cong_WP11.md) chưa sẵn sàng: hoàn tất WP0 chuyển dữ liệu trước; không lách lần từ chối quyền cũ. Thẩm định lại sau sửa bằng phiên độc lập, không dùng test giả để đóng live/server.

@@ -1,0 +1,134 @@
+........F........F..                                                     [100%]
+================================== FAILURES ===================================
+_________ test_m07_bql_merge_of_emergencies_and_undo_by_role[memory] __________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000012DD3B7ED10>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x0000012DD3B7E7D0>
+
+    def test_m07_bql_merge_of_emergencies_and_undo_by_role(clock, eng):
+        """M-07: bql_merge of two emergencies; BPTN cannot undo (403 + audit); BQL undo reruns from 2 and the ticket
+        stops again at EMERGENCY_PENDING_BQL, never ROUTED."""
+        e1 = report(eng, EMERGENCY)
+        e2 = later(clock, eng, EMERGENCY)
+        assert state(eng, e1) == state(eng, e2) == ("VERIFYING", "EMERGENCY_PENDING_BQL")
+        merged = eng.bql_merge(e2, BQL, into=e1, note="Cùng một sự cố")
+        assert (merged.ticket.status, merged.ticket.merged_into) == ("MERGED", e1)
+        assert any(e.action == Action.BQL_MERGE and e.new_value == e1 for e in merged.audit)
+        root = eng.get(e1)
+        assert root.ticket.merged_children == [e2] and root.ticket.duplicate_count == 1
+        with pytest.raises(ActionDeniedError):
+            eng.undo_merge(e2, BPTN, note="Thử hoàn tác")
+        last = eng.get(e2).audit[-1]
+        assert (last.action, last.action_result) == (Action.ACTION_DENIED, ActionResult.ACTION_DENIED)
+        assert "requested=MERGE_UNDO" in last.reason and last.actor_id == BPTN
+        assert eng.get(e2).ticket.status == "MERGED"
+>       case = eng.undo_merge(e2, BQL, note="Hai sự cố khác nhau")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_merge.py:208: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\maintenance\coordination\merge.py:299: in undo_merge
+    return self.transition(ticket_id, TicketStatus.RECEIVED, actor_id, note=note, expected_from=TicketStatus.MERGED)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1703: in transition
+    return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1760: in _transition
+    return self._mutate(
+src\maintenance\engine.py:1798: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1834: in _mutate_locked
+    op(work, now)
+src\maintenance\engine.py:1758: in op
+    self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
+src\maintenance\engine.py:2444: in _human_transition
+    self._t09_unmerge_by_person(work, actor_id, role, now, note=note)
+src\maintenance\coordination\merge.py:246: in _t09_unmerge_by_person
+    self._unmerge(work, actor_id, role, now, note=note.strip())
+src\maintenance\coordination\merge.py:263: in _unmerge
+    self._run_pipeline(work, 4, now)
+src\maintenance\engine.py:3034: in _run_pipeline
+    if number >= from_step and step(work, now):
+                               ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x0000012DD3B7E7D0>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:05:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+now = datetime.datetime(2026, 9, 28, 9, 5, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+
+    def _step_6_lookup_asset(self, work: Case, now: datetime) -> bool:
+        proposal, ticket = work.proposal, work.ticket
+        location = self.effective_location(work)
+>       if proposal.playbook_id != PlaybookId.TEC:
+           ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'NoneType' object has no attribute 'playbook_id'
+
+src\maintenance\engine.py:3644: AttributeError
+______________ test_m11b_bql_merge_roles_state_and_note[memory] _______________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000012DD3E442D0>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x0000012DD3E46C50>
+
+    def test_m11b_bql_merge_roles_state_and_note(clock, eng):
+        e1 = report(eng, EMERGENCY)
+        e2 = later(clock, eng, EMERGENCY)
+        with pytest.raises(ActionDeniedError):
+            eng.bql_merge(e2, BPTN, into=e1, note="x")
+        assert eng.get(e2).audit[-1].action_result == ActionResult.ACTION_DENIED
+        with pytest.raises(GuardError):
+            eng.bql_merge(e2, BQL, into=e1, note="  ")
+        n = later(clock, eng, LIGHTING)
+        with pytest.raises(InvalidTransitionError):
+            eng.bql_merge(n, BQL, into=e1, note="x")  # ROUTED, not an emergency waiting for BQL
+        eng.bql_merge(e2, BQL, into=e1, note="ok")
+        e3 = later(clock, eng, EMERGENCY)
+>       eng.cancel(e1, BQL, cancel_reason="Nhập nhầm")
+
+tests\test_maintenance\test_p1_merge.py:350: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\maintenance\engine.py:1580: in cancel
+    return self.transition(ticket_id, S.CANCELLED, actor_id, cancel_reason=cancel_reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1703: in transition
+    return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1760: in _transition
+    return self._mutate(
+src\maintenance\engine.py:1798: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1834: in _mutate_locked
+    op(work, now)
+src\maintenance\engine.py:1758: in op
+    self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
+src\maintenance\engine.py:2434: in _human_transition
+    self._after_cancel(work, blocker, now)
+src\maintenance\engine.py:2625: in _after_cancel
+    self._unmerge_children_of(work, now)
+src\maintenance\coordination\merge.py:296: in _unmerge_children_of
+    self._unmerge(self._related_case(child_id), SYSTEM_ID, ActorRole.SYSTEM, now, note=_ROOT_CANCELLED)
+src\maintenance\coordination\merge.py:263: in _unmerge
+    self._run_pipeline(work, 4, now)
+src\maintenance\engine.py:3034: in _run_pipeline
+    if number >= from_step and step(work, now):
+                               ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x0000012DD3E46C50>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:05:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+now = datetime.datetime(2026, 9, 28, 9, 15, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+
+    def _step_6_lookup_asset(self, work: Case, now: datetime) -> bool:
+        proposal, ticket = work.proposal, work.ticket
+        location = self.effective_location(work)
+>       if proposal.playbook_id != PlaybookId.TEC:
+           ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'NoneType' object has no attribute 'playbook_id'
+
+src\maintenance\engine.py:3644: AttributeError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_merge.py::test_m07_bql_merge_of_emergencies_and_undo_by_role[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m11b_bql_merge_roles_state_and_note[memory]
+2 failed, 18 passed, 20 deselected in 1.92s
+EXIT=1

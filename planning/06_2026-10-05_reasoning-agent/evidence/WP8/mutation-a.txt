@@ -1,0 +1,26 @@
+...........F.......................                                      [100%]
+================================== FAILURES ===================================
+_ test_s03_a_mixed_report_with_a_tier2_signal_is_not_split_even_after_bptn_cleared_it[rules] _
+
+mode = 'rules'
+
+    @pytest.mark.parametrize("mode", MODES)
+    def test_s03_a_mixed_report_with_a_tier2_signal_is_not_split_even_after_bptn_cleared_it(mode):
+        engine = build(mode)
+        root_id = report(engine, TIER2_MIXED)
+        ticket = engine.get(root_id).ticket
+        assert (ticket.status, ticket.blocker.code, ticket.risk_level) == ("VERIFYING", "SAFETY_REVIEW_REQUIRED", "UNCLEAR")
+        engine.safety_confirm_safe(root_id, BPTN, note="Đã gọi cư dân, tiếng xèo xèo là máy lạnh")
+        case = engine.get(root_id)
+        assert case.ticket.safety_cleared_at is not None  # condition 4: a cleared safety state is not "nothing found"
+>       assert case.ticket.split_children == [] and case.ticket.split_category is None
+E       AssertionError: assert (['SIM-TKT-0002'] == []
+E         
+E         Left contains one more item: 'SIM-TKT-0002'
+E         Use -v to get more diff)
+
+tests\test_maintenance\test_p1_split.py:186: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_split.py::test_s03_a_mixed_report_with_a_tier2_signal_is_not_split_even_after_bptn_cleared_it[rules]
+1 failed, 34 passed, 2 deselected in 2.18s
+EXIT=1

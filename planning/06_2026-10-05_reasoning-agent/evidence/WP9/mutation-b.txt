@@ -1,0 +1,46 @@
+.........F.F....                                                         [100%]
+================================== FAILURES ===================================
+_________ test_d07_to_bptn_takes_a_snapshot_and_resets_the_execution __________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x000002C4A4542450>
+
+    def test_d07_to_bptn_takes_a_snapshot_and_resets_the_execution(fresh):
+        tid = reported(fresh)
+        before = fresh.get(tid)
+        case = fresh.bql_wrong_department(tid, BQL, decision="TO_BPTN", note="Là việc kỹ thuật, BPTN giao lại")
+        ticket = case.ticket
+        assert ticket.status == "VERIFYING" and ticket.blocker.code == "WRONG_DEPT" and ticket.blocker.owner_role == "BPTN"
+        assert ticket.blocker.resume_step == 6
+        assert ticket.department_id is None and ticket.accepted_at is None and ticket.dispatched_at is None
+        assert all(i.status == "PENDING" and i.updated_by is None and i.note is None for i in case.checklist_items)
+        assert case.evidence_round_start == len(case.evidence) == len(before.evidence)
+>       assert len(case.execution_snapshots) == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).execution_snapshots
+
+tests\test_maintenance\test_p1_department.py:166: AssertionError
+___ test_d08_after_to_bptn_bptn_picks_another_category_and_a_new_department ___
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x000002C4A459BB50>
+
+    def test_d08_after_to_bptn_bptn_picks_another_category_and_a_new_department(fresh):
+        tid = reported(fresh)
+        fresh.bql_wrong_department(tid, BQL, decision="TO_BPTN", note="Là việc kỹ thuật")
+        case = fresh.bptn_resolve(tid, BPTN, category="KY_THUAT", note="Gọi lại cư dân: đèn hỏng")
+        assert case.ticket.status == "ROUTED" and case.ticket.department_id == "DEPT_TECHNICAL"
+        assert case.ticket.accepted_at is None and case.ticket.blocker is None
+        assert case.draft.department_id == "DEPT_TECHNICAL"
+        assert all(i.status == "PENDING" for i in case.checklist_items)
+>       assert len(case.execution_snapshots) == 1  # the old work stays in the snapshot only
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).execution_snapshots
+
+tests\test_maintenance\test_p1_department.py:199: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_department.py::test_d07_to_bptn_takes_a_snapshot_and_resets_the_execution
+FAILED tests/test_maintenance/test_p1_department.py::test_d08_after_to_bptn_bptn_picks_another_category_and_a_new_department
+2 failed, 14 passed, 1 deselected in 0.79s
+EXIT=1

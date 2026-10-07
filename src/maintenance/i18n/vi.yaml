@@ -46,6 +46,11 @@ reason_messages:
   SAFETY_REVIEW_REQUIRED: "Phản ánh đang được kiểm tra."
   EMERGENCY_PENDING_BQL: "Phản ánh đang được kiểm tra."
   WRONG_DEPT_AFTER_START: "Đang xác minh lại phòng ban phụ trách."  # dự phòng Q-A; P0 chưa có đường tạo
+  WAITING_EMERGENCY: "Phản ánh đang được kiểm tra trước khi chuyển phòng ban."  # plan 06 P1-E: không lộ lý do thật
+
+# Plan 06: ticket sinh ra do tách một phản ánh hai việc / do BQL tạo ticket sửa chữa tiếp theo
+split_created_message: "Phản ánh này được tách từ phản ánh {parent} vì có hai việc cần hai bộ phận khác nhau xử lý."
+follow_up_created_message: "Phản ánh này được tạo để xử lý tiếp sau phản ánh {source}."
 
 # NEED_INFO do tầng an toàn yêu cầu (T06, safety_context): chỉ cư dân trả lời mới gỡ được (plan 02 Q04)
 safety_info_message: "Vui lòng bổ sung: {fields}."

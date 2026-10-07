@@ -2,6 +2,65 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.3.0] - 2026-10-07: UI tĩnh `src/web/` mang design của `portal/` (plan 07)
+### Changed
+- `src/web/index.html` + `app.js`: font Be Vietnam Pro, header gradient "Xin chào, <tên>" (avatar chữ viết tắt, pill vai trò, ô đổi tài khoản test, nút Đăng xuất pill), khối tiêu đề màn là card đè lên gradient, màn đăng nhập theo `Main.dc.html` của portal (thay bản gradient cam sáng cùng ngày).
+- Helper `BTN`/`INPUT`/`card`/`badge`/`chip`/`callout`/`toast`/item danh sách dùng class thiết kế; màu trạng thái theo bảng pill của portal (`planning/07_…/specs/01-CONTRACTS.md` §3).
+### Added
+- `src/web/theme.css`: token + class chép từ `portal/src/app/globals.css`. `docs/web.md`.
+### Decisions
+- Reskin, KHÔNG dựng lại màn theo bố cục portal (khác mô hình dữ liệu/vai trò). Remap palette `slate`/`stone`/`indigo` trong `tailwind.config` đổi 418 chuỗi class ở một chỗ.
+- Tắt dark mode (thiết kế không có); không thêm chuông/tile menu (không có dữ liệu — nút giả).
+### Evidence
+- pytest 2972 passed, ruff sạch, `node --check` exit 0; 22 ảnh 1440/390 + 3 ảnh thao tác, 0 tràn ngang (`planning/07_2026-10-07_web-portal-reskin/evidence/`).
+
+## [v1.2.0] - 2026-10-07: Cổng phản ánh cư dân — website Next.js từ bộ thiết kế (plan 06)
+### Added
+- Thư mục top-level mới `portal/`: Next.js 16.4 (App Router, `cacheComponents`) + TypeScript + Tailwind v4 + PostgreSQL
+  (Drizzle + `pg`), dựng theo `design-ticket-cu-dan/…/HANDOFF.md` + 6 file `.dc.html`: đăng nhập, Cư dân, Ban tiếp nhận,
+  Ban quản lý, Phòng vệ sinh, Phòng kỹ thuật. Độc lập backend Python (KHÔNG nối engine CR-03). Tài liệu `docs/portal.md`.
+- 10 bảng (users, sessions, staff, tickets, photos, history, ratings, keywords, materials, notices); DB `portal`/`portal_test`
+  trong container `p151-db-1`; seed 22 ticket mẫu phủ mọi trạng thái.
+- Session cookie ↔ bảng `sessions` (SHA-256 token), scrypt; ma trận quyền một nguồn (`permissions.ts`) vừa kiểm vừa hiển thị.
+- Mọi ghi qua `src/server/workflow.ts` (FOR UPDATE + UPDATE có điều kiện stage + 1 dòng lịch sử); lỗi `ActionResult` 5 mã.
+### Decisions
+- Một mô hình `stage 1..6` cho mọi vai; 9 lệch có chủ đích D1–D9 (`planning/06_…/specs/00-ARCHITECTURE.md` §5), gồm: không lộ
+  vai trò/tồn tại tài khoản khi đăng nhập, Agent so khớp nguyên từ, không khớp ⇒ "Chưa rõ" thay vì BQL 38%.
+- Phòng vệ sinh / kỹ thuật xem được đánh giá của cư dân (sao, thẻ nhận xét, bình luận) ở cột "Hoàn thành" và tab Lịch sử,
+  nhưng KHÔNG biết người gửi (không tên/tài khoản/mã cư dân, tên file ảnh ẩn thành "Ảnh N") — quyết định người dùng (plan Q11).
+- Agent phát hiện ticket có thể trùng (cùng phòng ban + vị trí + từ khóa, ≤7 ngày); Ban tiếp nhận so sánh hai ticket cạnh nhau và chỉ
+  duyệt gộp / "Không trùng" (cột `dup_dismissed`, migration `0001`); server chặn gộp cặp không được đề xuất (plan Q13).
+### Removed
+- Tab "Phân quyền" (BQL), tab "Quy tắc từ khóa" + quyền sửa từ khóa (Ban tiếp nhận) — người dùng: Agent phân loại, Ban tiếp nhận chỉ duyệt (plan Q12).
+### Fixed (trong lúc nghiệm thu)
+- Ảnh ticket trả `Cache-Control: private, no-store` (bản `max-age=300` cho người đăng nhập sau trên cùng máy xem lại ảnh).
+- Ô "Gộp vào ticket trùng" làm trang tràn ngang ở 390px.
+### Evidence
+- typecheck/lint 0 lỗi, unit 14/14, DB 15/15 (Postgres thật, 2 phép phá đều làm đỏ), build OK, E2E production PASS,
+  38 ảnh đối chiếu thiết kế, 0 tràn ngang — `planning/06_2026-10-07_resident-portal-next/evidence/`.
+
+## [Unreleased] - 2026-10-07: Sửa 500 "Không tải được dữ liệu" trên Supabase dùng chung
+### Fixed
+- `Ticket.merged_children: list[str]` (CR-BPTN-03 §8) thêm vào `src/maintenance/models.py`: 16 doc trên Supabase do bản code
+  khác (PR #11 đã revert) ghi field này làm `repo.list()` vỡ ⇒ mọi màn danh sách 500. Field chỉ được nạp/giữ; engine nhánh này
+  CHƯA điền khi gộp trùng (việc của chủ engine). Test hồi quy `test_doc_with_merged_children_loads_and_keeps_the_link`.
+
+## [Unreleased] - 2026-10-07: Màn đăng nhập "Cổng phản ánh cư dân"
+### Changed
+- `showLogin` (`src/web/app.js`) dựng lại theo mockup người dùng: nền gradient cam tràn ngang, logo nhà + "Cổng phản ánh cư dân"
+  / `LOGIN_SITE_NAME`, thẻ trắng "Xin chào, Đăng nhập", ô nhập bo tròn có placeholder, nút "Hiện/Ẩn" trong ô mật khẩu,
+  nút cam `orange-700` bo tròn, dòng "Quên mật khẩu?". Header + `main` ẩn khi chưa đăng nhập (`setShellVisible`);
+  `#login-view` chuyển ra ngoài `main`. Bỏ hẳn khối "Tài khoản thử nghiệm" + hàm `demoAccountList` khỏi màn đăng nhập
+  (người dùng yêu cầu; đăng nhập nhanh còn `?autologin=<username>` và ô đổi vai trò sau khi vào). Cache bust `app.js?v=3.2`.
+## [Unreleased] - 2026-10-07: Hoàn thiện Đặc tả Thiết kế Điều phối Ngữ nghĩa SPEC-P09 (Plan 06 WP16)
+### Added
+- Đặc tả hợp đồng điều phối ngữ nghĩa [`SPEC-P09-semantic-coordination.md`](../planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md) (PROPOSED) hoàn thiện qua 6 vòng thẩm định đối kháng nghiêm ngặt (R15 §01–§17).
+- Cơ chế liên kết giá trị - bằng chứng vị trí (B1): thuật toán kiểm tra giao khoảng sự cố vs nơi ở, ngăn chặn triệt để quote bao trọn nơi ở.
+- Ràng buộc cấu trúc tách ticket (B2): bắt buộc đủ cả 3 thành phần vị trí (`building`, `floor`, `area`) cho cả hai nhánh override và shared_location; loại bỏ hoàn toàn regex suy đoán từ quote rút gọn mồ côi; chặn tách ticket khác khu vực.
+- Phân cấp an toàn và bất biến next_step (B3): bảo toàn tính đơn điệu của mức an toàn, quy định chuỗi hỏi thông tin cư dân và chuyển BPTN.
+- Tương thích đọc kép P01 & Runbook Rollback (B4): đồng bộ cardinality `SemanticMetadata.job_evidences` cho 0/1/2 jobs; quy tắc nâng sàn kỹ thuật `KY_THUAT LOW` $\rightarrow$ `MEDIUM (PRI-M1)`; chuẩn hóa thao tác JSONB `maintops.cases.doc #- '{agent_decision, semantic_metadata}'` và quy trình Quiesce dừng toàn bộ writers bắt buộc.
+- Handoff [`H16_thi-cong_WP17.md`](../planning/06_2026-10-05_reasoning-agent/handoffs/H16_thi-cong_WP17.md) chuẩn bị cho thi công runtime sau khi P09 được phê duyệt.
+
 ## [v1.1.5] - 2026-10-05: Đèn cháy / đèn chập là đèn hỏng, không phải nguy hiểm (plan 05 Q11)
 ### Fixed
 - "Đèn hành lang … bị chập / chập rồi / chập điện" và câu gõ không dấu "den hanh lang … bi chay / bi chap" không còn bị

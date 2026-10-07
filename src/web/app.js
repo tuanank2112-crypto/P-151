@@ -25,20 +25,29 @@ const VIEW_TEXT = {
   bql: ['Bảng điều hành Ban Quản lý', 'Giám sát toàn diện, nghiệm thu chất lượng 6 Gates và xử lý sự cố.'],
 };
 
-// Status → badge colours. Colour is never the only signal: every badge also carries the label text.
+// Status → pill colours of the portal design (plan 07, 01-CONTRACTS §3). Colour is never the only signal: every badge also carries the label text.
+const PILL = {
+  grey: 'background:#E9EDF3;color:#475166',
+  amber: 'background:#FFEFC2;color:#664900',
+  blue: 'background:#E1EAF9;color:#1E3F7A',
+  violet: 'background:#E5E0F6;color:#3D3078',
+  green: 'background:#D8EFE3;color:#13553A',
+  red: 'background:#FDE2DF;color:#8A1C12',
+  urgent: 'background:#B42318;color:#FFFFFF',
+};
 const STATUS_STYLE = {
-  RECEIVED: 'bg-slate-100 text-slate-700 ring-slate-500/20 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700',
-  VERIFYING: 'bg-amber-50 text-amber-800 ring-amber-600/20 dark:bg-amber-950/60 dark:text-amber-300 dark:ring-amber-500/30',
-  ROUTED: 'bg-sky-50 text-sky-800 ring-sky-600/20 dark:bg-sky-950/60 dark:text-sky-300 dark:ring-sky-500/30',
-  IN_PROGRESS: 'bg-indigo-50 text-indigo-700 ring-indigo-600/20 dark:bg-indigo-950/60 dark:text-indigo-300 dark:ring-indigo-500/30',
-  READY_FOR_REVIEW: 'bg-violet-50 text-violet-700 ring-violet-600/20 dark:bg-violet-950/60 dark:text-violet-300 dark:ring-violet-500/30',
-  CLOSED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-500/30',
-  NEED_INFO: 'bg-orange-50 text-orange-800 ring-orange-600/20 dark:bg-orange-950/60 dark:text-orange-300 dark:ring-orange-500/30',
-  ON_HOLD: 'bg-yellow-50 text-yellow-800 ring-yellow-600/20 dark:bg-yellow-950/60 dark:text-yellow-300 dark:ring-yellow-500/30',
-  MERGED: 'bg-zinc-100 text-zinc-700 ring-zinc-500/20 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700',
-  CANCELLED: 'bg-rose-50 text-rose-700 ring-rose-600/20 dark:bg-rose-950/60 dark:text-rose-300 dark:ring-rose-500/30',
-  EMERGENCY_PENDING_BQL: 'bg-rose-100 text-rose-800 ring-rose-600/30 dark:bg-rose-950 dark:text-rose-200 dark:ring-rose-800',
-  SAFETY_REVIEW_REQUIRED: 'bg-amber-100 text-amber-800 ring-amber-600/30 dark:bg-amber-950 dark:text-amber-200 dark:ring-amber-800',
+  RECEIVED: PILL.grey,
+  VERIFYING: PILL.amber,
+  ROUTED: PILL.blue,
+  IN_PROGRESS: PILL.blue,
+  READY_FOR_REVIEW: PILL.violet,
+  CLOSED: PILL.green,
+  NEED_INFO: PILL.amber,
+  ON_HOLD: PILL.amber,
+  MERGED: PILL.grey,
+  CANCELLED: PILL.grey,
+  EMERGENCY_PENDING_BQL: PILL.urgent,
+  SAFETY_REVIEW_REQUIRED: PILL.red,
 };
 const REASON_LABEL = {
   MISSING_INFO: 'Thiếu thông tin',
@@ -192,6 +201,7 @@ function svgIcon(name, className = 'h-4 w-4') {
     check: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m4.5 12.75 6 6 9-13.5"/>',
     spark: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/>',
     arrowRight: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>',
+    home: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10.5 12 3l9 7.5M5.25 9v10.5A1.5 1.5 0 0 0 6.75 21h3.75v-6h3v6h3.75a1.5 1.5 0 0 0 1.5-1.5V9"/>',
   };
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('class', className);
@@ -256,16 +266,17 @@ function deptName(id) {
 
 // ------------------------------------------------------------------ UI building blocks
 
+// Portal design classes (src/web/theme.css, plan 07 SPEC-P01 §3)
 const BTN = {
-  primary: 'inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 active:scale-[0.98] transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60',
-  secondary: 'inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-2xs ring-1 ring-inset ring-slate-200/90 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 active:scale-[0.98] transition-all duration-150 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-800 dark:hover:bg-slate-800/80 disabled:cursor-not-allowed disabled:opacity-60',
-  danger: 'inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-rose-700 shadow-2xs ring-1 ring-inset ring-rose-200 hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-600 active:scale-[0.98] transition-all duration-150 dark:bg-slate-900 dark:text-rose-400 dark:ring-rose-900/60 dark:hover:bg-slate-800/80 disabled:cursor-not-allowed disabled:opacity-60',
+  primary: 'btn primary',
+  secondary: 'btn',
+  danger: 'btn danger',
 };
-const INPUT = 'block w-full min-h-[42px] rounded-xl border-0 py-2.5 px-3.5 text-sm text-slate-900 shadow-2xs ring-1 ring-inset ring-slate-200/90 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-800 dark:placeholder:text-slate-500 dark:focus:ring-indigo-500 transition-colors';
+const INPUT = 'field';
 
 function card(title, ...children) {
-  return el('div', { class: 'rounded-2xl bg-white p-4 sm:p-5 shadow-2xs ring-1 ring-slate-200/80 dark:bg-slate-900 dark:ring-slate-800/90 transition-colors' },
-    title ? el('h2', { class: 'text-base font-semibold tracking-tight text-slate-900 dark:text-white' }, title) : null,
+  return el('div', { class: 'card p-5 sm:p-6' },
+    title ? el('h2', { class: 'text-[17px] font-bold tracking-tight text-slate-900' }, title) : null,
     el('div', { class: title ? 'mt-4 space-y-4' : 'space-y-4' }, ...children));
 }
 
@@ -273,23 +284,18 @@ function badge(status, label) {
   const style = STATUS_STYLE[status] || STATUS_STYLE.RECEIVED;
   const text = label || statusLabel(status);
   return el('span', {
-    class: `inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${style}`,
+    class: 'pill',
+    style,
     role: 'status',
     'aria-label': `Trạng thái: ${text}`,
   },
-    el('span', { class: 'h-1.5 w-1.5 rounded-full bg-current', 'aria-hidden': 'true' }),
+    el('span', { class: 'dot', 'aria-hidden': 'true' }),
     text);
 }
 
 function chip(text, tone = 'slate') {
-  const tones = {
-    slate: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-    amber: 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300',
-    rose: 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300',
-    indigo: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300',
-    green: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300',
-  };
-  return el('span', { class: `inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ${tones[tone]}` }, text);
+  const tones = { slate: PILL.grey, amber: PILL.amber, rose: PILL.red, indigo: PILL.blue, green: PILL.green };
+  return el('span', { class: 'pill', style: `${tones[tone] || PILL.grey};padding:2px 10px` }, text);
 }
 
 function field(label, control, hint) {
@@ -298,40 +304,35 @@ function field(label, control, hint) {
   const hintId = hint ? `${id}-hint` : null;
   if (hintId) control.setAttribute('aria-describedby', hintId);
   return el('div', {},
-    el('label', { for: id, class: 'block text-sm font-medium text-slate-800 dark:text-slate-200' }, label),
-    el('div', { class: 'mt-1.5' }, control),
-    hint ? el('p', { id: hintId, class: 'mt-1.5 text-xs text-slate-500 dark:text-slate-400' }, hint) : null);
+    el('label', { for: id, class: 'block text-sm font-semibold text-slate-900' }, label),
+    el('div', { class: 'mt-2' }, control),
+    hint ? el('p', { id: hintId, class: 'mt-1.5 text-xs text-slate-500' }, hint) : null);
 }
 
 function dl(rows) {
   return el('dl', { class: 'grid grid-cols-1 gap-x-4 gap-y-3 text-sm sm:grid-cols-3' },
     rows.filter(Boolean).flatMap(([term, value]) => [
-      el('dt', { class: 'font-medium text-slate-500 dark:text-slate-400' }, term),
-      el('dd', { class: 'text-slate-900 dark:text-slate-100 sm:col-span-2' }, value ?? '—'),
+      el('dt', { class: 'font-medium text-slate-500' }, term),
+      el('dd', { class: 'text-slate-900 sm:col-span-2' }, value ?? '—'),
     ]));
 }
 
 function callout(tone, title, body) {
-  const tones = {
-    info: 'bg-sky-50 text-sky-900 ring-sky-200 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-900/50',
-    warn: 'bg-amber-50 text-amber-900 ring-amber-200 dark:bg-amber-950/50 dark:text-amber-200 dark:ring-amber-900/50',
-    danger: 'bg-rose-50 text-rose-900 ring-rose-200 dark:bg-rose-950/50 dark:text-rose-200 dark:ring-rose-900/50',
-    ok: 'bg-emerald-50 text-emerald-900 ring-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-900/50',
-  };
-  return el('div', { class: `rounded-lg p-4 text-sm ring-1 ring-inset ${tones[tone]}` },
+  const tones = { info: PILL.blue, warn: PILL.amber, danger: PILL.red, ok: PILL.green };
+  return el('div', { class: 'rounded-xl p-4 text-sm', style: tones[tone] || PILL.blue },
     title ? el('p', { class: 'font-semibold' }, title) : null,
     body ? el('p', { class: title ? 'mt-1' : '' }, body) : null);
 }
 
 function emptyState(title, body) {
-  return el('div', { class: 'rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-800 px-6 py-10 text-center' },
-    el('p', { class: 'text-sm font-semibold text-slate-800 dark:text-slate-200' }, title),
-    body ? el('p', { class: 'mt-1 text-sm text-slate-500 dark:text-slate-400' }, body) : null);
+  return el('div', { class: 'rounded-[18px] border-2 border-dashed border-slate-300 px-6 py-10 text-center' },
+    el('p', { class: 'text-sm font-semibold text-slate-900' }, title),
+    body ? el('p', { class: 'mt-1 text-sm text-slate-500' }, body) : null);
 }
 
 function skeleton(lines = 3) {
   return el('div', { class: 'animate-pulse space-y-3', 'aria-busy': 'true', 'aria-label': 'Đang tải' },
-    Array.from({ length: lines }, () => el('div', { class: 'h-14 rounded-lg bg-slate-200/70 dark:bg-slate-800/70' })));
+    Array.from({ length: lines }, () => el('div', { class: 'h-14 rounded-[18px] bg-white/80' })));
 }
 
 /** A form whose submit button shows progress and cannot be double-submitted. */
@@ -361,11 +362,12 @@ function actionForm(children, submitLabel, onSubmit, { variant = 'primary', extr
 
 function toast(message, tone = 'ok') {
   const tones = {
-    ok: 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900',
-    error: 'bg-rose-600 text-white',
+    ok: 'background:#13203A;color:#FFFFFF',
+    error: 'background:#FDE2DF;color:#8A1C12',
   };
   const node = el('div', {
-    class: `pointer-events-auto max-w-sm rounded-lg px-4 py-3 text-sm font-medium shadow-lg ${tones[tone]}`,
+    class: 'pointer-events-auto max-w-[min(560px,calc(100vw-32px))] rounded-[14px] px-4 py-3 text-sm font-medium',
+    style: `${tones[tone]};box-shadow:0 8px 30px rgba(15,30,60,0.18)`,
     role: tone === 'error' ? 'alert' : 'status',
     'aria-live': tone === 'error' ? 'assertive' : 'polite',
     'aria-atomic': 'true',
@@ -465,16 +467,16 @@ function listItem(ticket, { title, meta, right }) {
   return el('li', {},
     el('button', {
       type: 'button',
-      class: `w-full rounded-xl px-4 py-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${selected ? 'bg-indigo-50/80 ring-1 ring-indigo-200/90 dark:bg-indigo-950/40 dark:ring-indigo-500/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`,
+      class: selected ? 'titem on' : 'titem',
       'aria-current': selected ? 'true' : undefined,
       onclick: () => select(ticket),
     },
     el('div', { class: 'flex items-start justify-between gap-3' },
       el('div', { class: 'min-w-0 flex-1' },
-        el('p', { class: 'font-mono text-xs font-bold tracking-tight text-slate-800 dark:text-slate-200' }, displayId),
-        el('p', { class: 'mt-0.5 truncate text-sm font-medium text-slate-700 dark:text-slate-200' }, humanizeOperationalText(title) || 'Phản ánh thiếu mô tả sự cố (cần xác minh)')),
+        el('span', { class: 'idb' }, displayId),
+        el('p', { class: 'mt-1.5 text-[15px] font-semibold leading-snug text-slate-900 line-clamp-2' }, humanizeOperationalText(title) || 'Phản ánh thiếu mô tả sự cố (cần xác minh)')),
       right),
-    meta ? el('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400' }, meta) : null));
+    meta ? el('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500' }, meta) : null));
 }
 
 function residentListItem(ticketId, { title, meta, right }) {
@@ -483,23 +485,23 @@ function residentListItem(ticketId, { title, meta, right }) {
   return el('li', {},
     el('button', {
       type: 'button',
-      class: `w-full rounded-xl px-4 py-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${selected ? 'bg-indigo-50/80 ring-1 ring-indigo-200/90 dark:bg-indigo-950/40 dark:ring-indigo-500/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`,
+      class: selected ? 'titem on' : 'titem',
       'aria-current': selected ? 'true' : undefined,
       onclick: () => select(ticketId),
     },
     el('div', { class: 'flex items-start justify-between gap-3' },
       el('div', { class: 'min-w-0 flex-1' },
-        el('p', { class: 'font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-0.5' }, displayId),
-        el('p', { class: 'text-sm font-semibold text-slate-900 dark:text-white line-clamp-2 leading-snug' }, humanizeOperationalText(title) || 'Yêu cầu hỗ trợ phản ánh')),
+        displayId ? el('span', { class: 'idb' }, displayId) : null,
+        el('p', { class: 'mt-1.5 text-[15px] font-semibold leading-snug text-slate-900 line-clamp-2' }, humanizeOperationalText(title) || 'Yêu cầu hỗ trợ phản ánh')),
       right),
-    meta ? el('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400' }, meta) : null));
+    meta ? el('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500' }, meta) : null));
 }
 
 function listCard(title, count, items, empty) {
   return card(null,
     el('div', { class: 'flex items-center justify-between pb-1' },
-      el('h2', { class: 'text-base font-semibold tracking-tight text-slate-900 dark:text-white' }, title),
-      el('span', { class: 'text-xs font-medium text-slate-500 dark:text-slate-400' }, `${count} phản ánh`)),
+      el('h2', { class: 'text-[17px] font-bold tracking-tight text-slate-900' }, title),
+      el('span', { class: 'pill', style: PILL.blue }, `${count} phản ánh`)),
     items.length ? el('ul', { class: '-mx-2 space-y-1' }, items) : emptyState(empty[0], empty[1]));
 }
 
@@ -507,8 +509,8 @@ function detailHeader(ticketId, status, extra, customLabel) {
   const displayId = formatTicketId(ticketId);
   return el('div', { class: 'flex flex-wrap items-start justify-between gap-3' },
     el('div', {},
-      el('h2', { id: 'detail-title', tabindex: '-1', class: 'text-lg font-bold tracking-tight text-slate-900 dark:text-white focus:outline-none' }, displayId ? `Phản ánh ${displayId}` : 'Chi tiết phản ánh'),
-      extra ? el('p', { class: 'mt-0.5 text-xs text-slate-500 dark:text-slate-400 font-mono' }, extra) : null),
+      el('h2', { id: 'detail-title', tabindex: '-1', class: 'text-xl font-bold tracking-tight text-slate-900 focus:outline-none' }, displayId ? `Phản ánh ${displayId}` : 'Chi tiết phản ánh'),
+      extra ? el('p', { class: 'mt-0.5 font-mono text-xs text-slate-500' }, extra) : null),
     badge(status, customLabel));
 }
 
@@ -1965,114 +1967,66 @@ async function quickSwitchUser(username) {
   }
 }
 
-async function demoAccountList(onSelect, onDirectSignIn) {
-  let data;
-  try {
-    data = await api('/auth/demo-accounts');
-  } catch {
-    data = {
-      shared_test_password: 'Demo@2026',
-      accounts: [
-        { username: 'cudan01', display_name: 'Nguyễn Văn Hùng (S2.05-1402)', role: 'RESIDENT' },
-        { username: 'cudan02', display_name: 'Lê Thu Trang (S1.12-0805)', role: 'RESIDENT' },
-        { username: 'bptn01', display_name: 'Trần Mai Anh (BPTN)', role: 'BPTN' },
-        { username: 'vesinh01', display_name: 'Đội Vệ sinh Tòa nhà', role: 'DEPARTMENT' },
-        { username: 'kythuat01', display_name: 'Đội Kỹ thuật Tòa nhà', role: 'DEPARTMENT' },
-        { username: 'kho01', display_name: 'Kho Vật tư Kỹ thuật', role: 'WAREHOUSE' },
-        { username: 'bql01', display_name: 'Ban Quản lý Tòa nhà', role: 'BQL' },
-      ],
-    };
-  }
-  const accounts = (data.accounts || []).filter((a) => a.role !== 'QA_INTERNAL' && a.username !== 'qa01');
-  const sharedPassword = data.shared_test_password || 'Demo@2026';
+// Shown under the portal title on the login screen (site name from seed/maintenance_v1/catalog.yaml)
+const LOGIN_SITE_NAME = 'Khu đô thị Ocean Park';
 
-  let activeRoleFilter = 'ALL';
-  const container = el('div', { class: 'space-y-3' });
-
-  const filterTabs = [
-    ['ALL', 'Tất cả'],
-    ['RESIDENT', 'Cư dân'],
-    ['BPTN', 'BPTN'],
-    ['DEPARTMENT', 'Phòng ban'],
-    ['WAREHOUSE', 'Kho'],
-    ['BQL', 'BQL'],
-  ];
-
-  const filterBar = el('div', { class: 'flex flex-wrap gap-1.5 pb-1' });
-  const listContainer = el('div', { class: 'space-y-2' });
-
-  function renderList() {
-    filterBar.replaceChildren();
-    for (const [key, label] of filterTabs) {
-      const isSelected = activeRoleFilter === key;
-      const pill = el('button', {
-        type: 'button',
-        class: `rounded-lg px-2.5 py-1 text-xs font-semibold transition active:scale-[0.97] ${
-          isSelected
-            ? 'bg-indigo-600 text-white shadow-2xs ring-1 ring-indigo-600'
-            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-        }`,
-        onclick: () => {
-          activeRoleFilter = key;
-          renderList();
-        },
-      }, label);
-      filterBar.append(pill);
-    }
-
-    listContainer.replaceChildren();
-    const filtered = activeRoleFilter === 'ALL'
-      ? accounts
-      : accounts.filter((a) => a.role === activeRoleFilter);
-
-    for (const a of filtered) {
-      const displayName = humanizeDisplayName(a.username, a.display_name);
-      const initials = displayName.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-      const meta = REALISTIC_ACCOUNTS[a.username] ? REALISTIC_ACCOUNTS[a.username].title : `${ROLE_LABEL[a.role] || a.role}`;
-
-      const cardEl = el('div', {
-        class: 'group flex items-center justify-between gap-3 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-2.5 text-left transition hover:border-indigo-400 hover:shadow-2xs dark:hover:border-indigo-500/50',
-      },
-        el('button', {
-          type: 'button',
-          class: 'flex items-center gap-2.5 min-w-0 flex-1 text-left focus:outline-none',
-          onclick: () => onSelect(a.username, sharedPassword),
-        },
-          el('span', { class: 'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 font-mono text-xs font-bold ring-1 ring-indigo-500/20' }, initials),
-          el('div', { class: 'min-w-0' },
-            el('div', { class: 'flex items-center gap-1.5' },
-              el('span', { class: 'font-semibold text-xs text-slate-900 dark:text-white truncate' }, displayName),
-              chip(ROLE_LABEL[a.role] || a.role, 'slate')),
-            el('p', { class: 'text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5' }, meta))),
-        el('button', {
-          type: 'button',
-          class: 'shrink-0 rounded-lg bg-slate-100 hover:bg-indigo-600 hover:text-white dark:bg-slate-800 dark:hover:bg-indigo-600 text-slate-700 dark:text-slate-300 px-2.5 py-1 text-xs font-semibold transition active:scale-[0.96]',
-          onclick: () => onDirectSignIn(a.username, sharedPassword),
-        }, 'Vào ngay'));
-
-      listContainer.append(cardEl);
-    }
-  }
-
-  renderList();
-  container.append(filterBar, listContainer);
-  return container;
+function loginField(label, control, trailing) {
+  return el('div', { class: 'flex flex-col gap-2' },
+    el('label', { for: control.id, class: 'text-sm font-semibold text-slate-900' }, label),
+    el('div', { class: 'relative' }, control, trailing || null));
 }
 
-async function showLogin(message) {
+/** Header and main are hidden while signed out so the login screen can fill the page. */
+function setShellVisible(visible) {
+  $('app-header').classList.toggle('hidden', !visible);
+  $('main').classList.toggle('hidden', !visible);
+}
+
+function showLogin(message) {
+  setShellVisible(false);
   $('app-view').classList.add('hidden');
   $('user-menu').replaceChildren();
 
   const view = $('login-view');
   view.classList.remove('hidden');
 
-  const username = el('input', { id: 'login-username', name: 'username', type: 'text', required: true, autocomplete: 'username', autocapitalize: 'none', spellcheck: 'false', class: INPUT });
-  const password = el('input', { id: 'login-password', name: 'password', type: 'password', required: true, autocomplete: 'current-password', class: INPUT });
-  const show = el('input', {
-    id: 'login-show', type: 'checkbox', class: 'h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 dark:border-slate-700 dark:bg-slate-800',
-    onchange: (e) => { password.type = e.target.checked ? 'text' : 'password'; },
+  const username = el('input', {
+    id: 'login-username', name: 'username', type: 'text', required: true, autocomplete: 'username',
+    autocapitalize: 'none', spellcheck: 'false', placeholder: 'Nhập tên đăng nhập', class: 'field',
   });
-  const error = el('div', { role: 'alert' }, message ? callout('warn', message, null) : null);
+  const password = el('input', {
+    id: 'login-password', name: 'password', type: 'password', required: true, autocomplete: 'current-password',
+    placeholder: 'Nhập mật khẩu', class: 'field', style: 'padding-right:64px',
+  });
+  const toggle = el('button', {
+    type: 'button',
+    class: 'eye',
+    'aria-controls': 'login-password',
+    'aria-pressed': 'false',
+    'aria-label': 'Hiện mật khẩu',
+    onclick: () => {
+      const reveal = password.type === 'password';
+      password.type = reveal ? 'text' : 'password';
+      toggle.textContent = reveal ? 'Ẩn' : 'Hiện';
+      toggle.setAttribute('aria-pressed', String(reveal));
+      toggle.setAttribute('aria-label', reveal ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+      password.focus();
+    },
+  }, 'Hiện');
+  const error = el('div', { role: 'alert', class: message ? '' : 'hidden' }, message ? el('div', { class: 'alert warn' }, message) : null);
+
+  function showError(msg) {
+    error.className = '';
+    error.replaceChildren(el('div', { class: 'alert' }, msg));
+    username.classList.add('err');
+    password.classList.add('err');
+  }
+  for (const input of [username, password]) {
+    input.addEventListener('input', () => {
+      username.classList.remove('err');
+      password.classList.remove('err');
+    });
+  }
 
   async function performLogin(u, p) {
     try {
@@ -2082,42 +2036,48 @@ async function showLogin(message) {
       const msg = (err.message && err.message.includes('fetch'))
         ? 'Không thể kết nối đến máy chủ API (cổng 8000). Vui lòng đảm bảo server FastAPI đang chạy.'
         : err.message;
-      error.replaceChildren(callout('danger', msg, null));
+      showError(msg);
       password.value = '';
       password.focus();
     }
   }
 
-  const form = actionForm([
+  const submit = el('button', { type: 'submit', class: 'submit' }, 'Đăng nhập');
+  // Main.dc.html login card (portal/src/app/login/login-form.tsx)
+  const form = el('form', { class: 'sheet', novalidate: true },
+    el('div', { class: 'flex flex-col gap-1.5' },
+      el('span', { class: 'text-base text-slate-500' }, 'Xin chào,'),
+      el('h1', { class: 'm-0 text-[30px] font-bold tracking-tight text-slate-900' }, 'Đăng nhập'),
+      el('span', { class: 'text-sm text-slate-500' }, 'Hệ thống tự đưa bạn đến dashboard theo vai trò của tài khoản.')),
+    loginField('Tên đăng nhập', username),
+    loginField('Mật khẩu', password, toggle),
     error,
-    field('Tên đăng nhập', username),
-    field('Mật khẩu', password),
-    el('div', { class: 'flex items-center gap-2' }, show, el('label', { for: 'login-show', class: 'text-sm text-slate-700 dark:text-slate-300' }, 'Hiện mật khẩu')),
-  ], 'Đăng nhập', async (data) => {
-    await performLogin(data.get('username'), data.get('password'));
-  });
-  form.querySelector('button[type=submit]').classList.add('w-full');
-
-  const accounts = await demoAccountList(
-    (name, shared) => {
-      username.value = name;
-      if (shared) password.value = shared;
-      password.focus();
-    },
-    (name, shared) => {
-      performLogin(name, shared);
+    submit,
+    el('span', { class: 'text-center text-[13px] text-slate-500' }, 'Quên mật khẩu? Liên hệ Ban quản lý để được cấp lại.'));
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
     }
-  );
+    submit.disabled = true;
+    submit.textContent = 'Đang đăng nhập…';
+    try {
+      await performLogin(username.value.trim(), password.value);
+    } finally {
+      submit.disabled = false;
+      submit.textContent = 'Đăng nhập';
+    }
+  });
 
-  view.replaceChildren(el('div', { class: 'mx-auto grid max-w-4xl grid-cols-1 gap-6 py-6 md:grid-cols-2' },
-    el('div', { class: 'rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xs ring-1 ring-slate-200/90 dark:ring-slate-800 sm:p-7 transition-colors' },
-      el('h1', { class: 'text-xl font-bold tracking-tight text-slate-900 dark:text-white' }, 'Đăng nhập hệ thống'),
-      el('p', { class: 'mt-1 text-xs text-slate-500 dark:text-slate-400' }, 'Hệ thống Quản lý Vận hành & Bảo trì Tòa nhà'),
-      el('div', { class: 'mt-6' }, form)),
-    el('div', { class: 'rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xs ring-1 ring-slate-200/90 dark:ring-slate-800 sm:p-7 transition-colors' },
-      el('h2', { class: 'text-base font-bold text-slate-900 dark:text-white' }, 'Tài khoản thử nghiệm'),
-      el('p', { class: 'mt-1 text-xs text-slate-500 dark:text-slate-400' }, 'Bấm "Vào ngay" để đăng nhập nhanh theo từng vai trò'),
-      el('div', { class: 'mt-4' }, accounts))));
+  view.replaceChildren(el('div', { class: 'scr-login' },
+    el('div', { class: 'band' },
+      el('div', { class: 'mx-auto flex max-w-[1200px] items-center gap-3.5' },
+        el('span', { class: 'brand-ic' }, svgIcon('home', 'h-6 w-6')),
+        el('div', { class: 'flex flex-col' },
+          el('span', { class: 'text-xl font-bold text-slate-900' }, 'Cổng phản ánh cư dân'),
+          el('span', { class: 'text-sm text-indigo-900' }, LOGIN_SITE_NAME)))),
+    el('div', { class: '-mt-[120px] flex flex-1 justify-center px-4 pb-16 sm:px-6' }, form)));
   username.focus();
 }
 
@@ -2141,6 +2101,7 @@ function signIn(token, user) {
   try { sessionStorage.setItem(TOKEN_KEY, token); } catch { /* storage unavailable */ }
   $('login-view').classList.add('hidden');
   $('login-view').replaceChildren();
+  setShellVisible(true);
   $('app-view').classList.remove('hidden');
   renderUserMenu();
   loadCatalog().then(render);
@@ -2162,6 +2123,7 @@ function signOut({ remote = true, message = null } = {}) {
   showLogin(message);
 }
 
+/** Gradient header (portal/src/components/shell.tsx Header): avatar + "Xin chào, <name>", role pill, test-account switcher, logout. */
 function renderUserMenu() {
   const user = state.user;
   if (!user) return;
@@ -2172,8 +2134,12 @@ function renderUserMenu() {
     ? REALISTIC_ACCOUNTS[user.username].title
     : `${ROLE_LABEL[user.role] || user.role}${user.department_id ? ` · ${deptName(user.department_id)}` : ''} · ${user.username}`;
 
+  $('hello-avatar').textContent = initials;
+  $('hello-name').textContent = displayName;
+  $('hello-name').title = displayName;
+
   const roleSelect = el('select', {
-    class: 'hidden md:inline-block rounded-xl border-0 py-1.5 pl-3 pr-8 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 ring-1 ring-inset ring-slate-200/90 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-600 cursor-pointer transition',
+    class: 'hdr-select hidden md:inline-block',
     'aria-label': 'Đổi vai trò kiểm thử',
     onchange: (e) => {
       const selectedUsername = e.target.value;
@@ -2197,16 +2163,10 @@ function renderUserMenu() {
     })
   );
 
-  const menuChildren = [
+  $('user-menu').replaceChildren(
+    el('span', { class: 'pill hdr-pill max-w-full truncate', title: userMeta }, userMeta),
     roleSelect,
-    el('div', { class: 'hidden text-right sm:block' },
-      el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, displayName),
-      el('p', { class: 'text-xs text-slate-500 dark:text-slate-400' }, userMeta)),
-    el('span', { class: 'flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200', 'aria-hidden': 'true' }, initials),
-    el('button', { type: 'button', class: BTN.secondary, onclick: () => signOut() }, 'Đăng xuất'),
-  ].filter(Boolean);
-
-  $('user-menu').replaceChildren(...menuChildren);
+    el('button', { type: 'button', class: 'hdr-btn', onclick: () => signOut() }, 'Đăng xuất'));
 }
 
 async function loadCatalog() {
@@ -2226,13 +2186,13 @@ async function render() {
   const detailPane = $('detail-pane');
 
   listPane.classList.remove('hidden');
-  listPane.className = 'space-y-4 sm:space-y-6 lg:col-span-5';
+  listPane.className = 'space-y-6 lg:col-span-5';
   detailPane.className = 'lg:col-span-7';
 
   const [title, subtitle] = VIEW_TEXT[state.role];
   $('view-title').textContent = title;
   $('view-subtitle').textContent = subtitle;
-  const list = el('div', { class: 'space-y-4 sm:space-y-6' });
+  const list = el('div', { class: 'space-y-6' });
   const detail = el('div');
   if (!listPane.children.length) {
     listPane.replaceChildren(skeleton(4));

@@ -1,0 +1,21 @@
+......F.................                                                 [100%]
+================================== FAILURES ===================================
+_________________________ test_c04_v_t4_no_self_link __________________________
+
+    def test_c04_v_t4_no_self_link():
+        _good_pair()
+        own = _ticket_doc()["ticket_id"]
+        for field, value in (
+            ("merged_children", [own]),
+            ("split_children", [own]),
+            ("related_ticket_ids", [own]),
+        ):
+            extra = {"split_category": "VE_SINH"} if field == "split_children" else {}
+>           with pytest.raises(ValidationError, match="tự liên kết"):
+E           Failed: DID NOT RAISE ValidationError
+
+tests\test_maintenance\test_p1_contracts.py:153: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c04_v_t4_no_self_link
+1 failed, 23 passed in 1.20s
+EXIT=1

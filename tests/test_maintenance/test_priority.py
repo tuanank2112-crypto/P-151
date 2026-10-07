@@ -206,3 +206,42 @@ def test_priority_uses_shared_scope():
     for text, expected_priority, expected_rule in table:
         proposal = propose_priority(ServiceCategory.VE_SINH, where, text, LEX)
         assert (proposal.priority, proposal.rule_id) == (expected_priority, expected_rule), text
+
+
+def test_pri_u1_raises_one_level_at_the_threshold():
+    """PRI-U1 (plan 06 P04 §2.3, CR D-03): at the threshold the base level goes up exactly one, the rule id stays."""
+    where = "Tòa S1 / Tầng 3 / Hành lang"
+    text = "Hành lang tầng 3 tòa S1 có nhiều rác."
+    base = propose_priority(ServiceCategory.VE_SINH, where, text, LEX)
+    assert (base.priority, base.rule_id, base.adjustments) == ("MEDIUM", "PRI-M2", ())
+    below = propose_priority(ServiceCategory.VE_SINH, where, text, LEX, duplicate_count=2, duplicate_raise_at=3)
+    assert (below.priority, below.adjustments) == ("MEDIUM", ())
+    for count in (3, 7):
+        raised = propose_priority(
+            ServiceCategory.VE_SINH, where, text, LEX, duplicate_count=count, duplicate_raise_at=3
+        )
+        assert (raised.priority, raised.rule_id, raised.adjustments) == ("HIGH", "PRI-M2", ("PRI-U1",))
+        assert raised.reason == base.reason + f"; PRI-U1: {count} phản ánh trùng ≥ 3 (+1 mức)"
+
+
+def test_pri_u1_low_goes_to_medium_high_stays_and_none_disables():
+    from src.maintenance.priority import apply_duplicate_raise
+
+    assert apply_duplicate_raise(Priority.LOW, "r", duplicate_count=3, raise_at=3) == (
+        Priority.MEDIUM,
+        "r; PRI-U1: 3 phản ánh trùng ≥ 3 (+1 mức)",
+        ("PRI-U1",),
+    )
+    assert apply_duplicate_raise(Priority.HIGH, "r", duplicate_count=9, raise_at=3) == (Priority.HIGH, "r", ())
+    where = "Tòa S1 / Tầng 3 / Hành lang"
+    off = propose_priority(ServiceCategory.VE_SINH, where, "nhiều rác", LEX, duplicate_count=9, duplicate_raise_at=None)
+    assert (off.priority, off.adjustments) == ("MEDIUM", ())
+    lamp = propose_priority(ServiceCategory.KY_THUAT, where, "đèn tắt", LEX, duplicate_count=9, duplicate_raise_at=3)
+    assert (lamp.priority, lamp.adjustments) == ("HIGH", ())  # PRI-H1 is already the top level
+
+
+def test_pri_u1_threshold_is_never_hardcoded():
+    """P04 §2.3 / Q19: the engine reads the number from sla_config; the source has no literal 3 for it."""
+    source = (Path(engine_module.__file__).parent / "coordination" / "merge.py").read_text(encoding="utf-8")
+    assert "duplicate_raise_at_count" in source
+    assert "raise_at=3" not in source and ">= 3" not in source

@@ -1,0 +1,44 @@
+...F................                                                     [100%]
+================================== FAILURES ===================================
+_________ test_m03_t08_links_both_ways_and_hides_merged_text[memory] __________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000015678829150>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x0000015678828DD0>
+
+    def test_m03_t08_links_both_ways_and_hides_merged_text(clock, eng):
+        """M-03 (pg): T08 appends the child's additions and photos to the root as `merged_from`, the root is not rerun,
+        its Agent text (`_content`) and the resident view never read them; the child's own records stay."""
+        root, child = dup_pair(clock, eng)
+        eng.add_resident_photo(child, RESIDENT, "child.jpg")
+        with eng.repo.transaction() as tx:
+            case = tx.get_for_update(child)
+            case.additions.append(
+                ResidentAddition(
+                    addition_id=f"SIM-ADD-{child.removeprefix('SIM-TKT-')}-01",
+                    ticket_id=child,
+                    content="Bổ sung: có nước rỉ ra sàn",
+                    submitted_by=RESIDENT,
+                    submitted_at=clock(),
+                )
+            )
+            tx.save(case)
+        before = eng.get(root)
+        merged = eng.bptn_resolve(child, BPTN, merge=True, note="Cùng sự cố")
+        assert (merged.ticket.status, merged.ticket.merged_into) == ("MERGED", root)
+        after = eng.get(root)
+        assert after.ticket.merged_children == [child] and after.ticket.status == before.ticket.status
+        assert len(after.events) == len(before.events)  # the root is not rerun (no status event)
+        assert [(a.content, a.merged_from) for a in after.additions] == [("Bổ sung: có nước rỉ ra sàn", child)]
+        assert [e.merged_from for e in after.evidence if e.merged_from] == [child]
+>       assert "nước rỉ" not in eng._content(after)
+E       AssertionError: assert 'nước rỉ' not in 'Hành lang t...ớc rỉ ra sàn'
+E         
+E         'nước rỉ' is contained here:
+E            sung: có nước rỉ ra sàn
+E         ?           +++++++
+
+tests\test_maintenance\test_p1_merge.py:125: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_merge.py::test_m03_t08_links_both_ways_and_hides_merged_text[memory]
+1 failed, 19 passed, 20 deselected in 1.04s
+EXIT=1

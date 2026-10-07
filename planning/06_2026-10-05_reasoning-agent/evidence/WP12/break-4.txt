@@ -1,0 +1,38 @@
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/break4_race_threads.py
+--- 4a one interleaving
+setup: NEED_INFO MISSING_INFO
+ok   4a one interleaving: thread A finished without error []
+calls: [('MainThread', 'Đèn hành lang không sáng'), ('A', 'Đèn hành lang không sáng | ở tầng 3 ạ'), ('B1', 'Đèn hành lang không sáng | đèn nhấp nháy rồi tắt hẳn'), ('A', 'Đèn hành lang không sáng | đèn nhấp nháy rồi tắt hẳn | ở tầng 3 ạ')]
+final: NEED_INFO MISSING_INFO risk NONE record AGENT None flags []
+ok   4a one interleaving: applied decision fingerprint == fingerprint of the stored content
+ok   4a one interleaving: the model call behind the applied decision saw 'đèn nhấp nháy rồi tắt hẳn'
+ok   4a one interleaving: the model call behind the applied decision saw 'ở tầng 3 ạ'
+AGENT_DECISION audit rows: 3
+ok   4a: after one re-decision the Agent's decision is used
+--- 4b two interleavings
+setup: NEED_INFO MISSING_INFO
+ok   4b two interleavings: thread A finished without error []
+calls: [('MainThread', 'Đèn hành lang không sáng'), ('A', 'Đèn hành lang không sáng | ở tầng 3 ạ'), ('B1', 'Đèn hành lang không sáng | đèn nhấp nháy'), ('A', 'Đèn hành lang không sáng | đèn nhấp nháy | ở tầng 3 ạ'), ('B2', 'Đèn hành lang không sáng | đèn nhấp nháy | giờ tắt hẳn rồi')]
+final: NEED_INFO MISSING_INFO risk NONE record FALLBACK_RULE STALE flags ['AGENT_FALLBACK']
+ok   4b two interleavings: applied decision fingerprint == fingerprint of the stored content
+AGENT_DECISION audit rows: 4
+ok   4b: FALLBACK_RULE/STALE after two interleavings
+ok   4b: AGENT_FALLBACK flag
+--- 4c danger added during A's model call
+setup: NEED_INFO MISSING_INFO
+ok   4c danger added during A's model call: thread A finished without error []
+calls: [('MainThread', 'Đèn hành lang không sáng'), ('A', 'Đèn hành lang không sáng | tầng 3 tòa S1 ạ')]
+final: VERIFYING EMERGENCY_PENDING_BQL risk EMERGENCY record SKIPPED_RULE_EMERGENCY None flags []
+ok   4c danger added during A's model call: applied decision fingerprint == fingerprint of the stored content
+AGENT_DECISION audit rows: 3
+ok   4c: final EMERGENCY (danger of B not lost to A's older decision)
+--- 4d BPTN resolve vs resident danger
+setup: NEED_INFO MISSING_INFO
+ok   4d BPTN resolve vs resident danger: thread A finished without error []
+calls: [('MainThread', 'Đèn hành lang không sáng'), ('A', 'Đèn hành lang không sáng')]
+final: VERIFYING EMERGENCY_PENDING_BQL risk EMERGENCY record SKIPPED_RULE_EMERGENCY None flags []
+ok   4d BPTN resolve vs resident danger: applied decision fingerprint == fingerprint of the stored content
+AGENT_DECISION audit rows: 3
+ok   4d: final EMERGENCY after BPTN's resolve committed on top of the resident's danger
+RESULT scenarios=4 problems=0
+EXIT=0

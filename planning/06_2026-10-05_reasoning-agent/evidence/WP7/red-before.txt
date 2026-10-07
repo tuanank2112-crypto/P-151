@@ -1,0 +1,532 @@
+FFFFFFFFFFFFF.FFFFF......................FFF                             [100%]
+================================== FAILURES ===================================
+__________________ test_m01_detection_counts_on_root[memory] __________________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E216530290>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E216537890>
+
+    def test_m01_detection_counts_on_root(clock, eng):
+        """M-01: step 4 finds the root: duplicate_count 0 -> 1 with one LINK_TICKETS row on the root."""
+        root = report(eng, CLEANING)
+        assert eng.get(root).ticket.duplicate_count == 0
+        child = later(clock, eng, CLEANING)
+        case = eng.get(root)
+>       assert case.ticket.duplicate_count == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).duplicate_count
+E        +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_merge.py:72: AssertionError
+________________ test_m01b_every_extra_report_adds_one[memory] ________________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E2165239D0>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E216523A90>
+
+    def test_m01b_every_extra_report_adds_one(clock, eng):
+        root, _ = dup_pair(clock, eng)
+        later(clock, eng, CLEANING)
+>       assert eng.get(root).ticket.duplicate_count == 2
+E       AssertionError: assert 0 == 2
+E        +  where 0 = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).duplicate_count
+E        +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+E        +      where Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None) = get('SIM-TKT-0001')
+E        +        where get = <src.maintenance.engine.MaintenanceEngine object at 0x000001E216523A90>.get
+
+tests\test_maintenance\test_p1_merge.py:81: AssertionError
+________ test_m02_bptn_rejects_then_merge_does_not_count_again[memory] ________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E21628B950>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E216288CD0>
+
+    def test_m02_bptn_rejects_then_merge_does_not_count_again(clock, eng):
+        """M-02: BPTN says "not a duplicate" 1 -> 0; confirming a duplicate (T08) adds nothing on top of detection."""
+        root, child = dup_pair(clock, eng)
+        case = eng.bptn_resolve(child, BPTN, merge=False)
+>       assert case.ticket.not_duplicate_of == [root] and case.ticket.status == "ROUTED"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_merge.py:89: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:05:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True)
+item = 'not_duplicate_of'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'Ticket' object has no attribute 'not_duplicate_of'
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\640e8089-3b43-4a75-9055-cbb167391b76\scratchpad\venv311\Lib\site-packages\pydantic\main.py:1042: AttributeError
+_________ test_m03_t08_links_both_ways_and_hides_merged_text[memory] __________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E2164005D0>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E216402590>
+
+    def test_m03_t08_links_both_ways_and_hides_merged_text(clock, eng):
+        """M-03 (pg): T08 appends the child's additions and photos to the root as `merged_from`, the root is not rerun,
+        its Agent text (`_content`) and the resident view never read them; the child's own records stay."""
+        root, child = dup_pair(clock, eng)
+        eng.add_resident_photo(child, RESIDENT, "child.jpg")
+        with eng.repo.transaction() as tx:
+            case = tx.get_for_update(child)
+            case.additions.append(
+                ResidentAddition(
+                    addition_id=f"SIM-ADD-{child.removeprefix('SIM-TKT-')}-01",
+                    ticket_id=child,
+                    content="Bổ sung: có nước rỉ ra sàn",
+                    submitted_by=RESIDENT,
+                    submitted_at=clock(),
+                )
+            )
+            tx.save(case)
+        before = eng.get(root)
+        merged = eng.bptn_resolve(child, BPTN, merge=True, note="Cùng sự cố")
+        assert (merged.ticket.status, merged.ticket.merged_into) == ("MERGED", root)
+        after = eng.get(root)
+>       assert after.ticket.merged_children == [child] and after.ticket.status == before.ticket.status
+E       AssertionError: assert ([] == ['SIM-TKT-0002']
+E         
+E         Right contains one more item: 'SIM-TKT-0002'
+E         Use -v to get more diff)
+
+tests\test_maintenance\test_p1_merge.py:121: AssertionError
+____________ test_m04_merge_into_finished_root_is_refused[memory] _____________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E2163BC6D0>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E2163BC190>
+
+    def test_m04_merge_into_finished_root_is_refused(clock, eng):
+        """M-04: a root that finished (cancelled here) cannot take a merge: 409 GUARD and nothing changes."""
+        root, child = dup_pair(clock, eng)
+        eng.cancel(root, BQL, cancel_reason="Đã xử lý ngoài hệ thống")
+        assert state(eng, child) == ("VERIFYING", "DUPLICATE")  # kept for BPTN (P04 §6)
+        snap = (eng.get(root).model_dump(), eng.get(child).model_dump())
+>       with pytest.raises(GuardError):
+E       Failed: DID NOT RAISE GuardError
+
+tests\test_maintenance\test_p1_merge.py:140: Failed
+__________________ test_m05_chained_merge_is_refused[memory] __________________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E216385690>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E216384410>
+
+    def test_m05_chained_merge_is_refused(clock, eng):
+        """M-05: a ticket that still has open merged children cannot itself be merged elsewhere."""
+        e1 = report(eng, EMERGENCY)
+        e2 = later(clock, eng, EMERGENCY)
+        e3 = later(clock, eng, EMERGENCY)
+>       eng.bql_merge(e3, BQL, into=e2, note="Cùng một sự cố")
+
+tests\test_maintenance\test_p1_merge.py:151: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x000001E216384410>
+ticket_id = 'SIM-TKT-0003', actor_id = 'SIM-ACTOR-BQL-01', into = 'SIM-TKT-0002'
+note = 'Cùng một sự cố'
+
+    def bql_merge(self, ticket_id: str, actor_id: str, *, into: str, note: str) -> Case:
+>       raise NotImplementedError("plan 06 WP7: bql_merge")
+E       NotImplementedError: plan 06 WP7: bql_merge
+
+src\maintenance\coordination\merge.py:46: NotImplementedError
+_______________ test_m06_undo_merge_reruns_from_step_4[memory] ________________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E2161D4DD0>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E2161D7650>
+
+    def test_m06_undo_merge_reruns_from_step_4(clock, eng):
+        """M-06: T09 by BPTN: RECEIVED then the pipeline again from 4; the pair is not offered again; history kept."""
+        root, child = dup_pair(clock, eng)
+        eng.bptn_resolve(child, BPTN, merge=True)
+>       case = eng.undo_merge(child, BPTN, note="Không cùng sự cố")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_merge.py:166: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\maintenance\coordination\merge.py:49: in undo_merge
+    return self.transition(ticket_id, TicketStatus.RECEIVED, actor_id, note=note, expected_from=TicketStatus.MERGED)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1693: in transition
+    return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1750: in _transition
+    return self._mutate(
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+src\maintenance\engine.py:1748: in op
+    self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
+src\maintenance\engine.py:2434: in _human_transition
+    self._t09_unmerge_by_person(work, actor_id, role, now, note=note)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x000001E2161D7650>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:05:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+actor_id = 'SIM-ACTOR-BPTN-01', role = <ActorRole.BPTN: 'BPTN'>
+now = datetime.datetime(2026, 9, 28, 9, 5, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+note = 'Không cùng sự cố'
+
+    def _t09_unmerge_by_person(
+        self, work: Case, actor_id: str, role: ActorRole, now: datetime, *, note: str | None
+    ) -> None:
+>       raise NotImplementedError("plan 06 WP7: _t09_unmerge_by_person")
+E       NotImplementedError: plan 06 WP7: _t09_unmerge_by_person
+
+src\maintenance\coordination\merge.py:31: NotImplementedError
+___________ test_m06b_undo_needs_a_note_and_a_merged_ticket[memory] ___________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E216609510>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E216609A50>
+
+    def test_m06b_undo_needs_a_note_and_a_merged_ticket(clock, eng):
+        root, child = dup_pair(clock, eng)
+        with pytest.raises(InvalidTransitionError):
+            eng.undo_merge(child, BPTN, note="x")  # VERIFYING, not MERGED
+        eng.bptn_resolve(child, BPTN, merge=True)
+        with pytest.raises(GuardError):
+>           eng.undo_merge(child, BPTN, note="  ")
+
+tests\test_maintenance\test_p1_merge.py:185: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\maintenance\coordination\merge.py:49: in undo_merge
+    return self.transition(ticket_id, TicketStatus.RECEIVED, actor_id, note=note, expected_from=TicketStatus.MERGED)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1693: in transition
+    return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1750: in _transition
+    return self._mutate(
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+src\maintenance\engine.py:1748: in op
+    self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
+src\maintenance\engine.py:2434: in _human_transition
+    self._t09_unmerge_by_person(work, actor_id, role, now, note=note)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x000001E216609A50>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:05:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+actor_id = 'SIM-ACTOR-BPTN-01', role = <ActorRole.BPTN: 'BPTN'>
+now = datetime.datetime(2026, 9, 28, 9, 5, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+note = '  '
+
+    def _t09_unmerge_by_person(
+        self, work: Case, actor_id: str, role: ActorRole, now: datetime, *, note: str | None
+    ) -> None:
+>       raise NotImplementedError("plan 06 WP7: _t09_unmerge_by_person")
+E       NotImplementedError: plan 06 WP7: _t09_unmerge_by_person
+
+src\maintenance\coordination\merge.py:31: NotImplementedError
+_________ test_m07_bql_merge_of_emergencies_and_undo_by_role[memory] __________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E2164085D0>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E216408550>
+
+    def test_m07_bql_merge_of_emergencies_and_undo_by_role(clock, eng):
+        """M-07: bql_merge of two emergencies; BPTN cannot undo (403 + audit); BQL undo reruns from 2 and the ticket
+        stops again at EMERGENCY_PENDING_BQL, never ROUTED."""
+        e1 = report(eng, EMERGENCY)
+        e2 = later(clock, eng, EMERGENCY)
+        assert state(eng, e1) == state(eng, e2) == ("VERIFYING", "EMERGENCY_PENDING_BQL")
+>       merged = eng.bql_merge(e2, BQL, into=e1, note="Cùng một sự cố")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_merge.py:197: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x000001E216408550>
+ticket_id = 'SIM-TKT-0002', actor_id = 'SIM-ACTOR-BQL-01', into = 'SIM-TKT-0001'
+note = 'Cùng một sự cố'
+
+    def bql_merge(self, ticket_id: str, actor_id: str, *, into: str, note: str) -> Case:
+>       raise NotImplementedError("plan 06 WP7: bql_merge")
+E       NotImplementedError: plan 06 WP7: bql_merge
+
+src\maintenance\coordination\merge.py:46: NotImplementedError
+______ test_m08_root_cancel_unmerges_children_in_one_transaction[memory] ______
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E216207A50>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E2162F4A50>
+
+    def test_m08_root_cancel_unmerges_children_in_one_transaction(clock, eng):
+        """M-08 (pg): cancelling the root sends every MERGED child back (T09 SYSTEM); two children of one incident do not
+        both get routed: the later becomes a duplicate of the earlier."""
+        root, b = dup_pair(clock, eng)
+        c = later(clock, eng, CLEANING)
+        eng.bptn_resolve(b, BPTN, merge=True)
+        eng.bptn_resolve(c, BPTN, merge=True)
+>       assert eng.get(root).ticket.merged_children == [b, c]
+E       AssertionError: assert [] == ['SIM-TKT-000...SIM-TKT-0003']
+E         
+E         Right contains 2 more items, first extra item: 'SIM-TKT-0002'
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_merge.py:224: AssertionError
+__________ test_m09_pri_u1_raises_one_level_at_the_threshold[memory] __________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E2162F5C50>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E2162F4510>
+
+    def test_m09_pri_u1_raises_one_level_at_the_threshold(clock, eng):
+        """M-09: 3 duplicates raise MEDIUM to HIGH ("PRI-U1" in the reason, rule kept); one rejected goes back."""
+        root = report(eng, CLEANING)
+        assert (eng.get(root).ticket.priority, eng.get(root).ticket.priority_rule_id) == ("MEDIUM", "PRI-M2")
+        kids = [later(clock, eng, CLEANING) for _ in range(3)]
+        ticket = eng.get(root).ticket
+>       assert (ticket.priority, ticket.priority_rule_id, ticket.priority_source) == ("HIGH", "PRI-M2", "AGENT_RULE")
+E       AssertionError: assert (<Priority.ME...'AGENT_RULE'>) == ('HIGH', 'PRI... 'AGENT_RULE')
+E         
+E         At index 0 diff: <Priority.MEDIUM: 'MEDIUM'> != 'HIGH'
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_merge.py:247: AssertionError
+______________ test_m09b_human_override_is_never_touched[memory] ______________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E216419D90>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E21641A150>
+
+    def test_m09b_human_override_is_never_touched(clock, eng):
+        root = report(eng, CLEANING)
+        eng.set_priority(root, BPTN, "LOW", note="Đã có người dọn")
+        for _ in range(3):
+            later(clock, eng, CLEANING)
+        ticket = eng.get(root).ticket
+>       assert (ticket.duplicate_count, ticket.priority, ticket.priority_source) == (3, "LOW", "HUMAN_OVERRIDE")
+E       AssertionError: assert (0, <Priority...AN_OVERRIDE'>) == (3, 'LOW', 'HUMAN_OVERRIDE')
+E         
+E         At index 0 diff: 0 != 3
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_merge.py:263: AssertionError
+_____________ test_m09c_threshold_is_data_not_a_constant[memory] ______________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E2162F5F90>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E216344810>
+
+    def test_m09c_threshold_is_data_not_a_constant(clock, eng):
+        """The threshold is `sla_config.priority.duplicate_raise_at_count`; 2 raises at two duplicates."""
+        sla = eng.catalog.sla_config
+        eng.catalog = eng.catalog.model_copy(
+            update={"sla_config": sla.model_copy(update={"priority": PrioritySla(duplicate_raise_at_count=2)})}
+        )
+        root = report(eng, CLEANING)
+        later(clock, eng, CLEANING)
+        assert eng.get(root).ticket.priority == "MEDIUM"
+        later(clock, eng, CLEANING)
+>       assert eng.get(root).ticket.priority == "HIGH"
+E       AssertionError: assert <Priority.MEDIUM: 'MEDIUM'> == 'HIGH'
+E         
+E         - HIGH
+E         + MEDIUM
+
+tests\test_maintenance\test_p1_merge.py:276: AssertionError
+________ test_m10_rating_of_a_merged_ticket_waits_for_the_root[memory] ________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E2162DF8D0>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E2162DCC50>
+
+    def test_m10_rating_of_a_merged_ticket_waits_for_the_root(clock, eng):
+        """M-10: MERGED rates only once the root is CLOSED, once; the resident view shows RATE accordingly."""
+        root, child = dup_pair(clock, eng)
+        eng.bptn_resolve(child, BPTN, merge=True)
+        assert "RATE" not in resident_view(eng, eng.get(child), clock()).allowed_actions
+        with pytest.raises(GuardError):
+            eng.rate(child, RESIDENT, 4)
+        to_ready(eng, root)
+        with pytest.raises(GuardError):
+            eng.rate(child, RESIDENT, 4)  # READY_FOR_REVIEW is not CLOSED
+        eng.close(root, BQL)
+        assert "RATE" in resident_view(eng, eng.get(child), clock()).allowed_actions
+>       assert eng.rate(child, RESIDENT, 4).ticket.rating == 4
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_merge.py:304: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\maintenance\engine.py:788: in rate
+    return self._mutate(ticket_id, actor_id, Action.RATE_TICKET, op)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:05:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+now = datetime.datetime(2026, 9, 28, 9, 5, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+
+    def op(work: Case, now: datetime) -> None:
+        if work.ticket.status != S.CLOSED:
+>           raise GuardError("Chỉ đánh giá được khi ticket đã hoàn thành")
+E           src.maintenance.store.base.GuardError: Chỉ đánh giá được khi ticket đã hoàn thành
+
+src\maintenance\engine.py:767: GuardError
+___ test_m10b_root_closed_as_emergency_handled_can_be_rated_through[memory] ___
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E2163B0E50>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E2163B2010>
+
+    def test_m10b_root_closed_as_emergency_handled_can_be_rated_through(clock, eng):
+        e1 = report(eng, EMERGENCY)
+        e2 = later(clock, eng, EMERGENCY)
+>       eng.bql_merge(e2, BQL, into=e1, note="Cùng một sự cố")
+
+tests\test_maintenance\test_p1_merge.py:314: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x000001E2163B2010>
+ticket_id = 'SIM-TKT-0002', actor_id = 'SIM-ACTOR-BQL-01', into = 'SIM-TKT-0001'
+note = 'Cùng một sự cố'
+
+    def bql_merge(self, ticket_id: str, actor_id: str, *, into: str, note: str) -> Case:
+>       raise NotImplementedError("plan 06 WP7: bql_merge")
+E       NotImplementedError: plan 06 WP7: bql_merge
+
+src\maintenance\coordination\merge.py:46: NotImplementedError
+__________________ test_m11_bql_merge_target_checks[memory] ___________________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E216453910>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E216450D90>
+
+    def test_m11_bql_merge_target_checks(clock, eng):
+        """M-11: `into` not an open emergency -> 409; missing -> 404; itself -> 409."""
+        normal = report(eng, LIGHTING)
+        clock.advance(minutes=5)
+        e1 = report(eng, EMERGENCY)
+        for into in (normal, e1):
+            with pytest.raises(GuardError):
+>               eng.bql_merge(e1, BQL, into=into, note="x")
+
+tests\test_maintenance\test_p1_merge.py:330: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x000001E216450D90>
+ticket_id = 'SIM-TKT-0002', actor_id = 'SIM-ACTOR-BQL-01', into = 'SIM-TKT-0001'
+note = 'x'
+
+    def bql_merge(self, ticket_id: str, actor_id: str, *, into: str, note: str) -> Case:
+>       raise NotImplementedError("plan 06 WP7: bql_merge")
+E       NotImplementedError: plan 06 WP7: bql_merge
+
+src\maintenance\coordination\merge.py:46: NotImplementedError
+______________ test_m11b_bql_merge_roles_state_and_note[memory] _______________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E216304410>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E216304ED0>
+
+    def test_m11b_bql_merge_roles_state_and_note(clock, eng):
+        e1 = report(eng, EMERGENCY)
+        e2 = later(clock, eng, EMERGENCY)
+        with pytest.raises(ActionDeniedError):
+>           eng.bql_merge(e2, BPTN, into=e1, note="x")
+
+tests\test_maintenance\test_p1_merge.py:340: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x000001E216304ED0>
+ticket_id = 'SIM-TKT-0002', actor_id = 'SIM-ACTOR-BPTN-01'
+into = 'SIM-TKT-0001', note = 'x'
+
+    def bql_merge(self, ticket_id: str, actor_id: str, *, into: str, note: str) -> Case:
+>       raise NotImplementedError("plan 06 WP7: bql_merge")
+E       NotImplementedError: plan 06 WP7: bql_merge
+
+src\maintenance\coordination\merge.py:46: NotImplementedError
+____ test_m12_cancelling_a_suspected_duplicate_releases_the_count[memory] _____
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001E2164B46D0>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001E2164B7C50>
+
+    def test_m12_cancelling_a_suspected_duplicate_releases_the_count(clock, eng):
+        """M-12: BQL cancels the suspected duplicate: the root count drops by one, and never below zero."""
+        root, child = dup_pair(clock, eng)
+>       assert eng.get(root).ticket.duplicate_count == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).duplicate_count
+E        +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+E        +      where Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None) = get('SIM-TKT-0001')
+E        +        where get = <src.maintenance.engine.MaintenanceEngine object at 0x000001E2164B7C50>.get
+
+tests\test_maintenance\test_p1_merge.py:361: AssertionError
+________________ test_pri_u1_raises_one_level_at_the_threshold ________________
+
+    def test_pri_u1_raises_one_level_at_the_threshold():
+        """PRI-U1 (plan 06 P04 §2.3, CR D-03): at the threshold the base level goes up exactly one, the rule id stays."""
+        where = "Tòa S1 / Tầng 3 / Hành lang"
+        text = "Hành lang tầng 3 tòa S1 có nhiều rác."
+        base = propose_priority(ServiceCategory.VE_SINH, where, text, LEX)
+>       assert (base.priority, base.rule_id, base.adjustments) == ("MEDIUM", "PRI-M2", ())
+                                             ^^^^^^^^^^^^^^^^
+E       AttributeError: 'PriorityProposal' object has no attribute 'adjustments'
+
+tests\test_maintenance\test_priority.py:216: AttributeError
+_________ test_pri_u1_low_goes_to_medium_high_stays_and_none_disables _________
+
+    def test_pri_u1_low_goes_to_medium_high_stays_and_none_disables():
+>       from src.maintenance.priority import apply_duplicate_raise
+E       ImportError: cannot import name 'apply_duplicate_raise' from 'src.maintenance.priority' (D:\P151\.claude\worktrees\agent-a70dcd63d06da071f\src\maintenance\priority.py)
+
+tests\test_maintenance\test_priority.py:226: ImportError
+__________________ test_pri_u1_threshold_is_never_hardcoded ___________________
+
+    def test_pri_u1_threshold_is_never_hardcoded():
+        """P04 §2.3 / Q19: the engine reads the number from sla_config; the source has no literal 3 for it."""
+        source = (Path(engine_module.__file__).parent / "coordination" / "merge.py").read_text(encoding="utf-8")
+>       assert "duplicate_raise_at_count" in source
+E       assert 'duplicate_raise_at_count' in '"""Duplicate detection, merge and unmerge (SPEC-P04). WP5: frame and stubs; WP7 fills the bodies."""\n\nfrom datetime...    return self.transition(ticket_id, TicketStatus.RECEIVED, actor_id, note=note, expected_from=TicketStatus.MERGED)\n'
+
+tests\test_maintenance\test_priority.py:244: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_merge.py::test_m01_detection_counts_on_root[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m01b_every_extra_report_adds_one[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m02_bptn_rejects_then_merge_does_not_count_again[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m03_t08_links_both_ways_and_hides_merged_text[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m04_merge_into_finished_root_is_refused[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m05_chained_merge_is_refused[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m06_undo_merge_reruns_from_step_4[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m06b_undo_needs_a_note_and_a_merged_ticket[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m07_bql_merge_of_emergencies_and_undo_by_role[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m08_root_cancel_unmerges_children_in_one_transaction[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m09_pri_u1_raises_one_level_at_the_threshold[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m09b_human_override_is_never_touched[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m09c_threshold_is_data_not_a_constant[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m10_rating_of_a_merged_ticket_waits_for_the_root[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m10b_root_closed_as_emergency_handled_can_be_rated_through[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m11_bql_merge_target_checks[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m11b_bql_merge_roles_state_and_note[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m12_cancelling_a_suspected_duplicate_releases_the_count[memory]
+FAILED tests/test_maintenance/test_priority.py::test_pri_u1_raises_one_level_at_the_threshold
+FAILED tests/test_maintenance/test_priority.py::test_pri_u1_low_goes_to_medium_high_stays_and_none_disables
+FAILED tests/test_maintenance/test_priority.py::test_pri_u1_threshold_is_never_hardcoded
+21 failed, 23 passed, 20 deselected in 2.27s
+EXIT=1

@@ -1,0 +1,25 @@
+HEAD=aafdf6a1ab84349cbbf756893bfd0bd7d61f8fd3
+MODE=verbatim P09 markdown schema/functions; no live/database writes
+MISSING_OVERRIDES_AND_SHARED=REJECT
+FULL_SHARED_POSITIVE=ACCEPT
+TWO_EMPTY_OVERRIDES=ACCEPT
+TWO_PARTIAL_OVERRIDES=ACCEPT
+FULL_MATCHING_OVERRIDES_POSITIVE=ACCEPT
+DIFFERENT_AREAS=REJECT
+METADATA_0_ROUNDTRIP=PASS
+METADATA_1_ROUNDTRIP=PASS
+METADATA_2_ROUNDTRIP=PASS
+B1_ENCLOSING=False
+B1_SECOND_OCCURRENCE=True
+B1_INSIDE=False
+ROLLBACK_STORAGE_PATH=maintops.cases.doc confirmed in migration 0001
+ROLLBACK_STOP_WRITER_ALTERNATIVE=feature flag false; same SPEC says P01 continues writing metadata=None
+DIFF_STAT=brain4agent/memory/hot/today.md                    | 55 ++++++++++++++++++++++
+ .../handoffs/H13_thi-cong_WP14.md                  | 14 +++---
+ .../handoffs/H14_thi-cong_WP15.md                  | 12 +++--
+ planning/06_2026-10-05_reasoning-agent/plan.md     | 15 ++++++
+ 4 files changed, 85 insertions(+), 11 deletions(-)
+DIFF_CHECK_EXIT=0
+RUNTIME_DIFF=
+LIVE/POSTGRES/FULL_SUITE=NOT_RUN; design review only
+EXIT=0

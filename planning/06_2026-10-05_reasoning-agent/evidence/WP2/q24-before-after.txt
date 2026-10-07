@@ -1,0 +1,17 @@
+# Q24 before/after. BEFORE = lexicon 2026-10-05.p1c without the Q24 b01_prefix_words lines (the staged copy, extracted to scratchpad/wp2/base_lex/); AFTER = seed/maintenance_v1/lexicon.yaml (p1d). Base 3e3a3f8.
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. C:/Users/lenku/AppData/Local/Temp/claude/d--P151/640e8089-3b43-4a75-9055-cbb167391b76/scratchpad/venv311/Scripts/python.exe -c "<inline: assess each q24 stop-set text with both lexicons, print BEFORE AFTER EXPECT text>"
+q24:thay-bong-den-da-chay        BEFORE=UNCLEAR   AFTER=NONE      EXPECT=NONE      OK | Sảnh chính tòa S2: thay bóng đèn đã cháy
+q24:ve-sinh-va-thay-bong-den     BEFORE=UNCLEAR   AFTER=NONE      EXPECT=NONE      OK | Sảnh chính tòa S2: cần vệ sinh sàn và thay bóng đèn đã cháy
+q24:bong-den-da-chay             BEFORE=NONE      AFTER=NONE      EXPECT=NONE      OK | Sảnh chính tòa S2: bóng đèn đã cháy
+q24:nho-thay-vi-tri-cuoi         BEFORE=UNCLEAR   AFTER=NONE      EXPECT=NONE      OK | Nhờ thay bóng đèn bị cháy ở hành lang tầng 3 tòa S1
+q24:thay-vi-tri-giua             BEFORE=UNCLEAR   AFTER=NONE      EXPECT=NONE      OK | Thay bóng đèn ở sảnh thang máy tầng 2 tòa S2 đã cháy
+q24:can-thay-den-chay            BEFORE=UNCLEAR   AFTER=NONE      EXPECT=NONE      OK | Hành lang tầng 4 tòa S1 cần thay đèn cháy
+q24:xin-thay-giup                BEFORE=UNCLEAR   AFTER=NONE      EXPECT=NONE      OK | Tòa S1 / Tầng 3 / Hành lang: xin thay giúp bóng đèn bị cháy
+q24:khong-dau                    BEFORE=UNCLEAR   AFTER=NONE      EXPECT=NONE      OK | Sanh chinh toa S2: thay bong den da chay
+q24:keep-tu-dien-chay            BEFORE=EMERGENCY AFTER=EMERGENCY EXPECT=EMERGENCY OK | thay đèn xong thấy tủ điện cháy
+q24:keep-thay-vi-o-cam-khoi      BEFORE=EMERGENCY AFTER=EMERGENCY EXPECT=EMERGENCY OK | thay vì đèn cháy thì ổ cắm đang bốc khói
+q24:keep-chay-no-khoi            BEFORE=EMERGENCY AFTER=EMERGENCY EXPECT=EMERGENCY OK | thay bóng đèn bị cháy nổ, khói đầy hành lang
+q24:keep-thay-la-thay            BEFORE=UNCLEAR   AFTER=UNCLEAR   EXPECT=UNCLEAR   OK | Thay bóng đèn ở hành lang tầng 3 tòa S1 thì thấy cháy
+q24:keep-thay-chay-dau           BEFORE=UNCLEAR   AFTER=UNCLEAR   EXPECT=UNCLEAR   OK | Thấy cháy ở hành lang tầng 3 tòa S1
+Q24_FAILURES=0
+EXIT=0

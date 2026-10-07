@@ -1,0 +1,71 @@
+================================================================================
+WP16 VÒNG 5 VERIFICATION & PACKAGE CHECK — 2026-10-07T05:03:07.946477+00:00
+================================================================================
+
+--- 1. KIỂM TRA MÃ NGUỒN & GIT WORKSPACE ---
+git diff --check exit code: 0
+git diff --check: PASS (không có lỗi whitespace/conflict)
+Runtime files changed (src/, tests/, seed/): 0
+BẢO TOÀN RUNTIME: PASS (0 file runtime bị thay đổi, giữ nguyên nguyên tắc SPEC-first)
+
+--- 2. KIỂM TRA ĐỘ DÀI HANDOFF (<= 80 DÒNG) ---
+planning/06_2026-10-05_reasoning-agent/handoffs/H15_thi-cong_WP16.md: 37 dòng (giới hạn <= 80) -> PASS
+planning/06_2026-10-05_reasoning-agent/handoffs/H16_thi-cong_WP17.md: 34 dòng (giới hạn <= 80) -> PASS
+
+--- 3. KIỂM TRA TÍNH TOÀN VẸN SPEC-P09 ---
+SPEC-P09 Status: PROPOSED -> PASS (chưa thay thế P01/P08, đúng quy chuẩn)
+SPEC-P09 Internal Markdown Links: 0 broken links
+SPEC-P09 Anchor Links: 100% PASS
+
+--- 4. BỘ PROBE KIỂM CHỨNG KIẾN TRÚC B1–B4 (THEO R15 §14) ---
+>>> Probe B1: Kiểm tra FLOOR_PATTERN & Incident Spans (Giao khoảng offset & Quote bao trọn)
+  [PASS] SPEC_FLOOR_MATCH 'tầng 10' = ['10'] (expected: ['10'])
+  [PASS] SPEC_FLOOR_MATCH 'tầng 7' = ['7'] (expected: ['7'])
+  [PASS] SPEC_FLOOR_MATCH 'căn hộ 1702' = [] (expected: [])
+  [PASS] SPEC_FLOOR_MATCH 'tầng hầm B1' = ['B1'] (expected: ['B1'])
+  [PASS] SPEC_FLOOR_MATCH 'hầm B1' = ['B1'] (expected: ['B1'])
+  [PASS] SPEC_FLOOR_MATCH 'lầu 3' = ['3'] (expected: ['3'])
+  [PASS] Incident span: Nhận tòa S1 khi xuất hiện cả ở nơi ở và sự cố
+  [PASS] Incident span: Nhận tầng 7 ở sự cố
+  [PASS] Incident span: Chặn tầng 3 vì chỉ xuất hiện ở nơi ở
+  [PASS] Incident span: Chặn quote bao trọn nơi ở (QUOTE_ENCLOSING_RESIDENCE_ACCEPTED=False)
+
+>>> Probe B2: Phân tích Tách việc (Bảo vệ Vị trí theo Cấu trúc & Khu vực, Chặn Quote Rút gọn Mồ côi)
+  [PASS] DEFAULT_JOB_LOCATIONS_IDENTICAL=False (bắt buộc khai báo)
+  [PASS] TWO_PLACES_SHORT_GROUNDED_QUOTES=REJECT (chặn quote rút gọn thiếu chứng cứ)
+  [PASS] SAME_BUILDING_FLOOR_DIFFERENT_AREAS=REJECT (chặn cùng tầng khác khu vực)
+  [PASS] EXPLICIT_TWO_BUILDINGS=REJECT (chặn hai tòa khác nhau)
+  [PASS] SAME_PLACE_SHARED_LOCATION=ACCEPT (đối chứng dương shared_location)
+  [PASS] SAME_PLACE_MATCHING_OVERRIDES=ACCEPT (đối chứng dương matching overrides)
+
+>>> Probe B3: Bất biến next_step & Phản ví dụ Schema
+  [PASS] ASK_EMPTY_FIELDS_ACCEPTED=False
+  [PASS] PROCEED_FIELDS_ACCEPTED=False
+  [PASS] ZERO_JOBS_PROCEED_ACCEPTED=False
+
+>>> Probe B4: Ánh xạ Priority Rules, Cardinality Metadata & PostgreSQL JSONB Runbook
+  [PASS] Mapping KY_THUAT HIGH -> PRI-H1 (HIGH) [runtime match: OK]
+  [PASS] Mapping KY_THUAT MEDIUM -> PRI-M1 (MEDIUM) [runtime match: OK]
+  [PASS] Mapping KY_THUAT LOW -> PRI-M1 (MEDIUM) [runtime match: OK]
+  [PASS] Mapping VE_SINH HIGH -> PRI-H2 (HIGH) [runtime match: OK]
+  [PASS] Mapping VE_SINH MEDIUM -> PRI-M2 (MEDIUM) [runtime match: OK]
+  [PASS] Mapping VE_SINH LOW -> PRI-L1 (LOW) [runtime match: OK]
+  [PASS] ZERO_JOB_METADATA_ACCEPTED=True (0 jobs không bị too_short)
+  [PASS] ONE_JOB_METADATA_ACCEPTED=True (1 job)
+  [PASS] TWO_JOB_METADATA_ACCEPTED=True (2 jobs)
+  [PASS] Reader P01 nạp doc legacy sạch 100%
+  [PASS] Reader P01 từ chối doc có metadata khi chưa strip (bảo vệ extra_forbidden)
+  [PASS] Reader P01 nạp thành công sau khi strip JSONB doc (Rollback an toàn)
+  [PASS] PostgreSQL Live DB Rollback: NOT_RUN (chế độ review tài liệu/thiết kế)
+
+================================================================================
+KẾT LUẬN TOÀN DIỆN VÒNG 5:
+- 100% Probe kiến trúc B1, B2, B3, B4 PASS theo đúng yêu cầu R15 §14.
+- B1: Khắc phục triệt để lỗi giao khoảng incident span (QUOTE_ENCLOSING_RESIDENCE_ACCEPTED=False).
+- B2: Chặn triệt để quote rút gọn mồ côi (TWO_PLACES_SHORT_GROUNDED_QUOTES=REJECT) & khác khu vực (SAME_BUILDING_FLOOR_DIFFERENT_AREAS=REJECT).
+- B3: Bảo toàn 100% bất biến next_step và ưu tiên an toàn.
+- B4: Khớp 100% runtime PRIORITY_RULES với quy tắc sàn kỹ thuật; hỗ trợ đầy đủ 0, 1, 2 jobs; chuẩn hóa Runbook SQL xóa key trong JSONB maintops.cases.doc.
+- 0 file runtime bị thay đổi trong gói WP16.
+- Handoff H15, H16 đạt chuẩn độ dài <= 80 dòng.
+- SPEC-P09 bảo toàn trạng thái PROPOSED, liên kết nội bộ 100% hợp lệ.
+================================================================================

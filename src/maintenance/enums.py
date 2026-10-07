@@ -43,6 +43,7 @@ class ReasonCode(StrEnum):
     SAFETY_REVIEW_REQUIRED = "SAFETY_REVIEW_REQUIRED"  # CR-BPTN-03 §3.2: tier 2, owned by BPTN
     EMERGENCY_PENDING_BQL = "EMERGENCY_PENDING_BQL"  # CR-BPTN-03 §3.2: tier 1, owned by BQL
     WRONG_DEPT_AFTER_START = "WRONG_DEPT_AFTER_START"  # CR-BPTN-03 §3.2: owned by BQL; P0 only declares it (Q-A)
+    WAITING_EMERGENCY = "WAITING_EMERGENCY"  # plan 06 P1-E: ON_HOLD, owned by SYSTEM; in no BPTN/SAFETY/BQL group
 
 
 # Blockers BPTN clears (event `bptn_resolved`). MISSING_INFO too: BPTN contacts the resident and enters what is
@@ -99,6 +100,7 @@ class PrioritySource(StrEnum):
     """CR-BPTN-03 §7."""
 
     AGENT_RULE = "AGENT_RULE"
+    AGENT_LLM = "AGENT_LLM"  # plan 06 D-15: the reasoning Agent chose the priority
     HUMAN_OVERRIDE = "HUMAN_OVERRIDE"
 
 
@@ -126,6 +128,8 @@ class BlockerOwner(StrEnum):
 class TicketFlag(StrEnum):
     ASSET_CHECK_ONSITE = "ASSET_CHECK_ONSITE"  # BPTN could not identify the asset; the department checks on site
     STOCK_CHECK_ON_ACCEPT = "STOCK_CHECK_ON_ACCEPT"  # stock unknown; the department checks when it accepts
+    AGENT_FALLBACK = "AGENT_FALLBACK"  # plan 06: the Agent was unusable, rules decided; shown to staff only
+    AGENT_DISAGREEMENT = "AGENT_DISAGREEMENT"  # plan 06: Agent and rules disagree; shown to staff only
 
 
 class ServiceCategory(StrEnum):
@@ -289,7 +293,21 @@ class Action(StrEnum):
     EMERGENCY_CLOSE = "EMERGENCY_CLOSE"
     EMERGENCY_DOWNGRADE = "EMERGENCY_DOWNGRADE"
     SET_PRIORITY = "SET_PRIORITY"
+    # Plan 06 (reasoning Agent and P1 coordination). No name starts with SAFETY / EMERGENCY / SET_PRIORITY.
+    AGENT_DECISION = "AGENT_DECISION"
+    BQL_MERGE = "BQL_MERGE"
+    MERGE_UNDO = "MERGE_UNDO"
+    CREATE_FOLLOW_UP = "CREATE_FOLLOW_UP"
+    REPORT_WRONG_DEPT = "REPORT_WRONG_DEPT"
+    BQL_KEEP_DEPARTMENT = "BQL_KEEP_DEPARTMENT"
+    BQL_REASSIGN_TO_BPTN = "BQL_REASSIGN_TO_BPTN"
+    SPLIT_TICKET = "SPLIT_TICKET"
+    SPLIT_UNDO = "SPLIT_UNDO"
+    LINK_TICKETS = "LINK_TICKETS"
 
+
+# Plan 06 Q04: a report with two jobs is split into two tickets; the original keeps element 0, the child gets element 1
+SPLIT_PAIR: tuple[ServiceCategory, ServiceCategory] = (ServiceCategory.VE_SINH, ServiceCategory.KY_THUAT)
 
 # Playbook pair mapping (Playbook §6.1, §7.1): the only valid service/type/playbook triples
 PLAYBOOK_PAIRS: dict[tuple[ServiceCategory, TicketType], PlaybookId] = {

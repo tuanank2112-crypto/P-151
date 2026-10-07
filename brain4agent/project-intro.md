@@ -9,7 +9,7 @@ Repo P-151 (AI20K Build Phase) xây **MaintenanceOps Agent** cho BQL một cụm
 - Hướng ResidentGPT (hỏi-đáp nội quy, `Problem_Card.md` trên `main`) là hướng cũ, không còn dùng.
 
 ## 2. Công nghệ cốt lõi (Tech Stack)
-- **Frontend / Web:** UI tĩnh `src/web/` (index.html, app.js), FastAPI phục vụ chung; đăng nhập tài khoản mô phỏng theo vai trò.
+- **Frontend / Web:** UI tĩnh `src/web/` (index.html, app.js, theme.css), FastAPI phục vụ chung; đăng nhập tài khoản mô phỏng theo vai trò. Từ v1.3.0 (plan 07) mang cùng design với `portal/` (Be Vietnam Pro, header gradient xanh, card/pill).
 - **Backend / Engine:** Python 3.11, FastAPI, Pydantic. Lõi `src/maintenance/`: `engine.py` (state machine + pipeline), luật `rules.py` + LLM `proposer.py` (LangChain/OpenAI; `LLM_MODE=mock` cho test). LangGraph ở `src/agents/` vẫn là mẫu; kế hoạch đưa lên đường chạy thật trước 19/10.
 - **Data Persistence:** `MO_STORE=memory` (mặc định) | `postgres` (schema `maintops`, Alembic, Supabase); ảnh `MO_PHOTO_STORE=local|supabase`. Seed `seed/maintenance_v1/` chỉ nạp khi DB rỗng. Fixture đích CR-03: `seed/maintenance_cr03/`.
 - **Kiểm thử và vận hành:** pytest, ruff, Docker Compose, GitHub Actions.
@@ -20,3 +20,9 @@ Repo P-151 (AI20K Build Phase) xây **MaintenanceOps Agent** cho BQL một cụm
 **Nhóm & chủ việc:** Như Ý (engine/safety integration/LangGraph) · Trường (nghiệp vụ, dataset/nhãn, rules/playbook, quyết
 định CR, architecture, user test, pitch) · Châm Anh (API/persistence/CI/deploy/eval runner/chi phí, leader) · Trí (UI/UX,
 AI Logs, Phoenix).
+
+## 3. Sản phẩm thứ hai: Cổng phản ánh cư dân `portal/` (plan 06, v1.2.0, 2026-10-07)
+- **Bản chất:** website Next.js dựng từ bộ thiết kế `design-ticket-cu-dan/…` (HANDOFF + 6 file `.dc.html`) — 5 vai (Cư dân, Ban tiếp nhận, Ban quản lý, Phòng vệ sinh, Phòng kỹ thuật) dùng chung một PostgreSQL; luồng ticket 6 bước (Tiếp nhận → Thẩm định → Phân công → Đang xử lý → Nghiệm thu → Hoàn tất), Agent phân loại bằng từ khóa Ban tiếp nhận sửa được.
+- **ĐỘC LẬP** với MaintenanceOps Agent Python: không dùng engine/CR-BPTN-03, không dùng dữ liệu `SIM-`, mô hình trạng thái riêng. Đừng trộn hai bên khi sửa.
+- **Tech stack:** Next.js 16.4 (App Router, `cacheComponents`, Server Actions), React 19, TypeScript strict, Tailwind v4 (+ nguyên CSS thiết kế), Drizzle ORM + `pg`, Vitest (unit + DB thật), Playwright (E2E, chụp màn). Node 24.
+- Tài liệu module: [`docs/portal.md`](../docs/portal.md); SPEC: `planning/06_2026-10-07_resident-portal-next/specs/`.

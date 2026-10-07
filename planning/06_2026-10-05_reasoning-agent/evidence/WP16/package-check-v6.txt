@@ -1,0 +1,70 @@
+================================================================================
+WP16 VÒNG 6 VERIFICATION & PACKAGE CHECK — 2026-10-07T05:18:30.080092+00:00
+================================================================================
+
+--- 1. KIỂM TRA MÃ NGUỒN & GIT WORKSPACE ---
+git diff --check exit code: 0
+git diff --check: PASS (không có lỗi whitespace/conflict)
+Runtime files changed (src/, tests/, seed/): 0
+BẢO TOÀN RUNTIME: PASS (0 file runtime bị thay đổi, giữ nguyên nguyên tắc SPEC-first)
+
+--- 2. KIỂM TRA ĐỘ DÀI HANDOFF (<= 80 DÒNG) ---
+planning/06_2026-10-05_reasoning-agent/handoffs/H15_thi-cong_WP16.md: 37 dòng (giới hạn <= 80) -> PASS
+planning/06_2026-10-05_reasoning-agent/handoffs/H16_thi-cong_WP17.md: 34 dòng (giới hạn <= 80) -> PASS
+
+--- 3. KIỂM TRA TÍNH TOÀN VẸN SPEC-P09 ---
+SPEC-P09 Status: PROPOSED -> PASS (chưa thay thế P01/P08, đúng quy chuẩn)
+SPEC-P09 Internal Markdown Links: 0 broken links
+SPEC-P09 Anchor Links: 100% PASS
+
+--- 4. BỘ PROBE KIỂM CHỨNG KIẾN TRÚC B1–B4 (THEO R15 §16) ---
+>>> Probe B1: Kiểm tra FLOOR_PATTERN & Incident Spans (Giao khoảng offset & Quote bao trọn)
+  [PASS] SPEC_FLOOR_MATCH 'tầng 10' = ['10'] (expected: ['10'])
+  [PASS] SPEC_FLOOR_MATCH 'tầng 7' = ['7'] (expected: ['7'])
+  [PASS] SPEC_FLOOR_MATCH 'căn hộ 1702' = [] (expected: [])
+  [PASS] SPEC_FLOOR_MATCH 'tầng hầm B1' = ['B1'] (expected: ['B1'])
+  [PASS] SPEC_FLOOR_MATCH 'hầm B1' = ['B1'] (expected: ['B1'])
+  [PASS] SPEC_FLOOR_MATCH 'lầu 3' = ['3'] (expected: ['3'])
+  [PASS] Incident span: Nhận tòa S1 khi xuất hiện cả ở nơi ở và sự cố
+  [PASS] Incident span: Nhận tầng 7 ở sự cố
+  [PASS] Incident span: Chặn tầng 3 vì chỉ xuất hiện ở nơi ở
+  [PASS] Incident span: Chặn quote bao trọn nơi ở (QUOTE_ENCLOSING_RESIDENCE_ACCEPTED=False)
+
+>>> Probe B2: Phân tích Tách việc (Ràng buộc Đầy đủ 3 Thành phần cho Override & Shared Location)
+  [PASS] EMPTY_OVERRIDES_ACCEPTED=False (chặn hai override rỗng {})
+  [PASS] PARTIAL_OVERRIDES_BUILDING_ONLY_ACCEPTED=False (chặn override chỉ có tòa)
+  [PASS] PARTIAL_OVERRIDES_MISSING_AREA_ACCEPTED=False (chặn override thiếu khu vực)
+  [PASS] SAME_BUILDING_FLOOR_DIFFERENT_AREAS=REJECT (chặn khác khu vực)
+  [PASS] MATCHING_COMPLETE_OVERRIDES_ACCEPTED=True (chấp nhận hai override đủ 3 thành phần)
+  [PASS] SHARED_LOCATION_COMPLETE_ACCEPTED=True (chấp nhận shared_location đủ 3 thành phần)
+  [PASS] SHARED_LOCATION_EMPTY_OR_PARTIAL_ACCEPTED=False (chặn shared_location thiếu thành phần)
+
+>>> Probe B3: Bất biến next_step & Phản ví dụ Schema
+  [PASS] ASK_EMPTY_FIELDS_ACCEPTED=False
+  [PASS] PROCEED_FIELDS_ACCEPTED=False
+  [PASS] ZERO_JOBS_PROCEED_ACCEPTED=False
+
+>>> Probe B4: Priority Floor Promotion, Metadata Cardinality & Runbook Writer Quiesce
+  [PASS] Mapping KY_THUAT HIGH -> PRI-H1 (HIGH) [runtime match: OK]
+  [PASS] Mapping KY_THUAT MEDIUM -> PRI-M1 (MEDIUM) [runtime match: OK]
+  [PASS] Mapping KY_THUAT LOW -> PRI-M1 (MEDIUM) [runtime match: OK]
+  [PASS] Mapping VE_SINH HIGH -> PRI-H2 (HIGH) [runtime match: OK]
+  [PASS] Mapping VE_SINH MEDIUM -> PRI-M2 (MEDIUM) [runtime match: OK]
+  [PASS] Mapping VE_SINH LOW -> PRI-L1 (LOW) [runtime match: OK]
+  [PASS] ZERO_JOB_METADATA_ACCEPTED=True (0 jobs không bị too_short)
+  [PASS] ONE_JOB_METADATA_ACCEPTED=True (1 job)
+  [PASS] TWO_JOB_METADATA_ACCEPTED=True (2 jobs)
+  [PASS] RUNBOOK_BUOC_1_STRICT_QUIESCE=True (bắt buộc dừng toàn bộ writers, cấm dùng cờ thay thế)
+  [PASS] Reader P01 nạp thành công sau khi strip JSONB doc (Rollback an toàn)
+  [PASS] PostgreSQL Live DB Execution: NOT_RUN (chế độ review tài liệu/thiết kế)
+
+================================================================================
+KẾT LUẬN TOÀN DIỆN VÒNG 6:
+- 100% Probe kiến trúc B1, B2, B3, B4 PASS theo đúng yêu cầu R15 §16.
+- B2: Chặn triệt để hai override rỗng {} và override thiếu thành phần (chỉ có tòa/tầng).
+- B2: Bắt buộc đủ cả 3 thành phần building, floor, area cho cả nhánh override và nhánh shared_location.
+- B4: Chuẩn hóa Runbook Bước 1 bắt buộc dừng toàn bộ writers (strict quiesce), cấm dùng việc tắt cờ thay thế.
+- 0 file runtime bị thay đổi trong gói WP16.
+- Handoff H15, H16 đạt chuẩn độ dài <= 80 dòng.
+- SPEC-P09 bảo toàn trạng thái PROPOSED, liên kết nội bộ 100% hợp lệ.
+================================================================================
