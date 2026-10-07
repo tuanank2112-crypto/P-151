@@ -273,6 +273,9 @@ class Ticket(Entity):
     review_status: ReviewStatus | None = None  # pipeline step 5
     asset_resolution: AssetResolution | None = None  # pipeline step 6
     merged_into: str | None = None
+    # CR-BPTN-03 §8: the original lists the tickets merged into it. Older builds wrote this to the shared store,
+    # so the field must load even though this build does not fill it yet.
+    merged_children: list[str] = Field(default_factory=list)
     flags: list[TicketFlag] = Field(default_factory=list)
     rework_count: int = Field(default=0, ge=0)
     dispatched_at: AwareDatetime | None = None  # ROUTED and inside the department's hours
