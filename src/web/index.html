@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MaintenanceOps — Theo dõi phản ánh</title>
-  <meta name="description" content="Prototype mô phỏng: cư dân gửi phản ánh, BPTN xác minh, phòng ban xử lý, BQL nghiệm thu.">
+  <title>MaintenanceOps — Quản lý Vận hành & Bảo trì Tòa nhà</title>
+  <meta name="description" content="MaintenanceOps — Hệ thống tiếp nhận, điều phối và xử lý phản ánh bảo trì tòa nhà thông minh.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <!-- Prototype only: the Play CDN compiles classes in the browser. Use the Tailwind CLI for production. -->
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
   <script>
@@ -15,7 +15,10 @@
       darkMode: 'class',
       theme: {
         extend: {
-          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+          },
         },
       },
     };
@@ -32,18 +35,17 @@
   </a>
 
   <div class="flex min-h-full flex-col">
-    <!-- Simulated-data banner: required on every screen (UI rule 1.1) -->
-    <div class="bg-amber-50 px-4 py-2 text-center text-xs font-medium text-amber-900 ring-1 ring-inset ring-amber-200 dark:bg-amber-950/70 dark:text-amber-200 dark:ring-amber-900/60">
-      DỮ LIỆU MÔ PHỎNG — Không phải hồ sơ hay quy trình vận hành thật.
-    </div>
 
-    <header class="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 transition-colors">
+    <header class="sticky top-0 z-40 border-b border-slate-200/80 bg-white/85 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/85 transition-colors">
       <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-3 py-3 sm:gap-4 sm:px-6 lg:px-8">
         <div class="flex items-center gap-2.5 sm:gap-3">
-          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white shadow-xs" aria-hidden="true">MO</div>
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-sm font-bold text-white shadow-xs ring-1 ring-white/20" aria-hidden="true">MO</div>
           <div>
-            <p class="text-base font-semibold leading-tight text-slate-900 dark:text-white">MaintenanceOps</p>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Phản ánh bảo trì khu vực chung</p>
+            <div class="flex items-center gap-2">
+              <p class="text-base font-bold tracking-tight text-slate-900 dark:text-white">MaintenanceOps</p>
+              <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.2 text-[10px] font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-600/20 dark:bg-indigo-950/60 dark:text-indigo-300">Vận hành Tòa nhà</span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Hệ thống Tiếp nhận & Điều phối Bảo trì</p>
           </div>
         </div>
 
@@ -70,14 +72,6 @@
       </div>
     </main>
 
-    <footer class="border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 transition-colors">
-      <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 text-xs text-slate-500 dark:text-slate-400 sm:px-6 lg:px-8">
-        <p>Prototype CR-BPTN-02 · v0.5 candidate</p>
-        <div class="flex flex-wrap items-center gap-2">
-          <a href="/docs" class="rounded-md px-2.5 py-1.5 font-medium text-indigo-700 dark:text-indigo-400 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">API docs</a>
-        </div>
-      </div>
-    </footer>
   </div>
 
   <!-- Toasts: announced to screen readers -->
@@ -95,9 +89,7 @@
     </form>
   </dialog>
 
-  <script src="js/dark_mode.js"></script>
-  <script src="js/components/agent_proposal.js"></script>
-  <script src="js/components/ai_logs_view.js"></script>
-  <script src="app.js"></script>
+  <script src="js/dark_mode.js?v=3.0"></script>
+  <script src="app.js?v=3.0"></script>
 </body>
 </html>
