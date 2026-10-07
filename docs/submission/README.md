@@ -14,6 +14,8 @@ Cuối cùng, từ các file này tổng hợp vào đúng vị trí chapter-09 
 | 7 | Pitch deck | `docs/pitch-deck.pdf` | ⬜ | [planning/04_*](../../planning/04_2026-10-03_user-test-pitch/) |
 | 8 | Journal | `docs/journal.md` | ⬜ chuyển từ [JOURNAL.md](../../JOURNAL.md) | root |
 | 9 | Worklog | `docs/worklog.md` | ⬜ chuyển từ [WORKLOG.md](../../WORKLOG.md) | root |
-| 10 | Evaluation evidence | `docs/evaluation.md` | 🟡 6 ca manual (localhost) | [planning/02_*/deliverables/](../../planning/02_2026-10-03_truong-mvp-prep/deliverables/) |
+| 10 | Evaluation evidence | `evaluation.md` (root repo) | 🟡 9 ca manual (8 PASS, 1 BLOCKED; localhost) | [evaluation.md](../../evaluation.md), [planning/02_*/deliverables/](../../planning/02_2026-10-03_truong-mvp-prep/deliverables/) |
+
+Báo cáo từng ngày: [day01](day01-report.md) · [day02](day02-report.md) · [day03](day03-report.md) · [day04](day04-report.md).
 
 Mỗi ngày: thêm `daily/<ngày>.md` (việc đã làm, kết quả đo, link evidence, deliverable # nào được đẩy tiến).
