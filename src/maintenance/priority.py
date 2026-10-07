@@ -16,6 +16,23 @@ class PriorityProposal:
     priority: Priority
     rule_id: str  # "PRI-H1" | "PRI-H2" | "PRI-M1" | "PRI-M2" | "PRI-L1" | "PRI-D0"
     reason: str  # one Vietnamese sentence: the rule and its evidence (area, or the first matching phrase)
+    adjustments: tuple[str, ...] = ()  # rules applied on top of `rule_id` (plan 06: "PRI-U1"); the rule id stays
+
+
+_RAISE = {Priority.LOW: Priority.MEDIUM, Priority.MEDIUM: Priority.HIGH}
+
+
+def apply_duplicate_raise(
+    priority: Priority, reason: str, *, duplicate_count: int, raise_at: int
+) -> tuple[Priority, str, tuple[str, ...]]:
+    """PRI-U1 (CR §7, D-03): at `raise_at` reports taken as the same incident, the level goes up exactly one.
+
+    HIGH is already the top: nothing is raised and nothing is written. Shared by the rule base and the Agent's base.
+    """
+    if duplicate_count < raise_at or priority not in _RAISE:
+        return priority, reason, ()
+    note = f"; PRI-U1: {duplicate_count} phản ánh trùng ≥ {raise_at} (+1 mức)"
+    return _RAISE[priority], reason + note, ("PRI-U1",)
 
 
 def _first_match(patterns: tuple[str, ...], ctx: TextContext, lexicon: PriorityLexicon) -> str | None:
@@ -40,9 +57,31 @@ def _first_match(patterns: tuple[str, ...], ctx: TextContext, lexicon: PriorityL
 
 
 def propose_priority(
+    category: ServiceCategory | None,
+    location: str | None,
+    text: str,
+    lexicon: PriorityLexicon,
+    *,
+    duplicate_count: int = 0,
+    duplicate_raise_at: int | None = None,
+) -> PriorityProposal:
+    """CR-03 §7: PRI-D0 / H1 / M1 for lighting by area, PRI-H2 / M2 / L1 for cleaning by the report's wording.
+
+    With `duplicate_raise_at` set, PRI-U1 then raises the result one level (see `apply_duplicate_raise`)."""
+    proposal = _base_proposal(category, location, text, lexicon)
+    if duplicate_raise_at is None:
+        return proposal
+    priority, reason, adjustments = apply_duplicate_raise(
+        proposal.priority, proposal.reason, duplicate_count=duplicate_count, raise_at=duplicate_raise_at
+    )
+    if not adjustments:
+        return proposal
+    return PriorityProposal(priority, proposal.rule_id, reason, adjustments)
+
+
+def _base_proposal(
     category: ServiceCategory | None, location: str | None, text: str, lexicon: PriorityLexicon
 ) -> PriorityProposal:
-    """CR-03 §7: PRI-D0 / H1 / M1 for lighting by area, PRI-H2 / M2 / L1 for cleaning by the report's wording."""
     if location is None or category not in (ServiceCategory.KY_THUAT, ServiceCategory.VE_SINH):
         return PriorityProposal(Priority.MEDIUM, "PRI-D0", "PRI-D0: chưa rõ vị trí hoặc loại việc; mặc định MEDIUM")
     if category == ServiceCategory.KY_THUAT:

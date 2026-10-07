@@ -1,0 +1,15 @@
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/extra_followup_split_safety.py
+(a1) Agent S-00 PRESENT: VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY children=[]
+ok   (a1) S-00 PRESENT: no split, root EMERGENCY
+(a1) Agent T2-04 UNCLEAR: VERIFYING/SAFETY_REVIEW_REQUIRED risk=UNCLEAR children=[]
+ok   (a1) T2-04 UNCLEAR: no split, root UNCLEAR
+(a2) MUST_SPLIT=32 split=32 child_below_root=0
+ok   (a2) no split child below its root's level
+(b/mirror) source SIM-TKT-0001: VERIFYING/EMERGENCY_PENDING_BQL lock=Tòa S1 / Tầng 3 / Hành lang
+(b/mirror) follow-up SIM-TKT-0002: NEED_INFO/MISSING_INFO lock=None place=None dept=None
+FAIL (b/mirror) follow-up keeps the place BPTN confirmed for the source
+(b/agent-reads-text) source SIM-TKT-0001: VERIFYING/EMERGENCY_PENDING_BQL lock=Tòa S1 / Tầng 3 / Hành lang
+(b/agent-reads-text) follow-up SIM-TKT-0002: VERIFYING/PENDING_REVIEW lock=None place=Tòa S2 / Tầng 7 / Hành lang dept=None
+FAIL (b/agent-reads-text) follow-up keeps the place BPTN confirmed for the source
+RESULT problems=2
+EXIT=1

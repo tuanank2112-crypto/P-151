@@ -1,0 +1,13 @@
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. C:/Users/lenku/AppData/Local/Temp/claude/d--P151/640e8089-3b43-4a75-9055-cbb167391b76/scratchpad/venv311/Scripts/python.exe planning/06_2026-10-05_reasoning-agent/specs/REF-p1-safety-meter.py   # lexicon 2026-10-05.p1d, base 3e3a3f8
+MODE=repo active_phases=['P0', 'P1']
+STOP_SETS total=1079 violations=0
+BUDGET b_fp counts={'EMERGENCY': 0, 'UNCLEAR': 4, 'NONE': 55} max={'EMERGENCY': 1, 'UNCLEAR': 5} ok=True
+BUDGET b_fp2 counts={'EMERGENCY': 3, 'UNCLEAR': 1, 'NONE': 29} max={'EMERGENCY': 3} ok=True
+BUDGET jx_negfp counts={'EMERGENCY': 1, 'UNCLEAR': 0, 'NONE': 19} max={'EMERGENCY': 2} ok=True
+BUDGET fixture emergencies=['SIM-TKT-CLN-004', 'SIM-TKT-TEC-005'] ok=True
+MUST_CATCH total=47 failures=0
+MUST_NOT_RAISE total=21 failures=0
+P1_LOCATION_VARIANTS total=980 violations=0
+CORPUS changed_by_P1=259 not_lamp_fall=0
+GATES_FAILED=0
+EXIT=0

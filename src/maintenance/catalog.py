@@ -115,6 +115,20 @@ class PrioritySla(Frozen):
     duplicate_raise_at_count: int = Field(ge=1)  # D-03; loaded in P0, not used yet (PRI-U1 is P1)
 
 
+class WrongDeptReturnSla(Frozen):
+    escalate_at_count: int = Field(ge=1)  # CR §9.2 / §12.2: the Nth wrong-department return escalates to BQL
+
+
+class AgentPolicy(Frozen):
+    """Plan 06 behaviour switches and limits (I-29): data, so they can be turned off without a code change."""
+
+    auto_split_mixed_reports: bool  # Q03: the Agent splits a report with two jobs into two tickets
+    hold_near_open_emergency: bool  # Q18: hold an ordinary ticket next to an open emergency (default false)
+    max_material_qty: float = Field(gt=0, le=100)
+    max_duplicate_candidates: int = Field(ge=0, le=8)
+    max_job_agent_calls: int = Field(ge=0, le=50)  # model calls per job round (orphan tickets only)
+
+
 class SlaConfig(Frozen):
     """Every timing the engine uses. Defaults in catalog.yaml are provisional (CR-BPTN-02 §8)."""
 
@@ -127,6 +141,7 @@ class SlaConfig(Frozen):
     waiting_material: WaitingMaterialSla
     not_accepted: NotAcceptedSla
     rework: ReworkSla
+    wrong_dept_return: WrongDeptReturnSla
     priority: PrioritySla
 
 
@@ -186,6 +201,7 @@ class SignalDef(Frozen):
     patterns: tuple[str, ...] = ()
     all_of: tuple[str, ...] = ()  # tier 1 combination: EVERY component PRESENT (S-14)
     any_of: tuple[str, ...] = ()  # tier 2: some component but not all of all_of (T2-05)
+    agent_only: bool = False  # plan 06: only the Agent may write it (S-00 has no pattern)
 
 
 class ComponentDef(Frozen):
@@ -330,7 +346,9 @@ class SafetyLexicon(Frozen):
                 raise ValueError(f"{signal.signal_id}: all_of/any_of trỏ tới component không có")
             if combo and signal.patterns:
                 raise ValueError(f"{signal.signal_id}: tín hiệu tổ hợp không được có patterns")
-            if not combo and not signal.patterns and signal.signal_id != "T2-03":
+            if signal.agent_only and signal.signal_id != "S-00":
+                raise ValueError(f"{signal.signal_id}: agent_only chỉ cho phép với S-00")
+            if not combo and not signal.patterns and signal.signal_id != "T2-03" and not signal.agent_only:
                 raise ValueError(f"{signal.signal_id}: thiếu patterns")
         return self
 
@@ -395,6 +413,22 @@ class Catalog(Frozen):
     departments: tuple[DepartmentConfig, ...]
     business_hours: BusinessHours
     sla_config: SlaConfig
+    playbook_materials: dict[PlaybookId, tuple[str, ...]]  # plan 06: materials the Agent may choose per playbook
+    agent_policy: AgentPolicy
+
+    @model_validator(mode="after")
+    def _materials_consistent(self):
+        codes = {m.item_code for m in self.materials}
+        for playbook, allowed in self.playbook_materials.items():
+            unknown = set(allowed) - codes
+            if unknown:
+                raise ValueError(f"playbook_materials[{playbook}]: mã không có trong materials: {sorted(unknown)}")
+        for playbook, lines in self.default_materials.items():
+            allowed = set(self.playbook_materials.get(playbook, ()))
+            missing = {line.item_code for line in lines} - allowed
+            if missing:
+                raise ValueError(f"default_materials[{playbook}] phải nằm trong playbook_materials: {sorted(missing)}")
+        return self
 
     def material(self, item_code: str) -> MaterialCatalogItem | None:
         return next((m for m in self.materials if m.item_code == item_code), None)

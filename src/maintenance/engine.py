@@ -15,22 +15,37 @@ Rules that hold everywhere:
     deep copy and commits only after the audit sink accepted the new rows (audit failure = fail closed).
 """
 
+import hashlib
 import json
 import logging
 import threading
 from collections.abc import Callable, Iterator, Mapping, MutableMapping, Sequence
 from contextlib import contextmanager
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Any
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, Any, Literal
 
+from src.maintenance.agent.inputs import AssetCandidate, DecisionInput, DuplicateCandidate
+from src.maintenance.agent.reconcile import safety_for
+from src.maintenance.agent.schema import AgentDecisionRecord, Disagreement, JobDecision
 from src.maintenance.catalog import Catalog, Lexicon, TicketDataset, load_catalog, load_dataset, load_lexicon
+from src.maintenance.common import (  # noqa: F401 - re-exported: `from src.maintenance.engine import AGENT_ID, ...`
+    AGENT_ID,
+    DEFAULT_RESIDENT_ID,
+    LOCAL_TZ,
+    SYSTEM_ID,
+    _blank,
+    _created_at,
+    _suffix,
+)
+from src.maintenance.coordination import DepartmentMixin, MergeMixin, NeighborMixin, SplitMixin
 from src.maintenance.enums import (
     BPTN_REASONS,
     BQL_REASONS,
     PLAYBOOK_BY_CATEGORY,
     PLAYBOOK_VERSION,
     SAFETY_REASONS,
+    SPLIT_PAIR,
     TERMINAL_STATUSES,
     Action,
     ActionResult,
@@ -61,7 +76,9 @@ from src.maintenance.enums import (
     SignalStatus,
     TicketFlag,
     TicketStatus,
+    TicketType,
 )
+from src.maintenance.errors import ActionDeniedError, AuditWriteError, InvalidTransitionError
 from src.maintenance.messages import field_label, public_message, safety_info_message
 from src.maintenance.models import (
     AgentClassificationProposal,
@@ -99,13 +116,10 @@ from src.maintenance.store.memory import InMemoryRepository
 
 if TYPE_CHECKING:
     from src.config import Settings
+    from src.maintenance.agent.agent import ReasoningAgent
 
 logger = logging.getLogger(__name__)
 
-LOCAL_TZ = timezone(timedelta(hours=7))
-AGENT_ID = "SIM-ACTOR-AGENT"
-SYSTEM_ID = "SIM-ACTOR-SYSTEM"
-DEFAULT_RESIDENT_ID = "SIM-ACTOR-RESIDENT-01"
 # Photos: optional for the resident, required from the department before step 10 passes
 MAX_RESIDENT_PHOTOS = 5
 MAX_EXECUTION_PHOTOS = 10
@@ -113,6 +127,7 @@ EXECUTION_PHOTO = "execution_photo"  # failing_items entry when the department s
 SOURCE_REVISION = "SRC-001"
 DENIED_TEXT_MAX = 500  # a denied request cannot grow the ticket's audit by more than this per field (plan 04 A1)
 ORPHAN_GRACE = timedelta(minutes=2)  # a RECEIVED ticket left without a pipeline run is picked up by the job after this
+_COPY_VERB = {"merge": "Nối", "copy": "Chép"}  # audit wording of `_copy_additions` / `_copy_resident_photos`
 
 S = TicketStatus
 R = ReasonCode
@@ -139,6 +154,12 @@ PERMISSIONS: dict[Action, frozenset[ActorRole]] = {
     Action.EMERGENCY_DOWNGRADE: frozenset({Role.BQL}),  # §6.5
     Action.EMERGENCY_CLOSE: frozenset({Role.BQL}),  # T10
     Action.SET_PRIORITY: frozenset({Role.BPTN, Role.BQL}),  # §7
+    # Plan 06 (01 §5.3). AGENT_DECISION, SPLIT_TICKET and LINK_TICKETS are deliberately absent: written internally
+    # through _agent/_audit, no role may request them.
+    Action.BQL_MERGE: frozenset({Role.BQL}),
+    Action.CREATE_FOLLOW_UP: frozenset({Role.BQL}),
+    Action.BQL_REASSIGN_TO_BPTN: frozenset({Role.BQL}),
+    Action.SPLIT_UNDO: frozenset({Role.BPTN, Role.BQL}),
 }
 
 
@@ -154,7 +175,7 @@ def _rule(*actors: ActorRole, reasons=(), required=False, pipeline=False) -> Tra
     return TransitionRule(frozenset(actors), frozenset(reasons), required, pipeline)
 
 
-# CR-BPTN-03 §4.1. The only allowed status changes: 18 rows + cancel from the 7 non-terminal statuses.
+# CR-BPTN-03 §4.1. The only allowed status changes: 23 rows + cancel from the 7 non-terminal statuses.
 TRANSITIONS: dict[tuple[TicketStatus, TicketStatus], TransitionRule] = {
     (S.RECEIVED, S.NEED_INFO): _rule(Role.SYSTEM, reasons=[R.MISSING_INFO], required=True, pipeline=True),  # T02
     (S.NEED_INFO, S.RECEIVED): _rule(Role.SYSTEM, Role.BQL),  # T03: not pipeline-only, BQL clears a safety NEED_INFO
@@ -172,12 +193,14 @@ TRANSITIONS: dict[tuple[TicketStatus, TicketStatus], TransitionRule] = {
         required=True,
         pipeline=True,
     ),
-    (S.VERIFYING, S.MERGED): _rule(Role.BPTN),  # T08 (BQL merge is P1)
+    (S.VERIFYING, S.MERGED): _rule(Role.BPTN, Role.BQL),  # T08 (plan 06: BQL merges an emergency ticket too)
     (S.VERIFYING, S.RECEIVED): _rule(Role.SYSTEM, Role.BPTN, Role.BQL),  # T05: not pipeline-only
     (S.VERIFYING, S.NEED_INFO): _rule(Role.BPTN, Role.BQL, reasons=[R.MISSING_INFO], required=True),  # T06
     (S.NEED_INFO, S.VERIFYING): _rule(Role.BQL, reasons=[R.EMERGENCY_PENDING_BQL], required=True),  # T07
     (S.VERIFYING, S.CLOSED): _rule(Role.BQL),  # T10
-    (S.RECEIVED, S.ON_HOLD): _rule(Role.AGENT, reasons=[R.WAITING_MATERIAL], required=True, pipeline=True),
+    (S.RECEIVED, S.ON_HOLD): _rule(  # T11
+        Role.AGENT, reasons=[R.WAITING_MATERIAL, R.WAITING_EMERGENCY], required=True, pipeline=True
+    ),
     (S.ON_HOLD, S.RECEIVED): _rule(Role.SYSTEM, pipeline=True),
     (S.RECEIVED, S.ROUTED): _rule(Role.SYSTEM, reasons=[R.OUT_OF_HOURS], pipeline=True),
     (S.ROUTED, S.IN_PROGRESS): _rule(Role.DEPARTMENT),
@@ -187,6 +210,14 @@ TRANSITIONS: dict[tuple[TicketStatus, TicketStatus], TransitionRule] = {
     (S.IN_PROGRESS, S.READY_FOR_REVIEW): _rule(Role.AGENT, pipeline=True),
     (S.READY_FOR_REVIEW, S.CLOSED): _rule(Role.BQL),
     (S.READY_FOR_REVIEW, S.IN_PROGRESS): _rule(Role.BQL, reasons=[R.REWORK], required=True),
+    # Plan 06 (01 §5.1): 5 more rows
+    (S.MERGED, S.RECEIVED): _rule(Role.BPTN, Role.BQL, Role.SYSTEM),  # T09: undo a merge / root cancelled
+    (S.IN_PROGRESS, S.VERIFYING): _rule(  # T16: department reports a wrong department after it accepted
+        Role.DEPARTMENT, reasons=[R.WRONG_DEPT_AFTER_START], required=True
+    ),
+    (S.VERIFYING, S.IN_PROGRESS): _rule(Role.BQL),  # T17: BQL keeps the department
+    (S.ON_HOLD, S.MERGED): _rule(Role.BPTN, Role.BQL),  # T08S-a: only undo_split
+    (S.ROUTED, S.MERGED): _rule(Role.BPTN, Role.BQL),  # T08S-b: only undo_split
     **{(status, S.CANCELLED): _rule(Role.BQL) for status in S if status not in TERMINAL_STATUSES},
 }
 
@@ -196,6 +227,7 @@ BLOCKER_OWNERS: dict[ReasonCode, BlockerOwner] = {
     R.EMERGENCY_PENDING_BQL: BlockerOwner.BQL,
     R.WRONG_DEPT_AFTER_START: BlockerOwner.BQL,  # Q-A: declared only, nothing creates it in P0
     R.WAITING_MATERIAL: BlockerOwner.WAREHOUSE,
+    R.WAITING_EMERGENCY: BlockerOwner.SYSTEM,  # plan 06 P1-E: released when the emergency next to it is handled
     R.OUT_OF_HOURS: BlockerOwner.SYSTEM,
     R.NOT_ACCEPTED: BlockerOwner.DEPARTMENT,
     R.BLOCKED_ONSITE: BlockerOwner.DEPARTMENT,
@@ -206,20 +238,6 @@ SCOPE_LABELS = {
     PlaybookId.CLN: "vệ sinh khu vực chung",
     PlaybookId.TEC: "đèn chiếu sáng khu vực chung không hoạt động",
 }
-
-
-class InvalidTransitionError(GuardError):
-    code = "INVALID_TRANSITION"
-
-
-class ActionDeniedError(EngineError):
-    """Permission rejection (canonical code ACTION_DENIED). The denial itself is audited."""
-
-    code = "ACTION_DENIED"
-
-
-class AuditWriteError(EngineError):
-    code = "AUDIT_WRITE_FAILED"
 
 
 AuditSink = Callable[[list[AuditEvent | StatusEvent]], None]
@@ -313,23 +331,101 @@ def can_route(ticket: Ticket) -> bool:
     return not route_blockers(ticket)
 
 
-def _blank(value: str | None) -> bool:
-    return value is None or not value.strip() or value.strip().upper() == "UNKNOWN"
+_STALE = object()  # sentinel in the map of prepared decisions: the content changed twice, the rules decide (P02 §4.3)
+_LEVEL_ORDER = {RiskLevel.NONE: 0, RiskLevel.UNCLEAR: 1, RiskLevel.EMERGENCY: 2}  # I-17: the level never goes down
+_AGENT_CLS_RULE = "PB-AGT-R-CLS-01"  # `rule_id` of a classification the Agent made (P02 §6.3)
 
 
-def _suffix(ticket_id: str) -> str:
-    return ticket_id.removeprefix("SIM-TKT-")
+class _StaleDecision(Exception):  # noqa: N818 - internal signal: leave the transaction (rollback) and decide again
+    """The content changed between the model call and the transaction that applies it."""
 
 
-def _created_at(raw: RawTicket) -> datetime | None:
-    try:
-        moment = datetime.fromisoformat(raw.created_at)
-    except ValueError:
-        return None
-    return moment if moment.tzinfo else None
+class DecisionView:
+    """What a pipeline step may read of the Agent's decision. Every step reads through this view, never through
+    `record.decision`: it already leaves out what the engine rejected (P01 §3.2) and it is None for a record that
+    carries no decision (FALLBACK_RULE, SKIPPED_RULE_EMERGENCY), where a step runs the plain rule code (P02 §4.5)."""
+
+    def __init__(self, record: AgentDecisionRecord):
+        self.record = record
+        self._decision = record.decision
+
+    def location(self) -> str | None:
+        return self.record.agent_location
+
+    def missing_parts(self) -> tuple[str, ...]:
+        return tuple(self.record.agent_missing_parts)
+
+    def jobs(self) -> list[JobDecision]:
+        return [self._decision.jobs[i] for i in self.record.valid_job_indexes]
+
+    def offered_jobs(self) -> int:
+        """How many jobs the model wrote, valid or not: a model that offered jobs but none was valid is a failure of
+        the model, not an answer of "no job here"."""
+        return len(self._decision.jobs)
+
+    def job_index(self, category: ServiceCategory) -> int | None:
+        return next(
+            (i for i in self.record.valid_job_indexes if self._decision.jobs[i].category == category.value), None
+        )
+
+    def job(self, category: ServiceCategory) -> JobDecision | None:
+        index = self.job_index(category)
+        return None if index is None else self._decision.jobs[index]
+
+    def field_ok(self, path: str) -> bool:
+        return path not in self.record.rejected
+
+    def serious(self, category: ServiceCategory) -> list[Disagreement]:
+        """The SERIOUS disagreements that stop the ticket of this job: the ones about the job's own category and
+        the ones about the whole report (location, electrical hazard)."""
+        return [
+            d
+            for d in self.record.disagreements
+            if d.severity == "SERIOUS" and (d.field != "category" or d.agent_value == category.value)
+        ]
+
+    def minor(self, field: str) -> list[Disagreement]:
+        return [d for d in self.record.disagreements if d.severity == "MINOR" and d.field == field]
+
+    def lower_safety_reason(self) -> str | None:
+        """G-6: the Agent saw less danger than the rules; its reason goes into the safety note for the reviewer."""
+        return self._decision.safety.reason if self.minor("safety") else None
+
+    @property
+    def next_step(self) -> str:
+        return self._decision.next_step
+
+    @property
+    def bptn_reason(self) -> str | None:
+        return self._decision.bptn_reason
+
+    def note(self) -> str:
+        """The Agent's own words for the staff: `note_for_staff`, else the conclusion of its last reasoning step."""
+        return (self._decision.note_for_staff or self._decision.reasoning[-1].conclusion).strip()
 
 
-class MaintenanceEngine:
+@dataclass
+class _Touched:
+    """A ticket other than the main one that the running operation reads or writes (SPEC-P02 §2)."""
+
+    work: Case  # the working copy, saved at commit
+    marks: tuple[int, int, int]  # len(audit), len(events), len(notifications) when first touched; (0, 0, 0) if inserted
+    original: Case | None  # the copy read under the row lock (None if inserted): unchanged means not saved (I-26)
+    inserted: bool
+
+
+@dataclass
+class _OpScope:
+    """What one `_mutate_locked` transaction has touched. Order of insertion = order of locking = order of commit."""
+
+    tx: Tx
+    main: Case
+    touched: dict[str, _Touched] = field(default_factory=dict)
+    committed: list[Case] | None = None  # the cases written, main first; set once the commit loop ends
+    listing: list[Case] | None = None  # `repo.list()` read once per operation (`_cases_snapshot`)
+
+
+class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
     def __init__(
         self,
         catalog: Catalog | None = None,
@@ -342,7 +438,11 @@ class MaintenanceEngine:
         lexicon: Lexicon | None = None,
         safety_llm: SafetyLLMClient | None = None,
         repo: CaseRepository | None = None,
+        agent: "ReasoningAgent | None" = None,
     ):
+        if agent is not None and llm is not None:
+            raise ValueError("Chỉ một trong agent hoặc llm")
+        self.agent = agent  # None = the fixed rules decide every step (plan 06: Agent off, or no model configured)
         self.catalog = catalog or load_catalog()
         self.dataset = dataset or load_dataset()
         self.audit_sink = audit_sink or (lambda rows: None)
@@ -444,7 +544,12 @@ class MaintenanceEngine:
             original_description=original_description,
             channel=channel,
         )
-        # E4 (plan 04 Q06): the slow LLM call runs before the engine lock, so other requests are not held up
+        # E4 (plan 04 Q06) and I-16: the slow model call runs before the engine lock, so other requests are not held up
+        if self.agent is not None:
+            record = self._prepare_new(raw, resident_id, moment)
+            with self.lock, self.at(moment), self._prepared({raw.ticket_id: record}, retry_on_stale=False):
+                self.ingest(raw, resident_id=resident_id)
+                return self.run_agent(raw.ticket_id)
         hint = self._early_proposal(raw)
         with self.lock, self.at(moment), self._proposal_hint(raw.ticket_id, original_description, hint):
             self.ingest(raw, resident_id=resident_id)
@@ -491,6 +596,25 @@ class MaintenanceEngine:
 
     def _ingest(self, raw: RawTicket, planned_materials: list[PlannedMaterial] | None, resident_id: str) -> Case:
         now = self.clock()
+        work = self._build_case(raw, planned_materials, resident_id, now)
+        with self.repo.transaction() as tx:
+            tx.insert(work)  # a duplicate ticket_id raises GuardError("... đã được ingest")
+            self._commit(tx, work, 0, 0, 0)
+        return work
+
+    def _build_case(
+        self,
+        raw: RawTicket,
+        planned_materials: list[PlannedMaterial] | None,
+        resident_id: str,
+        now: datetime,
+        *,
+        public_message: str | None = None,
+        notify_extra: dict[str, Any] | None = None,
+        reason: str = "Ingest raw ticket mô phỏng",
+    ) -> Case:
+        """A new RECEIVED case with its INGEST audit row, first event and notification. No transaction: `_ingest`
+        stores it, an operation that creates a second ticket hands it to `_insert_case`."""
         marker = raw.integrity_marker()
         ticket = Ticket(
             ticket_id=raw.ticket_id,
@@ -512,14 +636,15 @@ class MaintenanceEngine:
             "ticket",
             None,
             {"raw_integrity_marker": marker},
-            "Ingest raw ticket mô phỏng",
+            reason,
             now=now,
         )
-        self._record_event(work, None, S.RECEIVED, None, SYSTEM_ID, Role.SYSTEM, now, public=True)
-        self._notify(work, "ticket.status_changed", BlockerOwner.RESIDENT, now, {"to": S.RECEIVED})
-        with self.repo.transaction() as tx:
-            tx.insert(work)  # a duplicate ticket_id raises GuardError("... đã được ingest")
-            self._commit(tx, work, 0, 0, 0)
+        self._record_event(
+            work, None, S.RECEIVED, None, SYSTEM_ID, Role.SYSTEM, now, public=True, public_message=public_message
+        )
+        self._notify(
+            work, "ticket.status_changed", BlockerOwner.RESIDENT, now, {"to": S.RECEIVED, **(notify_extra or {})}
+        )
         return work
 
     def run_agent(self, ticket_id: str) -> Case:
@@ -533,8 +658,28 @@ class MaintenanceEngine:
         return self._mutate(ticket_id, AGENT_ID, Action.RUN_PIPELINE, op)
 
     def add_resident_info(self, ticket_id: str, actor_id: str, content: str) -> Case:
-        """Event `resident_info_added`: append (never edit the original), then resume."""
+        """Event `resident_info_added`: append (never edit the original), then resume. With an Agent, the model is
+        asked first, outside the lock, about the content the ticket WILL have (P02 §5)."""
 
+        def change(work: Case, now: datetime) -> None:
+            self._append_addition(work, content, actor_id, Role.RESIDENT, "Cư dân bổ sung thông tin", now)
+
+        def gate(case: Case) -> bool:
+            return (
+                self._role(actor_id) == Role.RESIDENT
+                and actor_id == case.ticket.resident_id
+                and case.ticket.status == S.NEED_INFO
+                and not _blank(content)
+            )
+
+        return self._with_decision(
+            ticket_id,
+            change,
+            lambda: self._add_resident_info(ticket_id, actor_id, content),
+            gate=self._gate(ticket_id, gate),
+        )
+
+    def _add_resident_info(self, ticket_id: str, actor_id: str, content: str) -> Case:
         def op(work: Case, now: datetime) -> None:
             if work.ticket.status in TERMINAL_STATUSES:
                 raise GuardError("Ticket đã kết thúc; không nhận thêm thông tin")
@@ -557,7 +702,11 @@ class MaintenanceEngine:
             submitted_at=now,
         )
         work.additions.append(addition)
-        if work.ticket.status == S.NEED_INFO and work.ticket.locked_fields.category is None:
+        if (
+            work.ticket.status == S.NEED_INFO
+            and work.ticket.locked_fields.category is None
+            and work.ticket.split_category is None
+        ):
             work.classification = None  # new content: classify again from original + additions
         self._audit(
             work,
@@ -614,7 +763,14 @@ class MaintenanceEngine:
 
     def rate(self, ticket_id: str, actor_id: str, score: int) -> Case:
         def op(work: Case, now: datetime) -> None:
-            if work.ticket.status != S.CLOSED:
+            if work.ticket.status == S.MERGED:  # P04 §7: rates once the root it was merged into is done
+                try:
+                    root_status = self._case_view(work.ticket.merged_into).ticket.status
+                except NotFoundError:
+                    root_status = None
+                if root_status != S.CLOSED:
+                    raise GuardError("Chỉ đánh giá khi phản ánh gốc đã hoàn thành", {"root_status": root_status})
+            elif work.ticket.status != S.CLOSED:
                 raise GuardError("Chỉ đánh giá được khi ticket đã hoàn thành")
             if work.ticket.rating is not None:
                 raise GuardError(
@@ -681,8 +837,86 @@ class MaintenanceEngine:
             required → ONSITE_BY_BPTN + flag ASSET_CHECK_ONSITE); resume at step 6.
         WRONG_DEPT: `category` and/or `department`. A new category resets the asset and resumes at step 6;
             the same category resumes at step 7. Never straight to step 8.
-        """
 
+        With an Agent, a lock or an added `info` changes what the Agent reads, so it is asked again first, outside
+        the lock (P02 §5); a call that changes nothing the Agent reads uses the stored decision.
+        """
+        values = {
+            "note": note,
+            "merge": merge,
+            "category": category,
+            "department": department,
+            "location": location,
+            "asset_id": asset_id,
+            "asset_onsite": asset_onsite,
+            "info": info,
+        }
+
+        def change(work: Case, now: datetime) -> None:
+            locks, category_changed = self._bptn_locks(work, category, department, location, asset_id)
+            current = work.ticket.locked_fields.model_dump()
+            if category_changed:
+                current.update(asset_id=None, department=None)
+            work.ticket.locked_fields = LockedFields(**{**current, **locks})
+            if not _blank(info):
+                self._append_addition(work, info, actor_id, Role.BPTN, "BPTN ghi thông tin thu thập từ cư dân", now)
+
+        def gate(case: Case) -> bool:
+            blocker = case.ticket.blocker
+            return (
+                self._role(actor_id) == Role.BPTN
+                and blocker is not None
+                and blocker.code in BPTN_REASONS
+                and not merge
+                and not (blocker.code == R.MISSING_INFO and case.ticket.safety_context)
+                and case.ticket.status == (S.NEED_INFO if blocker.code == R.MISSING_INFO else S.VERIFYING)
+            )
+
+        return self._with_decision(
+            ticket_id,
+            change,
+            lambda: self._bptn_resolve(ticket_id, actor_id, **values),
+            gate=self._gate(ticket_id, gate),
+        )
+
+    def _bptn_locks(
+        self,
+        work: Case,
+        category: ServiceCategory | None,
+        department: Department | None,
+        location: str | None,
+        asset_id: str | None,
+    ) -> tuple[dict[str, Any], bool]:
+        """The values BPTN locks with this call and whether the category changes. Pure: it validates nothing (the
+        operation checks the arguments first) and writes nothing, so the ticket the Agent will read can be computed
+        before the transaction."""
+        locks: dict[str, Any] = {}
+        if category is not None:
+            locks["category"] = category
+        if department is not None:
+            locks["department"] = department
+        if location is not None:
+            # Plan 05: a location BPTN types freely ("tầng 3 tòa SIM-A hành lang") is stored in the standard form, so
+            # asset lookup and duplicate checks compare like with like; text that does not parse is kept as typed
+            locks["location"] = extract_location(location, self.catalog.site.buildings) or location.strip()
+        if asset_id is not None:
+            locks["asset_id"] = asset_id
+        return locks, category is not None and category != self._category(work)
+
+    def _bptn_resolve(
+        self,
+        ticket_id: str,
+        actor_id: str,
+        *,
+        note: str | None,
+        merge: bool | None,
+        category: ServiceCategory | None,
+        department: Department | None,
+        location: str | None,
+        asset_id: str | None,
+        asset_onsite: bool,
+        info: str | None,
+    ) -> Case:
         def op(work: Case, now: datetime) -> None:
             ticket = work.ticket
             blocker = ticket.blocker
@@ -730,29 +964,21 @@ class MaintenanceEngine:
                 raise GuardError("ASSET_UNCLEAR: chọn asset_id, sửa location hoặc chọn xác định tại hiện trường")
             if asset_onsite and code != R.ASSET_UNCLEAR:
                 raise GuardError("asset_onsite chỉ dùng cho ASSET_UNCLEAR")
-            locks: dict[str, Any] = {}
-            if category is not None:
-                if category not in PLAYBOOK_BY_CATEGORY:
-                    raise GuardError("Category không thuộc playbook v1.1", {"category": category})
-                locks["category"] = category
-            if department is not None:
-                locks["department"] = department
-            if location is not None:
-                if _blank(location):
-                    raise GuardError("location không được rỗng")
-                # Plan 05: a location BPTN types freely ("tầng 3 tòa SIM-A hành lang") is stored in the standard form, so
-                # asset lookup and duplicate checks compare like with like; text that does not parse is kept as typed
-                locks["location"] = extract_location(location, self.catalog.site.buildings) or location.strip()
-            if asset_id is not None:
-                if not any(a.asset_id == asset_id for a in self.catalog.assets):
-                    raise GuardError(f"Không có asset {asset_id} trong catalog")
-                locks["asset_id"] = asset_id
+            if category is not None and category not in PLAYBOOK_BY_CATEGORY:
+                raise GuardError("Category không thuộc playbook v1.1", {"category": category})
+            if location is not None and _blank(location):
+                raise GuardError("location không được rỗng")
+            if asset_id is not None and not any(a.asset_id == asset_id for a in self.catalog.assets):
+                raise GuardError(f"Không có asset {asset_id} trong catalog")
+            locks, category_changed = self._bptn_locks(work, category, department, location, asset_id)
             if (locks or asset_onsite or info is not None) and _blank(note):
                 raise GuardError("BPTN thay đổi giá trị hoặc chọn xác định tại hiện trường thì bắt buộc ghi lý do")
 
-            category_changed = category is not None and category != self._category(work)
             if code == R.DUPLICATE:
                 work.not_duplicate_of.append(blocker.related_ticket_id)
+                self._count_if_open(  # P04 §3: the root no longer counts this report
+                    blocker.related_ticket_id, -1, ticket_id, actor_id, Role.BPTN, now, why="BPTN bác trùng"
+                )
             current_locks = ticket.locked_fields.model_dump()
             if category_changed:
                 # A new kind of work: the old asset and department choices no longer apply; step 6 runs again
@@ -800,7 +1026,42 @@ class MaintenanceEngine:
         """CR-03 T05 (BPTN or BQL, VERIFYING + SAFETY_REVIEW_REQUIRED) and T03 (BQL only, safety NEED_INFO).
 
         Clears the safety state with a mandatory reason, then reruns the pipeline from step 2 (2b skips itself).
+        With an Agent that has no decision for this content yet, the model is asked first, outside the lock.
         """
+
+        def gate(case: Case) -> bool:
+            role, ticket, blocker = self._role(actor_id), case.ticket, case.ticket.blocker
+            if role not in PERMISSIONS[Action.SAFETY_CONFIRM_SAFE] or blocker is None or _blank(note):
+                return False
+            if ticket.status == S.NEED_INFO:  # T03
+                return role == Role.BQL and ticket.safety_context and blocker.code == R.MISSING_INFO
+            return (  # T05: BQL only after the escalation (Q19), exactly what the precheck denies otherwise
+                ticket.status == S.VERIFYING
+                and blocker.code == R.SAFETY_REVIEW_REQUIRED
+                and (role != Role.BQL or blocker.escalated)
+            )
+
+        return self._with_decision(
+            ticket_id,
+            self._clearing_change(actor_id, note),
+            lambda: self._safety_confirm_safe(ticket_id, actor_id, note=note),
+            gate=self._gate(ticket_id, gate),
+        )
+
+    def _clearing_change(self, actor_id: str, note: str | None) -> Callable[[Case, datetime], None]:
+        """What a safety clearance does to what the Agent reads: after it only later additions count (CR §5.2)."""
+
+        def change(work: Case, now: datetime) -> None:
+            self._set_ticket(
+                work,
+                safety_cleared_by=actor_id,
+                safety_cleared_at=now,
+                safety_clear_reason=(note or "").strip() or "-",
+            )
+
+        return change
+
+    def _safety_confirm_safe(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
         with self.lock:
             case = self.get(ticket_id)
             if case.ticket.status == S.NEED_INFO:  # T03: BQL only
@@ -904,7 +1165,27 @@ class MaintenanceEngine:
             return self.transition(ticket_id, S.NEED_INFO, actor_id, note=note, expected_from=S.VERIFYING)
 
     def emergency_downgrade(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
-        """CR-03 T05 (BQL only, VERIFYING + EMERGENCY_PENDING_BQL): a false alarm; the normal flow restarts."""
+        """CR-03 T05 (BQL only, VERIFYING + EMERGENCY_PENDING_BQL): a false alarm; the normal flow restarts. A rule
+        EMERGENCY was never put to the model, so with an Agent it is asked now, once, outside the lock."""
+
+        def gate(case: Case) -> bool:
+            blocker = case.ticket.blocker
+            return (
+                self._role(actor_id) == Role.BQL
+                and case.ticket.status == S.VERIFYING
+                and blocker is not None
+                and blocker.code == R.EMERGENCY_PENDING_BQL
+                and not _blank(note)
+            )
+
+        return self._with_decision(
+            ticket_id,
+            self._clearing_change(actor_id, note),
+            lambda: self._emergency_downgrade(ticket_id, actor_id, note=note),
+            gate=self._gate(ticket_id, gate),
+        )
+
+    def _emergency_downgrade(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
         with self.lock:
             self._safety_precheck(
                 ticket_id,
@@ -1044,7 +1325,7 @@ class MaintenanceEngine:
         return self.transition(ticket_id, S.IN_PROGRESS, actor_id, expected_from=S.ROUTED)
 
     def return_wrong_department(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
-        return self.transition(ticket_id, S.VERIFYING, actor_id, note=note)
+        return self.transition(ticket_id, S.VERIFYING, actor_id, note=note, expected_from=S.ROUTED)
 
     def block_onsite(self, ticket_id: str, actor_id: str, *, note: str, eta: datetime) -> Case:
         return self.transition(ticket_id, S.ON_HOLD, actor_id, note=note, eta=eta)
@@ -1342,7 +1623,18 @@ class MaintenanceEngine:
         accepted. Returns the ticket IDs that changed."""
         moment = now or self.clock()
         changed = []
-        with self.lock, self.repo.job_lease() as leader, self.at(moment):
+        records: dict[str, AgentDecisionRecord | None] = {}
+        if self.agent is not None:  # phase 1, no lock (I-16): only orphans, a bounded number of model calls per round
+            with self.at(moment):
+                orphans = [c.ticket.ticket_id for c in self.repo.list() if self._orphaned(c.ticket, moment)]
+                limit = self.catalog.agent_policy.max_job_agent_calls
+                records = {ticket_id: self._prepare(ticket_id, None) for ticket_id in orphans[:limit]}
+        with (
+            self.lock,
+            self.repo.job_lease() as leader,
+            self.at(moment),
+            self._prepared(records, retry_on_stale=False),
+        ):
             if not leader:
                 return []  # another process runs the job this round
             for case in self.repo.list():
@@ -1538,8 +1830,19 @@ class MaintenanceEngine:
 
                 work = case.model_copy(deep=True)
                 marks = (len(work.audit), len(work.events), len(work.notifications))
-                op(work, now)
-                self._commit(tx, work, *marks)
+                with self._op_scope(tx, work) as scope:
+                    op(work, now)
+                    self._commit(tx, work, *marks)  # the main ticket first
+                    written = [work]
+                    for other in scope.touched.values():  # then the related ones, in the order they were touched
+                        if other.inserted:
+                            # the cases row comes before its audit_log/notifications rows (foreign keys)
+                            tx.insert(other.work)
+                        elif other.work == other.original:
+                            continue  # read under the row lock, never changed: not saved (I-26)
+                        self._commit(tx, other.work, *other.marks)
+                        written.append(other.work)
+                    scope.committed = written
         except _Denied as denied:  # the transaction above rolled back; the denial is written in its own
             if denied.deny_kwargs is not None:  # raised by `_deny` inside `op` (e.g. the Q19 gate of T06/T07)
                 self._deny(**denied.deny_kwargs)
@@ -1555,6 +1858,158 @@ class MaintenanceEngine:
             yield
         finally:
             self._local.tx_depth = depth
+
+    # ------------------------------------------------------------------ more than one ticket in one transaction
+
+    @contextmanager
+    def _op_scope(self, tx: Tx, main: Case) -> Iterator[_OpScope]:
+        """Opens the scope in which `op` may lock, edit or insert other tickets (SPEC-P02 §2). Thread-local, and the
+        previous value is restored: the transaction of `_mutate_locked` is never nested."""
+        previous = getattr(self._local, "op_scope", None)
+        scope = _OpScope(tx=tx, main=main)
+        self._local.op_scope = scope
+        try:
+            yield scope
+        finally:
+            self._local.op_scope = previous
+
+    def _scope(self) -> _OpScope | None:
+        return getattr(self._local, "op_scope", None)
+
+    def _related_case(self, ticket_id: str) -> Case:
+        """The working copy of a ticket other than the main one (locked now, saved at commit if it changed).
+
+        The main ticket and a ticket already touched come back as the same object. A ticket that does not exist is a
+        NotFoundError, which cancels the whole transaction."""
+        scope = self._scope()
+        if scope is None:
+            raise EngineError("Ghi ticket liên quan ngoài một thao tác", {"ticket_id": ticket_id})
+        if ticket_id == scope.main.ticket.ticket_id:
+            return scope.main
+        touched = scope.touched.get(ticket_id)
+        if touched is not None:
+            return touched.work
+        case = scope.tx.get_for_update(ticket_id)  # row lock (I-3), after the main ticket's
+        if case.ticket.raw.integrity_marker() != case.ticket.raw_integrity_marker:
+            raise EngineError("Raw integrity marker không khớp; dừng xử lý (fail closed)", {"ticket_id": ticket_id})
+        work = case.model_copy(deep=True)
+        marks = (len(work.audit), len(work.events), len(work.notifications))
+        scope.touched[ticket_id] = _Touched(work=work, marks=marks, original=case, inserted=False)
+        return work
+
+    def _insert_case(self, work: Case) -> None:
+        """A ticket this operation creates (built by `_build_case`); stored at commit, after the main ticket."""
+        scope = self._scope()
+        ticket_id = work.ticket.ticket_id
+        if scope is None:
+            raise EngineError("Ghi ticket liên quan ngoài một thao tác", {"ticket_id": ticket_id})
+        if ticket_id == scope.main.ticket.ticket_id or ticket_id in scope.touched:
+            raise GuardError(f"Ticket {ticket_id} đã có trong thao tác này", {"ticket_id": ticket_id})
+        scope.touched[ticket_id] = _Touched(work=work, marks=(0, 0, 0), original=None, inserted=True)
+
+    def _case_view(self, ticket_id: str) -> Case:
+        """Read only: the operation's own copy if it has one, else the stored case. Never edit what this returns
+        unless it came from `_related_case`."""
+        scope = self._scope()
+        if scope is not None:
+            if ticket_id == scope.main.ticket.ticket_id:
+                return scope.main
+            touched = scope.touched.get(ticket_id)
+            if touched is not None:
+                return touched.work
+        return self.repo.get(ticket_id)
+
+    def _cases_snapshot(self) -> list[Case]:
+        """Every ticket as this operation sees it: the stored list (read once per operation) with the operation's own
+        copies in place of the stored ones, and the tickets it inserted at the end."""
+        scope = self._scope()
+        if scope is None:
+            return self.repo.list()
+        if scope.listing is None:
+            scope.listing = self.repo.list()
+        own = {scope.main.ticket.ticket_id: scope.main, **{tid: t.work for tid, t in scope.touched.items()}}
+        stored = {case.ticket.ticket_id for case in scope.listing}
+        return [
+            *(own.get(case.ticket.ticket_id, case) for case in scope.listing),
+            *(work for tid, work in own.items() if tid not in stored),
+        ]
+
+    def _copy_additions(self, src: Case, dst: Case, now: datetime, *, mode: Literal["merge", "copy"]) -> list[str]:
+        """Copy the resident's additions of `src` onto `dst`. Additions that were themselves merged in from elsewhere
+        or copied from `dst` are left out. Returns the new addition ids; one LINK_TICKETS audit row on `dst`."""
+        added: list[str] = []
+        for addition in src.additions:
+            if addition.merged_from is not None or addition.copied_from == dst.ticket.ticket_id:
+                continue
+            origin = {"merged_from" if mode == "merge" else "copied_from": src.ticket.ticket_id}
+            copy = ResidentAddition(
+                addition_id=f"SIM-ADD-{_suffix(dst.ticket.ticket_id)}-{len(dst.additions) + 1:02d}",
+                ticket_id=dst.ticket.ticket_id,
+                content=addition.content,
+                submitted_by=addition.submitted_by,
+                submitted_at=addition.submitted_at,
+                **origin,
+            )
+            dst.additions.append(copy)
+            added.append(copy.addition_id)
+        if added:
+            self._link_audit(dst, "additions", added, f"{_COPY_VERB[mode]} bổ sung của {src.ticket.ticket_id}", now)
+        return added
+
+    def _copy_resident_photos(
+        self, src: Case, dst: Case, now: datetime, *, mode: Literal["merge", "copy"]
+    ) -> list[str]:
+        """Same as `_copy_additions` for the resident's photos: a new evidence_id, the same file reference."""
+        added: list[str] = []
+        for photo in resident_photos(src):
+            if photo.copied_from == dst.ticket.ticket_id:
+                continue
+            origin = {"merged_from" if mode == "merge" else "copied_from": src.ticket.ticket_id}
+            copy = EvidenceRecord(
+                evidence_id=f"SIM-EVD-{_suffix(dst.ticket.ticket_id)}-{len(dst.evidence) + 1:02d}",
+                ticket_id=dst.ticket.ticket_id,
+                work_order_draft_id=None,
+                requirement_id=None,
+                evidence_type=EvidenceType.RESIDENT_ORIGINAL,
+                content_or_metadata=photo.content_or_metadata,
+                source=EvidenceSource.RESIDENT_ORIGINAL,
+                submitted_by=photo.submitted_by,
+                submitted_at=photo.submitted_at,
+                readability_status=photo.readability_status,
+                immutable=True,
+                **origin,
+            )
+            dst.evidence.append(copy)
+            added.append(copy.evidence_id)
+        if added:
+            self._link_audit(dst, "evidence", added, f"{_COPY_VERB[mode]} ảnh của {src.ticket.ticket_id}", now)
+        return added
+
+    def _link_audit(self, work: Case, field_name: str, new: Any, why: str, now: datetime) -> None:
+        self._agent(work, Action.LINK_TICKETS, "Ticket", work.ticket.ticket_id, field_name, None, new, why, now=now)
+
+    def _link_pair(self, a: Case, b: Case, now: datetime, actor_id: str, role: ActorRole, *, why: str) -> None:
+        """Each ticket lists the other in `related_ticket_ids` (append only, once). A finished ticket is not written
+        (I-26); the other side still gets its link."""
+        for mine, other in ((a, b), (b, a)):
+            other_id = other.ticket.ticket_id
+            if mine.ticket.status in TERMINAL_STATUSES or other_id in mine.ticket.related_ticket_ids:
+                continue
+            old = list(mine.ticket.related_ticket_ids)
+            self._audit(
+                mine,
+                Action.LINK_TICKETS,
+                "Ticket",
+                mine.ticket.ticket_id,
+                actor_id,
+                role,
+                "related_ticket_ids",
+                old,
+                [*old, other_id],
+                why,
+                now=now,
+            )
+            self._set_ticket(mine, related_ticket_ids=[*old, other_id])
 
     def _commit(self, tx: Tx, work: Case, audit_from: int, events_from: int, notes_from: int) -> None:
         """Save `work` and append its new rows inside `tx`. A failing append or sink rolls everything back."""
@@ -1741,9 +2196,10 @@ class MaintenanceEngine:
         *,
         public: bool,
         note: str | None = None,
+        public_message: str | None = None,
     ) -> None:
         blocker = work.ticket.blocker
-        message = blocker.public_message if blocker else self._status_message(work)
+        message = public_message or (blocker.public_message if blocker else self._status_message(work))
         work.events.append(
             StatusEvent(
                 id=f"SIM-EVT-{_suffix(work.ticket.ticket_id)}-{len(work.events) + 1:04d}",
@@ -1975,16 +2431,17 @@ class MaintenanceEngine:
             if _blank(cancel_reason):
                 raise GuardError("cancel_reason bắt buộc khi hủy")
             self._apply_transition(work, to, actor_id, role, now, note=note, cancel_reason=cancel_reason.strip())
+            self._after_cancel(work, blocker, now)
         elif key == (S.ROUTED, S.IN_PROGRESS):
             self._apply_transition(work, to, actor_id, role, now, note=note, accepted_at=now)
-        elif key == (S.ROUTED, S.VERIFYING):
-            if _blank(note):
-                raise GuardError("Trả lại sai phòng ban phải có lý do")
-            # resume_step is decided by BPTN's answer: 6 if the category changes, 7 if not (never 8)
-            wrong = self._new_blocker(work, R.WRONG_DEPT, now, resume_step=6, note=note)
-            self._apply_transition(
-                work, to, actor_id, role, now, blocker=wrong, note=note, department_id=None, dispatched_at=None
-            )
+        elif key == (S.ROUTED, S.VERIFYING):  # T15
+            self._t15_return_wrong_department(work, actor_id, role, now, note=note)
+        elif key == (S.IN_PROGRESS, S.VERIFYING):  # T16
+            self._t16_report_wrong_department(work, actor_id, role, now, note=note)
+        elif key == (S.VERIFYING, S.IN_PROGRESS):  # T17
+            self._t17_keep_department(work, actor_id, role, now, note=note)
+        elif key == (S.MERGED, S.RECEIVED):  # T09 by a person
+            self._t09_unmerge_by_person(work, actor_id, role, now, note=note)
         elif key == (S.IN_PROGRESS, S.ON_HOLD):
             if _blank(note) or eta is None:
                 raise GuardError("BLOCKED_ONSITE bắt buộc lý do và eta")
@@ -2053,6 +2510,8 @@ class MaintenanceEngine:
                 risk_level=RiskLevel.NONE,
             )
             self._run_pipeline(work, 2, now)  # 2b skips itself (cleared); step 2 checks the location; then 3...
+            if blocker.code == R.EMERGENCY_PENDING_BQL:  # P1-E (WP10): tickets waiting for this emergency may go on
+                self._release_waiting_for(work, now)
         elif key == (S.NEED_INFO, S.RECEIVED):  # T03: BQL confirms a safety NEED_INFO is safe
             if role != Role.BQL or not ticket.safety_context:
                 raise InvalidTransitionError("NEED_INFO → RECEIVED do người chỉ với BQL khi safety_context=true (T03)")
@@ -2096,6 +2555,7 @@ class MaintenanceEngine:
                 risk_level=RiskLevel.EMERGENCY,
                 safety_context=False,
             )
+            self._link_emergency_both_ways(work, list(work.ticket.related_ticket_ids), now)  # P1-E (WP10)
             self._notify(
                 work,
                 "emergency.created",
@@ -2144,12 +2604,27 @@ class MaintenanceEngine:
                 closed_at=now,
                 closure_kind=ClosureKind.EMERGENCY_HANDLED,
             )
-        elif key == (S.VERIFYING, S.MERGED):
+            self._release_waiting_for(work, now)  # P1-E (WP10)
+        elif key == (S.VERIFYING, S.MERGED):  # T08: only BPTN confirming a duplicate; BQL has bql_merge (P04)
+            if role != Role.BPTN:
+                raise InvalidTransitionError(
+                    "Gộp qua transition chỉ cho BPTN xác nhận trùng; BQL dùng bql_merge, tách sai dùng undo_split"
+                )
             if blocker is None or blocker.code != R.DUPLICATE:
                 raise InvalidTransitionError("Chỉ gộp được ticket đang chờ xác nhận trùng (DUPLICATE)")
-            self._apply_transition(work, to, actor_id, role, now, note=note, merged_into=blocker.related_ticket_id)
+            self._merge_into(work, blocker.related_ticket_id, actor_id, role, now, note=note, counted=False)
+        elif to == S.MERGED:  # T08S-a / T08S-b: the table has the rows for `undo_split` (P05); no other entry
+            raise InvalidTransitionError("Chỉ hoàn tác tách (undo_split) được gộp ticket ở trạng thái này")
         else:
             raise InvalidTransitionError(f"Không chuyển được {ticket.status} → {to}")
+
+    def _after_cancel(self, work: Case, previous_blocker: Blocker | None, now: datetime) -> None:
+        """What a cancelled ticket leaves behind for the other tickets (P04 duplicate count + merged children, P07
+        tickets waiting for an emergency). Each hook is a no-op until its wave."""
+        self._release_duplicate_count(work, previous_blocker, now)
+        self._unmerge_children_of(work, now)
+        if previous_blocker is not None and previous_blocker.code == R.EMERGENCY_PENDING_BQL:
+            self._release_waiting_for(work, now)
 
     # ------------------------------------------------------------------ resume and scheduled checks
 
@@ -2173,6 +2648,10 @@ class MaintenanceEngine:
         return False  # NOT_ACCEPTED, BLOCKED_ONSITE, REWORK clear through their own transitions
 
     def _resume(self, work: Case, now: datetime) -> bool:
+        with self._activated(work, now):  # `_cleared` reads the location, which may be the Agent's
+            return self._resume_activated(work, now)
+
+    def _resume_activated(self, work: Case, now: datetime) -> bool:
         blocker = work.ticket.blocker
         if blocker is not None and blocker.code == R.WAITING_MATERIAL:
             self._refresh_line_stock(work)  # a partial delivery must show, not the stock of the first check
@@ -2241,6 +2720,300 @@ class MaintenanceEngine:
             payload = {"reason_code": blocker.code, "why": why, "safety_context": work.ticket.safety_context}
             self._notify(work, kind, BlockerOwner.BQL, now, payload)
 
+    # ------------------------------------------------------------------ the Agent in the engine (SPEC-P02 §4)
+    #
+    # The model is asked BEFORE the transaction that applies its answer (`_prepare`, no lock, I-16); inside the
+    # transaction the pipeline only READS the answer (`_decision_for` → `_activate` → `_view`). Content that changed
+    # in between is detected by the fingerprint and decided again once, then by the rules (`_with_decision`).
+
+    def _content_fingerprint(self, work: Case) -> str:
+        """What the model reads of the ticket and what BPTN pinned, so a stored decision is used only for the very
+        content it was made for. Not in it (re-checked when applied): candidates, `not_duplicate_of`, status, time."""
+        payload = {
+            "v": 1,
+            "report": self._content(work),
+            "location": self._location_text(work),
+            "locks": work.ticket.locked_fields.model_dump(mode="json"),
+            "pinned": work.ticket.split_category,
+            "follow_up_of": work.ticket.follow_up_of,
+        }
+        text = json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)
+        return "sha256:" + hashlib.sha256(text.encode()).hexdigest()
+
+    def _safety_fingerprint(self, work: Case) -> str:
+        return "sha256:" + hashlib.sha256(self._safety_scope_text(work).encode()).hexdigest()
+
+    def _decision_input(self, work: Case, now: datetime) -> DecisionInput:
+        """What the Agent is given about `work`: the same text the rules read, the locks and the candidates."""
+        ticket = work.ticket
+        location = self.effective_location(work)
+        policy = self.catalog.agent_policy
+        created = _created_at(ticket.raw)
+        found: list[tuple[Case, ServiceCategory, str, datetime]] = []
+        if created is not None:
+            earliest = created - timedelta(hours=self.catalog.sla_config.duplicate_window_hours)
+            for other in self._cases_snapshot():
+                o = other.ticket
+                if (
+                    o.ticket_id == ticket.ticket_id
+                    or o.status in TERMINAL_STATUSES
+                    or o.ticket_id in work.not_duplicate_of
+                    or o.risk_level != RiskLevel.NONE
+                ):
+                    continue
+                category = self._category(other)
+                other_created = _created_at(o.raw)
+                if category is None or other_created is None or not (earliest <= other_created < created):
+                    continue
+                other_location = self.effective_location(other)
+                if other_location is not None:
+                    found.append((other, category, other_location, other_created))
+        building = location.split(" / ")[0] if location else None
+        found.sort(
+            key=lambda f: (
+                location is None or f[2] != location,  # the same place first,
+                building is None or f[2].split(" / ")[0] != building,  # then the same building,
+                -f[3].timestamp(),  # then the newest
+                f[0].ticket.ticket_id,
+            )
+        )
+        candidates = [
+            DuplicateCandidate(
+                ticket_id=other.ticket.ticket_id,
+                category=category,
+                location=other_location,
+                created_at=other.ticket.raw.created_at,
+                status=other.ticket.status,
+                excerpt=self._content(other)[:200],
+            )
+            for other, category, other_location, _ in found[: policy.max_duplicate_candidates]
+        ]
+        assets = [
+            AssetCandidate(asset_id=a.asset_id, location=a.location_normalized)
+            for a in self.catalog.assets
+            if a.asset_type == "LIGHTING"
+        ]
+        return DecisionInput(
+            ticket_id=ticket.ticket_id,
+            created_at=ticket.raw.created_at,
+            report_text=self._content(work),
+            location_text=self._location_text(work),
+            safety_text=self._safety_scope_text(work),
+            locks=ticket.locked_fields,
+            pinned_category=ticket.split_category,
+            follow_up_of=ticket.follow_up_of,
+            duplicate_candidates=candidates,
+            asset_candidates=assets,
+            fingerprint=self._content_fingerprint(work),
+            safety_fingerprint=self._safety_fingerprint(work),
+        )
+
+    def _peek(self, ticket_id: str) -> Case | None:
+        try:
+            return self.repo.get(ticket_id)
+        except NotFoundError:
+            return None
+
+    def _gate(self, ticket_id: str, check: Callable[[Case], bool]) -> bool:
+        """The cheap test of an entry point before the model is asked: with no Agent, no ticket or a request the
+        operation will refuse anyway, there is no point asking. It writes nothing (a denial is the operation's)."""
+        if self.agent is None:
+            return False
+        case = self._peek(ticket_id)
+        return case is not None and bool(check(case))
+
+    def _prepare(self, ticket_id: str, change: Callable[[Case, datetime], None] | None) -> AgentDecisionRecord | None:
+        """The Agent's decision for the ticket as it WILL be once `change` is applied. Holds no lock: it reads the
+        committed case, applies `change` to a copy (no sink, no repository) and either hands back the stored decision
+        made for the same content or asks the model."""
+        if self.agent is None:
+            return None
+        case = self._peek(ticket_id)
+        if case is None:
+            return None
+        work, now = case.model_copy(deep=True), self.clock()
+        if change is not None:
+            try:
+                change(work, now)
+            except Exception:  # noqa: BLE001 - a request the operation refuses: it raises the right error itself
+                return None
+        return self._decide(work, now)
+
+    def _prepare_new(self, raw: RawTicket, resident_id: str, now: datetime) -> AgentDecisionRecord | None:
+        """`_prepare` for a report that is not stored yet (`receive`): the case it will become, built and not saved."""
+        return self._decide(self._build_case(raw, None, resident_id, now), now)
+
+    def _decide(self, work: Case, now: datetime) -> AgentDecisionRecord:
+        data = self._decision_input(work, now)
+        stored = work.agent_decision
+        if stored is not None and stored.source == "AGENT" and stored.fingerprint == data.fingerprint:
+            return stored  # decided for this very content: not asked again
+        return self.agent.decide(data)
+
+    @contextmanager
+    def _prepared(
+        self, records: Mapping[str, AgentDecisionRecord | object | None], *, retry_on_stale: bool
+    ) -> Iterator[None]:
+        """Offer these decisions to the pipeline of the tickets named, on this thread (`_decision_for`)."""
+        previous = (getattr(self._local, "prepared", None), getattr(self._local, "retry_on_stale", False))
+        self._local.prepared, self._local.retry_on_stale = dict(records), retry_on_stale
+        try:
+            yield
+        finally:
+            self._local.prepared, self._local.retry_on_stale = previous
+
+    def _with_decision(
+        self,
+        ticket_id: str,
+        change: Callable[[Case, datetime], None] | None,
+        call: Callable[[], Case],
+        *,
+        gate: bool,
+    ) -> Case:
+        """Run `call` (an operation that locks and writes) with a decision prepared before it. A decision made for
+        content that moved on is decided again once; if it moves again the rules decide (`FALLBACK_RULE/STALE`)."""
+        if self.agent is None or not gate:
+            return call()
+        for _ in range(2):
+            record = self._prepare(ticket_id, change)
+            try:
+                with self._prepared({ticket_id: record}, retry_on_stale=True):
+                    return call()
+            except _StaleDecision:
+                continue
+        with self._prepared({ticket_id: _STALE}, retry_on_stale=False):
+            return call()
+
+    def _active_map(self) -> dict[str, AgentDecisionRecord]:
+        active = getattr(self._local, "active", None)
+        if active is None:
+            active = self._local.active = {}
+        return active
+
+    def _decision_for(self, work: Case, now: datetime) -> AgentDecisionRecord | None:
+        """The decision the steps below read, WITHOUT asking the model (it runs inside the transaction)."""
+        if self.agent is None:
+            return None  # the rules, exactly as before
+        ticket_id = work.ticket.ticket_id
+        fingerprint = self._content_fingerprint(work)
+        prepared = (getattr(self._local, "prepared", None) or {}).get(ticket_id)
+        if prepared is _STALE:
+            return self.agent.fallback(self._decision_input(work, now), "STALE")
+        if prepared is not None:
+            if prepared.fingerprint == fingerprint:
+                return prepared
+            if getattr(self._local, "retry_on_stale", False):
+                raise _StaleDecision(ticket_id)
+            return self.agent.fallback(self._decision_input(work, now), "STALE")
+        stored = work.agent_decision
+        if stored is not None and stored.fingerprint == fingerprint:
+            return stored  # resume, a job that is not an orphan, a cancelled root: the decision already made
+        return None  # nothing was prepared for this content: the rules decide
+
+    def _activate(self, work: Case, now: datetime) -> AgentDecisionRecord | None:
+        """Make the decision for this content the one the steps read, and keep it on the ticket with ONE audit row
+        when it differs from the stored one (I-23). Idempotent: the same record twice writes nothing."""
+        record = self._decision_for(work, now)
+        if record is None:
+            return None
+        self._active_map()[work.ticket.ticket_id] = record
+        if work.agent_decision == record:
+            return record
+        old = work.agent_decision
+        work.agent_decision = record
+        decision = record.decision
+        failed = record.source == "FALLBACK_RULE" or (
+            decision is not None
+            and (
+                "location" in record.rejected
+                or (decision.jobs and all(f"jobs[{i}]" in record.rejected for i in range(len(decision.jobs))))
+            )
+        )
+        flags = [f for f in work.ticket.flags if f not in (TicketFlag.AGENT_FALLBACK, TicketFlag.AGENT_DISAGREEMENT)]
+        if failed:
+            flags.append(TicketFlag.AGENT_FALLBACK)
+        if any(d.severity == "SERIOUS" for d in record.disagreements):
+            flags.append(TicketFlag.AGENT_DISAGREEMENT)
+        work.ticket.flags = flags
+        self._agent(
+            work,
+            Action.AGENT_DECISION,
+            "Ticket",
+            work.ticket.ticket_id,
+            "agent_decision",
+            None if old is None else self._decision_summary(old),
+            self._decision_summary(record),
+            f"Agent {record.source} · {record.model}",
+            now=now,
+            rule_id="PB-AGT-R-DEC-01",
+        )
+        return record
+
+    @staticmethod
+    def _decision_summary(record: AgentDecisionRecord) -> dict[str, Any]:
+        """What the audit keeps of a decision: no `reasoning` (it is in `case.agent_decision` and in `ai_logger`)."""
+        decision = record.decision
+        return {
+            "source": record.source,
+            "model": record.model,
+            "fallback_reason": record.fallback_reason,
+            "risk": {"rule": record.rule_risk_level, "agent": record.agent_risk_level},
+            "scope": decision.scope if decision else None,
+            "jobs": [
+                {
+                    "category": j.category,
+                    "quote": j.quote,
+                    "reason": j.reason,
+                    "priority": j.priority,
+                    "duplicate_of": j.duplicate_of,
+                    "asset_id": j.asset_id,
+                    "needs_review": j.needs_review,
+                }
+                for j in (decision.jobs if decision else [])
+            ],
+            "location": record.agent_location,
+            "next_step": decision.next_step if decision else None,
+            "rejected": list(record.rejected),
+            "disagreements": [d.model_dump(mode="json") for d in record.disagreements],
+            "ai_log_id": record.ai_log_id,
+            "latency_ms": record.latency_ms,
+            "prompt_version": record.prompt_version,
+        }
+
+    @contextmanager
+    def _activated(self, work: Case, now: datetime) -> Iterator[None]:
+        """`_activate` for the duration of a resume or a pipeline run; a pipeline nested in another (a child ticket)
+        puts back what was active for its own ticket."""
+        if self.agent is None:
+            yield
+            return
+        active, key = self._active_map(), work.ticket.ticket_id
+        had, previous = key in active, active.get(key)
+        self._activate(work, now)
+        try:
+            yield
+        finally:
+            if had:
+                active[key] = previous
+            else:
+                active.pop(key, None)
+
+    def _view(self, work: Case) -> DecisionView | None:
+        """The decision of the running pipeline for this ticket, or None (no Agent, no decision made for this content,
+        or a record without a decision): then the step runs the rule code that existed before the Agent."""
+        if self.agent is None:
+            return None
+        record = self._active_map().get(work.ticket.ticket_id)
+        return DecisionView(record) if record is not None and record.decision is not None else None
+
+    def _job_view(self, work: Case) -> DecisionView | None:
+        """`_view` for the steps that read the jobs: None also when the model offered jobs and the engine rejected
+        every one (a failure of the model, not an answer of "nothing to do here"): the rules decide (I-20)."""
+        view = self._view(work)
+        if view is not None and view.offered_jobs() and not view.jobs():
+            return None
+        return view
+
     # ------------------------------------------------------------------ pipeline (steps 2–8)
 
     def _run_pipeline(self, work: Case, from_step: int, now: datetime) -> None:
@@ -2256,29 +3029,43 @@ class MaintenanceEngine:
             (7, self._step_7_check_material_stock),
             (8, self._step_8_route_to_department),
         )
-        for number, step in steps:
-            if number >= from_step and step(work, now):
-                return
+        with self._activated(work, now):
+            for number, step in steps:
+                if number >= from_step and step(work, now):
+                    return
         raise EngineError("Pipeline kết thúc mà không route hoặc dừng")
 
     def _content(self, work: Case) -> str:
-        """Original report plus resident additions: what the Agent reads. The original itself never changes."""
-        parts = [work.ticket.raw.original_description, *(a.content for a in work.additions)]
+        """Original report plus resident additions: what the Agent reads. The original itself never changes.
+        What was merged in from another ticket (`merged_from`) is staff-only and is not read (I-28)."""
+        parts = [work.ticket.raw.original_description, *(a.content for a in work.additions if a.merged_from is None)]
         return "\n".join(p for p in parts if p and p.strip())
 
     def effective_location(self, work: Case) -> str | None:
-        return work.ticket.locked_fields.location or extract_location(
-            self._location_text(work), self.catalog.site.buildings
-        )
+        """BPTN's lock, else (with an Agent) the location the Agent read for this content, else the rules."""
+        locked = work.ticket.locked_fields.location
+        if locked or self.agent is None:
+            return locked or extract_location(self._location_text(work), self.catalog.site.buildings)
+        record = self._active_map().get(work.ticket.ticket_id)
+        if record is None:
+            stored = work.agent_decision
+            if stored is not None and stored.fingerprint == self._content_fingerprint(work):
+                record = stored
+        if record is not None and record.agent_location:
+            return record.agent_location
+        return extract_location(self._location_text(work), self.catalog.site.buildings)
 
     def _location_text(self, work: Case) -> str:
         """What the location is read from: the newest addition first, the original report last, so a resident's
         correction ("Ở hầm B1 ạ") wins over the floor of their own flat in the original (plan 05)."""
-        parts = [*(a.content for a in reversed(work.additions)), work.ticket.raw.original_description]
+        parts = [
+            *(a.content for a in reversed(work.additions) if a.merged_from is None),
+            work.ticket.raw.original_description,
+        ]
         return "\n".join(p for p in parts if p and p.strip())
 
     def _category(self, work: Case) -> ServiceCategory | None:
-        locked = work.ticket.locked_fields.category
+        locked = work.ticket.locked_fields.category or work.ticket.split_category  # a split pins the category (P05)
         if locked:
             return locked
         cls = work.classification
@@ -2295,6 +3082,9 @@ class MaintenanceEngine:
             missing.append("description")
         if self.effective_location(work) is None:
             parts = missing_location_parts(self._location_text(work), self.catalog.site.buildings)
+            view = self._view(work)
+            if view is not None and view.missing_parts():  # the Agent may have understood more than the rules did
+                parts = [p for p in ("building", "floor", "area") if p in view.missing_parts()]
             # name only the parts still missing; a report with none of them gets the general request
             missing.extend(["location"] if len(parts) == 3 else [f"location_{part}" for part in parts])
         return missing
@@ -2304,7 +3094,7 @@ class MaintenanceEngine:
         cleared_at = work.ticket.safety_cleared_at
         if cleared_at is None:
             return self._content(work)
-        return "\n".join(a.content for a in work.additions if a.submitted_at >= cleared_at)
+        return "\n".join(a.content for a in work.additions if a.merged_from is None and a.submitted_at >= cleared_at)
 
     def _related_ticket_ids(self, work: Case) -> list[str]:
         """Open tickets at the same location, created earlier and inside the duplicate window (Q11). Link only."""
@@ -2313,7 +3103,7 @@ class MaintenanceEngine:
             return []
         earliest = created - timedelta(hours=self.catalog.sla_config.duplicate_window_hours)
         found = []
-        for other in self.repo.list():
+        for other in self._cases_snapshot():
             ticket = other.ticket
             if ticket.ticket_id == work.ticket.ticket_id or ticket.status in TERMINAL_STATUSES:
                 continue
@@ -2329,11 +3119,25 @@ class MaintenanceEngine:
         text = self._safety_scope_text(work)
         if _blank(text):
             return False  # nothing to assess (empty, or cleared and no later addition)
-        result = assess_with_llm(text, self.lexicon.safety, self.safety_llm, self.llm_label)
+        view = self._view(work)
+        if view is not None and view.record.safety_fingerprint == self._safety_fingerprint(work):
+            result = safety_for(view.record, text, self.lexicon, view.record.model)  # rules + the Agent's valid signals
+        else:
+            result = assess_with_llm(text, self.lexicon.safety, self.safety_llm, self.llm_label)
         ticket = work.ticket
         old = ticket.risk_level
-        ticket.risk_level, ticket.risk_signals = result.risk_level, list(result.signals)
-        present = sorted({s.signal_id for s in result.signals if s.status == SignalStatus.PRESENT})
+        # I-17: only a person lowers the level. Whatever this run finds, the ticket keeps the level it already has.
+        level = max(result.risk_level, old, key=_LEVEL_ORDER.__getitem__)
+        named = result.signals or ticket.risk_signals  # a level kept from before is explained by the signals before
+        ticket.risk_level, ticket.risk_signals = level, list(named)
+        present = sorted({s.signal_id for s in named if s.status == SignalStatus.PRESENT})
+        agent_note = ""
+        if view is not None and (reason := view.lower_safety_reason()):  # G-6: the Agent saw less than the rules
+            agent_note = f" · Agent: {reason}"
+
+        def with_agent(note: str) -> str:
+            return (note + agent_note)[:500] if agent_note else note
+
         self._agent(
             work,
             Action.ASSESS_SAFETY,
@@ -2342,7 +3146,7 @@ class MaintenanceEngine:
             "risk_level",
             old,
             {
-                "risk_level": result.risk_level,
+                "risk_level": level,
                 "signals": list(result.signals),
                 "notes": list(result.notes),
                 "proposer": result.proposer,
@@ -2352,7 +3156,7 @@ class MaintenanceEngine:
             now=now,
             rule_id=next((s.rule_id for s in result.signals if s.status == SignalStatus.PRESENT), None),
         )
-        if result.risk_level == RiskLevel.EMERGENCY:
+        if level == RiskLevel.EMERGENCY:
             ticket.related_ticket_ids = self._related_ticket_ids(work)  # Q11: link, never merge
             self._stop(
                 work,
@@ -2360,8 +3164,9 @@ class MaintenanceEngine:
                 R.EMERGENCY_PENDING_BQL,
                 now,
                 resume_step=2,
-                note=self._with_missing(work, f"Bậc 1: {', '.join(present)}"),
+                note=with_agent(self._with_missing(work, f"Bậc 1: {', '.join(present)}")),
             )
+            self._link_emergency_both_ways(work, list(work.ticket.related_ticket_ids), now)  # P1-E (WP10)
             self._notify(
                 work,
                 "emergency.created",
@@ -2374,8 +3179,8 @@ class MaintenanceEngine:
                 },
             )
             return True
-        if result.risk_level == RiskLevel.UNCLEAR:
-            unclear = sorted({s.signal_id for s in result.signals if s.status != SignalStatus.ABSENT})
+        if level == RiskLevel.UNCLEAR:
+            unclear = sorted({s.signal_id for s in named if s.status != SignalStatus.ABSENT})
             escalated_before = _safety_escalated_before(work)
             self._stop(
                 work,
@@ -2383,7 +3188,7 @@ class MaintenanceEngine:
                 R.SAFETY_REVIEW_REQUIRED,
                 now,
                 resume_step=2,
-                note=self._with_missing(work, "Bậc 2: " + ", ".join(unclear)),
+                note=with_agent(self._with_missing(work, "Bậc 2: " + ", ".join(unclear))),
             )
             if escalated_before:
                 # Q04 (plan 04): BQL already took this safety decision over; a new tier-2 stop (e.g. after the
@@ -2406,7 +3211,26 @@ class MaintenanceEngine:
 
     def _step_2_check_required_data(self, work: Case, now: datetime) -> bool:
         missing = self._missing_fields(work)
-        if (
+        view = self._job_view(work)
+        if view is not None:
+            # Agent: only the location is missing, nobody chose the category, and the Agent says this is not ours
+            # (plan 05 Q05 by the Agent's reading). It NEVER goes on with a missing location, whatever it says (G-9).
+            if (
+                missing
+                and self._only_location_missing(missing)
+                and work.ticket.locked_fields.category is None
+                and view.next_step == "TO_BPTN"
+                and view.bptn_reason == "OUT_OF_SCOPE"
+            ):
+                return self._stop(
+                    work,
+                    S.VERIFYING,
+                    R.OUT_OF_SCOPE,
+                    now,
+                    resume_step=2,
+                    note=f"Agent: {view.note()}; thiếu vị trí, không hỏi",
+                )
+        elif (
             missing
             and self._only_location_missing(missing)
             and work.ticket.locked_fields.category is None
@@ -2479,6 +3303,15 @@ class MaintenanceEngine:
         if locked:
             self._bind_category(work, locked, "BPTN_LOCKED", now)  # BPTN already chose; never reclassify
             return False
+        if work.ticket.split_category:  # a ticket born from a split (or its root) keeps the category the split gave it
+            self._bind_category(work, work.ticket.split_category, "AGENT_SPLIT", now)
+            return False
+        if self._try_split(work, now):  # P05 (WP8): the report names two jobs, this ticket keeps the first
+            self._bind_category(work, SPLIT_PAIR[0], "AGENT_SPLIT", now)
+            return False
+        view = self._job_view(work)
+        if view is not None:
+            return self._step_3_by_agent(work, view, now)
         cls = self._classification(work, now)
         if cls.playbook_id is None:
             return self._stop(
@@ -2487,11 +3320,89 @@ class MaintenanceEngine:
         self._bind_category(work, cls.service_category, "AGENT", now)
         return False
 
+    def _step_3_by_agent(self, work: Case, view: DecisionView, now: datetime) -> bool:
+        """Step 3 on the Agent's decision (P02 §6.3): one job binds its category, none or two stop for BPTN."""
+        jobs = view.jobs()
+        model = view.record.model
+        notes = [d.note for d in view.record.disagreements if d.severity == "MINOR"]
+        if len(jobs) == 1:
+            job = jobs[0]
+            category = ServiceCategory(job.category)
+            ticket_type, playbook_id = PLAYBOOK_BY_CATEGORY[category]
+            record = ClassificationRecord(
+                playbook_id=playbook_id,
+                service_category=category,
+                ticket_type=ticket_type,
+                rule_id=_AGENT_CLS_RULE,
+                reason=job.reason,
+                reason_code=None,
+                needs_review=job.needs_review,
+                proposer=f"agent:{model}",
+                notes=notes,
+            )
+            self._set_classification(work, record, job.reason, now)
+            self._bind_category(work, category, "AGENT_LLM", now)
+            return False
+        if not jobs:
+            code = R(view.bptn_reason) if view.bptn_reason else R.CATEGORY_UNCLEAR
+            reason = f"Agent: {view.note()}"
+            record = ClassificationRecord(
+                playbook_id=None,
+                service_category=ServiceCategory.UNKNOWN,
+                ticket_type=TicketType.UNKNOWN,
+                rule_id=_AGENT_CLS_RULE,
+                reason=reason,
+                reason_code=code,
+                needs_review=False,
+                proposer=f"agent:{model}",
+                notes=notes,
+            )
+            self._set_classification(work, record, reason, now)
+            return self._stop(work, S.VERIFYING, code, now, resume_step=4, note=reason)
+        # two valid jobs and `_try_split` refused (P05 §3 conditions not met): BPTN decides
+        reason = "Agent thấy hai việc: " + "; ".join(f"{j.category} ({j.quote})" for j in jobs)
+        reason += "; không tách: điều kiện tách chưa đủ"
+        record = ClassificationRecord(
+            playbook_id=None,
+            service_category=ServiceCategory.UNKNOWN,
+            ticket_type=TicketType.UNKNOWN,
+            rule_id=_AGENT_CLS_RULE,
+            reason=reason,
+            reason_code=R.CATEGORY_UNCLEAR,
+            needs_review=False,
+            proposer=f"agent:{model}",
+            notes=notes,
+        )
+        self._set_classification(work, record, reason, now)
+        return self._stop(work, S.VERIFYING, R.CATEGORY_UNCLEAR, now, resume_step=4, note=reason)
+
+    def _set_classification(self, work: Case, record: ClassificationRecord, reason: str, now: datetime) -> None:
+        """Store the Agent's classification; one CREATE_PROPOSAL audit row, none when a rerun finds it unchanged."""
+        if work.classification == record:
+            return
+        old = work.classification
+        work.classification = record
+        self._agent(
+            work,
+            Action.CREATE_PROPOSAL,
+            "Ticket",
+            work.ticket.ticket_id,
+            "classification",
+            old,
+            record,
+            reason,
+            now=now,
+            rule_id=record.rule_id,
+        )
+
     def _step_4_check_duplicate_ticket(self, work: Case, now: datetime) -> bool:
         """An open ticket created earlier, same category and location, within the window → BPTN decides."""
-        duplicate_of = self._find_duplicate_ticket_id(work)
+        duplicate_of = self._duplicate_for(work, now)
         if duplicate_of is None:
             return False
+        root = self._related_case(duplicate_of)  # locked for the rest of the operation; saved only if a hook edits it
+        if root.ticket.status not in TERMINAL_STATUSES:
+            self._on_duplicate_detected(root, work, now)  # P04 (WP7): count the report on the root
         window = timedelta(hours=self.catalog.sla_config.duplicate_window_hours)
         return self._stop(
             work,
@@ -2501,6 +3412,66 @@ class MaintenanceEngine:
             resume_step=5,
             related_ticket_id=duplicate_of,
             note=f"Cùng vị trí và loại với {duplicate_of} trong {window}",
+        )
+
+    def _duplicate_for(self, work: Case, now: datetime) -> str | None:
+        """Step 4's answer: the Agent's choice when it passes the re-check made now (I-20), else the rules'. An Agent
+        that says "not a duplicate" while the rules see one wins, with a MINOR note in the audit."""
+        rule_choice = self._find_duplicate_ticket_id(work)
+        category, view = self._category(work), self._job_view(work)
+        job = view.job(category) if view is not None and category is not None else None
+        if job is None or not view.field_ok(f"jobs[{view.job_index(category)}].duplicate_of"):
+            return rule_choice
+        if job.duplicate_of is not None:
+            if self._duplicate_still_valid(work, job.duplicate_of, category):
+                return job.duplicate_of
+            self._duplicate_note(
+                work, now, rule_choice, job.duplicate_of, f"Agent chọn trùng {job.duplicate_of} nhưng không còn hợp lệ"
+            )
+            return rule_choice
+        if rule_choice is not None:
+            self._duplicate_note(
+                work, now, rule_choice, None, f"Luật thấy trùng {rule_choice}, Agent cho là không trùng"
+            )
+        return None
+
+    def _duplicate_note(
+        self, work: Case, now: datetime, rule_choice: str | None, agent_choice: str | None, why: str
+    ) -> None:
+        self._agent(
+            work,
+            Action.CREATE_PROPOSAL,
+            "Ticket",
+            work.ticket.ticket_id,
+            "duplicate_check",
+            rule_choice,
+            agent_choice,
+            f"MINOR · {why}",
+            now=now,
+        )
+
+    def _duplicate_still_valid(self, work: Case, other_id: str, category: ServiceCategory) -> bool:
+        """The Agent's duplicate, checked against the tickets as they are now: still open, no safety level, the same
+        category and location, created earlier inside the window, and not one BPTN already said is different."""
+        try:
+            other = self._case_view(other_id)
+        except NotFoundError:
+            return False
+        ticket, mine = other.ticket, work.ticket
+        location = self.effective_location(work)
+        created, other_created = _created_at(mine.raw), _created_at(ticket.raw)
+        if location is None or created is None or other_created is None:
+            return False
+        earliest = created - timedelta(hours=self.catalog.sla_config.duplicate_window_hours)
+        return (
+            other_id != mine.ticket_id
+            and other_id not in work.not_duplicate_of
+            and ticket.status not in TERMINAL_STATUSES
+            and ticket.risk_level == RiskLevel.NONE
+            and self._category(other) == category
+            and earliest <= other_created
+            and (other_created, other_id) < (created, mine.ticket_id)
+            and self.effective_location(other) == location
         )
 
     def _find_duplicate_ticket_id(self, work: Case) -> str | None:
@@ -2513,7 +3484,7 @@ class MaintenanceEngine:
         mine = (created, work.ticket.ticket_id)
         earliest = created - timedelta(hours=self.catalog.sla_config.duplicate_window_hours)
         matches = []
-        for other in self.repo.list():
+        for other in self._cases_snapshot():
             ticket = other.ticket
             if (
                 ticket.ticket_id == work.ticket.ticket_id
@@ -2542,6 +3513,7 @@ class MaintenanceEngine:
             cls = work.classification
             technical = playbook_id == PlaybookId.TEC
             agent_made = source == "AGENT" and cls is not None
+            llm_made = source == "AGENT_LLM" and cls is not None  # the reasoning Agent chose it (P02 §6.3)
             work.proposal = AgentClassificationProposal(
                 proposal_id=f"SIM-ACP-{_suffix(work.ticket.ticket_id)}",
                 ticket_id=work.ticket.ticket_id,
@@ -2553,9 +3525,15 @@ class MaintenanceEngine:
                 asset_type="LIGHTING" if technical else None,
                 reported_symptom="NOT_WORKING" if technical else None,
                 location_proposed=location,
-                matched_rule_ids=[cls.rule_id] if agent_made else ["PB-COM-R-OVR-01"],
-                classification_reason=cls.reason if agent_made else "Category do BPTN chọn (locked_fields)",
-                source_references=["ticket.original_description", "ticket_resident_additions"]
+                matched_rule_ids=[cls.rule_id]
+                if agent_made
+                else [_AGENT_CLS_RULE]
+                if llm_made
+                else ["PB-COM-R-OVR-01"],
+                classification_reason=cls.reason if agent_made or llm_made else "Category do BPTN chọn (locked_fields)",
+                source_references=["ticket.original_description", "ticket_resident_additions", "agent_decision"]
+                if llm_made
+                else ["ticket.original_description", "ticket_resident_additions"]
                 if agent_made
                 else ["locked_fields.category"],
                 created_at=now,
@@ -2568,8 +3546,27 @@ class MaintenanceEngine:
         ticket = work.ticket
         if ticket.priority_source == PrioritySource.HUMAN_OVERRIDE:
             return
-        proposal = propose_priority(category, self.effective_location(work), self._content(work), self.lexicon.priority)
-        if (ticket.priority, ticket.priority_rule_id) == (proposal.priority, proposal.rule_id):
+        view = self._job_view(work)
+        job = view.job(category) if view is not None else None
+        if job is not None and view.field_ok(f"jobs[{view.job_index(category)}].priority"):
+            # the Agent's own priority, from the rule table it must name (checked by P01 §3.2)
+            level, rule_id, text = Priority(job.priority), job.priority_rule_id, f"Agent: {job.priority_reason}"
+            source = PrioritySource.AGENT_LLM
+        else:
+            proposal = propose_priority(
+                category, self.effective_location(work), self._content(work), self.lexicon.priority
+            )
+            level, rule_id, text, source = (
+                proposal.priority,
+                proposal.rule_id,
+                proposal.reason,
+                PrioritySource.AGENT_RULE,
+            )
+        priority, reason = self._apply_pri_u1(work, level, text)  # P04 (WP7): PRI-U1
+        same = (ticket.priority, ticket.priority_rule_id) == (priority, rule_id)
+        if source == PrioritySource.AGENT_LLM:
+            same = same and ticket.priority_source == source
+        if same:
             return  # a pipeline rerun adds no audit row
         self._agent(
             work,
@@ -2578,17 +3575,17 @@ class MaintenanceEngine:
             ticket.ticket_id,
             "priority",
             ticket.priority,
-            proposal.priority,
-            proposal.reason,
+            priority,
+            reason,
             now=now,
-            rule_id=proposal.rule_id,
+            rule_id=rule_id,
         )
         self._set_ticket(
             work,
-            priority=proposal.priority,
-            priority_source=PrioritySource.AGENT_RULE,
-            priority_rule_id=proposal.rule_id,
-            priority_reason=proposal.reason,
+            priority=priority,
+            priority_source=source,
+            priority_rule_id=rule_id,
+            priority_reason=reason,
         )
 
     def _propose_department(self, work: Case, now: datetime) -> None:
@@ -2612,6 +3609,20 @@ class MaintenanceEngine:
     def _step_5_check_bptn_review_needed(self, work: Case, now: datetime) -> bool:
         ticket = work.ticket
         if ticket.review_status == ReviewStatus.CONFIRMED:
+            return False
+        view, category = self._job_view(work), self._category(work)
+        job = view.job(category) if view is not None and category is not None else None
+        if job is not None:  # the Agent decides whether a person must look (P02 §6.4)
+            serious = view.serious(category)
+            if job.needs_review or serious:
+                ticket.review_status = ReviewStatus.PENDING_REVIEW
+                note = (
+                    f"Agent cần người duyệt: {job.review_reason}"
+                    if job.needs_review
+                    else "Bất đồng với luật: " + "; ".join(d.note for d in serious)
+                )
+                return self._stop(work, S.VERIFYING, R.PENDING_REVIEW, now, resume_step=6, note=note[:500])
+            ticket.review_status = ReviewStatus.NOT_REQUIRED
             return False
         cls = work.classification
         if cls is not None and cls.needs_review:
@@ -2643,6 +3654,14 @@ class MaintenanceEngine:
             if len(matches) == 1:
                 status, asset_id = AssetLookupStatus.MATCHED, matches[0].asset_id
                 reason = f"Một asset LIGHTING khớp vị trí ({matches[0].source_ref})"
+                view = self._job_view(work)
+                job = view.job(ServiceCategory.KY_THUAT) if view is not None else None
+                if (  # the Agent's choice counts only while it is still THE one asset at the final location
+                    job is not None
+                    and job.asset_id == asset_id
+                    and view.field_ok(f"jobs[{view.job_index(ServiceCategory.KY_THUAT)}].asset_id")
+                ):
+                    reason = f"Agent: {job.asset_reason} ({matches[0].source_ref})"
             elif matches:
                 status, asset_id, reason = AssetLookupStatus.AMBIGUOUS, None, f"{len(matches)} asset cùng vị trí"
             else:
@@ -2715,8 +3734,16 @@ class MaintenanceEngine:
         if work.planned_for_playbook not in (None, playbook_id):
             work.planned_materials = None  # the previous plan belonged to the other playbook
         if work.planned_materials is None:
-            work.planned_materials = list(self.catalog.default_materials.get(playbook_id, ()))
-            source = f"vật tư mặc định của {playbook_id}"
+            view, category = self._job_view(work), self._category(work)
+            job = view.job(category) if view is not None and category is not None else None
+            if job is not None and job.materials and view.field_ok(f"jobs[{view.job_index(category)}].materials"):
+                work.planned_materials = [
+                    PlannedMaterial(item_code=m.item_code, planned_qty=m.planned_qty) for m in job.materials
+                ]
+                source = "vật tư do Agent chọn"
+            else:
+                work.planned_materials = list(self.catalog.default_materials.get(playbook_id, ()))
+                source = f"vật tư mặc định của {playbook_id}"
         else:
             source = "kế hoạch vật tư của ticket"
         work.planned_for_playbook = playbook_id
@@ -2724,10 +3751,12 @@ class MaintenanceEngine:
 
     def _check_material_lines_against_stock(self, work: Case) -> MaterialStockStatus:
         suffix = _suffix(work.ticket.ticket_id)
+        old_lines = work.material_lines
         work.material_lines = [
             self._material_line(f"SIM-WOD-{suffix}", suffix, index, planned)
             for index, planned in enumerate(work.planned_materials, start=1)
         ]
+        self._carry_over_material_qty(old_lines, work.material_lines)  # P06 (WP9): keep issued/used of the same item
         return _aggregate_stock(work.material_lines)
 
     def _step_8_route_to_department(self, work: Case, now: datetime) -> bool:
@@ -2735,6 +3764,8 @@ class MaintenanceEngine:
         failing = route_blockers(ticket)
         if failing:  # the step order should make this impossible; refuse rather than hand over
             raise EngineError("Bước 8 chạy khi can_route sai", {"failing": failing})
+        if self._hold_for_emergency(work, now):  # P1-E (WP10): an emergency is open at the same place
+            return True
         self._build_draft(work, now)
         department = self.catalog.department(ticket.proposed_department_id)
         handover = {"department_id": department.department_id}
@@ -2993,7 +4024,8 @@ def _safety_escalated_before(case: Case) -> bool:
 
 
 def resident_photos(case: Case) -> list[EvidenceRecord]:
-    return [e for e in case.evidence if e.source == EvidenceSource.RESIDENT_ORIGINAL]
+    """The resident's own photos. Photos merged in from another ticket are staff-only and not listed (I-28)."""
+    return [e for e in case.evidence if e.source == EvidenceSource.RESIDENT_ORIGINAL and e.merged_from is None]
 
 
 def current_round_evidence(case: Case) -> list[EvidenceRecord]:
@@ -3059,6 +4091,12 @@ def build_engine(settings: "Settings | None" = None) -> MaintenanceEngine:
         repo = PostgresRepository(settings.database_url)
         repo.check()
     if settings.llm_mode == "openai" and settings.openai_api_key:
+        if settings.mo_agent_enabled:  # plan 06: the reasoning Agent decides each step, the rules are floor + fallback
+            from src.maintenance.agent.agent import build_agent
+
+            catalog, lexicon = load_catalog(), load_lexicon()  # built once, shared by the Agent and the engine
+            agent = build_agent(settings, catalog, lexicon, lambda: datetime.now(LOCAL_TZ))
+            return MaintenanceEngine(repo=repo, catalog=catalog, lexicon=lexicon, agent=agent)
         return MaintenanceEngine(
             repo=repo,
             llm=openai_client(settings.model_name, settings.openai_api_key, settings.openai_base_url),

@@ -27,8 +27,11 @@ from src.maintenance.enums import (
 )
 from src.maintenance.messages import _templates, overdue_eta_message, status_label
 from src.maintenance.models import Blocker, Case, Ticket
+from src.maintenance.store.base import NotFoundError
 
 ResidentAction = Literal["ADD_INFO", "RATE"]
+# One neutral resident label (CR-BPTN-03 §13) for safety blockers and for a ticket held next to an emergency
+NEUTRAL_LABEL_REASONS = SAFETY_REASONS | {ReasonCode.WAITING_EMERGENCY}
 
 PRIORITY_RANK: dict[Priority | None, int] = {Priority.HIGH: 0, Priority.MEDIUM: 1, Priority.LOW: 2, None: 3}
 
@@ -66,6 +69,15 @@ class MergedInto(BaseModel):
     public_message: str
 
 
+class LinkedTicket(BaseModel):
+    """A ticket of the SAME resident that this one was split from / into or follows up (plan 06 01 §8)."""
+
+    ticket_id: str
+    status: TicketStatus
+    status_label: str
+    public_message: str
+
+
 class ResidentTicketView(BaseModel):
     ticket_id: str
     created_at: str
@@ -80,6 +92,9 @@ class ResidentTicketView(BaseModel):
     timeline: list[TimelineEntry]
     allowed_actions: list[ResidentAction]
     merged_into: MergedInto | None = None
+    split_from: LinkedTicket | None = None
+    split_into: list[LinkedTicket] = []
+    follow_up_of: LinkedTicket | None = None
 
 
 def _department_name(engine: MaintenanceEngine, case: Case) -> str | None:
@@ -97,11 +112,41 @@ def _current_message(case: Case) -> str:
 
 
 def _resident_status_label(case: Case) -> str:
-    """CR-BPTN-03 §13: tier 1 and tier 2 tickets share one neutral label."""
+    """CR-BPTN-03 §13: tier 1 and tier 2 tickets (and a ticket held next to an emergency) share one neutral label."""
     blocker = case.ticket.blocker
-    if blocker is not None and blocker.code in SAFETY_REASONS:
+    if blocker is not None and blocker.code in NEUTRAL_LABEL_REASONS:
         return _templates()["safety_status_label"]
     return status_label(case.ticket.status)
+
+
+def _linked(engine: MaintenanceEngine, ticket_id: str, resident_id: str) -> LinkedTicket | None:
+    """Only a ticket of the same resident is shown; a missing or foreign one is silently left out."""
+    try:
+        other = engine.get(ticket_id)
+    except NotFoundError:
+        return None
+    if other.ticket.resident_id != resident_id:
+        return None
+    return LinkedTicket(
+        ticket_id=other.ticket.ticket_id,
+        status=other.ticket.status,
+        status_label=_resident_status_label(other),
+        public_message=_current_message(other),
+    )
+
+
+def _can_rate(engine: MaintenanceEngine, ticket: Ticket) -> bool:
+    """CLOSED, or MERGED into a root that is CLOSED (plan 06 P04 §7); one rating only."""
+    if ticket.rating is not None:
+        return False
+    if ticket.status == TicketStatus.CLOSED:
+        return True
+    if ticket.status == TicketStatus.MERGED and ticket.merged_into:
+        try:
+            return engine.get(ticket.merged_into).ticket.status == TicketStatus.CLOSED
+        except NotFoundError:
+            return False
+    return False
 
 
 def resident_view(engine: MaintenanceEngine, case: Case, now: datetime) -> ResidentTicketView:
@@ -109,9 +154,9 @@ def resident_view(engine: MaintenanceEngine, case: Case, now: datetime) -> Resid
     actions: list[ResidentAction] = []
     if ticket.status == TicketStatus.NEED_INFO:  # BPTN follows up, but the resident may still add it directly
         actions.append("ADD_INFO")
-    if ticket.status == TicketStatus.CLOSED:
-        if ticket.rating is None:
-            actions.append("RATE")
+    if _can_rate(engine, ticket):
+        actions.append("RATE")
+    split_into = [item for tid in ticket.split_children if (item := _linked(engine, tid, ticket.resident_id))]
     eta = ticket.blocker.eta if ticket.blocker else None
     eta_passed = eta is not None and eta <= now
     merged = None
@@ -128,7 +173,7 @@ def resident_view(engine: MaintenanceEngine, case: Case, now: datetime) -> Resid
         ticket_id=ticket.ticket_id,
         created_at=ticket.raw.created_at,
         description=ticket.raw.original_description,
-        additions=[a.content for a in case.additions],
+        additions=[a.content for a in case.additions if a.merged_from is None],  # merged-in text is staff only
         photos=[e.evidence_id for e in resident_photos(case)],
         status=ticket.status,
         status_label=_resident_status_label(case),
@@ -147,6 +192,9 @@ def resident_view(engine: MaintenanceEngine, case: Case, now: datetime) -> Resid
         ],
         allowed_actions=actions,
         merged_into=merged,
+        split_from=_linked(engine, ticket.split_from, ticket.resident_id) if ticket.split_from else None,
+        split_into=split_into,
+        follow_up_of=_linked(engine, ticket.follow_up_of, ticket.resident_id) if ticket.follow_up_of else None,
     )
 
 
@@ -175,6 +223,16 @@ class BqlTicketRow(BaseModel):
     blocker_owner_role: BlockerOwner | None  # the "needs me" box of BQL/BPTN
     safety_cleared_by: str | None
     closure_kind: ClosureKind | None
+    # Plan 06 (01 §8): staff only
+    duplicate_count: int
+    merged_children: list[str]
+    related_ticket_ids: list[str]
+    split_from: str | None
+    split_children: list[str]
+    follow_up_of: str | None
+    wrong_department_return_count: int
+    agent_source: str | None  # case.agent_decision.source
+    agent_disagreements: list[str]  # "<field>:<severity>"
 
 
 def _overdue(case: Case, now: datetime) -> bool:
@@ -196,11 +254,12 @@ def bql_rows(
     risk_level: RiskLevel | None = None,
     priority: Priority | None = None,
     blocker_owner_role: BlockerOwner | None = None,
+    flag: TicketFlag | None = None,
 ) -> list[BqlTicketRow]:
     rows = []
     # snapshot: a new ticket may arrive from another thread; sorted by the CR-BPTN-03 §7 queue key
     for case in sort_queue(list(engine.cases.values())):
-        ticket, blocker = case.ticket, case.ticket.blocker
+        ticket, blocker, record = case.ticket, case.ticket.blocker, case.agent_decision
         row = BqlTicketRow(
             ticket_id=ticket.ticket_id,
             status=ticket.status,
@@ -226,7 +285,18 @@ def bql_rows(
             blocker_owner_role=blocker.owner_role if blocker else None,
             safety_cleared_by=ticket.safety_cleared_by,
             closure_kind=ticket.closure_kind,
+            duplicate_count=ticket.duplicate_count,
+            merged_children=list(ticket.merged_children),
+            related_ticket_ids=list(ticket.related_ticket_ids),
+            split_from=ticket.split_from,
+            split_children=list(ticket.split_children),
+            follow_up_of=ticket.follow_up_of,
+            wrong_department_return_count=ticket.wrong_department_return_count,
+            agent_source=record.source if record else None,
+            agent_disagreements=[f"{d.field}:{d.severity}" for d in record.disagreements] if record else [],
         )
+        if flag is not None and flag not in ticket.flags:
+            continue
         if status is not None and row.status != status:
             continue
         if department_id is not None and row.department_id != department_id:

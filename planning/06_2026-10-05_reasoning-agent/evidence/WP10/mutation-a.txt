@@ -1,0 +1,29 @@
+﻿..............F.                                                         [100%]
+================================== FAILURES ===================================
+_ test_f05_a_follow_up_does_not_wait_for_its_own_source_with_the_switch_on[memory] _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001A77A74C450>
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001A77A74FF50>
+
+    def test_f05_a_follow_up_does_not_wait_for_its_own_source_with_the_switch_on(engine, clock):
+        hold_on(engine)
+        smoke = report(engine, SMOKE_LAMP)  # an emergency whose repair is a lamp job, so the follow-up can be routed
+        assert engine.get(smoke).ticket.blocker.code == "EMERGENCY_PENDING_BQL"
+        clock.advance(minutes=20)
+        control = report(engine, SWEEP)  # an ordinary report at the same place does wait: the switch is effective
+        assert engine.get(control).ticket.status == TicketStatus.ON_HOLD
+        clock.advance(minutes=5)
+        new = engine.create_follow_up(smoke, BQL, note=NOTE)
+        ticket = new.ticket
+>       assert not (ticket.status == TicketStatus.ON_HOLD and ticket.blocker.code == "WAITING_EMERGENCY")
+E       AssertionError: assert not (<TicketStatus...LD: 'ON_HOLD'> == <TicketStatus...LD: 'ON_HOLD'>
+E         
+E           ON_HOLD and <ReasonCode.W...NG_EMERGENCY'> == 'WAITING_EMERGENCY'
+E         
+E           WAITING_EMERGENCY)
+
+tests\test_maintenance\test_p1_follow_up.py:203: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_follow_up.py::test_f05_a_follow_up_does_not_wait_for_its_own_source_with_the_switch_on[memory]
+1 failed, 15 passed, 5 deselected in 0.88s
+EXIT=1

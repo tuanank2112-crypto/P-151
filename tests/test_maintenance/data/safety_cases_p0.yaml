@@ -41,7 +41,7 @@ safety_cases:
   - {id: SC-34, text: "Chập cháy ở hộp đèn tầng 5 tòa SIM-A.", expect: EMERGENCY, signals: [S-05]}
   - {id: SC-35, text: "Đèn tầng 2 tòa SIM-B rơi xuống, có người bị thương.", expect: EMERGENCY, signals: [S-09]}
   - {id: SC-36, text: "Hành lang tầng 3 tòa SIM-A có mùi hắc khó chịu.", expect: UNCLEAR, signals: [T2-05]}
-  - {id: SC-37, text: "Có bị điện giật nhẹ khi chạm vào hộp đèn tầng 4 tòa SIM-A.", expect: UNCLEAR, signals: [T2-03]}   # S-06 là P1 (Q06): P0 chỉ Bậc 2
+  - {id: SC-37, text: "Có bị điện giật nhẹ khi chạm vào hộp đèn tầng 4 tòa SIM-A.", expect: EMERGENCY, signals: [S-06]}   # plan 06 SPEC-P03 §5: S-06 (P1) bật -> Bậc 1 (plan 01 Q18 đã báo trước)
   - {id: SC-38, text: "Đèn hành lang tầng 3 tòa SIM-A cháy rồi, giờ tối om.", expect: NONE, absent: [T2-03]}
   - {id: SC-39, text: "Hộp đèn tầng 3 tòa SIM-A cháy, có khói.", expect: EMERGENCY, signals: [S-04]}
   - {id: SC-40, text: "Không có dấu hiệu cháy nổ, chỉ là đèn hành lang tầng 3 tòa SIM-A hỏng.", expect: NONE, absent: [S-05]}

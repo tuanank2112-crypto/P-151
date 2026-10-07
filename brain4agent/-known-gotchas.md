@@ -66,6 +66,7 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 
 ## Evidence và pytest (2026-10-03)
 - Pytest mặc định có thể collect `test*.txt` như doctest, kể cả output trong planning/evidence; output PowerShell UTF-16 làm collection lỗi UnicodeDecodeError. Đặt tên evidence không bắt đầu `test` (vd `scope-stat.txt`), không sửa tay nội dung output máy.
+- Fixture `engine` (tests/test_maintenance/conftest.py) dùng đồng hồ THẬT: test nào chạy lại pipeline tới bước 8 sẽ đỏ sau 22:00 (OUT_OF_HOURS) dù code đúng. Test cần giờ hành chính phải đặt `engine.clock = Clock(MONDAY_9AM)` hoặc dùng fixture `fresh` (2026-10-05, `test_partial_delivery_…`).
 - PowerShell pipe sang Python cần `$OutputEncoding` UTF-8 và `PYTHONIOENCODING=utf-8` để giữ tiếng Việt của input/output; tránh gold case bị biến thành dấu hỏi.
 
 ## Day03 đo local (2026-10-03)
@@ -84,7 +85,7 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 - **Plugin `forms` của CDN đè class tự viết:** CDN chèn `<style>` SAU `theme.css`; selector `[type='text']`, `select` (0,1,1) thắng `.field` (0,1,0) ⇒ ô nhập mất nền/viền/bo góc. Viết `html body .field` (0,1,2). Áp cho mọi class tự viết đụng thuộc tính mà plugin `forms` đặt.
 - **Đo UI không được làm trên `:8000`:** container `backend` đọc `.env` = Supabase dùng chung; bấm thử ghi thẳng vào DB nhóm. Chạy `MO_STORE=memory MO_PHOTO_STORE=local LLM_MODE=mock DATABASE_URL= python -m uvicorn src.main:app --port 8001` (biến môi trường thắng `.env`). Store memory KHÔNG có ticket cư dân (seed CLN/TEC bị UI lọc) — tạo ticket qua API trước khi chụp.
 - **Playwright `text=Nhận việc` khớp chuỗi con, không phân biệt hoa thường** ⇒ trúng ô thống kê "Chờ nhận việc". Dùng `getByRole('button', { name, exact: true })`. Bấm item danh sách gây render lại ⇒ chờ `networkidle` trước khi `fill`, nếu không giá trị bị xoá.
-- **`test_assess_is_linear_on_adversarial_24kb_texts` (ngưỡng 1 giây) đỏ khi máy bận** (uvicorn + Playwright chạy song song); riêng lẻ ~2,6 giây cho 6 văn bản. Đỏ đơn lẻ ⇒ chạy lại khi máy rảnh trước khi kết luận.
+- **`test_assess_is_linear_on_adversarial_24kb_texts` và `test_assess_is_linear_on_a_24kb_text` (ngưỡng 1 giây, đo thật ~0,6 giây) đỏ khi máy bận** (cả ngay sau checkout/merge nhiều file) (uvicorn + Playwright chạy song song); riêng lẻ ~2,6 giây cho 6 văn bản. Đỏ đơn lẻ ⇒ chạy lại khi máy rảnh trước khi kết luận.
 
 ## Cổng phản ánh cư dân `portal/` (Next.js, 2026-10-07)
 - **Next 16.4 khác kiến thức cũ:** `create-next-app` bật `cacheComponents` + `partialPrefetching`; đọc `cookies()`/DB ngoài `<Suspense>` là lỗi build. Mọi page đọc session đặt trong `<Suspense fallback={<DashboardSkeleton/>}>`. Tài liệu đúng bản nằm ở `portal/node_modules/next/dist/docs/`. `portal/AGENTS.md` do `next dev` tự sinh lại — giữ, không coi là luật dự án (luật ở `AGENTS.md` gốc).

@@ -1,0 +1,60 @@
+................FFF................                                      [100%]
+================================== FAILURES ===================================
+________ test_s05_the_old_llm_path_never_splits_when_the_llm_abstains _________
+
+    def test_s05_the_old_llm_path_never_splits_when_the_llm_abstains():
+        engine = MaintenanceEngine(clock=Clock(MONDAY_9AM), llm=_old_llm("UNKNOWN", "UNKNOWN"))
+        engine.reset(with_fixtures=False)
+        case = engine.receive(MIXED, resident_id=RESIDENT)
+        assert case.classification.reason_code == "CATEGORY_UNCLEAR"  # the rules alone would have split this
+>       assert case.ticket.split_children == [] and len(engine.repo.list()) == 1
+E       AssertionError: assert (['SIM-TKT-0002'] == []
+E         
+E         Left contains one more item: 'SIM-TKT-0002'
+E         Use -v to get more diff)
+
+tests\test_maintenance\test_p1_split.py:233: AssertionError
+_ test_s05_the_old_llm_path_never_splits_when_the_llm_chooses_one_playbook[VE_SINH-COMMON_AREA_CLEANING] _
+
+service = 'VE_SINH', ticket_type = 'COMMON_AREA_CLEANING'
+
+    @pytest.mark.parametrize(
+        ("service", "ticket_type"),
+        [("VE_SINH", "COMMON_AREA_CLEANING"), ("KY_THUAT", "COMMON_AREA_LIGHTING")],
+    )
+    def test_s05_the_old_llm_path_never_splits_when_the_llm_chooses_one_playbook(service, ticket_type):
+        engine = MaintenanceEngine(clock=Clock(MONDAY_9AM), llm=_old_llm(service, ticket_type))
+        engine.reset(with_fixtures=False)
+        case = engine.receive(MIXED, resident_id=RESIDENT)
+>       assert case.ticket.split_children == [] and len(engine.repo.list()) == 1
+E       AssertionError: assert (['SIM-TKT-0002'] == []
+E         
+E         Left contains one more item: 'SIM-TKT-0002'
+E         Use -v to get more diff)
+
+tests\test_maintenance\test_p1_split.py:245: AssertionError
+_ test_s05_the_old_llm_path_never_splits_when_the_llm_chooses_one_playbook[KY_THUAT-COMMON_AREA_LIGHTING] _
+
+service = 'KY_THUAT', ticket_type = 'COMMON_AREA_LIGHTING'
+
+    @pytest.mark.parametrize(
+        ("service", "ticket_type"),
+        [("VE_SINH", "COMMON_AREA_CLEANING"), ("KY_THUAT", "COMMON_AREA_LIGHTING")],
+    )
+    def test_s05_the_old_llm_path_never_splits_when_the_llm_chooses_one_playbook(service, ticket_type):
+        engine = MaintenanceEngine(clock=Clock(MONDAY_9AM), llm=_old_llm(service, ticket_type))
+        engine.reset(with_fixtures=False)
+        case = engine.receive(MIXED, resident_id=RESIDENT)
+>       assert case.ticket.split_children == [] and len(engine.repo.list()) == 1
+E       AssertionError: assert (['SIM-TKT-0002'] == []
+E         
+E         Left contains one more item: 'SIM-TKT-0002'
+E         Use -v to get more diff)
+
+tests\test_maintenance\test_p1_split.py:245: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_split.py::test_s05_the_old_llm_path_never_splits_when_the_llm_abstains
+FAILED tests/test_maintenance/test_p1_split.py::test_s05_the_old_llm_path_never_splits_when_the_llm_chooses_one_playbook[VE_SINH-COMMON_AREA_CLEANING]
+FAILED tests/test_maintenance/test_p1_split.py::test_s05_the_old_llm_path_never_splits_when_the_llm_chooses_one_playbook[KY_THUAT-COMMON_AREA_LIGHTING]
+3 failed, 32 passed, 2 deselected in 2.81s
+EXIT=1

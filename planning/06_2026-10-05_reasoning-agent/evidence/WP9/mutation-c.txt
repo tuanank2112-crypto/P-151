@@ -1,0 +1,248 @@
+....F..F.F.FF..F                                                         [100%]
+================================== FAILURES ===================================
+________ test_d04_report_after_start_keeps_the_execution_data[memory] _________
+
+store_engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001FF5A1527D0>
+
+    def test_d04_report_after_start_keeps_the_execution_data(store_engine):
+        engine = store_engine
+        tid = started(engine)
+        before = engine.get(tid)
+        case = engine.report_wrong_department(tid, CLN, note="Khu này thuộc phòng kỹ thuật")
+        ticket = case.ticket
+        assert ticket.status == "VERIFYING" and ticket.blocker.code == "WRONG_DEPT_AFTER_START"
+        assert ticket.blocker.owner_role == "BQL"
+>       assert ticket.department_id == before.ticket.department_id == "DEPT_CLEANING"
+E       AssertionError: assert None == <Department.DEPT_CLEANING: 'DEPT_CLEANING'>
+E        +  where None = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).department_id
+E        +  and   <Department.DEPT_CLEANING: 'DEPT_CLEANING'> = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).department_id
+E        +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_department.py:94: AssertionError
+____________ test_d06_keep_returns_to_in_progress_with_data_intact ____________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x000001FF5A15FB90>
+
+    def test_d06_keep_returns_to_in_progress_with_data_intact(fresh):
+        tid = reported(fresh)
+        before = fresh.get(tid)
+        with pytest.raises(GuardError):
+            fresh.bql_wrong_department(tid, BQL, decision="KEEP", note="")
+>       case = fresh.bql_wrong_department(tid, BQL, decision="KEEP", note="Đúng phòng vệ sinh, làm tiếp")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_department.py:139: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\maintenance\coordination\department.py:148: in bql_wrong_department
+    return self.transition(
+src\maintenance\engine.py:1693: in transition
+    return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1750: in _transition
+    return self._mutate(
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+src\maintenance\engine.py:1748: in op
+    self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
+src\maintenance\engine.py:2432: in _human_transition
+    self._t17_keep_department(work, actor_id, role, now, note=note)
+src\maintenance\coordination\department.py:106: in _t17_keep_department
+    self._apply_transition(work, TicketStatus.IN_PROGRESS, actor_id, role, now, note=note)
+src\maintenance\engine.py:2273: in _apply_transition
+    self._set_ticket(work, status=to, blocker=blocker, **changes)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x000001FF5A15FB90>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+changes = {'status': <TicketStatus.IN_PROGRESS: 'IN_PROGRESS'>, 'blocker': None}
+
+    def _set_ticket(self, work: Case, **changes: Any) -> None:
+        """Apply several ticket fields at once, so the cross-field validators see the final combination."""
+>       work.ticket = Ticket.model_validate({**work.ticket.model_dump(), **changes})
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for Ticket
+E         Value error, Trạng thái IN_PROGRESS phải có department_id (đã giao ở bước 8) [type=value_error, input_value={'ticket_id': 'SIM-TKT-00...None, 'synthetic': True}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+src\maintenance\engine.py:2243: ValidationError
+_________ test_d07_to_bptn_takes_a_snapshot_and_resets_the_execution __________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x000001FF5A29A950>
+
+    def test_d07_to_bptn_takes_a_snapshot_and_resets_the_execution(fresh):
+        tid = reported(fresh)
+        before = fresh.get(tid)
+>       case = fresh.bql_wrong_department(tid, BQL, decision="TO_BPTN", note="Là việc kỹ thuật, BPTN giao lại")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_department.py:159: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\maintenance\coordination\department.py:196: in bql_wrong_department
+    return self._mutate(
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+src\maintenance\coordination\department.py:163: in op
+    work.execution_snapshots.append(self._take_execution_snapshot(work, actor_id, now))  # before the reset
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x000001FF5A29A950>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+actor_id = 'SIM-ACTOR-BQL-01'
+now = datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+
+    def _take_execution_snapshot(self, work: Case, actor_id: str, now: datetime) -> ExecutionSnapshot:
+        """Deep copy of the execution data, taken BEFORE E02 resets the checklist (SPEC-P06 §5)."""
+        ticket = work.ticket
+>       return ExecutionSnapshot(
+            snapshot_id=f"SIM-SNP-{_suffix(ticket.ticket_id)}-{len(work.execution_snapshots) + 1:02d}",
+            ticket_id=ticket.ticket_id,
+            reason="BQL_REASSIGN_TO_BPTN",
+            taken_at=now,
+            taken_by=actor_id,
+            department_id=ticket.department_id,
+            work_order_draft_id=work.draft.work_order_draft_id if work.draft else None,
+            playbook_id=work.draft.playbook_id if work.draft else None,
+            checklist_items=[item.model_copy(deep=True) for item in work.checklist_items],
+            material_lines=[line.model_copy(deep=True) for line in work.material_lines],
+            evidence_ids=[record.evidence_id for record in work.evidence],
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ExecutionSnapshot
+E       department_id
+E         Input should be 'DEPT_CLEANING' or 'DEPT_TECHNICAL' [type=enum, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/enum
+
+src\maintenance\coordination\department.py:111: ValidationError
+___ test_d08_after_to_bptn_bptn_picks_another_category_and_a_new_department ___
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x000001FF5A3977D0>
+
+    def test_d08_after_to_bptn_bptn_picks_another_category_and_a_new_department(fresh):
+        tid = reported(fresh)
+>       fresh.bql_wrong_department(tid, BQL, decision="TO_BPTN", note="Là việc kỹ thuật")
+
+tests\test_maintenance\test_p1_department.py:193: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\maintenance\coordination\department.py:196: in bql_wrong_department
+    return self._mutate(
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+src\maintenance\coordination\department.py:163: in op
+    work.execution_snapshots.append(self._take_execution_snapshot(work, actor_id, now))  # before the reset
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x000001FF5A3977D0>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+actor_id = 'SIM-ACTOR-BQL-01'
+now = datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+
+    def _take_execution_snapshot(self, work: Case, actor_id: str, now: datetime) -> ExecutionSnapshot:
+        """Deep copy of the execution data, taken BEFORE E02 resets the checklist (SPEC-P06 §5)."""
+        ticket = work.ticket
+>       return ExecutionSnapshot(
+            snapshot_id=f"SIM-SNP-{_suffix(ticket.ticket_id)}-{len(work.execution_snapshots) + 1:02d}",
+            ticket_id=ticket.ticket_id,
+            reason="BQL_REASSIGN_TO_BPTN",
+            taken_at=now,
+            taken_by=actor_id,
+            department_id=ticket.department_id,
+            work_order_draft_id=work.draft.work_order_draft_id if work.draft else None,
+            playbook_id=work.draft.playbook_id if work.draft else None,
+            checklist_items=[item.model_copy(deep=True) for item in work.checklist_items],
+            material_lines=[line.model_copy(deep=True) for line in work.material_lines],
+            evidence_ids=[record.evidence_id for record in work.evidence],
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ExecutionSnapshot
+E       department_id
+E         Input should be 'DEPT_CLEANING' or 'DEPT_TECHNICAL' [type=enum, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/enum
+
+src\maintenance\coordination\department.py:111: ValidationError
+______________ test_d08b_same_item_code_carries_issued_and_used _______________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x000001FF5A10FB90>
+
+    def test_d08b_same_item_code_carries_issued_and_used(fresh):
+        tid = reported(fresh)
+        before = fresh.get(tid)
+>       fresh.bql_wrong_department(tid, BQL, decision="TO_BPTN", note="Giao lại phòng khác")
+
+tests\test_maintenance\test_p1_department.py:206: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\maintenance\coordination\department.py:196: in bql_wrong_department
+    return self._mutate(
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+src\maintenance\coordination\department.py:163: in op
+    work.execution_snapshots.append(self._take_execution_snapshot(work, actor_id, now))  # before the reset
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x000001FF5A10FB90>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+actor_id = 'SIM-ACTOR-BQL-01'
+now = datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+
+    def _take_execution_snapshot(self, work: Case, actor_id: str, now: datetime) -> ExecutionSnapshot:
+        """Deep copy of the execution data, taken BEFORE E02 resets the checklist (SPEC-P06 §5)."""
+        ticket = work.ticket
+>       return ExecutionSnapshot(
+            snapshot_id=f"SIM-SNP-{_suffix(ticket.ticket_id)}-{len(work.execution_snapshots) + 1:02d}",
+            ticket_id=ticket.ticket_id,
+            reason="BQL_REASSIGN_TO_BPTN",
+            taken_at=now,
+            taken_by=actor_id,
+            department_id=ticket.department_id,
+            work_order_draft_id=work.draft.work_order_draft_id if work.draft else None,
+            playbook_id=work.draft.playbook_id if work.draft else None,
+            checklist_items=[item.model_copy(deep=True) for item in work.checklist_items],
+            material_lines=[line.model_copy(deep=True) for line in work.material_lines],
+            evidence_ids=[record.evidence_id for record in work.evidence],
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ExecutionSnapshot
+E       department_id
+E         Input should be 'DEPT_CLEANING' or 'DEPT_TECHNICAL' [type=enum, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/enum
+
+src\maintenance\coordination\department.py:111: ValidationError
+___________ test_d10_report_on_a_rework_ticket_replaces_the_blocker ___________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x000001FF5A3F1A10>
+
+    def test_d10_report_on_a_rework_ticket_replaces_the_blocker(fresh):
+        tid = report(fresh, SWEEP)
+        to_ready(fresh, tid)
+        case = fresh.rework(tid, BQL, note="Còn bẩn")
+        assert case.ticket.blocker.code == "REWORK" and case.ticket.rework_count == 1
+        round_start = case.evidence_round_start
+        case = fresh.report_wrong_department(tid, CLN, note="Thực ra thuộc phòng kỹ thuật")
+        assert case.ticket.status == "VERIFYING" and case.ticket.blocker.code == "WRONG_DEPT_AFTER_START"
+        assert case.ticket.rework_count == 1 and case.evidence_round_start == round_start
+>       assert case.ticket.department_id == "DEPT_CLEANING"
+E       AssertionError: assert None == 'DEPT_CLEANING'
+E        +  where None = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).department_id
+E        +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_department.py:246: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_department.py::test_d04_report_after_start_keeps_the_execution_data[memory]
+FAILED tests/test_maintenance/test_p1_department.py::test_d06_keep_returns_to_in_progress_with_data_intact
+FAILED tests/test_maintenance/test_p1_department.py::test_d07_to_bptn_takes_a_snapshot_and_resets_the_execution
+FAILED tests/test_maintenance/test_p1_department.py::test_d08_after_to_bptn_bptn_picks_another_category_and_a_new_department
+FAILED tests/test_maintenance/test_p1_department.py::test_d08b_same_item_code_carries_issued_and_used
+FAILED tests/test_maintenance/test_p1_department.py::test_d10_report_on_a_rework_ticket_replaces_the_blocker
+6 failed, 10 passed, 1 deselected in 1.66s
+EXIT=1

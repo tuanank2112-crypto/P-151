@@ -26,6 +26,8 @@ ABOVE_LABEL = {
     "Chất lỏng gây ngạt mũi": "EMERGENCY",  # "ngạt" is not in homographs.ngat, so S-09 "ngat" stays PRESENT
     "Không có tia lửa và khói.": "UNCLEAR",  # R4: negation does not spread over "và"; "khói" is the R9 tier-2 net
     "Hôm qua có tia lửa": "EMERGENCY",  # R5: only hedges and "đã hết" markers lower tier 1; "hôm qua" is neither
+    "Mùi gas": "EMERGENCY",  # plan 06 SPEC-P03 §5: S-10 (P1) is active; the gold label was written for phase P0
+    "Kim tiêm": "EMERGENCY",  # plan 06 SPEC-P03 §5: S-13 (P1) is active; the gold label was written for phase P0
 }
 
 

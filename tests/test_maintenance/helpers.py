@@ -93,3 +93,37 @@ def finish(engine: MaintenanceEngine, ticket_id: str):
 def to_ready(engine: MaintenanceEngine, ticket_id: str):
     engine.accept(ticket_id, dept_of(engine, ticket_id))
     return finish(engine, ticket_id)
+
+
+# ---------------------------------------------------------------------- plan 06 WP6 (TESTING §2): the Agent in the engine
+
+
+def agent_engine(clock, client) -> MaintenanceEngine:
+    """An engine whose Agent asks `client` (a fake from `agent/client.py`), on `clock`, with no fixture ticket."""
+    from src.maintenance.agent.agent import ReasoningAgent
+    from src.maintenance.catalog import load_catalog, load_lexicon
+
+    agent = ReasoningAgent(client, catalog=load_catalog(), lexicon=load_lexicon(), model_label="fake", clock=clock)
+    engine = MaintenanceEngine(clock=clock, agent=agent)
+    engine.reset(with_fixtures=False)
+    return engine
+
+
+def decision(**overrides) -> str:
+    """JSON of the prompt example (01 §3.1) with dotted-path overrides, e.g. decision(**{"jobs.1.quote": "..."})."""
+    import copy
+    import json
+
+    from src.maintenance.agent import prompt
+
+    doc = copy.deepcopy(prompt.EXAMPLE)
+    for path, value in overrides.items():
+        node = doc
+        *head, last = path.split(".")
+        for part in head:
+            node = node[int(part)] if isinstance(node, list) else node[part]
+        if isinstance(node, list):
+            node[int(last)] = value
+        else:
+            node[last] = value
+    return json.dumps(doc, ensure_ascii=False)

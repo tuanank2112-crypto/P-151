@@ -1,0 +1,6 @@
+$ C:/Users/lenku/AppData/Local/Temp/claude/d--P151/640e8089-3b43-4a75-9055-cbb167391b76/scratchpad/venv311/Scripts/python.exe -m ruff check src/ tests/   # scope = Makefile lint / CI; base 3e3a3f8
+All checks passed!
+EXIT=0
+$ C:/Users/lenku/AppData/Local/Temp/claude/d--P151/640e8089-3b43-4a75-9055-cbb167391b76/scratchpad/venv311/Scripts/python.exe -m ruff format --check src/ tests/
+101 files already formatted
+EXIT=0

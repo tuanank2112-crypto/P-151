@@ -1,0 +1,60 @@
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/break6_wrong_split.py
+[REF-MUST_NOT_SPLIT] Đèn hành lang tầng 3 tòa S1 hỏng nên không thấy rác mà dọn
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Hành lang tầng 3 tòa S1 tối om vì đèn hỏng, đi vấp phải rác
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Sảnh thang máy tầng 2 tòa S2 đèn tắt nên lao công không dọn rác được
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S2 / Tầng 2 / Sảnh thang máy dept=None G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Do đèn cầu thang bộ tầng 6 tòa S1 không sáng mà rác ở đó không ai thấy để dọn
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S1 / Tầng 6 / Cầu thang bộ dept=None G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Đèn hành lang tầng 4 tòa S2 hỏng khiến cư dân đá đổ thùng rác
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S2 / Tầng 4 / Hành lang dept=None G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Bóng đèn hành lang tầng 7 tòa S2 vỡ, mảnh vỡ vương vãi khắp sàn
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S2 / Tầng 7 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Hành lang tầng 3 tòa S1 hình như có rác, đèn cũng không biết có hỏng không
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Sảnh chính tòa S1 có rác hoặc đèn không sáng?
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S1 / Tầng 1 / Sảnh chính dept=None G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Rác ở hành lang tầng 3 tòa S1, còn đèn sảnh thang máy tầng 5 tòa S1 không sáng
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S1 / Tầng 5 / Sảnh thang máy dept=None G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Phòng rác tầng 2 tòa S2 đầy tràn, đèn hành lang tầng 2 tòa S2 hỏng
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S2 / Tầng 2 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Hành lang tầng 3 tòa S1 nhiều rác, đèn hành lang tầng 4 tòa S1 cũng hỏng
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Hành lang tầng 3 tòa S1 nhiều rác, đèn trong căn hộ tôi cũng hỏng
+     rules=no-split ROUTED/- | mirror=no-split ROUTED/- | reckless=SPLIT root ROUTED/- child VERIFYING/PENDING_REVIEW @ Tòa S1 / Tầng 3 / Hành lang dept=None G1/2/3=['category']
+[REF-MUST_NOT_SPLIT] hanh lang tang 3 toa S1 nuoc ngot do ra san, den hong
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Hành lang tầng 3 tòa S1 đèn không sáng
+     rules=no-split ROUTED/- | mirror=no-split ROUTED/- | reckless=SPLIT root VERIFYING/PENDING_REVIEW child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=['category']
+[REF-MUST_NOT_SPLIT] Hành lang tầng 5 tòa S2 nhiều rác quá
+     rules=no-split ROUTED/- | mirror=no-split ROUTED/- | reckless=SPLIT root ROUTED/- child VERIFYING/PENDING_REVIEW @ Tòa S2 / Tầng 5 / Hành lang dept=None G1/2/3=['category']
+[REF-MUST_NOT_SPLIT] Đèn sảnh tầng 2 tòa S2 tắt có lẽ do mất điện, sàn thì bẩn
+     rules=no-split NEED_INFO/MISSING_INFO | mirror=no-split NEED_INFO/MISSING_INFO | reckless=no-split NEED_INFO/MISSING_INFO
+[REF-MUST_NOT_SPLIT] Hành lang tầng 6 tòa S1 rác nhiều, chắc là đèn cũng hỏng
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S1 / Tầng 6 / Hành lang dept=None G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Hành lang tầng 3 tòa S1 nhiều rác vì bóng đèn hành lang không sáng
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[cause] Hành lang tầng 3 tòa S1 tối om vì đèn hỏng nên không thấy rác để dọn
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[cause] Đèn hành lang tầng 3 tòa S1 không sáng nên rác đổ ra không ai thấy
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[cause] Bóng đèn sảnh thang máy tầng 5 tòa S1 vỡ, mảnh vỡ vương vãi khắp sàn
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S1 / Tầng 5 / Sảnh thang máy dept=None G1/2/3=[]
+[cause] Do đèn cầu thang bộ tầng 4 tòa S2 hỏng nên cư dân vứt rác bừa
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S2 / Tầng 4 / Cầu thang bộ dept=None G1/2/3=[]
+[cause] Hành lang tầng 2 tòa S2 bẩn do đèn tắt cả tuần, lao công không dọn
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S2 / Tầng 2 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[two-places] Hành lang tầng 3 tòa S1 nhiều rác, còn đèn sảnh thang máy tầng 5 tòa S1 không sáng
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S1 / Tầng 5 / Sảnh thang máy dept=None G1/2/3=[]
+[two-places] Rác ở hầm xe tầng B1 tòa S1, đèn hành lang tầng 2 tòa S2 cũng hỏng
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S1 / Tầng 2 / Hành lang dept=None G1/2/3=[]
+[two-places] Tầng 3 tòa S1 hành lang nhiều rác; tầng 7 tòa S2 hành lang đèn không sáng
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[no-place] Hành lang nhiều rác, đèn cũng không sáng
+     rules=no-split NEED_INFO/MISSING_INFO | mirror=no-split NEED_INFO/MISSING_INFO | reckless=no-split NEED_INFO/MISSING_INFO
+[danger] Hành lang tầng 3 tòa S1 nhiều rác, đèn không sáng và hình như có mùi khét
+     rules=no-split VERIFYING/SAFETY_REVIEW_REQUIRED | mirror=no-split VERIFYING/SAFETY_REVIEW_REQUIRED | reckless=no-split VERIFYING/SAFETY_REVIEW_REQUIRED
+splits per mode: {'rules': 0, 'mirror': 0, 'reckless': 25} of 28
+RESULT sentences=28 splits_rules=0 splits_mirror=0 splits_reckless=25 violations=0
+EXIT=0

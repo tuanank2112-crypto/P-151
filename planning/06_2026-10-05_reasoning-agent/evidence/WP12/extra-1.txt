@@ -1,0 +1,20 @@
+$ LLM_MODE=mock PYTHONUTF8=1 python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/extra_addition_not_assessed.py .    # HEAD (this worktree)
+SIM-TKT-0001 [NEED_INFO/MISSING_INFO] + 'Có mùi gas nồng nặc, sợ quá' -> NEED_INFO/MISSING_INFO risk=NONE note='Thiếu: location_building, location_floor'
+SIM-TKT-0002 [NEED_INFO/MISSING_INFO] + 'Có khói bốc ra từ hộp điện' -> NEED_INFO/MISSING_INFO risk=NONE note='Thiếu: location_building, location_floor'
+SIM-TKT-0003 [NEED_INFO/MISSING_INFO] + 'Hộp đèn đang cháy, có lửa!' -> NEED_INFO/MISSING_INFO risk=NONE note='Thiếu: location_building, location_floor'
+SIM-TKT-0004 [NEED_INFO/MISSING_INFO] + 'Có người bị điện giật ngất ở đây' -> NEED_INFO/MISSING_INFO risk=NONE note='Thiếu: location_building, location_floor'
+SIM-TKT-0005 [NEED_INFO/MISSING_INFO] + 'Ở tầng 3, có mùi khét và tia lửa' -> NEED_INFO/MISSING_INFO risk=NONE note='Thiếu: location_building, location_floor'
+SIM-TKT-0006 [NEED_INFO/MISSING_INFO] + 'Có kim tiêm vứt bừa ở đó' -> NEED_INFO/MISSING_INFO risk=NONE note='Thiếu: location_building, location_floor'
+SIM-TKT-0007 [VERIFYING/SAFETY_REVIEW_REQUIRED risk=UNCLEAR] T06 -> + 'Giờ có lửa bốc lên rồi!' -> NEED_INFO/MISSING_INFO risk=UNCLEAR
+RESULT root=. cases=7 tier1_addition_left_unassessed=6 t06_answer_not_emergency=1
+EXIT=1
+$ LLM_MODE=mock PYTHONUTF8=1 python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/extra_addition_not_assessed.py <scratchpad>/old82    # base 82f01f0
+SIM-TKT-0001 [NEED_INFO/MISSING_INFO] + 'Có mùi gas nồng nặc, sợ quá' -> NEED_INFO/MISSING_INFO risk=NONE note='Thiếu: location_building, location_floor'
+SIM-TKT-0002 [NEED_INFO/MISSING_INFO] + 'Có khói bốc ra từ hộp điện' -> NEED_INFO/MISSING_INFO risk=NONE note='Thiếu: location_building, location_floor'
+SIM-TKT-0003 [NEED_INFO/MISSING_INFO] + 'Hộp đèn đang cháy, có lửa!' -> NEED_INFO/MISSING_INFO risk=NONE note='Thiếu: location_building, location_floor'
+SIM-TKT-0004 [NEED_INFO/MISSING_INFO] + 'Có người bị điện giật ngất ở đây' -> NEED_INFO/MISSING_INFO risk=NONE note='Thiếu: location_building, location_floor'
+SIM-TKT-0005 [NEED_INFO/MISSING_INFO] + 'Ở tầng 3, có mùi khét và tia lửa' -> NEED_INFO/MISSING_INFO risk=NONE note='Thiếu: location_building, location_floor'
+SIM-TKT-0006 [NEED_INFO/MISSING_INFO] + 'Có kim tiêm vứt bừa ở đó' -> NEED_INFO/MISSING_INFO risk=NONE note='Thiếu: location_building, location_floor'
+SIM-TKT-0007 [VERIFYING/SAFETY_REVIEW_REQUIRED risk=UNCLEAR] T06 -> + 'Giờ có lửa bốc lên rồi!' -> NEED_INFO/MISSING_INFO risk=UNCLEAR
+RESULT root=C:/Users/lenku/AppData/Local/Temp/claude/d--P151/640e8089-3b43-4a75-9055-cbb167391b76/scratchpad/old82 cases=7 tier1_addition_left_unassessed=6 t06_answer_not_emergency=1
+EXIT=1

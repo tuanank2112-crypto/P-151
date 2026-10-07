@@ -1,0 +1,29 @@
+...F                                                                     [100%]
+================================== FAILURES ===================================
+_______________ test_j05_marker_migration_has_no_sql_only_pass ________________
+
+    def test_j05_marker_migration_has_no_sql_only_pass():
+        module = ast.parse(MIGRATION.read_text(encoding="utf-8"))
+        assignments = {
+            node.targets[0].id: ast.literal_eval(node.value)
+            for node in module.body
+            if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name)
+        }
+        assert assignments["revision"] == MARKER
+        assert assignments["down_revision"] == "0001_maintops_initial"
+        functions = {node.name: node for node in module.body if isinstance(node, ast.FunctionDef)}
+        assert set(functions) == {"upgrade", "downgrade"}
+        for node in functions.values():
+            statements = node.body[1:] if ast.get_docstring(node) is not None else node.body
+>           assert [type(stmt) for stmt in statements] == [ast.Pass], node.name
+E           AssertionError: upgrade
+E           assert [<class 'ast.Expr'>] == [<class 'ast.Pass'>]
+E             
+E             At index 0 diff: <class 'ast.Expr'> != <class 'ast.Pass'>
+E             Use -v to get more diff
+
+tests\test_maintenance\test_p1_store.py:125: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_store.py::test_j05_marker_migration_has_no_sql_only_pass
+1 failed, 3 passed, 2 deselected in 0.53s
+EXIT=1

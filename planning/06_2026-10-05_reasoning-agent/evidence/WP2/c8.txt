@@ -1,0 +1,7 @@
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. C:/Users/lenku/AppData/Local/Temp/claude/d--P151/640e8089-3b43-4a75-9055-cbb167391b76/scratchpad/venv311/Scripts/python.exe -m pytest -q -s -p no:cacheprovider tests/test_maintenance/test_safety.py -k 24kb   # lexicon 2026-10-05.p1d, base 3e3a3f8
+assess 24024 chars: 0.285s
+assess 25225 chars: 0.425s
+.slowest adversarial 24 KB text: 0.376s
+.
+2 passed, 1469 deselected in 2.78s
+EXIT=0
