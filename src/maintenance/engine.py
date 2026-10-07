@@ -3661,7 +3661,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                     and job.asset_id == asset_id
                     and view.field_ok(f"jobs[{view.job_index(ServiceCategory.KY_THUAT)}].asset_id")
                 ):
-                    reason = f"Agent: {job.asset_reason} ({matches[0].source_ref})"
+                    reason = f"Agent: {job.asset_reason or 'asset duy nhất tại vị trí'} ({matches[0].source_ref})"
             elif matches:
                 status, asset_id, reason = AssetLookupStatus.AMBIGUOUS, None, f"{len(matches)} asset cùng vị trí"
             else:

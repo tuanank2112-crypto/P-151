@@ -819,6 +819,17 @@ def test_openai_json_client_stream_joins_deltas_keeps_usage_and_closes(fake_open
     assert closed == [True]
 
 
+def test_openai_json_client_sends_reasoning_effort_only_when_set(fake_openai):
+    plain = openai_json_client("m", "k", None, timeout=5.0, max_output_tokens=600, json_mode="json_object")
+    plain("S", "U", new_input())
+    low = openai_json_client(
+        "m", "k", None, timeout=5.0, max_output_tokens=600, json_mode="json_object", reasoning_effort="low"
+    )
+    low("S", "U", new_input())
+    first, second = (sdk.calls[0] for sdk in fake_openai.instances)
+    assert "reasoning_effort" not in first and second["reasoning_effort"] == "low"
+
+
 def test_openai_json_client_stream_past_the_timeout_raises_timeout(fake_openai, monkeypatch):
     client = openai_json_client(
         "m", "k", None, timeout=5.0, max_output_tokens=600, json_mode="json_object", stream=True

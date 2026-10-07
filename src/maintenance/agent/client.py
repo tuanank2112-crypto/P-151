@@ -55,6 +55,7 @@ def openai_json_client(
     max_output_tokens: int,
     json_mode: Literal["json_object", "prompt_only"],
     stream: bool = False,
+    reasoning_effort: str = "",
 ) -> DecisionClient:
     """`stream=True` keeps bytes flowing while the model writes: a proxy that cuts a silent connection (vyceai.com
     behind Cloudflare answers 504 after ~12-15 s) still delivers the whole JSON. `timeout` then bounds the whole call,
@@ -72,6 +73,10 @@ def openai_json_client(
         }
         if json_mode == "json_object":
             kwargs["response_format"] = {"type": "json_object"}
+        if (
+            reasoning_effort
+        ):  # a thinking model writes hidden reasoning tokens first; "low" halves them (deepseek-v4-flash)
+            kwargs["reasoning_effort"] = reasoning_effort
         started = time.perf_counter()
         if stream:
             chunks = sdk.chat.completions.create(**kwargs, stream=True, stream_options={"include_usage": True})

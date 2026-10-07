@@ -151,8 +151,8 @@ def test_p_07_no_locks_means_khong_and_locks_are_listed_when_present():
     )
 
 
-def test_p_08_prompt_version_is_the_second_one():
-    assert prompt.PROMPT_VERSION == "agent-prompt/2"
+def test_p_08_prompt_version_is_the_third_one():
+    assert prompt.PROMPT_VERSION == "agent-prompt/3"
 
 
 def test_p_08b_system_prompt_shows_the_shape_of_a_safety_signal():
@@ -173,3 +173,16 @@ def test_p_09_assets_materials_and_empty_safety_text_render():
     assert "SIM-MAT-LAMP-01" in tech
     assert message.startswith('<phan_anh ma="SIM-TKT-9001" luc="2026-10-05T09:00:00+07:00">')
     assert message.endswith("Trả lời bằng JSON theo mẫu.")
+
+
+def test_p_10_compact_output_keeps_reasons_that_are_read_and_drops_the_rest():
+    from src.maintenance.agent.schema import AgentDecision
+
+    decision = AgentDecision.model_validate(prompt.EXAMPLE)
+    assert decision.location.reason is None and all(m.reason is None for j in decision.jobs for m in j.materials)
+    assert [j.duplicate_reason for j in decision.jobs] == [None, None]
+    assert decision.jobs[0].asset_reason is None and decision.jobs[1].asset_reason  # only with an asset_id
+    assert all(j.reason and j.priority_reason for j in decision.jobs) and decision.safety.reason
+    assert [s.step for s in decision.reasoning] == ["AN_TOAN", "LOAI_VIEC", "VI_TRI", "TAI_SAN", "KET_LUAN"]
+    system = prompt.render_system_prompt(CATALOG, LEXICON)
+    assert "VIẾT GỌN: mỗi reason là MỘT câu ngắn" in system and "conclusion = MỘT câu ngắn" in system

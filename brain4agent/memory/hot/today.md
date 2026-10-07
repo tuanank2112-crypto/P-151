@@ -161,3 +161,7 @@
 - Đo: không stream ⇒ 504 Cloudflare ~12–17 s; stream ⇒ hết 504 nhưng vyceai tự "request timed out" ~25–30 s ở đa số câu; lần trọn 17 s = 4382 token vào/1124 ra. Quyết định thật đầu tiên của Agent: "Thay bóng đèn cháy … giúp với" ⇒ NONE, KY_THUAT, đúng nghĩa.
 - Code: `agent/client.py` stream (`MO_AGENT_STREAM`), `CachingClient` (`MO_AGENT_CACHE_ENTRIES`/`_TTL_SECONDS`, chỉ lưu quyết định hợp lệ), prompt `agent-prompt/2` mô tả object tín hiệu (REF plan 06 cập nhật). Agent tests 103 pass; full suite 3347 pass, 1 fail = `test_f2_f11_lexicon_safety` của worker H13 (đúng dự kiến sau hoàn tác Q30).
 - Còn mở: output JSON ~1.1k token quá dài so với ngưỡng ~25 s của vyceai; mô hình còn ghi sai enum `next_step`; vyceai không báo `prompt_cache_hit_tokens`.
+
+## Phiên 2026-10-07 21:41:28 +0700 — Q31 đầu ra Agent gọn + reasoning_effort
+- `agent-prompt/3` (REF plan 06 sửa trước, code chép theo): reasoning chỉ các bước cần, bỏ lý do cho trường trống; schema nới tùy chọn. Thêm `MO_AGENT_REASONING_EFFORT` (`.env`: low). Engine: `asset_reason` trống ⇒ chữ mặc định.
+- Live 4 câu: "Xin cứu, nhà cháy rồi" ⇒ AGENT S-05 PRESENT ⇒ EMERGENCY_PENDING_BQL (F11 giải bằng LLM, không regex); "Thay bóng đèn cháy … giúp với" ⇒ AGENT NONE, KY_THUAT; 2 câu vyceai cắt ~28 s ⇒ luật.

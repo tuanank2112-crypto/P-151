@@ -51,13 +51,13 @@ class LocationDecision(_Strict):
     floor: Annotated[str, StringConstraints(max_length=10)] | None = None
     area: Annotated[str, StringConstraints(max_length=40)] | None = None
     quote: Quote | None = None
-    reason: Short
+    reason: Short | None = None  # agent-prompt/3: optional, no consumer
 
 
 class MaterialChoice(_Strict):
     item_code: Annotated[str, StringConstraints(pattern=r"^SIM-[A-Z0-9-]+$")]
     planned_qty: float = Field(gt=0, le=100)
-    reason: Short
+    reason: Short | None = None  # agent-prompt/3: optional, no consumer
 
 
 class JobDecision(_Strict):
@@ -69,9 +69,9 @@ class JobDecision(_Strict):
     priority_rule_id: Literal["PRI-H1", "PRI-H2", "PRI-M1", "PRI-M2", "PRI-L1", "PRI-D0"]
     priority_reason: Short
     duplicate_of: Annotated[str, StringConstraints(pattern=r"^SIM-TKT-[A-Z0-9-]+$")] | None = None
-    duplicate_reason: Short
+    duplicate_reason: Short | None = None  # agent-prompt/3: only with a duplicate_of
     asset_id: Annotated[str, StringConstraints(pattern=r"^SIM-ASSET-[A-Z0-9-]+$")] | None = None
-    asset_reason: Short
+    asset_reason: Short | None = None  # agent-prompt/3: only with an asset_id
     materials: list[MaterialChoice] = Field(default_factory=list, max_length=5)
     needs_review: bool
     review_reason: Annotated[str, StringConstraints(max_length=300)] | None = None

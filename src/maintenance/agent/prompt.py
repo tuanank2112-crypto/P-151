@@ -17,7 +17,7 @@ from src.maintenance.rules import AREA_PATTERNS
 
 from .inputs import DecisionInput
 
-PROMPT_VERSION = "agent-prompt/2"  # /2: shape of a safety signal object (live model returned strings)
+PROMPT_VERSION = "agent-prompt/3"  # /2: safety signal object shape; /3: compact output (fewer tokens, same reasoning)
 
 # CR-BPTN-03 §6.2 in plain Vietnamese, keyed by signal_id; S-00 is the agent-only catch-all (SPEC-P01 §3.3)
 SIGNAL_TEXT = {
@@ -47,7 +47,7 @@ QUY TẮC BẮT BUỘC
 - An toàn trước hết: luật cố định của hệ thống đã quét phản ánh; bạn KHÔNG thể hạ mức nguy hiểm, chỉ có thể nêu thêm. Không chắc thì chọn UNCLEAR.
 - "BPTN đã chốt" là quyết định của con người: giữ nguyên, không đổi.
 
-CÁC BƯỚC SUY LUẬN (ghi vào "reasoning" theo thứ tự; facts = dữ kiện chép từ phản ánh, conclusion = kết luận của bước)
+CÁC BƯỚC SUY LUẬN (suy luận đủ 10 bước; chỉ GHI vào "reasoning", theo thứ tự, các bước AN_TOAN, LOAI_VIEC, VI_TRI, KET_LUAN và thêm THIEU_THONG_TIN, TRUNG, TAI_SAN khi có điều cần nói; facts = tối đa 2 đoạn ngắn chép từ phản ánh, conclusion = MỘT câu ngắn)
 1. DU_KIEN: sự việc, nơi xảy ra, thời điểm, mức độ cư dân mô tả.
 2. AN_TOAN: chỉ xét phần <an_toan_can_xet>. Đối chiếu bảng tín hiệu Bậc 1:
 {signal_table}
@@ -67,6 +67,8 @@ CÁC BƯỚC SUY LUẬN (ghi vào "reasoning" theo thứ tự; facts = dữ ki�
 8. TAI_SAN: chỉ cho KY_THUAT; chọn trong <tai_san> asset có vị trí TRÙNG vị trí sự cố; không có hoặc có từ hai asset trở lên ở vị trí đó ⇒ asset_id null.
 9. VAT_TU: chọn trong <vat_tu> đúng loại việc, số lượng hợp lý (không quá {max_qty}); không cần ⇒ [].
 10. KET_LUAN: tóm tắt quyết định. Đặt needs_review=true (kèm review_reason) khi bạn không chắc về loại việc hoặc vị trí.
+
+VIẾT GỌN: mỗi reason là MỘT câu ngắn, không lặp lại điều đã ghi ở reasoning. KHÔNG ghi location.reason, reason của vật tư, duplicate_reason khi duplicate_of null, asset_reason khi asset_id null (bỏ hẳn các khóa đó).
 
 ĐẦU RA: CHỈ MỘT đối tượng JSON hợp lệ, đúng các khóa như mẫu dưới (không thêm khóa, không thêm chữ ngoài JSON). Mẫu:
 {example}"""
@@ -92,28 +94,18 @@ Trả lời bằng JSON theo mẫu."""
 EXAMPLE = {
     "schema_version": "agent-decision/1",
     "reasoning": [
-        {
-            "step": "DU_KIEN",
-            "facts": ["hành lang tầng 3 tòa S1", "nhiều rác", "đèn cũng không sáng"],
-            "conclusion": "Cư dân báo rác và đèn không sáng ở cùng một hành lang",
-        },
-        {"step": "AN_TOAN", "facts": [], "conclusion": "Không có tín hiệu nguy hiểm nào"},
+        {"step": "AN_TOAN", "facts": [], "conclusion": "Không có tín hiệu nguy hiểm"},
         {
             "step": "LOAI_VIEC",
             "facts": ["nhiều rác", "đèn cũng không sáng"],
             "conclusion": "Hai việc độc lập cùng chỗ: vệ sinh và đèn",
         },
         {"step": "VI_TRI", "facts": ["hành lang tầng 3 tòa S1"], "conclusion": "Tòa S1 / Tầng 3 / Hành lang"},
+        {"step": "TAI_SAN", "facts": [], "conclusion": "Một đèn duy nhất tại hành lang này"},
         {"step": "KET_LUAN", "facts": [], "conclusion": "Tách hai việc, cả hai đi tiếp"},
     ],
-    "safety": {"risk_level": "NONE", "signals": [], "reason": "Không có khói, lửa, khét, tia lửa hay người bị nạn"},
-    "location": {
-        "building": "S1",
-        "floor": "3",
-        "area": "Hành lang",
-        "quote": "hành lang tầng 3 tòa S1",
-        "reason": "Cư dân nêu rõ nơi xảy ra",
-    },
+    "safety": {"risk_level": "NONE", "signals": [], "reason": "Không có khói, lửa, khét hay người bị nạn"},
+    "location": {"building": "S1", "floor": "3", "area": "Hành lang", "quote": "hành lang tầng 3 tòa S1"},
     "scope": "IN_SCOPE",
     "jobs": [
         {
@@ -123,12 +115,10 @@ EXAMPLE = {
             "department_id": "DEPT_CLEANING",
             "priority": "MEDIUM",
             "priority_rule_id": "PRI-M2",
-            "priority_reason": "Rác nhiều ảnh hưởng sử dụng, chưa chắn lối",
+            "priority_reason": "Nhiều rác, chưa chắn lối",
             "duplicate_of": None,
-            "duplicate_reason": "Không có ứng viên cùng sự việc",
             "asset_id": None,
-            "asset_reason": "Vệ sinh không tra tài sản",
-            "materials": [{"item_code": "SIM-MAT-BAG-01", "planned_qty": 2, "reason": "Túi đựng rác"}],
+            "materials": [{"item_code": "SIM-MAT-BAG-01", "planned_qty": 2}],
             "needs_review": False,
             "review_reason": None,
         },
@@ -139,12 +129,11 @@ EXAMPLE = {
             "department_id": "DEPT_TECHNICAL",
             "priority": "HIGH",
             "priority_rule_id": "PRI-H1",
-            "priority_reason": "Đèn ở hành lang là lối đi chung",
+            "priority_reason": "Đèn ở lối đi chung",
             "duplicate_of": None,
-            "duplicate_reason": "Không có ứng viên cùng sự việc",
             "asset_id": "SIM-ASSET-LIGHT-001",
-            "asset_reason": "Asset duy nhất tại Tòa S1 / Tầng 3 / Hành lang",
-            "materials": [{"item_code": "SIM-MAT-LAMP-01", "planned_qty": 1, "reason": "Thay bóng LED"}],
+            "asset_reason": "Đèn duy nhất tại vị trí này",
+            "materials": [{"item_code": "SIM-MAT-LAMP-01", "planned_qty": 1}],
             "needs_review": False,
             "review_reason": None,
         },

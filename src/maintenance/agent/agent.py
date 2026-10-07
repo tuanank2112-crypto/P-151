@@ -230,6 +230,7 @@ def build_agent(
         max_output_tokens=settings.mo_agent_max_output_tokens,
         json_mode=settings.mo_agent_json_mode,
         stream=settings.mo_agent_stream,
+        reasoning_effort=settings.mo_agent_reasoning_effort,
     )
     if settings.mo_agent_cache_entries > 0:  # the same request (ticket, content, candidates, locks) is asked once
         client = CachingClient(

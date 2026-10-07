@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     mo_agent_max_output_tokens: int = Field(default=2500, ge=500, le=8000)
     mo_agent_json_mode: Literal["json_object", "prompt_only"] = "json_object"
     mo_agent_stream: bool = True  # stream the reply: proxies cut a silent request (vyceai.com 504 after ~12-15 s)
+    mo_agent_reasoning_effort: Literal["", "low", "medium", "high"] = ""  # "" = not sent (provider default)
     mo_agent_cache_entries: int = Field(default=256, ge=0, le=10000)  # identical requests reuse the reply; 0 = off
     mo_agent_cache_ttl_seconds: float = Field(default=3600.0, gt=0, le=86400)
 
