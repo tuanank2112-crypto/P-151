@@ -59,9 +59,9 @@ field_labels:
   created_at: "thời điểm tiếp nhận"
   description: "nội dung phản ánh"
   location: "vị trí (tòa, tầng, khu vực)"
-  location_building: "tòa (ghi kèm chữ \"tòa\", ví dụ: tòa SIM-A)"
+  location_building: "tòa (hiện chỉ nhận tòa S1 hoặc S2 – Ocean Park)"  # khớp catalog site.buildings
   location_floor: "tầng (ví dụ: tầng 3)"
-  location_area: "khu vực (hành lang, sảnh thang máy, sảnh chính, cầu thang bộ, hầm xe, bãi đỗ xe, phòng rác, sân chơi, sân thượng hoặc lối đi)"
+  location_area: "khu vực (hành lang, sảnh cư dân, sảnh thang máy, sảnh chính, cầu thang bộ, hầm xe, bãi đỗ xe, phòng rác, sân chơi, sân thượng, lối đi hoặc lối thoát hiểm)"
   safety_details: "mô tả rõ hơn hiện tượng bạn thấy (mùi, khói, tiếng động, thời điểm xảy ra)"  # Q-F
 
 datetime_format: "%H:%M %d/%m/%Y"

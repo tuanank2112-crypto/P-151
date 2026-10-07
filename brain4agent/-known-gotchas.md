@@ -73,3 +73,6 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 
 ## curl tiếng Việt trên Git Bash Windows (2026-10-04)
 - `curl -d '{"original_description":"...có dấu..."}'` trả 422 `There was an error parsing the body` do mã hoá tham số; truyền qua file `--data-binary @body.json`, PowerShell dùng UTF-8 bytes, hoặc Swagger. Không phải bug API.
+## Phạm vi tòa thí điểm Ocean Park S1/S2 (2026-10-05)
+- Vị trí cư dân chỉ hợp lệ khi tòa nằm trong `catalog.yaml` `site.buildings`; seed/test đã đổi `SIM-A`→`S1`, `SIM-B`→`S2`. Text test qua engine dùng tòa khác (vd `SIM-A`, `S3`) sẽ rơi NEED_INFO thiếu tòa.
+- KHÔNG đổi tòa trong bộ nhãn an toàn (`tests/.../data/safety_*_p0.yaml`, `test_safety_p0.py`) và `test_b01_closed_prefix_twenty_tokens_and_lamp_accent`: `assess()` không xét vị trí, còn "tòa SIM-A" = 3 token, "tòa S1" = 2 token ⇒ ca biên 20/21 token của B-01 lệch.

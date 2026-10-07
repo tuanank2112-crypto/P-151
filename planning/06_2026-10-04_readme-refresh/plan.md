@@ -63,3 +63,9 @@
 - [x] Re-run tests on feature/truong: 1843 pass, 29 pg deselected; ruff check/format exit0.
 - [x] Update current-workspace memory; preserve three submission files as untracked; no push.
 - Evidence: evidence/integration/feature-update-checks.txt, feature-pytest.txt, feature-ruff-check.txt, feature-ruff-format.txt.
+
+
+## Local develop integration — 2026-10-07T03:04:07.271Z
+- Integrated origin/develop 52ae81c into feature/truong; runtime src/tests/seed equals upstream; local diagrams/submission preserved. pytest 2971 passed, 29 PostgreSQL tests deselected, 0 fail, 0 skip; ruff check/format and four JavaScript syntax checks pass. PostgreSQL/Docker/live LLM/browser not verified; no typecheck configured. Day05 labels/backlog and Day06 blocker/resume comparison still need acceptance; LangGraph runtime pending. No remote push.
+- Backups: backup/truong-before-integration-20261007 (e52c655), backup/truong-local-20261007 (0f7bf85).
+- Evidence: planning/06_2026-10-04_readme-refresh/evidence/integration-20261007/. Initial proposal JS check used an incorrect path; corrected check covers src/web/js/components/agent_proposal.js.

@@ -1,10 +1,10 @@
 {
-  "current_version": "1.1.3",
+  "current_version": "1.1.5",
   "brain_template_version": "1.7.1",
   "system_status": "active",
   "last_verification": {
-    "timestamp": "2026-10-04T00:00:00.000Z",
-    "grade": "fix/nhuy-logic-review (plan 04 agent part, backend split to H03): 1843 pytest pass (29 deselected), ruff clean"
+    "timestamp": "2026-10-07T03:04:07.271Z",
+    "grade": "local integration verified; pytest2971 pass, ruff clean"
   },
   "active_plans_completed": 2,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
@@ -31,10 +31,10 @@
     "license": ""
   },
   "active_spec": "docs/CR-BPTN-03.md",
-  "working_branch": "fix/nhuy-logic-review",
-  "code_baseline": "6265436 (develop)",
+  "working_branch": "feature/truong",
+  "code_baseline": "52ae81c (origin/develop)",
   "last_benchmark": {
-    "pytest": "1843 passed, 29 deselected, 0 skip",
+    "pytest": "2941 passed, 29 deselected, 0 skip (pg: 1872 passed on develop 37a0fb3, 2026-10-04)",
     "safety_stop_sets": "1065 green",
     "false_alarm_budget": {
       "b_fp": "EM 0 / UNCLEAR 4",
@@ -43,12 +43,13 @@
     },
     "holdout_none": "2/39",
     "assess_24kb_seconds": 0.28,
-    "review_set_2026_10_04": "adversarial 107: HEAD 50 errors -> 7; SO holdout 18/18; live API corpus 34: only out-of-scope-asks-location left (spec)"
+    "review_set_2026_10_04": "adversarial 107: HEAD 50 errors -> 7; SO holdout 18/18; live API corpus 34: only out-of-scope-asks-location left (spec)",
+    "agent_audit_2026_10_05": "independent E2E audit scripts rerun: 77 sentences 16->7 errors, group D 9->2; rest P1/spec"
   },
   "last_sync": "2026-10-02T13:09:52.176Z",
-  "next_step": "PR #14 (fix/nhuy-logic-review -> develop) chờ review/merge; handoffs H03 Châm Anh, H04 Trí, H05 Trường",
+  "next_step": "Finish Day05 backlog/labels then Day06 blocker-resume matrix and graph comparison fixtures",
   "active_plan": {
-    "id": "04_2026-10-04_logic-review-fix",
+    "id": "05_2026-10-04_agent-hardening",
     "status": "in_progress",
     "team_plan_url": "https://storm-jade-f74.notion.site/K-ho-ch-MaintenanceOps-MVP-3e43b68a924d80d7a81fe0579e1eddb9",
     "deadlines": {
@@ -240,28 +241,27 @@
   },
   "feature_update": {
     "status": "completed_local",
-    "at": "2026-10-04T22:22:24+07:00",
+    "at": "2026-10-07T03:04:07.271Z",
     "branch": "feature/truong",
-    "integrated_commit": "f4155d6b842b3b90846e14d486965a71e6da6db7",
-    "develop_commit": "37a0fb3863e86fb21496e4f0be8ef6750c72a47c",
-    "pre_update_backup": "backup/truong-before-update-20261004",
-    "local_snapshot_backup": "backup/truong-local-20261004",
+    "develop_commit": "52ae81ccd63e49979a93966dd98cd62415f8d6e5",
+    "pre_update_backup": "backup/truong-before-integration-20261007",
+    "local_snapshot_backup": "backup/truong-local-20261007",
     "tests": {
-      "passed": 1843,
+      "passed": 2971,
       "failed": 0,
       "skipped": 0,
       "deselected": 29
     },
     "ruff_check": "pass",
     "ruff_format": "pass",
-    "diagrams": "preserved",
-    "submission_files": "3 new untracked files preserved",
+    "js_syntax": "4/4 pass",
     "remote_push": false,
-    "develop_ref_changed": false,
-    "evidence": "planning/06_2026-10-04_readme-refresh/evidence/integration/feature-update-checks.txt",
+    "evidence": "planning/06_2026-10-04_readme-refresh/evidence/integration-20261007",
     "limits": [
-      "PostgreSQL/Docker not tested",
-      "mypy unavailable"
+      "PostgreSQL/Docker/live LLM/browser not tested",
+      "No configured typecheck",
+      "Day05/Day06 not signed off",
+      "Graph runtime pending"
     ]
   }
 }

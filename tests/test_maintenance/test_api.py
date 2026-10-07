@@ -61,7 +61,7 @@ def test_evaluate_endpoint_passes_all(api):
 
 def test_12_resident_view_hides_internal_fields(api, engine):
     tid = create(
-        api, "Đèn hành lang tầng 7 tòa SIM-B không sáng", when="2026-10-01T23:00:00+07:00"
+        api, "Đèn hành lang tầng 7 tòa S2 không sáng", when="2026-10-01T23:00:00+07:00"
     )  # > 48h after the fixture
     view = api.get(f"/api/v1/resident/tickets/{tid}", headers=RESIDENT).json()
     assert view["status"] == "ROUTED" and view["status_label"] == "Đã chuyển phòng ban"
@@ -89,7 +89,7 @@ def test_resident_full_journey_over_http(api):
     assert view["status"] == "NEED_INFO" and view["allowed_actions"] == ["ADD_INFO"]
 
     view = api.post(
-        f"/api/v1/resident/tickets/{tid}/additions", json={"content": "Hành lang tầng 7 tòa SIM-B"}, headers=RESIDENT
+        f"/api/v1/resident/tickets/{tid}/additions", json={"content": "Hành lang tầng 7 tòa S2"}, headers=RESIDENT
     ).json()
     assert view["status"] == "ROUTED"
 
@@ -127,7 +127,7 @@ def upload(api, url, headers, files=None):
 
 
 def test_resident_photo_is_optional_and_private(api):
-    tid = create(api, "Cầu thang bộ tầng 4 tòa SIM-B nhiều rác")
+    tid = create(api, "Cầu thang bộ tầng 4 tòa S2 nhiều rác")
     assert api.get(f"/api/v1/resident/tickets/{tid}", headers=RESIDENT).json()["photos"] == []
 
     view = upload(api, f"/api/v1/resident/tickets/{tid}/photos", RESIDENT)
@@ -144,7 +144,7 @@ def test_resident_photo_is_optional_and_private(api):
 
 
 def test_photo_upload_checks_the_bytes_not_the_name(api):
-    tid = create(api, "Cầu thang bộ tầng 4 tòa SIM-B nhiều rác")
+    tid = create(api, "Cầu thang bộ tầng 4 tòa S2 nhiều rác")
     url = f"/api/v1/resident/tickets/{tid}/photos"
     fake = api.post(url, files=[("files", ("x.png", b"<script>alert(1)</script>", "image/png"))], headers=RESIDENT)
     assert fake.status_code == 415
@@ -156,13 +156,13 @@ def test_photo_upload_checks_the_bytes_not_the_name(api):
 
 
 def test_department_photo_needs_an_accepted_ticket(api):
-    tid = create(api, "Cầu thang bộ tầng 4 tòa SIM-B nhiều rác")
+    tid = create(api, "Cầu thang bộ tầng 4 tòa S2 nhiều rác")
     response = api.post(f"/api/v1/mo/tickets/{tid}/photos", files=[("files", ("a.png", PNG, "image/png"))], headers=CLN)
     assert response.status_code == 409  # ROUTED, not yet accepted
 
 
 def test_resident_cannot_see_another_residents_ticket(api):
-    tid = create(api, "Hành lang tầng 3 tòa SIM-A nhiều rác")
+    tid = create(api, "Hành lang tầng 3 tòa S1 nhiều rác")
     assert api.get(f"/api/v1/resident/tickets/{tid}", headers=OTHER_RESIDENT).status_code == 404
     assert api.get(f"/api/v1/resident/tickets/{tid}", headers=BQL).status_code == 403
 
@@ -223,7 +223,7 @@ def test_bptn_resolve_and_stock_over_http(api):
 def test_bptn_fills_missing_location_over_http(api):
     tid = create(api, "Nhiều rác quá, cần dọn")
     url = f"/api/v1/mo/tickets/{tid}/bptn-resolve"
-    body = {"location": "Tòa SIM-B / Tầng 7 / Hành lang", "note": "Gọi cư dân"}
+    body = {"location": "Tòa S2 / Tầng 7 / Hành lang", "note": "Gọi cư dân"}
     assert api.post(url, json=body, headers=RESIDENT).status_code == 403
     case = api.post(url, json=body, headers=BPTN).json()
     assert case["ticket"]["status"] == "ROUTED" and case["ticket"]["department_id"] == "DEPT_CLEANING"
@@ -243,8 +243,8 @@ def test_no_endpoint_assigns_a_person(api):
 
 
 def test_resident_lists_only_their_own_tickets(api):
-    mine = create(api, "Hành lang tầng 7 tòa SIM-B nhiều rác")
-    theirs = create(api, "Sảnh chính tòa SIM-A nhiều rác", headers=OTHER_RESIDENT)
+    mine = create(api, "Hành lang tầng 7 tòa S2 nhiều rác")
+    theirs = create(api, "Sảnh chính tòa S1 nhiều rác", headers=OTHER_RESIDENT)
     ids = [v["ticket_id"] for v in api.get("/api/v1/resident/tickets", headers=RESIDENT).json()]
     assert mine in ids and theirs not in ids
     assert api.get("/api/v1/resident/tickets", headers=BQL).status_code == 403
@@ -266,9 +266,9 @@ def test_ui_is_served(api):
 
 def test_16_resident_sees_no_department_before_hand_over(api, engine):
     need_info = create(api, "Nhiều rác quá")
-    asset_unclear = create(api, "Đèn cầu thang bộ tầng 9 tòa SIM-A không sáng")
+    asset_unclear = create(api, "Đèn cầu thang bộ tầng 9 tòa S1 không sáng")
     engine.stock["SIM-MAT-CLEAN-01"] = 0
-    waiting = create(api, "Hành lang tầng 7 tòa SIM-B nhiều rác")
+    waiting = create(api, "Hành lang tầng 7 tòa S2 nhiều rác")
     for tid in (need_info, asset_unclear, waiting):
         assert engine.get(tid).ticket.department_id is None
         view = api.get(f"/api/v1/resident/tickets/{tid}", headers=RESIDENT).json()
@@ -281,7 +281,34 @@ def test_resident_cannot_backdate_in_production(api, monkeypatch):
     from src.config import get_settings
 
     monkeypatch.setattr(get_settings(), "app_env", "production")
-    body = {"original_description": "Hành lang tầng 3 tòa SIM-A nhiều rác", "simulated_received_at": MORNING}
+    body = {"original_description": "Hành lang tầng 3 tòa S1 nhiều rác", "simulated_received_at": MORNING}
     assert api.post("/api/v1/resident/tickets", json=body, headers=RESIDENT).status_code == 422
     body.pop("simulated_received_at")
     assert api.post("/api/v1/resident/tickets", json=body, headers=RESIDENT).status_code == 201
+
+
+def test_department_confirms_material_plan(api, engine):
+    tid = "SIM-TKT-TEC-002"
+    engine.bptn_resolve(tid, "SIM-ACTOR-BPTN-01", asset_onsite=True, note="Không có trong sổ tài sản")
+    api.post(f"/api/v1/mo/tickets/{tid}/accept", headers=TEC)
+    url = f"/api/v1/mo/tickets/{tid}/material-plan"
+    body = {"lines": [{"item_code": "SIM-MAT-LAMP-02", "planned_qty": 2}], "note": "Đèn tuýp"}
+    assert api.post(url, json=body, headers=BPTN).status_code == 403
+    assert api.post(url, json={**body, "note": " "}, headers=TEC).status_code == 409
+    assert (
+        api.post(url, json={"lines": [{"item_code": "LAMP", "planned_qty": 1}], "note": "x"}, headers=TEC).status_code
+        == 422
+    )
+    case = api.post(url, json=body, headers=TEC).json()
+    assert [(m["item_code"], m["planned_qty"]) for m in case["material_lines"]] == [("SIM-MAT-LAMP-02", 2)]
+
+
+def test_warehouse_reads_stock(api):
+    rows = api.get("/api/v1/mo/warehouse/stock", headers=WAREHOUSE)
+    assert rows.status_code == 200
+    assert {r["item_code"]: r["qty"] for r in rows.json()}["SIM-MAT-LAMP-02"] == 0
+    api.post("/api/v1/mo/warehouse/stock/SIM-MAT-LAMP-02", json={"qty": 1}, headers=WAREHOUSE)
+    assert {r["item_code"]: r["qty"] for r in api.get("/api/v1/mo/warehouse/stock", headers=WAREHOUSE).json()}[
+        "SIM-MAT-LAMP-02"
+    ] == 1
+    assert api.get("/api/v1/mo/warehouse/stock", headers=RESIDENT).status_code == 403

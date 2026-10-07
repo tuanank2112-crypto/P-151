@@ -228,7 +228,6 @@
 ## Đóng lệch thứ tự phân loại/an toàn (plan 02 Q11) — 2026-10-04
 - Trường sửa fixture `954dcab` (PR #12, develop `dff898e`): CLN-004/TEC-005 bỏ 3 trường phân loại; engine không đổi.
 - Đo lại (evidence/13 của plan 02): evaluate CR03 12/12, 4 demo; target 9 passed; phá thử 3/3 đều đỏ; pytest 1641 passed/29 deselected, ruff sạch. Ghi Q11 vào plan 02, sửa `docs/maintenance.md` §10, thêm Idea Vault.
-
 ## Rà soát toàn dự án + mở plan 04 sửa logic — 2026-10-04
 - Rà engine (tự đọc) + 2 thẩm định Opus (an toàn/phân loại; API/quyền/lưu trữ): pytest 1641 pass/29 deselected, ruff sạch, nhưng 16 lỗi đo được (plan 04 §1): bỏ sót Bậc 1 (thang máy kẹt người, té xỉu, dây điện rơi), báo nhầm "bị ngắt"; cư dân dò/phình ticket người khác qua route hành động; ảnh giả qua cổng bước 10; REWORK dùng lại ảnh cũ; BQL bị khoá sau T06; AI Log luôn `PENDING`; LLM trong `engine.lock`; ticket mồ côi.
 - Mở `planning/04_2026-10-04_logic-review-fix/` (PATCH, nhánh `fix/nhuy-logic-review`): WP1 lexicon (Opus worktree), WP2 rules/proposer (Sonnet worktree), WP3 engine/router (SO).
@@ -247,3 +246,21 @@
 - User explicitly requested working on feature/truong. Adopted snapshot5f7c354 without rewriting working files, then fast-forwarded to tested integration f4155d6. No develop change and no push.
 - Re-ran tests in C:/P-151-truong: 1843 pass/0 fail/0 skip/29 pg deselected; ruff check+format exit0. 853 unaffected original/local paths verified, including diagrams, submission files and venv config.
 - Three docs/submission files remain untracked and unchanged. Backup branches retained. Earlier isolated-original-unchanged statements describe the preparation phase; feature/truong is now updated.
+## Plan 05 — làm cứng Agent bằng kiểm thử biến thể — 2026-10-04
+- Demo trên develop lộ 'Sảnh thang máy tầng 2 tòa SIM-C có khối rác' ⇒ khẩn cấp (confirmer khoi: toa khớp chữ 'tòa'); plan 04 chỉ sửa câu không tên tòa. Người dùng: 'sửa toàn diện phần agent'. Mở planning/05_2026-10-04_agent-hardening (nhánh fix/nhuy-agent-hardening từ develop 37a0fb3, đã gỡ upstream): WP1 an toàn + WP2 phân loại/vị trí bằng bộ biến thể vị trí, WP3 thẩm định độc lập câu có vị trí.
+- Plan 05 vòng 1 gộp (WP1 an toàn 33→0 vi phạm biến thể; WP2 phân loại 1483→0; sửa job chết do plan 04 E5): pytest 2780 passed, ruff sạch. Thẩm định end-to-end 🔁: vị trí chèn giữa câu làm sót Bậc 1, S-03 lộ/lòi dây, 'day tran' không dấu, tách vị trí lấy tầng đầu tiên, B-01 'cứ/gần căn'. Mở H03 (an toàn vòng 2), H04 (phân loại vòng 2); SO làm engine (Q05 ngoài phạm vi không hỏi vị trí, vị trí bổ sung ưu tiên, chuẩn hoá vị trí BPTN).
+- Plan 05 vòng 2 gộp (H03 an toàn: biến thể giữa câu 216→0, p3 45/45; H04 phân loại: 2117→0) + engine Q05 thu hẹp (Q09) + vị trí bổ sung mới nhất + chuẩn hoá vị trí BPTN. pytest 2941 passed; script thẩm định chạy lại 77 câu 16→7, phần còn lại P1/spec. Người dùng: push rồi làm P1 (luồng trùng §8, tách ticket hai việc).
+- Bản vá 05b (v1.1.5): người dùng 'đèn cháy/đèn chập không phải khẩn cấp, là đèn hỏng'. Sửa B-01 + chấp nhận 'den' không dấu khi cả câu không dấu + triệu chứng 'chập', 'bị cháy' trong rules. pytest 2941 passed; ca mới đỏ 12 trên code cũ. Kiến trúc sư P1 dừng vì hết hạn mức phiên (5 file SPEC dở ở planning/06, chưa commit).
+## 🛠 Phiên 2026-10-05 — Sửa luồng UI/engine theo phản hồi demo (develop)
+- Nút Nghiệm thu BQL bấm một lần (`oneShotButton`, `act()` trả bool).
+- Thí điểm Ocean Park: `catalog.yaml` `site.buildings: [S1, S2]`; tòa khác ⇒ thiếu `location_building`; giữ tòa con `S1.12`; "Sảnh cư dân" mặc định Tầng 1. Seed/test `SIM-A`→`S1`, `SIM-B`→`S2` (giữ bộ nhãn an toàn).
+- Ticket "tiếng nổ" thiếu khu vực: Q08 (an toàn trước dữ liệu) ⇒ cư dân chưa được hỏi. Giữ Q08; `internal_note` blocker an toàn kèm `· Thiếu: …`, UI BPTN cảnh báo + điền sẵn REQUEST_INFO.
+- Vật tư kiểm tại hiện trường: `confirm_materials` + `POST /mo/tickets/{id}/material-plan` + khung UI phòng ban. Không thêm gate nghiệm thu, không chặn theo tồn kho.
+- Đo: pytest 1649 pass (29 deselected), ruff check/format sạch, `node --check app.js` OK. CHƯA: bấm thử UI trên trình duyệt, `pytest --pg`, reset DB online (dữ liệu SIM-A cũ còn trên Supabase).
+- Mở cho nhóm: đổi Q08 để hỏi cư dân song song? bắt buộc xác nhận vật tư trước nghiệm thu?
+
+
+## Local develop integration — 2026-10-07T03:04:07.271Z
+- Integrated origin/develop 52ae81c into feature/truong; runtime src/tests/seed equals upstream; local diagrams/submission preserved. pytest 2971 passed, 29 PostgreSQL tests deselected, 0 fail, 0 skip; ruff check/format and four JavaScript syntax checks pass. PostgreSQL/Docker/live LLM/browser not verified; no typecheck configured. Day05 labels/backlog and Day06 blocker/resume comparison still need acceptance; LangGraph runtime pending. No remote push.
+- Backups: backup/truong-before-integration-20261007 (e52c655), backup/truong-local-20261007 (0f7bf85).
+- Evidence: planning/06_2026-10-04_readme-refresh/evidence/integration-20261007/. Initial proposal JS check used an incorrect path; corrected check covers src/web/js/components/agent_proposal.js.

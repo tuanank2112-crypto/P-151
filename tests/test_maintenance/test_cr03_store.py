@@ -24,9 +24,9 @@ from tests.test_maintenance.helpers import BPTN, BQL, RESIDENT, report
 
 STORES = ["memory", pytest.param("postgres", marks=pytest.mark.pg)]
 
-TIER1 = "Có mùi khét ở hành lang tầng 3 tòa SIM-A."
-TIER2 = "Hình như có mùi khét ở hành lang tầng 3 tòa SIM-A."
-TIER2_LAMP = "Hình như có mùi khét, đèn hành lang tầng 3 tòa SIM-A không sáng."
+TIER1 = "Có mùi khét ở hành lang tầng 3 tòa S1."
+TIER2 = "Hình như có mùi khét ở hành lang tầng 3 tòa S1."
+TIER2_LAMP = "Hình như có mùi khét, đèn hành lang tầng 3 tòa S1 không sáng."
 NO_LOCATION = "Nhiều rác quá, cần dọn gấp."
 
 
@@ -63,7 +63,7 @@ def test_q04_bptn_clearing_missing_info_reruns_safety_layer(engine):
     tid = report(engine, NO_LOCATION)
     assert engine.get(tid).ticket.blocker.code == "MISSING_INFO"
     case = engine.bptn_resolve(
-        tid, BPTN, info="Hành lang tầng 3 tòa SIM-A, hình như có mùi khét", note="Gọi cư dân lúc 09:10"
+        tid, BPTN, info="Hành lang tầng 3 tòa S1, hình như có mùi khét", note="Gọi cư dân lúc 09:10"
     )
     ticket = case.ticket
     assert (ticket.status, ticket.blocker.code) == ("VERIFYING", "SAFETY_REVIEW_REQUIRED")
@@ -85,7 +85,7 @@ def test_q04_bptn_cannot_clear_a_safety_need_info(engine):
     version = engine.repo.version_of(tid)
     for kwargs in (
         {"info": "Cư dân nói chỉ là mùi sơn", "note": "Gọi cư dân"},
-        {"location": "Tòa SIM-A / Tầng 3 / Hành lang", "note": "Gọi cư dân"},
+        {"location": "Tòa S1 / Tầng 3 / Hành lang", "note": "Gọi cư dân"},
     ):
         with pytest.raises(GuardError, match="tầng an toàn"):
             engine.bptn_resolve(tid, BPTN, **kwargs)
@@ -195,7 +195,7 @@ def test_store_round_trip_emergency_close_and_rating_once(engine):
 
 
 def test_store_round_trip_set_priority(engine):
-    tid = report(engine, "Hành lang tầng 3 tòa SIM-A nhiều rác, cần vệ sinh.")
+    tid = report(engine, "Hành lang tầng 3 tòa S1 nhiều rác, cần vệ sinh.")
     case = engine.set_priority(tid, BQL, "HIGH", note="Sắp có đoàn kiểm tra")
     back = reloaded(engine, tid)
     assert back == case and (back.ticket.priority, back.ticket.priority_source) == ("HIGH", "HUMAN_OVERRIDE")

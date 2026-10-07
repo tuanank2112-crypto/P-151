@@ -24,6 +24,8 @@
 - Kiểm tra: `python -m pytest -q -p no:cacheprovider` + `python -m ruff check src tests` + `python -m ruff format --check src tests` (venv Python 3.11, `LLM_MODE=mock`, `PYTHONUTF8=1`). File data test mới: `git add -f`. Postgres: `MO_TEST_DATABASE_URL=…/p151_test python -m pytest --pg -q` (chỉ docker local).
 - Planning & RFCs: `planning/[STT]_[YYYY-MM-DD]_[Ten-Ngan]` (25-35 ký tự, cố định path); hồ sơ 01 có specs/reports/evidence đầy đủ.
 - **Plan 04 (2026-10-04, v1.1.3, nhánh `fix/nhuy-logic-review`):** sửa 16 lỗi rà soát — từ vựng an toàn `2026-10-04.p0d` (thang máy kẹt người, té xỉu, dây điện rơi ⇒ Bậc 1; "bị ngắt"/"khối"/"bật lửa" ⇒ NONE), REWORK cần bằng chứng mới (`evidence_round_start`), BQL giữ ticket an toàn đã leo thang, LLM phân loại ngoài `engine.lock`, ticket mồ côi job tự chạy, 403 ngoài phạm vi không lộ trạng thái (vẫn 403 + audit — 404 chờ nhóm); Q22 + tách vị trí mở rộng. Phần backend tách sang `handoffs/H03` (Châm Anh), UI `H04` (Trí), rules/spec `H05` (Trường). `docs/maintenance.md` §12.
+- **Plan 05 (2026-10-05, v1.1.4):** Agent làm cứng bằng kiểm thử biến thể vị trí (cổng chính: thêm vị trí không được đổi mức an toàn/loại việc); vị trí = nơi có sự cố; ngoài phạm vi không nhắc khu vực/đèn/rác ⇒ OUT_OF_SCOPE cho BPTN, không hỏi vị trí. Tiếp theo: P1 (luồng trùng CR §8, tách ticket hai việc, tín hiệu P1). `docs/maintenance.md` §13.
+- 2026-10-05 (develop, Unreleased): vị trí chỉ nhận tòa trong `catalog.yaml` `site.buildings` (Ocean Park S1/S2, giữ tòa con S1.12; "Sảnh cư dân" = Tầng 1); blocker an toàn ghi `· Thiếu: …` cho BPTN (Q08 giữ nguyên); phòng ban `confirm_materials` / `POST /mo/tickets/{id}/material-plan`.
 - Plan02 (2026-10-03): Trường chuẩn bị 5 gói theo Notion; safety P0 + fixture CR03 riêng, chưa tích hợp runtime. D08 approved (leader Châm Anh, 02/10, ghi 03/10). Day03 local (0ea04ad): 23 record = 17 PASS/1 FAIL/5 BLOCKED (FAIL DEMO-01-RATING; BLOCKED safety/rating-once/reopen, owner Như Ý); D3-05/06 chưa [x]; runtime/online pending. Day03 ĐÓNG (7/7 [x]) trên develop f46a53c: DEMO-04, WORD-01..04 PASS; D-01 delta+snapshot NGOÀI MVP 04/10 (D01-A/C BLOCKED, Như Ý). Runtime/online gates vẫn mở.
 </project_foundation>
 
@@ -36,7 +38,7 @@
 - Chỉ tiêu 19/10 Trường phải cấp dữ liệu: safety ≥40 câu nhãn, 0 bỏ sót Bậc 1; classification ≥90% held-out; user test 3–5 người độc lập (thiếu ⇒ ghi số thật, CẤM phản hồi giả); so sánh thủ công/sản phẩm đảo thứ tự.
 - Quyết định nghiệp vụ ghi tên người duyệt + kết quả thật; chưa đồng thuận ⇒ không triển khai phần tranh luận.
 - Diagrams (04/10 restoration): user-selected target layouts restored from Downloads/VS Code history; README setup/link fixes retained. Current-code differences documented beside diagrams; no new runtime/render verification.
-- Feature/truong (04/10): adopted tested integration f4155d6 (develop37a0fb3); pytest1843 pass, ruff clean; diagrams/submission preserved, no push. PG/Docker/mypy gates open.
+- Feature/truong (07/10): integrated develop52ae81c; pytest2971 pass/29 pg deselected, ruff clean; diagrams/submission preserved. Day05/06 acceptance still open; LangGraph runtime pending; no push.
 </truong_focus>
 
 <brain_file_roles>

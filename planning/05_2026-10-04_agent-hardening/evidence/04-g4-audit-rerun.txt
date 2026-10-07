@@ -1,0 +1,26 @@
+# G4 independent end-to-end audit scripts (classification / routing / coordination), rerun on final code
+== audit_a
+ERR A15 st=ROUTED/None/None risk=NONE sig=[] cat=VE_SINH dept=DEPT_CLEANING loc=Tòa SIM-A / Tầng 8 / Hành lang asset=NOT_APPLICABLE:None prio=MEDIUM/PRI-M2
+ERR A29 st=VERIFYING/OUT_OF_SCOPE/BPTN risk=NONE sig=[] cat=OUT_OF_SCOPE dept=None loc=Tòa SIM-C / Tầng 9 / Cầu thang bộ asset=None:None prio=None/None
+ERR A30 st=ROUTED/None/None risk=NONE sig=[] cat=VE_SINH dept=DEPT_CLEANING loc=Tòa SIM-B / Tầng 4 / Phòng rác asset=NOT_APPLICABLE:None prio=LOW/PRI-L1
+ERR A33 st=ROUTED/None/None risk=NONE sig=[] cat=KY_THUAT dept=DEPT_TECHNICAL loc=Tòa SIM-B / Tầng 2 / Hành lang asset=FOUND:SIM-ASSET-LIGHT-004 prio=HIGH/PRI-H1
+ERR A36 st=VERIFYING/OUT_OF_SCOPE/BPTN risk=NONE sig=[] cat=OUT_OF_SCOPE dept=None loc=Tòa SIM-A / Tầng B1 / Hầm xe asset=None:None prio=None/None
+ERR A48 st=VERIFYING/OUT_OF_SCOPE/BPTN risk=NONE sig=[] cat=OUT_OF_SCOPE dept=None loc=None asset=None:None prio=None/None
+ERR A59 st=ROUTED/None/None risk=NONE sig=[] cat=VE_SINH dept=DEPT_CLEANING loc=Tòa SIM-C / Tầng 2 / Sảnh thang máy asset=NOT_APPLICABLE:None prio=MEDIUM/PRI-M2
+TOTAL=77 ERR=7
+== audit_c
+ERR C10d BQL hạ → flow thường → ROUTED KT asset 001
+ERR C16c hệ thống nhắc/tạo việc cho phần rác còn lại
+ERR C18d ticket đèn đã giao bị giữ lại/được đánh dấu khi chỗ đó có khẩn cấp
+ERR C20 ngoài phạm vi thiếu vị trí → (spec) NEED_INFO hỏi vị trí trước phân loại
+ERR C25 trả sai phòng ≥2 lần → báo BQL (E03)
+GROUP B: 39 checks, 0 ERR
+GROUP C: 68 checks, 5 ERR
+== audit_d
+ERR D01 ticket thường cùng chỗ với khẩn cấp đang mở 5 phút trước: không tự giao phòng KT khi chưa ai xem (hoặc ít nhất liên kết)
+ERR D02b ticket 1 bổ sung cùng vị trí → không giao lần 2 (trùng)
+GROUP D: 28 checks, 2 ERR
+== probe p3
+45
+== probe p6
+24

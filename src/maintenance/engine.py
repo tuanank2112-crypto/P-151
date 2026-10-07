@@ -86,7 +86,7 @@ from src.maintenance.models import (
 )
 from src.maintenance.priority import propose_priority
 from src.maintenance.proposer import LLMClient, ProposalResult, propose
-from src.maintenance.rules import extract_location, missing_location_parts
+from src.maintenance.rules import extract_location, mentions_playbook_subject, missing_location_parts
 from src.maintenance.safety import SafetyLLMClient, assess, assess_with_llm
 from src.maintenance.store.base import (  # the error hierarchy lives with the store
     CaseRepository,
@@ -451,10 +451,11 @@ class MaintenanceEngine:
             return self.run_agent(raw.ticket_id)
 
     def _early_proposal(self, raw: RawTicket) -> ProposalResult | None:
-        """The classification step 3 will ask for, computed outside the lock. Skipped when there is no LLM, or when the
-        pipeline will stop before step 3 anyway (a safety stop or a missing location), so no call is wasted."""
+        """The classification the pipeline will ask for, computed outside the lock. Skipped when there is no LLM or when
+        the safety layer stops the ticket first, so no call is wasted. A report without a location is still classified:
+        step 2 needs to know whether it is out of scope (plan 05 Q05)."""
         text = raw.original_description
-        if self.llm is None or _blank(text) or extract_location(text) is None:
+        if self.llm is None or _blank(text):
             return None
         if assess(text, self.lexicon.safety).risk_level != RiskLevel.NONE:
             return None
@@ -739,7 +740,9 @@ class MaintenanceEngine:
             if location is not None:
                 if _blank(location):
                     raise GuardError("location không được rỗng")
-                locks["location"] = location.strip()
+                # Plan 05: a location BPTN types freely ("tầng 3 tòa SIM-A hành lang") is stored in the standard form, so
+                # asset lookup and duplicate checks compare like with like; text that does not parse is kept as typed
+                locks["location"] = extract_location(location, self.catalog.site.buildings) or location.strip()
             if asset_id is not None:
                 if not any(a.asset_id == asset_id for a in self.catalog.assets):
                     raise GuardError(f"Không có asset {asset_id} trong catalog")
@@ -1127,6 +1130,65 @@ class MaintenanceEngine:
 
         return self._mutate(ticket_id, actor_id, Action.UPDATE_MATERIAL, op)
 
+    def confirm_materials(self, ticket_id: str, actor_id: str, *, lines: list[PlannedMaterial], note: str) -> Case:
+        """The department replaces the Agent's planned materials with what the site really needs (IN_PROGRESS).
+
+        Step 7 can only guess from the playbook defaults (e.g. an asset checked on site). An empty list means no
+        material is used (mode N_A). Issued/used quantities already entered are kept for an unchanged item_code.
+        Stock is shown per line but never stops the work here: a shortage goes through `block` (WAITING_MATERIAL).
+        """
+
+        def op(work: Case, now: datetime) -> None:
+            self._require_in_progress(work)
+            if _blank(note):
+                raise GuardError("Xác nhận vật tư bắt buộc ghi lý do")
+            codes = [line.item_code for line in lines]
+            unknown = sorted({code for code in codes if self.catalog.material(code) is None})
+            if unknown:
+                raise GuardError("Vật tư không có trong catalog", {"item_codes": unknown})
+            if len(set(codes)) != len(codes):
+                raise GuardError("Mỗi vật tư chỉ được một dòng")
+            if any(line.planned_qty <= 0 for line in lines):
+                raise GuardError("Số lượng vật tư phải lớn hơn 0; bỏ dòng nếu không dùng")
+            draft = work.draft
+            suffix = _suffix(ticket_id)
+            entered = {line.item_code: line for line in work.material_lines}
+            old = [{"item_code": m.item_code, "planned_qty": m.planned_qty} for m in work.material_lines]
+            new_lines = []
+            for index, planned in enumerate(lines, start=1):
+                line = self._material_line(draft.work_order_draft_id, suffix, index, planned)
+                kept = entered.get(planned.item_code)
+                if kept is not None:
+                    line.issued_qty, line.used_qty, line.variance_reason = (
+                        kept.issued_qty,
+                        kept.used_qty,
+                        kept.variance_reason,
+                    )
+                new_lines.append(line)
+            work.planned_materials = list(lines)
+            work.material_lines = new_lines
+            draft.material_line_ids = [m.material_line_id for m in new_lines]
+            draft.material_stock_status = _aggregate_stock(new_lines)
+            draft.material_requirement_mode = (
+                MaterialRequirementMode.TRACKED if new_lines else MaterialRequirementMode.N_A
+            )
+            draft.material_gate_status = MaterialGateStatus.NEEDS_CLARIFICATION if new_lines else MaterialGateStatus.NA
+            self._audit(
+                work,
+                Action.UPDATE_MATERIAL,
+                "WorkOrderDraft",
+                draft.work_order_draft_id,
+                actor_id,
+                Role.DEPARTMENT,
+                "planned_materials",
+                old,
+                [{"item_code": m.item_code, "planned_qty": m.planned_qty} for m in new_lines],
+                note.strip(),
+                now=now,
+            )
+
+        return self._mutate(ticket_id, actor_id, Action.UPDATE_MATERIAL, op)
+
     def add_evidence(
         self,
         ticket_id: str,
@@ -1258,6 +1320,17 @@ class MaintenanceEngine:
             ]
             return [self.resume(ticket_id) for ticket_id in waiting]
 
+    def stock_levels(self, actor_id: str) -> list[dict[str, Any]]:
+        """Current simulated stock of every catalog item (staff only; residents never see materials, CR-03 §2)."""
+        role = self.catalog.actor_role(actor_id)
+        if role is None or role == Role.RESIDENT:
+            raise ActionDeniedError("Chỉ nhân viên được xem tồn kho", {"code": "ACTION_DENIED", "actor_id": actor_id})
+        stock = self.repo.stock()
+        return [
+            {"item_code": m.item_code, "item_name": m.item_name, "unit": m.unit, "qty": stock.get(m.item_code)}
+            for m in self.catalog.materials
+        ]
+
     # ------------------------------------------------------------------ system: resume + scheduled job
 
     def resume(self, ticket_id: str) -> Case:
@@ -1274,12 +1347,12 @@ class MaintenanceEngine:
                 return []  # another process runs the job this round
             for case in self.repo.list():
                 ticket_id = case.ticket.ticket_id
-                if not self._due(case.ticket, moment):
-                    continue  # nothing for _tick to do: skip the deep copy
                 before = len(case.events)
                 try:
+                    if not self._due(case.ticket, moment):
+                        continue  # nothing for _tick to do: skip the deep copy
                     self._mutate(ticket_id, SYSTEM_ID, Action.RUN_JOBS, lambda work, now: self._tick(work, now))
-                except EngineError:  # one broken ticket must not stop the job for all the others
+                except Exception:  # noqa: BLE001 - one broken ticket (any error) must not stop the job for the others
                     logger.exception("run_jobs: ticket %s failed", ticket_id)
                     continue
                 if len(self.repo.get(ticket_id).events) != before:
@@ -1308,12 +1381,12 @@ class MaintenanceEngine:
         """E5 (plan 04 Q07): a stored RECEIVED ticket without a blocker never had its pipeline committed (`receive`
         commits the ingest first). Past a grace period, so a `receive` still running elsewhere is left alone."""
         created = _created_at(ticket.raw)
-        return (
-            ticket.status == S.RECEIVED
-            and ticket.blocker is None
-            and created is not None
-            and now >= created + ORPHAN_GRACE
-        )
+        if ticket.status != S.RECEIVED or ticket.blocker is not None or created is None:
+            return False
+        try:
+            return now >= created + ORPHAN_GRACE
+        except OverflowError:  # a created_at at the very end of the calendar is never "past the grace period"
+            return False
 
     # ------------------------------------------------------------------ the one transition entry point
 
@@ -2101,6 +2174,8 @@ class MaintenanceEngine:
 
     def _resume(self, work: Case, now: datetime) -> bool:
         blocker = work.ticket.blocker
+        if blocker is not None and blocker.code == R.WAITING_MATERIAL:
+            self._refresh_line_stock(work)  # a partial delivery must show, not the stock of the first check
         if blocker is None or not self._cleared(work, blocker, now):
             return False
         code = blocker.code
@@ -2192,7 +2267,15 @@ class MaintenanceEngine:
         return "\n".join(p for p in parts if p and p.strip())
 
     def effective_location(self, work: Case) -> str | None:
-        return work.ticket.locked_fields.location or extract_location(self._content(work))
+        return work.ticket.locked_fields.location or extract_location(
+            self._location_text(work), self.catalog.site.buildings
+        )
+
+    def _location_text(self, work: Case) -> str:
+        """What the location is read from: the newest addition first, the original report last, so a resident's
+        correction ("Ở hầm B1 ạ") wins over the floor of their own flat in the original (plan 05)."""
+        parts = [*(a.content for a in reversed(work.additions)), work.ticket.raw.original_description]
+        return "\n".join(p for p in parts if p and p.strip())
 
     def _category(self, work: Case) -> ServiceCategory | None:
         locked = work.ticket.locked_fields.category
@@ -2211,7 +2294,7 @@ class MaintenanceEngine:
         if _blank(self._content(work)):
             missing.append("description")
         if self.effective_location(work) is None:
-            parts = missing_location_parts(self._content(work))
+            parts = missing_location_parts(self._location_text(work), self.catalog.site.buildings)
             # name only the parts still missing; a report with none of them gets the general request
             missing.extend(["location"] if len(parts) == 3 else [f"location_{part}" for part in parts])
         return missing
@@ -2272,7 +2355,12 @@ class MaintenanceEngine:
         if result.risk_level == RiskLevel.EMERGENCY:
             ticket.related_ticket_ids = self._related_ticket_ids(work)  # Q11: link, never merge
             self._stop(
-                work, S.VERIFYING, R.EMERGENCY_PENDING_BQL, now, resume_step=2, note=f"Bậc 1: {', '.join(present)}"
+                work,
+                S.VERIFYING,
+                R.EMERGENCY_PENDING_BQL,
+                now,
+                resume_step=2,
+                note=self._with_missing(work, f"Bậc 1: {', '.join(present)}"),
             )
             self._notify(
                 work,
@@ -2290,7 +2378,12 @@ class MaintenanceEngine:
             unclear = sorted({s.signal_id for s in result.signals if s.status != SignalStatus.ABSENT})
             escalated_before = _safety_escalated_before(work)
             self._stop(
-                work, S.VERIFYING, R.SAFETY_REVIEW_REQUIRED, now, resume_step=2, note="Bậc 2: " + ", ".join(unclear)
+                work,
+                S.VERIFYING,
+                R.SAFETY_REVIEW_REQUIRED,
+                now,
+                resume_step=2,
+                note=self._with_missing(work, "Bậc 2: " + ", ".join(unclear)),
             )
             if escalated_before:
                 # Q04 (plan 04): BQL already took this safety decision over; a new tier-2 stop (e.g. after the
@@ -2306,8 +2399,26 @@ class MaintenanceEngine:
             return True
         return False
 
+    def _with_missing(self, work: Case, note: str) -> str:
+        """Q08 puts safety before the minimum data, so the reviewer is told here what step 2 will still ask for."""
+        missing = self._missing_fields(work)
+        return f"{note} · Thiếu: {', '.join(missing)}" if missing else note
+
     def _step_2_check_required_data(self, work: Case, now: datetime) -> bool:
         missing = self._missing_fields(work)
+        if (
+            missing
+            and self._only_location_missing(missing)
+            and work.ticket.locked_fields.category is None
+            and not mentions_playbook_subject(self._content(work))  # "Đèn tầng 3 hỏng": ask the resident
+        ):
+            cls = self._classification(work, now)  # cached: step 3 reuses it
+            if cls.playbook_id is None and cls.reason_code == R.OUT_OF_SCOPE:
+                # Plan 05 Q05: clearly outside both playbooks, so a common-area location is not worth asking for.
+                # BPTN answers the resident. resume_step=2: if BPTN picks a category, step 2 asks for the location.
+                return self._stop(
+                    work, S.VERIFYING, R.OUT_OF_SCOPE, now, resume_step=2, note=f"{cls.reason}; thiếu vị trí, không hỏi"
+                )
         if missing:
             return self._stop(
                 work,
@@ -2321,6 +2432,14 @@ class MaintenanceEngine:
                 note=f"Thiếu: {', '.join(missing)}",
             )
         return False
+
+    @staticmethod
+    def _only_location_missing(missing: list[str]) -> bool:
+        """Only location parts are missing, and no common area is named at all ("phí quản lý", "vòi nước trong căn
+        hộ"). A report that names a common area ("Ở hành lang có vấn đề") is about the building: the resident is still
+        asked for what is missing and can add the details themselves (plan 05 Q05, audit C05/D11)."""
+        only_location = all(field.startswith("location") for field in missing)
+        return only_location and ("location" in missing or "location_area" in missing)
 
     def _classification(self, work: Case, now: datetime) -> ClassificationRecord:
         if work.classification is None:
@@ -2549,6 +2668,14 @@ class MaintenanceEngine:
         if status in (AssetLookupStatus.NOT_FOUND, AssetLookupStatus.AMBIGUOUS):
             return self._stop(work, S.VERIFYING, R.ASSET_UNCLEAR, now, resume_step=6, note=reason)
         return False
+
+    def _refresh_line_stock(self, work: Case) -> None:
+        """Re-read the stock snapshot of every material line (and the draft's aggregate) from the store."""
+        for line in work.material_lines:
+            line.simulated_stock_qty = self.repo.stock_of(line.item_code)
+            line.material_stock_status = self._line_stock(line.item_code, line.planned_qty)
+        if work.draft is not None:
+            work.draft.material_stock_status = _aggregate_stock(work.material_lines)
 
     def _line_stock(self, item_code: str, planned_qty: float) -> MaterialStockStatus:
         stock = self.repo.stock_of(item_code)

@@ -30,6 +30,8 @@ HARD_BREAKS = ".;!?"  # sentence breaks, kept in `norm`
 HANGUL_FILLERS = frozenset(map(chr, (0x115F, 0x1160, 0x3164, 0xFFA0)))  # R8 (code points, never literal characters)
 DOWNGRADE_RULES = frozenset({"B-02", "B-02D", "T2-01", "T2-02"})  # rules copied onto T2-05 (§3.4)
 TOKEN = re.compile(r"[a-z0-9]+")
+PLACE_SENTENCE_MAX = 1000  # plan 05 H03: longest sentence (norm characters) that gets the place-free readings
+PLACE_PREPOSITIONS = frozenset({"o", "tai", "ngay"})  # plan 05 H03: words opening a place adjunct (ở, tại, ngay)
 LETTERS = re.compile(r"[a-z]+")
 
 Span = tuple[int, int]
@@ -153,6 +155,8 @@ class TextContext:
     index: list[int]
     sentence_cuts: list[int]
     clause_cuts: list[int]
+    soft_cuts: tuple[int, ...] = ()  # `,:()—–` cuts only (plan 05 H03: a place clause between two of them)
+    conjunction_cuts: frozenset[int] = frozenset()
 
     def sentence(self, pos: int) -> Span:
         return _span(self.sentence_cuts, pos, len(self.norm))
@@ -174,11 +178,15 @@ def build_context(text: str, conjunctions: Sequence[str] = (), *, invisible_as_s
     """Normalise once and index the sentence and clause boundaries (no per-match scanning later)."""
     norm, index, hard, soft = _normalize(text, invisible_as_space)
     cuts = set(hard) | set(soft)
+    conj_cuts: set[int] = set()
     if conjunctions:
         conj = re.compile(r"\b(?:" + "|".join(re.escape(c) for c in conjunctions) + r")\b")
         for m in conj.finditer(norm):
-            cuts.update((m.start(), m.end()))
-    return TextContext(text, norm, index, sorted(set(hard)), sorted(cuts))
+            conj_cuts.update((m.start(), m.end()))
+    cuts |= conj_cuts
+    return TextContext(
+        text, norm, index, sorted(set(hard)), sorted(cuts), tuple(sorted(set(soft))), frozenset(conj_cuts)
+    )
 
 
 # ---------------------------------------------------------------- R1: ONE scope rule shared with priority
@@ -347,13 +355,38 @@ class _Lookups:
         if s0 not in self._valid_markers:
             inside = [(a, b) for a, b in self.markers if s0 <= a < s1]
             tail = s0
-            if inside:  # end of the last token of the sentence that is not a final particle
-                for token in reversed(list(TOKEN.finditer(self.ctx.norm, s0, s1))):
-                    if token.group(0) not in self.particles:
-                        tail = token.end()
-                        break
+            if inside:  # end of the last token that is not a final particle nor part of a trailing place phrase
+                tokens = list(TOKEN.finditer(self.ctx.norm, s0, s1))
+                k = self._strip_particles(tokens, len(tokens))
+                k = self._strip_particles(tokens, self._place_tail(tokens, k))
+                tail = tokens[k - 1].end() if k else s0
             self._valid_markers[s0] = [(a, b) for a, b in inside if b >= tail]
         return self._valid_markers[s0]
+
+    def _strip_particles(self, tokens: list[re.Match[str]], k: int) -> int:
+        while k and tokens[k - 1].group(0) in self.particles:
+            k -= 1
+        return k
+
+    def _place_tail(self, tokens: list[re.Match[str]], k: int) -> int:
+        """Plan 05: start of the longest run tokens[j:k] that is a place written after the marker ("giờ hết rồi ở hành
+        lang tầng 4 tòa SIM-B"): the B-01 closed set of place words and codes (R6), at most `b01_max_prefix_tokens`
+        tokens, holding a code or a phrase of two or more words (so helper words alone never count). No match: k."""
+        words = [t.group(0) for t in tokens[:k]]
+        ok = [False] * (k + 1)  # ok[j]: words[j:k] decomposes into the closed set
+        strong = [False] * (k + 1)  # strong[j]: ... with at least one code or multi-word phrase
+        ok[k] = True
+        best = k
+        for j in range(k - 1, max(-1, k - 1 - self.lexicon.b01_max_prefix_tokens), -1):
+            if self.code_re.fullmatch(words[j]) and ok[j + 1]:
+                ok[j], strong[j] = True, True
+            for length in range(1, min(self.longest, k - j) + 1):
+                if ok[j + length] and tuple(words[j : j + length]) in self.phrases:
+                    ok[j] = True
+                    strong[j] = strong[j] or length > 1 or strong[j + length]
+            if ok[j] and strong[j]:
+                best = j
+        return best
 
     # -- R7 ------------------------------------------------------------------------------------------------
     def clause_grams(self, pos: int) -> frozenset[str]:
@@ -482,14 +515,29 @@ def _closed_prefix(lk: _Lookups, c0: int, p: int) -> bool:
     return reach[len(tokens)]
 
 
-def _proven_lamp(lk: _Lookups, match: re.Match[str]) -> bool:
-    """A1: every token of the lamp noun that has accented forms is written with one of them."""
+def _proven_lamp(lk: _Lookups, match: re.Match[str], unaccented_symptom: bool = False) -> bool:
+    """A1: every token of the lamp noun that has accented forms is written with one of them.
+
+    Plan 05b (user decision 2026-10-05: "đèn cháy / đèn chập = đèn hỏng"): when the symptom itself is typed without
+    accents ("bi chay", "bi chap"), a lamp token typed without accents ("den", "bong") is taken as the lamp; a token
+    written with OTHER accents ("đen" in "khói đen", "bông") still proves it is not a lamp. Location text with accents
+    around it does not matter (a resident may paste "Tòa SIM-A / Tầng 3 / Hành lang:" before an unaccented report)."""
     forms = lk.lexicon.benign_lamp_noun_forms
     for token in TOKEN.finditer(match.group(0)):
         accepted = forms.get(token.group(0))
-        if accepted and lk.ctx.original(match.start() + token.start(), match.start() + token.end()) not in accepted:
-            return False
+        if not accepted:
+            continue
+        written = lk.ctx.original(match.start() + token.start(), match.start() + token.end())
+        if written in accepted or (unaccented_symptom and _typed_without_accents(written)):
+            continue
+        return False
     return True
+
+
+def _typed_without_accents(text: str) -> bool:
+    """No Vietnamese diacritic anywhere (no combining mark after NFD, no "đ"): the writer never types accents."""
+    decomposed = unicodedata.normalize("NFD", text)
+    return "đ" not in text.lower() and not any(unicodedata.category(c) == "Mn" for c in decomposed)
 
 
 def _b01_ok(lk: _Lookups, c0: int, p: int, e: int) -> bool:
@@ -499,12 +547,207 @@ def _b01_ok(lk: _Lookups, c0: int, p: int, e: int) -> bool:
     if not _closed_prefix(lk, c0, p):
         return False
     norm = lk.ctx.norm
-    if any(_proven_lamp(lk, m) for m in lk.lamp_re.finditer(norm, c0, e)):
+    unaccented = _typed_without_accents(lk.ctx.original(p, e))  # plan 05b: "bi chay" typed without accents
+    if any(_proven_lamp(lk, m, unaccented) for m in lk.lamp_re.finditer(norm, c0, e)):
         return True
     after = e + 1 if e < len(norm) and norm[e] == " " else e
     following = lk.lamp_re.match(norm, after)
     # R6: the lamp noun right after the candidate counts only inside the same clause ("cháy, đèn tắt" is two clauses)
-    return following is not None and lk.ctx.clause(after)[0] == c0 and _proven_lamp(lk, following)
+    return following is not None and lk.ctx.clause(after)[0] == c0 and _proven_lamp(lk, following, unaccented)
+
+
+# ---------------------------------------------------------------- plan 05 H03: a place phrase is transparent (Q01)
+
+
+@dataclass(frozen=True)
+class _PlaceRun:
+    """A place phrase written by the resident ("ở hành lang tầng 3 tòa SIM-A"), as norm positions."""
+
+    start: int
+    end: int
+    adjunct: int  # start of the part reading B removes: the first preposition inside the run, else `start`
+    code_groups: tuple[Span, ...]  # "tầng 3", "tòa SIM-A": a code chain plus at most two single words before it
+    whole_segment: tuple[int, int] | None  # (end of the token before, start of the token after) for ", <place>, "
+    lead_gap: tuple[int, int] | None  # (end of the token before, start of the run) when a comma opens the run
+
+
+@lru_cache(maxsize=8)
+def _place_vocabulary(prefix_words: tuple[str, ...], lamp_nouns: tuple[str, ...]) -> frozenset[tuple[str, ...]]:
+    """The R6 closed set of place words without the phrases that hold a lamp noun ("xin báo bóng đèn")."""
+    lamp_tokens = {t for noun in lamp_nouns for t in noun.split()}
+    return frozenset(tuple(p.split()) for p in prefix_words if not lamp_tokens & set(p.split()))
+
+
+def _place_runs(ctx: TextContext, lexicon: SafetyLexicon) -> list[_PlaceRun]:
+    """Runs of the place closed set inside one segment (no `,:().;!?` inside): consecutive tokens each covered by a
+    place phrase or a code, cut after the last anchor code, a code holding a digit ("3", "b1", "1205") or a letter
+    after "sim" ("SIM-A"). A run without an anchor is not a place. Linear in the number of tokens."""
+    vocab = _place_vocabulary(tuple(lexicon.b01_prefix_words), tuple(lexicon.benign_lamp_nouns))
+    longest = max((len(p) for p in vocab), default=1)
+    code_re = re.compile(lexicon.b01_code_token_regex)
+    norm = ctx.norm
+    soft = set(ctx.soft_cuts)
+    cuts = sorted({0, *ctx.sentence_cuts, *soft, len(norm)})
+    all_tokens = list(TOKEN.finditer(norm))
+    starts = [t.start() for t in all_tokens]
+    runs: list[_PlaceRun] = []
+    for lo, hi in zip(cuts, cuts[1:]):
+        k0, k1 = bisect_left(starts, lo), bisect_left(starts, hi)
+        tokens = all_tokens[k0:k1]
+        words = [t.group(0) for t in tokens]
+        n = len(words)
+        is_code = [bool(code_re.fullmatch(w)) for w in words]
+        anchor = [
+            is_code[i] and (any(c.isdigit() for c in words[i]) or (i > 0 and words[i - 1] == "sim")) for i in range(n)
+        ]
+        piece = [0] * n  # piece[j]: length of the longest place phrase starting at j (1 for a code), 0 for none
+        covered = [False] * n
+        for j in range(n):
+            for length in range(min(longest, n - j), 0, -1):
+                if tuple(words[j : j + length]) in vocab:
+                    piece[j] = length
+                    break
+            if not piece[j] and is_code[j]:
+                piece[j] = 1
+            for m in range(j, j + piece[j]):
+                covered[m] = True
+        i = 0
+        while i < n:
+            if not covered[i]:
+                i += 1
+                continue
+            stop = i
+            while stop < n and covered[stop]:
+                stop += 1
+            last = max((m for m in range(i, stop) if anchor[m]), default=-1)
+            if last < 0:
+                i = stop
+                continue
+            start = i
+            while start <= last and not piece[start]:  # the stretch may open inside a phrase: start on a piece
+                start += 1
+            end = last + 1
+            pieces: list[Span] = []  # greedy segmentation, longest phrase first
+            j = start
+            while j < end:
+                length = max(1, min(piece[j], end - j))
+                pieces.append((j, j + length))
+                j += length
+            groups: list[Span] = []
+            p = 0
+            while p < len(pieces):
+                a, b = pieces[p]
+                if b - a == 1 and is_code[a] and p > 0:
+                    first = p
+                    while (
+                        p + 1 < len(pieces) and pieces[p + 1][1] - pieces[p + 1][0] == 1 and is_code[pieces[p + 1][0]]
+                    ):
+                        p += 1
+                    if any(anchor[q] for q in range(pieces[first][0], pieces[p][1])):
+                        back = first
+                        while back > 0 and first - back < 2:
+                            pa, pb = pieces[back - 1]
+                            if pb - pa != 1 or is_code[pa]:
+                                break
+                            back -= 1
+                        if back < first:  # a code needs its key word ("tầng 3"), never a bare number
+                            groups.append((tokens[pieces[back][0]].start(), tokens[pieces[p][1] - 1].end()))
+                p += 1
+            whole = lead = None
+            if start == 0 and lo in soft and k0 > 0:
+                gap0 = all_tokens[k0 - 1].end()
+                if end == n and hi in soft and k1 < len(all_tokens):
+                    whole = (gap0, all_tokens[k1].start())
+                elif ctx.text[ctx.index[gap0]] == ",":  # "X, <place> Y": the comma only sets the place apart
+                    lead = (gap0, tokens[start].start())
+            # "Phòng rác ở sảnh … tầng 5 tòa SIM-A bốc hỏa": the area before a preposition is the subject, B keeps it
+            adjunct = start
+            if words[start] not in PLACE_PREPOSITIONS:
+                adjunct = next((m for m in range(start + 1, end) if words[m] in PLACE_PREPOSITIONS), start)
+            runs.append(
+                _PlaceRun(
+                    tokens[start].start(), tokens[end - 1].end(), tokens[adjunct].start(), tuple(groups), whole, lead
+                )
+            )
+            i = stop
+    return runs
+
+
+def _joins(ctx: TextContext, start: int, end: int) -> bool:
+    """Removing norm[start:end] brings two tokens of one sentence together (a sentence a resident writes: at most
+    PLACE_SENTENCE_MAX characters; a longer one keeps reading A only, which bounds the cost of the extra readings)."""
+    s0, s1 = ctx.sentence(start)
+    if s1 - s0 > PLACE_SENTENCE_MAX:
+        return False
+    return TOKEN.search(ctx.norm, s0, start) is not None and TOKEN.search(ctx.norm, end, s1) is not None
+
+
+def _delete(ctx: TextContext, spans: Sequence[Span]) -> tuple[str, list[int]] | None:
+    """The original text with the norm spans removed (one space each), and the map back to original positions."""
+    if not spans:
+        return None
+    text, index = ctx.text, ctx.index
+    cuts = sorted((index[a], index[b - 1] + 1) for a, b in spans if b > a)
+    out: list[str] = []
+    char_map: list[int] = []
+    pos = 0
+    for a, b in cuts:
+        if a < pos:
+            a = pos
+        out.append(text[pos:a])
+        char_map.extend(range(pos, a))
+        out.append(" ")
+        char_map.append(a)
+        pos = max(pos, b)
+    out.append(text[pos:])
+    char_map.extend(range(pos, len(text)))
+    return "".join(out), char_map
+
+
+def _readings(text: str, lexicon: SafetyLexicon) -> list[TextContext]:
+    """Plan 05 Q01: adding a location must not change the level. Reading A is the text itself, with a place clause
+    written between two commas (", ngay sảnh tầng 2 tòa SIM-C, ") read as part of its sentence; when the text holds a
+    place phrase, two more readings follow: without the whole phrase (B) and without only its codes (C, which keeps a
+    subject such as "phòng rác"). Every reading quotes the original text; their records are merged, so the level is
+    the highest of the readings and a place phrase can never lower it."""
+    ctx = build_context(text, lexicon.clause_conjunctions)
+    if not ctx.norm.strip():
+        return [ctx]
+    runs = _place_runs(ctx, lexicon)
+    if not runs:
+        return [ctx]
+    drop: set[int] = set()
+    for run in runs:
+        gap = run.whole_segment or run.lead_gap
+        if gap is not None:
+            drop.update(c for c in ctx.soft_cuts if gap[0] <= c <= gap[1] and c not in ctx.conjunction_cuts)
+    readings = [replace(ctx, clause_cuts=[c for c in ctx.clause_cuts if c not in drop]) if drop else ctx]
+    whole: list[Span] = []
+    codes: list[Span] = []  # a place clause between two commas has no subject role: it goes as a whole
+    for run in runs:
+        if run.whole_segment:
+            whole.append(run.whole_segment)
+            codes.append(run.whole_segment)
+            continue
+        if run.adjunct > run.start or not run.lead_gap:
+            whole.append((run.adjunct, run.end))
+        else:
+            whole.append((run.lead_gap[0], run.end))
+        # codes of the subject part ("phòng rác tầng 6")
+        whole.extend(g for g in run.code_groups if g[1] <= run.adjunct)
+        codes.extend(run.code_groups)
+        if run.lead_gap:  # the comma that only sets the place apart goes too (as in reading A)
+            codes.append(run.lead_gap)
+            whole.append(run.lead_gap)
+    for spans in (whole, codes):
+        # a span at the edge of its sentence joins nothing when removed: reading A already says it all
+        spans = [(a, b) for a, b in spans if _joins(ctx, a, b)]
+        reduced = _delete(ctx, spans)
+        if reduced is None:
+            continue
+        sub = build_context(reduced[0], lexicon.clause_conjunctions)
+        readings.append(replace(sub, text=text, index=[reduced[1][i] for i in sub.index]))
+    return readings
 
 
 # ---------------------------------------------------------------- 3 assess
@@ -513,6 +756,10 @@ def _b01_ok(lk: _Lookups, c0: int, p: int, e: int) -> bool:
 def _assess_hits(text: str, lexicon: SafetyLexicon, invisible_as_space: bool) -> list[_Hit]:
     """§3.0: the whole sequence for ONE R8 variant."""
     ctx = build_context(text, lexicon.clause_conjunctions, invisible_as_space=invisible_as_space)
+    return _assess_context(ctx, lexicon)
+
+
+def _assess_context(ctx: TextContext, lexicon: SafetyLexicon) -> list[_Hit]:
     norm = ctx.norm
     if not norm.strip():
         return []
@@ -620,7 +867,11 @@ def assess(text: str, lexicon: SafetyLexicon) -> SafetyAssessment:
     R8: the text is read once with invisible characters dropped and, if it has any, once with them as spaces; the
     records of both readings are merged, so the level is the higher of the two.
     """
-    hits = _assess_hits(text, lexicon, False)
+    first, *reduced = _readings(text, lexicon)
+    hits = _assess_context(first, lexicon)
+    seen = {(h.signal_id, h.status) for h in hits}
+    for ctx in reduced:  # plan 05 H03: only records reading A lacks, so A keeps its own (shorter) quotes
+        hits += [h for h in _assess_context(ctx, lexicon) if (h.signal_id, h.status) not in seen]
     if any(is_invisible(c) for c in text):
         hits += _assess_hits(text, lexicon, True)
     signals = _dedupe(hits)

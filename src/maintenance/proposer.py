@@ -122,6 +122,11 @@ def propose(
         )
     elif rules_cls.playbook_id:
         classification = rules_cls  # both agree
+    elif rules_cls.reason_code == ReasonCode.CATEGORY_UNCLEAR:
+        # The rules saw BOTH playbooks (mixed report): the LLM picking one must not hide the other part (plan 05)
+        if llm_playbook:
+            notes.append(f"Luật thấy cả hai playbook; LLM chọn {llm_playbook} — BPTN quyết")
+        classification = rules_cls
     elif llm_playbook:
         service, ticket_type = pair
         classification = Classification(

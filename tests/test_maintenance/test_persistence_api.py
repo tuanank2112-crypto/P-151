@@ -19,7 +19,7 @@ from tests.test_maintenance.helpers import CLN, report
 QA = {"X-Actor-Id": "SIM-ACTOR-QA-01"}
 BQL = {"X-Actor-Id": "SIM-ACTOR-BQL-01"}
 CLN_HEADER = {"X-Actor-Id": CLN}
-FRESH_CLEANING = "Sảnh thang máy tầng 9 tòa SIM-C nhiều rác, cần vệ sinh."  # no fixture ticket like it: ROUTED
+FRESH_CLEANING = "Sảnh thang máy tầng 9 tòa S2 nhiều rác, cần vệ sinh."  # no fixture ticket like it: ROUTED
 
 
 class FlakyRepository(InMemoryRepository):

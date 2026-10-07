@@ -21,6 +21,7 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | **Tài liệu kỹ thuật module** | [`docs/`](../docs/) · [`../docs/maintenance.md`](../docs/maintenance.md) | Tài liệu chuyên trách 1-1; `maintenance.md` = module `src/maintenance/` (pipeline, tầng an toàn R1–R10, 5 method khẩn cấp, priority, cấu hình, test). Đọc TRƯỚC khi sửa engine. |
 | **Kế hoạch 01 — CR-03 P0 engine (✅ 2026-10-02)** | [`../planning/01_2026-10-01_cr03-p0-engine/`](../planning/01_2026-10-01_cr03-p0-engine/) | `plan.md` (Q01–Q33), `specs/` (SPEC-P01 an toàn, P02 khẩn cấp, P03 priority, P04 chốt chặn, TESTING, OPERATIONS), `reports/R01…R11`, `evidence/`. Hợp đồng từ vựng: `specs/01-CONTRACTS.md` §5 + `seed/maintenance_v1/lexicon.yaml`. |
 | **Kế hoạch 04 — sửa logic sau rà soát (v1.1.3, 2026-10-04)** | [`../planning/04_2026-10-04_logic-review-fix/`](../planning/04_2026-10-04_logic-review-fix/) | `plan.md` (§1 16 lỗi đo được, Q01–Q12), `handoffs/H01` từ vựng an toàn, `H02` rules/proposer, `H03` backend (bản vá cho Châm Anh), `H04` UI (Trí), `H05` rules/spec (Trường), `reports/R01–R02`, `evidence/`. Test hồi quy: `tests/test_maintenance/test_logic_review_fixes.py`, `test_rules_review_fixes.py`, `test_safety_review_fixes.py`. Tóm tắt: `docs/maintenance.md` §12. |
+| **Kế hoạch 05 — làm cứng Agent (v1.1.4, 2026-10-05)** | [`../planning/05_2026-10-04_agent-hardening/`](../planning/05_2026-10-04_agent-hardening/plan.md) | `plan.md` (Q01–Q10), `handoffs/H01–H04`, `reports/R01–R04`, `evidence/`. Bộ biến thể: `tests/test_maintenance/test_safety_metamorphic.py`, `test_classify_metamorphic.py`; điều phối: `test_agent_coordination.py`. Tóm tắt: `docs/maintenance.md` §13. |
 | **⭐ SPEC DUY NHẤT — MaintenanceOps** | [`../docs/CR-BPTN-03.md`](../docs/CR-BPTN-03.md) | Vai trò/quyền, 10 trạng thái, T01–T23, pipeline §5.1, tầng an toàn §6, priority §7, gộp §8, AC-01..18, P0/P1. CR-01/02 đã xoá. |
 | **Sản phẩm (nền v0.3, lệch thì CR-03 thắng)** | [`../docs/01_problem_statement.md`](../docs/01_problem_statement.md) … [`05_traceability_and_review.md`](../docs/05_traceability_and_review.md), [`data-contract-v1.md`](../docs/data-contract-v1.md), [`playbook-v1.md`](../docs/playbook-v1.md) | Bài toán, PRD, UI flow, data contract, playbook. |
 | **Swimlane / sơ đồ flow** | [`../docs/Activity Diagram.png`](../docs/Activity%20Diagram.png) | Bản nháp, CHƯA khớp CR-03 (thiếu Bậc 2, sai thứ tự an toàn). `flow_maintenanceops_v04.png` là flow cũ. |
@@ -134,3 +135,6 @@ project-root/
 
 ## Current working branch — 2026-10-04
 - Work in feature/truong at C:/P-151-truong: tested integration f4155d6 adopted locally. Integration worktree remains a preparation reference; source is develop37a0fb3. Details and evidence: planning/06_2026-10-04_readme-refresh/.
+
+
+- Latest local integration: feature/truong + develop52ae81c, see planning/06_2026-10-04_readme-refresh/plan.md and evidence/integration-20261007/. No additional runtime module or entry point introduced by the integration itself.

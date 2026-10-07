@@ -29,7 +29,7 @@ def timeline(engine, ticket_id):
 
 
 def test_01_happy_path_has_five_resident_milestones(fresh):
-    tid = report(fresh, "Hành lang tầng 3 tòa SIM-A nhiều rác")
+    tid = report(fresh, "Hành lang tầng 3 tòa S1 nhiều rác")
     case = fresh.get(tid)
     assert case.ticket.status == "ROUTED" and case.ticket.department_id == "DEPT_CLEANING"
     assert case.ticket.blocker is None and case.draft.assignee_id is None
@@ -51,12 +51,12 @@ def test_02_missing_location_goes_to_bptn_and_the_resident_can_still_add_it(fres
     )
     original, marker = case.ticket.raw.original_description, case.ticket.raw_integrity_marker
 
-    case = fresh.add_resident_info(tid, "SIM-ACTOR-RESIDENT-01", "Ở hành lang tầng 3 tòa SIM-A")
+    case = fresh.add_resident_info(tid, "SIM-ACTOR-RESIDENT-01", "Ở hành lang tầng 3 tòa S1")
     assert case.ticket.status == "ROUTED" and case.ticket.department_id == "DEPT_CLEANING"
-    assert case.draft.location == "Tòa SIM-A / Tầng 3 / Hành lang"
+    assert case.draft.location == "Tòa S1 / Tầng 3 / Hành lang"
     assert case.ticket.raw.original_description == original
     assert case.ticket.raw.integrity_marker() == marker
-    assert [a.content for a in case.additions] == ["Ở hành lang tầng 3 tòa SIM-A"]
+    assert [a.content for a in case.additions] == ["Ở hành lang tầng 3 tòa S1"]
 
 
 def test_02b_bptn_enters_the_missing_location_after_calling_the_resident(fresh):
@@ -64,11 +64,11 @@ def test_02b_bptn_enters_the_missing_location_after_calling_the_resident(fresh):
     with pytest.raises(GuardError):  # a location or what the resident said is required
         fresh.bptn_resolve(tid, BPTN, note="Đã gọi cư dân")
     with pytest.raises(GuardError):  # entering a value needs a reason
-        fresh.bptn_resolve(tid, BPTN, location="Tòa SIM-A / Tầng 3 / Hành lang")
+        fresh.bptn_resolve(tid, BPTN, location="Tòa S1 / Tầng 3 / Hành lang")
 
-    case = fresh.bptn_resolve(tid, BPTN, location="Tòa SIM-A / Tầng 3 / Hành lang", note="Gọi cư dân lúc 09:10")
+    case = fresh.bptn_resolve(tid, BPTN, location="Tòa S1 / Tầng 3 / Hành lang", note="Gọi cư dân lúc 09:10")
     assert case.ticket.status == "ROUTED" and case.ticket.department_id == "DEPT_CLEANING"
-    assert case.ticket.locked_fields.location == "Tòa SIM-A / Tầng 3 / Hành lang"
+    assert case.ticket.locked_fields.location == "Tòa S1 / Tầng 3 / Hành lang"
     assert case.ticket.blocker is None and case.additions == []
     assert [e.to_status for e in case.events][-3:] == ["NEED_INFO", "RECEIVED", "ROUTED"]
 
@@ -76,12 +76,12 @@ def test_02b_bptn_enters_the_missing_location_after_calling_the_resident(fresh):
 def test_02c_bptn_records_what_the_resident_said_and_must_cover_every_missing_part(fresh):
     tid = report(fresh, "Nhiều rác quá, cần dọn gấp.")
     with pytest.raises(GuardError, match="Vẫn thiếu"):  # floor and area still missing: nothing is saved
-        fresh.bptn_resolve(tid, BPTN, info="Ở tòa SIM-A", note="Gọi cư dân")
+        fresh.bptn_resolve(tid, BPTN, info="Ở tòa S1", note="Gọi cư dân")
     assert fresh.get(tid).additions == [] and fresh.get(tid).ticket.status == "NEED_INFO"
 
-    case = fresh.bptn_resolve(tid, BPTN, info="Hành lang tầng 3 tòa SIM-A", note="Gọi cư dân lúc 09:10")
-    assert case.ticket.status == "ROUTED" and case.draft.location == "Tòa SIM-A / Tầng 3 / Hành lang"
-    assert [(a.content, a.submitted_by) for a in case.additions] == [("Hành lang tầng 3 tòa SIM-A", BPTN)]
+    case = fresh.bptn_resolve(tid, BPTN, info="Hành lang tầng 3 tòa S1", note="Gọi cư dân lúc 09:10")
+    assert case.ticket.status == "ROUTED" and case.draft.location == "Tòa S1 / Tầng 3 / Hành lang"
+    assert [(a.content, a.submitted_by) for a in case.additions] == [("Hành lang tầng 3 tòa S1", BPTN)]
     assert case.ticket.raw.original_description == "Nhiều rác quá, cần dọn gấp."
 
 
@@ -98,7 +98,7 @@ def test_03_bptn_category_is_locked_and_never_reclassified(fresh, monkeypatch):
     real = engine_module.propose
     monkeypatch.setattr(engine_module, "propose", lambda *a, **k: calls.append(a) or real(*a, **k))
 
-    tid = report(fresh, "Hành lang tầng 3 tòa SIM-A nhiều rác và bóng đèn hành lang không sáng")
+    tid = report(fresh, "Hành lang tầng 3 tòa S1 nhiều rác và bóng đèn hành lang không sáng")
     case = fresh.get(tid)
     assert case.ticket.status == "VERIFYING" and case.ticket.blocker.code == "CATEGORY_UNCLEAR"
     assert case.ticket.blocker.resume_step == 4 and len(calls) == 1  # BPTN's category still gets the duplicate check
@@ -240,7 +240,7 @@ def test_15_emergency_closed_ticket_can_be_rated_once(engine):
 def test_10_duplicate_is_merged_and_the_resident_sees_the_original(fresh, clock):
     first = report(fresh, LIGHTING)
     clock.advance(hours=3)
-    second = report(fresh, "Bóng đèn hành lang tầng 3 tòa SIM-A tắt rồi", resident="SIM-ACTOR-RESIDENT-02")
+    second = report(fresh, "Bóng đèn hành lang tầng 3 tòa S1 tắt rồi", resident="SIM-ACTOR-RESIDENT-02")
     case = fresh.get(second)
     assert case.ticket.status == "VERIFYING" and case.ticket.blocker.code == "DUPLICATE"
     assert case.ticket.blocker.related_ticket_id == first
@@ -267,7 +267,7 @@ def test_10b_rejected_duplicate_resumes_at_step_5(fresh, clock):
 def test_10d_classification_runs_before_the_duplicate_check(fresh, clock, monkeypatch):
     first = report(fresh, LIGHTING)
     clock.advance(hours=1)
-    second = report(fresh, "Bóng đèn hành lang tầng 3 tòa SIM-A tắt rồi")
+    second = report(fresh, "Bóng đèn hành lang tầng 3 tòa S1 tắt rồi")
     case = fresh.get(second)
     assert case.ticket.blocker.code == "DUPLICATE" and case.ticket.blocker.related_ticket_id == first
     assert case.proposal is not None and case.ticket.proposed_department_id == "DEPT_TECHNICAL"
@@ -279,7 +279,7 @@ def test_10d_classification_runs_before_the_duplicate_check(fresh, clock, monkey
         "effective_location",
         lambda self, work: reads.append(work.ticket.ticket_id) or real(self, work),
     )
-    third = report(fresh, "Hành lang tầng 3 tòa SIM-A nhiều rác")  # same place, other category
+    third = report(fresh, "Hành lang tầng 3 tòa S1 nhiều rác")  # same place, other category
     assert fresh.get(third).ticket.status == "ROUTED"
     assert first not in reads and second not in reads  # another category: their report text is never parsed
 
@@ -292,7 +292,7 @@ def test_10e_unclear_category_stops_before_reading_other_tickets(fresh, clock, m
     monkeypatch.setattr(
         MaintenanceEngine, "_find_duplicate_ticket_id", lambda self, work: scans.append(1) or real(self, work)
     )
-    tid = report(fresh, "Hành lang tầng 3 tòa SIM-A nhiều rác và bóng đèn hành lang không sáng")
+    tid = report(fresh, "Hành lang tầng 3 tòa S1 nhiều rác và bóng đèn hành lang không sáng")
     assert fresh.get(tid).ticket.blocker.code == "CATEGORY_UNCLEAR" and scans == []
 
 
@@ -333,7 +333,7 @@ def actions_after(case, action):
 @pytest.mark.parametrize("actor", ["SIM-ACTOR-SYSTEM", "SIM-ACTOR-AGENT", BPTN, TEC, BQL])
 def test_13_pending_review_cannot_be_routed(clock, actor):
     e = llm_only_engine(clock)
-    tid = report(e, "Hành lang tầng 3 tòa SIM-A tối om, bóng tuýp chết rồi")
+    tid = report(e, "Hành lang tầng 3 tòa S1 tối om, không thấy đường")
     case = e.get(tid)
     assert case.ticket.blocker.code == "PENDING_REVIEW" and not can_route(case.ticket)
     with pytest.raises(ActionDeniedError):
@@ -344,7 +344,7 @@ def test_13_pending_review_cannot_be_routed(clock, actor):
 def test_13b_the_guard_itself_refuses_routing_without_review(clock):
     """Even the internal path (pipeline/system) cannot hand over while review is pending."""
     e = llm_only_engine(clock)
-    tid = report(e, "Hành lang tầng 3 tòa SIM-A tối om, bóng tuýp chết rồi")
+    tid = report(e, "Hành lang tầng 3 tòa S1 tối om, không thấy đường")
     work = e.get(tid).model_copy(deep=True)
     e._set_ticket(work, status="RECEIVED", blocker=None)
     with pytest.raises(InvalidTransitionError) as err:
@@ -355,7 +355,7 @@ def test_13b_the_guard_itself_refuses_routing_without_review(clock):
 
 
 def test_14_asset_unclear_waits_for_bptn(fresh, clock):
-    tid = report(fresh, "Đèn cầu thang bộ tầng 9 tòa SIM-A không sáng")  # no asset registered there
+    tid = report(fresh, "Đèn cầu thang bộ tầng 9 tòa S1 không sáng")  # no asset registered there
     for days in (1, 2, 3):
         fresh.run_jobs(clock.now + timedelta(days=days))
         fresh.resume(tid)
@@ -370,7 +370,7 @@ def test_14_asset_unclear_waits_for_bptn(fresh, clock):
 
 
 def test_15_wrong_department_to_lighting_goes_through_asset_lookup(fresh):
-    tid = report(fresh, "Cầu thang bộ tầng 9 tòa SIM-A nhiều rác")
+    tid = report(fresh, "Cầu thang bộ tầng 9 tòa S1 nhiều rác")
     fresh.return_wrong_department(tid, CLN, note="Không có rác, đèn cầu thang hỏng")
     assert fresh.get(tid).ticket.department_id is None
 

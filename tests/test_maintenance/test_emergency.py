@@ -27,8 +27,8 @@ from tests.test_maintenance.helpers import (
     to_ready,
 )
 
-TIER2 = "Hình như có mùi khét ở hành lang tầng 3 tòa SIM-A."
-TIER2_LAMP = "Hình như có mùi khét, đèn hành lang tầng 3 tòa SIM-A không sáng."
+TIER2 = "Hình như có mùi khét ở hành lang tầng 3 tòa S1."
+TIER2_LAMP = "Hình như có mùi khét, đèn hành lang tầng 3 tòa S1 không sáng."
 TEC005 = "SIM-TKT-TEC-005"
 FORBIDDEN_FOR_RESIDENT = (
     "EMERGENCY",
@@ -354,7 +354,7 @@ def test_audit_failure_rolls_back_safety_action(clock):
 
 def test_emergency_created_notification_payload(fresh):
     """P02 §8: emergency.created goes to BQL only, from 2b, E01 and T07, with the documented payload keys."""
-    tier1 = fresh.get(report(fresh, "Có tia lửa ở hộp đèn hành lang tầng 3 tòa SIM-A."))
+    tier1 = fresh.get(report(fresh, "Có tia lửa ở hộp đèn hành lang tầng 3 tòa S1."))
     created = [n for n in tier1.notifications if n.type == "emergency.created"]
     assert [n.audience for n in created] == ["BQL"] and created[0].payload["signal_ids"] == ["S-02"]
     e01 = fresh.safety_escalate(report(fresh, TIER2.replace("tầng 3", "tầng 5")), BPTN)
