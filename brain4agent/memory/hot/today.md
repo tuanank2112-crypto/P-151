@@ -143,3 +143,15 @@
 - Kết quả kiểm chứng độc lập: 27/27 probes đạt PASS (package-check-v6.txt). 0 file runtime bị thay đổi.
 - Chuẩn bị lưu trữ git và rà soát điều kiện đẩy nhánh theo quy định an toàn hệ thống.
 
+
+## Phiên 2026-10-07 18:40:21 +0700 — Kiểm tiến độ Agent + lập hồ sơ 08 (báo khẩn khi đã giao)
+- Đo lại `origin/develop` `04491ad` (đã chứa nhánh reasoning-agent, Châm Anh merge 15:30): pytest 3339 passed/76 deselected, ruff sạch (venv tạm ở scratchpad; repo không còn `.venv`).
+- Probe R12 trên `77d5279`: `receive` 218 câu nhãn ⇒ 0 hạ, 0 tới phòng ban; Agent không hạ (654 cặp). F1 còn đỏ: 6/6 bổ sung Bậc 1 khi chờ vị trí giữ `NEED_INFO`, risk=NONE.
+- Lỗ mới: luật + Agent cùng bỏ sót ⇒ ticket đi thẳng phòng ban, sau đó không ai nâng được (`safety_escalate` chỉ nhận VERIFYING/SAFETY_REVIEW_REQUIRED hoặc NEED_INFO). Lập `planning/08_2026-10-07_inflight-emergency/` (SPEC + H01 🟠, H02 🟢, H03 🔴), CHỜ DUYỆT; chạy sau H13 plan 06.
+- Phát hiện: `portal/` Next.js trên develop là app độc lập, agent từ khoá TS riêng, không nối engine Python — nhóm cần quyết đường demo.
+- Thẩm định vòng 6 P09 (evidence `WP16-review-v6/`, untracked) chưa ghi vào R15: B2/B4 đạt; mới: P09 nới 8/8 ràng buộc của P01, `COMPLEX_CLAIM` không có trong code.
+
+## Phiên 2026-10-07 20:18:06 +0700 — Q30: ngữ nghĩa an toàn về Agent, hoàn tác vá từ vựng của H13
+- Người dùng nhắc lại Q01 ("đừng word by word… không sử dụng LLM"). Căn nguyên: Q25→Q28 (SO, 05/10) chốt "kêu cứu + cháy ở tầng luật, CHỈ dữ liệu" trái Q01, không ai đánh dấu thay thế; kernel không có dòng Q01 mà lại mô tả "sửa từ vựng" như cách làm thường; review đối chiếu SPEC thay vì đối chiếu nguyên tắc; đo bằng `assess` vì Agent chưa chạy live.
+- Đã làm: hoàn tác `lexicon.yaml` + `test_safety.py` của worker H13 (về `p1d`; patch lưu scratchpad) — bản p1e làm "Không có khói nhiều"/"Chưa thấy khói nhiều" NONE→EMERGENCY, "Thay bóng đèn cháy giúp với" NONE→EMERGENCY. Kernel thêm bất biến Q01/Q30. Plan 06: Q30 + "Quyết định bị thay thế" (Q28 phần F2/F11) + WP14b. SPEC-P08 §4 viết lại (prompt + nối dây + G-LIVE), §8 vùng cấm.
+- Còn mở: test `test_f2_f11_lexicon_safety` của worker giờ đỏ (cần bỏ khỏi H13); R13 chưa ghi phán quyết (🔁: ruff EXIT=1 bị báo 0, test cũ bị nới không báo, F10 `refused_not_403=2`, test mỏng); WP14b chưa có handoff.
