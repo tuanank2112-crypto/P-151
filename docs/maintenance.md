@@ -150,3 +150,20 @@ Hồ sơ: [`planning/05_2026-10-04_agent-hardening/`](../planning/05_2026-10-04_
 - Test: `test_agent_coordination.py` (điều phối), hai file biến thể, ca SC-220… trong `safety_cases_p0.yaml`.
 - **Bản vá 05b (Q11):** "đèn cháy / đèn chập = đèn hỏng": `benign_phrases`/`benign_with_lamp_noun` thêm "chập (điện/mạch)" sau danh từ đèn; `safety._proven_lamp` nhận "den"/"bong" không dấu khi chính triệu chứng ("bi chay", "bi chap") cũng gõ không dấu — xét từng chữ, vị trí có dấu xung quanh không ảnh hưởng; chữ có dấu khác ("đen", "bông") vẫn không phải đèn; `rules.py` thêm "chập", "bị/đã cháy" vào triệu chứng đèn hỏng. Có khói/tóe lửa/khét kèm thì vẫn khẩn cấp.
 - Để P1: tín hiệu an toàn P1 (gas, kim tiêm, nước vào tủ điện, đèn nóng), luồng trùng đầy đủ (CR §8), tách ticket khi một phản ánh có hai việc, đếm trả sai phòng ban.
+
+## 14. Agent chạy LLM thật: streaming, cache, CLI, G-LIVE (plan 06 Q30–Q33, 2026-10-07)
+- **Ngữ nghĩa an toàn do Agent suy luận, không vá regex (Q30):** kêu cứu, phủ định, "hình như", nhờ thay đèn cháy… viết thành hướng dẫn bằng lời trong `agent/prompt.py`; luật (`safety.py` + `lexicon.yaml` `p1d`) chỉ là sàn hẹp. Luật ra EMERGENCY ⇒ Agent bị bỏ qua, nên regex bắt quá tay = loại LLM.
+- **Prompt `agent-prompt/5`** (REF trong `planning/06_.../specs/REF-agent-contract.py` sửa trước, code chép theo): /2 hình dạng object tín hiệu `{signal_id, status, quote}`; /3 đầu ra gọn (chỉ bước suy luận cần thiết, bỏ lý do cho trường trống — schema NỚI tùy chọn); /4 phủ định = ABSENT, kêu cứu/báo cháy/giục sơ tán = PRESENT; /5 `TO_BPTN` luôn kèm `bptn_reason`, khẩn cấp không có việc ⇒ `OUT_OF_SCOPE`.
+- **Client (`agent/client.py`) và cấu hình (`src/config.py`):**
+
+| Biến | Mặc định | Ý nghĩa |
+|---|---|---|
+| `LLM_MODE` | `mock` | `openai` (API key) · `agy_cli` (Antigravity `agy -p`) · `claude_cli` (`claude -p`, tắt) — `*_cli` CHỈ dev/demo local bằng gói cá nhân, không deploy cho người dùng thật |
+| `MODEL_NAME` | `gpt-4o-mini` | Với `agy_cli` LUÔN chỉ định (hiện `gemini-3.8-flash-low`); model mặc định của agy có quota nhỏ |
+| `MO_AGENT_STREAM` | `true` | Stream câu trả lời (proxy cắt request im lặng); `timeout` chặn tổng thời gian |
+| `MO_AGENT_TIMEOUT_SECONDS` | `25` | `.env` hiện 60 |
+| `MO_AGENT_REASONING_EFFORT` | `""` | `low` giảm token suy nghĩ ngầm (gửi `reasoning_effort` / `--effort`) |
+| `MO_AGENT_CACHE_ENTRIES` / `_TTL_SECONDS` | 256 / 3600 | `CachingClient`: request y hệt (cùng ticket + nội dung) dùng lại quyết định hợp lệ; trả lời lỗi không lưu |
+
+- CLI client: chạy trong thư mục tạm trống (không nạp CLAUDE.md repo), không tool/MCP; `agy` không có cờ thay system prompt nên ghép vào đầu prompt + `--sandbox`; ép schema bằng `--json-schema` (`AgentDecision.model_json_schema()`, không ép được ràng buộc chéo trường — đó là lý do prompt /5).
+- **G-LIVE:** `PYTHONUTF8=1 PYTHONPATH=. python scripts/agent_live_eval.py [--group …] [--workers 3]` chạy từng câu qua engine thật + Agent, chấm đúng / bỏ sót (UNDER) / báo nhầm (OVER) theo nhóm; bộ câu `tests/test_maintenance/data/agent_live_eval.yaml` (NHÃN NHÁP chờ Trường). Kết quả 2026-10-07 (agy gemini-3.8-flash-low): khẩn cấp khó mà luật bỏ sót 16/16 (prompt /5), phủ định 10/10, nhờ thay đèn Agent 19/19; 3 câu nhờ thay đèn vẫn sang BPTN vì luật UNCLEAR và Agent không được hạ (Q33). Mỗi lượt ~17–20 s. Evidence `planning/06_.../evidence/G-LIVE/`.

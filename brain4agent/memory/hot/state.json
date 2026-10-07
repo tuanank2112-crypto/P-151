@@ -32,9 +32,9 @@
   },
   "active_spec": "docs/CR-BPTN-03.md",
   "working_branch": "feature/nhuy-reasoning-agent",
-  "code_baseline": "aafdf6a (feature/nhuy-reasoning-agent)",
+  "code_baseline": "f64508f (feature/nhuy-reasoning-agent, chưa push: GitHub 500 khi cập nhật ref)",
   "last_benchmark": {
-    "pytest": "2941 passed, 29 deselected, 0 skip (pg: 1872 passed on develop 37a0fb3, 2026-10-04)",
+    "pytest": "3354 passed, 1 failed (test F2/F11 của worker H13, đúng dự kiến sau Q30), 75 deselected (2026-10-07)",
     "safety_stop_sets": "1065 green",
     "false_alarm_budget": {
       "b_fp": "EM 0 / UNCLEAR 4",
@@ -45,10 +45,11 @@
     "assess_24kb_seconds": 0.28,
     "review_set_2026_10_04": "adversarial 107: HEAD 50 errors -> 7; SO holdout 18/18; live API corpus 34: only out-of-scope-asks-location left (spec)",
     "agent_audit_2026_10_05": "independent E2E audit scripts rerun: 77 sentences 16->7 errors, group D 9->2; rest P1/spec",
-    "spec_p09_v6_probes": "27/27 passed (B1 interval overlap, B2 3-part overrides & shared location, B3 next_step, B4 cardinality & quiesce)"
+    "spec_p09_v6_probes": "27/27 passed (B1 interval overlap, B2 3-part overrides & shared location, B3 next_step, B4 cardinality & quiesce)",
+    "g_live_2026_10_07": "agy gemini-3.8-flash-low: A2 khẩn cấp khó 16/16 (prompt /5, 0 fallback, p50 17 s); phủ định 10/10; nhờ thay đèn Agent 19/19 (3 sang BPTN do luật UNCLEAR, Q33); draft1 56/60 0 bỏ sót"
   },
-  "last_sync": "2026-10-07T12:30:00.000Z",
-  "next_step": "Chờ người duyệt SPEC-P09 (PROPOSED -> APPROVED); nhận H16 thi công runtime WP17",
+  "last_sync": "2026-10-08T00:00:01+0700",
+  "next_step": "Push 5 commit khi GitHub hết lỗi 500; chạy lại G-LIVE đủ 76 câu với prompt /5; worker sửa H13 theo R13; handoff WP14b; chờ duyệt hồ sơ 08",
   "active_plan": {
     "id": "06_2026-10-05_reasoning-agent",
     "status": "in_progress_spec_review",
@@ -140,5 +141,11 @@
       "postgres": "not run this session"
     },
     "local_work_packages_completed": 5
+  },
+  "agent_llm": {
+    "llm_mode": "agy_cli",
+    "model": "gemini-3.8-flash-low",
+    "prompt_version": "agent-prompt/5",
+    "scope": "dev/demo local only"
   }
 }

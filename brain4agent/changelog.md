@@ -2,6 +2,16 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Unreleased] - 2026-10-07: Agent suy luận bằng LLM thật qua Antigravity CLI (plan 06 Q30–Q33)
+### Changed
+- Q30: ngữ nghĩa an toàn (kêu cứu, phủ định, nghi ngờ, nhờ thay đèn cháy) chuyển về Agent suy luận; hoàn tác vá `lexicon.yaml` của worker H13 (bản p1e làm "Không có khói nhiều" thành EMERGENCY). Kernel thêm bất biến "ngữ nghĩa do LLM, không khớp từ khoá".
+- Prompt Agent `agent-prompt/2`→`/5` (REF SPEC sửa trước): hình dạng tín hiệu, đầu ra gọn, phủ định = ABSENT / kêu cứu = PRESENT, `TO_BPTN` luôn kèm `bptn_reason`. Schema chỉ NỚI (lý do trường trống thành tùy chọn), record cũ vẫn đọc được.
+- Q33: giữ "Agent không tự hạ mức" kể cả khi luật bắt nhầm (BPTN xác nhận bằng tay).
+### Added
+- Client Agent: streaming (`MO_AGENT_STREAM`), cache quyết định (`MO_AGENT_CACHE_*`), `MO_AGENT_REASONING_EFFORT`, backend CLI `LLM_MODE=agy_cli|claude_cli` (chỉ dev/demo local). Người dùng chọn `agy_cli` + `gemini-3.8-flash-low`.
+- G-LIVE: `scripts/agent_live_eval.py` + `tests/test_maintenance/data/agent_live_eval.yaml` (nhãn nháp). Kết quả: khẩn cấp khó 16/16, phủ định 10/10, nhờ thay đèn 19/19 (Agent).
+- Hồ sơ 08 `planning/08_2026-10-07_inflight-emergency/` (SPEC, CHỜ DUYỆT): báo khẩn khi ticket đã giao phòng ban.
+
 ## [Unreleased] - 2026-10-07: Hoàn thiện Đặc tả Thiết kế Điều phối Ngữ nghĩa SPEC-P09 (Plan 06 WP16)
 ### Added
 - Đặc tả hợp đồng điều phối ngữ nghĩa [`SPEC-P09-semantic-coordination.md`](../planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md) (PROPOSED) hoàn thiện qua 6 vòng thẩm định đối kháng nghiêm ngặt (R15 §01–§17).
