@@ -1,10 +1,10 @@
 {
-  "current_version": "1.1.5",
+  "current_version": "1.3.0",
   "brain_template_version": "1.7.1",
   "system_status": "active",
   "last_verification": {
-    "timestamp": "2026-10-05T00:00:00.000Z",
-    "grade": "fix/nhuy-lamp-burnt-short (v1.1.5) merged with develop (Ocean Park pilot): see plan 05 evidence"
+    "timestamp": "2026-10-07T08:26:00.000Z",
+    "grade": "plan 07 src/web reskin local gates G1–G4 green (pytest 2972 passed, ruff clean, 22 screenshots 0 overflow); server gate pending"
   },
   "active_plans_completed": 2,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
@@ -44,7 +44,8 @@
     "holdout_none": "2/39",
     "assess_24kb_seconds": 0.28,
     "review_set_2026_10_04": "adversarial 107: HEAD 50 errors -> 7; SO holdout 18/18; live API corpus 34: only out-of-scope-asks-location left (spec)",
-    "agent_audit_2026_10_05": "independent E2E audit scripts rerun: 77 sentences 16->7 errors, group D 9->2; rest P1/spec"
+    "agent_audit_2026_10_05": "independent E2E audit scripts rerun: 77 sentences 16->7 errors, group D 9->2; rest P1/spec",
+    "portal": "unit 14/14, test:db 15/15 (portal_test), next build ok, e2e PASS on next start (2026-10-07)"
   },
   "last_sync": "2026-10-02T13:09:52.176Z",
   "next_step": "PR lamp fix -> develop; resume P1 SPEC (planning/06, architect stopped by session limit)",

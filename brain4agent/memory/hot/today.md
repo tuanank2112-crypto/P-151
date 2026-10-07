@@ -51,3 +51,24 @@
 - Vật tư kiểm tại hiện trường: `confirm_materials` + `POST /mo/tickets/{id}/material-plan` + khung UI phòng ban. Không thêm gate nghiệm thu, không chặn theo tồn kho.
 - Đo: pytest 1649 pass (29 deselected), ruff check/format sạch, `node --check app.js` OK. CHƯA: bấm thử UI trên trình duyệt, `pytest --pg`, reset DB online (dữ liệu SIM-A cũ còn trên Supabase).
 - Mở cho nhóm: đổi Q08 để hỏi cư dân song song? bắt buộc xác nhận vật tư trước nghiệm thu?
+## 🎨 Phiên 2026-10-07 — Màn đăng nhập theo mockup (dev)
+- Dựng lại `showLogin` theo ảnh mẫu người dùng (gradient cam, thẻ trắng, nút cam bo tròn, "Hiện/Ẩn" trong ô mật khẩu); "[TÊN KHU ĐÔ THỊ]" điền `Khu đô thị Ocean Park` (catalog). Demo accounts gập trong `<details>`.
+- Đo: `node --check` OK; `test_api.py` 26 passed; chụp Chrome headless 1000px + 520px khớp mockup (390px bị Chrome headless Windows cắt — giới hạn công cụ, layout co giãn đúng ở 520px).
+- Bỏ khối "Tài khoản thử nghiệm (demo)" khỏi màn đăng nhập (xoá `demoAccountList`). `test_api`+`test_auth` 39 passed; ảnh chụp xác nhận. Câu hỏi xoá hẳn `qa01` còn treo (cách 1/2).
+- Lỗi 500 màn cư dân: 16/53 doc Supabase có `ticket.merged_children` (bản code PR #11 ghi 05/10) ⇒ `extra="forbid"` vỡ `list()`. Thêm field theo CR-03 §8 + test hồi quy (đỏ trước sửa). pytest 2972 passed / 1 failed (`test_partial_delivery_updates_the_stock_the_waiting_ticket_shows` đỏ sẵn, không do sửa này); ruff sạch; DB 53/53 doc hợp lệ. Server :8000 của người dùng cần khởi động lại.
+
+## 🏗️ Phiên 2026-10-07 — Plan 06: Cổng phản ánh cư dân `portal/` (Next.js, v1.2.0)
+- Yêu cầu: dựng web Next.js + TS + Tailwind + PostgreSQL theo `design-ticket-cu-dan/…/HANDOFF.md` + 6 file `.dc.html`, thứ tự dữ liệu → auth → Cư dân → Tiếp nhận → phòng ban → BQL, mỗi màn so lại thiết kế.
+- Bước 0 `init_brain.js --check` exit 0. Bộ SPEC `planning/06_2026-10-07_resident-portal-next/` (00/01/P01/P02/OPERATIONS/TESTING). Docker Desktop bật lại; DB `portal` + `portal_test` tạo trong `p151-db-1`.
+- Quyết định: app độc lập backend Python; Drizzle (không Prisma); session tự viết; giữ `cacheComponents`; một mô hình stage 1..6; 9 lệch thiết kế D1–D9.
+- Lỗi bắt được khi nghiệm thu: Agent khớp chuỗi con ("ồn"/"cộng đồng") → so khớp nguyên từ; ảnh cache `max-age` lộ cho người đăng nhập sau → `no-store`; ô Gộp tràn ngang 390px.
+- Đo: typecheck/lint exit 0; unit 14/14; DB 15/15 (2 phép phá cố ý đều đỏ); `next build` exit 0; E2E trên production PASS; 38 ảnh đối chiếu, 0 tràn ngang. Evidence: `planning/06_…/evidence/`.
+- Chưa commit (chờ người dùng). Cột server của gate còn ⬜.
+
+## 🎨 Phiên 2026-10-07 — Plan 07: UI `src/web/` theo design `portal/` (v1.3.0)
+- Yêu cầu: "Chuyển Ui theo design của foder portal sang UI của P151". Bước 0 exit 0. Hồ sơ `planning/07_2026-10-07_web-portal-reskin/` (plan + 5 SPEC).
+- Cách làm: reskin 3 lớp — remap palette trong `tailwind.config`, `src/web/theme.css` chép class portal, viết lại header/đăng nhập/helper. Không đổi API/logic. Tắt dark mode; không thêm chuông/tile.
+- Màn đăng nhập cam (sáng cùng ngày) bị thay bằng bản xanh portal — ghi ở "Quyết định bị thay thế".
+- Đo trên backend local `:8001` memory (KHÔNG trên Supabase chung): 22 ảnh 1440/390, 0 tràn ngang; thao tác thật kythuat01/cudan01/bptn01 0 lỗi JS. pytest 2972 passed, ruff sạch.
+- Chưa: container `backend` `:8000` vẫn chạy image cũ (cần `docker compose up -d --build backend`); chưa commit.
+
