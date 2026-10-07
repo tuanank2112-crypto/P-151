@@ -163,6 +163,7 @@ CÁC BƯỚC SUY LUẬN (suy luận đủ 10 bước; chỉ GHI vào "reasoning"
 {signal_table}
    Bậc 1 có thật (PRESENT) ⇒ risk_level EMERGENCY. Nghi ngờ ("hình như", "có vẻ"), đã xảy ra rồi hết ("hôm qua…, giờ hết rồi"), từ nhiều nghĩa đứng riêng ("cháy", "chập" không rõ là gì), âm thanh lạ (xèo xèo, lốp bốp), vệ sinh chỉ có một dấu hiệu nguy hại ⇒ UNCLEAR.
    KHÔNG phải nguy hiểm: đèn/bóng đèn bị cháy, chập, chập chờn, nhấp nháy, nổ bóng (đó là ĐÈN HỎNG) khi không kèm khói, lửa, khét, nóng, tia lửa; câu phủ định ("không có mùi khét"); "khét" do nấu ăn.
+   Cư dân PHỦ ĐỊNH một dấu hiệu ("không có khói nhiều", "chưa thấy lửa", "không phải cháy") ⇒ tín hiệu đó là ABSENT, KHÔNG phải UNCLEAR, và không làm tăng risk_level. UNCLEAR chỉ dành cho khi chính cư dân nghi ngờ hoặc mô tả chưa rõ. Ngược lại, lời kêu cứu, báo cháy, giục gọi cứu hỏa hay sơ tán là người đang gặp nguy ngay ⇒ PRESENT dù không dùng đúng từ trong bảng.
    Mỗi phần tử của safety.signals là MỘT đối tượng có đúng ba khóa: signal_id (mã trong bảng trên, ví dụ "S-05"; S-00 cho nguy hiểm thật khác), status (chỉ PRESENT, UNCLEAR hoặc ABSENT) và quote (đoạn chép nguyên văn từ <an_toan_can_xet>). KHÔNG ghi tín hiệu dạng chuỗi. Không có tín hiệu ⇒ signals [].
 3. LOAI_VIEC: chỉ hai loại việc:
    - VE_SINH (PB-CLN-01): khu vực chung bẩn hoặc có thứ cần dọn (rác, bụi, vết bẩn, nước đọng, chất lỏng đổ, bãi nôn, phân, lá cây, mạng nhện…).
@@ -172,6 +173,7 @@ CÁC BƯỚC SUY LUẬN (suy luận đủ 10 bước; chỉ GHI vào "reasoning"
    Không xác định được ⇒ scope UNCLEAR, TO_BPTN với CATEGORY_UNCLEAR.
 4. VI_TRI: nơi XẢY RA SỰ CỐ, không phải nơi cư dân ở ("em ở căn 1203 tầng 12" không phải vị trí sự cố). Tòa chỉ thuộc: {buildings}. Tầng là số, "B1"/"B2" (hầm) hoặc "Trệt". Khu vực chỉ thuộc: {areas}. Sảnh chính và Sảnh cư dân là tầng 1 nếu không nêu. Tòa ngoài danh sách = thiếu tòa. Thiếu phần nào để null.
 5. THIEU_THONG_TIN: thiếu tòa/tầng/khu vực ⇒ next_step ASK_RESIDENT với đúng các trường thiếu (location, location_building, location_floor, location_area). Phản ánh rõ ràng ngoài phạm vi và không nhắc khu vực chung nào ⇒ TO_BPTN với OUT_OF_SCOPE (không hỏi vị trí). Đủ thông tin và thuộc phạm vi ⇒ PROCEED.
+   next_step TO_BPTN LUÔN kèm bptn_reason (OUT_OF_SCOPE hoặc CATEGORY_UNCLEAR); thiếu bptn_reason thì CẢ quyết định bị loại, kể cả phần an toàn. Ca nguy hiểm thật (risk_level EMERGENCY) mà không có việc vệ sinh/đèn ⇒ scope OUT_OF_SCOPE, jobs [], next_step TO_BPTN, bptn_reason OUT_OF_SCOPE (BQL nhận ca khẩn cấp riêng).
 6. TRUNG: chỉ chọn trong <ung_vien_trung>; trùng khi cùng loại việc, cùng tòa/tầng/khu vực VÀ cùng một sự việc. Không chắc ⇒ duplicate_of null.
 7. UU_TIEN: PRI-H1 đèn ở lối đi chung ({high_areas}) = HIGH; PRI-M1 đèn ở chỗ khác = MEDIUM; PRI-H2 vệ sinh cản trở lối đi (chắn lối, trơn trượt, tràn ra lối đi) = HIGH; PRI-M2 vệ sinh ảnh hưởng sử dụng (nhiều rác, ẩm ướt, mùi) = MEDIUM; PRI-L1 vệ sinh chưa ảnh hưởng = LOW; PRI-D0 chưa rõ vị trí hoặc loại = MEDIUM.
 8. TAI_SAN: chỉ cho KY_THUAT; chọn trong <tai_san> asset có vị trí TRÙNG vị trí sự cố; không có hoặc có từ hai asset trở lên ở vị trí đó ⇒ asset_id null.

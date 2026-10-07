@@ -169,3 +169,9 @@
 ## Phiên 2026-10-07 — Q32: Agent chạy LLM qua Antigravity CLI
 - Thêm `claude_cli_client` và `agy_cli_client` (`agent/client.py`), `LLM_MODE=claude_cli|agy_cli`, `--json-schema` + `--effort`; người dùng chọn `agy_cli` + `gemini-3.8-flash-low` (`.env`), không dùng Claude. Full suite 3354 pass, 1 fail = test F2/F11 của worker H13.
 - Đo live 4 câu: Claude sonnet 4/4 đúng (20–27 s); agy Gemini 4/4 AGENT, 3/4 đúng (12–27 s), sai câu phủ định "Không có khói nhiều đâu" ⇒ UNCLEAR. Kế tiếp: bộ G-LIVE ~50 câu có nhãn.
+
+## Phiên 2026-10-07 22:30 — G-LIVE qua Antigravity + prompt /4, /5 (Q33)
+- Bộ `tests/test_maintenance/data/agent_live_eval.yaml` (draft2, NHÃN NHÁP chờ Trường) + `scripts/agent_live_eval.py`; evidence `planning/06_.../evidence/G-LIVE/`.
+- draft1 (prompt /3): 56/60, 0 bỏ sót; nhóm A quá dễ (luật bắt 19/20). Q33: giữ "Agent không tự hạ" (3/20 câu nhờ thay đèn sang BPTN vì luật UNCLEAR).
+- prompt /4 (phủ định = ABSENT, kêu cứu = PRESENT bằng lời): phủ định 10/10; nhóm A2 (16 câu khẩn cấp luật bỏ sót) 8/16 do mô hình quên `bptn_reason` khi TO_BPTN ⇒ cả quyết định bị loại.
+- prompt /5 (TO_BPTN luôn kèm bptn_reason; khẩn cấp không có việc ⇒ OUT_OF_SCOPE): A2 16/16, 0 fallback, p50 17 s. R13 ghi 🔁 SỬA (6 mục).

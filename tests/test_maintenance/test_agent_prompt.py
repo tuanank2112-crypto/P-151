@@ -151,8 +151,20 @@ def test_p_07_no_locks_means_khong_and_locks_are_listed_when_present():
     )
 
 
-def test_p_08_prompt_version_is_the_third_one():
-    assert prompt.PROMPT_VERSION == "agent-prompt/3"
+def test_p_08_prompt_version_is_the_fifth_one():
+    assert prompt.PROMPT_VERSION == "agent-prompt/5"
+
+
+def test_p_08d_to_bptn_always_carries_a_reason_and_an_emergency_alone_is_out_of_scope():
+    system = prompt.render_system_prompt(CATALOG, LEXICON)
+    assert "next_step TO_BPTN LUÔN kèm bptn_reason" in system
+    assert "jobs [], next_step TO_BPTN, bptn_reason OUT_OF_SCOPE" in system
+
+
+def test_p_08c_negation_is_absent_and_a_help_cry_is_present_in_words():
+    system = prompt.render_system_prompt(CATALOG, LEXICON)
+    assert "PHỦ ĐỊNH một dấu hiệu" in system and "KHÔNG phải UNCLEAR" in system
+    assert "lời kêu cứu, báo cháy, giục gọi cứu hỏa hay sơ tán" in system
 
 
 def test_p_08b_system_prompt_shows_the_shape_of_a_safety_signal():
