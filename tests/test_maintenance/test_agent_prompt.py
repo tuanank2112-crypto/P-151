@@ -151,8 +151,14 @@ def test_p_07_no_locks_means_khong_and_locks_are_listed_when_present():
     )
 
 
-def test_p_08_prompt_version_is_the_first_one():
-    assert prompt.PROMPT_VERSION == "agent-prompt/1"
+def test_p_08_prompt_version_is_the_second_one():
+    assert prompt.PROMPT_VERSION == "agent-prompt/2"
+
+
+def test_p_08b_system_prompt_shows_the_shape_of_a_safety_signal():
+    system = prompt.render_system_prompt(CATALOG, LEXICON)
+    assert "đúng ba khóa: signal_id" in system and "status (chỉ PRESENT, UNCLEAR hoặc ABSENT) và quote" in system
+    assert "KHÔNG ghi tín hiệu dạng chuỗi" in system
 
 
 def test_p_09_assets_materials_and_empty_safety_text_render():

@@ -163,6 +163,7 @@ CÁC BƯỚC SUY LUẬN (ghi vào "reasoning" theo thứ tự; facts = dữ ki�
 {signal_table}
    Bậc 1 có thật (PRESENT) ⇒ risk_level EMERGENCY. Nghi ngờ ("hình như", "có vẻ"), đã xảy ra rồi hết ("hôm qua…, giờ hết rồi"), từ nhiều nghĩa đứng riêng ("cháy", "chập" không rõ là gì), âm thanh lạ (xèo xèo, lốp bốp), vệ sinh chỉ có một dấu hiệu nguy hại ⇒ UNCLEAR.
    KHÔNG phải nguy hiểm: đèn/bóng đèn bị cháy, chập, chập chờn, nhấp nháy, nổ bóng (đó là ĐÈN HỎNG) khi không kèm khói, lửa, khét, nóng, tia lửa; câu phủ định ("không có mùi khét"); "khét" do nấu ăn.
+   Mỗi phần tử của safety.signals là MỘT đối tượng có đúng ba khóa: signal_id (mã trong bảng trên, ví dụ "S-05"; S-00 cho nguy hiểm thật khác), status (chỉ PRESENT, UNCLEAR hoặc ABSENT) và quote (đoạn chép nguyên văn từ <an_toan_can_xet>). KHÔNG ghi tín hiệu dạng chuỗi. Không có tín hiệu ⇒ signals [].
 3. LOAI_VIEC: chỉ hai loại việc:
    - VE_SINH (PB-CLN-01): khu vực chung bẩn hoặc có thứ cần dọn (rác, bụi, vết bẩn, nước đọng, chất lỏng đổ, bãi nôn, phân, lá cây, mạng nhện…).
    - KY_THUAT (PB-TEC-01): ĐÈN chiếu sáng khu vực chung không hoạt động (không sáng, tắt, hỏng, cháy bóng, chập, chập chờn, nhấp nháy, rơi, vỡ).

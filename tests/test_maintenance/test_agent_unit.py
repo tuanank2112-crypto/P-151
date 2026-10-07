@@ -17,6 +17,7 @@ from src.maintenance.agent import prompt, reconcile
 from src.maintenance.agent.agent import ReasoningAgent, build_agent
 from src.maintenance.agent.baseline import mirror_decision, rule_view
 from src.maintenance.agent.client import (
+    CachingClient,
     ClientReply,
     CountingClient,
     FailingClient,
@@ -223,7 +224,9 @@ def test_a_02_a_valid_reply_becomes_an_agent_record_with_one_log_line():
     assert len(logs) == 1
     entry = logs[0]
     assert entry.status.value == "SUCCESS" and entry.model_name == "fake-model" and entry.latency_ms >= 0
-    assert REPORT in entry.prompt_sent["user"] and entry.prompt_sent["system"].startswith("agent-prompt/1 sha256:")
+    assert REPORT in entry.prompt_sent["user"] and entry.prompt_sent["system"].startswith(
+        f"{prompt.PROMPT_VERSION} sha256:"
+    )
     assert entry.structured_output["schema_version"] == "agent-decision/1"
     assert record.ai_log_id == entry.log_id
 
@@ -791,6 +794,76 @@ def test_openai_json_client_prompt_only_sends_no_response_format_and_strips_fenc
     assert empty.text == "" and empty.usage is None
 
 
+def _chunk(content=None, usage=None):
+    delta = types.SimpleNamespace(content=content)
+    choices = [] if content is None else [types.SimpleNamespace(delta=delta)]
+    return types.SimpleNamespace(choices=choices, usage=usage)
+
+
+def test_openai_json_client_stream_joins_deltas_keeps_usage_and_closes(fake_openai):
+    client = openai_json_client(
+        "m", "k", None, timeout=9.0, max_output_tokens=600, json_mode="json_object", stream=True
+    )
+    sdk = fake_openai.instances[0]
+    closed = []
+    usage = types.SimpleNamespace(prompt_tokens=3, completion_tokens=4, total_tokens=7)
+
+    class Stream(list):
+        def close(self):
+            closed.append(True)
+
+    sdk.reply = Stream([_chunk('{"a": '), _chunk(""), _chunk("1}"), _chunk(usage=usage)])
+    reply = client("S", "U", new_input())
+    assert sdk.calls[0]["stream"] is True and sdk.calls[0]["response_format"] == {"type": "json_object"}
+    assert reply.text == '{"a": 1}' and reply.usage == {"prompt_tokens": 3, "completion_tokens": 4, "total_tokens": 7}
+    assert closed == [True]
+
+
+def test_openai_json_client_stream_past_the_timeout_raises_timeout(fake_openai, monkeypatch):
+    client = openai_json_client(
+        "m", "k", None, timeout=5.0, max_output_tokens=600, json_mode="json_object", stream=True
+    )
+    sdk = fake_openai.instances[0]
+    sdk.reply = [_chunk('{"a": '), _chunk("1}")]
+    ticks = iter([0.0, 1.0, 6.0, 7.0])
+    monkeypatch.setattr("src.maintenance.agent.client.time", types.SimpleNamespace(perf_counter=lambda: next(ticks)))
+    with pytest.raises(TimeoutError):
+        client("S", "U", new_input())
+
+
+def test_caching_client_reuses_identical_requests_until_ttl_and_evicts_lru():
+    data = new_input()
+    valid = mirror_decision(data, CATALOG, LEXICON).model_dump_json()
+    counting = CountingClient(ScriptedClient({}, default=valid))
+    now = [0.0]
+    cache = CachingClient(counting, max_entries=2, ttl_seconds=10.0, clock=lambda: now[0])
+    first = cache("S", "U1", data)
+    again = cache("S", "U1", data)
+    assert counting.calls == 1 and again.text == first.text == valid
+    assert again.latency_ms == 0.0 and again.usage == {"cache_hit": 1}
+    cache("S2", "U1", data)  # another system prompt (prompt version) is another request
+    assert counting.calls == 2
+    now[0] = 11.0  # past the TTL: asked again
+    cache("S", "U1", data)
+    assert counting.calls == 3
+    cache("S", "U2", data)
+    cache("S", "U3", data)  # room for two: "S/U1" is the least recently used and goes (not the TTL: t=11)
+    cache("S", "U3", data)
+    assert counting.calls == 5
+    cache("S", "U1", data)
+    assert counting.calls == 6 and (cache.hits, cache.misses) == (2, 6)
+
+
+def test_caching_client_keeps_only_valid_decisions():
+    data = new_input()
+    for bad in ("không phải json", '{"schema_version": "agent-decision/1"}'):
+        counting = CountingClient(ScriptedClient({}, default=bad))
+        cache = CachingClient(counting, max_entries=8, ttl_seconds=60.0)
+        cache("S", "U", data)
+        cache("S", "U", data)
+        assert counting.calls == 2  # a malformed reply is asked again, never served from the cache
+
+
 def test_build_agent_needs_openai_mode_a_key_and_the_switch(fake_openai):
     def settings(**kw):
         return Settings(_env_file=None, **kw)
@@ -813,3 +886,6 @@ def test_build_agent_needs_openai_mode_a_key_and_the_switch(fake_openai):
     (sdk,) = fake_openai.instances
     assert sdk.init["base_url"] == "https://api.deepseek.com" and sdk.init["max_retries"] == 0
     assert sdk.init["timeout"] == 25.0 and sdk.calls == []  # the model was not called
+    sdk.reply = [_chunk("{}")]
+    agent._client("S", "U", new_input())  # MO_AGENT_STREAM defaults to on: the reply is streamed
+    assert sdk.calls[0]["stream"] is True

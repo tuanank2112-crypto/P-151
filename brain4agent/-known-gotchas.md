@@ -75,3 +75,10 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 ## Phạm vi tòa thí điểm Ocean Park S1/S2 (2026-10-05)
 - Vị trí cư dân chỉ hợp lệ khi tòa nằm trong `catalog.yaml` `site.buildings`; seed/test đã đổi `SIM-A`→`S1`, `SIM-B`→`S2`. Text test qua engine dùng tòa khác (vd `SIM-A`, `S3`) sẽ rơi NEED_INFO thiếu tòa.
 - KHÔNG đổi tòa trong bộ nhãn an toàn (`tests/.../data/safety_*_p0.yaml`, `test_safety_p0.py`) và `test_b01_closed_prefix_twenty_tokens_and_lamp_accent`: `assess()` không xét vị trí, còn "tòa SIM-A" = 3 token, "tòa S1" = 2 token ⇒ ca biên 20/21 token của B-01 lệch.
+
+## LLM qua vyceai.com `deepseek-v4.1` quá chậm cho Agent (đo 2026-10-07)
+- Gọi ngắn ("trả JSON {ok:true}") OK. Lượt gọi thật của Agent (system ~7.6k + user ~1k ký tự, `max_tokens` 2500, JSON mode) ⇒ 504 Cloudflare sau ~14–17 s (non-stream) hoặc "request timed out" sau ~25 s (stream) ⇒ `FALLBACK_RULE/HTTP_ERROR`, engine chạy luật (an toàn, nhưng KHÔNG có suy luận).
+- Thông lượng đo: câu ngắn stream 63 chunk mất 21 s (chunk đầu 4.9 s) ≈ 3 chunk/s ⇒ JSON quyết định 1–2k token cần vài phút. Lỗi tầng 1 (hạ tầng nhà cung cấp), không phải code. Không nâng timeout để "chữa": 504 do proxy cắt.
+- Mô hình trần (không system prompt) coi "Thay bóng đèn cháy … giúp với" là EMERGENCY ⇒ hướng dẫn ngữ nghĩa trong `prompt.py` là bắt buộc, đừng đo LLM bằng prompt trần.
+- Đã thêm `MO_AGENT_STREAM=true` (mặc định) ở `agent/client.py`: hết 504 Cloudflare, nhưng `deepseek-v4-flash` qua vyceai vẫn tự báo "The request timed out" sau ~28–30 s ở 3/4 câu (lần đo riêng: 17 s, chunk đầu 5.6 s) ⇒ nhà cung cấp chậm/không ổn định. `timeout` của client chặn TỔNG thời gian stream.
+- Prompt Agent (`prompt.py` EXAMPLE) chỉ có `"signals": []`, không mô tả object `{signal_id, status, quote}` ⇒ mô hình thật trả `signals` dạng chuỗi ⇒ `SCHEMA_INVALID` ⇒ FALLBACK. Lộ ra CHỈ khi chạy live; mock không thấy.

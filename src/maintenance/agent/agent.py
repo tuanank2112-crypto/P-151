@@ -22,7 +22,7 @@ from src.maintenance.catalog import Catalog, Lexicon
 from src.maintenance.enums import RiskLevel
 
 from .baseline import rule_view
-from .client import DecisionClient, openai_json_client
+from .client import CachingClient, DecisionClient, openai_json_client
 from .graph import AgentState, GraphSteps, build_graph
 from .inputs import DecisionInput
 from .prompt import PROMPT_VERSION, render_system_prompt, render_user_message
@@ -229,5 +229,10 @@ def build_agent(
         timeout=settings.mo_agent_timeout_seconds,
         max_output_tokens=settings.mo_agent_max_output_tokens,
         json_mode=settings.mo_agent_json_mode,
+        stream=settings.mo_agent_stream,
     )
+    if settings.mo_agent_cache_entries > 0:  # the same request (ticket, content, candidates, locks) is asked once
+        client = CachingClient(
+            client, max_entries=settings.mo_agent_cache_entries, ttl_seconds=settings.mo_agent_cache_ttl_seconds
+        )
     return ReasoningAgent(client, catalog=catalog, lexicon=lexicon, model_label=settings.model_name, clock=clock)
