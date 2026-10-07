@@ -1,0 +1,7 @@
+
+> portal@1.2.0 typecheck
+> next typegen && tsc --noEmit
+
+Generating route types...
+✓ Types generated successfully
+npm run typecheck exit=0
