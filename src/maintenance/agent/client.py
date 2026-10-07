@@ -6,7 +6,11 @@ no test ever reaches a network.
 """
 
 import hashlib
+import json
 import re
+import shutil
+import subprocess
+import tempfile
 import threading
 import time
 from collections import OrderedDict
@@ -88,6 +92,142 @@ def openai_json_client(
         if json_mode == "prompt_only":
             text = _strip_to_json_object(text)
         return ClientReply(text=text, latency_ms=latency_ms, usage=_usage(raw_usage))
+
+    return call
+
+
+def claude_cli_client(
+    model: str,
+    *,
+    timeout: float,
+    effort: str = "",
+    json_schema: Mapping[str, Any] | None = None,
+    cli_path: str | None = None,
+) -> DecisionClient:
+    """Local development and demo only: one `claude -p` call per decision, signed in with the subscription of the
+    person running this backend. Do NOT use it for a deployed service that serves other people (Anthropic consumer
+    terms: a personal plan is for personal use; a shared service needs an API key).
+
+    The CLI runs in an empty temporary directory (no repo CLAUDE.md), with no tools, no MCP servers, no slash
+    commands and no saved session; `--system-prompt` replaces the default one. The reply text goes through the same
+    fence stripping as `prompt_only`; with `json_schema` the CLI enforces the shape and `structured_output` is used.
+    `effort` ("low" …) limits hidden thinking. A non-zero exit, `is_error` or unreadable output raises (the Agent then
+    falls back to the rules); `subprocess.TimeoutExpired` becomes a TIMEOUT fallback."""
+    executable = cli_path or shutil.which("claude") or "claude"
+    workdir = tempfile.mkdtemp(prefix="mo-agent-cli-")
+
+    def call(system: str, user: str, data: DecisionInput) -> ClientReply:
+        args = [
+            executable,
+            "-p",
+            "--output-format",
+            "json",
+            "--model",
+            model,
+            "--tools",
+            "",
+            "--strict-mcp-config",
+            "--no-session-persistence",
+            "--disable-slash-commands",
+            "--system-prompt",
+            system,
+        ]
+        if effort:
+            args += ["--effort", effort]
+        if json_schema is not None:
+            args += ["--json-schema", json.dumps(json_schema, ensure_ascii=False)]
+        started = time.perf_counter()
+        proc = subprocess.run(
+            args, input=user, capture_output=True, text=True, encoding="utf-8", timeout=timeout, cwd=workdir
+        )
+        latency_ms = (time.perf_counter() - started) * 1000
+        if proc.returncode != 0:
+            raise RuntimeError(f"claude CLI exit {proc.returncode}: {(proc.stderr or proc.stdout)[:300]}")
+        out = json.loads(proc.stdout)
+        if out.get("is_error"):
+            raise RuntimeError(f"claude CLI error: {str(out.get('result'))[:300]}")
+        raw = out.get("usage") or {}
+        cached = int(raw.get("cache_read_input_tokens") or 0)
+        prompt_tokens = int(raw.get("input_tokens") or 0) + cached + int(raw.get("cache_creation_input_tokens") or 0)
+        completion = int(raw.get("output_tokens") or 0)
+        usage = {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion,
+            "total_tokens": prompt_tokens + completion,
+            "prompt_cache_hit_tokens": cached,
+        }
+        structured = out.get("structured_output")
+        if isinstance(structured, dict):
+            text = json.dumps(structured, ensure_ascii=False)
+        else:
+            text = _strip_to_json_object(str(out.get("result") or ""))
+        return ClientReply(text=text, latency_ms=latency_ms, usage=usage)
+
+    return call
+
+
+def agy_cli_client(
+    model: str,
+    *,
+    timeout: float,
+    effort: str = "",
+    json_schema: Mapping[str, Any] | None = None,
+    cli_path: str | None = None,
+) -> DecisionClient:
+    """Local development and demo only, like `claude_cli_client`: one `agy -p` call (Antigravity CLI, e.g. a Gemini
+    Flash model) per decision, signed in with the operator's own plan — not for a service that serves other people.
+
+    `agy` has no flag to replace its system prompt or to turn tools off, so the Agent's system prompt is sent at the
+    top of the prompt, the CLI runs in an empty temporary directory with `--sandbox` and without auto-approval (a
+    tool request in print mode is never approved). Pick a model explicitly: the default one may sit on a smaller
+    quota. A non-zero exit or `status != SUCCESS` raises (the Agent falls back to the rules)."""
+    executable = cli_path or shutil.which("agy") or "agy"
+    workdir = tempfile.mkdtemp(prefix="mo-agent-agy-")
+
+    def call(system: str, user: str, data: DecisionInput) -> ClientReply:
+        prompt_text = f"{system}\n\n=== PHẢN ÁNH CẦN QUYẾT ĐỊNH ===\n{user}"
+        args = [
+            executable,
+            "-p",
+            prompt_text,
+            "--model",
+            model,
+            "--output-format",
+            "json",
+            "--sandbox",
+            "--disable-slash-commands",
+            "--print-timeout",
+            f"{max(1, int(timeout))}s",
+        ]
+        if effort:
+            args += ["--effort", effort]
+        if json_schema is not None:
+            args += ["--json-schema", json.dumps(json_schema, ensure_ascii=False)]
+        started = time.perf_counter()
+        proc = subprocess.run(args, capture_output=True, text=True, encoding="utf-8", timeout=timeout + 5, cwd=workdir)
+        latency_ms = (time.perf_counter() - started) * 1000
+        try:
+            out = json.loads(proc.stdout)
+        except ValueError as exc:
+            raise RuntimeError(f"agy exit {proc.returncode}: {(proc.stderr or proc.stdout)[:300]}") from exc
+        if proc.returncode != 0 or out.get("status") != "SUCCESS":
+            raise RuntimeError(f"agy {out.get('status')} (exit {proc.returncode}): {str(out.get('error'))[:300]}")
+        raw = out.get("usage") or {}
+        cached = int(raw.get("cache_read_tokens") or 0)
+        prompt_tokens = int(raw.get("input_tokens") or 0)
+        completion = int(raw.get("output_tokens") or 0) + int(raw.get("thinking_tokens") or 0)
+        usage = {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion,
+            "total_tokens": prompt_tokens + completion,
+            "prompt_cache_hit_tokens": cached,
+        }
+        structured = out.get("structured_output")
+        if isinstance(structured, dict):
+            text = json.dumps(structured, ensure_ascii=False)
+        else:
+            text = _strip_to_json_object(str(out.get("response") or ""))
+        return ClientReply(text=text, latency_ms=latency_ms, usage=usage)
 
     return call
 

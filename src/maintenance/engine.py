@@ -4090,6 +4090,12 @@ def build_engine(settings: "Settings | None" = None) -> MaintenanceEngine:
 
         repo = PostgresRepository(settings.database_url)
         repo.check()
+    if settings.llm_mode in ("claude_cli", "agy_cli") and settings.mo_agent_enabled:  # local demo through a CLI
+        from src.maintenance.agent.agent import build_agent
+
+        catalog, lexicon = load_catalog(), load_lexicon()
+        agent = build_agent(settings, catalog, lexicon, lambda: datetime.now(LOCAL_TZ))
+        return MaintenanceEngine(repo=repo, catalog=catalog, lexicon=lexicon, agent=agent)
     if settings.llm_mode == "openai" and settings.openai_api_key:
         if settings.mo_agent_enabled:  # plan 06: the reasoning Agent decides each step, the rules are floor + fallback
             from src.maintenance.agent.agent import build_agent

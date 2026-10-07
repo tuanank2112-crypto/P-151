@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     model_name: str = "gpt-4o-mini"
     llm_temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     # mock: rule-based extraction, deterministic, no API key needed (dev/test)
-    llm_mode: Literal["openai", "mock"] = "mock"
+    llm_mode: Literal["openai", "mock", "claude_cli", "agy_cli"] = "mock"  # *_cli: local demo only (own plan)
 
     # MaintenanceOps: run the retry/escalation job inside the API process (CR-BPTN-02 §5)
     mo_jobs_enabled: bool = True

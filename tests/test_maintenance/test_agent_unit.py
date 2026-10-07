@@ -24,6 +24,8 @@ from src.maintenance.agent.client import (
     LockProbeClient,
     MirrorClient,
     ScriptedClient,
+    agy_cli_client,
+    claude_cli_client,
     openai_json_client,
 )
 from src.maintenance.agent.inputs import AssetCandidate, DecisionInput, DuplicateCandidate
@@ -875,6 +877,93 @@ def test_caching_client_keeps_only_valid_decisions():
         assert counting.calls == 2  # a malformed reply is asked again, never served from the cache
 
 
+def _cli_result(stdout: str, returncode: int = 0, stderr: str = ""):
+    return types.SimpleNamespace(stdout=stdout, stderr=stderr, returncode=returncode)
+
+
+def test_claude_cli_client_runs_isolated_and_reads_the_fenced_json(monkeypatch):
+    calls = []
+    payload = {
+        "is_error": False,
+        "result": 'Kết quả:\n```json\n{"a": 1}\n```',
+        "usage": {
+            "input_tokens": 100,
+            "cache_read_input_tokens": 4000,
+            "cache_creation_input_tokens": 0,
+            "output_tokens": 50,
+        },
+    }
+
+    def fake_run(args, **kwargs):
+        calls.append((args, kwargs))
+        return _cli_result(json.dumps(payload))
+
+    monkeypatch.setattr("src.maintenance.agent.client.subprocess.run", fake_run)
+    client = claude_cli_client("sonnet", timeout=30.0, cli_path="claude-x")
+    reply = client("SYS", "USR", new_input())
+    ((args, kwargs),) = calls
+    assert args[:5] == ["claude-x", "-p", "--output-format", "json", "--model"] and args[5] == "sonnet"
+    assert args[args.index("--tools") + 1] == "" and args[args.index("--system-prompt") + 1] == "SYS"
+    assert {"--strict-mcp-config", "--no-session-persistence", "--disable-slash-commands"} <= set(args)
+    assert kwargs["input"] == "USR" and kwargs["timeout"] == 30.0 and "mo-agent-cli-" in kwargs["cwd"]
+    assert "--effort" not in args and "--json-schema" not in args
+    assert reply.text == '{"a": 1}'
+    assert reply.usage == {
+        "prompt_tokens": 4100,
+        "completion_tokens": 50,
+        "total_tokens": 4150,
+        "prompt_cache_hit_tokens": 4000,
+    }
+
+
+def test_claude_cli_client_sends_effort_and_schema_and_prefers_structured_output(monkeypatch):
+    calls = []
+    out = {"is_error": False, "result": "ignored", "structured_output": {"a": "ổn"}, "usage": {}}
+    monkeypatch.setattr(
+        "src.maintenance.agent.client.subprocess.run",
+        lambda args, **kw: calls.append(args) or _cli_result(json.dumps(out)),
+    )
+    client = claude_cli_client("sonnet", timeout=30.0, effort="low", json_schema={"type": "object"}, cli_path="c")
+    reply = client("S", "U", new_input())
+    (args,) = calls
+    assert args[args.index("--effort") + 1] == "low"
+    assert json.loads(args[args.index("--json-schema") + 1]) == {"type": "object"}
+    assert json.loads(reply.text) == {"a": "ổn"}
+
+
+def test_claude_cli_client_raises_on_exit_code_and_on_is_error(monkeypatch):
+    replies = iter(
+        [_cli_result("", 1, "not logged in"), _cli_result(json.dumps({"is_error": True, "result": "limit"}))]
+    )
+    monkeypatch.setattr("src.maintenance.agent.client.subprocess.run", lambda args, **kw: next(replies))
+    client = claude_cli_client("sonnet", timeout=30.0, cli_path="claude-x")
+    with pytest.raises(RuntimeError, match="exit 1"):
+        client("S", "U", new_input())
+    with pytest.raises(RuntimeError, match="limit"):
+        client("S", "U", new_input())
+
+
+def test_build_agent_claude_cli_mode_needs_no_key_and_calls_nothing_at_build(monkeypatch):
+    def boom(*a, **k):
+        raise AssertionError("the CLI must not run while building")
+
+    monkeypatch.setattr("src.maintenance.agent.client.subprocess.run", boom)
+    agent = build_agent(
+        Settings(_env_file=None, llm_mode="claude_cli", openai_api_key="", model_name="sonnet"),
+        CATALOG,
+        LEXICON,
+        lambda: NOW,
+    )
+    assert isinstance(agent, ReasoningAgent) and agent.model_label == "sonnet"
+    assert isinstance(agent._client, CachingClient)
+    assert (
+        build_agent(
+            Settings(_env_file=None, llm_mode="claude_cli", mo_agent_enabled=False), CATALOG, LEXICON, lambda: NOW
+        )
+        is None
+    )
+
+
 def test_build_agent_needs_openai_mode_a_key_and_the_switch(fake_openai):
     def settings(**kw):
         return Settings(_env_file=None, **kw)
@@ -900,3 +989,34 @@ def test_build_agent_needs_openai_mode_a_key_and_the_switch(fake_openai):
     sdk.reply = [_chunk("{}")]
     agent._client("S", "U", new_input())  # MO_AGENT_STREAM defaults to on: the reply is streamed
     assert sdk.calls[0]["stream"] is True
+
+
+def test_agy_cli_client_puts_the_system_prompt_first_runs_sandboxed_and_checks_status(monkeypatch):
+    calls = []
+    outputs = iter(
+        [
+            {
+                "status": "SUCCESS",
+                "response": '```json\n{"a": 1}\n```',
+                "usage": {"input_tokens": 9, "output_tokens": 2},
+            },
+            {"status": "ERROR", "response": "", "error": "Individual quota reached"},
+        ]
+    )
+    monkeypatch.setattr(
+        "src.maintenance.agent.client.subprocess.run",
+        lambda args, **kw: calls.append((args, kw)) or _cli_result(json.dumps(next(outputs))),
+    )
+    client = agy_cli_client(
+        "gemini-3.8-flash-low", timeout=30.0, effort="low", json_schema={"type": "object"}, cli_path="a"
+    )
+    reply = client("SYS", "USR", new_input())
+    args, kwargs = calls[0]
+    prompt_text = args[args.index("-p") + 1]
+    assert prompt_text.startswith("SYS\n\n") and prompt_text.endswith("\nUSR")
+    assert args[args.index("--model") + 1] == "gemini-3.8-flash-low" and "--sandbox" in args
+    assert "--dangerously-skip-permissions" not in args and args[args.index("--print-timeout") + 1] == "30s"
+    assert "mo-agent-agy-" in kwargs["cwd"] and reply.text == '{"a": 1}'
+    assert reply.usage == {"prompt_tokens": 9, "completion_tokens": 2, "total_tokens": 11, "prompt_cache_hit_tokens": 0}
+    with pytest.raises(RuntimeError, match="quota"):
+        client("SYS", "USR", new_input())

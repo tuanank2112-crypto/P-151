@@ -165,3 +165,7 @@
 ## Phiên 2026-10-07 21:41:28 +0700 — Q31 đầu ra Agent gọn + reasoning_effort
 - `agent-prompt/3` (REF plan 06 sửa trước, code chép theo): reasoning chỉ các bước cần, bỏ lý do cho trường trống; schema nới tùy chọn. Thêm `MO_AGENT_REASONING_EFFORT` (`.env`: low). Engine: `asset_reason` trống ⇒ chữ mặc định.
 - Live 4 câu: "Xin cứu, nhà cháy rồi" ⇒ AGENT S-05 PRESENT ⇒ EMERGENCY_PENDING_BQL (F11 giải bằng LLM, không regex); "Thay bóng đèn cháy … giúp với" ⇒ AGENT NONE, KY_THUAT; 2 câu vyceai cắt ~28 s ⇒ luật.
+
+## Phiên 2026-10-07 — Q32: Agent chạy LLM qua Antigravity CLI
+- Thêm `claude_cli_client` và `agy_cli_client` (`agent/client.py`), `LLM_MODE=claude_cli|agy_cli`, `--json-schema` + `--effort`; người dùng chọn `agy_cli` + `gemini-3.8-flash-low` (`.env`), không dùng Claude. Full suite 3354 pass, 1 fail = test F2/F11 của worker H13.
+- Đo live 4 câu: Claude sonnet 4/4 đúng (20–27 s); agy Gemini 4/4 AGENT, 3/4 đúng (12–27 s), sai câu phủ định "Không có khói nhiều đâu" ⇒ UNCLEAR. Kế tiếp: bộ G-LIVE ~50 câu có nhãn.
