@@ -15,7 +15,7 @@ import { Feedback } from "@/components/rating-summary";
 import { Body, Header, NavTiles, PageHead } from "@/components/shell";
 import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
-import { ROLE_LABEL } from "@/lib/constants";
+import { ROLE_LABEL, STOCK_CATALOG } from "@/lib/constants";
 import type { DeptData, DeptTicket } from "@/lib/dto";
 
 type Tab = "queue" | "mat";
@@ -28,18 +28,7 @@ const HEAD: Record<Tab, { title: string; sub: string }> = {
   mat: { title: "Yêu cầu vật tư", sub: "Vật tư cần cho các ticket đang xử lý." },
 };
 
-const COMMON_MATERIALS = [
-  "Aptomat tép MCB 1P 32A Schneider",
-  "Aptomat tổng MCCB 3P 63A Mitsubishi",
-  "Dây điện đôi Cadivi VCm 2x2.5mm²",
-  "Bóng đèn LED Tuýp T8 1.2m 18W Rạng Đông",
-  "Bóng đèn Downlight âm trần 9W Philip",
-  "Van khóa nước 1 chiều đồng MIHA D25",
-  "Van phao cơ ngắt nước thông minh D27",
-  "Ống nước Tiền Phong uPVC D27 C2",
-  "Băng tan cao cấp PTFE quấn ống nước",
-  "Keo dán ống PVC Tiền Phong 100g",
-];
+const COMMON_MATERIALS = STOCK_CATALOG.map((m) => m.name);
 
 const kwText = (t: DeptTicket) => (t.keywords.length ? t.keywords.join(", ") : "không khớp từ khóa");
 

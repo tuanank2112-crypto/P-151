@@ -4,9 +4,9 @@
  */
 import { sql } from "drizzle-orm";
 import type { Db } from "./client";
-import { history, keywords, materials, notices, ratings, staff, tickets, users, type Dept, type Place } from "./schema";
+import { history, keywords, materials, notices, ratings, staff, tickets, users, warehouseStock, type Dept, type Place } from "./schema";
 import { classify, type KeywordRules } from "@/lib/agent";
-import { DEPT_LABEL, placeLocation, type Home } from "@/lib/constants";
+import { DEPT_LABEL, STOCK_CATALOG, placeLocation, type Home } from "@/lib/constants";
 import { fmtDateTime } from "@/lib/format";
 import { hashPassword } from "@/server/password";
 
@@ -109,7 +109,7 @@ export async function seed(db: Db, opts: { reset?: boolean; now?: Date } = {}): 
   const now = opts.now ?? new Date();
   if (opts.reset) {
     await db.execute(
-      sql`truncate table materials, ratings, history, photos, tickets, staff, keywords, notices, sessions, users restart identity cascade`,
+      sql`truncate table materials, ratings, history, photos, tickets, staff, keywords, notices, sessions, users, warehouse_stock restart identity cascade`,
     );
   }
   const [{ count }] = (await db.execute<{ count: number }>(sql`select count(*)::int as count from users`)).rows;
@@ -263,6 +263,8 @@ export async function seed(db: Db, opts: { reset?: boolean; now?: Date } = {}): 
 
     const day = (d: number) => new Date(now.getTime() + d * 24 * H);
     const dmy = (d: Date) => fmtDateTime(d).slice(6);
+    await tx.insert(warehouseStock).values(STOCK_CATALOG);
+
     await tx.insert(notices).values([
       {
         title: "Lịch bảo trì thang máy tòa S2.05",

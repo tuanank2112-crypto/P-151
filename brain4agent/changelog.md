@@ -2,6 +2,14 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.3.1] - 2026-10-08: Sửa portal sau đợt merge `feature/tri` (kho vật tư)
+### Fixed
+- `portal/drizzle/0002_warehouse.sql`: migration bị thiếu cho role `warehouse` + bảng `warehouse_stock` (schema có, migration không) ⇒ DB dựng mới vỡ seed ở user `kho` (`invalid input value for enum role`).
+- Seed nạp kho từ `STOCK_CATALOG` (`portal/src/lib/constants.ts`) — cùng danh mục form yêu cầu vật tư của Kỹ thuật dùng; trước đó kho trống và form dùng danh sách cứng riêng.
+- Modal chi tiết ticket thôi bịa "95%" khi Agent không có gợi ý.
+### Evidence
+- Đối chứng ĐỎ: DB chỉ có `0000`+`0001` ⇒ seed exit 1 đúng lỗi enum; có `0002` ⇒ migrate/seed exit 0. typecheck 0, unit 17/17, test:db 18/18, Playwright 9 luồng 0 lỗi trang (Postgres local cổng 5433).
+
 ## [v1.3.0] - 2026-10-07: UI tĩnh `src/web/` mang design của `portal/` (plan 07)
 ### Changed
 - `src/web/index.html` + `app.js`: font Be Vietnam Pro, header gradient "Xin chào, <tên>" (avatar chữ viết tắt, pill vai trò, ô đổi tài khoản test, nút Đăng xuất pill), khối tiêu đề màn là card đè lên gradient, màn đăng nhập theo `Main.dc.html` của portal (thay bản gradient cam sáng cùng ngày).

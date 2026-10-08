@@ -100,6 +100,8 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 - Test đồng thời bằng `Promise.all` hai action KHÔNG tạo tranh chấp (giao dịch đầu xong trước) ⇒ phép phá bỏ `FOR UPDATE` vẫn xanh. Test tất định: giữ khoá dòng từ một kết nối khác, đổi stage, rồi commit (`tests/db/workflow.test.ts`).
 - Ô `<select>` rộng theo option dài làm trang tràn ngang ở 390px; `npm run screenshots` nay fail khi `scrollWidth > viewport`.
 - `docker compose up -d --build` trước 2026-10-07 chỉ dựng `db` + `backend` (Python) ⇒ `localhost:8000` vẫn là UI cũ (đăng nhập màu cam), không phải portal. Nay có service `portal` ở `localhost:3000`. Mạng Docker Desktop chập chờn ("no such host" khi kéo `node:24-alpine") ⇒ `docker pull` lại vài lần.
+- **Sửa `portal/src/db/schema.ts` thì PHẢI `npx drizzle-kit generate --name <tên>`** và commit file `drizzle/00NN_*.sql` + `meta/`. `drizzle-kit push` chỉ sửa DB trên máy mình ⇒ người khác `db:migrate` thiếu bảng/enum (gặp 2026-10-08: role `warehouse`). Kiểm nhanh: `drizzle-kit generate` trên nhánh sạch phải báo "No schema changes".
+- `docker-compose.yml` cố định `name: p151` ⇒ worktree khác chạy `docker compose up` sẽ DÙNG CHUNG volume DB với repo chính. Cô lập bằng `docker compose -p <tên-khác>` + `POSTGRES_PORT` khác.
 - Cookie `secure` bật ở production làm đăng nhập lặp vòng khi mở bằng HTTP qua IP LAN; compose đặt `SESSION_COOKIE_SECURE=false`.
 
 

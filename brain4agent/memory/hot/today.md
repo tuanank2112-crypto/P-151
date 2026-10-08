@@ -485,3 +485,9 @@ Trường xác nhận đánh giá sơ bộ bằng 15 câu do Trường tự so�
 - 2026-10-08T09:42:49.903373+00:00: Trường duyệt 4 mục cuối 009/010 NEXT, 013/014 DEFER nghiệm thu riêng. Hướng xử lý backlog đủ15/15; không có mục nào mới CLOSED. Sửa mô tả lỗi thời 013 (đã có module StateGraph/engine integration) và 014 (lexicon P0/P1); chưa coi code tồn tại là runtime PASS. Tổng hợp backlog-handoff-summary.md để người dùng bàn giao, chưa gửi tin/commit/push.
 
 - 2026-10-08T10:10:44.796289+00:00: Trường báo Như Ý/Châm Anh đã duyệt và nhận phần việc, yêu cầu push nhánh và PR vào develop. Ghi owner-acknowledgement.json, 12/15 owner CONFIRMED (3 mục còn có Trí/leader không suy nhận việc); review nhãn và runtime retest vẫn PENDING. Chuẩn bị commit gói Day05 cùng bằng chứng Day04 liên quan, không thêm thay đổi runtime chưa thuộc scope.
+
+
+## 🧩 Portal — nhận phần việc của Trí (2026-10-08T14:38:20.476143+00:00)
+- Kéo `develop` 5780fda (merge `feature/tri`: kho vật tư, modal chi tiết ticket, luồng phòng ban). Worktree `D:\P151-portal-fe`, nhánh `feature/nhuy-portal-fe`. Trí giao toàn quyền portal cho Như Ý; ghi chú yêu cầu của anh Cố ở Google Doc `1tlvFRnAioxn7LFHTNlM9TQgYzIDzx25ZC4pFxqB3qiA`.
+- Đối chiếu ghi chú: gần hết đã có. Sửa v1.3.1: thiếu migration `0002_warehouse`, kho trống khi seed, modal bịa 95%.
+- Postgres local cô lập `docker compose -p p151fe` cổng 5433. DB thật là Supabase dùng chung — CHỜ DUYỆT quyền, chưa ghi gì lên đó; trước khi migrate phải kiểm chỉ đọc xem Trí đã `drizzle-kit push` chưa.

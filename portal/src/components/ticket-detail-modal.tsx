@@ -193,22 +193,25 @@ export function TicketDetailModal({
               <span className="text-base">✨</span>
               <span>Phân tích Agent Thông Minh</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-              <div>
-                <span className="text-slate-500 block">Gợi ý phòng ban:</span>
-                <span className="font-semibold text-sky-800">
-                  {ticket.aiDept ? DEPT_LABEL[ticket.aiDept] : "Chưa xác định"}
-                </span>
+            {/* Chỉ hiện số liệu Agent thật: ticket chưa có gợi ý thì không bịa độ tin cậy */}
+            {ticket.aiDept ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                <div>
+                  <span className="text-slate-500 block">Gợi ý phòng ban:</span>
+                  <span className="font-semibold text-sky-800">{DEPT_LABEL[ticket.aiDept]}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block">Độ tin cậy:</span>
+                  <span className="font-semibold text-sky-800">{ticket.conf}%</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block">Kỹ năng yêu cầu:</span>
+                  <span className="font-semibold text-slate-800">{ticket.skill ?? "—"}</span>
+                </div>
               </div>
-              <div>
-                <span className="text-slate-500 block">Độ tin cậy:</span>
-                <span className="font-semibold text-sky-800">{ticket.conf || 95}%</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block">Kỹ năng yêu cầu:</span>
-                <span className="font-semibold text-slate-800">{ticket.skill || "Tiêu chuẩn"}</span>
-              </div>
-            </div>
+            ) : (
+              <p className="m-0 text-xs text-slate-500 italic">Agent chưa đưa ra gợi ý cho ticket này.</p>
+            )}
             {ticket.keywords && ticket.keywords.length > 0 && (
               <div className="mt-3 pt-2.5 border-t border-sky-100 flex flex-wrap items-center gap-1.5">
                 <span className="text-[11px] text-slate-500 mr-1">Từ khóa khớp:</span>

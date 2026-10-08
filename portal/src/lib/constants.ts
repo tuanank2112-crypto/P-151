@@ -99,3 +99,17 @@ export function ticketCode(id: number): string {
 
 /** Shown under the portal name on the login page (Main.dc.html "[TÊN KHU ĐÔ THỊ]") */
 export const SITE_NAME = "Khu đô thị Ocean Park";
+
+// Danh mục vật tư mẫu: seed nạp vào kho (warehouse_stock), form yêu cầu vật tư của Kỹ thuật chọn từ cùng danh sách
+export const STOCK_CATALOG: { code: string; name: string; category: string; unit: string; stock: number }[] = [
+  { code: "VT-E01", name: "Aptomat tép MCB 1P 32A Schneider", category: "Điện", unit: "cái", stock: 12 },
+  { code: "VT-E02", name: "Aptomat tổng MCCB 3P 63A Mitsubishi", category: "Điện", unit: "cái", stock: 3 },
+  { code: "VT-E03", name: "Dây điện đôi Cadivi VCm 2x2.5mm²", category: "Điện", unit: "cuộn", stock: 8 },
+  { code: "VT-E04", name: "Bóng đèn LED Tuýp T8 1.2m 18W Rạng Đông", category: "Chiếu sáng", unit: "bóng", stock: 40 },
+  { code: "VT-E05", name: "Bóng đèn Downlight âm trần 9W Philip", category: "Chiếu sáng", unit: "bóng", stock: 4 },
+  { code: "VT-N01", name: "Van khóa nước 1 chiều đồng MIHA D25", category: "Cấp thoát nước", unit: "cái", stock: 10 },
+  { code: "VT-N02", name: "Van phao cơ ngắt nước thông minh D27", category: "Cấp thoát nước", unit: "cái", stock: 6 },
+  { code: "VT-N03", name: "Ống nước Tiền Phong uPVC D27 C2", category: "Cấp thoát nước", unit: "cây", stock: 25 },
+  { code: "VT-N04", name: "Băng tan cao cấp PTFE quấn ống nước", category: "Phụ kiện", unit: "cuộn", stock: 2 },
+  { code: "VT-N05", name: "Keo dán ống PVC Tiền Phong 100g", category: "Phụ kiện", unit: "tuýp", stock: 15 },
+];
