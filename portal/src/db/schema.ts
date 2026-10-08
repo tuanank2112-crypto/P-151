@@ -15,7 +15,7 @@ import {
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
-export const ROLES = ["resident", "reception", "management", "cleaning", "technical"] as const;
+export const ROLES = ["resident", "reception", "management", "cleaning", "technical", "warehouse"] as const;
 export const DEPTS = ["ve_sinh", "ky_thuat", "bql"] as const;
 export const PLACES = ["floor", "lobby", "lift", "common"] as const;
 
@@ -172,6 +172,18 @@ export const notices = pgTable("notices", {
   title: text("title").notNull(),
   body: text("body").notNull(),
   publishedAt: timestamp("published_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const warehouseStock = pgTable("warehouse_stock", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull(),
+  category: text("category").notNull(),
+  unit: text("unit").notNull().default("cái"),
+  stock: integer("stock").notNull().default(0),
+  minStock: integer("min_stock").notNull().default(5),
+  location: text("location").notNull().default("Kho trung tâm"),
+  createdAt: createdAt(),
 });
 
 export type Role = (typeof ROLES)[number];
