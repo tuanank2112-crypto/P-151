@@ -1,6 +1,17 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useState, type ReactNode } from "react";
 import { logout } from "@/app/actions/auth";
 import { IconBell } from "./icons";
+
+export type ShellNotice = {
+  id: string | number;
+  title: string;
+  time?: string;
+  body?: string;
+  urgent?: boolean;
+  tag?: string;
+};
 
 /** Gradient header of every dashboard (Resident/Reception/Management/Cleaning/Technical .dc.html <header>) */
 export function Header(props: {
@@ -10,7 +21,20 @@ export function Header(props: {
   bellLabel: string;
   bellCount: number;
   onBell?: () => void;
+  notices?: ShellNotice[];
 }) {
+  const [openModal, setOpenModal] = useState(false);
+
+  const handleBellClick = () => {
+    if (props.notices && props.notices.length > 0) {
+      setOpenModal(true);
+    } else if (props.onBell) {
+      props.onBell();
+    } else {
+      setOpenModal(true);
+    }
+  };
+
   return (
     <header style={{ background: "linear-gradient(120deg, #9CCBFF 0%, #5E9BFF 100%)", padding: "32px 24px 112px" }}>
       <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-4">
@@ -27,7 +51,7 @@ export function Header(props: {
           <span className="pill" style={{ background: "rgba(255,255,255,0.88)", color: "#13203A", fontSize: 13, padding: "8px 14px" }}>
             {props.rolePill}
           </span>
-          <button type="button" className="bell" aria-label={props.bellLabel} onClick={props.onBell}>
+          <button type="button" className="bell cursor-pointer" aria-label={props.bellLabel} onClick={handleBellClick}>
             <IconBell />
             <span className="b">{props.bellCount}</span>
           </button>
@@ -38,6 +62,60 @@ export function Header(props: {
           </form>
         </div>
       </div>
+
+      {openModal && (
+        <div className="modal-backdrop" onClick={() => setOpenModal(false)}>
+          <div className="modal-card max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-soft text-brand font-bold text-sm">
+                  🔔
+                </span>
+                <h3 className="m-0 text-[18px] font-bold text-body">Trung tâm thông báo & Cảnh báo</h3>
+              </div>
+              <button
+                type="button"
+                className="text-muted hover:text-body text-xl font-bold cursor-pointer"
+                onClick={() => setOpenModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2.5 py-1">
+              {(!props.notices || props.notices.length === 0) && (
+                <div className="py-8 text-center text-sm text-muted">
+                  Không có thông báo mới vào thời điểm hiện tại.
+                </div>
+              )}
+              {props.notices?.map((n) => (
+                <div
+                  key={n.id}
+                  className="flex flex-col gap-1 rounded-xl border border-line bg-soft/40 p-3 hover:bg-soft transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-brand uppercase tracking-wider">
+                      {n.tag ?? props.rolePill}
+                    </span>
+                    <span className="text-[11px] text-muted">{n.time}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {n.urgent && <span className="pill urgent text-[11px] py-0.5 px-2">Khẩn cấp</span>}
+                    <h4 className="m-0 text-[14px] font-bold text-body">{n.title}</h4>
+                  </div>
+                  {n.body && <p className="m-0 text-xs text-muted leading-relaxed">{n.body}</p>}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end border-t border-line pt-2.5">
+              <button type="button" className="btn sm" onClick={() => setOpenModal(false)}>
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

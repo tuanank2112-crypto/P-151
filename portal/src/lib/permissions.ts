@@ -6,8 +6,8 @@ import type { Role } from "./constants";
  */
 export const PERMISSIONS = [
   { key: "submit_ticket", label: "Gửi phản ánh", roles: ["resident"] },
-  { key: "view_own", label: "Xem ticket của chính mình", roles: ["resident", "reception", "management", "cleaning", "technical"] },
-  { key: "view_agent", label: "Xem gợi ý của Agent", roles: ["resident", "reception", "management", "cleaning", "technical"] },
+  { key: "view_own", label: "Xem ticket của chính mình", roles: ["resident", "reception", "management", "cleaning", "technical", "warehouse"] },
+  { key: "view_agent", label: "Xem gợi ý của Agent", roles: ["resident", "reception", "management", "cleaning", "technical", "warehouse"] },
   { key: "route_ticket", label: "Phân loại và chuyển ticket", roles: ["reception", "management"] },
   { key: "update_progress", label: "Nhận và cập nhật tiến độ ticket", roles: ["management", "cleaning", "technical"] },
   { key: "assign_staff", label: "Phân công nhân viên xử lý", roles: ["cleaning", "technical"] },

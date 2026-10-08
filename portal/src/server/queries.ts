@@ -6,10 +6,10 @@ import "server-only";
 import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { db as appDb } from "@/db";
 import type { Db } from "@/db/client";
-import { history, materials, notices, photos, ratings, staff, tickets, users, type Dept } from "@/db/schema";
+import { history, materials, notices, photos, ratings, staff, tickets, users, warehouseStock, type Dept } from "@/db/schema";
 import { classify, techSkill } from "@/lib/agent";
 import { PLACE_ORDER, ROLE_DEPT, ticketCode } from "@/lib/constants";
-import type { DeptData, ManagementData, PhotoRef, ReceptionData, ResidentData } from "@/lib/dto";
+import type { DeptData, ManagementData, PhotoRef, ReceptionData, ResidentData, WarehouseData } from "@/lib/dto";
 import { fmtDateTime, fmtHistory, fmtRelative, initials } from "@/lib/format";
 import { ageHours, hoursLeft, isLate } from "@/lib/sla";
 import type { SessionUser } from "./session";
@@ -105,6 +105,17 @@ export async function receptionData(user: SessionUser, db: Db = appDb): Promise<
   const pending = rows.filter((r) => r.t.stage === 1 && !r.t.needInfo);
   const byId = new Map(rows.map((r) => [r.t.id, r]));
   const pics = await photosOf(db, pending.map((r) => r.t.id));
+  const routedTickets = rows.filter((r) => r.t.stage >= 2 || r.t.needInfo);
+  const routedIds = routedTickets.map((r) => r.t.id);
+  const routedHist = routedIds.length
+    ? await db.select().from(history).where(inArray(history.ticketId, routedIds)).orderBy(desc(history.createdAt), desc(history.id))
+    : [];
+  const routedPhotoRows = routedIds.length
+    ? await db.select().from(photos).where(inArray(photos.ticketId, routedIds)).orderBy(photos.id)
+    : [];
+  const staffRows = await db.select().from(staff);
+  const staffMap = new Map(staffRows.map((s) => [s.id, s.name]));
+
   return {
     user: { name: user.name, avatar: ROLE_AVATAR.reception },
     inbox: await Promise.all(
@@ -142,9 +153,43 @@ export async function receptionData(user: SessionUser, db: Db = appDb): Promise<
         };
       }),
     ),
-    routed: rows
-      .filter((r) => r.t.stage >= 2 || r.t.needInfo)
-      .map(({ t }) => ({ id: t.id, code: ticketCode(t.id), text: t.description, aiDept: t.aiDept, dept: t.dept, needInfo: t.needInfo && t.stage === 1 })),
+    routed: routedTickets.map(({ t }) => {
+      const beforePhotos = routedPhotoRows
+        .filter((p) => p.ticketId === t.id && !p.name.startsWith("after_"))
+        .map((p) => ({ id: p.id, name: p.name }));
+      const afterPhotos = routedPhotoRows
+        .filter((p) => p.ticketId === t.id && p.name.startsWith("after_"))
+        .map((p) => ({ id: p.id, name: p.name }));
+      const ticketHist = routedHist
+        .filter((h) => h.ticketId === t.id)
+        .map((h) => ({ label: h.label, note: h.note, time: fmtHistory(h.createdAt, now) }));
+      const disputed = t.extras.some((e) => e.includes("[Báo cần BQL xem]")) || t.paused;
+      const disputeReason = t.extras.find((e) => e.includes("[Báo cần BQL xem]"))?.replace("[Báo cần BQL xem] ", "") ?? null;
+
+      return {
+        id: t.id,
+        code: ticketCode(t.id),
+        text: t.description,
+        location: t.location,
+        createdAt: fmtRelative(t.createdAt, now),
+        dept: t.dept,
+        aiDept: t.aiDept,
+        conf: t.aiConfidence,
+        stage: t.stage,
+        cancelled: t.cancelled,
+        urgent: t.urgent,
+        staffName: t.assigneeId ? staffMap.get(t.assigneeId) ?? null : null,
+        keywords: t.aiKeywords,
+        skill: techSkill(t.description),
+        extras: t.extras,
+        history: ticketHist,
+        beforePhotos,
+        afterPhotos,
+        disputed,
+        disputeReason,
+        needInfo: t.needInfo && t.stage === 1,
+      };
+    }),
   };
 }
 
@@ -213,28 +258,101 @@ export async function deptData(user: SessionUser, db: Db = appDb): Promise<DeptD
 export async function managementData(user: SessionUser, db: Db = appDb): Promise<ManagementData> {
   const now = new Date();
   const rows = await db
-    .select({ t: tickets, stars: ratings.stars })
+    .select({ t: tickets, stars: ratings.stars, staffName: staff.name })
     .from(tickets)
+    .leftJoin(staff, eq(staff.id, tickets.assigneeId))
     .leftJoin(ratings, eq(ratings.ticketId, tickets.id))
     .orderBy(desc(tickets.createdAt));
+  const ids = rows.map((r) => r.t.id);
+  const hist = ids.length
+    ? await db.select().from(history).where(inArray(history.ticketId, ids)).orderBy(desc(history.createdAt), desc(history.id))
+    : [];
+  const photoRows = ids.length
+    ? await db.select().from(photos).where(inArray(photos.ticketId, ids)).orderBy(photos.id)
+    : [];
+
   return {
     user: { name: user.name, avatar: ROLE_AVATAR.management },
-    tickets: rows.map(({ t, stars }) => ({
-      id: t.id,
-      code: ticketCode(t.id),
-      text: t.description,
-      location: t.location,
-      createdAt: fmtRelative(t.createdAt, now),
-      dept: t.dept,
-      aiDept: t.aiDept,
-      conf: t.aiConfidence,
-      stage: t.stage,
-      cancelled: t.cancelled,
-      urgent: t.urgent,
-      late: isLate(t, now),
-      ageH: ageHours(t.createdAt, now),
-      stars: stars ?? null,
-      doneHours: t.doneAt ? (t.doneAt.getTime() - t.createdAt.getTime()) / 3_600_000 : null,
+    tickets: rows.map(({ t, stars, staffName }) => {
+      const beforePhotos = photoRows
+        .filter((p) => p.ticketId === t.id && !p.name.startsWith("after_"))
+        .map((p) => ({ id: p.id, name: p.name }));
+      const afterPhotos = photoRows
+        .filter((p) => p.ticketId === t.id && p.name.startsWith("after_"))
+        .map((p) => ({ id: p.id, name: p.name }));
+      const ticketHist = hist
+        .filter((h) => h.ticketId === t.id)
+        .map((h) => ({ label: h.label, note: h.note, time: fmtHistory(h.createdAt, now) }));
+      const disputed = t.extras.some((e) => e.includes("[Báo cần BQL xem]")) || (t.paused && t.stage === 4);
+      const disputeReason = t.extras.find((e) => e.includes("[Báo cần BQL xem]"))?.replace("[Báo cần BQL xem] ", "") ?? null;
+
+      return {
+        id: t.id,
+        code: ticketCode(t.id),
+        text: t.description,
+        location: t.location,
+        createdAt: fmtRelative(t.createdAt, now),
+        dept: t.dept,
+        aiDept: t.aiDept,
+        conf: t.aiConfidence,
+        stage: t.stage,
+        cancelled: t.cancelled,
+        urgent: t.urgent,
+        staffName: staffName ?? null,
+        keywords: t.aiKeywords,
+        skill: techSkill(t.description),
+        extras: t.extras,
+        history: ticketHist,
+        beforePhotos,
+        afterPhotos,
+        disputed,
+        disputeReason,
+        late: isLate(t, now),
+        ageH: ageHours(t.createdAt, now),
+        stars: stars ?? null,
+        doneHours: t.doneAt ? (t.doneAt.getTime() - t.createdAt.getTime()) / 3_600_000 : null,
+      };
+    }),
+  };
+}
+
+export async function warehouseData(user: SessionUser, db: Db = appDb): Promise<WarehouseData> {
+  const stockRows = await db.select().from(warehouseStock).orderBy(warehouseStock.id);
+  const reqRows = await db
+    .select({
+      m: materials,
+      t: tickets,
+      u: users,
+      staffName: staff.name,
+    })
+    .from(materials)
+    .innerJoin(tickets, eq(tickets.id, materials.ticketId))
+    .innerJoin(users, eq(users.id, materials.requestedBy))
+    .leftJoin(staff, eq(staff.id, materials.staffId))
+    .orderBy(desc(materials.createdAt));
+
+  return {
+    user: { name: user.name, avatar: "TK" },
+    inventory: stockRows.map((s) => ({
+      id: s.id,
+      code: s.code,
+      name: s.name,
+      category: s.category,
+      unit: s.unit,
+      stock: s.stock,
+      minStock: s.minStock,
+      location: s.location,
+    })),
+    requests: reqRows.map(({ m, t, u, staffName }) => ({
+      id: m.id,
+      ticketId: m.ticketId,
+      ticketCode: ticketCode(m.ticketId),
+      ticketDescription: t.description,
+      item: m.item,
+      requestedBy: u.name,
+      staffName: staffName ?? null,
+      createdAt: fmtDateTime(m.createdAt),
+      received: m.received,
     })),
   };
 }
