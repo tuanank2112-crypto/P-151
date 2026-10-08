@@ -83,6 +83,7 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 - Vị trí cư dân chỉ hợp lệ khi tòa nằm trong `catalog.yaml` `site.buildings`; seed/test đã đổi `SIM-A`→`S1`, `SIM-B`→`S2`. Text test qua engine dùng tòa khác (vd `SIM-A`, `S3`) sẽ rơi NEED_INFO thiếu tòa.
 - KHÔNG đổi tòa trong bộ nhãn an toàn (`tests/.../data/safety_*_p0.yaml`, `test_safety_p0.py`) và `test_b01_closed_prefix_twenty_tokens_and_lamp_accent`: `assess()` không xét vị trí, còn "tòa SIM-A" = 3 token, "tòa S1" = 2 token ⇒ ca biên 20/21 token của B-01 lệch.
 
+
 ## UI tĩnh `src/web/` + Tailwind Play CDN (plan 07, 2026-10-07)
 - **Plugin `forms` của CDN đè class tự viết:** CDN chèn `<style>` SAU `theme.css`; selector `[type='text']`, `select` (0,1,1) thắng `.field` (0,1,0) ⇒ ô nhập mất nền/viền/bo góc. Viết `html body .field` (0,1,2). Áp cho mọi class tự viết đụng thuộc tính mà plugin `forms` đặt.
 - **Đo UI không được làm trên `:8000`:** container `backend` đọc `.env` = Supabase dùng chung; bấm thử ghi thẳng vào DB nhóm. Chạy `MO_STORE=memory MO_PHOTO_STORE=local LLM_MODE=mock DATABASE_URL= python -m uvicorn src.main:app --port 8001` (biến môi trường thắng `.env`). Store memory KHÔNG có ticket cư dân (seed CLN/TEC bị UI lọc) — tạo ticket qua API trước khi chụp.
@@ -100,3 +101,7 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 - Ô `<select>` rộng theo option dài làm trang tràn ngang ở 390px; `npm run screenshots` nay fail khi `scrollWidth > viewport`.
 - `docker compose up -d --build` trước 2026-10-07 chỉ dựng `db` + `backend` (Python) ⇒ `localhost:8000` vẫn là UI cũ (đăng nhập màu cam), không phải portal. Nay có service `portal` ở `localhost:3000`. Mạng Docker Desktop chập chờn ("no such host" khi kéo `node:24-alpine") ⇒ `docker pull` lại vài lần.
 - Cookie `secure` bật ở production làm đăng nhập lặp vòng khi mở bằng HTTP qua IP LAN; compose đặt `SESSION_COOKIE_SECURE=false`.
+
+
+### Stash + Windows live logs and line endings — 2026-10-07T13:30:26.152115+00:00
+Stash push -u may save successfully but exit1 without cleaning tracked files when open log files prevent removal. Check backup/state before merge. Keep stash, restore only verified tracked changes; never delete active logs. Git normalization can alter mixed LF/CRLF in untracked machine evidence; preserve/recover exact bytes only when original manifest hash matches. Conflict marker regex must use [^\n]* for marker lines: .* with DOTALL can consume trailing document/test content. Final preservation/test evidence is under plan06 integration-latest-20261007.

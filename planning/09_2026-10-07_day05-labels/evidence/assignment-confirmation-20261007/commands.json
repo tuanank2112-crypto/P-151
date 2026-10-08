@@ -1,0 +1,13 @@
+{
+  "command": [
+    "C:\\P-151\\.python\\cpython-3.11.16-windows-x86_64-none\\python.exe",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\tools\\validate_day05.py",
+    "--backlog",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\backlog.json",
+    "--issues",
+    "planning/07_2026-10-04_online-acceptance/deliverables/issues.json"
+  ],
+  "exit_code": 0,
+  "backlog_sha256": "c78c95b068b21bebfdd6472617df26623ab5f4de8cc468e917e413c9e631617d",
+  "scope": "Assignment confirmation only; historical manifests retained"
+}

@@ -16,6 +16,8 @@ Cuối cùng, từ các file này tổng hợp vào đúng vị trí chapter-09 
 | 9 | Worklog | `docs/worklog.md` | ⬜ chuyển từ [WORKLOG.md](../../WORKLOG.md) | root |
 | 10 | Evaluation evidence | `evaluation.md` (root repo) | 🟡 9 ca manual (8 PASS, 1 BLOCKED; localhost) | [evaluation.md](../../evaluation.md), [planning/02_*/deliverables/](../../planning/02_2026-10-03_truong-mvp-prep/deliverables/) |
 
-Báo cáo từng ngày: [day01](day01-report.md) · [day02](day02-report.md) · [day03](day03-report.md) · [day04](day04-report.md).
+Báo cáo từng ngày: [day01](day01-report.md) · [day02](day02-report.md) · [day03](day03-report.md) · [day04](day04-report.md) · [day05](day05-report.md).
+
+Day05: đã chuẩn bị hồ sơ local; review người thật, held-out/gold và baseline còn chờ. Chi tiết kiểm chứng: [daily/2026-10-05.md](daily/2026-10-05.md).
 
 Mỗi ngày: thêm `daily/<ngày>.md` (việc đã làm, kết quả đo, link evidence, deliverable # nào được đẩy tiến).

@@ -269,3 +269,44 @@ Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên 
 - Integrated origin/develop 52ae81c into feature/truong; runtime src/tests/seed equals upstream; local diagrams/submission preserved. pytest 2971 passed, 29 PostgreSQL tests deselected, 0 fail, 0 skip; ruff check/format and four JavaScript syntax checks pass. PostgreSQL/Docker/live LLM/browser not verified; no typecheck configured. Day05 labels/backlog and Day06 blocker/resume comparison still need acceptance; LangGraph runtime pending. No remote push.
 - Backups: backup/truong-before-integration-20261007 (e52c655), backup/truong-local-20261007 (0f7bf85).
 - Evidence: planning/06_2026-10-04_readme-refresh/evidence/integration-20261007/. Initial proposal JS check used an incorrect path; corrected check covers src/web/js/components/agent_proposal.js.
+
+
+## GPT-6 Luna local configuration — 2026-10-07T03:15:09.129Z
+- Local GPT-6 Luna activation requested: .env now LLM_MODE=openai, MODEL_NAME=gpt-6-luna; proposer sets reasoning_effort=none for Luna Chat Completions. Real smoke call failed with OpenAIAuthenticationError (placeholder key), logged FALLBACK_RULE; successful real LLM usage is NOT verified. Replace OPENAI_API_KEY locally, then restart and verify AI Logs SUCCESS + rules+llm:gpt-6-luna. Targeted regression: 30 pass, ruff check/format exit0. No server running on localhost8000/8001/8080 at inspection; no push.
+
+## [Unreleased] — 2026-10-07: Shared Supabase compatibility and demo
+- Shared Supabase demo SIM-TKT-0042 CLOSED; 2 simulated PNG photos byte/hash verified through API and Storage after restart; cases53->54, preexisting53 unchanged, stock unchanged; GPT-6 Luna SUCCESS / rules+llm:gpt-6-luna (2000.82ms); missing execution photo blocked completion; pytest2973 passed,29 pg deselected, ruff clean. Server127.0.0.1:8001 (jobs/seed/reset false).
+- Evidence: planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json; run_demo.py; pytest.txt; ruff-check.txt. Real AI response preserved in recovery_ai_logs; in-memory API AI Logs are empty after restart. No rating submitted. API flow exercised; no manual browser walkthrough/public deployment/physical maintenance acceptance. Day05/06 remain open.
+- Fixed Ticket.merged_children missing from the local model although CR-BPTN-03 §8/§13 defines it. Before fix, reading shared cases failed extra_forbidden and create returned422 after ingest. Typed list with empty default preserves stored links; unknown fields still forbidden. No migration, filtering, or rewriting of existing shared tickets. Recovered existing demo through engine.run_agent; no second ticket created. Two repository regression tests added. No merge/unmerge behavior newly implemented.
+
+## [Unreleased] — Day04 evidence contract day04-3 — 2026-10-07T04:32:59.390139+00:00
+- User removed six unused cases from personal acceptance scope; active9=H01,H02,I01,A01,M01,U01,S04,G03,R01. day04-3 manifest/results/issues normalized from valid references, separated legacy8PASS/1BLOCKED and Supabase1PASS/1FAIL (create422 recovered but pending clean201 retest). No cross-build9/9 claim. All references/counts/source time provenance checked;3 corruption controls rejected. No app execution/shared writes/commit/push.
+- Records: planning/07_2026-10-04_online-acceptance/deliverables/manifest.json, results.json, issues.json, day04-summary.md; validation: evidence/normalization-20261007/validation.txt in that plan.
+
+## Unreleased — Day05 planning 2026-10-07T05:07:58.261170+00:00
+
+Added proposed package09 for backlog triage and independent classification/safety gold; target80 safety/40 classification, family-held-out protocol and D4-11 regression. Planning validation exit0,3 negative controls. No runtime/API change, app release or version bump; data contracts remain proposed day05-1.
+
+## Unreleased — Day05 local execution 2026-10-07
+
+Executed the offline part of package 09: 15-item backlog (PROPOSED, D4-11 re-measured still failing), 50 DEVELOP cases with separate safety/classification proposals (agent-drafted, no gold), review pack with opaque IDs, validator/baseline runner/review-pack tools (270 tests, 0 skip; ruff clean). Decision: workers' H01/H02 outputs rejected after independent measurement and redone at a higher tier; cold audit found 1 blocker + 5 majors in the tools, fixed in H05. Freeze hash definition chosen by orchestrator (sha256 of `<file>:<sha256>` lines). No gold, held-out, freeze or baseline yet; no runtime/API change, app release or version bump.
+
+## Unreleased — Day05 daily report 2026-10-07T06:16:13.491588+00:00
+
+Added docs/submission/daily/2026-10-05.md from freshly measured evidence. Tools270 pass;95 manifest hashes match; full dataset gate fails honestly for absent gold/held-out. No runtime contract, app release or app version change; Day05 not closed.
+
+
+### Unreleased — Day05 submission report 2026-10-07T06:21:49.340237+00:00
+Added main day05-report.md, submission index and daily backlink; explicit pending acceptance. Documentation only; no application version change.
+
+
+## Integration record — 2026-10-07T13:30:26.152115+00:00
+Merged develop04491ad into feature/truong 79f9444, importing upstream version1.3.0; no additional version bump/release. Preserved local dirty work, repaired conflicts, final3341 tests green/76 deselected and270 tools green. Shared rollout/real LLM/portal not verified.
+
+
+### Portal local startup ? 2026-10-07T13:50:36.821687+00:00
+Configured ignored portal/.env.local, installed locked dependencies, initialized local portal DB and started Next dev3000.17 unit tests pass; no source/runtime contract/app version changes, no shared DB writes.
+
+- 2026-10-07T16:47:40.721485+00:00 Unreleased documentation/data preparation: Day05 completion packet and fresh offline measurements; application version unchanged, no release or runtime modification.
+
+- 2026-10-08T08:59:38.730526+00:00 Unreleased documentation: user-approved PRELIMINARY_15 replaces broad Day05 evaluation quota; human review, evidence and runtime safety gates retained. No application release/version change.

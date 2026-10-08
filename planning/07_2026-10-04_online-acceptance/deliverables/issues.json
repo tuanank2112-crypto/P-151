@@ -1,0 +1,233 @@
+{
+  "schema_version": "day04-3",
+  "normalized_at": "2026-10-07T04:38:20.673490+00:00",
+  "issues": [
+    {
+      "issue_id": "D4-01",
+      "run_id": "local-ui-20261004-05",
+      "case_ids": [
+        "R01"
+      ],
+      "severity": "MINOR",
+      "owner": "Châm Anh / persistence",
+      "expected": "Postgres persistence",
+      "actual": "Legacy memory cannot establish persistence",
+      "reproduce": [
+        "Đọc evidence và đối chiếu expected của ca; chưa chạy lại trong lượt chuẩn hóa."
+      ],
+      "evidence_refs": [
+        "evaluation.md"
+      ],
+      "status": "OPEN",
+      "retest_ref": null,
+      "next_step": "Dùng R01 của run Supabase riêng; không sửa kết quả memory thành PASS"
+    },
+    {
+      "issue_id": "D4-02",
+      "run_id": "local-ui-20261004-05",
+      "case_ids": [
+        "M01"
+      ],
+      "severity": "MINOR",
+      "owner": "Trường / Châm Anh",
+      "expected": "Resume lặp không giao trùng",
+      "actual": "Lượt cũ chỉ đo nhập1+1, chưa resume lần hai",
+      "reproduce": [
+        "Đọc evidence và đối chiếu expected của ca; chưa chạy lại trong lượt chuẩn hóa."
+      ],
+      "evidence_refs": [
+        "evaluation.md"
+      ],
+      "status": "OPEN",
+      "retest_ref": null,
+      "next_step": "Đo idempotency trên QA cô lập; không nhập kho chung để tạo fixture"
+    },
+    {
+      "issue_id": "D4-03",
+      "run_id": "local-ui-20261004-05",
+      "case_ids": [
+        "S04"
+      ],
+      "severity": "MAJOR",
+      "owner": "Trường / Trí",
+      "expected": "Evidence cùng ticket trước/sau BQL đóng",
+      "actual": "S04_02/S04_04 hiển thị ticket khác",
+      "reproduce": [
+        "Đọc evidence và đối chiếu expected của ca; chưa chạy lại trong lượt chuẩn hóa."
+      ],
+      "evidence_refs": [
+        "evaluation.md"
+      ],
+      "status": "OPEN",
+      "retest_ref": null,
+      "next_step": "Bổ sung evidence cùng ticket hoặc chạy lại S04 trên QA phù hợp"
+    },
+    {
+      "issue_id": "D4-04",
+      "run_id": "local-ui-20261004-05",
+      "case_ids": [
+        "G03"
+      ],
+      "severity": "MINOR",
+      "owner": "Trường / Châm Anh",
+      "expected": "403 + state không đổi",
+      "actual": "Thiếu GET độc lập sau cả hai thao tác",
+      "reproduce": [
+        "Đọc evidence và đối chiếu expected của ca; chưa chạy lại trong lượt chuẩn hóa."
+      ],
+      "evidence_refs": [
+        "evaluation.md"
+      ],
+      "status": "OPEN",
+      "retest_ref": null,
+      "next_step": "Đo GET trước/sau guard trên QA, giữ audit denial"
+    },
+    {
+      "issue_id": "D4-05",
+      "run_id": "local-ui-20261004-05",
+      "case_ids": [
+        "A01"
+      ],
+      "severity": "MINOR",
+      "owner": "Trường / Trí",
+      "expected": "Ảnh xác nhận onsite cùng ticket",
+      "actual": "A01_02 hiển thị ticket khác",
+      "reproduce": [
+        "Đọc evidence và đối chiếu expected của ca; chưa chạy lại trong lượt chuẩn hóa."
+      ],
+      "evidence_refs": [
+        "evaluation.md"
+      ],
+      "status": "OPEN",
+      "retest_ref": null,
+      "next_step": "Kiểm A01_01/A01_03 và bổ sung evidence đúng ticket"
+    },
+    {
+      "issue_id": "D4-06",
+      "run_id": "local-supabase-20261007",
+      "case_ids": [
+        "H01"
+      ],
+      "severity": "MAJOR",
+      "owner": "Như Ý / Châm Anh",
+      "expected": "POST resident/tickets201 xuyên suốt",
+      "actual": "422 do shared merged_children absent locally; fix applied, same ticket recovered; no clean create retest",
+      "reproduce": [
+        "Đọc evidence và đối chiếu expected của ca; chưa chạy lại trong lượt chuẩn hóa."
+      ],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json",
+        "planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/agent-recovery.json"
+      ],
+      "status": "FIXED_PENDING_RETEST",
+      "retest_ref": null,
+      "next_step": "Đo create mới trên QA cô lập hoặc trong scope ghi shared được cho phép; giữ FIXED_PENDING_RETEST đến201"
+    },
+    {
+      "issue_id": "D4-07",
+      "run_id": "local-supabase-20261007",
+      "case_ids": [
+        "H01",
+        "R01"
+      ],
+      "severity": "MINOR",
+      "owner": "Trường / integration",
+      "expected": "Build/source fingerprint và thời gian từng bước được ghi",
+      "actual": "Base SHA known, dirty source not fingerprinted at execution; exact per-step restart times missing",
+      "reproduce": [
+        "Đọc evidence và đối chiếu expected của ca; chưa chạy lại trong lượt chuẩn hóa."
+      ],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json",
+        "planning/07_2026-10-04_online-acceptance/deliverables/shared-supabase-demo-20261007.md"
+      ],
+      "status": "OPEN",
+      "retest_ref": null,
+      "next_step": "Lượt sau ghi manifest/source hash và UTC trước/sau restart; không bịa lượt cũ"
+    },
+    {
+      "issue_id": "D4-08",
+      "run_id": null,
+      "case_ids": [],
+      "severity": "MINOR",
+      "owner": "Leader / Châm Anh",
+      "expected": "Public deployment and group sign-off if claimed",
+      "actual": "Only localhost; no documented leader acceptance",
+      "reproduce": [
+        "Đọc evidence và đối chiếu expected của ca; chưa chạy lại trong lượt chuẩn hóa."
+      ],
+      "evidence_refs": [
+        "evaluation.md",
+        "planning/07_2026-10-04_online-acceptance/deliverables/shared-supabase-demo-20261007.md"
+      ],
+      "status": "OPEN",
+      "retest_ref": null,
+      "next_step": "Bàn giao hồ sơ giới hạn local; chỉ xác nhận online/leader khi có bằng chứng thật"
+    },
+    {
+      "issue_id": "D4-09",
+      "run_id": "local-ui-20261004-05",
+      "case_ids": [
+        "H01",
+        "H02"
+      ],
+      "severity": "MINOR",
+      "owner": "Châm Anh / backend",
+      "expected": "Thông báo ngoài giờ phù hợp hành vi nhận việc",
+      "actual": "Báo cáo cũ: báo xử lý từ06:00 nhưng phòng ban vẫn nhận và hoàn tất trước06:00",
+      "reproduce": [
+        "Đọc evidence và đối chiếu expected của ca; chưa chạy lại trong lượt chuẩn hóa."
+      ],
+      "evidence_refs": [
+        "evaluation.md"
+      ],
+      "status": "OPEN",
+      "retest_ref": null,
+      "next_step": "Owner xác nhận hành vi theo thiết kế và wording; chưa tự kết luận đây là bug"
+    },
+    {
+      "issue_id": "D4-10",
+      "run_id": "local-ui-20261004-05",
+      "case_ids": [
+        "U01"
+      ],
+      "severity": "MINOR",
+      "owner": "Trí / UI, Như Ý / rules",
+      "expected": "Wording thời hạn thống nhất và cư dân hiểu được",
+      "actual": "Báo cáo cũ: thẻ4h nhưng ghi chú2 days; form cư dân còn chữ Agent",
+      "reproduce": [
+        "Đọc evidence và đối chiếu expected của ca; chưa chạy lại trong lượt chuẩn hóa."
+      ],
+      "evidence_refs": [
+        "evaluation.md"
+      ],
+      "status": "OPEN",
+      "retest_ref": null,
+      "next_step": "Rà wording build hiện hành, lưu evidence trước/sau sửa"
+    },
+    {
+      "issue_id": "D4-11",
+      "run_id": null,
+      "case_ids": [
+        "S04"
+      ],
+      "severity": "CRITICAL",
+      "owner": "Như Ý / engine safety; Châm Anh phối hợp tích hợp và retest API",
+      "expected": "Có trẻ con bị kẹt phải được S-09 nhận diện EMERGENCY, VERIFYING/EMERGENCY_PENDING_BQL, owner BQL",
+      "actual": "Local probe exact screenshot text gives NONE/OUT_OF_SCOPE/BPTN; S1 variant also fails; adding mắc routes emergency correctly",
+      "reproduce": [
+        "Run assess and memory/mock engine.receive for: có trẻ con bị kẹt ở sảnh chung cư tòa S5",
+        "Compare S1 variant and bị mắc kẹt variant; inspect local machine probe JSON",
+        "User screenshot ticket TK-0046 was not queried or modified; live backend build is not identified"
+      ],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/evidence/normalization-20261007/safety-child-trapped.json",
+        "seed/maintenance_v1/lexicon.yaml",
+        "docs/CR-BPTN-03.md"
+      ],
+      "status": "OPEN",
+      "retest_ref": null,
+      "next_step": "Mở rộng nhận diện person+trapped có ngữ cảnh, test phủ định/đa nghĩa và safety regression; retest pipeline/API/UI trước CLOSED"
+    }
+  ]
+}

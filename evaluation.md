@@ -28,7 +28,7 @@ Người thực hiện: Cao Văn Trường · Ngày chạy: 2026-10-04 (22:25 �
 | 8 | M01 — Thiếu vật tư, kho nhập | Vật tư | **PASS** | SIM-TKT-TEC-003 |
 | 9 | R01 — Dữ liệu sau restart | Lưu bền | **BLOCKED_MEMORY_STORE** | — |
 
-**Theo ma trận 15 ca của Day04:** 8 PASS · 0 FAIL · 1 BLOCKED (R01) · 6 NOT_RUN (S01, S02, S03, S05, G01, G02; rút gọn phạm vi). 8+1+6 = 15. PASS chỉ tính ca có đủ bằng chứng UI/Swagger.
+**Theo phạm vi9 ca đã chốt ngày07/10:** lượt UI lịch sử báo cáo8 PASS · 0 FAIL · 1 BLOCKED (R01). Sáu ca ngoài phạm vi đã bỏ theo yêu cầu người dùng, không tính là việc còn nợ. Đây là kết luận lịch sử, chưa đo lại trên build hiện tại. Hồ sơ chuẩn tách từng lượt tại [manifest](planning/07_2026-10-04_online-acceptance/deliverables/manifest.json), [results](planning/07_2026-10-04_online-acceptance/deliverables/results.json), [issues](planning/07_2026-10-04_online-acceptance/deliverables/issues.json).
 
 ---
 
@@ -151,7 +151,6 @@ Người thực hiện: Cao Văn Trường · Ngày chạy: 2026-10-04 (22:25 �
 
 ## 5. Giới hạn và phần chưa làm (ghi trung thực)
 
-- **Phạm vi:** 9 ca đã chạy (8 PASS, 1 BLOCKED). Theo quyết định rút gọn của người thực hiện (chỉ chạy flow theo script demo, đối chiếu expected), **NOT_RUN: S01, S02, S03, S05 (nhánh an toàn Bậc 2 và hạ mức Bậc 1), G01 (rating lần hai), G02 (đóng sớm / đóng khẩn cấp bằng đường thường)**. Nhóm an toàn mới có S04. Kết quả này không đồng nghĩa MVP đạt.
 - **Môi trường:** localhost, dữ liệu giả, LLM mock → không đo chất lượng phân loại LLM thật; `Độ tin cậy 95%` ở giao diện là từ luật cố định, không phải số đo mô hình.
 - **Lưu trữ:** store memory, nên chưa chứng minh dữ liệu còn sau restart (R01 BLOCKED).
 - **Ảnh sau xử lý ở H01/H02 là ảnh minh họa** (ảnh chụp màn hình bất kỳ), không phải ảnh hiện trường thật.

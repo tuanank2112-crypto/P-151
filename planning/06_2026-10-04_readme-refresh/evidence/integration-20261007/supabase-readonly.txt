@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-10-07T03:48:49.352218+00:00",
+  "current_user": "truong",
+  "member_maintops_dev": true,
+  "schema_usage": true,
+  "cases_select": true,
+  "cases_insert": true,
+  "cases_update": true,
+  "schema_revision": [
+    [
+      "0001_maintops_initial"
+    ]
+  ],
+  "cases_count": 53,
+  "transaction_read_only": "on",
+  "client_tls_in_use": true,
+  "client_tls_protocol": "TLSv1.3",
+  "client_tls_cipher": "TLS_AES_256_GCM_SHA384",
+  "sslmode": "verify-full",
+  "ca": "official Supabase CA plus certifi; temporary bundle only",
+  "dns": "DoH supplied hostaddr for probe only; DNS/.env unchanged",
+  "writes": "none; rollback"
+}
+EXIT_CODE=0

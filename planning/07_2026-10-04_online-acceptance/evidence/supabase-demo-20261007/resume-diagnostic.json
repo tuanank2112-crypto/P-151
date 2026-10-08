@@ -1,0 +1,117 @@
+{
+  "http_status": 200,
+  "response": {
+    "ticket": {
+      "ticket_id": "SIM-TKT-0042",
+      "raw": {
+        "ticket_id": "SIM-TKT-0042",
+        "created_at": "2026-10-07T11:03:18+07:00",
+        "original_description": "Hành lang tầng 37 tòa S1 có rác giấy, cần dọn vệ sinh. DEMO-TRUONG-20261007T040318Z. Dữ liệu demo mô phỏng.",
+        "original_evidence_refs": [],
+        "channel": "form"
+      },
+      "raw_integrity_marker": "sha256:b9ed47b32eb927d5834baaa168c3381bfbd446ca473b4cd61f7f587256740e6e",
+      "resident_id": "SIM-ACTOR-RESIDENT-01",
+      "source_revision": "SRC-001",
+      "dataset_version": "maintenanceops-sim-v1.3",
+      "status": "RECEIVED",
+      "proposed_department_id": null,
+      "department_id": null,
+      "assignee_id": null,
+      "blocker": null,
+      "locked_fields": {
+        "category": null,
+        "location": null,
+        "asset_id": null,
+        "department": null
+      },
+      "review_status": null,
+      "asset_resolution": null,
+      "merged_into": null,
+      "flags": [],
+      "rework_count": 0,
+      "dispatched_at": null,
+      "accepted_at": null,
+      "closed_by": null,
+      "closed_at": null,
+      "closure_kind": null,
+      "cancel_reason": null,
+      "rating": null,
+      "risk_level": "NONE",
+      "risk_signals": [],
+      "safety_cleared_by": null,
+      "safety_cleared_at": null,
+      "safety_clear_reason": null,
+      "safety_context": false,
+      "related_ticket_ids": [],
+      "priority": null,
+      "priority_source": null,
+      "priority_rule_id": null,
+      "priority_reason": null,
+      "synthetic": true
+    },
+    "planned_materials": null,
+    "planned_for_playbook": null,
+    "classification": null,
+    "not_duplicate_of": [],
+    "proposal": null,
+    "draft": null,
+    "checklist_items": [],
+    "material_lines": [],
+    "evidence": [],
+    "evidence_round_start": 0,
+    "additions": [],
+    "events": [
+      {
+        "id": "SIM-EVT-0042-0001",
+        "ticket_id": "SIM-TKT-0042",
+        "from_status": null,
+        "to_status": "RECEIVED",
+        "reason_code": null,
+        "actor_role": "SYSTEM",
+        "actor_id": "SIM-ACTOR-SYSTEM",
+        "public_message": "Phản ánh của bạn đã được tiếp nhận.",
+        "internal_note": null,
+        "public": true,
+        "created_at": "2026-10-07T11:03:18.497385+07:00"
+      }
+    ],
+    "notifications": [
+      {
+        "notification_id": "SIM-NTF-0042-0001",
+        "ticket_id": "SIM-TKT-0042",
+        "type": "ticket.status_changed",
+        "audience": "RESIDENT",
+        "payload": {
+          "to": "RECEIVED"
+        },
+        "created_at": "2026-10-07T11:03:18.497385+07:00"
+      }
+    ],
+    "audit": [
+      {
+        "event_id": "SIM-AUD-0042-0001",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "Ticket",
+        "entity_id": "SIM-TKT-0042",
+        "action": "INGEST",
+        "actor_id": "SIM-ACTOR-SYSTEM",
+        "actor_role": "SYSTEM",
+        "timestamp": "2026-10-07T11:03:18.497385+07:00",
+        "field_name": "ticket",
+        "old_value": null,
+        "new_value": {
+          "raw_integrity_marker": "sha256:b9ed47b32eb927d5834baaa168c3381bfbd446ca473b4cd61f7f587256740e6e"
+        },
+        "reason": "Ingest raw ticket mô phỏng",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": null,
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      }
+    ]
+  }
+}

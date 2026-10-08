@@ -1,0 +1,7 @@
+# cmd:
+PYTHONUTF8=1 .venv/Scripts/python.exe -c "from src.maintenance.catalog import load_lexicon as L;from src.maintenance.safety import assess;[print(t,'=>',assess(t,L().safety).risk_level.value) for t in ['có trẻ con bị kẹt ở sảnh chung cư tòa S5','có trẻ con bị kẹt ở sảnh chung cư tòa S1','có trẻ con bị mắc kẹt ở sảnh chung cư tòa S5']]"
+# stdout:
+có trẻ con bị kẹt ở sảnh chung cư tòa S5 => NONE
+có trẻ con bị kẹt ở sảnh chung cư tòa S1 => NONE
+có trẻ con bị mắc kẹt ở sảnh chung cư tòa S5 => EMERGENCY
+EXIT=0

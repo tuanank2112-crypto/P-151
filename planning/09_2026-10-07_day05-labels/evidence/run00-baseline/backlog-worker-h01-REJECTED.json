@@ -1,0 +1,261 @@
+{
+  "schema_version": "day05-1",
+  "created_at": "2026-10-07T11:30:00Z",
+  "records": [
+    {
+      "item_id": "D5-B-001",
+      "title": "R01 Supabase persistence layer integration",
+      "kind": "EVIDENCE",
+      "severity": "MINOR",
+      "priority": "P2",
+      "decision": "NEXT",
+      "owner": "Châm Anh",
+      "owner_acceptance": "PROPOSED",
+      "dependencies": [],
+      "source_issue_refs": ["D4-01"],
+      "evidence_refs": ["evaluation.md"],
+      "expected": "Postgres persistence with Supabase backend for R01 memory store",
+      "actual": "Legacy memory cannot establish persistence; only R01 synthetic run on Supabase collected",
+      "done_when": {
+        "command": "ls -la planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/ | grep -q result.json",
+        "expected_result": "Evidence file exists with persistence state captured"
+      },
+      "status": "OPEN",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "item_id": "D5-B-002",
+      "title": "Resume idempotency: avoid double giao trùng",
+      "kind": "BUG",
+      "severity": "MINOR",
+      "priority": "P2",
+      "decision": "NEXT",
+      "owner": "Trường",
+      "owner_acceptance": "PROPOSED",
+      "dependencies": [],
+      "source_issue_refs": ["D4-02"],
+      "evidence_refs": ["evaluation.md"],
+      "expected": "Resume operation executes exactly once, second call is no-op or rejected",
+      "actual": "Resume lượt cũ recorded only single 1+1 measurement; second resume attempt not tested in normalization phase",
+      "done_when": {
+        "command": "cd C:\\P-151-truong && python -m pytest tests/test_maintenance/ -k resume -v 2>&1 | grep -E '(PASSED|FAILED|ERROR)'",
+        "expected_result": "Resume idempotency test passes"
+      },
+      "status": "OPEN",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "item_id": "D5-B-003",
+      "title": "S04 evidence: collect same ticket before/after BQL close",
+      "kind": "EVIDENCE",
+      "severity": "MAJOR",
+      "priority": "P1",
+      "decision": "NEXT",
+      "owner": "Trường",
+      "owner_acceptance": "PROPOSED",
+      "dependencies": [],
+      "source_issue_refs": ["D4-03"],
+      "evidence_refs": ["evaluation.md"],
+      "expected": "S04_02 and S04_04 screenshots show same ticket TK-XXXX at both steps",
+      "actual": "S04_02 and S04_04 display different ticket IDs; missing aligned evidence for lifecycle",
+      "done_when": {
+        "command": "grep -i 'S04' evaluation.md | grep -q 'ticket'",
+        "expected_result": "Evaluation document references S04 ticket alignment evidence"
+      },
+      "status": "OPEN",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "item_id": "D5-B-004",
+      "title": "G03 guard: independent GET before/after 403",
+      "kind": "SPEC",
+      "severity": "MINOR",
+      "priority": "P2",
+      "decision": "NEXT",
+      "owner": "Châm Anh",
+      "owner_acceptance": "PROPOSED",
+      "dependencies": [],
+      "source_issue_refs": ["D4-04"],
+      "evidence_refs": ["evaluation.md"],
+      "expected": "Probe includes GET state check before denied operation and after 403 response to verify no side effects",
+      "actual": "G03 audit contains only denial response, missing independent state reads bracketing the guard",
+      "done_when": {
+        "command": "grep -i 'GET' evaluation.md | grep -i 'G03' | wc -l",
+        "expected_result": "Output shows >=2 (before and after read)"
+      },
+      "status": "OPEN",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "item_id": "D5-B-005",
+      "title": "A01 image: confirm onsite photo matches ticket lifecycle",
+      "kind": "EVIDENCE",
+      "severity": "MINOR",
+      "priority": "P1",
+      "decision": "NEXT",
+      "owner": "Trí",
+      "owner_acceptance": "PROPOSED",
+      "dependencies": [],
+      "source_issue_refs": ["D4-05"],
+      "evidence_refs": ["evaluation.md"],
+      "expected": "A01_02 onsite confirmation photo is bound to same ticket as A01_01 incident report",
+      "actual": "A01_02 displayed in UI against different ticket ID than incident",
+      "done_when": {
+        "command": "grep -A5 'A01_02' evaluation.md | grep -q 'same.*ticket'",
+        "expected_result": "Evaluation confirms A01_02 ticket alignment or retest with correct ticket ID"
+      },
+      "status": "OPEN",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "item_id": "D5-B-006",
+      "title": "H01 POST /resident/tickets: clean create returns 201, not 422",
+      "kind": "BUG",
+      "severity": "MAJOR",
+      "priority": "P1",
+      "decision": "NOW",
+      "owner": "Như Ý",
+      "owner_acceptance": "PROPOSED",
+      "dependencies": [],
+      "source_issue_refs": ["D4-06"],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json",
+        "planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/agent-recovery.json"
+      ],
+      "expected": "POST /resident/tickets with valid payload returns HTTP 201 Created",
+      "actual": "POST returned 422 due to shared Supabase merged_children absent locally; fix applied and ticket recovered but clean create retest incomplete",
+      "done_when": {
+        "command": "cd C:\\P-151-truong && curl -s http://localhost:8001/mo/health -H 'Authorization: Bearer test' 2>/dev/null | grep -q 'ok' && echo 'local server ready' || echo 'server check skipped'",
+        "expected_result": "Clean POST /resident/tickets call on QA environment returns 201 with new ticket ID in response"
+      },
+      "status": "FIXED_PENDING_RETEST",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "item_id": "D5-B-007",
+      "title": "H01/R01 build fingerprint: capture source state and UTC timestamps",
+      "kind": "EVIDENCE",
+      "severity": "MINOR",
+      "priority": "P1",
+      "decision": "NEXT",
+      "owner": "Trường",
+      "owner_acceptance": "PROPOSED",
+      "dependencies": [],
+      "source_issue_refs": ["D4-07"],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json",
+        "planning/07_2026-10-04_online-acceptance/deliverables/shared-supabase-demo-20261007.md"
+      ],
+      "expected": "Manifest records base SHA, dirty source fingerprint (if modified), and precise UTC timestamps before/after restart",
+      "actual": "Base SHA known (8dd6baa); dirty source not fingerprinted at execution; per-step restart times missing from evidence",
+      "done_when": {
+        "command": "grep -i 'sha\\|fingerprint\\|timestamp' planning/07_2026-10-04_online-acceptance/deliverables/shared-supabase-demo-20261007.md | wc -l",
+        "expected_result": "Count >= 3 (shows presence of hash, build metadata, time references)"
+      },
+      "status": "OPEN",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "item_id": "D5-B-008",
+      "title": "Public deployment and leader acceptance sign-off",
+      "kind": "SPEC",
+      "severity": "MINOR",
+      "priority": "P2",
+      "decision": "DEFER",
+      "owner": "Châm Anh",
+      "owner_acceptance": "PROPOSED",
+      "dependencies": [],
+      "source_issue_refs": ["D4-08"],
+      "evidence_refs": [
+        "evaluation.md",
+        "planning/07_2026-10-04_online-acceptance/deliverables/shared-supabase-demo-20261007.md"
+      ],
+      "expected": "Public deployment URL with documented leader acceptance/sign-off timestamp",
+      "actual": "Only localhost deployment; no documented leader acceptance; production readiness out of scope for Day05",
+      "done_when": {
+        "command": "grep -i 'public\\|leader.*accept' planning/07_2026-10-04_online-acceptance/deliverables/shared-supabase-demo-20261007.md",
+        "expected_result": "Evidence documents deployment scope (local or public) and any sign-off; if public, includes approval time"
+      },
+      "status": "OPEN",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "item_id": "D5-B-009",
+      "title": "H01/H02 off-hours message: align notification wording with acceptance behavior",
+      "kind": "SPEC",
+      "severity": "MINOR",
+      "priority": "P2",
+      "decision": "NEXT",
+      "owner": "Châm Anh",
+      "owner_acceptance": "PROPOSED",
+      "dependencies": [],
+      "source_issue_refs": ["D4-09"],
+      "evidence_refs": ["evaluation.md"],
+      "expected": "Notification says 'will be processed from 06:00' and team actually waits until 06:00 to process",
+      "actual": "Old report: message claims processing from 06:00 but team accepts and completes work before 06:00; wording/behavior mismatch",
+      "done_when": {
+        "command": "grep -i 'off.hour\\|06:00' evaluation.md | wc -l",
+        "expected_result": ">=1 (indicates off-hours behavior documented)"
+      },
+      "status": "OPEN",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "item_id": "D5-B-010",
+      "title": "U01 UI wording: unify deadline display and cư dân comprehension",
+      "kind": "SPEC",
+      "severity": "MINOR",
+      "priority": "P1",
+      "decision": "NEXT",
+      "owner": "Trí",
+      "owner_acceptance": "PROPOSED",
+      "dependencies": [],
+      "source_issue_refs": ["D4-10"],
+      "evidence_refs": ["evaluation.md"],
+      "expected": "Resident form shows consistent deadline label (e.g. '4 hours' or '2 days', not mixed) and no placeholder text like 'Agent'",
+      "actual": "Old report: tag shows 4h but note says 2 days; resident form still contains placeholder text 'Agent'",
+      "done_when": {
+        "command": "grep -i 'wording\\|deadline\\|agent' evaluation.md | wc -l",
+        "expected_result": ">=1 (indicates U01 wording issues documented)"
+      },
+      "status": "OPEN",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "item_id": "D5-B-011",
+      "title": "S04 S-09 safety: detect child trapped emergency and route to BQL",
+      "kind": "BUG",
+      "severity": "CRITICAL",
+      "priority": "P0",
+      "decision": "NOW",
+      "owner": "Như Ý",
+      "owner_acceptance": "PROPOSED",
+      "dependencies": [],
+      "source_issue_refs": ["D4-11"],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/evidence/normalization-20261007/safety-child-trapped.json",
+        "seed/maintenance_v1/lexicon.yaml",
+        "docs/CR-BPTN-03.md"
+      ],
+      "expected": "Text 'có trẻ con bị kẹt ở sảnh chung cư tòa S5' → classify risk EMERGENCY, status VERIFYING/EMERGENCY_PENDING_BQL, owner BQL (S-09)",
+      "actual": "Local assess probe with exact screenshot text: safety level NONE, classification OUT_OF_SCOPE, BPTN receiver (wrong); S1 variant also fails; adding 'mắc' fixes emergency route",
+      "done_when": {
+        "command": "python -m pytest tests/test_maintenance/test_safety_p0.py::test_child_trapped -v 2>&1 | grep -E '(PASSED|FAILED)'",
+        "expected_result": "Test passes: all variants (S5, S1, bị mắc kẹt) correctly identify EMERGENCY and VERIFYING status; no regression on negatives"
+      },
+      "status": "OPEN",
+      "reviewed_by": null,
+      "reviewed_at": null
+    }
+  ]
+}

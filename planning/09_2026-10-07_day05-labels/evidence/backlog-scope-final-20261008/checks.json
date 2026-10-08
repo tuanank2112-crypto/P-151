@@ -1,0 +1,27 @@
+{
+  "recorded_at": "2026-10-08T09:42:49.903373+00:00",
+  "command": [
+    "C:\\P-151\\.python\\cpython-3.11.16-windows-x86_64-none\\python.exe",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\tools\\validate_day05.py",
+    "--backlog",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\backlog.json",
+    "--issues",
+    "planning/07_2026-10-04_online-acceptance/deliverables/issues.json"
+  ],
+  "exit_code": 0,
+  "scope_decisions_confirmed": 15,
+  "newly_closed": 0,
+  "code_observed": {
+    "langgraph_module_exists": true,
+    "active_phases": [
+      "P0",
+      "P1"
+    ]
+  },
+  "runtime_tested": false,
+  "files": {
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\backlog.json": "a47b41c4bfd0cd23faf775cfb59e05ad327146a8dd00de2d46e2e7210d98c74f",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\backlog-scope-decisions.json": "b260677558ef5b0938f89bbc59d78718cdf589119f22f07e41f71c415b784904",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\backlog-handoff-summary.md": "8f0ed8529243c32a465afeb6915f0a41c0d0ac069dbe2d28e5314b053b2e8733"
+  }
+}

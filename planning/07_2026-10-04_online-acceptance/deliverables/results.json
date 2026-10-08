@@ -1,0 +1,390 @@
+{
+  "schema_version": "day04-3",
+  "normalized_at": "2026-10-07T04:38:20.673490+00:00",
+  "active_case_ids": [
+    "H01",
+    "H02",
+    "I01",
+    "A01",
+    "M01",
+    "U01",
+    "S04",
+    "G03",
+    "R01"
+  ],
+  "runs": [
+    {
+      "run_id": "local-ui-20261004-05",
+      "observed_at": null,
+      "records": [
+        {
+          "case_id": "H01",
+          "task_id": "D4-02",
+          "actor_role": "RESIDENT/BPTN/DEPARTMENT/BQL/QA",
+          "ticket_ids": [
+            "SIM-TKT-0001"
+          ],
+          "started_at": null,
+          "ended_at": null,
+          "time_precision": "not_recorded",
+          "expected": "- **Expected:** `ROUTED` sang Phòng Vệ sinh; qua `Đang xử lý` → `Chờ nghiệm thu` → `Hoàn thành`; có audit.",
+          "actual": "Báo cáo cũ: giao Vệ sinh, checklist/vật tư/ảnh, READY_FOR_REVIEW -> CLOSED và timeline cư dân.",
+          "result": "PASS",
+          "evidence_basis": "HISTORICAL_REPORT",
+          "evidence_refs": [
+            "evaluation.md",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/H01_01_cudan01_gui-phan-anh.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/H01_02_vesinh01_nhan-ticket.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/H01_03_vesinh01_checklist-anh.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/H01_04_vesinh01_bao-hoan-thanh.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/H01_05_bql01_nghiem-thu-dong.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/H01_06_cudan01_timeline-cuoi.png"
+          ],
+          "issue_ids": [
+            "D4-09"
+          ],
+          "limitations": [
+            "PASS là kết luận báo cáo lịch sử; chưa đo lại trên build hiện tại.",
+            "Không có thời điểm bắt đầu/kết thúc chính xác từng ca."
+          ]
+        },
+        {
+          "case_id": "H02",
+          "task_id": "D4-02",
+          "actor_role": "RESIDENT/BPTN/DEPARTMENT/BQL/QA",
+          "ticket_ids": [
+            "SIM-TKT-0002"
+          ],
+          "started_at": null,
+          "ended_at": null,
+          "time_precision": "not_recorded",
+          "expected": "- **Expected:** `ROUTED` sang Phòng Kỹ thuật; hoàn tất checklist, vật tư và ảnh; `Chờ nghiệm thu` → `Hoàn thành`; Agent không gán nhân viên.",
+          "actual": "Báo cáo cũ: giao Kỹ thuật, SIM-ASSET-LIGHT-001, đủ vật tư/ảnh, CLOSED và timeline.",
+          "result": "PASS",
+          "evidence_basis": "HISTORICAL_REPORT",
+          "evidence_refs": [
+            "evaluation.md",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/H02_01_cudan01_phan_anh.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/H02_02_kythuat01_nhan_ticket.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/H02_03_kythuat01_checklist-anh.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/H02_04_kythuat01_bao-hoan-thanh..png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/H02_05_bql01_nghiem-thu-dong.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/H02_06_cudan01_timeline-cuoi.png"
+          ],
+          "issue_ids": [
+            "D4-09"
+          ],
+          "limitations": [
+            "PASS là kết luận báo cáo lịch sử; chưa đo lại trên build hiện tại.",
+            "Không có thời điểm bắt đầu/kết thúc chính xác từng ca."
+          ]
+        },
+        {
+          "case_id": "I01",
+          "task_id": "D4-03",
+          "actor_role": "RESIDENT/BPTN/DEPARTMENT/BQL/QA",
+          "ticket_ids": [
+            "SIM-TKT-0003"
+          ],
+          "started_at": null,
+          "ended_at": null,
+          "time_precision": "not_recorded",
+          "expected": "- **Expected:** trạng thái thiếu thông tin → sau bổ sung đi tiếp `ROUTED`; raw không bị sửa.",
+          "actual": "Báo cáo cũ: thiếu tòa -> NEED_INFO; BPTN bổ sung -> ROUTED; raw giữ nguyên.",
+          "result": "PASS",
+          "evidence_basis": "HISTORICAL_REPORT",
+          "evidence_refs": [
+            "evaluation.md",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/I01_01_cudan01_thieu-thong-tin.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/I01_02_bptn01_hang-cho.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/I01_03_bptn01_gui-bo-sung.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/I01_04_ket-qua.png"
+          ],
+          "issue_ids": [],
+          "limitations": [
+            "PASS là kết luận báo cáo lịch sử; chưa đo lại trên build hiện tại.",
+            "Không có thời điểm bắt đầu/kết thúc chính xác từng ca."
+          ]
+        },
+        {
+          "case_id": "A01",
+          "task_id": "D4-03",
+          "actor_role": "RESIDENT/BPTN/DEPARTMENT/BQL/QA",
+          "ticket_ids": [
+            "SIM-TKT-TEC-002"
+          ],
+          "started_at": null,
+          "ended_at": null,
+          "time_precision": "not_recorded",
+          "expected": "- **Expected:** blocker \"Chưa xác định tài sản\" gỡ bằng quyền BPTN → `ROUTED` Phòng Kỹ thuật, cờ `ASSET_CHECK_ONSITE`.",
+          "actual": "Báo cáo cũ: BPTN xác nhận onsite, ROUTED Kỹ thuật với ASSET_CHECK_ONSITE.",
+          "result": "PASS",
+          "evidence_basis": "HISTORICAL_REPORT",
+          "evidence_refs": [
+            "evaluation.md",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/A01_01_bptn01_asset-chua-ro.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/A01_02_bptn01_xac-nhan-onsite.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/A01_03_ket-qua.png"
+          ],
+          "issue_ids": [
+            "D4-05"
+          ],
+          "limitations": [
+            "PASS là kết luận báo cáo lịch sử; chưa đo lại trên build hiện tại.",
+            "Không có thời điểm bắt đầu/kết thúc chính xác từng ca.",
+            "Ảnh A01_02 hiển thị ticket khác; đối chiếu A01_01/A01_03."
+          ]
+        },
+        {
+          "case_id": "M01",
+          "task_id": "D4-04",
+          "actor_role": "RESIDENT/BPTN/DEPARTMENT/BQL/QA",
+          "ticket_ids": [
+            "SIM-TKT-TEC-003"
+          ],
+          "started_at": null,
+          "ended_at": null,
+          "time_precision": "not_recorded",
+          "expected": "Thiếu vật tư dừng; nhập chưa đủ vẫn dừng; đủ thì tự giao; resume không giao trùng.",
+          "actual": "Báo cáo cũ: kho nhập1 vẫn dừng, nhập1 nữa đủ thì giao. Chưa kiểm resume lần hai.",
+          "result": "PASS",
+          "evidence_basis": "HISTORICAL_REPORT",
+          "evidence_refs": [
+            "evaluation.md",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/M01_01_bql01_cho-vat-tu.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/M01_02_kho01_nhap-1.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/M01_03_van-tam-hoan.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/M01_04_kho01_nhap-du.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/M01_05_da-giao.png"
+          ],
+          "issue_ids": [
+            "D4-02"
+          ],
+          "limitations": [
+            "PASS là kết luận báo cáo lịch sử; chưa đo lại trên build hiện tại.",
+            "Không có thời điểm bắt đầu/kết thúc chính xác từng ca.",
+            "Thiếu kiểm resume lần hai và thông báo chạy tiếp có thể xuất hiện sớm."
+          ]
+        },
+        {
+          "case_id": "U01",
+          "task_id": "D4-04",
+          "actor_role": "RESIDENT/BPTN/DEPARTMENT/BQL/QA",
+          "ticket_ids": [
+            "SIM-TKT-0004",
+            "SIM-TKT-0005"
+          ],
+          "started_at": null,
+          "ended_at": null,
+          "time_precision": "not_recorded",
+          "expected": "- **Expected:** ticket thứ hai `VERIFYING` / nghi trùng, chưa giao phòng ban; BPTN chọn \"Không trùng\" → đi tiếp.",
+          "actual": "Báo cáo cũ: cảnh báo trùng, BPTN chọn không gộp rồi đi tiếp.",
+          "result": "PASS",
+          "evidence_basis": "HISTORICAL_REPORT",
+          "evidence_refs": [
+            "evaluation.md",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/U01_01_cudan01_nghi-trung.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/U01_02_bptn01_canh-bao-trung.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/U01_03_bptn01_khong-gop.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/U01_04_ket-qua.png"
+          ],
+          "issue_ids": [
+            "D4-10"
+          ],
+          "limitations": [
+            "PASS là kết luận báo cáo lịch sử; chưa đo lại trên build hiện tại.",
+            "Không có thời điểm bắt đầu/kết thúc chính xác từng ca."
+          ]
+        },
+        {
+          "case_id": "S04",
+          "task_id": "D4-05",
+          "actor_role": "RESIDENT/BPTN/DEPARTMENT/BQL/QA",
+          "ticket_ids": [
+            "SIM-TKT-0006"
+          ],
+          "started_at": null,
+          "ended_at": null,
+          "time_precision": "not_recorded",
+          "expected": "- **Expected:** `VERIFYING` / `EMERGENCY_PENDING_BQL`, BQL thấy đúng 2 lựa chọn; đóng → `CLOSED`.",
+          "actual": "Báo cáo cũ: EMERGENCY_PENDING_BQL -> BQL đóng. Một số ảnh hiển thị ticket khác.",
+          "result": "PASS",
+          "evidence_basis": "HISTORICAL_REPORT",
+          "evidence_refs": [
+            "evaluation.md",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/S04_01_cudan01_trang-thai.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/S04_02_bql01_lua-chon.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/S04_03_bql01_ket-qua.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/S04_04_bql01_audit.png"
+          ],
+          "issue_ids": [
+            "D4-03"
+          ],
+          "limitations": [
+            "PASS là kết luận báo cáo lịch sử; chưa đo lại trên build hiện tại.",
+            "Không có thời điểm bắt đầu/kết thúc chính xác từng ca.",
+            "S04_02/S04_04 lệch ticket; chưa có bằng chứng thay thế đủ để tái xác nhận."
+          ]
+        },
+        {
+          "case_id": "G03",
+          "task_id": "D4-06",
+          "actor_role": "RESIDENT/BPTN/DEPARTMENT/BQL/QA",
+          "ticket_ids": [
+            "SIM-TKT-TEC-005"
+          ],
+          "started_at": null,
+          "ended_at": null,
+          "time_precision": "not_recorded",
+          "expected": "BPTN không được hạ/đóng Bậc1; department sai không accept; state nghiệp vụ không đổi.",
+          "actual": "Báo cáo cũ: BPTN hạ bậc và phòng sai accept đều403; chưa có GET sau thao tác độc lập.",
+          "result": "PASS",
+          "evidence_basis": "HISTORICAL_REPORT",
+          "evidence_refs": [
+            "evaluation.md",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/G03_01_bptn-ha-bac1-403.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/G03_02_phong-sai-accept-403.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/G03_03_khong-thay-doi.png"
+          ],
+          "issue_ids": [
+            "D4-04"
+          ],
+          "limitations": [
+            "PASS là kết luận báo cáo lịch sử; chưa đo lại trên build hiện tại.",
+            "Không có thời điểm bắt đầu/kết thúc chính xác từng ca.",
+            "Ảnh G03_03 không phải GET state độc lập sau cả hai thao tác."
+          ]
+        },
+        {
+          "case_id": "R01",
+          "task_id": "D4-07",
+          "actor_role": "RESIDENT/BPTN/DEPARTMENT/BQL/QA",
+          "ticket_ids": [],
+          "started_at": null,
+          "ended_at": null,
+          "time_precision": "not_recorded",
+          "expected": "- **Expected (SPEC OPERATIONS §3):** với `memory`, mất dữ liệu sau restart là giới hạn dự kiến; R01 ghi `BLOCKED_MEMORY_STORE`, không ghi PASS lưu bền, không ghi FAIL.",
+          "actual": "Store memory; không chứng minh dữ liệu/ảnh lưu bền sau restart.",
+          "result": "BLOCKED",
+          "evidence_basis": "HISTORICAL_REPORT",
+          "evidence_refs": [
+            "evaluation.md",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/H01_06_cudan01_timeline-cuoi.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/H02_06_cudan01_timeline-cuoi.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/R01_02_truoc-restart.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/01_03_sau-restart.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/S04_02_bql01_lua-chon.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/S04_04_bql01_audit.png",
+            "planning/07_2026-10-04_online-acceptance/evidence/ui/G03_03_khong-thay-doi.png"
+          ],
+          "issue_ids": [
+            "D4-01"
+          ],
+          "limitations": [
+            "PASS là kết luận báo cáo lịch sử; chưa đo lại trên build hiện tại.",
+            "Không có thời điểm bắt đầu/kết thúc chính xác từng ca."
+          ]
+        }
+      ],
+      "coverage": {
+        "recorded_case_ids": [
+          "H01",
+          "H02",
+          "I01",
+          "A01",
+          "M01",
+          "U01",
+          "S04",
+          "G03",
+          "R01"
+        ],
+        "unmeasured_active_case_ids": []
+      },
+      "counts": {
+        "PASS": 8,
+        "FAIL": 0,
+        "BLOCKED": 1
+      },
+      "interpretation": "Separate run evidence; do not aggregate across builds. Historical PASS is reported, not newly measured."
+    },
+    {
+      "run_id": "local-supabase-20261007",
+      "observed_at": "2026-10-07T04:11:12.207497+00:00",
+      "records": [
+        {
+          "case_id": "H01",
+          "task_id": "D4-02",
+          "actor_role": "RESIDENT/DEPARTMENT/BQL/QA",
+          "ticket_ids": [
+            "SIM-TKT-0042"
+          ],
+          "started_at": "2026-10-07T11:03:18+07:00",
+          "ended_at": "2026-10-07T11:08:38.145893+07:00",
+          "time_precision": "exact",
+          "expected": "Tạo phản ánh thành công201 rồi ROUTED -> IN_PROGRESS -> READY_FOR_REVIEW -> CLOSED, thiếu ảnh bị chặn.",
+          "actual": "POST create422 sau ingest RECEIVED; sửa merged_children và recovery cùng ticket; luồng xử lý đạt CLOSED, thiếu ảnh chặn đúng.",
+          "result": "FAIL",
+          "evidence_basis": "MACHINE_EVIDENCE",
+          "evidence_refs": [
+            "planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json",
+            "planning/07_2026-10-04_online-acceptance/deliverables/shared-supabase-demo-20261007.md"
+          ],
+          "issue_ids": [
+            "D4-06",
+            "D4-07"
+          ],
+          "limitations": [
+            "Recovery thành công không thay thế retest POST create trả201.",
+            "Chạy API/script, không walkthrough UI theo vai."
+          ]
+        },
+        {
+          "case_id": "R01",
+          "task_id": "D4-07",
+          "actor_role": "QA/SERVER_OPERATOR",
+          "ticket_ids": [
+            "SIM-TKT-0042"
+          ],
+          "started_at": null,
+          "ended_at": null,
+          "time_precision": "not_recorded",
+          "expected": "Postgres giữ ticket CLOSED, ảnh, audit và tồn kho sau restart; ảnh tải lại đúng bytes/hash.",
+          "actual": "CLOSED sau restart, hai ảnh API/Storage khớp; ledger24, notifications7, stock không đổi, 53 ticket cũ không đổi.",
+          "result": "PASS",
+          "evidence_basis": "MACHINE_EVIDENCE",
+          "evidence_refs": [
+            "planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json",
+            "planning/07_2026-10-04_online-acceptance/deliverables/shared-supabase-demo-20261007.md"
+          ],
+          "issue_ids": [
+            "D4-07"
+          ],
+          "limitations": [
+            "Chưa ghi timestamp từng bước stop/start; không dùng mtime thay event time."
+          ]
+        }
+      ],
+      "coverage": {
+        "recorded_case_ids": [
+          "H01",
+          "R01"
+        ],
+        "unmeasured_active_case_ids": [
+          "H02",
+          "I01",
+          "A01",
+          "M01",
+          "U01",
+          "S04",
+          "G03"
+        ]
+      },
+      "counts": {
+        "PASS": 1,
+        "FAIL": 1,
+        "BLOCKED": 0
+      },
+      "interpretation": "Separate run evidence; do not aggregate across builds. Historical PASS is reported, not newly measured."
+    }
+  ]
+}

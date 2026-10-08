@@ -1,0 +1,475 @@
+{
+  "schema_version": "day05-1",
+  "created_at": "2026-10-07T05:24:52Z",
+  "records": [
+    {
+      "item_id": "D5-B-001",
+      "title": "R01 lưu bền: dùng bằng chứng Supabase thay vì sửa memory",
+      "kind": "EVIDENCE",
+      "severity": "MINOR",
+      "priority": "P2",
+      "decision": "NO_ACTION",
+      "owner": "Châm Anh",
+      "owner_acceptance": "CONFIRMED",
+      "dependencies": [],
+      "source_issue_refs": [
+        "D4-01"
+      ],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/deliverables/issues.json",
+        "planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-scope-decisions.json",
+        "planning/09_2026-10-07_day05-labels/deliverables/owner-acknowledgement.json"
+      ],
+      "expected": "Persistence đo trên Postgres/Supabase, không đo trên memory.",
+      "actual": "Run local-ui-20261004-05 (memory) không chứng minh được lưu bền; run Supabase 20261007 có restart_verification. Quyết định phạm vi được Trường xác nhận 2026-10-08T09:11:20.819204+00:00: Không sửa memory để lưu bền; ghi giới hạn, dùng bằng chứng Supabase/Postgres cho persistence. Không chứng nhận hoàn thành hoặc owner đã nhận việc.",
+      "done_when": {
+        "command": "PYTHONUTF8=1 .venv/Scripts/python.exe -c \"import json;r=json.load(open('planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json',encoding='utf-8'))['restart_verification'];assert r['ticket_status']=='CLOSED' and r['photos_count']==2;print('OK')\"",
+        "expected_result": "In OK, exit 0. NO_ACTION: không yêu cầu memory store lưu bền."
+      },
+      "status": "OPEN",
+      "reviewed_by": "Cao Văn Trường (báo nhóm Như Ý/Châm Anh đã đồng ý nhận phần việc)",
+      "reviewed_at": "2026-10-08T10:10:44.796289+00:00"
+    },
+    {
+      "item_id": "D5-B-002",
+      "title": "Resume lặp không giao trùng: đo idempotency",
+      "kind": "EVIDENCE",
+      "severity": "MINOR",
+      "priority": "P1",
+      "decision": "NEXT",
+      "owner": "Châm Anh (kiểm thử API) / Như Ý (phối hợp nếu có lỗi engine)",
+      "owner_acceptance": "CONFIRMED",
+      "dependencies": [
+        "Chuẩn bị môi trường QA cô lập; không dùng shared Supabase theo xác nhận này",
+        "Châm Anh xác nhận tiếp nhận việc kiểm thử; phối hợp Như Ý khi cần"
+      ],
+      "source_issue_refs": [
+        "D4-02"
+      ],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/deliverables/issues.json",
+        "planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/resume-diagnostic.json",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-scope-decisions.json",
+        "planning/09_2026-10-07_day05-labels/deliverables/api-retest-checklist.md",
+        "planning/09_2026-10-07_day05-labels/deliverables/owner-acknowledgement.json"
+      ],
+      "expected": "Resume lần 2 trên cùng ticket không tạo giao việc/thông báo trùng.",
+      "actual": "Run cũ chỉ đo nhập 1+1; chưa gọi resume lần hai. Trường duyệt hướng xử lý 2026-10-08T09:22:47.304078+00:00: Bổ sung kiểm chứng resume hai lần cùng ticket không phát sinh giao việc hoặc thông báo trùng; chưa kết luận runtime đang lỗi.",
+      "done_when": {
+        "command": "PYTHONUTF8=1 .venv/Scripts/python.exe -c \"import json;d=json.load(open('planning/09_2026-10-07_day05-labels/evidence/retest-d4-02/resume-twice.json',encoding='utf-8'));assert d['dispatch_count_after_second_resume']==d['dispatch_count_after_first_resume'];print('OK')\"",
+        "expected_result": "File evidence mới tồn tại, hai số dispatch bằng nhau, in OK, exit 0. Hiện tại: FileNotFoundError (chưa đo)."
+      },
+      "status": "OPEN",
+      "reviewed_by": "Cao Văn Trường (báo nhóm Như Ý/Châm Anh đã đồng ý nhận phần việc)",
+      "reviewed_at": "2026-10-08T10:10:44.796289+00:00"
+    },
+    {
+      "item_id": "D5-B-003",
+      "title": "S04: evidence cùng ticket trước/sau BQL đóng",
+      "kind": "EVIDENCE",
+      "severity": "MAJOR",
+      "priority": "P1",
+      "decision": "NEXT",
+      "owner": "Trường (chủ trì tổng hợp); Trí hỗ trợ nếu có vấn đề UI",
+      "owner_acceptance": "CONFIRMED",
+      "dependencies": [
+        "Chuẩn bị lượt demo QA cô lập cùng build; chưa cho phép chạy shared Supabase theo quyết định này",
+        "Trí hỗ trợ theo nhu cầu UI; chưa có xác nhận trực tiếp Trí nhận việc"
+      ],
+      "source_issue_refs": [
+        "D4-03"
+      ],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/deliverables/issues.json",
+        "evaluation.md",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-scope-decisions.json",
+        "planning/09_2026-10-07_day05-labels/deliverables/demo-evidence-checklist.md"
+      ],
+      "expected": "Ảnh S04 bước 02 và 04 cùng một ticket_id.",
+      "actual": "S04_02 và S04_04 hiển thị ticket khác nhau. Trường xác nhận 2026-10-08T09:40:03.176149+00:00: Thu lại bằng chứng trước/sau BQL đóng trên cùng ticket; Trường tổng hợp, Trí hỗ trợ khi có vấn đề UI. Chưa có evidence mới, chưa đóng mục.",
+      "done_when": {
+        "command": "PYTHONUTF8=1 .venv/Scripts/python.exe -c \"import json;d=json.load(open('planning/09_2026-10-07_day05-labels/evidence/retest-d4-03/s04-tickets.json',encoding='utf-8'));assert len({s['ticket_id'] for s in d['steps']})==1;print('OK')\"",
+        "expected_result": "File evidence mới tồn tại, mọi bước cùng ticket_id, in OK, exit 0. Hiện tại: chưa có file."
+      },
+      "status": "OPEN",
+      "reviewed_by": "Cao Văn Trường (xác nhận hướng xử lý và phần việc chủ trì của mình)",
+      "reviewed_at": "2026-10-08T09:40:03.176149+00:00"
+    },
+    {
+      "item_id": "D5-B-004",
+      "title": "G03: GET độc lập trước/sau 403, state không đổi",
+      "kind": "EVIDENCE",
+      "severity": "MINOR",
+      "priority": "P1",
+      "decision": "NEXT",
+      "owner": "Châm Anh (kiểm thử API) / Như Ý (phối hợp nếu có lỗi engine)",
+      "owner_acceptance": "CONFIRMED",
+      "dependencies": [
+        "Chuẩn bị môi trường QA cô lập; không dùng shared Supabase theo xác nhận này",
+        "Châm Anh xác nhận tiếp nhận việc kiểm thử; phối hợp Như Ý khi cần"
+      ],
+      "source_issue_refs": [
+        "D4-04"
+      ],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/deliverables/issues.json",
+        "evaluation.md",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-scope-decisions.json",
+        "planning/09_2026-10-07_day05-labels/deliverables/api-retest-checklist.md",
+        "planning/09_2026-10-07_day05-labels/deliverables/owner-acknowledgement.json"
+      ],
+      "expected": "403 kèm GET trước và sau trả cùng state; audit ghi denial.",
+      "actual": "Chỉ có phản hồi 403; thiếu GET độc lập bao quanh guard. Trường duyệt hướng xử lý 2026-10-08T09:22:47.304078+00:00: Bổ sung GET độc lập trước/sau thao tác bị từ chối, trạng thái nghiệp vụ không đổi và audit có denial; chưa kết luận runtime đang lỗi.",
+      "done_when": {
+        "command": "PYTHONUTF8=1 .venv/Scripts/python.exe -c \"import json;d=json.load(open('planning/09_2026-10-07_day05-labels/evidence/retest-d4-04/guard-get.json',encoding='utf-8'));assert d['denied_status']==403 and d['state_before']==d['state_after'];print('OK')\"",
+        "expected_result": "In OK, exit 0. Hiện tại: chưa có file."
+      },
+      "status": "OPEN",
+      "reviewed_by": "Cao Văn Trường (báo nhóm Như Ý/Châm Anh đã đồng ý nhận phần việc)",
+      "reviewed_at": "2026-10-08T10:10:44.796289+00:00"
+    },
+    {
+      "item_id": "D5-B-005",
+      "title": "A01: ảnh xác nhận onsite cùng ticket",
+      "kind": "EVIDENCE",
+      "severity": "MINOR",
+      "priority": "P1",
+      "decision": "NEXT",
+      "owner": "Trường (chủ trì tổng hợp); Trí hỗ trợ nếu có vấn đề UI",
+      "owner_acceptance": "CONFIRMED",
+      "dependencies": [
+        "Chuẩn bị lượt demo QA cô lập cùng build; chưa cho phép chạy shared Supabase theo quyết định này",
+        "Trí hỗ trợ theo nhu cầu UI; chưa có xác nhận trực tiếp Trí nhận việc"
+      ],
+      "source_issue_refs": [
+        "D4-05"
+      ],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/deliverables/issues.json",
+        "evaluation.md",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-scope-decisions.json",
+        "planning/09_2026-10-07_day05-labels/deliverables/demo-evidence-checklist.md"
+      ],
+      "expected": "A01_02 hiển thị cùng ticket với A01_01 và A01_03.",
+      "actual": "A01_02 hiển thị ticket khác. Trường xác nhận 2026-10-08T09:40:03.176149+00:00: Thu lại bằng chứng xác nhận hiện trường trên đúng ticket; có thể cùng lượt demo với 003 nhưng lưu từng kết quả riêng. Chưa có evidence mới, chưa đóng mục.",
+      "done_when": {
+        "command": "PYTHONUTF8=1 .venv/Scripts/python.exe -c \"import json;d=json.load(open('planning/09_2026-10-07_day05-labels/evidence/retest-d4-05/a01-tickets.json',encoding='utf-8'));assert len({s['ticket_id'] for s in d['steps']})==1;print('OK')\"",
+        "expected_result": "In OK, exit 0. Hiện tại: chưa có file."
+      },
+      "status": "OPEN",
+      "reviewed_by": "Cao Văn Trường (xác nhận hướng xử lý và phần việc chủ trì của mình)",
+      "reviewed_at": "2026-10-08T09:40:03.176149+00:00"
+    },
+    {
+      "item_id": "D5-B-006",
+      "title": "POST resident/tickets: tạo ticket mới phải trả 201",
+      "kind": "BUG",
+      "severity": "MAJOR",
+      "priority": "P1",
+      "decision": "NOW",
+      "owner": "Châm Anh (kiểm thử API) / Như Ý (phối hợp nếu có lỗi engine)",
+      "owner_acceptance": "CONFIRMED",
+      "dependencies": [
+        "Chuẩn bị môi trường QA cô lập; không dùng shared Supabase theo xác nhận này",
+        "Châm Anh xác nhận tiếp nhận việc kiểm thử; phối hợp Như Ý khi cần"
+      ],
+      "source_issue_refs": [
+        "D4-06"
+      ],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/deliverables/issues.json",
+        "planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json",
+        "planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/agent-recovery.json",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-scope-decisions.json",
+        "planning/09_2026-10-07_day05-labels/deliverables/api-retest-checklist.md",
+        "planning/09_2026-10-07_day05-labels/deliverables/owner-acknowledgement.json"
+      ],
+      "expected": "POST tạo mới trả 201 trên DB đã có cột merged_children.",
+      "actual": "Run Supabase 20261007: 422 do merged_children vắng ở lược đồ chung; fix áp dụng, SIM-TKT-0042 được phục hồi, CHƯA có lượt tạo sạch. Giữ FIXED_PENDING_RETEST. Trường duyệt hướng xử lý 2026-10-08T09:22:47.304078+00:00: Kiểm thử sớm tạo ticket mới: API trả 201 và lưu dữ liệu đúng; giữ FIXED_PENDING_RETEST đến khi có bằng chứng.",
+      "done_when": {
+        "command": "PYTHONUTF8=1 .venv/Scripts/python.exe -c \"import json;d=json.load(open('planning/09_2026-10-07_day05-labels/evidence/retest-d4-06/create.json',encoding='utf-8'));assert d['http_status']==201;print('OK')\"",
+        "expected_result": "In OK, exit 0; recovery CLOSED không đủ để đóng. Hiện tại: chưa có file retest."
+      },
+      "status": "FIXED_PENDING_RETEST",
+      "reviewed_by": "Cao Văn Trường (báo nhóm Như Ý/Châm Anh đã đồng ý nhận phần việc)",
+      "reviewed_at": "2026-10-08T10:10:44.796289+00:00"
+    },
+    {
+      "item_id": "D5-B-007",
+      "title": "Fingerprint nguồn và UTC từng bước của demo shared",
+      "kind": "EVIDENCE",
+      "severity": "MINOR",
+      "priority": "P1",
+      "decision": "NEXT",
+      "owner": "Trường",
+      "owner_acceptance": "CONFIRMED",
+      "dependencies": [
+        "Chuẩn bị lượt demo QA cô lập cùng build; chưa cho phép chạy shared Supabase theo quyết định này"
+      ],
+      "source_issue_refs": [
+        "D4-07"
+      ],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/deliverables/issues.json",
+        "planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json",
+        "planning/07_2026-10-04_online-acceptance/deliverables/shared-supabase-demo-20261007.md",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-scope-decisions.json",
+        "planning/09_2026-10-07_day05-labels/deliverables/demo-evidence-checklist.md"
+      ],
+      "expected": "Manifest ghi base SHA, hash nguồn dirty, UTC trước/sau restart.",
+      "actual": "Có base SHA; hash nguồn lúc chạy và giờ restart từng bước thiếu; không bịa cho lượt cũ. Trường xác nhận 2026-10-08T09:40:03.176149+00:00: Lượt QA mới ghi commit/dirty-source fingerprints, cấu hình đã lược secret và UTC ngay lúc chạy; không bù thời gian/hash cho lượt cũ. Chưa có evidence mới, chưa đóng mục.",
+      "done_when": {
+        "command": "PYTHONUTF8=1 .venv/Scripts/python.exe -c \"import json;d=json.load(open('planning/09_2026-10-07_day05-labels/evidence/retest-d4-07/run-manifest.json',encoding='utf-8'));assert d['base_sha'] and d['source_hashes'] and d['restart_before_utc'] and d['restart_after_utc'];print('OK')\"",
+        "expected_result": "In OK, exit 0 ở lượt chạy MỚI (không áp ngược lượt cũ)."
+      },
+      "status": "OPEN",
+      "reviewed_by": "Cao Văn Trường (xác nhận hướng xử lý và phần việc chủ trì của mình)",
+      "reviewed_at": "2026-10-08T09:40:03.176149+00:00"
+    },
+    {
+      "item_id": "D5-B-008",
+      "title": "Triển khai public và xác nhận nghiệm thu của leader",
+      "kind": "SPEC",
+      "severity": "MINOR",
+      "priority": "P2",
+      "decision": "DEFER",
+      "owner": "Leader / Châm Anh",
+      "owner_acceptance": "PROPOSED",
+      "dependencies": [],
+      "source_issue_refs": [
+        "D4-08"
+      ],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/deliverables/issues.json",
+        "planning/07_2026-10-04_online-acceptance/deliverables/shared-supabase-demo-20261007.md",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-scope-decisions.json"
+      ],
+      "expected": "Nếu tuyên bố public thì có URL và xác nhận leader có thời điểm.",
+      "actual": "Chỉ localhost; chưa có xác nhận leader; ngoài scope dữ liệu Day05. Quyết định phạm vi được Trường xác nhận 2026-10-08T09:11:20.819204+00:00: Triển khai public và nghiệm thu online để sau Day05, chưa ấn định lịch; Day05 sơ bộ được đánh giá trên localhost. Không chứng nhận hoàn thành hoặc owner đã nhận việc.",
+      "done_when": {
+        "command": "PYTHONUTF8=1 .venv/Scripts/python.exe -c \"import json;d=json.load(open('planning/09_2026-10-07_day05-labels/evidence/retest-d4-08/signoff.json',encoding='utf-8'));assert d['approved_by'] and d['approved_at'];print('OK')\"",
+        "expected_result": "In OK, exit 0 khi có xác nhận thật của leader. Không suy từ dataset offline."
+      },
+      "status": "OPEN",
+      "reviewed_by": "Cao Văn Trường (duyệt hướng xử lý, chưa xác nhận owner nhận việc)",
+      "reviewed_at": "2026-10-08T09:11:20.819204+00:00"
+    },
+    {
+      "item_id": "D5-B-009",
+      "title": "Thông báo ngoài giờ khớp hành vi nhận việc",
+      "kind": "EVIDENCE",
+      "severity": "MINOR",
+      "priority": "P2",
+      "decision": "NEXT",
+      "owner": "Châm Anh (kiểm tra API/hành vi) / Trường (xác nhận nội dung/giờ phục vụ)",
+      "owner_acceptance": "CONFIRMED",
+      "dependencies": [],
+      "source_issue_refs": [
+        "D4-09"
+      ],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/deliverables/issues.json",
+        "evaluation.md",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-scope-decisions.json",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-handoff-summary.md",
+        "planning/09_2026-10-07_day05-labels/deliverables/owner-acknowledgement.json"
+      ],
+      "expected": "Lời nhắn ngoài giờ khớp thực tế phòng ban nhận/hoàn tất.",
+      "actual": "Báo cáo cũ (local-ui-20261004-05): báo xử lý từ 06:00 nhưng phòng ban nhận và hoàn tất trước 06:00; chưa kiểm build hiện tại. Trường duyệt 2026-10-08T09:42:49.903373+00:00: Kiểm tra thông báo ngoài giờ khớp nhận/xử lý thực tế trên build hiện tại; giờ phục vụ theo cấu hình do Trường xác nhận. Khẩn cấp không bị giữ chỉ vì ngoài giờ.",
+      "done_when": {
+        "command": "PYTHONUTF8=1 .venv/Scripts/python.exe -c \"import json;d=json.load(open('planning/09_2026-10-07_day05-labels/evidence/retest-d4-09/off-hours.json',encoding='utf-8'));assert d['message_matches_behavior'] is True;print('OK')\"",
+        "expected_result": "In OK, exit 0 sau khi owner xác nhận hành vi mong muốn và đo build hiện tại. Lệnh cũ chỉ kiểm tối thiểu/hồ sơ lịch sử; việc nghiệm thu dựa vào retest cùng build và bằng chứng đầy đủ, không suy hoàn thành từ marker roadmap hoặc cấu hình."
+      },
+      "status": "OPEN",
+      "reviewed_by": "Cao Văn Trường (báo nhóm Như Ý/Châm Anh đã đồng ý nhận phần việc)",
+      "reviewed_at": "2026-10-08T10:10:44.796289+00:00"
+    },
+    {
+      "item_id": "D5-B-010",
+      "title": "Wording hạn xử lý thống nhất, bỏ chữ Agent ở form cư dân",
+      "kind": "EVIDENCE",
+      "severity": "MINOR",
+      "priority": "P2",
+      "decision": "NEXT",
+      "owner": "Trí (hiển thị) / Như Ý (dữ liệu engine) / Trường (duyệt nội dung)",
+      "owner_acceptance": "PROPOSED",
+      "dependencies": [],
+      "source_issue_refs": [
+        "D4-10"
+      ],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/deliverables/issues.json",
+        "evaluation.md",
+        "src/web/app.js",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-scope-decisions.json",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-handoff-summary.md"
+      ],
+      "expected": "Thẻ hạn và ghi chú cùng đơn vị; form cư dân không lộ nhãn kỹ thuật.",
+      "actual": "Báo cáo cũ: thẻ 4h nhưng ghi chú 2 days; form cư dân còn chữ Agent. Build hiện tại: src/web/app.js còn 'Agent' ở nhãn (dòng 67, 784, 1197, 1294); chưa phân biệt màn cư dân hay BPTN. Trường duyệt 2026-10-08T09:42:49.903373+00:00: Rà hạn xử lý thống nhất ý nghĩa và cách trình bày; form cư dân dùng ngôn ngữ dễ hiểu, không cần nhãn kỹ thuật Agent. Trường duyệt nội dung, Trí hiển thị, Như Ý phối hợp dữ liệu engine.",
+      "done_when": {
+        "command": "PYTHONUTF8=1 .venv/Scripts/python.exe -c \"import json;d=json.load(open('planning/09_2026-10-07_day05-labels/evidence/retest-d4-10/wording.json',encoding='utf-8'));assert d['resident_form_mentions_agent'] is False and d['deadline_units_consistent'] is True;print('OK')\"",
+        "expected_result": "In OK, exit 0 sau khi rà màn cư dân của build hiện tại. Lệnh cũ chỉ kiểm tối thiểu/hồ sơ lịch sử; việc nghiệm thu dựa vào retest cùng build và bằng chứng đầy đủ, không suy hoàn thành từ marker roadmap hoặc cấu hình."
+      },
+      "status": "OPEN",
+      "reviewed_by": "Cao Văn Trường (duyệt hướng xử lý; chưa ghi acknowledgement thành viên khác)",
+      "reviewed_at": "2026-10-08T09:42:49.903373+00:00"
+    },
+    {
+      "item_id": "D5-B-011",
+      "title": "Trẻ con bị kẹt ở sảnh phải là EMERGENCY (S-09), chuyển BQL",
+      "kind": "BUG",
+      "severity": "CRITICAL",
+      "priority": "P0",
+      "decision": "NOW",
+      "owner": "Như Ý",
+      "owner_acceptance": "CONFIRMED",
+      "dependencies": [
+        "Châm Anh: kiểm tra API và retest đường xử lý khẩn cấp cùng bản sửa safety",
+        "Trường: chuẩn bị câu kiểm thử F-D4-11, biến thể và câu đối chứng"
+      ],
+      "source_issue_refs": [
+        "D4-11"
+      ],
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/deliverables/issues.json",
+        "planning/07_2026-10-04_online-acceptance/evidence/normalization-20261007/safety-child-trapped.json",
+        "planning/09_2026-10-07_day05-labels/evidence/run00-baseline/d411-probe.txt",
+        "seed/maintenance_v1/lexicon.yaml",
+        "docs/CR-BPTN-03.md",
+        "planning/09_2026-10-07_day05-labels/plan.md",
+        "planning/09_2026-10-07_day05-labels/deliverables/outside-scope-safety-policy.json"
+      ],
+      "expected": "Kiểm thử luồng API/BQL trong phạm vi thí điểm dùng S1/S2 (catalog hiện tại). Câu trẻ bị kẹt hoặc mắc kẹt phải được nhận diện safety EMERGENCY; đường xử lý BQL trong phạm vi phải được kiểm thử trên cùng bản sửa. Người dùng xác nhận S5 không thuộc cụm thí điểm: giữ câu S5 làm trường hợp ngoài phạm vi, không coi S5 là địa điểm hợp lệ cho nghiệm thu luồng giao BQL. Safety và phạm vi địa điểm được đánh giá riêng; chính sách ngoài phạm vi đã được Trường duyệt: EMERGENCY báo BQL ngay để xác minh/chuyển tiếp, ghi rõ ngoài thí điểm; không tự điều đội thí điểm. UNCLEAR vào xác minh an toàn BPTN, NONE vào xác minh phạm vi BPTN. Câu đối chứng không có người mắc kẹt không tự động nhận EMERGENCY.",
+      "actual": "Đo lại 2026-10-07 trên HEAD hiện tại, tầng assess: S5 'bị kẹt' => NONE, S1 'bị kẹt' => NONE, S5 'bị mắc kẹt' => EMERGENCY (evidence run00-baseline/d411-probe.txt). Lỗi tái hiện, vẫn OPEN. Không suy do tòa S5; thêm 'mắc' thì đúng.",
+      "done_when": {
+        "command": "PYTHONUTF8=1 .venv/Scripts/python.exe -c \"from src.maintenance.catalog import load_lexicon as L;from src.maintenance.safety import assess as A;lx=L().safety;pos=['có trẻ con bị kẹt ở sảnh chung cư tòa S5','có trẻ con bị kẹt ở sảnh chung cư tòa S1','có trẻ nhỏ bị kẹt ở sảnh chung cư tòa S5','có em bé bị mắc kẹt ở sảnh chung cư tòa S1'];neg=['không có trẻ con nào bị kẹt ở sảnh tòa S5','kẹt xe ở cổng chung cư tòa S1','cửa sảnh tòa S5 bị kẹt, không có ai bên trong'];assert all(A(t,lx).risk_level.value=='EMERGENCY' for t in pos),'POS_FAIL';assert all(A(t,lx).risk_level.value!='EMERGENCY' for t in neg),'CONTROL_FAIL';print('OK')\"",
+        "expected_result": "In OK, exit 0 (hiện tại: AssertionError POS_FAIL). CLOSED chỉ sau thêm: pytest regression đầy đủ không giảm, retest API/UI cùng build có bằng chứng, Như Ý xác nhận. Retest S5: EMERGENCY thuộc BQL/EMERGENCY_PENDING_BQL, cảnh báo ngoài phạm vi, không tự giao đội thí điểm; lưu request/response và build SHA. Không chỉ kiểm assess()."
+      },
+      "status": "OPEN",
+      "reviewed_by": "Cao Văn Trường (xác nhận phân công nhóm trong hội thoại)",
+      "reviewed_at": "2026-10-07T16:39:35.819793+00:00"
+    },
+    {
+      "item_id": "D5-B-012",
+      "title": "Vision / phân tích ảnh",
+      "kind": "FEATURE",
+      "severity": "NA",
+      "priority": "P2",
+      "decision": "DEFER",
+      "owner": "Trí / Như Ý",
+      "owner_acceptance": "PROPOSED",
+      "dependencies": [],
+      "source_issue_refs": [
+        "roadmap#vision"
+      ],
+      "evidence_refs": [
+        "brain4agent/roadmap.md",
+        "brain4agent/memory-distill.txt",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-scope-decisions.json"
+      ],
+      "expected": "Chưa có vision trong runtime; không đưa vào Day05.",
+      "actual": "Chỉ phân loại văn bản; ảnh chưa được phân tích. Quyết định phạm vi được Trường xác nhận 2026-10-08T09:11:20.819204+00:00: Không yêu cầu AI phân tích ảnh trong Day05; giữ backlog mở rộng, upload/lưu ảnh không được coi là vision. Không chứng nhận hoàn thành hoặc owner đã nhận việc.",
+      "done_when": {
+        "command": "PYTHONUTF8=1 .venv/Scripts/python.exe -c \"print('vision' in open('brain4agent/roadmap.md',encoding='utf-8').read().lower())\"",
+        "expected_result": "In True nếu roadmap còn ghi vision; DEFER tới khi leader xếp lịch."
+      },
+      "status": "OPEN",
+      "reviewed_by": "Cao Văn Trường (duyệt hướng xử lý, chưa xác nhận owner nhận việc)",
+      "reviewed_at": "2026-10-08T09:11:20.819204+00:00"
+    },
+    {
+      "item_id": "D5-B-013",
+      "title": "LangGraph thật và blocker/resume Day06",
+      "kind": "FEATURE",
+      "severity": "NA",
+      "priority": "P2",
+      "decision": "DEFER",
+      "owner": "Như Ý / Châm Anh",
+      "owner_acceptance": "CONFIRMED",
+      "dependencies": [],
+      "source_issue_refs": [
+        "roadmap#langgraph"
+      ],
+      "evidence_refs": [
+        "brain4agent/roadmap.md",
+        "planning/05_2026-10-04_agent-hardening/plan.md",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-scope-decisions.json",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-handoff-summary.md",
+        "planning/09_2026-10-07_day05-labels/deliverables/owner-acknowledgement.json"
+      ],
+      "expected": "Engine↔graph, blocker/resume là task Day06, không chen vào gold Day05.",
+      "actual": "Mô tả cũ \"LangGraph runtime chưa nối\" đã lỗi thời sau merge develop. Code hiện có src/maintenance/agent/graph.py dùng StateGraph, engine có nhánh tích hợp và config mo_agent_enabled=True. Chưa đo lại runtime đầy đủ trong lượt chốt backlog này; DEFER là lịch nghiệm thu riêng, không phải chứng minh tính năng vắng mặt.",
+      "done_when": {
+        "command": "PYTHONUTF8=1 .venv/Scripts/python.exe -c \"print('langgraph' in open('brain4agent/roadmap.md',encoding='utf-8').read().lower())\"",
+        "expected_result": "In True; DEFER sang Day06. Lệnh cũ chỉ kiểm tối thiểu/hồ sơ lịch sử; việc nghiệm thu dựa vào retest cùng build và bằng chứng đầy đủ, không suy hoàn thành từ marker roadmap hoặc cấu hình."
+      },
+      "status": "OPEN",
+      "reviewed_by": "Cao Văn Trường (báo nhóm Như Ý/Châm Anh đã đồng ý nhận phần việc)",
+      "reviewed_at": "2026-10-08T10:10:44.796289+00:00"
+    },
+    {
+      "item_id": "D5-B-014",
+      "title": "P1: luồng trùng, tách ticket hai việc, tín hiệu P1",
+      "kind": "FEATURE",
+      "severity": "NA",
+      "priority": "P2",
+      "decision": "DEFER",
+      "owner": "Như Ý",
+      "owner_acceptance": "CONFIRMED",
+      "dependencies": [],
+      "source_issue_refs": [
+        "roadmap#p1"
+      ],
+      "evidence_refs": [
+        "brain4agent/roadmap.md",
+        "docs/CR-BPTN-03.md",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-scope-decisions.json",
+        "planning/09_2026-10-07_day05-labels/deliverables/backlog-handoff-summary.md",
+        "planning/09_2026-10-07_day05-labels/deliverables/owner-acknowledgement.json"
+      ],
+      "expected": "P1 theo CR §8; không thuộc gate P0 của Day05.",
+      "actual": "Mô tả cũ active_phases=[P0] đã lỗi thời; đọc code hiện tại ngày 08/10 thấy active_phases=['P0', 'P1']. Chưa nghiệm thu đầy đủ merge/split/P1 trên runtime trong lượt này. DEFER là phạm vi kiểm chứng riêng, không phải tắt hoặc loại bỏ tính năng đã có.",
+      "done_when": {
+        "command": "python -c \"import yaml;d=yaml.safe_load(open('seed/maintenance_v1/lexicon.yaml',encoding='utf-8'));print(d['safety']['active_phases'])\"",
+        "expected_result": "Ghi đúng cấu hình hiện có ['P0','P1']; đây chỉ là kiểm kê cấu hình, không chứng nhận nghiệm thu P1. Nghiệm thu cần test chức năng và report của kế hoạch P1 riêng."
+      },
+      "status": "OPEN",
+      "reviewed_by": "Cao Văn Trường (báo nhóm Như Ý/Châm Anh đã đồng ý nhận phần việc)",
+      "reviewed_at": "2026-10-08T10:10:44.796289+00:00"
+    },
+    {
+      "item_id": "D5-B-015",
+      "title": "Review 15 câu AUTHORED cho đánh giá sơ bộ Day05",
+      "kind": "DATA",
+      "severity": "NA",
+      "priority": "P0",
+      "decision": "NOW",
+      "owner": "Trường (soạn câu/điều phối) / Như Ý (review safety) / Châm Anh (review classification)",
+      "owner_acceptance": "CONFIRMED",
+      "dependencies": [
+        "Nhận phiếu review safety của Như Ý và classification của Châm Anh",
+        "Giải quyết disputes, đối chiếu family trước khi xuất gold và chạy baseline sơ bộ"
+      ],
+      "source_issue_refs": [
+        "Day05-WP03"
+      ],
+      "evidence_refs": [
+        "planning/09_2026-10-07_day05-labels/deliverables/review/REVIEW-GUIDE.md",
+        "planning/09_2026-10-07_day05-labels/specs/SPEC-P02-LABELS.md",
+        "planning/09_2026-10-07_day05-labels/deliverables/preliminary15-scope.json",
+        "planning/09_2026-10-07_day05-labels/deliverables/human-authored-intake.json",
+        "planning/09_2026-10-07_day05-labels/deliverables/reviewer-assignment-human15.json"
+      ],
+      "expected": "PRELIMINARY_15 đã được Trường duyệt: 15 câu AUTHORED, review safety bởi Như Ý và classification bởi Châm Anh; chỉ xuất classification gold cho safety NONE; không còn quota 30 held-out hoặc 80/40 gold của bộ rộng.",
+      "actual": "Đã nhận 15 câu Trường soạn, scope và reviewer được xác nhận; phiếu safety/classification hoàn tất 0/15 mỗi loại. Chưa export gold hoặc chạy baseline sơ bộ.",
+      "done_when": {
+        "command": "python -c \"import json;from pathlib import Path;p=Path('planning/09_2026-10-07_day05-labels/deliverables/review-human15');s=json.loads((p/'safety-review.json').read_text(encoding='utf-8'))['records'];c=json.loads((p/'classification-review.json').read_text(encoding='utf-8'))['records'];assert len(s)==len(c)==15;assert all(x['label'] in ('NONE','UNCLEAR','EMERGENCY') and x['rationale'].strip() and x['spec_refs'] and x['reviewed_by']=='Như Ý' and x['reviewed_at'] and not x['dispute_note'].strip() for x in s);ids={x['review_id'] for x in s if x['label']=='NONE'};assert all(x['label'] in ('VE_SINH','KY_THUAT','UNKNOWN') and x['rationale'].strip() and x['spec_refs'] and x['reviewed_by']=='Châm Anh' and x['reviewed_at'] and not x['dispute_note'].strip() for x in c if x['review_id'] in ids);print('REVIEW_COMPLETENESS_OK')\"",
+        "expected_result": "In REVIEW_COMPLETENESS_OK, exit 0 sau khi nhận review thật. Đây chỉ là kiểm đủ trường review, chưa đủ nghiệm thu gold: cần kiểm mapping/quote/pair/independence, export gold có hash và baseline theo SPEC-P03 trước khi đóng Day05. Hiện tại lệnh phải fail vì phiếu còn trống."
+      },
+      "status": "IN_PROGRESS",
+      "reviewed_by": "Cao Văn Trường (xác nhận scope và phân công trong hội thoại)",
+      "reviewed_at": "2026-10-08T09:05:55.932842+00:00"
+    }
+  ]
+}

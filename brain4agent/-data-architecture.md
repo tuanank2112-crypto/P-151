@@ -40,3 +40,6 @@ Chi tiết hợp đồng: `planning/01_2026-10-02_supabase-persistence/specs/01-
 - 10 bảng (Drizzle `portal/src/db/schema.ts`, migration SQL `portal/drizzle/`): `users`, `sessions` (SHA-256 token), `staff`, `tickets` (stage 1..6 + cờ `need_info/paused/cancelled`, `merged_into/merged_from`, `extras[]`, snapshot Agent `ai_*`), `photos` (bytea, đã kiểm magic bytes), `history`, `ratings` (1/ticket), `keywords` (dept, word), `materials`, `notices`.
 - Flow ghi: Server Action → `act()` đọc lại session → `workflow.ts` (transaction: kiểm quyền → `FOR UPDATE` → phạm vi/stage → `UPDATE … WHERE stage=<cũ>` → 1 dòng `history`) → `refresh()`. Flow đọc: page (trong `<Suspense>`) → `requireUser(role)` → `queries.ts` trả DTO đã định dạng theo vai.
 - Seed `npm run db:seed` chỉ khi `users` rỗng; `--reset` TRUNCATE (cấm ở production). Thời gian seed tương đối theo lúc chạy.
+
+
+Develop04491ad imports P1 case fields, multi-ticket coordination, agent_decision and execution_snapshots; doc-shape marker revision0002_p1_doc_shape is required by the new Postgres repository. Migration was NOT run on shared Supabase in this integration. Portal DB remains separate. Coordinate old-backend stop and owner migration before starting new code on shared DB; see reasoning-agent OPERATIONS §5.

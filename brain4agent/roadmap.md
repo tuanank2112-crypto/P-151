@@ -122,3 +122,75 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [ ] Day05: approve post-MVP backlog and separate classification/safety labels with held-out evidence.
 - [ ] Day06: review every blocker/resume route and prepare engine-versus-graph cases.
 - Integration is not personal task acceptance; graph runtime remains pending.
+
+
+## GPT-6 Luna — 2026-10-07
+- [x] Local configuration and Luna compatibility; 30 targeted tests pass.
+- [x] Verify SUCCESS on a real synthetic classification request (SIM-TKT-0042, 2026-10-07; supersedes initial placeholder-key failure).
+
+## Shared Supabase demo — 2026-10-07
+- Shared Supabase demo SIM-TKT-0042 CLOSED; 2 simulated PNG photos byte/hash verified through API and Storage after restart; cases53->54, preexisting53 unchanged, stock unchanged; GPT-6 Luna SUCCESS / rules+llm:gpt-6-luna (2000.82ms); missing execution photo blocked completion; pytest2973 passed,29 pg deselected, ruff clean. Server127.0.0.1:8001 (jobs/seed/reset false).
+- Evidence: planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json; run_demo.py; pytest.txt; ruff-check.txt. Real AI response preserved in recovery_ai_logs; in-memory API AI Logs are empty after restart. No rating submitted. API flow exercised; no manual browser walkthrough/public deployment/physical maintenance acceptance. Day05/06 remain open.
+- [x] Shared DB + Storage demo and persistence of one ticket after server restart.
+- [x] Real GPT-6 Luna classification verified (supersedes earlier replace-placeholder pending item).
+- [ ] Public deployment, complete 14-case acceptance matrix, Day05/Day06 sign-off.
+
+## Day04 completion review — 2026-10-07T04:21:45.545224+00:00
+- Day04 review: narrowed personal demo scope executed with expected/actual and limitations recorded; formal acceptance package not closed. Preserve old8PASS/1BLOCKED/6NOT_RUN on mock/memory; separate Supabase/Luna one-case evidence. No combined9/15 claim. Missing day04-2 manifest/results/issues, same-build smoke/UI wording, old M01/S04/G03 evidence gaps, online/leader sign-off. User-approved reduced scope remains authoritative.
+- Current report: planning/07_2026-10-04_online-acceptance/deliverables/day04-summary.md. Two broken links corrected. This read-only evidence review did not run new demos or write shared DB/Storage.
+
+## Day04 scope normalization — 2026-10-07T04:32:59.390139+00:00
+- User removed six unused cases from personal acceptance scope; active9=H01,H02,I01,A01,M01,U01,S04,G03,R01. day04-3 manifest/results/issues normalized from valid references, separated legacy8PASS/1BLOCKED and Supabase1PASS/1FAIL (create422 recovered but pending clean201 retest). No cross-build9/9 claim. All references/counts/source time provenance checked;3 corruption controls rejected. No app execution/shared writes/commit/push.
+- Records: planning/07_2026-10-04_online-acceptance/deliverables/manifest.json, results.json, issues.json, day04-summary.md; validation: evidence/normalization-20261007/validation.txt in that plan.
+
+## Child trapped safety false negative — 2026-10-07T04:38:20.572561+00:00
+- CRITICAL D4-11 OPEN: exact text có trẻ con bị kẹt ở sảnh chung cư tòa S5 -> local memory/mock NONE/OUT_OF_SCOPE/BPTN; S1 also fails, adding mắc gives EMERGENCY_PENDING_BQL/BQL. Root cause missing person+trapped wording in S-09 lexicon, primary owner Như Ý (engine/safety), Châm Anh integration/API retest. Screenshot TK-0046 live backend not queried/modified; no shared writes/LLM calls. Do not mark fixed; no source patch made.
+- Evidence: planning/07_2026-10-04_online-acceptance/evidence/normalization-20261007/safety-child-trapped.json; issue D4-11 in deliverables/issues.json. Safety runs before location/category and must catch this even when S5 is outside supported buildings.
+
+## Day05 — kế hoạch đề xuất 2026-10-07T05:07:58.261170+00:00
+
+- [x] Lập [SPEC package](../planning/09_2026-10-07_day05-labels/plan.md):7 docs,10 source refs,3 negative controls rejected, exit0.
+- [ ] Duyệt contract/reviewer/owner; chốt backlog từ evidence, ưu tiên D4-11 CRITICAL/P0.
+- [ ] Chuẩn bị80 câu safety (20 EMERGENCY/20 UNCLEAR/40 NONE);40 câu NONE có thêm classification (15 vệ sinh/15 kỹ thuật/10 UNKNOWN). Chỉ nhãn được người độc lập duyệt mới là gold.
+- [ ] Freeze family split develop50/held-out30, validator/baseline riêng; báo lỗi thật, không đóng product safety gate còn mở.
+- Idea Vault: vision/LangGraph/P1 và Day06 blocker-resume tách ngoài Day05. Chưa tạo dữ liệu hoặc baseline mới.
+
+## Day05 — thực thi local 2026-10-07 (offline, chưa đóng)
+
+- [x] Backlog PROPOSED: 15 mục / 11 issue Day04 phủ hết, validator exit 0; D4-11 đo lại trên HEAD vẫn lỗi (S5/S1 "bị kẹt" ⇒ NONE) ⇒ giữ OPEN/CRITICAL/P0 (Như Ý). Chờ leader/owner xác nhận (owner_acceptance=PROPOSED).
+- [x] 50 câu DEVELOP + 50 safety / 20 classification proposal (agent soạn, chưa phải gold), 30 family, nhóm F-D4-11 = 8; blind review sheet ID mờ; công cụ validator/baseline/review-pack: pytest 270 pass/0 skip, ruff exit 0 (sau thẩm định cô lập + H05).
+- [ ] Gold ACCEPTED 0/80 safety, 0/40 classification (cần reviewer người độc lập); held-out 0/30 (người soạn AUTHORED); split nháp chưa freeze; baseline CHƯA chạy (runner `NO_VALID_GOLD` exit 2).
+- Idea Vault: soạn ≥1 ô held-out bằng người khác Trường; bổ sung thẩm định cô lập vòng 2 trước khi freeze; cân nhắc `review_id` thay khoá `case_id` trong sheet.
+- Evidence: planning/09_2026-10-07_day05-labels/ (deliverables/day05-summary.md, evidence/run00..05, reports/R01–R05, handoffs/H01–H05). Bước 0 `init_brain --check` exit 1 MODULE_NOT_FOUND (thiếu hub), luật managed giữ nguyên.
+
+## Day05 recheck and daily report — 2026-10-07T06:16:13.491588+00:00
+
+- [x] Recheck local tools/data and write [daily report](../docs/submission/daily/2026-10-05.md):270 pass/0 fail/0 skip, lint/format exit0, backlog and structure exit0,95 hashes match.
+- [ ] Day05 completion:15 owners PROPOSED;50 DEVELOP/70 proposals;0 accepted gold;0 held-out. Full validator exit1; runners exit2 and no baseline output. D4-11 still reproduces on S1/S5. Human review/held-out/ownership confirmations still required.
+
+
+### Day05 main report — 2026-10-07T06:21:49.340237+00:00
+- [x] Added docs/submission/day05-report.md and README/daily links; prior measurements retained, all new report links checked.
+- [ ] Full Day05 closure still requires human review/owner confirmation, held-out/gold/freeze and baseline; no requirement waived.
+
+
+## Latest develop merge — 2026-10-07T13:30:26.152115+00:00
+- [x] feature/truong integrates develop04491ad;3341 app tests +270 Day05 tools pass,ruff clean; local work and90 package hashes preserved.
+- [ ] Coordinate Supabase0002 migration/new backend restart; test real Luna reasoning client and portal separately. Day05 gold/held-out/reviewer gates unchanged.
+
+
+- [x] Start portal3000 for direct testing (07/10): local PostgreSQL schema/seed, login browser200,17 unit tests pass.
+- [ ] Portal connection to Python/Luna/Supabase is not implemented; do not treat portal test as Day05 engine evaluation.
+
+- 2026-10-07T16:47:40.721485+00:00: Day05 remaining-work packet prepared: D4-11 10 proposal cases, 30 human authoring slots, 15 backlog approval rows; tools270 PASS. Human gold/authorship and policy approvals still pending; no Day05 closure.
+
+- 2026-10-08T08:55:52.078704+00:00: Outside-pilot safety policy approved by Trường: EMERGENCY→BQL urgent review/forwarding, UNCLEAR→BPTN safety review, NONE→BPTN scope review. Runtime/API implementation pending; D4-11 OPEN.
+
+
+## Scope Day05 đã duyệt: PRELIMINARY_15 (2026-10-08T08:59:38.730526+00:00)
+
+Trường xác nhận đánh giá sơ bộ bằng 15 câu do Trường tự soạn thay yêu cầu 30 câu held-out. Các quota 80 safety/40 classification và minimum32 family của hồ sơ rộng không còn chặn nghiệm thu Day05 sơ bộ. Vẫn cần review safety bởi Như Ý, classification bởi Châm Anh, kiểm tra nhóm biến thể/nguồn, baseline thật, xác nhận backlog và report/manifest. Không suy nghiệm thu safety đầy đủ, API/online hoặc chất lượng tổng quát. Hiện: 15 AUTHORED, review hoàn tất 0, baseline chưa chạy. Contract đang hiệu lực: planning/09_2026-10-07_day05-labels/specs/SPEC-P03-PRELIMINARY15.md. Quota cũ và bằng chứng cũ được giữ làm lịch sử.
+
+- 2026-10-08T09:42:49.903373+00:00: Trường duyệt 4 mục cuối 009/010 NEXT, 013/014 DEFER nghiệm thu riêng. Hướng xử lý backlog đủ15/15; không có mục nào mới CLOSED. Sửa mô tả lỗi thời 013 (đã có module StateGraph/engine integration) và 014 (lexicon P0/P1); chưa coi code tồn tại là runtime PASS. Tổng hợp backlog-handoff-summary.md để người dùng bàn giao, chưa gửi tin/commit/push.
+
+- 2026-10-08T10:10:44.796289+00:00: Trường báo Như Ý/Châm Anh đã duyệt và nhận phần việc, yêu cầu push nhánh và PR vào develop. Ghi owner-acknowledgement.json, 12/15 owner CONFIRMED (3 mục còn có Trí/leader không suy nhận việc); review nhãn và runtime retest vẫn PENDING. Chuẩn bị commit gói Day05 cùng bằng chứng Day04 liên quan, không thêm thay đổi runtime chưa thuộc scope.

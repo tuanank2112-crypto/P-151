@@ -1,0 +1,123 @@
+{
+  "recorded_at": "2026-10-08T08:38:17.800096+00:00",
+  "develop_compared": 50,
+  "prior_intake_compared": 10,
+  "records": [
+    {
+      "intake_id": "HA-001-11",
+      "exact_develop_ids": [],
+      "exact_prior_intake_ids": [],
+      "nearest_develop": [
+        {
+          "case_id": "D5-C-0033",
+          "family_id": "F-17",
+          "similarity": 0.6667
+        },
+        {
+          "case_id": "D5-C-0044",
+          "family_id": "F-25",
+          "similarity": 0.5806
+        },
+        {
+          "case_id": "D5-C-0042",
+          "family_id": "F-23",
+          "similarity": 0.5745
+        }
+      ],
+      "semantic_independence": "PENDING_REVIEW"
+    },
+    {
+      "intake_id": "HA-001-12",
+      "exact_develop_ids": [],
+      "exact_prior_intake_ids": [],
+      "nearest_develop": [
+        {
+          "case_id": "D5-C-0033",
+          "family_id": "F-17",
+          "similarity": 0.6325
+        },
+        {
+          "case_id": "D5-C-0042",
+          "family_id": "F-23",
+          "similarity": 0.5565
+        },
+        {
+          "case_id": "D5-C-0014",
+          "family_id": "F-04",
+          "similarity": 0.537
+        }
+      ],
+      "semantic_independence": "PENDING_REVIEW"
+    },
+    {
+      "intake_id": "HA-001-13",
+      "exact_develop_ids": [],
+      "exact_prior_intake_ids": [],
+      "nearest_develop": [
+        {
+          "case_id": "D5-C-0015",
+          "family_id": "F-04",
+          "similarity": 0.6133
+        },
+        {
+          "case_id": "D5-C-0044",
+          "family_id": "F-25",
+          "similarity": 0.5714
+        },
+        {
+          "case_id": "D5-C-0045",
+          "family_id": "F-26",
+          "similarity": 0.5647
+        }
+      ],
+      "semantic_independence": "PENDING_REVIEW"
+    },
+    {
+      "intake_id": "HA-001-14",
+      "exact_develop_ids": [],
+      "exact_prior_intake_ids": [],
+      "nearest_develop": [
+        {
+          "case_id": "D5-C-0045",
+          "family_id": "F-26",
+          "similarity": 0.6824
+        },
+        {
+          "case_id": "D5-C-0049",
+          "family_id": "F-29",
+          "similarity": 0.625
+        },
+        {
+          "case_id": "D5-C-0046",
+          "family_id": "F-26",
+          "similarity": 0.6237
+        }
+      ],
+      "semantic_independence": "PENDING_REVIEW"
+    },
+    {
+      "intake_id": "HA-001-15",
+      "exact_develop_ids": [],
+      "exact_prior_intake_ids": [],
+      "nearest_develop": [
+        {
+          "case_id": "D5-C-0045",
+          "family_id": "F-26",
+          "similarity": 0.6667
+        },
+        {
+          "case_id": "D5-C-0046",
+          "family_id": "F-26",
+          "similarity": 0.6105
+        },
+        {
+          "case_id": "D5-C-0037",
+          "family_id": "F-19",
+          "similarity": 0.6047
+        }
+      ],
+      "semantic_independence": "PENDING_REVIEW"
+    }
+  ],
+  "warning": "Exact-match screening does not prove family independence. No runtime scoring performed."
+}

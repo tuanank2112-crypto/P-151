@@ -149,3 +149,33 @@ project-root/
 
 
 - Latest local integration: feature/truong + develop52ae81c, see planning/06_2026-10-04_readme-refresh/plan.md and evidence/integration-20261007/. No additional runtime module or entry point introduced by the integration itself.
+
+- GPT-6 Luna local configuration and verification: docs/maintenance.md §Local GPT-6 Luna configuration; src/maintenance/proposer.py openai_client. Real SUCCESS verified on shared-Supabase demo SIM-TKT-0042; see current runtime verification below.
+
+## Shared Supabase runtime verification — 2026-10-07
+- Shared Supabase demo SIM-TKT-0042 CLOSED; 2 simulated PNG photos byte/hash verified through API and Storage after restart; cases53->54, preexisting53 unchanged, stock unchanged; GPT-6 Luna SUCCESS / rules+llm:gpt-6-luna (2000.82ms); missing execution photo blocked completion; pytest2973 passed,29 pg deselected, ruff clean. Server127.0.0.1:8001 (jobs/seed/reset false).
+- Evidence: planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json; run_demo.py; pytest.txt; ruff-check.txt. Real AI response preserved in recovery_ai_logs; in-memory API AI Logs are empty after restart. No rating submitted. API flow exercised; no manual browser walkthrough/public deployment/physical maintenance acceptance. Day05/06 remain open.
+
+## Day04 normalized evidence router — 2026-10-07T04:32:59.390139+00:00
+- User removed six unused cases from personal acceptance scope; active9=H01,H02,I01,A01,M01,U01,S04,G03,R01. day04-3 manifest/results/issues normalized from valid references, separated legacy8PASS/1BLOCKED and Supabase1PASS/1FAIL (create422 recovered but pending clean201 retest). No cross-build9/9 claim. All references/counts/source time provenance checked;3 corruption controls rejected. No app execution/shared writes/commit/push.
+- Records: planning/07_2026-10-04_online-acceptance/deliverables/manifest.json, results.json, issues.json, day04-summary.md; validation: evidence/normalization-20261007/validation.txt in that plan.
+
+## Day05 labeling plan — 2026-10-07
+
+Proposed active package: [Day05 backlog and labels](../planning/09_2026-10-07_day05-labels/plan.md). Router: specs/00-ARCHITECTURE.md → 01-CONTRACTS.md → SPEC-P01-BACKLOG.md → SPEC-P02-LABELS.md → OPERATIONS.md → TESTING-ACCEPTANCE.md. Executed 2026-10-07 (offline): deliverables/{backlog,cases,label-proposals,*-gold(empty),split-manifest(draft)}.json, tools/{validate_day05,run_day05_baseline,build_review_pack}.py + tests, review/; summary deliverables/day05-summary.md; handoffs H01–H05 ↔ reports R01–R05. Existing engine/seed paths unchanged.
+
+## Day05 submission review — 2026-10-07T06:16:13.491588+00:00
+
+Report: [daily/2026-10-05.md](../docs/submission/daily/2026-10-05.md). Fresh command and artifact evidence: planning/09_2026-10-07_day05-labels/evidence/submission-review-20261007/. 270 tools tests pass; 95 manifest hashes match. Dataset gates remain OPEN; this report is not Day05 sign-off.
+
+- Day05 main submission report: [day05-report.md](../docs/submission/day05-report.md), linked from submission README and daily05; local preparation verified, full acceptance pending.
+
+
+Latest feature/truong merge: develop04491ad → 79f9444; [integration report](../planning/06_2026-10-04_readme-refresh/evidence/integration-latest-20261007/integration-report.md). Imported src/maintenance/agent/ runtime and portal/; portal docs/DB are independent. Shared revision0002 rollout not performed.
+
+
+Portal direct test: http://localhost:3000/login PID21076; [module docs](../docs/portal.md). Local PostgreSQL, keyword Agent, not the Python/Luna server8002. Runtime evidence plan06 readme-refresh/evidence/runtime-portal-20261007/.
+
+- Day05 completion router: `planning/09_2026-10-07_day05-labels/deliverables/completion-guide.md`; matrix and human-input forms live beside it.
+
+- Active Day05 scope: `planning/09_2026-10-07_day05-labels/specs/SPEC-P03-PRELIMINARY15.md`; user-approved preliminary15 supersedes old30-case closure quota.
