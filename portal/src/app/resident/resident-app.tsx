@@ -60,14 +60,6 @@ const EXAMPLES: [string, string][] = [
   ["Thang máy kẹt", "Thang máy dừng giữa tầng, cửa không mở"],
 ];
 
-const FILTERS: [Filter, string][] = [
-  ["all", "Tất cả"],
-  ["run", "Đang xử lý"],
-  ["accept", "Chờ nghiệm thu"],
-  ["rate", "Chờ đánh giá"],
-  ["done", "Đã xong"],
-];
-
 const OVERVIEW: [Exclude<Filter, "all">, string, string, string][] = [
   ["run", "Đang xử lý", "#2563EB", "Tiếp nhận đến đang xử lý"],
   ["accept", "Chờ nghiệm thu", "#6D5BD0", "Phòng ban báo đã xong"],

@@ -25,6 +25,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [ ] Nếu deploy sau reverse proxy (Render): lấy IP client từ header tin cậy, nếu không khóa đăng nhập sẽ dồn về IP của proxy.
 
 ## 💡 Kho Ý Tưởng & Backlog (Idea Vault)
+- **Portal — lịch sử nhập/xuất kho (2026-10-08):** bảng `stock_movements` lưu ghi chú "Nguồn cấp" khi nhập kho (hiện bị bỏ) và trừ tồn khi kho duyệt cấp vật tư cho ticket. Cần chốt có làm trước demo không.
 - [ ] **(2026-10-07, sau plan 07) `src/web/`:** đổi Tailwind Play CDN sang Tailwind CLI (bỏ biên dịch class trên trình duyệt); xoá hẳn `js/dark_mode.js` và `js/components/*.js` (không còn được nạp) sau khi Trí xác nhận; tile menu kiểu portal nếu app có tab (vd AI Logs).
 - [ ] **P1 tiếp theo (người dùng chốt 2026-10-05, sau plan 05):** luồng trùng đầy đủ CR §8 (đếm trùng + danh sách ticket con, nối bổ sung/ảnh sang ticket gốc, cư dân ticket bị gộp được đánh giá, hoàn tác gộp T09 + `duplicate_rejected_of`, ticket gốc bị hủy ⇒ ticket con chạy lại, BQL gộp khẩn cấp T08, PRI-U1 nâng ưu tiên khi ≥3 trùng); tách ticket khi một phản ánh có hai việc (Agent đề xuất, BPTN xác nhận — chờ người dùng chọn tự tách hay xác nhận); tín hiệu an toàn P1 (gas, kim tiêm, nước vào tủ điện, đèn nóng); đếm trả sai phòng ban báo BQL; giữ/liên kết ticket thường khi cùng chỗ có khẩn cấp; ưu tiên "suýt trượt"/"tràn ra cả hành lang". Route/UI cho các hành động mới giao Châm Anh/Trí.
 *Nơi lưu trữ các ý tưởng hay, kiến trúc mở rộng chưa ưu tiên làm ngay nhưng cần giữ lại để tham khảo.*
@@ -42,6 +43,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [ ] **(2026-10-04) Từ plan 04, cần nhóm quyết:** (1) ngoài phạm vi trả 404 thay vì 403 + audit (chặn dò ticket + phình audit do gọi lặp; đổi 8 test đã duyệt); (2) ghi chú kết quả có bắt buộc ở bước 10 (CR §9.4(2)) không; (3) cư dân gửi ảnh ngoài NEED_INFO; (4) đánh giá ticket MERGED khi ticket gốc CLOSED; (5) lỗ SPEC-P01 A2: marker "giờ hết rồi" hạ cả mệnh đề có người ngất — cần architect; (6) `_proven_lamp` trong `safety.py` coi mọi "đèn" có dấu trong mệnh đề là bằng chứng B-01 ("đèn … cháy đen" mới vá bằng từ vựng); (7) cụm cũ `ket nguoi` bắt "kẹt, người dùng phản ánh…"; (8) tồn kho mô phỏng không trừ khi giao việc; (9) `/mo/catalog` mở cho cư dân, `eta` không timezone trả 409; (10) từ vựng còn (sau vòng 3): "cháy" đứng riêng chỉ Bậc 2 (B-03, cần SPEC); "không có lửa nhưng khói rất nhiều" chỉ Bậc 2; ngữ cảnh khói thuốc ở câu khác không được loại; "kêu cứu" nghĩa bóng lên Bậc 1 (chủ ý).
 
 ## Đã hoàn thành (Done)
+- [x] **v1.3.1 + v1.4.0 (2026-10-08, Như Ý — nhận portal từ Trí):** migration kho bị thiếu, seed kho, modal hết bịa 95%, gate nghiệm thu BQL lấy từ dữ liệu thật. Nhánh `feature/nhuy-portal-fe`. Còn chờ: áp migration `0002` lên Supabase (chờ duyệt quyền).
 - [x] **README refresh (2026-10-04, Trường, docs-only, không bump version):** `planning/06_2026-10-04_readme-refresh/`. Đường chạy chính Docker + `MO_STORE=memory`, bảng biến môi trường đầy đủ, câu mẫu + curl/PowerShell đã chạy thật, API theo code đang chạy. Docker KHÔNG kiểm được trên máy (không có Docker Desktop): đã kiểm bằng uvicorn + pytest 1641 pass.
 
 

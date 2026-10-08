@@ -126,6 +126,7 @@ export type DeptData = {
 };
 
 export type MgmtTicket = TicketDetail & {
+  materials: { item: string; received: boolean }[];
   late: boolean;
   ageH: number;
   stars: number | null;

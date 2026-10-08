@@ -2,6 +2,16 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.4.0] - 2026-10-08: Gate nghiệm thu BQL lấy từ dữ liệu thật
+### Changed
+- Tab "Việc của BQL": bỏ 6 dấu ✓ viết cứng. 4 gate hệ thống tự kiểm (`portal/src/lib/inspection.ts`: phòng ban, ảnh sau xử lý, vật tư đã nhận, SLA theo giờ báo xong) + 2 mục BQL tự tích tại hiện trường; nút "Nghiệm thu đạt" khoá tới khi tích đủ. `MgmtTicket` thêm `materials`.
+- Dọn 4 cảnh báo lint (import/biến thừa). `docs/portal.md` cập nhật theo đợt kho vật tư của Trí.
+### Decisions
+- Gate tự kiểm ✕ chỉ cảnh báo, không chặn (BQL vẫn quyết; seed có ticket chờ nghiệm thu chưa có ảnh). Action server `approveInspection` không đổi contract.
+- Giữ cảnh báo lint `note` ở `receiveStock`: dấu hiệu ghi chú nhập kho bị bỏ qua (chưa có bảng lịch sử) — Idea Vault.
+### Evidence
+- unit 23/23 (+6), test:db 18/18, typecheck 0; đối chứng ĐỎ: gate ảnh luôn đạt ⇒ 1 test fail. Playwright: nút khoá trước khi tích, mở sau khi tích; PA-0005 hiện "Đạt 5/6" (thiếu ảnh).
+
 ## [v1.3.1] - 2026-10-08: Sửa portal sau đợt merge `feature/tri` (kho vật tư)
 ### Fixed
 - `portal/drizzle/0002_warehouse.sql`: migration bị thiếu cho role `warehouse` + bảng `warehouse_stock` (schema có, migration không) ⇒ DB dựng mới vỡ seed ở user `kho` (`invalid input value for enum role`).

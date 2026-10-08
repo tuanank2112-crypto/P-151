@@ -270,6 +270,13 @@ export async function managementData(user: SessionUser, db: Db = appDb): Promise
   const photoRows = ids.length
     ? await db.select().from(photos).where(inArray(photos.ticketId, ids)).orderBy(photos.id)
     : [];
+  const matRows = ids.length
+    ? await db
+        .select({ ticketId: materials.ticketId, item: materials.item, received: materials.received })
+        .from(materials)
+        .where(inArray(materials.ticketId, ids))
+        .orderBy(materials.id)
+    : [];
 
   return {
     user: { name: user.name, avatar: ROLE_AVATAR.management },
@@ -307,6 +314,7 @@ export async function managementData(user: SessionUser, db: Db = appDb): Promise
         afterPhotos,
         disputed,
         disputeReason,
+        materials: matRows.filter((m) => m.ticketId === t.id).map((m) => ({ item: m.item, received: m.received })),
         late: isLate(t, now),
         ageH: ageHours(t.createdAt, now),
         stars: stars ?? null,

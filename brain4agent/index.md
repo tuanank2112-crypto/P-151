@@ -65,8 +65,8 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | `seed/maintenance_cr03/` | Fixture đích CR-03: nhãn safety + expected outcome (Trường) |
 | `portal/src/server/workflow.ts` | [Next.js] MỌI ghi ticket của Cổng phản ánh (FOR UPDATE + stage có điều kiện + history) |
 | `portal/src/server/queries.ts`, `session.ts` | [Next.js] Đọc theo vai; session cookie ↔ bảng `sessions` |
-| `portal/src/app/{login,resident,reception,management,cleaning,technical}/` | [Next.js] 6 màn ↔ 6 file `.dc.html`; Server Actions ở `app/actions/` |
-| `portal/src/db/schema.ts`, `portal/drizzle/` | [Next.js] 10 bảng + migration SQL; seed `src/db/seed.ts` |
+| `portal/src/app/{login,resident,reception,management,cleaning,technical,warehouse}/` | [Next.js] 6 màn ↔ 6 file `.dc.html` + màn kho; Server Actions ở `app/actions/`; gate nghiệm thu `src/lib/inspection.ts` |
+| `portal/src/db/schema.ts`, `portal/drizzle/` | [Next.js] 11 bảng (có `warehouse_stock`) + migration SQL; seed `src/db/seed.ts` |
 
 ---
 

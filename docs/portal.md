@@ -16,7 +16,7 @@ cd portal && npm ci && cp .env.example .env.local
 npm run db:migrate && npm run db:seed         # seed chỉ chạy khi DB rỗng; --reset để làm lại
 npm run dev                                   # http://localhost:3000
 ```
-Tài khoản mẫu (mật khẩu `123456`): `cudan`, `tiepnhan`, `quanly`, `vesinh`, `kythuat`.
+Tài khoản mẫu (mật khẩu `123456`): `cudan`, `tiepnhan`, `quanly`, `vesinh`, `kythuat`, `kho` (thủ kho).
 
 ## 2. Lệnh
 | Lệnh | Việc |
@@ -36,11 +36,11 @@ portal/
 ├── scripts/                 # migrate.mts, seed.mts, e2e-flow.mts, screens.mts
 ├── tests/unit, tests/db     # vitest (2 project)
 └── src/
-    ├── db/                  # schema.ts (10 bảng), client.ts, index.ts (pool dùng chung), seed.ts
-    ├── lib/                 # thuần, dùng cả client: agent.ts, constants.ts, sla.ts, format.ts, permissions.ts, photos.ts, dto.ts, result.ts
+    ├── db/                  # schema.ts (11 bảng, có `warehouse_stock`), client.ts, index.ts (pool dùng chung), seed.ts
+    ├── lib/                 # thuần, dùng cả client: agent.ts, duplicates.ts, inspection.ts (gate nghiệm thu), constants.ts (gồm `STOCK_CATALOG`), sla.ts, format.ts, permissions.ts, photos.ts, dto.ts, result.ts
     ├── server/              # chỉ server: workflow.ts (MỌI ghi), queries.ts (đọc theo vai), session.ts, password.ts, act.ts
-    ├── components/          # shell (header/menu/skeleton), board, icons, photo-strip, toast, use-action
-    └── app/                 # login, resident, reception, management, cleaning, technical, api/photos/[id], actions/*
+    ├── components/          # shell (header/menu/skeleton), board, icons, photo-strip, ticket-detail-modal, toast, use-action
+    └── app/                 # login, resident, reception, management, cleaning, technical, warehouse, api/photos/[id], actions/*
 ```
 
 ## 4. Màn hình ↔ thiết kế
@@ -52,10 +52,20 @@ portal/
 | `/management` | management | `Management.dc.html` (bỏ tab Phân quyền) |
 | `/cleaning` | cleaning | `Cleaning.dc.html` |
 | `/technical` | technical | `Technical.dc.html` |
+| `/warehouse` | warehouse | — (không có thiết kế; theo style chung) |
 CSS của thiết kế được chép nguyên vào `src/app/globals.css` (class dùng chung + khối riêng `.scr-<màn>`). Lệch có chủ đích D1–D9: `planning/06_…/specs/00-ARCHITECTURE.md` §5.
 
 ## 5. Mô hình ticket
 `stage` 1 Tiếp nhận → 2 Thẩm định (đã chuyển phòng ban) → 3 Phân công → 4 Đang xử lý → 5 Nghiệm thu (phòng ban báo xong) → 6 Hoàn tất; cờ `need_info`, `paused`, `cancelled` (+`merged_into`).
+
+### Nghiệm thu của BQL (`src/lib/inspection.ts`, tab "Việc của BQL")
+- 4 gate **hệ thống tự kiểm** từ dữ liệu (`autoGates`): đúng phòng ban (không bị báo sai phòng), có ảnh sau xử lý (`after_*`), vật tư đã nhận đủ, xong trong SLA (`doneHours ≤ 4h/48h`). Gate ✕ chỉ cảnh báo, KHÔNG khoá.
+- 2 gate **BQL tự tích tại hiện trường** (`SITE_CHECKS`): nút "Nghiệm thu đạt" khoá tới khi tích đủ. Trạng thái tích chỉ ở client, không lưu DB.
+- CẤM quay lại tích ✓ cứng: `tests/unit/inspection.test.ts` đỏ khi gate ảnh luôn đạt.
+
+### Kho vật tư (`/warehouse`, vai `warehouse`)
+- Bảng `warehouse_stock` (migration `0002`). Seed nạp từ `STOCK_CATALOG`; form "Yêu cầu vật tư" của Kỹ thuật chọn từ cùng danh mục (+ nhập vật tư ngoài danh mục).
+- Hạn chế đã biết: ô "Nguồn cấp / ghi chú" khi nhập kho bị bỏ qua (`receiveStock` chưa có bảng lịch sử nhập kho); yêu cầu vật tư không trừ tồn kho.
 Bảng ánh xạ nhãn từng dashboard + tiền điều kiện từng action: `specs/01-CONTRACTS.md` §2, §4.
 Mọi ghi đi qua `src/server/workflow.ts`: kiểm quyền → `SELECT … FOR UPDATE` → kiểm phạm vi/stage → `UPDATE … WHERE stage = <cũ>` → 1 dòng `history`. Lỗi trả `ActionResult` (`UNAUTHENTICATED | FORBIDDEN | NOT_FOUND | INVALID_INPUT | CONFLICT`); ticket ngoài phạm vi luôn là `NOT_FOUND`.
 

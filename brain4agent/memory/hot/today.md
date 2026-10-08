@@ -491,3 +491,4 @@ Trường xác nhận đánh giá sơ bộ bằng 15 câu do Trường tự so�
 - Kéo `develop` 5780fda (merge `feature/tri`: kho vật tư, modal chi tiết ticket, luồng phòng ban). Worktree `D:\P151-portal-fe`, nhánh `feature/nhuy-portal-fe`. Trí giao toàn quyền portal cho Như Ý; ghi chú yêu cầu của anh Cố ở Google Doc `1tlvFRnAioxn7LFHTNlM9TQgYzIDzx25ZC4pFxqB3qiA`.
 - Đối chiếu ghi chú: gần hết đã có. Sửa v1.3.1: thiếu migration `0002_warehouse`, kho trống khi seed, modal bịa 95%.
 - Postgres local cô lập `docker compose -p p151fe` cổng 5433. DB thật là Supabase dùng chung — CHỜ DUYỆT quyền, chưa ghi gì lên đó; trước khi migrate phải kiểm chỉ đọc xem Trí đã `drizzle-kit push` chưa.
+- 2026-10-08T14:39:22.717568+00:00: v1.4.0 — gate nghiệm thu BQL lấy từ dữ liệu (4 tự kiểm + 2 BQL tích tay, khoá nút tới khi tích đủ); dọn lint; docs/portal.md theo đợt kho. unit 23/23, test:db 18/18.

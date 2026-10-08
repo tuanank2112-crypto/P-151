@@ -14,8 +14,9 @@ import { Body, Header, NavTiles, PageHead } from "@/components/shell";
 import { TicketDetailModal } from "@/components/ticket-detail-modal";
 import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
-import { DEPT_COLOR, DEPT_LABEL, DEPT_ORDER, ROLE_LABEL, type Dept } from "@/lib/constants";
+import { DEPT_LABEL, DEPT_ORDER, ROLE_LABEL, type Dept } from "@/lib/constants";
 import type { ManagementData, MgmtTicket } from "@/lib/dto";
+import { autoGates, SITE_CHECKS } from "@/lib/inspection";
 
 type Tab = "overview" | "all" | "mine" | "teams";
 type Filter = "all" | "moi" | "dang_xu_ly" | "urgent" | "late" | Dept;
@@ -66,6 +67,13 @@ export function ManagementApp({ data }: { data: ManagementData }) {
   const [selectedTicket, setSelectedTicket] = useState<MgmtTicket | null>(null);
   const [rejectReasonId, setRejectReasonId] = useState<number | null>(null);
   const [rejectReasonText, setRejectReasonText] = useState("");
+  // Mục BQL đã tự tích tại hiện trường, theo từng ticket
+  const [siteChecked, setSiteChecked] = useState<Record<number, string[]>>({});
+  const toggleSite = (id: number, key: string) =>
+    setSiteChecked((s) => {
+      const cur = s[id] ?? [];
+      return { ...s, [id]: cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key] };
+    });
 
   const all = data.tickets;
   const live = all.filter((t) => !t.cancelled);
@@ -396,7 +404,12 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                 </div>
               )}
 
-              {inspectionTickets.map((t) => (
+              {inspectionTickets.map((t) => {
+                const gates = autoGates(t);
+                const checked = siteChecked[t.id] ?? [];
+                const siteDone = SITE_CHECKS.every((c) => checked.includes(c.key));
+                const passed = gates.filter((g) => g.ok).length + checked.length;
+                return (
                 <article key={t.id} className="card flex flex-col gap-4 p-6 border-l-4 border-l-sky-500 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft pb-3">
                     <div className="flex items-center gap-2">
@@ -416,36 +429,37 @@ export function ManagementApp({ data }: { data: ManagementData }) {
 
                   <div className="text-[15px] font-medium text-slate-800">{t.text}</div>
 
-                  {/* 6 Gates Validation Checklist */}
+                  {/* 6 tiêu chuẩn nghiệm thu: 4 hệ thống tự kiểm từ dữ liệu + 2 BQL tự tích tại hiện trường */}
                   <div className="bg-sky-50/70 border border-sky-100 rounded-xl p-4">
-                    <h5 className="text-xs font-bold text-sky-950 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                      <span>🛡️</span> 6 Tiêu chuẩn đối soát nghiệm thu (Quality Gates)
+                    <h5 className="text-xs font-bold text-sky-950 uppercase tracking-wide mb-2 flex items-center justify-between gap-1.5">
+                      <span>🛡️ Tiêu chuẩn nghiệm thu</span>
+                      <span className={passed === gates.length + SITE_CHECKS.length ? "text-emerald-700" : "text-amber-700"}>
+                        Đạt {passed}/{gates.length + SITE_CHECKS.length}
+                      </span>
                     </h5>
+                    <span className="text-[11px] font-semibold text-slate-500 block mb-1">Hệ thống tự kiểm</span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-sky-900">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-emerald-600 font-bold">✓</span>
-                        <span>1. Hiện trường sự cố đã xử lý dứt điểm</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-emerald-600 font-bold">✓</span>
-                        <span>2. Có hình ảnh minh chứng đối soát sau xử lý</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-emerald-600 font-bold">✓</span>
-                        <span>3. Không còn rác / vật tư thừa bừa bãi</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-emerald-600 font-bold">✓</span>
-                        <span>4. Đảm bảo an toàn kỹ thuật / vệ sinh chung</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-emerald-600 font-bold">✓</span>
-                        <span>5. Khớp đúng nội dung phản ánh của cư dân</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-emerald-600 font-bold">✓</span>
-                        <span>6. Tuân thủ cam kết SLA vận hành khu đô thị</span>
-                      </div>
+                      {gates.map((g) => (
+                        <div key={g.key} className="flex items-start gap-1.5">
+                          <span className={g.ok ? "text-emerald-600 font-bold" : "text-rose-600 font-bold"}>{g.ok ? "✓" : "✕"}</span>
+                          <span>
+                            {g.label} <span className="text-slate-500">· {g.detail}</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <span className="text-[11px] font-semibold text-slate-500 block mt-3 mb-1">BQL xác nhận tại hiện trường</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-sky-900">
+                      {SITE_CHECKS.map((c) => (
+                        <label key={c.key} className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={checked.includes(c.key)}
+                            onChange={() => toggleSite(t.id, c.key)}
+                          />
+                          <span>{c.label}</span>
+                        </label>
+                      ))}
                     </div>
                   </div>
 
@@ -498,7 +512,8 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                     <button
                       type="button"
                       className="btn primary bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
-                      disabled={pending}
+                      disabled={pending || !siteDone}
+                      title={siteDone ? undefined : "Tích đủ mục xác nhận tại hiện trường trước khi nghiệm thu"}
                       onClick={() => run(() => approveInspectionAction(t.id))}
                     >
                       ✓ Nghiệm thu đạt (Hoàn tất)
@@ -561,7 +576,8 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                     </div>
                   )}
                 </article>
-              ))}
+                );
+              })}
             </div>
 
             {/* 2. ĐƠN VỊ BÁO CẦN BQL XEM (KHIẾU NẠI SAI PHÒNG BAN) */}

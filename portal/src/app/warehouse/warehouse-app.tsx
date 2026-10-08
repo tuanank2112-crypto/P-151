@@ -6,12 +6,12 @@ import {
   approveMaterialAction,
   receiveStockAction,
 } from "@/app/actions/warehouse";
-import { IconBox, IconKanban, IconWrench } from "@/components/icons";
+import { IconBox, IconWrench } from "@/components/icons";
 import { Body, Header, NavTiles, PageHead } from "@/components/shell";
 import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
 import { ROLE_LABEL } from "@/lib/constants";
-import type { MaterialRequest, WarehouseData, WarehouseItem } from "@/lib/dto";
+import type { WarehouseData, WarehouseItem } from "@/lib/dto";
 
 type Tab = "inventory" | "requests";
 
