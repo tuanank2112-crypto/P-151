@@ -1,0 +1,2 @@
+Typecheck prerequisite: mypy installed=False
+Typecheck: NOT RUN (mypy is not in requirements.txt and unavailable)

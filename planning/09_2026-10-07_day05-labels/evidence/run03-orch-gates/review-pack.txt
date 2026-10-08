@@ -1,0 +1,3 @@
+# cmd: .venv/Scripts/python.exe planning/09_2026-10-07_day05-labels/deliverables/tools/build_review_pack.py --data-dir planning/09_2026-10-07_day05-labels/deliverables --out planning/09_2026-10-07_day05-labels/deliverables/review
+OK blind-review-sheet.json records=50
+EXIT=0

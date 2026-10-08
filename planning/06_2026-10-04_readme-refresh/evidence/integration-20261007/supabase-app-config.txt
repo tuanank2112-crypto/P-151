@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-10-07T03:55:06.596678+00:00",
+  "app_configuration_check": "PASS",
+  "repository": "PostgresRepository",
+  "photo_store": "SupabasePhotoStore",
+  "cases_count": 53,
+  "database_host": "aws-0-ap-southeast-1.pooler.supabase.com",
+  "sslmode": "verify-full",
+  "database_identity": "truong",
+  "llm_model": "gpt-6-luna",
+  "llm_client_constructed": true,
+  "llm_invoked": false,
+  "reset_allowed": false,
+  "seed_on_empty": false,
+  "server_started": false,
+  "verification": "database default_transaction_read_only=on for probe; no seed/jobs/photo upload"
+}
+EXIT_CODE=0

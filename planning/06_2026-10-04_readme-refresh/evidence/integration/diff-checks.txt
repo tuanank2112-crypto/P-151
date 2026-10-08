@@ -1,0 +1,187 @@
+Command: git diff --cached --check 5f7c35428288015bb5ccc1b2fed1f3640d98e233
+Exit: 2
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:2: trailing whitespace.
++ROUTED      None                    risk=NONE      cat=KY_THUAT pri=HIGH   loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: đèn → ROUTED KY_THUAT 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:3: trailing whitespace.
++ROUTED      None                    risk=NONE      cat=VE_SINH  pri=MEDIUM loc=Tòa SIM-B / Tầng 5 / Sảnh thang máy      | want: vệ sinh → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:4: trailing whitespace.
++ROUTED      None                    risk=NONE      cat=VE_SINH  pri=LOW    loc=Tòa SIM-A / Tầng 2 / Cầu thang bộ        | want: vệ sinh → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:5: trailing whitespace.
++ROUTED      None                    risk=NONE      cat=VE_SINH  pri=MEDIUM loc=Tòa SIM-C / Tầng 4 / Phòng rác           | want: vệ sinh → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:6: trailing whitespace.
++ROUTED      None                    risk=NONE      cat=KY_THUAT pri=HIGH   loc=Tòa SIM-A / Tầng B1 / Hầm xe             | want: đèn → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:7: trailing whitespace.
++ROUTED      None                    risk=NONE      cat=VE_SINH  pri=LOW    loc=Tòa SIM-B / Tầng Trệt / Sân chơi         | want: vệ sinh → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:8: trailing whitespace.
++ROUTED      None                    risk=NONE      cat=VE_SINH  pri=MEDIUM loc=Tòa SIM-B / Tầng 7 / Hành lang           | want: vệ sinh → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:9: trailing whitespace.
++VERIFYING   DUPLICATE               risk=NONE      cat=KY_THUAT pri=HIGH   loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: đèn → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:10: trailing whitespace.
++ROUTED      None                    risk=NONE      cat=VE_SINH  pri=LOW    loc=Tòa SIM-A / Tầng 1 / Sảnh chính          | want: vệ sinh → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:11: trailing whitespace.
++VERIFYING   ASSET_UNCLEAR           risk=NONE      cat=KY_THUAT pri=HIGH   loc=Tòa SIM-C / Tầng 6 / Cầu thang bộ        | want: đèn → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:12: trailing whitespace.
++ROUTED      None                    risk=NONE      cat=VE_SINH  pri=HIGH   loc=Tòa SIM-B / Tầng 4 / Hành lang           | want: vệ sinh → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:13: trailing whitespace.
++ROUTED      None                    risk=NONE      cat=VE_SINH  pri=MEDIUM loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: vệ sinh không dấu → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:14: trailing whitespace.
++VERIFYING   ASSET_UNCLEAR           risk=NONE      cat=KY_THUAT pri=HIGH   loc=Tòa SIM-B / Tầng 5 / Hành lang           | want: đèn không dấu → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:15: trailing whitespace.
++VERIFYING   DUPLICATE               risk=NONE      cat=VE_SINH  pri=LOW    loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: toà (dấu cũ) → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:16: trailing whitespace.
++VERIFYING   DUPLICATE               risk=NONE      cat=VE_SINH  pri=MEDIUM loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: tòa nhà → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:17: trailing whitespace.
++VERIFYING   DUPLICATE               risk=NONE      cat=VE_SINH  pri=LOW    loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: block/lầu → ? 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:18: trailing whitespace.
++VERIFYING   DUPLICATE               risk=NONE      cat=VE_SINH  pri=LOW    loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: khu vực → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:19: trailing whitespace.
++VERIFYING   ASSET_UNCLEAR           risk=NONE      cat=KY_THUAT pri=HIGH   loc=Tòa SIM-A / Tầng B2 / Hầm xe             | want: đèn hầm → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:20: trailing whitespace.
++VERIFYING   ASSET_UNCLEAR           risk=NONE      cat=KY_THUAT pri=HIGH   loc=Tòa SIM-B / Tầng 9 / Sảnh thang máy      | want: đèn → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:21: trailing whitespace.
++ROUTED      None                    risk=NONE      cat=VE_SINH  pri=LOW    loc=Tòa SIM-C / Tầng 10 / Hành lang          | want: vệ sinh → ROUTED 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:22: trailing whitespace.
++NEED_INFO   MISSING_INFO            risk=NONE      cat=None     pri=None   loc=None                                     | want: thiếu tòa → NEED_INFO 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:23: trailing whitespace.
++NEED_INFO   MISSING_INFO            risk=NONE      cat=None     pri=None   loc=None                                     | want: thiếu tòa → NEED_INFO 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:24: trailing whitespace.
++NEED_INFO   MISSING_INFO            risk=NONE      cat=None     pri=None   loc=None                                     | want: thiếu vị trí → NEED_INFO 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:25: trailing whitespace.
++NEED_INFO   MISSING_INFO            risk=NONE      cat=None     pri=None   loc=None                                     | want: thiếu tầng → NEED_INFO 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:26: trailing whitespace.
++NEED_INFO   MISSING_INFO            risk=NONE      cat=None     pri=None   loc=None                                     | want: ngoài phạm vi → OUT_OF_SCOPE 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:27: trailing whitespace.
++NEED_INFO   MISSING_INFO            risk=NONE      cat=None     pri=None   loc=None                                     | want: ngoài phạm vi 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:28: trailing whitespace.
++NEED_INFO   MISSING_INFO            risk=NONE      cat=None     pri=None   loc=None                                     | want: ngoài phạm vi 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:29: trailing whitespace.
++VERIFYING   DUPLICATE               risk=NONE      cat=KY_THUAT pri=HIGH   loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: Q22 bóng đèn cháy 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:30: trailing whitespace.
++VERIFYING   CATEGORY_UNCLEAR        risk=NONE      cat=UNKNOWN  pri=None   loc=None                                     | want: cả hai → CATEGORY_UNCLEAR 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:31: trailing whitespace.
++VERIFYING   EMERGENCY_PENDING_BQL   risk=EMERGENCY cat=None     pri=None   loc=None                                     | want: Bậc 1 → EMERGENCY 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:32: trailing whitespace.
++VERIFYING   SAFETY_REVIEW_REQUIRED  risk=UNCLEAR   cat=None     pri=None   loc=None                                     | want: Bậc 2 → SAFETY_REVIEW 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:33: trailing whitespace.
++VERIFYING   EMERGENCY_PENDING_BQL   risk=EMERGENCY cat=None     pri=None   loc=None                                     | want: Bậc 1 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:34: trailing whitespace.
++VERIFYING   EMERGENCY_PENDING_BQL   risk=EMERGENCY cat=None     pri=None   loc=None                                     | want: Bậc 1 
+planning/04_2026-10-04_logic-review-fix/evidence/06-live-corpus-after.txt:35: trailing whitespace.
++VERIFYING   DUPLICATE               risk=NONE      cat=VE_SINH  pri=LOW    loc=Tòa SIM-A / Tầng 3 / Hành lang           | want: vệ sinh, không bị điều khiển 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:19: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:58: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:76: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:81: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:82: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:91: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:96: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:101: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:109: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:112: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:117: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:118: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:123: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:126: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:130: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:131: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:135: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:136: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:138: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:139: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:169: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:170: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:174: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:175: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:202: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:203: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:206: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:213: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:214: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:219: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:234: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:240: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:244: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:245: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:247: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:252: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:253: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:261: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:262: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:265: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:266: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:274: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:283: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:288: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:289: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:296: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:302: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:310: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:311: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:314: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:329: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:330: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:353: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:354: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:359: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:362: trailing whitespace.
++ 
+planning/04_2026-10-04_logic-review-fix/handoffs/H03_backend-api.patch:363: trailing whitespace.
++ 
+
+Command: git diff --cached --check 37a0fb3863e86fb21496e4f0be8ef6750c72a47c -- README.md docs/architecture_diagram.md brain4agent planning/06_2026-10-04_readme-refresh
+Exit: 0

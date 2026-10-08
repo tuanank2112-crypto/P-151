@@ -26,3 +26,6 @@ AI Logs, Phoenix).
 - **ĐỘC LẬP** với MaintenanceOps Agent Python: không dùng engine/CR-BPTN-03, không dùng dữ liệu `SIM-`, mô hình trạng thái riêng. Đừng trộn hai bên khi sửa.
 - **Tech stack:** Next.js 16.4 (App Router, `cacheComponents`, Server Actions), React 19, TypeScript strict, Tailwind v4 (+ nguyên CSS thiết kế), Drizzle ORM + `pg`, Vitest (unit + DB thật), Playwright (E2E, chụp màn). Node 24.
 - Tài liệu module: [`docs/portal.md`](../docs/portal.md); SPEC: `planning/06_2026-10-07_resident-portal-next/specs/`.
+
+
+Current feature/truong imported develop04491ad (07/10): src/maintenance/agent/ reasoning runtime/P1 coordination now present; portal/ remains independent of Python engine. Integration tests3341 pass; portal and live model/shared rollout not measured here.

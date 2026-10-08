@@ -1,0 +1,75 @@
+{
+  "schema_version": "day04-3",
+  "normalized_at": "2026-10-07T04:38:20.673490+00:00",
+  "active_case_ids": [
+    "H01",
+    "H02",
+    "I01",
+    "A01",
+    "M01",
+    "U01",
+    "S04",
+    "G03",
+    "R01"
+  ],
+  "scope_decision": {
+    "authorized_by": "Cao Văn Trường",
+    "authorized_on": "2026-10-07",
+    "source": "User explicitly requested removal of six NOT_RUN cases and normalization of valid evidence",
+    "removed_case_ids": [
+      "S01",
+      "S02",
+      "S03",
+      "S05",
+      "G01",
+      "G02"
+    ]
+  },
+  "runs": [
+    {
+      "environment": "local-qa",
+      "confirmed_at": null,
+      "run_id": "local-ui-20261004-05",
+      "base_url": "http://localhost:8000",
+      "build_sha": "3efb660",
+      "dirty_worktree": null,
+      "build_identity_status": "REPORT_ONLY",
+      "configuration_source": "evaluation.md",
+      "llm_mode": "mock",
+      "model": null,
+      "store_mode": "memory",
+      "photo_store_mode": null,
+      "confirmed_by": "Cao Văn Trường (báo cáo lịch sử)",
+      "confirmation_source": "evaluation.md",
+      "confirmation_status": "REPORT_ONLY",
+      "mutation_scope": "Ticket/vật tư SIM-* của lượt demo local lịch sử",
+      "photo_scope": "Ảnh minh họa trên UI; chưa có bằng chứng Storage của lượt cũ",
+      "evidence_refs": [
+        "evaluation.md"
+      ]
+    },
+    {
+      "environment": "local-qa",
+      "confirmed_at": null,
+      "run_id": "local-supabase-20261007",
+      "base_url": "http://127.0.0.1:8001",
+      "build_sha": "8dd6baa5e733fd9dd917b30522b131d520471e05",
+      "dirty_worktree": true,
+      "build_identity_status": "BASE_SHA_ONLY",
+      "configuration_source": "planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json",
+      "llm_mode": "openai",
+      "model": "gpt-6-luna",
+      "store_mode": "postgres",
+      "photo_store_mode": "supabase",
+      "confirmed_by": "Trường (cho phép demo trong phiên)",
+      "confirmation_source": "User authorized shared-Supabase demo; result.json confirms configuration and scope",
+      "confirmation_status": "EXECUTION_EVIDENCE",
+      "mutation_scope": "Chỉ SIM-TKT-0042; jobs/seed/reset false; 53 ticket cũ và tồn kho không đổi",
+      "photo_scope": "Hai PNG mô phỏng trong private maintenance-photos, hash khớp API/Storage",
+      "evidence_refs": [
+        "planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json",
+        "planning/07_2026-10-04_online-acceptance/deliverables/shared-supabase-demo-20261007.md"
+      ]
+    }
+  ]
+}

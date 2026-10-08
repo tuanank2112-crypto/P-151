@@ -125,3 +125,57 @@ project-root/
 - User xác nhận D-01 delta + persisted structured context; D-02–07 defaults. D-08 group approval recorded (leader Lê Thị Châm Anh, reported date 2026-10-02, recorded 2026-10-03); chưa tích hợp engine/runtime.
 
 - Ngày 03: `planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md`; đã chạy local (17 PASS/1 FAIL/5 BLOCKED); kết quả: `deliverables/day03-summary.md`, `day03-wording.md`, `day03-results.json` của cùng package; harness `evidence/d3-06/harness.py`.
+
+## Target component diagram — 2026-10-04
+- [Hồ sơ 05](../planning/05_2026-10-04_component-diagram/plan.md), router [Architecture](../planning/05_2026-10-04_component-diagram/specs/00-ARCHITECTURE.md): target 19/10, LangGraph/Phoenix confirmed; GPT-4o + vision proposed; SPEC approved; đã bàn giao local [draw.io/SVG](../docs/architecture_diagram.md), chờ user visual review.
+
+## Day04 online acceptance — 2026-10-04
+- [Hồ sơ 07](../planning/07_2026-10-04_online-acceptance/plan.md): PROPOSED, 8 task/15 ca; manifest/build QA pending, chưa thực thi online; Trường phụ trách nghiệp vụ, Châm Anh thực hiện restart.
+
+- 2026-10-04, hồ sơ07 cập nhật theo người dùng: chỉ localhost, chưa có online. Kiểm14 ca nghiệp vụ local; R01 postgres kiểm trước/sau restart, memory ghi BLOCKED_MEMORY_STORE. Online BLOCKED_NO_DEPLOYMENT; chưa chạy test trong lượt điều chỉnh kế hoạch.
+
+## Architecture data flow diagram — 2026-10-04
+- [Hồ sơ 08](../planning/08_2026-10-04_data-flow/plan.md), router [Architecture](../planning/08_2026-10-04_data-flow/specs/00-ARCHITECTURE.md): target 19/10, CR-BPTN-03 pipeline; bố cục 3 Hành lang Tuyến tính (Upper Escalation, Central Highway 6 trạm, Lower Feedback 4 loops, Bottom Data Stores bar) tỷ lệ 16:9 Zero-Crossing; SPEC approved; đã bàn giao [Mermaid/draw.io/SVG](../docs/diagrams/maintenanceops-data-flow-20261019/README.md), chờ user visual review.
+
+
+## Documentation correction — 2026-10-04
+- Restored target components: `docs/diagrams/Diagrams Components.drawio.svg` (original embedded source) + extracted `.drawio`; data flow restored at its existing path. Replaces the implementation-view redraw. `docs/architecture_diagram.md` explains differences with running code.
+
+## Isolated integration workspace
+- integration/truong-develop-20261004 combines local documentation snapshot 5f7c354 with develop 37a0fb3. Original feature/truong worktree remains unchanged. Evidence is in planning/06_2026-10-04_readme-refresh/evidence/integration/.
+
+## Current working branch — 2026-10-04
+- Work in feature/truong at C:/P-151-truong: tested integration f4155d6 adopted locally. Integration worktree remains a preparation reference; source is develop37a0fb3. Details and evidence: planning/06_2026-10-04_readme-refresh/.
+
+
+- Latest local integration: feature/truong + develop52ae81c, see planning/06_2026-10-04_readme-refresh/plan.md and evidence/integration-20261007/. No additional runtime module or entry point introduced by the integration itself.
+
+- GPT-6 Luna local configuration and verification: docs/maintenance.md §Local GPT-6 Luna configuration; src/maintenance/proposer.py openai_client. Real SUCCESS verified on shared-Supabase demo SIM-TKT-0042; see current runtime verification below.
+
+## Shared Supabase runtime verification — 2026-10-07
+- Shared Supabase demo SIM-TKT-0042 CLOSED; 2 simulated PNG photos byte/hash verified through API and Storage after restart; cases53->54, preexisting53 unchanged, stock unchanged; GPT-6 Luna SUCCESS / rules+llm:gpt-6-luna (2000.82ms); missing execution photo blocked completion; pytest2973 passed,29 pg deselected, ruff clean. Server127.0.0.1:8001 (jobs/seed/reset false).
+- Evidence: planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json; run_demo.py; pytest.txt; ruff-check.txt. Real AI response preserved in recovery_ai_logs; in-memory API AI Logs are empty after restart. No rating submitted. API flow exercised; no manual browser walkthrough/public deployment/physical maintenance acceptance. Day05/06 remain open.
+
+## Day04 normalized evidence router — 2026-10-07T04:32:59.390139+00:00
+- User removed six unused cases from personal acceptance scope; active9=H01,H02,I01,A01,M01,U01,S04,G03,R01. day04-3 manifest/results/issues normalized from valid references, separated legacy8PASS/1BLOCKED and Supabase1PASS/1FAIL (create422 recovered but pending clean201 retest). No cross-build9/9 claim. All references/counts/source time provenance checked;3 corruption controls rejected. No app execution/shared writes/commit/push.
+- Records: planning/07_2026-10-04_online-acceptance/deliverables/manifest.json, results.json, issues.json, day04-summary.md; validation: evidence/normalization-20261007/validation.txt in that plan.
+
+## Day05 labeling plan — 2026-10-07
+
+Proposed active package: [Day05 backlog and labels](../planning/09_2026-10-07_day05-labels/plan.md). Router: specs/00-ARCHITECTURE.md → 01-CONTRACTS.md → SPEC-P01-BACKLOG.md → SPEC-P02-LABELS.md → OPERATIONS.md → TESTING-ACCEPTANCE.md. Executed 2026-10-07 (offline): deliverables/{backlog,cases,label-proposals,*-gold(empty),split-manifest(draft)}.json, tools/{validate_day05,run_day05_baseline,build_review_pack}.py + tests, review/; summary deliverables/day05-summary.md; handoffs H01–H05 ↔ reports R01–R05. Existing engine/seed paths unchanged.
+
+## Day05 submission review — 2026-10-07T06:16:13.491588+00:00
+
+Report: [daily/2026-10-05.md](../docs/submission/daily/2026-10-05.md). Fresh command and artifact evidence: planning/09_2026-10-07_day05-labels/evidence/submission-review-20261007/. 270 tools tests pass; 95 manifest hashes match. Dataset gates remain OPEN; this report is not Day05 sign-off.
+
+- Day05 main submission report: [day05-report.md](../docs/submission/day05-report.md), linked from submission README and daily05; local preparation verified, full acceptance pending.
+
+
+Latest feature/truong merge: develop04491ad → 79f9444; [integration report](../planning/06_2026-10-04_readme-refresh/evidence/integration-latest-20261007/integration-report.md). Imported src/maintenance/agent/ runtime and portal/; portal docs/DB are independent. Shared revision0002 rollout not performed.
+
+
+Portal direct test: http://localhost:3000/login PID21076; [module docs](../docs/portal.md). Local PostgreSQL, keyword Agent, not the Python/Luna server8002. Runtime evidence plan06 readme-refresh/evidence/runtime-portal-20261007/.
+
+- Day05 completion router: `planning/09_2026-10-07_day05-labels/deliverables/completion-guide.md`; matrix and human-input forms live beside it.
+
+- Active Day05 scope: `planning/09_2026-10-07_day05-labels/specs/SPEC-P03-PRELIMINARY15.md`; user-approved preliminary15 supersedes old30-case closure quota.

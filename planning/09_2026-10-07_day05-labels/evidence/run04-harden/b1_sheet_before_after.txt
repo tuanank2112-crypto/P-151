@@ -1,0 +1,13 @@
+BEFORE (pre-H05 tool) exit 0
+  stdout: OK blind-review-sheet.json records=80
+  sheet contains 'D5-C-': 80 times; original case_ids found: 80 of 80
+  first 3 sheet ids: ['D5-C-0074', 'D5-C-0033', 'D5-C-0019']
+  sheet order == sha256(case_id) order (publicly recomputable): True
+  id-map.json written next to the sheet: False
+AFTER (hardened tool) exit 0
+  stdout: OK blind-review-sheet.json records=80 | WARNING C:\Users\caotr\AppData\Local\Temp\claude\c--P-151-truong\168221f8-d289-4923-9c33-100200559616\scratchpad\b1_work\AFTER\id-map.json: CHỈ cho điều phối, không đưa reviewer
+  sheet contains 'D5-C-': 0 times; original case_ids found: 0 of 80
+  first 3 sheet ids: ['RV-001', 'RV-002', 'RV-003']
+  sheet order == sha256(case_id) order (publicly recomputable): False
+  id-map.json written next to the sheet: True
+EXIT=0

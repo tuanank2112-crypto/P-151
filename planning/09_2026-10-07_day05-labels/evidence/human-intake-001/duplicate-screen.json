@@ -1,0 +1,134 @@
+{
+  "recorded_at": "2026-10-07T16:58:11.277650+00:00",
+  "checked_develop_cases": 50,
+  "checked_fixture_files": 53,
+  "records": [
+    {
+      "intake_id": "HA-001-01",
+      "exact_develop_ids": [],
+      "fixture_substring_hits": [],
+      "nearest_develop": [
+        {
+          "case_id": "D5-C-0022",
+          "family_id": "F-06",
+          "similarity": 0.5143
+        },
+        {
+          "case_id": "D5-C-0045",
+          "family_id": "F-26",
+          "similarity": 0.5055
+        },
+        {
+          "case_id": "D5-C-0048",
+          "family_id": "F-28",
+          "similarity": 0.4906
+        }
+      ],
+      "semantic_independence": "PENDING_REVIEW",
+      "warning": "String similarity cannot prove family independence."
+    },
+    {
+      "intake_id": "HA-001-02",
+      "exact_develop_ids": [],
+      "fixture_substring_hits": [],
+      "nearest_develop": [
+        {
+          "case_id": "D5-C-0033",
+          "family_id": "F-17",
+          "similarity": 0.5934
+        },
+        {
+          "case_id": "D5-C-0016",
+          "family_id": "F-05",
+          "similarity": 0.5618
+        },
+        {
+          "case_id": "D5-C-0024",
+          "family_id": "F-09",
+          "similarity": 0.537
+        }
+      ],
+      "semantic_independence": "PENDING_REVIEW",
+      "warning": "String similarity cannot prove family independence."
+    },
+    {
+      "intake_id": "HA-001-03",
+      "exact_develop_ids": [],
+      "fixture_substring_hits": [],
+      "nearest_develop": [
+        {
+          "case_id": "D5-C-0039",
+          "family_id": "F-20",
+          "similarity": 0.5273
+        },
+        {
+          "case_id": "D5-C-0007",
+          "family_id": "F-D4-11",
+          "similarity": 0.5161
+        },
+        {
+          "case_id": "D5-C-0009",
+          "family_id": "F-01",
+          "similarity": 0.5091
+        }
+      ],
+      "semantic_independence": "PENDING_REVIEW",
+      "warning": "String similarity cannot prove family independence."
+    },
+    {
+      "intake_id": "HA-001-04",
+      "exact_develop_ids": [],
+      "fixture_substring_hits": [],
+      "nearest_develop": [
+        {
+          "case_id": "D5-C-0045",
+          "family_id": "F-26",
+          "similarity": 0.6857
+        },
+        {
+          "case_id": "D5-C-0044",
+          "family_id": "F-25",
+          "similarity": 0.6538
+        },
+        {
+          "case_id": "D5-C-0046",
+          "family_id": "F-26",
+          "similarity": 0.6372
+        }
+      ],
+      "semantic_independence": "PENDING_REVIEW",
+      "warning": "String similarity cannot prove family independence."
+    },
+    {
+      "intake_id": "HA-001-05",
+      "exact_develop_ids": [],
+      "fixture_substring_hits": [],
+      "nearest_develop": [
+        {
+          "case_id": "D5-C-0004",
+          "family_id": "F-D4-11",
+          "similarity": 0.6742
+        },
+        {
+          "case_id": "D5-C-0002",
+          "family_id": "F-D4-11",
+          "similarity": 0.6437
+        },
+        {
+          "case_id": "D5-C-0003",
+          "family_id": "F-D4-11",
+          "similarity": 0.6341
+        }
+      ],
+      "semantic_independence": "PENDING_REVIEW",
+      "warning": "String similarity cannot prove family independence."
+    }
+  ],
+  "batch_pairs": [
+    {
+      "left": 1,
+      "right": 2,
+      "family_review": "Treat as same family unless substantive distinction established"
+    }
+  ]
+}

@@ -3,8 +3,8 @@
   "brain_template_version": "1.7.1",
   "system_status": "active",
   "last_verification": {
-    "timestamp": "2026-10-07T08:26:00.000Z",
-    "grade": "plan 07 src/web reskin local gates G1–G4 green (pytest 2972 passed, ruff clean, 22 screenshots 0 overflow); server gate pending"
+    "timestamp": "2026-10-07T04:11:12.207497+00:00",
+    "grade": "shared DB/Storage demo/restart PASS; GPT-6 Luna SUCCESS; pytest2973 pass, ruff clean"
   },
   "active_plans_completed": 2,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
@@ -31,8 +31,8 @@
     "license": ""
   },
   "active_spec": "docs/CR-BPTN-03.md",
-  "working_branch": "feature/nhuy-reasoning-agent",
-  "code_baseline": "aafdf6a (feature/nhuy-reasoning-agent)",
+  "working_branch": "feature/truong",
+  "code_baseline": "04491ad (origin/develop)",
   "last_benchmark": {
     "pytest": "2941 passed, 29 deselected, 0 skip (pg: 1872 passed on develop 37a0fb3, 2026-10-04)",
     "safety_stop_sets": "1065 green",
@@ -48,11 +48,507 @@
     "portal": "unit 14/14, test:db 15/15 (portal_test), next build ok, e2e PASS on next start (2026-10-07)",
     "spec_p09_v6_probes": "27/27 passed (B1 interval overlap, B2 3-part overrides & shared location, B3 next_step, B4 cardinality & quiesce)"
   },
-  "last_sync": "2026-10-07T12:30:00.000Z",
-  "next_step": "Chờ người duyệt SPEC-P09 (PROPOSED -> APPROVED); nhận H16 thi công runtime WP17",
+  "last_sync": "2026-10-08T10:10:44.796289+00:00",
+  "next_step": "User hands off prepared reviewer/API/UI packets after push; receive human review for15 cases, verify families/export/freeze, baseline and final report. Backlog scope decisions 15/15 confirmed; runtime issues stay open.",
   "active_plan": {
-    "id": "06_2026-10-05_reasoning-agent",
-    "status": "in_progress_spec_review",
+    "id": "09_2026-10-07_day05-labels",
+    "status": "preliminary15_approved_waiting_review",
+    "task_date": "2026-10-05",
+    "created_at": "2026-10-07T05:07:58.261170+00:00",
+    "owner": "Cao Văn Trường",
+    "approval": {
+      "decision": "pending",
+      "preliminary15": {
+        "decision": "approved",
+        "by": "Cao Văn Trường",
+        "recorded_at": "2026-10-08T08:59:38.730526+00:00"
+      }
+    },
+    "parent_id": "05_2026-10-04_agent-hardening",
+    "verification": {
+      "package_exit": 0,
+      "spec_documents": 7,
+      "source_refs": 10,
+      "negative_controls_rejected": 3
+    },
+    "dataset_executed": false,
+    "execution": {
+      "local_offline_at": "2026-10-07",
+      "status": "partial",
+      "backlog_items": 15,
+      "source_cases_develop": 50,
+      "proposals": {
+        "safety": 50,
+        "classification": 20
+      },
+      "gold_accepted": {
+        "safety": 0,
+        "classification": 0
+      },
+      "held_out": 0,
+      "baseline": "not_run",
+      "tools_tests": {
+        "passed": 270,
+        "failed": 0,
+        "skipped": 0
+      },
+      "cold_audit": "1 blocker+5 majors fixed; round2 not run",
+      "boot_exit": 1,
+      "backlog_owner_acceptance": {
+        "confirmed": 12,
+        "proposed": 3,
+        "confirmed_items": [
+          "D5-B-001",
+          "D5-B-002",
+          "D5-B-003",
+          "D5-B-004",
+          "D5-B-005",
+          "D5-B-006",
+          "D5-B-007",
+          "D5-B-009",
+          "D5-B-011",
+          "D5-B-013",
+          "D5-B-014",
+          "D5-B-015"
+        ],
+        "recorded_at": "2026-10-08T10:10:44.796289+00:00",
+        "note": "Như Ý/Châm Anh acceptance reported by user; no completed review inferred"
+      },
+      "remaining_work_packet": {
+        "prepared_at": "2026-10-07T16:47:40.721485+00:00",
+        "guide": "planning\\09_2026-10-07_day05-labels\\deliverables\\completion-guide.md",
+        "d411_proposal_cases": 10,
+        "human_authoring_slots": 30,
+        "probe_mismatches_vs_proposals": 4,
+        "verification": "tools 270 pass; full gate 1; baseline develop/held-out 2",
+        "status": "waiting_human_inputs"
+      },
+      "human_intake": {
+        "received": 15,
+        "source_kind": "AUTHORED",
+        "held_out_imported": 0,
+        "gold_accepted": 0,
+        "status": "15 authored; cabin/stairwell/internal-ground lighting scope confirmed; pending family/label review",
+        "path": "planning\\09_2026-10-07_day05-labels\\deliverables\\human-authored-intake.json",
+        "scope_confirmed_at": "2026-10-08T08:45:45.700329+00:00",
+        "reviewers": {
+          "safety": "Như Ý",
+          "classification": "Châm Anh"
+        },
+        "reviewer_assignment_confirmed_at": "2026-10-08T08:49:58.066057+00:00",
+        "review_status": "PENDING",
+        "review_packet": "planning\\09_2026-10-07_day05-labels\\deliverables\\review-human15"
+      },
+      "outside_scope_policy": {
+        "id": "D5-POL-OUTSIDE-SAFETY-01",
+        "approved_by": "Cao Văn Trường",
+        "recorded_at": "2026-10-08T08:55:52.078704+00:00",
+        "status": "APPROVED_TARGET",
+        "runtime_verified": false
+      },
+      "evaluation_profile": "PRELIMINARY_15",
+      "backlog_scope_decisions": {
+        "confirmed_items": [
+          "D5-B-001",
+          "D5-B-002",
+          "D5-B-003",
+          "D5-B-004",
+          "D5-B-005",
+          "D5-B-006",
+          "D5-B-007",
+          "D5-B-008",
+          "D5-B-009",
+          "D5-B-010",
+          "D5-B-011",
+          "D5-B-012",
+          "D5-B-013",
+          "D5-B-014",
+          "D5-B-015"
+        ],
+        "remaining_discussion_items": 0,
+        "recorded_at": "2026-10-08T09:42:49.903373+00:00",
+        "note": "15 scope dispositions confirmed; owner acknowledgement and completion separate"
+      }
+    }
+  },
+  "last_session": {
+    "date": "2026-10-03",
+    "timestamp": "2026-10-03T09:50:39+07:00",
+    "boot_exit": 1,
+    "agents_requested": 5,
+    "baseline_tests": {
+      "passed": 185,
+      "deselected": 20,
+      "exit": 0
+    },
+    "baseline_format": "2 pre-existing files need formatting",
+    "local_verification": {
+      "pytest": {
+        "passed": 266,
+        "deselected": 20,
+        "exit": 0
+      },
+      "safety_tests": 72,
+      "target_tests": 9,
+      "package_checks": {
+        "passed": 57,
+        "failed": 0,
+        "skip": 0,
+        "exit": 0
+      },
+      "lint_exit": 0,
+      "new_files_format_exit": 0,
+      "full_format_exit": 1,
+      "full_format_preexisting_files": [
+        "src/api/routers/maintenance.py",
+        "src/maintenance/ai_logger.py"
+      ],
+      "syntax": "passed",
+      "typechecker": "not configured",
+      "postgres": "not run this session"
+    },
+    "local_work_packages_completed": 5
+  },
+  "diagram_spec": {
+    "id": "05_2026-10-04_component-diagram",
+    "status": "local_delivered",
+    "approval": "approved",
+    "target_date": "2026-10-19",
+    "artifacts": "verified_local",
+    "vision_gpt4o": "proposed",
+    "phoenix": "user_confirmed_target",
+    "base": "b9379563891be415e3531743b85f65a8d60b206b",
+    "boot_exit": 1,
+    "verification": {
+      "native_drawio_version": "31.7.0",
+      "export_exit": 0,
+      "artifact_check_exit": 0,
+      "components": 10,
+      "edges": 12,
+      "negative_exits": [
+        1,
+        1,
+        1
+      ],
+      "min_font": 20,
+      "min_text_margin": 49,
+      "text_overlap": 0,
+      "clipped": 0,
+      "node_crossings": 0,
+      "edge_crossings": 2,
+      "previews_opened": [
+        "1280x720",
+        "960x540"
+      ],
+      "evidence": "planning/05_2026-10-04_component-diagram/evidence/build/"
+    },
+    "user_visual_acceptance": "pending",
+    "local_delivered_at": "2026-10-04T10:46:25+07:00",
+    "output_dir": "docs/diagrams/maintenanceops-target-20261019"
+  },
+  "day04_acceptance_plan": {
+    "id": "07_2026-10-04_online-acceptance",
+    "status": "evidence_normalized",
+    "tasks": 8,
+    "required_cases": 9,
+    "online_tested": false,
+    "environment_confirmation": "pending",
+    "structure_check": "passed",
+    "execution_environment": "local-qa",
+    "online_status": "blocked_no_deployment",
+    "local_tested": false,
+    "core_cases": 14,
+    "persistence_case": "conditional_on_actual_store",
+    "active_case_ids": [
+      "H01",
+      "H02",
+      "I01",
+      "A01",
+      "M01",
+      "U01",
+      "S04",
+      "G03",
+      "R01"
+    ],
+    "results_schema": "day04-3",
+    "validation_exit": 0,
+    "negative_controls_rejected": 3,
+    "application_version_changed": false
+  },
+  "documentation_correction": {
+    "at": "2026-10-04T19:41:03+07:00",
+    "status": "layout_replacement_superseded",
+    "components": "docs/diagrams/Diagrams Components.svg",
+    "flow": "docs/diagrams/maintenanceops-data-flow-20261019/data-flow.svg",
+    "runtime": "blocked_python_docker_unavailable",
+    "visual": "blocked_browser_file_protocol",
+    "team": "pending_user",
+    "app_version_changed": false,
+    "evidence": "planning/06_2026-10-04_readme-refresh/evidence/readme/correction-checks.txt"
+  },
+  "diagram_restoration": {
+    "at": "2026-10-04T21:08:19+07:00",
+    "status": "restored_exact_backup_verified",
+    "components": "docs/diagrams/Diagrams Components.drawio.svg",
+    "component_source": "Downloads SVG embedded mxfile",
+    "flow_source": "VS Code local history 8VJO.svg / tSzP.mmd / e4lQ.drawio",
+    "evidence": "planning/06_2026-10-04_readme-refresh/evidence/readme/layout-restoration-checks.txt",
+    "layout": "original_target",
+    "runtime_retested": false,
+    "visual_retested": false
+  },
+  "isolated_integration": {
+    "status": "validated_isolated",
+    "branch": "integration/truong-develop-20261004",
+    "snapshot": "5f7c35428288015bb5ccc1b2fed1f3640d98e233",
+    "develop": "37a0fb3863e86fb21496e4f0be8ef6750c72a47c",
+    "original_branch_unchanged": true,
+    "original_worktree_unchanged": true,
+    "remote_push": false,
+    "verified_at": "2026-10-04T22:01:39+07:00",
+    "original_file_hashes_checked": 872,
+    "concurrent_new_folder": "docs/submission/ (not included)",
+    "tests": {
+      "passed": 1843,
+      "failed": 0,
+      "skipped": 0,
+      "deselected": 29
+    },
+    "ruff_check": "pass",
+    "ruff_format": "pass",
+    "readme_queries": "4/4 pass",
+    "evaluate": "12/12",
+    "typecheck": "unavailable_mypy",
+    "postgres": "not_run",
+    "docker": "not_run",
+    "evidence": "planning/06_2026-10-04_readme-refresh/evidence/integration/"
+  },
+  "feature_update": {
+    "status": "completed_local",
+    "at": "2026-10-07T03:04:07.271Z",
+    "branch": "feature/truong",
+    "develop_commit": "52ae81ccd63e49979a93966dd98cd62415f8d6e5",
+    "pre_update_backup": "backup/truong-before-integration-20261007",
+    "local_snapshot_backup": "backup/truong-local-20261007",
+    "tests": {
+      "passed": 2971,
+      "failed": 0,
+      "skipped": 0,
+      "deselected": 29
+    },
+    "ruff_check": "pass",
+    "ruff_format": "pass",
+    "js_syntax": "4/4 pass",
+    "remote_push": false,
+    "evidence": "planning/06_2026-10-04_readme-refresh/evidence/integration-20261007",
+    "limits": [
+      "PostgreSQL/Docker/live LLM/browser not tested",
+      "No configured typecheck",
+      "Day05/Day06 not signed off",
+      "Graph runtime pending"
+    ]
+  },
+  "llm_activation": {
+    "at": "2026-10-07T04:11:12.207497+00:00",
+    "model": "gpt-6-luna",
+    "mode": "openai",
+    "client_constructed": true,
+    "real_call_status": "SUCCESS",
+    "error_type": null,
+    "cause": null,
+    "successful_real_usage": true,
+    "regression": {
+      "passed": 30,
+      "failed": 0,
+      "ruff_check_exit": 0,
+      "ruff_format_exit": 0
+    },
+    "next_step": "Review saved recovery_ai_logs; API logger is in-memory and cleared on restart",
+    "ticket_id": "SIM-TKT-0042",
+    "proposer": "rules+llm:gpt-6-luna",
+    "latency_ms": 2000.82,
+    "previous_failed_call": {
+      "status": "FALLBACK_RULE",
+      "cause": "placeholder_api_key"
+    }
+  },
+  "supabase_readonly_verification": {
+    "timestamp": "2026-10-07T03:48:49.352218+00:00",
+    "current_user": "truong",
+    "member_maintops_dev": true,
+    "schema_usage": true,
+    "cases_select": true,
+    "cases_insert": true,
+    "cases_update": true,
+    "schema_revision": [
+      [
+        "0001_maintops_initial"
+      ]
+    ],
+    "cases_count": 53,
+    "transaction_read_only": "on",
+    "client_tls_in_use": true,
+    "client_tls_protocol": "TLSv1.3",
+    "client_tls_cipher": "TLS_AES_256_GCM_SHA384",
+    "sslmode": "verify-full",
+    "ca": "official Supabase CA plus certifi; temporary bundle only",
+    "dns": "DoH supplied hostaddr for probe only; DNS/.env unchanged",
+    "writes": "none; rollback",
+    "evidence": "planning/06_2026-10-04_readme-refresh/evidence/integration-20261007/supabase-readonly.txt",
+    "normal_hostname_startup": "application_factories_verified_readonly",
+    "app_storage_activated": "shared_runtime_demo_verified",
+    "storage_key_configured": true
+  },
+  "supabase_local_configuration": {
+    "timestamp": "2026-10-07T03:55:06.596678+00:00",
+    "app_configuration_check": "PASS",
+    "repository": "PostgresRepository",
+    "photo_store": "SupabasePhotoStore",
+    "cases_count": 53,
+    "database_host": "aws-0-ap-southeast-1.pooler.supabase.com",
+    "sslmode": "verify-full",
+    "database_identity": "truong",
+    "llm_model": "gpt-6-luna",
+    "llm_client_constructed": true,
+    "llm_invoked": false,
+    "reset_allowed": false,
+    "seed_on_empty": false,
+    "server_started": false,
+    "verification": "database default_transaction_read_only=on for probe; no seed/jobs/photo upload",
+    "storage_metadata_http_status": 200,
+    "private_bucket": true,
+    "evidence": "planning/06_2026-10-04_readme-refresh/evidence/integration-20261007/supabase-app-config.txt",
+    "local_secrets_committed": false
+  },
+  "shared_supabase_demo": {
+    "verified_at": "2026-10-07T04:11:12.207497+00:00",
+    "ticket_id": "SIM-TKT-0042",
+    "label": "DEMO-TRUONG-20261007T040318Z",
+    "status": "CLOSED",
+    "photos": {
+      "resident": {
+        "evidence_id": "SIM-EVD-0042-01",
+        "object_ref": "bf1c203e10a241c6bce67e99f4ffdc59.png",
+        "bytes": 686,
+        "sha256": "adce3702b8912bc71aa2b890360f0926b391844694fd20c19cb6921bc5051e79",
+        "api_match": true,
+        "storage_match": true
+      },
+      "execution": {
+        "evidence_id": "SIM-EVD-0042-03",
+        "object_ref": "76bf986e34774c1392017cd3f828b035.png",
+        "bytes": 686,
+        "sha256": "66319477376af2279dd6c9a6ee1c38d1a8ec82243664faeddcb07d15aa3ab84a",
+        "api_match": true,
+        "storage_match": true
+      }
+    },
+    "before_cases": 53,
+    "after_cases": 54,
+    "scope_checks": {
+      "preexisting_cases_changed": [],
+      "stock_unchanged": true,
+      "new_ticket_ids": [
+        "SIM-TKT-0042"
+      ]
+    },
+    "restart_verification": {
+      "ticket_status": "CLOSED",
+      "photos_count": 2,
+      "counts": {
+        "audit_log": 24,
+        "notifications": 7
+      }
+    },
+    "jobs_enabled": false,
+    "seed_enabled": false,
+    "reset_enabled": false,
+    "server_url": "http://127.0.0.1:8001/ui/",
+    "server_pid": 20944,
+    "tests": {
+      "passed": 2973,
+      "deselected": 29,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0
+    },
+    "ruff_exit_code": 0,
+    "evidence": "planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json",
+    "limits": [
+      "synthetic photos/checklist/material usage",
+      "no rating submitted",
+      "no manual browser E2E",
+      "no public deployment",
+      "Day05/Day06 not signed off",
+      "Postgres regression suite not run against shared DB",
+      "brain hub unavailable, boot exit1"
+    ]
+  },
+  "day04_completion_review": {
+    "at": "2026-10-07T04:32:59.390139+00:00",
+    "personal_scope": "user_approved_9_cases",
+    "demo_and_reporting": "performed",
+    "formal_acceptance": "evidence_package_normalized_product_gates_open",
+    "same_build_matrix_verified": false,
+    "online_deployment": false,
+    "combined_pass_count": null,
+    "current_report": "planning/07_2026-10-04_online-acceptance/deliverables/day04-summary.md",
+    "shared_writes_this_review": false,
+    "normalized_files": [
+      "manifest.json",
+      "results.json",
+      "issues.json"
+    ],
+    "validation_exit": 0,
+    "scope_removals": "6 removed, no NOT_RUN records"
+  },
+  "day04_normalization": {
+    "at": "2026-10-07T04:32:59.390139+00:00",
+    "scope_cases": 9,
+    "schema": "day04-3",
+    "runs": [
+      {
+        "id": "local-ui-20261004-05",
+        "counts": {
+          "PASS": 8,
+          "FAIL": 0,
+          "BLOCKED": 1
+        }
+      },
+      {
+        "id": "local-supabase-20261007",
+        "counts": {
+          "PASS": 1,
+          "FAIL": 1,
+          "BLOCKED": 0
+        }
+      }
+    ],
+    "shared_writes": false,
+    "runtime_tests_run": false,
+    "validation_exit": 0,
+    "negative_controls_rejected": 3,
+    "report": "planning/07_2026-10-04_online-acceptance/deliverables/day04-summary.md"
+  },
+  "critical_safety_issue": {
+    "id": "D4-11",
+    "status": "OPEN",
+    "severity": "CRITICAL",
+    "primary_owner": "Như Ý / engine safety",
+    "integration_owner": "Châm Anh",
+    "observed_at": "2026-10-07T04:38:20.572561+00:00",
+    "local_reproductions": {
+      "failed": 2,
+      "passed_control": 1
+    },
+    "reported_ticket": "TK-0046 screenshot only",
+    "live_ticket_modified": false,
+    "source_fixed": false,
+    "evidence": "planning/07_2026-10-04_online-acceptance/evidence/normalization-20261007/safety-child-trapped.json"
+  },
+  "prior_active_plan": {
+    "id": "05_2026-10-04_agent-hardening",
+    "status": "in_progress",
     "team_plan_url": "https://storm-jade-f74.notion.site/K-ho-ch-MaintenanceOps-MVP-3e43b68a924d80d7a81fe0579e1eddb9",
     "deadlines": {
       "mvp_online": "2026-10-04T23:59:00+07:00",
@@ -104,42 +600,186 @@
       "spec": "planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md"
     }
   },
-  "last_session": {
-    "date": "2026-10-03",
-    "timestamp": "2026-10-03T09:50:39+07:00",
-    "boot_exit": 1,
-    "agents_requested": 5,
-    "baseline_tests": {
-      "passed": 185,
-      "deselected": 20,
+  "day05_submission_review": {
+    "at": "2026-10-07T06:16:13.491588+00:00",
+    "report": "docs\\submission\\daily\\2026-10-05.md",
+    "evidence": "planning\\09_2026-10-07_day05-labels\\evidence\\submission-review-20261007",
+    "status": "local_preparation_verified_acceptance_open",
+    "pytest": {
+      "passed": 270,
+      "failed": 0,
+      "skipped": 0,
       "exit": 0
     },
-    "baseline_format": "2 pre-existing files need formatting",
-    "local_verification": {
-      "pytest": {
-        "passed": 266,
-        "deselected": 20,
-        "exit": 0
-      },
-      "safety_tests": 72,
-      "target_tests": 9,
-      "package_checks": {
-        "passed": 57,
-        "failed": 0,
-        "skip": 0,
-        "exit": 0
-      },
-      "lint_exit": 0,
-      "new_files_format_exit": 0,
-      "full_format_exit": 1,
-      "full_format_preexisting_files": [
-        "src/api/routers/maintenance.py",
-        "src/maintenance/ai_logger.py"
-      ],
-      "syntax": "passed",
-      "typechecker": "not configured",
-      "postgres": "not run this session"
+    "ruff_check_exit": 0,
+    "ruff_format_exit": 0,
+    "backlog_exit": 0,
+    "structure_exit": 0,
+    "full_validator_exit": 1,
+    "baseline_develop_exit": 2,
+    "baseline_heldout_exit": 2,
+    "manifest_hashes_matched": 95,
+    "gold_accepted": 0,
+    "held_out": 0,
+    "runtime_fixed": false,
+    "app_version_changed": false,
+    "main_report": "docs/submission/day05-report.md",
+    "main_report_created_at": "2026-10-07T06:21:49.340237+00:00",
+    "full_task_closed": false
+  },
+  "upstream_active_plan": {
+    "id": "09_2026-10-07_day05-labels",
+    "status": "proposed",
+    "team_plan_url": "https://storm-jade-f74.notion.site/K-ho-ch-MaintenanceOps-MVP-3e43b68a924d80d7a81fe0579e1eddb9",
+    "deadlines": {
+      "mvp_online": "2026-10-04T23:59:00+07:00",
+      "feature_freeze": "2026-10-12T21:00:00+07:00",
+      "final_handoff": "2026-10-19T23:59:00+07:00"
     },
-    "local_work_packages_completed": 5
+    "group_approval": "approved",
+    "runtime_integration": "pending",
+    "online_acceptance": "pending",
+    "local_outputs": "verified",
+    "approval": {
+      "decision": "pending",
+      "approver": "Lê Thị Châm Anh",
+      "role": "leader",
+      "approved_date": "2026-10-02",
+      "approved_at": null,
+      "date_precision": "day",
+      "recorded_date": "2026-10-03",
+      "recorded_at": "2026-10-03T10:25:01+07:00",
+      "source": "user report in this session",
+      "reference_commit": "a5e2705cf2ad1f57a896f5d3baf2f020ca96d45d",
+      "reference_pr": 6,
+      "scope": "MVP 04/10 and D-01-D-07",
+      "external_minutes_url": null,
+      "chronology_note": "Reference commit created after the reported approval date; reference mapping confirmed by user on 2026-10-03."
+    },
+    "day03": {
+      "status": "closed_local_d01_out_of_mvp",
+      "recorded_at": "2026-10-03",
+      "sha": "f46a53c607a0ac9a0038346980abf26419206d57",
+      "results": {
+        "total": 23,
+        "pass": 17,
+        "fail": 1,
+        "blocked": 5,
+        "not_run": 0
+      },
+      "task_ids": [
+        "D3-01",
+        "D3-02",
+        "D3-03",
+        "D3-04",
+        "D3-05",
+        "D3-06",
+        "D3-07"
+      ],
+      "completed": 7,
+      "runtime_changes_allowed": false,
+      "spec": "planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md"
+    },
+    "task_date": "2026-10-05",
+    "created_at": "2026-10-07T05:07:58.261170+00:00",
+    "owner": "Cao Văn Trường",
+    "parent_id": "05_2026-10-04_agent-hardening",
+    "verification": {
+      "package_exit": 0,
+      "spec_documents": 7,
+      "source_refs": 10,
+      "negative_controls_rejected": 3
+    },
+    "dataset_executed": false,
+    "execution": {
+      "local_offline_at": "2026-10-07",
+      "status": "partial",
+      "backlog_items": 15,
+      "source_cases_develop": 50,
+      "proposals": {
+        "safety": 50,
+        "classification": 20
+      },
+      "gold_accepted": {
+        "safety": 0,
+        "classification": 0
+      },
+      "held_out": 0,
+      "baseline": "not_run",
+      "tools_tests": {
+        "passed": 270,
+        "failed": 0,
+        "skipped": 0
+      },
+      "cold_audit": "1 blocker+5 majors fixed; round2 not run",
+      "boot_exit": 1
+    }
+  },
+  "latest_develop_integration": {
+    "at": "2026-10-07T13:30:26.152115+00:00",
+    "branch": "feature/truong",
+    "head": "79f9444596f61c41bd08dbbc9b70fb0ed8e68cdc",
+    "develop": "04491adf9c466fb34feb4ec4947ceea933e45eba",
+    "develop_is_ancestor": true,
+    "backup_branch": "backup/truong-before-develop-20261007-1530",
+    "stash": "e3369059939a78f476a083f0991e2c1e6f09aac8",
+    "pytest": {
+      "passed": 3341,
+      "failed": 0,
+      "skipped": 0,
+      "deselected": 76,
+      "exit": 0
+    },
+    "day05_tests": {
+      "passed": 270,
+      "failed": 0,
+      "skipped": 0,
+      "exit": 0
+    },
+    "ruff_check_exit": 0,
+    "ruff_format_exit": 0,
+    "day05_package_hashes_match": 90,
+    "shared_db_changed": false,
+    "live_llm_tested": false,
+    "portal_tested": false,
+    "server_restarted": false,
+    "limits": [
+      "PostgreSQL/portal/Docker not tested",
+      "shared DB needs coordinated 0002_p1_doc_shape migration before new backend startup",
+      "Luna on new reasoning client not live-tested",
+      "Day05 gold/held-out acceptance remains open"
+    ],
+    "code_hashes": {
+      "src/maintenance/models.py": "6df082d9c995e288ee7ba3cd82771947dcf000d8fe7e5a783968823fe256f052",
+      "src/maintenance/proposer.py": "115ef84017d908e0e67c45500dc5352e960ca12a8b25bfefbc8696c62e417122",
+      "src/maintenance/agent/client.py": "38ecf700bd4af1a05ad91df24e5dbcb2cbfa949ddf75a637300404749a46852c",
+      "src/maintenance/safety.py": "a2039d58cd8e23821ab35e4762f2fa6445d3ee8dc5ab191eb46f07330ee327f9",
+      "seed/maintenance_v1/lexicon.yaml": "920e6b3f3e78b915635c72c74e84130ab0f7848a398da67964a5a74c2d13fb99"
+    }
+  },
+  "portal_test_server": {
+    "at": "2026-10-07T13:50:36.821687+00:00",
+    "url": "http://localhost:3000/login",
+    "pid": 21076,
+    "http_status": 200,
+    "browser_verified": true,
+    "browser_title": "??ng nh?p ? C?ng ph?n ?nh c? d?n",
+    "store": "PostgreSQL local portal",
+    "container": "p151-db-1",
+    "db_bind": "127.0.0.1:5432",
+    "migration_exit": 0,
+    "seed_exit": 0,
+    "unit_tests": {
+      "passed": 17,
+      "failed": 0,
+      "files": 3,
+      "exit": 0
+    },
+    "npm_ci_exit": 0,
+    "shared_supabase_changed": false,
+    "reset_used": false,
+    "llm_connected": false,
+    "python_engine_connected": false,
+    "config": "portal/.env.local (git ignored)"
   }
 }

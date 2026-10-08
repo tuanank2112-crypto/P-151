@@ -1,0 +1,5 @@
+C:/P-151/.python/cpython-3.11.16-windows-x86_64-none/python.exe -m ruff check src tests
+All checks passed!
+
+
+EXIT_CODE=0
