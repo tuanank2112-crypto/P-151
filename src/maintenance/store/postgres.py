@@ -13,11 +13,11 @@ import functools
 import logging
 import re
 import threading
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 import sqlalchemy as sa
 from sqlalchemy import bindparam, text
@@ -100,14 +100,32 @@ def connect_args_for(url: str) -> dict[str, Any]:
 
 @functools.lru_cache(maxsize=4)
 def sql_engine(url: str) -> sa.Engine:
-    """One engine (one pool) per URL per process: at most 5 connections."""
+    """The WRITE engine: transactions, row locks, leases. With `sql_read_engine` at most 5 connections per process
+    (plan 12 Q05): `engine.lock` allows one write transaction, plus one lease."""
     return sa.create_engine(
         url,
         pool_size=2,
-        max_overflow=3,
+        max_overflow=0,
         pool_timeout=30,
         pool_pre_ping=True,
         pool_recycle=300,
+        connect_args=connect_args_for(url),
+    )
+
+
+@functools.lru_cache(maxsize=4)
+def sql_read_engine(url: str) -> sa.Engine:
+    """The READ engine (plan 12 SPEC-P01): AUTOCOMMIT, so a one-statement read is one round trip instead of four
+    (pre-ping, BEGIN, query, ROLLBACK — 230 ms vs 52 ms measured on Supabase). No pre-ping: `_read` retries once
+    when the server dropped the pooled connection."""
+    return sa.create_engine(
+        url,
+        pool_size=2,
+        max_overflow=1,
+        pool_timeout=30,
+        pool_pre_ping=False,
+        pool_recycle=300,
+        isolation_level="AUTOCOMMIT",
         connect_args=connect_args_for(url),
     )
 
@@ -343,9 +361,13 @@ class _PgTx:
 # ---------------------------------------------------------------------- repository
 
 
+_T = TypeVar("_T")
+
+
 class PostgresRepository:
     def __init__(self, url: str):
         self._engine = sql_engine(url)
+        self._read_engine = sql_read_engine(url)
         self._url_host = make_url(url).host
         self._local = threading.local()
         # list() cache (plan 09): ticket_id -> (xmin, validated Case); the Cases are shared and read-only
@@ -368,9 +390,27 @@ class PostgresRepository:
 
     # ------------------------------------------------------------------ reads (own connection: committed data only)
 
+    def _read(self, fn: Callable[[Connection], _T]) -> _T:
+        """Run one read on the AUTOCOMMIT engine (plan 12 SPEC-P01). A connection the server dropped (pooler idle
+        timeout, restart) is retried exactly once on a new one; any other error is translated as before."""
+        for attempt in (0, 1):
+            try:
+                with self._read_engine.connect() as conn:
+                    return fn(conn)
+            except DBAPIError as exc:
+                if attempt == 0 and exc.connection_invalidated:
+                    logger.info("read retried after a dropped connection")
+                    continue
+                with _db_errors():
+                    raise
+        raise AssertionError("unreachable")
+
     def get(self, ticket_id: str) -> Case:
-        with _db_errors(), self._engine.connect() as conn:
-            doc = conn.execute(text("select doc from maintops.cases where ticket_id = :id"), {"id": ticket_id}).scalar()
+        doc = self._read(
+            lambda conn: conn.execute(
+                text("select doc from maintops.cases where ticket_id = :id"), {"id": ticket_id}
+            ).scalar()
+        )
         if doc is None:
             raise NotFoundError(f"Không có ticket {ticket_id}")
         return Case.model_validate(doc)
@@ -381,8 +421,9 @@ class PostgresRepository:
         with self._list_lock:
             known = dict(self._list_cache)
         ids = list(known)
-        with _db_errors(), self._engine.connect() as conn:
-            rows = conn.execute(_LIST_CHANGED, {"ids": ids, "vs": [known[tid][0] for tid in ids]}).all()
+        rows = self._read(
+            lambda conn: conn.execute(_LIST_CHANGED, {"ids": ids, "vs": [known[tid][0] for tid in ids]}).all()
+        )
         cache: dict[str, tuple[str, Case]] = {}
         loaded = 0
         for row in rows:  # validate everything before touching the cache: a broken doc leaves it as it was
@@ -411,51 +452,58 @@ class PostgresRepository:
             }
 
     def count(self) -> int:
-        with _db_errors(), self._engine.connect() as conn:
-            return conn.execute(text("select count(*) from maintops.cases")).scalar_one()
+        return self._read(lambda conn: conn.execute(text("select count(*) from maintops.cases")).scalar_one())
 
     def stock_of(self, item_code: str) -> float | None:
-        with _db_errors(), self._engine.connect() as conn:
-            return conn.execute(text("select qty from maintops.stock where item_code = :c"), {"c": item_code}).scalar()
+        return self._read(
+            lambda conn: conn.execute(
+                text("select qty from maintops.stock where item_code = :c"), {"c": item_code}
+            ).scalar()
+        )
 
     def stock(self) -> dict[str, float | None]:
-        with _db_errors(), self._engine.connect() as conn:
-            rows = conn.execute(text("select item_code, qty from maintops.stock order by item_code")).all()
+        rows = self._read(
+            lambda conn: conn.execute(text("select item_code, qty from maintops.stock order by item_code")).all()
+        )
         return {row.item_code: row.qty for row in rows}
 
     def run_number(self) -> int:
-        with _db_errors(), self._engine.connect() as conn:
-            return conn.execute(text("select value from maintops.meta where key = 'run_number'")).scalar_one()
+        return self._read(
+            lambda conn: conn.execute(text("select value from maintops.meta where key = 'run_number'")).scalar_one()
+        )
 
     # ------------------------------------------------------------------ test-only inspection (01-CONTRACTS §4.3)
 
     def version_of(self, ticket_id: str) -> int:
-        with _db_errors(), self._engine.connect() as conn:
-            version = conn.execute(
+        version = self._read(
+            lambda conn: conn.execute(
                 text("select version from maintops.cases where ticket_id = :id"), {"id": ticket_id}
             ).scalar()
+        )
         if version is None:
             raise NotFoundError(f"Không có ticket {ticket_id}")
         return version
 
     def log_rows(self) -> list[AuditEvent | StatusEvent]:
-        with _db_errors(), self._engine.connect() as conn:
-            rows = conn.execute(text("select kind, payload from maintops.audit_log order by seq")).all()
+        rows = self._read(
+            lambda conn: conn.execute(text("select kind, payload from maintops.audit_log order by seq")).all()
+        )
         return [
             AuditEvent.model_validate(row.payload) if row.kind == "audit" else StatusEvent.model_validate(row.payload)
             for row in rows
         ]
 
     def notification_rows(self) -> list[Notification]:
-        with _db_errors(), self._engine.connect() as conn:
-            payloads = conn.execute(text("select payload from maintops.notifications order by seq")).scalars().all()
+        payloads = self._read(
+            lambda conn: conn.execute(text("select payload from maintops.notifications order by seq")).scalars().all()
+        )
         return [Notification.model_validate(payload) for payload in payloads]
 
     # ------------------------------------------------------------------ writes outside a transaction
 
     def next_ticket_number(self) -> int:
-        with _db_errors(), self._engine.begin() as conn:
-            return conn.execute(text("select nextval('maintops.ticket_number_seq')")).scalar_one()
+        # nextval is not transactional: one AUTOCOMMIT round trip; a retry after a dropped connection only skips a number
+        return self._read(lambda conn: conn.execute(text("select nextval('maintops.ticket_number_seq')")).scalar_one())
 
     def set_stock(self, item_code: str, qty: float | None) -> None:
         with _db_errors(), self._engine.begin() as conn:

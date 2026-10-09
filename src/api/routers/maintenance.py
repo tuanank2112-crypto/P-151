@@ -15,6 +15,7 @@ from datetime import datetime
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
@@ -177,20 +178,25 @@ class RequiredNoteBody(NoteBody):
 PhotoFiles = Annotated[list[UploadFile], File(description="Ảnh JPG, PNG hoặc WEBP, tối đa 5 MB mỗi ảnh")]
 
 
-async def _attach_photos(files: list[UploadFile], room: int, limit: int, attach) -> Case:
-    """Validate all files, then store and record them one by one. A file whose record is refused is deleted."""
-    batch = await photos.read_photos(files)
+def _store_and_attach(batch: list[tuple[bytes, str]], room: int, limit: int, attach_many) -> Case:
+    """Store every photo, then record them all in ONE engine transaction (plan 12 SPEC-P02). Blocking I/O (photo store,
+    database): run it in the threadpool, never on the event loop. Refused or failed ⇒ every stored photo is deleted."""
     if len(batch) > room:
         raise HTTPException(status_code=409, detail=f"Tối đa {limit} ảnh; còn gửi thêm được {room} ảnh")
-    case = None
-    for data, extension in batch:
-        ref = photos.save(data, extension)
-        try:
-            case = _call(attach, ref)
-        except Exception:
+    refs: list[str] = []
+    try:
+        for data, extension in batch:
+            refs.append(photos.save(data, extension))
+        return _call(attach_many, refs)
+    except Exception:
+        for ref in refs:
             photos.discard(ref)
-            raise
-    return case
+        raise
+
+
+# The photo name is a fresh uuid and its bytes never change: the browser may keep it (plan 12 SPEC-P02 §2).
+# "identity" also tells the gzip middleware to leave the already-compressed image alone (SPEC-P03 §1).
+_PHOTO_HEADERS = {"Cache-Control": "private, max-age=31536000, immutable", "Content-Encoding": "identity"}
 
 
 def _photo_file(case: Case, evidence_id: str, allowed) -> Response:
@@ -198,7 +204,7 @@ def _photo_file(case: Case, evidence_id: str, allowed) -> Response:
     if record is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy ảnh")
     data, media_type = photos.load(record.content_or_metadata)
-    return Response(content=data, media_type=media_type, headers={"Cache-Control": "private, max-age=3600"})
+    return Response(content=data, media_type=media_type, headers=_PHOTO_HEADERS)
 
 
 # ------------------------------------------------------------------ demo control (internal, FR-DEMO-001)
@@ -565,20 +571,16 @@ def add_evidence(ticket_id: str, body: EvidenceRequest, actor: ActorDep, engine:
 @router.post("/tickets/{ticket_id}/photos", response_model=Case)
 async def add_execution_photos(ticket_id: str, files: PhotoFiles, actor: ActorDep, engine: EngineDep) -> Case:
     """Phòng ban gửi ảnh sau khi xử lý (bắt buộc ít nhất một ảnh trước khi báo hoàn thành)."""
-    case = _staff_case(engine, actor, ticket_id)
-    room = MAX_EXECUTION_PHOTOS - len(execution_photos(case))
+    batch = await photos.read_photos(files)  # the only awaited step; everything below blocks, so it runs in a thread
 
-    def attach(ref: str) -> Case:
-        return engine.add_evidence(
-            ticket_id,
-            actor,
-            requirement_id=None,
-            evidence_type=EvidenceType.SIMULATED_IMAGE,
-            content_or_metadata=ref,
-            readability_status=ReadabilityStatus.READABLE,
+    def work() -> Case:
+        case = _staff_case(engine, actor, ticket_id)
+        room = MAX_EXECUTION_PHOTOS - len(execution_photos(case))
+        return _store_and_attach(
+            batch, room, MAX_EXECUTION_PHOTOS, lambda refs: engine.add_execution_photos(ticket_id, actor, refs)
         )
 
-    return await _attach_photos(files, room, MAX_EXECUTION_PHOTOS, attach)
+    return await run_in_threadpool(work)
 
 
 @router.get("/tickets/{ticket_id}/photos/{evidence_id}", response_class=Response)
@@ -705,12 +707,17 @@ async def resident_add_photos(
     ticket_id: str, files: PhotoFiles, actor: ActorDep, engine: EngineDep
 ) -> ResidentTicketView:
     """Đính kèm ảnh (không bắt buộc) vào phản ánh của chính mình."""
-    case = _own_case(engine, ticket_id, actor)
-    room = MAX_RESIDENT_PHOTOS - len(resident_photos(case))
-    case = await _attach_photos(
-        files, room, MAX_RESIDENT_PHOTOS, lambda ref: engine.add_resident_photo(ticket_id, actor, ref)
-    )
-    return resident_view(engine, case, engine.clock())
+    batch = await photos.read_photos(files)  # the only awaited step; everything below blocks, so it runs in a thread
+
+    def work() -> ResidentTicketView:
+        case = _own_case(engine, ticket_id, actor)
+        room = MAX_RESIDENT_PHOTOS - len(resident_photos(case))
+        case = _store_and_attach(
+            batch, room, MAX_RESIDENT_PHOTOS, lambda refs: engine.add_resident_photos(ticket_id, actor, refs)
+        )
+        return resident_view(engine, case, engine.clock())
+
+    return await run_in_threadpool(work)
 
 
 @resident_router.get("/tickets/{ticket_id}/photos/{evidence_id}", response_class=Response)

@@ -173,10 +173,36 @@
 - Còn treo: commit merge + plan 09; client `gpt-6-luna`; Idea Vault (agent chạy nền, session DB, bỏ audit/notifications khỏi doc, phân trang, gzip).
 - Plan 10 (v1.6.0): chia trang 20 ticket ở giao diện (`listCard` + pager, 4 màn), API không đổi. Harness Playwright `:8001` P1–P8 + P3b xanh, 3/3 phép phá đỏ; 2 mutant reset (đăng xuất, lọc BQL) là tương đương vì mọi màn tự chọn ticket đầu. Server `:8000` chỉ đọc: 8/8 (cudan01 38 → 2 trang, BQL 55 → 3 trang). pytest 3344 passed. Người dùng hỏi "đã phân trang chưa" ⇒ có thể đã hiểu sai "làm cái 1 và 2" ở plan 09; AI chạy nền + giữ đăng nhập vẫn chưa làm.
 
-## ⚡ Phiên 2026-10-09 — Plan 11 app điện thoại PWA (feature/chamanh, v1.7.0)
-- Người dùng: cư dân dùng app, BQL chủ yếu web nhưng cần app; bắt buộc đồng bộ DB. Chốt PWA (không React Native) — Q13.
-- `src/mobile/` ở `/app/` (1 dòng mount `src/main.py`), client mỏng của API ⇒ cùng DB; tải lại 30 s; SW không cache `/api/`.
-- Lỗi lượt đầu bắt từ ảnh chụp: "null" do `replaceChildren()`; `ADD_INFO` chỉ ở `NEED_INFO` nhưng ảnh nhận mọi trạng thái mở (Q15–Q17, gotchas).
-- Đo: pytest 3349, ruff sạch, harness M1–M13 26/26, đồng bộ 30,3 s, 4/4 phép phá đỏ. Còn: G5 điện thoại thật, G6–G8 HTTPS, commit (chưa).
-- Đợt 2 (15:13): người dùng "lấy backend từ folder gốc :8000 docker … dùng ui trong folder portal để gen ra UI của app" ⇒ SPEC-P04: chép class `globals.css` + icon + header/tile/3 thẻ đánh số/stepper sang `src/mobile/`, backend vẫn FastAPI. Docker `:8000` crash do image dựng từ `dev` (SQLAlchemy 2.1, chưa ghim) ⇒ chuyển `feature/chamanh` + `git stash apply stash@{0}` (mount `/app` + não đợt 1 bị cất) + dựng lại. Đo: pytest 3349, harness 26/26, 4/4 phép phá đỏ, `:8000` chỉ đọc 200. Lỗi tự gây: lần đầu `stash apply` chạy nhầm trên `dev` (pipe nuốt lỗi checkout) ⇒ hoàn tác bằng checkout HEAD 12 file, stash còn nguyên.
-- Đợt 3 (17:53): người dùng "tất cả các role đều cần có app để tiện chụp hình, báo cáo" + bỏ hàng chip lọc Cư dân ⇒ SPEC-P05: `staff.js` + `dept.js` (ảnh sau xử lý đầu tiên) + `bptn.js` + `kho.js`; QA vẫn web. Bắt được: `bptn_resolve` 409 khi thiếu lý do (form web cũng sai). Đo: pytest 3349, M1–M17 ALL PASS, 5/5 phép phá đỏ, `:8000` chỉ đọc 200 mọi vai. Link điện thoại: `http://<IPv4 Wi-Fi>:8000/app/`.
+## ⚡ Phiên 2026-10-09 — App điện thoại mọi vai (plan 11) + giảm độ trễ backend (plan 12) (feature/chamanh)
+
+> Cập nhật lúc: `2026-10-09T19:55:00+07:00` | Phiên bản: `v1.8.0` (plan 12 chưa commit) | Commit cuối: `e9960f0` (đã push)
+
+### 🎯 Thành tựu
+1. **Backend Docker `:8000` sống lại**: image dựng từ `dev` kéo SQLAlchemy 2.1 (đòi psycopg3) ⇒ chuyển `feature/chamanh` (đã ghim `<2.1`) + `git stash apply stash@{0}` (mount `/app` + não plan 11 bị cất khi đổi nhánh). `stash@{0}` giữ lại, nay trùng commit.
+2. **Plan 11 đợt 2 (SPEC-P04)**: giao diện app chép từ `portal/` (class `globals.css`, icon, header gradient + tile, 3 thẻ đánh số, stepper) trên backend FastAPI gốc.
+3. **Plan 11 đợt 3 (SPEC-P05, Q26–Q32)**: app cho Phòng ban (ảnh sau xử lý, checklist, vật tư, báo hoàn thành), BPTN (form theo mã vướng, lý do bắt buộc), Kho (tồn, nhập kho); bỏ chip lọc Cư dân; Phòng ban 4 tile có "Chờ nghiệm thu", bỏ ô số liệu. Commit `118eeba` + `e9960f0`, ĐÃ PUSH `origin/feature/chamanh`.
+4. **Rà soát backend (chỉ đọc)** ⇒ 9 điểm; **plan 12 (v1.8.0)** làm #1 engine đọc AUTOCOMMIT, #2 ảnh khỏi event loop + 1 transaction/lô, #4 gzip, #6 cache ảnh, #8 `run_jobs`. CHƯA COMMIT.
+
+### 🧪 Số đo
+| Đo | Kết quả |
+|---|---|
+| pytest / `--pg` local / ruff | 3359 passed / 88 passed / 0 |
+| Harness app plan 11 M1–M17 (`:8001`) | ALL PASS; 5/5 phép phá plan 11 đỏ |
+| Phép phá plan 12 m1–m5 | 5/5 đỏ, khôi phục từng byte |
+| `:8000` GET median (Supabase, đo trong container) | 226–280 ms → 50–55 ms |
+| Danh sách trên dây | 54–69 KB → ~4 KB (gzip) |
+| Ảnh xem lại | 527 → 56 ms (mục tiêu 50 ms — CHƯA đạt, ghi trung thực ở G5) |
+
+### 📁 File
+- **Commit/push:** `src/mobile/` (PWA mọi vai), `src/main.py` (mount `/app`), `docs/mobile.md`, `planning/11_2026-10-09_mobile-pwa-app/`, test `test_mobile_static.py`.
+- **Chưa commit (plan 12):** `src/maintenance/store/postgres.py` (`sql_read_engine`, `_read`), `src/maintenance/engine.py` (`add_resident_photos`, `add_execution_photos`, `run_jobs`), `src/api/routers/maintenance.py` (`_store_and_attach`, threadpool), `src/api/photos.py` (cache LRU), `src/main.py` (gzip), test mới `test_backend_latency.py`, `test_read_engine.py`, bộ đếm SQL 3 file test, `docs/maintenance.md` §15, `planning/12_2026-10-09_backend-latency/`, não, version 1.8.0.
+
+### ⚠️ Gotchas (chi tiết ở `-known-gotchas.md`)
+- `engine.connect()` psycopg2 = 4 vòng mạng; AUTOCOMMIT phải đặt ở mức engine.
+- `async def` + I/O đồng bộ = đứng cả server (đo 1,0 s).
+- Python `urllib` trên Windows host cộng ~180 ms/lần ⇒ đo trong container; `MSYS_NO_PATHCONV=1` cho `docker exec -w`.
+- `bptn_resolve` bắt buộc `note` khi BPTN đổi giá trị — form web ghi "không bắt buộc" (lỗi web, chưa sửa).
+- Pipe trong chuỗi `&&` nuốt mã lỗi (`git checkout … | tail && git stash apply` đã chạy nhầm trên `dev`).
+
+### ⏸ Còn mở
+Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lập (plan 11, 12); G5 điện thoại thật, G6–G8 HTTPS (plan 11); sửa form BPTN web; Idea Vault #3/#5/#7/#9; nhánh `dev`/`develop` thiếu ghim SQLAlchemy (PR `feature/chamanh` → `develop`); `stash@{0}` có thể xoá; `planning/08_…` chưa track.

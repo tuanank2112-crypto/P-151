@@ -6,6 +6,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -71,6 +72,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# Plan 12 SPEC-P03: JSON lists are 50-70 KB and ~4 KB gzipped (the phone app reloads them every 30 s). Added after CORS,
+# so it wraps everything; photos say "Content-Encoding: identity" and are left alone.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 
 def _store_error_handler(status_code: int):

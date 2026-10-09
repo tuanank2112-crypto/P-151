@@ -172,3 +172,17 @@ Hồ sơ: [`planning/09_2026-10-08_backend-speed/`](../planning/09_2026-10-08_ba
 - **`resident_view(..., lookup=None)`** (`views.py`): `resident_list` truyền `{ticket_id: Case}` của cùng snapshot ⇒ ticket gộp/tách/follow-up không đọc lại DB.
   Route đơn (`/resident/tickets/{id}`…) không truyền `lookup`, vẫn đọc tươi.
 - Số đo (median, Supabase): cư dân 2676→201 ms, BPTN 1514→224 ms, BQL 503→219 ms; API trả về giống hệt từng byte (8/8 vai). Test: `test_list_cache.py` (T1–T8).
+
+## 15. Độ trễ: engine đọc, ảnh, gzip (plan 12, v1.8.0, 2026-10-09)
+Hồ sơ: [`planning/12_2026-10-09_backend-latency/`](../planning/12_2026-10-09_backend-latency/plan.md).
+- **Hai engine SQLAlchemy** (`store/postgres.py`): `sql_engine` = GHI (transaction, khoá dòng, lease; pre-ping; 2+0 kết nối);
+  `sql_read_engine` = ĐỌC (`isolation_level="AUTOCOMMIT"`, KHÔNG pre-ping, 2+1). Mọi đọc ngoài transaction qua `PostgresRepository._read(fn)`:
+  thử lại ĐÚNG một lần khi `DBAPIError.connection_invalidated`, lỗi khác dịch như cũ. CẤM `_read_engine.begin()`; ghi luôn qua `transaction()`.
+  Lý do: psycopg2 `connect()` thường = pre-ping + BEGIN + query + ROLLBACK = 4 vòng (~55 ms/vòng tới Supabase) ⇒ 230 ms; AUTOCOMMIT 1 vòng ⇒ ~53 ms.
+- **Ảnh**: route `async def` CHỈ `await photos.read_photos(files)`; kiểm quyền, lưu Storage, ghi engine chạy trong `run_in_threadpool`
+  (`_store_and_attach`). Cả lô = MỘT `_mutate` (`engine.add_resident_photos` / `add_execution_photos`), tất cả hoặc không; lỗi ⇒ xoá mọi file vừa lưu.
+  `add_resident_photo` (một ảnh) giữ, gọi bản lô. `photos.load` có cache LRU 32 MB theo `ref`; header ảnh `private, max-age=31536000, immutable` + `Content-Encoding: identity`.
+- **Gzip**: `GZipMiddleware(minimum_size=1024)` trong `src/main.py` (sau CORS). Ảnh không bị nén lại.
+- **`run_jobs`** dùng `Case` mà `_mutate` trả về, không đọc lại DB dưới `engine.lock`.
+- Số đo `:8000` (Supabase, median, đo trong container): GET 226–280 → 50–55 ms; danh sách trên dây 54–69 KB → ~4 KB; ảnh xem lại 527 → 56 ms.
+  Test: `test_backend_latency.py` (P1–P5, Z1–Z2), `test_read_engine.py` (`--pg`, T1–T3); phép phá `evidence/harness/mutate12.py` m1–m5.

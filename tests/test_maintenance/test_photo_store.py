@@ -235,7 +235,8 @@ def test_t17_photo_api_is_unchanged(api):
         response = client.get(url, headers=headers)
         assert response.status_code == 200 and response.content == PNG
         assert response.headers["content-type"] == "image/png"
-        assert response.headers["cache-control"] == "private, max-age=3600"
+        # plan 12 SPEC-P02: uuid-named photos never change, so the browser may keep them (was max-age=3600)
+        assert response.headers["cache-control"] == "private, max-age=31536000, immutable"
 
     case = engine.add_resident_photo(tid, "SIM-ACTOR-RESIDENT-01", "../../etc/passwd")
     bad = case.evidence[-1].evidence_id

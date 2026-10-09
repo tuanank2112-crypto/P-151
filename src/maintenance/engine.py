@@ -723,43 +723,54 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         )
 
     def add_resident_photo(self, ticket_id: str, actor_id: str, file_ref: str) -> Case:
-        """Optional photo the resident attaches to their own report. Kept as original evidence: never edited, never
-        read by the Agent, never a condition for anything."""
+        """One photo; see `add_resident_photos`."""
+        return self.add_resident_photos(ticket_id, actor_id, [file_ref])
+
+    def add_resident_photos(self, ticket_id: str, actor_id: str, file_refs: Sequence[str]) -> Case:
+        """Optional photos the resident attaches to their own report. Kept as original evidence: never edited, never
+        read by the Agent, never a condition for anything. All photos in one transaction (plan 12 SPEC-P02): one
+        EvidenceRecord and one audit row each, and either every photo is recorded or none."""
+        if not file_refs:
+            raise GuardError("Chưa có ảnh")
 
         def op(work: Case, now: datetime) -> None:
-            if work.ticket.status in TERMINAL_STATUSES:
-                raise GuardError("Ticket đã kết thúc; không nhận thêm ảnh")
-            if len(resident_photos(work)) >= MAX_RESIDENT_PHOTOS:
-                raise GuardError(f"Mỗi phản ánh tối đa {MAX_RESIDENT_PHOTOS} ảnh")
-            record = EvidenceRecord(
-                evidence_id=f"SIM-EVD-{_suffix(ticket_id)}-{len(work.evidence) + 1:02d}",
-                ticket_id=ticket_id,
-                work_order_draft_id=None,
-                requirement_id=None,
-                evidence_type=EvidenceType.RESIDENT_ORIGINAL,
-                content_or_metadata=file_ref,
-                source=EvidenceSource.RESIDENT_ORIGINAL,
-                submitted_by=actor_id,
-                submitted_at=now,
-                readability_status=ReadabilityStatus.READABLE,
-                immutable=True,
-            )
-            work.evidence.append(record)
-            self._audit(
-                work,
-                Action.ADD_RESIDENT_PHOTO,
-                "EvidenceRecord",
-                record.evidence_id,
-                actor_id,
-                Role.RESIDENT,
-                "evidence",
-                None,
-                {"evidence_type": record.evidence_type},
-                "Cư dân đính kèm ảnh",
-                now=now,
-            )
+            for file_ref in file_refs:
+                self._append_resident_photo(work, now, ticket_id, actor_id, file_ref)
 
         return self._mutate(ticket_id, actor_id, Action.ADD_RESIDENT_PHOTO, op)
+
+    def _append_resident_photo(self, work: Case, now: datetime, ticket_id: str, actor_id: str, file_ref: str) -> None:
+        if work.ticket.status in TERMINAL_STATUSES:
+            raise GuardError("Ticket đã kết thúc; không nhận thêm ảnh")
+        if len(resident_photos(work)) >= MAX_RESIDENT_PHOTOS:
+            raise GuardError(f"Mỗi phản ánh tối đa {MAX_RESIDENT_PHOTOS} ảnh")
+        record = EvidenceRecord(
+            evidence_id=f"SIM-EVD-{_suffix(ticket_id)}-{len(work.evidence) + 1:02d}",
+            ticket_id=ticket_id,
+            work_order_draft_id=None,
+            requirement_id=None,
+            evidence_type=EvidenceType.RESIDENT_ORIGINAL,
+            content_or_metadata=file_ref,
+            source=EvidenceSource.RESIDENT_ORIGINAL,
+            submitted_by=actor_id,
+            submitted_at=now,
+            readability_status=ReadabilityStatus.READABLE,
+            immutable=True,
+        )
+        work.evidence.append(record)
+        self._audit(
+            work,
+            Action.ADD_RESIDENT_PHOTO,
+            "EvidenceRecord",
+            record.evidence_id,
+            actor_id,
+            Role.RESIDENT,
+            "evidence",
+            None,
+            {"evidence_type": record.evidence_type},
+            "Cư dân đính kèm ảnh",
+            now=now,
+        )
 
     def rate(self, ticket_id: str, actor_id: str, score: int) -> Case:
         def op(work: Case, now: datetime) -> None:
@@ -1497,45 +1508,79 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         """Execution note. The content is stored as untrusted data and never interpreted (FR-SECURITY-001)."""
 
         def op(work: Case, now: datetime) -> None:
-            self._require_in_progress(work)
-            draft = work.draft
-            known = {r.requirement_id for r in draft.evidence_requirements}
-            if requirement_id is not None and requirement_id not in known:
-                raise GuardError(
-                    f"Requirement {requirement_id} không thuộc playbook của draft", {"known": sorted(known)}
-                )
-            if evidence_type == EvidenceType.RESIDENT_ORIGINAL:
-                raise GuardError("Execution evidence không được mang type RESIDENT_ORIGINAL")
-            if evidence_type == EvidenceType.SIMULATED_IMAGE and len(execution_photos(work)) >= MAX_EXECUTION_PHOTOS:
-                raise GuardError(f"Mỗi lần xử lý tối đa {MAX_EXECUTION_PHOTOS} ảnh")
-            record = EvidenceRecord(
-                evidence_id=f"SIM-EVD-{_suffix(ticket_id)}-{len(work.evidence) + 1:02d}",
-                ticket_id=ticket_id,
-                work_order_draft_id=draft.work_order_draft_id,
-                requirement_id=requirement_id,
-                evidence_type=evidence_type,
-                content_or_metadata=content_or_metadata,
-                source=EvidenceSource.DEPARTMENT_EXECUTION,
-                submitted_by=actor_id,
-                submitted_at=now,
-                readability_status=readability_status,
-            )
-            work.evidence.append(record)
-            self._audit(
-                work,
-                Action.ADD_EVIDENCE,
-                "EvidenceRecord",
-                record.evidence_id,
-                actor_id,
-                Role.DEPARTMENT,
-                "evidence",
-                None,
-                {"requirement_id": requirement_id, "evidence_type": evidence_type},
-                "Thêm ghi chú xử lý mô phỏng",
-                now=now,
+            self._append_execution_evidence(
+                work, now, ticket_id, actor_id, requirement_id, evidence_type, content_or_metadata, readability_status
             )
 
         return self._mutate(ticket_id, actor_id, Action.ADD_EVIDENCE, op)
+
+    def add_execution_photos(self, ticket_id: str, actor_id: str, file_refs: Sequence[str]) -> Case:
+        """The department's photos after the work, all in one transaction (plan 12 SPEC-P02): one EvidenceRecord and
+        one audit row each, written as `add_evidence` writes them, and either every photo is recorded or none."""
+        if not file_refs:
+            raise GuardError("Chưa có ảnh")
+
+        def op(work: Case, now: datetime) -> None:
+            for file_ref in file_refs:
+                self._append_execution_evidence(
+                    work,
+                    now,
+                    ticket_id,
+                    actor_id,
+                    None,
+                    EvidenceType.SIMULATED_IMAGE,
+                    file_ref,
+                    ReadabilityStatus.READABLE,
+                )
+
+        return self._mutate(ticket_id, actor_id, Action.ADD_EVIDENCE, op)
+
+    def _append_execution_evidence(
+        self,
+        work: Case,
+        now: datetime,
+        ticket_id: str,
+        actor_id: str,
+        requirement_id: str | None,
+        evidence_type: EvidenceType,
+        content_or_metadata: str,
+        readability_status: ReadabilityStatus,
+    ) -> None:
+        self._require_in_progress(work)
+        draft = work.draft
+        known = {r.requirement_id for r in draft.evidence_requirements}
+        if requirement_id is not None and requirement_id not in known:
+            raise GuardError(f"Requirement {requirement_id} không thuộc playbook của draft", {"known": sorted(known)})
+        if evidence_type == EvidenceType.RESIDENT_ORIGINAL:
+            raise GuardError("Execution evidence không được mang type RESIDENT_ORIGINAL")
+        if evidence_type == EvidenceType.SIMULATED_IMAGE and len(execution_photos(work)) >= MAX_EXECUTION_PHOTOS:
+            raise GuardError(f"Mỗi lần xử lý tối đa {MAX_EXECUTION_PHOTOS} ảnh")
+        record = EvidenceRecord(
+            evidence_id=f"SIM-EVD-{_suffix(ticket_id)}-{len(work.evidence) + 1:02d}",
+            ticket_id=ticket_id,
+            work_order_draft_id=draft.work_order_draft_id,
+            requirement_id=requirement_id,
+            evidence_type=evidence_type,
+            content_or_metadata=content_or_metadata,
+            source=EvidenceSource.DEPARTMENT_EXECUTION,
+            submitted_by=actor_id,
+            submitted_at=now,
+            readability_status=readability_status,
+        )
+        work.evidence.append(record)
+        self._audit(
+            work,
+            Action.ADD_EVIDENCE,
+            "EvidenceRecord",
+            record.evidence_id,
+            actor_id,
+            Role.DEPARTMENT,
+            "evidence",
+            None,
+            {"requirement_id": requirement_id, "evidence_type": evidence_type},
+            "Thêm ghi chú xử lý mô phỏng",
+            now=now,
+        )
 
     def report_complete(self, ticket_id: str, actor_id: str) -> Case:
         """'Báo hoàn thành' → step 10 reconciliation. Pass: READY_FOR_REVIEW. Fail: stays IN_PROGRESS, the
@@ -1657,11 +1702,13 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 try:
                     if not self._due(case.ticket, moment):
                         continue  # nothing for _tick to do: skip the deep copy
-                    self._mutate(ticket_id, SYSTEM_ID, Action.RUN_JOBS, lambda work, now: self._tick(work, now))
+                    updated = self._mutate(
+                        ticket_id, SYSTEM_ID, Action.RUN_JOBS, lambda work, now: self._tick(work, now)
+                    )
                 except Exception:  # noqa: BLE001 - one broken ticket (any error) must not stop the job for the others
                     logger.exception("run_jobs: ticket %s failed", ticket_id)
                     continue
-                if len(self.repo.get(ticket_id).events) != before:
+                if len(updated.events) != before:  # the committed copy `_mutate` returns: no extra read (plan 12)
                     changed.append(ticket_id)
         return changed
 

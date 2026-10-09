@@ -2,6 +2,16 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.8.0] - 2026-10-09: Giảm độ trễ backend (plan 12)
+### Changed
+- Đọc DB qua engine `AUTOCOMMIT` riêng (`sql_read_engine`, `PostgresRepository._read`, thử lại 1 lần khi rớt kết nối); engine ghi giữ pre-ping. Tổng ≤5 kết nối.
+- Route ảnh: I/O đồng bộ chuyển vào threadpool; một lô ảnh = một transaction (`add_resident_photos`, `add_execution_photos`), tất cả hoặc không.
+- Cache bytes ảnh trong tiến trình (LRU 32 MB) + `Cache-Control: private, max-age=31536000, immutable`; gzip JSON > 1 KB; `run_jobs` bỏ một lần đọc dưới khoá.
+### Measured (`:8000`, Supabase)
+- GET 226–280 ms → 50–55 ms; danh sách 54–69 KB → ~4 KB trên dây; ảnh xem lại 527 → 56 ms; event loop không còn đứng ~1 s khi upload chờ Storage.
+### Decisions
+- Không làm: khoá theo ticket, bỏ audit khỏi doc (đổi schema), `/bql/tickets/{id}` (API mới), gỡ route mẫu `/api/v1/chat` (phải xoá test) ⇒ Idea Vault.
+
 ## [v1.7.0] - 2026-10-09: App điện thoại (PWA) cho Cư dân và BQL (plan 11)
 ### Added
 - `src/mobile/` (phục vụ ở `/app/`, một dòng mount trong `src/main.py`): Cư dân gửi phản ánh kèm ảnh chụp (nén ≤1600 px), theo dõi, bổ sung, thêm ảnh, đánh giá; BQL 3 tab Cần tôi/Khẩn cấp/Tất cả + nghiệm thu, trả làm lại, hủy, đóng/hạ mức khẩn cấp. Vai khác ⇒ màn "Dùng bản web".

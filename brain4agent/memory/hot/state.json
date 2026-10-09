@@ -1,10 +1,10 @@
 {
-  "current_version": "1.7.0",
+  "current_version": "1.8.0",
   "brain_template_version": "1.7.1",
   "system_status": "active",
   "last_verification": {
-    "timestamp": "2026-10-09T10:53:00.000Z",
-    "grade": "plan 11 round 3 (all roles on app): node --check 0, pytest 3349 passed, ruff clean, Playwright M1-M17 ALL PASS on :8001, 5/5 mutants red, Docker :8000 read-only smoke 200 for every role; G5-G8 not run"
+    "timestamp": "2026-10-09T12:40:00.000Z",
+    "grade": "plan 12 backend latency: pytest 3359 passed, --pg 88 passed, ruff clean, 5/5 mutants red, phone harness M1-M17 ALL PASS; :8000 GET median 226-280 ms -> 50-55 ms, lists gzip 54-69 KB -> ~4 KB, photo re-view 527 -> 56 ms"
   },
   "active_plans_completed": 4,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",

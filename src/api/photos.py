@@ -9,7 +9,9 @@ either, so a stored name cannot point outside the folder or the bucket.
 import functools
 import logging
 import re
+import threading
 import uuid
+from collections import OrderedDict
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
@@ -27,6 +29,8 @@ logger = logging.getLogger(__name__)
 
 MAX_BYTES = 5 * 1024 * 1024
 MAX_FILES_PER_REQUEST = 5
+# Plan 12 SPEC-P02: stored photos never change (uuid names), so their bytes are kept in memory after the first view
+PHOTO_CACHE_BYTES = 32 * 1024 * 1024
 
 # magic bytes → (extension, media type)
 _SIGNATURES = (
@@ -103,10 +107,60 @@ def save(data: bytes, extension: str) -> str:
     return ref
 
 
+class _PhotoCache:
+    """Least-recently-used photo bytes, bounded by their total size. Only `load` fills it, and the routes call `load`
+    after they checked who may see the photo (plan 12 I-6)."""
+
+    def __init__(self, budget: int) -> None:
+        self.budget = budget
+        self._items: OrderedDict[str, bytes] = OrderedDict()
+        self._size = 0
+        self._lock = threading.Lock()
+
+    def get(self, ref: str) -> bytes | None:
+        with self._lock:
+            data = self._items.get(ref)
+            if data is not None:
+                self._items.move_to_end(ref)
+            return data
+
+    def put(self, ref: str, data: bytes) -> None:
+        if len(data) > self.budget // 8:  # one big photo must not empty the cache
+            return
+        with self._lock:
+            if ref in self._items:
+                return
+            self._items[ref] = data
+            self._size += len(data)
+            while self._size > self.budget:
+                _, dropped = self._items.popitem(last=False)
+                self._size -= len(dropped)
+
+    def drop(self, ref: str) -> None:
+        with self._lock:
+            data = self._items.pop(ref, None)
+            if data is not None:
+                self._size -= len(data)
+
+    def clear(self) -> None:
+        with self._lock:
+            self._items.clear()
+            self._size = 0
+
+
+_cache = _PhotoCache(PHOTO_CACHE_BYTES)
+
+
+def clear_photo_cache() -> None:
+    """Tests: start from an empty cache."""
+    _cache.clear()
+
+
 def discard(ref: str) -> None:
     """Best effort: a photo whose evidence was refused is deleted; a failure only leaves an orphan, logged."""
     if not _REF.match(ref):
         return
+    _cache.drop(ref)
     try:
         photo_store().delete(ref)
     except PhotoStoreError:
@@ -118,6 +172,9 @@ def load(ref: str) -> tuple[bytes, str]:
     match = _REF.match(ref)
     if match is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy ảnh")
+    cached = _cache.get(ref)
+    if cached is not None:
+        return cached, _MEDIA_TYPES[match.group(1)]
     try:
         data = photo_store().get(ref)
     except PhotoNotFoundError:
@@ -127,4 +184,5 @@ def load(ref: str) -> tuple[bytes, str]:
         raise HTTPException(
             status_code=502, detail={"code": "PHOTO_STORE_FAILED", "message": "Không tải được ảnh, thử lại sau"}
         ) from exc
+    _cache.put(ref, data)
     return data, _MEDIA_TYPES[match.group(1)]
