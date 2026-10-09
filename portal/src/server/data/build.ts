@@ -112,7 +112,8 @@ export function buildMaterials(c: BCase, stock?: Map<string, number | null>): Ma
       issuedQty: m.issued_qty,
       usedQty: m.used_qty,
       stock: live,
-      shortage: live === null ? 0 : Math.max(0, m.planned_qty - live),
+      // what the warehouse still has to hand out, not the whole plan (WP7 review NEW-1b)
+      shortage: live === null ? 0 : Math.max(0, m.planned_qty - (m.issued_qty ?? 0) - live),
     };
   });
 }

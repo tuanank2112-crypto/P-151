@@ -1,0 +1,9 @@
+$ tsx scripts/ui-check-WP4.mts cleaning --base=http://localhost:8000
+PASS cleaning: queue renders cards, no horizontal overflow cards=4
+PASS cleaning: code opens TicketDetailModal, Esc closes 
+PASS cleaning: ROUTED has assign-or-accept + 'Không phải việc phòng mình' (note required) 
+PASS cleaning: assign/accept first ROUTED ticket -> IN_PROGRESS code=SIM-TKT-CLN-001 viaAssign=true
+PASS cleaning: IN_PROGRESS buttons (hoàn thành, báo sai phòng ban) 
+PASS cleaning: finish refuses without photo (inline error), then succeeds with photo 
+PASS cleaning: staff tab + history tab render 
+EXIT=0

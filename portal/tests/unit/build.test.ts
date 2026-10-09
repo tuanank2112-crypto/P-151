@@ -182,3 +182,16 @@ describe("perfRow (WP7 P9)", () => {
     expect(perfRow({ ...base, risk_level: "EMERGENCY" }).dept).toBeNull();
   });
 });
+
+describe("material shortage (WP7 NEW-1b)", () => {
+  it("counts only what is still to hand out: an issued line is not short even with stock 0", () => {
+    const c = aCase({}, {
+      material_lines: [
+        { item_code: "SIM-MAT-X-1", item_name: "Ống", unit: "cái", planned_qty: 1, issued_qty: 1, used_qty: null, simulated_stock_qty: 0 },
+        { item_code: "SIM-MAT-X-2", item_name: "Van", unit: "cái", planned_qty: 3, issued_qty: 1, used_qty: null, simulated_stock_qty: 1 },
+      ],
+    });
+    const t = buildDeptTicket(c, labels, new Map(), now);
+    expect(t.materials.map((m) => m.shortage)).toEqual([0, 1]);
+  });
+});

@@ -886,3 +886,52 @@ def test_wp7_p5_flag_off_keeps_the_old_flow_for_the_shared_database(eng, monkeyp
         ticket_id, TEC, lines=[PlannedMaterial(item_code=LAMP2, planned_qty=2)], note="Đèn tuýp"
     )
     assert case.ticket.status == "IN_PROGRESS" and case.ticket.blocker is None
+
+
+# ======================================================================= WP7 review round 2: stock counts what is still to hand out
+
+LAMP1 = "SIM-MAT-LAMP-01"  # catalog stock 5
+
+
+def approved_ticket(engine: MaintenanceEngine, qty: float, stock: float) -> str:
+    ticket_id = in_progress_ticket(engine)
+    engine.receive_stock(WAREHOUSE, LAMP2, stock)
+    engine.confirm_materials(ticket_id, TEC, lines=[PlannedMaterial(item_code=LAMP2, planned_qty=qty)], note="Đèn tuýp")
+    engine.approve_materials(ticket_id, WAREHOUSE)
+    return ticket_id
+
+
+def test_wp7_new1b_asking_another_item_after_the_first_took_all_the_stock(eng):
+    ticket_id = approved_ticket(eng, 1, stock=1)
+    assert eng.repo.stock_of(LAMP2) == 0
+    lines = [PlannedMaterial(item_code=LAMP2, planned_qty=1), PlannedMaterial(item_code=LAMP1, planned_qty=1)]
+    eng.confirm_materials(ticket_id, TEC, lines=lines, note="Thêm bóng LED")
+    case = eng.approve_materials(ticket_id, WAREHOUSE)  # LAMP2 already handed out: only LAMP1 is needed
+    assert case.ticket.status == "IN_PROGRESS"
+    assert {m.item_code: m.issued_qty for m in case.material_lines} == {LAMP2: 1, LAMP1: 1}
+    assert (eng.repo.stock_of(LAMP2), eng.repo.stock_of(LAMP1)) == (0, 4)
+
+
+def test_wp7_new1_one_more_of_the_same_item_needs_only_the_difference(eng):
+    ticket_id = approved_ticket(eng, 1, stock=2)
+    eng.confirm_materials(ticket_id, TEC, lines=[PlannedMaterial(item_code=LAMP2, planned_qty=2)], note="Thêm 1")
+    assert eng.approve_materials(ticket_id, WAREHOUSE).ticket.status == "IN_PROGRESS"
+    assert eng.repo.stock_of(LAMP2) == 0
+
+
+def test_wp7_new2_fewer_than_handed_out_gives_the_rest_back(eng):
+    ticket_id = approved_ticket(eng, 3, stock=3)
+    case = eng.confirm_materials(
+        ticket_id, TEC, lines=[PlannedMaterial(item_code=LAMP2, planned_qty=1)], note="Chỉ cần 1"
+    )
+    assert [m.issued_qty for m in case.material_lines] == [1]
+    assert eng.repo.stock_of(LAMP2) == 2
+    assert eng.approve_materials(ticket_id, WAREHOUSE).ticket.status == "IN_PROGRESS"
+    assert eng.repo.stock_of(LAMP2) == 2
+
+
+def test_wp7_new3_cancel_gives_unused_stock_back(eng):
+    ticket_id = approved_ticket(eng, 2, stock=2)
+    assert eng.repo.stock_of(LAMP2) == 0
+    eng.cancel(ticket_id, BQL, cancel_reason="Cư dân tự sửa")
+    assert eng.repo.stock_of(LAMP2) == 2

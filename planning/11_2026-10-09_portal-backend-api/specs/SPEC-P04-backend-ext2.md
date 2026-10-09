@@ -20,6 +20,7 @@ Nguyên tắc như SPEC-P01: KHÔNG thêm trường/giá trị enum vào doc tic
 - **Cờ:** luồng chờ duyệt (§2) chỉ bật khi `MO_PORTAL_EXTRAS` bật (mặc định: memory bật, postgres TẮT). Lý do (WP7 P5): engine cũ trên Render đọc ticket "ON_HOLD chờ duyệt" sẽ đẩy về ROUTED (bỏ qua duyệt). Bật trên Supabase CHỈ sau khi Render chạy code này (OPERATIONS §3). Cờ tắt ⇒ `material-plan` giữ hành vi cũ (ticket vẫn IN_PROGRESS).
 - **Duyệt = xuất kho (giữ hàng, WP7 P7):** `approve_materials` trừ tồn phần còn thiếu của từng dòng và đặt `issued_qty = planned_qty`; phòng ban nhập số đã xuất bằng đúng số đó thì không trừ lần hai. Hai ticket không thể cùng được duyệt trên một đơn vị tồn (lần sau 409 `STOCK_SHORT`).
 - **Yêu cầu cộng dồn (WP7 P6):** `material-plan` là THAY THẾ; portal `requestMaterialsAction` luôn gửi dòng đang có + dòng mới (cộng số lượng cùng mã), không làm mất dòng đã duyệt/đã xuất.
+- **Thẩm định vòng 2 (2026-10-10):** (a) đủ/thiếu hàng tính trên PHẦN CÒN PHẢI XUẤT `planned_qty − issued_qty` (`_still_to_issue`) ở `_refresh_line_stock`, `_cleared`, duyệt cấp, và `shortage` của portal; (b) giảm số lượng dưới số đã xuất ⇒ trả phần thừa về kho (`confirm_materials`); (c) hủy ticket ⇒ trả về kho phần đã xuất chưa dùng (`_after_cancel`). Test `test_wp7_new*` (đỏ trên `b42f9c3`).
 - **Chưa làm (Idea Vault, WP7 P8):** phòng ban rút yêu cầu / kho từ chối cấp. Hiện thoát trạng thái chờ duyệt chỉ bằng nhập kho + duyệt, hoặc BQL hủy ticket.
 - Test: `test_wp7_*` trong `test_portal_backend_ext2.py` (đỏ trên `091bc45`, xanh sau sửa).
 

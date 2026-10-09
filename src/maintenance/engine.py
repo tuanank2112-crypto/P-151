@@ -1709,6 +1709,10 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                         kept.used_qty,
                         kept.variance_reason,
                     )
+                    excess = (line.issued_qty or 0) - max(planned.planned_qty, line.used_qty or 0)
+                    if excess > 0:  # fewer needed than handed out: the rest goes back (WP7 review NEW-2)
+                        self._issue_stock(planned.item_code, -excess)
+                        line.issued_qty = (line.issued_qty or 0) - excess
                 new_lines.append(line)
             work.planned_materials = list(lines)
             work.material_lines = new_lines
@@ -3026,6 +3030,11 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         tickets waiting for an emergency). Each hook is a no-op until its wave."""
         self._release_duplicate_count(work, previous_blocker, now)
         self._unmerge_children_of(work, now)
+        for line in work.material_lines:  # handed out but not used goes back to the warehouse (WP7 review NEW-3)
+            unused = (line.issued_qty or 0) - (line.used_qty or 0)
+            if unused > 0:
+                self._issue_stock(line.item_code, -unused)
+                line.issued_qty = line.used_qty or 0
         if previous_blocker is not None and previous_blocker.code == R.EMERGENCY_PENDING_BQL:
             self._release_waiting_for(work, now)
 
@@ -3045,7 +3054,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             if work.ticket.department_id is not None and blocker.resolved_at is None and _material_approval_required():
                 return False  # a department's request (plan 11 Q15): the warehouse or BQL must approve it first
             return not any(
-                self._line_stock(line.item_code, line.planned_qty) == MaterialStockStatus.INSUFFICIENT
+                self._line_stock(line.item_code, _still_to_issue(line)) == MaterialStockStatus.INSUFFICIENT
                 for line in work.material_lines
             )
         if code == R.OUT_OF_HOURS:
@@ -4144,11 +4153,13 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         """Re-read the stock snapshot of every material line (and the draft's aggregate) from the store."""
         for line in work.material_lines:
             line.simulated_stock_qty = self.repo.stock_of(line.item_code)
-            line.material_stock_status = self._line_stock(line.item_code, line.planned_qty)
+            line.material_stock_status = self._line_stock(line.item_code, _still_to_issue(line))
         if work.draft is not None:
             work.draft.material_stock_status = _aggregate_stock(work.material_lines)
 
     def _line_stock(self, item_code: str, planned_qty: float) -> MaterialStockStatus:
+        if planned_qty <= 0:
+            return MaterialStockStatus.SUFFICIENT  # already handed out: nothing more to take from the warehouse
         stock = self.repo.stock_of(item_code)
         if stock is None:
             return MaterialStockStatus.UNKNOWN
@@ -4540,6 +4551,11 @@ def _plain(value: Any) -> Any:
     if isinstance(value, datetime):
         return value.isoformat()
     return str(value) if hasattr(value, "value") else value
+
+
+def _still_to_issue(line: MaterialLine) -> float:
+    """What the warehouse still has to hand out for a line (plan minus what it already gave)."""
+    return line.planned_qty - (line.issued_qty or 0)
 
 
 def _material_approval_required() -> bool:

@@ -1,0 +1,9 @@
+$ ruff check src tests
+All checks passed!
+EXIT=0
+$ ruff format --check (changed files)
+2 files already formatted
+EXIT=0
+$ pytest test_portal_backend_ext*.py (after format)
+114 passed, 10 deselected in 15.12s
+EXIT=0
