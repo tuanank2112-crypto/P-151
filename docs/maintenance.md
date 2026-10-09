@@ -181,7 +181,7 @@ Hồ sơ: [`planning/12_2026-10-09_backend-latency/`](../planning/12_2026-10-09_
   Lý do: psycopg2 `connect()` thường = pre-ping + BEGIN + query + ROLLBACK = 4 vòng (~55 ms/vòng tới Supabase) ⇒ 230 ms; AUTOCOMMIT 1 vòng ⇒ ~53 ms.
 - **Ảnh**: route `async def` CHỈ `await photos.read_photos(files)`; kiểm quyền, lưu Storage, ghi engine chạy trong `run_in_threadpool`
   (`_store_and_attach`). Cả lô = MỘT `_mutate` (`engine.add_resident_photos` / `add_execution_photos`), tất cả hoặc không; lỗi ⇒ xoá mọi file vừa lưu.
-  `add_resident_photo` (một ảnh) giữ, gọi bản lô. `photos.load` có cache LRU 32 MB theo `ref`; header ảnh `private, max-age=31536000, immutable` + `Content-Encoding: identity`.
+  `add_resident_photo` (một ảnh) giữ, gọi bản lô. `photos.load` có cache LRU 32 MB theo `ref`; header ảnh `private, no-cache` + `ETag: "<ref>"` + `Content-Encoding: identity` (v1.8.2, R01: cache trình duyệt không kiểm quyền ⇒ trình duyệt luôn hỏi lại, server kiểm quyền rồi trả 304). Upload kiểm quyền/tồn tại TRƯỚC khi xét file (404/403 trước 413/415/422).
 - **Gzip**: `GZipMiddleware(minimum_size=1024)` trong `src/main.py` (sau CORS). Ảnh không bị nén lại.
 - **`run_jobs`** dùng `Case` mà `_mutate` trả về, không đọc lại DB dưới `engine.lock`.
 - Số đo `:8000` (Supabase, median, đo trong container): GET 226–280 → 50–55 ms; danh sách trên dây 54–69 KB → ~4 KB; ảnh xem lại 527 → 56 ms.

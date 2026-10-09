@@ -36,7 +36,7 @@ PHOTO_CACHE_BYTES = 32 * 1024 * 1024
 def load(ref: str) -> tuple[bytes, str]   # đọc cache trước; miss ⇒ Storage rồi nạp cache (LRU theo tổng byte, khoá threading.Lock)
 ```
 Ảnh > `PHOTO_CACHE_BYTES / 8` không cache. `discard(ref)` xoá khỏi cache.
-Header ảnh: `Cache-Control: private, max-age=31536000, immutable` và `Content-Encoding: identity` (để GZip bỏ qua — V6).
+Header ảnh (Q10, thay `private, max-age=31536000, immutable`): `Cache-Control: private, no-cache`, `ETag: "<ref>"` (tên đã lưu, uuid — không bao giờ dùng lại cho bytes khác; `photos.etag(ref)`), `Content-Encoding: identity` (để GZip bỏ qua — V6). `If-None-Match` khớp ⇒ `304` rỗng, CHỈ sau khi `allowed(case)` tìm thấy ảnh cho actor này; không khớp/không có ⇒ `200` + bytes. Upload: kiểm quyền/tồn tại ticket TRƯỚC `read_photos` (mã lỗi như `e9960f0`: 404/403 trước 413/415/422 — R01 #7).
 
 ## §5. `src/main.py`
 `app.add_middleware(GZipMiddleware, minimum_size=1024)` (Starlette 1.7.0). Không đổi CORS, route, mount.

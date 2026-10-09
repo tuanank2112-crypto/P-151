@@ -19,7 +19,7 @@
 - G-2 Gửi ảnh không chặn request khác: `/health` trả < 300 ms khi một upload đang chờ Storage chậm 1 s.
 - G-3 N ảnh trong một request = MỘT `_mutate` (một transaction), tất cả hoặc không ảnh nào.
 - G-4 JSON > 1 KB nén gzip khi client hỗ trợ; ảnh không bị nén lại.
-- G-5 Ảnh xem lại không đi Supabase Storage (cache trong tiến trình) và trình duyệt không hỏi lại (`immutable`).
+- G-5 Ảnh xem lại không đi Supabase Storage (cache trong tiến trình). ~~trình duyệt không hỏi lại (`immutable`)~~ — THAY bởi Q10 (R01 #2/#3): trình duyệt LUÔN hỏi lại (`no-cache` + `ETag`), server kiểm quyền rồi trả 304. CẤM header ảnh cho trình duyệt dùng lại bytes không hỏi server (`max-age`, `immutable`): cache trình duyệt không kiểm quyền.
 - G-6 Không đổi API (path, body, mã lỗi), schema DB, luật nghiệp vụ; 3349 test hiện có vẫn xanh.
 
 ## §3. Non-goals

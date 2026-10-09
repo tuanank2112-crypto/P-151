@@ -167,6 +167,11 @@ def discard(ref: str) -> None:
         logger.warning("photo discard failed ref=%s", ref)
 
 
+def etag(ref: str) -> str | None:
+    """HTTP validator of a stored photo: a name this module wrote is a fresh uuid, never reused for other bytes."""
+    return f'"{ref}"' if _REF.match(ref) else None
+
+
 def load(ref: str) -> tuple[bytes, str]:
     """Bytes and media type of a stored photo; 404 for anything this module did not write."""
     match = _REF.match(ref)

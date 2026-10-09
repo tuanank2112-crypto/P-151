@@ -1,0 +1,8 @@
+R01 #2 re-check after the fix — auditor probe %TEMP%/aud/b1.mjs (Chrome, one profile), fresh :8001 memory, 2026-10-09 21:06:14 +0700
+before fix (same probe, HEAD e546262): B(other resident)= [ 200, 70 ], server saw 1 photo GET
+after fix:
+same-browser fetch: A= [ 200, 70 ]  B(other resident)= [ 404, 43 ]
+server log:
+GET /api/v1/resident/tickets/SIM-TKT-0001/photos/SIM-EVD-0001-01 HTTP/1.1" 200 OK
+GET /api/v1/resident/tickets/SIM-TKT-0001/photos/SIM-EVD-0001-01 HTTP/1.1" 304 Not Modified
+GET /api/v1/resident/tickets/SIM-TKT-0001/photos/SIM-EVD-0001-01 HTTP/1.1" 404 Not Found

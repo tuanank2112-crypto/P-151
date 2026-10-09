@@ -14,7 +14,7 @@ import threading
 from datetime import datetime
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response
 from pydantic import BaseModel, Field, ValidationError, field_validator
@@ -194,17 +194,23 @@ def _store_and_attach(batch: list[tuple[bytes, str]], room: int, limit: int, att
         raise
 
 
-# The photo name is a fresh uuid and its bytes never change: the browser may keep it (plan 12 SPEC-P02 §2).
-# "identity" also tells the gzip middleware to leave the already-compressed image alone (SPEC-P03 §1).
-_PHOTO_HEADERS = {"Cache-Control": "private, max-age=31536000, immutable", "Content-Encoding": "identity"}
+# The browser may keep the bytes but must ask first: a browser cache does not check who asks (another account on the
+# same browser, R01 #2) and a demo reset reuses the URL for another photo (R01 #3). The ETag is the stored name, so an
+# allowed viewer gets 304 without the bytes (plan 12 Q10). "identity": the gzip middleware leaves the image alone.
+_PHOTO_HEADERS = {"Cache-Control": "private, no-cache", "Content-Encoding": "identity"}
 
 
-def _photo_file(case: Case, evidence_id: str, allowed) -> Response:
+def _photo_file(request: Request, case: Case, evidence_id: str, allowed) -> Response:
+    """Checked on every call, including revalidations: 304 only after `allowed` found the photo for this actor."""
     record = next((e for e in allowed(case) if e.evidence_id == evidence_id), None)
     if record is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy ảnh")
+    etag = photos.etag(record.content_or_metadata)
+    headers = {**_PHOTO_HEADERS, "ETag": etag} if etag else _PHOTO_HEADERS
+    if etag and etag in [tag.strip().removeprefix("W/") for tag in request.headers.get("if-none-match", "").split(",")]:
+        return Response(status_code=304, headers=headers)
     data, media_type = photos.load(record.content_or_metadata)
-    return Response(content=data, media_type=media_type, headers=_PHOTO_HEADERS)
+    return Response(content=data, media_type=media_type, headers=headers)
 
 
 # ------------------------------------------------------------------ demo control (internal, FR-DEMO-001)
@@ -571,7 +577,9 @@ def add_evidence(ticket_id: str, body: EvidenceRequest, actor: ActorDep, engine:
 @router.post("/tickets/{ticket_id}/photos", response_model=Case)
 async def add_execution_photos(ticket_id: str, files: PhotoFiles, actor: ActorDep, engine: EngineDep) -> Case:
     """Phòng ban gửi ảnh sau khi xử lý (bắt buộc ít nhất một ảnh trước khi báo hoàn thành)."""
-    batch = await photos.read_photos(files)  # the only awaited step; everything below blocks, so it runs in a thread
+    # who may send to which ticket BEFORE the files are judged: 404/403 stay ahead of 413/415/422 (plan 12 R01 #7)
+    await run_in_threadpool(_staff_case, engine, actor, ticket_id)
+    batch = await photos.read_photos(files)  # blocking work below runs in a thread, never on the event loop
 
     def work() -> Case:
         case = _staff_case(engine, actor, ticket_id)
@@ -584,12 +592,12 @@ async def add_execution_photos(ticket_id: str, files: PhotoFiles, actor: ActorDe
 
 
 @router.get("/tickets/{ticket_id}/photos/{evidence_id}", response_class=Response)
-def read_photo(ticket_id: str, evidence_id: str, actor: ActorDep, engine: EngineDep) -> Response:
+def read_photo(request: Request, ticket_id: str, evidence_id: str, actor: ActorDep, engine: EngineDep) -> Response:
     """Ảnh của cư dân hoặc của phòng ban, cho người được xem ticket."""
     case = _staff_case(engine, actor, ticket_id)
     # every department photo, including those from before a rework, so BQL can compare
     images = (EvidenceType.RESIDENT_ORIGINAL, EvidenceType.SIMULATED_IMAGE)
-    return _photo_file(case, evidence_id, lambda c: [e for e in c.evidence if e.evidence_type in images])
+    return _photo_file(request, case, evidence_id, lambda c: [e for e in c.evidence if e.evidence_type in images])
 
 
 @router.post("/tickets/{ticket_id}/complete", response_model=Case)
@@ -707,7 +715,8 @@ async def resident_add_photos(
     ticket_id: str, files: PhotoFiles, actor: ActorDep, engine: EngineDep
 ) -> ResidentTicketView:
     """Đính kèm ảnh (không bắt buộc) vào phản ánh của chính mình."""
-    batch = await photos.read_photos(files)  # the only awaited step; everything below blocks, so it runs in a thread
+    await run_in_threadpool(_own_case, engine, ticket_id, actor)  # 403/404 before judging the files (R01 #7)
+    batch = await photos.read_photos(files)  # blocking work below runs in a thread, never on the event loop
 
     def work() -> ResidentTicketView:
         case = _own_case(engine, ticket_id, actor)
@@ -721,9 +730,11 @@ async def resident_add_photos(
 
 
 @resident_router.get("/tickets/{ticket_id}/photos/{evidence_id}", response_class=Response)
-def resident_read_photo(ticket_id: str, evidence_id: str, actor: ActorDep, engine: EngineDep) -> Response:
+def resident_read_photo(
+    request: Request, ticket_id: str, evidence_id: str, actor: ActorDep, engine: EngineDep
+) -> Response:
     """Chỉ ảnh cư dân tự gửi."""
-    return _photo_file(_own_case(engine, ticket_id, actor), evidence_id, resident_photos)
+    return _photo_file(request, _own_case(engine, ticket_id, actor), evidence_id, resident_photos)
 
 
 class RatingRequest(BaseModel):

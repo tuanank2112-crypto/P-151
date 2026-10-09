@@ -17,7 +17,7 @@ from src.maintenance.engine import MaintenanceEngine
 from src.maintenance.enums import Action, EvidenceType
 from src.maintenance.store.photos import LocalPhotoStore
 
-from .helpers import MONDAY_9AM, RESIDENT, Clock, dept_of, report
+from .helpers import MONDAY_9AM, OTHER_RESIDENT, RESIDENT, Clock, dept_of, report
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
 FRESH = "Sảnh thang máy tầng 9 tòa S2 nhiều rác, cần vệ sinh."  # no fixture ticket like it: ROUTED
@@ -189,7 +189,7 @@ def test_p5_second_view_of_a_photo_skips_the_store(engine, store):
     second = api.get(url, headers={"Accept-Encoding": "gzip"})
     assert first.content == second.content == PNG
     assert store.gets == 1
-    assert "immutable" in second.headers["cache-control"]
+    assert second.headers["cache-control"] == "private, no-cache"  # plan 12 Q10: was immutable (R01 #2)
     assert second.headers.get("content-encoding", "identity") == "identity"
 
 
@@ -215,3 +215,94 @@ def test_z1_large_json_is_gzipped(engine, store):
 def test_z2_small_responses_are_not_gzipped():
     response = TestClient(app).get("/health", headers={"Accept-Encoding": "gzip"})
     assert response.status_code == 200 and "content-encoding" not in response.headers
+
+
+# ---------------------------------------------------------------------- R01: independent audit of plan 12
+
+
+def test_r1_another_account_never_gets_a_304_for_a_photo_it_may_not_see(engine, store):
+    """R01 #2: the browser must revalidate, and the server answers the revalidation only after the access check."""
+    tid = routed(engine)
+    owner = TestClient(app, headers={"X-Actor-Id": RESIDENT})
+    url = f"/api/v1/resident/tickets/{tid}/photos/{owner.post(f'/api/v1/resident/tickets/{tid}/photos', files=files(1)).json()['photos'][0]}"
+    first = owner.get(url)
+    etag = first.headers["etag"]
+    assert first.headers["cache-control"] == "private, no-cache" and "immutable" not in first.headers["cache-control"]
+    again = owner.get(url, headers={"If-None-Match": etag})
+    assert again.status_code == 304 and again.content == b""
+    assert owner.get(url, headers={"If-None-Match": f'W/{etag}, "other"'}).status_code == 304
+    stranger = TestClient(app, headers={"X-Actor-Id": OTHER_RESIDENT})
+    assert stranger.get(url, headers={"If-None-Match": etag}).status_code == 404
+
+
+def test_r1b_a_reused_photo_url_gets_the_new_bytes(engine, store):
+    """R01 #3: a demo reset hands out the same ticket and evidence ids again; the ETag (stored name) differs."""
+    api = TestClient(app, headers={"X-Actor-Id": RESIDENT})
+
+    def photo_url():
+        tid = routed(engine)
+        return f"/api/v1/resident/tickets/{tid}/photos/{api.post(f'/api/v1/resident/tickets/{tid}/photos', files=files(1)).json()['photos'][0]}"
+
+    old_url = photo_url()
+    old_etag = api.get(old_url).headers["etag"]
+    engine.reset()
+    new_url = photo_url()
+    response = api.get(new_url, headers={"If-None-Match": old_etag})
+    assert new_url == old_url  # the case R01 #3 describes
+    assert response.status_code == 200 and response.content == PNG and response.headers["etag"] != old_etag
+
+
+def test_r2_access_is_checked_before_the_files(engine, store):
+    """R01 #7: the error codes of e9960f0 — 404/403 come before the file checks (415 here)."""
+    bad = [("files", ("x.png", b"not an image", "image/png"))]
+    tid, dept = in_progress(engine)
+    resident = TestClient(app, headers={"X-Actor-Id": RESIDENT})
+    assert (
+        TestClient(app, headers={"X-Actor-Id": dept})
+        .post("/api/v1/mo/tickets/SIM-TKT-9999/photos", files=bad)
+        .status_code
+        == 404
+    )
+    assert resident.post(f"/api/v1/mo/tickets/{tid}/photos", files=bad).status_code == 403
+    assert resident.post("/api/v1/resident/tickets/SIM-TKT-9999/photos", files=bad).status_code == 404
+    stranger = TestClient(app, headers={"X-Actor-Id": OTHER_RESIDENT})
+    assert stranger.post(f"/api/v1/resident/tickets/{tid}/photos", files=bad).status_code == 404
+    assert (
+        resident.post(f"/api/v1/resident/tickets/{tid}/photos", files=bad).status_code == 415
+    )  # own ticket: files judged
+    assert store.puts == 0
+
+
+def test_r3_the_resident_route_serves_only_resident_photos(engine, store):
+    """R01 #14 (mutant f): a department photo of the resident's own ticket is not served on the resident route."""
+    tid, dept = in_progress(engine)
+    case = TestClient(app, headers={"X-Actor-Id": dept}).post(f"/api/v1/mo/tickets/{tid}/photos", files=files(1)).json()
+    [dept_photo] = [e["evidence_id"] for e in case["evidence"] if e["evidence_type"] == EvidenceType.SIMULATED_IMAGE]
+    resident = TestClient(app, headers={"X-Actor-Id": RESIDENT})
+    assert resident.get(f"/api/v1/resident/tickets/{tid}/photos/{dept_photo}").status_code == 404
+    assert (
+        TestClient(app, headers={"X-Actor-Id": dept}).get(f"/api/v1/mo/tickets/{tid}/photos/{dept_photo}").status_code
+        == 200
+    )
+
+
+def test_z3_a_photo_over_1kb_is_never_gzipped(engine, store):
+    """R01 #14 (mutant d): the image passes the gzip middleware untouched."""
+    big = PNG + bytes(range(256)) * 16  # > 1 KB, the middleware threshold
+    tid = routed(engine)
+    api = TestClient(app, headers={"X-Actor-Id": RESIDENT})
+    view = api.post(f"/api/v1/resident/tickets/{tid}/photos", files=[("files", ("big.png", big, "image/png"))]).json()
+    response = api.get(
+        f"/api/v1/resident/tickets/{tid}/photos/{view['photos'][0]}", headers={"Accept-Encoding": "gzip"}
+    )
+    assert response.headers.get("content-encoding") == "identity" and response.content == big
+
+
+def test_p5c_the_photo_cache_stays_within_its_byte_budget():
+    """R01 #14 (mutant g): the LRU drops the oldest bytes; one photo over budget/8 is never kept."""
+    cache = photos._PhotoCache(budget=800)
+    for i in range(30):
+        cache.put(f"{i:032x}.png", b"x" * 100)
+    assert cache._size <= 800 and cache.get(f"{0:032x}.png") is None and cache.get(f"{29:032x}.png") is not None
+    cache.put("f" * 32 + ".png", b"x" * 101)
+    assert cache.get("f" * 32 + ".png") is None

@@ -28,4 +28,5 @@ async route ─ await read_photos(files)            # chỉ đọc body (async)
 - P2 3 ảnh ⇒ đúng 1 lần `_mutate`, 3 bản ghi, 3 audit.
 - P3 cư dân còn chỗ 2 ảnh, gửi 3 ⇒ 409, 0 bản ghi mới, 3 file đã lưu đều bị xoá (route kiểm `room` trước — vẫn không file nào sót).
 - P4 guard engine ở ảnh 2 (ticket TERMINAL giữa chừng mô phỏng bằng monkeypatch) ⇒ 0 bản ghi, mọi file bị xoá.
-- P5 xem cùng ảnh 2 lần ⇒ Storage `get` 1 lần; header `immutable`; `discard` xoá cache.
+- P5 xem cùng ảnh 2 lần ⇒ Storage `get` 1 lần; header `private, no-cache` + `ETag` (Q10, thay `immutable`); `discard` xoá cache.
+- R1–R3, Z3, P5c (R01): người khác gửi `If-None-Match` ⇒ 404 không phải 304; URL dùng lại sau reset ⇒ 200 bytes mới; upload kiểm quyền trước khi xét file; route cư dân chỉ ảnh cư dân; ảnh > 1 KB giữ `identity`; LRU giữ trong ngân sách byte. Phép phá: `evidence/harness/mutate_r01.py` (8/8 đỏ).

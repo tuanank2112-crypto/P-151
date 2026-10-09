@@ -175,7 +175,7 @@
 
 ## ⚡ Phiên 2026-10-09 — App điện thoại mọi vai (plan 11) + giảm độ trễ backend (plan 12) (feature/chamanh)
 
-> Cập nhật lúc: `2026-10-09T19:55:00+07:00` | Phiên bản: `v1.8.0` (plan 12 chưa commit) | Commit cuối: `e9960f0` (đã push)
+> Cập nhật lúc: `2026-10-09T19:55:00+07:00` | Phiên bản: `v1.8.0` | Commit cuối: `e546262` plan 12 (19:06, ĐÃ PUSH — dòng "chưa commit" bên dưới đã cũ, đính chính ở phiên tối)
 
 ### 🎯 Thành tựu
 1. **Backend Docker `:8000` sống lại**: image dựng từ `dev` kéo SQLAlchemy 2.1 (đòi psycopg3) ⇒ chuyển `feature/chamanh` (đã ghim `<2.1`) + `git stash apply stash@{0}` (mount `/app` + não plan 11 bị cất khi đổi nhánh). `stash@{0}` giữ lại, nay trùng commit.
@@ -206,3 +206,12 @@
 
 ### ⏸ Còn mở
 Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lập (plan 11, 12); G5 điện thoại thật, G6–G8 HTTPS (plan 11); sửa form BPTN web; Idea Vault #3/#5/#7/#9; nhánh `dev`/`develop` thiếu ghim SQLAlchemy (PR `feature/chamanh` → `develop`); `stash@{0}` có thể xoá; `planning/08_…` chưa track.
+
+## ⚡ Phiên tối 2026-10-09 — đo lại plan 12, hotfix web BPTN (plan 13), thẩm định 11/12 (feature/chamanh)
+- Plan 12 thực tế ĐÃ commit + push `e546262` (`origin/feature/chamanh` = HEAD). Đo lại: pytest 3359 passed / `--pg` 3447 passed / ruff 0.
+- Ảnh xem lại 56 ms: đã còn 1 vòng DB (`repo.get` kiểm quyền), đáy GET Supabase ~50 ms ⇒ bớt nữa = cache quyền hoặc URL ký = bảo mật/API ⇒ DỪNG hỏi người (Idea Vault).
+- Plan 13 (v1.8.1, PATCH): `bptnForm` chặn lý do trống (`VALUE_KEYS` như app) + xác nhận an toàn/yêu cầu bổ sung bắt buộc lý do. Harness `:8001` W1–W6 ALL PASS, 2/2 phép phá đỏ. CHƯA commit.
+- Thẩm định độc lập plan 11 + 12: handoff `planning/12_…/handoffs/H01_independent-audit.md`, auditor cô lập (chỉ đọc).
+- Còn mở: commit plan 13; PR `feature/chamanh` → `develop` (develop thiếu ghim `sqlalchemy<2.1`); Idea Vault #3/#5/#7/#9 chờ người chọn; `stash@{0}` trùng commit.
+- Thẩm định R01: plan 11 ✅ DUYỆT; plan 12 🔁 SỬA (#2 🔴 cache trình duyệt vượt quyền — SO tái hiện: B nhận 200 không request tới server; #3 URL ảnh sau reset; #7 đổi mã lỗi; #14 thiếu test). #2/#3 chờ người chọn header. PR → develop GIỮ tới khi sửa #2. pytest lần 1 đỏ 2 test thời gian do tải, chạy lại 3359 passed.
+- Người dùng chọn (c) giữ ảnh ~56 ms. v1.8.2: header ảnh `no-cache` + `ETag` (X), upload kiểm quyền trước (#7), +6 test (#14). `mutate_r01.py` 8/8 đỏ; pytest 3365 / `--pg` 3453 / ruff 0; probe trình duyệt của auditor: B 200→404. CHƯA commit. Người dùng muốn giữ đăng nhập 2 tuần không nhập lại ⇒ bản tổng hợp chờ duyệt (bảng `maintops.sessions` có sẵn từ 0001).

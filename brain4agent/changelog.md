@@ -2,6 +2,23 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.8.2] - 2026-10-09: Sửa plan 12 sau thẩm định độc lập (R01)
+### Security
+- Ảnh: `Cache-Control: private, no-cache` + `ETag` (thay `max-age=31536000, immutable`). Trước: cùng trình duyệt, tài khoản khác mở được ảnh từ cache mà server không kiểm quyền (R01 #2, 🔴; lỗ 1 giờ có từ trước plan 12). Sau: B nhận 404, chủ ảnh nhận 304 không kèm bytes. URL dùng lại sau reset nhận bytes mới (#3).
+### Fixed
+- Upload ảnh kiểm quyền/tồn tại ticket trước khi xét file ⇒ mã lỗi như trước plan 12 (#7). +6 test (R1–R3, Z3, P5c), phép phá 8/8 đỏ.
+### Decisions
+- Người dùng chọn (c): ảnh xem lại giữ ~56 ms (1 câu SQL kiểm quyền), không cache quyền, không URL ký. G5 → "≤ median GET + 10 ms".
+
+## [v1.8.1] - 2026-10-09: Hotfix lý do bắt buộc ở form BPTN web (plan 13)
+### Fixed
+- `src/web/app.js` `bptnForm`: BPTN chọn/sửa giá trị (vị trí, thông tin, loại việc, phòng ban, tài sản, xác định tại hiện trường) mà để trống lý do ⇒ chặn ở client (trước: gửi đi, engine trả 409 GUARD_FAILED). Cùng luật `VALUE_KEYS` với app điện thoại.
+- Form An toàn Bậc 2: "Xác nhận an toàn" và "Yêu cầu cư dân bổ sung" bắt buộc lý do (engine vốn bắt buộc); "Nâng mức" vẫn không bắt buộc.
+### Measured
+- Harness Playwright `:8001` W1–W6 ALL PASS; 2/2 phép phá đỏ. API/engine không đổi.
+### Decisions
+- Ảnh xem lại 56 ms (plan 12 G5): đã ở 1 vòng DB (`repo.get`) như mọi GET ~50 ms; xuống 0 vòng phải cache dữ kiện kiểm quyền hoặc đổi URL ảnh ⇒ chạm bảo mật/API, chờ người dùng quyết (Idea Vault).
+
 ## [v1.8.0] - 2026-10-09: Giảm độ trễ backend (plan 12)
 ### Changed
 - Đọc DB qua engine `AUTOCOMMIT` riêng (`sql_read_engine`, `PostgresRepository._read`, thử lại 1 lần khi rớt kết nối); engine ghi giữ pre-ping. Tổng ≤5 kết nối.

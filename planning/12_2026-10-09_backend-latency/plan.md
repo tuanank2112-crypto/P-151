@@ -2,7 +2,7 @@
 
 | Trường | Giá trị |
 |---|---|
-| Trạng thái | 🟡 G1–G4 local ✅, G5 server ✅ trừ một điểm (ảnh xem lại 56 ms > mục tiêu 50 ms) — 2026-10-09 19:40:00 +0700; chưa commit |
+| Trạng thái | 🟡 Đã sửa sau thẩm định R01 ([`reports/R01_independent-audit.md`](reports/R01_independent-audit.md)) — v1.8.2, local ✅ (#2 #3 #7 #14, phép phá 8/8 đỏ, trình duyệt thật B 200→404) — 2026-10-09 21:06; chưa commit; server `:8000` ⬜. Bản đầu `e546262` đã push |
 | Loại | MINOR (tối ưu hiệu năng, KHÔNG đổi API/schema/luật nghiệp vụ) — đủ bộ SPEC → v1.8.0 |
 | Yêu cầu | Người dùng, 2026-10-09: "dà soát lại toàn bộ backend là tìm ra các điểm có thể tối ưu được chúng" → "dựa theo những gì đã gợi ý hãy tối ưu lại backend để nhanh hơn, mượt hơn" |
 | Nhánh | `feature/chamanh` (sau `e9960f0`) |
@@ -19,6 +19,11 @@
 | Q05 | 2026-10-09 | Tổng kết nối giữ ≤ 5: ghi 2+0, đọc 2+1 | Plan 01 Q7 (trần pooler chưa đo) |
 | Q06 | 2026-10-09 | Ảnh theo lô = tất cả hoặc không (trước: có thể ghi một phần) | Một transaction; file thừa bị xoá |
 | Q07 | 2026-10-09 | Agent tự chọn Q01–Q06 (AGENTS L.2); người dùng đổi được | Quyết định kỹ thuật |
+
+| Q08 | 2026-10-09 | Thẩm định độc lập (auditor cô lập, H01/R01) ⇒ 🔁 SỬA. SO đo lại: #2 và #7 xác nhận. #7 khôi phục thứ tự kiểm quyền trước đọc body; #14 thêm test; #13 ⇒ Idea Vault | SPEC-P02 §3 "mã lỗi không đổi"; lật #7 = sửa SPEC chấp nhận 415, chi phí 0 |
+| Q09 | 2026-10-09 | #2/#3 (`Cache-Control` ảnh) CHỜ NGƯỜI — đề xuất `private, no-cache` + `ETag` | Đổi bảo mật ⇒ người dùng yêu cầu dừng hỏi |
+| Q10 | 2026-10-09 | Header ảnh `private, no-cache` + `ETag: "<ref>"`, 304 chỉ sau kiểm quyền (phương án X); upload kiểm quyền trước khi xét file (+1 lần đọc DB mỗi upload, như trước plan 12) | Người dùng chọn (c) "giữ 56 ms" — X là cách đóng #2/#3 khớp (c) mà không tải lại bytes. Lật: đổi 1 dòng header (mở lại lỗ #2) |
+| Q11 | 2026-10-09 | G5 ảnh: "≤ 50 ms" → "≤ median GET + 10 ms" | Người dùng chọn (c): không cache quyền, không URL ký; 1 câu SQL kiểm quyền là đáy |
 
 ### Quyết định bị thay thế
 - Plan 01 `01-CONTRACTS.md` §2 "`sql_engine(url)` = pool_size=2, max_overflow=3" → Q04/Q05: engine ghi 2+0 + engine đọc 2+1 (vẫn ≤5).
@@ -40,6 +45,9 @@
 - [x] WP1 (P1–P5 đỏ trước sửa: `evidence/WP1/red-before.txt` — event loop đứng 1,00–1,01 s) · [x] WP2 · [x] WP3 (T1–T3 đỏ trước: `evidence/WP3/red-before.txt`)
 - [x] WP4 G1–G4 local, G5 server (`evidence/after/probe-8000.txt`, `evidence/mutations/`, `evidence/app-harness-green.txt`)
 - [x] WP5 `docs/maintenance.md` §15 + não + version 1.8.0
+- [x] Thẩm định độc lập H01/R01 (auditor cô lập) ⇒ 🔁 SỬA #2 #3 #7 #14
+- [x] Sửa R01 (v1.8.2): header ảnh Q10, thứ tự kiểm quyền upload, 6 test mới; `mutate_r01.py` 8/8 đỏ; pytest 3365 / `--pg` 3453 / ruff 0; trình duyệt thật `evidence/r01-browser-recheck.txt`
+- [ ] Server `:8000`: dựng lại image, probe header ảnh (chỉ GET) · thẩm định lại phần sửa (agent khác)
 
 ## §4. Bảng trỏ SPEC
 | File | Nội dung |
