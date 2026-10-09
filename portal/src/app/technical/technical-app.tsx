@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import {
-  assignStaffAction,
+  acceptAction,
   finishTicketAction,
-  receiveMaterialAction,
   reportWrongDeptAction,
-  requestMaterialAction,
+  requestMaterialsAction,
+  type MaterialLineInput,
 } from "@/app/actions/departments";
 import { Board } from "@/components/board";
 import { IconBox, IconKanban, IconWrench } from "@/components/icons";
@@ -15,7 +15,7 @@ import { Feedback } from "@/components/rating-summary";
 import { Body, Header, NavTiles, PageHead } from "@/components/shell";
 import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
-import { ROLE_LABEL, STOCK_CATALOG } from "@/lib/constants";
+import { ROLE_LABEL } from "@/lib/constants";
 import type { DeptData, DeptTicket } from "@/lib/dto";
 
 type Tab = "queue" | "mat";
@@ -23,28 +23,22 @@ type Tab = "queue" | "mat";
 const HEAD: Record<Tab, { title: string; sub: string }> = {
   queue: {
     title: "Hàng việc kỹ thuật",
-    sub: "Ticket khẩn cấp lên đầu, kèm thời hạn xử lý. Nút viền cam là kỹ thuật viên đúng chuyên môn.",
+    sub: "Ticket khẩn cấp lên đầu, kèm thời hạn xử lý. Nhận việc rồi mới xử lý.",
   },
   mat: { title: "Yêu cầu vật tư", sub: "Vật tư cần cho các ticket đang xử lý." },
 };
 
-const COMMON_MATERIALS = STOCK_CATALOG.map((m) => m.name);
-
-const kwText = (t: DeptTicket) => (t.keywords.length ? t.keywords.join(", ") : "không khớp từ khóa");
-
-export function formatStaffRole(name: string | null) {
-  if (!name) return null;
-  if (name === "Kỹ thuật viên 1" || name === "Kỹ thuật viên 4" || name === "Hùng") return "Điện";
-  if (name === "Kỹ thuật viên 2" || name === "Tuấn") return "Cấp thoát nước";
-  if (name === "Kỹ thuật viên 3" || name === "Minh") return "Thang máy";
-  return name.replace(/^Kỹ thuật viên\s*\d*\s*[·-]?\s*/i, "").trim() || name;
+/** Material lines of every ticket, flattened for the "Yêu cầu vật tư" tab (received = nothing short) */
+function materialRows(tickets: DeptTicket[]) {
+  return tickets.flatMap((t) => t.materials.map((m) => ({ ...m, ticketCode: t.code, received: m.shortage === 0 })));
 }
 
 export function TechnicalApp({ data }: { data: DeptData }) {
   const { pending, error, setError, run } = useAction();
   const [tab, setTab] = useState<Tab>("queue");
   const all = data.tickets;
-  const pendingReq = data.materials.filter((m) => !m.received).length;
+  const materials = materialRows(all);
+  const pendingReq = materials.filter((m) => !m.received).length;
 
   return (
     <div className="scr-technical min-h-screen bg-page">
@@ -53,25 +47,25 @@ export function TechnicalApp({ data }: { data: DeptData }) {
         name={data.user.name}
         rolePill={ROLE_LABEL.technical}
         bellLabel="Thông báo kỹ thuật"
-        bellCount={all.filter((t) => t.stage === 2).length + pendingReq}
+        bellCount={all.filter((t) => t.stage === 3).length + pendingReq}
         notices={[
           ...all
-            .filter((t) => t.stage === 2 || t.urgent)
+            .filter((t) => t.stage === 3 || t.urgent)
             .map((t) => ({
               id: `t-${t.id}`,
               title: `${t.code}: ${t.text}`,
               urgent: t.urgent,
-              tag: t.stage === 2 ? "Cần tiếp nhận" : "Đang xử lý",
+              tag: t.stage === 3 ? "Cần tiếp nhận" : "Đang xử lý",
               time: t.createdAt,
-              body: `Vị trí: ${t.location} · Chuyên môn: ${t.skill ?? "Chung"} · KTV: ${t.staffName ?? "Chưa giao"}`,
+              body: `Vị trí: ${t.location}`,
             })),
-          ...data.materials
+          ...materials
             .filter((m) => !m.received)
             .map((m) => ({
-              id: `m-${m.id}`,
-              title: `Yêu cầu cấp vật tư: ${m.item}`,
+              id: `m-${m.ticketCode}-${m.itemCode}`,
+              title: `Yêu cầu cấp vật tư: ${m.itemName}`,
               tag: "Kho vật tư",
-              body: `Cho ticket ${m.ticketCode} · Phụ trách: ${m.staffName ?? "Kỹ thuật viên"}`,
+              body: `Cho ticket ${m.ticketCode}`,
             })),
         ]}
       />
@@ -94,12 +88,12 @@ export function TechnicalApp({ data }: { data: DeptData }) {
               <TechCard
                 key={t.id}
                 t={t}
-                staff={data.staff}
-                ticketMaterials={data.materials.filter((m) => m.ticketCode === t.code)}
+                catalog={data.catalog}
+                customMaterials={data.customMaterials}
                 pending={pending}
-                onAssign={(sid) => run(() => assignStaffAction(t.id, sid))}
+                onAccept={() => run(() => acceptAction(t.id))}
                 onFinish={(fd) => run(() => finishTicketAction(t.id, fd))}
-                onRequest={(item, done) => run(() => requestMaterialAction(t.id, item), done)}
+                onRequest={(lines, note, done) => run(() => requestMaterialsAction(t.id, lines, note), done)}
                 onReportWrongDept={(reason, done) => run(() => reportWrongDeptAction(t.id, reason), done)}
               />
             )}
@@ -108,28 +102,23 @@ export function TechnicalApp({ data }: { data: DeptData }) {
 
         {tab === "mat" && (
           <section className="flex max-w-[900px] flex-col gap-3.5">
-            {data.materials.length === 0 && (
+            {materials.length === 0 && (
               <div className="card p-10 text-center text-muted">
                 Chưa có yêu cầu vật tư. Tạo yêu cầu từ một ticket đang xử lý.
               </div>
             )}
-            {data.materials.map((m) => (
-              <article key={m.id} className="card flex flex-wrap items-center gap-3 px-6 py-[22px]">
+            {materials.map((m) => (
+              <article key={`${m.ticketCode}-${m.itemCode}`} className="card flex flex-wrap items-center gap-3 px-6 py-[22px]">
                 <span className="flex h-[52px] w-[52px] flex-none items-center justify-center rounded-full bg-line-soft text-brand-mid">
                   <IconBox size={24} width={1.8} />
                 </span>
                 <div className="flex flex-col gap-1" style={{ flex: "1 1 260px" }}>
-                  <span className="text-[15px] font-semibold">{m.item}</span>
+                  <span className="text-[15px] font-semibold">{m.itemName}</span>
                   <span className="text-[13px] text-muted">
-                    Cho {m.ticketCode} · {m.staffName ?? "Chưa giao"}
+                    Cho {m.ticketCode} · cần {m.plannedQty} {m.unit}
                   </span>
                 </div>
                 <span className={m.received ? "pill got" : "pill req"}>{m.received ? "Đã nhận" : "Chờ cấp"}</span>
-                {!m.received && (
-                  <button type="button" className="btn" disabled={pending} onClick={() => run(() => receiveMaterialAction(m.id))}>
-                    Xác nhận đã nhận
-                  </button>
-                )}
               </article>
             ))}
           </section>
@@ -142,21 +131,22 @@ export function TechnicalApp({ data }: { data: DeptData }) {
 
 function TechCard(props: {
   t: DeptTicket;
-  staff: DeptData["staff"];
-  ticketMaterials: DeptData["materials"];
+  catalog: DeptData["catalog"];
+  customMaterials: boolean;
   pending: boolean;
-  onAssign: (staffId: number) => void;
-  onFinish: (fd?: FormData) => void;
-  onRequest: (item: string, done: () => void) => void;
+  onAccept: () => void;
+  onFinish: (fd: FormData) => void;
+  onRequest: (lines: MaterialLineInput[], note: string, done: () => void) => void;
   onReportWrongDept: (reason: string, done: () => void) => void;
 }) {
-  const { t, ticketMaterials } = props;
+  const { t } = props;
+  const ticketMaterials = t.materials;
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [finishModalOpen, setFinishModalOpen] = useState(false);
   const [wrongDeptModalOpen, setWrongDeptModalOpen] = useState(false);
 
   // Material request modal state
-  const [selectedMat, setSelectedMat] = useState(COMMON_MATERIALS[0]);
+  const [selectedMat, setSelectedMat] = useState(props.catalog[0]?.itemCode ?? "");
   const [customMat, setCustomMat] = useState("");
   const [isCustom, setIsCustom] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -197,17 +187,19 @@ function TechCard(props: {
     }
     const fd = new FormData();
     fd.append("note", finishNote.trim() || "Kỹ thuật đã hoàn tất và kiểm tra hoạt động bình thường.");
-    fd.append("photo", photoFile);
+    fd.append("photos", photoFile);
+    // all checks ticked: report every pending checklist item of the playbook as done
+    t.checklist.filter((c) => !c.done).forEach((c) => fd.append("checklist", c.templateItemId));
     props.onFinish(fd);
     setFinishModalOpen(false);
   };
 
   const handleRequestSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const itemName = isCustom ? customMat.trim() : selectedMat;
-    if (!itemName) return;
-    const finalDesc = `${itemName} (SL: ${quantity}${matNote.trim() ? ` · ${matNote.trim()}` : ""})`;
-    props.onRequest(finalDesc, () => {
+    const name = customMat.trim();
+    if (isCustom ? !name : !selectedMat) return;
+    const line: MaterialLineInput = isCustom ? { newItemName: name, unit: "cái", qty: quantity } : { itemCode: selectedMat, qty: quantity };
+    props.onRequest([line], matNote.trim(), () => {
       setRequestModalOpen(false);
       setCustomMat("");
       setIsCustom(false);
@@ -221,67 +213,41 @@ function TechCard(props: {
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-bold">{t.code}</span>
         {t.urgent && <span className="pill urgent">Khẩn cấp</span>}
-        {t.stage < 5 && <span className={left < 0 ? "pill sla-late" : "pill sla-ok"}>{left < 0 ? `Quá hạn ${-left}h` : `Còn ${left}h`}</span>}
-        {t.paused && t.stage < 5 && <span className="pill req">Cần BQL xem</span>}
+        {t.stage < 5 && left !== null && <span className={left < 0 ? "pill sla-late" : "pill sla-ok"}>{left < 0 ? `Quá hạn ${-left}h` : `Còn ${left}h`}</span>}
+        {t.paused && t.stage < 5 && <span className="pill req">Tạm hoãn</span>}
       </div>
       <p className="m-0 text-[15px] leading-normal">{t.text}</p>
       <span className="text-[13px] text-muted">
         {t.location} · {t.createdAt}
       </span>
-      <span className="text-xs text-muted">
-        Agent nhận diện: {kwText(t)} · {t.conf}% · chuyên môn: {t.skill ?? "chưa rõ"}
-      </span>
       {t.photos.length > 0 && <PhotoStrip photos={t.photos} />}
-      {t.staffName && <span className="pill staff self-start">Phụ trách: {formatStaffRole(t.staffName)}</span>}
 
       {/* Material Request Checklist on Card */}
       {ticketMaterials.length > 0 && (
         <div className="rounded-xl bg-slate-50 border border-slate-200 p-2.5 text-xs space-y-1.5">
           <span className="font-semibold text-slate-700 block">Checklist vật tư yêu cầu:</span>
           {ticketMaterials.map((m) => (
-            <div key={m.id} className="flex items-center justify-between gap-1 text-[11px]">
-              <span className="text-slate-700 truncate max-w-[200px]">{m.item}</span>
-              <span className={m.received ? "text-emerald-700 font-bold" : "text-amber-700 font-medium"}>
-                {m.received ? "✓ Đã nhận" : "⏳ Chờ cấp"}
+            <div key={m.itemCode} className="flex items-center justify-between gap-1 text-[11px]">
+              <span className="text-slate-700 truncate max-w-[200px]">{m.itemName}</span>
+              <span className={m.shortage === 0 ? "text-emerald-700 font-bold" : "text-amber-700 font-medium"}>
+                {m.shortage === 0 ? "✓ Đủ tồn" : "⏳ Chờ cấp"}
               </span>
             </div>
           ))}
         </div>
       )}
 
-      {/* Stage 2 Assignment */}
-      {t.stage === 2 && (
+      {/* Stage 3: routed, not accepted yet */}
+      {t.stage === 3 && (
         <div className="flex flex-col gap-2 border-t border-line-soft pt-2.5">
-          <span className="text-[13px] font-semibold text-body">Giao chuyên môn phụ trách:</span>
-          <div className="flex flex-col gap-1.5">
-            {props.staff
-              .filter((s) => s.name !== "Kỹ thuật viên 4" && s.id !== 7)
-              .map((s) => {
-                const isMatch = s.skill === t.skill;
-                const roleLabel = s.skill ?? (s.name === "Kỹ thuật viên 1" ? "Điện" : s.name === "Kỹ thuật viên 2" ? "Cấp thoát nước" : "Thang máy");
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    className={isMatch ? "btn sug flex items-center justify-between text-left" : "btn flex items-center justify-between text-left"}
-                    disabled={props.pending}
-                    onClick={() => props.onAssign(s.id)}
-                  >
-                    <span className="font-semibold text-body">{roleLabel}</span>
-                    {isMatch && (
-                      <span className="text-xs font-bold text-[#C2410C] bg-[#FFEDD5] px-2 py-0.5 rounded-full">
-                        Phù hợp nhất
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-          </div>
+          <button type="button" className="btn primary self-start" disabled={props.pending} onClick={props.onAccept}>
+            Nhận việc
+          </button>
         </div>
       )}
 
-      {/* Stage 3/4 Action Buttons */}
-      {(t.stage === 3 || t.stage === 4) && (
+      {/* Stage 4 Action Buttons */}
+      {t.stage === 4 && (
         <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-line-soft">
           <button
             type="button"
@@ -328,13 +294,15 @@ function TechCard(props: {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-semibold text-slate-700">Chọn vật tư:</label>
-                  <button
-                    type="button"
-                    onClick={() => setIsCustom(!isCustom)}
-                    className="text-xs text-sky-600 hover:underline font-medium"
-                  >
-                    {isCustom ? "← Chọn từ danh mục có sẵn" : "+ Nhập vật tư khác ngoài kho"}
-                  </button>
+                  {props.customMaterials && (
+                    <button
+                      type="button"
+                      onClick={() => setIsCustom(!isCustom)}
+                      className="text-xs text-sky-600 hover:underline font-medium"
+                    >
+                      {isCustom ? "← Chọn từ danh mục có sẵn" : "+ Nhập vật tư khác ngoài kho"}
+                    </button>
+                  )}
                 </div>
 
                 {isCustom ? (
@@ -352,9 +320,9 @@ function TechCard(props: {
                     value={selectedMat}
                     onChange={(e) => setSelectedMat(e.target.value)}
                   >
-                    {COMMON_MATERIALS.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
+                    {props.catalog.map((m) => (
+                      <option key={m.itemCode} value={m.itemCode}>
+                        {m.itemName}
                       </option>
                     ))}
                   </select>

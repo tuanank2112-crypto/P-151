@@ -1,14 +1,17 @@
 # OPERATIONS — chạy, demo, rollback (hồ sơ 11)
 
+## 0. Cổng: UI mới mở ở 8000 (Q19)
+Backend chạy cổng **8000** với `PORTAL_URL=http://127.0.0.1:3000` ⇒ mọi đường ngoài `/api/v1`, `/ui`, `/health`, `/docs` được chuyển tiếp sang portal Next.js (cổng 3000, chạy `BACKEND_URL=http://127.0.0.1:8000`). Người dùng mở http://localhost:8000 = UI mới. UI tĩnh `/ui/` KHÔNG dùng để demo.
+
 ## 1. Dev local (KHÔNG chạm Supabase)
 ```bash
-# backend (repo này, store memory, LLM mock) — cổng 8001
+# backend (repo này, store memory, LLM mock) — cổng 8000
 MO_STORE=memory MO_PHOTO_STORE=local LLM_MODE=mock DATABASE_URL= MO_CUSTOM_MATERIALS=true \
-  PYTHONUTF8=1 .venv/Scripts/python.exe -m uvicorn src.main:app --host 127.0.0.1 --port 8001
-# portal — cổng 3000
-cd portal && BACKEND_URL=http://127.0.0.1:8001 SESSION_SECRET=dev-only npm run dev
+  PORTAL_URL=http://127.0.0.1:3000 PYTHONUTF8=1 .venv/Scripts/python.exe -m uvicorn src.main:app --host 127.0.0.1 --port 8000
+# portal — cổng 3000 (người dùng mở qua 8000)
+cd portal && BACKEND_URL=http://127.0.0.1:8000 SESSION_SECRET=dev-only npm run dev
 ```
-- Mở http://localhost:3000, đăng nhập `cudan`/`tiepnhan`/`quanly`/`vesinh`/`kythuat`/`kho`, mật khẩu `123456`.
+- Mở http://localhost:8000 (UI mới qua backend), đăng nhập `cudan`/`tiepnhan`/`quanly`/`vesinh`/`kythuat`/`kho`, mật khẩu `123456`.
 - Backend memory: khởi động lại = về 12 ticket mẫu, mọi phiên đăng nhập mất (token trong RAM) ⇒ portal tự về `/login`.
 - `portal/.env.local` KHÔNG chứa `BACKEND_URL` trỏ Supabase/Render (gotcha: `next dev` tự nạp lại `.env.local`).
 
@@ -22,6 +25,10 @@ Thứ tự BẮT BUỘC:
 3. Portal `BACKEND_URL=http://127.0.0.1:8002`. Đăng nhập `quanly` ⇒ tổng ticket khớp bước 2.
 4. (Tuỳ chọn, hỏi riêng) Bật vật tư mới trên Supabase: chạy Alembic `0003_material_items` (chỉ tạo bảng) + `MO_CUSTOM_MATERIALS=true`. Rủi ro: bản Render cũ gặp mã `SIM-MAT-X-*` trong ticket ⇒ chưa đo; chỉ bật sau khi Render chạy code có `self.material()` hoặc người dùng chấp nhận rủi ro.
 5. Revision `0003` là bảng mới, code cũ không đọc ⇒ không cần dừng writer (khác plan 06 OPERATIONS §5).
+
+## 3b. Nhánh (Q19)
+Backend thật của nhóm = `develop`. Đưa code hồ sơ này lên `develop` bằng PR (`feature/nhuy-portal-fe` → `develop`, gồm cả PR #19 vì nhánh đã gộp `feature/nhuy-reasoning-agent`); KHÔNG push thẳng `develop` (bị chặn "merge without review"). Bản Render chạy code mới sau khi PR merge + deploy (người của nhóm làm).
+Bảng mới trên Supabase: `0003_material_items`, `0004_portal_extras` (chỉ CREATE TABLE) — chạy khi người dùng gật OPERATIONS §3.
 
 ## 4. Rollback
 | Sự cố | Làm |

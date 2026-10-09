@@ -1,6 +1,6 @@
-import type { Dept, Place, Role } from "@/db/schema";
-
-export type { Dept, Place, Role };
+export type Role = "resident" | "reception" | "management" | "cleaning" | "technical" | "warehouse";
+export type Dept = "ve_sinh" | "ky_thuat" | "bql";
+export type Place = "floor" | "lobby" | "lift" | "common";
 
 export const DEPT_ORDER: Dept[] = ["ve_sinh", "ky_thuat", "bql"];
 

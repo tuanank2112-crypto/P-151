@@ -1,38 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { addExtraAction, rateTicketAction, submitTicketAction } from "@/app/actions/resident";
 import {
-  acceptTicketAction,
-  addExtraAction,
-  cancelTicketAction,
-  rateTicketAction,
-  rejectTicketAction,
-  submitTicketAction,
-} from "@/app/actions/resident";
-import {
-  IconBell,
   IconBuilding,
   IconCheck,
   IconClipboard,
   IconInbox,
-  IconInfo,
   IconLayers,
   IconLift,
   IconPen,
   IconPin,
   IconStar,
   IconUpload,
-  IconWarning,
 } from "@/components/icons";
 import { PhotoStrip } from "@/components/photo-strip";
 import { Body, Header, NavTiles } from "@/components/shell";
 import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
-import { classify } from "@/lib/agent";
 import {
-  BAD_TAGS,
-  DEPT_LABEL,
-  GOOD_TAGS,
   MAX_PHOTOS,
   MIN_DESCRIPTION,
   PLACE_DEFS,
@@ -43,7 +29,7 @@ import {
 } from "@/lib/constants";
 import type { ResidentData, ResidentTicket } from "@/lib/dto";
 
-type Tab = "compose" | "mine" | "notice";
+type Tab = "compose" | "mine";
 type Filter = "all" | "run" | "accept" | "rate" | "done";
 
 const PLACE_ICON: Record<Place, React.ReactNode> = {
@@ -69,7 +55,6 @@ const OVERVIEW: [Exclude<Filter, "all">, string, string, string][] = [
 
 function status(t: ResidentTicket): [string, string] {
   if (t.cancelled) return ["pill s-cancel", "Đã hủy"];
-  if (t.paused) return ["pill s-pause", "Tạm hoãn"];
   if (t.stage === 5) return ["pill s-wait", "Chờ nghiệm thu"];
   if (t.stage === 6) return ["pill s-done", "Hoàn tất"];
   return ["pill s-run", STAGES[t.stage - 1]];
@@ -78,7 +63,7 @@ function status(t: ResidentTicket): [string, string] {
 function inFilter(t: ResidentTicket, f: Filter): boolean {
   if (f === "run") return !t.cancelled && t.stage < 5;
   if (f === "accept") return !t.cancelled && t.stage === 5;
-  if (f === "rate") return !t.cancelled && t.stage === 6 && !t.rating;
+  if (f === "rate") return !t.cancelled && t.canRate;
   if (f === "done") return t.cancelled || t.stage === 6;
   return true;
 }
@@ -86,13 +71,12 @@ function inFilter(t: ResidentTicket, f: Filter): boolean {
 type LocalPhoto = { file: File; url: string };
 
 export function ResidentApp({ data }: { data: ResidentData }) {
-  const { user, tickets: all, notices, rules } = data;
+  const { user, tickets: all } = data;
   const home = { tower: user.tower, floor: user.floor, apartment: user.apartment };
   const { pending, error, setError, run } = useAction();
 
   const [tab, setTab] = useState<Tab>("compose");
   // Compose
-  const [urgentPick, setUrgentPick] = useState<boolean | null>(null);
   const [place, setPlace] = useState<Place>("floor");
   const [sub, setSub] = useState("");
   const [drag, setDrag] = useState(false);
@@ -102,11 +86,9 @@ export function ResidentApp({ data }: { data: ResidentData }) {
   const [done, setDone] = useState<{ code: string; text: string } | null>(null);
   // Mine
   const [filter, setFilter] = useState<Filter>("all");
-  const [sel, setSel] = useState<number | null>(all[0]?.id ?? null);
+  const [sel, setSel] = useState<string | null>(all[0]?.id ?? null);
   const [extra, setExtra] = useState("");
   const [rStars, setRStars] = useState(0);
-  const [rTags, setRTags] = useState<string[]>([]);
-  const [rComment, setRComment] = useState("");
 
   // Revoke preview URLs still held when the page unmounts
   const photosRef = useRef(photos);
@@ -121,11 +103,7 @@ export function ResidentApp({ data }: { data: ResidentData }) {
   };
 
   // ---------- Gửi phản ánh ----------
-  const ai = useMemo(() => classify(draft, rules, home), [draft, rules, home.tower, home.floor]); // eslint-disable-line react-hooks/exhaustive-deps
-  const dept = ai.dept;
-  const urgent = urgentPick === null ? ai.urgent : urgentPick;
-  const baseLoc = placeLocation(place, sub, home);
-  const finalLoc = ai.locationFromText ? `${ai.locationFromText} (theo mô tả)` : baseLoc;
+  const finalLoc = placeLocation(place, sub, home);
   const descOk = draft.trim().length >= MIN_DESCRIPTION;
 
   const addFiles = (files: FileList | null) => {
@@ -154,7 +132,6 @@ export function ResidentApp({ data }: { data: ResidentData }) {
     fd.set("description", draft);
     fd.set("place", place);
     fd.set("placeDetail", sub);
-    fd.set("urgent", urgentPick === null ? "auto" : String(urgentPick));
     photos.forEach((p) => fd.append("photos", p.file, p.file.name));
     setFormError("");
     run(
@@ -163,14 +140,13 @@ export function ResidentApp({ data }: { data: ResidentData }) {
         photos.forEach((p) => URL.revokeObjectURL(p.url));
         setPhotos([]);
         setDraft("");
-        setUrgentPick(null);
         setPlace("floor");
         setSub("");
         setSel(res.id);
         setFilter("all");
         setDone({
           code: res.code,
-          text: `Dự kiến chuyển đến ${res.dept ? DEPT_LABEL[res.dept] : "Ban tiếp nhận"}, xử lý trong ${res.urgent ? "4 giờ" : "48 giờ"}.`,
+          text: res.photoError ? `Đã gửi phản ánh, nhưng chưa đính kèm được ảnh: ${res.photoError}` : "Ban tiếp nhận sẽ tiếp nhận và chuyển đúng phòng ban.",
         });
       },
       (r) => {
@@ -184,12 +160,10 @@ export function ResidentApp({ data }: { data: ResidentData }) {
   // ---------- Phản ánh của tôi ----------
   const list = all.filter((t) => inFilter(t, filter));
   const cur = all.find((t) => t.id === sel) ?? list[0] ?? null;
-  const selectTicket = (id: number) => {
+  const selectTicket = (id: string) => {
     setSel(id);
     setExtra("");
     setRStars(0);
-    setRTags([]);
-    setRComment("");
   };
   const mineCount = all.filter((t) => !t.cancelled && t.stage < 6).length;
 
@@ -200,31 +174,20 @@ export function ResidentApp({ data }: { data: ResidentData }) {
         name={user.name}
         rolePill={`Cư dân · ${user.tower}-${user.apartment}`}
         bellLabel="Thông báo & Cảnh báo"
-        bellCount={notices.length + all.filter((t) => t.stage === 5 || (t.stage === 6 && !t.rating) || t.urgent).length}
-        notices={[
-          ...all
-            .filter((t) => t.stage === 5 || (t.stage === 6 && !t.rating) || t.urgent)
-            .map((t) => ({
-              id: `t-${t.id}`,
-              title: `${t.code}: ${t.title}`,
-              time: t.sentAt,
-              body:
-                t.stage === 5
-                  ? "Kỹ thuật đã xử lý xong · Cần bạn nghiệm thu"
-                  : t.stage === 6 && !t.rating
-                    ? "Đã hoàn thành · Mời bạn đánh giá chất lượng"
-                    : `Trạng thái: Bước ${t.stage}/6 · Khẩn cấp`,
-              urgent: t.urgent,
-              tag: "Phản ánh của bạn",
-            })),
-          ...notices.map((n) => ({
-            id: `n-${n.id}`,
-            title: n.title,
-            time: n.date,
-            body: n.body,
-            tag: "Ban quản lý",
-          })),
-        ]}
+        bellCount={all.filter((t) => t.stage === 5 || t.canRate || t.needInfo).length}
+        notices={all
+          .filter((t) => t.stage === 5 || t.canRate || t.needInfo)
+          .map((t) => ({
+            id: `t-${t.id}`,
+            title: `${t.code}: ${t.title}`,
+            time: t.sentAt,
+            body: t.needInfo
+              ? "Ban tiếp nhận cần thêm thông tin từ bạn"
+              : t.canRate
+                ? "Đã hoàn thành · Mời bạn đánh giá chất lượng"
+                : "Phòng ban đã xử lý xong · Chờ Ban quản lý nghiệm thu",
+            tag: "Phản ánh của bạn",
+          }))}
       />
       <Body>
         <NavTiles<Tab>
@@ -243,7 +206,7 @@ export function ResidentApp({ data }: { data: ResidentData }) {
             <div className="flex flex-col gap-1">
               <h1 className="mt-2 mb-0 text-[28px] font-bold tracking-[-0.01em]">Gửi phản ánh mới</h1>
               <p className="m-0 text-[15px] text-muted">
-                Mô tả vấn đề, chọn vị trí và thêm ảnh nếu có. Agent sẽ tự phân loại và chuyển đúng phòng ban.
+                Mô tả vấn đề, chọn vị trí và thêm ảnh nếu có. Ban tiếp nhận sẽ phân loại và chuyển đúng phòng ban.
               </p>
             </div>
 
@@ -294,18 +257,6 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                       </button>
                     ))}
                   </div>
-                  {draft.trim().length > 2 && (
-                    <div className="flex flex-wrap items-center gap-2 rounded-[14px] bg-soft px-3.5 py-3 text-[13px]">
-                      <span className="font-bold text-brand">Agent nhận diện:</span>
-                      <span className={`pill cat-${dept ?? "none"}`}>
-                        <span className="dot" />
-                        {dept ? DEPT_LABEL[dept] : "Chưa rõ, Ban tiếp nhận sẽ xem"}
-                      </span>
-                      <span className="text-body">
-                        {dept ? `Từ khóa: ${ai.keywords.join(", ")} · ${ai.confidence}%` : "Mô tả thêm để Agent nhận diện."}
-                      </span>
-                    </div>
-                  )}
                 </section>
 
                 {/* 2. Vị trí */}
@@ -355,14 +306,6 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                       </button>
                     ))}
                   </div>
-                  {ai.locationFromText && (
-                    <div role="status" className="flex items-center gap-2.5 rounded-[14px] px-3.5 py-3 text-sm" style={{ background: "#FFF7E0", color: "#5C4200" }}>
-                      <IconInfo />
-                      <span>
-                        Mô tả có nhắc <b>{ai.locationFromText}</b>. Agent sẽ ưu tiên vị trí này.
-                      </span>
-                    </div>
-                  )}
                 </section>
 
                 {/* 3. Ảnh */}
@@ -446,15 +389,8 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-xs font-bold uppercase tracking-wider text-muted">Đơn vị tiếp nhận dự kiến</span>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={`pill cat-${dept ?? "none"}`}>
-                      <span className="dot" />
-                      {dept ? DEPT_LABEL[dept] : "Ban tiếp nhận sẽ phân loại"}
-                    </span>
-                    {urgent && <span className="pill urgent">Khẩn cấp</span>}
-                  </div>
-                  <span className="text-[13px] text-muted">Dự kiến xử lý trong {urgent ? "4 giờ" : "48 giờ"}.</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted">Đơn vị tiếp nhận</span>
+                  <span className="text-[14px] font-semibold text-body">Ban tiếp nhận sẽ phân loại</span>
                 </div>
 
                 <div className="flex flex-col gap-1">
@@ -546,7 +482,7 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                 )}
                 {list.map((t) => {
                   const [stCls, stLabel] = status(t);
-                  const needRate = t.stage === 6 && !t.rating && !t.cancelled;
+                  const needRate = t.canRate && !t.cancelled;
                   const needAccept = t.stage === 5 && !t.cancelled;
                   const needInfo = t.needInfo && !t.cancelled;
                   return (
@@ -569,9 +505,7 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                                 : n < t.stage || t.stage === 6
                                   ? "seg done"
                                   : n === t.stage
-                                    ? t.paused
-                                      ? "seg pause"
-                                      : "seg cur"
+                                    ? "seg cur"
                                     : "seg"
                             }
                           />
@@ -585,7 +519,7 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                           {needRate ? "Cần bạn đánh giá" : needAccept ? "Cần bạn nghiệm thu" : "Cần bạn bổ sung thông tin"}
                         </span>
                       )}
-                      {t.rating && <span className="text-[13px] text-muted">Bạn đã đánh giá {t.rating.stars}/5 sao</span>}
+                      {t.rated && <span className="text-[13px] text-muted">Bạn đã đánh giá phản ánh này</span>}
                     </button>
                   );
                 })}
@@ -599,17 +533,7 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                   extra={extra}
                   setExtra={setExtra}
                   rStars={rStars}
-                  rTags={rTags}
-                  rComment={rComment}
-                  setRStars={(n) => {
-                    setRStars(n);
-                    setRTags([]);
-                  }}
-                  setRTags={setRTags}
-                  setRComment={setRComment}
-                  onAccept={() => run(() => acceptTicketAction(cur.id))}
-                  onReject={() => run(() => rejectTicketAction(cur.id))}
-                  onCancel={() => run(() => cancelTicketAction(cur.id))}
+                  setRStars={setRStars}
                   onAddExtra={() => {
                     const txt = extra.trim();
                     if (!txt) return;
@@ -618,12 +542,8 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                   onRate={() => {
                     if (!rStars) return;
                     run(
-                      () => rateTicketAction(cur.id, { stars: rStars, tags: rTags, comment: rComment.trim() }),
-                      () => {
-                        setRStars(0);
-                        setRTags([]);
-                        setRComment("");
-                      },
+                      () => rateTicketAction(cur.id, rStars),
+                      () => setRStars(0),
                     );
                   }}
                 />
@@ -632,110 +552,6 @@ export function ResidentApp({ data }: { data: ResidentData }) {
           </div>
         )}
 
-        {/* ===================== THÔNG BÁO ===================== */}
-        {tab === "notice" && (
-          <section className="flex max-w-[900px] flex-col gap-6">
-            <div className="flex flex-col gap-1">
-              <h1 className="mt-2 mb-0 text-[28px] font-bold tracking-[-0.01em]">Thông báo & Hoạt động</h1>
-              <p className="m-0 text-[15px] text-muted">
-                Cập nhật trạng thái xử lý các phản ánh của bạn và thông báo chung từ Ban quản lý tòa nhà.
-              </p>
-            </div>
-
-            {/* Cập nhật phản ánh của cư dân */}
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <h2 className="m-0 text-[18px] font-bold">Trạng thái phản ánh của bạn ({all.length})</h2>
-                {all.length > 0 && (
-                  <button type="button" className="text-sm font-semibold text-brand hover:underline" onClick={() => pick("mine")}>
-                    Xem danh sách phản ánh →
-                  </button>
-                )}
-              </div>
-
-              {all.length === 0 && (
-                <div className="card p-7 text-center text-sm text-muted">
-                  Bạn chưa có phản ánh nào. Khi bạn gửi phản ánh, tiến độ xử lý và cập nhật sẽ hiển thị tại đây.
-                </div>
-              )}
-
-              {all.map((t) => {
-                const [stCls, stLabel] = status(t);
-                const latestHistory = t.history[0];
-                return (
-                  <article key={t.id} className="card flex items-start gap-4 px-6 py-4.5 transition-colors hover:border-brand-mid">
-                    <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-soft text-brand">
-                      {t.stage === 6 ? <IconCheck size={20} /> : t.urgent ? <IconWarning size={20} /> : <IconBell size={20} />}
-                    </span>
-                    <div className="flex flex-1 flex-col gap-1.5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="idb">#{t.code}</span>
-                        <span className={stCls}>
-                          <span className="dot" />
-                          {stLabel}
-                        </span>
-                        {t.urgent && <span className="pill urgent">Khẩn cấp</span>}
-                        <span className="ml-auto text-xs text-muted">{latestHistory?.time ?? t.sentAt}</span>
-                      </div>
-                      <h3 className="m-0 text-[16px] font-semibold text-body">{t.title}</h3>
-                      <p className="m-0 text-sm text-muted">
-                        {latestHistory ? `${latestHistory.label}: ${latestHistory.note || "Đang được xử lý"}` : `Gửi lúc: ${t.sentAt}`}
-                      </p>
-                      {t.stage === 5 && !t.cancelled && (
-                        <div className="mt-1 flex items-center gap-2">
-                          <span className="pill need">Kỹ thuật đã xử lý xong · Cần bạn nghiệm thu</span>
-                          <button
-                            type="button"
-                            className="btn sm primary"
-                            onClick={() => {
-                              selectTicket(t.id);
-                              pick("mine");
-                            }}
-                          >
-                            Nghiệm thu ngay
-                          </button>
-                        </div>
-                      )}
-                      {t.stage === 6 && !t.rating && !t.cancelled && (
-                        <div className="mt-1 flex items-center gap-2">
-                          <span className="pill need">Đã hoàn thành · Mời bạn đánh giá chất lượng</span>
-                          <button
-                            type="button"
-                            className="btn sm"
-                            onClick={() => {
-                              selectTicket(t.id);
-                              pick("mine");
-                            }}
-                          >
-                            Đánh giá sao
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-
-            {/* Thông báo chung từ Ban quản lý */}
-            <div className="flex flex-col gap-3 pt-2">
-              <h2 className="m-0 text-[18px] font-bold">Thông báo chung từ Ban quản lý</h2>
-              {notices.length === 0 && <div className="card p-7 text-center text-sm text-muted">Chưa có thông báo chung nào.</div>}
-              {notices.map((n) => (
-                <article key={n.id} className="card flex items-start gap-4 px-6 py-[22px]">
-                  <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-line-soft text-brand-mid">
-                    <IconBuilding size={20} />
-                  </span>
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-xs font-semibold text-brand">BAN QUẢN LÝ · {n.date}</span>
-                    <h2 className="m-0 text-[16px] font-bold">{n.title}</h2>
-                    <p className="m-0 text-sm leading-[1.55] text-body">{n.body}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
       </Body>
       <Toast message={error} onClose={() => setError("")} />
     </div>
@@ -748,28 +564,19 @@ function TicketDetail(props: {
   extra: string;
   setExtra: (v: string) => void;
   rStars: number;
-  rTags: string[];
-  rComment: string;
   setRStars: (n: number) => void;
-  setRTags: (v: string[]) => void;
-  setRComment: (v: string) => void;
-  onAccept: () => void;
-  onReject: () => void;
-  onCancel: () => void;
   onAddExtra: () => void;
   onRate: () => void;
 }) {
-  const { t, rStars, rTags } = props;
+  const { t, rStars } = props;
   const [stCls, stLabel] = status(t);
-  const canAccept = t.stage === 5 && !t.cancelled;
-  const canRate = t.stage === 6 && !t.rating && !t.cancelled;
+  const canRate = t.canRate && !t.cancelled;
   const canAdd = !t.cancelled && t.stage < 6;
-  const canCancel = !t.cancelled && t.stage <= 2;
   const info = [
-    { k: "Phòng ban tiếp nhận", v: t.dept ? DEPT_LABEL[t.dept] : "Đang điều phối phân công" },
-    { k: "Người phụ trách", v: t.staffName ?? (t.dept === "bql" && t.stage >= 4 ? DEPT_LABEL.bql : "Chưa phân công") },
+    { k: "Phòng ban tiếp nhận", v: t.deptName ?? "Đang điều phối phân công" },
     { k: "Vị trí", v: t.location },
-    { k: "Mức độ", v: t.urgent ? "Khẩn cấp · xử lý trong 4 giờ" : "Thông thường · xử lý trong 48 giờ" },
+    { k: "Trạng thái", v: t.statusLabel },
+    ...(t.eta ? [{ k: "Dự kiến xong", v: t.eta }] : []),
   ];
 
   return (
@@ -784,9 +591,9 @@ function TicketDetail(props: {
       </div>
       <h2 className="-mt-2 mb-0 text-[22px] leading-[1.35] font-bold">{t.title}</h2>
 
-      {t.paused && !t.cancelled && (
+      {t.publicMessage && !t.cancelled && !t.needInfo && (
         <div role="status" className="rounded-2xl px-[18px] py-4 text-[15px] leading-[1.55]" style={{ background: "#FFF7E0", border: "1px solid #F3D27A", color: "#5C4200" }}>
-          {t.pauseText}
+          {t.publicMessage}
         </div>
       )}
       {t.needInfo && !t.cancelled && (
@@ -815,7 +622,7 @@ function TicketDetail(props: {
             return (
               <div key={label} className="flex flex-col gap-2">
                 <div className="flex items-center gap-1.5 pr-1.5">
-                  <span className={`sd${isDone ? " done" : isCur ? (t.paused ? " pause" : " cur") : ""}`}>{isDone ? "✓" : n}</span>
+                  <span className={`sd${isDone ? " done" : isCur ? " cur" : ""}`}>{isDone ? "✓" : n}</span>
                   {n < 6 && <span className={n < t.stage || t.stage === 6 ? "sl done" : "sl"} />}
                 </div>
                 <span className={isDone || isCur ? "slab done" : "slab"}>{label}</span>
@@ -841,27 +648,12 @@ function TicketDetail(props: {
         </div>
       )}
 
-      {canAccept && (
-        <div className="flex flex-col gap-3 rounded-2xl p-[18px]" style={{ background: "#EEF4FF", border: "1px solid #C9DAFF" }}>
-          <span className="text-[15px] font-semibold">Phòng ban báo đã xử lý xong. Bạn kiểm tra và nghiệm thu giúp nhé.</span>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" className="btn primary" onClick={props.onAccept} disabled={props.pending}>
-              Xác nhận đã xử lý xong
-            </button>
-            <button type="button" className="btn" onClick={props.onReject} disabled={props.pending}>
-              Chưa đạt, yêu cầu làm lại
-            </button>
-          </div>
-        </div>
-      )}
-
       {canRate && (
         <div className="flex flex-col gap-3.5 rounded-[18px] p-5" style={{ background: "#FFFBEB", border: "1px solid #F6DE8D" }}>
           <div className="flex flex-col gap-0.5">
             <span className="text-[17px] font-bold">Đánh giá kết quả xử lý</span>
             <span className="text-sm text-muted">
-              {(t.dept ? DEPT_LABEL[t.dept] : "Phòng ban") + (t.staffName ? ` · ${t.staffName}` : "")} đã hoàn tất. Đánh giá giúp Ban quản lý cải
-              thiện chất lượng.
+              {t.deptName ?? "Phòng ban"} đã hoàn tất. Đánh giá giúp Ban quản lý cải thiện chất lượng.
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -883,73 +675,19 @@ function TicketDetail(props: {
             <span className="text-[15px] font-semibold">{rStars ? STAR_LABEL[rStars] : "Chọn số sao"}</span>
           </div>
           {rStars > 0 && (
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-wrap gap-2">
-                {(rStars >= 4 ? GOOD_TAGS : BAD_TAGS).map((g) => {
-                  const on = rTags.includes(g);
-                  return (
-                    <button
-                      key={g}
-                      type="button"
-                      className={on ? "chip sm on" : "chip sm"}
-                      aria-pressed={on}
-                      onClick={() => props.setRTags(on ? rTags.filter((x) => x !== g) : [...rTags, g])}
-                    >
-                      {g}
-                    </button>
-                  );
-                })}
-              </div>
-              <label htmlFor="rcomment" className="sr">
-                Nhận xét thêm
-              </label>
-              <textarea
-                id="rcomment"
-                className="field"
-                rows={2}
-                placeholder="Nhận xét thêm (không bắt buộc)"
-                value={props.rComment}
-                onChange={(e) => props.setRComment(e.target.value)}
-                style={{ resize: "vertical", background: "#FFFFFF" }}
-              />
-              {rStars < 3 && (
-                <span className="text-[13px]" style={{ color: "#8A1C12" }}>
-                  Đánh giá dưới 3 sao sẽ được chuyển Ban quản lý xem xét và liên hệ lại với bạn.
-                </span>
-              )}
-              <div>
-                <button type="button" className="btn primary" onClick={props.onRate} disabled={props.pending}>
-                  Gửi đánh giá
-                </button>
-              </div>
+            <div>
+              <button type="button" className="btn primary" onClick={props.onRate} disabled={props.pending}>
+                Gửi đánh giá
+              </button>
             </div>
           )}
         </div>
       )}
 
-      {t.rating && (
+      {t.rated && (
         <div className="flex flex-col gap-2.5 rounded-[18px] border border-line px-5 py-[18px]">
           <span className="text-xs font-bold tracking-[.06em] text-muted">ĐÁNH GIÁ CỦA BẠN</span>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="flex gap-0.5" aria-label={`${t.rating.stars} trên 5 sao`}>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <span key={n} className={n <= t.rating!.stars ? "rs on" : "rs"}>
-                  <IconStar size={22} />
-                </span>
-              ))}
-            </span>
-            <span className="text-[15px] font-semibold">
-              {t.rating.stars}/5 · {STAR_LABEL[t.rating.stars]}
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {t.rating.tags.map((g) => (
-              <span key={g} className="pill s-run">
-                {g}
-              </span>
-            ))}
-          </div>
-          {t.rating.comment && <p className="m-0 text-sm leading-[1.55] text-body">“{t.rating.comment}”</p>}
+          <span className="text-[15px] font-semibold">Bạn đã đánh giá phản ánh này. Cảm ơn bạn.</span>
         </div>
       )}
 
@@ -1004,13 +742,6 @@ function TicketDetail(props: {
         ))}
       </div>
 
-      {canCancel && (
-        <div className="flex justify-end border-t border-line pt-4">
-          <button type="button" className="btn danger" onClick={props.onCancel} disabled={props.pending}>
-            Hủy phản ánh
-          </button>
-        </div>
-      )}
     </section>
   );
 }

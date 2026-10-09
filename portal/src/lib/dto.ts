@@ -1,104 +1,132 @@
-/** Serializable shapes passed from Server Components to the dashboards (strings are preformatted on the server) */
-import type { KeywordRules } from "./agent";
+/**
+ * Serializable shapes passed from Server Components to the dashboards (strings are preformatted on the server).
+ * Contract: planning/11_2026-10-09_portal-backend-api/specs/01-CONTRACTS.md §5. Ids are the backend `ticket_id`.
+ */
 import type { Dept, Place } from "./constants";
 
-export type PhotoRef = { id: number; name: string };
+export type PhotoRef = { id: string; name: string; url: string };
 
-export type RatingDto = { stars: number; tags: string[]; comment: string };
+export type HistoryEntry = { label: string; note: string; time: string };
 
+export type ChecklistRow = { templateItemId: string; label: string; required: boolean; done: boolean };
+
+export type MaterialRow = {
+  itemCode: string;
+  itemName: string;
+  unit: string;
+  plannedQty: number;
+  issuedQty: number | null;
+  usedQty: number | null;
+  stock: number | null;
+  shortage: number;
+};
+
+export type UserBrief = { name: string; avatar: string };
+
+// ---------- 5.1 Resident ----------
 export type ResidentTicket = {
-  id: number;
+  id: string;
   code: string;
   title: string;
+  description: string;
   location: string;
   sentAt: string;
   stage: number;
-  paused: boolean;
-  pauseText: string;
+  statusLabel: string;
+  publicMessage: string;
+  needInfo: boolean;
+  canRate: boolean;
+  /** CLOSED and no longer ratable: the resident already rated (the backend does not return the score) */
+  rated: boolean;
   cancelled: boolean;
   mergedInto: string | null;
-  needInfo: boolean;
-  dept: Dept | null;
-  staffName: string | null;
-  urgent: boolean;
-  rating: RatingDto | null;
+  deptName: string | null;
+  eta: string | null;
+  rating: number | null;
   extras: string[];
-  history: { label: string; note: string; time: string }[];
+  history: HistoryEntry[];
   photos: PhotoRef[];
 };
 
 export type ResidentData = {
-  user: { name: string; avatar: string; tower: string; floor: string; apartment: string };
+  user: UserBrief & { tower: string; floor: string; apartment: string };
   tickets: ResidentTicket[];
-  notices: { id: number; date: string; title: string; body: string }[];
-  rules: KeywordRules;
   places: Place[];
 };
 
+// ---------- 5.2 Reception ----------
+export type DuplicateRef = { id: string; code: string; text: string; statusLabel: string };
+
 export type ReceptionInboxItem = {
-  id: number;
+  id: string;
   code: string;
   text: string;
   location: string;
-  resident: string;
   createdAt: string;
   urgent: boolean;
-  aiDept: Dept | null;
-  conf: number;
-  keywords: string[];
+  blockerCode: string;
+  blockerLabel: string;
+  /** Backend note for the reviewer: internal note, else the public message of the blocker */
+  note: string;
+  proposedDept: Dept | null;
+  riskLevel: string;
+  priority: string | null;
   extras: string[];
   photos: PhotoRef[];
-  duplicates: DuplicateCandidate[];
+  duplicateOf: string | null;
+  duplicate?: DuplicateRef;
 };
 
-/** Older ticket the Agent thinks is the same problem, shown side by side for reception to approve */
-export type DuplicateCandidate = {
-  id: number;
-  code: string;
-  text: string;
-  location: string;
-  resident: string;
-  createdAt: string;
-  status: string;
-  score: number;
-  reasons: string[];
-};
-
-export type TicketDetail = {
-  id: number;
+export type ReceptionAllItem = {
+  id: string;
   code: string;
   text: string;
   location: string;
   createdAt: string;
-  dept: Dept | null;
-  aiDept: Dept | null;
-  conf: number;
   stage: number;
+  statusLabel: string;
+  dept: Dept | null;
   cancelled: boolean;
   urgent: boolean;
-  staffName: string | null;
-  keywords: string[];
-  skill: string | null;
-  extras: string[];
-  history: { label: string; note: string; time: string }[];
-  beforePhotos: PhotoRef[];
-  afterPhotos: PhotoRef[];
-  disputed?: boolean;
-  disputeReason?: string | null;
-};
-
-export type ReceptionRoutedItem = TicketDetail & {
-  needInfo: boolean;
 };
 
 export type ReceptionData = {
-  user: { name: string; avatar: string };
+  user: UserBrief;
   inbox: ReceptionInboxItem[];
-  routed: ReceptionRoutedItem[];
+  all: ReceptionAllItem[];
 };
 
+// ---------- 5.6 Ticket detail (modal) ----------
+export type TicketDetail = {
+  id: string;
+  code: string;
+  text: string;
+  location: string;
+  createdAt: string;
+  stage: number;
+  statusLabel: string;
+  dept: Dept | null;
+  deptName: string | null;
+  cancelled: boolean;
+  urgent: boolean;
+  riskLevel: string;
+  priority: string | null;
+  blockerCode: string | null;
+  blockerLabel: string;
+  publicMessage: string;
+  extras: string[];
+  history: (HistoryEntry & { actorRole: string })[];
+  beforePhotos: PhotoRef[];
+  afterPhotos: PhotoRef[];
+  checklist: ChecklistRow[];
+  materials: MaterialRow[];
+};
+
+// ---------- 5.3 Departments ----------
+export type Readiness = { checklist: boolean; photo: boolean; materials: boolean; failing: string[] };
+
 export type DeptTicket = {
-  id: number;
+  id: string;
   code: string;
   text: string;
   location: string;
@@ -106,64 +134,71 @@ export type DeptTicket = {
   urgent: boolean;
   stage: number;
   paused: boolean;
-  keywords: string[];
-  conf: number;
-  staffId: number | null;
-  staffName: string | null;
-  rating: RatingDto | null;
-  skill: string | null;
-  hoursLeft: number;
-  materialRequested: boolean;
+  blockerCode: string | null;
+  statusLabel: string;
+  hoursLeft: number | null;
   extras: string[];
   photos: PhotoRef[];
+  checklist: ChecklistRow[];
+  materials: MaterialRow[];
+  readiness: Readiness;
 };
+
+export type CatalogItem = { itemCode: string; itemName: string; unit: string; stock: number | null };
 
 export type DeptData = {
-  user: { name: string; avatar: string };
+  user: UserBrief;
   tickets: DeptTicket[];
-  staff: { id: number; name: string; skill: string | null; area: string | null; capacity: number | null }[];
-  materials: { id: number; item: string; ticketCode: string; staffName: string | null; received: boolean }[];
+  catalog: CatalogItem[];
+  /** Backend flag `custom_materials_enabled` (SPEC-P01 §3); the "+" button is hidden when false */
+  customMaterials: boolean;
 };
 
-export type MgmtTicket = TicketDetail & {
-  materials: { item: string; received: boolean }[];
+// ---------- 5.4 Management ----------
+export type MgmtTicket = {
+  id: string;
+  code: string;
+  text: string;
+  location: string;
+  createdAt: string;
+  stage: number;
+  statusLabel: string;
+  dept: Dept | null;
+  cancelled: boolean;
+  urgent: boolean;
   late: boolean;
-  ageH: number;
-  stars: number | null;
-  doneHours: number | null;
+  escalated: boolean;
+  blockerCode: string | null;
+  riskLevel: string;
+  priority: string | null;
+  closureKind: string | null;
+  /** The BQL list has no rating field; null until the backend exposes it */
+  ratingStars: number | null;
+  bqlWork: boolean;
+  /** MERGED into another ticket: counted out of the totals */
+  merged: boolean;
 };
 
 export type ManagementData = {
-  user: { name: string; avatar: string };
+  user: UserBrief;
   tickets: MgmtTicket[];
 };
 
-export type WarehouseItem = {
-  id: number;
-  code: string;
-  name: string;
-  category: string;
-  unit: string;
-  stock: number;
-  minStock: number;
-  location: string;
-};
+// ---------- 5.5 Warehouse ----------
+export type WarehouseItem = { code: string; name: string; unit: string; stock: number | null; custom: boolean };
 
-export type MaterialRequest = {
-  id: number;
-  ticketId: number;
+export type WarehouseRequest = {
+  ticketId: string;
   ticketCode: string;
-  ticketDescription: string;
-  item: string;
-  requestedBy: string;
-  staffName: string | null;
-  createdAt: string;
-  received: boolean;
+  ticketText: string;
+  departmentName: string;
+  lines: { itemCode: string; itemName: string; unit: string; plannedQty: number; stock: number | null; shortage: number }[];
+  since: string;
 };
 
 export type WarehouseData = {
-  user: { name: string; avatar: string };
+  user: UserBrief;
   inventory: WarehouseItem[];
-  requests: MaterialRequest[];
+  requests: WarehouseRequest[];
+  customMaterials: boolean;
 };
-

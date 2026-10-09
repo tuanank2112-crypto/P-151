@@ -1,24 +1,29 @@
 "use server";
 
-import { act, toId } from "@/server/act";
-import * as wf from "@/server/workflow";
+import { fail } from "@/lib/result";
+import { act, id, num, str } from "@/server/act";
+import { api } from "@/server/backend";
 
-export async function receiveStockAction(code: string, qty: number, note?: string) {
-  return act((db, actor) => wf.receiveStock(db, actor, String(code ?? ""), Number(qty), note));
+/** Receiving stock restarts tickets waiting for that material (backend side) */
+export async function receiveStockAction(code: string, qty: number) {
+  const item = id(code);
+  const n = num(qty);
+  if (!item || !(n > 0)) return fail("INVALID_INPUT", "Số lượng nhập phải lớn hơn 0.");
+  return act(async () => {
+    await api(`/mo/warehouse/stock/${encodeURIComponent(item)}`, { json: { qty: n } });
+    return null;
+  });
 }
 
-export async function addStockItemAction(item: {
-  code: string;
-  name: string;
-  category: string;
-  unit: string;
-  stock: number;
-  minStock?: number;
-  location?: string;
-}) {
-  return act((db, actor) => wf.addStockItem(db, actor, item));
-}
-
-export async function approveMaterialAction(materialId: number) {
-  return act((db, actor) => wf.approveMaterial(db, actor, toId(materialId)));
+/** New catalog item (`POST /mo/warehouse/items`), then the opening stock when qty > 0 */
+export async function addStockItemAction(input: { name: string; unit: string; qty: number }) {
+  const name = str(input?.name);
+  const unit = str(input?.unit);
+  const qty = num(input?.qty);
+  if (!name || !unit) return fail("INVALID_INPUT", "Vui lòng nhập tên và đơn vị vật tư.");
+  return act(async () => {
+    const created = await api<{ item_code: string }>("/mo/warehouse/items", { json: { item_name: name, unit } });
+    if (qty > 0) await api(`/mo/warehouse/stock/${encodeURIComponent(created.item_code)}`, { json: { qty } });
+    return { code: created.item_code };
+  });
 }

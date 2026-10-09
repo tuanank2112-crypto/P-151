@@ -52,10 +52,6 @@ export function TicketDetailModal({
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-700">
                   Đã hủy
                 </span>
-              ) : ticket.disputed ? (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                  Cần BQL xem
-                </span>
               ) : currentStage === 6 ? (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
                   Hoàn tất
@@ -92,16 +88,7 @@ export function TicketDetailModal({
         {/* Scrollable Content */}
         <div className="overflow-y-auto p-5 space-y-6 text-sm text-slate-700">
           {/* Status banner */}
-          {ticket.disputed && (
-            <div className="rounded-xl p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs flex gap-2.5 items-start">
-              <span className="text-base leading-none">⚠️</span>
-              <div>
-                <strong className="font-semibold">Đơn vị báo cần BQL xem xét do khiếu nại sai phòng ban.</strong>
-                {ticket.disputeReason && <p className="mt-0.5 text-amber-800">Lý do: {ticket.disputeReason}</p>}
-              </div>
-            </div>
-          )}
-          {currentStage === 5 && !ticket.disputed && (
+          {currentStage === 5 && (
             <div className="rounded-xl p-3 bg-sky-50 border border-sky-200 text-sky-900 text-xs flex gap-2.5 items-start">
               <span className="text-base leading-none">🔔</span>
               <div>
@@ -158,14 +145,12 @@ export function TicketDetailModal({
             <div>
               <span className="text-slate-500 block">Phòng ban tiếp nhận</span>
               <span className="font-semibold text-slate-800">
-                {ticket.dept ? DEPT_LABEL[ticket.dept] : "Đang điều phối phân công"}
+                {ticket.deptName ?? (ticket.dept ? DEPT_LABEL[ticket.dept] : "Đang điều phối phân công")}
               </span>
             </div>
             <div>
-              <span className="text-slate-500 block">Người phụ trách</span>
-              <span className="font-semibold text-slate-800">
-                {ticket.staffName ?? "Chưa phân công"}
-              </span>
+              <span className="text-slate-500 block">Trạng thái</span>
+              <span className="font-semibold text-slate-800">{ticket.statusLabel}</span>
             </div>
             <div>
               <span className="text-slate-500 block">Vị trí</span>
@@ -174,7 +159,7 @@ export function TicketDetailModal({
             <div>
               <span className="text-slate-500 block">Mức độ</span>
               <span className={`font-semibold ${ticket.urgent ? "text-rose-600" : "text-slate-800"}`}>
-                {ticket.urgent ? "Khẩn cấp · xử lý trong 4 giờ" : "Thông thường · xử lý trong 48 giờ"}
+                {ticket.urgent ? "Khẩn cấp" : "Thông thường"}
               </span>
             </div>
           </div>
@@ -187,45 +172,13 @@ export function TicketDetailModal({
             </div>
           </div>
 
-          {/* Dynamic AI / Agent Analysis */}
-          <div className="p-4 rounded-xl bg-linear-to-br from-indigo-50/70 via-sky-50/50 to-white border border-sky-100 shadow-2xs">
-            <div className="flex items-center gap-1.5 mb-2.5 text-xs font-bold text-sky-900 tracking-wide uppercase">
-              <span className="text-base">✨</span>
-              <span>Phân tích Agent Thông Minh</span>
+          {/* Current blocker / public message */}
+          {(ticket.blockerLabel || ticket.publicMessage) && (
+            <div className="p-4 rounded-xl bg-sky-50/60 border border-sky-100 text-xs">
+              {ticket.blockerLabel && <p className="m-0 font-bold text-sky-900">{ticket.blockerLabel}</p>}
+              {ticket.publicMessage && <p className="m-0 mt-1 text-slate-700">{ticket.publicMessage}</p>}
             </div>
-            {/* Chỉ hiện số liệu Agent thật: ticket chưa có gợi ý thì không bịa độ tin cậy */}
-            {ticket.aiDept ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                <div>
-                  <span className="text-slate-500 block">Gợi ý phòng ban:</span>
-                  <span className="font-semibold text-sky-800">{DEPT_LABEL[ticket.aiDept]}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block">Độ tin cậy:</span>
-                  <span className="font-semibold text-sky-800">{ticket.conf}%</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block">Kỹ năng yêu cầu:</span>
-                  <span className="font-semibold text-slate-800">{ticket.skill ?? "—"}</span>
-                </div>
-              </div>
-            ) : (
-              <p className="m-0 text-xs text-slate-500 italic">Agent chưa đưa ra gợi ý cho ticket này.</p>
-            )}
-            {ticket.keywords && ticket.keywords.length > 0 && (
-              <div className="mt-3 pt-2.5 border-t border-sky-100 flex flex-wrap items-center gap-1.5">
-                <span className="text-[11px] text-slate-500 mr-1">Từ khóa khớp:</span>
-                {ticket.keywords.map((kw, i) => (
-                  <span
-                    key={i}
-                    className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-sky-100 text-sky-700"
-                  >
-                    #{kw}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Photos (Before & After) */}
           <div className="space-y-3">
@@ -239,13 +192,13 @@ export function TicketDetailModal({
                     {ticket.beforePhotos.map((p) => (
                       <a
                         key={p.id}
-                        href={`/api/photos/${p.id}`}
+                        href={p.url}
                         target="_blank"
                         rel="noreferrer"
                         className="block w-16 h-16 rounded-lg overflow-hidden border border-slate-300 hover:scale-105 transition-transform"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={`/api/photos/${p.id}`} alt={p.name} className="w-full h-full object-cover" />
+                        <img src={p.url} alt={p.name} className="w-full h-full object-cover" />
                       </a>
                     ))}
                   </div>
@@ -262,13 +215,13 @@ export function TicketDetailModal({
                     {ticket.afterPhotos.map((p) => (
                       <a
                         key={p.id}
-                        href={`/api/photos/${p.id}`}
+                        href={p.url}
                         target="_blank"
                         rel="noreferrer"
                         className="block w-16 h-16 rounded-lg overflow-hidden border border-emerald-300 ring-2 ring-emerald-100 hover:scale-105 transition-transform"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={`/api/photos/${p.id}`} alt={p.name} className="w-full h-full object-cover" />
+                        <img src={p.url} alt={p.name} className="w-full h-full object-cover" />
                       </a>
                     ))}
                   </div>

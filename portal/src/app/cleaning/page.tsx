@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { DashboardSkeleton } from "@/components/shell";
-import { deptData } from "@/server/queries";
+import { deptData } from "@/server/data/departments";
+import { BackendDown } from "@/components/backend-down";
+import { safe } from "@/server/data/safe";
 import { requireUser } from "@/server/session";
 import { CleaningApp } from "./cleaning-app";
 
@@ -9,7 +11,8 @@ export const metadata: Metadata = { title: "Phòng vệ sinh · Cổng phản á
 
 async function Cleaning() {
   const user = await requireUser(["cleaning"]);
-  return <CleaningApp data={await deptData(user)} />;
+  const res = await safe(() => deptData(user));
+  return res.ok ? <CleaningApp data={res.data} /> : <BackendDown message={res.message} />;
 }
 
 /** Cleaning.dc.html */

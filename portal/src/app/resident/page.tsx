@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { DashboardSkeleton } from "@/components/shell";
-import { residentData } from "@/server/queries";
+import { residentData } from "@/server/data/resident";
+import { BackendDown } from "@/components/backend-down";
+import { safe } from "@/server/data/safe";
 import { requireUser } from "@/server/session";
 import { ResidentApp } from "./resident-app";
 
@@ -9,7 +11,8 @@ export const metadata: Metadata = { title: "Cư dân · Cổng phản ánh cư d
 
 async function Resident() {
   const user = await requireUser(["resident"]);
-  return <ResidentApp data={await residentData(user)} />;
+  const res = await safe(() => residentData(user));
+  return res.ok ? <ResidentApp data={res.data} /> : <BackendDown message={res.message} />;
 }
 
 /** Resident.dc.html */

@@ -13,6 +13,8 @@ export default defineConfig({
   test: {
     projects: [
       { resolve: { alias }, test: { name: "unit", include: ["tests/unit/**/*.test.ts"], environment: "node" } },
+      // Needs a running backend (BACKEND_URL): `npx vitest run --project smoke`; never part of `npm test`
+      { resolve: { alias }, test: { name: "smoke", include: ["tests/smoke/**/*.test.ts"], environment: "node", testTimeout: 60_000 } },
       {
         resolve: { alias },
         test: {

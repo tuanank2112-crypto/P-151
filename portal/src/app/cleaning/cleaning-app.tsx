@@ -1,39 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { assignStaffAction, finishTicketAction, reportWrongDeptAction } from "@/app/actions/departments";
+import { acceptAction, finishTicketAction, reportWrongDeptAction } from "@/app/actions/departments";
 import { Board } from "@/components/board";
-import { IconClock, IconKanban, IconUsers } from "@/components/icons";
+import { IconClock, IconKanban } from "@/components/icons";
 import { PhotoStrip } from "@/components/photo-strip";
-import { Feedback, RatingSummary } from "@/components/rating-summary";
+import { Feedback } from "@/components/rating-summary";
 import { Body, Header, NavTiles, PageHead } from "@/components/shell";
 import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
 import { ROLE_LABEL } from "@/lib/constants";
 import type { DeptData, DeptTicket } from "@/lib/dto";
 
-type Tab = "queue" | "staff" | "history";
+type Tab = "queue" | "history";
 
 const HEAD: Record<Tab, { title: string; sub: string }> = {
-  queue: { title: "Hàng việc", sub: "Chỉ hiển thị ticket vệ sinh đã được Ban tiếp nhận chuyển đến. Giao tổ để bắt đầu xử lý." },
-  staff: { title: "Phân công tổ vệ sinh", sub: "Tải công việc hiện tại của từng tổ." },
-  history: { title: "Lịch sử hoàn thành", sub: "Ticket đã xong và đánh giá của cư dân." },
+  queue: { title: "Hàng việc", sub: "Chỉ hiển thị ticket vệ sinh đã được Ban tiếp nhận chuyển đến. Nhận việc để bắt đầu xử lý." },
+  history: { title: "Lịch sử hoàn thành", sub: "Ticket đã xong." },
 };
 
-/** Satisfied = 4–5 stars */
 function rate(t: DeptTicket): [string, string] {
-  if (!t.rating) return ["pill none", t.stage === 5 ? "Chờ cư dân nghiệm thu" : "Chưa đánh giá"];
-  return t.rating.stars >= 4 ? ["pill good", "Cư dân hài lòng"] : ["pill bad", "Cư dân chưa hài lòng"];
+  return t.stage === 5 ? ["pill none", "Chờ nghiệm thu"] : ["pill good", "Hoàn tất"];
 }
-
-const kwText = (t: DeptTicket) => (t.keywords.length ? t.keywords.join(", ") : "không khớp từ khóa");
 
 export function CleaningApp({ data }: { data: DeptData }) {
   const { pending, error, setError, run } = useAction();
   const [tab, setTab] = useState<Tab>("queue");
   const all = data.tickets;
   const open = all.filter((t) => t.stage < 5).length;
-  const newCount = all.filter((t) => t.stage === 2).length;
+  const newCount = all.filter((t) => t.stage === 3).length;
   const doneList = all.filter((t) => t.stage >= 5);
 
   return (
@@ -50,9 +45,9 @@ export function CleaningApp({ data }: { data: DeptData }) {
             id: t.id,
             title: `${t.code}: ${t.text}`,
             urgent: t.urgent,
-            tag: t.stage === 2 ? "Chưa nhận việc" : "Đang thực hiện",
+            tag: t.stage === 3 ? "Chưa nhận việc" : "Đang thực hiện",
             time: t.createdAt,
-            body: `Vị trí: ${t.location} · Tổ phụ trách: ${t.staffName ?? "Chưa phân công"}`,
+            body: `Vị trí: ${t.location}`,
           }))}
       />
       <Body>
@@ -62,7 +57,6 @@ export function CleaningApp({ data }: { data: DeptData }) {
           onPick={setTab}
           items={[
             { key: "queue", label: "Hàng việc", icon: <IconKanban />, count: open },
-            { key: "staff", label: "Phân công tổ", icon: <IconUsers /> },
             { key: "history", label: "Lịch sử", icon: <IconClock /> },
           ]}
         />
@@ -75,46 +69,13 @@ export function CleaningApp({ data }: { data: DeptData }) {
               <CleaningCard
                 key={t.id}
                 t={t}
-                staff={data.staff}
                 pending={pending}
-                onAssign={(sid) => run(() => assignStaffAction(t.id, sid))}
+                onAccept={() => run(() => acceptAction(t.id))}
                 onFinish={(fd) => run(() => finishTicketAction(t.id, fd))}
                 onReportWrongDept={(reason, done) => run(() => reportWrongDeptAction(t.id, reason), done)}
               />
             )}
           />
-        )}
-
-        {tab === "staff" && (
-          <div className="flex flex-wrap gap-4">
-            {data.staff.map((s) => {
-              const active = all.filter((t) => t.staffId === s.id && (t.stage === 3 || t.stage === 4)).length;
-              const done = all.filter((t) => t.staffId === s.id && t.stage >= 5).length;
-              const cap = s.capacity ?? 0;
-              return (
-                <section key={s.id} className="card flex flex-col gap-3 p-6" style={{ flex: "1 1 260px" }}>
-                  <h2 className="m-0 text-lg font-bold">{s.name}</h2>
-                  <span className="text-[13px] text-muted">Khu vực: {s.area}</span>
-                  <div className="flex gap-7">
-                    <div className="flex flex-col">
-                      <span className="text-[30px] font-bold">{active}</span>
-                      <span className="text-[13px] text-muted">đang xử lý</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[30px] font-bold">{done}</span>
-                      <span className="text-[13px] text-muted">đã hoàn thành</span>
-                    </div>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-line-soft">
-                    <div className="h-2 rounded-full bg-brand-mid" style={{ width: `${cap ? Math.min(100, Math.round((100 * active) / cap)) : 0}%` }} />
-                  </div>
-                  <span className="text-xs text-muted">
-                    Tải công việc {active}/{cap} ticket
-                  </span>
-                </section>
-              );
-            })}
-          </div>
         )}
 
         {tab === "history" && (
@@ -125,14 +86,8 @@ export function CleaningApp({ data }: { data: DeptData }) {
               return (
                 <article key={t.id} className="card flex flex-wrap items-center gap-2.5 px-6 py-[22px]">
                   <span className="text-[15px] font-bold">{t.code}</span>
-                  {t.staffName && <span className="pill staff">{t.staffName}</span>}
                   <span className={`${cls} ml-auto`}>{label}</span>
                   <span className="basis-full text-[15px] leading-normal">{t.text}</span>
-                  {t.rating && (
-                    <div className="basis-full">
-                      <RatingSummary rating={t.rating} />
-                    </div>
-                  )}
                 </article>
               );
             })}
@@ -146,10 +101,9 @@ export function CleaningApp({ data }: { data: DeptData }) {
 
 function CleaningCard(props: {
   t: DeptTicket;
-  staff: DeptData["staff"];
   pending: boolean;
-  onAssign: (staffId: number) => void;
-  onFinish: (fd?: FormData) => void;
+  onAccept: () => void;
+  onFinish: (fd: FormData) => void;
   onReportWrongDept: (reason: string, done: () => void) => void;
 }) {
   const { t } = props;
@@ -188,7 +142,9 @@ function CleaningCard(props: {
     }
     const fd = new FormData();
     fd.append("note", finishNote.trim() || "Tổ vệ sinh đã hoàn tất dọn dẹp hiện trường sạch sẽ.");
-    fd.append("photo", photoFile);
+    fd.append("photos", photoFile);
+    // both site checks ticked: report every pending checklist item of the playbook as done
+    t.checklist.filter((c) => !c.done).forEach((c) => fd.append("checklist", c.templateItemId));
     props.onFinish(fd);
     setFinishModalOpen(false);
   };
@@ -199,38 +155,23 @@ function CleaningCard(props: {
         <span className="text-sm font-bold">{t.code}</span>
         <span className="text-xs text-muted">{t.createdAt}</span>
         {t.urgent && <span className="pill urgent">Khẩn cấp</span>}
-        {t.paused && t.stage < 5 && <span className="pill" style={{ background: "#FFEFC2", color: "#664900" }}>Cần BQL xem</span>}
+        {t.paused && t.stage < 5 && <span className="pill" style={{ background: "#FFEFC2", color: "#664900" }}>Tạm hoãn</span>}
       </div>
       <p className="m-0 text-[15px] leading-normal">{t.text}</p>
       <span className="text-[13px] text-muted">{t.location}</span>
-      <span className="text-xs text-muted">
-        Agent nhận diện: {kwText(t)} · {t.conf}%
-      </span>
       {t.photos.length > 0 && <PhotoStrip photos={t.photos} />}
-      {t.staffName && <span className="pill staff self-start">Phụ trách: {t.staffName}</span>}
 
-      {/* Stage 2 Assignment */}
-      {t.stage === 2 && (
+      {/* Stage 3: routed, not accepted yet */}
+      {t.stage === 3 && (
         <div className="flex flex-col gap-2 border-t border-line-soft pt-2.5">
-          <span className="text-[13px] font-semibold">Giao cho tổ:</span>
-          <div className="flex flex-wrap gap-1.5">
-            {props.staff.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                className="btn"
-                disabled={props.pending}
-                onClick={() => props.onAssign(s.id)}
-              >
-                {s.name}
-              </button>
-            ))}
-          </div>
+          <button type="button" className="btn primary self-start" disabled={props.pending} onClick={props.onAccept}>
+            Nhận việc
+          </button>
         </div>
       )}
 
-      {/* Stage 3/4 Action Buttons */}
-      {(t.stage === 3 || t.stage === 4) && (
+      {/* Stage 4 Action Buttons */}
+      {t.stage === 4 && (
         <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-line-soft">
           <button
             type="button"

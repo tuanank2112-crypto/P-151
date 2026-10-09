@@ -9,10 +9,8 @@
 | Không làm | Lý do |
 |---|---|
 | Bảng thông báo cư dân (`notices`) | Người dùng hoãn (2026-10-09 "bảng thông báo tôi sẽ xem xét sau"). Tab Thông báo của cư dân ẩn đi, KHÔNG xoá component. |
-| Phân công tổ/kỹ thuật viên (`staff`, `assignStaff`) | CR-03 P0 không có người được giao (`assignee_id` luôn null); doc không yêu cầu. Thay bằng "Nhận việc" (ROUTED → IN_PROGRESS). |
+| Agent khớp TỪ KHOÁ / % viết cứng phía portal (`lib/agent.ts`, `classify`) | Doc R3/R4 + Q01/Q30 dự án: ngữ nghĩa do LLM ở backend. Agent THẬT từ backend thì hiện (Q10). |
 | Cư dân "Xác nhận hoàn tất / Chưa đạt", cư dân huỷ ticket | CR-03: BQL nghiệm thu (T10/READY_FOR_REVIEW→CLOSED), chỉ BQL huỷ. Doc không yêu cầu. |
-| Thẻ + bình luận khi đánh giá | CR-03 `rating` = số 1..5. Doc không yêu cầu. Giữ chọn sao. |
-| Agent khớp từ khoá phía portal (`lib/agent.ts` `classify`, `%` độ tin cậy, dự đoán khi cư dân gõ) | Doc R3/R4 "bỏ cái Agent cứng"; luật dự án Q01/Q30: ngữ nghĩa do LLM ở backend, cấm khớp từ khoá. |
 | Tự tính trùng ở portal (`lib/duplicates.ts`) | Backend có bước trùng (blocker `DUPLICATE`) do engine/Agent quyết. |
 | Cư dân tự chọn "khẩn cấp" khi gửi | CR-03: mức an toàn do tầng an toàn quyết, cư dân không đặt mức. |
 | Ghi dữ liệu thử vào Supabase khi phát triển | Supabase dùng chung với bản Render của nhóm. Phát triển/test bằng backend `MO_STORE=memory`. Trỏ Supabase chỉ ở bước demo, có người dùng đồng ý (OPERATIONS §3). |
@@ -42,5 +40,7 @@
 | R10 | Kỹ thuật: checklist lấy từ yêu cầu vật tư | SPEC-P03 §4.4 |
 | R11 | Tab Việc của BQL (phí, thủ tục, an ninh, tranh chấp; chuyển lại được); ticket "Chờ nghiệm thu" có view để thành "Hoàn thành" | SPEC-P03 §5.4, SPEC-P01 §2 |
 
+Ghi chú 2026-10-09: phân công nhân viên và thẻ + bình luận đánh giá được GIỮ (Q17, SPEC-P04 §3–§4).
+
 ## 5. Thứ tự đọc
-`01-CONTRACTS.md` (ánh xạ dữ liệu, API) → `SPEC-P01-backend-ext.md` (mở rộng backend) → `SPEC-P02-portal-client.md` (client, phiên, ảnh) → `SPEC-P03-screens.md` (từng màn) → `OPERATIONS.md` → `TESTING-ACCEPTANCE.md`.
+`01-CONTRACTS.md` (ánh xạ dữ liệu, API) → `SPEC-P01-backend-ext.md` (mở rộng backend) → `SPEC-P02-portal-client.md` (client, phiên, ảnh) → `SPEC-P04-backend-ext2.md` (mở rộng đợt 2) → `SPEC-P03-screens.md` (từng màn) → `OPERATIONS.md` → `TESTING-ACCEPTANCE.md`.

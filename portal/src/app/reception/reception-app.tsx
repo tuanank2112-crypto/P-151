@@ -1,53 +1,43 @@
 "use client";
 
 import { useState } from "react";
+import { ticketDetailAction } from "@/app/actions/detail";
 import {
-  askMoreInfoAction,
-  dismissDuplicateAction,
-  mergeTicketAction,
+  confirmReviewAction,
+  duplicateAction,
+  resolveAssetAction,
   routeTicketAction,
-  setUrgentAction,
+  safetyAction,
 } from "@/app/actions/reception";
-import { IconBars, IconCheckSquare, IconInbox } from "@/components/icons";
+import { IconCheckSquare, IconInbox } from "@/components/icons";
 import { PhotoStrip } from "@/components/photo-strip";
 import { Body, Header, NavTiles, PageHead } from "@/components/shell";
 import { TicketDetailModal } from "@/components/ticket-detail-modal";
 import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
-import { DEPT_LABEL, DEPT_ORDER, ROLE_LABEL, type Dept } from "@/lib/constants";
-import type { DuplicateCandidate, ReceptionData, ReceptionInboxItem } from "@/lib/dto";
+import { DEPT_LABEL, ROLE_LABEL, STAGES, type Dept } from "@/lib/constants";
+import type { ReceptionData, ReceptionInboxItem, TicketDetail } from "@/lib/dto";
 
-type Tab = "inbox" | "done" | "agent";
+type Tab = "inbox" | "all";
 
 const HEAD: Record<Tab, { title: string; sub: string }> = {
   inbox: {
-    title: "Ticket chờ phân loại",
-    sub: "Xác nhận gợi ý của Agent hoặc chọn phòng ban khác. Ticket khẩn cấp ở trên cùng; Agent đánh dấu ticket có thể trùng để bạn so sánh.",
+    title: "Ticket chờ xử lý",
+    sub: "Ticket đang dừng ở Tiếp nhận: chọn việc cần làm theo lý do dừng. Ticket khẩn cấp ở trên cùng.",
   },
-  done: { title: "Ticket đã phân loại", sub: "Lịch sử chuyển ticket và việc Agent gợi ý đúng hay đã được sửa." },
-  agent: { title: "Hiệu suất Agent", sub: "Mức độ chính xác của Agent so với quyết định cuối cùng của nhân viên." },
+  all: { title: "Tất cả ticket", sub: "Mọi ticket trong hệ thống. Bấm mã để xem chi tiết." },
 };
 
 const deptPill = (d: Dept | null) => `pill cat-${d ?? "none"}`;
-const deptName = (d: Dept | null, none = "Chưa rõ") => (d ? DEPT_LABEL[d] : none);
-
-type Routed = ReceptionData["routed"][number];
-
-function result(t: Routed): [string, string] {
-  if (!t.dept) return ["pill wait", "Chờ cư dân bổ sung"];
-  return t.dept === t.aiDept ? ["pill ok", "Agent đúng"] : ["pill fix", "Đã sửa gợi ý"];
-}
+const deptName = (d: Dept | null, none = "Chưa chuyển") => (d ? DEPT_LABEL[d] : none);
 
 export function ReceptionApp({ data }: { data: ReceptionData }) {
   const { pending, error, setError, run } = useAction();
   const [tab, setTab] = useState<Tab>("inbox");
-  const [selectedTicket, setSelectedTicket] = useState<ReceptionData["routed"][number] | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<TicketDetail | null>(null);
 
   const inbox = [...data.inbox].sort((a, b) => Number(b.urgent) - Number(a.urgent));
-  const routed = data.routed;
-  const assigned = routed.filter((t) => t.dept);
-  const correct = assigned.filter((t) => t.dept === t.aiDept);
-  const overrides = assigned.filter((t) => t.dept !== t.aiDept);
+  const open = (id: string) => run(() => ticketDetailAction(id), setSelectedTicket);
 
   return (
     <div className="scr-reception min-h-screen bg-page">
@@ -55,7 +45,7 @@ export function ReceptionApp({ data }: { data: ReceptionData }) {
         avatar={data.user.avatar}
         name={data.user.name}
         rolePill={ROLE_LABEL.reception}
-        bellLabel="Ticket chờ phân loại"
+        bellLabel="Ticket chờ xử lý"
         bellCount={inbox.length}
         notices={inbox.map((t) => ({
           id: t.id,
@@ -63,7 +53,7 @@ export function ReceptionApp({ data }: { data: ReceptionData }) {
           urgent: t.urgent,
           tag: t.urgent ? "Khẩn cấp" : "Hàng đợi tiếp nhận",
           time: t.createdAt,
-          body: `Gợi ý Agent: ${t.aiDept ? DEPT_LABEL[t.aiDept] : "Chưa rõ"} (${t.conf}%) · Vị trí: ${t.location}`,
+          body: `${t.blockerLabel} · Vị trí: ${t.location}`,
         }))}
       />
       <Body>
@@ -72,88 +62,71 @@ export function ReceptionApp({ data }: { data: ReceptionData }) {
           active={tab}
           onPick={setTab}
           items={[
-            { key: "inbox", label: "Chờ phân loại", icon: <IconInbox />, count: inbox.length },
-            { key: "done", label: "Đã phân loại", icon: <IconCheckSquare /> },
-            { key: "agent", label: "Hiệu suất Agent", icon: <IconBars /> },
+            { key: "inbox", label: "Chờ xử lý", icon: <IconInbox />, count: inbox.length },
+            { key: "all", label: "Tất cả ticket", icon: <IconCheckSquare />, count: data.all.length },
           ]}
         />
         <PageHead {...HEAD[tab]} />
 
         {tab === "inbox" && (
           <section className="flex flex-col gap-4">
-            {inbox.length === 0 && <div className="card p-10 text-center text-muted">Không còn ticket nào chờ phân loại.</div>}
+            {inbox.length === 0 && <div className="card p-10 text-center text-muted">Không còn ticket nào chờ xử lý.</div>}
             {inbox.map((t) => (
               <InboxCard
                 key={t.id}
                 t={t}
                 pending={pending}
+                onOpen={() => open(t.id)}
                 onRoute={(d) => run(() => routeTicketAction(t.id, d))}
-                onUrgent={() => run(() => setUrgentAction(t.id, !t.urgent))}
-                onAskMore={() => run(() => askMoreInfoAction(t.id))}
-                onMerge={(target) => run(() => mergeTicketAction(t.id, target))}
-                onNotDuplicate={(other) => run(() => dismissDuplicateAction(t.id, other))}
+                onAsset={() => run(() => resolveAssetAction(t.id, true))}
+                onConfirm={() => run(() => confirmReviewAction(t.id))}
+                onDuplicate={(merge) => run(() => duplicateAction(t.id, merge))}
+                onSafety={(decision) => run(() => safetyAction(t.id, decision))}
               />
             ))}
           </section>
         )}
 
-        {tab === "done" && (
+        {tab === "all" && (
           <section className="card overflow-x-auto p-2">
             <table>
               <thead>
                 <tr>
                   <th>Mã</th>
                   <th>Nội dung</th>
-                  <th>Agent gợi ý</th>
-                  <th>Đã chuyển đến</th>
-                  <th>Kết quả</th>
+                  <th>Trạng thái</th>
+                  <th>Phòng ban</th>
                 </tr>
               </thead>
               <tbody>
-                {routed.map((t) => {
-                  const [resCls, resLabel] = result(t);
-                  return (
-                    <tr key={t.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="font-bold whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedTicket(t)}
-                          className="font-mono text-sky-700 hover:text-sky-900 hover:underline font-bold text-left"
-                          title="Bấm để xem chi tiết đầy đủ"
-                        >
-                          {t.code}
-                        </button>
-                      </td>
-                      <td className="max-w-[360px] leading-[1.45]">
-                        <span
-                          className="cursor-pointer hover:text-slate-900"
-                          onClick={() => setSelectedTicket(t)}
-                        >
-                          {t.text}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={deptPill(t.aiDept)}>
-                          <span className="dot" />
-                          {deptName(t.aiDept)}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={deptPill(t.dept)}>
-                          <span className="dot" />
-                          {deptName(t.dept, "Chưa chuyển")}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={resCls}>{resLabel}</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {routed.length === 0 && (
+                {data.all.map((t) => (
+                  <tr key={t.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="font-bold whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => open(t.id)}
+                        className="font-mono text-sky-700 hover:text-sky-900 hover:underline font-bold text-left"
+                        title="Bấm để xem chi tiết đầy đủ"
+                      >
+                        {t.code}
+                      </button>
+                    </td>
+                    <td className="max-w-[360px] leading-[1.45]">{t.text}</td>
+                    <td>
+                      <span className="pill wait">{t.cancelled ? "Đã hủy" : `${t.statusLabel} · ${STAGES[t.stage - 1]}`}</span>
+                    </td>
+                    <td>
+                      <span className={deptPill(t.dept)}>
+                        <span className="dot" />
+                        {deptName(t.dept)}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {data.all.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center text-muted">
-                      Chưa có ticket nào được phân loại.
+                    <td colSpan={4} className="text-center text-muted">
+                      Chưa có ticket nào.
                     </td>
                   </tr>
                 )}
@@ -161,39 +134,6 @@ export function ReceptionApp({ data }: { data: ReceptionData }) {
             </table>
           </section>
         )}
-
-        {tab === "agent" && (
-          <div className="flex flex-col gap-5">
-            <div className="flex flex-wrap gap-4">
-              {[
-                { label: "Ticket đã chuyển", value: String(assigned.length) },
-                { label: "Agent gợi ý đúng", value: assigned.length ? `${Math.round((100 * correct.length) / assigned.length)}%` : "—" },
-                { label: "Số lần nhân viên sửa", value: String(overrides.length) },
-                { label: "Chờ cư dân bổ sung", value: String(routed.length - assigned.length) },
-              ].map((k) => (
-                <div key={k.label} className="card flex flex-col gap-1 px-6 py-5" style={{ flex: "1 1 200px" }}>
-                  <span className="text-sm text-muted">{k.label}</span>
-                  <span className="text-[30px] font-bold">{k.value}</span>
-                </div>
-              ))}
-            </div>
-            <section className="card flex flex-col gap-2 p-6">
-              <h2 className="m-0 text-lg font-bold">Các lần nhân viên sửa gợi ý của Agent</h2>
-              <span className="text-[13px] text-muted">Ticket mà nhân viên chuyển khác với phòng ban Agent gợi ý.</span>
-              {overrides.length === 0 && <span className="text-sm text-muted">Chưa có lần sửa nào.</span>}
-              {overrides.map((t) => (
-                <div key={t.id} className="flex flex-wrap items-center gap-2 border-t border-line-soft py-3.5">
-                  <span className="text-sm font-bold">{t.code}</span>
-                  <span className={deptPill(t.aiDept)}>{deptName(t.aiDept)}</span>
-                  <span aria-hidden="true">→</span>
-                  <span className={deptPill(t.dept)}>{deptName(t.dept)}</span>
-                  <span className="basis-full text-sm text-body">{t.text}</span>
-                </div>
-              ))}
-            </section>
-          </div>
-        )}
-
       </Body>
       <TicketDetailModal ticket={selectedTicket} onClose={() => setSelectedTicket(null)} />
       <Toast message={error} onClose={() => setError("")} />
@@ -204,21 +144,25 @@ export function ReceptionApp({ data }: { data: ReceptionData }) {
 function InboxCard(props: {
   t: ReceptionInboxItem;
   pending: boolean;
-  onRoute: (d: Dept) => void;
-  onUrgent: () => void;
-  onAskMore: () => void;
-  onMerge: (targetId: number) => void;
-  onNotDuplicate: (otherId: number) => void;
+  onOpen: () => void;
+  onRoute: (d: "ve_sinh" | "ky_thuat" | "bql") => void;
+  onAsset: () => void;
+  onConfirm: () => void;
+  onDuplicate: (merge: boolean) => void;
+  onSafety: (decision: "CONFIRM_SAFE" | "REQUEST_INFO" | "ESCALATE") => void;
 }) {
-  const { t } = props;
+  const { t, pending } = props;
+  const code = t.blockerCode;
+  const canRoute = ["CATEGORY_UNCLEAR", "WRONG_DEPT", "OUT_OF_SCOPE", "ASSET_UNCLEAR"].includes(code);
   return (
     <article className="card flex flex-col gap-3.5 p-6">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-base font-bold">{t.code}</span>
-        <span className="text-[13px] text-muted">
-          {t.createdAt} · {t.resident}
-        </span>
+        <button type="button" className="text-base font-bold text-sky-700 hover:underline" onClick={props.onOpen}>
+          {t.code}
+        </button>
+        <span className="text-[13px] text-muted">{t.createdAt}</span>
         {t.urgent && <span className="pill urgent">Khẩn cấp</span>}
+        <span className="pill wait">{t.blockerLabel}</span>
       </div>
       <p className="m-0 text-base leading-[1.55]">{t.text}</p>
       {t.extras.length > 0 && (
@@ -230,109 +174,75 @@ function InboxCard(props: {
       )}
       <span className="text-[13px] text-muted">Vị trí: {t.location}</span>
       {t.photos.length > 0 && <PhotoStrip photos={t.photos} />}
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-soft p-4">
-        <span className="text-[13px] font-bold text-brand-dark">Agent gợi ý</span>
-        <span className={deptPill(t.aiDept)}>
-          <span className="dot" />
-          {deptName(t.aiDept, "Chưa rõ")}
-        </span>
-        <div className="flex items-center gap-2" style={{ flex: "1 1 160px" }}>
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "#D6E4FF" }}>
-            <div className="h-1.5 bg-brand-mid" style={{ width: `${t.conf}%` }} />
-          </div>
-          <span className="text-[13px] font-bold">{t.conf}%</span>
-        </div>
-        <span className="basis-full text-[13px] text-muted">
-          Từ khóa nhận diện: {t.keywords.length ? t.keywords.join(", ") : "không khớp từ khóa nào, cần nhân viên xem xét"}
-        </span>
-      </div>
-      {t.duplicates.map((d) => (
-        <DuplicatePanel
-          key={d.id}
-          t={t}
-          d={d}
-          pending={props.pending}
-          onMerge={() => props.onMerge(d.id)}
-          onNotDuplicate={() => props.onNotDuplicate(d.id)}
-        />
-      ))}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[13px] font-semibold text-muted">Chuyển đến:</span>
-        {DEPT_ORDER.map((d) => (
-          <button key={d} type="button" className={d === t.aiDept ? "btn sug" : "btn"} disabled={props.pending} onClick={() => props.onRoute(d)}>
-            {DEPT_LABEL[d] + (d === t.aiDept ? " (gợi ý)" : "")}
-          </button>
-        ))}
-      </div>
-      <div className="flex flex-wrap items-center gap-2 border-t border-line-soft pt-3">
-        <button type="button" className="btn warn" disabled={props.pending} onClick={props.onUrgent}>
-          {t.urgent ? "Bỏ đánh dấu khẩn cấp" : "Đánh dấu khẩn cấp"}
-        </button>
-        <button type="button" className="btn ghost" disabled={props.pending} onClick={props.onAskMore}>
-          Yêu cầu cư dân bổ sung thông tin
-        </button>
-      </div>
-    </article>
-  );
-}
+      {t.note && <span className="rounded-2xl bg-soft p-4 text-[13px] text-body">{t.note}</span>}
 
-/** Agent duplicate proposal: both tickets side by side, reception approves (merge) or rejects (plan 06 Q13) */
-function DuplicatePanel(props: {
-  t: ReceptionInboxItem;
-  d: DuplicateCandidate;
-  pending: boolean;
-  onMerge: () => void;
-  onNotDuplicate: () => void;
-}) {
-  const { t, d } = props;
-  const side = (label: string, code: string, text: string, location: string, meta: string, status?: string) => (
-    <div className="flex min-w-0 flex-col gap-1.5 rounded-xl bg-white p-3.5" style={{ flex: "1 1 240px" }}>
-      <span className="text-[11px] font-bold tracking-[.06em] text-muted">{label}</span>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-bold">{code}</span>
-        {status && <span className="pill wait">{status}</span>}
-      </div>
-      <p className="m-0 text-sm leading-normal">{text}</p>
-      <span className="text-xs text-muted">{location}</span>
-      <span className="text-xs text-muted">{meta}</span>
-    </div>
-  );
-  return (
-    <section
-      aria-label={`Agent nghi ${t.code} trùng với ${d.code}`}
-      className="flex flex-col gap-3 rounded-2xl p-4"
-      style={{ background: "#FFF7E0", border: "1px solid #F3D27A" }}
-    >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-[13px] font-bold" style={{ color: "#5C4200" }}>
-          Agent phát hiện có thể trùng
-        </span>
-        <div className="flex items-center gap-2" style={{ flex: "1 1 160px" }}>
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "#F3E2A8" }}>
-            <div className="h-1.5" style={{ width: `${d.score}%`, background: "#B07D00" }} />
-          </div>
-          <span className="text-[13px] font-bold">{d.score}%</span>
-        </div>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {d.reasons.map((r) => (
-          <span key={r} className="pill" style={{ background: "#FFEFC2", color: "#664900" }}>
-            {r}
+      {code === "DUPLICATE" && (
+        <div className="flex flex-col gap-2 rounded-2xl p-4" style={{ background: "#FFF7E0", border: "1px solid #F3D27A" }}>
+          <span className="text-[13px] font-bold" style={{ color: "#5C4200" }}>
+            Nghi trùng với {t.duplicateOf ?? "ticket khác"}
+            {t.duplicate ? ` · ${t.duplicate.statusLabel}` : ""}
           </span>
-        ))}
-      </div>
-      <div className="flex flex-wrap gap-2.5">
-        {side("PHẢN ÁNH MỚI", t.code, t.text, t.location, `${t.createdAt} · ${t.resident}`)}
-        {side("TICKET ĐÃ CÓ", d.code, d.text, d.location, `${d.createdAt} · ${d.resident}`, d.status)}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <button type="button" className="btn sug" disabled={props.pending} onClick={props.onMerge}>
-          Đúng, gộp {t.code} vào {d.code}
-        </button>
-        <button type="button" className="btn" disabled={props.pending} onClick={props.onNotDuplicate}>
-          Không trùng
-        </button>
-      </div>
-    </section>
+          {t.duplicate && <span className="text-sm">{t.duplicate.text}</span>}
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="btn sug" disabled={pending} onClick={() => props.onDuplicate(true)}>
+              Đúng, gộp vào {t.duplicateOf}
+            </button>
+            <button type="button" className="btn" disabled={pending} onClick={() => props.onDuplicate(false)}>
+              Không trùng
+            </button>
+          </div>
+        </div>
+      )}
+
+      {code === "SAFETY_REVIEW_REQUIRED" && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[13px] font-semibold text-muted">Xác minh an toàn:</span>
+          <button type="button" className="btn sug" disabled={pending} onClick={() => props.onSafety("CONFIRM_SAFE")}>
+            Xác nhận an toàn
+          </button>
+          <button type="button" className="btn" disabled={pending} onClick={() => props.onSafety("REQUEST_INFO")}>
+            Hỏi thêm cư dân
+          </button>
+          <button type="button" className="btn warn" disabled={pending} onClick={() => props.onSafety("ESCALATE")}>
+            Báo khẩn cấp cho BQL
+          </button>
+        </div>
+      )}
+
+      {code === "PENDING_REVIEW" && (
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" className="btn sug" disabled={pending} onClick={props.onConfirm}>
+            Xác nhận phân loại
+          </button>
+        </div>
+      )}
+
+      {code === "ASSET_UNCLEAR" && (
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" className="btn" disabled={pending} onClick={props.onAsset}>
+            Xác định tài sản tại hiện trường
+          </button>
+        </div>
+      )}
+
+      {canRoute && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[13px] font-semibold text-muted">Chuyển đến:</span>
+          <button type="button" className={t.proposedDept === "ve_sinh" ? "btn sug" : "btn"} disabled={pending} onClick={() => props.onRoute("ve_sinh")}>
+            {DEPT_LABEL.ve_sinh}
+          </button>
+          <button type="button" className={t.proposedDept === "ky_thuat" ? "btn sug" : "btn"} disabled={pending} onClick={() => props.onRoute("ky_thuat")}>
+            {DEPT_LABEL.ky_thuat}
+          </button>
+          {code === "OUT_OF_SCOPE" && (
+            <button type="button" className="btn" disabled={pending} onClick={() => props.onRoute("bql")}>
+              Việc của Ban quản lý
+            </button>
+          )}
+        </div>
+      )}
+
+      {code === "MISSING_INFO" && <span className="text-[13px] text-muted">Đang chờ cư dân bổ sung thông tin.</span>}
+    </article>
   );
 }
