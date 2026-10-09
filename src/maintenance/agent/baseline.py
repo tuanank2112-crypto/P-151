@@ -180,6 +180,9 @@ def mirror_decision(data: DecisionInput, catalog: Catalog, lexicon: Lexicon) -> 
     building, floor, area = _split_location(rv.location)
     if rv.location is None:
         building, floor, area = rules._location_parts(data.location_text, catalog.site.buildings)
+    # SPEC-P08 §2: a location with no quote is rejected; the rules read it from the location text, so quote that
+    location_quote = data.location_text.strip()[:300] if building or floor or area else ""
+    location_quote = location_quote if len(location_quote) >= 2 else None  # a locked place may have no text
     signals = [
         SchemaSignal(signal_id=s.signal_id, status=s.status.value, quote=s.source_quote[:300])
         for s in rv.safety.signals
@@ -194,7 +197,7 @@ def mirror_decision(data: DecisionInput, catalog: Catalog, lexicon: Lexicon) -> 
             reason="Theo luật cố định: mức " + rv.safety.risk_level.value,
         ),
         location=LocationDecision(
-            building=building, floor=floor, area=area, quote=None, reason="Vị trí theo luật cố định"
+            building=building, floor=floor, area=area, quote=location_quote, reason="Vị trí theo luật cố định"
         ),
         scope=scope,
         jobs=jobs,

@@ -222,6 +222,7 @@ const state = {
   activeTab: 'workspace', // 'workspace' | 'ai-logs'
   catalog: { departments: {}, assets: [], status_labels: {}, materials: [] },
   bqlFilters: { status: '', department_id: '', escalated: false, overdue: false, emergency: false },
+  pages: {}, // list page per screen ('resident' | 'bptn' | 'department' | 'bql'), 1-based (plan 10)
 };
 
 // ------------------------------------------------------------------ DOM helpers
@@ -497,12 +498,59 @@ function residentListItem(ticketId, { title, meta, right }) {
     meta ? el('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500' }, meta) : null));
 }
 
-function listCard(title, count, items, empty) {
-  return card(null,
-    el('div', { class: 'flex items-center justify-between pb-1' },
-      el('h2', { class: 'text-[17px] font-bold tracking-tight text-slate-900' }, title),
-      el('span', { class: 'pill', style: PILL.blue }, `${count} phản ánh`)),
-    items.length ? el('ul', { class: '-mx-2 space-y-1' }, items) : emptyState(empty[0], empty[1]));
+const PAGE_SIZE = 20;
+
+function pageCount(total, size = PAGE_SIZE) { return Math.max(1, Math.ceil(total / size)); }
+function clampPage(page, total, size = PAGE_SIZE) { return Math.min(Math.max(1, page | 0), pageCount(total, size)); }
+function pageOfIndex(index, size = PAGE_SIZE) { return Math.floor(index / size) + 1; }
+
+/**
+ * A ticket list. With `paging` ({ key, ids }: ids[i] is the ticket of items[i]) only PAGE_SIZE items are shown at a
+ * time; `count` stays the full total. Turning a page swaps the rows in place: no render(), no API call (plan 10).
+ */
+function listCard(title, count, items, empty, paging = null) {
+  if (paging && paging.ids.length !== items.length) {
+    console.error(`listCard: ${paging.ids.length} ids for ${items.length} items (${paging.key})`);
+    paging = null;
+  }
+  const header = el('div', { class: 'flex items-center justify-between pb-1' },
+    el('h2', { class: 'text-[17px] font-bold tracking-tight text-slate-900' }, title),
+    el('span', { class: 'pill', style: PILL.blue }, `${count} phản ánh`));
+  if (!items.length) return card(null, header, emptyState(empty[0], empty[1]));
+  const list = el('ul', { class: '-mx-2 space-y-1', 'data-list': paging && paging.key });
+  if (!paging) {
+    list.append(...items);
+    return card(null, header, list);
+  }
+
+  const { key, ids } = paging;
+  const total = items.length;
+  const selectedAt = ids.indexOf(state.selected);
+  let page = clampPage(selectedAt >= 0 ? pageOfIndex(selectedAt) : state.pages[key] || 1, total);
+  const prev = el('button', { type: 'button', class: BTN.secondary, 'data-page-prev': true }, '‹ Trước');
+  const label = el('span', { class: 'text-sm text-slate-600', 'data-page-label': true });
+  const next = el('button', { type: 'button', class: BTN.secondary, 'data-page-next': true }, 'Sau ›');
+  const box = card(null, header, list);
+  const show = (target) => {
+    page = clampPage(target, total);
+    state.pages[key] = page;
+    list.replaceChildren(...items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE));
+    label.textContent = `Trang ${page} / ${pageCount(total)}`;
+    prev.disabled = page === 1;
+    next.disabled = page === pageCount(total);
+  };
+  const turn = (step) => {
+    show(page + step);
+    box.scrollIntoView({ block: 'nearest' });
+  };
+  prev.addEventListener('click', () => turn(-1));
+  next.addEventListener('click', () => turn(1));
+  show(page);
+  if (total > PAGE_SIZE) {
+    box.append(el('nav', { class: 'pager flex items-center justify-center gap-3 pt-3', 'aria-label': 'Chuyển trang danh sách', 'data-pager': key },
+      prev, label, next));
+  }
+  return box;
 }
 
 function detailHeader(ticketId, status, extra, customLabel) {
@@ -1032,7 +1080,8 @@ async function renderResident(list, detail) {
         right: isUnderCheck ? badge('VERIFYING', 'Đang được kiểm tra') : badge(t.status, t.status_label),
       });
     }),
-    ['Bạn chưa gửi phản ánh nào', 'Phản ánh bạn gửi sẽ hiện ở đây kèm trạng thái xử lý.']));
+    ['Bạn chưa gửi phản ánh nào', 'Phản ánh bạn gửi sẽ hiện ở đây kèm trạng thái xử lý.'],
+    { key: 'resident', ids: tickets.map((t) => t.ticket_id) }));
 
   const view = tickets.find((t) => t.ticket_id === state.selected);
   detail.append(view ? residentDetail(view) : pickDetail(tickets.length > 0));
@@ -1145,7 +1194,7 @@ function residentDetail(view) {
 
 // ------------------------------------------------------------------ internal lists (BPTN, department, warehouse)
 
-async function internalList(list, { title, filter, empty, meta, statsBuilder }) {
+async function internalList(list, { title, filter, empty, meta, statsBuilder, pageKey }) {
   const all = await api('/mo/tickets');
   const realTickets = all.filter((t) => !isSeedTicket(t.ticket_id));
   const tickets = realTickets.filter(filter);
@@ -1159,7 +1208,7 @@ async function internalList(list, { title, filter, empty, meta, statsBuilder }) 
     title: t.description,
     meta: meta(t),
     right: badge(t.status, t.status_label),
-  })), empty));
+  })), empty, { key: pageKey, ids: tickets.map((t) => t.ticket_id) }));
   return tickets;
 }
 
@@ -1190,6 +1239,7 @@ async function renderBptn(list, detail) {
     'WRONG_DEPT',
   ]);
   await internalList(list, {
+    pageKey: 'bptn',
     title: 'Hàng chờ BPTN xử lý',
     filter: (t) => {
       const code = t.reason_code || (t.blocker && t.blocker.code);
@@ -1333,6 +1383,7 @@ function bptnForm(c) {
 async function renderDepartment(list, detail) {
   // The server already limits the list to tickets handed to this account's department
   await internalList(list, {
+    pageKey: 'department',
     title: `Việc đã giao cho ${deptName(state.user.department_id)}`,
     filter: () => true,
     meta: (t) => [t.reason_code ? chip(REASON_LABEL[t.reason_code] || t.reason_code, 'amber') : null, formatTime(t.created_at)],
@@ -1724,6 +1775,7 @@ async function renderBql(list, detail) {
   const update = () => {
     Object.assign(f, { status: status.value, department_id: dept.value, escalated: escalated.checked, overdue: overdue.checked, emergency: emergency.checked });
     state.selected = null;
+    state.pages.bql = 1; // a new filter starts on page 1 (plan 10)
     render();
   };
   [status, dept, emergency, escalated, overdue].forEach((c) => c.addEventListener('change', update));
@@ -1788,7 +1840,7 @@ async function renderBql(list, detail) {
       ],
       right: badge(r.status, r.status_label),
     });
-  }), ['Không có phản ánh phù hợp', 'Thử bỏ bớt bộ lọc.']));
+  }), ['Không có phản ánh phù hợp', 'Thử bỏ bớt bộ lọc.'], { key: 'bql', ids: rows.map((r) => r.ticket_id) }));
 
   if (!state.selected) return detail.append(pickDetail());
   const c = await api(`/mo/tickets/${state.selected}`);
@@ -2113,6 +2165,7 @@ function signOut({ remote = true, message = null } = {}) {
   state.user = null;
   state.role = null;
   state.selected = null;
+  state.pages = {};
   state.activeTab = 'workspace';
   try { sessionStorage.removeItem(TOKEN_KEY); } catch { /* storage unavailable */ }
   if (remote && token) {

@@ -89,3 +89,6 @@ html body .scr-login .field { min-height: 52px; padding: 14px 16px; }
   .scr-login .band { padding: 28px 16px 150px; }
   .scr-login .sheet { padding: 24px; }
 }
+
+/* List pager (plan 10): a disabled page button is not busy, just unavailable */
+.pager .btn:disabled { opacity: 0.45; cursor: not-allowed; }

@@ -1,0 +1,21 @@
+
+=== resident_list: total 1784ms, SQL 7 queries / 1129ms
+      6x select doc from maintops.cases where ticket_id = %(id)s
+      1x select doc from maintops.cases order by ticket_id collate "C"
+
+
+=== list_tickets bptn: total 3631ms, SQL 1 queries / 3498ms
+      1x select doc from maintops.cases order by ticket_id collate "C"
+
+
+=== bql_list: total 481ms, SQL 1 queries / 313ms
+      1x select doc from maintops.cases order by ticket_id collate "C"
+
+
+=== read_events (1 ticket): total 204ms, SQL 1 queries / 123ms
+      1x select doc from maintops.cases where ticket_id = %(id)s
+
+
+=== warehouse stock_levels: total 204ms, SQL 1 queries / 110ms
+      1x select item_code, qty from maintops.stock order by item_code
+

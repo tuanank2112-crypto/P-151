@@ -1,0 +1,10 @@
+POST /auth/login                            63ms
+GET /mo/tickets (bptn01)               median=    224ms  min=   179  max=   434  size=   24.2KB
+   tickets: 66
+GET /mo/tickets/{id}                   median=    211ms  min=   167  max=   239  size=    6.8KB
+GET /mo/tickets/{id}/events            median=    215ms  min=   178  max=   465  size=    1.7KB
+GET /mo/catalog                        median=      6ms  min=     4  max=    23  size=    1.3KB
+GET /mo/ai-logs                        median=      4ms  min=     4  max=     4  size=    0.0KB
+GET /mo/warehouse/stock (kho01)        median=    227ms  min=   176  max=   233  size=    0.5KB
+GET /resident/tickets (cudan01)        median=    201ms  min=   185  max=   327  size=   53.3KB
+GET /bql/tickets (bql01)               median=    219ms  min=   192  max=   237  size=   67.2KB

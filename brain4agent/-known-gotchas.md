@@ -56,6 +56,15 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 ` sẽ không khớp.
 - Bỏ `from None` khi raise trong `except` KHÔNG làm `__cause__` khác None (chỉ gắn `__context__`): kiểm `__suppress_context__`.
 - Shell `(base)` conda: `python` là miniconda, không có alembic/deps ⇒ dùng `.venv\Scripts\python.exe` hoặc activate `.venv`.
+- **Supabase dùng chung + nhánh tụt revision ⇒ :8000 "mất UI" (2026-10-08):** schema `maintops` đã lên `0002_p1_doc_shape`
+  (plan 06), nhánh chưa merge `develop` chỉ biết `0001` ⇒ `repo.check()` fail-fast, uvicorn thoát, cổng 8000 trống.
+  Sửa = merge `develop` (hoặc `MO_STORE=mock` tạm). CẤM `alembic downgrade` DB chung — gãy các nhánh đã ở 0002.
+- **SQLAlchemy 2.1 đổi driver mặc định của `postgresql://` sang `psycopg` (v3) (2026-10-08):** image Docker build mới kéo 2.1.4
+  ⇒ `ModuleNotFoundError: psycopg`, `p151-backend-1` restart vòng (exit 3) trong khi `.venv` (2.0.x) vẫn chạy. Ghim
+  `sqlalchemy<2.1` trong `requirements.txt`. Model OpenAI đời mới (vd `gpt-6-luna`) từ chối `max_tokens` và `temperature≠1`.
+- `maintops.cases` có CHECK `cases_doc_matches`: `doc.ticket.status`/`department_id` phải khớp cột ⇒ test muốn làm hỏng doc phải đổi trường KHÁC (vd thêm field lạ), không đổi status.
+- `PostgresRepository.list()` (plan 09) trả object dùng chung từ cache theo `xmin` ⇒ sửa trực tiếp Case lấy từ `list()`/`engine.cases` làm bẩn cache của mọi request sau; luôn sửa qua `_mutate`/`transaction`.
+- UI `src/web/`: mọi màn tự chọn ticket đầu khi `state.selected` rỗng ⇒ "trang đang xem" bị ghi đè bởi trang của ticket đang chọn sau mỗi `render()`; test UI muốn thấy khác biệt phải lật trang SAU khi chọn. Harness Playwright đăng nhập bằng `page.goto` = tải lại trang = xoá mọi state JS — thử luồng đăng xuất/đăng nhập thật phải điền form tại chỗ.
 - Qua Supabase pooler, `pg_stat_ssl.ssl` = false (chặng pooler→DB); TLS client kiểm bằng `connection.info.ssl_in_use`.
 - **Supabase dùng chung + model `extra="forbid"` ⇒ 500 mọi màn danh sách (2026-10-07):** chỉ cần MỘT doc do bản code khác ghi
   có field lạ là `repo.list()` vỡ `ValidationError` ⇒ `/resident/tickets`, `/mo/tickets`… đều 500 ("Không tải được dữ liệu · Lỗi 500").
@@ -82,6 +91,20 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 ## Phạm vi tòa thí điểm Ocean Park S1/S2 (2026-10-05)
 - Vị trí cư dân chỉ hợp lệ khi tòa nằm trong `catalog.yaml` `site.buildings`; seed/test đã đổi `SIM-A`→`S1`, `SIM-B`→`S2`. Text test qua engine dùng tòa khác (vd `SIM-A`, `S3`) sẽ rơi NEED_INFO thiếu tòa.
 - KHÔNG đổi tòa trong bộ nhãn an toàn (`tests/.../data/safety_*_p0.yaml`, `test_safety_p0.py`) và `test_b01_closed_prefix_twenty_tokens_and_lamp_accent`: `assess()` không xét vị trí, còn "tòa SIM-A" = 3 token, "tòa S1" = 2 token ⇒ ca biên 20/21 token của B-01 lệch.
+
+## LLM qua vyceai.com `deepseek-v4.1` quá chậm cho Agent (đo 2026-10-07)
+- Gọi ngắn ("trả JSON {ok:true}") OK. Lượt gọi thật của Agent (system ~7.6k + user ~1k ký tự, `max_tokens` 2500, JSON mode) ⇒ 504 Cloudflare sau ~14–17 s (non-stream) hoặc "request timed out" sau ~25 s (stream) ⇒ `FALLBACK_RULE/HTTP_ERROR`, engine chạy luật (an toàn, nhưng KHÔNG có suy luận).
+- Thông lượng đo: câu ngắn stream 63 chunk mất 21 s (chunk đầu 4.9 s) ≈ 3 chunk/s ⇒ JSON quyết định 1–2k token cần vài phút. Lỗi tầng 1 (hạ tầng nhà cung cấp), không phải code. Không nâng timeout để "chữa": 504 do proxy cắt.
+- Mô hình trần (không system prompt) coi "Thay bóng đèn cháy … giúp với" là EMERGENCY ⇒ hướng dẫn ngữ nghĩa trong `prompt.py` là bắt buộc, đừng đo LLM bằng prompt trần.
+- Đã thêm `MO_AGENT_STREAM=true` (mặc định) ở `agent/client.py`: hết 504 Cloudflare, nhưng `deepseek-v4-flash` qua vyceai vẫn tự báo "The request timed out" sau ~28–30 s ở 3/4 câu (lần đo riêng: 17 s, chunk đầu 5.6 s) ⇒ nhà cung cấp chậm/không ổn định. `timeout` của client chặn TỔNG thời gian stream.
+- Prompt Agent (`prompt.py` EXAMPLE) chỉ có `"signals": []`, không mô tả object `{signal_id, status, quote}` ⇒ mô hình thật trả `signals` dạng chuỗi ⇒ `SCHEMA_INVALID` ⇒ FALLBACK. Lộ ra CHỈ khi chạy live; mock không thấy.
+- `deepseek-v4-flash` là mô hình suy nghĩ ngầm: `completion_tokens` ~1.300–1.600 dù JSON chỉ ~450 token; vyceai KHÔNG chuyển `reasoning_content` và gom nội dung gửi một lần cuối (stream không thật); `extra_body.thinking=disabled` vô tác dụng. `reasoning_effort=low` (`MO_AGENT_REASONING_EFFORT=low`) giảm còn ~800 token ở một lần đo. Sau `agent-prompt/3` + stream + low: 2/4 câu thử AGENT quyết đúng (kêu cứu + cháy ⇒ S-05 PRESENT ⇒ BQL; nhờ thay đèn cháy ⇒ NONE), 2/4 vẫn bị vyceai cắt ~28 s.
+- **Antigravity CLI (`agy -p`) làm LLM cho Agent:** LUÔN truyền `--model` (vd `gemini-3.8-flash-low`) — không truyền thì dùng model mặc định có quota nhỏ, báo "Individual quota reached" dù Gemini còn đầy. `agy` không có cờ thay system prompt/tắt tool ⇒ client ghép system prompt vào đầu prompt, chạy thư mục trống + `--sandbox`, không auto-approve; mỗi lượt ~17k token vào (agy tự chèn ~13.8k). Worker chạy Antigravity dùng chung quota.
+
+## Trích dẫn của Agent: "chỉ dấu câu" = không có trích dẫn (WP14 vòng 2, 2026-10-09)
+- `agent/validate.grounded` gấp quote (bỏ dấu, dấu câu thành khoảng trắng) rồi kiểm chuỗi con. Quote `".."`/`"--"` qua được schema (`Quote` min_length=2) nhưng gấp ra `""` — chuỗi rỗng là con của mọi văn bản ⇒ trước đây vị trí/việc bịa được coi là có trích dẫn. Nay `grounded` trả False khi quote gấp ra rỗng (cùng luật `safety._grounded`). Viết kiểm "có trích dẫn" mới thì kiểm SAU khi gấp, đừng kiểm chuỗi thô.
+- Test "đường Agent" dùng `MirrorClient` không chứng minh nhánh Agent: Mirror quyết y như luật, nên thay đường 2b bằng luật thuần vẫn xanh. Muốn bắt nhánh Agent phải có client giả nêu tín hiệu mà luật KHÔNG thấy (vd `SeesDanger` trong `test_p1_audit_fixes_safety.py`).
+- Git Bash trên máy này: `/tmp_x` = `D:\Git\tmp_x` (root của Git Bash), không phải thư mục tạm — ghi file tạm vào scratchpad.
 
 
 ## UI tĩnh `src/web/` + Tailwind Play CDN (plan 07, 2026-10-07)

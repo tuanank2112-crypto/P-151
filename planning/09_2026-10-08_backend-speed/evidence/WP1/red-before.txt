@@ -1,0 +1,20 @@
+        engine = MaintenanceEngine(clock=clock, repo=InMemoryRepository(initial_stock(load_catalog())))
+        engine.reset(with_fixtures=False)
+        root, child = _merged_pair(clock, engine, child_resident)
+        snapshot = list(engine.cases.values())
+        lookup = {case.ticket.ticket_id: case for case in snapshot}
+        for case in snapshot:
+            fresh = resident_view(engine, case, clock())
+>           assert resident_view(engine, case, clock(), lookup).model_dump() == fresh.model_dump()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: resident_view() takes 3 positional arguments but 4 were given
+
+tests\test_maintenance\test_list_cache.py:183: TypeError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_list_cache.py::test_t2_a_second_list_without_writes_loads_no_doc
+FAILED tests/test_maintenance/test_list_cache.py::test_t3_one_write_reloads_exactly_that_ticket
+FAILED tests/test_maintenance/test_list_cache.py::test_t6_a_broken_doc_is_never_cached
+FAILED tests/test_maintenance/test_list_cache.py::test_t7_resident_list_reads_no_single_ticket
+FAILED tests/test_maintenance/test_list_cache.py::test_t8_lookup_gives_the_same_view_as_fresh_reads[SIM-ACTOR-RESIDENT-01]
+FAILED tests/test_maintenance/test_list_cache.py::test_t8_lookup_gives_the_same_view_as_fresh_reads[SIM-ACTOR-RESIDENT-02]
+6 failed, 4 passed in 3.65s

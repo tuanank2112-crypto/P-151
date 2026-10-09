@@ -1,0 +1,70 @@
+G-LIVE dataset=2026-10-07.draft1 sentences=60 llm_mode=agy_cli model=gemini-3.8-flash-low effort=low workers=3
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=UNCLEAR   src=AGENT                   23.3s | Xin cứu, nhà cháy rồi | Cư dân báo cháy khẩn cấp
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   1.4s | Cứu với, cháy ở hành lang tầng 7 tòa S1 | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   1.4s | Cứu tôi với, khói đen đầy hành lang tầng 12 tòa S2 | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.1s | Giúp tôi với, phòng rác tầng 5 tòa S1 đang cháy | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.1s | Cứu em với, lửa bốc lên ở hầm B1 tòa S2 | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.1s | cuu voi chay o tang 3 toa S1 | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.0s | Có ai không, cháy to ở sảnh chính tòa S2, cứu với | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.1s | Cứu con với, khói nhiều quá không thở được | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.1s | Giúp em với, tủ điện hành lang tầng 9 tòa S1 đang bốc cháy | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.1s | Mọi người ơi cứu với, cháy rồi | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.0s | Cứu, cứu, hành lang tầng 4 tòa S2 có lửa | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.1s | Xin cứu giúp, khói bốc ra từ phòng rác tầng 8 tòa S1 | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.1s | Giúp tôi với, có người bị kẹt trong đám cháy ở tầng 6 tòa S2 | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.1s | Cứu với cháy cháy cháy | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.0s | Ai đó cứu với, khói tràn vào sảnh thang máy tầng 10 tòa S1 | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.1s | Giúp với, ổ cắm hành lang tầng 2 tòa S2 tóe lửa và cháy rồi | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.0s | Cứu tôi, lửa đang lan ra hành lang tầng 11 tòa S1 | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.1s | cuu toi voi, khoi day o ham B2 toa S2 | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.1s | Xin cứu với, cháy ở nhà xe tòa S1 | 
+[OK   ] A_help_fire     expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.1s | Cứu! Thùng rác tầng 3 tòa S2 cháy bùng lên | 
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   13.2s | Sảnh chính tòa S2: thay bóng đèn đã cháy | Bóng đèn cháy là đèn hỏng thông thường, không kèm khói lửa hay nguy hiểm khác
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   21.2s | Sảnh chính tòa S2: cần vệ sinh sàn và thay bóng đèn đã cháy | Bóng đèn cháy là đèn hỏng, không có khói lửa, khét hay nguy hiểm
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   30.8s | Sảnh chính tòa S2: bóng đèn đã cháy | Chỉ là bóng đèn bị cháy hỏng thông thường, không kèm khói, lửa hay nguy cơ rò điện
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   26.8s | Nhờ thay bóng đèn bị cháy ở hành lang tầng 3 tòa S1 | Bóng đèn bị cháy là đèn hỏng, không có khói lửa hay nguy hiểm
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   19.3s | Thay bóng đèn ở sảnh thang máy tầng 2 tòa S2 đã cháy | Không có khói, lửa, khét hay dấu hiệu nguy hiểm
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   35.9s | Hành lang tầng 4 tòa S1 cần thay đèn cháy | Không có khói, lửa, khét hay nguy hiểm
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   18.9s | Tòa S1 / Tầng 3 / Hành lang: xin thay giúp bóng đèn bị cháy | Bóng đèn bị cháy là hỏng hóc thông thường, không có dấu hiệu khói lửa hay nguy cơ an toàn
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   20.7s | Sanh chinh toa S2: thay bong den da chay | Bóng đèn cháy không kèm khói, lửa, khét hay nguy cơ mất an toàn
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   30.8s | Thay bóng đèn cháy ở hành lang tầng 3 tòa S1 giúp với | Không có khói, lửa, khét hay nguy hiểm điện
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   19.7s | Giúp em với, đèn hành lang tầng 5 tòa S2 cháy bóng rồi | Không có khói, lửa, khét hay dấu hiệu nguy hiểm
+[OVER ] B_lamp_request  expect=NONE      final=UNCLEAR   agent=NONE      rule=UNCLEAR   src=AGENT                   20.5s | Nhờ ban quản lý thay giúp bóng đèn cháy ở sảnh tòa S1 | Bóng đèn cháy đơn thuần, không kèm khói, lửa, tia lửa hay mùi khét.
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   53.6s | Đèn cầu thang tầng 7 tòa S2 bị cháy, nhờ thay giúp | Chỉ là bóng đèn bị cháy hỏng, không có dấu hiệu cháy nổ nguy hiểm
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   39.5s | Bóng đèn hành lang tầng 8 tòa S1 cháy rồi, tối quá, giúp với | Bóng đèn cháy là đèn hỏng, không có khói lửa hay nguy hiểm
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   19.6s | Xin thay giúp bóng đèn đã cháy ở hầm B1 tòa S2 | Chỉ là bóng đèn bị cháy hỏng, không có khói lửa hay nguy cơ chập cháy khác
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   13.2s | Đèn sảnh thang máy tầng 6 tòa S1 chập chờn rồi tắt hẳn | Đèn hỏng chập chờn rồi tắt hẳn không kèm khói lửa hay chập cháy nguy hiểm
+[OVER ] B_lamp_request  expect=NONE      final=UNCLEAR   agent=NONE      rule=UNCLEAR   src=AGENT                   17.4s | Hành lang tầng 9 tòa S2 đèn không sáng, chắc cháy bóng | Không có khói, lửa, tia lửa hay nguy cơ rò điện.
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   15.3s | Nhờ thay đèn bị cháy ở nhà xe tòa S2 | Đèn bị cháy ở đây là đèn hỏng, không có khói lửa hay nguy cơ chạm chập
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   17.2s | Đèn hành lang tầng 10 tòa S1 nhấp nháy mấy hôm nay | Không phát hiện khói, lửa, mùi khét hay nguy cơ mất an toàn.
+[OVER ] B_lamp_request  expect=NONE      final=UNCLEAR   agent=NONE      rule=UNCLEAR   src=AGENT                   13.6s | Phiền ban quản lý thay bóng đèn cháy ở hành lang tầng 2 tòa S1 | Bóng đèn cháy hỏng, không kèm khói, lửa, khét hay nguy hiểm
+[OK   ] B_lamp_request  expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   34.0s | den hanh lang tang 6 toa S2 chay bong roi, nho thay giup | Không có khói, lửa, khét hay nguy cơ mất an toàn
+[OVER ] C_negation      expect=NONE      final=UNCLEAR   agent=UNCLEAR   rule=NONE      src=AGENT                   20.7s | Không có khói nhiều đâu, chỉ là đèn hành lang tầng 3 tòa S1 không sáng | Phản ánh nhắc tới khói nhưng chưa rõ mức độ nguy hiểm thực tế
+[OK   ] C_negation      expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   17.7s | Chưa thấy khói gì cả, đèn hành lang tầng 4 tòa S2 tắt thôi | Không có tín hiệu nguy hiểm, câu phủ định khói
+[OK   ] C_negation      expect=NONE      final=NONE      agent=None      rule=NONE      src=FALLBACK_RULE           65.1s | Không có cháy, chỉ là bóng đèn sảnh tòa S1 hỏng | fallback=TIMEOUT
+[OK   ] C_negation      expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   12.4s | Không phải cháy đâu, chỉ là đèn hành lang tầng 7 tòa S1 chập chờn | Không có khói, lửa, khét hay nguy hiểm; câu phủ định về cháy và đèn chập chờn thông thường
+[OK   ] C_negation      expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   19.9s | ko co khoi, den hanh lang tang 8 toa S2 khong sang | Không có khói, lửa, khét hay dấu hiệu nguy hiểm
+[OK   ] C_negation      expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   15.5s | Hành lang tầng 9 tòa S1 không có mùi khét, chỉ nhiều rác | Không có tín hiệu nguy hiểm, câu phủ định về mùi khét
+[OK   ] C_negation      expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   20.9s | Không có lửa hay khói gì, nhờ dọn rác ở phòng rác tầng 2 tòa S2 | Không có khói, lửa hay nguy hiểm cháy nổ
+[OK   ] C_negation      expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   11.4s | Chẳng có gì nguy hiểm, đèn hầm B1 tòa S1 không sáng | Không có khói, lửa, khét hay nguy hiểm điện
+[OK   ] C_negation      expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   26.2s | Không thấy tia lửa nào, đèn sảnh tầng 1 tòa S2 tắt | Không ghi nhận nguy cơ cháy nổ hay mất an toàn
+[OK   ] C_negation      expect=NONE      final=NONE      agent=NONE      rule=NONE      src=AGENT                   13.3s | Không ai bị thương, chỉ là bóng đèn hành lang tầng 6 tòa S1 vỡ | Không có khói, lửa, khét hay người bị thương
+[OK   ] D_smoke_lots    expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.0s | Khói rất nhiều ở hành lang tầng 9 | 
+[OK   ] D_smoke_lots    expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.0s | khoi rat nhieu o tang ham | 
+[OK   ] D_smoke_lots    expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.0s | Hành lang tầng 9 khói rất nhiều, mọi người chạy hết xuống | 
+[OK   ] D_smoke_lots    expect=EMERGENCY final=EMERGENCY agent=None      rule=EMERGENCY src=SKIPPED_RULE_EMERGENCY   0.0s | khoi nhieu o hanh lang tang 4 | 
+[OK   ] E_doubt         expect=UNCLEAR   final=UNCLEAR   agent=UNCLEAR   rule=UNCLEAR   src=AGENT                   21.6s | Hành lang tầng 5 tòa S2 hình như có khói nhiều | Cư dân nghi ngờ có khói nhiều ở hành lang
+[OK   ] E_doubt         expect=UNCLEAR   final=UNCLEAR   agent=UNCLEAR   rule=UNCLEAR   src=AGENT                   16.7s | Hình như có mùi khét ở hành lang tầng 3 tòa S1 | Cư dân nghi ngờ có mùi khét ('Hình như').
+[OK   ] E_doubt         expect=UNCLEAR   final=UNCLEAR   agent=UNCLEAR   rule=UNCLEAR   src=AGENT                   20.0s | Có vẻ như có khói ở phòng rác tầng 7 tòa S2 | Cư dân nghi ngờ có khói ở phòng rác
+[OK   ] E_doubt         expect=UNCLEAR   final=UNCLEAR   agent=UNCLEAR   rule=UNCLEAR   src=AGENT                   20.7s | Hôm qua có mùi khét ở hành lang tầng 5 tòa S2, giờ hết rồi | Mùi khét xảy ra hôm qua và hiện đã hết
+[OK   ] E_doubt         expect=UNCLEAR   final=UNCLEAR   agent=UNCLEAR   rule=UNCLEAR   src=AGENT                   56.1s | Nghe xèo xèo ở hộp điện hành lang tầng 4 tòa S1 | Tiếng xèo xèo ở hộp điện là âm thanh lạ nghi ngờ chập điện hoặc phát tia lửa
+[OK   ] E_doubt         expect=UNCLEAR   final=UNCLEAR   agent=None      rule=UNCLEAR   src=FALLBACK_RULE           15.8s | Thấy cháy ở tầng 8 tòa S2 | fallback=SCHEMA_INVALID
+
+SUMMARY
+A_help_fire     n=20 correct=20 under= 0 over= 0 agent_used= 1 fallback= 0 rule_correct=19 p50=0.1s p90=1.4s
+B_lamp_request  n=20 correct=17 under= 0 over= 3 agent_used=20 fallback= 0 rule_correct=17 p50=20.1s p90=35.9s
+C_negation      n=10 correct= 9 under= 0 over= 1 agent_used= 9 fallback= 1 rule_correct=10 p50=18.8s p90=26.2s
+D_smoke_lots    n= 4 correct= 4 under= 0 over= 0 agent_used= 0 fallback= 0 rule_correct= 4 p50=0.0s p90=0.0s
+E_doubt         n= 6 correct= 6 under= 0 over= 0 agent_used= 5 fallback= 1 rule_correct= 6 p50=20.3s p90=21.6s
+TOTAL n=60 correct=56 under=0 over=4 agent_used=35 rule_correct=56
+EXIT=0

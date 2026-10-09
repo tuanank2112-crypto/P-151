@@ -227,8 +227,18 @@ class MergeMixin:
     def _t09_unmerge_by_person(
         self, work: Case, actor_id: str, role: ActorRole, now: datetime, *, note: str | None
     ) -> None:
-        if role not in (ActorRole.BPTN, ActorRole.BQL):
-            raise InvalidTransitionError("Hoàn tác gộp do BPTN/BQL (T09)")
+        if role not in (ActorRole.BPTN, ActorRole.BQL):  # SYSTEM is a T09 actor only for a cancelled root (SPEC-P08 §3)
+            self._deny(
+                self.get(work.ticket.ticket_id),
+                actor_id,
+                role,
+                Action.MERGE_UNDO,
+                "merged_into",
+                None,
+                note,
+                now,
+                message="Hoàn tác gộp do BPTN/BQL (T09)",
+            )
         if role == ActorRole.BPTN and work.ticket.risk_level == RiskLevel.EMERGENCY:
             self._deny(
                 self.get(work.ticket.ticket_id),

@@ -64,13 +64,13 @@ class LocationDecision(_Strict):
     floor: Annotated[str, StringConstraints(max_length=10)] | None = None
     area: Annotated[str, StringConstraints(max_length=40)] | None = None
     quote: Quote | None = None
-    reason: Short
+    reason: Short | None = None  # agent-prompt/3: optional, no consumer
 
 
 class MaterialChoice(_Strict):
     item_code: Annotated[str, StringConstraints(pattern=r"^SIM-[A-Z0-9-]+$")]
     planned_qty: float = Field(gt=0, le=100)
-    reason: Short
+    reason: Short | None = None  # agent-prompt/3: optional, no consumer
 
 
 class JobDecision(_Strict):
@@ -82,9 +82,9 @@ class JobDecision(_Strict):
     priority_rule_id: Literal["PRI-H1", "PRI-H2", "PRI-M1", "PRI-M2", "PRI-L1", "PRI-D0"]
     priority_reason: Short
     duplicate_of: Annotated[str, StringConstraints(pattern=r"^SIM-TKT-[A-Z0-9-]+$")] | None = None
-    duplicate_reason: Short
+    duplicate_reason: Short | None = None  # agent-prompt/3: only with a duplicate_of
     asset_id: Annotated[str, StringConstraints(pattern=r"^SIM-ASSET-[A-Z0-9-]+$")] | None = None
-    asset_reason: Short
+    asset_reason: Short | None = None  # agent-prompt/3: only with an asset_id
     materials: list[MaterialChoice] = Field(default_factory=list, max_length=5)
     needs_review: bool
     review_reason: Annotated[str, StringConstraints(max_length=300)] | None = None
@@ -157,12 +157,14 @@ QUY TẮC BẮT BUỘC
 - An toàn trước hết: luật cố định của hệ thống đã quét phản ánh; bạn KHÔNG thể hạ mức nguy hiểm, chỉ có thể nêu thêm. Không chắc thì chọn UNCLEAR.
 - "BPTN đã chốt" là quyết định của con người: giữ nguyên, không đổi.
 
-CÁC BƯỚC SUY LUẬN (ghi vào "reasoning" theo thứ tự; facts = dữ kiện chép từ phản ánh, conclusion = kết luận của bước)
+CÁC BƯỚC SUY LUẬN (suy luận đủ 10 bước; chỉ GHI vào "reasoning", theo thứ tự, các bước AN_TOAN, LOAI_VIEC, VI_TRI, KET_LUAN và thêm THIEU_THONG_TIN, TRUNG, TAI_SAN khi có điều cần nói; facts = tối đa 2 đoạn ngắn chép từ phản ánh, conclusion = MỘT câu ngắn)
 1. DU_KIEN: sự việc, nơi xảy ra, thời điểm, mức độ cư dân mô tả.
 2. AN_TOAN: chỉ xét phần <an_toan_can_xet>. Đối chiếu bảng tín hiệu Bậc 1:
 {signal_table}
    Bậc 1 có thật (PRESENT) ⇒ risk_level EMERGENCY. Nghi ngờ ("hình như", "có vẻ"), đã xảy ra rồi hết ("hôm qua…, giờ hết rồi"), từ nhiều nghĩa đứng riêng ("cháy", "chập" không rõ là gì), âm thanh lạ (xèo xèo, lốp bốp), vệ sinh chỉ có một dấu hiệu nguy hại ⇒ UNCLEAR.
    KHÔNG phải nguy hiểm: đèn/bóng đèn bị cháy, chập, chập chờn, nhấp nháy, nổ bóng (đó là ĐÈN HỎNG) khi không kèm khói, lửa, khét, nóng, tia lửa; câu phủ định ("không có mùi khét"); "khét" do nấu ăn.
+   Cư dân PHỦ ĐỊNH một dấu hiệu ("không có khói nhiều", "chưa thấy lửa", "không phải cháy") ⇒ tín hiệu đó là ABSENT, KHÔNG phải UNCLEAR, và không làm tăng risk_level. UNCLEAR chỉ dành cho khi chính cư dân nghi ngờ hoặc mô tả chưa rõ. Ngược lại, lời kêu cứu, báo cháy, giục gọi cứu hỏa hay sơ tán là người đang gặp nguy ngay ⇒ PRESENT dù không dùng đúng từ trong bảng.
+   Mỗi phần tử của safety.signals là MỘT đối tượng có đúng ba khóa: signal_id (mã trong bảng trên, ví dụ "S-05"; S-00 cho nguy hiểm thật khác), status (chỉ PRESENT, UNCLEAR hoặc ABSENT) và quote (đoạn chép nguyên văn từ <an_toan_can_xet>). KHÔNG ghi tín hiệu dạng chuỗi. Không có tín hiệu ⇒ signals [].
 3. LOAI_VIEC: chỉ hai loại việc:
    - VE_SINH (PB-CLN-01): khu vực chung bẩn hoặc có thứ cần dọn (rác, bụi, vết bẩn, nước đọng, chất lỏng đổ, bãi nôn, phân, lá cây, mạng nhện…).
    - KY_THUAT (PB-TEC-01): ĐÈN chiếu sáng khu vực chung không hoạt động (không sáng, tắt, hỏng, cháy bóng, chập, chập chờn, nhấp nháy, rơi, vỡ).
@@ -171,11 +173,14 @@ CÁC BƯỚC SUY LUẬN (ghi vào "reasoning" theo thứ tự; facts = dữ ki�
    Không xác định được ⇒ scope UNCLEAR, TO_BPTN với CATEGORY_UNCLEAR.
 4. VI_TRI: nơi XẢY RA SỰ CỐ, không phải nơi cư dân ở ("em ở căn 1203 tầng 12" không phải vị trí sự cố). Tòa chỉ thuộc: {buildings}. Tầng là số, "B1"/"B2" (hầm) hoặc "Trệt". Khu vực chỉ thuộc: {areas}. Sảnh chính và Sảnh cư dân là tầng 1 nếu không nêu. Tòa ngoài danh sách = thiếu tòa. Thiếu phần nào để null.
 5. THIEU_THONG_TIN: thiếu tòa/tầng/khu vực ⇒ next_step ASK_RESIDENT với đúng các trường thiếu (location, location_building, location_floor, location_area). Phản ánh rõ ràng ngoài phạm vi và không nhắc khu vực chung nào ⇒ TO_BPTN với OUT_OF_SCOPE (không hỏi vị trí). Đủ thông tin và thuộc phạm vi ⇒ PROCEED.
+   next_step TO_BPTN LUÔN kèm bptn_reason (OUT_OF_SCOPE hoặc CATEGORY_UNCLEAR); thiếu bptn_reason thì CẢ quyết định bị loại, kể cả phần an toàn. Ca nguy hiểm thật (risk_level EMERGENCY) mà không có việc vệ sinh/đèn ⇒ scope OUT_OF_SCOPE, jobs [], next_step TO_BPTN, bptn_reason OUT_OF_SCOPE (BQL nhận ca khẩn cấp riêng).
 6. TRUNG: chỉ chọn trong <ung_vien_trung>; trùng khi cùng loại việc, cùng tòa/tầng/khu vực VÀ cùng một sự việc. Không chắc ⇒ duplicate_of null.
 7. UU_TIEN: PRI-H1 đèn ở lối đi chung ({high_areas}) = HIGH; PRI-M1 đèn ở chỗ khác = MEDIUM; PRI-H2 vệ sinh cản trở lối đi (chắn lối, trơn trượt, tràn ra lối đi) = HIGH; PRI-M2 vệ sinh ảnh hưởng sử dụng (nhiều rác, ẩm ướt, mùi) = MEDIUM; PRI-L1 vệ sinh chưa ảnh hưởng = LOW; PRI-D0 chưa rõ vị trí hoặc loại = MEDIUM.
 8. TAI_SAN: chỉ cho KY_THUAT; chọn trong <tai_san> asset có vị trí TRÙNG vị trí sự cố; không có hoặc có từ hai asset trở lên ở vị trí đó ⇒ asset_id null.
 9. VAT_TU: chọn trong <vat_tu> đúng loại việc, số lượng hợp lý (không quá {max_qty}); không cần ⇒ [].
 10. KET_LUAN: tóm tắt quyết định. Đặt needs_review=true (kèm review_reason) khi bạn không chắc về loại việc hoặc vị trí.
+
+VIẾT GỌN: mỗi reason là MỘT câu ngắn, không lặp lại điều đã ghi ở reasoning. KHÔNG ghi location.reason, reason của vật tư, duplicate_reason khi duplicate_of null, asset_reason khi asset_id null (bỏ hẳn các khóa đó).
 
 ĐẦU RA: CHỈ MỘT đối tượng JSON hợp lệ, đúng các khóa như mẫu dưới (không thêm khóa, không thêm chữ ngoài JSON). Mẫu:
 {example}"""
@@ -201,32 +206,27 @@ Trả lời bằng JSON theo mẫu."""
 EXAMPLE = {
     "schema_version": "agent-decision/1",
     "reasoning": [
-        {"step": "DU_KIEN", "facts": ["hành lang tầng 3 tòa S1", "nhiều rác", "đèn cũng không sáng"],
-         "conclusion": "Cư dân báo rác và đèn không sáng ở cùng một hành lang"},
-        {"step": "AN_TOAN", "facts": [], "conclusion": "Không có tín hiệu nguy hiểm nào"},
+        {"step": "AN_TOAN", "facts": [], "conclusion": "Không có tín hiệu nguy hiểm"},
         {"step": "LOAI_VIEC", "facts": ["nhiều rác", "đèn cũng không sáng"],
          "conclusion": "Hai việc độc lập cùng chỗ: vệ sinh và đèn"},
         {"step": "VI_TRI", "facts": ["hành lang tầng 3 tòa S1"], "conclusion": "Tòa S1 / Tầng 3 / Hành lang"},
+        {"step": "TAI_SAN", "facts": [], "conclusion": "Một đèn duy nhất tại hành lang này"},
         {"step": "KET_LUAN", "facts": [], "conclusion": "Tách hai việc, cả hai đi tiếp"},
     ],
-    "safety": {"risk_level": "NONE", "signals": [], "reason": "Không có khói, lửa, khét, tia lửa hay người bị nạn"},
-    "location": {"building": "S1", "floor": "3", "area": "Hành lang", "quote": "hành lang tầng 3 tòa S1",
-                 "reason": "Cư dân nêu rõ nơi xảy ra"},
+    "safety": {"risk_level": "NONE", "signals": [], "reason": "Không có khói, lửa, khét hay người bị nạn"},
+    "location": {"building": "S1", "floor": "3", "area": "Hành lang", "quote": "hành lang tầng 3 tòa S1"},
     "scope": "IN_SCOPE",
     "jobs": [
         {"category": "VE_SINH", "quote": "nhiều rác", "reason": "Rác ở khu vực chung cần dọn",
          "department_id": "DEPT_CLEANING", "priority": "MEDIUM", "priority_rule_id": "PRI-M2",
-         "priority_reason": "Rác nhiều ảnh hưởng sử dụng, chưa chắn lối", "duplicate_of": None,
-         "duplicate_reason": "Không có ứng viên cùng sự việc", "asset_id": None,
-         "asset_reason": "Vệ sinh không tra tài sản",
-         "materials": [{"item_code": "SIM-MAT-BAG-01", "planned_qty": 2, "reason": "Túi đựng rác"}],
+         "priority_reason": "Nhiều rác, chưa chắn lối", "duplicate_of": None, "asset_id": None,
+         "materials": [{"item_code": "SIM-MAT-BAG-01", "planned_qty": 2}],
          "needs_review": False, "review_reason": None},
         {"category": "KY_THUAT", "quote": "đèn cũng không sáng", "reason": "Đèn khu vực chung không hoạt động",
          "department_id": "DEPT_TECHNICAL", "priority": "HIGH", "priority_rule_id": "PRI-H1",
-         "priority_reason": "Đèn ở hành lang là lối đi chung", "duplicate_of": None,
-         "duplicate_reason": "Không có ứng viên cùng sự việc", "asset_id": "SIM-ASSET-LIGHT-001",
-         "asset_reason": "Asset duy nhất tại Tòa S1 / Tầng 3 / Hành lang",
-         "materials": [{"item_code": "SIM-MAT-LAMP-01", "planned_qty": 1, "reason": "Thay bóng LED"}],
+         "priority_reason": "Đèn ở lối đi chung", "duplicate_of": None,
+         "asset_id": "SIM-ASSET-LIGHT-001", "asset_reason": "Đèn duy nhất tại vị trí này",
+         "materials": [{"item_code": "SIM-MAT-LAMP-01", "planned_qty": 1}],
          "needs_review": False, "review_reason": None},
     ],
     "next_step": "PROCEED",

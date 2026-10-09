@@ -104,7 +104,7 @@ from src.maintenance.models import (
 from src.maintenance.priority import propose_priority
 from src.maintenance.proposer import LLMClient, ProposalResult, propose
 from src.maintenance.rules import extract_location, mentions_playbook_subject, missing_location_parts
-from src.maintenance.safety import SafetyLLMClient, assess, assess_with_llm
+from src.maintenance.safety import SafetyAssessment, SafetyLLMClient, assess, assess_with_llm
 from src.maintenance.store.base import (  # the error hierarchy lives with the store
     CaseRepository,
     EngineError,
@@ -1390,11 +1390,22 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             line = next((m for m in work.material_lines if m.item_code == item_code), None)
             if line is None:
                 raise GuardError(f"Không có dòng vật tư {item_code} trong draft")
+            if used_qty > issued_qty:
+                raise GuardError(
+                    "Số đã dùng không được lớn hơn số đã xuất kho",
+                    {"item_code": item_code, "issued_qty": issued_qty, "used_qty": used_qty},
+                )
             old = {"issued_qty": line.issued_qty, "used_qty": line.used_qty, "variance_reason": line.variance_reason}
+            stock_qty = self._issue_stock(item_code, issued_qty - (line.issued_qty or 0))
             line.issued_qty = issued_qty
             line.used_qty = used_qty
             line.variance_reason = None if _blank(variance_reason) else variance_reason.strip()
-            new = {"issued_qty": issued_qty, "used_qty": used_qty, "variance_reason": line.variance_reason}
+            new = {
+                "issued_qty": issued_qty,
+                "used_qty": used_qty,
+                "variance_reason": line.variance_reason,
+                "stock_qty": stock_qty,
+            }
             self._audit(
                 work,
                 Action.UPDATE_MATERIAL,
@@ -1434,6 +1445,9 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             draft = work.draft
             suffix = _suffix(ticket_id)
             entered = {line.item_code: line for line in work.material_lines}
+            for code, dropped in entered.items():  # a dropped line gives what it issued back to the warehouse
+                if code not in codes and dropped.issued_qty:
+                    self._issue_stock(code, -dropped.issued_qty)
             old = [{"item_code": m.item_code, "planned_qty": m.planned_qty} for m in work.material_lines]
             new_lines = []
             for index, planned in enumerate(lines, start=1):
@@ -1738,9 +1752,21 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 message=f"{role or 'actor không xác định'} không được chuyển sang {to}",
             )
         rule = TRANSITIONS.get((current, to))
-        if rule is None or rule.pipeline_only or role not in rule.actors or expected_from not in (None, current):
+        if rule is None or rule.pipeline_only or expected_from not in (None, current):
             raise InvalidTransitionError(
                 f"Không chuyển được {current} → {to}", {"from": current, "to": to, "actor_role": role}
+            )
+        if role not in rule.actors:
+            self._deny(
+                case,
+                actor_id,
+                role,
+                Action.TRANSITION,
+                "status",
+                to,
+                note,
+                now,
+                message=f"{role or 'actor không xác định'} không được duyệt bước từ {current} sang {to}",
             )
 
         def op(work: Case, now: datetime) -> None:
@@ -1812,7 +1838,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         role = self._role(actor_id)
         allowed = PERMISSIONS.get(action, frozenset()) if roles is None else roles
         try:
-            with self.repo.transaction() as tx, self._in_transaction():
+            with self.repo.transaction() as tx, self._in_transaction(tx):
                 case = tx.get_for_update(ticket_id)  # row lock (I-3)
                 if role is None or role not in allowed:
                     raise _Denied(case, None)
@@ -1850,14 +1876,21 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         return work
 
     @contextmanager
-    def _in_transaction(self) -> Iterator[None]:
-        """Marks this thread as inside `_mutate_locked`'s transaction: `_deny` then defers (never nests a tx)."""
-        depth = getattr(self._local, "tx_depth", 0)
-        self._local.tx_depth = depth + 1
+    def _in_transaction(self, tx: Tx) -> Iterator[None]:
+        """Marks this thread as inside `_mutate_locked`'s transaction: `_deny` then defers (never nests a tx), and
+        `_issue_stock` writes the warehouse in that same transaction."""
+        depth, previous = getattr(self._local, "tx_depth", 0), getattr(self._local, "tx", None)
+        self._local.tx_depth, self._local.tx = depth + 1, tx
         try:
             yield
         finally:
-            self._local.tx_depth = depth
+            self._local.tx_depth, self._local.tx = depth, previous
+
+    def _issue_stock(self, item_code: str, qty: float) -> float | None:
+        """Take `qty` out of the warehouse (negative: put it back) in the running `_mutate` transaction, so the
+        ticket and the stock commit or roll back together. More than the stock holds ⇒ `GuardError`; unknown
+        stock (null, D-05) is not counted and returns None."""
+        return self._local.tx.take_stock(item_code, qty) if qty else self.repo.stock_of(item_code)
 
     # ------------------------------------------------------------------ more than one ticket in one transaction
 
@@ -2656,7 +2689,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         if blocker is not None and blocker.code == R.WAITING_MATERIAL:
             self._refresh_line_stock(work)  # a partial delivery must show, not the stock of the first check
         if blocker is None or not self._cleared(work, blocker, now):
-            return False
+            return self._addition_raises_safety(work, blocker, now)
         code = blocker.code
         if code == R.OUT_OF_HOURS:
             self._set_blocker(work, None, SYSTEM_ID, Role.SYSTEM, now, note="Đầu ca phòng ban", dispatched_at=now)
@@ -2667,6 +2700,25 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         resume_step = {R.MISSING_INFO: 2, R.WAITING_MATERIAL: 6}.get(code, blocker.resume_step)
         self._apply_transition(work, S.RECEIVED, SYSTEM_ID, Role.SYSTEM, now, note=f"Gỡ {code}", safety_context=False)
         self._run_pipeline(work, resume_step, now)
+        return True
+
+    def _addition_raises_safety(self, work: Case, blocker: Blocker | None, now: datetime) -> bool:
+        """SPEC-P08 §1 (CR §5.2, AC-08): a resident's addition while the location is still missing reruns 2b. Any
+        level above NONE sends the ticket back through the pipeline from 2b; NONE keeps it waiting for the location."""
+        if blocker is None or blocker.code != R.MISSING_INFO:
+            return False
+        if not any(a.submitted_at >= blocker.since for a in work.additions):
+            return False  # a job tick with nothing new from the resident: 2b already ran on this content
+        text = self._safety_scope_text(work)
+        if _blank(text):
+            return False
+        level = max(self._assess_2b(work, text).risk_level, work.ticket.risk_level, key=_LEVEL_ORDER.__getitem__)
+        if level == RiskLevel.NONE:
+            return False
+        self._apply_transition(
+            work, S.RECEIVED, SYSTEM_ID, Role.SYSTEM, now, note="Bổ sung có dấu hiệu an toàn", safety_context=False
+        )
+        self._run_pipeline(work, 2, now)
         return True
 
     def _tick(self, work: Case, now: datetime) -> None:
@@ -3114,16 +3166,21 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 found.append(ticket.ticket_id)
         return sorted(found)
 
+    def _assess_2b(self, work: Case, text: str) -> SafetyAssessment:
+        """The 2b assessment of `text`, writing nothing: rules + the Agent's valid signals when its decision saw this
+        safety content, otherwise rules + the safety LLM."""
+        view = self._view(work)
+        if view is not None and view.record.safety_fingerprint == self._safety_fingerprint(work):
+            return safety_for(view.record, text, self.lexicon, view.record.model)
+        return assess_with_llm(text, self.lexicon.safety, self.safety_llm, self.llm_label)
+
     def _step_2b_assess_safety(self, work: Case, now: datetime) -> bool:
         """CR §5.1 step 2b. Runs on any ticket with content, before classification: tier 1 stops (BQL), tier 2 (BPTN)."""
         text = self._safety_scope_text(work)
         if _blank(text):
             return False  # nothing to assess (empty, or cleared and no later addition)
         view = self._view(work)
-        if view is not None and view.record.safety_fingerprint == self._safety_fingerprint(work):
-            result = safety_for(view.record, text, self.lexicon, view.record.model)  # rules + the Agent's valid signals
-        else:
-            result = assess_with_llm(text, self.lexicon.safety, self.safety_llm, self.llm_label)
+        result = self._assess_2b(work, text)
         ticket = work.ticket
         old = ticket.risk_level
         # I-17: only a person lowers the level. Whatever this run finds, the ticket keeps the level it already has.
@@ -3661,7 +3718,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                     and job.asset_id == asset_id
                     and view.field_ok(f"jobs[{view.job_index(ServiceCategory.KY_THUAT)}].asset_id")
                 ):
-                    reason = f"Agent: {job.asset_reason} ({matches[0].source_ref})"
+                    reason = f"Agent: {job.asset_reason or 'asset duy nhất tại vị trí'} ({matches[0].source_ref})"
             elif matches:
                 status, asset_id, reason = AssetLookupStatus.AMBIGUOUS, None, f"{len(matches)} asset cùng vị trí"
             else:
@@ -4090,6 +4147,12 @@ def build_engine(settings: "Settings | None" = None) -> MaintenanceEngine:
 
         repo = PostgresRepository(settings.database_url)
         repo.check()
+    if settings.llm_mode in ("claude_cli", "agy_cli") and settings.mo_agent_enabled:  # local demo through a CLI
+        from src.maintenance.agent.agent import build_agent
+
+        catalog, lexicon = load_catalog(), load_lexicon()
+        agent = build_agent(settings, catalog, lexicon, lambda: datetime.now(LOCAL_TZ))
+        return MaintenanceEngine(repo=repo, catalog=catalog, lexicon=lexicon, agent=agent)
     if settings.llm_mode == "openai" and settings.openai_api_key:
         if settings.mo_agent_enabled:  # plan 06: the reasoning Agent decides each step, the rules are floor + fallback
             from src.maintenance.agent.agent import build_agent

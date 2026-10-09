@@ -24,6 +24,7 @@ Không làm ở P0: persistence, router/UI mới, LLM an toàn, gộp ticket (P1
 - Thứ tự `_run_pipeline`: `2b` đứng TRƯỚC `2` (Bậc 1 > Bậc 2 > `MISSING_INFO`, Q08), cả hai mang số 2 nên `resume_step=2` chạy lại cả hai.
 - Hàm bước tên `_step_<số>_<việc>` (`_step_2b_assess_safety`, `_step_2_check_required_data`, …).
 - Chạy lại sau khi gỡ blocker: `MISSING_INFO`/`SAFETY_REVIEW_REQUIRED`/`EMERGENCY_PENDING_BQL` → 2 (2b tự bỏ qua khi đã `safety_cleared_*` và chưa có bổ sung từ mốc đó); `CATEGORY_UNCLEAR`/`OUT_OF_SCOPE` → 4; `DUPLICATE` bác → 5; `PENDING_REVIEW`/`ASSET_UNCLEAR` → 6; `WRONG_DEPT` → 6 hoặc 7; `WAITING_MATERIAL` → 6.
+- **Bổ sung khi còn thiếu vị trí (SPEC-P08 §1, F1):** `MISSING_INFO` chưa gỡ được mà có bổ sung sau `blocker.since` ⇒ `_addition_raises_safety` chạy lại 2b qua `_assess_2b` (cùng đường với pipeline: view Agent khớp vân tay ⇒ `safety_for`, không ⇒ `assess_with_llm`), không ghi gì; mức > NONE ⇒ `RECEIVED` → pipeline từ 2 (Bậc 1 ⇒ `EMERGENCY_PENDING_BQL`), NONE ⇒ vẫn chờ vị trí. Job tick chỉ chạy lại khi tới `next_retry_at` (có giới hạn).
 
 ## 3. Tầng an toàn (bước 2b) — `safety.py`
 `assess(text, lexicon) -> SafetyAssessment(risk_level, signals, notes, proposer)`; `risk_level` ∈ `NONE | UNCLEAR | EMERGENCY` (Bậc 2 | Bậc 1).
@@ -57,6 +58,7 @@ Mọi method nhận `ticket_id, actor_id` đầu tiên, trả `Case` đã commit
 | `emergency_downgrade(tid, actor, *, note)` | BQL (T05) | VERIFYING + `EMERGENCY_PENDING_BQL` | báo nhầm: về flow thường |
 | `emergency_close(tid, actor, *, note)` | BQL (T10) | như trên | `CLOSED`, `closure_kind=EMERGENCY_HANDLED`, không cần phòng ban |
 Lỗi: sai vai / BPTN trên blocker thuộc BQL (kể cả `bptn_resolve`, CR-03 §4.4.5) ⇒ `ActionDeniedError` 403 + audit, trạng thái không đổi; BQL dùng 3 lựa chọn Bậc 2 trước khi leo thang ⇒ 403 (Q19); sai trạng thái/blocker ⇒ `InvalidTransitionError` 409; thiếu `note` ⇒ `GuardError` 409; blocker an toàn của BPTN + `bptn_resolve` ⇒ `GuardError` 409.
+F10 (SPEC-P08 §3): vai có thể tới trạng thái đích nhưng KHÔNG có tên trên hàng `(hiện tại, đích)` ⇒ 403 + audit (không còn 409). `undo_merge` bởi SYSTEM gọi từ ngoài ⇒ 403 (SYSTEM chỉ là tác nhân T09 khi huỷ gốc, đường nội bộ). T05/T03 bởi SYSTEM từ ngoài vẫn 409 (test §11) — chờ thống nhất (plan 06 Q34).
 Route API (prefix `/api/v1`; router chỉ bọc method trên, không kiểm vai/logic; lỗi qua `_call`: 403/404/409; `decision` lạ ⇒ 422; `closure_kind` client gửi bị bỏ qua):
 
 | Route | Body | Method engine |
@@ -76,6 +78,17 @@ Cư dân chỉ thấy nhãn "Đang được kiểm tra" và lời trong `i18n/vi
 
 ### Kho: tồn kho và nhập thiếu (2026-10-05)
 `stock_levels(actor)` — route `GET /mo/warehouse/stock` → `[{item_code, item_name, unit, qty}]` (`qty` null = không rõ); mọi vai trừ cư dân (cư dân ⇒ 403). `_resume` của ticket `WAITING_MATERIAL` luôn gọi `_refresh_line_stock` trước khi xét gỡ: nhập thiếu (cần 2, có 1) ⇒ ticket vẫn chờ nhưng dòng vật tư hiện tồn mới. `POST /mo/warehouse/stock/{item}` trả MỌI ticket đã xét (kể cả còn chờ) — UI đếm "chạy tiếp" theo blocker, không theo độ dài mảng. Màn Kho: bảng tồn kho, "cần · tồn · còn thiếu" theo tồn hiện tại, điền sẵn số còn thiếu.
+
+### Xuất kho khi phòng ban ghi vật tư (2026-10-05)
+`record_material(tid, actor, item, *, issued_qty, used_qty, variance_reason)` trừ kho **phần chênh** `issued_qty − issued_qty cũ` (sửa giảm ⇒ hoàn kho) bằng `Tx.take_stock(item, qty)` trong CÙNG transaction của `_mutate` (`engine._issue_stock`): ticket và tồn kho cùng commit hoặc cùng huỷ. `confirm_materials` bỏ một dòng đã xuất ⇒ hoàn lại số đã xuất. Audit `UPDATE_MATERIAL` ghi thêm `stock_qty` (tồn sau khi xuất; null = không rõ).
+
+| Lỗi | Hành vi |
+| :--- | :--- |
+| Xuất thêm > tồn hiện tại | `GuardError` 409 "Kho chỉ còn X …", không ghi gì; phòng ban dùng `block` → `WAITING_MATERIAL` |
+| `used_qty > issued_qty` | `GuardError` 409 — chỉ được dùng hàng đã xuất kho |
+| Tồn không rõ (`null`, D-05) | Không trừ, không chặn, tồn vẫn `null` |
+
+Postgres: một `UPDATE … WHERE qty >= :q` có điều kiện (hai worker không cùng lấy được phần cuối); bảng `maintops.stock` còn `check (qty >= 0)`. **Vùng cấm:** KHÔNG giữ chỗ (reserve) ở bước 7/khi giao việc — bước 7 chỉ đoán theo playbook, giữ chỗ sẽ khoá hàng của ticket chưa chắc dùng; huỷ ticket sau khi đã xuất KHÔNG tự hoàn kho (hàng có thể đã dùng; chưa có luồng trả hàng).
 
 ### Xác nhận vật tư tại hiện trường (2026-10-05)
 `confirm_materials(tid, actor, *, lines: list[PlannedMaterial], note)` — route `POST /mo/tickets/{id}/material-plan` `{lines: [{item_code, planned_qty}], note}`. Chỉ DEPARTMENT đúng phòng ban, ticket `IN_PROGRESS`; `note` bắt buộc. Thay `planned_materials` + dựng lại `material_lines` (giữ `issued_qty`/`used_qty`/`variance_reason` của item_code không đổi), cập nhật `draft.material_line_ids`/`material_stock_status`/`material_requirement_mode` (rỗng ⇒ `N_A`). Audit `UPDATE_MATERIAL` field `planned_materials`. Lỗi: item không có trong catalog / trùng dòng / qty ≤ 0 / note rỗng / chưa nhận việc ⇒ `GuardError` (409); sai vai/phòng ban ⇒ 403; item_code sai mẫu `SIM-` ⇒ 422. **Vùng cấm:** KHÔNG chặn khi tồn kho thiếu (đi `block` → `WAITING_MATERIAL`), KHÔNG thêm điều kiện nghiệm thu mới (6 gate §9.4 giữ nguyên). Lý do: bước 7 chỉ đoán vật tư mặc định của playbook; khi tài sản `ASSET_CHECK_ONSITE` UI phòng ban hiện khung này nổi bật, ca khác để thu gọn.
@@ -151,7 +164,6 @@ Hồ sơ: [`planning/05_2026-10-04_agent-hardening/`](../planning/05_2026-10-04_
 - **Bản vá 05b (Q11):** "đèn cháy / đèn chập = đèn hỏng": `benign_phrases`/`benign_with_lamp_noun` thêm "chập (điện/mạch)" sau danh từ đèn; `safety._proven_lamp` nhận "den"/"bong" không dấu khi chính triệu chứng ("bi chay", "bi chap") cũng gõ không dấu — xét từng chữ, vị trí có dấu xung quanh không ảnh hưởng; chữ có dấu khác ("đen", "bông") vẫn không phải đèn; `rules.py` thêm "chập", "bị/đã cháy" vào triệu chứng đèn hỏng. Có khói/tóe lửa/khét kèm thì vẫn khẩn cấp.
 - Để P1: tín hiệu an toàn P1 (gas, kim tiêm, nước vào tủ điện, đèn nóng), luồng trùng đầy đủ (CR §8), tách ticket khi một phản ánh có hai việc, đếm trả sai phòng ban.
 
-
 ## Local GPT-6 Luna configuration — 2026-10-07
 - Set `LLM_MODE=openai`, `MODEL_NAME=gpt-6-luna`, and a valid `OPENAI_API_KEY` in ignored `.env`. Model defaults and test mode remain unchanged.
 - `openai_client()` sets `reasoning_effort=none` for Luna (including vendor-prefixed name) to support the existing Chat Completions path; temperature stays 0. Safety still uses fixed rules.
@@ -199,3 +211,32 @@ Day05 submission entry point: [main report](submission/day05-report.md), with ve
 
 ## Latest develop integration — 2026-10-07T13:30:26.152115+00:00
 Imported reasoning Agent/P1 from develop04491ad; local proposer Luna option preserved.3341 Python tests and270 Day05 tools pass,ruff clean. New JSON reasoning client has not been live-tested with Luna. Postgres requires revision0002_p1_doc_shape; shared DB rollout must follow reasoning-agent OPERATIONS §5 (coordinate stopping old backends). No migration/restart/shared writes performed. [Integration evidence](../planning/06_2026-10-04_readme-refresh/evidence/integration-latest-20261007/integration-report.md).
+
+## 14. Tốc độ đọc danh sách — cache `list()` theo `xmin` (plan 09, v1.5.0, 2026-10-08)
+Hồ sơ: [`planning/09_2026-10-08_backend-speed/`](../planning/09_2026-10-08_backend-speed/plan.md). Audit: `PostgresRepository.list()` kéo toàn bộ doc
+(725 KB với 65 ticket) mỗi request ⇒ danh sách cư dân 2.7 s, BPTN 1.5 s trên Supabase.
+- **`PostgresRepository.list()`** (`store/postgres.py`, `_LIST_CHANGED`): MỘT câu SQL gửi cặp `(ticket_id, xmin)` đang giữ; DB trả `xmin` mọi dòng và
+  `doc` CHỈ của dòng mới/đổi. Không TTL ⇒ ghi từ backend khác thấy ngay ở lần đọc sau. Doc lỗi ⇒ ném, cache giữ nguyên. `cache_stats()` cho test/log
+  (INFO mỗi 100 lần). `get()`/`get_for_update()`/`transaction()` KHÔNG dùng cache.
+- **Object trả từ `list()` là CHỈ ĐỌC, dùng chung** (như `InMemoryRepository.list()`): sửa ticket luôn qua `_mutate`/`transaction`. CẤM sửa trực tiếp.
+- **`resident_view(..., lookup=None)`** (`views.py`): `resident_list` truyền `{ticket_id: Case}` của cùng snapshot ⇒ ticket gộp/tách/follow-up không đọc lại DB.
+  Route đơn (`/resident/tickets/{id}`…) không truyền `lookup`, vẫn đọc tươi.
+- Số đo (median, Supabase): cư dân 2676→201 ms, BPTN 1514→224 ms, BQL 503→219 ms; API trả về giống hệt từng byte (8/8 vai). Test: `test_list_cache.py` (T1–T8).
+
+## 15. Agent chạy LLM thật: streaming, cache, CLI, G-LIVE (plan 06 Q30–Q33, 2026-10-07)
+- **Ngữ nghĩa an toàn do Agent suy luận, không vá regex (Q30):** kêu cứu, phủ định, "hình như", nhờ thay đèn cháy… viết thành hướng dẫn bằng lời trong `agent/prompt.py`; luật (`safety.py` + `lexicon.yaml` `p1d`) chỉ là sàn hẹp. Luật ra EMERGENCY ⇒ Agent bị bỏ qua, nên regex bắt quá tay = loại LLM.
+- **Prompt `agent-prompt/5`** (REF trong `planning/06_.../specs/REF-agent-contract.py` sửa trước, code chép theo): /2 hình dạng object tín hiệu `{signal_id, status, quote}`; /3 đầu ra gọn (chỉ bước suy luận cần thiết, bỏ lý do cho trường trống — schema NỚI tùy chọn); /4 phủ định = ABSENT, kêu cứu/báo cháy/giục sơ tán = PRESENT; /5 `TO_BPTN` luôn kèm `bptn_reason`, khẩn cấp không có việc ⇒ `OUT_OF_SCOPE`.
+- **Trích dẫn vị trí bắt buộc (SPEC-P08 §2, F3):** Agent điền bất kỳ phần nào của vị trí mà quote rỗng/không có thật ⇒ loại cả vị trí (`rejected=["location"]`), luật vị trí quyết. `validate.grounded` coi quote gấp ra rỗng ("..", "--") là không có — chặt hơn `safety._grounded`. `mirror_decision` trích `location_text` làm quote vị trí. Quote đúng chữ nhưng không chứng minh tòa/tầng ("Hành lang") còn lọt — chờ P09.
+- **Client (`agent/client.py`) và cấu hình (`src/config.py`):**
+
+| Biến | Mặc định | Ý nghĩa |
+|---|---|---|
+| `LLM_MODE` | `mock` | `openai` (API key) · `agy_cli` (Antigravity `agy -p`) · `claude_cli` (`claude -p`, tắt) — `*_cli` CHỈ dev/demo local bằng gói cá nhân, không deploy cho người dùng thật |
+| `MODEL_NAME` | `gpt-4o-mini` | Với `agy_cli` LUÔN chỉ định (hiện `gemini-3.8-flash-low`); model mặc định của agy có quota nhỏ |
+| `MO_AGENT_STREAM` | `true` | Stream câu trả lời (proxy cắt request im lặng); `timeout` chặn tổng thời gian |
+| `MO_AGENT_TIMEOUT_SECONDS` | `25` | `.env` hiện 60 |
+| `MO_AGENT_REASONING_EFFORT` | `""` | `low` giảm token suy nghĩ ngầm (gửi `reasoning_effort` / `--effort`) |
+| `MO_AGENT_CACHE_ENTRIES` / `_TTL_SECONDS` | 256 / 3600 | `CachingClient`: request y hệt (cùng ticket + nội dung) dùng lại quyết định hợp lệ; trả lời lỗi không lưu |
+
+- CLI client: chạy trong thư mục tạm trống (không nạp CLAUDE.md repo), không tool/MCP; `agy` không có cờ thay system prompt nên ghép vào đầu prompt + `--sandbox`; ép schema bằng `--json-schema` (`AgentDecision.model_json_schema()`, không ép được ràng buộc chéo trường — đó là lý do prompt /5).
+- **G-LIVE:** `PYTHONUTF8=1 PYTHONPATH=. python scripts/agent_live_eval.py [--group …] [--workers 3]` chạy từng câu qua engine thật + Agent, chấm đúng / bỏ sót (UNDER) / báo nhầm (OVER) theo nhóm; bộ câu `tests/test_maintenance/data/agent_live_eval.yaml` (NHÃN NHÁP chờ Trường). Kết quả 2026-10-07 (agy gemini-3.8-flash-low): khẩn cấp khó mà luật bỏ sót 16/16 (prompt /5), phủ định 10/10, nhờ thay đèn Agent 19/19; 3 câu nhờ thay đèn vẫn sang BPTN vì luật UNCLEAR và Agent không được hạ (Q33). Mỗi lượt ~17–20 s. Evidence `planning/06_.../evidence/G-LIVE/`.

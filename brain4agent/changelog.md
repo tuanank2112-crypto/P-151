@@ -20,6 +20,24 @@ Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên 
 ### Evidence
 - Đối chứng ĐỎ: DB chỉ có `0000`+`0001` ⇒ seed exit 1 đúng lỗi enum; có `0002` ⇒ migrate/seed exit 0. typecheck 0, unit 17/17, test:db 18/18, Playwright 9 luồng 0 lỗi trang (Postgres local cổng 5433).
 
+## [v1.6.0] - 2026-10-08: Danh sách hiện 20 phản ánh một trang (plan 10)
+### Added
+- `src/web/app.js`: `listCard(..., { key, ids })` chia trang 20 dòng cho màn cư dân, BPTN, phòng ban, BQL; khối "‹ Trước · Trang x / y · Sau ›" chỉ hiện khi > 20.
+### Decisions
+- Chia ở giao diện, KHÔNG ở server: ô đếm/lọc/sắp xếp đều tính ở trình duyệt trên toàn bộ danh sách; API giữ nguyên.
+- Chuyển trang không gọi API; mỗi `render()` mở trang chứa ticket đang chọn. Reset trang khi đăng xuất/đổi lọc BQL là phòng hờ (mutant tương đương — plan 10 Q07).
+
+## [v1.5.0] - 2026-10-08: Danh sách phản ánh nhanh 7–13 lần (plan 09)
+### Changed
+- `PostgresRepository.list()` nhớ doc theo `xmin` từng dòng: MỘT câu SQL gửi phiên bản đang giữ, DB chỉ trả doc của dòng mới/đổi. Không TTL (ghi từ backend khác thấy ngay); doc lỗi không vào cache.
+- `resident_view(..., lookup=None)`: màn cư dân dùng ticket liên quan (gộp/tách/follow-up) từ cùng snapshot thay vì đọc lại từng ticket (7 → 1 câu SQL).
+### Fixed
+- `requirements.txt`: ghim `sqlalchemy<2.1` — bản 2.1 đổi `postgresql://` sang driver `psycopg` (v3) không cài ⇒ container `backend` khởi động lại vòng (exit 3).
+### Decisions
+- Object trả từ `list()` CHỈ ĐỌC, dùng chung (cùng hợp đồng store memory) — không deep copy. API/schema/UI không đổi (parity 8/8 vai trên DB chung).
+- Số đo median trên Supabase: cư dân 2676→201 ms, BPTN 1514→224 ms, BQL 503→219 ms. Bỏ khỏi đợt này theo người dùng: gzip, BQL 1 API.
+- Lấy v1.5.0 (không phải v1.4.0) vì plan 08 (`web-portal-shell`, chưa merge) đã nhận v1.4.0.
+
 ## [v1.3.0] - 2026-10-07: UI tĩnh `src/web/` mang design của `portal/` (plan 07)
 ### Changed
 - `src/web/index.html` + `app.js`: font Be Vietnam Pro, header gradient "Xin chào, <tên>" (avatar chữ viết tắt, pill vai trò, ô đổi tài khoản test, nút Đăng xuất pill), khối tiêu đề màn là card đè lên gradient, màn đăng nhập theo `Main.dc.html` của portal (thay bản gradient cam sáng cùng ngày).
@@ -70,6 +88,17 @@ Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên 
   nút cam `orange-700` bo tròn, dòng "Quên mật khẩu?". Header + `main` ẩn khi chưa đăng nhập (`setShellVisible`);
   `#login-view` chuyển ra ngoài `main`. Bỏ hẳn khối "Tài khoản thử nghiệm" + hàm `demoAccountList` khỏi màn đăng nhập
   (người dùng yêu cầu; đăng nhập nhanh còn `?autologin=<username>` và ô đổi vai trò sau khi vào). Cache bust `app.js?v=3.2`.
+
+## [Unreleased] - 2026-10-07: Agent suy luận bằng LLM thật qua Antigravity CLI (plan 06 Q30–Q33)
+### Changed
+- Q30: ngữ nghĩa an toàn (kêu cứu, phủ định, nghi ngờ, nhờ thay đèn cháy) chuyển về Agent suy luận; hoàn tác vá `lexicon.yaml` của worker H13 (bản p1e làm "Không có khói nhiều" thành EMERGENCY). Kernel thêm bất biến "ngữ nghĩa do LLM, không khớp từ khoá".
+- Prompt Agent `agent-prompt/2`→`/5` (REF SPEC sửa trước): hình dạng tín hiệu, đầu ra gọn, phủ định = ABSENT / kêu cứu = PRESENT, `TO_BPTN` luôn kèm `bptn_reason`. Schema chỉ NỚI (lý do trường trống thành tùy chọn), record cũ vẫn đọc được.
+- Q33: giữ "Agent không tự hạ mức" kể cả khi luật bắt nhầm (BPTN xác nhận bằng tay).
+### Added
+- Client Agent: streaming (`MO_AGENT_STREAM`), cache quyết định (`MO_AGENT_CACHE_*`), `MO_AGENT_REASONING_EFFORT`, backend CLI `LLM_MODE=agy_cli|claude_cli` (chỉ dev/demo local). Người dùng chọn `agy_cli` + `gemini-3.8-flash-low`.
+- G-LIVE: `scripts/agent_live_eval.py` + `tests/test_maintenance/data/agent_live_eval.yaml` (nhãn nháp). Kết quả: khẩn cấp khó 16/16, phủ định 10/10, nhờ thay đèn 19/19 (Agent).
+- Hồ sơ 08 `planning/08_2026-10-07_inflight-emergency/` (SPEC, CHỜ DUYỆT): báo khẩn khi ticket đã giao phòng ban.
+
 ## [Unreleased] - 2026-10-07: Hoàn thiện Đặc tả Thiết kế Điều phối Ngữ nghĩa SPEC-P09 (Plan 06 WP16)
 ### Added
 - Đặc tả hợp đồng điều phối ngữ nghĩa [`SPEC-P09-semantic-coordination.md`](../planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md) (PROPOSED) hoàn thiện qua 6 vòng thẩm định đối kháng nghiêm ngặt (R15 §01–§17).
@@ -84,6 +113,12 @@ Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên 
 - "Đèn hành lang … bị chập / chập rồi / chập điện" và câu gõ không dấu "den hanh lang … bi chay / bi chap" không còn bị
   coi là nghi nguy hiểm (chuyển BPTN); giờ là việc đèn giao Phòng Kỹ thuật. Có khói, tóe lửa, khét kèm thì vẫn khẩn cấp;
   "ổ điện bị chập" vẫn cần người xem. Lexicon `2026-10-05.p0g`; test P1-11 đổi theo quyết định người dùng.
+
+## [Unreleased] - 2026-10-05: Ghi vật tư đã xuất thì trừ kho; không xuất/dùng vượt tồn
+### Fixed
+- `record_material` chỉ lưu số trên ticket, tồn kho không đổi ⇒ dùng vật tư rồi kho vẫn đủ, và xuất được nhiều hơn tồn
+  (vd 2 bóng tuýp khi kho 0 vẫn nghiệm thu được). Nay trừ phần chênh `issued_qty` trong cùng transaction (`Tx.take_stock`,
+  Postgres UPDATE có điều kiện); vượt tồn ⇒ 409; `used_qty > issued_qty` ⇒ 409; bỏ dòng đã xuất ⇒ hoàn kho; tồn `null` không trừ.
 
 ## [Unreleased] - 2026-10-05: Kho xem được tồn kho; nhập thiếu không còn "đòi lại" số cũ
 ### Fixed

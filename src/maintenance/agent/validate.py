@@ -33,8 +33,9 @@ def _fold(text: str) -> str:
 
 def grounded(quote: str | None, text: str) -> bool:
     """A quote counts when its folded form (NFKC, lowercase, no accents, punctuation as one space) is inside the
-    folded text. An empty quote never does. Same rule as `safety._grounded`."""
-    return bool(quote and quote.strip()) and _fold(quote) in _fold(text)
+    folded text. A quote that folds to nothing ("..", "--") never does: stricter than `safety._grounded` (P08 §2)."""
+    folded = _fold(quote or "")
+    return bool(folded) and folded in _fold(text)  # ".." folds to "": as empty as no quote
 
 
 @dataclass(frozen=True)
@@ -95,8 +96,9 @@ def _check_location(
     loc: LocationDecision, location_text: str, catalog: Catalog
 ) -> tuple[str | None, tuple[str, ...], list[str]]:
     """(complete location or None, missing parts, rejected paths)."""
-    if loc.quote and not grounded(loc.quote, location_text):
-        return None, ("building", "floor", "area"), ["location"]  # an invented quote voids the whole location
+    has_parts = bool(loc.building or loc.floor or loc.area)
+    if (has_parts or loc.quote) and not grounded(loc.quote, location_text):
+        return None, ("building", "floor", "area"), ["location"]  # no quote or an invented one voids it (P08 §2)
     rejected: list[str] = []
     codes = "|".join(re.escape(b.upper()) for b in catalog.site.buildings)
 

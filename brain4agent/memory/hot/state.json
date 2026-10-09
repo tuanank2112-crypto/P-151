@@ -1,12 +1,12 @@
 {
-  "current_version": "1.4.0",
+  "current_version": "1.6.0",
   "brain_template_version": "1.7.1",
   "system_status": "active",
   "last_verification": {
-    "timestamp": "2026-10-07T04:11:12.207497+00:00",
-    "grade": "shared DB/Storage demo/restart PASS; GPT-6 Luna SUCCESS; pytest2973 pass, ruff clean"
+    "timestamp": "2026-10-08T12:30:00.000Z",
+    "grade": "plan 10 list paging: node --check 0, pytest 3344 passed, Playwright P1-P8+P3b green on :8001, 3/3 mutants red, :8000 read-only 8/8"
   },
-  "active_plans_completed": 2,
+  "active_plans_completed": 4,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
   "engine_version": "1.13.1",
   "lang": {
@@ -32,9 +32,9 @@
   },
   "active_spec": "docs/CR-BPTN-03.md",
   "working_branch": "feature/truong",
-  "code_baseline": "04491ad (origin/develop)",
+  "code_baseline": "merge origin/develop b6590ce vào feature/nhuy-reasoning-agent (WP14 4533b15), 2026-10-09",
   "last_benchmark": {
-    "pytest": "2941 passed, 29 deselected, 0 skip (pg: 1872 passed on develop 37a0fb3, 2026-10-04)",
+    "pytest": "3388 passed, 0 failed, 75 deselected (2026-10-09, WP14 vòng 2b; --pg chưa chạy: Docker tắt)",
     "safety_stop_sets": "1065 green",
     "false_alarm_budget": {
       "b_fp": "EM 0 / UNCLEAR 4",
@@ -46,10 +46,11 @@
     "review_set_2026_10_04": "adversarial 107: HEAD 50 errors -> 7; SO holdout 18/18; live API corpus 34: only out-of-scope-asks-location left (spec)",
     "agent_audit_2026_10_05": "independent E2E audit scripts rerun: 77 sentences 16->7 errors, group D 9->2; rest P1/spec",
     "portal": "unit 14/14, test:db 15/15 (portal_test), next build ok, e2e PASS on next start (2026-10-07)",
-    "spec_p09_v6_probes": "27/27 passed (B1 interval overlap, B2 3-part overrides & shared location, B3 next_step, B4 cardinality & quiesce)"
+    "spec_p09_v6_probes": "27/27 passed (B1 interval overlap, B2 3-part overrides & shared location, B3 next_step, B4 cardinality & quiesce)",
+    "g_live_2026_10_07": "agy gemini-3.8-flash-low: A2 khẩn cấp khó 16/16 (prompt /5, 0 fallback, p50 17 s); phủ định 10/10; nhờ thay đèn Agent 19/19 (3 sang BPTN do luật UNCLEAR, Q33); draft1 56/60 0 bỏ sót"
   },
-  "last_sync": "2026-10-08T15:24:01.505502+00:00",
-  "next_step": "User hands off prepared reviewer/API/UI packets after push; receive human review for15 cases, verify families/export/freeze, baseline and final report. Backlog scope decisions 15/15 confirmed; runtime issues stay open.",
+  "last_sync": "2026-10-09T10:01:23+0700",
+  "next_step": "--pg khi bật Docker; handoff WP14b (F2/F11 bằng Agent); H14/WP15 (F4–F9); chạy lại G-LIVE 76 câu prompt /5; chờ duyệt hồ sơ 08 (H13 F1 nay đã ✅ local) · Nhóm (develop): User hands off prepared reviewer/API/UI packets after push; receive human review for15 cases, verify families/export/freeze, baseline and final report. Backlog scope decisions 15/15 confirmed; runtime issues stay open.",
   "active_plan": {
     "id": "09_2026-10-07_day05-labels",
     "status": "preliminary15_approved_waiting_review",
@@ -781,5 +782,11 @@
     "llm_connected": false,
     "python_engine_connected": false,
     "config": "portal/.env.local (git ignored)"
+  },
+  "agent_llm": {
+    "llm_mode": "agy_cli",
+    "model": "gemini-3.8-flash-low",
+    "prompt_version": "agent-prompt/5",
+    "scope": "dev/demo local only"
   }
 }
