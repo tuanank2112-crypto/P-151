@@ -1287,13 +1287,26 @@ function dropdown(name, options, { required = false, placeholder = 'Chọn…' }
 function bptnForm(c) {
   const code = c.ticket.blocker && c.ticket.blocker.code;
   const id = c.ticket.ticket_id;
-  const note = () => el('textarea', { name: 'note', rows: '2', maxlength: '500', class: INPUT, placeholder: 'Ghi chú xử lý (không bắt buộc)…' });
+  const note = (placeholder = 'Lý do / ghi chú', attrs = {}) => el('textarea', { name: 'note', rows: '2', maxlength: '500', class: INPUT, placeholder, ...attrs });
   const categories = Object.entries(CATEGORY_LABEL);
-  const send = (body, message) => act(api(`/mo/tickets/${id}/bptn-resolve`, { method: 'POST', body: compact(body) }), message);
+  // engine.bptn_resolve: a BPTN-chosen value (location, info, category, department, asset) needs a reason, else
+  // 409 GUARD_FAILED — the same rule as src/mobile/js/bptn.js
+  const VALUE_KEYS = ['location', 'info', 'category', 'department', 'asset_id', 'asset_onsite'];
+  const send = (body, message) => {
+    const sent = compact(Object.fromEntries(Object.entries(body).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])));
+    if (VALUE_KEYS.some((key) => key in sent) && !sent.note) return toast('Nhập lý do (bắt buộc khi BPTN chọn hoặc sửa giá trị)', 'error');
+    return act(api(`/mo/tickets/${id}/bptn-resolve`, { method: 'POST', body: sent }), message);
+  };
+  // engine.safety_confirm_safe / safety_request_info refuse a blank note; escalating does not need one
+  const safety = (decision, data, message, required) => {
+    const text = (data.get('note') || '').trim();
+    if (required && !text) return toast('Nhập lý do (bắt buộc)', 'error');
+    return act(api(`/mo/tickets/${id}/safety`, { method: 'POST', body: compact({ decision, note: text }) }), message);
+  };
 
   if (code === 'SAFETY_REVIEW_REQUIRED') {
     const missing = missingFromNote(c.ticket.blocker.internal_note);
-    const askNote = note();
+    const askNote = note('Nội dung hỏi cư dân', { required: true });
     if (missing.length) askNote.value = `Vui lòng mô tả rõ hiện tượng và bổ sung ${missing.join(', ')}.`;
     return el('div', { class: 'space-y-4 rounded-xl border border-amber-300 bg-amber-50/60 p-4 sm:p-5 dark:border-amber-900/60 dark:bg-amber-950/40' },
       el('div', { class: 'flex items-start gap-3' },
@@ -1306,14 +1319,14 @@ function bptnForm(c) {
         'Kiểm tra an toàn được xét trước nên cư dân chưa được hỏi. Chọn "Yêu cầu cư dân bổ sung" để hỏi luôn phần còn thiếu.') : null,
       el('div', { class: 'space-y-3 pt-2' },
         actionForm([
-          field('Xác nhận an toàn (Bác nguy cơ)', note(), 'Ghi chú thêm nếu cần. Vé chuyển tiếp phân loại bình thường.'),
-        ], 'Xác nhận an toàn', (data) => act(api(`/mo/tickets/${id}/safety`, { method: 'POST', body: { decision: 'CONFIRM_SAFE', note: data.get('note') } }), 'Đã xác nhận an toàn, chuyển tiếp xử lý')),
+          field('Xác nhận an toàn (Bác nguy cơ) — lý do bắt buộc', note('Lý do xác nhận an toàn', { required: true }), 'Vé chuyển tiếp phân loại bình thường.'),
+        ], 'Xác nhận an toàn', (data) => safety('CONFIRM_SAFE', data, 'Đã xác nhận an toàn, chuyển tiếp xử lý', true)),
         actionForm([
-          field('Yêu cầu cư dân làm rõ', askNote, 'Hệ thống tự động gửi thông báo tới cư dân.'),
-        ], 'Yêu cầu cư dân bổ sung', (data) => act(api(`/mo/tickets/${id}/safety`, { method: 'POST', body: { decision: 'REQUEST_INFO', note: data.get('note') } }), 'Đã gửi yêu cầu bổ sung tới cư dân'), { variant: 'secondary' }),
+          field('Yêu cầu cư dân làm rõ — bắt buộc', askNote, 'Hệ thống tự động gửi thông báo tới cư dân.'),
+        ], 'Yêu cầu cư dân bổ sung', (data) => safety('REQUEST_INFO', data, 'Đã gửi yêu cầu bổ sung tới cư dân', true), { variant: 'secondary' }),
         actionForm([
-          field('Nâng mức Khẩn cấp (Bậc 1)', note(), 'Phát hiện nguy cơ nghiêm trọng, nâng lên BQL xử lý tức thì.'),
-        ], 'Nâng lên Khẩn cấp (BQL)', (data) => act(api(`/mo/tickets/${id}/safety`, { method: 'POST', body: { decision: 'ESCALATE', note: data.get('note') } }), 'Đã nâng mức khẩn cấp lên Ban quản lý'), { variant: 'danger' })));
+          field('Nâng mức Khẩn cấp (Bậc 1)', note('Lý do nâng mức (không bắt buộc)'), 'Phát hiện nguy cơ nghiêm trọng, nâng lên BQL xử lý tức thì.'),
+        ], 'Nâng lên Khẩn cấp (BQL)', (data) => safety('ESCALATE', data, 'Đã nâng mức khẩn cấp lên Ban quản lý', false), { variant: 'danger' })));
   }
 
   if (code === 'MISSING_INFO') {
@@ -1321,7 +1334,7 @@ function bptnForm(c) {
       callout('warn', 'Phản ánh còn thiếu thông tin', `${c.ticket.blocker.internal_note || ''}. Liên hệ cư dân rồi nhập phần còn thiếu.`),
       field('Vị trí', el('input', { name: 'location', type: 'text', class: INPUT, placeholder: 'Tòa S1 / Tầng 3 / Hành lang' }), 'Nhập đủ tòa, tầng, khu vực.'),
       field('Thông tin cư dân cung cấp', el('textarea', { name: 'info', rows: '2', maxlength: '500', class: INPUT }), 'Ghi nhận lời cư dân cung cấp.'),
-      field('Ghi chú thêm', note()),
+      field('Lý do (bắt buộc)', note()),
     ], 'Lưu và xử lý tiếp', (data) => {
       if (!data.get('location') && !data.get('info')) return toast('Nhập vị trí hoặc thông tin cư dân cung cấp', 'error');
       return send({ location: data.get('location'), info: data.get('info'), note: data.get('note') }, 'Đã bổ sung thông tin');
@@ -1338,14 +1351,14 @@ function bptnForm(c) {
   if (code === 'CATEGORY_UNCLEAR' || code === 'OUT_OF_SCOPE') {
     return actionForm([
       field('Loại việc', dropdown('category', categories, { required: true })),
-      field('Ghi chú', note()),
+      field('Lý do (bắt buộc)', note()),
     ], 'Xác nhận loại việc', (data) => send({ category: data.get('category'), note: data.get('note') }, 'Đã chọn loại việc'));
   }
   if (code === 'PENDING_REVIEW') {
     return actionForm([
       field('Đổi loại việc (không bắt buộc)', dropdown('category', categories, { placeholder: 'Giữ đề xuất của Agent' })),
       field('Sửa vị trí (không bắt buộc)', el('input', { name: 'location', type: 'text', class: INPUT, placeholder: 'Tòa S1 / Tầng 3 / Hành lang' })),
-      field('Ghi chú', note()),
+      field('Lý do (bắt buộc khi đổi)', note(), 'Giữ nguyên đề xuất của Agent thì để trống.'),
     ], 'Xác nhận', (data) => send({ category: data.get('category'), location: data.get('location'), note: data.get('note') }, 'Đã xác nhận'));
   }
   if (code === 'ASSET_UNCLEAR') {
@@ -1357,7 +1370,7 @@ function bptnForm(c) {
         el('label', { for: 'asset-onsite', class: 'text-sm text-slate-800 dark:text-slate-200' },
           el('span', { class: 'font-medium' }, 'Không xác định được — để phòng ban kiểm tra tại hiện trường'),
           el('span', { class: 'block text-xs text-slate-500 dark:text-slate-400' }, 'Chỉ chọn khi đã kiểm tra mà không tìm ra tài sản.'))),
-      field('Ghi chú', note()),
+      field('Lý do (bắt buộc)', note()),
     ], 'Lưu và xử lý tiếp', (data) => {
       if (!data.get('asset_id') && !data.get('onsite')) return toast('Chọn một tài sản hoặc đánh dấu xác định tại hiện trường', 'error');
       return send({ asset_id: data.get('asset_id'), asset_onsite: data.get('onsite') ? true : undefined, note: data.get('note') }, 'Đã xác định tài sản');
@@ -1369,7 +1382,7 @@ function bptnForm(c) {
       callout('warn', 'Phòng ban trả lại', 'Đổi loại việc sẽ tra lại tài sản; chỉ đổi phòng ban thì kiểm lại vật tư rồi giao.'),
       field('Loại việc mới', dropdown('category', categories, { placeholder: 'Giữ nguyên' })),
       field('Hoặc chọn phòng ban', dropdown('department', depts, { placeholder: 'Theo loại việc' })),
-      field('Ghi chú', note()),
+      field('Lý do (bắt buộc)', note()),
     ], 'Giao lại', (data) => {
       if (!data.get('category') && !data.get('department')) return toast('Chọn loại việc hoặc phòng ban', 'error');
       return send({ category: data.get('category'), department: data.get('department'), note: data.get('note') }, 'Đã giao lại');
