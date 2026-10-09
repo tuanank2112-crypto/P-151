@@ -108,6 +108,7 @@ export function buildMaterials(c: BCase, stock?: Map<string, number | null>): Ma
       itemName: m.item_name,
       unit: m.unit ?? "",
       plannedQty: m.planned_qty,
+      normQty: m.norm_qty ?? null,
       issuedQty: m.issued_qty,
       usedQty: m.used_qty,
       stock: live,
@@ -340,7 +341,10 @@ export function buildInboxItem(c: BCase, byId: Map<string, BSummary>, now: Date)
 
 /** One row of the "Hiệu suất Agent" tab (SPEC-P04 §5): the Agent's pick against where the ticket ended up */
 export function perfRow(s: BSummary): PerfRow {
-  const bql = isBqlWork(s.reason_code ? { code: s.reason_code, escalated: s.escalated } : null);
+  const open = isBqlWork(s.reason_code ? { code: s.reason_code, escalated: s.escalated } : null);
+  // BQL closed it ("handled"): CLOSED with no department and not an emergency (Q09) — still BQL's work (WP7 P9)
+  const handled = s.status === "CLOSED" && !s.department_id && s.risk_level !== "EMERGENCY";
+  const bql = open || handled;
   return {
     id: s.ticket_id,
     code: s.ticket_id,

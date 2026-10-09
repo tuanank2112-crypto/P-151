@@ -25,6 +25,7 @@ Thứ tự BẮT BUỘC:
 3. Portal `BACKEND_URL=http://127.0.0.1:8002`. Đăng nhập `quanly` ⇒ tổng ticket khớp bước 2.
 4. (Tuỳ chọn, hỏi riêng) Bật vật tư mới trên Supabase: chạy Alembic `0003_material_items` (chỉ tạo bảng) + `MO_CUSTOM_MATERIALS=true`. Rủi ro: bản Render cũ gặp mã `SIM-MAT-X-*` trong ticket ⇒ chưa đo; chỉ bật sau khi Render chạy code có `self.material()` hoặc người dùng chấp nhận rủi ro.
 5. Revision `0003` là bảng mới, code cũ không đọc ⇒ không cần dừng writer (khác plan 06 OPERATIONS §5).
+6. **CHẶN trước khi bật `MO_PORTAL_EXTRAS=true` trên Supabase** (WP7 P5): bản Render cũ gặp ticket "chờ duyệt cấp vật tư" sẽ đẩy về ROUTED. Chỉ bật khi Render đã chạy code hồ sơ 11 (PR vào `develop` đã merge + deploy) HOẶC job nền của Render tắt. Trước đó giữ cờ TẮT (luồng vật tư như cũ, không có phân công/thẻ đánh giá).
 
 ## 3b. Nhánh (Q19)
 Backend thật của nhóm = `develop`. Đưa code hồ sơ này lên `develop` bằng PR (`feature/nhuy-portal-fe` → `develop`, gồm cả PR #19 vì nhánh đã gộp `feature/nhuy-reasoning-agent`); KHÔNG push thẳng `develop` (bị chặn "merge without review"). Bản Render chạy code mới sau khi PR merge + deploy (người của nhóm làm).

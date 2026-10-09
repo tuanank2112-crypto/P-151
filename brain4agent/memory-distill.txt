@@ -40,7 +40,7 @@
 </project_foundation>
 
 <truong_focus>
-- Portal current UI: http://localhost:3000/login PID21076, Next dev + local PostgreSQL portal;17 unit tests pass, browser login200. Keywords Agent, NOT connected to Python/Luna/Supabase. Servers8001/8002 unchanged.
+- **Hồ sơ 11 (2026-10-09, v1.7.0): portal GỌI BACKEND** — không còn DB riêng ở luồng chạy; dữ liệu qua `/api/v1` (Supabase khi backend trỏ Supabase). UI mới mở ở cổng 8000 (backend `PORTAL_URL` → portal 3000, portal PHẢI `next build && next start`). Yêu cầu giao diện = ghi chú anh Cố (Google Doc). Mở rộng backend KHÔNG đổi hình doc ticket (Render cũ đọc chung Supabase): bảng mới `material_items`/`assignments`/`rating_details` + cờ `MO_CUSTOM_MATERIALS`/`MO_PORTAL_EXTRAS`. `planning/11_2026-10-09_portal-backend-api/`
 - Latest develop04491ad merged into feature/truong 79f9444;3341 tests/76 deselected +270 tools pass,ruff clean;90 Day05 package hashes preserved. Agent/P1 and independent portal imported. Shared Supabase0002 rollout, new Luna reasoning and portal not verified; no restart/push. Local work retained, Day05 gates open.
 - Day05 scope APPROVED PRELIMINARY_15 on08/10:15 human AUTHORED cases replace30 held-out and old80/40 quota gates. Như Ý safety/Châm Anh classification responsibilities accepted per Trường,0 reviews completed; baseline pending. SPEC-P03-PRELIMINARY15 controls closure. Outside-pilot policy approved; D4-11 OPEN, no full safety/product sign-off.
 - Nguồn phân công: Notion "Kế hoạch MaintenanceOps MVP" (link + lịch từng ngày: `roadmap.md` §Trường). Mốc: MVP online 23:59 04/10; bàn giao cuối 23:59 19/10; nghiệm thu 21:00 cùng ngày; họp nhóm 21:00 hằng ngày.

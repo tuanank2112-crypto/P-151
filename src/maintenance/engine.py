@@ -1731,7 +1731,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 note.strip(),
                 now=now,
             )
-            if new_lines:
+            if new_lines and _material_approval_required():  # off on postgres by default (WP7 P5, OPERATIONS §3)
                 hold = self._new_blocker(work, R.WAITING_MATERIAL, now, resume_step=6, note=note)
                 self._apply_transition(work, S.ON_HOLD, actor_id, Role.DEPARTMENT, now, blocker=hold, note=note)
 
@@ -1773,6 +1773,11 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                     f"Kho chưa đủ {'; '.join(parts)} — nhập kho trước",
                     {"item_codes": [line.item_code for _, line in short]},
                 )
+            for line in work.material_lines:  # approval = the warehouse hands the material out (WP7 P7)
+                missing = line.planned_qty - (line.issued_qty or 0)
+                if missing > 0:
+                    line.simulated_stock_qty = self._issue_stock(line.item_code, missing)
+                    line.issued_qty = line.planned_qty
             self._set_blocker(
                 work,
                 blocker.model_copy(update={"resolved_at": now, "resolved_by": actor_id}),
@@ -3037,7 +3042,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         if code in BPTN_REASONS:
             return blocker.resolved_at is not None
         if code == R.WAITING_MATERIAL:
-            if work.ticket.department_id is not None and blocker.resolved_at is None:
+            if work.ticket.department_id is not None and blocker.resolved_at is None and _material_approval_required():
                 return False  # a department's request (plan 11 Q15): the warehouse or BQL must approve it first
             return not any(
                 self._line_stock(line.item_code, line.planned_qty) == MaterialStockStatus.INSUFFICIENT
@@ -4535,6 +4540,15 @@ def _plain(value: Any) -> Any:
     if isinstance(value, datetime):
         return value.isoformat()
     return str(value) if hasattr(value, "value") else value
+
+
+def _material_approval_required() -> bool:
+    """Plan 11 Q15 (every department material request waits for warehouse/BQL approval) rides on MO_PORTAL_EXTRAS:
+    on for memory, off for postgres by default. The old backend on Render cannot read a ticket waiting for approval
+    (it would push it back to ROUTED, WP7 P5), so the shared database keeps the old flow until Render runs this code."""
+    from src.config import get_settings
+
+    return get_settings().portal_extras_enabled()
 
 
 def build_engine(settings: "Settings | None" = None) -> MaintenanceEngine:

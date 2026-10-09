@@ -3,6 +3,7 @@
 File này chứa danh sách các tính năng, mục tiêu sắp tới và tình trạng công việc hiện tại.
 
 ## Mục tiêu hiện tại (Active)
+- [ ] **Hồ sơ 11 — Portal gọi backend theo ghi chú anh Cố (v1.7.0, 2026-10-09):** WP1–WP6 ✅ local (3771 pytest, 121 unit portal, 4 bộ kiểm UI qua cổng 8000). Còn: thẩm định cô lập WP7, chạy trên Supabase (thiếu mật khẩu DB — lấy `DATABASE_URL` từ Render; tạo bảng 0003/0004 cần gật), PR `feature/nhuy-portal-fe` → `develop`. Bảng thông báo: người dùng hoãn. `planning/11_2026-10-09_portal-backend-api/`
 - [ ] **Plan 06 — Agent với LLM thật (2026-10-07):** chạy qua Antigravity `agy_cli` + `gemini-3.8-flash-low` (dev/demo local). G-LIVE: khẩn cấp khó 16/16, phủ định 10/10, nhờ thay đèn 19/19 (Agent). Còn: chạy lại đủ 76 câu với prompt /5; Trường duyệt nhãn G-LIVE (câu "Thấy cháy ở tầng 8"); H13/WP14 ✅ local 2026-10-09 (R13 vòng 2b, `--pg` ⬜); viết handoff WP14b; thời gian ~17–20 s/lượt (đề xuất cho Agent quyết chạy nền — cần SPEC); deploy server cần API key thay CLI.
 - [ ] **Plan 08 (2026-10-07, báo khẩn cấp khi ticket đã qua tầng an toàn):** SPEC + H01–H03 xong, 🟡 CHỜ DUYỆT. Lỗ đo được: luật + Agent cùng bỏ sót ⇒ ticket tới phòng ban, sau `ROUTED`/`IN_PROGRESS`/`ON_HOLD` không có đường lên Bậc 1. Chờ: người dùng duyệt, Trường duyệt delta CR (E03/E04, T24–T28), merge `origin/develop`, dựng `.venv`, H13 plan 06 (F1) ✅ trước. `planning/08_2026-10-07_inflight-emergency/`.
 
@@ -32,7 +33,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 - [ ] **(2026-10-09) Từ thẩm định WP14 vòng 2:** thống nhất SYSTEM gọi `transition` từ ngoài (T09 nay 403, T05/T03 vẫn 409 — test §11); đồng bộ SPEC-P01 dòng 45 + `REF-agent-contract.py:246` với `grounded` mới; `safety._grounded("--")` = True (vùng cấm safety.py, chỉ chiều nâng); Agent nhắc lại vị trí đã khoá không kèm quote ⇒ cờ AGENT_FALLBACK báo nhầm (P09); T06 + trả lời vô hại thiếu vị trí nay về `SAFETY_REVIEW_REQUIRED` — thêm test.
 - [ ] **(2026-10-07) Cư dân báo nguy hiểm khi ticket đã giao (plan 08 P2):** bổ sung văn bản chạy 2b ở mọi trạng thái chưa kết thúc; hiện cư dân chỉ bổ sung được khi `NEED_INFO`.
-- [ ] **(2026-10-07) `portal/` Next.js (develop) có agent từ khoá TS riêng, KHÔNG nối engine Python (portal plan 06 Q01):** nhóm cần chọn đường demo; nếu demo bằng portal thì tầng an toàn + Reasoning Agent không nằm trên đường sản phẩm (plan 08 P3).
+- [x] **(2026-10-07→09) `portal/` nối engine Python:** xong ở hồ sơ 11 (portal gọi `/api/v1`, Agent LLM thật, tầng an toàn của backend).
 
 - [ ] **(2026-10-07, sau plan 07) `src/web/`:** đổi Tailwind Play CDN sang Tailwind CLI (bỏ biên dịch class trên trình duyệt); xoá hẳn `js/dark_mode.js` và `js/components/*.js` (không còn được nạp) sau khi Trí xác nhận; tile menu kiểu portal nếu app có tab (vd AI Logs).
 - [ ] **P1 tiếp theo (người dùng chốt 2026-10-05, sau plan 05):** luồng trùng đầy đủ CR §8 (đếm trùng + danh sách ticket con, nối bổ sung/ảnh sang ticket gốc, cư dân ticket bị gộp được đánh giá, hoàn tác gộp T09 + `duplicate_rejected_of`, ticket gốc bị hủy ⇒ ticket con chạy lại, BQL gộp khẩn cấp T08, PRI-U1 nâng ưu tiên khi ≥3 trùng); tách ticket khi một phản ánh có hai việc (Agent đề xuất, BPTN xác nhận — chờ người dùng chọn tự tách hay xác nhận); tín hiệu an toàn P1 (gas, kim tiêm, nước vào tủ điện, đèn nóng); đếm trả sai phòng ban báo BQL; giữ/liên kết ticket thường khi cùng chỗ có khẩn cấp; ưu tiên "suýt trượt"/"tràn ra cả hành lang". Route/UI cho các hành động mới giao Châm Anh/Trí.
@@ -193,7 +194,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 
 - [x] Start portal3000 for direct testing (07/10): local PostgreSQL schema/seed, login browser200,17 unit tests pass.
-- [ ] Portal connection to Python/Luna/Supabase is not implemented; do not treat portal test as Day05 engine evaluation.
+- [x] Portal gọi backend Python (hồ sơ 11, 2026-10-09); chạy trên Supabase chờ `DATABASE_URL` + gật OPERATIONS §3.
 
 - 2026-10-07T16:47:40.721485+00:00: Day05 remaining-work packet prepared: D4-11 10 proposal cases, 30 human authoring slots, 15 backlog approval rows; tools270 PASS. Human gold/authorship and policy approvals still pending; no Day05 closure.
 
@@ -207,3 +208,4 @@ Trường xác nhận đánh giá sơ bộ bằng 15 câu do Trường tự so�
 - 2026-10-08T09:42:49.903373+00:00: Trường duyệt 4 mục cuối 009/010 NEXT, 013/014 DEFER nghiệm thu riêng. Hướng xử lý backlog đủ15/15; không có mục nào mới CLOSED. Sửa mô tả lỗi thời 013 (đã có module StateGraph/engine integration) và 014 (lexicon P0/P1); chưa coi code tồn tại là runtime PASS. Tổng hợp backlog-handoff-summary.md để người dùng bàn giao, chưa gửi tin/commit/push.
 
 - 2026-10-08T10:10:44.796289+00:00: Trường báo Như Ý/Châm Anh đã duyệt và nhận phần việc, yêu cầu push nhánh và PR vào develop. Ghi owner-acknowledgement.json, 12/15 owner CONFIRMED (3 mục còn có Trí/leader không suy nhận việc); review nhãn và runtime retest vẫn PENDING. Chuẩn bị commit gói Day05 cùng bằng chứng Day04 liên quan, không thêm thay đổi runtime chưa thuộc scope.
+- [ ] **(2026-10-10, WP7 P8) Vật tư chờ duyệt không có đường thoát:** phòng ban rút yêu cầu / kho từ chối cấp (hiện chỉ nhập kho + duyệt, hoặc BQL hủy ticket).

@@ -240,3 +240,19 @@ Hồ sơ: [`planning/09_2026-10-08_backend-speed/`](../planning/09_2026-10-08_ba
 
 - CLI client: chạy trong thư mục tạm trống (không nạp CLAUDE.md repo), không tool/MCP; `agy` không có cờ thay system prompt nên ghép vào đầu prompt + `--sandbox`; ép schema bằng `--json-schema` (`AgentDecision.model_json_schema()`, không ép được ràng buộc chéo trường — đó là lý do prompt /5).
 - **G-LIVE:** `PYTHONUTF8=1 PYTHONPATH=. python scripts/agent_live_eval.py [--group …] [--workers 3]` chạy từng câu qua engine thật + Agent, chấm đúng / bỏ sót (UNDER) / báo nhầm (OVER) theo nhóm; bộ câu `tests/test_maintenance/data/agent_live_eval.yaml` (NHÃN NHÁP chờ Trường). Kết quả 2026-10-07 (agy gemini-3.8-flash-low): khẩn cấp khó mà luật bỏ sót 16/16 (prompt /5), phủ định 10/10, nhờ thay đèn Agent 19/19; 3 câu nhờ thay đèn vẫn sang BPTN vì luật UNCLEAR và Agent không được hạ (Q33). Mỗi lượt ~17–20 s. Evidence `planning/06_.../evidence/G-LIVE/`.
+
+## 16. Phục vụ portal Next.js (hồ sơ 11, v1.7.0, 2026-10-09)
+Hồ sơ: [`planning/11_2026-10-09_portal-backend-api/`](../planning/11_2026-10-09_portal-backend-api/plan.md) (SPEC-P01, SPEC-P04). Nguyên tắc:
+KHÔNG thêm trường/giá trị enum vào doc ticket JSONB (bản Render cũ đọc chung Supabase) — dữ liệu mới ở BẢNG MỚI, trường mới chỉ ở model response.
+- **Tài khoản portal:** `cudan`, `tiepnhan`, `quanly`, `vesinh`, `kythuat`, `kho` / `123456` (`accounts.yaml`, giữ tài khoản cũ); `Me.profile {tower, floor, apartment}`.
+- **Việc của BQL** = ticket `VERIFYING/OUT_OF_SCOPE` có `blocker.escalated`: Agent (nguồn AGENT, scope OUT_OF_SCOPE) tự chuyển; BPTN `POST /mo/tickets/{id}/to-bql`;
+  BQL `POST /bql/tickets/{id}/handled` (đóng CLOSED với `closure_kind=EMERGENCY_HANDLED` — `Ticket._status_rules` cấm CLOSED không phòng ban với NORMAL, Q09) hoặc `/return-to-bptn`.
+- **Duyệt cấp vật tư:** kế hoạch vật tư của PHÒNG BAN (`material-plan`, IN_PROGRESS) ⇒ `ON_HOLD/WAITING_MATERIAL` chưa duyệt; `_cleared` cần đủ tồn VÀ `blocker.resolved_at`;
+  `POST /mo/tickets/{id}/materials/approve` (WAREHOUSE, BQL; thiếu ⇒ 409 `STOCK_SHORT`) ⇒ IN_PROGRESS. Kiểm tồn tự động lúc điều phối (bước 6) KHÔNG cần duyệt.
+- **Vật tư ngoài danh mục:** bảng `maintops.material_items` (Alembic `0003`), `POST /mo/warehouse/items`, mã `SIM-MAT-X-<hex>`, tồn đầu 0; tra cứu một chỗ `engine.material(code)`. Cờ `MO_CUSTOM_MATERIALS`.
+- **BQL nhập kho** như thủ kho (`receive_stock` cho WAREHOUSE + BQL).
+- **Phân công + thẻ đánh giá:** `seed/maintenance_v1/staff.yaml`, bảng `maintops.assignments`, `maintops.rating_details` (Alembic `0004`); `GET /mo/staff`, `POST /mo/tickets/{id}/assign`
+  (phân công ticket ROUTED = nhận việc), `rating {score, tags, comment}`. `Ticket.assignee_id` vẫn kiểu `None`. Cờ `MO_PORTAL_EXTRAS` (bật mặc định ở memory, tắt ở postgres).
+- **Route sai phòng ban:** `POST /mo/tickets/{id}/wrong-department` (T16), `POST /bql/tickets/{id}/wrong-department {KEEP|TO_BPTN}`.
+- **Response mới:** `TicketSummary`/`BqlTicketRow` có `staff_*`, `rating*`, `agent_source`, `agent_department`, `agent_scope`; `CatalogView.custom_materials_enabled`, `portal_extras_enabled`.
+- Test: `tests/test_maintenance/test_portal_backend_ext.py`, `test_portal_backend_ext2.py`.

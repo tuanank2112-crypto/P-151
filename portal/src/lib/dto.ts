@@ -15,6 +15,7 @@ export type MaterialRow = {
   itemName: string;
   unit: string;
   plannedQty: number;
+  normQty: number | null;
   issuedQty: number | null;
   usedQty: number | null;
   stock: number | null;

@@ -7,6 +7,7 @@ import {
   buildReadiness,
   buildResidentTicket,
   buildWarehouseRequest,
+  perfRow,
   stockMap,
 } from "@/server/data/build";
 import type { BBqlRow, BCase, BResidentView, BSummary } from "@/server/data/types";
@@ -165,5 +166,19 @@ describe("detail, inbox, management, warehouse", () => {
     expect(r?.lines).toEqual([{ itemCode: "SIM-MAT-1", itemName: "Bóng LED", unit: "cái", plannedQty: 2, stock: 0, shortage: 2, short: true }]);
     expect(r?.departmentName).toBe("Phòng kỹ thuật");
     expect(buildWarehouseRequest(c, stockMap([{ item_code: "SIM-MAT-1", item_name: "x", unit: "cái", qty: 9 }]), {}, now)).toMatchObject({ short: false, approved: false });
+  });
+});
+
+describe("perfRow (WP7 P9)", () => {
+  const base: BSummary = {
+    ticket_id: "SIM-TKT-0050", status: "CLOSED", status_label: "Hoàn thành", reason_code: null, proposed_department_id: null, department_id: null,
+    escalated: false, risk_level: "NONE", priority: null, created_at: "2026-10-09T01:00:00Z", description: "Phí dịch vụ tính sai",
+    agent_source: "AGENT", agent_department: null, agent_scope: "OUT_OF_SCOPE",
+  };
+  it("a ticket BQL closed as handled still counts as BQL work, so the Agent's out-of-scope pick is judged right", () => {
+    expect(perfRow(base)).toMatchObject({ agentDept: "bql", dept: "bql" });
+  });
+  it("an emergency BQL closed is not BQL work", () => {
+    expect(perfRow({ ...base, risk_level: "EMERGENCY" }).dept).toBeNull();
   });
 });

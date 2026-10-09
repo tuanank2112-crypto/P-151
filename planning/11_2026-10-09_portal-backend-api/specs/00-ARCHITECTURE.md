@@ -31,7 +31,7 @@
 | R1 | BQL: bỏ thẻ "Ban quản lý" ở nhóm phòng ban; bấm Phòng VS / Phòng KT ⇒ mọi ticket đã chuyển cho phòng đó | SPEC-P03 §5.1 |
 | R2 | BQL tổng quan: 5 ô bấm được (Tổng ticket, Chờ phân loại, Đang xử lý, Khẩn cấp chưa xong, Quá hạn) | SPEC-P03 §5.2 |
 | R3 | BQL tab Tất cả ticket: bấm mọi mã ⇒ chi tiết; bỏ khối Agent cứng | SPEC-P03 §5.3, §7 |
-| R4 | Tiếp nhận: như R3 (có tab Tất cả ticket) | SPEC-P03 §3.3, §7 |
+| R4 | Tiếp nhận: như R3 — giữ 2 tab cũ, mọi ticket bấm được để xem chi tiết (Q11, không thêm tab Tất cả) | SPEC-P03 §3.3, §7 |
 | R5 | Role kho: `kho` / `123456` | SPEC-P01 §1, SPEC-P03 §6 |
 | R6 | Bỏ kho vật tư khỏi role kỹ thuật | SPEC-P03 §4.3 |
 | R7 | Kỹ thuật: bấm "Yêu cầu vật tư" ⇒ form chọn vật tư đẹp; nút "+" nhập vật tư khác ngoài danh sách | SPEC-P03 §4.3, SPEC-P01 §3 |

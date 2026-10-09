@@ -5,7 +5,8 @@ const calls: { url: string; opts: { method?: string; json?: unknown } | undefine
 vi.mock("@/server/backend", () => ({
   api: vi.fn(async (url: string, opts?: { method?: string; json?: unknown }) => {
     calls.push({ url, opts });
-    return { ticket_id: "SIM-TKT-0099", item_code: "SIM-MAT-X-1" };
+    const lines = (globalThis as { __materialLines?: unknown[] }).__materialLines ?? [];
+    return { ticket_id: "SIM-TKT-0099", item_code: "SIM-MAT-X-1", material_lines: lines };
   }),
 }));
 vi.mock("@/server/session", () => ({
@@ -14,7 +15,7 @@ vi.mock("@/server/session", () => ({
 vi.mock("next/cache", () => ({ refresh: () => undefined }));
 vi.mock("next/navigation", () => ({ redirect: () => undefined }));
 
-import { assignStaffAction } from "@/app/actions/departments";
+import { assignStaffAction, requestMaterialsAction } from "@/app/actions/departments";
 import { rateTicketAction, submitTicketAction } from "@/app/actions/resident";
 import { approveMaterialsAction } from "@/app/actions/warehouse";
 
@@ -99,5 +100,23 @@ describe("assignStaffAction / approveMaterialsAction", () => {
   it("approve rejects an invalid id", async () => {
     expect((await approveMaterialsAction("../x")).ok).toBe(false);
     expect(calls).toHaveLength(0);
+  });
+});
+
+describe("requestMaterialsAction (WP7 P6)", () => {
+  it("keeps the lines the ticket already has and adds the new request to them", async () => {
+    (globalThis as { __materialLines?: unknown[] }).__materialLines = [
+      { item_code: "SIM-MAT-LAMP-02", planned_qty: 1 },
+      { item_code: "SIM-MAT-STARTER-01", planned_qty: 2 },
+    ];
+    const r = await requestMaterialsAction("SIM-TKT-0099", [{ itemCode: "SIM-MAT-LAMP-02", qty: 2 }, { itemCode: "SIM-MAT-LAMP-01", qty: 1 }], "thêm");
+    (globalThis as { __materialLines?: unknown[] }).__materialLines = undefined;
+    expect(r.ok).toBe(true);
+    const plan = calls.find((c) => c.url.endsWith("/material-plan"))?.opts?.json as { lines: { item_code: string; planned_qty: number }[] };
+    expect(plan.lines).toEqual([
+      { item_code: "SIM-MAT-LAMP-02", planned_qty: 3 },
+      { item_code: "SIM-MAT-STARTER-01", planned_qty: 2 },
+      { item_code: "SIM-MAT-LAMP-01", planned_qty: 1 },
+    ]);
   });
 });

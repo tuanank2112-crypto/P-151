@@ -251,6 +251,9 @@ export function FinishModal(props: {
   };
   const usedQty = (m: MaterialRow) => m.issuedQty ?? m.plannedQty;
   const mats = kind === "technical" ? t.materials : []; // technical: every requested material is a checklist line (R10)
+  /** Backend rule (VAL-MAT-CMP-001): a reason is required when planned≠norm, issued≠planned or used≠issued */
+  const needsReason = (m: MaterialRow) =>
+    (m.normQty !== null && m.plannedQty !== m.normQty) || usedQty(m) !== m.plannedQty || usedOf(m) !== usedQty(m);
   const usedOf = (m: MaterialRow) => {
     const typed = usedQtys[m.itemCode];
     return typed === undefined || typed.trim() === "" ? usedQty(m) : Number(typed);
@@ -262,6 +265,8 @@ export function FinishModal(props: {
     if (missing.length > 0) return setErr(`Chưa tích checklist: ${missing.map((c) => c.label).join("; ")}.`);
     if (mats.some((m) => !usedTicked.has(m.itemCode))) return setErr("Phải tích hết checklist vật tư đã dùng.");
     if (t.materials.some((m) => !Number.isFinite(usedOf(m)) || usedOf(m) < 0)) return setErr("Số vật tư đã dùng phải là số không âm.");
+    const noReason = t.materials.filter((m) => needsReason(m) && !reasons[m.itemCode]?.trim());
+    if (noReason.length > 0) return setErr(`Ghi lý do chênh lệch định mức: ${noReason.map((m) => m.itemName).join("; ")}.`);
     if (files.length === 0) return setErr("Bắt buộc có ít nhất 1 ảnh hiện trường sau khi xử lý.");
     setErr("");
     const fd = new FormData();
@@ -315,7 +320,7 @@ export function FinishModal(props: {
                 </label>
                 <input
                   className={`${FIELD} ml-6 text-xs`}
-                  placeholder="Lý do nếu số lượng khác định mức (không bắt buộc)"
+                  placeholder={needsReason(m) ? `Bắt buộc: lý do khác định mức${m.normQty !== null ? ` (${m.normQty} ${m.unit})` : ""}` : "Lý do nếu số lượng khác định mức (không bắt buộc)"}
                   aria-label={`Lý do chênh lệch ${m.itemName}`}
                   value={reasons[m.itemCode] ?? ""}
                   onChange={(e) => setReasons({ ...reasons, [m.itemCode]: e.target.value })}
@@ -343,10 +348,10 @@ export function FinishModal(props: {
                     onChange={(e) => setUsedQtys({ ...usedQtys, [m.itemCode]: e.target.value })}
                   />
                 </label>
-                {usedOf(m) !== usedQty(m) && (
+                {needsReason(m) && (
                   <input
                     className={`${FIELD} text-xs`}
-                    placeholder="Lý do dùng khác số đã cấp"
+                    placeholder={`Bắt buộc: lý do khác định mức${m.normQty !== null ? ` (${m.normQty} ${m.unit})` : ""} hoặc số đã cấp`}
                     aria-label={`Lý do chênh lệch ${m.itemName}`}
                     value={reasons[m.itemCode] ?? ""}
                     onChange={(e) => setReasons({ ...reasons, [m.itemCode]: e.target.value })}

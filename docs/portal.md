@@ -1,82 +1,71 @@
-# portal — Cổng phản ánh cư dân (Next.js)
+# portal — Cổng phản ánh cư dân (Next.js) — UI mới, gọi backend
 
-Website thật dựng từ bộ thiết kế `design-ticket-cu-dan/design-ticket-cu-dan/` (`HANDOFF.md` + 6 file `design/*.dc.html`).
-Một PostgreSQL dùng chung cho 5 vai trò. Độc lập với backend Python `src/` (KHÔNG nối engine MaintenanceOps / CR-BPTN-03).
-Hồ sơ thiết kế + quyết định: [`planning/06_2026-10-07_resident-portal-next/`](../planning/06_2026-10-07_resident-portal-next/plan.md).
+Website dựng từ bộ thiết kế `design-ticket-cu-dan/` (Trí). Từ hồ sơ 11 (v1.7.0) portal **không còn DB riêng**: mọi dữ liệu
+(ticket, người dùng, ảnh, vật tư, phân công, đánh giá) đi qua API backend Python `/api/v1` (engine CR-BPTN-03, Agent LLM,
+tầng an toàn). Backend trỏ Supabase ⇒ portal hiện dữ liệu thật. Yêu cầu giao diện: ghi chú anh Cố (Google Doc
+`1tlvFRnAioxn7LFHTNlM9TQgYzIDzx25ZC4pFxqB3qiA`). Hồ sơ + quyết định Q01–Q19:
+[`planning/11_2026-10-09_portal-backend-api/`](../planning/11_2026-10-09_portal-backend-api/plan.md). Hồ sơ dựng ban đầu:
+[`planning/06_2026-10-07_resident-portal-next/`](../planning/06_2026-10-07_resident-portal-next/plan.md).
 
-## 1. Chạy
-**Bằng Docker (đơn giản nhất):** `docker compose up -d --build` ⇒ http://localhost:3000. Service `portal` tự tạo DB `portal`
-trên service `db`, migrate, seed (chỉ khi rỗng) rồi `next start`. `localhost:8000` là UI CŨ của backend Python (`src/web/`), không phải portal.
-
-**Chạy dev trên máy:**
+## 1. Chạy — UI mới mở ở cổng 8000
+Backend cổng 8000 có `PORTAL_URL` ⇒ mọi đường ngoài `/api/v1`, `/ui`, `/health`, `/docs` chuyển tiếp sang portal (cổng 3000).
 ```bash
-docker compose up -d db                       # Postgres 16 của repo (container p151-db-1)
-docker exec p151-db-1 psql -U p151 -d p151 -c "create database portal" -c "create database portal_test"   # một lần
-cd portal && npm ci && cp .env.example .env.local
-npm run db:migrate && npm run db:seed         # seed chỉ chạy khi DB rỗng; --reset để làm lại
-npm run dev                                   # http://localhost:3000
+# backend (store memory, LLM mock) — từ root repo
+MO_STORE=memory MO_PHOTO_STORE=local LLM_MODE=mock DATABASE_URL= MO_CUSTOM_MATERIALS=true MO_PORTAL_EXTRAS=true \
+  PORTAL_URL=http://127.0.0.1:3000 PYTHONUTF8=1 PYTHONPATH=. .venv/Scripts/python.exe -m uvicorn src.main:app --port 8000
+# portal — PHẢI chạy production khi xem qua 8000
+cd portal && npm ci && BACKEND_URL=http://127.0.0.1:8000 npx next build \
+  && BACKEND_URL=http://127.0.0.1:8000 SESSION_SECRET=<chuỗi bí mật> npx next start --port 3000
 ```
-Tài khoản mẫu (mật khẩu `123456`): `cudan`, `tiepnhan`, `quanly`, `vesinh`, `kythuat`, `kho` (thủ kho).
+Mở http://localhost:8000. Tài khoản (mật khẩu `123456`): `cudan`, `tiepnhan`, `quanly`, `vesinh`, `kythuat`, `kho`
+(tài khoản cũ `cudan01`…/`Demo@2026` vẫn dùng được).
+- `next dev` chỉ mở thẳng `http://localhost:3000`: qua cổng 8000 trang KHÔNG hydrate (WebSocket HMR không đi qua proxy).
+- Dữ liệu Supabase: chạy backend với `DATABASE_URL` Supabase (`?sslmode=require`), `MO_STORE=postgres`, `MO_JOBS_ENABLED=false`,
+  `MO_ALLOW_RESET=false`. Vật tư "+" và phân công/thẻ đánh giá cần bảng `0003`/`0004` trên Supabase rồi bật
+  `MO_CUSTOM_MATERIALS`/`MO_PORTAL_EXTRAS` — OPERATIONS §3 của hồ sơ 11 (mọi bước cần người dùng gật).
 
 ## 2. Lệnh
 | Lệnh | Việc |
 |---|---|
 | `npm run typecheck` | `next typegen` + `tsc --noEmit` |
-| `npm run lint` | ESLint (config Next) |
-| `npm test` | Unit: Agent, SLA, định dạng, ma trận quyền, kiểm ảnh, mật khẩu |
-| `npm run test:db` | Toàn bộ workflow trên Postgres thật (`TEST_DATABASE_URL`, tên DB phải kết thúc `_test`) |
-| `npm run db:generate` / `db:migrate [-- --test]` / `db:seed [-- --reset]` | Migration Drizzle (SQL trong `drizzle/`), seed dữ liệu mẫu |
-| `npm run e2e -- --base=URL` | Luồng đầy đủ qua giao diện (Playwright) — cần DB vừa `--reset` |
-| `npm run screenshots -- [role…] --base=URL` | Chụp mọi tab ở 1440/390px vào `planning/06_…/evidence/screens/`, lỗi nếu trang tràn ngang |
+| `npm run lint` | ESLint |
+| `npm test` | Unit: ánh xạ backend → DTO, lọc ô tổng quan, phiên ký HMAC, action, gate nghiệm thu |
+| `npx tsx scripts/ui-check-WP3.mts --base=URL` | Kiểm Cư dân + Tiếp nhận trên trình duyệt (Playwright), ảnh 1440/390 |
+| `npx tsx scripts/ui-check-WP4.mts cleaning\|technical --base=URL` | Kiểm Vệ sinh / Kỹ thuật |
+| `npx tsx scripts/ui-check-WP5.mts --base=URL` | Kiểm Quản lý + Kho + modal |
+`db:*`, `test:db`, `e2e`, `screenshots` là công cụ của bản DB riêng cũ — không dùng cho luồng hiện tại.
 
 ## 3. Cấu trúc
 ```text
-portal/
-├── drizzle/                 # migration SQL (CẤM sửa tay file đã commit)
-├── scripts/                 # migrate.mts, seed.mts, e2e-flow.mts, screens.mts
-├── tests/unit, tests/db     # vitest (2 project)
-└── src/
-    ├── db/                  # schema.ts (11 bảng, có `warehouse_stock`), client.ts, index.ts (pool dùng chung), seed.ts
-    ├── lib/                 # thuần, dùng cả client: agent.ts, duplicates.ts, inspection.ts (gate nghiệm thu), constants.ts (gồm `STOCK_CATALOG`), sla.ts, format.ts, permissions.ts, photos.ts, dto.ts, result.ts
-    ├── server/              # chỉ server: workflow.ts (MỌI ghi), queries.ts (đọc theo vai), session.ts, password.ts, act.ts
-    ├── components/          # shell (header/menu/skeleton), board, icons, photo-strip, ticket-detail-modal, toast, use-action
-    └── app/                 # login, resident, reception, management, cleaning, technical, warehouse, api/photos/[id], actions/*
+portal/src/
+├── server/        # chỉ server: backend.ts (fetch + Bearer + lỗi), session.ts + session-token.ts (cookie ký HMAC chứa token
+│                  #   backend), act.ts, uploads.ts, data/<vai>.ts (loader đọc theo vai), data/types.ts (kiểu JSON backend)
+├── lib/           # thuần: backend-map.ts (status→stage, nhãn, splitReport, Agent đúng/sai, lọc ô tổng quan, readinessMessages),
+│                  #   dto.ts, constants.ts, inspection.ts, sla.ts, format.ts, result.ts
+├── app/actions/   # server action mỗi vai ⇒ gọi /api/v1 (bảng 01-CONTRACTS §7 + SPEC-P04)
+├── app/api/       # photos/[ticketId]/[evidenceId] (proxy ảnh kèm Bearer), session/expired
+└── components/    # shell, board, ticket-detail-modal (khối Agent THẬT), ticket-evidence, photo-strip, use-action…
 ```
+`src/db/**`, `drizzle/**`: lịch sử bản DB riêng, KHÔNG import ở luồng chạy (grep nghiệm thu = 0).
+`.gitignore` có `!portal/src/server/data/` (dòng `data/` từng nuốt thư mục này).
 
-## 4. Màn hình ↔ thiết kế
-| Route | Vai | File thiết kế |
+## 4. Màn hình (SPEC-P03 hồ sơ 11)
+| Route | Vai | Điểm chính |
 |---|---|---|
-| `/login` | — | `Main.dc.html` |
-| `/resident` | resident | `Resident.dc.html` |
-| `/reception` | reception | `Reception.dc.html` (bỏ tab Quy tắc từ khóa) |
-| `/management` | management | `Management.dc.html` (bỏ tab Phân quyền) |
-| `/cleaning` | cleaning | `Cleaning.dc.html` |
-| `/technical` | technical | `Technical.dc.html` |
-| `/warehouse` | warehouse | — (không có thiết kế; theo style chung) |
-CSS của thiết kế được chép nguyên vào `src/app/globals.css` (class dùng chung + khối riêng `.scr-<màn>`). Lệch có chủ đích D1–D9: `planning/06_…/specs/00-ARCHITECTURE.md` §5.
+| `/resident` | cư dân | Tiêu đề + nội dung góp ý + nơi + ảnh; bổ sung; đánh giá sao + thẻ + bình luận. Không khẩn cấp tự chọn, không xác nhận/hủy |
+| `/reception` | tiếp nhận | Chờ phân loại (nút theo blocker, khối Agent thật), Đã phân loại, Hiệu suất Agent (đúng/sai) |
+| `/cleaning`, `/technical` | phòng ban | Phân công tổ/kỹ thuật viên, yêu cầu vật tư (+ ngoài danh mục, chờ duyệt cấp), form hoàn thành (vệ sinh: ảnh bắt buộc + vật tư đã dùng; kỹ thuật: checklist vật tư tích hết) |
+| `/management` | BQL | 5 ô tổng quan bấm được, phụ tải VS/KT bấm được, Tất cả ticket → modal, Việc của BQL (Đã tiếp nhận / Đã hoàn thành / Tất cả), Hiệu suất phòng ban, lối vào Kho |
+| `/warehouse` | kho, BQL | Tồn kho, nhập kho, thêm vật tư, Duyệt cấp yêu cầu |
 
-## 5. Mô hình ticket
-`stage` 1 Tiếp nhận → 2 Thẩm định (đã chuyển phòng ban) → 3 Phân công → 4 Đang xử lý → 5 Nghiệm thu (phòng ban báo xong) → 6 Hoàn tất; cờ `need_info`, `paused`, `cancelled` (+`merged_into`).
+## 5. Ánh xạ trạng thái
+`status` backend → stepper 6 bước: RECEIVED/NEED_INFO=1, VERIFYING=2, ROUTED=3, IN_PROGRESS/ON_HOLD=4, READY_FOR_REVIEW=5,
+CLOSED=6; CANCELLED/MERGED ⇒ `cancelled`. Mã ticket = `ticket_id` backend. "BQL đã xử lý" = CLOSED + `EMERGENCY_HANDLED`
++ mức an toàn khác EMERGENCY (Q09) — không tính khẩn cấp.
 
-### Nghiệm thu của BQL (`src/lib/inspection.ts`, tab "Việc của BQL")
-- 4 gate **hệ thống tự kiểm** từ dữ liệu (`autoGates`): đúng phòng ban (không bị báo sai phòng), có ảnh sau xử lý (`after_*`), vật tư đã nhận đủ, xong trong SLA (`doneHours ≤ 4h/48h`). Gate ✕ chỉ cảnh báo, KHÔNG khoá.
-- 2 gate **BQL tự tích tại hiện trường** (`SITE_CHECKS`): nút "Nghiệm thu đạt" khoá tới khi tích đủ. Trạng thái tích chỉ ở client, không lưu DB.
-- CẤM quay lại tích ✓ cứng: `tests/unit/inspection.test.ts` đỏ khi gate ảnh luôn đạt.
-
-### Kho vật tư (`/warehouse`, vai `warehouse`)
-- Bảng `warehouse_stock` (migration `0002`). Seed nạp từ `STOCK_CATALOG`; form "Yêu cầu vật tư" của Kỹ thuật chọn từ cùng danh mục (+ nhập vật tư ngoài danh mục).
-- Hạn chế đã biết: ô "Nguồn cấp / ghi chú" khi nhập kho bị bỏ qua (`receiveStock` chưa có bảng lịch sử nhập kho); yêu cầu vật tư không trừ tồn kho.
-Bảng ánh xạ nhãn từng dashboard + tiền điều kiện từng action: `specs/01-CONTRACTS.md` §2, §4.
-Mọi ghi đi qua `src/server/workflow.ts`: kiểm quyền → `SELECT … FOR UPDATE` → kiểm phạm vi/stage → `UPDATE … WHERE stage = <cũ>` → 1 dòng `history`. Lỗi trả `ActionResult` (`UNAUTHENTICATED | FORBIDDEN | NOT_FOUND | INVALID_INPUT | CONFLICT`); ticket ngoài phạm vi luôn là `NOT_FOUND`.
-
-## 6. Agent phân loại (`src/lib/agent.ts`)
-`classify(text, rules, home) → { dept, confidence, keywords, urgent, locationFromText }`. Từ khóa theo phòng ban ở bảng `keywords` (Ban tiếp nhận sửa). So khớp **nguyên từ** (Unicode), tin cậy `min(97, round(48 + 38·best/total + 5·min(best,3)))`, không khớp ⇒ `dept=null`, 0%. Hạn: khẩn cấp 4 giờ, thường 48 giờ.
-
-### Agent phát hiện trùng (`src/lib/duplicates.ts`)
-Ticket mới được so với ticket cũ hơn còn mở trong 7 ngày: cùng phòng ban gợi ý + cùng vị trí (tòa + tầng / thang máy) + ≥1 từ khóa chung.
-Thẻ chờ phân loại hiện hai ticket cạnh nhau với lý do và %; Ban tiếp nhận chỉ duyệt "Đúng, gộp" hoặc "Không trùng" (lưu `dup_dismissed`).
-Server chặn gộp cặp Agent không đề xuất. Từ khóa của Agent KHÔNG còn sửa trên UI: đổi qua `SEED_KEYWORDS` (`src/db/seed.ts`) hoặc SQL bảng `keywords`.
-
-## 7. Bảo mật
-- **Phòng vệ sinh / kỹ thuật không biết ai gửi** (plan Q11): `deptData()` không trả tên, tài khoản, `resident_id`; tên file ảnh thành "Ảnh N". Họ VẪN thấy số sao, thẻ nhận xét và bình luận của việc phòng mình (`RatingSummary`). Số căn hộ chỉ có trong vị trí khi sự cố "Trong căn hộ". Khoá bằng `tests/db/queries.test.ts`.
-Session cookie `httpOnly` ↔ bảng `sessions` (lưu SHA-256 token, hạn 7 ngày); mật khẩu scrypt; lỗi đăng nhập chung một câu. Ảnh: kiểm magic bytes JPG/PNG/WEBP, ≤5 ảnh × 5 MB, trả qua `/api/photos/[id]` có kiểm phạm vi và `Cache-Control: private, no-store`.
+## 6. Bảo mật
+- Quyền do backend quyết (403/409); portal chỉ ẩn/hiện nút. Cư dân chỉ gọi `/resident/*`.
+- Phòng ban không thấy danh tính cư dân (sao/thẻ/bình luận vẫn thấy).
+- Token backend chỉ nằm trong cookie httpOnly ký HMAC (`SESSION_SECRET`, bắt buộc ở production); không ra trình duyệt.
+  Backend khởi động lại ⇒ token chết ⇒ portal tự về `/login`.
+- Ảnh luôn qua proxy có phiên, `Cache-Control: private, no-store`.

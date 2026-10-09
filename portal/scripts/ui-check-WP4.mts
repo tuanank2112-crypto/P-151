@@ -126,6 +126,8 @@ try {
       await card.getByRole("button", { name: "Đánh dấu hoàn thành" }).click();
       const dlg = page.getByRole("dialog");
       for (const cb of await dlg.locator("input[type=checkbox]:not([disabled])").all()) await cb.check();
+      // material lines off the norm ask for a reason (backend VAL-MAT-CMP-001): fill every required one
+      for (const r of await dlg.locator('input[placeholder^="Bắt buộc"]').all()) await r.fill("Theo thực tế hiện trường");
       await dlg.getByRole("button", { name: "Gửi nghiệm thu" }).click();
       const msg = await dlg.getByRole("alert").innerText();
       if (!/ảnh/i.test(msg)) throw new Error(`no photo error: ${msg}`);

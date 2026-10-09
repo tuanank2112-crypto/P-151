@@ -1,6 +1,6 @@
 # SPEC-P01 — Mở rộng backend cho portal (WP1, 🔴 thiết kế đã chốt ở đây, thi công 🟠)
 
-Nguyên tắc chung (00 §2 vùng cấm cuối): KHÔNG thêm trường/giá trị enum vào doc ticket JSONB. Chỉ dùng trường đã có (`blocker.escalated`, `closure_kind=NORMAL`, …) hoặc bảng MỚI. Mỗi route mới: router mỏng gọi một method engine; quyền kiểm ở engine (403 + `ACTION_DENIED` audit), trạng thái sai ⇒ 409.
+Nguyên tắc chung (00 §2 vùng cấm cuối): KHÔNG thêm trường/giá trị enum vào doc ticket JSONB. Chỉ dùng trường đã có (`blocker.escalated`, `closure_kind=EMERGENCY_HANDLED` cho BQL `handled` — Q09, …) hoặc bảng MỚI. Mỗi route mới: router mỏng gọi một method engine; quyền kiểm ở engine (403 + `ACTION_DENIED` audit), trạng thái sai ⇒ 409.
 
 ## 1. Tài khoản demo của portal + hồ sơ cư dân (R5)
 - `seed/maintenance_v1/accounts.yaml`: THÊM 6 tài khoản, mật khẩu `123456` (băm bằng `src.api.auth.hash_password`, 200 000 vòng), giữ nguyên 8 tài khoản cũ:

@@ -25,6 +25,7 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | **⭐ Kế hoạch 09 — Tăng tốc đọc backend (v1.5.0, 2026-10-08)** | [`../planning/09_2026-10-08_backend-speed/`](../planning/09_2026-10-08_backend-speed/plan.md) · [`../docs/maintenance.md`](../docs/maintenance.md) §14 | `PostgresRepository.list()` cache theo `xmin` (1 câu SQL, không TTL), `resident_view(lookup=…)` bỏ N+1. Object từ `list()` CHỈ ĐỌC. Probe đo lại: `evidence/audit/probes/`. |
 | **⭐ Kế hoạch 07 — UI `src/web/` theo design portal (v1.3.0, 2026-10-07)** | [`../planning/07_2026-10-07_web-portal-reskin/`](../planning/07_2026-10-07_web-portal-reskin/plan.md) · [`../docs/web.md`](../docs/web.md) | Reskin UI tĩnh backend: `theme.css` + remap palette Tailwind CDN + header gradient/đăng nhập/helper; API/logic không đổi. SPEC: `01-CONTRACTS.md` (token, DOM id, màu trạng thái). Đọc `docs/web.md` TRƯỚC khi sửa `src/web/`. |
 | **⭐ Kế hoạch 06 — Cổng phản ánh cư dân `portal/` (v1.2.0, 2026-10-07)** | [`../planning/06_2026-10-07_resident-portal-next/`](../planning/06_2026-10-07_resident-portal-next/plan.md) · [`../docs/portal.md`](../docs/portal.md) | Website Next.js 16 + TypeScript + Tailwind v4 + PostgreSQL (Drizzle) dựng từ `design-ticket-cu-dan/…/HANDOFF.md` + 6 file `.dc.html`. ĐỘC LẬP backend Python. SPEC: `specs/00-ARCHITECTURE.md` (bất biến, lệch D1–D9), `01-CONTRACTS.md` (schema, stage 1..6, action, lỗi). Đọc `docs/portal.md` TRƯỚC khi sửa `portal/`. |
+| **⭐ Kế hoạch 11 — Portal gọi backend theo ghi chú anh Cố (v1.7.0, 2026-10-09)** | [`../planning/11_2026-10-09_portal-backend-api/`](../planning/11_2026-10-09_portal-backend-api/plan.md) · [`../docs/portal.md`](../docs/portal.md) · [`../docs/maintenance.md`](../docs/maintenance.md) §16 |
 | **Kế hoạch 05 — làm cứng Agent (v1.1.4, 2026-10-05)** | [`../planning/05_2026-10-04_agent-hardening/`](../planning/05_2026-10-04_agent-hardening/plan.md) | `plan.md` (Q01–Q10), `handoffs/H01–H04`, `reports/R01–R04`, `evidence/`. Bộ biến thể: `tests/test_maintenance/test_safety_metamorphic.py`, `test_classify_metamorphic.py`; điều phối: `test_agent_coordination.py`. Tóm tắt: `docs/maintenance.md` §13. |
 | **Kế hoạch 06 — Reasoning Agent & P1 (2026-10-05)** | [`../planning/06_2026-10-05_reasoning-agent/`](../planning/06_2026-10-05_reasoning-agent/) | `plan.md` (Q01–Q33), `specs/` (00-ARCHITECTURE, 01-CONTRACTS, P01–P09, OPERATIONS, TESTING, `REF-agent-contract.py` = nguồn prompt/schema), `SPEC-P09-semantic-coordination.md` (điều phối ngữ nghĩa, B1–B4), `handoffs/H13` (WP14, R13 🔁), `H15`, `H16` (WP17 runtime CHỜ DUYỆT), `reports/R13`, `R15` (§01–§17), `evidence/WP14/`, `WP16/`, `G-LIVE/` (đo Agent với LLM thật). LLM thật, streaming, cache, CLI, G-LIVE: `docs/maintenance.md` §14. |
 | **Kế hoạch 08 — báo khẩn khi ticket đã giao (2026-10-07, CHỜ DUYỆT)** | [`../planning/08_2026-10-07_inflight-emergency/`](../planning/08_2026-10-07_inflight-emergency/plan.md) | `plan.md` (Q01–Q10, P1–P5 chờ người), `specs/` (00, 01, SPEC-P01 báo khẩn/trả về, OPERATIONS, TESTING A-01…A-24), `handoffs/H01–H03`. Chạy sau H13 plan 06. |
@@ -66,10 +67,10 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | `seed/maintenance_v1/` | Fixture: tickets, catalog (`sla_config`), accounts, `lexicon.yaml` (từ vựng an toàn + priority) |
 | `tests/test_maintenance/` | Test engine, API, auth, acceptance, safety/emergency/priority (CR-03), store (pg chỉ chạy `--pg` trên docker `*_test`), `test_cr03_store.py` (CR-03 qua repository + Q04) |
 | `seed/maintenance_cr03/` | Fixture đích CR-03: nhãn safety + expected outcome (Trường) |
-| `portal/src/server/workflow.ts` | [Next.js] MỌI ghi ticket của Cổng phản ánh (FOR UPDATE + stage có điều kiện + history) |
-| `portal/src/server/queries.ts`, `session.ts` | [Next.js] Đọc theo vai; session cookie ↔ bảng `sessions` |
+| `portal/src/server/backend.ts`, `server/data/<vai>.ts`, `app/actions/*` | [Next.js] Gọi backend `/api/v1` (Bearer từ cookie ký HMAC `session.ts`); loader đọc theo vai + server action ghi (hồ sơ 11) |
+| `portal/src/lib/backend-map.ts`, `lib/dto.ts` | [Next.js] Ánh xạ thuần JSON backend → DTO màn (status→stage, nhãn, Agent đúng/sai, lọc ô tổng quan, `readinessMessages`) |
 | `portal/src/app/{login,resident,reception,management,cleaning,technical,warehouse}/` | [Next.js] 6 màn ↔ 6 file `.dc.html` + màn kho; Server Actions ở `app/actions/`; gate nghiệm thu `src/lib/inspection.ts` |
-| `portal/src/db/schema.ts`, `portal/drizzle/` | [Next.js] 11 bảng (có `warehouse_stock`) + migration SQL; seed `src/db/seed.ts` |
+| `portal/src/db/`, `portal/drizzle/` | [Next.js] LỊCH SỬ bản DB riêng (hồ sơ 06) — không import ở luồng chạy |
 
 ---
 
@@ -82,7 +83,7 @@ project-root/
 ├── brain4agent-v1.7.1.md             # [MARKER] Phiên bản khung não — soi nhanh ở root
 ├── README.md                         # Giới thiệu + cách chạy (phần v0.3 đã cũ; spec là docs/CR-BPTN-03.md)
 ├── requirements.txt                  # Dependency Python
-├── portal/                           # [Next.js 16 + TS + Tailwind + PostgreSQL/Drizzle] Cổng phản ánh cư dân (plan 06, docs/portal.md) — ĐỘC LẬP src/
+├── portal/                           # [Next.js 16 + TS + Tailwind] Cổng phản ánh cư dân — GỌI backend /api/v1 (hồ sơ 11, docs/portal.md); UI mới ở cổng 8000
 │   ├── src/{app,components,lib,server,db}/  # màn + actions · UI dùng chung · thuần (agent, sla…) · chỉ server (workflow, queries, session) · schema/seed
 │   ├── drizzle/, scripts/, tests/{unit,db}/ # migration SQL · migrate/seed/e2e/screens · vitest
 ├── design-ticket-cu-dan/             # Bộ thiết kế nguồn (HANDOFF.md + design/*.dc.html) của portal/
@@ -177,7 +178,7 @@ Report: [daily/2026-10-05.md](../docs/submission/daily/2026-10-05.md). Fresh com
 Latest feature/truong merge: develop04491ad → 79f9444; [integration report](../planning/06_2026-10-04_readme-refresh/evidence/integration-latest-20261007/integration-report.md). Imported src/maintenance/agent/ runtime and portal/; portal docs/DB are independent. Shared revision0002 rollout not performed.
 
 
-Portal direct test: http://localhost:3000/login PID21076; [module docs](../docs/portal.md). Local PostgreSQL, keyword Agent, not the Python/Luna server8002. Runtime evidence plan06 readme-refresh/evidence/runtime-portal-20261007/.
+Portal (hồ sơ 11): mở http://localhost:8000 (backend proxy → portal production 3000), tài khoản `cudan`…`kho`/`123456`; dữ liệu từ backend; [docs/portal.md](../docs/portal.md), [planning/11_2026-10-09_portal-backend-api/](../planning/11_2026-10-09_portal-backend-api/plan.md).
 
 - Day05 completion router: `planning/09_2026-10-07_day05-labels/deliverables/completion-guide.md`; matrix and human-input forms live beside it.
 

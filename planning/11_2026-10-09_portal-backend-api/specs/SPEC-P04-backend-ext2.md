@@ -16,6 +16,13 @@ Nguyên tắc như SPEC-P01: KHÔNG thêm trường/giá trị enum vào doc tic
 - `receive_stock` KHÔNG tự chạy tiếp ticket chưa được duyệt (vì `_cleared` cần duyệt).
 - Nghiệm thu: kho đủ ⇒ gửi kế hoạch ⇒ ON_HOLD chờ duyệt; kho duyệt ⇒ IN_PROGRESS; kho thiếu ⇒ duyệt 409 STOCK_SHORT ⇒ nhập kho ⇒ vẫn ON_HOLD ⇒ duyệt ⇒ IN_PROGRESS; phòng ban tự duyệt ⇒ 403.
 
+### 2b. Sau thẩm định WP7 (2026-10-09) — BẮT BUỘC
+- **Cờ:** luồng chờ duyệt (§2) chỉ bật khi `MO_PORTAL_EXTRAS` bật (mặc định: memory bật, postgres TẮT). Lý do (WP7 P5): engine cũ trên Render đọc ticket "ON_HOLD chờ duyệt" sẽ đẩy về ROUTED (bỏ qua duyệt). Bật trên Supabase CHỈ sau khi Render chạy code này (OPERATIONS §3). Cờ tắt ⇒ `material-plan` giữ hành vi cũ (ticket vẫn IN_PROGRESS).
+- **Duyệt = xuất kho (giữ hàng, WP7 P7):** `approve_materials` trừ tồn phần còn thiếu của từng dòng và đặt `issued_qty = planned_qty`; phòng ban nhập số đã xuất bằng đúng số đó thì không trừ lần hai. Hai ticket không thể cùng được duyệt trên một đơn vị tồn (lần sau 409 `STOCK_SHORT`).
+- **Yêu cầu cộng dồn (WP7 P6):** `material-plan` là THAY THẾ; portal `requestMaterialsAction` luôn gửi dòng đang có + dòng mới (cộng số lượng cùng mã), không làm mất dòng đã duyệt/đã xuất.
+- **Chưa làm (Idea Vault, WP7 P8):** phòng ban rút yêu cầu / kho từ chối cấp. Hiện thoát trạng thái chờ duyệt chỉ bằng nhập kho + duyệt, hoặc BQL hủy ticket.
+- Test: `test_wp7_*` trong `test_portal_backend_ext2.py` (đỏ trên `091bc45`, xanh sau sửa).
+
 ## 3. Phân công nhân viên (Q17)
 - Danh sách nhân viên tĩnh `seed/maintenance_v1/staff.yaml`: `staff: [{staff_id, department_id, name, skill, area, capacity}]` — chép đúng 3 tổ vệ sinh + 4 kỹ thuật viên từ `portal/src/db/seed.ts` (Tổ A/B/C; Kỹ thuật viên 1–4 với skill Điện / Cấp thoát nước / Thang máy / Điện). Mã `SIM-STAFF-CLN-A`… `SIM-STAFF-TEC-4`.
 - Bảng `maintops.assignments (ticket_id text primary key, staff_id text not null, assigned_by text not null, assigned_at timestamptz not null)`.

@@ -40,8 +40,8 @@ export async function readStaff(): Promise<BStaff[]> {
 }
 
 /** Detail of at most MAX_DETAIL_CALLS tickets, in list order, 6 at a time. A ticket that vanished meanwhile (404) is skipped; any other error propagates. */
-export async function readCases(ids: string[]): Promise<BCase[]> {
-  const got = await mapLimit(ids.slice(0, MAX_DETAIL_CALLS), async (id) => {
+export async function readCases(ids: string[], limit = MAX_DETAIL_CALLS): Promise<BCase[]> {
+  const got = await mapLimit(ids.slice(0, limit), async (id) => {
     try {
       return await readCase(id);
     } catch (e) {

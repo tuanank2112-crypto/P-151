@@ -15,11 +15,14 @@ export function needsReception(s: BSummary): boolean {
   return s.reason_code === null || BPTN_REASON_CODES.includes(s.reason_code);
 }
 
+const RECEPTION_INBOX_LIMIT = 200;
+
 export async function receptionData(user: SessionUser): Promise<ReceptionData> {
   const list = await listTickets();
   const now = new Date();
   const byId = new Map(list.map((s) => [s.ticket_id, s]));
-  const cases = await readCases(list.filter(needsReception).map((s) => s.ticket_id));
+  // the inbox is built from details: never cut it at the generic detail cap (WP7 P10) — every BPTN ticket must show
+  const cases = await readCases(list.filter(needsReception).map((s) => s.ticket_id), RECEPTION_INBOX_LIMIT);
   const inbox = cases
     .filter((c) => !c.ticket.blocker || c.ticket.blocker.owner_role === "BPTN")
     .map((c) => buildInboxItem(c, byId, now));

@@ -60,6 +60,7 @@ export type BMaterialLine = {
   item_name: string;
   unit: string | null;
   planned_qty: number;
+  norm_qty?: number | null;
   issued_qty: number | null;
   used_qty: number | null;
   simulated_stock_qty: number | null;

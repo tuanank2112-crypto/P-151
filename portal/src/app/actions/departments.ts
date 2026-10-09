@@ -51,7 +51,13 @@ export async function requestMaterialsAction(ticketId: string, lines: MaterialLi
   const tid = id(ticketId);
   if (!tid || !Array.isArray(lines) || lines.length === 0) return fail("INVALID_INPUT", "Chọn ít nhất một vật tư.");
   return act(async () => {
-    const plan: { item_code: string; planned_qty: number }[] = [];
+    // material-plan REPLACES the plan: start from what the ticket already has, so a second request adds to the
+    // approved/issued lines instead of silently dropping them (WP7 review P6)
+    const current = await api<{ material_lines?: { item_code: string; planned_qty: number }[] }>(`/mo/tickets/${tid}`);
+    const plan: { item_code: string; planned_qty: number }[] = (current.material_lines ?? []).map((m) => ({
+      item_code: m.item_code,
+      planned_qty: m.planned_qty,
+    }));
     for (const l of lines) {
       const qty = num(l?.qty);
       if (!(qty > 0)) throw new BackendError(422, "INVALID_INPUT", "Số lượng vật tư phải lớn hơn 0.");

@@ -52,6 +52,7 @@ from tests.test_maintenance.test_portal_backend_ext import (
     audit_denials,
     in_progress_ticket,
     oos_ticket,
+    routed_ticket,
 )
 
 PORTAL_PASSWORD = "123456"
@@ -847,3 +848,41 @@ def test_pg_migration_0004_creates_and_drops_only_its_tables(pg_url):
     with sql_engine(pg_url).connect() as conn:
         assert conn.execute(exists).scalar() is True
         assert conn.execute(text("select version_num from maintops.alembic_version")).scalar() == "0004_portal_extras"
+
+
+# ======================================================================= WP7 review: P5 (old backend) and P7 (reservation)
+
+
+def test_wp7_p7_approval_hands_the_stock_out_so_two_tickets_cannot_share_it(eng):
+    first = waiting_ticket(eng, stock=2)
+    approved = eng.approve_materials(first, WAREHOUSE)
+    assert [m.issued_qty for m in approved.material_lines] == [2]
+    assert eng.repo.stock_of(LAMP2) == 0
+    second = routed_ticket(eng, "Đèn hành lang tầng 7 tòa S2 không sáng.")  # another place: not a duplicate
+    eng.accept(second, TEC)
+    eng.confirm_materials(second, TEC, lines=[PlannedMaterial(item_code=LAMP2, planned_qty=2)], note="Đèn tuýp")
+    with pytest.raises(StockShortError):
+        eng.approve_materials(second, WAREHOUSE)
+    assert eng.get(second).ticket.status == "ON_HOLD"
+
+
+def test_wp7_p7_issuing_after_approval_does_not_take_the_stock_twice(eng):
+    ticket_id = waiting_ticket(eng, stock=5)
+    eng.approve_materials(ticket_id, WAREHOUSE)
+    assert eng.repo.stock_of(LAMP2) == 3
+    eng.record_material(ticket_id, TEC, LAMP2, issued_qty=2, used_qty=2)
+    assert eng.repo.stock_of(LAMP2) == 3
+
+
+def test_wp7_p5_flag_off_keeps_the_old_flow_for_the_shared_database(eng, monkeypatch):
+    """MO_PORTAL_EXTRAS off (default on postgres): a plan never parks the ticket waiting for approval, so the old
+    backend reading the same database never meets that state."""
+    import src.config as config
+
+    settings = config.get_settings().model_copy(update={"mo_portal_extras": False})
+    monkeypatch.setattr(config, "get_settings", lambda: settings)
+    ticket_id = in_progress_ticket(eng)
+    case = eng.confirm_materials(
+        ticket_id, TEC, lines=[PlannedMaterial(item_code=LAMP2, planned_qty=2)], note="Đèn tuýp"
+    )
+    assert case.ticket.status == "IN_PROGRESS" and case.ticket.blocker is None
