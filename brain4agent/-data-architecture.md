@@ -34,3 +34,12 @@ Chi tiết hợp đồng: `planning/01_2026-10-02_supabase-persistence/specs/01-
 ## Trường MVP preparation — 2026-10-03
 - D-01 là target contract trong plan02 `specs/01-CONTRACTS.md`: persisted structured snapshot + event/version identifiers; payload LLM chỉ delta + snapshot, raw/audit vẫn append-only.
 - Chưa thêm cột/schema hoặc nối vào engine/storage. `seed/maintenance_cr03/` là target/gold data riêng, startup vẫn `maintenance_v1`.
+
+## Cổng phản ánh cư dân `portal/` (plan 06, 2026-10-07) — kho dữ liệu RIÊNG
+- PostgreSQL DB `portal` (dev) / `portal_test` (test) trong container `p151-db-1` — KHÔNG phải schema `maintops`, không Supabase. Biến `DATABASE_URL` / `TEST_DATABASE_URL` ở `portal/.env.local` (riêng, không dùng `.env` gốc).
+- 10 bảng (Drizzle `portal/src/db/schema.ts`, migration SQL `portal/drizzle/`): `users`, `sessions` (SHA-256 token), `staff`, `tickets` (stage 1..6 + cờ `need_info/paused/cancelled`, `merged_into/merged_from`, `extras[]`, snapshot Agent `ai_*`), `photos` (bytea, đã kiểm magic bytes), `history`, `ratings` (1/ticket), `keywords` (dept, word), `materials`, `notices`.
+- Flow ghi: Server Action → `act()` đọc lại session → `workflow.ts` (transaction: kiểm quyền → `FOR UPDATE` → phạm vi/stage → `UPDATE … WHERE stage=<cũ>` → 1 dòng `history`) → `refresh()`. Flow đọc: page (trong `<Suspense>`) → `requireUser(role)` → `queries.ts` trả DTO đã định dạng theo vai.
+- Seed `npm run db:seed` chỉ khi `users` rỗng; `--reset` TRUNCATE (cấm ở production). Thời gian seed tương đối theo lúc chạy.
+
+
+Develop04491ad imports P1 case fields, multi-ticket coordination, agent_decision and execution_snapshots; doc-shape marker revision0002_p1_doc_shape is required by the new Postgres repository. Migration was NOT run on shared Supabase in this integration. Portal DB remains separate. Coordinate old-backend stop and owner migration before starting new code on shared DB; see reasoning-agent OPERATIONS §5.

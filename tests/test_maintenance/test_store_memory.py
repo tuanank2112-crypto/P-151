@@ -84,6 +84,18 @@ def test_t01_case_round_trip_after_reset(repo):
     assert [c.ticket.ticket_id for c in cases] == sorted(c.ticket.ticket_id for c in cases)
 
 
+def test_doc_with_merged_children_loads_and_keeps_the_link(repo):
+    """A shared store holds docs written by builds that fill CR-03 §8 `merged_children`: loading one must not
+    500 every list endpoint, and saving it back must keep the link."""
+    engine = MaintenanceEngine(repo=repo)
+    engine.reset()
+    doc = repo.list()[0].model_dump(mode="json")
+    doc["ticket"]["merged_children"] = ["SIM-TKT-0041"]
+    case = Case.model_validate(doc)
+    assert case.ticket.merged_children == ["SIM-TKT-0041"]
+    assert case.model_dump(mode="json")["ticket"]["merged_children"] == ["SIM-TKT-0041"]
+
+
 def test_t02_audit_sink_failure_changes_nothing(repo, clock):
     fail = {"on": False}
 

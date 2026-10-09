@@ -33,6 +33,7 @@ from src.maintenance.store.base import (
     StorePermissionError,
     StoreUnavailableError,
     UnstorableTextError,
+    short_stock_error,
 )
 
 logger = logging.getLogger(__name__)
@@ -165,6 +166,17 @@ _SAVE_LOCKED = text(
     "update maintops.cases set doc = :doc, status = :status, department_id = :department_id, "
     "version = version + 1, updated_at = now() where ticket_id = :id and version = :v"
 ).bindparams(bindparam("doc", type_=JSONB))
+
+
+# Plan 09 SPEC-P01: one statement returns every row's version and the doc only of rows the cache does not hold as is
+_LIST_CHANGED = text(
+    "select c.ticket_id, c.xmin::text as v, "
+    "case when k.v is distinct from c.xmin::text then c.doc end as doc "
+    "from maintops.cases c "
+    "left join unnest(cast(:ids as text[]), cast(:vs as text[])) as k(tid, v) on k.tid = c.ticket_id "
+    'order by c.ticket_id collate "C"'
+)
+LIST_LOG_EVERY = 100  # one INFO line with the cache counters every N listings
 
 
 class _PgTx:
@@ -308,6 +320,25 @@ class _PgTx:
                 {"c": item_code, "q": qty},
             ).scalar_one()
 
+    def take_stock(self, item_code: str, qty: float) -> float | None:
+        with _db_errors():
+            # One conditional UPDATE: two workers can never both issue the last units (the row lock serialises).
+            new = self.conn.execute(
+                text(
+                    "update maintops.stock set qty = qty - :q "
+                    "where item_code = :c and qty is not null and qty >= :q returning qty"
+                ),
+                {"c": item_code, "q": qty},
+            ).scalar()
+            if new is not None:
+                return new
+            current = self.conn.execute(
+                text("select qty from maintops.stock where item_code = :c"), {"c": item_code}
+            ).scalar()
+        if current is None:
+            return None
+        raise short_stock_error(item_code, current, qty)
+
 
 # ---------------------------------------------------------------------- repository
 
@@ -317,6 +348,10 @@ class PostgresRepository:
         self._engine = sql_engine(url)
         self._url_host = make_url(url).host
         self._local = threading.local()
+        # list() cache (plan 09): ticket_id -> (xmin, validated Case); the Cases are shared and read-only
+        self._list_cache: dict[str, tuple[str, Case]] = {}
+        self._list_lock = threading.Lock()
+        self._list_stats = {"hits": 0, "misses": 0, "calls": 0}
 
     # ------------------------------------------------------------------ transaction
 
@@ -341,9 +376,39 @@ class PostgresRepository:
         return Case.model_validate(doc)
 
     def list(self) -> list[Case]:
+        """Every ticket, committed state, `collate "C"` order. Only rows whose `xmin` changed since the last call
+        travel over the network (plan 09 SPEC-P01); the returned Cases are shared, so callers must not mutate them."""
+        with self._list_lock:
+            known = dict(self._list_cache)
+        ids = list(known)
         with _db_errors(), self._engine.connect() as conn:
-            docs = conn.execute(text('select doc from maintops.cases order by ticket_id collate "C"')).scalars().all()
-        return [Case.model_validate(doc) for doc in docs]
+            rows = conn.execute(_LIST_CHANGED, {"ids": ids, "vs": [known[tid][0] for tid in ids]}).all()
+        cache: dict[str, tuple[str, Case]] = {}
+        loaded = 0
+        for row in rows:  # validate everything before touching the cache: a broken doc leaves it as it was
+            if row.doc is None:
+                cache[row.ticket_id] = known[row.ticket_id]
+            else:
+                cache[row.ticket_id] = (row.v, Case.model_validate(row.doc))
+                loaded += 1
+        with self._list_lock:
+            self._list_cache = cache
+            stats = self._list_stats
+            stats["hits"] += len(cache) - loaded
+            stats["misses"] += loaded
+            stats["calls"] += 1
+            if stats["calls"] % LIST_LOG_EVERY == 0:
+                logger.info("list cache hits=%d misses=%d size=%d", stats["hits"], stats["misses"], len(cache))
+        return [case for _, case in cache.values()]
+
+    def cache_stats(self) -> dict[str, int]:
+        """Counters of the `list()` cache, for tests and logs (not exposed by the API)."""
+        with self._list_lock:
+            return {
+                "hits": self._list_stats["hits"],
+                "misses": self._list_stats["misses"],
+                "size": len(self._list_cache),
+            }
 
     def count(self) -> int:
         with _db_errors(), self._engine.connect() as conn:

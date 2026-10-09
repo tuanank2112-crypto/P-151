@@ -56,7 +56,21 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 ` sẽ không khớp.
 - Bỏ `from None` khi raise trong `except` KHÔNG làm `__cause__` khác None (chỉ gắn `__context__`): kiểm `__suppress_context__`.
 - Shell `(base)` conda: `python` là miniconda, không có alembic/deps ⇒ dùng `.venv\Scripts\python.exe` hoặc activate `.venv`.
+- **Supabase dùng chung + nhánh tụt revision ⇒ :8000 "mất UI" (2026-10-08):** schema `maintops` đã lên `0002_p1_doc_shape`
+  (plan 06), nhánh chưa merge `develop` chỉ biết `0001` ⇒ `repo.check()` fail-fast, uvicorn thoát, cổng 8000 trống.
+  Sửa = merge `develop` (hoặc `MO_STORE=mock` tạm). CẤM `alembic downgrade` DB chung — gãy các nhánh đã ở 0002.
+- **SQLAlchemy 2.1 đổi driver mặc định của `postgresql://` sang `psycopg` (v3) (2026-10-08):** image Docker build mới kéo 2.1.4
+  ⇒ `ModuleNotFoundError: psycopg`, `p151-backend-1` restart vòng (exit 3) trong khi `.venv` (2.0.x) vẫn chạy. Ghim
+  `sqlalchemy<2.1` trong `requirements.txt`. Model OpenAI đời mới (vd `gpt-6-luna`) từ chối `max_tokens` và `temperature≠1`.
+- `maintops.cases` có CHECK `cases_doc_matches`: `doc.ticket.status`/`department_id` phải khớp cột ⇒ test muốn làm hỏng doc phải đổi trường KHÁC (vd thêm field lạ), không đổi status.
+- `PostgresRepository.list()` (plan 09) trả object dùng chung từ cache theo `xmin` ⇒ sửa trực tiếp Case lấy từ `list()`/`engine.cases` làm bẩn cache của mọi request sau; luôn sửa qua `_mutate`/`transaction`.
+- UI `src/web/`: mọi màn tự chọn ticket đầu khi `state.selected` rỗng ⇒ "trang đang xem" bị ghi đè bởi trang của ticket đang chọn sau mỗi `render()`; test UI muốn thấy khác biệt phải lật trang SAU khi chọn. Harness Playwright đăng nhập bằng `page.goto` = tải lại trang = xoá mọi state JS — thử luồng đăng xuất/đăng nhập thật phải điền form tại chỗ.
 - Qua Supabase pooler, `pg_stat_ssl.ssl` = false (chặng pooler→DB); TLS client kiểm bằng `connection.info.ssl_in_use`.
+- **Supabase dùng chung + model `extra="forbid"` ⇒ 500 mọi màn danh sách (2026-10-07):** chỉ cần MỘT doc do bản code khác ghi
+  có field lạ là `repo.list()` vỡ `ValidationError` ⇒ `/resident/tickets`, `/mo/tickets`… đều 500 ("Không tải được dữ liệu · Lỗi 500").
+  Lần này: 16/53 ticket có `ticket.merged_children` (CR-03 §8; PR #11 đã revert khỏi `main` 04/10 nhưng bản chạy 05/10 vẫn ghi).
+  Sửa bằng cách thêm field ĐÚNG SPEC vào model (giữ dữ liệu), KHÔNG xoá field trên DB, KHÔNG nới `extra`. Dò nhanh: validate từng
+  `doc` trong `maintops.cases` bằng `Case.model_validate` (chỉ đọc). Server không `--reload` phải khởi động lại mới ăn code.
 - Docker backend dùng nguyên `DATABASE_URL` của `.env` (Supabase) từ 2026-10-02; service `db` chỉ cho `pytest --pg`. Schema thiếu ⇒ container exit 3 và restart lặp.
 
 ## Evidence và pytest (2026-10-03)
@@ -72,6 +86,8 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 - **`gh` CLI trên máy Như Ý:** token trong Git Credential Manager (tài khoản `tuanank2112-crypto`) có scope `repo, workflow, gist`, THIẾU `read:org` ⇒ `gh auth login --with-token` và `gh pr edit` (GraphQL) lỗi. Dùng `GH_TOKEN=$(git credential fill ...)` + `gh api` (REST) cho từng lệnh. Agent KHÔNG được merge PR khi CI đỏ (chốt quyền "CI Bypass") ⇒ người bấm merge.
 - **CI GitHub Actions fail không do code (2026-10-03):** "job was not started because recent account payments have failed or your spending limit needs to be increased" — mọi run trên `develop` cũng vậy. Kiểm bằng `gh api .../actions/runs/<id>/jobs` (steps rỗng) + annotations.
 
+## curl tiếng Việt trên Git Bash Windows (2026-10-04)
+- `curl -d '{"original_description":"...có dấu..."}'` trả 422 `There was an error parsing the body` do mã hoá tham số; truyền qua file `--data-binary @body.json`, PowerShell dùng UTF-8 bytes, hoặc Swagger. Không phải bug API.
 ## Phạm vi tòa thí điểm Ocean Park S1/S2 (2026-10-05)
 - Vị trí cư dân chỉ hợp lệ khi tòa nằm trong `catalog.yaml` `site.buildings`; seed/test đã đổi `SIM-A`→`S1`, `SIM-B`→`S2`. Text test qua engine dùng tòa khác (vd `SIM-A`, `S3`) sẽ rơi NEED_INFO thiếu tòa.
 - KHÔNG đổi tòa trong bộ nhãn an toàn (`tests/.../data/safety_*_p0.yaml`, `test_safety_p0.py`) và `test_b01_closed_prefix_twenty_tokens_and_lamp_accent`: `assess()` không xét vị trí, còn "tòa SIM-A" = 3 token, "tòa S1" = 2 token ⇒ ca biên 20/21 token của B-01 lệch.
@@ -89,3 +105,26 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 - `agent/validate.grounded` gấp quote (bỏ dấu, dấu câu thành khoảng trắng) rồi kiểm chuỗi con. Quote `".."`/`"--"` qua được schema (`Quote` min_length=2) nhưng gấp ra `""` — chuỗi rỗng là con của mọi văn bản ⇒ trước đây vị trí/việc bịa được coi là có trích dẫn. Nay `grounded` trả False khi quote gấp ra rỗng (cùng luật `safety._grounded`). Viết kiểm "có trích dẫn" mới thì kiểm SAU khi gấp, đừng kiểm chuỗi thô.
 - Test "đường Agent" dùng `MirrorClient` không chứng minh nhánh Agent: Mirror quyết y như luật, nên thay đường 2b bằng luật thuần vẫn xanh. Muốn bắt nhánh Agent phải có client giả nêu tín hiệu mà luật KHÔNG thấy (vd `SeesDanger` trong `test_p1_audit_fixes_safety.py`).
 - Git Bash trên máy này: `/tmp_x` = `D:\Git\tmp_x` (root của Git Bash), không phải thư mục tạm — ghi file tạm vào scratchpad.
+
+
+## UI tĩnh `src/web/` + Tailwind Play CDN (plan 07, 2026-10-07)
+- **Plugin `forms` của CDN đè class tự viết:** CDN chèn `<style>` SAU `theme.css`; selector `[type='text']`, `select` (0,1,1) thắng `.field` (0,1,0) ⇒ ô nhập mất nền/viền/bo góc. Viết `html body .field` (0,1,2). Áp cho mọi class tự viết đụng thuộc tính mà plugin `forms` đặt.
+- **Đo UI không được làm trên `:8000`:** container `backend` đọc `.env` = Supabase dùng chung; bấm thử ghi thẳng vào DB nhóm. Chạy `MO_STORE=memory MO_PHOTO_STORE=local LLM_MODE=mock DATABASE_URL= python -m uvicorn src.main:app --port 8001` (biến môi trường thắng `.env`). Store memory KHÔNG có ticket cư dân (seed CLN/TEC bị UI lọc) — tạo ticket qua API trước khi chụp.
+- **Playwright `text=Nhận việc` khớp chuỗi con, không phân biệt hoa thường** ⇒ trúng ô thống kê "Chờ nhận việc". Dùng `getByRole('button', { name, exact: true })`. Bấm item danh sách gây render lại ⇒ chờ `networkidle` trước khi `fill`, nếu không giá trị bị xoá.
+- **`test_assess_is_linear_on_adversarial_24kb_texts` và `test_assess_is_linear_on_a_24kb_text` (ngưỡng 1 giây, đo thật ~0,6 giây) đỏ khi máy bận** (cả ngay sau checkout/merge nhiều file) (uvicorn + Playwright chạy song song); riêng lẻ ~2,6 giây cho 6 văn bản. Đỏ đơn lẻ ⇒ chạy lại khi máy rảnh trước khi kết luận.
+
+## Cổng phản ánh cư dân `portal/` (Next.js, 2026-10-07)
+- **Next 16.4 khác kiến thức cũ:** `create-next-app` bật `cacheComponents` + `partialPrefetching`; đọc `cookies()`/DB ngoài `<Suspense>` là lỗi build. Mọi page đọc session đặt trong `<Suspense fallback={<DashboardSkeleton/>}>`. Tài liệu đúng bản nằm ở `portal/node_modules/next/dist/docs/`. `portal/AGENTS.md` do `next dev` tự sinh lại — giữ, không coi là luật dự án (luật ở `AGENTS.md` gốc).
+- `RouteContext`/`LayoutProps` là kiểu Next sinh ra: chạy `next typegen` trước `tsc` (script `typecheck` đã gộp).
+- So khớp từ khóa tiếng Việt bằng chuỗi con (như `indexOf` của thiết kế) sai: "ồn" khớp "cộng đ**ồn**g", "ống" khớp "ch**ống**". `hasWord()` dùng ranh giới `\p{L}\p{N}` (cờ `u`).
+- Ảnh/nội dung theo phiên đừng trả `Cache-Control: private, max-age=…`: trình duyệt dùng chung phát lại cho người đăng nhập sau (E2E bắt được: kỹ thuật thấy ảnh ticket vệ sinh). Dùng `private, no-store`.
+- `server-only` ném lỗi ngoài điều kiện react-server ⇒ Vitest alias sang `tests/server-only-stub.ts`; script `tsx` có top-level await phải là `.mts`.
+- Git Bash trên Windows: tên file có `:` (vd `test:db.txt`) thành ký tự lạ/ADS — đặt `test-db.txt`.
+- Test đồng thời bằng `Promise.all` hai action KHÔNG tạo tranh chấp (giao dịch đầu xong trước) ⇒ phép phá bỏ `FOR UPDATE` vẫn xanh. Test tất định: giữ khoá dòng từ một kết nối khác, đổi stage, rồi commit (`tests/db/workflow.test.ts`).
+- Ô `<select>` rộng theo option dài làm trang tràn ngang ở 390px; `npm run screenshots` nay fail khi `scrollWidth > viewport`.
+- `docker compose up -d --build` trước 2026-10-07 chỉ dựng `db` + `backend` (Python) ⇒ `localhost:8000` vẫn là UI cũ (đăng nhập màu cam), không phải portal. Nay có service `portal` ở `localhost:3000`. Mạng Docker Desktop chập chờn ("no such host" khi kéo `node:24-alpine") ⇒ `docker pull` lại vài lần.
+- Cookie `secure` bật ở production làm đăng nhập lặp vòng khi mở bằng HTTP qua IP LAN; compose đặt `SESSION_COOKIE_SECURE=false`.
+
+
+### Stash + Windows live logs and line endings — 2026-10-07T13:30:26.152115+00:00
+Stash push -u may save successfully but exit1 without cleaning tracked files when open log files prevent removal. Check backup/state before merge. Keep stash, restore only verified tracked changes; never delete active logs. Git normalization can alter mixed LF/CRLF in untracked machine evidence; preserve/recover exact bytes only when original manifest hash matches. Conflict marker regex must use [^\n]* for marker lines: .* with DOTALL can consume trailing document/test content. Final preservation/test evidence is under plan06 integration-latest-20261007.

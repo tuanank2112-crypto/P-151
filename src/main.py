@@ -1,13 +1,17 @@
 import asyncio
 import contextlib
 import logging
+import os
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import StreamingResponse
 
 from src.api import auth, photos
 from src.api.routers import maintenance
@@ -48,6 +52,9 @@ async def lifespan(app: FastAPI):
     await asyncio.to_thread(maintenance.get_engine)
     jobs = asyncio.create_task(_maintenance_jobs()) if settings.mo_jobs_enabled else None
     yield
+    global _portal_client
+    if _portal_client and not _portal_client.is_closed:
+        await _portal_client.aclose()
     if jobs:
         jobs.cancel()
         with contextlib.suppress(asyncio.CancelledError):
@@ -96,11 +103,80 @@ app.include_router(maintenance.bql_router, prefix="/api/v1")
 app.mount("/ui", StaticFiles(directory=Path(__file__).parent / "web", html=True), name="ui")
 
 
+PORTAL_URL = os.getenv("PORTAL_URL")
+_portal_client: httpx.AsyncClient | None = None
+
+
+def _get_portal_client() -> httpx.AsyncClient:
+    global _portal_client
+    if _portal_client is None or _portal_client.is_closed:
+        _portal_client = httpx.AsyncClient(base_url=PORTAL_URL, timeout=60.0, follow_redirects=False)
+    return _portal_client
+
+
+async def _proxy_to_portal(request: Request, path: str):
+    client = _get_portal_client()
+    url = f"{PORTAL_URL}/{path}" if path else f"{PORTAL_URL}/"
+    if request.url.query:
+        url += f"?{request.url.query}"
+
+    excluded_req_headers = {"host", "content-length", "accept-encoding"}
+    req_headers = {
+        k: v for k, v in request.headers.items()
+        if k.lower() not in excluded_req_headers
+    }
+    req_headers["host"] = request.headers.get("host", "localhost:8000")
+
+    body = await request.body()
+    try:
+        req = client.build_request(
+            method=request.method,
+            url=url,
+            headers=req_headers,
+            content=body,
+        )
+        res = await client.send(req, stream=True)
+    except (httpx.ConnectError, httpx.ConnectTimeout):
+        if not path or path == "/":
+            return RedirectResponse(url="/ui/")
+        return JSONResponse(status_code=503, content={"detail": "Portal service is unavailable"})
+
+    response_headers = []
+    for k, v in res.headers.raw:
+        k_lower = k.lower()
+        if k_lower in (b"content-encoding", b"content-length", b"transfer-encoding"):
+            continue
+        if k_lower == b"location":
+            loc = v.decode("latin1")
+            loc = re.sub(r"^https?://(?:portal:3000|localhost:3000)", "", loc)
+            response_headers.append((k, loc.encode("latin1")))
+        else:
+            response_headers.append((k, v))
+
+    response = StreamingResponse(
+        res.aiter_bytes(),
+        status_code=res.status_code,
+        background=res.aclose,
+    )
+    response.raw_headers = response_headers
+    return response
+
+
 @app.get("/", include_in_schema=False)
-async def root():
+async def root(request: Request):
+    if PORTAL_URL:
+        return await _proxy_to_portal(request, "")
     return RedirectResponse(url="/ui/")
 
 
 @app.get("/health")
 async def health():
     return {"status": "ok", "env": settings.app_env}
+
+
+@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"], include_in_schema=False)
+async def portal_fallback(request: Request, path: str):
+    if PORTAL_URL:
+        return await _proxy_to_portal(request, path)
+    return JSONResponse(status_code=404, content={"detail": "Not found"})
+

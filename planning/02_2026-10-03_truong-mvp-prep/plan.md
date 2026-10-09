@@ -30,6 +30,8 @@
 
 - 2026-10-03: người dùng xác nhận flow là AN TOÀN TRƯỚC, PHÂN LOẠI SAU (CR-03 §5.1). Sửa fixture `seed/maintenance_cr03/tickets.yaml`: CLN-004/TEC-005 bỏ playbook_id/proposed_department_id/review_status; `test_cr03_targets.py` đổi assertion thành khẳng định các trường đó vắng mặt (guard vẫn đỏ khi thêm lại). Kết quả: evaluate fixture CR03 12/12, 4 demo; pytest 1641 passed, ruff đạt. Chi phí lật: khôi phục 3 trường và assertion cũ.
 
+- 2026-10-04: nhóm CHƯA có URL online, MVP 04/10 demo trên localhost (thông báo người dùng). Diễn tập bốn demo qua server thật (uvicorn 127.0.0.1:8184, develop dff898e, memory/mock): 18 record = 16 PASS / 2 BLOCKED (DEMO-03-STOCK: không có GET tồn kho qua HTTP, Châm Anh; PERSIST-RESTART: cần Postgres/Supabase, Châm Anh). Root đo lại g1r/t1close/neg403 khớp. Gate online/persistence vẫn mở; kết quả này KHÔNG thay gate online. Xem [day04/notes](deliverables/day04/notes.md), H18/R18.
+
 ### Quyết định bị thay thế
 
 - Câu 'classification-before-safety' trong TESTING-ACCEPTANCE (WP5) bị thay bởi quyết định an toàn trước phân loại 2026-10-03 (xem nhật ký).

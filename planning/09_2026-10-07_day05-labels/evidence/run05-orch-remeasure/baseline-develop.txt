@@ -1,0 +1,3 @@
+# cmd: .venv/Scripts/python.exe planning/09_2026-10-07_day05-labels/deliverables/tools/run_day05_baseline.py --data-dir planning/09_2026-10-07_day05-labels/deliverables --mode rules --split develop --output planning/09_2026-10-07_day05-labels/evidence/run05-orch-remeasure/should-not-exist.json
+NO_VALID_GOLD: no case in DEVELOP has valid ACCEPTED gold
+EXIT=2

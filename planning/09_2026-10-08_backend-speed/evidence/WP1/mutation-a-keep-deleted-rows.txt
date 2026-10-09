@@ -1,0 +1,4 @@
+mutant a-keep-deleted-rows: pytest exit=1
+FAILED tests/test_maintenance/test_list_cache.py::test_t3_one_write_reloads_exactly_that_ticket
+FAILED tests/test_maintenance/test_list_cache.py::test_t5_wipe_and_reseed_never_returns_old_tickets
+2 failed, 8 passed in 3.25s

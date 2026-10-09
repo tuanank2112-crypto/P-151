@@ -1,0 +1,12 @@
+# cmd: .venv/Scripts/python.exe planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir planning/09_2026-10-07_day05-labels/deliverables --structure-only
+COUNT safety ALL EMERGENCY=0 UNCLEAR=0 NONE=0
+COUNT cls ALL VE_SINH=0 KY_THUAT=0 UNKNOWN=0
+COUNT safety DEVELOP EMERGENCY=0 UNCLEAR=0 NONE=0
+COUNT cls DEVELOP VE_SINH=0 KY_THUAT=0 UNKNOWN=0
+COUNT safety HELD_OUT EMERGENCY=0 UNCLEAR=0 NONE=0
+COUNT cls HELD_OUT VE_SINH=0 KY_THUAT=0 UNKNOWN=0
+COUNT cases=50 families_accepted=0 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+RESULT: STRUCTURE_PASS
+EXIT=0

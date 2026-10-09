@@ -1,6 +1,8 @@
 <kernel_instructions>
 <role>Bạn là Senior Developer/System Architect của dự án này. Nhiệm vụ: giữ kiến trúc sạch, code chuẩn, hiệu năng cao, không thừa logic.</role>
 
+- Shared Supabase demo verified 2026-10-07: SIM-TKT-0042 CLOSED, 2 Storage photos survive restart; 53 old cases/stock unchanged. GPT-6 Luna SUCCESS. Ticket.merged_children compatibility fixed; unknown fields forbidden. Evidence planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/. Local server8001 jobs=false; no public deployment/Day05-06 sign-off.
+- Day04 scope updated07/10 by user:9 cases only, six unused cases removed. day04-3 manifest/results/issues under planning/07.../deliverables/; separated old UI and Supabase runs, create422 pending clean retest; validator+3 negative controls pass. Personal evidence normalized, no online/product sign-off.
 <agent_startup_protocol>
 0. [BẮT BUỘC TIÊN QUYẾT] Chạy `node ../brain4agent.release/.agents/skills/.xay-dung-nao-bo/scripts/init_brain.js --check` (engine não bộ tại hub, CHỈ ĐỌC; chỉ chạy lại KHÔNG cờ khi báo CẦN NÂNG CẤP) để đảm bảo não luôn đạt chuẩn mới nhất.
 1. Đọc `brain4agent/memory-distill.txt` trước khi sửa code.
@@ -28,11 +30,18 @@
 - **Plan 05 (2026-10-05, v1.1.4):** Agent làm cứng bằng kiểm thử biến thể vị trí (cổng chính: thêm vị trí không được đổi mức an toàn/loại việc); vị trí = nơi có sự cố; ngoài phạm vi không nhắc khu vực/đèn/rác ⇒ OUT_OF_SCOPE cho BPTN, không hỏi vị trí. Tiếp theo: P1 (luồng trùng CR §8, tách ticket hai việc, tín hiệu P1). `docs/maintenance.md` §13.
 - 2026-10-05 (develop, Unreleased): vị trí chỉ nhận tòa trong `catalog.yaml` `site.buildings` (Ocean Park S1/S2, giữ tòa con S1.12; "Sảnh cư dân" = Tầng 1); blocker an toàn ghi `· Thiếu: …` cho BPTN (Q08 giữ nguyên); phòng ban `confirm_materials` / `POST /mo/tickets/{id}/material-plan`.
 - Plan02 (2026-10-03): Trường chuẩn bị 5 gói theo Notion; safety P0 + fixture CR03 riêng, chưa tích hợp runtime. D08 approved (leader Châm Anh, 02/10, ghi 03/10). Day03 local (0ea04ad): 23 record = 17 PASS/1 FAIL/5 BLOCKED (FAIL DEMO-01-RATING; BLOCKED safety/rating-once/reopen, owner Như Ý); D3-05/06 chưa [x]; runtime/online pending. Day03 ĐÓNG (7/7 [x]) trên develop f46a53c: DEMO-04, WORD-01..04 PASS; D-01 delta+snapshot NGOÀI MVP 04/10 (D01-A/C BLOCKED, Như Ý). Runtime/online gates vẫn mở.
+- **Plan 10 (2026-10-08, v1.6.0):** UI `src/web/` chia trang 20 dòng qua `listCard(..., { key, ids })` (4 màn), chuyển trang không gọi API, trang theo `state.selected`; API không đổi. `docs/web.md` §4.
+- **Plan 09 (2026-10-08, v1.5.0):** `PostgresRepository.list()` cache theo `xmin` (1 câu SQL, không TTL, doc chỉ tải khi đổi) + `resident_view(lookup=…)` bỏ N+1 ⇒ danh sách ~0.2 s trên Supabase. Object từ `list()` CHỈ ĐỌC (như store memory). `docs/maintenance.md` §14.
+- **Plan 07 (2026-10-07, v1.3.0):** UI tĩnh `src/web/` mang design `portal/` (reskin: `theme.css` + remap palette Tailwind CDN + khung/helper mới; API/logic không đổi; dark mode tắt). Đọc `docs/web.md`. Đo UI trên backend local memory `:8001`, KHÔNG trên `:8000` (Supabase chung). Gate local ✅, server ⬜.
+- **Plan 06 (2026-10-07, v1.2.0): `portal/` = Cổng phản ánh cư dân** — Next.js 16 + TS + Tailwind v4 + PostgreSQL (Drizzle), dựng từ `design-ticket-cu-dan/…` (HANDOFF + 6 `.dc.html`). ĐỘC LẬP engine Python/CR-03 (DB riêng `portal`, mô hình stage 1..6). Mọi ghi qua `portal/src/server/workflow.ts`; đọc `docs/portal.md` trước khi sửa. Kiểm: trong `portal/` chạy `npm run typecheck && npm run lint && npm test && npm run test:db` (+ `npm run e2e`/`screenshots` trên app đang chạy, DB vừa `db:seed -- --reset`). Gate local ✅, server ⬜.
 - **Plan 06 (2026-10-05, Reasoning Agent & P1, nhánh `feature/nhuy-reasoning-agent`):** Điều phối ngữ nghĩa SPEC-P09 (PROPOSED, H16 CHỜ DUYỆT). Hoàn thiện qua 6 vòng thẩm định R15: B1 (kiểm giao khoảng sự cố, chặn quote bao trọn nơi ở), B2 (bắt buộc đủ 3 thành phần vị trí cho override/shared, chặn quote rút gọn mồ côi & khác khu vực), B3 (bất biến next_step & an toàn số 1), B4 (cardinality 0/1/2 jobs, nâng sàn KY_THUAT LOW, Postgres doc #- metadata, quiesce dừng writers). Runtime 0 diff.
 - **Agent + LLM thật (2026-10-07, Q30–Q33):** dev/demo local chạy `LLM_MODE=agy_cli` + `MODEL_NAME=gemini-3.8-flash-low` (Antigravity CLI, gói cá nhân; deploy server ⇒ API key). Client: stream, cache, `MO_AGENT_REASONING_EFFORT`; prompt `agent-prompt/5` (REF SPEC là nguồn). G-LIVE `scripts/agent_live_eval.py` (nhãn nháp chờ Trường): khẩn cấp khó 16/16, phủ định 10/10, nhờ thay đèn 19/19; Agent không tự hạ (Q33). `docs/maintenance.md` §14.
 </project_foundation>
 
 <truong_focus>
+- Portal current UI: http://localhost:3000/login PID21076, Next dev + local PostgreSQL portal;17 unit tests pass, browser login200. Keywords Agent, NOT connected to Python/Luna/Supabase. Servers8001/8002 unchanged.
+- Latest develop04491ad merged into feature/truong 79f9444;3341 tests/76 deselected +270 tools pass,ruff clean;90 Day05 package hashes preserved. Agent/P1 and independent portal imported. Shared Supabase0002 rollout, new Luna reasoning and portal not verified; no restart/push. Local work retained, Day05 gates open.
+- Day05 scope APPROVED PRELIMINARY_15 on08/10:15 human AUTHORED cases replace30 held-out and old80/40 quota gates. Như Ý safety/Châm Anh classification responsibilities accepted per Trường,0 reviews completed; baseline pending. SPEC-P03-PRELIMINARY15 controls closure. Outside-pilot policy approved; D4-11 OPEN, no full safety/product sign-off.
 - Nguồn phân công: Notion "Kế hoạch MaintenanceOps MVP" (link + lịch từng ngày: `roadmap.md` §Trường). Mốc: MVP online 23:59 04/10; bàn giao cuối 23:59 19/10; nghiệm thu 21:00 cùng ngày; họp nhóm 21:00 hằng ngày.
 - Trường SỞ HỮU: nghiệp vụ, dataset/nhãn chuẩn + kịch bản eval, rules/playbook, quyết định CR (D-xx), architecture/swimlane, user test, pitch 10 slide.
 - Chủ việc khác — Trường KHÔNG sửa, chỉ giao handoff/fixture/test đích: Như Ý = engine/state machine/safety integration/proposer/LangGraph; Châm Anh = API/persistence/CI/deploy/eval runner/chi phí; Trí = UI/UX, panel Agent, AI Logs, Phoenix.
@@ -40,6 +49,10 @@
 - Việc đang mở: Day03 đã chạy local (D3-05/06 còn BLOCKED/FAIL; chờ người quyết ASSET-03, STOCK-04, owner reopen/rating-once) → 04/10 chạy 4 demo online, đối chiếu expected, ghi thiếu sót.
 - Chỉ tiêu 19/10 Trường phải cấp dữ liệu: safety ≥40 câu nhãn, 0 bỏ sót Bậc 1; classification ≥90% held-out; user test 3–5 người độc lập (thiếu ⇒ ghi số thật, CẤM phản hồi giả); so sánh thủ công/sản phẩm đảo thứ tự.
 - Quyết định nghiệp vụ ghi tên người duyệt + kết quả thật; chưa đồng thuận ⇒ không triển khai phần tranh luận.
+- Diagrams (04/10 restoration): user-selected target layouts restored from Downloads/VS Code history; README setup/link fixes retained. Current-code differences documented beside diagrams; no new runtime/render verification.
+- Feature/truong (07/10): integrated develop52ae81c; pytest2971 pass/29 pg deselected, ruff clean; diagrams/submission preserved. Day05/06 acceptance still open; LangGraph runtime pending; no push.
+- Local LLM (07/10): real gpt-6-luna call SUCCESS verified in shared demo; previous placeholder AUTH failure superseded. Text classification only; safety remains rules, no image analysis verified.
+- Supabase local (07/10): shared demo verified54 cases incl SIM-TKT-0042; private bucket/TLS verify-full,2 synthetic photos persist after restart. Server8001 last run jobs/seed/reset disabled; credentials ignored by Git.
 </truong_focus>
 
 <brain_file_roles>

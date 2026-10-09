@@ -1,0 +1,2 @@
+2026-10-04T11:57:28+07:00 python harness.py t2info exit=1
+checks_total=8 ok=7 mismatch=1

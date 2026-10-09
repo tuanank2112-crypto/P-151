@@ -1,0 +1,318 @@
+{
+  "schema_version": "day05-human-intake-1",
+  "received_at": "2026-10-07T16:58:11.277650+00:00",
+  "records": [
+    {
+      "intake_id": "HA-001-01",
+      "text": "Sảnh căn hộ tòa S1 khu vực sảnh B1 rất bẩn",
+      "synthetic": true,
+      "source": {
+        "kind": "AUTHORED",
+        "author": "Cao Văn Trường",
+        "ref": "User message in current conversation, numbered sentences 1-5"
+      },
+      "received_at": "2026-10-07T16:58:11.277650+00:00",
+      "authored_at": null,
+      "split_candidate": "HELD_OUT",
+      "status": "PENDING_FAMILY_AND_LABEL_REVIEW",
+      "family_candidate": "F-HO-LOBBY-DIRT-01",
+      "reviewed_by": null,
+      "notes": "Formatting list numbers/backslashes removed; sentence wording retained. Authorship does not imply accepted gold or independent split.",
+      "author_clarification": {
+        "meaning": "sảnh ở tầng hầm B1",
+        "confirmed_by": "Cao Văn Trường",
+        "recorded_at": "2026-10-07T16:59:31.535946+00:00",
+        "source": "User clarification in current conversation"
+      }
+    },
+    {
+      "intake_id": "HA-001-02",
+      "text": "Sảnh tầng hầm B1 tòa S1 lúc nào cũng bẩn",
+      "synthetic": true,
+      "source": {
+        "kind": "AUTHORED",
+        "author": "Cao Văn Trường",
+        "ref": "User message in current conversation, numbered sentences 1-5"
+      },
+      "received_at": "2026-10-07T16:58:11.277650+00:00",
+      "authored_at": null,
+      "split_candidate": "HELD_OUT",
+      "status": "PENDING_FAMILY_AND_LABEL_REVIEW",
+      "family_candidate": "F-HO-LOBBY-DIRT-01",
+      "reviewed_by": null,
+      "notes": "Formatting list numbers/backslashes removed; sentence wording retained. Authorship does not imply accepted gold or independent split."
+    },
+    {
+      "intake_id": "HA-001-03",
+      "text": "Tòa S1 tầng 8 khu vực hành lang thường không có điện rất tối",
+      "synthetic": true,
+      "source": {
+        "kind": "AUTHORED",
+        "author": "Cao Văn Trường",
+        "ref": "User message in current conversation, numbered sentences 1-5"
+      },
+      "received_at": "2026-10-07T16:58:11.277650+00:00",
+      "authored_at": null,
+      "split_candidate": "HELD_OUT",
+      "status": "PENDING_FAMILY_AND_LABEL_REVIEW",
+      "family_candidate": "F-HO-INTAKE-03",
+      "reviewed_by": null,
+      "notes": "Formatting list numbers/backslashes removed; sentence wording retained. Authorship does not imply accepted gold or independent split.",
+      "author_clarification": {
+        "meaning": "đèn hành lang không sáng",
+        "confirmed_by": "Cao Văn Trường",
+        "recorded_at": "2026-10-07T16:59:31.535946+00:00",
+        "source": "User clarification in current conversation"
+      }
+    },
+    {
+      "intake_id": "HA-001-04",
+      "text": "bóng đèn khu vực sảnh thang máy tầng 7 tòa S2 không sáng",
+      "synthetic": true,
+      "source": {
+        "kind": "AUTHORED",
+        "author": "Cao Văn Trường",
+        "ref": "User message in current conversation, numbered sentences 1-5"
+      },
+      "received_at": "2026-10-07T16:58:11.277650+00:00",
+      "authored_at": null,
+      "split_candidate": "HELD_OUT",
+      "status": "PENDING_FAMILY_AND_LABEL_REVIEW",
+      "family_candidate": "F-HO-INTAKE-04",
+      "reviewed_by": null,
+      "notes": "Formatting list numbers/backslashes removed; sentence wording retained. Authorship does not imply accepted gold or independent split."
+    },
+    {
+      "intake_id": "HA-001-05",
+      "text": "Trời mưa khu vực sảnh chung cư tòa S2 rất bẩn",
+      "synthetic": true,
+      "source": {
+        "kind": "AUTHORED",
+        "author": "Cao Văn Trường",
+        "ref": "User message in current conversation, numbered sentences 1-5"
+      },
+      "received_at": "2026-10-07T16:58:11.277650+00:00",
+      "authored_at": null,
+      "split_candidate": "HELD_OUT",
+      "status": "PENDING_FAMILY_AND_LABEL_REVIEW",
+      "family_candidate": "F-HO-INTAKE-05",
+      "reviewed_by": null,
+      "notes": "Formatting list numbers/backslashes removed; sentence wording retained. Authorship does not imply accepted gold or independent split."
+    },
+    {
+      "intake_id": "HA-001-06",
+      "text": "Khu vực sảnh thang máy tầng 1 tòa S1 có quá nhiều người đi lại gây bẩn",
+      "synthetic": true,
+      "source": {
+        "kind": "AUTHORED",
+        "author": "Cao Văn Trường",
+        "ref": "User message in current conversation, numbered sentences 6-10"
+      },
+      "received_at": "2026-10-07T17:16:20.774354+00:00",
+      "authored_at": null,
+      "split_candidate": "HELD_OUT",
+      "status": "PENDING_FAMILY_AND_LABEL_REVIEW",
+      "family_candidate": "F-HO-INTAKE-06",
+      "reviewed_by": null,
+      "notes": "Removed list formatting and trailing HTML space entity only. Original wording retained. Authorship does not imply accepted label or held-out independence."
+    },
+    {
+      "intake_id": "HA-001-07",
+      "text": "Đèn điện khu vực ngoài sảnh chung cư tòa S1 có 3 cái cháy bóng",
+      "synthetic": true,
+      "source": {
+        "kind": "AUTHORED",
+        "author": "Cao Văn Trường",
+        "ref": "User message in current conversation, numbered sentences 6-10"
+      },
+      "received_at": "2026-10-07T17:16:20.774354+00:00",
+      "authored_at": null,
+      "split_candidate": "HELD_OUT",
+      "status": "PENDING_FAMILY_AND_LABEL_REVIEW",
+      "family_candidate": "F-HO-INTAKE-07",
+      "reviewed_by": null,
+      "notes": "Removed list formatting and trailing HTML space entity only. Original wording retained. Authorship does not imply accepted label or held-out independence."
+    },
+    {
+      "intake_id": "HA-001-08",
+      "text": "Đèn trong thang máy tòa S1 không còn sáng",
+      "synthetic": true,
+      "source": {
+        "kind": "AUTHORED",
+        "author": "Cao Văn Trường",
+        "ref": "User message in current conversation, numbered sentences 6-10"
+      },
+      "received_at": "2026-10-07T17:16:20.774354+00:00",
+      "authored_at": null,
+      "split_candidate": "HELD_OUT",
+      "status": "PENDING_FAMILY_AND_LABEL_REVIEW",
+      "family_candidate": "F-HO-INTAKE-08",
+      "reviewed_by": null,
+      "notes": "Removed list formatting and trailing HTML space entity only. Original wording retained. Authorship does not imply accepted label or held-out independence.",
+      "scope_review_question": "Cabin interior, not elevator lobby: verify pilot service/asset coverage before accepting classification label.",
+      "scope_confirmation": {
+        "status": "IN_SCOPE",
+        "confirmed_by": "Cao Văn Trường",
+        "recorded_at": "2026-10-08T08:45:45.700329+00:00",
+        "basis": "User confirmed cleaning and lighting in elevator cabins and emergency stairwells, and lighting inside condominium managed grounds.",
+        "note": "Scope confirmation only; not label acceptance, asset match, API test or routing to BQL as execution department."
+      }
+    },
+    {
+      "intake_id": "HA-001-09",
+      "text": "Trời mưa trong thang máy tòa S2 bẩn quá",
+      "synthetic": true,
+      "source": {
+        "kind": "AUTHORED",
+        "author": "Cao Văn Trường",
+        "ref": "User message in current conversation, numbered sentences 6-10"
+      },
+      "received_at": "2026-10-07T17:16:20.774354+00:00",
+      "authored_at": null,
+      "split_candidate": "HELD_OUT",
+      "status": "PENDING_FAMILY_AND_LABEL_REVIEW",
+      "family_candidate": "F-HO-INTAKE-09",
+      "reviewed_by": null,
+      "notes": "Removed list formatting and trailing HTML space entity only. Original wording retained. Authorship does not imply accepted label or held-out independence.",
+      "scope_review_question": "Cabin interior, not elevator lobby: verify pilot service/asset coverage before accepting classification label.",
+      "scope_confirmation": {
+        "status": "IN_SCOPE",
+        "confirmed_by": "Cao Văn Trường",
+        "recorded_at": "2026-10-08T08:45:45.700329+00:00",
+        "basis": "User confirmed cleaning and lighting in elevator cabins and emergency stairwells, and lighting inside condominium managed grounds.",
+        "note": "Scope confirmation only; not label acceptance, asset match, API test or routing to BQL as execution department."
+      }
+    },
+    {
+      "intake_id": "HA-001-10",
+      "text": "Đèn hành lang tầng 12 tòa S1 bị chập chờn",
+      "synthetic": true,
+      "source": {
+        "kind": "AUTHORED",
+        "author": "Cao Văn Trường",
+        "ref": "User message in current conversation, numbered sentences 6-10"
+      },
+      "received_at": "2026-10-07T17:16:20.774354+00:00",
+      "authored_at": null,
+      "split_candidate": "HELD_OUT",
+      "status": "PENDING_FAMILY_AND_LABEL_REVIEW",
+      "family_candidate": "F-HO-INTAKE-10",
+      "reviewed_by": null,
+      "notes": "Removed list formatting and trailing HTML space entity only. Original wording retained. Authorship does not imply accepted label or held-out independence."
+    },
+    {
+      "intake_id": "HA-001-11",
+      "text": "Đèn trong phòng rác tầng 8 tòa S1 bị hỏng rồi",
+      "synthetic": true,
+      "source": {
+        "kind": "AUTHORED",
+        "author": "Cao Văn Trường",
+        "ref": "User message in current conversation, numbered sentences 11-15"
+      },
+      "received_at": "2026-10-08T08:38:17.800096+00:00",
+      "authored_at": null,
+      "split_candidate": "HELD_OUT",
+      "status": "PENDING_FAMILY_AND_LABEL_REVIEW",
+      "family_candidate": "F-HO-INTAKE-11",
+      "reviewed_by": null,
+      "notes": "Removed list formatting and trailing HTML space entity only; original wording retained. No accepted label or split independence inferred."
+    },
+    {
+      "intake_id": "HA-001-12",
+      "text": "Túi rác trong phòng rác tầng 7 tòa S2 đã qua ngày mà chưa được dọn",
+      "synthetic": true,
+      "source": {
+        "kind": "AUTHORED",
+        "author": "Cao Văn Trường",
+        "ref": "User message in current conversation, numbered sentences 11-15"
+      },
+      "received_at": "2026-10-08T08:38:17.800096+00:00",
+      "authored_at": null,
+      "split_candidate": "HELD_OUT",
+      "status": "PENDING_FAMILY_AND_LABEL_REVIEW",
+      "family_candidate": "F-HO-INTAKE-12",
+      "reviewed_by": null,
+      "notes": "Removed list formatting and trailing HTML space entity only; original wording retained. No accepted label or split independence inferred."
+    },
+    {
+      "intake_id": "HA-001-13",
+      "text": "Đèn trong thang máy tòa S1 chớp chớp",
+      "synthetic": true,
+      "source": {
+        "kind": "AUTHORED",
+        "author": "Cao Văn Trường",
+        "ref": "User message in current conversation, numbered sentences 11-15"
+      },
+      "received_at": "2026-10-08T08:38:17.800096+00:00",
+      "authored_at": null,
+      "split_candidate": "HELD_OUT",
+      "status": "PENDING_FAMILY_AND_LABEL_REVIEW",
+      "family_candidate": "F-HO-INTAKE-08",
+      "reviewed_by": null,
+      "notes": "Removed list formatting and trailing HTML space entity only; original wording retained. No accepted label or split independence inferred.",
+      "scope_review_question": "Cabin interior coverage pending; same family candidate as HA-001-08.",
+      "scope_confirmation": {
+        "status": "IN_SCOPE",
+        "confirmed_by": "Cao Văn Trường",
+        "recorded_at": "2026-10-08T08:45:45.700329+00:00",
+        "basis": "User confirmed cleaning and lighting in elevator cabins and emergency stairwells, and lighting inside condominium managed grounds.",
+        "note": "Scope confirmation only; not label acceptance, asset match, API test or routing to BQL as execution department."
+      }
+    },
+    {
+      "intake_id": "HA-001-14",
+      "text": "Đèn trong thang bộ tòa S1 không sáng",
+      "synthetic": true,
+      "source": {
+        "kind": "AUTHORED",
+        "author": "Cao Văn Trường",
+        "ref": "User message in current conversation, numbered sentences 11-15"
+      },
+      "received_at": "2026-10-08T08:38:17.800096+00:00",
+      "authored_at": null,
+      "split_candidate": "HELD_OUT",
+      "status": "PENDING_FAMILY_AND_LABEL_REVIEW",
+      "family_candidate": "F-HO-INTAKE-14",
+      "reviewed_by": null,
+      "notes": "Removed list formatting and trailing HTML space entity only; original wording retained. No accepted label or split independence inferred.",
+      "scope_confirmation": {
+        "status": "IN_SCOPE",
+        "confirmed_by": "Cao Văn Trường",
+        "recorded_at": "2026-10-08T08:45:45.700329+00:00",
+        "basis": "User confirmed cleaning and lighting in elevator cabins and emergency stairwells, and lighting inside condominium managed grounds.",
+        "note": "Scope confirmation only; not label acceptance, asset match, API test or routing to BQL as execution department."
+      }
+    },
+    {
+      "intake_id": "HA-001-15",
+      "text": "Đèn điện ngoài đường tòa S2 không sáng",
+      "synthetic": true,
+      "source": {
+        "kind": "AUTHORED",
+        "author": "Cao Văn Trường",
+        "ref": "User message in current conversation, numbered sentences 11-15"
+      },
+      "received_at": "2026-10-08T08:38:17.800096+00:00",
+      "authored_at": null,
+      "split_candidate": "HELD_OUT",
+      "status": "PENDING_FAMILY_AND_LABEL_REVIEW",
+      "family_candidate": "F-HO-INTAKE-15",
+      "reviewed_by": null,
+      "notes": "Removed list formatting and trailing HTML space entity only; original wording retained. No accepted label or split independence inferred.",
+      "scope_review_question": "Verify whether street lighting outside S2 belongs to pilot managed common area and covered assets; do not infer ownership from tower name alone.",
+      "scope_confirmation": {
+        "status": "IN_SCOPE",
+        "confirmed_by": "Cao Văn Trường",
+        "recorded_at": "2026-10-08T08:45:45.700329+00:00",
+        "basis": "User confirmed cleaning and lighting in elevator cabins and emergency stairwells, and lighting inside condominium managed grounds.",
+        "note": "Scope confirmation only; not label acceptance, asset match, API test or routing to BQL as execution department."
+      },
+      "author_clarification": {
+        "meaning": "Đèn tại đường nội khu chung cư thuộc phạm vi BQL quản lý",
+        "confirmed_by": "Cao Văn Trường",
+        "recorded_at": "2026-10-08T08:45:45.700329+00:00",
+        "source": "User response to scope question for sentence 15; original text retained"
+      }
+    }
+  ]
+}

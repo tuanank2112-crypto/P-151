@@ -1,0 +1,111 @@
+### GREEN-REFERENCE backlog valid
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --backlog <fx>/bl/valid.json
+COUNT backlog items=1
+RESULT: PASS
+EXIT=0
+
+### CONTROL mut-bad_decision_enum
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --backlog <fx>/bl/mut-bad_decision_enum.json
+COUNT backlog items=1
+ERR BAD_SCHEMA D5-B-001.decision='MAYBE'
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-bad_item_id
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --backlog <fx>/bl/mut-bad_item_id.json
+COUNT backlog items=1
+ERR BAD_ID backlog[0] item_id='B-1'
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-blank_expected_result
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --backlog <fx>/bl/mut-blank_expected_result.json
+COUNT backlog items=1
+ERR BAD_DONE_WHEN D5-B-001: done_when.command/expected_result must be non-empty
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-closed_with_missing_retest_file
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --backlog <fx>/bl/mut-closed_with_missing_retest_file.json
+COUNT backlog items=1
+ERR BAD_REF D5-B-001: evidence_ref 'no/such/retest.txt' is not a file under the repo root
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-closed_without_retest_evidence
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --backlog <fx>/bl/mut-closed_without_retest_evidence.json
+COUNT backlog items=1
+ERR CLOSED_NO_RETEST D5-B-001: CLOSED without retest evidence
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-closed_without_reviewer
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --backlog <fx>/bl/mut-closed_without_reviewer.json
+COUNT backlog items=1
+ERR CLOSED_NO_REVIEWER D5-B-001
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-confirmed_without_reviewed_at
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --backlog <fx>/bl/mut-confirmed_without_reviewed_at.json
+COUNT backlog items=1
+ERR CONFIRMED_NO_REVIEW D5-B-001
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-confirmed_without_reviewer
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --backlog <fx>/bl/mut-confirmed_without_reviewer.json
+COUNT backlog items=1
+ERR CONFIRMED_NO_REVIEW D5-B-001
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-critical_not_p0
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --backlog <fx>/bl/mut-critical_not_p0.json
+COUNT backlog items=1
+ERR CRITICAL_NOT_P0 D5-B-001: CRITICAL but P1
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-duplicate_item_id
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --backlog <fx>/bl/mut-duplicate_item_id.json
+COUNT backlog items=2
+ERR DUP_ID D5-B-001
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-empty_command
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --backlog <fx>/bl/mut-empty_command.json
+COUNT backlog items=1
+ERR BAD_DONE_WHEN D5-B-001: done_when.command/expected_result must be non-empty
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-evidence_ref_absolute_path
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --backlog <fx>/bl/mut-evidence_ref_absolute_path.json
+COUNT backlog items=1
+ERR BAD_REF D5-B-001: evidence_ref 'C:\\P-151-truong\\AGENTS.md' is not a file under the repo root
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-evidence_ref_missing_file
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --backlog <fx>/bl/mut-evidence_ref_missing_file.json
+COUNT backlog items=1
+ERR BAD_REF D5-B-001: evidence_ref 'planning/nope.md' is not a file under the repo root
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-missing_key
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --backlog <fx>/bl/mut-missing_key.json
+COUNT backlog items=1
+ERR BAD_SCHEMA backlog[0] missing keys or not an object
+RESULT: FAIL
+EXIT=1
+
+### CONTROL issue not covered
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --backlog <fx>/bl/valid.json --issues <fx>/bl/issues.json (issue D4-99 in no source_issue_refs)
+COUNT backlog items=1
+ERR ISSUE_UNCOVERED D4-99 is in no source_issue_refs
+RESULT: FAIL
+EXIT=1
+

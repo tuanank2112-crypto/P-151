@@ -1,0 +1,260 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080" style="background:#FFFFFF; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <defs>
+    <!-- Markers -->
+    <marker id="arrow-indigo" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#4F46E5" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#DC2626" />
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#D97706" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#059669" />
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#7C3AED" />
+    </marker>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#334155" />
+    </marker>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0F172A" flood-opacity="0.05"/>
+    </filter>
+  </defs>
+
+  <!-- ========================================================================= -->
+  <!-- HEADER -->
+  <!-- ========================================================================= -->
+  <text x="960" y="55" text-anchor="middle" font-size="28" font-weight="800" fill="#0F172A" letter-spacing="-0.5px">MaintenanceOps Agent — Architecture Data Flow</text>
+
+  <!-- ========================================================================= -->
+  <!-- PILLAR 1: INTAKE & MULTI-LAYER SAFETY GATE (X: 50, W: 425) -->
+  <!-- ========================================================================= -->
+  <rect x="50" y="95" width="425" height="935" rx="14" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5" />
+  <text x="75" y="130" font-size="13" font-weight="800" fill="#4F46E5" letter-spacing="1px">1. INTAKE &amp; SAFETY INTERCEPTION</text>
+
+  <!-- Node: Resident Report -->
+  <g transform="translate(75, 155)" filter="url(#shadow)">
+    <rect width="375" height="85" rx="8" fill="#FFFFFF" stroke="#0F172A" stroke-width="2"/>
+    <text x="187" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#0F172A">👤 Resident Report</text>
+    <text x="187" y="58" text-anchor="middle" font-size="11" font-weight="500" fill="#475569">Raw Description Text + Initial Field Photo Evidence</text>
+  </g>
+
+  <!-- Node: Ingestion & Validation -->
+  <g transform="translate(75, 275)" filter="url(#shadow)">
+    <rect width="375" height="85" rx="8" fill="#FFFFFF" stroke="#4F46E5" stroke-width="2"/>
+    <text x="187" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#1E1B4B">⚡ Ingestion &amp; Schema Validator</text>
+    <text x="187" y="58" text-anchor="middle" font-size="11" font-weight="500" fill="#4338CA">Validates Payload Schema · Enforces Location &amp; Timestamp</text>
+  </g>
+
+  <!-- Node: Safety Interceptor -->
+  <g transform="translate(75, 395)" filter="url(#shadow)">
+    <rect width="375" height="105" rx="8" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2.5"/>
+    <text x="187" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#1E1B4B">🛡️ Multi-Layer Safety Interceptor</text>
+    <text x="187" y="58" text-anchor="middle" font-size="11" font-weight="500" fill="#4338CA">Step 2b · R1-R10 Fixed Rules + lexicon.yaml + LLM Guard</text>
+    <text x="187" y="80" text-anchor="middle" font-size="11" font-weight="600" fill="#312E81">Evaluates: Level 1 Emergency / Level 2 Warning / Safe</text>
+  </g>
+
+  <!-- Pillar 1 Connectors (Vertical 100% Clear) -->
+  <path d="M 262 240 L 262 273" stroke="#4F46E5" stroke-width="2" marker-end="url(#arrow-indigo)" fill="none" />
+  <path d="M 262 360 L 262 393" stroke="#4F46E5" stroke-width="2" marker-end="url(#arrow-indigo)" fill="none" />
+
+  <!-- Pillar 1 Local Exception Handlers: SIDE-BY-SIDE & GAP ROUTING (NO PIERCING) -->
+  <!-- Level 1 Emergency (Left Sub-box: X: 70, W: 180) -->
+  <g transform="translate(70, 545)" filter="url(#shadow)">
+    <rect width="180" height="95" rx="8" fill="#FEF2F2" stroke="#DC2626" stroke-width="2"/>
+    <text x="90" y="30" text-anchor="middle" font-size="13" font-weight="700" fill="#991B1B">🚨 Level 1 Emergency</text>
+    <text x="90" y="50" text-anchor="middle" font-size="10" font-weight="600" fill="#B91C1C">EMERGENCY_PENDING_BQL</text>
+    <text x="90" y="70" text-anchor="middle" font-size="10" font-weight="500" fill="#7F1D1D">BQL Direct Action</text>
+  </g>
+  <!-- Direct Red Arrow from Safety Interceptor (bottom-left) to Level 1 Emergency -->
+  <path d="M 160 500 L 160 543" stroke="#DC2626" stroke-width="2" marker-end="url(#arrow-red)" fill="none" />
+
+  <!-- Level 2 Warning (Right Sub-box: X: 275, W: 180) -->
+  <g transform="translate(275, 545)" filter="url(#shadow)">
+    <rect width="180" height="95" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="2"/>
+    <text x="90" y="30" text-anchor="middle" font-size="13" font-weight="700" fill="#92400E">⚠️ Level 2 Warning</text>
+    <text x="90" y="50" text-anchor="middle" font-size="10" font-weight="600" fill="#B45309">SAFETY_REVIEW_REQUIRED</text>
+    <text x="90" y="70" text-anchor="middle" font-size="10" font-weight="500" fill="#78350F">BPTN Staff Review (4h)</text>
+  </g>
+  <!-- Direct Amber Arrow from Safety Interceptor (bottom-right) to Level 2 Warning -->
+  <path d="M 365 500 L 365 543" stroke="#D97706" stroke-width="2" marker-end="url(#arrow-amber)" fill="none" />
+
+  <!-- Missing Info Hold (Full Width Box Below: X: 70, W: 385, Y: 680) -->
+  <g transform="translate(70, 680)" filter="url(#shadow)">
+    <rect width="385" height="85" rx="8" fill="#F0FDF4" stroke="#059669" stroke-width="2"/>
+    <text x="192" y="36" text-anchor="middle" font-size="14" font-weight="700" fill="#064E3B">🔄 Missing Information Hold</text>
+    <text x="192" y="58" text-anchor="middle" font-size="11" font-weight="500" fill="#047857">NEED_INFO · Requests Citizen Location/Details Clarification</text>
+  </g>
+  <!-- Green Arrow routes through the 25px CLEAR GAP between Box 1 and Box 2 (at X: 262) -->
+  <path d="M 262 500 L 262 678" stroke="#059669" stroke-width="2" marker-end="url(#arrow-green)" fill="none" />
+
+
+  <!-- ========================================================================= -->
+  <!-- PILLAR 2: AI REASONING & ENRICHMENT (X: 515, W: 425) -->
+  <!-- ========================================================================= -->
+  <rect x="515" y="95" width="425" height="935" rx="14" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5" />
+  <text x="540" y="130" font-size="13" font-weight="800" fill="#4F46E5" letter-spacing="1px">2. AI REASONING &amp; ENRICHMENT</text>
+
+  <!-- Node: OpenAI Proposer -->
+  <g transform="translate(540, 155)" filter="url(#shadow)">
+    <rect width="375" height="85" rx="8" fill="#FFFFFF" stroke="#334155" stroke-width="2"/>
+    <text x="187" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#1E293B">🧠 OpenAI API (GPT-4o Proposer)</text>
+    <text x="187" y="58" text-anchor="middle" font-size="11" font-weight="500" fill="#475569">Structured JSON Output · Category &amp; Priority Proposal</text>
+  </g>
+
+  <!-- Node: Hybrid Classify & Priority -->
+  <g transform="translate(540, 275)" filter="url(#shadow)">
+    <rect width="375" height="100" rx="8" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2.5"/>
+    <text x="187" y="35" text-anchor="middle" font-size="15" font-weight="700" fill="#1E1B4B">🤖 Hybrid Classify &amp; Priority</text>
+    <text x="187" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#4338CA">Step 3 · PB-CLN-01 (Cleaning) / PB-TEC-01 (Lighting)</text>
+    <text x="187" y="76" text-anchor="middle" font-size="11" font-weight="600" fill="#312E81">PRI-H1/H2/M1/M2/L1/D0 Priority Rules</text>
+  </g>
+
+  <!-- Direct Connector: LLM -> Hybrid Classify (35px clear space) -->
+  <path d="M 727 240 L 727 273" stroke="#334155" stroke-width="1.8" stroke-dasharray="4 4" marker-end="url(#arrow-slate)" fill="none" />
+
+  <!-- Node: Duplicate Detection -->
+  <g transform="translate(540, 410)" filter="url(#shadow)">
+    <rect width="375" height="90" rx="8" fill="#FFFFFF" stroke="#4F46E5" stroke-width="2"/>
+    <text x="187" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#1E1B4B">🔍 Duplicate Detection Gate</text>
+    <text x="187" y="58" text-anchor="middle" font-size="11" font-weight="500" fill="#4338CA">Step 4 · Scans PostgreSQL cases for SLA window overlaps</text>
+    <text x="187" y="76" text-anchor="middle" font-size="11" font-weight="500" fill="#475569">Filters duplicate clusters · Preserves unique ticket draft</text>
+  </g>
+  <!-- Direct Connector: Classify -> Dedup (35px clear space) -->
+  <path d="M 727 375 L 727 408" stroke="#4F46E5" stroke-width="2" marker-end="url(#arrow-indigo)" fill="none" />
+
+  <!-- Node: Asset & Inventory Resolver -->
+  <g transform="translate(540, 535)" filter="url(#shadow)">
+    <rect width="375" height="100" rx="8" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2.5"/>
+    <text x="187" y="35" text-anchor="middle" font-size="15" font-weight="700" fill="#1E1B4B">📦 Asset &amp; Inventory Packaging</text>
+    <text x="187" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#4338CA">Steps 6-7 · Traversal of Asset Tree · Stock Check SIM</text>
+    <text x="187" y="76" text-anchor="middle" font-size="11" font-weight="600" fill="#312E81">Generates sealed WorkOrderDraft bundle</text>
+  </g>
+  <!-- Direct Connector: Dedup -> Asset (35px clear space) -->
+  <path d="M 727 500 L 727 533" stroke="#4F46E5" stroke-width="2" marker-end="url(#arrow-indigo)" fill="none" />
+
+  <!-- Node: Material Restock Queue -->
+  <g transform="translate(540, 670)" filter="url(#shadow)">
+    <rect width="375" height="85" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="2"/>
+    <text x="187" y="36" text-anchor="middle" font-size="14" font-weight="700" fill="#92400E">⏳ Material Restock Queue</text>
+    <text x="187" y="58" text-anchor="middle" font-size="11" font-weight="500" fill="#B45309">WAITING_MATERIAL (ON_HOLD) · Re-triggers when stock arrives</text>
+  </g>
+  <!-- Direct Connector: Asset -> Restock Queue (35px clear space) -->
+  <path d="M 727 635 L 727 668" stroke="#D97706" stroke-width="2" marker-end="url(#arrow-amber)" fill="none" />
+
+
+  <!-- ========================================================================= -->
+  <!-- PILLAR 3: FIELD DISPATCH & EXECUTION (X: 980, W: 425) -->
+  <!-- ========================================================================= -->
+  <rect x="980" y="95" width="425" height="935" rx="14" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5" />
+  <text x="1005" y="130" font-size="13" font-weight="800" fill="#4F46E5" letter-spacing="1px">3. FIELD DISPATCH &amp; EXECUTION</text>
+
+  <!-- Node: Work Order Dispatch (TOP OF PILLAR 3) -->
+  <g transform="translate(1005, 155)" filter="url(#shadow)">
+    <rect width="375" height="95" rx="8" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2.5"/>
+    <text x="187" y="35" text-anchor="middle" font-size="15" font-weight="700" fill="#1E1B4B">📋 Work Order Packaging &amp; Dispatch</text>
+    <text x="187" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#4338CA">Step 8 · Status: ROUTED · Dispatched to Assigned Team</text>
+    <text x="187" y="76" text-anchor="middle" font-size="11" font-weight="600" fill="#312E81">Binds SLA Timers &amp; Department Routing Rules</text>
+  </g>
+
+  <!-- Node: Field Operations (MIDDLE OF PILLAR 3) -->
+  <g transform="translate(1005, 285)" filter="url(#shadow)">
+    <rect width="375" height="105" rx="8" fill="#FFFFFF" stroke="#0F172A" stroke-width="2"/>
+    <text x="187" y="35" text-anchor="middle" font-size="15" font-weight="700" fill="#0F172A">🛠️ Execution Department Operations</text>
+    <text x="187" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#475569">PB-CLN-01 (Cleaners) / PB-TEC-01 (Technicians) Onsite</text>
+    <text x="187" y="76" text-anchor="middle" font-size="11" font-weight="500" fill="#475569">Records checklist, actual materials used &amp; completion logs</text>
+  </g>
+  <!-- Direct Connector: Dispatch -> Field Operations (35px clear space) -->
+  <path d="M 1192 250 L 1192 283" stroke="#4F46E5" stroke-width="2" marker-end="url(#arrow-indigo)" fill="none" />
+
+  <!-- Node: Supabase Photo Storage (DOWNSTREAM OF FIELD OPERATIONS) -->
+  <g transform="translate(1005, 425)" filter="url(#shadow)">
+    <rect width="375" height="90" rx="8" fill="#FFFFFF" stroke="#334155" stroke-width="2"/>
+    <text x="187" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#1E293B">🪣 Supabase Photo Storage</text>
+    <text x="187" y="58" text-anchor="middle" font-size="11" font-weight="500" fill="#475569">Private Bucket: maintenance-photos (Binary Proxy Streaming)</text>
+    <text x="187" y="74" text-anchor="middle" font-size="10" font-weight="500" fill="#64748B">Stores Before &amp; After Proof of Completion</text>
+  </g>
+  <!-- Direct Connector: Field Operations -> Photo Storage (35px clear space, ZERO PIERCING) -->
+  <path d="M 1192 390 L 1192 423" stroke="#334155" stroke-width="1.8" stroke-dasharray="4 4" marker-end="url(#arrow-slate)" fill="none" />
+
+  <!-- Node: Automated 6-Point Audit (BOTTOM OF PILLAR 3) -->
+  <g transform="translate(1005, 550)" filter="url(#shadow)">
+    <rect width="375" height="105" rx="8" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2.5"/>
+    <text x="187" y="35" text-anchor="middle" font-size="15" font-weight="700" fill="#1E1B4B">✅ Automated 6-Point Audit</text>
+    <text x="187" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#4338CA">Step 10 · Checks Checklist, Materials, Timestamps &amp; ≥1 Photo</text>
+    <text x="187" y="76" text-anchor="middle" font-size="11" font-weight="600" fill="#312E81">Transitions ticket: IN_PROGRESS → READY_FOR_REVIEW</text>
+  </g>
+  <!-- Direct Connector: Photo Storage -> 6-Point Audit (35px clear space) -->
+  <path d="M 1192 515 L 1192 548" stroke="#4F46E5" stroke-width="2" marker-end="url(#arrow-indigo)" fill="none" />
+
+
+  <!-- ========================================================================= -->
+  <!-- PILLAR 4: QUALITY GATE & ACID PERSISTENCE (X: 1445, W: 425) -->
+  <!-- ========================================================================= -->
+  <rect x="1445" y="95" width="425" height="935" rx="14" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5" />
+  <text x="1470" y="130" font-size="13" font-weight="800" fill="#4F46E5" letter-spacing="1px">4. QUALITY GATE &amp; ACID PERSISTENCE</text>
+
+  <!-- Node: Rework Re-dispatch (TOP EXCEPTION IN PILLAR 4) -->
+  <g transform="translate(1470, 155)" filter="url(#shadow)">
+    <rect width="375" height="85" rx="8" fill="#FAF5FF" stroke="#7C3AED" stroke-width="2"/>
+    <text x="187" y="36" text-anchor="middle" font-size="14" font-weight="700" fill="#4C1D95">🔧 Rework Re-dispatch (T22)</text>
+    <text x="187" y="58" text-anchor="middle" font-size="11" font-weight="500" fill="#6D28D9">Rejection with Defect Notes · Returned to Executing Dept</text>
+  </g>
+
+  <!-- Node: Management BQL Quality Gate -->
+  <g transform="translate(1470, 285)" filter="url(#shadow)">
+    <rect width="375" height="105" rx="8" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2.5"/>
+    <text x="187" y="35" text-anchor="middle" font-size="15" font-weight="700" fill="#1E1B4B">👔 Management (BQL) Quality Gate</text>
+    <text x="187" y="56" text-anchor="middle" font-size="11" font-weight="500" fill="#4338CA">Final Human Sign-off on READY_FOR_REVIEW Dossier</text>
+    <text x="187" y="76" text-anchor="middle" font-size="11" font-weight="600" fill="#312E81">Verifies Onsite Quality, Photos &amp; Reconciled Stock</text>
+  </g>
+  <!-- Direct Upward Connector: BQL -> Rework (45px clear space) -->
+  <path d="M 1657 285 L 1657 242" stroke="#7C3AED" stroke-width="2" marker-end="url(#arrow-purple)" fill="none" />
+
+  <!-- Node: ACID Commit Engine -->
+  <g transform="translate(1470, 425)" filter="url(#shadow)">
+    <rect width="375" height="90" rx="8" fill="#FFFFFF" stroke="#0F172A" stroke-width="2"/>
+    <text x="187" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#0F172A">💾 ACID Transaction Commit Engine</text>
+    <text x="187" y="58" text-anchor="middle" font-size="11" font-weight="500" fill="#475569">Maintains engine.lock · Atomic State Mutation Commit</text>
+    <text x="187" y="76" text-anchor="middle" font-size="11" font-weight="600" fill="#0F172A">State: CLOSED (closure_kind=NORMAL / EMERGENCY)</text>
+  </g>
+  <!-- Direct Downward Connector: BQL -> ACID Commit (35px clear space) -->
+  <path d="M 1657 390 L 1657 423" stroke="#4F46E5" stroke-width="2" marker-end="url(#arrow-indigo)" fill="none" />
+
+  <!-- Node: PostgreSQL Database -->
+  <g transform="translate(1470, 550)" filter="url(#shadow)">
+    <rect width="375" height="105" rx="8" fill="#FFFFFF" stroke="#334155" stroke-width="2"/>
+    <text x="187" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#1E293B">🐘 PostgreSQL (Supabase maintops)</text>
+    <text x="187" y="58" text-anchor="middle" font-size="11" font-weight="500" fill="#475569">cases (JSONB) · audit_log (Append-only) · notifications (Outbox)</text>
+    <text x="187" y="80" text-anchor="middle" font-size="11" font-weight="500" fill="#475569">Advisory Locks &amp; Immutable Historical Traceability</text>
+  </g>
+  <!-- Direct Downward Connector: ACID Commit -> PostgreSQL (35px clear space) -->
+  <path d="M 1657 515 L 1657 548" stroke="#334155" stroke-width="2" marker-end="url(#arrow-slate)" fill="none" />
+
+
+  <!-- ========================================================================= -->
+  <!-- HIGHWAY BRIDGES BETWEEN PILLARS (TRAVELS THROUGH CLEAR 40px GUTTERS) -->
+  <!-- ========================================================================= -->
+
+  <!-- Bridge 1: Pillar 1 -> Pillar 2 (Safety Cleared Context) -->
+  <!-- Level: Y = 325 (Aligns right between Ingestion & Safety -> Classify) -->
+  <path d="M 450 325 L 538 325" stroke="#4F46E5" stroke-width="3" marker-end="url(#arrow-indigo)" fill="none" />
+  <rect x="460" y="302" width="70" height="22" rx="4" fill="#FFFFFF" stroke="#4F46E5" stroke-width="1.5" />
+  <text x="495" y="317" text-anchor="middle" font-size="10" font-weight="700" fill="#4F46E5">Cleared</text>
+
+  <!-- Bridge 2: Pillar 2 -> Pillar 3 (WorkOrderDraft Bundle) -->
+  <!-- From Asset & Inventory (X: 915, Y: 585) -> Gutter (X: 960) -> Up to Dispatch (Y: 202) -> Enter Dispatch (X: 1003) -->
+  <path d="M 915 585 L 960 585 L 960 202 L 1003 202" stroke="#4F46E5" stroke-width="3" marker-end="url(#arrow-indigo)" fill="none" />
+  <rect x="925" y="191" width="70" height="22" rx="4" fill="#FFFFFF" stroke="#4F46E5" stroke-width="1.5" />
+  <text x="960" y="206" text-anchor="middle" font-size="10" font-weight="700" fill="#4F46E5">Enriched</text>
+
+  <!-- Bridge 3: Pillar 3 -> Pillar 4 (Verified Completion Audit Dossier) -->
+  <!-- From 6-Point Audit (X: 1380, Y: 602) -> Gutter (X: 1425) -> Up to BQL (Y: 337) -> Enter BQL (X: 1468) -->
+  <path d="M 1380 602 L 1425 602 L 1425 337 L 1468 337" stroke="#4F46E5" stroke-width="3" marker-end="url(#arrow-indigo)" fill="none" />
+  <rect x="1390" y="326" width="70" height="22" rx="4" fill="#FFFFFF" stroke="#4F46E5" stroke-width="1.5" />
+  <text x="1425" y="341" text-anchor="middle" font-size="10" font-weight="700" fill="#4F46E5">Audited</text>
+
+</svg>

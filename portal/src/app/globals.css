@@ -1,0 +1,202 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens and classes copied from design-ticket-cu-dan/design/*.dc.html (<helmet><style>).
+ * Classes shared by every screen are global; classes that differ between design files are scoped
+ * under .scr-<screen> (login, resident, reception, management, cleaning, technical). SPEC-P02 §5: do not
+ * replace these values with "close" Tailwind colors.
+ */
+
+@theme inline {
+  --font-sans: var(--font-be-vietnam), system-ui, sans-serif;
+  --color-ink: #13203a;
+  --color-ink-strong: #0f1e36;
+  --color-hello: #17305a;
+  --color-muted: #5b6578;
+  --color-body: #2a3447;
+  --color-page: #f3f5f9;
+  --color-brand: #1d4ed8;
+  --color-brand-dark: #1e3a8a;
+  --color-brand-mid: #2563eb;
+  --color-line: #e9edf3;
+  --color-line-soft: #eef2f7;
+  --color-soft: #eef4ff;
+  --color-field: #f7f9fc;
+  --color-danger: #b42318;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-be-vietnam), system-ui, sans-serif;
+  color: #13203a;
+  background: #f3f5f9;
+}
+a { color: #1d4ed8; }
+a:hover { color: #1e3a8a; }
+
+/* ---------- Shared (identical in every dashboard file) ---------- */
+.tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px 6px;border:0;background:transparent;border-radius:18px;cursor:pointer;font:inherit;font-size:15px;color:#13203A;text-align:center}
+.tile .ic{width:72px;height:72px;border-radius:50%;background:#EEF2F7;display:flex;align-items:center;justify-content:center;color:#2563EB}
+.tile:hover .ic{background:#DCE8FF}
+.tile.on{font-weight:700}.tile.on .ic{background:#2563EB;color:#FFFFFF}
+.cnt{position:absolute;top:6px;left:calc(50% + 18px);min-width:24px;height:24px;padding:0 6px;box-sizing:border-box;border-radius:999px;background:#1D4ED8;color:#FFFFFF;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #FFFFFF}
+.card{background:#FFFFFF;border-radius:22px;box-shadow:0 2px 14px rgba(15,30,60,0.06)}
+.hdr-btn{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:999px;background:#FFFFFF;color:#13203A;text-decoration:none;font-weight:600;font-size:14px;border:0;cursor:pointer;font-family:inherit}
+.hdr-btn:hover{color:#1D4ED8}
+.bell{position:relative;width:56px;height:56px;border-radius:50%;background:#FFFFFF;border:0;display:flex;align-items:center;justify-content:center;color:#13203A;cursor:pointer;box-shadow:0 4px 14px rgba(15,30,60,0.12)}
+.bell .b{position:absolute;top:-2px;right:-2px;min-width:22px;height:22px;padding:0 5px;box-sizing:border-box;border-radius:999px;background:#1D4ED8;color:#FFFFFF;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #FFFFFF}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;line-height:1.4}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+.cat-ve_sinh{background:#D3F0EC;color:#0E5A52}.cat-ky_thuat{background:#FBE1CC;color:#78320A}.cat-bql{background:#E5E0F6;color:#3D3078}.cat-none{background:#E9EDF3;color:#475166}
+.urgent{background:#B42318;color:#FFFFFF}
+.btn{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid #D9DFE8;background:#FFFFFF;font:inherit;font-weight:600;font-size:14px;cursor:pointer;color:#13203A}
+.btn:hover{border-color:#1D4ED8;color:#1D4ED8}
+.btn.primary{background:#1D4ED8;border-color:#1D4ED8;color:#FFFFFF}.btn.primary:hover{background:#1E3A8A;border-color:#1E3A8A;color:#FFFFFF}
+.btn:disabled{opacity:.6;cursor:progress}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.badge{min-width:26px;height:26px;padding:0 8px;box-sizing:border-box;border-radius:999px;background:#FFFFFF;font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px}
+.thumbs a{display:block;width:64px;height:64px;border-radius:12px;overflow:hidden;background:#E9EDF3}
+.thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* ---------- Main.dc.html (login) ---------- */
+.scr-login .field{width:100%;box-sizing:border-box;min-height:52px;border:1px solid #DCE2EB;border-radius:14px;padding:14px 16px;font:inherit;font-size:15px;color:#13203A;background:#F7F9FC}
+.scr-login .field:focus{outline:2px solid #2563EB;outline-offset:1px;background:#FFFFFF}
+.scr-login .field.err{border-color:#B42318}
+.scr-login .submit{display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:999px;background:#1D4ED8;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:16px;border:0;cursor:pointer;font-family:inherit}
+.scr-login .submit:hover{background:#1E3A8A;color:#FFFFFF}
+.scr-login .submit:disabled{opacity:.7;cursor:progress}
+.scr-login .eye{position:absolute;right:6px;top:4px;min-width:44px;min-height:44px;border:0;background:transparent;font:inherit;font-size:13px;font-weight:600;color:#1D4ED8;cursor:pointer;border-radius:10px}
+
+/* ---------- Resident.dc.html ---------- */
+.scr-resident .btn.big{min-height:52px;font-size:16px;width:100%}
+.scr-resident .chip{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid transparent;background:#EEF2F7;font:inherit;font-size:14px;color:#2A3447;cursor:pointer}
+.scr-resident .chip:hover{background:#DCE8FF;color:#1E3A8A}
+.scr-resident .chip.on{background:#1D4ED8;color:#FFFFFF;font-weight:600}
+.scr-resident .chip.sm{min-height:36px;font-size:13px;padding:0 12px}
+.scr-resident .field{width:100%;box-sizing:border-box;border:1px solid #DCE2EB;border-radius:14px;padding:14px 16px;font:inherit;font-size:15px;color:#13203A;background:#F7F9FC}
+.scr-resident .field:focus{outline:2px solid #2563EB;outline-offset:1px;background:#FFFFFF}
+.scr-resident .num{width:30px;height:30px;flex:none;border-radius:50%;background:#1D4ED8;color:#FFFFFF;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.scr-resident .urg{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid #F1B4AE;background:#FFFFFF;color:#B42318;font:inherit;font-weight:600;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.scr-resident .urg.on{background:#B42318;border-color:#B42318;color:#FFFFFF}
+.scr-resident .chk{display:flex;align-items:center;gap:10px;font-size:14px;color:#5B6578}
+.scr-resident .chk .bx{width:22px;height:22px;border-radius:50%;border:2px solid #C5CEDB;box-sizing:border-box;flex:none;display:flex;align-items:center;justify-content:center;color:#FFFFFF}
+.scr-resident .chk.ok{color:#13203A}.scr-resident .chk.ok .bx{background:#16A34A;border-color:#16A34A}
+.scr-resident .idb{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;font-weight:700;color:#1D4ED8;background:#EEF4FF;padding:4px 10px;border-radius:8px}
+.scr-resident .titem{display:flex;flex-direction:column;align-items:flex-start;gap:8px;width:100%;text-align:left;padding:16px 18px;border-radius:18px;border:2px solid transparent;background:#FFFFFF;box-shadow:0 2px 14px rgba(15,30,60,0.06);font:inherit;color:#13203A;cursor:pointer}
+.scr-resident .titem:hover{border-color:#C9DAFF}.scr-resident .titem.on{border-color:#2563EB}
+.scr-resident .s-run{background:#E1EAF9;color:#1E3F7A}.scr-resident .s-wait{background:#E5E0F6;color:#3D3078}.scr-resident .s-pause{background:#FFEFC2;color:#664900}.scr-resident .s-done{background:#D8EFE3;color:#13553A}.scr-resident .s-cancel{background:#E9EDF3;color:#475166}
+.scr-resident .sd{width:26px;height:26px;flex:none;border-radius:50%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid #C5CEDB;color:#5B6578;background:#FFFFFF}
+.scr-resident .sd.done{background:#2563EB;border-color:#2563EB;color:#FFFFFF}
+.scr-resident .sd.cur{border-color:#2563EB;color:#1D4ED8;box-shadow:0 0 0 4px #DCE8FF}
+.scr-resident .sd.pause{border-color:#B07D00;color:#664900;box-shadow:0 0 0 4px #FFEFC2}
+.scr-resident .sl{flex:1;height:3px;border-radius:999px;background:#DCE2EB}.scr-resident .sl.done{background:#2563EB}
+.scr-resident .slab{font-size:13px;color:#5B6578}.scr-resident .slab.done{color:#13203A;font-weight:600}
+.scr-resident .hd{width:12px;height:12px;border-radius:50%;background:#C5CEDB;margin-top:5px;flex:none}.scr-resident .hd.first{background:#2563EB;box-shadow:0 0 0 4px #DCE8FF}
+.scr-resident .btn.danger{border-color:#F1B4AE;color:#B42318}.scr-resident .btn.danger:hover{background:#FDE2DF;color:#8A1C12}
+.scr-resident .place{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:64px;border-radius:16px;border:2px solid #E9EDF3;background:#FFFFFF;cursor:pointer;font:inherit;color:#13203A;text-align:left}
+.scr-resident .place:hover{border-color:#C9DAFF}
+.scr-resident .place .ic{width:44px;height:44px;border-radius:50%;background:#EEF2F7;color:#2563EB;display:flex;align-items:center;justify-content:center;flex:none}
+.scr-resident .place.on{border-color:#2563EB;background:#F5F8FF}.scr-resident .place.on .ic{background:#2563EB;color:#FFFFFF}
+.scr-resident .drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:104px;padding:16px;box-sizing:border-box;border:2px dashed #9DB4DA;border-radius:16px;background:#F7F9FC;cursor:pointer;text-align:center}
+.scr-resident .drop:hover,.scr-resident .drop.over{background:#EEF4FF;border-color:#2563EB}
+.scr-resident .thumb{position:relative;width:104px;height:104px;border-radius:14px;overflow:hidden;background:#E9EDF3;flex:none}
+.scr-resident .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.scr-resident .thumb .x{position:absolute;top:4px;right:4px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(15,30,54,0.78);color:#FFFFFF;font-size:16px;cursor:pointer}
+.scr-resident .ov{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:16px 18px;border-radius:18px;border:2px solid transparent;background:#FFFFFF;box-shadow:0 2px 14px rgba(15,30,60,0.06);font:inherit;color:#13203A;cursor:pointer;text-align:left}
+.scr-resident .ov:hover{border-color:#C9DAFF}.scr-resident .ov.on{border-color:#2563EB}
+.scr-resident .seg{flex:1;height:5px;border-radius:999px;background:#E2E7EF}.scr-resident .seg.done{background:#2563EB}.scr-resident .seg.cur{background:#93B4F5}.scr-resident .seg.pause{background:#E8B931}
+.scr-resident .need{background:#FFEFC2;color:#664900}
+.scr-resident .star{width:44px;height:44px;border:0;background:transparent;color:#C5CEDB;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:10px;padding:0}
+.scr-resident .star:hover{color:#E8B931}.scr-resident .star.on{color:#E5A100}
+.scr-resident .rs{color:#D5DBE5;display:flex}.scr-resident .rs.on{color:#E5A100}
+
+/* ---------- Reception.dc.html ---------- */
+.scr-reception .ok{background:#D8EFE3;color:#13553A}.scr-reception .fix{background:#FFEFC2;color:#664900}.scr-reception .wait{background:#E9EDF3;color:#475166}
+.scr-reception .btn.sug{background:#1D4ED8;border-color:#1D4ED8;color:#FFFFFF}.scr-reception .btn.sug:hover{background:#1E3A8A;border-color:#1E3A8A;color:#FFFFFF}
+.scr-reception .btn.ghost{border-color:transparent;background:transparent;color:#1D4ED8;text-decoration:underline}
+.scr-reception .btn.warn{border-color:#B42318;color:#B42318}
+.scr-reception table{border-collapse:collapse;width:100%;min-width:820px}
+
+/* ---------- Management.dc.html ---------- */
+.scr-management .st-moi{background:#FFEFC2;color:#664900}.scr-management .st-da_chuyen{background:#E1EAF9;color:#1E3F7A}.scr-management .st-dang_xu_ly{background:#D8EFE3;color:#13553A}.scr-management .st-hoan_thanh{background:#E9EDF3;color:#475166}
+.scr-management .late{background:#FDE2DF;color:#8A1C12}
+.scr-management .fchip{min-height:40px;padding:0 16px;border-radius:999px;border:0;background:#EEF2F7;font:inherit;font-size:13px;font-weight:600;cursor:pointer;color:#2A3447}
+.scr-management .fchip:hover{background:#DCE8FF}
+.scr-management .fchip.on{background:#1D4ED8;color:#FFFFFF}
+.scr-management table{border-collapse:collapse;width:100%;min-width:860px}
+
+/* Tables of Reception and Management share th/td */
+.scr-reception th,.scr-management th{text-align:left;font-size:12px;font-weight:600;color:#5B6578;text-transform:uppercase;letter-spacing:.04em;padding:14px 16px;border-bottom:1px solid #E9EDF3}
+.scr-reception td,.scr-management td{padding:16px;border-bottom:1px solid #EEF2F7;font-size:14px;vertical-align:top}
+
+/* ---------- Cleaning.dc.html ---------- */
+.scr-cleaning .staff{background:#D3F0EC;color:#0E5A52}
+.scr-cleaning .good{background:#D8EFE3;color:#13553A}.scr-cleaning .bad{background:#FDE2DF;color:#8A1C12}.scr-cleaning .none{background:#E9EDF3;color:#475166}
+
+/* ---------- Technical.dc.html ---------- */
+.scr-technical .staff{background:#FBE1CC;color:#78320A}
+.scr-technical .sla-ok{background:#D8EFE3;color:#13553A}.scr-technical .sla-late{background:#FDE2DF;color:#8A1C12}
+.scr-technical .req{background:#FFEFC2;color:#664900}.scr-technical .got{background:#D8EFE3;color:#13553A}
+.scr-technical .btn.sug{border:2px solid #1D4ED8;color:#1E3A8A;background:#EEF4FF}
+.scr-technical .field{flex:1 1 200px;min-width:0;box-sizing:border-box;border:1px solid #DCE2EB;border-radius:999px;padding:10px 16px;font:inherit;font-size:14px;color:#13203A;background:#F7F9FC;min-height:44px}
+.scr-technical .field:focus{outline:2px solid #2563EB;outline-offset:1px;background:#FFFFFF}
+
+/* Action error toast (all dashboards) */
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:50;max-width:min(560px,calc(100vw - 32px));background:#FDE2DF;color:#8A1C12;border-radius:14px;padding:12px 16px;font-size:14px;box-shadow:0 8px 30px rgba(15,30,60,0.18);display:flex;gap:12px;align-items:center}
+.toast button{border:0;background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer;min-width:32px;min-height:32px}
+
+/* Resident rating shown to departments (plan 06 Q11) — same colors as .rs / .s-run of Resident.dc.html */
+.rstars{display:inline-flex;gap:2px;color:#D5DBE5}.rstars .on{color:#E5A100}.rstars span{display:flex}
+.ftag{background:#E1EAF9;color:#1E3F7A}
+
+/* ---------- Senior Designer Enhancements: Micro-interactions & Animations ---------- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.anim-fade {
+  animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.card-hover {
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15, 30, 60, 0.09);
+}
+
+.titem, .ov, .btn, .chip {
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn:active, .chip:active {
+  transform: scale(0.98);
+}
+
+/* Modal Backdrop & Container */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+  animation: fadeIn 0.15s ease-out;
+}
+.modal-card {
+  background: #FFFFFF;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(15, 30, 60, 0.16);
+  max-width: 520px;
+  width: 100%;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}

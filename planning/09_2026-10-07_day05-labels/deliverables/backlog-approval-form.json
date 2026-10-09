@@ -1,0 +1,172 @@
+{
+  "schema_version": "day05-approval-form-1",
+  "created_at": "2026-10-07T16:45:48.266171+00:00",
+  "instructions": "Only D5-B-011 assignment is confirmed by user. Fill actual decisions; no automatic approval or closure.",
+  "records": [
+    {
+      "item_id": "D5-B-001",
+      "title": "R01 lưu bền: dùng bằng chứng Supabase thay vì sửa memory",
+      "proposed_owner": "Châm Anh",
+      "priority": "P2",
+      "decision": "NO_ACTION",
+      "owner_acceptance": "PROPOSED",
+      "confirmation_by": null,
+      "confirmation_at": null,
+      "requested_change": null
+    },
+    {
+      "item_id": "D5-B-002",
+      "title": "Resume lặp không giao trùng: đo idempotency",
+      "proposed_owner": "Trường / Châm Anh",
+      "priority": "P1",
+      "decision": "NEXT",
+      "owner_acceptance": "PROPOSED",
+      "confirmation_by": null,
+      "confirmation_at": null,
+      "requested_change": null
+    },
+    {
+      "item_id": "D5-B-003",
+      "title": "S04: evidence cùng ticket trước/sau BQL đóng",
+      "proposed_owner": "Trường / Trí",
+      "priority": "P1",
+      "decision": "NEXT",
+      "owner_acceptance": "PROPOSED",
+      "confirmation_by": null,
+      "confirmation_at": null,
+      "requested_change": null
+    },
+    {
+      "item_id": "D5-B-004",
+      "title": "G03: GET độc lập trước/sau 403, state không đổi",
+      "proposed_owner": "Trường / Châm Anh",
+      "priority": "P1",
+      "decision": "NEXT",
+      "owner_acceptance": "PROPOSED",
+      "confirmation_by": null,
+      "confirmation_at": null,
+      "requested_change": null
+    },
+    {
+      "item_id": "D5-B-005",
+      "title": "A01: ảnh xác nhận onsite cùng ticket",
+      "proposed_owner": "Trường / Trí",
+      "priority": "P1",
+      "decision": "NEXT",
+      "owner_acceptance": "PROPOSED",
+      "confirmation_by": null,
+      "confirmation_at": null,
+      "requested_change": null
+    },
+    {
+      "item_id": "D5-B-006",
+      "title": "POST resident/tickets: tạo ticket mới phải trả 201",
+      "proposed_owner": "Như Ý / Châm Anh",
+      "priority": "P1",
+      "decision": "NOW",
+      "owner_acceptance": "PROPOSED",
+      "confirmation_by": null,
+      "confirmation_at": null,
+      "requested_change": null
+    },
+    {
+      "item_id": "D5-B-007",
+      "title": "Fingerprint nguồn và UTC từng bước của demo shared",
+      "proposed_owner": "Trường",
+      "priority": "P1",
+      "decision": "NEXT",
+      "owner_acceptance": "PROPOSED",
+      "confirmation_by": null,
+      "confirmation_at": null,
+      "requested_change": null
+    },
+    {
+      "item_id": "D5-B-008",
+      "title": "Triển khai public và xác nhận nghiệm thu của leader",
+      "proposed_owner": "Leader / Châm Anh",
+      "priority": "P2",
+      "decision": "DEFER",
+      "owner_acceptance": "PROPOSED",
+      "confirmation_by": null,
+      "confirmation_at": null,
+      "requested_change": null
+    },
+    {
+      "item_id": "D5-B-009",
+      "title": "Thông báo ngoài giờ khớp hành vi nhận việc",
+      "proposed_owner": "Châm Anh",
+      "priority": "P2",
+      "decision": "NEXT",
+      "owner_acceptance": "PROPOSED",
+      "confirmation_by": null,
+      "confirmation_at": null,
+      "requested_change": null
+    },
+    {
+      "item_id": "D5-B-010",
+      "title": "Wording hạn xử lý thống nhất, bỏ chữ Agent ở form cư dân",
+      "proposed_owner": "Trí / Như Ý",
+      "priority": "P2",
+      "decision": "NEXT",
+      "owner_acceptance": "PROPOSED",
+      "confirmation_by": null,
+      "confirmation_at": null,
+      "requested_change": null
+    },
+    {
+      "item_id": "D5-B-011",
+      "title": "Trẻ con bị kẹt ở sảnh phải là EMERGENCY (S-09), chuyển BQL",
+      "proposed_owner": "Như Ý",
+      "priority": "P0",
+      "decision": "NOW",
+      "owner_acceptance": "CONFIRMED",
+      "confirmation_by": "Cao Văn Trường (xác nhận phân công nhóm trong hội thoại)",
+      "confirmation_at": "2026-10-07T16:39:35.819793+00:00",
+      "requested_change": null
+    },
+    {
+      "item_id": "D5-B-012",
+      "title": "Vision / phân tích ảnh",
+      "proposed_owner": "Trí / Như Ý",
+      "priority": "P2",
+      "decision": "DEFER",
+      "owner_acceptance": "PROPOSED",
+      "confirmation_by": null,
+      "confirmation_at": null,
+      "requested_change": null
+    },
+    {
+      "item_id": "D5-B-013",
+      "title": "LangGraph thật và blocker/resume Day06",
+      "proposed_owner": "Như Ý / Châm Anh",
+      "priority": "P2",
+      "decision": "DEFER",
+      "owner_acceptance": "PROPOSED",
+      "confirmation_by": null,
+      "confirmation_at": null,
+      "requested_change": null
+    },
+    {
+      "item_id": "D5-B-014",
+      "title": "P1: luồng trùng, tách ticket hai việc, tín hiệu P1",
+      "proposed_owner": "Như Ý",
+      "priority": "P2",
+      "decision": "DEFER",
+      "owner_acceptance": "PROPOSED",
+      "confirmation_by": null,
+      "confirmation_at": null,
+      "requested_change": null
+    },
+    {
+      "item_id": "D5-B-015",
+      "title": "Review người thật cho gold Day05 và soạn held-out AUTHORED",
+      "proposed_owner": "Trường (soạn held-out) / Như Ý + leader (review safety)",
+      "priority": "P0",
+      "decision": "NOW",
+      "owner_acceptance": "PROPOSED",
+      "confirmation_by": null,
+      "confirmation_at": null,
+      "requested_change": null
+    }
+  ]
+}

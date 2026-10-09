@@ -1,0 +1,193 @@
+<mxfile host="app.diagrams.net" modified="2026-10-04T19:25:00.000Z" agent="Antigravity" version="21.0.0" type="device">
+  <diagram id="DataFlow-Clean-ZeroCrossing" name="Architecture Data Flow (Clean)">
+    <mxGraphModel dx="1920" dy="1080" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1080" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="MaintenanceOps Agent — Architecture Data Flow" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Arial;fontSize=28;fontStyle=1;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="60" y="25" width="1800" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================================= -->
+        <!-- PILLAR 1: INTAKE & MULTI-LAYER SAFETY GATE -->
+        <!-- ========================================================================= -->
+        <mxCell id="p1_group" value="1. INTAKE &amp; SAFETY INTERCEPTION" style="rounded=1;arcSize=3;fillColor=#F8FAFC;strokeColor=#CBD5E1;strokeWidth=1.5;align=left;verticalAlign=top;spacingLeft=16;spacingTop=12;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#4F46E5;" vertex="1" parent="1">
+          <mxGeometry x="50" y="95" width="425" height="935" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p1_res" value="&lt;b style=&quot;font-size:15px;color:#0F172A;&quot;&gt;👤 Resident Report&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#475569;&quot;&gt;Raw Description Text + Initial Field Photo Evidence&lt;/span&gt;" style="rounded=1;arcSize=8;fillColor=#FFFFFF;strokeColor=#0F172A;strokeWidth=2;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="75" y="155" width="375" height="85" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p1_ingest" value="&lt;b style=&quot;font-size:15px;color:#1E1B4B;&quot;&gt;⚡ Ingestion &amp;amp; Schema Validator&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#4338CA;&quot;&gt;Validates Payload Schema · Enforces Location &amp;amp; Timestamp&lt;/span&gt;" style="rounded=1;arcSize=8;fillColor=#FFFFFF;strokeColor=#4F46E5;strokeWidth=2;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="75" y="275" width="375" height="85" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p1_safety" value="&lt;b style=&quot;font-size:15px;color:#1E1B4B;&quot;&gt;🛡️ Multi-Layer Safety Interceptor&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#4338CA;&quot;&gt;Step 2b · R1-R10 Fixed Rules + lexicon.yaml + LLM Guard&lt;/span&gt;&lt;br&gt;&lt;i style=&quot;font-size:11px;color:#312E81;&quot;&gt;Evaluates: Level 1 Emergency / Level 2 Warning / Safe&lt;/i&gt;" style="rounded=1;arcSize=8;fillColor=#EEF2FF;strokeColor=#4F46E5;strokeWidth=2.5;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="75" y="395" width="375" height="105" as="geometry" />
+        </mxCell>
+
+        <!-- Exceptions side-by-side & gap routed -->
+        <mxCell id="p1_em" value="&lt;b style=&quot;font-size:13px;color:#991B1B;&quot;&gt;🚨 Level 1 Emergency&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px;color:#B91C1C;&quot;&gt;EMERGENCY_PENDING_BQL&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px;color:#7F1D1D;&quot;&gt;BQL Direct Action&lt;/span&gt;" style="rounded=1;arcSize=8;fillColor=#FEF2F2;strokeColor=#DC2626;strokeWidth=2;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="70" y="545" width="180" height="95" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p1_warn" value="&lt;b style=&quot;font-size:13px;color:#92400E;&quot;&gt;⚠️ Level 2 Warning&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px;color:#B45309;&quot;&gt;SAFETY_REVIEW_REQUIRED&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px;color:#78350F;&quot;&gt;BPTN Staff Review (4h)&lt;/span&gt;" style="rounded=1;arcSize=8;fillColor=#FFFBEB;strokeColor=#D97706;strokeWidth=2;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="275" y="545" width="180" height="95" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p1_info" value="&lt;b style=&quot;font-size:14px;color:#064E3B;&quot;&gt;🔄 Missing Information Hold&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#047857;&quot;&gt;NEED_INFO · Requests Citizen Location/Details Clarification&lt;/span&gt;" style="rounded=1;arcSize=8;fillColor=#F0FDF4;strokeColor=#059669;strokeWidth=2;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="70" y="680" width="385" height="85" as="geometry" />
+        </mxCell>
+
+        <!-- Pillar 1 Connectors (Zero Piercing) -->
+        <mxCell id="e_p1_1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4F46E5;" edge="1" source="p1_res" target="p1_ingest" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_p1_2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4F46E5;" edge="1" source="p1_ingest" target="p1_safety" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_p1_em" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#DC2626;" edge="1" source="p1_safety" target="p1_em" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_p1_warn" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#D97706;" edge="1" source="p1_safety" target="p1_warn" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_p1_info" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#059669;" edge="1" source="p1_safety" target="p1_info" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+
+        <!-- ========================================================================= -->
+        <!-- PILLAR 2: AI REASONING & ENRICHMENT -->
+        <!-- ========================================================================= -->
+        <mxCell id="p2_group" value="2. AI REASONING &amp; ENRICHMENT" style="rounded=1;arcSize=3;fillColor=#F8FAFC;strokeColor=#CBD5E1;strokeWidth=1.5;align=left;verticalAlign=top;spacingLeft=16;spacingTop=12;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#4F46E5;" vertex="1" parent="1">
+          <mxGeometry x="515" y="95" width="425" height="935" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p2_llm" value="&lt;b style=&quot;font-size:15px;color:#1E293B;&quot;&gt;🧠 OpenAI API (GPT-4o Proposer)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#475569;&quot;&gt;Structured JSON Output · Category &amp;amp; Priority Proposal&lt;/span&gt;" style="rounded=1;arcSize=8;fillColor=#FFFFFF;strokeColor=#334155;strokeWidth=2;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="540" y="155" width="375" height="85" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p2_classify" value="&lt;b style=&quot;font-size:15px;color:#1E1B4B;&quot;&gt;🤖 Hybrid Classify &amp;amp; Priority&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#4338CA;&quot;&gt;Step 3 · PB-CLN-01 (Cleaning) / PB-TEC-01 (Lighting)&lt;/span&gt;&lt;br&gt;&lt;i style=&quot;font-size:11px;color:#312E81;&quot;&gt;PRI-H1/H2/M1/M2/L1/D0 Priority Rules&lt;/i&gt;" style="rounded=1;arcSize=8;fillColor=#EEF2FF;strokeColor=#4F46E5;strokeWidth=2.5;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="540" y="275" width="375" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p2_dedup" value="&lt;b style=&quot;font-size:15px;color:#1E1B4B;&quot;&gt;🔍 Duplicate Detection Gate&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#4338CA;&quot;&gt;Step 4 · Scans PostgreSQL cases for SLA window overlaps&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#475569;&quot;&gt;Filters duplicate clusters · Preserves unique ticket draft&lt;/span&gt;" style="rounded=1;arcSize=8;fillColor=#FFFFFF;strokeColor=#4F46E5;strokeWidth=2;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="540" y="410" width="375" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p2_asset" value="&lt;b style=&quot;font-size:15px;color:#1E1B4B;&quot;&gt;📦 Asset &amp;amp; Inventory Packaging&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#4338CA;&quot;&gt;Steps 6-7 · Traversal of Asset Tree · Stock Check SIM&lt;/span&gt;&lt;br&gt;&lt;i style=&quot;font-size:11px;color:#312E81;&quot;&gt;Generates sealed WorkOrderDraft bundle&lt;/i&gt;" style="rounded=1;arcSize=8;fillColor=#EEF2FF;strokeColor=#4F46E5;strokeWidth=2.5;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="540" y="535" width="375" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p2_stock" value="&lt;b style=&quot;font-size:14px;color:#92400E;&quot;&gt;⏳ Material Restock Queue&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#B45309;&quot;&gt;WAITING_MATERIAL (ON_HOLD) · Re-triggers when stock arrives&lt;/span&gt;" style="rounded=1;arcSize=8;fillColor=#FFFBEB;strokeColor=#D97706;strokeWidth=2;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="540" y="670" width="375" height="85" as="geometry" />
+        </mxCell>
+
+        <!-- Pillar 2 Connectors (Clean Vertical) -->
+        <mxCell id="e_p2_llm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=1.8;strokeColor=#334155;dashed=1;" edge="1" source="p2_llm" target="p2_classify" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_p2_1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4F46E5;" edge="1" source="p2_classify" target="p2_dedup" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_p2_2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4F46E5;" edge="1" source="p2_dedup" target="p2_asset" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_p2_stock" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#D97706;" edge="1" source="p2_asset" target="p2_stock" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+
+        <!-- ========================================================================= -->
+        <!-- PILLAR 3: FIELD DISPATCH & EXECUTION -->
+        <!-- ========================================================================= -->
+        <mxCell id="p3_group" value="3. FIELD DISPATCH &amp; EXECUTION" style="rounded=1;arcSize=3;fillColor=#F8FAFC;strokeColor=#CBD5E1;strokeWidth=1.5;align=left;verticalAlign=top;spacingLeft=16;spacingTop=12;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#4F46E5;" vertex="1" parent="1">
+          <mxGeometry x="980" y="95" width="425" height="935" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p3_dispatch" value="&lt;b style=&quot;font-size:15px;color:#1E1B4B;&quot;&gt;📋 Work Order Packaging &amp;amp; Dispatch&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#4338CA;&quot;&gt;Step 8 · Status: ROUTED · Dispatched to Assigned Team&lt;/span&gt;&lt;br&gt;&lt;i style=&quot;font-size:11px;color:#312E81;&quot;&gt;Binds SLA Timers &amp;amp; Department Routing Rules&lt;/i&gt;" style="rounded=1;arcSize=8;fillColor=#EEF2FF;strokeColor=#4F46E5;strokeWidth=2.5;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="1005" y="155" width="375" height="95" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p3_dept" value="&lt;b style=&quot;font-size:15px;color:#0F172A;&quot;&gt;🛠️ Execution Department Operations&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#475569;&quot;&gt;PB-CLN-01 (Cleaners) / PB-TEC-01 (Technicians) Onsite&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#475569;&quot;&gt;Records checklist, actual materials used &amp;amp; completion logs&lt;/span&gt;" style="rounded=1;arcSize=8;fillColor=#FFFFFF;strokeColor=#0F172A;strokeWidth=2;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="1005" y="285" width="375" height="105" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p3_storage" value="&lt;b style=&quot;font-size:15px;color:#1E293B;&quot;&gt;🪣 Supabase Photo Storage&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#475569;&quot;&gt;Private Bucket: maintenance-photos (Binary Proxy Streaming)&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:10px;color:#64748B;&quot;&gt;Stores Before &amp;amp; After Proof of Completion&lt;/span&gt;" style="rounded=1;arcSize=8;fillColor=#FFFFFF;strokeColor=#334155;strokeWidth=2;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="1005" y="425" width="375" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p3_audit" value="&lt;b style=&quot;font-size:15px;color:#1E1B4B;&quot;&gt;✅ Automated 6-Point Audit&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#4338CA;&quot;&gt;Step 10 · Checks Checklist, Materials, Timestamps &amp;amp; ≥1 Photo&lt;/span&gt;&lt;br&gt;&lt;i style=&quot;font-size:11px;color:#312E81;&quot;&gt;Transitions ticket: IN_PROGRESS → READY_FOR_REVIEW&lt;/i&gt;" style="rounded=1;arcSize=8;fillColor=#EEF2FF;strokeColor=#4F46E5;strokeWidth=2.5;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="1005" y="550" width="375" height="105" as="geometry" />
+        </mxCell>
+
+        <!-- Pillar 3 Connectors (Downstream Top-to-Bottom, ZERO PIERCING) -->
+        <mxCell id="e_p3_1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4F46E5;" edge="1" source="p3_dispatch" target="p3_dept" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_p3_photo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=1.8;strokeColor=#334155;dashed=1;" edge="1" source="p3_dept" target="p3_storage" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_p3_2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4F46E5;" edge="1" source="p3_storage" target="p3_audit" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+
+        <!-- ========================================================================= -->
+        <!-- PILLAR 4: QUALITY GATE & ACID PERSISTENCE -->
+        <!-- ========================================================================= -->
+        <mxCell id="p4_group" value="4. QUALITY GATE &amp; ACID PERSISTENCE" style="rounded=1;arcSize=3;fillColor=#F8FAFC;strokeColor=#CBD5E1;strokeWidth=1.5;align=left;verticalAlign=top;spacingLeft=16;spacingTop=12;fontFamily=Arial;fontSize=13;fontStyle=1;fontColor=#4F46E5;" vertex="1" parent="1">
+          <mxGeometry x="1445" y="95" width="425" height="935" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p4_rework" value="&lt;b style=&quot;font-size:14px;color:#4C1D95;&quot;&gt;🔧 Rework Re-dispatch (T22)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6D28D9;&quot;&gt;Rejection with Defect Notes · Returned to Executing Dept&lt;/span&gt;" style="rounded=1;arcSize=8;fillColor=#FAF5FF;strokeColor=#7C3AED;strokeWidth=2;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="1470" y="155" width="375" height="85" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p4_bql" value="&lt;b style=&quot;font-size:15px;color:#1E1B4B;&quot;&gt;👔 Management (BQL) Quality Gate&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#4338CA;&quot;&gt;Final Human Sign-off on READY_FOR_REVIEW Dossier&lt;/span&gt;&lt;br&gt;&lt;i style=&quot;font-size:11px;color:#312E81;&quot;&gt;Verifies Onsite Quality, Photos &amp;amp; Reconciled Stock&lt;/i&gt;" style="rounded=1;arcSize=8;fillColor=#EEF2FF;strokeColor=#4F46E5;strokeWidth=2.5;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="1470" y="285" width="375" height="105" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p4_commit" value="&lt;b style=&quot;font-size:15px;color:#0F172A;&quot;&gt;💾 ACID Transaction Commit Engine&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#475569;&quot;&gt;Maintains engine.lock · Atomic State Mutation Commit&lt;/span&gt;&lt;br&gt;&lt;b style=&quot;font-size:11px;color:#0F172A;&quot;&gt;State: CLOSED (closure_kind=NORMAL / EMERGENCY)&lt;/b&gt;" style="rounded=1;arcSize=8;fillColor=#FFFFFF;strokeColor=#0F172A;strokeWidth=2;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="1470" y="425" width="375" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p4_db" value="&lt;b style=&quot;font-size:15px;color:#1E293B;&quot;&gt;🐘 PostgreSQL (Supabase maintops)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#475569;&quot;&gt;cases (JSONB) · audit_log (Append-only) · notifications (Outbox)&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#475569;&quot;&gt;Advisory Locks &amp;amp; Immutable Historical Traceability&lt;/span&gt;" style="rounded=1;arcSize=8;fillColor=#FFFFFF;strokeColor=#334155;strokeWidth=2;align=center;verticalAlign=middle;html=1;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="1470" y="550" width="375" height="105" as="geometry" />
+        </mxCell>
+
+        <!-- Pillar 4 Connectors (Clean Up/Down) -->
+        <mxCell id="e_p4_rework" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#7C3AED;" edge="1" source="p4_bql" target="p4_rework" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_p4_1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4F46E5;" edge="1" source="p4_bql" target="p4_commit" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_p4_2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#334155;" edge="1" source="p4_commit" target="p4_db" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+
+        <!-- ========================================================================= -->
+        <!-- HIGHWAY BRIDGES BETWEEN PILLARS (THROUGH CLEAR 40px GUTTERS) -->
+        <!-- ========================================================================= -->
+        <mxCell id="bridge_1_2" value="Cleared" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#4F46E5;fontSize=11;fontColor=#4F46E5;fontStyle=1;labelBackgroundColor=#FFFFFF;" edge="1" source="p1_ingest" target="p2_classify" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="bridge_2_3" value="Enriched" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#4F46E5;fontSize=11;fontColor=#4F46E5;fontStyle=1;labelBackgroundColor=#FFFFFF;" edge="1" source="p2_asset" target="p3_dispatch" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="bridge_3_4" value="Audited" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#4F46E5;fontSize=11;fontColor=#4F46E5;fontStyle=1;labelBackgroundColor=#FFFFFF;" edge="1" source="p3_audit" target="p4_bql" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

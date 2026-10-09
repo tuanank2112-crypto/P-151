@@ -1,0 +1,1 @@
+typecheck: NOT_CONFIGURED (no mypy/pyright config in repo; TESTING-ACCEPTANCE §2)

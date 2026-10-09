@@ -32,6 +32,14 @@ class GuardError(EngineError):
     code = "GUARD_FAILED"
 
 
+def short_stock_error(item_code: str, stock: float, qty: float) -> GuardError:
+    """Issuing more than the warehouse holds (both stores raise the same error)."""
+    return GuardError(
+        f"Kho chỉ còn {stock:g} {item_code}, không xuất thêm được {qty:g}",
+        {"item_code": item_code, "stock_qty": stock, "requested_qty": qty},
+    )
+
+
 class ConcurrencyError(EngineError):
     """`Tx.save` matched no row at the expected version: someone else changed the ticket. Nothing is written."""
 
@@ -70,6 +78,11 @@ class Tx(Protocol):
     def append_notifications(self, rows: Sequence[Notification]) -> None: ...
 
     def add_stock(self, item_code: str, qty: float) -> float: ...
+
+    def take_stock(self, item_code: str, qty: float) -> float | None:
+        """Issue `qty` (negative = return) from known stock, atomically. Unknown stock (null) is left as is and
+        returns None; a take larger than the stock raises `GuardError` and the whole transaction rolls back."""
+        ...
 
 
 class CaseRepository(Protocol):

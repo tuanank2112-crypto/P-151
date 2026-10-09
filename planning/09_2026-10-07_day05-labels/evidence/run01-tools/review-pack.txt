@@ -1,0 +1,97 @@
+### blind review sheet
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/build_review_pack.py --data-dir <fx>/mini-valid --out <out>/pack
+OK blind-review-sheet.json records=7
+EXIT=0
+
+### sheet content (7 records, order = SHA256(case_id))
+$ cat <out>/pack/blind-review-sheet.json
+{
+  "schema_version": "day05-1",
+  "created_at": "2026-10-07T05:32:39.315016+00:00",
+  "records": [
+    {
+      "case_id": "D5-C-0007",
+      "text": "Rác chất đống ở hành lang tầng 3 tòa S1 (mã 7)",
+      "safety_risk": null,
+      "signals": [],
+      "classification": null,
+      "rationale": "",
+      "reviewer": "",
+      "reviewed_at": null,
+      "dispute_note": ""
+    },
+    {
+      "case_id": "D5-C-0006",
+      "text": "Có người bị mắc kẹt trong thang máy tòa S1 (mã 6)",
+      "safety_risk": null,
+      "signals": [],
+      "classification": null,
+      "rationale": "",
+      "reviewer": "",
+      "reviewed_at": null,
+      "dispute_note": ""
+    },
+    {
+      "case_id": "D5-C-0002",
+      "text": "Hành lang tầng 3 tòa S1 có mùi lạ (mã 2)",
+      "safety_risk": null,
+      "signals": [],
+      "classification": null,
+      "rationale": "",
+      "reviewer": "",
+      "reviewed_at": null,
+      "dispute_note": ""
+    },
+    {
+      "case_id": "D5-C-0003",
+      "text": "Rác chất đống ở hành lang tầng 3 tòa S1 (mã 3)",
+      "safety_risk": null,
+      "signals": [],
+      "classification": null,
+      "rationale": "",
+      "reviewer": "",
+      "reviewed_at": null,
+      "dispute_note": ""
+    },
+    {
+      "case_id": "D5-C-0001",
+      "text": "Có người bị mắc kẹt trong thang máy tòa S1 (mã 1)",
+      "safety_risk": null,
+      "signals": [],
+      "classification": null,
+      "rationale": "",
+      "reviewer": "",
+      "reviewed_at": null,
+      "dispute_note": ""
+    },
+    {
+      "case_id": "D5-C-0005",
+      "text": "Điều hòa trong căn hộ tầng 5 tòa S1 bị hỏng (mã 5)",
+      "safety_risk": null,
+      "signals": [],
+      "classification": null,
+      "rationale": "",
+      "reviewer": "",
+      "reviewed_at": null,
+      "dispute_note": ""
+    },
+    {
+      "case_id": "D5-C-0004",
+      "text": "Đèn hành lang tầng 3 tòa S1 bị hỏng (mã 4)",
+      "safety_risk": null,
+      "signals": [],
+      "classification": null,
+      "rationale": "",
+      "reviewer": "",
+      "reviewed_at": null,
+      "dispute_note": ""
+    }
+  ]
+}
+EXIT=0
+
+### CONTROL missing cases.json
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/build_review_pack.py --data-dir <fx>/does-not-exist --out <out>/pack2
+BAD_CASES: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\caotr\\AppData\\Local\\Temp\\claude\\c--P-151-truong\\168221f8-d289-4923-9c33-100200559616\\scratchpad\\fx\\does-not-exist\\cases.json'
+EXIT=1
+

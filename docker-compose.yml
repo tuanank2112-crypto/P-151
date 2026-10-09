@@ -31,6 +31,7 @@ services:
       - .env
     environment:
       # DATABASE_URL comes from .env as is: the shared Supabase DB (Session pooler 5432), never the local "db"
+      PORTAL_URL: http://portal:3000
       TZ: Asia/Ho_Chi_Minh
     volumes:
       # Uploaded ticket photos and other local data
@@ -41,6 +42,25 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Cổng phản ánh cư dân (Next.js, portal/): chạy nội bộ, được backend tại cổng 8000 chuyển tiếp giao diện
+  portal:
+    build:
+      context: ./portal
+    expose:
+      - "3000"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-p151}:${POSTGRES_PASSWORD:-p151}@db:5432/portal
+      BACKEND_URL: http://backend:8000
+      SESSION_COOKIE_SECURE: "false"
+      TZ: Asia/Ho_Chi_Minh
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   pgdata:

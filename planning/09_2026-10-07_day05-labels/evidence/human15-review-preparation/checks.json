@@ -1,0 +1,12 @@
+{
+  "recorded_at": "2026-10-08T08:49:58.066057+00:00",
+  "safety_rows": 15,
+  "classification_rows": 15,
+  "labels_filled": 0,
+  "source_texts_preserved": true,
+  "source_ids_hidden": true,
+  "mapping_separate": true,
+  "assignment_confirmed": true,
+  "review_complete": false,
+  "source_sha256": "4bd28e338f750c210b5e32fa9b9c4139c197465a06008da377ce99a16c8d2188"
+}

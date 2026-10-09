@@ -1,0 +1,341 @@
+{
+  "schema_version": "day03-1",
+  "observed_at": "2026-10-04T12:00:26+07:00",
+  "branch": "origin/develop (worktree detached)",
+  "commit": "dff898e5cfcfef3ebfe39af9cb83a938ed275fbf",
+  "environment": "local",
+  "base_url": "http://127.0.0.1:8184",
+  "records": [
+    {
+      "case_id": "DEMO-01A-CLEANING",
+      "task_id": "DAY04",
+      "actor_role": "BQL",
+      "steps": [
+        "HTTP qua uvicorn 127.0.0.1:8184 (httpx.Client), server mới memory sạch; OPERATIONS §2 bước 1-7: GET ROUTED, accept đúng/sai department, checklist x3, vật tư x2, evidence x2, complete, BQL close, kèm negative (đóng sớm 409, sai vai 403)"
+      ],
+      "input_ref": "fixture SIM-TKT-CLN-001 (harness.py g1a)",
+      "expected": "ROUTED -> IN_PROGRESS -> READY_FOR_REVIEW -> CLOSED, assignee null, chỉ BQL đóng",
+      "actual": "g1a 26 ok 26 mismatch 0: CLOSED bởi BQL, readiness all_pass, các negative đúng 409/403",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/day04/g1a.txt",
+        "evidence/day04/g1a-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DEMO-01B-LIGHT",
+      "task_id": "DAY04",
+      "actor_role": "BQL",
+      "steps": [
+        "HTTP qua uvicorn 127.0.0.1:8184 (httpx.Client), server mới memory sạch; như 01A cho nhánh đèn, asset SIM-ASSET-LIGHT-001"
+      ],
+      "input_ref": "fixture SIM-TKT-TEC-001 (harness.py g1b)",
+      "expected": "như 01A, asset=SIM-ASSET-LIGHT-001",
+      "actual": "g1b 26 ok 26 mismatch 0: CLOSED bởi BQL",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/day04/g1b.txt",
+        "evidence/day04/g1b-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DEMO-01-RATING",
+      "task_id": "DAY04",
+      "actor_role": "RESIDENT",
+      "steps": [
+        "HTTP qua uvicorn 127.0.0.1:8184 (httpx.Client), server mới memory sạch; 01A đến CLOSED rồi cư dân POST rating 5 rồi 1; đọc rating qua GET /mo/tickets/T (không đọc engine in-process)"
+      ],
+      "input_ref": "fixture SIM-TKT-CLN-001 (harness.py g1r)",
+      "expected": "rating lần 1 = 200, lần 2 = 409, rating giữ 5, không thêm audit rating",
+      "actual": "g1r 31 ok 31 mismatch 0: lần 2 trả 409, rating giữ 5, audit rating không đổi",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/day04/g1r.txt",
+        "evidence/day04/g1r-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DEMO-02-NEED-INFO",
+      "task_id": "DAY04",
+      "actor_role": "BPTN",
+      "steps": [
+        "HTTP qua uvicorn 127.0.0.1:8184 (httpx.Client), server mới memory sạch; g2 (resolve NEED_INFO -> ROUTED) và g2neg (server mới: 409 thiếu note/location, 403 sai vai, không append dở)"
+      ],
+      "input_ref": "fixture SIM-TKT-CLN-003 (harness.py g2, g2neg)",
+      "expected": "OPERATIONS §3.1: BPTN bptn-resolve -> ROUTED; negative 409/403 state không đổi",
+      "actual": "g2 13 ok 13 mismatch 0; g2neg 10 ok 10 mismatch 0 (phần 2.1 đều OK)",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/day04/g2.txt",
+        "evidence/day04/g2-exit.txt",
+        "evidence/day04/g2neg.txt",
+        "evidence/day04/g2neg-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DEMO-02-ASSET-UNCLEAR",
+      "task_id": "DAY04",
+      "actor_role": "BPTN",
+      "steps": [
+        "HTTP qua uvicorn 127.0.0.1:8184 (httpx.Client), server mới memory sạch; g2 (asset_onsite=true+note -> ROUTED, flag ASSET_CHECK_ONSITE) và g2neg (thiếu note 409, sai vai 403, asset bịa 409)"
+      ],
+      "input_ref": "fixture SIM-TKT-TEC-002 (harness.py g2, g2neg)",
+      "expected": "OPERATIONS §3.2: ROUTED, ONSITE_BY_BPTN, flag ASSET_CHECK_ONSITE; negative đúng",
+      "actual": "g2/g2neg: 23/23 check OK gồm phần 2.2",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/day04/g2.txt",
+        "evidence/day04/g2-exit.txt",
+        "evidence/day04/g2neg.txt",
+        "evidence/day04/g2neg-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DEMO-03-STOCK",
+      "task_id": "DAY04",
+      "actor_role": "WAREHOUSE",
+      "steps": [
+        "HTTP qua uvicorn 127.0.0.1:8184 (httpx.Client), server mới memory sạch; OPERATIONS §4: ON_HOLD/WAITING_MATERIAL, resume khi stock 0, negative (403/422/404), kho nhập 1 rồi 1, kiểm audit lookup<stock<route, resume lại; tồn kho đọc qua material_lines của GET ticket vì không có endpoint GET stock"
+      ],
+      "input_ref": "fixture SIM-TKT-TEC-003, SIM-MAT-LAMP-02 (harness.py g3)",
+      "expected": "stock 0->1->2; sau lần 2 ROUTED; audit lookup<stock<create_draft; final stock 2.0",
+      "actual": "g3 21 ok 19 mismatch 2. 19/21 OK: luồng nghiệp vụ đúng (ON_HOLD sau lần 1, ROUTED sau lần 2, audit đúng thứ tự, final stock 2.0, resume không giao trùng). 2 check mismatch là số đo trung gian: simulated_stock_qty trong ticket chỉ là ảnh chụp, không đổi sau lần nhập 1 (đọc 0.0, kỳ vọng 1.0) và lần 2 trước resume (đọc 0.0, kỳ vọng 2.0). Day03 (TestClient) đọc repo in-process nên đo được; qua HTTP không đo được tồn kho trung gian.",
+      "result": "BLOCKED",
+      "evidence_refs": [
+        "evidence/day04/g3.txt",
+        "evidence/day04/g3-exit.txt"
+      ],
+      "issue_owner": "Châm Anh",
+      "block_reason": "Không có endpoint HTTP đọc tồn kho (GET stock); số đo trước/sau từng lần nhập (0->1->2) không kiểm được qua server thật, không đổi expected. Cần API đọc tồn kho hoặc chấp nhận suy luận từ hành vi."
+    },
+    {
+      "case_id": "DEMO-04-SAFETY-TIER2",
+      "task_id": "DAY04",
+      "actor_role": "BPTN",
+      "steps": [
+        "HTTP qua uvicorn 127.0.0.1:8184 (httpx.Client), server mới memory sạch; ingest câu Bậc 2 -> VERIFYING/SAFETY_REVIEW_REQUIRED owner BPTN; BPTN CONFIRM_SAFE cần note; các vai khác 403"
+      ],
+      "input_ref": "SIM text T2_TEXT (harness.py t2safe)",
+      "expected": "VERIFYING/SAFETY_REVIEW_REQUIRED owner BPTN, dept/draft null, ba lựa chọn đúng quyền",
+      "actual": "t2safe 17 ok 17 mismatch 0: ingest đúng, negative 403/409/422 đúng",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/day04/t2safe.txt",
+        "evidence/day04/t2safe-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DEMO-04-SAFETY-T2-CONFIRM-SAFE",
+      "task_id": "DAY04",
+      "actor_role": "BPTN",
+      "steps": [
+        "HTTP qua uvicorn 127.0.0.1:8184 (httpx.Client), server mới memory sạch; BPTN CONFIRM_SAFE có note, audit, lần hai 409"
+      ],
+      "input_ref": "harness.py t2safe",
+      "expected": "200, safety_cleared_by BPTN, audit SAFETY_CONFIRM_SAFE, lần hai 409",
+      "actual": "t2safe 17/17 OK",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/day04/t2safe.txt",
+        "evidence/day04/t2safe-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DEMO-04-SAFETY-T2-ESCALATE",
+      "task_id": "DAY04",
+      "actor_role": "BPTN",
+      "steps": [
+        "HTTP qua uvicorn 127.0.0.1:8184 (httpx.Client), server mới memory sạch; BPTN ESCALATE -> VERIFYING/EMERGENCY_PENDING_BQL owner BQL; BPTN không rút lại được (403)"
+      ],
+      "input_ref": "harness.py t2escalate",
+      "expected": "200, EMERGENCY_PENDING_BQL owner BQL, audit SAFETY_ESCALATE, BPTN 403",
+      "actual": "t2escalate 10 ok 10 mismatch 0",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/day04/t2escalate.txt",
+        "evidence/day04/t2escalate-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DEMO-04-SAFETY-T2-REQUEST-INFO",
+      "task_id": "DAY04",
+      "actor_role": "BPTN",
+      "steps": [
+        "HTTP qua uvicorn 127.0.0.1:8184 (httpx.Client), server mới memory sạch; BPTN REQUEST_INFO (cần note) -> NEED_INFO/MISSING_INFO; cư dân bổ sung có hazard -> VERIFYING/EMERGENCY_PENDING_BQL ngay"
+      ],
+      "input_ref": "harness.py t2info",
+      "expected": "NEED_INFO/MISSING_INFO, safety_context true, dept/draft null; owner: OPERATIONS §5.2.3 ghi BPTN, CR-03 §6.4 ghi cư dân; addition hazard -> EMERGENCY_PENDING_BQL",
+      "actual": "t2info 8 ok 7 mismatch 1: 7/8 OK; 1 mismatch duy nhất là literal owner (actual RESIDENT = CR-03 §6.4, expected OPERATIONS §5.2.3 = BPTN) y hệt Day03-ter; hazard addition -> EMERGENCY_PENDING_BQL đúng. Phán PASS theo CR-03 như Day03-ter; drift spec ghi Câu hỏi mở (owner Trường).",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/day04/t2info.txt",
+        "evidence/day04/t2info-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DEMO-04-SAFETY-T2-DEADLINE-4H",
+      "task_id": "DAY04",
+      "actor_role": "SYSTEM",
+      "steps": [
+        "HTTP qua uvicorn 127.0.0.1:8184 (httpx.Client), server mới memory sạch; POST /mo/jobs/run now=since+3h59 rồi +4h01 (MO_JOBS_ENABLED=false, chạy tay qua QA)"
+      ],
+      "input_ref": "harness.py t2dl",
+      "expected": "trước 4h chưa leo thang; sau 4h leo thang BQL, vẫn SAFETY_REVIEW_REQUIRED, chưa clear; BQL CONFIRM_SAFE được",
+      "actual": "t2dl 5 ok 5 mismatch 0",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/day04/t2dl.txt",
+        "evidence/day04/t2dl-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DEMO-04-SAFETY-T2-DEADLINE-12H",
+      "task_id": "DAY04",
+      "actor_role": "SYSTEM",
+      "steps": [
+        "HTTP qua uvicorn 127.0.0.1:8184 (httpx.Client), server mới memory sạch; REQUEST_INFO rồi jobs/run since+11h59 và +12h01"
+      ],
+      "input_ref": "harness.py t2dl12",
+      "expected": "trước 12h còn NEED_INFO; sau 12h leo thang BQL, không tự an toàn",
+      "actual": "t2dl12 3 ok 3 mismatch 0",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/day04/t2dl12.txt",
+        "evidence/day04/t2dl12-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DEMO-04-SAFETY-TIER1",
+      "task_id": "DAY04",
+      "actor_role": "BQL",
+      "steps": [
+        "HTTP qua uvicorn 127.0.0.1:8184 (httpx.Client), server mới memory sạch; ingest câu Bậc 1 -> VERIFYING/EMERGENCY_PENDING_BQL owner BQL, có thông báo BQL"
+      ],
+      "input_ref": "SIM text T1_TEXT (harness.py t1close)",
+      "expected": "VERIFYING/EMERGENCY_PENDING_BQL owner BQL, dept/draft null, notification BQL",
+      "actual": "t1close 13 ok 13 mismatch 0: ingest và thông báo BQL đúng",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/day04/t1close.txt",
+        "evidence/day04/t1close-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DEMO-04-SAFETY-T1-EMERGENCY-CLOSE",
+      "task_id": "DAY04",
+      "actor_role": "BQL",
+      "steps": [
+        "HTTP qua uvicorn 127.0.0.1:8184 (httpx.Client), server mới memory sạch; chỉ BQL /emergency/close (cần note; vai khác 403); /bql/close thường trên ticket khẩn cấp bị từ chối"
+      ],
+      "input_ref": "harness.py t1close, tgen",
+      "expected": "CLOSED/EMERGENCY_HANDLED, audit EMERGENCY_CLOSE bởi BQL; route đóng thường không đóng được",
+      "actual": "t1close 13 ok 13 mismatch 0; tgen 2 ok 2 mismatch 0 (close thường 409)",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/day04/t1close.txt",
+        "evidence/day04/t1close-exit.txt",
+        "evidence/day04/tgen.txt",
+        "evidence/day04/tgen-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DEMO-04-SAFETY-T1-EMERGENCY-DOWNGRADE",
+      "task_id": "DAY04",
+      "actor_role": "BQL",
+      "steps": [
+        "HTTP qua uvicorn 127.0.0.1:8184 (httpx.Client), server mới memory sạch; BQL /emergency/downgrade cần note; vai khác 403"
+      ],
+      "input_ref": "harness.py t1down",
+      "expected": "200, hạ về luồng bảo trì, safety_cleared_by BQL, audit EMERGENCY_DOWNGRADE",
+      "actual": "t1down 13 ok 13 mismatch 0",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/day04/t1down.txt",
+        "evidence/day04/t1down-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "DEMO-04-SAFETY-NEG-403",
+      "task_id": "DAY04",
+      "actor_role": "BPTN",
+      "steps": [
+        "HTTP qua uvicorn 127.0.0.1:8184 (httpx.Client), server mới memory sạch; 5 vai x 5 route safety/emergency + cancel => 403; QA resume, jobs/run không đổi trạng thái"
+      ],
+      "input_ref": "harness.py neg403",
+      "expected": "mọi 403, ticket không đổi, audit ACTION_DENIED",
+      "actual": "neg403 34 ok 34 mismatch 0",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/day04/neg403.txt",
+        "evidence/day04/neg403-exit.txt"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    },
+    {
+      "case_id": "PERSIST-RESTART",
+      "task_id": "DAY04",
+      "actor_role": "SYSTEM",
+      "steps": [
+        "Ingest ticket SIM-TKT-0001, dừng uvicorn, chạy lại cùng lệnh MO_STORE=memory, GET ticket cũ"
+      ],
+      "input_ref": "evidence/day04/persist_ui.sh",
+      "expected": "Với MO_STORE=memory: ticket cũ mất (404); persistence thật cần Postgres/Supabase",
+      "actual": "Đo được: trước restart GET 200, sau restart GET 404 (ticket mất, đúng kỳ vọng memory). Không dựng DB, không có bằng chứng persistence.",
+      "result": "BLOCKED",
+      "evidence_refs": [
+        "evidence/day04/persist-ui.txt",
+        "evidence/day04/persist-after.json",
+        "evidence/day04/persist_ui.sh"
+      ],
+      "issue_owner": "Châm Anh",
+      "block_reason": "Cần Postgres/Supabase; MVP local dùng memory nên mất dữ liệu khi restart"
+    },
+    {
+      "case_id": "UI-SMOKE",
+      "task_id": "DAY04",
+      "actor_role": "SYSTEM",
+      "steps": [
+        "curl GET /ui (307 -> /ui/) rồi curl -L"
+      ],
+      "input_ref": "evidence/day04/persist_ui.sh",
+      "expected": "GET /ui trả 200",
+      "actual": "GET /ui trả 307 redirect sang /ui/, theo redirect trả 200 text/html 6138 bytes. Chỉ đo HTTP 200; CHƯA đo UI thao tác (không click, không render JS/Tailwind CDN).",
+      "result": "PASS",
+      "evidence_refs": [
+        "evidence/day04/persist-ui.txt",
+        "evidence/day04/ui-body.html"
+      ],
+      "issue_owner": null,
+      "block_reason": null
+    }
+  ]
+}

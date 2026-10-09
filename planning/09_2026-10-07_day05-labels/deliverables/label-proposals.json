@@ -1,0 +1,1419 @@
+{
+  "schema_version": "day05-1",
+  "created_at": "2026-10-07T05:38:55Z",
+  "records": [
+    {
+      "case_id": "D5-C-0001",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "EMERGENCY",
+        "signals": [
+          {
+            "signal_id": "S-09",
+            "status": "PRESENT",
+            "source_quote": "bị kẹt",
+            "start": 11,
+            "end": 17
+          }
+        ],
+        "risk_reason": "Trẻ con đang bị kẹt ở sảnh là người thật bị mắc kẹt, thuộc tín hiệu Bậc 1 (CR-BPTN-03 §6.2 S-09, phase P0); vị trí S5 không phải điều kiện để hạ mức.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0002",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "EMERGENCY",
+        "signals": [
+          {
+            "signal_id": "S-09",
+            "status": "PRESENT",
+            "source_quote": "bị mắc kẹt",
+            "start": 9,
+            "end": 19
+          }
+        ],
+        "risk_reason": "Em bé bị mắc kẹt ở sảnh là người thật bị kẹt, tín hiệu Bậc 1 S-09 (CR-BPTN-03 §6.2, P0); đổi tòa S1 hay thêm 'mắc' không đổi mức.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0003",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "EMERGENCY",
+        "signals": [
+          {
+            "signal_id": "S-09",
+            "status": "PRESENT",
+            "source_quote": "bị kẹt",
+            "start": 8,
+            "end": 14
+          }
+        ],
+        "risk_reason": "Trẻ nhỏ bị kẹt ở sảnh là người thật bị kẹt nên S-09 PRESENT (CR-BPTN-03 §6.2 S-09, P0); chủ thể là người, không phải vật.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0004",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "EMERGENCY",
+        "signals": [
+          {
+            "signal_id": "S-09",
+            "status": "PRESENT",
+            "source_quote": "bị mắc kẹt",
+            "start": 11,
+            "end": 21
+          }
+        ],
+        "risk_reason": "Trẻ nhỏ bị mắc kẹt ở sảnh: người thật bị kẹt, S-09 PRESENT (CR-BPTN-03 §6.2 S-09, P0).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0005",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [
+          {
+            "signal_id": "S-09",
+            "status": "ABSENT",
+            "source_quote": "không ai bị kẹt",
+            "start": 0,
+            "end": 15
+          }
+        ],
+        "risk_reason": "'không ai bị kẹt' phủ định S-09 (CR-BPTN-03 §6.6 B-02) nên ABSENT; phần còn lại là đèn sảnh tắt, không có tín hiệu nguy hiểm khác.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0005",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "KY_THUAT",
+        "ticket_type": "COMMON_AREA_LIGHTING",
+        "playbook_id": "PB-TEC-01",
+        "reason_code": null,
+        "rationale": "Đèn sảnh tắt là hỏng chiếu sáng khu vực chung nên KY_THUAT/PB-TEC-01 (01-CONTRACTS §3); câu phủ định người bị kẹt nên đã qua tầng an toàn NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0006",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [
+          {
+            "signal_id": "S-09",
+            "status": "ABSENT",
+            "source_quote": "không ai bị thương",
+            "start": 31,
+            "end": 49
+          }
+        ],
+        "risk_reason": "'kẹt xe' là ùn tắc ở cổng và 'không ai bị thương' phủ định S-09 (CR-BPTN-03 §6.6 B-02); không có người bị mắc kẹt nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0006",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "UNKNOWN",
+        "ticket_type": "UNKNOWN",
+        "playbook_id": null,
+        "reason_code": "OUT_OF_SCOPE",
+        "rationale": "Ùn tắc xe ở cổng không phải vệ sinh hay đèn khu chung nên UNKNOWN/OUT_OF_SCOPE, không có playbook (01-CONTRACTS §3).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0007",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [
+          {
+            "signal_id": "S-09",
+            "status": "ABSENT",
+            "source_quote": "không có ai bên trong",
+            "start": 44,
+            "end": 65
+          }
+        ],
+        "risk_reason": "'bị kẹt' chỉ cái cửa và 'không có ai bên trong' xác nhận không có người bị mắc kẹt (CR-BPTN-03 §6.2 S-09 ABSENT); không có tín hiệu khác nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0007",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "UNKNOWN",
+        "ticket_type": "UNKNOWN",
+        "playbook_id": null,
+        "reason_code": "OUT_OF_SCOPE",
+        "rationale": "Cửa sảnh kẹt cần sửa chữa, ngoài hai playbook vệ sinh/chiếu sáng nên UNKNOWN/OUT_OF_SCOPE (01-CONTRACTS §3).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0008",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [
+          {
+            "signal_id": "S-09",
+            "status": "ABSENT",
+            "source_quote": "chẳng có ai mắc kẹt",
+            "start": 0,
+            "end": 19
+          }
+        ],
+        "risk_reason": "'chẳng có ai mắc kẹt' phủ định S-09 (CR-BPTN-03 §6.6 B-02) nên ABSENT; rác đổ ra sảnh không kèm dấu hiệu nguy hiểm.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0008",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "VE_SINH",
+        "ticket_type": "COMMON_AREA_CLEANING",
+        "playbook_id": "PB-CLN-01",
+        "reason_code": null,
+        "rationale": "Rác đổ tràn ở sảnh là vệ sinh khu vực chung nên VE_SINH/PB-CLN-01 (01-CONTRACTS §3).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0009",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "EMERGENCY",
+        "signals": [
+          {
+            "signal_id": "S-01",
+            "status": "PRESENT",
+            "source_quote": "mùi khét lẹt",
+            "start": 38,
+            "end": 50
+          }
+        ],
+        "risk_reason": "Mùi khét lẹt ngay tại hộp điện là tín hiệu Bậc 1 S-01 (CR-BPTN-03 §6.2 S-01, P0), có ngữ cảnh điện nên không áp B-04.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0010",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "EMERGENCY",
+        "signals": [
+          {
+            "signal_id": "S-01",
+            "status": "PRESENT",
+            "source_quote": "mui khet",
+            "start": 27,
+            "end": 35
+          }
+        ],
+        "risk_reason": "'mui khet' tu hop dien là mùi khét từ hộp điện viết không dấu, S-01 PRESENT (CR-BPTN-03 §6.1 chuẩn hóa không dấu, §6.2 S-01).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0011",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "EMERGENCY",
+        "signals": [
+          {
+            "signal_id": "S-02",
+            "status": "PRESENT",
+            "source_quote": "tóe lửa",
+            "start": 24,
+            "end": 31
+          }
+        ],
+        "risk_reason": "Ổ cắm vừa tóe lửa là tia lửa đang xảy ra, Bậc 1 S-02 (CR-BPTN-03 §6.2 S-02, P0).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0012",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "EMERGENCY",
+        "signals": [
+          {
+            "signal_id": "S-02",
+            "status": "PRESENT",
+            "source_quote": "toe lua",
+            "start": 40,
+            "end": 47
+          }
+        ],
+        "risk_reason": "'xet dien, toe lua' là xẹt điện và tóe lửa từng đợt ở ổ cắm, S-02 PRESENT (CR-BPTN-03 §6.2 S-02, P0).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0013",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "EMERGENCY",
+        "signals": [
+          {
+            "signal_id": "S-03",
+            "status": "PRESENT",
+            "source_quote": "dây điện đứt lòi ra",
+            "start": 27,
+            "end": 46
+          }
+        ],
+        "risk_reason": "Dây điện đứt lòi ra ở hầm xe là dây điện hở, Bậc 1 S-03 (CR-BPTN-03 §6.2 S-03, P0).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0014",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "EMERGENCY",
+        "signals": [
+          {
+            "signal_id": "S-04",
+            "status": "PRESENT",
+            "source_quote": "bốc khói",
+            "start": 34,
+            "end": 42
+          }
+        ],
+        "risk_reason": "Tủ điện đang bốc khói là khói đang xảy ra, Bậc 1 S-04 (CR-BPTN-03 §6.2 S-04, P0).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0015",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "EMERGENCY",
+        "signals": [
+          {
+            "signal_id": "S-04",
+            "status": "PRESENT",
+            "source_quote": "boc khoi",
+            "start": 27,
+            "end": 35
+          }
+        ],
+        "risk_reason": "'boc khoi den' là bốc khói đen từ tủ điện viết không dấu, S-04 PRESENT (CR-BPTN-03 §6.2 S-04, P0).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0016",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "EMERGENCY",
+        "signals": [
+          {
+            "signal_id": "S-05",
+            "status": "PRESENT",
+            "source_quote": "đang cháy",
+            "start": 28,
+            "end": 37
+          }
+        ],
+        "risk_reason": "Hộp điện đang cháy kèm lửa bốc lên là cháy thật, Bậc 1 S-05 (CR-BPTN-03 §6.2 S-05, P0), không phải bóng đèn cháy theo B-01.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0017",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "EMERGENCY",
+        "signals": [
+          {
+            "signal_id": "S-05",
+            "status": "PRESENT",
+            "source_quote": "đang cháy",
+            "start": 0,
+            "end": 9
+          }
+        ],
+        "risk_reason": "Hộp điện đang cháy, lửa đỏ cả một góc là cháy thật, S-05 PRESENT (CR-BPTN-03 §6.2 S-05, P0).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0018",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "EMERGENCY",
+        "signals": [
+          {
+            "signal_id": "S-14",
+            "status": "PRESENT",
+            "source_quote": "chất lạ bốc hơi",
+            "start": 19,
+            "end": 34
+          }
+        ],
+        "risk_reason": "Có cả chất lạ lẫn dấu hiệu nguy hại (bốc hơi, buồn nôn) nên đủ hai thành phần của S-14 (CR-BPTN-03 §6.2 S-14, P0); không dùng S-12 hóa chất (P1).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0019",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "EMERGENCY",
+        "signals": [
+          {
+            "signal_id": "S-09",
+            "status": "PRESENT",
+            "source_quote": "ngã đập đầu",
+            "start": 10,
+            "end": 21
+          }
+        ],
+        "risk_reason": "Người cao tuổi ngã đập đầu và nằm im là người bị thương, Bậc 1 S-09 (CR-BPTN-03 §6.2 S-09, P0).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0020",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "UNCLEAR",
+        "signals": [
+          {
+            "signal_id": "S-02",
+            "status": "UNCLEAR",
+            "source_quote": "tia lửa",
+            "start": 31,
+            "end": 38
+          },
+          {
+            "signal_id": "T2-02",
+            "status": "PRESENT",
+            "source_quote": "giờ thì hết rồi",
+            "start": 40,
+            "end": 55
+          }
+        ],
+        "risk_reason": "Tia lửa xảy ra hôm qua và 'giờ thì hết rồi' nên S-02 bị hạ từ PRESENT xuống UNCLEAR (CR-BPTN-03 §6.3 T2-02), BPTN cần xem xét.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0021",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "UNCLEAR",
+        "signals": [
+          {
+            "signal_id": "S-03",
+            "status": "UNCLEAR",
+            "source_quote": "dây điện bị hở",
+            "start": 18,
+            "end": 32
+          },
+          {
+            "signal_id": "T2-01",
+            "status": "PRESENT",
+            "source_quote": "nghe người ta nói",
+            "start": 0,
+            "end": 17
+          }
+        ],
+        "risk_reason": "Người báo chỉ nghe kể, chưa tự kiểm tra nên S-03 bị hạ xuống UNCLEAR (CR-BPTN-03 §6.3 T2-01); chưa đủ chắc để coi là khẩn cấp.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0022",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "UNCLEAR",
+        "signals": [
+          {
+            "signal_id": "T2-05",
+            "status": "PRESENT",
+            "source_quote": "chat la",
+            "start": 31,
+            "end": 38
+          }
+        ],
+        "risk_reason": "Chỉ có chất lạ trên sàn, chưa có dấu hiệu nguy hại kèm theo nên S-14 chưa đủ hai thành phần; áp Bậc 2 T2-05 (CR-BPTN-03 §6.3 T2-05).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0023",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "UNCLEAR",
+        "signals": [
+          {
+            "signal_id": "S-01",
+            "status": "UNCLEAR",
+            "source_quote": "mùi khét",
+            "start": 12,
+            "end": 20
+          },
+          {
+            "signal_id": "T2-01",
+            "status": "PRESENT",
+            "source_quote": "ngửi như",
+            "start": 0,
+            "end": 8
+          }
+        ],
+        "risk_reason": "'ngửi như' và 'tôi không chắc' là diễn đạt nghi ngờ nên S-01 chỉ là UNCLEAR (CR-BPTN-03 §6.3 T2-01), không tự hạ xuống NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0024",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "UNCLEAR",
+        "signals": [
+          {
+            "signal_id": "S-01",
+            "status": "UNCLEAR",
+            "source_quote": "mùi khét",
+            "start": 43,
+            "end": 51
+          },
+          {
+            "signal_id": "T2-02",
+            "status": "PRESENT",
+            "source_quote": "giờ đã hết",
+            "start": 58,
+            "end": 68
+          }
+        ],
+        "risk_reason": "Mùi khét đã xảy ra sáng nay và 'giờ đã hết' nên S-01 bị hạ xuống UNCLEAR (CR-BPTN-03 §6.3 T2-02) để BPTN xác nhận an toàn.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0025",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "UNCLEAR",
+        "signals": [
+          {
+            "signal_id": "S-04",
+            "status": "UNCLEAR",
+            "source_quote": "bốc khói",
+            "start": 36,
+            "end": 44
+          },
+          {
+            "signal_id": "T2-02",
+            "status": "PRESENT",
+            "source_quote": "giờ bình thường",
+            "start": 62,
+            "end": 77
+          }
+        ],
+        "risk_reason": "Đèn bốc khói đêm qua nhưng giờ bình thường: sự việc đã xảy ra, S-04 hạ xuống UNCLEAR (CR-BPTN-03 §6.3 T2-02).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0026",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "UNCLEAR",
+        "signals": [
+          {
+            "signal_id": "T2-03",
+            "status": "PRESENT",
+            "source_quote": "bị chập",
+            "start": 28,
+            "end": 35
+          }
+        ],
+        "risk_reason": "'chập' đứng riêng, không phải bóng đèn (B-01) và không kèm khói/lửa/mùi khét nên là Bậc 2 (CR-BPTN-03 §6.6 B-03, §6.3 T2-03).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0027",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "UNCLEAR",
+        "signals": [
+          {
+            "signal_id": "T2-03",
+            "status": "PRESENT",
+            "source_quote": "bi chap",
+            "start": 20,
+            "end": 27
+          }
+        ],
+        "risk_reason": "'bi chap' ở ổ cắm viết không dấu, từ đa nghĩa đứng riêng nên Bậc 2 (CR-BPTN-03 §6.6 B-03, §6.3 T2-03).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0028",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "UNCLEAR",
+        "signals": [
+          {
+            "signal_id": "T2-03",
+            "status": "PRESENT",
+            "source_quote": "bị cháy",
+            "start": 22,
+            "end": 29
+          }
+        ],
+        "risk_reason": "'bị cháy' đứng riêng ở cầu dao, không kèm khói/lửa/mùi khét nên là từ đa nghĩa Bậc 2 (CR-BPTN-03 §6.6 B-03, §6.3 T2-03).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0029",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "UNCLEAR",
+        "signals": [
+          {
+            "signal_id": "S-01",
+            "status": "UNCLEAR",
+            "source_quote": "cơm khét",
+            "start": 4,
+            "end": 12
+          }
+        ],
+        "risk_reason": "'khét' trong ngữ cảnh cơm, không phải điện/đèn nên không lên Bậc 1 mà là Bậc 2 (CR-BPTN-03 §6.6 B-04).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0030",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "UNCLEAR",
+        "signals": [
+          {
+            "signal_id": "T2-04",
+            "status": "PRESENT",
+            "source_quote": "xèo xèo",
+            "start": 11,
+            "end": 18
+          }
+        ],
+        "risk_reason": "Tiếng xèo xèo trong hộp điện là âm thanh bất thường, chưa có khói/lửa/tia lửa nên Bậc 2 (CR-BPTN-03 §6.3 T2-04).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0031",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "UNCLEAR",
+        "signals": [
+          {
+            "signal_id": "T2-04",
+            "status": "PRESENT",
+            "source_quote": "ù lớn",
+            "start": 38,
+            "end": 43
+          }
+        ],
+        "risk_reason": "Tủ điện ù lớn suốt đêm là âm thanh bất thường không kèm dấu hiệu Bậc 1 nên Bậc 2 (CR-BPTN-03 §6.3 T2-04).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0032",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "UNCLEAR",
+        "signals": [
+          {
+            "signal_id": "T2-04",
+            "status": "PRESENT",
+            "source_quote": "nổ lốp bốp",
+            "start": 9,
+            "end": 19
+          }
+        ],
+        "risk_reason": "Tiếng nổ lốp bốp trên trần là âm thanh bất thường, không rõ nguồn nên Bậc 2 (CR-BPTN-03 §6.3 T2-04).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0033",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "UNCLEAR",
+        "signals": [
+          {
+            "signal_id": "T2-05",
+            "status": "PRESENT",
+            "source_quote": "buồn nôn",
+            "start": 43,
+            "end": 51
+          }
+        ],
+        "risk_reason": "Chỉ có dấu hiệu nguy hại (buồn nôn), chưa có chất lạ nên vệ sinh có một dấu hiệu: Bậc 2 (CR-BPTN-03 §6.3 T2-05); phân biệt với S-14 cần đủ hai.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0034",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "UNCLEAR",
+        "signals": [
+          {
+            "signal_id": "T2-05",
+            "status": "PRESENT",
+            "source_quote": "chất lỏng không rõ",
+            "start": 24,
+            "end": 42
+          }
+        ],
+        "risk_reason": "Chỉ có chất lỏng không rõ nguồn gốc, chưa có dấu hiệu nguy hại nên một dấu hiệu: Bậc 2 (CR-BPTN-03 §6.3 T2-05).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0035",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [
+          {
+            "signal_id": "S-01",
+            "status": "ABSENT",
+            "source_quote": "không có mùi khét",
+            "start": 24,
+            "end": 41
+          }
+        ],
+        "risk_reason": "'không có mùi khét' phủ định S-01 (CR-BPTN-03 §6.6 B-02); bóng đèn chập chờn là lành tính theo B-01 nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0035",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "KY_THUAT",
+        "ticket_type": "COMMON_AREA_LIGHTING",
+        "playbook_id": "PB-TEC-01",
+        "reason_code": null,
+        "rationale": "Bóng đèn chập chờn ở hành lang là hỏng chiếu sáng khu vực chung nên KY_THUAT/PB-TEC-01 (01-CONTRACTS §3).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0036",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [
+          {
+            "signal_id": "S-03",
+            "status": "ABSENT",
+            "source_quote": "không hở chỗ nào",
+            "start": 41,
+            "end": 57
+          }
+        ],
+        "risk_reason": "'bọc kín, không hở chỗ nào' phủ định S-03 (CR-BPTN-03 §6.6 B-02); phần còn lại chỉ là đèn hầm không sáng nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0036",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "KY_THUAT",
+        "ticket_type": "COMMON_AREA_LIGHTING",
+        "playbook_id": "PB-TEC-01",
+        "reason_code": null,
+        "rationale": "Đèn hầm xe không sáng là hỏng chiếu sáng khu vực chung nên KY_THUAT/PB-TEC-01 (01-CONTRACTS §3).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0037",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [],
+        "risk_reason": "Chỉ là rác tràn ở sảnh, không có tín hiệu nào trong CR-BPTN-03 §6.2/§6.3 nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0037",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "VE_SINH",
+        "ticket_type": "COMMON_AREA_CLEANING",
+        "playbook_id": "PB-CLN-01",
+        "reason_code": null,
+        "rationale": "Rác tràn thùng ở sảnh là vệ sinh khu vực chung nên VE_SINH/PB-CLN-01 (01-CONTRACTS §3).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0038",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [],
+        "risk_reason": "Thùng rác đầy kèm mùi hôi thông thường, không có tín hiệu CR-BPTN-03 §6.2/§6.3 nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0038",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "VE_SINH",
+        "ticket_type": "COMMON_AREA_CLEANING",
+        "playbook_id": "PB-CLN-01",
+        "reason_code": null,
+        "rationale": "Thùng rác đầy và hôi ở sảnh là vệ sinh khu vực chung nên VE_SINH/PB-CLN-01 (01-CONTRACTS §3).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0039",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [],
+        "risk_reason": "Sàn ướt trơn ở hành lang là vấn đề vệ sinh, không kèm tín hiệu an toàn trong CR-BPTN-03 §6.2/§6.3 nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0039",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "VE_SINH",
+        "ticket_type": "COMMON_AREA_CLEANING",
+        "playbook_id": "PB-CLN-01",
+        "reason_code": null,
+        "rationale": "Sàn ướt, trơn ở hành lang là vệ sinh khu vực chung nên VE_SINH/PB-CLN-01 (01-CONTRACTS §3).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0040",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [],
+        "risk_reason": "Chỉ có rác ở cầu thang bộ, không có tín hiệu trong CR-BPTN-03 §6.2/§6.3 nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0040",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "VE_SINH",
+        "ticket_type": "COMMON_AREA_CLEANING",
+        "playbook_id": "PB-CLN-01",
+        "reason_code": null,
+        "rationale": "Rác ở cầu thang bộ là vệ sinh khu vực chung nên VE_SINH/PB-CLN-01 (01-CONTRACTS §3).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0041",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [],
+        "risk_reason": "Vết bẩn lâu ngày trên tường, không có tín hiệu trong CR-BPTN-03 §6.2/§6.3 nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0041",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "VE_SINH",
+        "ticket_type": "COMMON_AREA_CLEANING",
+        "playbook_id": "PB-CLN-01",
+        "reason_code": null,
+        "rationale": "Vết bẩn ở hành lang là vệ sinh khu vực chung; thiếu tầng/tòa là trục vị trí, không đổi loại việc (01-CONTRACTS §3) nên VE_SINH/PB-CLN-01.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0042",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [],
+        "risk_reason": "Phòng rác chưa dọn mấy hôm, không có tín hiệu trong CR-BPTN-03 §6.2/§6.3 nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0042",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "VE_SINH",
+        "ticket_type": "COMMON_AREA_CLEANING",
+        "playbook_id": "PB-CLN-01",
+        "reason_code": null,
+        "rationale": "Phòng rác chưa được dọn là vệ sinh khu vực chung nên VE_SINH/PB-CLN-01 (01-CONTRACTS §3).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0043",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [],
+        "risk_reason": "Rác vứt đầy ở thang bộ, không có tín hiệu trong CR-BPTN-03 §6.2/§6.3 nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0043",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "VE_SINH",
+        "ticket_type": "COMMON_AREA_CLEANING",
+        "playbook_id": "PB-CLN-01",
+        "reason_code": null,
+        "rationale": "Rác vứt đầy ở thang bộ là vệ sinh khu vực chung; thiếu tòa không đổi loại việc (01-CONTRACTS §3) nên VE_SINH/PB-CLN-01.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0044",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [],
+        "risk_reason": "'bóng đèn bị cháy' không kèm khói/lửa/mùi khét là lành tính theo CR-BPTN-03 §6.6 B-01 nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0044",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "KY_THUAT",
+        "ticket_type": "COMMON_AREA_LIGHTING",
+        "playbook_id": "PB-TEC-01",
+        "reason_code": null,
+        "rationale": "Bóng đèn hành lang bị cháy (hỏng) là chiếu sáng khu vực chung nên KY_THUAT/PB-TEC-01 (01-CONTRACTS §3).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0045",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [],
+        "risk_reason": "Đèn không sáng viết không dấu, không có tín hiệu trong CR-BPTN-03 §6.2/§6.3 nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0045",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "KY_THUAT",
+        "ticket_type": "COMMON_AREA_LIGHTING",
+        "playbook_id": "PB-TEC-01",
+        "reason_code": null,
+        "rationale": "Đèn hành lang không sáng là chiếu sáng khu vực chung nên KY_THUAT/PB-TEC-01 (01-CONTRACTS §3).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0046",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [],
+        "risk_reason": "Đèn không sáng kéo dài, không có tín hiệu trong CR-BPTN-03 §6.2/§6.3 nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0046",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "KY_THUAT",
+        "ticket_type": "COMMON_AREA_LIGHTING",
+        "playbook_id": "PB-TEC-01",
+        "reason_code": null,
+        "rationale": "Đèn hành lang không sáng là chiếu sáng khu vực chung nên KY_THUAT/PB-TEC-01 (01-CONTRACTS §3).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0047",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [],
+        "risk_reason": "Đèn tối, không có tín hiệu trong CR-BPTN-03 §6.2/§6.3 nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0047",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "KY_THUAT",
+        "ticket_type": "COMMON_AREA_LIGHTING",
+        "playbook_id": "PB-TEC-01",
+        "reason_code": null,
+        "rationale": "Đèn hành lang tối là chiếu sáng khu vực chung; thiếu tầng/tòa là trục vị trí, không đổi loại việc (01-CONTRACTS §3) nên KY_THUAT/PB-TEC-01.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0048",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [],
+        "risk_reason": "Tuýp đèn chập chờn là lành tính theo CR-BPTN-03 §6.6 B-01, không kèm nóng/mùi/âm thanh (C-01 chưa áp) nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0048",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "KY_THUAT",
+        "ticket_type": "COMMON_AREA_LIGHTING",
+        "playbook_id": "PB-TEC-01",
+        "reason_code": null,
+        "rationale": "Tuýp đèn chập chờn ở cầu thang bộ là chiếu sáng khu vực chung nên KY_THUAT/PB-TEC-01 (01-CONTRACTS §3).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0049",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [],
+        "risk_reason": "Đèn không sáng và rác đều là việc thường, không có tín hiệu trong CR-BPTN-03 §6.2/§6.3 nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0049",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "UNKNOWN",
+        "ticket_type": "UNKNOWN",
+        "playbook_id": null,
+        "reason_code": "CATEGORY_UNCLEAR",
+        "rationale": "Một câu chứa cả chiếu sáng lẫn vệ sinh, không chọn được một playbook nên UNKNOWN/CATEGORY_UNCLEAR (01-CONTRACTS §3).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0050",
+      "task": "SAFETY",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "risk_level": "NONE",
+        "signals": [],
+        "risk_reason": "Cửa cuốn đóng mở chậm là hỏng cơ khí thông thường, không có tín hiệu trong CR-BPTN-03 §6.2/§6.3 nên NONE.",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    },
+    {
+      "case_id": "D5-C-0050",
+      "task": "CLASSIFICATION",
+      "producer": "LLM",
+      "model": "claude-sonnet-5-5",
+      "proposed_at": "2026-10-07T05:38:55Z",
+      "payload": {
+        "service_category": "UNKNOWN",
+        "ticket_type": "UNKNOWN",
+        "playbook_id": null,
+        "reason_code": "OUT_OF_SCOPE",
+        "rationale": "Cửa cuốn bãi xe không thuộc hai playbook vệ sinh/chiếu sáng nên UNKNOWN/OUT_OF_SCOPE (01-CONTRACTS §3).",
+        "note": "agent-drafted; not gold"
+      },
+      "call_status": "OFFLINE",
+      "error_type": null
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "observed_at": "2026-10-07T04:37:26.448228+00:00",
+  "mode": "local-memory/mock; no HTTP, LLM or shared DB writes",
+  "reported_ui_ticket": "TK-0046 (screenshot only; backend ticket not queried)",
+  "source": "User screenshot original description; CR-BPTN-03 S-09",
+  "records": [
+    {
+      "input": "có trẻ con bị kẹt ở sảnh chung cư tòa S5",
+      "expected": {
+        "risk_level": "EMERGENCY",
+        "status": "VERIFYING",
+        "blocker_code": "EMERGENCY_PENDING_BQL",
+        "blocker_owner": "BQL"
+      },
+      "actual": {
+        "risk_level": "NONE",
+        "status": "VERIFYING",
+        "blocker_code": "OUT_OF_SCOPE",
+        "blocker_owner": "BPTN"
+      },
+      "result": "FAIL"
+    },
+    {
+      "input": "có trẻ con bị kẹt ở sảnh chung cư tòa S1",
+      "expected": {
+        "risk_level": "EMERGENCY",
+        "status": "VERIFYING",
+        "blocker_code": "EMERGENCY_PENDING_BQL",
+        "blocker_owner": "BQL"
+      },
+      "actual": {
+        "risk_level": "NONE",
+        "status": "VERIFYING",
+        "blocker_code": "OUT_OF_SCOPE",
+        "blocker_owner": "BPTN"
+      },
+      "result": "FAIL"
+    },
+    {
+      "input": "có trẻ con bị mắc kẹt ở sảnh chung cư tòa S5",
+      "expected": {
+        "risk_level": "EMERGENCY",
+        "status": "VERIFYING",
+        "blocker_code": "EMERGENCY_PENDING_BQL",
+        "blocker_owner": "BQL"
+      },
+      "actual": {
+        "risk_level": "EMERGENCY",
+        "status": "VERIFYING",
+        "blocker_code": "EMERGENCY_PENDING_BQL",
+        "blocker_owner": "BQL"
+      },
+      "result": "PASS"
+    }
+  ]
+}

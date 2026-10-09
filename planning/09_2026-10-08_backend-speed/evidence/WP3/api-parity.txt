@@ -1,0 +1,10 @@
+SAME  GET /mo/tickets as SIM-ACTOR-BPTN-01                    rows=66 bytes=25509
+SAME  GET /bql/tickets as SIM-ACTOR-BQL-01                    rows=66 bytes=72933
+SAME  GET /mo/tickets as SIM-ACTOR-DEPT-CLN-01                rows=16 bytes=6606
+SAME  GET /mo/tickets as SIM-ACTOR-DEPT-TEC-01                rows=11 bytes=4271
+SAME  GET /mo/tickets as SIM-ACTOR-QA-01                      rows=66 bytes=25509
+SAME  GET /resident/tickets as SIM-ACTOR-RESIDENT-01          rows=49 bytes=51918
+SAME  GET /resident/tickets as SIM-ACTOR-RESIDENT-02          rows=17 bytes=19871
+SAME  GET /mo/tickets as SIM-ACTOR-WAREHOUSE-01               rows=0 bytes=2
+cache: {'hits': 1254, 'misses': 66, 'size': 66}
+RESULT: 8/8 identical
