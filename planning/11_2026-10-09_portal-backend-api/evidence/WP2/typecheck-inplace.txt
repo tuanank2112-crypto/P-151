@@ -1,0 +1,7 @@
+$ npx tsc --noEmit   (real worktree, stale files still present)
+      1 src/app/api/photos/[id]/route.ts
+      3 src/app/api/photos/[ticketId]/[evidenceId]/route.ts
+      8 src/server/queries.ts
+      8 tests/db/queries.test.ts
+total error lines:
+20

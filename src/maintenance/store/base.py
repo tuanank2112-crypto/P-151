@@ -10,6 +10,8 @@ from collections.abc import Sequence
 from contextlib import AbstractContextManager
 from typing import Any, Protocol
 
+from pydantic import AwareDatetime, BaseModel, ConfigDict
+
 from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent
 
 
@@ -64,6 +66,18 @@ class UnstorableTextError(GuardError):
     code = "UNSTORABLE_TEXT"
 
 
+class MaterialItem(BaseModel):
+    """A material added at run time (plan 11 SPEC-P01 §3): table `maintops.material_items`, never in a ticket doc."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    item_code: str
+    item_name: str
+    unit: str
+    created_by: str
+    created_at: AwareDatetime
+
+
 class Tx(Protocol):
     """One open transaction. Every write becomes visible together at commit, or not at all."""
 
@@ -103,6 +117,14 @@ class CaseRepository(Protocol):
     def stock(self) -> dict[str, float | None]: ...
 
     def set_stock(self, item_code: str, qty: float | None) -> None: ...
+
+    def material_items(self) -> list[MaterialItem]:
+        """Materials added at run time, oldest first (empty when the feature is off)."""
+        ...
+
+    def add_material_item(self, item: MaterialItem) -> MaterialItem:
+        """Store `item`; an existing `item_code` is kept as it is and returned (the first one wins)."""
+        ...
 
     def run_number(self) -> int: ...
 

@@ -33,6 +33,16 @@ MAX_TRACKED_FAILURES = 10_000
 PBKDF2_ITERATIONS = 200_000
 
 
+class Profile(BaseModel):
+    """Where a resident lives (shown by the portal; test data only)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    tower: str
+    floor: str
+    apartment: str
+
+
 class Account(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -40,6 +50,7 @@ class Account(BaseModel):
     display_name: str
     actor_id: str
     password_hash: str
+    profile: Profile | None = None
 
 
 class AccountFile(BaseModel):
@@ -177,6 +188,7 @@ class Me(BaseModel):
     actor_id: str
     role: str
     department_id: str | None
+    profile: Profile | None = None
 
 
 class LoginResponse(BaseModel):
@@ -196,6 +208,7 @@ def _me(account: Account) -> Me:
         actor_id=account.actor_id,
         role=actor.actor_role.value,
         department_id=actor.department_id.value if actor.department_id else None,
+        profile=account.profile,
     )
 
 

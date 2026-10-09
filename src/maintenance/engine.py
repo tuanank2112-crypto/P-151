@@ -19,6 +19,8 @@ import hashlib
 import json
 import logging
 import threading
+import unicodedata
+import uuid
 from collections.abc import Callable, Iterator, Mapping, MutableMapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -89,6 +91,7 @@ from src.maintenance.models import (
     ClassificationRecord,
     EvidenceRecord,
     LockedFields,
+    MaterialCatalogItem,
     MaterialComparisonResult,
     MaterialLine,
     NonBlockingWarning,
@@ -109,6 +112,7 @@ from src.maintenance.store.base import (  # the error hierarchy lives with the s
     CaseRepository,
     EngineError,
     GuardError,
+    MaterialItem,
     NotFoundError,
     Tx,
 )
@@ -133,6 +137,18 @@ S = TicketStatus
 R = ReasonCode
 Role = ActorRole
 
+# Plan 11 SPEC-P01 §3: materials added at run time (outside the YAML catalog)
+CUSTOM_MATERIAL_PREFIX = "SIM-MAT-X-"
+CUSTOM_MATERIAL_ROLES = frozenset({Role.WAREHOUSE, Role.BQL, Role.DEPARTMENT})
+CUSTOM_MATERIAL_NAME_LEN = (2, 80)
+CUSTOM_MATERIAL_UNIT_LEN = (1, 20)
+BQL_HANDLED_MESSAGE = "Ban quản lý đã xử lý phản ánh."  # plan 11 SPEC-P01 §2: public line when BQL closes OUT_OF_SCOPE
+# SPEC-P01 §2 says closure_kind=NORMAL, but `Ticket._status_rules` refuses CLOSED without department_id unless the closure
+# is EMERGENCY_HANDLED, and an OUT_OF_SCOPE ticket never had a department. Changing that validator would make older
+# backends on the shared database fail to read the document, so the closure the validator already allows is used.
+# Open question in the WP1 report: one line to flip to NORMAL once models.py may relax the validator.
+BQL_HANDLED_CLOSURE = ClosureKind.EMERGENCY_HANDLED
+
 # Permission matrix for non-transition actions. Anything not listed is denied for every role (default deny).
 PERMISSIONS: dict[Action, frozenset[ActorRole]] = {
     Action.INGEST: frozenset({Role.SYSTEM}),
@@ -141,7 +157,7 @@ PERMISSIONS: dict[Action, frozenset[ActorRole]] = {
     Action.ADD_RESIDENT_PHOTO: frozenset({Role.RESIDENT}),
     Action.RATE_TICKET: frozenset({Role.RESIDENT}),
     Action.BPTN_RESOLVE: frozenset({Role.BPTN}),
-    Action.RECEIVE_STOCK: frozenset({Role.WAREHOUSE}),
+    Action.RECEIVE_STOCK: frozenset({Role.WAREHOUSE, Role.BQL}),  # plan 11 Q08: BQL manages the warehouse too
     # Action.SET_ASSIGNEE is not listed: every role is denied, with an audit row (CR-BPTN-03 §4.4.2)
     Action.UPDATE_CHECKLIST: frozenset({Role.DEPARTMENT}),
     Action.UPDATE_MATERIAL: frozenset({Role.DEPARTMENT}),
@@ -1212,6 +1228,118 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             )
             return self.transition(ticket_id, S.CLOSED, actor_id, note=note, expected_from=S.VERIFYING)
 
+    # ------------------------------------------------------------------ "Việc của BQL" (plan 11 SPEC-P01 §2)
+    #
+    # An OUT_OF_SCOPE ticket (fees, procedures, security, disputes) stays VERIFYING with the blocker BPTN owns. BPTN
+    # hands it to BQL by raising `blocker.escalated`; BQL closes it (`CLOSED`) or returns it to BPTN. No new
+    # field and no new enum value: the document keeps the shape older code reads. The audit uses TRANSITION.
+
+    def send_to_bql(self, ticket_id: str, actor_id: str, *, note: str | None) -> Case:
+        """BPTN: OUT_OF_SCOPE and not yet escalated → escalated; BQL is notified."""
+
+        def op(work: Case, now: datetime) -> None:
+            self._require_out_of_scope(work, escalated=False, what="Chuyển BQL")
+            if _blank(note):
+                raise GuardError("Chuyển BQL bắt buộc ghi lý do")
+            self._audit(
+                work, Action.TRANSITION, "Ticket", ticket_id, actor_id, Role.BPTN, "blocker.escalated", False, True,
+                note.strip(), now=now,
+            )  # fmt: skip
+            self._set_blocker(
+                work,
+                work.ticket.blocker.model_copy(update={"escalated": True, "next_retry_at": None}),
+                actor_id,
+                Role.BPTN,
+                now,
+                note=note,
+            )
+            self._notify(work, "escalation", BlockerOwner.BQL, now, {"reason_code": R.OUT_OF_SCOPE, "by": "BPTN"})
+
+        return self._mutate(
+            ticket_id,
+            actor_id,
+            Action.TRANSITION,
+            op,
+            roles=frozenset({Role.BPTN}),
+            field_name="blocker.escalated",
+            new_value=True,
+            reason=note,
+        )
+
+    def bql_handle_out_of_scope(self, ticket_id: str, actor_id: str, *, note: str | None) -> Case:
+        """BQL: VERIFYING + OUT_OF_SCOPE (escalated or not) → CLOSED (the resident can rate)."""
+
+        def op(work: Case, now: datetime) -> None:
+            self._require_out_of_scope(work, escalated=None, what="BQL đóng việc ngoài phạm vi")
+            if _blank(note):
+                raise GuardError("Đóng việc ngoài phạm vi bắt buộc ghi kết quả xử lý")
+            self._audit(
+                work, Action.TRANSITION, "Ticket", ticket_id, actor_id, Role.BQL, "closure_kind", None,
+                BQL_HANDLED_CLOSURE, note.strip(), now=now,
+            )  # fmt: skip
+            self._apply_transition(
+                work,
+                S.CLOSED,
+                actor_id,
+                Role.BQL,
+                now,
+                note=note,
+                closed_by=actor_id,
+                closed_at=now,
+                closure_kind=BQL_HANDLED_CLOSURE,
+            )
+            work.events[-1] = work.events[-1].model_copy(update={"public_message": BQL_HANDLED_MESSAGE})
+
+        return self._mutate(
+            ticket_id,
+            actor_id,
+            Action.TRANSITION,
+            op,
+            roles=frozenset({Role.BQL}),
+            field_name="closure_kind",
+            new_value=BQL_HANDLED_CLOSURE,
+            reason=note,
+        )
+
+    def bql_return_to_bptn(self, ticket_id: str, actor_id: str, *, note: str | None) -> Case:
+        """BQL: OUT_OF_SCOPE and escalated → the same blocker, not escalated, timers counted again from now."""
+
+        def op(work: Case, now: datetime) -> None:
+            self._require_out_of_scope(work, escalated=True, what="Trả về BPTN")
+            if _blank(note):
+                raise GuardError("Trả về BPTN bắt buộc ghi lý do")
+            fresh = self._new_blocker(work, R.OUT_OF_SCOPE, now, resume_step=work.ticket.blocker.resume_step, note=note)
+            self._audit(
+                work, Action.TRANSITION, "Ticket", ticket_id, actor_id, Role.BQL, "blocker.escalated", True, False,
+                note.strip(), now=now,
+            )  # fmt: skip
+            self._set_blocker(work, fresh, actor_id, Role.BQL, now, note=note)
+
+        return self._mutate(
+            ticket_id,
+            actor_id,
+            Action.TRANSITION,
+            op,
+            roles=frozenset({Role.BQL}),
+            field_name="blocker.escalated",
+            new_value=False,
+            reason=note,
+        )
+
+    @staticmethod
+    def _require_out_of_scope(work: Case, *, escalated: bool | None, what: str) -> None:
+        """VERIFYING + OUT_OF_SCOPE, and (when `escalated` is given) in that escalation state; else 409."""
+        ticket, blocker = work.ticket, work.ticket.blocker
+        if (
+            ticket.status != S.VERIFYING
+            or blocker is None
+            or blocker.code != R.OUT_OF_SCOPE
+            or (escalated is not None and blocker.escalated != escalated)
+        ):
+            where = f"{ticket.status} / {blocker.code if blocker else None}"
+            state = "" if escalated is None else (" đã leo thang" if escalated else " chưa leo thang")
+            raise InvalidTransitionError(f"{what} chỉ áp dụng cho ticket ngoài phạm vi{state}, không phải {where}")
+
     def set_priority(self, ticket_id: str, actor_id: str, priority: Priority, *, note: str) -> Case:
         """CR-03 §7 manual change: BPTN or BQL, reason required, audit SET_PRIORITY, source HUMAN_OVERRIDE.
 
@@ -1435,7 +1563,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             if _blank(note):
                 raise GuardError("Xác nhận vật tư bắt buộc ghi lý do")
             codes = [line.item_code for line in lines]
-            unknown = sorted({code for code in codes if self.catalog.material(code) is None})
+            unknown = sorted({code for code in codes if self.material(code) is None})
             if unknown:
                 raise GuardError("Vật tư không có trong catalog", {"item_codes": unknown})
             if len(set(codes)) != len(codes):
@@ -1597,9 +1725,11 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
 
     def receive_stock(self, actor_id: str, item_code: str, qty: float) -> list[Case]:
         """Event `stock_received`: raise simulated stock, then resume every ticket waiting for that item."""
-        if self.catalog.actor_role(actor_id) != Role.WAREHOUSE:
-            raise ActionDeniedError("Chỉ kho được nhập vật tư", {"code": "ACTION_DENIED", "actor_id": actor_id})
-        if self.catalog.material(item_code) is None:
+        if self.catalog.actor_role(actor_id) not in PERMISSIONS[Action.RECEIVE_STOCK]:
+            raise ActionDeniedError(
+                "Chỉ kho hoặc BQL được nhập vật tư", {"code": "ACTION_DENIED", "actor_id": actor_id}
+            )
+        if self.material(item_code) is None:
             raise NotFoundError(f"Không có vật tư {item_code} trong catalog")
         if qty <= 0:
             raise GuardError("Số lượng nhập phải > 0")
@@ -1623,8 +1753,64 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         stock = self.repo.stock()
         return [
             {"item_code": m.item_code, "item_name": m.item_name, "unit": m.unit, "qty": stock.get(m.item_code)}
-            for m in self.catalog.materials
+            for m in self.all_materials()
         ]
+
+    # ------------------------------------------------------------------ materials outside the catalog (plan 11)
+
+    def material(self, item_code: str) -> MaterialCatalogItem | None:
+        """One lookup for every material code: the YAML catalog first, then the items staff added."""
+        found = self.catalog.material(item_code)
+        if found is not None or not item_code.startswith(CUSTOM_MATERIAL_PREFIX):
+            return found
+        return next((_custom_as_catalog(i) for i in self.repo.material_items() if i.item_code == item_code), None)
+
+    def all_materials(self) -> list[MaterialCatalogItem]:
+        """Catalog materials followed by the added ones (names and units of the added ones come from the table)."""
+        return [*self.catalog.materials, *(_custom_as_catalog(i) for i in self.repo.material_items())]
+
+    def create_material_item(self, actor_id: str, item_name: str, unit: str) -> MaterialItem:
+        """Warehouse or a department adds a material the catalog lacks. The same name (trimmed, NFC, case-folded)
+        returns the item that already exists, from the catalog or from the table; a new item starts with stock 0."""
+        if self._role(actor_id) not in CUSTOM_MATERIAL_ROLES:
+            raise ActionDeniedError(
+                "Chỉ kho, BQL hoặc phòng ban được thêm vật tư mới", {"code": "ACTION_DENIED", "actor_id": actor_id}
+            )
+        name = unicodedata.normalize("NFC", item_name or "").strip()
+        unit_text = unicodedata.normalize("NFC", unit or "").strip()
+        low, high = CUSTOM_MATERIAL_NAME_LEN
+        if not low <= len(name) <= high:
+            raise GuardError(f"Tên vật tư phải dài {low}-{high} ký tự")
+        low, high = CUSTOM_MATERIAL_UNIT_LEN
+        if not low <= len(unit_text) <= high:
+            raise GuardError(f"Đơn vị phải dài {low}-{high} ký tự")
+        if any(ord(ch) < 32 or ord(ch) == 127 for ch in name + unit_text):
+            raise GuardError("Tên vật tư và đơn vị không được chứa ký tự điều khiển")
+        key = name.casefold()
+        with self.lock:
+            now = self.clock()
+            for known in self.catalog.materials:
+                if unicodedata.normalize("NFC", known.item_name).strip().casefold() == key:
+                    return MaterialItem(
+                        item_code=known.item_code,
+                        item_name=known.item_name,
+                        unit=known.unit or "",
+                        created_by="catalog",
+                        created_at=now,
+                    )
+            existing = self.repo.material_items()
+            for item in existing:
+                if unicodedata.normalize("NFC", item.item_name).strip().casefold() == key:
+                    return item
+            taken = {item.item_code for item in existing}
+            code = CUSTOM_MATERIAL_PREFIX + uuid.uuid4().hex[:8].upper()
+            while code in taken:
+                code = CUSTOM_MATERIAL_PREFIX + uuid.uuid4().hex[:8].upper()
+            created = self.repo.add_material_item(
+                MaterialItem(item_code=code, item_name=name, unit=unit_text, created_by=actor_id, created_at=now)
+            )
+            self.repo.set_stock(created.item_code, 0)  # stock 0: a plan that uses it waits until the warehouse receives
+            return created
 
     # ------------------------------------------------------------------ system: resume + scheduled job
 
@@ -3908,7 +4094,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         )
 
     def _material_line(self, draft_id: str, suffix: str, index: int, planned: PlannedMaterial) -> MaterialLine:
-        item = self.catalog.material(planned.item_code)
+        item = self.material(planned.item_code)
         return MaterialLine(
             material_line_id=f"SIM-MAT-LINE-{suffix}-{index:02d}",
             work_order_draft_id=draft_id,
@@ -4071,6 +4257,19 @@ def _aggregate_stock(lines: list[MaterialLine]) -> MaterialStockStatus:
     return MaterialStockStatus.SUFFICIENT
 
 
+def _custom_as_catalog(item: MaterialItem) -> MaterialCatalogItem:
+    """An added material seen as a catalog item: no norm, stock is read from the repository like any other."""
+    return MaterialCatalogItem(
+        item_code=item.item_code,
+        item_name=item.item_name,
+        unit=item.unit,
+        norm_qty=None,
+        norm_label=NormLabel.N_A,
+        simulated_stock_qty=0,
+        synthetic=True,
+    )
+
+
 def _safety_escalated_before(case: Case) -> bool:
     """Whether BQL already took over a safety decision on this ticket: a tier-2 review or a safety NEED_INFO that
     passed its deadline (both notify BQL once)."""
@@ -4145,7 +4344,7 @@ def build_engine(settings: "Settings | None" = None) -> MaintenanceEngine:
     if settings.mo_store == "postgres":
         from src.maintenance.store.postgres import PostgresRepository  # lazy: memory mode needs no psycopg2
 
-        repo = PostgresRepository(settings.database_url)
+        repo = PostgresRepository(settings.database_url, custom_materials=settings.custom_materials_enabled())
         repo.check()
     if settings.llm_mode in ("claude_cli", "agy_cli") and settings.mo_agent_enabled:  # local demo through a CLI
         from src.maintenance.agent.agent import build_agent

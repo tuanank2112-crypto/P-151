@@ -29,6 +29,7 @@ from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent
 from src.maintenance.store.base import (
     ConcurrencyError,
     GuardError,
+    MaterialItem,
     NotFoundError,
     StorePermissionError,
     StoreUnavailableError,
@@ -40,7 +41,11 @@ logger = logging.getLogger(__name__)
 
 SCHEMA = "maintops"
 SUPABASE_HOST_SUFFIXES = (".supabase.com", ".supabase.co")
-HEAD_REVISION = "0002_p1_doc_shape"
+HEAD_REVISION = "0003_material_items"
+# Plan 11: 0003 only adds the table `material_items`, which older code never reads, so a database still at the
+# previous revision is accepted while the feature is off (MO_CUSTOM_MATERIALS=false). With it on, the table is needed.
+PREVIOUS_REVISIONS = {"0003_material_items": "0002_p1_doc_shape"}
+MATERIALS_REVISION = "0003_material_items"
 ALEMBIC_INI = Path(__file__).with_name("alembic.ini")
 UPGRADE_COMMAND = "python -m alembic -c src/maintenance/store/alembic.ini upgrade head"
 KEY_JOBS = 151001  # advisory lock keys (transaction-scoped)
@@ -344,8 +349,9 @@ class _PgTx:
 
 
 class PostgresRepository:
-    def __init__(self, url: str):
+    def __init__(self, url: str, *, custom_materials: bool = False):
         self._engine = sql_engine(url)
+        self._custom_materials = custom_materials  # needs revision 0003; off ⇒ the table is never touched
         self._url_host = make_url(url).host
         self._local = threading.local()
         # list() cache (plan 09): ticket_id -> (xmin, validated Case); the Cases are shared and read-only
@@ -418,6 +424,18 @@ class PostgresRepository:
         with _db_errors(), self._engine.connect() as conn:
             return conn.execute(text("select qty from maintops.stock where item_code = :c"), {"c": item_code}).scalar()
 
+    def material_items(self) -> list[MaterialItem]:
+        if not self._custom_materials:
+            return []
+        with _db_errors(), self._engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    "select item_code, item_name, unit, created_by, created_at "
+                    "from maintops.material_items order by created_at, item_code"
+                )
+            ).all()
+        return [MaterialItem.model_validate(row._asdict()) for row in rows]
+
     def stock(self) -> dict[str, float | None]:
         with _db_errors(), self._engine.connect() as conn:
             rows = conn.execute(text("select item_code, qty from maintops.stock order by item_code")).all()
@@ -467,10 +485,38 @@ class PostgresRepository:
                 {"c": item_code, "q": qty},
             )
 
+    def add_material_item(self, item: MaterialItem) -> MaterialItem:
+        if not self._custom_materials:
+            raise GuardError("Nhập vật tư mới chưa bật (MO_CUSTOM_MATERIALS=false)")
+        with _db_errors(), self._engine.begin() as conn:
+            conn.execute(
+                text(
+                    "insert into maintops.material_items (item_code, item_name, unit, created_by, created_at) "
+                    "values (:code, :name, :unit, :by, :at) on conflict (item_code) do nothing"
+                ),
+                {
+                    "code": item.item_code,
+                    "name": item.item_name,
+                    "unit": item.unit,
+                    "by": item.created_by,
+                    "at": item.created_at,
+                },
+            )
+            row = conn.execute(
+                text(
+                    "select item_code, item_name, unit, created_by, created_at "
+                    "from maintops.material_items where item_code = :code"
+                ),
+                {"code": item.item_code},
+            ).one()
+        return MaterialItem.model_validate(row._asdict())
+
     def wipe(self, stock: dict[str, float | None]) -> int:
         """Reset everything except `maintops.sessions`. TRUNCATE needs the schema owner (42501 for `maintops_dev`)."""
         with _db_errors(), self._engine.begin() as conn:
             conn.execute(text("truncate maintops.audit_log, maintops.notifications, maintops.cases restart identity"))
+            if self._custom_materials:
+                conn.execute(text("delete from maintops.material_items"))
             conn.execute(text("delete from maintops.stock"))
             if stock:
                 conn.execute(
@@ -528,7 +574,9 @@ class PostgresRepository:
                     f"MO_STORE=postgres: schema maintops chưa sẵn sàng cho user này; chạy: {UPGRADE_COMMAND}"
                 ) from None
             raise
-        if revision != HEAD_REVISION:
+        previous = PREVIOUS_REVISIONS.get(HEAD_REVISION)
+        needs_table = self._custom_materials and HEAD_REVISION == MATERIALS_REVISION
+        if revision != HEAD_REVISION and (revision != previous or needs_table):
             raise RuntimeError(
                 f"schema maintops ở revision {revision}, code cần {HEAD_REVISION}; chạy: {UPGRADE_COMMAND}"
             )

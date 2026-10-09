@@ -35,6 +35,7 @@ Backend: FastAPI, mọi route dưới `/api/v1`, auth `Authorization: Bearer <to
 | MERGED | như CANCELLED | `cancelled=true`, `mergedInto=merged_into` |
 - `urgent` = `risk_level == "EMERGENCY"` HOẶC `priority == "HIGH"`. Cư dân KHÔNG thấy `urgent` (I-04 CR-03: cư dân chỉ thấy nhãn trung tính) ⇒ ở DTO cư dân luôn `false`.
 - `dept`: `department_id` (DEPT_CLEANING→`ve_sinh`, DEPT_TECHNICAL→`ky_thuat`); null nếu chưa giao. Ticket "Việc của BQL" (SPEC-P01 §2) có `dept="bql"` ở DTO quản lý (suy từ `blocker.code=="OUT_OF_SCOPE" && blocker.escalated`).
+- `closureKind == EMERGENCY_HANDLED && riskLevel != EMERGENCY` ⇒ nhãn "BQL đã xử lý" (Q09), KHÔNG tính là khẩn cấp ở bất kỳ ô/thống kê nào (khẩn cấp chỉ theo `riskLevel`).
 - Hàm ánh xạ đặt ở `portal/src/lib/backend-map.ts`, thuần (không I/O), có unit test bảng (TESTING §2).
 
 ## 4. Hợp đồng gọi theo màn (đọc)
@@ -87,8 +88,8 @@ Từ `BqlTicketRow`: `{ id, code, text (=description lấy từ GET /mo/tickets 
 | `reportWrongDeptAction(id, note)` | cleaning, technical (IN_PROGRESS) | `POST /mo/tickets/{id}/wrong-department {note}` (SPEC-P01 §4) |
 | `requestMaterialsAction(id, lines[{itemCode?, newItemName?, unit?, qty}], note)` | technical (+cleaning) | mỗi `newItemName` ⇒ `POST /mo/warehouse/items {item_name, unit}` lấy `item_code` (SPEC-P01 §3); rồi `POST /mo/tickets/{id}/material-plan {lines:[{item_code, planned_qty}], note}` |
 | `finishTicketAction(id, fd{note, photos[], checklist[], used[{itemCode, issued, used}]})` | cleaning, technical | theo thứ tự: ảnh `POST /mo/tickets/{id}/photos` · mỗi checklist `POST .../checklist/{template_item_id} {status:COMPLETED}` · mỗi vật tư `POST .../materials/{item_code} {issued_qty, used_qty}` · ghi chú `POST .../evidence {requirement_id:null, evidence_type:RESULT_NOTE, content_or_metadata:note}` · `POST .../complete`. Kết quả còn `IN_PROGRESS` ⇒ trả `INVALID_INPUT` kèm `failing_items` dịch tiếng Việt. |
-| `receiveStockAction(code, qty)` | warehouse | `POST /mo/warehouse/stock/{item_code} {qty}` |
-| `addStockItemAction({name, unit, qty})` | warehouse | `POST /mo/warehouse/items {item_name, unit}` rồi (qty>0) `POST /mo/warehouse/stock/{code} {qty}` |
+| `receiveStockAction(code, qty)` | warehouse, management | `POST /mo/warehouse/stock/{item_code} {qty}` |
+| `addStockItemAction({name, unit, qty})` | warehouse, management | `POST /mo/warehouse/items {item_name, unit}` rồi (qty>0) `POST /mo/warehouse/stock/{code} {qty}` |
 | `approveInspectionAction(id)` | management | `POST /bql/tickets/{id}/close {note}` |
 | `rejectInspectionAction(id, reason)` | management | `POST /bql/tickets/{id}/rework {note}` |
 | `bqlDecideWrongDeptAction(id, KEEP|TO_BPTN, note)` | management | `POST /bql/tickets/{id}/wrong-department {decision, note}` (SPEC-P01 §4) |

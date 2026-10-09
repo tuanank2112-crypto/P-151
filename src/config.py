@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_service_role_key: SecretStr = SecretStr("")
     supabase_storage_bucket: str = "maintenance-photos"
+    # Plan 11: staff may add materials outside the catalog (table maintops.material_items, revision 0003).
+    # None = on for the memory store, off for postgres (a shared database needs the migration first).
+    mo_custom_materials: bool | None = None
 
     # MaintenanceOps reasoning agent (plan 06). It runs only with LLM_MODE=openai and a key; otherwise the rules decide.
     # The agent always calls the model with temperature=0 (llm_temperature does not apply to it).
@@ -61,6 +64,11 @@ class Settings(BaseSettings):
 
     # Vector Store
     chroma_persist_dir: str = "./data/chroma"
+
+    def custom_materials_enabled(self) -> bool:
+        if self.mo_custom_materials is not None:
+            return self.mo_custom_materials
+        return self.mo_store == "memory"
 
 
 @lru_cache

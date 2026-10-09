@@ -41,7 +41,7 @@ Thẻ: mã, mô tả, vị trí, giờ, khẩn cấp, `statusLabel`, `hoursLeft`
 ### 4.2 Lịch sử (vệ sinh)
 Ticket đã READY_FOR_REVIEW/CLOSED của phòng; sao đánh giá nếu có (`rating` từ chi tiết). Tab "Phân công tổ": XOÁ (00 §2).
 ### 4.3 Yêu cầu vật tư (kỹ thuật; R6, R7)
-- Kỹ thuật KHÔNG có tab kho/tồn kho (R6). Tab "Yêu cầu vật tư" chỉ liệt kê vật tư đã yêu cầu theo ticket + trạng thái (đủ / chờ kho).
+- Kỹ thuật KHÔNG có tab kho/tồn kho (R6 — CHỈ bỏ ở site kỹ thuật; BQL và Kho giữ nguyên, §6). Tab "Yêu cầu vật tư" chỉ liệt kê vật tư đã yêu cầu theo ticket + trạng thái (đủ / chờ kho).
 - Bấm "Yêu cầu vật tư" ⇒ modal: nhiều dòng; mỗi dòng chọn vật tư từ `catalog` (tên · đơn vị · tồn hiện tại, tô đỏ khi tồn 0) + số lượng; nút "+ Thêm dòng"; nút "+ Vật tư khác (ngoài danh sách)" ⇒ dòng nhập tên + đơn vị + số lượng (ẩn khi `custom_materials_enabled=false`); ghi chú bắt buộc. Gửi ⇒ `requestMaterialsAction` (01 §7). Thiếu tồn ⇒ backend chuyển `WAITING_MATERIAL`, thẻ hiện "Chờ kho cấp vật tư".
 - Giao diện: modal rộng, dòng dạng thẻ, ô số lượng có nút −/+ (doc "chỉnh cho đẹp").
 ### 4.4 Form hoàn thành (R8, R9, R10)
@@ -74,7 +74,7 @@ Tính từ ticket: số đang xử lý, quá hạn, đã đóng, sao trung bình
 ## 6. Kho (`app/warehouse`; R5)
 - Tồn kho: bảng mã · tên · đơn vị · tồn (null ⇒ "Chưa rõ"); "Thêm vật tư" (tên, đơn vị, số lượng đầu ⇒ `addStockItemAction`; ẩn khi cờ tắt); "Nhập kho" (chọn vật tư, số lượng ⇒ `receiveStockAction`).
 - Yêu cầu: ticket `WAITING_MATERIAL` với dòng thiếu (cần · tồn · còn thiếu); nút "Nhập đủ <vật tư>" điền sẵn số còn thiếu. Nhập đủ ⇒ backend chạy tiếp ticket ⇒ dòng biến mất sau refresh.
-- Quản lý mở `/warehouse` chỉ xem (nút ghi ẩn; backend cũng 403).
+- Quản lý (`quanly`) dùng `/warehouse` ĐẦY ĐỦ như thủ kho (xem tồn, nhập kho, thêm vật tư, xem yêu cầu) — người dùng 2026-10-09: "bỏ kho vật tư chỉ ở site kỹ thuật, còn bên BQL, kho vẫn cần" (Q08). Trang Quản lý có lối vào "Kho vật tư".
 
 ## 7. `TicketDetailModal` (R3, R4)
 Mở bằng server action đọc `ticketDetailAction(id)` (`GET /mo/tickets/{id}`, map 01 §5.6). Hiện: mã, trạng thái, khẩn cấp, giờ, phòng, vị trí, mô tả, `blockerLabel` + `publicMessage`, stepper, ảnh khi tiếp nhận / ảnh sau xử lý, checklist, vật tư, lịch sử (nhãn + ghi chú + vai). **KHÔNG có khối Agent** (bỏ "Phân tích Agent Thông Minh", độ tin cậy, từ khoá, kỹ năng).

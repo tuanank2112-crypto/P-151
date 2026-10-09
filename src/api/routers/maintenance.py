@@ -353,6 +353,7 @@ class CatalogView(BaseModel):
     assets: list[dict[str, str]]
     status_labels: dict[str, str]
     materials: list[dict[str, str]]
+    custom_materials_enabled: bool = True  # plan 11: false ⇒ the portal hides the "+" that adds a material
 
 
 @router.get("/catalog", response_model=CatalogView)
@@ -363,7 +364,10 @@ def read_catalog(actor: ActorDep, engine: EngineDep) -> CatalogView:
         departments={d.department_id.value: d.name for d in catalog.departments},
         assets=[{"asset_id": a.asset_id, "location": a.location_normalized} for a in catalog.assets],
         status_labels={s.value: status_label(s) for s in TicketStatus},
-        materials=[{"item_code": m.item_code, "item_name": m.item_name} for m in catalog.materials],
+        materials=[
+            {"item_code": m.item_code, "item_name": m.item_name, "unit": m.unit or ""} for m in engine.all_materials()
+        ],
+        custom_materials_enabled=get_settings().custom_materials_enabled(),
     )
 
 
@@ -482,7 +486,23 @@ def set_priority(ticket_id: str, body: PriorityRequest, actor: ActorDep, engine:
     return _call(engine.set_priority, ticket_id, actor, priority=body.priority, note=body.note)
 
 
+class ToBqlRequest(NoteBody):
+    """`note` is checked by the engine: empty or missing ⇒ 409 GUARD_FAILED (SPEC-P01 §2)."""
+
+
+@router.post("/tickets/{ticket_id}/to-bql", response_model=Case)
+def send_to_bql(ticket_id: str, body: ToBqlRequest, actor: ActorDep, engine: EngineDep) -> Case:
+    """BPTN chuyển ticket ngoài phạm vi (OUT_OF_SCOPE) sang "Việc của BQL" (cờ leo thang), bắt buộc lý do."""
+    return _call(engine.send_to_bql, ticket_id, actor, note=body.note)
+
+
 # ------------------------------------------------------------------ department
+
+
+@router.post("/tickets/{ticket_id}/wrong-department", response_model=Case)
+def report_wrong_department(ticket_id: str, body: NoteBody, actor: ActorDep, engine: EngineDep) -> Case:
+    """Phòng ban đã nhận việc báo sai phòng ban (T16): IN_PROGRESS → VERIFYING (WRONG_DEPT_AFTER_START), BQL quyết."""
+    return _call(engine.report_wrong_department, ticket_id, actor, note=body.note)
 
 
 @router.post("/tickets/{ticket_id}/accept", response_model=Case)
@@ -615,6 +635,33 @@ class StockRow(BaseModel):
 def read_stock(actor: ActorDep, engine: EngineDep) -> list[StockRow]:
     """Tồn kho mô phỏng hiện tại của mọi vật tư (chỉ nhân viên)."""
     return _call(engine.stock_levels, actor)
+
+
+class NewMaterialRequest(BaseModel):
+    """Length rules (name 2..80, unit 1..20) are the engine's (409); the caps here only bound the request."""
+
+    model_config = {"extra": "forbid"}
+
+    item_name: str = Field(max_length=500)
+    unit: str = Field(max_length=100)
+
+
+@router.post("/warehouse/items", response_model=StockRow, status_code=201)
+def create_material(body: NewMaterialRequest, actor: ActorDep, engine: EngineDep) -> StockRow:
+    """Kho hoặc phòng ban thêm vật tư ngoài danh mục (mã SIM-MAT-X-…, tồn kho 0). Cùng tên ⇒ trả mã có sẵn.
+    Tắt bằng MO_CUSTOM_MATERIALS=false ⇒ 403 FEATURE_DISABLED."""
+    if not get_settings().custom_materials_enabled():
+        raise HTTPException(
+            status_code=403,
+            detail={"code": "FEATURE_DISABLED", "message": "Chưa bật nhập vật tư mới (MO_CUSTOM_MATERIALS=false)"},
+        )
+    item = _call(engine.create_material_item, actor, body.item_name, body.unit)
+    return StockRow(
+        item_code=item.item_code,
+        item_name=item.item_name,
+        unit=item.unit or None,
+        qty=engine.repo.stock_of(item.item_code),
+    )
 
 
 @router.post("/warehouse/stock/{item_code}", response_model=list[Case])
@@ -787,6 +834,28 @@ def bql_cancel(ticket_id: str, body: CancelRequest, actor: ActorDep, engine: Eng
 
 class EmergencyNoteBody(NoteBody):
     model_config = {"extra": "ignore"}  # a client-sent closure_kind is ignored: the engine sets EMERGENCY_HANDLED
+
+
+@bql_router.post("/tickets/{ticket_id}/handled", response_model=Case)
+def bql_handled(ticket_id: str, body: NoteBody, actor: ActorDep, engine: EngineDep) -> Case:
+    """Đánh dấu "Việc của BQL" đã xử lý: VERIFYING + OUT_OF_SCOPE → CLOSED. Chỉ BQL, bắt buộc ghi kết quả."""
+    return _call(engine.bql_handle_out_of_scope, ticket_id, actor, note=body.note)
+
+
+@bql_router.post("/tickets/{ticket_id}/return-to-bptn", response_model=Case)
+def bql_return_to_bptn(ticket_id: str, body: NoteBody, actor: ActorDep, engine: EngineDep) -> Case:
+    """Trả ticket ngoài phạm vi đã leo thang về BPTN (hết cờ leo thang, tính lại hạn). Chỉ BQL, bắt buộc lý do."""
+    return _call(engine.bql_return_to_bptn, ticket_id, actor, note=body.note)
+
+
+class WrongDepartmentDecision(NoteBody):
+    decision: Literal["KEEP", "TO_BPTN"]
+
+
+@bql_router.post("/tickets/{ticket_id}/wrong-department", response_model=Case)
+def bql_wrong_department(ticket_id: str, body: WrongDepartmentDecision, actor: ActorDep, engine: EngineDep) -> Case:
+    """BQL quyết định ticket phòng ban báo sai sau khi nhận: KEEP (giữ phòng ban) hoặc TO_BPTN (BPTN phân lại)."""
+    return _call(engine.bql_wrong_department, ticket_id, actor, decision=body.decision, note=body.note)
 
 
 @bql_router.post("/tickets/{ticket_id}/emergency/close", response_model=Case)

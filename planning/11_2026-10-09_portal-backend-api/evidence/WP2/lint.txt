@@ -1,0 +1,7 @@
+# measured on the verification copy
+$ npm run lint
+
+> portal@1.6.0 lint
+> eslint
+
+EXIT=0

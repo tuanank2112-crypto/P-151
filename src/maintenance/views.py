@@ -95,6 +95,7 @@ class ResidentTicketView(BaseModel):
     split_from: LinkedTicket | None = None
     split_into: list[LinkedTicket] = []
     follow_up_of: LinkedTicket | None = None
+    rating: int | None = None  # plan 11: the stars the resident gave (response only, not a document field)
 
 
 def _department_name(engine: MaintenanceEngine, case: Case) -> str | None:
@@ -206,6 +207,7 @@ def resident_view(
         merged_into=merged,
         split_from=_linked(engine, ticket.split_from, ticket.resident_id, lookup) if ticket.split_from else None,
         split_into=split_into,
+        rating=ticket.rating,
         follow_up_of=(
             _linked(engine, ticket.follow_up_of, ticket.resident_id, lookup) if ticket.follow_up_of else None
         ),
@@ -237,6 +239,7 @@ class BqlTicketRow(BaseModel):
     blocker_owner_role: BlockerOwner | None  # the "needs me" box of BQL/BPTN
     safety_cleared_by: str | None
     closure_kind: ClosureKind | None
+    rating: int | None = None  # plan 11: BQL averages the stars (response only)
     # Plan 06 (01 §8): staff only
     duplicate_count: int
     merged_children: list[str]
@@ -299,6 +302,7 @@ def bql_rows(
             blocker_owner_role=blocker.owner_role if blocker else None,
             safety_cleared_by=ticket.safety_cleared_by,
             closure_kind=ticket.closure_kind,
+            rating=ticket.rating,
             duplicate_count=ticket.duplicate_count,
             merged_children=list(ticket.merged_children),
             related_ticket_ids=list(ticket.related_ticket_ids),

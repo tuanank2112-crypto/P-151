@@ -20,6 +20,8 @@
 | Q04 | 2026-10-09 10:43:13 +0700 | "Việc của BQL" = ticket `OUT_OF_SCOPE` có `blocker.escalated` (trường có sẵn); BQL đóng (`handled`) hoặc trả Tiếp nhận | Doc R11; không thêm phòng/mã lỗi mới để không vỡ bản Render cũ đọc chung Supabase | Thêm `DEPT_BQL` thật cần CR mới + rollout · cao |
 | Q05 | 2026-10-09 10:43:13 +0700 | Vật tư ngoài danh mục: bảng mới `maintops.material_items` + cờ `MO_CUSTOM_MATERIALS` (mặc định tắt trên postgres) | Doc R7; bảng mới không ảnh hưởng code cũ; mã lạ trong doc ticket chưa đo với Render | Bật trên Supabase: OPERATIONS §3 bước 4 |
 | Q06 | 2026-10-09 10:43:13 +0700 | Tài khoản portal (`cudan`…`kho` / `123456`) thêm vào `accounts.yaml` backend, giữ tài khoản cũ | Doc R5 | — |
+| Q09 | 2026-10-09 11:40:00 +0700 | BQL `handled` đóng ticket với `closure_kind=EMERGENCY_HANDLED` (không phải NORMAL); portal hiện "BQL đã xử lý" khi mức an toàn không phải EMERGENCY; nhập kho sai vai chỉ 403, không audit (không có ticket để gắn) | Worker WP1 đo: model chặn CLOSED không phòng ban trừ EMERGENCY_HANDLED; nới validator ⇒ Render cũ vỡ khi đọc Supabase (00 §2) | Đổi NORMAL = nới `Ticket._status_rules` sau khi Render chạy code mới · thấp |
+| Q08 | 2026-10-09 11:05:00 +0700 | R6 "bỏ kho vật tư" CHỈ ở site kỹ thuật; BQL và Kho giữ đầy đủ chức năng kho (BQL nhập kho/thêm vật tư như thủ kho) ⇒ backend cho BQL nhập kho | Người dùng 2026-10-09 | — |
 | Q07 | 2026-10-09 10:43:13 +0700 | Phiên portal = cookie ký HMAC chứa token backend (8 giờ), không bảng `sessions` | I-03; backend là nguồn quyền | — |
 
 ### Quyết định bị thay thế
@@ -42,7 +44,7 @@
 ## §4. Checklist thực thi
 - [x] Khảo sát portal + API backend + đối chiếu doc (3 agent đọc) — 2026-10-09
 - [x] Bộ SPEC (00, 01, P01–P03, OPERATIONS, TESTING) — 2026-10-09
-- [ ] WP1 · [ ] WP2
+- [x] WP1 ✅ local 2026-10-09 (SO đo lại: ext 56 passed, full 3720 passed/0 fail, ruff check sạch; R01) · [ ] WP2 (code xong, chờ người dùng gật xoá 5 file cũ — câu 19)
 - [ ] WP3 · [ ] WP4 · [ ] WP5
 - [ ] WP6 (G3, G4) · [ ] WP7 (G5)
 - [ ] G6 Supabase demo (chờ người dùng gật — OPERATIONS §3)

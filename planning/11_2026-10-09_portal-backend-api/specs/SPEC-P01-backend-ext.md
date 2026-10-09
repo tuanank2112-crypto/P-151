@@ -25,7 +25,7 @@ Ticket về phí, thủ tục, an ninh, tranh chấp ⇒ engine đã dừng `VER
 | Route | Vai | Engine | Điều kiện (sai ⇒ 409 `INVALID_TRANSITION`) | Tác dụng |
 |---|---|---|---|---|
 | `POST /mo/tickets/{id}/to-bql {note: str ≥1}` | BPTN | `send_to_bql(id, actor, note)` | `VERIFYING`, blocker `OUT_OF_SCOPE`, `escalated == false` | blocker giữ code, `escalated=true`; audit `ESCALATE` (Action có sẵn; nếu không có dùng `TRANSITION` field `blocker.escalated`); notification `escalation` audience BQL, payload `{reason_code: OUT_OF_SCOPE, by: BPTN}` |
-| `POST /bql/tickets/{id}/handled {note: str ≥1}` | BQL | `bql_handle_out_of_scope(id, actor, note)` | `VERIFYING`, blocker `OUT_OF_SCOPE` (escalated hay không) | `VERIFYING → CLOSED`, `closure_kind=NORMAL`, `closed_by`, `closed_at`; public message "Ban quản lý đã xử lý phản ánh."; nhánh mới trong guard T10 (`(S.VERIFYING, S.CLOSED)` hiện chỉ cho `EMERGENCY_PENDING_BQL`) |
+| `POST /bql/tickets/{id}/handled {note: str ≥1}` | BQL | `bql_handle_out_of_scope(id, actor, note)` | `VERIFYING`, blocker `OUT_OF_SCOPE` (escalated hay không) | `VERIFYING → CLOSED`, `closure_kind=EMERGENCY_HANDLED` (Q09: `Ticket._status_rules` chỉ cho CLOSED không phòng ban khi EMERGENCY_HANDLED; nới validator thì bản Render cũ không đọc được doc), `closed_by`, `closed_at`; public message "Ban quản lý đã xử lý phản ánh."; nhánh mới trong guard T10 (`(S.VERIFYING, S.CLOSED)` hiện chỉ cho `EMERGENCY_PENDING_BQL`) |
 | `POST /bql/tickets/{id}/return-to-bptn {note: str ≥1}` | BQL | `bql_return_to_bptn(id, actor, note)` | `VERIFYING`, blocker `OUT_OF_SCOPE`, `escalated == true` | blocker mới cùng code `OUT_OF_SCOPE`, `escalated=false`, `escalate_at`/`next_retry_at` tính lại như blocker vừa tạo; audit ghi note |
 - Vai sai ⇒ 403 `ACTION_DENIED` + audit (đi qua `_mutate`/`_deny` như mọi method). Note rỗng ⇒ 409 `GUARD_FAILED`.
 - Sau `handled`, cư dân đánh giá được (CLOSED ⇒ `RATE`), như ticket thường.
@@ -34,11 +34,15 @@ Ticket về phí, thủ tục, an ninh, tranh chấp ⇒ engine đã dừng `VER
 
 ## 3. Vật tư ngoài danh mục (R7 nút "+")
 - **Lưu trữ:** bảng MỚI `maintops.material_items (item_code text primary key, item_name text not null, unit text not null, created_by text not null, created_at timestamptz not null default now())` — Alembic revision `0003_material_items` (chỉ tạo bảng; KHÔNG sửa bảng cũ). Memory store: dict. Repo thêm `material_items() -> list[MaterialItem]`, `add_material_item(item) -> MaterialItem`.
-- **Engine:** `create_material_item(actor_id, item_name, unit) -> MaterialItem`. Vai: WAREHOUSE, DEPARTMENT. `item_name` 2..80 ký tự (strip), `unit` 1..20. Trùng tên (so sánh `casefold` sau strip, với cả danh mục yaml lẫn bảng) ⇒ trả item có sẵn, không tạo mới. Mã `SIM-MAT-X-<8 hex>`. Tạo xong `set_stock(code, 0)` ⇒ kế hoạch dùng nó sẽ `INSUFFICIENT` ⇒ `WAITING_MATERIAL` ⇒ kho nhập.
+- **Engine:** `create_material_item(actor_id, item_name, unit) -> MaterialItem`. Vai: WAREHOUSE, BQL, DEPARTMENT. `item_name` 2..80 ký tự (strip), `unit` 1..20. Trùng tên (so sánh `casefold` sau strip, với cả danh mục yaml lẫn bảng) ⇒ trả item có sẵn, không tạo mới. Mã `SIM-MAT-X-<8 hex>`. Tạo xong `set_stock(code, 0)` ⇒ kế hoạch dùng nó sẽ `INSUFFICIENT` ⇒ `WAITING_MATERIAL` ⇒ kho nhập.
 - **Tra cứu một chỗ:** mọi `self.catalog.material(code)` trong engine/views đi qua `self.material(code)` = yaml trước, rồi bảng. `GET /mo/catalog.materials` và `GET /mo/warehouse/stock` gộp cả hai (tên/đơn vị lấy từ bảng).
 - **Route:** `POST /mo/warehouse/items {item_name, unit}` ⇒ 201 `{item_code, item_name, unit, qty}`.
 - **Cờ:** `MO_CUSTOM_MATERIALS` (mặc định `true` khi `MO_STORE=memory`, `false` khi `postgres`). Tắt ⇒ route 403 `{code: FEATURE_DISABLED}` và `GET /mo/catalog` trả `custom_materials_enabled: false` (trường mới của CatalogView — response, không phải doc) ⇒ portal ẩn nút "+". Lý do: bản backend cũ trên Render gặp mã vật tư lạ trong doc ticket chưa được đo; bật trên Supabase cần OPERATIONS §3 bước 4.
 - Nghiệm thu: tạo "Ống nước PVC 21" ⇒ có trong catalog + stock 0; plan dùng nó ⇒ ticket `WAITING_MATERIAL`; kho nhập 2 ⇒ ticket chạy tiếp; tạo lại cùng tên khác hoa/thường ⇒ cùng mã; cờ tắt ⇒ 403.
+
+## 3b. BQL quản lý kho như thủ kho (Q08)
+- `receive_stock` (`POST /mo/warehouse/stock/{item_code}`) và `POST /mo/warehouse/items`: vai WAREHOUSE **và BQL** (sửa bảng `PERMISSIONS` của action nhập kho; audit ghi đúng vai). Vai khác vẫn 403.
+- Nghiệm thu: `quanly`/`bql01` nhập kho 3 ⇒ 200, tồn tăng 3; `kythuat01` nhập kho ⇒ 403 + audit.
 
 ## 4. Mở route cho method engine có sẵn (không đổi engine)
 | Route | Vai | Gọi |

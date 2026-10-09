@@ -1,0 +1,23 @@
+# mutation m3: same name no longer returns the existing item (a new code is made)
+$ git diff -U0 (engine.py vs backup)
+1801c1801
+<                 if unicodedata.normalize("NFC", item.item_name).strip().casefold() == key:
+---
+>                 if False:
+$ pytest tests/test_maintenance/test_portal_backend_ext.py -q
+        assert created["item_code"].startswith("SIM-MAT-X-") and created["item_name"] == PVC and created["qty"] == 0
+        again = c.post("/api/v1/mo/warehouse/items", json={"item_name": PVC.lower(), "unit": "m"}, headers=tok("kythuat"))
+>       assert again.status_code == 201 and again.json()["item_code"] == created["item_code"]
+E       AssertionError: assert (201 == 201 and 'SIM-MAT-X-443FCD51' == 'SIM-MAT-X-6AB880F6'
+E        +  where 201 = <Response [201 Created]>.status_code
+E         
+E         - SIM-MAT-X-6AB880F6
+E         + SIM-MAT-X-443FCD51)
+
+tests\test_maintenance\test_portal_backend_ext.py:621: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_same_name_gives_the_same_code
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_decomposed_unicode_name_matches_the_composed_one
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_api_create_list_stock_and_receive
+3 failed, 50 passed, 5 deselected in 13.96s
+EXIT=1

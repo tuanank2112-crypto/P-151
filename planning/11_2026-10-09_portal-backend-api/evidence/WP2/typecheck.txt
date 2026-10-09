@@ -1,0 +1,9 @@
+# measured on the verification copy
+$ npm run typecheck
+
+> portal@1.6.0 typecheck
+> next typegen && tsc --noEmit
+
+Generating route types...
+✓ Types generated successfully
+EXIT=0

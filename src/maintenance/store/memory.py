@@ -16,7 +16,7 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 
 from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent
-from src.maintenance.store.base import ConcurrencyError, GuardError, NotFoundError, short_stock_error
+from src.maintenance.store.base import ConcurrencyError, GuardError, MaterialItem, NotFoundError, short_stock_error
 
 _TICKET_NUMBER = re.compile(r"^SIM-TKT-(\d+)$")
 
@@ -106,6 +106,7 @@ class InMemoryRepository:
         self._log: list[AuditEvent | StatusEvent] = []
         self._notifications: list[Notification] = []
         self._stock: dict[str, float | None] = dict(stock or {})
+        self._material_items: dict[str, MaterialItem] = {}
         self._ticket_number = 0
         self._run_number = 0
 
@@ -160,6 +161,10 @@ class InMemoryRepository:
     def run_number(self) -> int:
         return self._run_number
 
+    def material_items(self) -> list[MaterialItem]:
+        with self._lock:
+            return sorted(self._material_items.values(), key=lambda item: (item.created_at, item.item_code))
+
     def version_of(self, ticket_id: str) -> int:
         """Memory-only inspection for tests: the committed version of a ticket."""
         if ticket_id not in self._versions:
@@ -192,8 +197,13 @@ class InMemoryRepository:
         with self._lock:
             self._stock[item_code] = qty
 
+    def add_material_item(self, item: MaterialItem) -> MaterialItem:
+        with self._lock:
+            return self._material_items.setdefault(item.item_code, item)
+
     def wipe(self, stock: dict[str, float | None]) -> int:
         with self._lock:
+            self._material_items = {}
             self._cases = {}
             self._versions = {}
             self._log = []

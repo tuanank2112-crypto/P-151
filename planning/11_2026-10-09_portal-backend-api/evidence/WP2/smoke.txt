@@ -1,0 +1,38 @@
+# smoke 2026-10-09T11:11:52+07:00 BACKEND_URL=http://127.0.0.1:8001
+
+ RUN  v5.0.3 D:/P151-portal-fe/portal
+
+stdout | tests/smoke/backend-smoke.test.ts > portal -> backend smoke > reception: logs in as bptn01 and loads the inbox + all-ticket list
+SMOKE reception: user=bptn01 role=reception all=13 inbox=3
+
+ ✓ |smoke| tests/smoke/backend-smoke.test.ts > portal -> backend smoke > reception: logs in as bptn01 and loads the inbox + all-ticket list 736ms
+stdout | tests/smoke/backend-smoke.test.ts > portal -> backend smoke > resident: logs in as cudan01 and loads own tickets (no staff fields)
+SMOKE resident: user=cudan01 tickets=13
+
+ ✓ |smoke| tests/smoke/backend-smoke.test.ts > portal -> backend smoke > resident: logs in as cudan01 and loads own tickets (no staff fields) 298ms
+stdout | tests/smoke/backend-smoke.test.ts > portal -> backend smoke > management: logs in as bql01 and loads the BQL list
+SMOKE management: tickets=13 bqlWork=0
+
+ ✓ |smoke| tests/smoke/backend-smoke.test.ts > portal -> backend smoke > management: logs in as bql01 and loads the BQL list 342ms
+stdout | tests/smoke/backend-smoke.test.ts > portal -> backend smoke > departments and warehouse: vesinh01, kythuat01, kho01 loaders
+SMOKE vesinh01: tickets=4 catalog=5 customMaterials=false
+
+stdout | tests/smoke/backend-smoke.test.ts > portal -> backend smoke > departments and warehouse: vesinh01, kythuat01, kho01 loaders
+SMOKE kythuat01: tickets=4 catalog=5 customMaterials=false
+
+stdout | tests/smoke/backend-smoke.test.ts > portal -> backend smoke > departments and warehouse: vesinh01, kythuat01, kho01 loaders
+SMOKE kho01: inventory=5 requests=0
+
+ ✓ |smoke| tests/smoke/backend-smoke.test.ts > portal -> backend smoke > departments and warehouse: vesinh01, kythuat01, kho01 loaders 890ms
+stdout | tests/smoke/backend-smoke.test.ts > portal -> backend smoke > management uses the full warehouse page: bql01 loads the warehouse data
+SMOKE bql01 warehouse: inventory=5 requests=0
+
+ ✓ |smoke| tests/smoke/backend-smoke.test.ts > portal -> backend smoke > management uses the full warehouse page: bql01 loads the warehouse data 246ms
+ ✓ |smoke| tests/smoke/backend-smoke.test.ts > portal -> backend smoke > wrong password is a clean login error, not a crash 232ms
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  11:11:54
+   Duration  3.15s (tests 96%, transform 2%, import 2%)
+
+EXIT=0
