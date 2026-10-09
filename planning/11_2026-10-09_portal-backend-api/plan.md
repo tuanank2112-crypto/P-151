@@ -65,7 +65,7 @@
 - [x] WP1b ✅ local 2026-10-09 (SO đo: ext+ext2 107 passed, full 3771 passed/0 fail, ruff sạch; worker: --pg 163 passed; R03 — duyệt cấp chỉ áp kế hoạch của phòng ban, cờ `MO_PORTAL_EXTRAS`) · [x] WP2b ✅ local 2026-10-09 (SO đo: 118 unit pass, typecheck/lint EXIT=0; sửa `.gitignore` — `data/` đã nuốt `portal/src/server/data/`, commit WP2 `4be6284` thiếu thư mục này, bù ở commit WP2b)
 - [x] WP3 · [x] WP4 · [x] WP5 ✅ local 2026-10-09 (SO đo: unit 121 pass, typecheck/lint EXIT=0; ui-check của worker trên :3000; SO sửa thêm `splitReport` không lặp chữ + dịch `failing_items`; :8000 cần portal chạy production — `next dev` không hydrate sau proxy vì HMR WebSocket)
 - [x] WP6 ✅ local 2026-10-09 — 4 bộ ui-check (WP3, WP4 vệ sinh, WP4 kỹ thuật, WP5) qua CỔNG 8000, portal production, backend memory: đều EXIT=0 (`evidence/WP6/ui-8000-*.txt`); lộ + sửa lỗi form vệ sinh không gửi vật tư đã dùng · [x] WP7 ✅ local 2026-10-10 00:36:56 +0700 — thẩm định cô lập 4 vòng (🔁 P5–P7 → Q20; 🔁 NEW-1/1b/2/3 → Q21; 🔁 R3-D/E/F → Q22; vòng 4 còn R4-A ⇒ quyết theo CR-03, Q23). Cuối: pytest 3782 passed, ruff sạch, 125 unit, 4 ui-check qua 8000 EXIT=0
-- [ ] G6 Supabase demo (chờ người dùng gật — OPERATIONS §3)
+- [~] G6 Supabase 2026-10-10: ĐỌC ✅ — backend cổng 8000 trỏ Supabase (`MO_STORE=postgres`, jobs/reset/seed tắt, `MO_CUSTOM_MATERIALS`/`MO_PORTAL_EXTRAS` tắt, ảnh Supabase), `quanly` thấy 67 ticket thật (60 trừ gộp) trong ~3 s. Chưa: Alembic 0003/0004 trên Supabase + bật cờ (chờ Render chạy code mới, OPERATIONS §3 bước 6)
 - [x] WP8 ✅ 2026-10-10 00:36:56 +0700 (docs/portal.md, docs/maintenance.md §16, não, changelog v1.7.0, version 1.7.0) · [ ] Sign-off `✅ ĐÃ HOÀN THÀNH` — CHỜ G6 Supabase (thiếu mật khẩu DB đúng)
 
 ## §5. Bảng trỏ SPEC
