@@ -2,6 +2,13 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.6.0] - 2026-10-08: Danh sách hiện 20 phản ánh một trang (plan 10)
+### Added
+- `src/web/app.js`: `listCard(..., { key, ids })` chia trang 20 dòng cho màn cư dân, BPTN, phòng ban, BQL; khối "‹ Trước · Trang x / y · Sau ›" chỉ hiện khi > 20.
+### Decisions
+- Chia ở giao diện, KHÔNG ở server: ô đếm/lọc/sắp xếp đều tính ở trình duyệt trên toàn bộ danh sách; API giữ nguyên.
+- Chuyển trang không gọi API; mỗi `render()` mở trang chứa ticket đang chọn. Reset trang khi đăng xuất/đổi lọc BQL là phòng hờ (mutant tương đương — plan 10 Q07).
+
 ## [v1.5.0] - 2026-10-08: Danh sách phản ánh nhanh 7–13 lần (plan 09)
 ### Changed
 - `PostgresRepository.list()` nhớ doc theo `xmin` từng dòng: MỘT câu SQL gửi phiên bản đang giữ, DB chỉ trả doc của dòng mới/đổi. Không TTL (ghi từ backend khác thấy ngay); doc lỗi không vào cache.

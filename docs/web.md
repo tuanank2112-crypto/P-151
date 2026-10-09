@@ -22,3 +22,13 @@ Từ v1.3.0 (plan 07) giao diện mang design của `portal/`. Hồ sơ: `planni
 - Xem nhanh, không đụng DB chung: `MO_STORE=memory MO_PHOTO_STORE=local LLM_MODE=mock DATABASE_URL= python -m uvicorn src.main:app --port 8001` ⇒ http://127.0.0.1:8001/ui/ (tài khoản `seed/maintenance_v1/accounts.yaml`, mật khẩu `Demo@2026`).
 - Container: `docker compose up -d --build backend` (image chép `src/` lúc build) ⇒ http://localhost:8000/ui/ — dùng Supabase chung.
 - Kiểm: `node --check src/web/app.js`; `python -m pytest tests/test_maintenance/test_api.py -q -p no:cacheprovider`.
+
+## 4. Chia trang danh sách — 20 ticket một lần (plan 10, v1.6.0, 2026-10-08)
+Hồ sơ: [`planning/10_2026-10-08_list-paging/`](../planning/10_2026-10-08_list-paging/plan.md).
+- `listCard(title, count, items, empty, paging)` — `paging = { key, ids }` (`ids[i]` là ticket của `items[i]`): chỉ gắn `PAGE_SIZE = 20` dòng; pill `count`
+  và mọi ô đếm vẫn là TOÀN BỘ. Dùng ở 4 màn: `resident`, `bptn`, `department` (qua `internalList(..., pageKey)`), `bql`.
+- Bấm "‹ Trước / Sau ›" chỉ thay dòng trong `<ul data-list=key>` — KHÔNG `render()`, KHÔNG gọi API.
+- Mỗi `render()` mở đúng trang chứa `state.selected`. Mọi màn tự chọn ticket đầu khi chưa chọn ⇒ sau đăng nhập/đổi lọc luôn về trang 1;
+  `state.pages` + reset ở `signOut()`/lọc BQL chỉ là phòng hờ (hiện không đổi được gì nhìn thấy — plan 10 Q07).
+- Kiểm: `bash planning/10_2026-10-08_list-paging/evidence/harness/run_all.sh <python> <scratch>` (backend memory `:8001`, P1–P8 + 3 phép phá);
+  trên `:8000` chỉ dùng `server_readonly.mjs` (không gửi form).
