@@ -102,6 +102,8 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 - `docker compose up -d --build` trước 2026-10-07 chỉ dựng `db` + `backend` (Python) ⇒ `localhost:8000` vẫn là UI cũ (đăng nhập màu cam), không phải portal. Nay có service `portal` ở `localhost:3000`. Mạng Docker Desktop chập chờn ("no such host" khi kéo `node:24-alpine") ⇒ `docker pull` lại vài lần.
 - **Sửa `portal/src/db/schema.ts` thì PHẢI `npx drizzle-kit generate --name <tên>`** và commit file `drizzle/00NN_*.sql` + `meta/`. `drizzle-kit push` chỉ sửa DB trên máy mình ⇒ người khác `db:migrate` thiếu bảng/enum (gặp 2026-10-08: role `warehouse`). Kiểm nhanh: `drizzle-kit generate` trên nhánh sạch phải báo "No schema changes".
 - `docker-compose.yml` cố định `name: p151` ⇒ worktree khác chạy `docker compose up` sẽ DÙNG CHUNG volume DB với repo chính. Cô lập bằng `docker compose -p <tên-khác>` + `POSTGRES_PORT` khác.
+- **Supabase: tài khoản dashboard ≠ tài khoản DB.** Được thêm vào team supabase.com chỉ cho vào dashboard; script/app cần mật khẩu Postgres của project (Supabase KHÔNG hiện lại, chỉ người tạo biết; Reset làm đứt backend Render + máy cả nhóm). Không có mật khẩu ⇒ chạy SQL qua dashboard **SQL Editor** (chạy quyền `postgres`), agent soạn sẵn truy vấn. Qua Session pooler user có dạng `postgres.<project-ref>`, cổng 5432, DB `postgres`.
+- Chuỗi kết nối Supabase để ở `portal/.env.supabase` (gitignore `.env*`), KHÔNG để vào `.env.local`: `next dev` tự nạp lại `.env.local` khi đổi ⇒ UI local bấm thử là ghi thẳng DB chung. Kiểm DB chung luôn kèm `PGOPTIONS="-c default_transaction_read_only=on"`.
 - Cookie `secure` bật ở production làm đăng nhập lặp vòng khi mở bằng HTTP qua IP LAN; compose đặt `SESSION_COOKIE_SECURE=false`.
 
 

@@ -48,7 +48,7 @@
     "portal": "unit 14/14, test:db 15/15 (portal_test), next build ok, e2e PASS on next start (2026-10-07)",
     "spec_p09_v6_probes": "27/27 passed (B1 interval overlap, B2 3-part overrides & shared location, B3 next_step, B4 cardinality & quiesce)"
   },
-  "last_sync": "2026-10-08T10:10:44.796289+00:00",
+  "last_sync": "2026-10-08T15:24:01.505502+00:00",
   "next_step": "User hands off prepared reviewer/API/UI packets after push; receive human review for15 cases, verify families/export/freeze, baseline and final report. Backlog scope decisions 15/15 confirmed; runtime issues stay open.",
   "active_plan": {
     "id": "09_2026-10-07_day05-labels",
