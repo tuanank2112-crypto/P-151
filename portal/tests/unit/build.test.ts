@@ -158,12 +158,12 @@ describe("detail, inbox, management, warehouse", () => {
     expect(buildMgmtTicket({ ...row, status: "MERGED", blocker: null }, undefined, now)).toMatchObject({ merged: true, cancelled: true });
   });
 
-  it("warehouse request lists only short lines", () => {
+  it("warehouse request lists every line, flags the short ones (Q15: all plans need approval)", () => {
     const c = aCase({ status: "ON_HOLD" });
     const stock = stockMap([{ item_code: "SIM-MAT-1", item_name: "Bóng LED", unit: "cái", qty: 0 }]);
     const r = buildWarehouseRequest(c, stock, { DEPT_TECHNICAL: "Phòng kỹ thuật" }, now);
-    expect(r?.lines).toEqual([{ itemCode: "SIM-MAT-1", itemName: "Bóng LED", unit: "cái", plannedQty: 2, stock: 0, shortage: 2 }]);
+    expect(r?.lines).toEqual([{ itemCode: "SIM-MAT-1", itemName: "Bóng LED", unit: "cái", plannedQty: 2, stock: 0, shortage: 2, short: true }]);
     expect(r?.departmentName).toBe("Phòng kỹ thuật");
-    expect(buildWarehouseRequest(c, stockMap([{ item_code: "SIM-MAT-1", item_name: "x", unit: "cái", qty: 9 }]), {}, now)).toBeNull();
+    expect(buildWarehouseRequest(c, stockMap([{ item_code: "SIM-MAT-1", item_name: "x", unit: "cái", qty: 9 }]), {}, now)).toMatchObject({ short: false, approved: false });
   });
 });

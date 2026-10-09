@@ -49,6 +49,10 @@ export const SLA_HOURS = { urgent: 4, normal: 48 } as const;
 export const MAX_PHOTOS = 5;
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 export const MIN_DESCRIPTION = 10;
+export const MIN_TITLE = 5;
+export const MAX_TITLE = 120;
+export const MAX_CONTENT = 2000;
+export const MAX_RATING_COMMENT = 500;
 
 export const STAR_LABEL = ["", "Rất không hài lòng", "Không hài lòng", "Bình thường", "Hài lòng", "Rất hài lòng"];
 export const GOOD_TAGS = ["Xử lý nhanh", "Sạch sẽ, gọn gàng", "Thái độ tốt", "Giải quyết triệt để"];

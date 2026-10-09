@@ -15,6 +15,20 @@ export async function receiveStockAction(code: string, qty: number) {
   });
 }
 
+/**
+ * Approve a department's material plan (SPEC-P04 §2): warehouse or BQL. The backend answers 409 STOCK_SHORT with the
+ * missing quantity when stock is not enough; the ticket then resumes (ON_HOLD -> IN_PROGRESS).
+ */
+export async function approveMaterialsAction(ticketId: string, note?: string) {
+  const tid = id(ticketId);
+  if (!tid) return fail("INVALID_INPUT");
+  const text = str(note);
+  return act(async () => {
+    await api(`/mo/tickets/${tid}/materials/approve`, { json: text ? { note: text } : {} });
+    return null;
+  });
+}
+
 /** New catalog item (`POST /mo/warehouse/items`), then the opening stock when qty > 0 */
 export async function addStockItemAction(input: { name: string; unit: string; qty: number }) {
   const name = str(input?.name);

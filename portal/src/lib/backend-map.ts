@@ -1,5 +1,6 @@
 /** Pure mapping between the backend (CR-BPTN-03 API) and the portal (01-CONTRACTS §3, §5, §6). No I/O. */
 import type { Dept, Role } from "./constants";
+import type { AgentCorrection, AgentPerf, MgmtTicket } from "./dto";
 
 export type BStatus =
   | "RECEIVED"
@@ -162,4 +163,142 @@ export function roleFromMe(role: string, departmentId: string | null | undefined
     default:
       return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Title / content / location (SPEC-P03 §2)
+// ---------------------------------------------------------------------------
+
+/**
+ * `original_description` = title line, content lines, then "Vị trí: <where>" -> its three parts. A legacy report has
+ * no separate title: its first line is the title (<= 80 chars) and the content keeps the full text only when the
+ * title cut it.
+ */
+export function splitReport(raw: string): { title: string; content: string; location: string } {
+  const { description, location } = parseDescription(raw);
+  const lines = description.split("\n");
+  if (lines.length === 1) {
+    const title = titleOf(description);
+    return { title, content: title === description ? "" : description, location };
+  }
+  return { title: (lines[0] ?? "").trim(), content: lines.slice(1).join("\n").trim(), location };
+}
+
+// ---------------------------------------------------------------------------
+// Agent (SPEC-P04 §5)
+// ---------------------------------------------------------------------------
+
+/** Department the (real) Agent proposed: "bql" when it judged the ticket out of scope; null without an Agent decision */
+export function agentDept(
+  source: string | null | undefined,
+  department: string | null | undefined,
+  scope: string | null | undefined,
+): Dept | null {
+  if (source !== "AGENT") return null;
+  if (scope === "OUT_OF_SCOPE") return "bql";
+  return deptKey(department);
+}
+
+export type AgentCheck = { agentSource: string | null; agentDept: Dept | null; dept: Dept | null };
+
+/** Agent right/wrong once the ticket has a final department (or went to BQL); null when it cannot be judged */
+export function agentVerdict(t: AgentCheck): "correct" | "wrong" | null {
+  if (t.agentSource !== "AGENT" || !t.agentDept || !t.dept) return null;
+  return t.agentDept === t.dept ? "correct" : "wrong";
+}
+
+export type PerfRow = AgentCheck & { id: string; code: string; needInfo: boolean };
+
+export function agentPerformance(rows: PerfRow[]): AgentPerf {
+  let correct = 0;
+  const corrections: AgentCorrection[] = [];
+  for (const r of rows) {
+    const v = agentVerdict(r);
+    if (v === "correct") correct++;
+    else if (v === "wrong" && r.agentDept && r.dept) {
+      corrections.push({ id: r.id, code: r.code, agentDept: r.agentDept, finalDept: r.dept });
+    }
+  }
+  const wrong = corrections.length;
+  const judged = correct + wrong;
+  return {
+    transferred: rows.filter((r) => r.dept !== null).length,
+    correct,
+    wrong,
+    correctPct: judged === 0 ? null : Math.round((correct / judged) * 100),
+    waitingResident: rows.filter((r) => r.needInfo).length,
+    corrections,
+  };
+}
+
+/** Who sent a ticket to the BQL: the latest `escalation` notification's `payload.by`, else the Agent hint */
+export function escalationSource(
+  notifications: { type: string; payload?: Record<string, unknown> }[] | null | undefined,
+  agentHint: boolean,
+): "Agent chuyển" | "Tiếp nhận chuyển" {
+  const list = notifications ?? [];
+  for (let i = list.length - 1; i >= 0; i--) {
+    const n = list[i];
+    if (n.type !== "escalation") continue;
+    const by = n.payload?.by;
+    if (by === "AGENT") return "Agent chuyển";
+    if (typeof by === "string") return "Tiếp nhận chuyển";
+  }
+  return agentHint ? "Agent chuyển" : "Tiếp nhận chuyển";
+}
+
+// ---------------------------------------------------------------------------
+// Management filters and statistics (SPEC-P03 §5.1, §5.2, §5.5). Pure: the number on a tile is the number of rows.
+// ---------------------------------------------------------------------------
+
+export type OverviewKind = "total" | "waiting" | "processing" | "emergency" | "late";
+export type OverviewRow = Pick<MgmtTicket, "stage" | "cancelled" | "merged" | "riskLevel" | "late" | "bqlWork">;
+
+export function overviewFilter(kind: OverviewKind): (t: OverviewRow) => boolean {
+  switch (kind) {
+    case "total":
+      return (t) => !t.merged;
+    case "waiting":
+      return (t) => t.stage <= 2 && !t.cancelled && !t.bqlWork;
+    case "processing":
+      return (t) => t.stage >= 3 && t.stage <= 4 && !t.cancelled;
+    case "emergency":
+      return (t) => t.riskLevel === "EMERGENCY" && t.stage < 6 && !t.cancelled;
+    case "late":
+      return (t) => t.late && !t.cancelled;
+  }
+}
+
+export function overviewCount(rows: OverviewRow[], kind: OverviewKind): number {
+  return rows.filter(overviewFilter(kind)).length;
+}
+
+/** Click on a department row: its tickets not finished yet (stage < 5, not cancelled); `showAll` keeps finished ones */
+export function deptLoadFilter(dept: Dept, showAll: boolean): (t: Pick<MgmtTicket, "dept" | "stage" | "cancelled">) => boolean {
+  return (t) => t.dept === dept && (showAll || (t.stage < 5 && !t.cancelled));
+}
+
+/** Hours between two ISO times, 1 decimal; null when a side is missing or the order is wrong */
+export function hoursBetween(from: string | null | undefined, to: string | null | undefined): number | null {
+  if (!from || !to) return null;
+  const ms = new Date(to).getTime() - new Date(from).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return null;
+  return Math.round((ms / 3_600_000) * 10) / 10;
+}
+
+const avg = (xs: number[]): number | null => (xs.length === 0 ? null : Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10);
+
+export type DeptPerf = { processing: number; late: number; closed: number; avgStars: number | null; avgHours: number | null };
+
+/** "Hiệu suất phòng ban" of one department (SPEC-P03 §5.5) */
+export function deptPerformance(rows: MgmtTicket[], dept: Dept): DeptPerf {
+  const mine = rows.filter((t) => t.dept === dept && !t.cancelled);
+  const closed = mine.filter((t) => t.stage === 6);
+  return {
+    processing: mine.filter((t) => t.stage >= 3 && t.stage <= 4).length,
+    late: mine.filter((t) => t.late).length,
+    closed: closed.length,
+    avgStars: avg(closed.flatMap((t) => (t.ratingStars === null ? [] : [t.ratingStars]))),
+    avgHours: avg(closed.flatMap((t) => (t.doneHours === null ? [] : [t.doneHours]))),
+  };
 }

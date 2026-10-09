@@ -58,7 +58,7 @@
 - [x] Khảo sát portal + API backend + đối chiếu doc (3 agent đọc) — 2026-10-09
 - [x] Bộ SPEC (00, 01, P01–P03, OPERATIONS, TESTING) — 2026-10-09
 - [x] WP1 ✅ local 2026-10-09 (SO đo lại: ext 56 passed, full 3720 passed/0 fail, ruff check sạch; R01) · [x] WP2 ✅ local 2026-10-09 (SO đo tại chỗ sau khi xoá file cũ: unit/typecheck/lint EXIT=0, grep 0; portal qua cổng 8000 đăng nhập `kho` đạt; sửa `Date.now()` khi prerender ở `session.ts`)
-- [ ] WP1b (SPEC-P04) · [ ] WP2b (lớp dữ liệu cho SPEC-P03/P04 mới)
+- [ ] WP1b (SPEC-P04) · [x] WP2b ✅ local 2026-10-09 (SO đo: 118 unit pass, typecheck/lint EXIT=0; sửa `.gitignore` — `data/` đã nuốt `portal/src/server/data/`, commit WP2 `4be6284` thiếu thư mục này, bù ở commit WP2b)
 - [ ] WP3 · [ ] WP4 · [ ] WP5
 - [ ] WP6 (G3, G4) · [ ] WP7 (G5)
 - [ ] G6 Supabase demo (chờ người dùng gật — OPERATIONS §3)

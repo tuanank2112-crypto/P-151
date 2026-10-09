@@ -36,6 +36,14 @@ export async function reportWrongDeptAction(ticketId: string, note: string) {
   return act(() => post(path(tid, "wrong-department"), { note: reason }));
 }
 
+/** Assign a team / technician (SPEC-P04 §3). On a ROUTED ticket this also accepts it (ROUTED -> IN_PROGRESS). */
+export async function assignStaffAction(ticketId: string, staffId: string) {
+  const tid = id(ticketId);
+  const sid = id(staffId);
+  if (!tid || !sid) return fail("INVALID_INPUT", "Vui lòng chọn nhân viên.");
+  return act(() => post(path(tid, "assign"), { staff_id: sid }));
+}
+
 export type MaterialLineInput = { itemCode?: string; newItemName?: string; unit?: string; qty: number };
 
 /** New names become catalog items first (`POST /mo/warehouse/items`), then one `material-plan` call (01 §7) */

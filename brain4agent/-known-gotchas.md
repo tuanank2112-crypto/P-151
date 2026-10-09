@@ -132,3 +132,6 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 
 ### Stash + Windows live logs and line endings — 2026-10-07T13:30:26.152115+00:00
 Stash push -u may save successfully but exit1 without cleaning tracked files when open log files prevent removal. Check backup/state before merge. Keep stash, restore only verified tracked changes; never delete active logs. Git normalization can alter mixed LF/CRLF in untracked machine evidence; preserve/recover exact bytes only when original manifest hash matches. Conflict marker regex must use [^\n]* for marker lines: .* with DOTALL can consume trailing document/test content. Final preservation/test evidence is under plan06 integration-latest-20261007.
+
+## `.gitignore` `data/` nuốt thư mục mã tên `data` (hồ sơ 11, 2026-10-09)
+- Dòng `data/` (cho dữ liệu lớn ở root) khớp MỌI thư mục tên `data` ⇒ `portal/src/server/data/` (mã nguồn) bị bỏ qua âm thầm, commit thiếu file mà typecheck local vẫn xanh. Đã thêm `!portal/src/server/data/`. Tạo thư mục mã tên `data` ở chỗ khác ⇒ kiểm `git check-ignore -v <file>`. `tests/test_maintenance/data/` thì đã `git add -f`.

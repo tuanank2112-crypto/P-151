@@ -129,6 +129,8 @@ export function ResidentApp({ data }: { data: ResidentData }) {
       return;
     }
     const fd = new FormData();
+    // temporary: WP3 adds the title input; until then the title is the start of the text
+    fd.set("title", draft.trim().replace(/\s+/g, " ").slice(0, 60));
     fd.set("description", draft);
     fd.set("place", place);
     fd.set("placeDetail", sub);
@@ -542,7 +544,7 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                   onRate={() => {
                     if (!rStars) return;
                     run(
-                      () => rateTicketAction(cur.id, rStars),
+                      () => rateTicketAction(cur.id, { stars: rStars }),
                       () => setRStars(0),
                     );
                   }}
