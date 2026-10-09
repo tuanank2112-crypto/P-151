@@ -10,6 +10,9 @@ Chi tiết hợp đồng: `planning/01_2026-10-02_supabase-persistence/specs/01-
 - **Ảnh** qua `PhotoStore`, chọn bằng `MO_PHOTO_STORE`: `local` (`MO_UPLOAD_DIR`) hoặc `supabase` (bucket private
   `maintenance-photos`, REST bằng `httpx`, backend proxy bytes — không signed URL).
 - **Tĩnh** (catalog, accounts, fixture) vẫn là YAML trong `seed/maintenance_v1/`. Phiên đăng nhập còn trong RAM (WP4b sẽ lưu `maintops.sessions`).
+- **Client (plan 11, v1.7.0):** web `/ui/` và app điện thoại `/app/` (PWA) cùng gọi `/api/v1` của MỘT backend ⇒ cùng store, không có bản sao dữ liệu phía client.
+  App: token ở `localStorage['mo-app-token']`; service worker chỉ cache vỏ app, KHÔNG cache `/api/`; đồng bộ bằng tải lại 30 s khi app hiện + khi quay lại/có mạng (chưa realtime).
+  `portal/` (Next.js) vẫn DB riêng, không đồng bộ với hai client này.
 
 - `.ai-log/session.jsonl` là log dùng công cụ AI của thành viên, không phải dữ liệu ứng dụng.
 

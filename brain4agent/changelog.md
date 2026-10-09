@@ -2,6 +2,22 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.7.0] - 2026-10-09: App điện thoại (PWA) cho Cư dân và BQL (plan 11)
+### Added
+- `src/mobile/` (phục vụ ở `/app/`, một dòng mount trong `src/main.py`): Cư dân gửi phản ánh kèm ảnh chụp (nén ≤1600 px), theo dõi, bổ sung, thêm ảnh, đánh giá; BQL 3 tab Cần tôi/Khẩn cấp/Tất cả + nghiệm thu, trả làm lại, hủy, đóng/hạ mức khẩn cấp. Vai khác ⇒ màn "Dùng bản web".
+- `manifest.json` + `sw.js` + icon ⇒ cài lên màn hình chính khi chạy HTTPS. `docs/mobile.md`, `tests/test_maintenance/test_mobile_static.py` (5 test).
+### Decisions
+- PWA, KHÔNG React Native/Flutter (giao nhanh trước 19/10; bọc Capacitor sau nếu cần store). Client mỏng gọi API sẵn có, không endpoint mới ⇒ web và app cùng DB.
+- Đồng bộ = tải lại 30 s khi app đang hiện + ngay khi quay lại/có mạng; service worker KHÔNG cache `/api/`; không ghi offline. Realtime ⇒ Idea Vault.
+- Không Tailwind CDN/framework, không bước build; token lưu `localStorage['mo-app-token']` (app nhớ đăng nhập, session server vẫn TTL 8 h).
+- Ảnh cư dân gửi được ở mọi trạng thái chưa kết thúc (theo guard engine), bổ sung chữ chỉ khi `NEED_INFO` (theo `allowed_actions`).
+### Added (đợt 3, cùng ngày — SPEC-P05, Q26–Q31)
+- App cho mọi vai vận hành: Phòng ban (`js/dept.js` — nhận việc, chụp ảnh sau xử lý, checklist, vật tư, ghi chú, báo hoàn thành, vướng/sai phòng ban), BPTN (`js/bptn.js` — form theo mã vướng), Kho (`js/kho.js` — tồn kho, nhập kho); `js/staff.js` dùng chung. Chỉ QA còn "Dùng bản web". Không endpoint mới.
+- Bỏ hàng chip lọc ở màn Cư dân (4 ô tổng quan vẫn lọc).
+### Changed (đợt 2, cùng ngày — SPEC-P04, Q19–Q25)
+- Giao diện app chép từ `portal/`: header gradient + NavTiles (bỏ thanh tab đáy/FAB), form gửi 3 thẻ đánh số + Tóm tắt, ô tổng quan + 6 vạch tiến độ, stepper 6 bước, màn BQL kiểu Management; class `globals.css` chép nguyên, icon `icons.tsx` path-for-path. Backend vẫn FastAPI gốc `/api/v1` (Docker `:8000`), không chạm portal/DB portal.
+- Bước Vị trí ghép `Vị trí: Tòa … / Tầng … / <khu vực>` vào mô tả (API không đổi). Không làm phần portal mà API không có (khẩn cấp, tag đánh giá, cư dân nghiệm thu, Thông báo).
+
 ## [v1.6.0] - 2026-10-08: Danh sách hiện 20 phản ánh một trang (plan 10)
 ### Added
 - `src/web/app.js`: `listCard(..., { key, ids })` chia trang 20 dòng cho màn cư dân, BPTN, phòng ban, BQL; khối "‹ Trước · Trang x / y · Sau ›" chỉ hiện khi > 20.

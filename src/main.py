@@ -94,6 +94,8 @@ app.include_router(maintenance.bql_router, prefix="/api/v1")
 
 # Static prototype UI (Tailwind via CDN, no build step); it only calls the API above
 app.mount("/ui", StaticFiles(directory=Path(__file__).parent / "web", html=True), name="ui")
+# Phone app (PWA) for residents and BQL, same origin as the API (planning/11_2026-10-09_mobile-pwa-app)
+app.mount("/app", StaticFiles(directory=Path(__file__).parent / "mobile", html=True), name="app")
 
 
 @app.get("/", include_in_schema=False)

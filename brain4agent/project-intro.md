@@ -10,6 +10,7 @@ Repo P-151 (AI20K Build Phase) xây **MaintenanceOps Agent** cho BQL một cụm
 
 ## 2. Công nghệ cốt lõi (Tech Stack)
 - **Frontend / Web:** UI tĩnh `src/web/` (index.html, app.js, theme.css), FastAPI phục vụ chung; đăng nhập tài khoản mô phỏng theo vai trò. Từ v1.3.0 (plan 07) mang cùng design với `portal/` (Be Vietnam Pro, header gradient xanh, card/pill).
+- **App điện thoại (v1.7.0, plan 11):** PWA `src/mobile/` ở `/app/` cho Cư dân, BQL, Phòng ban, BPTN, Kho — plain JS ES module, CSS chép từ thiết kế `portal/` (SPEC-P04), manifest + service worker (chỉ cache vỏ app), không bước build. Client mỏng của cùng API ⇒ cùng DB với web. `docs/mobile.md`.
 - **Backend / Engine:** Python 3.11, FastAPI, Pydantic. Lõi `src/maintenance/`: `engine.py` (state machine + pipeline), luật `rules.py` + LLM `proposer.py` (LangChain/OpenAI; `LLM_MODE=mock` cho test). LangGraph ở `src/agents/` vẫn là mẫu; kế hoạch đưa lên đường chạy thật trước 19/10.
 - **Data Persistence:** `MO_STORE=memory` (mặc định) | `postgres` (schema `maintops`, Alembic, Supabase); ảnh `MO_PHOTO_STORE=local|supabase`. Seed `seed/maintenance_v1/` chỉ nạp khi DB rỗng. Fixture đích CR-03: `seed/maintenance_cr03/`.
 - **Kiểm thử và vận hành:** pytest, ruff, Docker Compose, GitHub Actions.

@@ -1,0 +1,42 @@
+mutant a-sw-caches-api: pytest test_mobile_static exit=1
+FAILED tests/test_maintenance/test_mobile_static.py::test_sw_never_caches_api
+1 failed, 4 passed in 0.74s
+mutant a-sw-caches-api: harness exit=1
+PASS M1 hash=#/r h1="Phản ánh của tôi"
+PASS TEXT m1-resident-list placeholder text on screen=[]
+PASS TEXT m2-new-ticket placeholder text on screen=[]
+PASS M2 id=SIM-TKT-0009 channel=app photos=[{"w":1600,"h":1200,"bytes":70052,"type":"image/jpeg"},{"w":1200,"h":1600,"bytes":72541,"type":"image/jpeg"}]
+PASS TEXT m2-detail placeholder text on screen=[]
+PASS M3 tickets with that text=1
+PASS TEXT m4-need-info placeholder text on screen=[]
+PASS M4 additions 0→1, shown without reload
+FAIL M5 badge "Đã chuyển phòng ban" → "Đã chuyển phòng ban" after 36.4s, no reload (sw controls page: true)
+PASS TEXT m5-synced placeholder text on screen=[]
+PASS M6 API calls while hidden 35s=0, within 2s of visible=1
+PASS TEXT m7-offline placeholder text on screen=[]
+PASS M7 write buttons disabled offline=true writes=0 re-enabled=true banner hidden=true list reload after online=1
+PASS M8 rating form gone after send, second rating via API → 409
+PASS TEXT m8-rated placeholder text on screen=[]
+PASS TEXT m17-resident-done-filter placeholder text on screen=[]
+PASS M17 chip rows=0, "Đã xong" shows 1/1 terminal tickets, all terminal=true
+FAIL M13 stopped: page.waitForFunction: Timeout 15000ms exceeded.
+PASS JS resident page errors=[]
+PASS M9 tab Cần tôi: 3 rows, has review tickets=true, seed rows=0
+PASS TEXT m9-bql-list placeholder text on screen=[]
+PASS TEXT m10-bql-review placeholder text on screen=[]
+FAIL M10 stopped: page.waitForFunction: Timeout 15000ms exceeded.
+PASS TEXT m11-bql-emergency placeholder text on screen=[]
+FAIL M11 stopped: page.waitForFunction: Timeout 15000ms exceeded.
+PASS JS BQL page errors=[]
+FAIL M14 stopped: page.waitForSelector: Timeout 15000ms exceeded.
+PASS JS department page errors=[]
+PASS TEXT m15-bptn-missing placeholder text on screen=[]
+PASS M15 before=NEED_INFO/MISSING_INFO after=VERIFYING/DUPLICATE
+PASS JS BPTN page errors=[]
+PASS TEXT m16-kho-stock placeholder text on screen=[]
+PASS M16 stock rows 5/5, SIM-MAT-CLEAN-01 4 → 5
+PASS JS warehouse page errors=[]
+PASS M12 hash=#/web data requests=0
+PASS TEXT m12-web-only placeholder text on screen=[]
+RESULT: 5 FAIL
+restored src/mobile/sw.js byte for byte
