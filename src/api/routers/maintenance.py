@@ -667,9 +667,11 @@ def resident_list(actor: ActorDep, engine: EngineDep) -> list[ResidentTicketView
     """Các phản ánh của chính cư dân gọi API, mới nhất trước."""
     _require_role(engine, actor, ActorRole.RESIDENT)
     now = engine.clock()
-    own = [c for c in list(engine.cases.values()) if c.ticket.resident_id == actor]
+    snapshot = list(engine.cases.values())
+    lookup = {c.ticket.ticket_id: c for c in snapshot}  # linked tickets (merge/split) come from the same read
+    own = [c for c in snapshot if c.ticket.resident_id == actor]
     own.sort(key=lambda c: c.ticket.raw.created_at, reverse=True)
-    return [resident_view(engine, c, now) for c in own]
+    return [resident_view(engine, c, now, lookup) for c in own]
 
 
 def _own_case(engine: MaintenanceEngine, ticket_id: str, actor: str) -> Case:

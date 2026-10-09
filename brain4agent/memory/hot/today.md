@@ -164,3 +164,10 @@
 - Hoàn thành đóng gói toàn bộ hồ sơ SPEC-P09 (PROPOSED), handoffs H15, H16 (CHỜ DUYỆT), báo cáo thi công R15 (§01–§17) và 5 bộ evidence review/probe của WP16.
 - Kết quả kiểm chứng độc lập: 27/27 probes đạt PASS (package-check-v6.txt). 0 file runtime bị thay đổi.
 - Chuẩn bị lưu trữ git và rà soát điều kiện đẩy nhánh theo quy định an toàn hệ thống.
+
+## ⚡ Phiên 2026-10-08 — Merge develop, Docker, gpt-6-luna, plan 09 tăng tốc backend (feature/chamanh)
+- :8000 "mất UI": DB Supabase chung ở migration `0002_p1_doc_shape` (plan 06), nhánh chưa merge `develop` chỉ biết `0001` ⇒ fail-fast. Merge `develop` (2 conflict nhật ký não, giữ cả hai) — CHƯA commit (chờ người dùng gật).
+- Container `backend` restart vòng: image kéo SQLAlchemy 2.1.4 ⇒ `postgresql://` dùng psycopg v3 không cài. Ghim `sqlalchemy<2.1`.
+- `.env`: `MODEL_NAME=gpt-6-luna` (tên `gpt6-luna` không tồn tại), `OPENAI_BASE_URL` trống. Model từ chối `max_tokens` và `temperature=0` ⇒ agent luôn FALLBACK_RULE; sửa client đổi contract plan 06 ⇒ CHỜ người dùng duyệt.
+- Plan 09 (v1.5.0): audit đo `list()` kéo 725 KB/request. Cache `xmin` 1 câu SQL + `lookup` màn cư dân. pytest 3344 passed, `--pg` 3429 passed, ruff sạch, 4/4 mutant đỏ, parity API 8/8. Median: cư dân 2676→201 ms, BPTN 1514→224, BQL 503→219.
+- Còn treo: commit merge + plan 09; client `gpt-6-luna`; Idea Vault (agent chạy nền, session DB, bỏ audit/notifications khỏi doc, phân trang, gzip).

@@ -2,6 +2,17 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.5.0] - 2026-10-08: Danh sách phản ánh nhanh 7–13 lần (plan 09)
+### Changed
+- `PostgresRepository.list()` nhớ doc theo `xmin` từng dòng: MỘT câu SQL gửi phiên bản đang giữ, DB chỉ trả doc của dòng mới/đổi. Không TTL (ghi từ backend khác thấy ngay); doc lỗi không vào cache.
+- `resident_view(..., lookup=None)`: màn cư dân dùng ticket liên quan (gộp/tách/follow-up) từ cùng snapshot thay vì đọc lại từng ticket (7 → 1 câu SQL).
+### Fixed
+- `requirements.txt`: ghim `sqlalchemy<2.1` — bản 2.1 đổi `postgresql://` sang driver `psycopg` (v3) không cài ⇒ container `backend` khởi động lại vòng (exit 3).
+### Decisions
+- Object trả từ `list()` CHỈ ĐỌC, dùng chung (cùng hợp đồng store memory) — không deep copy. API/schema/UI không đổi (parity 8/8 vai trên DB chung).
+- Số đo median trên Supabase: cư dân 2676→201 ms, BPTN 1514→224 ms, BQL 503→219 ms. Bỏ khỏi đợt này theo người dùng: gzip, BQL 1 API.
+- Lấy v1.5.0 (không phải v1.4.0) vì plan 08 (`web-portal-shell`, chưa merge) đã nhận v1.4.0.
+
 ## [v1.3.0] - 2026-10-07: UI tĩnh `src/web/` mang design của `portal/` (plan 07)
 ### Changed
 - `src/web/index.html` + `app.js`: font Be Vietnam Pro, header gradient "Xin chào, <tên>" (avatar chữ viết tắt, pill vai trò, ô đổi tài khoản test, nút Đăng xuất pill), khối tiêu đề màn là card đè lên gradient, màn đăng nhập theo `Main.dc.html` của portal (thay bản gradient cam sáng cùng ngày).

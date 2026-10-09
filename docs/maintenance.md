@@ -161,3 +161,14 @@ Hồ sơ: [`planning/05_2026-10-04_agent-hardening/`](../planning/05_2026-10-04_
 - Test: `test_agent_coordination.py` (điều phối), hai file biến thể, ca SC-220… trong `safety_cases_p0.yaml`.
 - **Bản vá 05b (Q11):** "đèn cháy / đèn chập = đèn hỏng": `benign_phrases`/`benign_with_lamp_noun` thêm "chập (điện/mạch)" sau danh từ đèn; `safety._proven_lamp` nhận "den"/"bong" không dấu khi chính triệu chứng ("bi chay", "bi chap") cũng gõ không dấu — xét từng chữ, vị trí có dấu xung quanh không ảnh hưởng; chữ có dấu khác ("đen", "bông") vẫn không phải đèn; `rules.py` thêm "chập", "bị/đã cháy" vào triệu chứng đèn hỏng. Có khói/tóe lửa/khét kèm thì vẫn khẩn cấp.
 - Để P1: tín hiệu an toàn P1 (gas, kim tiêm, nước vào tủ điện, đèn nóng), luồng trùng đầy đủ (CR §8), tách ticket khi một phản ánh có hai việc, đếm trả sai phòng ban.
+
+## 14. Tốc độ đọc danh sách — cache `list()` theo `xmin` (plan 09, v1.5.0, 2026-10-08)
+Hồ sơ: [`planning/09_2026-10-08_backend-speed/`](../planning/09_2026-10-08_backend-speed/plan.md). Audit: `PostgresRepository.list()` kéo toàn bộ doc
+(725 KB với 65 ticket) mỗi request ⇒ danh sách cư dân 2.7 s, BPTN 1.5 s trên Supabase.
+- **`PostgresRepository.list()`** (`store/postgres.py`, `_LIST_CHANGED`): MỘT câu SQL gửi cặp `(ticket_id, xmin)` đang giữ; DB trả `xmin` mọi dòng và
+  `doc` CHỈ của dòng mới/đổi. Không TTL ⇒ ghi từ backend khác thấy ngay ở lần đọc sau. Doc lỗi ⇒ ném, cache giữ nguyên. `cache_stats()` cho test/log
+  (INFO mỗi 100 lần). `get()`/`get_for_update()`/`transaction()` KHÔNG dùng cache.
+- **Object trả từ `list()` là CHỈ ĐỌC, dùng chung** (như `InMemoryRepository.list()`): sửa ticket luôn qua `_mutate`/`transaction`. CẤM sửa trực tiếp.
+- **`resident_view(..., lookup=None)`** (`views.py`): `resident_list` truyền `{ticket_id: Case}` của cùng snapshot ⇒ ticket gộp/tách/follow-up không đọc lại DB.
+  Route đơn (`/resident/tickets/{id}`…) không truyền `lookup`, vẫn đọc tươi.
+- Số đo (median, Supabase): cư dân 2676→201 ms, BPTN 1514→224 ms, BQL 503→219 ms; API trả về giống hệt từng byte (8/8 vai). Test: `test_list_cache.py` (T1–T8).

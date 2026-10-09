@@ -1,0 +1,9 @@
+mutant b-skip-sql-when-warm: pytest exit=1
+FAILED tests/test_maintenance/test_list_cache.py::test_t1_cached_list_equals_the_stored_rows
+FAILED tests/test_maintenance/test_list_cache.py::test_t3_one_write_reloads_exactly_that_ticket
+FAILED tests/test_maintenance/test_list_cache.py::test_t4_a_write_by_another_process_is_seen_on_the_next_list
+FAILED tests/test_maintenance/test_list_cache.py::test_t5_wipe_and_reseed_never_returns_old_tickets
+FAILED tests/test_maintenance/test_list_cache.py::test_t6_a_broken_doc_is_never_cached
+FAILED tests/test_maintenance/test_list_cache.py::test_t6b_listing_is_one_statement_cold_and_warm
+FAILED tests/test_maintenance/test_list_cache.py::test_t7_resident_list_reads_no_single_ticket
+7 failed, 3 passed in 3.49s

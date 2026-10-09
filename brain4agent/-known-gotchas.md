@@ -59,6 +59,11 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 - **Supabase dùng chung + nhánh tụt revision ⇒ :8000 "mất UI" (2026-10-08):** schema `maintops` đã lên `0002_p1_doc_shape`
   (plan 06), nhánh chưa merge `develop` chỉ biết `0001` ⇒ `repo.check()` fail-fast, uvicorn thoát, cổng 8000 trống.
   Sửa = merge `develop` (hoặc `MO_STORE=mock` tạm). CẤM `alembic downgrade` DB chung — gãy các nhánh đã ở 0002.
+- **SQLAlchemy 2.1 đổi driver mặc định của `postgresql://` sang `psycopg` (v3) (2026-10-08):** image Docker build mới kéo 2.1.4
+  ⇒ `ModuleNotFoundError: psycopg`, `p151-backend-1` restart vòng (exit 3) trong khi `.venv` (2.0.x) vẫn chạy. Ghim
+  `sqlalchemy<2.1` trong `requirements.txt`. Model OpenAI đời mới (vd `gpt-6-luna`) từ chối `max_tokens` và `temperature≠1`.
+- `maintops.cases` có CHECK `cases_doc_matches`: `doc.ticket.status`/`department_id` phải khớp cột ⇒ test muốn làm hỏng doc phải đổi trường KHÁC (vd thêm field lạ), không đổi status.
+- `PostgresRepository.list()` (plan 09) trả object dùng chung từ cache theo `xmin` ⇒ sửa trực tiếp Case lấy từ `list()`/`engine.cases` làm bẩn cache của mọi request sau; luôn sửa qua `_mutate`/`transaction`.
 - Qua Supabase pooler, `pg_stat_ssl.ssl` = false (chặng pooler→DB); TLS client kiểm bằng `connection.info.ssl_in_use`.
 - **Supabase dùng chung + model `extra="forbid"` ⇒ 500 mọi màn danh sách (2026-10-07):** chỉ cần MỘT doc do bản code khác ghi
   có field lạ là `repo.list()` vỡ `ValidationError` ⇒ `/resident/tickets`, `/mo/tickets`… đều 500 ("Không tải được dữ liệu · Lỗi 500").
