@@ -60,7 +60,7 @@
 - [x] WP1 ✅ local 2026-10-09 (SO đo lại: ext 56 passed, full 3720 passed/0 fail, ruff check sạch; R01) · [x] WP2 ✅ local 2026-10-09 (SO đo tại chỗ sau khi xoá file cũ: unit/typecheck/lint EXIT=0, grep 0; portal qua cổng 8000 đăng nhập `kho` đạt; sửa `Date.now()` khi prerender ở `session.ts`)
 - [x] WP1b ✅ local 2026-10-09 (SO đo: ext+ext2 107 passed, full 3771 passed/0 fail, ruff sạch; worker: --pg 163 passed; R03 — duyệt cấp chỉ áp kế hoạch của phòng ban, cờ `MO_PORTAL_EXTRAS`) · [x] WP2b ✅ local 2026-10-09 (SO đo: 118 unit pass, typecheck/lint EXIT=0; sửa `.gitignore` — `data/` đã nuốt `portal/src/server/data/`, commit WP2 `4be6284` thiếu thư mục này, bù ở commit WP2b)
 - [x] WP3 · [x] WP4 · [x] WP5 ✅ local 2026-10-09 (SO đo: unit 121 pass, typecheck/lint EXIT=0; ui-check của worker trên :3000; SO sửa thêm `splitReport` không lặp chữ + dịch `failing_items`; :8000 cần portal chạy production — `next dev` không hydrate sau proxy vì HMR WebSocket)
-- [ ] WP6 (G3, G4) · [ ] WP7 (G5)
+- [x] WP6 ✅ local 2026-10-09 — 4 bộ ui-check (WP3, WP4 vệ sinh, WP4 kỹ thuật, WP5) qua CỔNG 8000, portal production, backend memory: đều EXIT=0 (`evidence/WP6/ui-8000-*.txt`); lộ + sửa lỗi form vệ sinh không gửi vật tư đã dùng · [ ] WP7 (G5)
 - [ ] G6 Supabase demo (chờ người dùng gật — OPERATIONS §3)
 - [ ] WP8 · [ ] Sign-off `✅ ĐÃ HOÀN THÀNH` + mốc giây
 

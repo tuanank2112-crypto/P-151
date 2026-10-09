@@ -234,6 +234,7 @@ export function FinishModal(props: {
   const { t, kind } = props;
   const [ticked, setTicked] = useState<Set<string>>(() => new Set(t.checklist.filter((c) => c.done).map((c) => c.templateItemId)));
   const [usedTicked, setUsedTicked] = useState<Set<string>>(new Set());
+  const [usedQtys, setUsedQtys] = useState<Record<string, string>>({});
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [files, setFiles] = useState<File[]>([]);
   const [note, setNote] = useState("");
@@ -249,20 +250,26 @@ export function FinishModal(props: {
     put(next);
   };
   const usedQty = (m: MaterialRow) => m.issuedQty ?? m.plannedQty;
-  const mats = kind === "technical" ? t.materials : [];
+  const mats = kind === "technical" ? t.materials : []; // technical: every requested material is a checklist line (R10)
+  const usedOf = (m: MaterialRow) => {
+    const typed = usedQtys[m.itemCode];
+    return typed === undefined || typed.trim() === "" ? usedQty(m) : Number(typed);
+  };
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const missing = t.checklist.filter((c) => c.required && !ticked.has(c.templateItemId));
     if (missing.length > 0) return setErr(`Chưa tích checklist: ${missing.map((c) => c.label).join("; ")}.`);
     if (mats.some((m) => !usedTicked.has(m.itemCode))) return setErr("Phải tích hết checklist vật tư đã dùng.");
+    if (t.materials.some((m) => !Number.isFinite(usedOf(m)) || usedOf(m) < 0)) return setErr("Số vật tư đã dùng phải là số không âm.");
     if (files.length === 0) return setErr("Bắt buộc có ít nhất 1 ảnh hiện trường sau khi xử lý.");
     setErr("");
     const fd = new FormData();
     if (note.trim()) fd.append("note", note.trim());
     files.forEach((f) => fd.append("photos", f));
     t.checklist.filter((c) => !c.done && ticked.has(c.templateItemId)).forEach((c) => fd.append("checklist", c.templateItemId));
-    mats.forEach((m) => fd.append("used", JSON.stringify({ itemCode: m.itemCode, issued: usedQty(m), used: usedQty(m), reason: reasons[m.itemCode]?.trim() || undefined })));
+    // the backend needs issued + used for EVERY material line of the ticket (both departments), not only technical
+    t.materials.forEach((m) => fd.append("used", JSON.stringify({ itemCode: m.itemCode, issued: usedQty(m), used: usedOf(m), reason: reasons[m.itemCode]?.trim() || undefined })));
     props.onSubmit(fd, props.onClose, (m) => (setErr(m), true));
   }
 
@@ -319,12 +326,33 @@ export function FinishModal(props: {
         )}
 
         {kind === "cleaning" && t.materials.length > 0 && (
-          <fieldset className="space-y-1 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
-            <legend className="px-1 text-xs font-bold text-slate-800">Vật tư của ticket</legend>
+          <fieldset className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+            <legend className="px-1 text-xs font-bold text-slate-800">Vật tư đã dùng</legend>
             {t.materials.map((m) => (
-              <p key={m.itemCode} className="m-0 text-xs text-slate-700">
-                {m.itemName} — {usedQty(m)} {m.unit}
-              </p>
+              <div key={m.itemCode} className="space-y-1">
+                <label className="flex flex-wrap items-center gap-2 text-xs text-slate-700">
+                  <span className="min-w-0 flex-1">{m.itemName} (cấp {usedQty(m)} {m.unit})</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step="any"
+                    inputMode="decimal"
+                    className={`${FIELD} w-24 text-xs`}
+                    aria-label={`Số ${m.itemName} đã dùng`}
+                    value={usedQtys[m.itemCode] ?? String(usedQty(m))}
+                    onChange={(e) => setUsedQtys({ ...usedQtys, [m.itemCode]: e.target.value })}
+                  />
+                </label>
+                {usedOf(m) !== usedQty(m) && (
+                  <input
+                    className={`${FIELD} text-xs`}
+                    placeholder="Lý do dùng khác số đã cấp"
+                    aria-label={`Lý do chênh lệch ${m.itemName}`}
+                    value={reasons[m.itemCode] ?? ""}
+                    onChange={(e) => setReasons({ ...reasons, [m.itemCode]: e.target.value })}
+                  />
+                )}
+              </div>
             ))}
           </fieldset>
         )}

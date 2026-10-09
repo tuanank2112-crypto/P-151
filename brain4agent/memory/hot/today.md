@@ -502,3 +502,4 @@ Trường xác nhận đánh giá sơ bộ bằng 15 câu do Trường tự so�
 - WP2b ✅ local (118 unit). Gotcha: `.gitignore` `data/` nuốt `portal/src/server/data/` ⇒ commit WP2 thiếu lớp dữ liệu; đã thêm `!portal/src/server/data/`.
 - WP1b ✅ (3771 passed): Agent tự chuyển BQL, duyệt cấp vật tư (Kho/BQL), phân công (bảng `assignments`), thẻ+bình luận đánh giá, trường Agent; migration 0004 + cờ `MO_PORTAL_EXTRAS`. WP3–5 UI ✅ (121 unit). Gotcha: portal `next dev` sau proxy cổng 8000 không hydrate (HMR WebSocket bị 403) ⇒ demo qua 8000 phải `next build && next start`.
 - Commit giao diện WP3–5 + sửa splitReport/readinessMessages (SO).
+- WP6: qua cổng 8000 (portal production) 4 bộ kiểm UI đạt; sửa form vệ sinh không gửi vật tư đã dùng (backend chặn hoàn thành).
