@@ -30,6 +30,7 @@ from src.maintenance.engine import (
     AuditWriteError,
     EngineError,
     GuardError,
+    InvalidRatingError,
     MaintenanceEngine,
     NotFoundError,
     build_engine,
@@ -56,8 +57,11 @@ from src.maintenance.store.base import ConcurrencyError, StorePermissionError, S
 from src.maintenance.views import (
     BqlTicketRow,
     ResidentTicketView,
+    agent_fields,
     bql_rows,
+    rating_detail_of,
     resident_view,
+    staff_name,
 )
 
 router = APIRouter(prefix="/mo", tags=["maintenance-ops (nội bộ)"])
@@ -108,6 +112,8 @@ def _call(fn, *args, **kwargs):
         raise HTTPException(status_code=500, detail={"code": exc.code, "message": exc.message}) from exc
     except ValidationError as exc:
         raise HTTPException(status_code=422, detail=exc.errors(include_url=False)) from exc
+    except InvalidRatingError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except EngineError as exc:
         raise HTTPException(status_code=500, detail={"code": exc.code, "message": exc.message}) from exc
 
@@ -307,6 +313,15 @@ class TicketSummary(BaseModel):
     description: str  # resident text: untrusted data, the UI renders it as plain text
     flow: str | None
     synthetic: bool = True
+    # Plan 11 SPEC-P04 (response only; none of them is a ticket-document field)
+    staff_id: str | None = None
+    staff_name: str | None = None
+    rating: int | None = None
+    rating_tags: list[str] = []
+    rating_comment: str = ""
+    agent_source: str | None = None
+    agent_department: Department | None = None
+    agent_scope: str | None = None
 
 
 _PRIORITY_RANK = {Priority.HIGH: 0, Priority.MEDIUM: 1, None: 1, Priority.LOW: 2}
@@ -323,11 +338,15 @@ def list_tickets(actor: ActorDep, engine: EngineDep, status: TicketStatus | None
     Sắp xếp: khẩn cấp trước, rồi mức ưu tiên, rồi cũ trước (CR-BPTN-03 §7)."""
     _require_role(engine, actor, *STAFF)
     rows = []
+    assignments = engine.repo.assignments()
+    details = engine.repo.rating_details()
     for case in list(engine.cases.values()):  # snapshot: a new ticket may arrive from another thread
         ticket = case.ticket
         if (status is not None and ticket.status != status) or not _visible(engine, actor, case):
             continue
         fixture = engine.dataset.get(ticket.ticket_id)
+        assigned = assignments.get(ticket.ticket_id)
+        detail = rating_detail_of(engine, ticket, details)
         rows.append(
             TicketSummary(
                 ticket_id=ticket.ticket_id,
@@ -342,6 +361,12 @@ def list_tickets(actor: ActorDep, engine: EngineDep, status: TicketStatus | None
                 created_at=ticket.raw.created_at,
                 description=ticket.raw.original_description,
                 flow=fixture.flow if fixture else None,
+                staff_id=assigned.staff_id if assigned else None,
+                staff_name=staff_name(assigned.staff_id) if assigned else None,
+                rating=ticket.rating,
+                rating_tags=list(detail.tags) if detail else [],
+                rating_comment=detail.comment if detail else "",
+                **agent_fields(case),
             )
         )
     rows.sort(key=_queue_key)
@@ -354,6 +379,7 @@ class CatalogView(BaseModel):
     status_labels: dict[str, str]
     materials: list[dict[str, str]]
     custom_materials_enabled: bool = True  # plan 11: false ⇒ the portal hides the "+" that adds a material
+    portal_extras_enabled: bool = True  # plan 11 SPEC-P04: false ⇒ no staff assignment, no rating tags or comment
 
 
 @router.get("/catalog", response_model=CatalogView)
@@ -368,7 +394,49 @@ def read_catalog(actor: ActorDep, engine: EngineDep) -> CatalogView:
             {"item_code": m.item_code, "item_name": m.item_name, "unit": m.unit or ""} for m in engine.all_materials()
         ],
         custom_materials_enabled=get_settings().custom_materials_enabled(),
+        portal_extras_enabled=get_settings().portal_extras_enabled(),
     )
+
+
+class StaffRow(BaseModel):
+    staff_id: str
+    department_id: Department
+    name: str
+    skill: str | None
+    area: str | None
+    capacity: int | None
+    open_tickets: int
+
+
+@router.get("/staff", response_model=list[StaffRow])
+def read_staff(actor: ActorDep, engine: EngineDep) -> list[StaffRow]:
+    """Nhân viên có thể được phân công: phòng ban thấy phòng mình, BQL thấy tất cả; `open_tickets` = việc chưa xong."""
+    return _call(engine.staff_list, actor)
+
+
+class AssignRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    staff_id: str
+
+
+def _require_extras() -> None:
+    if not get_settings().portal_extras_enabled():
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "FEATURE_DISABLED",
+                "message": "Chưa bật phân công và thẻ đánh giá (MO_PORTAL_EXTRAS=false)",
+            },
+        )
+
+
+@router.post("/tickets/{ticket_id}/assign", response_model=Case)
+def assign_staff(ticket_id: str, body: AssignRequest, actor: ActorDep, engine: EngineDep) -> Case:
+    """Phòng ban phân công nhân viên của phòng mình cho ticket ROUTED / IN_PROGRESS; ROUTED được nhận việc luôn.
+    Tắt bằng MO_PORTAL_EXTRAS=false ⇒ 403 FEATURE_DISABLED."""
+    _require_extras()
+    return _call(engine.assign_staff, ticket_id, actor, body.staff_id)
 
 
 @router.get("/tickets/{ticket_id}", response_model=Case)
@@ -548,6 +616,20 @@ def update_checklist(
     return _call(engine.update_checklist, ticket_id, actor, template_item_id, status=body.status, note=body.note)
 
 
+class ApproveBody(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    note: str | None = None
+
+
+# Registered before `/materials/{item_code}`: "approve" must not be read as an item code.
+@router.post("/tickets/{ticket_id}/materials/approve", response_model=Case)
+def approve_materials(ticket_id: str, body: ApproveBody, actor: ActorDep, engine: EngineDep) -> Case:
+    """Kho hoặc BQL duyệt cấp vật tư phòng ban đã yêu cầu: ON_HOLD (WAITING_MATERIAL) → IN_PROGRESS.
+    Kho chưa đủ ⇒ 409 STOCK_SHORT (nhập kho trước rồi duyệt). Nhập kho không tự duyệt."""
+    return _call(engine.approve_materials, ticket_id, actor, note=body.note)
+
+
 class MaterialRequest(BaseModel):
     issued_qty: float = Field(ge=0)
     used_qty: float = Field(ge=0)
@@ -718,7 +800,8 @@ def resident_list(actor: ActorDep, engine: EngineDep) -> list[ResidentTicketView
     lookup = {c.ticket.ticket_id: c for c in snapshot}  # linked tickets (merge/split) come from the same read
     own = [c for c in snapshot if c.ticket.resident_id == actor]
     own.sort(key=lambda c: c.ticket.raw.created_at, reverse=True)
-    return [resident_view(engine, c, now, lookup) for c in own]
+    details = engine.repo.rating_details() if any(c.ticket.rating is not None for c in own) else {}
+    return [resident_view(engine, c, now, lookup, details) for c in own]
 
 
 def _own_case(engine: MaintenanceEngine, ticket_id: str, actor: str) -> Case:
@@ -768,12 +851,16 @@ def resident_read_photo(ticket_id: str, evidence_id: str, actor: ActorDep, engin
 
 class RatingRequest(BaseModel):
     score: int = Field(ge=1, le=5)
+    tags: list[str] = Field(default_factory=list, max_length=8)
+    comment: str | None = Field(default=None, max_length=500)
 
 
 @resident_router.post("/tickets/{ticket_id}/rating", response_model=ResidentTicketView)
 def resident_rate(ticket_id: str, body: RatingRequest, actor: ActorDep, engine: EngineDep) -> ResidentTicketView:
     _own_case(engine, ticket_id, actor)
-    case = _call(engine.rate, ticket_id, actor, body.score)
+    if body.tags or (body.comment or "").strip():
+        _require_extras()  # the tags and comment need their table; the stars alone never do
+    case = _call(engine.rate, ticket_id, actor, body.score, tags=body.tags, comment=body.comment)
     return resident_view(engine, case, engine.clock())
 
 

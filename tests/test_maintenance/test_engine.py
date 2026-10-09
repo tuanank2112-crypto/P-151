@@ -277,6 +277,7 @@ def test_department_confirms_onsite_materials_and_can_finish(engine):
         PlannedMaterial(item_code="SIM-MAT-STARTER-01", planned_qty=1),
     ]
     case = engine.confirm_materials(tid, TEC, lines=lines, note="Kiểm tại chỗ: đèn tuýp")
+    assert case.ticket.status == "ON_HOLD"  # plan 11 Q15: every material request waits for approval
     assert [(m.item_code, m.planned_qty) for m in case.material_lines] == [
         ("SIM-MAT-LAMP-02", 2),
         ("SIM-MAT-STARTER-01", 1),
@@ -286,9 +287,12 @@ def test_department_confirms_onsite_materials_and_can_finish(engine):
     audit = case.audit[-1]
     assert (audit.field_name, audit.actor_id, audit.reason) == ("planned_materials", TEC, "Kiểm tại chỗ: đèn tuýp")
     assert audit.old_value == [{"item_code": "SIM-MAT-LAMP-01", "planned_qty": 1}]
-    with pytest.raises(GuardError, match="Kho chỉ còn 0"):  # tube lamps are out of stock: nothing to issue yet
-        finish(engine, tid)
+    with pytest.raises(GuardError, match="Phòng ban chưa nhận việc hoặc ticket không ở IN_PROGRESS"):
+        finish(engine, tid)  # waiting for approval: the department cannot work on it
     engine.receive_stock(WAREHOUSE, "SIM-MAT-LAMP-02", 2)
+    engine.receive_stock(WAREHOUSE, "SIM-MAT-STARTER-01", 1)
+    assert engine.get(tid).ticket.status == "ON_HOLD"  # stock alone does not approve
+    assert engine.approve_materials(tid, WAREHOUSE).ticket.status == "IN_PROGRESS"
     assert finish(engine, tid).ticket.status == "READY_FOR_REVIEW"
     assert engine.repo.stock_of("SIM-MAT-LAMP-02") == 0
 
@@ -728,6 +732,7 @@ def test_unknown_stock_is_not_counted_and_a_dropped_line_returns_its_stock(engin
     engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=1, used_qty=1)
     starter = PlannedMaterial(item_code="SIM-MAT-STARTER-01", planned_qty=1)
     engine.confirm_materials(tid, TEC, lines=[starter], note="Chỉ thay tắc te")
+    engine.approve_materials(tid, WAREHOUSE)  # plan 11 Q15; the starter's stock is unknown, which does not block
     assert engine.repo.stock_of("SIM-MAT-LAMP-01") == lamp
     engine.record_material(tid, TEC, "SIM-MAT-STARTER-01", issued_qty=3, used_qty=3, variance_reason="Hỏng thêm")
     assert engine.repo.stock_of("SIM-MAT-STARTER-01") is None

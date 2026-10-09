@@ -236,9 +236,12 @@ def test_request_bodies_reject_placeholders(api):
 
 
 def test_no_endpoint_assigns_a_person(api):
-    """The department assigns its own staff outside this CR; no endpoint picks a person."""
+    """CR-BPTN-03 §4.4.2: the engine never picks a person. Plan 11 SPEC-P04 §3 adds ONE route where a department
+    records which of its own staff works on a ticket (a table beside the document); nothing else may assign."""
     schema = api.get("/openapi.json").json()
-    assert not any("assign" in path for path in schema["paths"])
+    assigning = [path for path in schema["paths"] if "assign" in path]
+    assert assigning == ["/api/v1/mo/tickets/{ticket_id}/assign"]
+    assert list(schema["paths"][assigning[0]]) == ["post"]
     assert "technician" not in json.dumps(schema).lower()
 
 

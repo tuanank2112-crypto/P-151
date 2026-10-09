@@ -135,3 +135,4 @@ Stash push -u may save successfully but exit1 without cleaning tracked files whe
 
 ## `.gitignore` `data/` nuốt thư mục mã tên `data` (hồ sơ 11, 2026-10-09)
 - Dòng `data/` (cho dữ liệu lớn ở root) khớp MỌI thư mục tên `data` ⇒ `portal/src/server/data/` (mã nguồn) bị bỏ qua âm thầm, commit thiếu file mà typecheck local vẫn xanh. Đã thêm `!portal/src/server/data/`. Tạo thư mục mã tên `data` ở chỗ khác ⇒ kiểm `git check-ignore -v <file>`. `tests/test_maintenance/data/` thì đã `git add -f`.
+- **Portal sau proxy backend (cổng 8000) phải chạy production.** `next dev` cần WebSocket HMR (`/_next/hmr`); route bắt-tất của FastAPI chỉ chuyển HTTP ⇒ uvicorn trả 403 cho WebSocket ⇒ trang KHÔNG hydrate, bấm nút không gửi gì (đăng nhập "đứng"). Dev thì mở thẳng `localhost:3000`; demo qua 8000 thì `next build && next start`. `127.0.0.1:3000` cũng không hydrate ở dev (chặn cross-origin dev, cần `allowedDevOrigins`).

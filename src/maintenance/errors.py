@@ -11,6 +11,12 @@ class InvalidTransitionError(GuardError):
     code = "INVALID_TRANSITION"
 
 
+class StockShortError(GuardError):
+    """The warehouse holds less than a material request needs (plan 11 SPEC-P04 §2): 409 `STOCK_SHORT`."""
+
+    code = "STOCK_SHORT"
+
+
 class ActionDeniedError(EngineError):
     """Permission rejection (canonical code ACTION_DENIED). The denial itself is audited."""
 
@@ -19,3 +25,7 @@ class ActionDeniedError(EngineError):
 
 class AuditWriteError(EngineError):
     code = "AUDIT_WRITE_FAILED"
+
+
+class InvalidRatingError(ValueError):
+    """Rating tags or comment the catalog does not allow (plan 11 SPEC-P04 §4): the API answers 422."""

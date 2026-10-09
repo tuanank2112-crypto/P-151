@@ -780,7 +780,7 @@ def test_pg_feature_off_never_touches_the_table(pg_repo):
 def test_pg_check_accepts_the_previous_revision_only_while_the_feature_is_off(pg_repo, pg_url):
     from sqlalchemy import text
 
-    from src.maintenance.store.postgres import PostgresRepository
+    from src.maintenance.store.postgres import HEAD_REVISION, PostgresRepository
 
     with pg_repo._engine.begin() as conn:
         conn.execute(text("update maintops.alembic_version set version_num = '0002_p1_doc_shape'"))
@@ -790,7 +790,7 @@ def test_pg_check_accepts_the_previous_revision_only_while_the_feature_is_off(pg
             PostgresRepository(pg_url, custom_materials=True).check()
     finally:
         with pg_repo._engine.begin() as conn:
-            conn.execute(text("update maintops.alembic_version set version_num = '0003_material_items'"))
+            conn.execute(text("update maintops.alembic_version set version_num = :v"), {"v": HEAD_REVISION})
     PostgresRepository(pg_url, custom_materials=True).check()
 
 
@@ -814,7 +814,7 @@ def test_pg_migration_0003_creates_and_drops_only_its_table(pg_url):
         command.upgrade(cfg, "head")
     with sql_engine(pg_url).connect() as conn:
         assert conn.execute(exists).scalar() is True
-        assert conn.execute(text("select version_num from maintops.alembic_version")).scalar() == "0003_material_items"
+        assert conn.execute(text("select version_num from maintops.alembic_version")).scalar() == "0004_portal_extras"
 
 
 # ======================================================================= §3b BQL manages the warehouse (Q08)

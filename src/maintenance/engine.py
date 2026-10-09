@@ -30,7 +30,15 @@ from typing import TYPE_CHECKING, Any, Literal
 from src.maintenance.agent.inputs import AssetCandidate, DecisionInput, DuplicateCandidate
 from src.maintenance.agent.reconcile import safety_for
 from src.maintenance.agent.schema import AgentDecisionRecord, Disagreement, JobDecision
-from src.maintenance.catalog import Catalog, Lexicon, TicketDataset, load_catalog, load_dataset, load_lexicon
+from src.maintenance.catalog import (
+    Catalog,
+    Lexicon,
+    TicketDataset,
+    load_catalog,
+    load_dataset,
+    load_lexicon,
+    load_staff,
+)
 from src.maintenance.common import (  # noqa: F401 - re-exported: `from src.maintenance.engine import AGENT_ID, ...`
     AGENT_ID,
     DEFAULT_RESIDENT_ID,
@@ -80,7 +88,13 @@ from src.maintenance.enums import (
     TicketStatus,
     TicketType,
 )
-from src.maintenance.errors import ActionDeniedError, AuditWriteError, InvalidTransitionError
+from src.maintenance.errors import (
+    ActionDeniedError,
+    AuditWriteError,
+    InvalidRatingError,
+    InvalidTransitionError,
+    StockShortError,
+)
 from src.maintenance.messages import field_label, public_message, safety_info_message
 from src.maintenance.models import (
     AgentClassificationProposal,
@@ -109,11 +123,13 @@ from src.maintenance.proposer import LLMClient, ProposalResult, propose
 from src.maintenance.rules import extract_location, mentions_playbook_subject, missing_location_parts
 from src.maintenance.safety import SafetyAssessment, SafetyLLMClient, assess, assess_with_llm
 from src.maintenance.store.base import (  # the error hierarchy lives with the store
+    Assignment,
     CaseRepository,
     EngineError,
     GuardError,
     MaterialItem,
     NotFoundError,
+    RatingDetail,
     Tx,
 )
 from src.maintenance.store.memory import InMemoryRepository
@@ -148,6 +164,9 @@ BQL_HANDLED_MESSAGE = "Ban quản lý đã xử lý phản ánh."  # plan 11 SPE
 # backends on the shared database fail to read the document, so the closure the validator already allows is used.
 # Open question in the WP1 report: one line to flip to NORMAL once models.py may relax the validator.
 BQL_HANDLED_CLOSURE = ClosureKind.EMERGENCY_HANDLED
+RATING_COMMENT_MAX = 500  # plan 11 SPEC-P04 §4
+RATING_GOOD_FROM = 4  # 4 and 5 stars take the "good" tags, 1 to 3 the "bad" ones
+ASSIGNABLE_STATUSES = frozenset({TicketStatus.ROUTED, TicketStatus.IN_PROGRESS})  # plan 11 SPEC-P04 §3
 
 # Permission matrix for non-transition actions. Anything not listed is denied for every role (default deny).
 PERMISSIONS: dict[Action, frozenset[ActorRole]] = {
@@ -158,6 +177,7 @@ PERMISSIONS: dict[Action, frozenset[ActorRole]] = {
     Action.RATE_TICKET: frozenset({Role.RESIDENT}),
     Action.BPTN_RESOLVE: frozenset({Role.BPTN}),
     Action.RECEIVE_STOCK: frozenset({Role.WAREHOUSE, Role.BQL}),  # plan 11 Q08: BQL manages the warehouse too
+    Action.APPROVE_MATERIAL: frozenset({Role.WAREHOUSE, Role.BQL}),  # plan 11 Q15: a department's request is approved
     # Action.SET_ASSIGNEE is not listed: every role is denied, with an audit row (CR-BPTN-03 §4.4.2)
     Action.UPDATE_CHECKLIST: frozenset({Role.DEPARTMENT}),
     Action.UPDATE_MATERIAL: frozenset({Role.DEPARTMENT}),
@@ -221,8 +241,10 @@ TRANSITIONS: dict[tuple[TicketStatus, TicketStatus], TransitionRule] = {
     (S.RECEIVED, S.ROUTED): _rule(Role.SYSTEM, reasons=[R.OUT_OF_HOURS], pipeline=True),
     (S.ROUTED, S.IN_PROGRESS): _rule(Role.DEPARTMENT),
     (S.ROUTED, S.VERIFYING): _rule(Role.DEPARTMENT, reasons=[R.WRONG_DEPT], required=True),
-    (S.IN_PROGRESS, S.ON_HOLD): _rule(Role.DEPARTMENT, reasons=[R.BLOCKED_ONSITE], required=True),
-    (S.ON_HOLD, S.IN_PROGRESS): _rule(Role.DEPARTMENT),
+    # Plan 11 SPEC-P04 §2: WAITING_MATERIAL is also a reason here (the department asks for material on site); the
+    # way back is the department's `resume_work` after BLOCKED_ONSITE, or the system once the request is approved.
+    (S.IN_PROGRESS, S.ON_HOLD): _rule(Role.DEPARTMENT, reasons=[R.BLOCKED_ONSITE, R.WAITING_MATERIAL], required=True),
+    (S.ON_HOLD, S.IN_PROGRESS): _rule(Role.DEPARTMENT, Role.SYSTEM),
     (S.IN_PROGRESS, S.READY_FOR_REVIEW): _rule(Role.AGENT, pipeline=True),
     (S.READY_FOR_REVIEW, S.CLOSED): _rule(Role.BQL),
     (S.READY_FOR_REVIEW, S.IN_PROGRESS): _rule(Role.BQL, reasons=[R.REWORK], required=True),
@@ -414,6 +436,10 @@ class DecisionView:
     @property
     def bptn_reason(self) -> str | None:
         return self._decision.bptn_reason
+
+    @property
+    def scope(self) -> str:
+        return self._decision.scope
 
     def note(self) -> str:
         """The Agent's own words for the staff: `note_for_staff`, else the conclusion of its last reasoning step."""
@@ -777,7 +803,29 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
 
         return self._mutate(ticket_id, actor_id, Action.ADD_RESIDENT_PHOTO, op)
 
-    def rate(self, ticket_id: str, actor_id: str, score: int) -> Case:
+    @staticmethod
+    def check_rating(score: int, tags: Sequence[str], comment: str | None) -> tuple[tuple[str, ...], str]:
+        """Plan 11 SPEC-P04 §4: tags come from the good list with 4-5 stars and from the bad list with 1-3 stars, no
+        tag twice; the comment (trimmed) has at most 500 characters. Returns the clean (tags, comment)."""
+        allowed = load_staff().rating_tags
+        pool = allowed.good if score >= RATING_GOOD_FROM else allowed.bad
+        clean = tuple(tags)
+        unknown = [tag for tag in clean if tag not in pool]
+        if unknown or len(set(clean)) != len(clean):
+            kind = "hài lòng" if score >= RATING_GOOD_FROM else "chưa hài lòng"
+            raise InvalidRatingError(f"Thẻ đánh giá {kind} chỉ chọn trong {list(pool)}, mỗi thẻ một lần")
+        text = (comment or "").strip()
+        if len(text) > RATING_COMMENT_MAX:
+            raise InvalidRatingError(f"Bình luận tối đa {RATING_COMMENT_MAX} ký tự")
+        return clean, text
+
+    def rate(
+        self, ticket_id: str, actor_id: str, score: int, *, tags: Sequence[str] = (), comment: str | None = None
+    ) -> Case:
+        """One rating per ticket. Tags and comment go to `rating_details` in the same transaction as the score: if
+        that write fails, no score is kept either."""
+        clean_tags, clean_comment = self.check_rating(score, tags, comment)
+
         def op(work: Case, now: datetime) -> None:
             if work.ticket.status == S.MERGED:  # P04 §7: rates once the root it was merged into is done
                 try:
@@ -807,6 +855,10 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 "Cư dân đánh giá",
                 now=now,
             )
+            if clean_tags or clean_comment:
+                self._local.tx.put_rating_detail(
+                    RatingDetail(ticket_id=ticket_id, tags=clean_tags, comment=clean_comment, created_at=now)
+                )
 
         return self._mutate(ticket_id, actor_id, Action.RATE_TICKET, op)
 
@@ -1475,6 +1527,74 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             reason="Gán nhân viên bị tắt (CR-BPTN-03 §4.4.2)",
         )
 
+    # ------------------------------------------------------------------ staff assignment (plan 11 SPEC-P04 §3)
+    #
+    # Who works on a ticket is stored in `maintops.assignments`, never in the document (`Ticket.assignee_id` stays
+    # None, CR-BPTN-03 §4.4.2) and the engine never uses it to decide anything.
+
+    def assign_staff(self, ticket_id: str, actor_id: str, staff_id: str) -> Case:
+        """The department of the ticket gives it to one of its staff. A ROUTED ticket is accepted in the same
+        transaction (assigning is how the work starts); an IN_PROGRESS one only changes hands."""
+        member = load_staff().member(staff_id)
+
+        def op(work: Case, now: datetime) -> None:
+            ticket = work.ticket
+            if ticket.status not in ASSIGNABLE_STATUSES:
+                raise InvalidTransitionError(
+                    f"Chỉ phân công khi ticket ở ROUTED hoặc IN_PROGRESS, không phải {ticket.status}"
+                )
+            if member is None:
+                raise GuardError(f"Không có nhân viên {staff_id}")
+            if member.department_id != ticket.department_id:
+                raise GuardError(f"{member.name} không thuộc phòng ban của ticket", {"staff_id": staff_id})
+            old = self.repo.assignments().get(ticket_id)
+            if ticket.status == S.ROUTED:
+                self._apply_transition(
+                    work,
+                    S.IN_PROGRESS,
+                    actor_id,
+                    Role.DEPARTMENT,
+                    now,
+                    note=f"Phân công {member.name}",
+                    accepted_at=now,
+                )
+            self._local.tx.put_assignment(
+                Assignment(ticket_id=ticket_id, staff_id=staff_id, assigned_by=actor_id, assigned_at=now)
+            )
+            self._audit(
+                work, Action.TRANSITION, "Ticket", ticket_id, actor_id, Role.DEPARTMENT, "staff_id",
+                old.staff_id if old else None, staff_id, f"Phân công {member.name}", now=now,
+            )  # fmt: skip
+
+        return self._mutate(
+            ticket_id,
+            actor_id,
+            Action.TRANSITION,
+            op,
+            roles=frozenset({Role.DEPARTMENT}),
+            field_name="staff_id",
+            new_value=staff_id,
+            reason="Phân công nhân viên",
+        )
+
+    def staff_list(self, actor_id: str) -> list[dict[str, Any]]:
+        """A department sees its own staff, BQL all of them; `open_tickets` counts the tickets given to each one that
+        are not finished (closed, cancelled or merged)."""
+        role = self._role(actor_id)
+        if role not in (Role.DEPARTMENT, Role.BQL):
+            raise ActionDeniedError("Chỉ phòng ban hoặc BQL xem danh sách nhân viên", {"actor_id": actor_id})
+        department = self.catalog.actor(actor_id).department_id if role == Role.DEPARTMENT else None
+        status = {case.ticket.ticket_id: case.ticket.status for case in self.repo.list()}
+        load: dict[str, int] = {}
+        for ticket_id, assignment in self.repo.assignments().items():
+            if status.get(ticket_id) not in (None, *TERMINAL_STATUSES):
+                load[assignment.staff_id] = load.get(assignment.staff_id, 0) + 1
+        return [
+            {**member.model_dump(mode="json"), "open_tickets": load.get(member.staff_id, 0)}
+            for member in load_staff().staff
+            if department is None or member.department_id == department
+        ]
+
     def update_checklist(
         self, ticket_id: str, actor_id: str, template_item_id: str, *, status: ChecklistStatus, note: str | None = None
     ) -> Case:
@@ -1555,7 +1675,9 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
 
         Step 7 can only guess from the playbook defaults (e.g. an asset checked on site). An empty list means no
         material is used (mode N_A). Issued/used quantities already entered are kept for an unchanged item_code.
-        Stock is shown per line but never stops the work here: a shortage goes through `block` (WAITING_MATERIAL).
+        Plan 11 SPEC-P04 §2 (Q15): a plan with at least one line is a material REQUEST. The ticket goes ON_HOLD /
+        WAITING_MATERIAL and stays there, enough stock or not, until the warehouse or BQL approves it with
+        `approve_materials`. An empty plan needs nothing and keeps the ticket IN_PROGRESS.
         """
 
         def op(work: Case, now: datetime) -> None:
@@ -1609,8 +1731,65 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 note.strip(),
                 now=now,
             )
+            if new_lines:
+                hold = self._new_blocker(work, R.WAITING_MATERIAL, now, resume_step=6, note=note)
+                self._apply_transition(work, S.ON_HOLD, actor_id, Role.DEPARTMENT, now, blocker=hold, note=note)
 
         return self._mutate(ticket_id, actor_id, Action.UPDATE_MATERIAL, op)
+
+    def approve_materials(self, ticket_id: str, actor_id: str, *, note: str | None = None) -> Case:
+        """Warehouse or BQL approves a department's material request: ON_HOLD / WAITING_MATERIAL → IN_PROGRESS.
+
+        Refused with `STOCK_SHORT` (409) while the warehouse holds less than a line needs; the warehouse receives
+        stock first. Receiving stock never approves by itself (`_cleared` also needs `blocker.resolved_at`)."""
+        role = self._role(actor_id)
+
+        def op(work: Case, now: datetime) -> None:
+            ticket, blocker = work.ticket, work.ticket.blocker
+            if (
+                ticket.status != S.ON_HOLD
+                or blocker is None
+                or blocker.code != R.WAITING_MATERIAL
+                or ticket.department_id is None
+                or blocker.resolved_at is not None
+            ):
+                where = f"{ticket.status} / {blocker.code if blocker else None}"
+                raise InvalidTransitionError(
+                    f"Duyệt cấp vật tư chỉ áp dụng cho yêu cầu đang chờ duyệt, không phải {where}"
+                )
+            self._refresh_line_stock(work)
+            short = [
+                (self.material(line.item_code), line)
+                for line in work.material_lines
+                if line.material_stock_status == MaterialStockStatus.INSUFFICIENT
+            ]
+            if short:
+                parts = [
+                    f"{(item.item_name if item else line.item_code)}: cần {line.planned_qty:g}, "
+                    f"còn {(line.simulated_stock_qty or 0):g}"
+                    for item, line in short
+                ]
+                raise StockShortError(
+                    f"Kho chưa đủ {'; '.join(parts)} — nhập kho trước",
+                    {"item_codes": [line.item_code for _, line in short]},
+                )
+            self._set_blocker(
+                work,
+                blocker.model_copy(update={"resolved_at": now, "resolved_by": actor_id}),
+                actor_id,
+                role,
+                now,
+                note=note,
+            )
+            self._audit(
+                work, Action.APPROVE_MATERIAL, "Ticket", ticket.ticket_id, actor_id, role, "blocker.resolved_at", None,
+                now.isoformat(), "Duyệt cấp vật tư" if _blank(note) else note.strip(), now=now,
+            )  # fmt: skip
+            self._resume(work, now)
+
+        return self._mutate(
+            ticket_id, actor_id, Action.APPROVE_MATERIAL, op, field_name="blocker.resolved_at", reason=note
+        )
 
     def add_evidence(
         self,
@@ -2858,6 +3037,8 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         if code in BPTN_REASONS:
             return blocker.resolved_at is not None
         if code == R.WAITING_MATERIAL:
+            if work.ticket.department_id is not None and blocker.resolved_at is None:
+                return False  # a department's request (plan 11 Q15): the warehouse or BQL must approve it first
             return not any(
                 self._line_stock(line.item_code, line.planned_qty) == MaterialStockStatus.INSUFFICIENT
                 for line in work.material_lines
@@ -2882,6 +3063,10 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             self._notify(
                 work, "department.dispatch", BlockerOwner.DEPARTMENT, now, {"department_id": work.ticket.department_id}
             )
+            return True
+        if code == R.WAITING_MATERIAL and work.ticket.department_id is not None:
+            # approved request of a department that already works on the ticket: back to work, no pipeline rerun
+            self._apply_transition(work, S.IN_PROGRESS, SYSTEM_ID, Role.SYSTEM, now, note="Đã duyệt cấp vật tư")
             return True
         resume_step = {R.MISSING_INFO: 2, R.WAITING_MATERIAL: 6}.get(code, blocker.resume_step)
         self._apply_transition(work, S.RECEIVED, SYSTEM_ID, Role.SYSTEM, now, note=f"Gỡ {code}", safety_context=False)
@@ -3447,6 +3632,22 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             return True
         return False
 
+    def _stop_out_of_scope(self, work: Case, now: datetime, *, resume_step: int, note: str, by_agent: bool) -> bool:
+        """VERIFYING + OUT_OF_SCOPE (BPTN's blocker). Plan 11 SPEC-P04 §1 (Q14): when the Agent itself concluded the
+        report is outside both playbooks, the ticket goes straight to "Việc của BQL" (`blocker.escalated`, BQL
+        notified). The fixed rules (no Agent, or the Agent failed) keep it with BPTN, who may send it on by hand."""
+        stopped = self._stop(work, S.VERIFYING, R.OUT_OF_SCOPE, now, resume_step=resume_step, note=note)
+        if by_agent:
+            ticket_id = work.ticket.ticket_id
+            self._audit(
+                work, Action.TRANSITION, "Ticket", ticket_id, AGENT_ID, Role.AGENT, "blocker.escalated", False, True,
+                note, now=now,
+            )  # fmt: skip
+            blocker = work.ticket.blocker.model_copy(update={"escalated": True, "next_retry_at": None})
+            self._set_ticket(work, blocker=blocker)
+            self._notify(work, "escalation", BlockerOwner.BQL, now, {"reason_code": R.OUT_OF_SCOPE, "by": "AGENT"})
+        return stopped
+
     def _with_missing(self, work: Case, note: str) -> str:
         """Q08 puts safety before the minimum data, so the reviewer is told here what step 2 will still ask for."""
         missing = self._missing_fields(work)
@@ -3465,13 +3666,12 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 and view.next_step == "TO_BPTN"
                 and view.bptn_reason == "OUT_OF_SCOPE"
             ):
-                return self._stop(
+                return self._stop_out_of_scope(
                     work,
-                    S.VERIFYING,
-                    R.OUT_OF_SCOPE,
                     now,
                     resume_step=2,
                     note=f"Agent: {view.note()}; thiếu vị trí, không hỏi",
+                    by_agent=view.scope == "OUT_OF_SCOPE",
                 )
         elif (
             missing
@@ -3483,8 +3683,8 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             if cls.playbook_id is None and cls.reason_code == R.OUT_OF_SCOPE:
                 # Plan 05 Q05: clearly outside both playbooks, so a common-area location is not worth asking for.
                 # BPTN answers the resident. resume_step=2: if BPTN picks a category, step 2 asks for the location.
-                return self._stop(
-                    work, S.VERIFYING, R.OUT_OF_SCOPE, now, resume_step=2, note=f"{cls.reason}; thiếu vị trí, không hỏi"
+                return self._stop_out_of_scope(
+                    work, now, resume_step=2, note=f"{cls.reason}; thiếu vị trí, không hỏi", by_agent=False
                 )
         if missing:
             return self._stop(
@@ -3601,6 +3801,10 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 notes=notes,
             )
             self._set_classification(work, record, reason, now)
+            if code == R.OUT_OF_SCOPE:
+                return self._stop_out_of_scope(
+                    work, now, resume_step=4, note=reason, by_agent=view.scope == "OUT_OF_SCOPE"
+                )
             return self._stop(work, S.VERIFYING, code, now, resume_step=4, note=reason)
         # two valid jobs and `_try_split` refused (P05 §3 conditions not met): BPTN decides
         reason = "Agent thấy hai việc: " + "; ".join(f"{j.category} ({j.quote})" for j in jobs)
@@ -4344,7 +4548,11 @@ def build_engine(settings: "Settings | None" = None) -> MaintenanceEngine:
     if settings.mo_store == "postgres":
         from src.maintenance.store.postgres import PostgresRepository  # lazy: memory mode needs no psycopg2
 
-        repo = PostgresRepository(settings.database_url, custom_materials=settings.custom_materials_enabled())
+        repo = PostgresRepository(
+            settings.database_url,
+            custom_materials=settings.custom_materials_enabled(),
+            portal_extras=settings.portal_extras_enabled(),
+        )
         repo.check()
     if settings.llm_mode in ("claude_cli", "agy_cli") and settings.mo_agent_enabled:  # local demo through a CLI
         from src.maintenance.agent.agent import build_agent
