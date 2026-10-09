@@ -1,6 +1,6 @@
 "use server";
 
-import { failingLabels } from "@/lib/backend-map";
+import { readinessMessages } from "@/lib/backend-map";
 import { fail } from "@/lib/result";
 import { act, id, num, str } from "@/server/act";
 import { api } from "@/server/backend";
@@ -110,7 +110,7 @@ export async function finishTicketAction(ticketId: string, fd: FormData) {
     const done = await api<BCase>(path(tid, "complete"), { method: "POST" });
     if (done.ticket.status === "IN_PROGRESS") {
       const failing = done.draft?.readiness_evaluation?.failing_items ?? [];
-      const why = failing.length ? failingLabels(failing).join("; ") : "Chưa đủ điều kiện hoàn thành";
+      const why = failing.length ? readinessMessages(failing, done.checklist_items, done.material_lines).join("; ") : "Chưa đủ điều kiện hoàn thành";
       throw new BackendError(422, "INVALID_INPUT", `Chưa thể hoàn thành: ${why}.`, { failing_items: failing });
     }
     return null;

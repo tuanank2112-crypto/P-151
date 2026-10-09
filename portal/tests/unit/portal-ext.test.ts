@@ -10,6 +10,7 @@ import {
   overviewCount,
   overviewFilter,
   splitReport,
+  readinessMessages,
   type OverviewKind,
 } from "@/lib/backend-map";
 import type { MgmtTicket } from "@/lib/dto";
@@ -42,11 +43,21 @@ describe("splitReport", () => {
   it("legacy single line: short text is only a title, no duplicated content", () => {
     expect(splitReport("Thùng rác đầy\nVị trí: Tầng 3")).toEqual({ title: "Thùng rác đầy", content: "", location: "Tầng 3" });
   });
-  it("legacy single long line: title truncated to 80, content keeps the full text", () => {
+  it("legacy single long line without breaks: hard cut, title and content never repeat", () => {
     const long = "a".repeat(100);
     const r = splitReport(`${long}\nVị trí: Y`);
-    expect(r.title).toBe("a".repeat(80));
-    expect(r.content).toBe(long);
+    expect(r.title).toBe(`${"a".repeat(80)}…`);
+    expect(r.content).toBe(`…${"a".repeat(20)}`);
+  });
+  it("legacy single long line: title stops at the first clause end, content is only the rest", () => {
+    const line = "Thùng rác tầng 12 đầy tràn, bốc mùi hôi từ tối qua chưa được thu gom mà không ai đến dọn dẹp giúp";
+    const r = splitReport(line);
+    expect(r.title).toBe("Thùng rác tầng 12 đầy tràn,");
+    expect(r.content).toBe("bốc mùi hôi từ tối qua chưa được thu gom mà không ai đến dọn dẹp giúp");
+    expect(`${r.title} ${r.content}`).toBe(line);
+  });
+  it("legacy short single line stays a title with no content", () => {
+    expect(splitReport("Đèn hành lang tầng 5 bị chập điện").content).toBe("");
   });
   it("no location line gives the dash", () => {
     expect(splitReport("Tiêu đề\nNội dung").location).toBe("—");
@@ -531,5 +542,24 @@ describe("management ticket", () => {
     const hint = buildMgmtTicket(base, summary, now);
     expect(hint.bqlSource).toBe("Agent chuyển");
     expect(buildMgmtTicket(row(), summary, now).bqlSource).toBeNull();
+  });
+});
+
+describe("readinessMessages", () => {
+  const checklist = [{ template_item_id: "CHK-1", label_snapshot: "Dọn sạch khu vực" }];
+  const lines = [
+    { material_line_id: "SIM-MAT-LINE-TEC-001-01", item_name: "Bóng đèn LED", issued_qty: 2, used_qty: 2 },
+    { material_line_id: "SIM-MAT-LINE-TEC-001-02", item_name: "Tắc te", issued_qty: null, used_qty: null },
+  ];
+  it("names every failing id from the case, never shows a raw id it can name", () => {
+    expect(
+      readinessMessages(["CHK-1", "execution_photo", "SIM-MAT-LINE-TEC-001-01", "SIM-MAT-LINE-TEC-001-02", "blocker:WAITING_MATERIAL"], checklist, lines),
+    ).toEqual([
+      "Chưa xong checklist: Dọn sạch khu vực",
+      "Thiếu ảnh sau xử lý",
+      "Bóng đèn LED dùng khác định mức, cần ghi lý do",
+      "Chưa nhập số vật tư đã dùng: Tắc te",
+      "Ticket đang bị chặn: Chờ vật tư",
+    ]);
   });
 });

@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { addStockItemAction, receiveStockAction } from "@/app/actions/warehouse";
+import { addStockItemAction, approveMaterialsAction, receiveStockAction } from "@/app/actions/warehouse";
 import { IconBox, IconWrench } from "@/components/icons";
 import { Body, Header, NavTiles, PageHead } from "@/components/shell";
 import { Toast } from "@/components/toast";
@@ -18,7 +20,7 @@ const HEAD: Record<Tab, { title: string; sub: string }> = {
   },
   requests: {
     title: "Yêu cầu cấp phát vật tư",
-    sub: "Ticket đang chờ vật tư: nhập đủ số còn thiếu để ticket chạy tiếp.",
+    sub: "Ticket phòng ban đã yêu cầu vật tư: duyệt cấp để ticket chạy tiếp, thiếu hàng thì nhập kho trước.",
   },
 };
 
@@ -28,6 +30,7 @@ const isLowStock = (i: WarehouseItem) => i.stock !== null && i.stock <= 0;
 
 export function WarehouseApp({ data }: { data: WarehouseData }) {
   const { pending, error, setError, run } = useAction();
+  const fromManagement = useSearchParams().get("from") === "management";
   const [tab, setTab] = useState<Tab>("inventory");
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState<string>("Tất cả");
@@ -46,7 +49,7 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
   const [newUnit, setNewUnit] = useState("cái");
   const [newStock, setNewStock] = useState(10);
 
-  const pendingRequests = data.requests;
+  const pendingRequests = data.requests.filter((r) => !r.approved);
   const lowStockCount = data.inventory.filter(isLowStock).length;
 
   const filteredInventory = data.inventory.filter((item) => {
@@ -97,7 +100,7 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
       <Header
         avatar={data.user.avatar}
         name={data.user.name}
-        rolePill={ROLE_LABEL.warehouse}
+        rolePill={fromManagement ? ROLE_LABEL.management : ROLE_LABEL.warehouse}
         bellLabel="Yêu cầu cấp vật tư"
         bellCount={pendingRequests.length}
         notices={pendingRequests.map((r) => ({
@@ -119,6 +122,16 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
             { key: "requests", label: "Yêu cầu cấp phát", icon: <IconWrench />, count: pendingRequests.length },
           ]}
         />
+        {fromManagement && (
+          <div>
+            <Link
+              href="/management"
+              className="inline-flex items-center rounded-full border border-line bg-white px-4 py-2 text-sm font-semibold text-body hover:border-sky-500 hover:text-sky-700 focus-visible:outline-2 focus-visible:outline-sky-600"
+            >
+              ← Về trang Ban quản lý
+            </Link>
+          </div>
+        )}
         <PageHead {...HEAD[tab]} />
 
         {tab === "inventory" && (
@@ -158,14 +171,24 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
                 ))}
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <input
                   type="text"
                   placeholder="Tìm mã hoặc tên vật tư..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="field text-xs py-1.5 px-3 w-56 rounded-xl"
+                  className="field text-xs py-1.5 px-3 w-full sm:w-56 rounded-xl"
                 />
+                <button
+                  type="button"
+                  className="btn text-xs whitespace-nowrap"
+                  onClick={() => {
+                    setIsNewItem(true);
+                    setModalOpen(true);
+                  }}
+                >
+                  + Thêm vật tư
+                </button>
                 <button
                   type="button"
                   className="btn primary bg-sky-600 hover:bg-sky-700 text-white font-medium text-xs whitespace-nowrap shadow-xs"
@@ -174,7 +197,7 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
                     setModalOpen(true);
                   }}
                 >
-                  + Nhập thêm kho
+                  + Nhập kho
                 </button>
               </div>
             </div>
@@ -186,6 +209,7 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
                   <tr>
                     <th>Mã VT</th>
                     <th>Tên vật tư</th>
+                    <th>Đơn vị</th>
                     <th>Tồn kho</th>
                     <th>Thao tác</th>
                   </tr>
@@ -197,10 +221,11 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
                       <tr key={item.code} className="hover:bg-slate-50/70 transition-colors">
                         <td className="font-mono font-bold text-slate-800 whitespace-nowrap">{item.code}</td>
                         <td className="font-medium text-slate-900 max-w-[280px]">{item.name}</td>
+                        <td className="text-slate-700">{item.unit}</td>
                         <td>
                           <div className="flex items-center gap-2">
                             <span className={`font-bold text-sm ${isLow ? "text-rose-600" : "text-slate-800"}`}>
-                              {item.stock === null ? "Chưa rõ" : `${item.stock} ${item.unit}`}
+                              {item.stock === null ? "Chưa rõ" : item.stock}
                             </span>
                             {isLow && (
                               <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">
@@ -223,7 +248,7 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
                   })}
                   {filteredInventory.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="text-center text-muted py-8">
+                      <td colSpan={5} className="text-center text-muted py-8">
                         Không tìm thấy vật tư nào phù hợp.
                       </td>
                     </tr>
@@ -240,40 +265,84 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
               <div className="card p-10 text-center text-muted">Chưa có yêu cầu cấp phát vật tư nào.</div>
             )}
             {data.requests.map((r) => (
-              <article key={r.ticketId} className="card flex flex-wrap items-center justify-between gap-4 p-5">
-                <div className="flex items-center gap-3.5">
-                  <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-slate-100 text-slate-700 font-bold">
-                    📦
-                  </span>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm font-bold text-sky-700">{r.ticketCode}</span>
-                      <span className="text-xs text-muted">· {r.since}</span>
+              <article key={r.ticketId} data-testid="material-request" className="card flex flex-col gap-4 p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex items-center gap-3.5">
+                    <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-slate-100 text-slate-700 font-bold">
+                      📦
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm font-bold text-sky-700">{r.ticketCode}</span>
+                        <span className="text-xs text-muted">· {r.since}</span>
+                      </div>
+                      <h4 className="text-sm font-bold text-slate-900 mt-0.5 mb-0.5">{r.ticketText}</h4>
+                      <p className="text-xs text-slate-500 m-0">{r.departmentName}</p>
                     </div>
-                    <h4 className="text-sm font-bold text-slate-900 mt-0.5 mb-0.5">{r.ticketText}</h4>
-                    <p className="text-xs text-slate-500 m-0">{r.departmentName}</p>
-                    {r.lines.map((l) => (
-                      <p key={l.itemCode} className="text-xs text-slate-700 m-0">
-                        {l.itemName}: cần {l.plannedQty} {l.unit} · tồn {l.stock ?? "chưa rõ"} · thiếu {l.shortage}
-                      </p>
-                    ))}
                   </div>
+                  {r.approved ? (
+                    <span className="pill st-hoan_thanh">Đã cấp</span>
+                  ) : r.short ? (
+                    <span className="pill req">⏳ Thiếu hàng, chờ nhập kho</span>
+                  ) : (
+                    <span className="pill st-da_chuyen">Chờ duyệt cấp</span>
+                  )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="pill req">⏳ Chờ vật tư</span>
-                  {r.lines.map((l) => (
+                <div className="overflow-x-auto">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Vật tư</th>
+                        <th>Cần</th>
+                        <th>Tồn</th>
+                        <th>Còn thiếu</th>
+                        <th />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {r.lines.map((l) => (
+                        <tr key={l.itemCode}>
+                          <td className="font-medium">{l.itemName}</td>
+                          <td>
+                            {l.plannedQty} {l.unit}
+                          </td>
+                          <td className={l.stock !== null && l.stock <= 0 ? "font-bold text-rose-600" : ""}>
+                            {l.stock ?? "chưa rõ"}
+                          </td>
+                          <td className={l.short ? "font-bold text-rose-600" : "text-slate-500"}>{l.shortage}</td>
+                          <td>
+                            {l.short && !r.approved && (
+                              <button
+                                type="button"
+                                className="btn text-xs py-1 px-2.5 hover:bg-sky-50 hover:text-sky-700"
+                                disabled={pending}
+                                onClick={() => run(() => receiveStockAction(l.itemCode, l.shortage))}
+                              >
+                                Nhập đủ {l.itemName} (+{l.shortage})
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {!r.approved && (
+                  <div className="flex flex-wrap items-center gap-3">
                     <button
-                      key={l.itemCode}
                       type="button"
                       className="btn primary bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs shadow-xs"
-                      disabled={pending}
-                      onClick={() => run(() => receiveStockAction(l.itemCode, l.shortage))}
+                      disabled={pending || r.short}
+                      title={r.short ? "Nhập kho trước" : undefined}
+                      onClick={() => run(() => approveMaterialsAction(r.ticketId))}
                     >
-                      Nhập đủ {l.itemName}
+                      Duyệt cấp
                     </button>
-                  ))}
-                </div>
+                    {r.short && <span className="text-xs text-rose-700">Nhập kho trước: kho chưa đủ số vật tư yêu cầu.</span>}
+                  </div>
+                )}
               </article>
             ))}
           </section>
@@ -288,15 +357,13 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
               <h3 className="text-base font-bold text-slate-800">
                 {isNewItem ? "Thêm vật tư mới vào danh mục kho" : "Nhập thêm số lượng vật tư"}
               </h3>
-              {data.customMaterials && (
-                <button
-                  type="button"
-                  onClick={() => setIsNewItem(!isNewItem)}
-                  className="text-xs text-sky-600 hover:underline font-medium"
-                >
-                  {isNewItem ? "← Chọn vật tư có sẵn" : "+ Tạo mã vật tư mới"}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setIsNewItem(!isNewItem)}
+                className="text-xs text-sky-600 hover:underline font-medium cursor-pointer"
+              >
+                {isNewItem ? "← Chọn vật tư có sẵn" : "+ Thêm vật tư mới"}
+              </button>
             </div>
 
             <form onSubmit={handleImportSubmit} className="space-y-4 text-xs">

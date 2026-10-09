@@ -120,6 +120,31 @@ const FAILING_LABELS: Record<string, string> = {
   department_accepted: "Chưa nhận việc",
 };
 
+/** Readiness `failing_items` are ids (checklist item, "execution_photo", material line, "blocker:CODE"): say each in
+ * Vietnamese with the names from the same case. Unknown ids fall back to the old flag labels, then to the id. */
+export function readinessMessages(
+  failing: string[],
+  checklist: { template_item_id: string; label_snapshot: string }[],
+  lines: { material_line_id?: string; item_name: string; issued_qty: number | null; used_qty: number | null }[],
+): string[] {
+  return failing.map((f) => {
+    if (f === "execution_photo") return "Thiếu ảnh sau xử lý";
+    if (f.startsWith("blocker:")) {
+      const code = f.slice("blocker:".length);
+      return `Ticket đang bị chặn: ${(BLOCKER_LABELS as Record<string, string>)[code] ?? code}`;
+    }
+    const item = checklist.find((c) => c.template_item_id === f);
+    if (item) return `Chưa xong checklist: ${item.label_snapshot}`;
+    const line = lines.find((l) => l.material_line_id === f);
+    if (line) {
+      return line.issued_qty === null || line.used_qty === null
+        ? `Chưa nhập số vật tư đã dùng: ${line.item_name}`
+        : `${line.item_name} dùng khác định mức, cần ghi lý do`;
+    }
+    return FAILING_LABELS[f] ?? f;
+  });
+}
+
 export function failingLabels(items: string[]): string[] {
   return items.map((i) => FAILING_LABELS[i] ?? i);
 }
@@ -174,12 +199,24 @@ export function roleFromMe(role: string, departmentId: string | null | undefined
  * no separate title: its first line is the title (<= 80 chars) and the content keeps the full text only when the
  * title cut it.
  */
+/** Legacy one-line report: the title stops at the first sentence/clause end within `max` chars, else at the last
+ * word boundary (with "…"); the content is only what follows, so title and content never repeat each other. */
+export function splitLongLine(text: string, max: number): { head: string; rest: string } {
+  if (text.length <= max) return { head: text, rest: "" };
+  const window = text.slice(0, max + 1);
+  const stop = Math.max(...[". ", "! ", "? ", "; ", ", "].map((m) => window.lastIndexOf(m)));
+  if (stop >= 20) return { head: text.slice(0, stop + 1).trim(), rest: text.slice(stop + 1).trim() };
+  const space = window.lastIndexOf(" ");
+  const cut = space >= 20 ? space : max;
+  return { head: `${text.slice(0, cut).trim()}…`, rest: `…${text.slice(cut).trim()}` };
+}
+
 export function splitReport(raw: string): { title: string; content: string; location: string } {
   const { description, location } = parseDescription(raw);
   const lines = description.split("\n");
   if (lines.length === 1) {
-    const title = titleOf(description);
-    return { title, content: title === description ? "" : description, location };
+    const { head, rest } = splitLongLine(description.trim(), 80);
+    return { title: head, content: rest, location };
   }
   return { title: (lines[0] ?? "").trim(), content: lines.slice(1).join("\n").trim(), location };
 }

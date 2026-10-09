@@ -19,8 +19,14 @@ import { Body, Header, NavTiles } from "@/components/shell";
 import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
 import {
+  BAD_TAGS,
+  GOOD_TAGS,
+  MAX_CONTENT,
   MAX_PHOTOS,
+  MAX_RATING_COMMENT,
+  MAX_TITLE,
   MIN_DESCRIPTION,
+  MIN_TITLE,
   PLACE_DEFS,
   STAGES,
   STAR_LABEL,
@@ -38,13 +44,6 @@ const PLACE_ICON: Record<Place, React.ReactNode> = {
   lift: <IconLift />,
   common: <IconPin />,
 };
-
-const EXAMPLES: [string, string][] = [
-  ["Đèn hỏng", "Bóng đèn hành lang chập chờn, không sáng"],
-  ["Rác chưa thu gom", "Rác chưa được thu gom, có mùi hôi"],
-  ["Mất nước", "Căn hộ mất nước từ sáng, vòi nước yếu"],
-  ["Thang máy kẹt", "Thang máy dừng giữa tầng, cửa không mở"],
-];
 
 const OVERVIEW: [Exclude<Filter, "all">, string, string, string][] = [
   ["run", "Đang xử lý", "#2563EB", "Tiếp nhận đến đang xử lý"],
@@ -80,6 +79,7 @@ export function ResidentApp({ data }: { data: ResidentData }) {
   const [place, setPlace] = useState<Place>("floor");
   const [sub, setSub] = useState("");
   const [drag, setDrag] = useState(false);
+  const [title, setTitle] = useState("");
   const [draft, setDraft] = useState("");
   const [photos, setPhotos] = useState<LocalPhoto[]>([]);
   const [formError, setFormError] = useState("");
@@ -89,6 +89,8 @@ export function ResidentApp({ data }: { data: ResidentData }) {
   const [sel, setSel] = useState<string | null>(all[0]?.id ?? null);
   const [extra, setExtra] = useState("");
   const [rStars, setRStars] = useState(0);
+  const [rTags, setRTags] = useState<string[]>([]);
+  const [rComment, setRComment] = useState("");
 
   // Revoke preview URLs still held when the page unmounts
   const photosRef = useRef(photos);
@@ -104,7 +106,9 @@ export function ResidentApp({ data }: { data: ResidentData }) {
 
   // ---------- Gửi phản ánh ----------
   const finalLoc = placeLocation(place, sub, home);
-  const descOk = draft.trim().length >= MIN_DESCRIPTION;
+  const titleLen = title.trim().length;
+  const titleOk = titleLen >= MIN_TITLE && titleLen <= MAX_TITLE;
+  const descOk = draft.trim().length >= MIN_DESCRIPTION && draft.trim().length <= MAX_CONTENT;
 
   const addFiles = (files: FileList | null) => {
     setDrag(false);
@@ -124,13 +128,16 @@ export function ResidentApp({ data }: { data: ResidentData }) {
   };
 
   const submit = () => {
+    if (!titleOk) {
+      setFormError(`Tiêu đề cần từ ${MIN_TITLE} đến ${MAX_TITLE} ký tự.`);
+      return;
+    }
     if (!descOk) {
-      setFormError("Vui lòng mô tả vấn đề (ít nhất 10 ký tự).");
+      setFormError(`Nội dung góp ý cần từ ${MIN_DESCRIPTION} đến ${MAX_CONTENT} ký tự.`);
       return;
     }
     const fd = new FormData();
-    // temporary: WP3 adds the title input; until then the title is the start of the text
-    fd.set("title", draft.trim().replace(/\s+/g, " ").slice(0, 60));
+    fd.set("title", title.trim());
     fd.set("description", draft);
     fd.set("place", place);
     fd.set("placeDetail", sub);
@@ -141,6 +148,7 @@ export function ResidentApp({ data }: { data: ResidentData }) {
       (res) => {
         photos.forEach((p) => URL.revokeObjectURL(p.url));
         setPhotos([]);
+        setTitle("");
         setDraft("");
         setPlace("floor");
         setSub("");
@@ -166,6 +174,8 @@ export function ResidentApp({ data }: { data: ResidentData }) {
     setSel(id);
     setExtra("");
     setRStars(0);
+    setRTags([]);
+    setRComment("");
   };
   const mineCount = all.filter((t) => !t.cancelled && t.stage < 6).length;
 
@@ -229,35 +239,52 @@ export function ResidentApp({ data }: { data: ResidentData }) {
 
             <div className="flex flex-wrap items-start gap-5">
               <div className="flex min-w-0 flex-col gap-5" style={{ flex: "999 1 600px" }}>
-                {/* 1. Mô tả */}
+                {/* 1. Tiêu đề + nội dung */}
                 <section className="card flex flex-col gap-3.5 p-6">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span className="num">1</span>
-                      <label htmlFor="draft" className="text-lg font-bold">
-                        Mô tả vấn đề
-                      </label>
-                    </div>
+                  <div className="flex items-center gap-3">
+                    <span className="num">1</span>
+                    <h2 className="m-0 text-lg font-bold">Nội dung phản ánh</h2>
                   </div>
-                  <textarea
-                    id="draft"
-                    className="field"
-                    rows={4}
-                    placeholder="Ví dụ: Bóng đèn hành lang chập chờn, không sáng. Nếu sự cố ở tầng khác, ghi rõ: tầng 15, cạnh thang máy."
-                    value={draft}
-                    onChange={(e) => {
-                      setDraft(e.target.value);
-                      setFormError("");
-                    }}
-                    style={{ resize: "vertical", minHeight: 120 }}
-                  />
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[13px] text-muted">Câu mẫu:</span>
-                    {EXAMPLES.map(([label, text]) => (
-                      <button key={label} type="button" className="chip sm" onClick={() => setDraft(text)}>
-                        {label}
-                      </button>
-                    ))}
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="title" className="text-sm font-semibold">
+                      Tiêu đề <span className="text-[#B42318]">*</span>
+                    </label>
+                    <input
+                      id="title"
+                      className="field"
+                      type="text"
+                      maxLength={MAX_TITLE}
+                      placeholder="Ví dụ: Bóng đèn hành lang tầng 15 chập chờn"
+                      value={title}
+                      onChange={(e) => {
+                        setTitle(e.target.value);
+                        setFormError("");
+                      }}
+                    />
+                    <span className="text-xs text-muted">
+                      {titleLen}/{MAX_TITLE} ký tự · tối thiểu {MIN_TITLE}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="draft" className="text-sm font-semibold">
+                      Nội dung góp ý <span className="text-[#B42318]">*</span>
+                    </label>
+                    <textarea
+                      id="draft"
+                      className="field"
+                      rows={4}
+                      maxLength={MAX_CONTENT}
+                      placeholder="Mô tả chi tiết vấn đề. Nếu sự cố ở tầng khác, ghi rõ: tầng 15, cạnh thang máy."
+                      value={draft}
+                      onChange={(e) => {
+                        setDraft(e.target.value);
+                        setFormError("");
+                      }}
+                      style={{ resize: "vertical", minHeight: 120 }}
+                    />
+                    <span className="text-xs text-muted">
+                      {draft.trim().length}/{MAX_CONTENT} ký tự · tối thiểu {MIN_DESCRIPTION}
+                    </span>
                   </div>
                 </section>
 
@@ -373,7 +400,16 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-xs font-bold uppercase tracking-wider text-muted">Mô tả vấn đề</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted">Tiêu đề</span>
+                  {title.trim() ? (
+                    <span className="text-[15px] font-bold break-words text-body">{title.trim()}</span>
+                  ) : (
+                    <span className="text-[13px] italic text-muted">Chưa nhập tiêu đề</span>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted">Nội dung góp ý</span>
                   {draft.trim() ? (
                     <div className="border-l-2 border-brand/70 pl-3 py-1 text-[14px] leading-relaxed font-medium text-body break-words bg-soft/40 rounded-r-lg">
                       {draft}
@@ -405,7 +441,8 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                 <div className="flex flex-col gap-2 border-t border-line pt-3.5">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted mb-0.5">Điều kiện gửi</span>
                   {[
-                    { label: "Mô tả ít nhất 10 ký tự", ok: descOk },
+                    { label: `Tiêu đề từ ${MIN_TITLE} đến ${MAX_TITLE} ký tự`, ok: titleOk },
+                    { label: `Nội dung góp ý từ ${MIN_DESCRIPTION} ký tự`, ok: descOk },
                     { label: "Vị trí hợp lệ", ok: true },
                   ].map((c) => (
                     <div key={c.label} className={c.ok ? "chk ok" : "chk"}>
@@ -535,7 +572,15 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                   extra={extra}
                   setExtra={setExtra}
                   rStars={rStars}
-                  setRStars={setRStars}
+                  setRStars={(n) => {
+                    setRStars(n);
+                    const ok: readonly string[] = n >= 4 ? GOOD_TAGS : BAD_TAGS;
+                    setRTags((cur) => cur.filter((x) => ok.includes(x)));
+                  }}
+                  rTags={rTags}
+                  toggleTag={(tag) => setRTags((cur) => (cur.includes(tag) ? cur.filter((x) => x !== tag) : [...cur, tag]))}
+                  rComment={rComment}
+                  setRComment={setRComment}
                   onAddExtra={() => {
                     const txt = extra.trim();
                     if (!txt) return;
@@ -544,8 +589,12 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                   onRate={() => {
                     if (!rStars) return;
                     run(
-                      () => rateTicketAction(cur.id, { stars: rStars }),
-                      () => setRStars(0),
+                      () => rateTicketAction(cur.id, { stars: rStars, tags: rTags, comment: rComment.trim() }),
+                      () => {
+                        setRStars(0);
+                        setRTags([]);
+                        setRComment("");
+                      },
                     );
                   }}
                 />
@@ -567,13 +616,18 @@ function TicketDetail(props: {
   setExtra: (v: string) => void;
   rStars: number;
   setRStars: (n: number) => void;
+  rTags: string[];
+  toggleTag: (tag: string) => void;
+  rComment: string;
+  setRComment: (v: string) => void;
   onAddExtra: () => void;
   onRate: () => void;
 }) {
   const { t, rStars } = props;
   const [stCls, stLabel] = status(t);
   const canRate = t.canRate && !t.cancelled;
-  const canAdd = !t.cancelled && t.stage < 6;
+  const canAdd = t.needInfo && !t.cancelled;
+  const tagList = rStars >= 4 ? GOOD_TAGS : BAD_TAGS;
   const info = [
     { k: "Phòng ban tiếp nhận", v: t.deptName ?? "Đang điều phối phân công" },
     { k: "Vị trí", v: t.location },
@@ -592,6 +646,7 @@ function TicketDetail(props: {
         </span>
       </div>
       <h2 className="-mt-2 mb-0 text-[22px] leading-[1.35] font-bold">{t.title}</h2>
+      {t.content && <p className="-mt-2 mb-0 text-[15px] leading-[1.55] whitespace-pre-line text-body">{t.content}</p>}
 
       {t.publicMessage && !t.cancelled && !t.needInfo && (
         <div role="status" className="rounded-2xl px-[18px] py-4 text-[15px] leading-[1.55]" style={{ background: "#FFF7E0", border: "1px solid #F3D27A", color: "#5C4200" }}>
@@ -677,11 +732,47 @@ function TicketDetail(props: {
             <span className="text-[15px] font-semibold">{rStars ? STAR_LABEL[rStars] : "Chọn số sao"}</span>
           </div>
           {rStars > 0 && (
-            <div>
-              <button type="button" className="btn primary" onClick={props.onRate} disabled={props.pending}>
-                Gửi đánh giá
-              </button>
-            </div>
+            <>
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-semibold">{rStars >= 4 ? "Điều bạn hài lòng" : "Điều cần cải thiện"} (không bắt buộc)</span>
+                <div className="flex flex-wrap gap-2">
+                  {tagList.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      className={props.rTags.includes(tag) ? "chip sm on" : "chip sm"}
+                      aria-pressed={props.rTags.includes(tag)}
+                      onClick={() => props.toggleTag(tag)}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="rcomment" className="text-sm font-semibold">
+                  Bình luận (không bắt buộc)
+                </label>
+                <textarea
+                  id="rcomment"
+                  className="field"
+                  rows={3}
+                  maxLength={MAX_RATING_COMMENT}
+                  value={props.rComment}
+                  onChange={(e) => props.setRComment(e.target.value)}
+                  placeholder="Chia sẻ thêm về việc xử lý"
+                  style={{ resize: "vertical" }}
+                />
+                <span className="text-xs text-muted">
+                  {props.rComment.length}/{MAX_RATING_COMMENT} ký tự
+                </span>
+              </div>
+              <div>
+                <button type="button" className="btn primary" onClick={props.onRate} disabled={props.pending}>
+                  Gửi đánh giá
+                </button>
+              </div>
+            </>
           )}
         </div>
       )}
@@ -689,7 +780,25 @@ function TicketDetail(props: {
       {t.rated && (
         <div className="flex flex-col gap-2.5 rounded-[18px] border border-line px-5 py-[18px]">
           <span className="text-xs font-bold tracking-[.06em] text-muted">ĐÁNH GIÁ CỦA BẠN</span>
-          <span className="text-[15px] font-semibold">Bạn đã đánh giá phản ánh này. Cảm ơn bạn.</span>
+          {t.rating ? (
+            <>
+              <span className="text-[15px] font-semibold">
+                {t.rating} sao · {STAR_LABEL[t.rating]}
+              </span>
+              {t.ratingTags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {t.ratingTags.map((tag) => (
+                    <span key={tag} className="pill wait">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {t.ratingComment && <span className="text-[15px] leading-normal whitespace-pre-line">{t.ratingComment}</span>}
+            </>
+          ) : (
+            <span className="text-[15px] font-semibold">Bạn đã đánh giá phản ánh này. Cảm ơn bạn.</span>
+          )}
         </div>
       )}
 
@@ -721,7 +830,7 @@ function TicketDetail(props: {
               }}
             />
             <button type="button" className="btn primary" onClick={props.onAddExtra} disabled={props.pending}>
-              Gửi bổ sung
+              Bổ sung
             </button>
           </div>
         )}

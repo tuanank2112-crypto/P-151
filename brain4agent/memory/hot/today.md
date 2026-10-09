@@ -501,3 +501,4 @@ Trường xác nhận đánh giá sơ bộ bằng 15 câu do Trường tự so�
 - Người dùng trả lời 18 câu (Q10–Q19): Agent thật + tab Hiệu suất Agent (đúng/sai), giữ phân công + thẻ đánh giá, mọi vật tư phải duyệt cấp, Agent tự chuyển việc BQL, Supabase + develop, UI mới mở ở cổng 8000 (backend `PORTAL_URL` → portal 3000). SPEC-P04 mới. WP2 ✅ local (xoá 7 file cũ; portal chạy qua 8000).
 - WP2b ✅ local (118 unit). Gotcha: `.gitignore` `data/` nuốt `portal/src/server/data/` ⇒ commit WP2 thiếu lớp dữ liệu; đã thêm `!portal/src/server/data/`.
 - WP1b ✅ (3771 passed): Agent tự chuyển BQL, duyệt cấp vật tư (Kho/BQL), phân công (bảng `assignments`), thẻ+bình luận đánh giá, trường Agent; migration 0004 + cờ `MO_PORTAL_EXTRAS`. WP3–5 UI ✅ (121 unit). Gotcha: portal `next dev` sau proxy cổng 8000 không hydrate (HMR WebSocket bị 403) ⇒ demo qua 8000 phải `next build && next start`.
+- Commit giao diện WP3–5 + sửa splitReport/readinessMessages (SO).

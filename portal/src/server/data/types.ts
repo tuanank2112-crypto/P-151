@@ -55,6 +55,7 @@ export type BTicket = {
 export type BChecklistItem = { template_item_id: string; label_snapshot: string; required: boolean; status: string };
 
 export type BMaterialLine = {
+  material_line_id?: string;
   item_code: string;
   item_name: string;
   unit: string | null;
