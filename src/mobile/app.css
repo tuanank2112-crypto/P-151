@@ -148,6 +148,9 @@ a.tile { text-decoration: none; }
   .tile { font-size: 14px; }
   .tile .ic { width: 60px; height: 60px; }
   .cnt { left: calc(50% + 14px); }
+  .tiles[style*="--cols:4"] .tile { font-size: 13px; gap: 8px; padding: 8px 2px; }
+  .tiles[style*="--cols:4"] .tile .ic { width: 52px; height: 52px; }
+  .tiles[style*="--cols:4"] .cnt { left: calc(50% + 10px); }
 }
 
 /* Content column */

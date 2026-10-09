@@ -1,7 +1,7 @@
 // Shared pieces of the staff screens (BQL, Phòng ban, BPTN, Kho) — plan 11 SPEC-P05 Q31.
 // Labels copied from src/web/app.js so web and app name things the same way.
-import { api, apiImage } from './api.js?v=3';
-import { el, emptyState, fill, formatTime, history, notice, pageHead, pagedList, pill, refreshButton, toast } from './ui.js?v=3';
+import { api, apiImage } from './api.js?v=4';
+import { el, emptyState, fill, formatTime, history, notice, pageHead, pagedList, pill, refreshButton, toast } from './ui.js?v=4';
 
 export const REASON_LABEL = {
   MISSING_INFO: 'Thiếu thông tin', DUPLICATE: 'Nghi trùng', CATEGORY_UNCLEAR: 'Loại việc chưa rõ', OUT_OF_SCOPE: 'Ngoài phạm vi',
@@ -163,7 +163,8 @@ export function summaryCard(cat, base) {
 
 /**
  * List screen shared by Phòng ban / BPTN / Kho: stat cards, filter tiles (#staff-tabs), page head, paged cards (#staff-list).
- * opts: { tiles: [[key, label, icon, test]], tab: { get, set }, heads: { key: [title, sub] }, base, stats(rows) → [[label, n]], empty }
+ * opts: { tiles: [[key, label, icon, test]], tab: { get, set }, heads: { key: [title, sub] }, base, stats?(rows) → [[label, n]], empty }
+ * Without `stats` no stat cards are drawn (Phòng ban, Q32).
  */
 export async function queueScreen(ctx, opts) {
   const statsBox = el('div', { class: 'stats' });
@@ -179,7 +180,8 @@ export async function queueScreen(ctx, opts) {
   const draw = (keep) => {
     chrome();
     ctx.counts(Object.fromEntries([...opts.tiles.map(([key, , , t]) => [key, rows.filter(t).length]), ['bell', rows.filter(opts.tiles[0][3]).length]]));
-    fill(statsBox, opts.stats(rows).map(([label, value]) => el('div', { class: 'card stat' }, el('span', {}, label), el('b', {}, String(value)))));
+    statsBox.hidden = !opts.stats;
+    fill(statsBox, (opts.stats ? opts.stats(rows) : []).map(([label, value]) => el('div', { class: 'card stat' }, el('span', {}, label), el('b', {}, String(value)))));
     const [title, sub] = opts.heads[opts.tab.get()] || opts.heads[opts.tiles[0][0]];
     fill(head, pageHead(title, sub, { right: refreshButton(load, ctx) }));
     const previous = keep ? body.firstElementChild : null;

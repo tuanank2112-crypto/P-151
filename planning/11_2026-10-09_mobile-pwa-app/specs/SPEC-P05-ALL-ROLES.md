@@ -9,7 +9,7 @@ Giữ nguyên SPEC-P04 (giao diện portal) và bất biến I-1..I-7; I-8 đổ
 |---|---|---|---|
 | RESIDENT | `#/r` | như SPEC-P04 | `/resident/*` |
 | BQL | `#/b` | như SPEC-P04 | `/bql/*` + `GET /mo/tickets/{id}` |
-| DEPARTMENT | `#/d` | Chờ nhận (`ROUTED`) · Đang làm (`IN_PROGRESS`,`ON_HOLD`) · Tất cả | `GET /mo/tickets` (server đã lọc theo phòng ban) |
+| DEPARTMENT | `#/d` | Chờ nhận (`ROUTED`) · Đang làm (`IN_PROGRESS`,`ON_HOLD`) · Chờ nghiệm thu (`READY_FOR_REVIEW`) · Tất cả — KHÔNG ô số liệu (Q32) | `GET /mo/tickets` (server đã lọc theo phòng ban) |
 | BPTN | `#/p` | Cần xử lý (§3 điều kiện) · An toàn B2 (`SAFETY_REVIEW_REQUIRED`) · Tất cả | `GET /mo/tickets` |
 | WAREHOUSE | `#/k` | Chờ vật tư · Tồn kho | `GET /mo/tickets` (server: chỉ `WAITING_MATERIAL`), `GET /mo/warehouse/stock` |
 | QA_INTERNAL | `#/web` | — | không gọi API dữ liệu (I-8 mới: CHỈ vai này thấy "Dùng bản web") |

@@ -1,22 +1,24 @@
 // Department screens (Phòng ban Vệ sinh / Kỹ thuật) — plan 11 SPEC-P05 §2. Same endpoints and rules as
 // renderDepartment / workSections in src/web/app.js; photos first because the field team works from the phone (Q28).
-import { api, apiForm } from './api.js?v=3';
-import { MAX_PHOTOS, photoFormData, photoPicker } from './photo.js?v=3';
-import { confirmSheet, el, field, fill, icon, notice, pill, writeButton } from './ui.js?v=3';
+import { api, apiForm } from './api.js?v=4';
+import { MAX_PHOTOS, photoFormData, photoPicker } from './photo.js?v=4';
+import { confirmSheet, el, field, fill, icon, notice, pill, writeButton } from './ui.js?v=4';
 import {
   REASON_LABEL, caseHead, caseScreen, checklistLabel, codeOf, eventsHistory, executionPhotoIds, imagesOf, materialName,
   materialUnit, photoBox, photoStrip, queueScreen, reportBox, select, webButton, writer,
-} from './staff.js?v=3';
+} from './staff.js?v=4';
 
 const MAX_EXECUTION_PHOTOS = 10; // src/maintenance/engine.py
 const TILES = [
   ['todo', 'Chờ nhận', 'briefcase', (t) => t.status === 'ROUTED'],
   ['doing', 'Đang làm', 'clipboard', (t) => t.status === 'IN_PROGRESS' || t.status === 'ON_HOLD'],
+  ['review', 'Chờ nghiệm thu', 'checkSquare', (t) => t.status === 'READY_FOR_REVIEW'],
   ['all', 'Tất cả', 'table', () => true],
 ];
 const HEADS = {
   todo: ['Việc chờ nhận', 'Phản ánh đã giao cho phòng ban, chưa có người nhận.'],
   doing: ['Việc đang làm', 'Chụp ảnh sau xử lý, tick checklist, ghi vật tư rồi báo hoàn thành.'],
+  review: ['Chờ nghiệm thu', 'Đã báo hoàn thành, đang chờ Ban quản lý nghiệm thu.'],
   all: ['Tất cả việc của phòng ban', 'Mọi phản ánh đã giao cho phòng ban của bạn.'],
 };
 let tab = 'todo';
@@ -26,8 +28,6 @@ const tabState = { get: () => tab, set: (key) => { tab = key; } };
 
 export const list = (ctx) => queueScreen(ctx, {
   tiles: TILES, tab: tabState, heads: HEADS, base: '#/d', empty: 'Không có việc nào ở mục này.',
-  stats: (rows) => [['Chờ nhận', rows.filter(TILES[0][3]).length], ['Đang làm', rows.filter(TILES[1][3]).length],
-    ['Chờ nghiệm thu', rows.filter((t) => t.status === 'READY_FOR_REVIEW').length], ['Tổng', rows.length]],
 });
 
 // ---------------------------------------------------------------- readiness (src/web/app.js failingLabel / computeReadinessPrecheck)

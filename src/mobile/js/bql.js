@@ -1,13 +1,13 @@
 // BQL screens on the phone (plan 11, SPEC-P03 rules, SPEC-P04 §5 layout from portal/src/app/management/management-app.tsx).
 // Buttons follow the BqlTicketRow; the server stays the referee (403/409 go through the error table).
-import { api, apiImage } from './api.js?v=3';
+import { api, apiImage } from './api.js?v=4';
 import {
   TERMINAL, confirmSheet, el, emptyState, field, fill, formatTime, history, icon, infoGrid, notice, pageHead, pagedList,
   refreshButton, toast, writeButton,
-} from './ui.js?v=3';
+} from './ui.js?v=4';
 import {
   PRIORITY_LABEL, REASON_LABEL, deptName, deptPill as deptPillOf, flags, imagesOf, isEmergency, isSeedTicket, loadCatalog, statusPill,
-} from './staff.js?v=3';
+} from './staff.js?v=4';
 
 export { isEmergency, isSeedTicket };
 const deptPill = (cat, r) => deptPillOf(cat, r.department_id);

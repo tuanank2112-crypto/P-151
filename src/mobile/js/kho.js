@@ -1,10 +1,10 @@
 // Warehouse screens (Kho vật tư) — plan 11 SPEC-P05 §4. Same endpoints as renderWarehouse in src/web/app.js.
-import { api } from './api.js?v=3';
-import { el, emptyState, field, fill, pageHead, pagedList, pill, refreshButton, toast, writeButton } from './ui.js?v=3';
+import { api } from './api.js?v=4';
+import { el, emptyState, field, fill, pageHead, pagedList, pill, refreshButton, toast, writeButton } from './ui.js?v=4';
 import {
   caseHead, caseScreen, codeOf, eventsHistory, isSeedTicket, loadCatalog, materialName, materialUnit, reportBox, select,
   summaryCard, webButton,
-} from './staff.js?v=3';
+} from './staff.js?v=4';
 
 const TILES = [['wait', 'Chờ vật tư', 'box'], ['stock', 'Tồn kho', 'grid']];
 let tab = 'wait';
