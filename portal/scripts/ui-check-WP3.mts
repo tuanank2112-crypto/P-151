@@ -194,9 +194,12 @@ try {
   // Hiệu suất Agent
   await tab(page, "Hiệu suất Agent").click();
   await page.waitForSelector("text=Các lần nhân viên sửa gợi ý của Agent");
-  for (const l of ["Ticket đã chuyển", "Agent gợi ý đúng", "Số lần nhân viên sửa", "Chờ cư dân bổ sung", "Agent đúng", "Agent sai"]) {
+  for (const l of ["Ticket đã chuyển", "Agent gợi ý đúng", "Số lần nhân viên sửa", "Chờ cư dân bổ sung"]) {
     check(`reception perf: tile '${l}'`, (await page.locator(`text=${l}`).count()) >= 1);
   }
+  // counts sit next to the percentage inside the "Agent gợi ý đúng" tile (user 2026-10-10)
+  const rightTile = page.locator(".card", { hasText: "Agent gợi ý đúng" }).first();
+  check("reception perf: right/wrong counts beside the %", /✓\s*\d+\s*đúng/.test(await rightTile.innerText()) && /✗\s*\d+\s*sai/.test(await rightTile.innerText()));
   await shot(page, "reception-perf");
 
   // drive the new ticket through whatever actions the blocker offers (asset check -> route / confirm)

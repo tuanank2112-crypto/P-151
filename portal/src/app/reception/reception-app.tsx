@@ -172,35 +172,31 @@ function DoneTable({ rows, onOpen }: { rows: ReceptionAllItem[]; onOpen: (id: st
 }
 
 function PerfPanel({ perf, onOpen }: { perf: AgentPerf; onOpen: (id: string) => void }) {
-  const tiles: [string, string][] = [
+  // the "right" tile carries its counts next to the percentage (user 2026-10-10: số lần đúng và sai bên cạnh % đúng)
+  const counts = (
+    <span className="flex flex-col text-sm font-semibold leading-tight" aria-label={`Agent đúng ${perf.correct} lần, sai ${perf.wrong} lần`}>
+      <span style={{ color: "#13553A" }}>✓ {perf.correct} đúng</span>
+      <span style={{ color: "#B42318" }}>✗ {perf.wrong} sai</span>
+    </span>
+  );
+  const tiles: [string, string, React.ReactNode?][] = [
     ["Ticket đã chuyển", String(perf.transferred)],
-    ["Agent gợi ý đúng", perf.correctPct === null ? "—" : `${perf.correctPct}%`],
+    ["Agent gợi ý đúng", perf.correctPct === null ? "—" : `${perf.correctPct}%`, counts],
     ["Số lần nhân viên sửa", String(perf.corrections.length)],
     ["Chờ cư dân bổ sung", String(perf.waitingResident)],
   ];
   return (
     <section className="flex flex-col gap-5">
       <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
-        {tiles.map(([label, value]) => (
+        {tiles.map(([label, value, extra]) => (
           <div key={label} className="card flex flex-col gap-1 p-5">
             <span className="text-sm text-muted">{label}</span>
-            <span className="text-[30px] font-bold">{value}</span>
+            <span className="flex items-center gap-3">
+              <span className="text-[30px] font-bold">{value}</span>
+              {extra}
+            </span>
           </div>
         ))}
-      </div>
-      <div className="flex flex-wrap gap-3">
-        <div className="card flex flex-1 flex-col gap-1 p-5" style={{ minWidth: 220 }}>
-          <span className="text-sm text-muted">Agent đúng</span>
-          <span className="text-[24px] font-bold" style={{ color: "#13553A" }}>
-            {perf.correct} lần
-          </span>
-        </div>
-        <div className="card flex flex-1 flex-col gap-1 p-5" style={{ minWidth: 220 }}>
-          <span className="text-sm text-muted">Agent sai</span>
-          <span className="text-[24px] font-bold" style={{ color: "#B42318" }}>
-            {perf.wrong} lần
-          </span>
-        </div>
       </div>
       <div className="card flex flex-col gap-3 p-6">
         <h2 className="m-0 text-lg font-bold">Các lần nhân viên sửa gợi ý của Agent</h2>
