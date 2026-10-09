@@ -505,3 +505,4 @@ Trường xác nhận đánh giá sơ bộ bằng 15 câu do Trường tự so�
 - WP6: qua cổng 8000 (portal production) 4 bộ kiểm UI đạt; sửa form vệ sinh không gửi vật tư đã dùng (backend chặn hoàn thành).
 - WP7 thẩm định cô lập: 🔁 (P5 Render cũ đẩy ticket chờ duyệt về ROUTED; P6 yêu cầu vật tư lần 2 xoá dòng đã duyệt; P7 duyệt không giữ hàng). Đã sửa (Q20): cờ `MO_PORTAL_EXTRAS` gác luồng duyệt, duyệt = xuất kho, yêu cầu cộng dồn, lý do lệch định mức bắt buộc theo luật backend. 3774 pytest, 124 unit, 4 ui-check qua 8000 đạt.
 - WP7 vòng 2 🔁 (NEW-1/1b/2/3): xin thêm vật tư sau khi duyệt bị kẹt vì so tồn với cả kế hoạch. Sửa (Q21): thiếu hàng = kế hoạch − đã xuất; giảm số/hủy ticket trả hàng về kho. 4 ui-check qua 8000 đạt.
+- WP7 vòng 3 🔁 (R3-D/E/F): đổi phòng làm mất hàng đã xuất; bỏ dòng trả cả phần đã dùng; phòng ban tự xuất vượt số duyệt qua API. Sửa (Q22): `_give_back_unused` cho mọi đường + chặn xuất vượt khi duyệt bật.

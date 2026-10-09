@@ -935,3 +935,30 @@ def test_wp7_new3_cancel_gives_unused_stock_back(eng):
     assert eng.repo.stock_of(LAMP2) == 0
     eng.cancel(ticket_id, BQL, cancel_reason="Cư dân tự sửa")
     assert eng.repo.stock_of(LAMP2) == 2
+
+
+# ======================================================================= WP7 review round 3: every way a plan loses stock
+
+
+def test_wp7_r3d_a_dropped_line_returns_only_what_was_not_used(eng):
+    ticket_id = approved_ticket(eng, 2, stock=2)
+    eng.record_material(ticket_id, TEC, LAMP2, issued_qty=2, used_qty=1, variance_reason="Hỏng 1")
+    eng.confirm_materials(ticket_id, TEC, lines=[], note="Không cần thêm")
+    assert eng.repo.stock_of(LAMP2) == 1
+
+
+def test_wp7_r3e_issuing_more_than_approved_is_refused(eng):
+    ticket_id = approved_ticket(eng, 1, stock=4)
+    with pytest.raises(GuardError):
+        eng.record_material(ticket_id, TEC, LAMP2, issued_qty=4, used_qty=4, variance_reason="x")
+    assert eng.repo.stock_of(LAMP2) == 3
+
+
+def test_wp7_r3f_wrong_department_then_rerouted_gives_the_stock_back(eng):
+    ticket_id = approved_ticket(eng, 2, stock=2)
+    assert eng.repo.stock_of(LAMP2) == 0
+    eng.report_wrong_department(ticket_id, TEC, note="Việc của vệ sinh")
+    eng.bql_wrong_department(ticket_id, BQL, decision="TO_BPTN", note="Chuyển lại")
+    eng.bptn_resolve(ticket_id, BPTN, category="VE_SINH", note="Vệ sinh")
+    assert eng.repo.stock_of(LAMP2) == 2
+    assert all(m.item_code != LAMP2 for m in eng.get(ticket_id).material_lines)

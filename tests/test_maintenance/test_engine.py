@@ -729,10 +729,12 @@ def test_unknown_stock_is_not_counted_and_a_dropped_line_returns_its_stock(engin
     """Unknown stock (null, D-05) stays unknown; dropping a line in confirm_materials gives back what it issued."""
     tid = _onsite_in_progress(engine)
     lamp = engine.repo.stock_of("SIM-MAT-LAMP-01")
-    engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=1, used_qty=1)
+    # plan 11 WP7 R3-D: a dropped line gives back what it took and did NOT use (issued 1, used 0 ⇒ 1 back)
+    engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=1, used_qty=0, variance_reason="Chưa lắp")
     starter = PlannedMaterial(item_code="SIM-MAT-STARTER-01", planned_qty=1)
     engine.confirm_materials(tid, TEC, lines=[starter], note="Chỉ thay tắc te")
     engine.approve_materials(tid, WAREHOUSE)  # plan 11 Q15; the starter's stock is unknown, which does not block
     assert engine.repo.stock_of("SIM-MAT-LAMP-01") == lamp
-    engine.record_material(tid, TEC, "SIM-MAT-STARTER-01", issued_qty=3, used_qty=3, variance_reason="Hỏng thêm")
+    # plan 11 WP7 R3-E: issuing more than approved (1) needs a new request; the approved 1 records fine
+    engine.record_material(tid, TEC, "SIM-MAT-STARTER-01", issued_qty=1, used_qty=1)
     assert engine.repo.stock_of("SIM-MAT-STARTER-01") is None

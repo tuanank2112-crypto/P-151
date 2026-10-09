@@ -1643,6 +1643,11 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                     "Số đã dùng không được lớn hơn số đã xuất kho",
                     {"item_code": item_code, "issued_qty": issued_qty, "used_qty": used_qty},
                 )
+            if line.issued_qty is not None and issued_qty > line.issued_qty and _material_approval_required():
+                raise GuardError(  # WP7 review R3-E: more than handed out needs a request + approval (Q15)
+                    "Xuất thêm vượt số đã cấp: gửi yêu cầu vật tư để kho duyệt",
+                    {"item_code": item_code, "issued_qty": line.issued_qty, "asked": issued_qty},
+                )
             old = {"issued_qty": line.issued_qty, "used_qty": line.used_qty, "variance_reason": line.variance_reason}
             stock_qty = self._issue_stock(item_code, issued_qty - (line.issued_qty or 0))
             line.issued_qty = issued_qty
@@ -1695,9 +1700,9 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             draft = work.draft
             suffix = _suffix(ticket_id)
             entered = {line.item_code: line for line in work.material_lines}
-            for code, dropped in entered.items():  # a dropped line gives what it issued back to the warehouse
-                if code not in codes and dropped.issued_qty:
-                    self._issue_stock(code, -dropped.issued_qty)
+            for code, dropped in entered.items():  # a dropped line gives back what it took and did not use
+                if code not in codes:
+                    self._give_back_unused(dropped)  # WP7 review R3-D: issued − used, not the whole issued
             old = [{"item_code": m.item_code, "planned_qty": m.planned_qty} for m in work.material_lines]
             new_lines = []
             for index, planned in enumerate(lines, start=1):
@@ -2259,6 +2264,13 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             yield
         finally:
             self._local.tx_depth, self._local.tx = depth, previous
+
+    def _give_back_unused(self, line: MaterialLine) -> None:
+        """Put back what a line took from the warehouse and did not use (issued − used); the line keeps `used`."""
+        unused = (line.issued_qty or 0) - (line.used_qty or 0)
+        if unused > 0:
+            self._issue_stock(line.item_code, -unused)
+            line.issued_qty = line.used_qty or 0
 
     def _issue_stock(self, item_code: str, qty: float) -> float | None:
         """Take `qty` out of the warehouse (negative: put it back) in the running `_mutate` transaction, so the
@@ -3031,10 +3043,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         self._release_duplicate_count(work, previous_blocker, now)
         self._unmerge_children_of(work, now)
         for line in work.material_lines:  # handed out but not used goes back to the warehouse (WP7 review NEW-3)
-            unused = (line.issued_qty or 0) - (line.used_qty or 0)
-            if unused > 0:
-                self._issue_stock(line.item_code, -unused)
-                line.issued_qty = line.used_qty or 0
+            self._give_back_unused(line)
         if previous_blocker is not None and previous_blocker.code == R.EMERGENCY_PENDING_BQL:
             self._release_waiting_for(work, now)
 
@@ -4220,6 +4229,10 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             for index, planned in enumerate(work.planned_materials, start=1)
         ]
         self._carry_over_material_qty(old_lines, work.material_lines)  # P06 (WP9): keep issued/used of the same item
+        kept = {line.item_code for line in work.material_lines}
+        for old in old_lines:  # a plan replaced (other department/playbook) gives its unused stock back (WP7 R3-F)
+            if old.item_code not in kept:
+                self._give_back_unused(old)
         return _aggregate_stock(work.material_lines)
 
     def _step_8_route_to_department(self, work: Case, now: datetime) -> bool:
