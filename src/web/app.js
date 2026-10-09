@@ -1362,7 +1362,7 @@ function bptnForm(c) {
     ], 'Xác nhận', (data) => send({ category: data.get('category'), location: data.get('location'), note: data.get('note') }, 'Đã xác nhận'));
   }
   if (code === 'ASSET_UNCLEAR') {
-    const assets = state.catalog.assets.map((a) => [a.asset_id, `${a.asset_id} — ${a.location}`]);
+    const assets = state.catalog.assets.map((a) => [a.asset_id, a.name]); // one asset per area (plan 14)
     const onsite = el('input', { id: 'asset-onsite', name: 'onsite', type: 'checkbox', class: 'mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 dark:border-slate-700 dark:bg-slate-800' });
     return actionForm([
       field('Chọn tài sản', dropdown('asset_id', assets, { placeholder: 'Chưa chọn' })),

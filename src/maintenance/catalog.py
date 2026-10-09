@@ -417,6 +417,19 @@ class Catalog(Frozen):
     agent_policy: AgentPolicy
 
     @model_validator(mode="after")
+    def _assets_one_per_area(self):
+        from src.maintenance.rules import AREA_LABELS
+
+        unknown = sorted({a.area for a in self.assets} - AREA_LABELS)
+        if unknown:
+            raise ValueError(f"assets: khu vực không có trong rules.AREA_PATTERNS: {unknown}")
+        active = [a.area for a in self.assets if a.active]
+        twice = sorted({area for area in active if active.count(area) > 1})
+        if twice:
+            raise ValueError(f"assets: mỗi khu vực tối đa một tài sản ACTIVE, trùng: {twice}")
+        return self
+
+    @model_validator(mode="after")
     def _materials_consistent(self):
         codes = {m.item_code for m in self.materials}
         for playbook, allowed in self.playbook_materials.items():

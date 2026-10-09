@@ -103,7 +103,7 @@ from src.maintenance.models import (
 )
 from src.maintenance.priority import propose_priority
 from src.maintenance.proposer import LLMClient, ProposalResult, propose
-from src.maintenance.rules import extract_location, mentions_playbook_subject, missing_location_parts
+from src.maintenance.rules import extract_location, location_area, mentions_playbook_subject, missing_location_parts
 from src.maintenance.safety import SafetyLLMClient, assess, assess_with_llm
 from src.maintenance.store.base import (  # the error hierarchy lives with the store
     CaseRepository,
@@ -979,8 +979,8 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 raise GuardError("Category không thuộc playbook v1.1", {"category": category})
             if location is not None and _blank(location):
                 raise GuardError("location không được rỗng")
-            if asset_id is not None and not any(a.asset_id == asset_id for a in self.catalog.assets):
-                raise GuardError(f"Không có asset {asset_id} trong catalog")
+            if asset_id is not None and not any(a.asset_id == asset_id and a.active for a in self.catalog.assets):
+                raise GuardError(f"Không có asset {asset_id} đang dùng trong catalog")
             locks, category_changed = self._bptn_locks(work, category, department, location, asset_id)
             if (locks or asset_onsite or info is not None) and _blank(note):
                 raise GuardError("BPTN thay đổi giá trị hoặc chọn xác định tại hiện trường thì bắt buộc ghi lý do")
@@ -2857,9 +2857,9 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             for other, category, other_location, _ in found[: policy.max_duplicate_candidates]
         ]
         assets = [
-            AssetCandidate(asset_id=a.asset_id, location=a.location_normalized)
+            AssetCandidate(asset_id=a.asset_id, area=a.area)
             for a in self.catalog.assets
-            if a.asset_type == "LIGHTING"
+            if a.asset_type == "LIGHTING" and a.active
         ]
         return DecisionInput(
             ticket_id=ticket.ticket_id,
@@ -3715,13 +3715,12 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             status, asset_id, reason = AssetLookupStatus.LOCKED_BY_BPTN, ticket.locked_fields.asset_id, "BPTN chọn"
         elif TicketFlag.ASSET_CHECK_ONSITE in ticket.flags:
             status, asset_id, reason = AssetLookupStatus.CHECK_ONSITE, None, "BPTN: không xác định được, kiểm tại chỗ"
-        else:
-            matches = [
-                a for a in self.catalog.assets if a.asset_type == "LIGHTING" and a.location_normalized == location
-            ]
+        else:  # one asset per area (plan 14): only the area part of the location counts
+            area = location_area(location)
+            matches = [a for a in self.catalog.assets if a.asset_type == "LIGHTING" and a.active and a.area == area]
             if len(matches) == 1:
                 status, asset_id = AssetLookupStatus.MATCHED, matches[0].asset_id
-                reason = f"Một asset LIGHTING khớp vị trí ({matches[0].source_ref})"
+                reason = f"Một asset LIGHTING khớp khu vực {area} ({matches[0].source_ref})"
                 view = self._job_view(work)
                 job = view.job(ServiceCategory.KY_THUAT) if view is not None else None
                 if (  # the Agent's choice counts only while it is still THE one asset at the final location
@@ -3731,9 +3730,9 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 ):
                     reason = f"Agent: {job.asset_reason} ({matches[0].source_ref})"
             elif matches:
-                status, asset_id, reason = AssetLookupStatus.AMBIGUOUS, None, f"{len(matches)} asset cùng vị trí"
+                status, asset_id, reason = AssetLookupStatus.AMBIGUOUS, None, f"{len(matches)} asset cùng khu vực"
             else:
-                status, asset_id, reason = AssetLookupStatus.NOT_FOUND, None, "Không có asset LIGHTING tại vị trí"
+                status, asset_id, reason = AssetLookupStatus.NOT_FOUND, None, "Không có asset LIGHTING cho khu vực này"
         proposal.asset_lookup_status, proposal.asset_id, proposal.asset_match_reason = status, asset_id, reason
         ticket.asset_resolution = {
             AssetLookupStatus.NOT_APPLICABLE: AssetResolution.NOT_APPLICABLE,

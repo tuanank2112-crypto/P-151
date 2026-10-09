@@ -25,7 +25,7 @@ class AssetCandidate(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     asset_id: str
-    location: str
+    area: str  # one asset per area (plan 14), compared with rules.location_area(location)
 
 
 class DecisionInput(BaseModel):

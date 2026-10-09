@@ -236,13 +236,14 @@ def test_plain_close_rejects_emergency(engine):
 
 
 def test_bql_downgrade_routes_normally(engine):
-    """E-12, AC-09: a false alarm goes back to the normal flow (two assets at that spot: ASSET_UNCLEAR)."""
+    """E-12, AC-09: a false alarm goes back to the normal flow (the lift-lobby asset matches: ROUTED)."""
     related = engine.get(TEC005).ticket.related_ticket_ids
     with pytest.raises(GuardError):
         engine.emergency_downgrade(TEC005, BQL, note=" ")
     case = engine.emergency_downgrade(TEC005, BQL, note="Báo nhầm: khét từ bếp căn hộ")
     ticket = case.ticket
-    assert (ticket.status, ticket.blocker.code, ticket.risk_level) == ("VERIFYING", "ASSET_UNCLEAR", RiskLevel.NONE)
+    assert (ticket.status, ticket.risk_level) == ("ROUTED", RiskLevel.NONE)
+    assert case.proposal.asset_id == "SIM-ASSET-LIGHT-LIFT-LOBBY"
     assert ticket.safety_cleared_by == BQL and ticket.related_ticket_ids == related
     assert count(case, Action.EMERGENCY_DOWNGRADE) == 1 and count(case, Action.ASSESS_SAFETY) == 1
 

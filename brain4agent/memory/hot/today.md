@@ -219,3 +219,5 @@ Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lậ
 ## 📱 Phiên 2026-10-10 — chạy app không Docker, đổi thứ tự form cư dân (feature/chamanh)
 - Hỏi đáp: backend chạy bằng `.venv` + uvicorn (không cần Docker); Docker chỉ cho Postgres local/portal. App Android = PWA `/app/`, điện thoại vào `http://<LAN-IP>:8001/app/` (cài được chỉ khi HTTPS hoặc USB forward).
 - v1.8.3 (Q33): `#/r/new` Vị trí trước Mô tả; `?v=5`, `SHELL_CACHE` v5. node --check 0, mobile static 5 passed, Playwright xác nhận thứ tự. CHƯA commit.
+- v1.8.4 (Q34): app BPTN `#/p` ô số liệu "An toàn B2" ⇒ "Hoàn thành" (`CLOSED`), theo ảnh người dùng; tile An toàn B2 giữ. `?v=6`, `SHELL_CACHE` v6. Playwright: đóng 1/3 ticket ⇒ thẻ hiện 1, khớp API. v1.8.3 đã commit+push `bf5196a`.
+- Plan 14 / v1.9.0: người dùng (ảnh form "Xác định tài sản"): tài sản theo khu vực, không tòa-tầng; chốt 4 khu vực (thêm Cầu thang bộ). 4 tài sản active + 6 mã cũ RETIRED; engine/Agent/API/dropdown app+web. TEC-002 → hầm, TEC-006 → cầu thang bộ (giữ mục đích kịch bản). pytest 3382 / ruff 0 / mutants 4/4 / picker ALL PASS. Chưa: `--pg`, LLM thật, server. v1.8.4 + v1.9.0 CHƯA commit.

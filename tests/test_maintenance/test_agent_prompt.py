@@ -151,14 +151,14 @@ def test_p_07_no_locks_means_khong_and_locks_are_listed_when_present():
     )
 
 
-def test_p_08_prompt_version_is_the_first_one():
-    assert prompt.PROMPT_VERSION == "agent-prompt/1"
+def test_p_08_prompt_version_is_two_since_assets_are_per_area():
+    assert prompt.PROMPT_VERSION == "agent-prompt/2"
 
 
 def test_p_09_assets_materials_and_empty_safety_text_render():
-    assets = [AssetCandidate(asset_id="SIM-ASSET-LIGHT-001", location="Tòa S1 / Tầng 3 / Hành lang")]
+    assets = [AssetCandidate(asset_id="SIM-ASSET-LIGHT-HALLWAY", area="Hành lang")]
     message = prompt.render_user_message(make_input(asset_candidates=assets, safety_text=""), CATALOG)
-    assert "- SIM-ASSET-LIGHT-001: Tòa S1 / Tầng 3 / Hành lang" in message
+    assert "- SIM-ASSET-LIGHT-HALLWAY: khu vực Hành lang" in message
     assert "(trống: đã được người xác nhận an toàn)" in message
     assert "(không có)" in message  # no duplicate candidates
     clean = next(ln for ln in message.splitlines() if ln.startswith("VE_SINH: "))

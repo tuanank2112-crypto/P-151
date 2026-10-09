@@ -37,6 +37,8 @@ Hồ sơ: [`planning/10_2026-10-08_list-paging/`](../planning/10_2026-10-08_list
 Hồ sơ: [`planning/13_2026-10-09_bptn-reason-web/`](../planning/13_2026-10-09_bptn-reason-web/plan.md).
 - `bptnForm` → `send(body)`: trim chuỗi, `compact`, rồi nếu có một trong `VALUE_KEYS` (`location`, `info`, `category`, `department`, `asset_id`,
   `asset_onsite`) mà `note` rỗng ⇒ toast "Nhập lý do…", KHÔNG gọi API. Cùng luật với `src/mobile/js/bptn.js` và engine `bptn_resolve` (409 GUARD_FAILED).
+- Form "Xác định tài sản" (ASSET_UNCLEAR): dropdown `asset_id` hiện `name` của 4 tài sản khu vực từ `/mo/catalog` (plan 14, `app.js?v=4.2`):
+  Đèn hành lang · Đèn sảnh thang máy · Đèn cầu thang bộ · Đèn phòng rác. Mã cũ `SIM-ASSET-LIGHT-00x` bị engine từ chối (409).
 - An toàn Bậc 2 → `safety(decision, data, message, required)`: CONFIRM_SAFE và REQUEST_INFO bắt buộc lý do (`required` + chặn chỉ khoảng trắng);
   ESCALATE không bắt buộc (engine `note_required=False`).
 - Đổi luật lý do ở engine ⇒ sửa CẢ `VALUE_KEYS` ở web và app. Kiểm: `bash planning/13_2026-10-09_bptn-reason-web/evidence/harness/run_all.sh <python> <scratch>`

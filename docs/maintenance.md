@@ -22,6 +22,7 @@ Không làm ở P0: persistence, router/UI mới, LLM an toàn, gộp ticket (P1
 ## 2. Pipeline (CR-03 §5.1, D-09)
 `2` dữ liệu tối thiểu → **`2b` an toàn** → `3` phân loại + phòng ban + priority → `4` trùng → `5` review → `6` asset → `7` vật tư/kho → `8` `can_route` rồi `ROUTED` → `10` `report_complete`.
 - Thứ tự `_run_pipeline`: `2b` đứng TRƯỚC `2` (Bậc 1 > Bậc 2 > `MISSING_INFO`, Q08), cả hai mang số 2 nên `resume_step=2` chạy lại cả hai.
+- Bước `6` asset (plan 14): mỗi khu vực MỘT tài sản đèn active (Hành lang, Sảnh thang máy, Cầu thang bộ, Phòng rác); so `rules.location_area(location)` với `Asset.area`, bỏ qua tòa/tầng. Khu vực khác ⇒ `NOT_FOUND` ⇒ `ASSET_UNCLEAR`. Mã `SIM-ASSET-LIGHT-001…006` là `RETIRED_SIMULATED`: không lookup, BPTN chọn ⇒ `GuardError`. Contract: `planning/14_2026-10-10_area-assets/specs/01-CONTRACTS.md`.
 - Hàm bước tên `_step_<số>_<việc>` (`_step_2b_assess_safety`, `_step_2_check_required_data`, …).
 - Chạy lại sau khi gỡ blocker: `MISSING_INFO`/`SAFETY_REVIEW_REQUIRED`/`EMERGENCY_PENDING_BQL` → 2 (2b tự bỏ qua khi đã `safety_cleared_*` và chưa có bổ sung từ mốc đó); `CATEGORY_UNCLEAR`/`OUT_OF_SCOPE` → 4; `DUPLICATE` bác → 5; `PENDING_REVIEW`/`ASSET_UNCLEAR` → 6; `WRONG_DEPT` → 6 hoặc 7; `WAITING_MATERIAL` → 6.
 

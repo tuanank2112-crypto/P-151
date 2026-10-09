@@ -173,13 +173,14 @@ def validate(
                 rejected.append(f"{prefix}.duplicate_of")
 
         if job.asset_id is not None:
-            here = [a for a in data.asset_candidates if a.location == final_location]
+            area = rules.location_area(final_location)
+            here = [a for a in data.asset_candidates if a.area == area]
             named = next((a for a in data.asset_candidates if a.asset_id == job.asset_id), None)
             if (
                 category != ServiceCategory.KY_THUAT
                 or named is None
-                or final_location is None
-                or named.location != final_location
+                or area is None
+                or named.area != area
                 or len(here) != 1
             ):
                 rejected.append(f"{prefix}.asset_id")

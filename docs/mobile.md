@@ -35,7 +35,7 @@ Backend vẫn là FastAPI gốc (Docker `:8000`); app KHÔNG gọi API/DB của 
 | `js/bql.js` | `#/b` ô số liệu + 3 tile lọc Cần tôi / Khẩn cấp / Tất cả · `#/b/<id>` nghiệm thu, trả làm lại, hủy, đóng/hạ mức khẩn cấp |
 | `js/staff.js` | Dùng chung cho vai nội bộ: nhãn (lý do, ưu tiên, loại việc, checklist, vật tư — chép từ `src/web/app.js`), pill, ảnh nội bộ, `queueScreen` (danh sách + tile `#staff-tabs`), `caseScreen` (khung chi tiết), `writer` (ghi → toast → tải lại) |
 | `js/dept.js` | Phòng ban `#/d`: 4 tile Chờ nhận / Đang làm / Chờ nghiệm thu / Tất cả, không ô số liệu (Q32) · `#/d/<id>`: nhận việc, **ảnh sau xử lý (đầu tiên)**, checklist, vật tư (+ xác nhận vật tư thực tế), ghi chú, tự kiểm, báo hoàn thành, vướng / sai phòng ban |
-| `js/bptn.js` | BPTN `#/p`: Cần xử lý / An toàn B2 / Tất cả · `#/p/<id>`: form theo mã vướng (an toàn Bậc 2, thiếu thông tin, trùng, loại việc, tài sản, sai phòng ban) |
+| `js/bptn.js` | BPTN `#/p`: tile Cần xử lý / An toàn B2 / Tất cả; ô số liệu Hàng chờ / Hoàn thành (`CLOSED`) / Nghi trùng / Tổng (Q34); form tài sản chọn 1 trong 4 tài sản khu vực theo `name` (plan 14) · `#/p/<id>`: form theo mã vướng (an toàn Bậc 2, thiếu thông tin, trùng, loại việc, tài sản, sai phòng ban) |
 | `js/kho.js` | Kho `#/k`: Chờ vật tư / Tồn kho (nhập kho) · `#/k/<id>`: vật tư thiếu + nhập kho điền sẵn |
 
 Chỉ `qa01` (QA_INTERNAL) đăng nhập ⇒ `#/web` (nút sang `/ui/`), không gọi API dữ liệu.

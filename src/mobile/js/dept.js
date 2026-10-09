@@ -1,12 +1,12 @@
 // Department screens (Phòng ban Vệ sinh / Kỹ thuật) — plan 11 SPEC-P05 §2. Same endpoints and rules as
 // renderDepartment / workSections in src/web/app.js; photos first because the field team works from the phone (Q28).
-import { api, apiForm } from './api.js?v=5';
-import { MAX_PHOTOS, photoFormData, photoPicker } from './photo.js?v=5';
-import { confirmSheet, el, field, fill, icon, notice, pill, writeButton } from './ui.js?v=5';
+import { api, apiForm } from './api.js?v=7';
+import { MAX_PHOTOS, photoFormData, photoPicker } from './photo.js?v=7';
+import { confirmSheet, el, field, fill, icon, notice, pill, writeButton } from './ui.js?v=7';
 import {
   REASON_LABEL, caseHead, caseScreen, checklistLabel, codeOf, eventsHistory, executionPhotoIds, imagesOf, materialName,
   materialUnit, photoBox, photoStrip, queueScreen, reportBox, select, webButton, writer,
-} from './staff.js?v=5';
+} from './staff.js?v=7';
 
 const MAX_EXECUTION_PHOTOS = 10; // src/maintenance/engine.py
 const TILES = [

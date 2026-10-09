@@ -2,6 +2,23 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.9.0] - 2026-10-10: Tài sản đèn theo khu vực (plan 14, MINOR)
+### Changed
+- Catalog: 4 tài sản active `SIM-ASSET-LIGHT-{HALLWAY,LIFT-LOBBY,STAIRS,WASTE-ROOM}` (mỗi khu vực một cái); 6 mã cũ `…-001…006` thành `RETIRED_SIMULATED` (ticket cũ vẫn giữ mã). `Asset` thêm `name`, `area`; validator ≤1 active mỗi khu vực.
+- Engine bước 6 so `rules.location_area(location)` với `asset.area` (trước: trọn chuỗi vị trí); `bptn_resolve` từ chối mã không active. Agent: `AssetCandidate{asset_id, area}`, prompt `agent-prompt/2` (REF plan 06 cùng chữ).
+- `/mo/catalog` `assets` = `[{asset_id, name, area}]` chỉ active; dropdown BPTN app (`?v=7`, `SHELL_CACHE` v7) và web (`app.js?v=4.2`) hiện tên.
+- Ticket mẫu: TEC-002 → hầm B1 (giữ kịch bản ASSET_UNCLEAR), TEC-006 → cầu thang bộ (giữ kịch bản tồn kho không rõ).
+### Measured
+- pytest 3382 passed (trước 3365; +17 `test_area_assets.py`) exit 0; ruff check/format 0; 12/12 ticket mẫu, 4/4 demo; phép phá m1–m4 4/4 RED; REF `--selftest` 0 lỗi; Playwright `:8001` dropdown app + web = 4 tên, ALL PASS.
+### Not measured
+- `pytest --pg`, eval Agent LLM thật (`REF --live`), server `:8000`.
+
+## [v1.8.4] - 2026-10-10: App điện thoại — BPTN thấy số phản ánh hoàn thành
+### Changed
+- `src/mobile/js/bptn.js` `#/p`: ô số liệu thứ 2 "An toàn B2" ⇒ "Hoàn thành" = số ticket `CLOSED` (trừ ticket mẫu), theo ảnh người dùng (plan 11 Q34). Tile "An toàn B2" giữ nguyên. `?v=6` mọi import + `SHELL_CACHE` `mo-app-shell-v6`. API không đổi.
+### Measured
+- `node --check` 11 file 0 lỗi; `test_mobile_static.py` 5 passed; Playwright `:8001` (memory), 3 ticket, BQL đóng 1 ⇒ bptn01 thấy `Hàng chờ 1 · Hoàn thành 1 · Nghi trùng 0 · Tổng 3`, khớp API (`CLOSED` = 1).
+
 ## [v1.8.3] - 2026-10-10: App điện thoại — chọn vị trí trước khi mô tả
 ### Changed
 - `src/mobile/js/resident.js` `#/r/new`: thẻ 1 = Vị trí sự cố, 2 = Mô tả vấn đề, 3 = Ảnh (trước: Mô tả trước). Placeholder/gợi ý đổi số bước. `?v=5` mọi import + `SHELL_CACHE` `mo-app-shell-v5`. API/chuỗi gửi không đổi (plan 11 Q33).

@@ -1,12 +1,12 @@
 // Phone app boot: hash router, sign-in, periodic refresh, offline banner, service worker (plan 11, SPEC-P01).
 // Chrome = portal Header + NavTiles (portal/src/components/shell.tsx, SPEC-P04 §3).
-import { api, clearToken, getToken, onUnauthorized, setToken } from './api.js?v=5';
-import { clock, el, fill, icon, person, toast } from './ui.js?v=5';
-import * as resident from './resident.js?v=5';
-import * as bql from './bql.js?v=5';
-import * as dept from './dept.js?v=5';
-import * as bptn from './bptn.js?v=5';
-import * as kho from './kho.js?v=5';
+import { api, clearToken, getToken, onUnauthorized, setToken } from './api.js?v=7';
+import { clock, el, fill, icon, person, toast } from './ui.js?v=7';
+import * as resident from './resident.js?v=7';
+import * as bql from './bql.js?v=7';
+import * as dept from './dept.js?v=7';
+import * as bptn from './bptn.js?v=7';
+import * as kho from './kho.js?v=7';
 
 export const REFRESH_MS = 30000;
 const ME_KEY = 'mo-app-me';

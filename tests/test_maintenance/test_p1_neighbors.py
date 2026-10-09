@@ -177,6 +177,7 @@ def test_e08_the_fixtures_with_the_switch_off_still_pass_12_of_12(engine):
     report_ = evaluate(engine)
     failed = {r.ticket_id: r.mismatches for r in report_.results if not r.passed}
     assert (report_.total, report_.passed, failed) == (12, 12, {})
-    tec6 = engine.get("SIM-TKT-TEC-006")
-    assert tec6.ticket.status == TicketStatus.ROUTED  # still ROUTED next to SIM-TKT-CLN-004's open emergency
-    assert linked(engine, "SIM-TKT-TEC-006", "SIM-TKT-CLN-004")  # but linked both ways
+    # SIM-TKT-TEC-006 left the car park (plan 14: it needs an asset); a new report there stands next to CLN-004
+    rubbish = report(engine, "Tầng hầm B1 tòa S1 nhiều rác, cần dọn.")
+    assert engine.get(rubbish).ticket.status == TicketStatus.ROUTED  # still ROUTED next to the open emergency
+    assert linked(engine, rubbish, "SIM-TKT-CLN-004")  # but linked both ways

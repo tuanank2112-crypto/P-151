@@ -96,12 +96,12 @@ def test_invariant_2_nobody_writes_assignee(fresh):
 
 
 def test_invariant_3_locked_fields_survive_a_rerun(fresh):
-    tid = report(fresh, "Đèn cầu thang bộ tầng 9 tòa S1 không sáng")  # no asset at that location
+    tid = report(fresh, "Đèn sảnh chính tòa S1 không sáng")  # no asset for that area
     assert fresh.get(tid).ticket.blocker.code == "ASSET_UNCLEAR"
     fresh.bptn_resolve(
         tid,
         BPTN,
-        asset_id="SIM-ASSET-LIGHT-001",
+        asset_id="SIM-ASSET-LIGHT-HALLWAY",
         location="Tòa S1 / Tầng 3 / Hành lang",
         note="Kiểm tra lại: cư dân nhầm tầng",
     )
@@ -111,9 +111,9 @@ def test_invariant_3_locked_fields_survive_a_rerun(fresh):
     assert (locked.category, locked.location, locked.asset_id) == (
         "KY_THUAT",
         "Tòa S1 / Tầng 3 / Hành lang",
-        "SIM-ASSET-LIGHT-001",
+        "SIM-ASSET-LIGHT-HALLWAY",
     )
-    assert case.proposal.asset_id == "SIM-ASSET-LIGHT-001" and case.proposal.asset_lookup_status == "LOCKED_BY_BPTN"
+    assert case.proposal.asset_id == "SIM-ASSET-LIGHT-HALLWAY" and case.proposal.asset_lookup_status == "LOCKED_BY_BPTN"
     assert case.draft.location == "Tòa S1 / Tầng 3 / Hành lang"
 
 

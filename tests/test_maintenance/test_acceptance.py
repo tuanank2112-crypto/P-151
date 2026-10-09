@@ -173,7 +173,7 @@ def test_06_wrong_department_goes_back_to_bptn_and_reroutes(fresh):
     case = fresh.bptn_resolve(tid, BPTN, category="KY_THUAT", note="Gọi lại cư dân: đèn hỏng")
     assert case.ticket.status == "ROUTED" and case.ticket.department_id == "DEPT_TECHNICAL"
     assert case.draft.playbook_id == "PB-TEC-01" and case.draft.department_id == "DEPT_TECHNICAL"
-    assert case.ticket.asset_resolution == "FOUND" and case.proposal.asset_id == "SIM-ASSET-LIGHT-001"
+    assert case.ticket.asset_resolution == "FOUND" and case.proposal.asset_id == "SIM-ASSET-LIGHT-HALLWAY"
     assert [m.item_code for m in case.material_lines] == ["SIM-MAT-LAMP-01"]
     assert fresh.accept(tid, TEC).ticket.status == "IN_PROGRESS"
 
@@ -355,7 +355,7 @@ def test_13b_the_guard_itself_refuses_routing_without_review(clock):
 
 
 def test_14_asset_unclear_waits_for_bptn(fresh, clock):
-    tid = report(fresh, "Đèn cầu thang bộ tầng 9 tòa S1 không sáng")  # no asset registered there
+    tid = report(fresh, "Đèn hầm B1 tòa S1 không sáng")  # no asset for the car park (plan 14: one per area)
     for days in (1, 2, 3):
         fresh.run_jobs(clock.now + timedelta(days=days))
         fresh.resume(tid)
@@ -364,19 +364,21 @@ def test_14_asset_unclear_waits_for_bptn(fresh, clock):
     assert case.ticket.asset_resolution is None and case.ticket.department_id is None
     assert case.ticket.blocker.escalated  # it escalates, it never routes itself
 
-    case = fresh.bptn_resolve(tid, BPTN, asset_id="SIM-ASSET-LIGHT-001", note="Cư dân nhầm, là đèn tầng 3")
+    with pytest.raises(GuardError):  # a retired per-location asset can no longer be chosen
+        fresh.bptn_resolve(tid, BPTN, asset_id="SIM-ASSET-LIGHT-001", note="Cư dân nhầm, là đèn cầu thang bộ")
+    case = fresh.bptn_resolve(tid, BPTN, asset_id="SIM-ASSET-LIGHT-STAIRS", note="Cư dân nhầm, là đèn cầu thang bộ")
     assert case.ticket.status == "ROUTED" and case.ticket.asset_resolution == "FOUND"
     assert case.ticket.department_id == "DEPT_TECHNICAL"
 
 
 def test_15_wrong_department_to_lighting_goes_through_asset_lookup(fresh):
-    tid = report(fresh, "Cầu thang bộ tầng 9 tòa S1 nhiều rác")
-    fresh.return_wrong_department(tid, CLN, note="Không có rác, đèn cầu thang hỏng")
+    tid = report(fresh, "Sảnh chính tòa S1 nhiều rác")
+    fresh.return_wrong_department(tid, CLN, note="Không có rác, đèn sảnh chính hỏng")
     assert fresh.get(tid).ticket.department_id is None
 
     case = fresh.bptn_resolve(tid, BPTN, category="KY_THUAT", note="Cư dân xác nhận đèn hỏng")
     assert "LOOKUP_ASSET" in actions_after(case, "BPTN_RESOLVE")
-    # No lighting asset at that spot: the ticket stops at step 6 instead of reaching DEPT_TECHNICAL
+    # No lighting asset for that area: the ticket stops at step 6 instead of reaching DEPT_TECHNICAL
     assert case.ticket.status == "VERIFYING" and case.ticket.blocker.code == "ASSET_UNCLEAR"
     assert case.ticket.department_id is None and case.ticket.proposed_department_id == "DEPT_TECHNICAL"
 

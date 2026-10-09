@@ -373,7 +373,7 @@ def read_catalog(actor: ActorDep, engine: EngineDep) -> CatalogView:
     catalog = engine.catalog
     return CatalogView(
         departments={d.department_id.value: d.name for d in catalog.departments},
-        assets=[{"asset_id": a.asset_id, "location": a.location_normalized} for a in catalog.assets],
+        assets=[{"asset_id": a.asset_id, "name": a.name, "area": a.area} for a in catalog.assets if a.active],
         status_labels={s.value: status_label(s) for s in TicketStatus},
         materials=[{"item_code": m.item_code, "item_name": m.item_name} for m in catalog.materials],
     )

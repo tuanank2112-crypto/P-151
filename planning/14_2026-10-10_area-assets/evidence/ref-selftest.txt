@@ -1,0 +1,8 @@
+example_valid=OK ungrounded=[]
+  OK  want=INVALID_JSON got=INVALID_JSON
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+ungrounded_detected=['jobs[1].quote']
+SELFTEST_FAILURES=0

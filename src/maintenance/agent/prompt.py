@@ -17,7 +17,7 @@ from src.maintenance.rules import AREA_PATTERNS
 
 from .inputs import DecisionInput
 
-PROMPT_VERSION = "agent-prompt/1"
+PROMPT_VERSION = "agent-prompt/2"  # 2: one asset per area (plan 14)
 
 # CR-BPTN-03 §6.2 in plain Vietnamese, keyed by signal_id; S-00 is the agent-only catch-all (SPEC-P01 §3.3)
 SIGNAL_TEXT = {
@@ -63,7 +63,7 @@ CÁC BƯỚC SUY LUẬN (ghi vào "reasoning" theo thứ tự; facts = dữ ki�
 5. THIEU_THONG_TIN: thiếu tòa/tầng/khu vực ⇒ next_step ASK_RESIDENT với đúng các trường thiếu (location, location_building, location_floor, location_area). Phản ánh rõ ràng ngoài phạm vi và không nhắc khu vực chung nào ⇒ TO_BPTN với OUT_OF_SCOPE (không hỏi vị trí). Đủ thông tin và thuộc phạm vi ⇒ PROCEED.
 6. TRUNG: chỉ chọn trong <ung_vien_trung>; trùng khi cùng loại việc, cùng tòa/tầng/khu vực VÀ cùng một sự việc. Không chắc ⇒ duplicate_of null.
 7. UU_TIEN: PRI-H1 đèn ở lối đi chung ({high_areas}) = HIGH; PRI-M1 đèn ở chỗ khác = MEDIUM; PRI-H2 vệ sinh cản trở lối đi (chắn lối, trơn trượt, tràn ra lối đi) = HIGH; PRI-M2 vệ sinh ảnh hưởng sử dụng (nhiều rác, ẩm ướt, mùi) = MEDIUM; PRI-L1 vệ sinh chưa ảnh hưởng = LOW; PRI-D0 chưa rõ vị trí hoặc loại = MEDIUM.
-8. TAI_SAN: chỉ cho KY_THUAT; chọn trong <tai_san> asset có vị trí TRÙNG vị trí sự cố; không có hoặc có từ hai asset trở lên ở vị trí đó ⇒ asset_id null.
+8. TAI_SAN: chỉ cho KY_THUAT; mỗi khu vực một asset, không phân biệt tòa/tầng. Chọn trong <tai_san> asset có khu vực TRÙNG khu vực của vị trí sự cố; không có asset cho khu vực đó ⇒ asset_id null.
 9. VAT_TU: chọn trong <vat_tu> đúng loại việc, số lượng hợp lý (không quá {max_qty}); không cần ⇒ [].
 10. KET_LUAN: tóm tắt quyết định. Đặt needs_review=true (kèm review_reason) khi bạn không chắc về loại việc hoặc vị trí.
 
@@ -141,8 +141,8 @@ EXAMPLE = {
             "priority_reason": "Đèn ở hành lang là lối đi chung",
             "duplicate_of": None,
             "duplicate_reason": "Không có ứng viên cùng sự việc",
-            "asset_id": "SIM-ASSET-LIGHT-001",
-            "asset_reason": "Asset duy nhất tại Tòa S1 / Tầng 3 / Hành lang",
+            "asset_id": "SIM-ASSET-LIGHT-HALLWAY",
+            "asset_reason": "Asset của khu vực Hành lang",
             "materials": [{"item_code": "SIM-MAT-LAMP-01", "planned_qty": 1, "reason": "Thay bóng LED"}],
             "needs_review": False,
             "review_reason": None,
@@ -217,7 +217,7 @@ def _candidates_text(data: DecisionInput) -> str:
 def _assets_text(data: DecisionInput) -> str:
     if not data.asset_candidates:
         return "(không có)"
-    return "\n".join(f"- {a.asset_id}: {_data(a.location)}" for a in data.asset_candidates)
+    return "\n".join(f"- {a.asset_id}: khu vực {_data(a.area)}" for a in data.asset_candidates)
 
 
 def _materials_text(catalog: Catalog) -> str:

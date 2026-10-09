@@ -309,6 +309,20 @@ AREA_PATTERNS: list[tuple[str, str]] = [
 IMPLIED_FLOOR = {"Sảnh chính": "1", "Sảnh cư dân": "1"}
 
 
+def location_area(location: str | None) -> str | None:
+    """Area label (AREA_PATTERNS) of a `Tòa X / Tầng N / Khu vực` location, read from its last part; None if none.
+
+    Asset lookup matches on this alone (plan 14): one lighting asset per area, whatever the building and floor.
+    """
+    if not location:
+        return None
+    text = normalize(location.rsplit("/", 1)[-1])
+    return next((label for pattern, label in AREA_PATTERNS if re.search(pattern, text)), None)
+
+
+AREA_LABELS: frozenset[str] = frozenset(label for _, label in AREA_PATTERNS)
+
+
 def extract_location(description: str, buildings: Sequence[str]) -> str | None:
     """Propose `Tòa X / Tầng N / Khu vực` from the resident text, or None unless all three parts are found.
 

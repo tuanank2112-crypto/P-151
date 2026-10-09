@@ -43,7 +43,7 @@ TZ = timezone(timedelta(hours=7))
 NOW = datetime(2026, 10, 5, 9, tzinfo=TZ)
 REPORT = prompt.EXAMPLE_REPORT  # "Hành lang tầng 3 tòa S1 nhiều rác, đèn cũng không sáng"
 LOC = "Tòa S1 / Tầng 3 / Hành lang"
-ASSET = AssetCandidate(asset_id="SIM-ASSET-LIGHT-001", location=LOC)
+ASSET = AssetCandidate(asset_id="SIM-ASSET-LIGHT-HALLWAY", area="Hành lang")
 JOB_VS = copy.deepcopy(prompt.EXAMPLE["jobs"][0])
 JOB_KT = copy.deepcopy(prompt.EXAMPLE["jobs"][1])
 _ids = itertools.count(9000)
@@ -180,7 +180,7 @@ def test_a_01c_mirror_picks_duplicate_asset_and_materials_like_the_engine():
     )
     (only,) = mirrored.jobs
     assert only.duplicate_of == "SIM-TKT-0003"  # earliest (created_at, ticket_id) of the same category and place
-    assert only.asset_id == "SIM-ASSET-LIGHT-001"
+    assert only.asset_id == "SIM-ASSET-LIGHT-HALLWAY"
     assert [m.item_code for m in only.materials] == ["SIM-MAT-LAMP-01"]
     assert (only.priority, only.priority_rule_id) == ("HIGH", "PRI-H1")
     locked = mirror_decision(
@@ -223,7 +223,7 @@ def test_a_02_a_valid_reply_becomes_an_agent_record_with_one_log_line():
     assert len(logs) == 1
     entry = logs[0]
     assert entry.status.value == "SUCCESS" and entry.model_name == "fake-model" and entry.latency_ms >= 0
-    assert REPORT in entry.prompt_sent["user"] and entry.prompt_sent["system"].startswith("agent-prompt/1 sha256:")
+    assert REPORT in entry.prompt_sent["user"] and entry.prompt_sent["system"].startswith("agent-prompt/2 sha256:")
     assert entry.structured_output["schema_version"] == "agent-decision/1"
     assert record.ai_log_id == entry.log_id
 
@@ -400,13 +400,13 @@ def test_a_09b_location_parts_are_normalised_and_checked():
     assert "location" in ungrounded.rejected
 
 
-def test_a_10_an_asset_at_another_place_or_one_of_several_is_rejected():
-    elsewhere = AssetCandidate(asset_id="SIM-ASSET-LIGHT-009", location="Tòa S1 / Tầng 5 / Sảnh thang máy")
-    record, _ = run(decision(**{"jobs.1.asset_id": "SIM-ASSET-LIGHT-009"}), new_input(assets=(ASSET, elsewhere)))
+def test_a_10_an_asset_of_another_area_or_one_of_several_is_rejected():
+    elsewhere = AssetCandidate(asset_id="SIM-ASSET-LIGHT-LIFT-LOBBY", area="Sảnh thang máy")
+    record, _ = run(decision(**{"jobs.1.asset_id": "SIM-ASSET-LIGHT-LIFT-LOBBY"}), new_input(assets=(ASSET, elsewhere)))
     assert "jobs[1].asset_id" in record.rejected and record.valid_job_indexes == [0, 1]
     assert "asset" in minor(record)
-    twin_a = AssetCandidate(asset_id="SIM-ASSET-LIGHT-010", location="Tòa S1 / Tầng 5 / Sảnh thang máy")
-    twin_b = AssetCandidate(asset_id="SIM-ASSET-LIGHT-011", location="Tòa S1 / Tầng 5 / Sảnh thang máy")
+    twin_a = AssetCandidate(asset_id="SIM-ASSET-LIGHT-010", area="Sảnh thang máy")
+    twin_b = AssetCandidate(asset_id="SIM-ASSET-LIGHT-011", area="Sảnh thang máy")
     report = "Sảnh thang máy tầng 5 tòa S1 đèn không sáng"
     reply = one_job_decision(
         job(JOB_KT, quote="đèn không sáng", asset_id="SIM-ASSET-LIGHT-010"),
@@ -426,7 +426,9 @@ def test_a_10_an_asset_at_another_place_or_one_of_several_is_rejected():
 
 
 def test_a_10b_an_asset_for_a_cleaning_job_or_not_in_the_candidates_is_rejected():
-    record, _ = run(decision(**{"jobs.0.asset_id": "SIM-ASSET-LIGHT-001", "jobs.1.asset_id": "SIM-ASSET-LIGHT-999"}))
+    record, _ = run(
+        decision(**{"jobs.0.asset_id": "SIM-ASSET-LIGHT-HALLWAY", "jobs.1.asset_id": "SIM-ASSET-LIGHT-999"})
+    )
     assert {"jobs[0].asset_id", "jobs[1].asset_id"} <= set(record.rejected)
 
 

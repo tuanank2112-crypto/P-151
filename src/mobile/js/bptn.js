@@ -1,10 +1,10 @@
 // BPTN screens (Bộ phận tiếp nhận) — plan 11 SPEC-P05 §3. Same queue filter and bodies as renderBptn / bptnForm in src/web/app.js.
-import { api } from './api.js?v=5';
-import { confirmSheet, el, field, fill, notice, writeButton } from './ui.js?v=5';
+import { api } from './api.js?v=7';
+import { confirmSheet, el, field, fill, notice, writeButton } from './ui.js?v=7';
 import {
   CATEGORY_LABEL, caseHead, caseScreen, codeOf, compact, eventsHistory, imagesOf, photoBox, queueScreen, reportBox, select,
   webButton, writer,
-} from './staff.js?v=5';
+} from './staff.js?v=7';
 
 const QUEUE = new Set(['SAFETY_REVIEW_REQUIRED', 'MISSING_INFO', 'DUPLICATE', 'CATEGORY_UNCLEAR', 'OUT_OF_SCOPE', 'PENDING_REVIEW', 'ASSET_UNCLEAR', 'WRONG_DEPT']);
 const needsBptn = (t) => t.status === 'NEED_INFO' || QUEUE.has(codeOf(t));
@@ -34,7 +34,7 @@ const tabState = { get: () => tab, set: (key) => { tab = key; } };
 
 export const list = (ctx) => queueScreen(ctx, {
   tiles: TILES, tab: tabState, heads: HEADS, base: '#/p', empty: 'Không có phản ánh nào cần BPTN xử lý.',
-  stats: (rows) => [['Hàng chờ', rows.filter(needsBptn).length], ['An toàn B2', rows.filter(TILES[1][3]).length],
+  stats: (rows) => [['Hàng chờ', rows.filter(needsBptn).length], ['Hoàn thành', rows.filter((t) => t.status === 'CLOSED').length],
     ['Nghi trùng', rows.filter((t) => codeOf(t) === 'DUPLICATE').length], ['Tổng', rows.length]],
 });
 
@@ -114,7 +114,8 @@ export async function detail(ctx) {
         writeButton('Xác nhận', () => resolve({ category: category.value, location: location.value.trim(), note: note.value.trim() }, 'Đã xác nhận')));
     }
     if (code === 'ASSET_UNCLEAR') {
-      const asset = select(((cat && cat.assets) || []).map((a) => [a.asset_id, `${a.asset_id} — ${a.location}`]), { placeholder: 'Chưa chọn' });
+      // One asset per area (plan 14): the name is enough, the floor and building come from the ticket location
+      const asset = select(((cat && cat.assets) || []).map((a) => [a.asset_id, a.name]), { placeholder: 'Chưa chọn' });
       const onsite = el('input', { type: 'checkbox', id: 'asset-onsite' });
       const note = noteBox();
       return el('div', { class: 'act-box', id: 'bptn-asset' }, el('b', {}, 'Xác định tài sản'), field('Chọn tài sản', asset),

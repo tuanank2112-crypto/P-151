@@ -442,7 +442,7 @@ def test_q20_decision_input_and_case_agent_decision_round_trip():
         pinned_category=None,
         follow_up_of=None,
         duplicate_candidates=[cand],
-        asset_candidates=[AssetCandidate(asset_id="SIM-ASSET-LIGHT-001", location="Tòa S1 / Tầng 3 / Hành lang")],
+        asset_candidates=[AssetCandidate(asset_id="SIM-ASSET-LIGHT-HALLWAY", area="Hành lang")],
         fingerprint="f",
         safety_fingerprint="s",
     )

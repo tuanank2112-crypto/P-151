@@ -255,6 +255,13 @@ def test_catalog_feeds_the_ui(api):
     assert catalog["departments"] == {"DEPT_CLEANING": "Phòng Vệ sinh", "DEPT_TECHNICAL": "Phòng Kỹ thuật"}
     assert catalog["status_labels"]["ROUTED"] == "Đã chuyển phòng ban"
     assert all(a["asset_id"].startswith("SIM-ASSET-") for a in catalog["assets"])
+    # plan 14: the BPTN picker gets one asset per area, retired per-location assets are left out
+    assert [(a["name"], a["area"]) for a in catalog["assets"]] == [
+        ("Đèn hành lang", "Hành lang"),
+        ("Đèn sảnh thang máy", "Sảnh thang máy"),
+        ("Đèn cầu thang bộ", "Cầu thang bộ"),
+        ("Đèn phòng rác", "Phòng rác"),
+    ]
 
 
 def test_ui_is_served(api):
@@ -266,7 +273,7 @@ def test_ui_is_served(api):
 
 def test_16_resident_sees_no_department_before_hand_over(api, engine):
     need_info = create(api, "Nhiều rác quá")
-    asset_unclear = create(api, "Đèn cầu thang bộ tầng 9 tòa S1 không sáng")
+    asset_unclear = create(api, "Đèn hầm B1 tòa S1 không sáng")
     engine.stock["SIM-MAT-CLEAN-01"] = 0
     waiting = create(api, "Hành lang tầng 7 tòa S2 nhiều rác")
     for tid in (need_info, asset_unclear, waiting):

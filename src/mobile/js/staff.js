@@ -1,7 +1,7 @@
 // Shared pieces of the staff screens (BQL, Phòng ban, BPTN, Kho) — plan 11 SPEC-P05 Q31.
 // Labels copied from src/web/app.js so web and app name things the same way.
-import { api, apiImage } from './api.js?v=5';
-import { el, emptyState, fill, formatTime, history, notice, pageHead, pagedList, pill, refreshButton, toast } from './ui.js?v=5';
+import { api, apiImage } from './api.js?v=7';
+import { el, emptyState, fill, formatTime, history, notice, pageHead, pagedList, pill, refreshButton, toast } from './ui.js?v=7';
 
 export const REASON_LABEL = {
   MISSING_INFO: 'Thiếu thông tin', DUPLICATE: 'Nghi trùng', CATEGORY_UNCLEAR: 'Loại việc chưa rõ', OUT_OF_SCOPE: 'Ngoài phạm vi',
