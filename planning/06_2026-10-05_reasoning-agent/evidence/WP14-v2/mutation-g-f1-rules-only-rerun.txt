@@ -1,0 +1,6 @@
+MUTANT g-f1-rules-only-rerun: src/maintenance/engine.py
+$ pytest tests/test_maintenance/test_p1_audit_fixes_safety.py tests/test_maintenance/test_agent_unit.py -q
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_addition_reruns_2b_with_the_agent_signals[Ch\xe1u b\xe9 tr\xe8o ra ngo\xe0i lan can]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_addition_reruns_2b_with_the_agent_signals[N\u01b0\u1edbc ng\u1eadp l\xean t\u1edbi \u1ed5 c\u1eafm \u0111i\u1ec7n]
+2 failed, 95 passed in 3.48s
+EXIT=1

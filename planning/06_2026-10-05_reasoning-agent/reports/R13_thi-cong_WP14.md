@@ -99,3 +99,70 @@ Phải sửa (vòng 2, cùng file này):
 6. F1: bỏ import trong hàm; tái dùng đường 2b qua helper thay vì chép lại khối `safety_for`/`assess_with_llm`.
 
 🔁 SỬA: mục 1–6 · SO · 2026-10-07 22:10:38 +0700
+
+## Vòng 2 — thi công theo phán quyết 22:10:38 — 2026-10-09
+Vai SO tự thi công · thi công · Anthropic/Claude Opus 5.5 · Bước 0 exit 0 · hiểu việc: sửa đúng 6 mục 🔁 của phán quyết trên, giữ F1/F3/F10 đã đạt; không đụng `lexicon.yaml`/`safety.py`/`agent/prompt.py`; xong khi test mới từng đỏ trên HEAD, xanh trên cây, đột biến đỏ, probe F1/F10 exit 0, full suite + ruff `EXIT=0`.
+Base: `6cd2bb9` · Head: `6cd2bb9` + working tree chưa commit · Evidence: `evidence/WP14-v2/` (UTF-8, mỗi file kết `EXIT=`).
+
+| # | Mục phán quyết | Đã làm | Bằng chứng |
+|---|---|---|---|
+| 1 | F2/F11 ra khỏi H13 | Xoá `test_f2_f11_lexicon_safety`; F2/F11 để WP14b | `pytest.txt`: 0 fail |
+| 2 | F10 `refused_not_403=2` | `merge.py::_t09_unmerge_by_person`: vai ngoài BPTN/BQL (SYSTEM gọi từ ngoài) ⇒ `_deny` 403 + `ACTION_DENIED`; đường nội bộ `_unmerge` khi huỷ gốc không đổi. T05 SYSTEM giữ 409 (test §11 `test_system_actor_cannot_move_verifying_to_received`) | `probes-after.txt`: `accepted_forbidden=0 refused_allowed=0 refused_not_403=0` EXIT=0 |
+| 3 | Test Mirror nới if/else | `baseline.py::mirror_decision` điền `quote` vị trí = `location_text` (≥2 ký tự); test trả về khẳng định gốc `rejected == [] and disagreements == []` (diff file test cũ = 0) | `test_f3_mirror_quotes_the_location_it_read`; đột biến e đỏ |
+| 4 | Test mỏng | F1: 6 câu Bậc 1 + T06 + câu vô hại (có `run_jobs`), mỗi ca × {luật, Agent Mirror}, khẳng định `status/blocker/risk` + số `emergency.created`. F3: 3 tổ hợp phần × {None, ""} + ca không vị trí. F10: dựng trạng thái qua `receive`/`bptn_resolve`, không chạm `repo` | `green.txt` 27 passed |
+| 5 | Evidence UTF-16 | Chuyển mã 10 file `evidence/WP14/` sang UTF-8 (iconv, nội dung giữ nguyên); evidence mới ghi UTF-8 | `file evidence/WP14*/*.txt`: không còn UTF-16 |
+| 6 | Import trong hàm, chép khối 2b | Helper `_assess_2b` dùng chung cho `_step_2b_assess_safety` và `_addition_raises_safety`; bỏ 3 import trong hàm | `git diff src/maintenance/engine.py` |
+
+| Lệnh | EXIT | Kết quả |
+|---|---|---|
+| test mới trên HEAD (worktree tạm) | 1 | `red-before.txt`: 23 failed, 4 passed (4 = ca đối chứng) |
+| `pytest test_p1_audit_fixes_safety.py -v` | 0 | `green.txt`: 27 passed |
+| `pytest -q -p no:cacheprovider` | 0 | `pytest.txt`: 3379 passed, 75 deselected, 0 fail, 0 skip |
+| `ruff check src tests` · `ruff format --check src tests` | 0 · 0 | `ruff.txt` |
+| REF meter · split variants · metamorphic | 0 · 0 · 0 | `safety-gates.txt`: GATES_FAILED=0, VARIANT_FAILURES=0, 991 passed |
+| probe F1 `extra_addition_not_assessed` | 0 | 7 ca, 0 bỏ sót, T06 = EMERGENCY |
+| probe F10 `extra_permissions` | 0 | 0 / 0 / 0 |
+| probe F3 `extra_invented_location` | 1 | `tickets_routed_to_invented_place=1` = ca `quote="Hành lang"`, BLOCKED chờ P09 (như vòng 1) |
+| probe `extra_context_lowers` | 1 | 8 cặp — chỉ gọi `safety.assess`; HEAD `6cd2bb9` cũng 8 ⇒ hệ quả hoàn tác Q30 (`p1d`), thuộc F2/WP14b, không phải hồi quy |
+| `--pg` | — | NOT_RUN: Docker daemon không chạy |
+
+Đột biến (chạy trên worktree tạm, test mới + `test_agent_unit.py`): a bỏ F1 ⇒ 14 fail · b cho vị trí không quote qua ⇒ 6 fail · c `transition` vai sai ⇒ 409 ⇒ 1 fail · d T09 SYSTEM ⇒ 409 ⇒ 1 fail · e Mirror `quote=None` ⇒ 2 fail (`mutation-*.txt`, đều EXIT=1).
+
+Ngoài phạm vi H13 §2, có lý do: `coordination/merge.py` (mục 2 không sửa được ở `transition` vì SYSTEM có tên trên hàng T09 cho đường huỷ gốc; WP15 chưa thi công nên không xung đột) và `agent/baseline.py` (mục 3, phương án phán quyết nêu).
+
+| Gói | Tầng yêu cầu | Họ/model đã dùng |
+|---|---|---|
+| WP14 vòng 2 (6 mục) | 🔴 | Anthropic/Claude Opus 5.5 (SO, tự làm) |
+| Thẩm định vòng 2 | 🔴 | agent Opus khác, ngữ cảnh cô lập (kết quả nối bên dưới) |
+
+Việc không làm: `--pg` (Docker tắt); F3 ca `quote="Hành lang"` (chờ P09); F2/F11 (WP14b). Ghi chú: sau bổ sung vô hại, mỗi lượt `_tick` tới hạn `next_retry_at` chạy lại 2b một lần (có giới hạn `max_auto_retries`, mức NONE không đổi trạng thái).
+
+⏳ Chờ người duyệt.
+
+### Thẩm định vòng 2 (agent Opus cô lập) — 2026-10-09
+Đo lại khớp: 3379 passed / 0 fail / 0 skip, ruff 0, probe F1 0, F10 0/0/0, red-before 23/4. Mục 1, 2, 3, 5, 6 ĐẠT; mục 4 đạt một phần. Phán quyết: 🔁 SỬA (1) quote vị trí chỉ gồm dấu câu ("..") chuẩn hoá ra rỗng nên `grounded` coi là có thật ⇒ vị trí bịa vẫn ROUTED (lỗi có từ trước, nằm trong nửa "quote rỗng" của F3); (2) không test nào bắt nhánh Agent của F1 (đột biến M2: thay `_assess_2b` bằng `assess_with_llm` ⇒ 3379 passed).
+GHI (không chặn WP14, cần quyết sau): (a) SYSTEM gọi `transition` từ ngoài vào T05/T03 vẫn ra 409 không audit, còn T09 nay ra 403 ⇒ hai luật cho cùng "SYSTEM từ ngoài"; T05 bị test §11 ghim 409 ⇒ cần architect quyết; (b) Agent nhắc lại vị trí đã khoá mà không kèm quote ⇒ `rejected=["location"]` + cờ AGENT_FALLBACK báo nhầm (route vẫn đúng) — lớp P09; (c) T06 rồi trả lời vô hại, vẫn thiếu vị trí: trước giữ NEED_INFO, nay về VERIFYING/SAFETY_REVIEW_REQUIRED (khớp SPEC §1, chiều nâng); (d) mỗi bổ sung nguy hiểm gọi safety LLM 2 lần, prod `safety_llm=None` nên không ảnh hưởng.
+
+### Vòng 2b — sửa 2 mục 🔁 — 2026-10-09
+| # | Đã làm | Bằng chứng |
+|---|---|---|
+| (1) | `validate.grounded`: quote chuẩn hoá ra rỗng không bao giờ có thật (khớp docstring + `safety._grounded`); `_check_location` loại vị trí khi `(has_parts or quote) and not grounded` | test F3 tham số `[None, "..", "--", "! "]` + `test_f3_punctuation_quote_does_not_ground_an_invented_place`; probe thẩm định `b1_punct_quote` ⇒ `routed_to_invented_place=0` EXIT=0 |
+| (2) | `test_f1_addition_reruns_2b_with_the_agent_signals`: client giả nêu S-00 có trích dẫn trên câu bổ sung, luật thấy NONE ⇒ EMERGENCY_PENDING_BQL; test câu vô hại nay gọi `run_jobs(next_retry_at)` và khẳng định `auto_retry_count` tăng (đường tick chạy thật) | đột biến g (= M2) ⇒ 2 fail; probe `b6b_agent_only_raise` ⇒ `agent_raise_lost=0` |
+
+| Lệnh | EXIT | Kết quả |
+|---|---|---|
+| test mới trên HEAD | 1 | `red-before.txt`: 32 failed, 4 passed |
+| test mới trên cây | 0 | `green.txt`: 36 passed |
+| `pytest -q -p no:cacheprovider` | 0 | `pytest.txt`: 3388 passed, 75 deselected, 0 fail, 0 skip |
+| `ruff check src tests` · `ruff format --check src tests` | 0 · 0 | `ruff.txt` |
+| REF meter · split variants · metamorphic | 0 · 0 · 0 | `safety-gates.txt` |
+| probe F1 · F10 · F3 · context | 0 · 0 · 1 · 1 | như vòng 2 (F3 ca "Hành lang" chờ P09; context = F2/WP14b) |
+| probe thẩm định b1 · b6b · b4 · b3 | 0 · 0 · 0 · 0 | `review-probes.txt` |
+| đột biến a…g | 1 ×7 | a 16 · b 3 · c 1 · d 1 · e 2 · f 10 · g 2 fail |
+
+### Thẩm định lại vòng 2b (cùng agent Opus cô lập) — 2026-10-09 10:01:23 +0700
+Đo lại: 36/36 test mới; HEAD 32 fail/4 pass; full 3388 passed/0 fail/0 skip; ruff 0/0; M2 ⇒ 2 fail; `grounded` cũ ⇒ 10 fail; probe b1/b6b/b4/b3 exit 0. Phá mới: 23.626 quote từ 651 câu thật ⇒ 0 quote có chữ/số đổi kết quả (chỉ quote toàn dấu câu/emoji); tín hiệu an toàn đi qua `safety._grounded` nên không hạ mức.
+GHI thêm: SPEC-P01 dòng 45 + `REF-agent-contract.py:246` còn ghi `grounded` "tương đương `safety._grounded`" ⇒ architect đồng bộ; `safety._grounded("--")` = True (vùng cấm safety.py, chỉ chiều nâng); quote một chữ cái giữ vị trí bịa = lớp P09. Docstring `validate.grounded` đã sửa theo (ruff 0, 97 passed).
+
+## Phán quyết người duyệt — 2026-10-09 10:01:23 +0700
+✅ DUYỆT local cho F1, F3 (phần quote rỗng/dấu câu), F10 · F2/F11 chuyển WP14b · F3 ca "Hành lang" chờ P09 · `--pg` ⬜ (Docker tắt) · SO · 2026-10-09 10:01:23 +0700

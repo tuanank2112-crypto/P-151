@@ -104,7 +104,7 @@ from src.maintenance.models import (
 from src.maintenance.priority import propose_priority
 from src.maintenance.proposer import LLMClient, ProposalResult, propose
 from src.maintenance.rules import extract_location, mentions_playbook_subject, missing_location_parts
-from src.maintenance.safety import SafetyLLMClient, assess, assess_with_llm
+from src.maintenance.safety import SafetyAssessment, SafetyLLMClient, assess, assess_with_llm
 from src.maintenance.store.base import (  # the error hierarchy lives with the store
     CaseRepository,
     EngineError,
@@ -1738,9 +1738,21 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 message=f"{role or 'actor không xác định'} không được chuyển sang {to}",
             )
         rule = TRANSITIONS.get((current, to))
-        if rule is None or rule.pipeline_only or role not in rule.actors or expected_from not in (None, current):
+        if rule is None or rule.pipeline_only or expected_from not in (None, current):
             raise InvalidTransitionError(
                 f"Không chuyển được {current} → {to}", {"from": current, "to": to, "actor_role": role}
+            )
+        if role not in rule.actors:
+            self._deny(
+                case,
+                actor_id,
+                role,
+                Action.TRANSITION,
+                "status",
+                to,
+                note,
+                now,
+                message=f"{role or 'actor không xác định'} không được duyệt bước từ {current} sang {to}",
             )
 
         def op(work: Case, now: datetime) -> None:
@@ -2656,7 +2668,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         if blocker is not None and blocker.code == R.WAITING_MATERIAL:
             self._refresh_line_stock(work)  # a partial delivery must show, not the stock of the first check
         if blocker is None or not self._cleared(work, blocker, now):
-            return False
+            return self._addition_raises_safety(work, blocker, now)
         code = blocker.code
         if code == R.OUT_OF_HOURS:
             self._set_blocker(work, None, SYSTEM_ID, Role.SYSTEM, now, note="Đầu ca phòng ban", dispatched_at=now)
@@ -2667,6 +2679,25 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         resume_step = {R.MISSING_INFO: 2, R.WAITING_MATERIAL: 6}.get(code, blocker.resume_step)
         self._apply_transition(work, S.RECEIVED, SYSTEM_ID, Role.SYSTEM, now, note=f"Gỡ {code}", safety_context=False)
         self._run_pipeline(work, resume_step, now)
+        return True
+
+    def _addition_raises_safety(self, work: Case, blocker: Blocker | None, now: datetime) -> bool:
+        """SPEC-P08 §1 (CR §5.2, AC-08): a resident's addition while the location is still missing reruns 2b. Any
+        level above NONE sends the ticket back through the pipeline from 2b; NONE keeps it waiting for the location."""
+        if blocker is None or blocker.code != R.MISSING_INFO:
+            return False
+        if not any(a.submitted_at >= blocker.since for a in work.additions):
+            return False  # a job tick with nothing new from the resident: 2b already ran on this content
+        text = self._safety_scope_text(work)
+        if _blank(text):
+            return False
+        level = max(self._assess_2b(work, text).risk_level, work.ticket.risk_level, key=_LEVEL_ORDER.__getitem__)
+        if level == RiskLevel.NONE:
+            return False
+        self._apply_transition(
+            work, S.RECEIVED, SYSTEM_ID, Role.SYSTEM, now, note="Bổ sung có dấu hiệu an toàn", safety_context=False
+        )
+        self._run_pipeline(work, 2, now)
         return True
 
     def _tick(self, work: Case, now: datetime) -> None:
@@ -3114,16 +3145,21 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 found.append(ticket.ticket_id)
         return sorted(found)
 
+    def _assess_2b(self, work: Case, text: str) -> SafetyAssessment:
+        """The 2b assessment of `text`, writing nothing: rules + the Agent's valid signals when its decision saw this
+        safety content, otherwise rules + the safety LLM."""
+        view = self._view(work)
+        if view is not None and view.record.safety_fingerprint == self._safety_fingerprint(work):
+            return safety_for(view.record, text, self.lexicon, view.record.model)
+        return assess_with_llm(text, self.lexicon.safety, self.safety_llm, self.llm_label)
+
     def _step_2b_assess_safety(self, work: Case, now: datetime) -> bool:
         """CR §5.1 step 2b. Runs on any ticket with content, before classification: tier 1 stops (BQL), tier 2 (BPTN)."""
         text = self._safety_scope_text(work)
         if _blank(text):
             return False  # nothing to assess (empty, or cleared and no later addition)
         view = self._view(work)
-        if view is not None and view.record.safety_fingerprint == self._safety_fingerprint(work):
-            result = safety_for(view.record, text, self.lexicon, view.record.model)  # rules + the Agent's valid signals
-        else:
-            result = assess_with_llm(text, self.lexicon.safety, self.safety_llm, self.llm_label)
+        result = self._assess_2b(work, text)
         ticket = work.ticket
         old = ticket.risk_level
         # I-17: only a person lowers the level. Whatever this run finds, the ticket keeps the level it already has.

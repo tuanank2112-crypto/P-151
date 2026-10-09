@@ -24,6 +24,7 @@ Không làm ở P0: persistence, router/UI mới, LLM an toàn, gộp ticket (P1
 - Thứ tự `_run_pipeline`: `2b` đứng TRƯỚC `2` (Bậc 1 > Bậc 2 > `MISSING_INFO`, Q08), cả hai mang số 2 nên `resume_step=2` chạy lại cả hai.
 - Hàm bước tên `_step_<số>_<việc>` (`_step_2b_assess_safety`, `_step_2_check_required_data`, …).
 - Chạy lại sau khi gỡ blocker: `MISSING_INFO`/`SAFETY_REVIEW_REQUIRED`/`EMERGENCY_PENDING_BQL` → 2 (2b tự bỏ qua khi đã `safety_cleared_*` và chưa có bổ sung từ mốc đó); `CATEGORY_UNCLEAR`/`OUT_OF_SCOPE` → 4; `DUPLICATE` bác → 5; `PENDING_REVIEW`/`ASSET_UNCLEAR` → 6; `WRONG_DEPT` → 6 hoặc 7; `WAITING_MATERIAL` → 6.
+- **Bổ sung khi còn thiếu vị trí (SPEC-P08 §1, F1):** `MISSING_INFO` chưa gỡ được mà có bổ sung sau `blocker.since` ⇒ `_addition_raises_safety` chạy lại 2b qua `_assess_2b` (cùng đường với pipeline: view Agent khớp vân tay ⇒ `safety_for`, không ⇒ `assess_with_llm`), không ghi gì; mức > NONE ⇒ `RECEIVED` → pipeline từ 2 (Bậc 1 ⇒ `EMERGENCY_PENDING_BQL`), NONE ⇒ vẫn chờ vị trí. Job tick chỉ chạy lại khi tới `next_retry_at` (có giới hạn).
 
 ## 3. Tầng an toàn (bước 2b) — `safety.py`
 `assess(text, lexicon) -> SafetyAssessment(risk_level, signals, notes, proposer)`; `risk_level` ∈ `NONE | UNCLEAR | EMERGENCY` (Bậc 2 | Bậc 1).
@@ -57,6 +58,7 @@ Mọi method nhận `ticket_id, actor_id` đầu tiên, trả `Case` đã commit
 | `emergency_downgrade(tid, actor, *, note)` | BQL (T05) | VERIFYING + `EMERGENCY_PENDING_BQL` | báo nhầm: về flow thường |
 | `emergency_close(tid, actor, *, note)` | BQL (T10) | như trên | `CLOSED`, `closure_kind=EMERGENCY_HANDLED`, không cần phòng ban |
 Lỗi: sai vai / BPTN trên blocker thuộc BQL (kể cả `bptn_resolve`, CR-03 §4.4.5) ⇒ `ActionDeniedError` 403 + audit, trạng thái không đổi; BQL dùng 3 lựa chọn Bậc 2 trước khi leo thang ⇒ 403 (Q19); sai trạng thái/blocker ⇒ `InvalidTransitionError` 409; thiếu `note` ⇒ `GuardError` 409; blocker an toàn của BPTN + `bptn_resolve` ⇒ `GuardError` 409.
+F10 (SPEC-P08 §3): vai có thể tới trạng thái đích nhưng KHÔNG có tên trên hàng `(hiện tại, đích)` ⇒ 403 + audit (không còn 409). `undo_merge` bởi SYSTEM gọi từ ngoài ⇒ 403 (SYSTEM chỉ là tác nhân T09 khi huỷ gốc, đường nội bộ). T05/T03 bởi SYSTEM từ ngoài vẫn 409 (test §11) — chờ thống nhất (plan 06 Q34).
 Route API (prefix `/api/v1`; router chỉ bọc method trên, không kiểm vai/logic; lỗi qua `_call`: 403/404/409; `decision` lạ ⇒ 422; `closure_kind` client gửi bị bỏ qua):
 
 | Route | Body | Method engine |
@@ -154,6 +156,7 @@ Hồ sơ: [`planning/05_2026-10-04_agent-hardening/`](../planning/05_2026-10-04_
 ## 14. Agent chạy LLM thật: streaming, cache, CLI, G-LIVE (plan 06 Q30–Q33, 2026-10-07)
 - **Ngữ nghĩa an toàn do Agent suy luận, không vá regex (Q30):** kêu cứu, phủ định, "hình như", nhờ thay đèn cháy… viết thành hướng dẫn bằng lời trong `agent/prompt.py`; luật (`safety.py` + `lexicon.yaml` `p1d`) chỉ là sàn hẹp. Luật ra EMERGENCY ⇒ Agent bị bỏ qua, nên regex bắt quá tay = loại LLM.
 - **Prompt `agent-prompt/5`** (REF trong `planning/06_.../specs/REF-agent-contract.py` sửa trước, code chép theo): /2 hình dạng object tín hiệu `{signal_id, status, quote}`; /3 đầu ra gọn (chỉ bước suy luận cần thiết, bỏ lý do cho trường trống — schema NỚI tùy chọn); /4 phủ định = ABSENT, kêu cứu/báo cháy/giục sơ tán = PRESENT; /5 `TO_BPTN` luôn kèm `bptn_reason`, khẩn cấp không có việc ⇒ `OUT_OF_SCOPE`.
+- **Trích dẫn vị trí bắt buộc (SPEC-P08 §2, F3):** Agent điền bất kỳ phần nào của vị trí mà quote rỗng/không có thật ⇒ loại cả vị trí (`rejected=["location"]`), luật vị trí quyết. `validate.grounded` coi quote gấp ra rỗng ("..", "--") là không có — chặt hơn `safety._grounded`. `mirror_decision` trích `location_text` làm quote vị trí. Quote đúng chữ nhưng không chứng minh tòa/tầng ("Hành lang") còn lọt — chờ P09.
 - **Client (`agent/client.py`) và cấu hình (`src/config.py`):**
 
 | Biến | Mặc định | Ý nghĩa |
