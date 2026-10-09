@@ -2,6 +2,12 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.8.3] - 2026-10-10: App điện thoại — chọn vị trí trước khi mô tả
+### Changed
+- `src/mobile/js/resident.js` `#/r/new`: thẻ 1 = Vị trí sự cố, 2 = Mô tả vấn đề, 3 = Ảnh (trước: Mô tả trước). Placeholder/gợi ý đổi số bước. `?v=5` mọi import + `SHELL_CACHE` `mo-app-shell-v5`. API/chuỗi gửi không đổi (plan 11 Q33).
+### Measured
+- `node --check` 10 file 0 lỗi; `test_mobile_static.py` 5 passed; Playwright `:8001` (memory) cudan01 ⇒ thứ tự thẻ `1 Vị trí · 2 Mô tả · 3 Ảnh`.
+
 ## [v1.8.2] - 2026-10-09: Sửa plan 12 sau thẩm định độc lập (R01)
 ### Security
 - Ảnh: `Cache-Control: private, no-cache` + `ETag` (thay `max-age=31536000, immutable`). Trước: cùng trình duyệt, tài khoản khác mở được ảnh từ cache mà server không kiểm quyền (R01 #2, 🔴; lỗ 1 giờ có từ trước plan 12). Sau: B nhận 404, chủ ảnh nhận 304 không kèm bytes. URL dùng lại sau reset nhận bytes mới (#3).

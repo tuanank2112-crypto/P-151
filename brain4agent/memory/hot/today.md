@@ -215,3 +215,7 @@ Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lậ
 - Còn mở: commit plan 13; PR `feature/chamanh` → `develop` (develop thiếu ghim `sqlalchemy<2.1`); Idea Vault #3/#5/#7/#9 chờ người chọn; `stash@{0}` trùng commit.
 - Thẩm định R01: plan 11 ✅ DUYỆT; plan 12 🔁 SỬA (#2 🔴 cache trình duyệt vượt quyền — SO tái hiện: B nhận 200 không request tới server; #3 URL ảnh sau reset; #7 đổi mã lỗi; #14 thiếu test). #2/#3 chờ người chọn header. PR → develop GIỮ tới khi sửa #2. pytest lần 1 đỏ 2 test thời gian do tải, chạy lại 3359 passed.
 - Người dùng chọn (c) giữ ảnh ~56 ms. v1.8.2: header ảnh `no-cache` + `ETag` (X), upload kiểm quyền trước (#7), +6 test (#14). `mutate_r01.py` 8/8 đỏ; pytest 3365 / `--pg` 3453 / ruff 0; probe trình duyệt của auditor: B 200→404. CHƯA commit. Người dùng muốn giữ đăng nhập 2 tuần không nhập lại ⇒ bản tổng hợp chờ duyệt (bảng `maintops.sessions` có sẵn từ 0001).
+
+## 📱 Phiên 2026-10-10 — chạy app không Docker, đổi thứ tự form cư dân (feature/chamanh)
+- Hỏi đáp: backend chạy bằng `.venv` + uvicorn (không cần Docker); Docker chỉ cho Postgres local/portal. App Android = PWA `/app/`, điện thoại vào `http://<LAN-IP>:8001/app/` (cài được chỉ khi HTTPS hoặc USB forward).
+- v1.8.3 (Q33): `#/r/new` Vị trí trước Mô tả; `?v=5`, `SHELL_CACHE` v5. node --check 0, mobile static 5 passed, Playwright xác nhận thứ tự. CHƯA commit.

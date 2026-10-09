@@ -1,11 +1,11 @@
 // Resident screens (plan 11, SPEC-P02 rules, SPEC-P04 §4 layout from portal/src/app/resident/resident-app.tsx).
 // Only /resident/* endpoints; data = ResidentTicketView.
-import { api, apiForm, apiImage } from './api.js?v=4';
+import { api, apiForm, apiImage } from './api.js?v=5';
 import {
   TERMINAL, el, emptyState, fill, formatTime, history, icon, infoGrid, notice, pageHead, pagedList, pill,
   refreshButton, stepHead, toast, writeButton,
-} from './ui.js?v=4';
-import { MAX_PHOTOS, photoFormData, photoPicker } from './photo.js?v=4';
+} from './ui.js?v=5';
+import { MAX_PHOTOS, photoFormData, photoPicker } from './photo.js?v=5';
 
 const MIN_DESCRIPTION = 10;
 const RECOVER_WINDOW_MS = 3 * 60 * 1000;
@@ -137,7 +137,7 @@ export async function create(ctx) {
   const loc = { building: '', area: '' };
   const description = el('textarea', {
     class: 'field', id: 'new-description', name: 'description', rows: 4, maxlength: '2000',
-    placeholder: 'Ví dụ: Bóng đèn hành lang chập chờn, không sáng. Ghi rõ tòa, tầng nếu chưa chọn ở bước 2.',
+    placeholder: 'Ví dụ: Bóng đèn hành lang chập chờn, không sáng. Ghi rõ tòa, tầng nếu chưa chọn ở bước 1.',
   });
   const floor = el('input', { class: 'field floor', id: 'loc-floor', type: 'text', maxlength: '4', autocomplete: 'off', placeholder: 'VD: 3, B1', 'aria-label': 'Tầng' });
   const buildingChips = el('div', { class: 'chips' });
@@ -215,16 +215,16 @@ export async function create(ctx) {
   submit.id = 'submit-ticket';
 
   ctx.screen.append(
-    pageHead('Gửi phản ánh mới', 'Mô tả vấn đề, chọn vị trí và thêm ảnh nếu có. Agent sẽ kiểm tra an toàn, phân loại và chuyển đúng bộ phận.'),
-    el('section', { class: 'card pad sec' }, stepHead(1, 'Mô tả vấn đề'), description,
+    pageHead('Gửi phản ánh mới', 'Chọn vị trí, mô tả vấn đề và thêm ảnh nếu có. Agent sẽ kiểm tra an toàn, phân loại và chuyển đúng bộ phận.'),
+    el('section', { class: 'card pad sec' }, stepHead(1, 'Vị trí sự cố', el('span', { class: 'muted small' }, 'Không bắt buộc')),
+      el('div', { class: 'loc-row' }, buildingChips, el('label', { class: 'floor-label' }, el('span', {}, 'Tầng'), floor)),
+      areaCards,
+      el('span', { class: 'muted small' }, 'Bỏ trống nếu sẽ ghi vị trí trong mô tả ở bước 2.')),
+    el('section', { class: 'card pad sec' }, stepHead(2, 'Mô tả vấn đề'), description,
       el('div', { class: 'chips' }, el('span', { class: 'chips-label' }, 'Câu mẫu:'),
         EXAMPLES.map(([label, text]) => el('button', {
           type: 'button', class: 'chip sm', onclick: () => { description.value = text; showError(''); summary(); },
         }, label)))),
-    el('section', { class: 'card pad sec' }, stepHead(2, 'Vị trí sự cố', el('span', { class: 'muted small' }, 'Không bắt buộc')),
-      el('div', { class: 'loc-row' }, buildingChips, el('label', { class: 'floor-label' }, el('span', {}, 'Tầng'), floor)),
-      areaCards,
-      el('span', { class: 'muted small' }, 'Bỏ trống nếu đã ghi vị trí trong mô tả.')),
     el('section', { class: 'card pad sec' }, stepHead(3, 'Ảnh hiện trường', el('span', { class: 'muted small' }, 'Không bắt buộc')), picker.node),
     el('aside', { class: 'card pad sec summary' }, el('h2', {}, 'Tóm tắt'),
       el('div', { class: 'kv1' }, el('span', { class: 'k' }, 'VỊ TRÍ'), sumLocation),

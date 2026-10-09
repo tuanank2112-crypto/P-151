@@ -43,6 +43,7 @@
 | Q30 | 2026-10-09 | Bỏ hàng chip lọc ở `#/r` (ảnh người dùng gửi); 4 ô tổng quan vẫn lọc + dòng "Đang lọc: … · Bỏ lọc" | Trùng chức năng với ô tổng quan |
 | Q31 | 2026-10-09 | Tách `js/staff.js` (nhãn, pill, ảnh, nội dung ticket nội bộ) dùng chung cho `bql.js`, `dept.js`, `bptn.js`, `kho.js`; mỗi file ≤400 dòng (01-CONTRACTS §1) | Không lặp code giữa 4 vai nội bộ |
 | Q32 | 2026-10-09 18:15 | Người dùng (ảnh 4 ô số liệu Phòng ban): "bỏ phần này trong phòng ban đi, và thêm ở bên trên 1 icon cho chờ nghiệm thu" ⇒ màn `#/d` bỏ ô số liệu; tile thứ 3 "Chờ nghiệm thu" (`READY_FOR_REVIEW`, icon check-square của portal) | Ô số liệu trùng số trên tile; phòng ban cần xem việc đã nộp |
+| Q33 | 2026-10-10 | Người dùng (ảnh màn `#/r/new`): "đổi thứ tự cho chọn vị trí lên trên trước viết vấn đề" ⇒ thẻ 1 = Vị trí sự cố, 2 = Mô tả vấn đề, 3 = Ảnh; placeholder/gợi ý đổi số bước; `?v=5`, `SHELL_CACHE` v5 (v1.8.3). Chuỗi gửi API không đổi (`Vị trí:` vẫn nối SAU mô tả) | Cư dân chọn nơi xảy ra trước rồi mới tả; API/engine không đổi |
 | Q25 | 2026-10-09 | Backend Docker `:8000` crash (`ModuleNotFoundError: psycopg`): image dựng từ `dev` kéo SQLAlchemy 2.1.3 (mặc định driver psycopg 3 cho `postgresql://`). `feature/chamanh` đã ghim `sqlalchemy<2.1` ⇒ dựng lại image từ nhánh này | Gotcha ghi `-known-gotchas.md` |
 
 ### Số đo nghiệm thu local (2026-10-09, backend memory `:8001`)
@@ -63,6 +64,7 @@
 - Q16 (một phần → SPEC-P04 §4/§5): khối thao tác nằm trong thẻ chi tiết ngay sau lưới thông tin (trước ảnh/lịch sử) — vẫn trên lịch sử như Q16.
 - Q05 + 00-ARCHITECTURE V8 + I-8 (2026-10-09 → Q26/Q27): app có cả Phòng ban, BPTN, Kho; chỉ QA còn màn "Dùng bản web".
 - SPEC-P04 §4 hàng chip lọc ở `#/r` (→ Q30): đã bỏ.
+- SPEC-P04 §4 thứ tự thẻ `#/r/new` 1 Mô tả / 2 Vị trí (→ Q33, 2026-10-10): 1 Vị trí / 2 Mô tả; nội dung từng thẻ và chuỗi `Vị trí:` giữ nguyên §4.2.
 - SPEC-P05 §1 tile Phòng ban 3 ô + ô số liệu (→ Q32): 4 tile, không ô số liệu.
 - 01-CONTRACTS §1 `#tabbar` thanh đáy + FAB `#new-ticket` (→ Q21): `#tabbar` là NavTiles, `#new-ticket` là tile "Gửi phản ánh".
 
