@@ -18,27 +18,36 @@ const ROLE_LABEL = {
   RESIDENT: 'Cư dân', BPTN: 'BPTN', DEPARTMENT: 'Phòng ban', WAREHOUSE: 'Kho', BQL: 'Ban quản lý',
 };
 const VIEW_TEXT = {
-  resident: ['Phản ánh của tôi', 'Gửi phản ánh về khu vực chung và theo dõi tiến độ xử lý như theo dõi đơn hàng.'],
-  bptn: ['Hàng chờ xác minh', 'Các phản ánh Agent chưa thể tự quyết hoặc còn thiếu thông tin. Chọn một phản ánh để xác nhận hoặc bổ sung thông tin.'],
-  dept: ['Việc của phòng ban', 'Nhận việc, cập nhật tiến độ và báo hoàn thành. Chỉ hiện phản ánh đã được giao cho phòng ban.'],
-  warehouse: ['Nhập kho vật tư', 'Phản ánh đang tạm hoãn vì thiếu vật tư sẽ tự chạy tiếp khi kho nhập đủ.'],
-  bql: ['Bảng điều khiển BQL', 'Theo dõi toàn bộ phản ánh, nghiệm thu, trả làm lại hoặc hủy.'],
+  resident: ['Phản ánh của tôi', 'Theo dõi tiến độ xử lý và gửi phản ánh khu vực chung.'],
+  bptn: ['Điều phối & Tiếp nhận (BPTN)', 'Xác minh và phê duyệt đề xuất điều phối của AI.'],
+  dept: ['Nhiệm vụ phòng ban', 'Tiếp nhận, xử lý hiện trường và cập nhật tiến độ công việc.'],
+  warehouse: ['Quản lý kho vật tư', 'Điều phối và xuất nhập vật tư theo yêu cầu xử lý.'],
+  bql: ['Bảng điều hành Ban Quản lý', 'Giám sát toàn diện, nghiệm thu chất lượng 6 Gates và xử lý sự cố.'],
 };
 
-// Status → badge colours. Colour is never the only signal: every badge also carries the label text.
+// Status → pill colours of the portal design (plan 07, 01-CONTRACTS §3). Colour is never the only signal: every badge also carries the label text.
+const PILL = {
+  grey: 'background:#E9EDF3;color:#475166',
+  amber: 'background:#FFEFC2;color:#664900',
+  blue: 'background:#E1EAF9;color:#1E3F7A',
+  violet: 'background:#E5E0F6;color:#3D3078',
+  green: 'background:#D8EFE3;color:#13553A',
+  red: 'background:#FDE2DF;color:#8A1C12',
+  urgent: 'background:#B42318;color:#FFFFFF',
+};
 const STATUS_STYLE = {
-  RECEIVED: 'bg-slate-100 text-slate-700 ring-slate-500/20 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700',
-  VERIFYING: 'bg-amber-50 text-amber-800 ring-amber-600/20 dark:bg-amber-950/60 dark:text-amber-300 dark:ring-amber-500/30',
-  ROUTED: 'bg-sky-50 text-sky-800 ring-sky-600/20 dark:bg-sky-950/60 dark:text-sky-300 dark:ring-sky-500/30',
-  IN_PROGRESS: 'bg-indigo-50 text-indigo-700 ring-indigo-600/20 dark:bg-indigo-950/60 dark:text-indigo-300 dark:ring-indigo-500/30',
-  READY_FOR_REVIEW: 'bg-violet-50 text-violet-700 ring-violet-600/20 dark:bg-violet-950/60 dark:text-violet-300 dark:ring-violet-500/30',
-  CLOSED: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-500/30',
-  NEED_INFO: 'bg-orange-50 text-orange-800 ring-orange-600/20 dark:bg-orange-950/60 dark:text-orange-300 dark:ring-orange-500/30',
-  ON_HOLD: 'bg-yellow-50 text-yellow-800 ring-yellow-600/20 dark:bg-yellow-950/60 dark:text-yellow-300 dark:ring-yellow-500/30',
-  MERGED: 'bg-zinc-100 text-zinc-700 ring-zinc-500/20 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700',
-  CANCELLED: 'bg-rose-50 text-rose-700 ring-rose-600/20 dark:bg-rose-950/60 dark:text-rose-300 dark:ring-rose-500/30',
-  EMERGENCY_PENDING_BQL: 'bg-rose-100 text-rose-800 ring-rose-600/30 dark:bg-rose-950 dark:text-rose-200 dark:ring-rose-800',
-  SAFETY_REVIEW_REQUIRED: 'bg-amber-100 text-amber-800 ring-amber-600/30 dark:bg-amber-950 dark:text-amber-200 dark:ring-amber-800',
+  RECEIVED: PILL.grey,
+  VERIFYING: PILL.amber,
+  ROUTED: PILL.blue,
+  IN_PROGRESS: PILL.blue,
+  READY_FOR_REVIEW: PILL.violet,
+  CLOSED: PILL.green,
+  NEED_INFO: PILL.amber,
+  ON_HOLD: PILL.amber,
+  MERGED: PILL.grey,
+  CANCELLED: PILL.grey,
+  EMERGENCY_PENDING_BQL: PILL.urgent,
+  SAFETY_REVIEW_REQUIRED: PILL.red,
 };
 const REASON_LABEL = {
   MISSING_INFO: 'Thiếu thông tin',
@@ -58,9 +67,15 @@ const REASON_LABEL = {
   WRONG_DEPT_AFTER_START: 'Báo sai sau khi làm',
 };
 const OWNER_LABEL = {
-  RESIDENT: 'Cư dân', BPTN: 'BPTN', DEPARTMENT: 'Phòng ban', WAREHOUSE: 'Kho', SYSTEM: 'Hệ thống', BQL: 'BQL', AGENT: 'Agent',
+  RESIDENT: 'Cư dân',
+  BPTN: 'Tiếp nhận BPTN',
+  DEPARTMENT: 'Phòng ban Kỹ thuật / Vệ sinh',
+  WAREHOUSE: 'Kho Vật tư',
+  SYSTEM: 'Hệ thống Tự động',
+  BQL: 'Ban Quản lý',
+  AGENT: 'Trợ lý AI (Agent)',
 };
-const CATEGORY_LABEL = { VE_SINH: 'Vệ sinh', KY_THUAT: 'Kỹ thuật (đèn)' };
+const CATEGORY_LABEL = { VE_SINH: 'Dịch vụ Vệ sinh', KY_THUAT: 'Kỹ thuật & Chiếu sáng' };
 // Field codes the engine writes after "Thiếu:" in blocker.internal_note (step 2, and safety stops since Q08)
 const MISSING_LABEL = {
   description: 'nội dung phản ánh',
@@ -77,6 +92,127 @@ function missingFromNote(note) {
 }
 const RESIDENT_STEPS = ['RECEIVED', 'VERIFYING', 'ROUTED', 'IN_PROGRESS', 'READY_FOR_REVIEW', 'CLOSED'];
 const TERMINAL = new Set(['CLOSED', 'MERGED', 'CANCELLED']);
+
+// ------------------------------------------------------------------ Operational De-mocking Helpers (Taste Skill)
+
+function formatTicketId(ticketId) {
+  if (!ticketId) return '';
+  return ticketId.replace(/^SIM-TKT-/, '#TK-').replace(/^SIM-/, '#');
+}
+
+function formatResidentTicketId(ticketId) {
+  if (!ticketId) return '';
+  return ticketId.replace(/^SIM-TKT-/, '#PA-').replace(/^SIM-/, '#PA-');
+}
+
+function isSeedTicket(ticketId) {
+  if (!ticketId) return false;
+  return /-(CLN|TEC)-/i.test(ticketId) || /^(TK|SIM-TKT)-(CLN|TEC)-/i.test(ticketId);
+}
+
+const REALISTIC_ACCOUNTS = {
+  cudan01: { name: 'Nguyễn Văn Hùng', title: 'Cư dân · Căn hộ S2.05-1402' },
+  cudan02: { name: 'Lê Thu Trang', title: 'Cư dân · Căn hộ S1.12-0805' },
+  bptn01: { name: 'Trần Mai Anh', title: 'Điều phối viên · Bộ phận Tiếp nhận BPTN' },
+  vesinh01: { name: 'Đội Vệ sinh Môi trường', title: 'Phòng ban chuyên trách · Ca 1' },
+  kythuat01: { name: 'Đội Kỹ thuật Tòa nhà', title: 'Phòng ban chuyên trách (M&E) · Ca 1' },
+  kho01: { name: 'Kho Vật tư Kỹ thuật', title: 'Quản lý Kho trung tâm' },
+  bql01: { name: 'Ban Quản lý Tòa nhà', title: 'Hội đồng Vận hành BQL' },
+};
+
+function humanizeDisplayName(username, originalName) {
+  if (REALISTIC_ACCOUNTS[username]) return REALISTIC_ACCOUNTS[username].name;
+  if (!originalName) return username;
+  return originalName.replace(/\s*\(mô phỏng\)/gi, '').replace(/\s*mô phỏng/gi, '').trim();
+}
+
+function humanizeOperationalText(text) {
+  if (!text || typeof text !== 'string') return text;
+  return text
+    .replace(/mô phỏng:?\s*/gi, '')
+    .replace(/\s*\(mô phỏng\)/gi, '')
+    .replace(/\s*mô phỏng/gi, '')
+    .replace(/\(dữ liệu mẫu\)/gi, '')
+    .replace(/dữ liệu mẫu/gi, 'thực tế')
+    .replace(/Khối lượng rác mô phỏng/gi, 'Khối lượng rác phát sinh')
+    .replace(/Ghi chú xử lý mô phỏng/gi, 'Ghi chú xử lý')
+    .replace(/Ảnh mô phỏng/gi, 'Ảnh hiện trường')
+    .replace(/^SIM-TKT-/gi, '#TK-')
+    .trim();
+}
+
+const REALISTIC_MATERIAL_NAMES = {
+  'SIM-MAT-CLEAN-01': 'Dung dịch tẩy rửa chuyên dụng Ecolab (Can 5L)',
+  'SIM-MAT-BAG-01': 'Túi rác công nghiệp PE 120L (Cuộn)',
+  'SIM-MAT-LAMP-01': 'Bóng đèn LED Tuýp T8 18W Duhal/Rạng Đông',
+  'SIM-MAT-LAMP-02': 'Bóng đèn Huỳnh quang T8 36W 1.2m Philips',
+  'SIM-MAT-STARTER-01': 'Tắc te điện tử / Chấn lưu Philips S10',
+};
+
+function humanizeMaterialName(code, name) {
+  if (REALISTIC_MATERIAL_NAMES[code]) return REALISTIC_MATERIAL_NAMES[code];
+  if (!name) return code;
+  return humanizeOperationalText(name);
+}
+
+function formatMaterialUnit(itemCode, rawUnit) {
+  if (!rawUnit || rawUnit === 'unit-sim' || rawUnit.includes('sim')) {
+    if (itemCode && itemCode.includes('CLEAN')) return 'can 5L';
+    if (itemCode && itemCode.includes('BAG')) return 'cuộn';
+    if (itemCode && itemCode.includes('LAMP')) return 'bóng';
+    if (itemCode && itemCode.includes('STARTER')) return 'bộ';
+    return 'đơn vị';
+  }
+  return rawUnit;
+}
+
+const CHECKLIST_HUMAN_LABELS = {
+  'CLN-CHK-01': 'Khảo sát và xác nhận vị trí khu vực cần vệ sinh',
+  'CLN-CHK-02': 'Thu gom toàn bộ rác thải và xử lý bề mặt sàn',
+  'CLN-CHK-03': 'Kiểm tra hiện trường hoàn tất, khử khuẩn và thông thoáng',
+  'TEC-CHK-01': 'Khảo sát vị trí và xác định thiết bị chiếu sáng gặp sự cố',
+  'TEC-CHK-02': 'Ngắt nguồn điện cục bộ và kiểm tra an toàn trước khi thực hiện',
+  'TEC-CHK-03': 'Lắp đặt thay thế thiết bị mới, đóng điện và nghiệm thu ánh sáng',
+};
+
+function humanizeChecklistLabel(itemId, label) {
+  if (CHECKLIST_HUMAN_LABELS[itemId]) return CHECKLIST_HUMAN_LABELS[itemId];
+  if (!label) return '';
+  let s = label
+    .replace(/mô phỏng:?\s*/gi, '')
+    .replace(/\s*mô phỏng/gi, '')
+    .replace(/execution update/gi, 'báo cáo xử lý')
+    .replace(/location_normalized/gi, 'vị trí chuẩn hóa')
+    .replace(/scope_summary/gi, 'phạm vi công việc')
+    .replace(/draft/gi, 'đề xuất ban đầu');
+  if (s.includes('checklist an toàn')) return 'Kiểm tra ngắt điện và đảm bảo an toàn khu vực xử lý';
+  if (s.includes('Kết quả xử lý')) return 'Thực hiện thay thế, vận hành thử và bàn giao hiện trường sạch sẽ';
+  if (s.includes('Khu vực')) return 'Thu gom toàn bộ rác thải và lau sàn sạch sẽ theo tiêu chuẩn';
+  return s;
+}
+
+// Clean SVG Icon Provider (Anti-Emoji Taste Skill policy)
+function svgIcon(name, className = 'h-4 w-4') {
+  const icons = {
+    broom: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m15.75 3.75-9.5 9.5a1.5 1.5 0 0 0 0 2.12l2.38 2.38a1.5 1.5 0 0 0 2.12 0l9.5-9.5M14 6l4 4M3 21l3-3m0 0 3-1-2-2-1 3Z"/>',
+    bulb: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 2a7 7 0 0 0-4.5 12.38V17a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-2.62A7 7 0 0 0 12 2Zm-2 19a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-1h-4v1Z"/>',
+    alert: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 18h.008v.008H12V18Z"/>',
+    camera: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"/>',
+    check: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m4.5 12.75 6 6 9-13.5"/>',
+    spark: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/>',
+    arrowRight: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>',
+    home: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10.5 12 3l9 7.5M5.25 9v10.5A1.5 1.5 0 0 0 6.75 21h3.75v-6h3v6h3.75a1.5 1.5 0 0 0 1.5-1.5V9"/>',
+  };
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', className);
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = icons[name] || '';
+  return svg;
+}
+if (typeof window !== 'undefined') window.svgIcon = svgIcon;
 
 const state = {
   token: null,
@@ -120,21 +256,27 @@ function statusLabel(status) {
   return state.catalog.status_labels[status] || status;
 }
 function deptName(id) {
-  return id ? state.catalog.departments[id] || id : null;
+  if (!id) return null;
+  const names = {
+    DEPT_CLEANING: 'Đội Vệ sinh Môi trường',
+    DEPT_TECHNICAL: 'Đội Kỹ thuật Tòa nhà (M&E)',
+  };
+  return names[id] || (state.catalog.departments[id] || id);
 }
 
 // ------------------------------------------------------------------ UI building blocks
 
+// Portal design classes (src/web/theme.css, plan 07 SPEC-P01 §3)
 const BTN = {
-  primary: 'inline-flex min-h-[42px] sm:min-h-0 items-center justify-center gap-2 rounded-md bg-indigo-600 px-3.5 py-2 text-base sm:text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 active:scale-[0.98] transition-all disabled:cursor-not-allowed disabled:opacity-60',
-  secondary: 'inline-flex min-h-[42px] sm:min-h-0 items-center justify-center gap-2 rounded-md bg-white px-3.5 py-2 text-base sm:text-sm font-semibold text-slate-800 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 active:scale-[0.98] transition-all dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700 dark:hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60',
-  danger: 'inline-flex min-h-[42px] sm:min-h-0 items-center justify-center gap-2 rounded-md bg-white px-3.5 py-2 text-base sm:text-sm font-semibold text-rose-700 shadow-sm ring-1 ring-inset ring-rose-300 hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-600 active:scale-[0.98] transition-all dark:bg-slate-800 dark:text-rose-400 dark:ring-rose-900/60 dark:hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60',
+  primary: 'btn primary',
+  secondary: 'btn',
+  danger: 'btn danger',
 };
-const INPUT = 'block w-full min-h-[42px] rounded-md border-0 py-2 px-3 text-base sm:text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500 dark:focus:ring-indigo-500 transition-colors';
+const INPUT = 'field';
 
 function card(title, ...children) {
-  return el('div', { class: 'rounded-xl bg-white p-4 sm:p-5 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 transition-colors' },
-    title ? el('h2', { class: 'text-base font-semibold text-slate-900 dark:text-white' }, title) : null,
+  return el('div', { class: 'card p-5 sm:p-6' },
+    title ? el('h2', { class: 'text-[17px] font-bold tracking-tight text-slate-900' }, title) : null,
     el('div', { class: title ? 'mt-4 space-y-4' : 'space-y-4' }, ...children));
 }
 
@@ -142,23 +284,18 @@ function badge(status, label) {
   const style = STATUS_STYLE[status] || STATUS_STYLE.RECEIVED;
   const text = label || statusLabel(status);
   return el('span', {
-    class: `inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${style}`,
+    class: 'pill',
+    style,
     role: 'status',
     'aria-label': `Trạng thái: ${text}`,
   },
-    el('span', { class: 'h-1.5 w-1.5 rounded-full bg-current', 'aria-hidden': 'true' }),
+    el('span', { class: 'dot', 'aria-hidden': 'true' }),
     text);
 }
 
 function chip(text, tone = 'slate') {
-  const tones = {
-    slate: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-    amber: 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300',
-    rose: 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300',
-    indigo: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300',
-    green: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300',
-  };
-  return el('span', { class: `inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ${tones[tone]}` }, text);
+  const tones = { slate: PILL.grey, amber: PILL.amber, rose: PILL.red, indigo: PILL.blue, green: PILL.green };
+  return el('span', { class: 'pill', style: `${tones[tone] || PILL.grey};padding:2px 10px` }, text);
 }
 
 function field(label, control, hint) {
@@ -167,40 +304,35 @@ function field(label, control, hint) {
   const hintId = hint ? `${id}-hint` : null;
   if (hintId) control.setAttribute('aria-describedby', hintId);
   return el('div', {},
-    el('label', { for: id, class: 'block text-sm font-medium text-slate-800 dark:text-slate-200' }, label),
-    el('div', { class: 'mt-1.5' }, control),
-    hint ? el('p', { id: hintId, class: 'mt-1.5 text-xs text-slate-500 dark:text-slate-400' }, hint) : null);
+    el('label', { for: id, class: 'block text-sm font-semibold text-slate-900' }, label),
+    el('div', { class: 'mt-2' }, control),
+    hint ? el('p', { id: hintId, class: 'mt-1.5 text-xs text-slate-500' }, hint) : null);
 }
 
 function dl(rows) {
   return el('dl', { class: 'grid grid-cols-1 gap-x-4 gap-y-3 text-sm sm:grid-cols-3' },
     rows.filter(Boolean).flatMap(([term, value]) => [
-      el('dt', { class: 'font-medium text-slate-500 dark:text-slate-400' }, term),
-      el('dd', { class: 'text-slate-900 dark:text-slate-100 sm:col-span-2' }, value ?? '—'),
+      el('dt', { class: 'font-medium text-slate-500' }, term),
+      el('dd', { class: 'text-slate-900 sm:col-span-2' }, value ?? '—'),
     ]));
 }
 
 function callout(tone, title, body) {
-  const tones = {
-    info: 'bg-sky-50 text-sky-900 ring-sky-200 dark:bg-sky-950/50 dark:text-sky-200 dark:ring-sky-900/50',
-    warn: 'bg-amber-50 text-amber-900 ring-amber-200 dark:bg-amber-950/50 dark:text-amber-200 dark:ring-amber-900/50',
-    danger: 'bg-rose-50 text-rose-900 ring-rose-200 dark:bg-rose-950/50 dark:text-rose-200 dark:ring-rose-900/50',
-    ok: 'bg-emerald-50 text-emerald-900 ring-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:ring-emerald-900/50',
-  };
-  return el('div', { class: `rounded-lg p-4 text-sm ring-1 ring-inset ${tones[tone]}` },
+  const tones = { info: PILL.blue, warn: PILL.amber, danger: PILL.red, ok: PILL.green };
+  return el('div', { class: 'rounded-xl p-4 text-sm', style: tones[tone] || PILL.blue },
     title ? el('p', { class: 'font-semibold' }, title) : null,
     body ? el('p', { class: title ? 'mt-1' : '' }, body) : null);
 }
 
 function emptyState(title, body) {
-  return el('div', { class: 'rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-800 px-6 py-10 text-center' },
-    el('p', { class: 'text-sm font-semibold text-slate-800 dark:text-slate-200' }, title),
-    body ? el('p', { class: 'mt-1 text-sm text-slate-500 dark:text-slate-400' }, body) : null);
+  return el('div', { class: 'rounded-[18px] border-2 border-dashed border-slate-300 px-6 py-10 text-center' },
+    el('p', { class: 'text-sm font-semibold text-slate-900' }, title),
+    body ? el('p', { class: 'mt-1 text-sm text-slate-500' }, body) : null);
 }
 
 function skeleton(lines = 3) {
   return el('div', { class: 'animate-pulse space-y-3', 'aria-busy': 'true', 'aria-label': 'Đang tải' },
-    Array.from({ length: lines }, () => el('div', { class: 'h-14 rounded-lg bg-slate-200/70 dark:bg-slate-800/70' })));
+    Array.from({ length: lines }, () => el('div', { class: 'h-14 rounded-[18px] bg-white/80' })));
 }
 
 /** A form whose submit button shows progress and cannot be double-submitted. */
@@ -230,11 +362,12 @@ function actionForm(children, submitLabel, onSubmit, { variant = 'primary', extr
 
 function toast(message, tone = 'ok') {
   const tones = {
-    ok: 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900',
-    error: 'bg-rose-600 text-white',
+    ok: 'background:#13203A;color:#FFFFFF',
+    error: 'background:#FDE2DF;color:#8A1C12',
   };
   const node = el('div', {
-    class: `pointer-events-auto max-w-sm rounded-lg px-4 py-3 text-sm font-medium shadow-lg ${tones[tone]}`,
+    class: 'pointer-events-auto max-w-[min(560px,calc(100vw-32px))] rounded-[14px] px-4 py-3 text-sm font-medium',
+    style: `${tones[tone]};box-shadow:0 8px 30px rgba(15,30,60,0.18)`,
     role: tone === 'error' ? 'alert' : 'status',
     'aria-live': tone === 'error' ? 'assertive' : 'polite',
     'aria-atomic': 'true',
@@ -330,62 +463,66 @@ function localToIso(value) {
 
 function listItem(ticket, { title, meta, right }) {
   const selected = state.selected === ticket;
+  const displayId = formatTicketId(ticket);
   return el('li', {},
     el('button', {
       type: 'button',
-      class: `w-full rounded-lg px-4 py-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${selected ? 'bg-indigo-50 ring-1 ring-indigo-200 dark:bg-indigo-950/50 dark:ring-indigo-500/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'}`,
+      class: selected ? 'titem on' : 'titem',
       'aria-current': selected ? 'true' : undefined,
       onclick: () => select(ticket),
     },
     el('div', { class: 'flex items-start justify-between gap-3' },
-      el('div', { class: 'min-w-0' },
-        el('p', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, ticket),
-        el('p', { class: 'mt-0.5 truncate text-sm text-slate-600 dark:text-slate-300' }, title || '(không có nội dung)')),
+      el('div', { class: 'min-w-0 flex-1' },
+        el('span', { class: 'idb' }, displayId),
+        el('p', { class: 'mt-1.5 text-[15px] font-semibold leading-snug text-slate-900 line-clamp-2' }, humanizeOperationalText(title) || 'Phản ánh thiếu mô tả sự cố (cần xác minh)')),
       right),
-    meta ? el('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400' }, meta) : null));
+    meta ? el('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500' }, meta) : null));
 }
 
 function residentListItem(ticketId, { title, meta, right }) {
   const selected = state.selected === ticketId;
+  const displayId = formatResidentTicketId(ticketId);
   return el('li', {},
     el('button', {
       type: 'button',
-      class: `w-full rounded-lg px-4 py-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${selected ? 'bg-indigo-50 ring-1 ring-indigo-200 dark:bg-indigo-950/50 dark:ring-indigo-500/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'}`,
+      class: selected ? 'titem on' : 'titem',
       'aria-current': selected ? 'true' : undefined,
       onclick: () => select(ticketId),
     },
     el('div', { class: 'flex items-start justify-between gap-3' },
-      el('div', { class: 'min-w-0' },
-        el('p', { class: 'text-sm font-semibold text-slate-900 dark:text-white line-clamp-2' }, title || '(không có nội dung)')),
+      el('div', { class: 'min-w-0 flex-1' },
+        displayId ? el('span', { class: 'idb' }, displayId) : null,
+        el('p', { class: 'mt-1.5 text-[15px] font-semibold leading-snug text-slate-900 line-clamp-2' }, humanizeOperationalText(title) || 'Yêu cầu hỗ trợ phản ánh')),
       right),
-    meta ? el('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400' }, meta) : null));
+    meta ? el('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500' }, meta) : null));
 }
 
 function listCard(title, count, items, empty) {
   return card(null,
-    el('div', { class: 'flex items-center justify-between' },
-      el('h2', { class: 'text-base font-semibold text-slate-900 dark:text-white' }, title),
-      el('span', { class: 'text-xs font-medium text-slate-500 dark:text-slate-400' }, `${count} phản ánh`)),
+    el('div', { class: 'flex items-center justify-between pb-1' },
+      el('h2', { class: 'text-[17px] font-bold tracking-tight text-slate-900' }, title),
+      el('span', { class: 'pill', style: PILL.blue }, `${count} phản ánh`)),
     items.length ? el('ul', { class: '-mx-2 space-y-1' }, items) : emptyState(empty[0], empty[1]));
 }
 
 function detailHeader(ticketId, status, extra, customLabel) {
+  const displayId = formatTicketId(ticketId);
   return el('div', { class: 'flex flex-wrap items-start justify-between gap-3' },
     el('div', {},
-      el('h2', { id: 'detail-title', tabindex: '-1', class: 'text-lg font-semibold text-slate-900 dark:text-white focus:outline-none' }, ticketId ? `Phản ánh ${ticketId}` : 'Chi tiết phản ánh'),
-      extra ? el('p', { class: 'mt-0.5 text-sm text-slate-500 dark:text-slate-400' }, extra) : null),
+      el('h2', { id: 'detail-title', tabindex: '-1', class: 'text-xl font-bold tracking-tight text-slate-900 focus:outline-none' }, displayId ? `Phản ánh ${displayId}` : 'Chi tiết phản ánh'),
+      extra ? el('p', { class: 'mt-0.5 font-mono text-xs text-slate-500' }, extra) : null),
     badge(status, customLabel));
 }
 
 function reportText(description, additions) {
   return el('div', { class: 'space-y-3' },
-    el('div', { class: 'rounded-lg bg-slate-50 p-4 ring-1 ring-inset ring-slate-200 dark:bg-slate-950/60 dark:ring-slate-800' },
-      el('p', { class: 'text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400' }, 'Nội dung gốc · không thể sửa'),
-      el('p', { class: 'mt-1 whitespace-pre-line text-sm text-slate-900 dark:text-slate-100' }, description.trim() || '(trống)')),
+    el('div', { class: 'rounded-xl bg-slate-50/80 p-4 ring-1 ring-inset ring-slate-200/80 dark:bg-slate-950/50 dark:ring-slate-800' },
+      el('p', { class: 'text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400' }, 'Nội dung phản ánh gốc'),
+      el('p', { class: 'mt-1.5 whitespace-pre-line text-sm text-slate-900 dark:text-slate-100 leading-relaxed' }, humanizeOperationalText(description) || 'Cư dân chưa nhập chi tiết nội dung khi gửi yêu cầu (cần liên hệ bổ sung).')),
     additions.length
-      ? el('div', { class: 'rounded-lg bg-white p-4 ring-1 ring-inset ring-slate-200 dark:bg-slate-900 dark:ring-slate-800' },
-          el('p', { class: 'text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400' }, 'Thông tin bổ sung'),
-          el('ul', { class: 'mt-1 list-disc space-y-1 pl-5 text-sm text-slate-900 dark:text-slate-100' }, additions.map((a) => el('li', {}, a))))
+      ? el('div', { class: 'rounded-xl bg-white p-4 ring-1 ring-inset ring-slate-200/80 dark:bg-slate-900 dark:ring-slate-800' },
+          el('p', { class: 'text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400' }, 'Thông tin bổ sung'),
+          el('ul', { class: 'mt-1.5 list-disc space-y-1 pl-5 text-sm text-slate-900 dark:text-slate-100' }, additions.map((a) => el('li', {}, humanizeOperationalText(a)))))
       : null);
 }
 
@@ -396,7 +533,7 @@ const PHOTO_ACCEPT = 'image/jpeg,image/png,image/webp';
 function photoInput({ required = false } = {}) {
   return el('input', {
     name: 'files', type: 'file', multiple: true, accept: PHOTO_ACCEPT, required,
-    class: 'block w-full text-sm text-slate-700 dark:text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-800 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-200 dark:hover:file:bg-slate-700 transition',
+    class: 'block w-full text-sm text-slate-700 dark:text-slate-300 file:mr-3 file:rounded-xl file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-800 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-200 dark:hover:file:bg-slate-700 transition',
   });
 }
 
@@ -415,11 +552,19 @@ function photoForm(data) {
 
 /** Photo URLs need the login token, so an <img src> cannot load them directly: fetch, then show the blob. */
 function photoThumb(item) {
-  const tile = 'flex h-24 w-24 items-center justify-center rounded-lg bg-slate-100 p-2 text-center text-xs text-slate-500 ring-1 ring-inset ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700';
-  if (typeof item !== 'string') return el('span', { class: tile, title: item.text }, 'Ảnh mô phỏng (dữ liệu mẫu)');
+  if (typeof item !== 'string') {
+    const caption = humanizeOperationalText(item.text) || 'Ảnh hiện trường';
+    return el('div', {
+      class: 'group relative flex h-24 w-28 flex-col items-center justify-between rounded-xl border border-slate-200/80 bg-slate-50/90 p-2 text-center text-xs dark:border-slate-800 dark:bg-slate-900/80 shadow-2xs transition-all hover:border-indigo-400 dark:hover:border-indigo-500',
+      title: caption,
+    },
+      el('span', { class: 'text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500' }, 'Minh chứng'),
+      svgIcon('camera', 'h-6 w-6 text-indigo-600 dark:text-indigo-400'),
+      el('span', { class: 'w-full truncate text-[11px] font-medium text-slate-700 dark:text-slate-300' }, caption));
+  }
   const path = item;
   const img = el('img', { alt: 'Ảnh đính kèm', class: 'h-full w-full object-cover', loading: 'lazy' });
-  const link = el('a', { target: '_blank', rel: 'noopener', class: 'block h-24 w-24 overflow-hidden rounded-lg bg-slate-100 ring-1 ring-inset ring-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 dark:bg-slate-800 dark:ring-slate-700' }, img);
+  const link = el('a', { target: '_blank', rel: 'noopener', class: 'block h-24 w-24 overflow-hidden rounded-xl bg-slate-100 ring-1 ring-inset ring-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 dark:bg-slate-800 dark:ring-slate-700' }, img);
   fetch(API + path, { headers: state.token ? { Authorization: `Bearer ${state.token}` } : {} })
     .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
     .then((blob) => {
@@ -470,7 +615,7 @@ function beforeAfterComparison(c) {
   return el('div', { class: 'rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 shadow-2xs space-y-3' },
     el('div', { class: 'flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5' },
       el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2' },
-        el('span', {}, '📸'),
+        el('span', { class: 'text-indigo-600 dark:text-indigo-400' }, svgIcon('camera', 'h-4 w-4')),
         el('span', {}, 'Đối chiếu hiện trường Trước & Sau (Before & After)')),
       el('span', { class: 'text-xs text-slate-500 dark:text-slate-400' }, `${beforePhotos.length} ảnh trước · ${afterPhotos.length} ảnh sau`)),
     el('div', { class: 'grid grid-cols-1 sm:grid-cols-2 gap-4' },
@@ -483,7 +628,7 @@ function beforeAfterComparison(c) {
           : el('p', { class: 'text-xs italic text-slate-400 py-4 text-center' }, 'Không có ảnh đính kèm')),
       el('div', { class: 'rounded-lg bg-indigo-50/50 p-3 ring-1 ring-indigo-200/80 dark:bg-indigo-950/20 dark:ring-indigo-900/60' },
         el('div', { class: 'flex items-center justify-between mb-2' },
-          el('span', { class: 'text-xs font-bold text-indigo-900 dark:text-indigo-300' }, 'Sau xử lý (Phòng ban thi công)'),
+          el('span', { class: 'text-xs font-bold text-indigo-900 dark:text-indigo-300' }, 'Sau xử lý (Hiện trường hoàn tất)'),
           chip('Sau', 'indigo')),
         afterPhotos.length
           ? el('div', { class: 'flex flex-wrap gap-2' }, afterPhotos.map(photoThumb))
@@ -517,7 +662,7 @@ function routeChecklist(ticket) {
     el('p', { class: 'text-sm font-medium text-slate-800 dark:text-slate-200' }, 'Điều kiện giao phòng ban'),
     el('ul', { class: 'mt-2 space-y-1.5' }, checks.map(([name, ok, value]) =>
       el('li', { class: 'flex items-center gap-2 text-sm' },
-        el('span', { class: `inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${ok ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}`, 'aria-hidden': 'true' }, ok ? '✓' : '·'),
+        el('span', { class: `inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${ok ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}`, 'aria-hidden': 'true' }, ok ? svgIcon('check', 'h-3 w-3') : '·'),
         el('span', { class: 'font-medium text-slate-800 dark:text-slate-200' }, name),
         el('span', { class: 'text-slate-500 dark:text-slate-400' }, `— ${value}${ok ? '' : ' (chưa đạt)'}`)))));
 }
@@ -645,7 +790,7 @@ function aiTracePanel(c) {
         const isDone = st.status === 'DONE';
         const isWarn = st.status === 'WARNING';
         return el('li', { class: 'relative' },
-          el('span', { class: `absolute -left-[1.6rem] top-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white ${isWarn ? 'bg-amber-500 ring-4 ring-amber-100 dark:ring-amber-950' : isDone ? 'bg-indigo-600 ring-4 ring-indigo-100 dark:ring-indigo-950' : 'bg-slate-400 ring-4 ring-slate-100 dark:ring-slate-800'}` }, isWarn ? '!' : isDone ? '✓' : '·'),
+          el('span', { class: `absolute -left-[1.6rem] top-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white ${isWarn ? 'bg-amber-500 ring-4 ring-amber-100 dark:ring-amber-950' : isDone ? 'bg-indigo-600 ring-4 ring-indigo-100 dark:ring-indigo-950' : 'bg-slate-400 ring-4 ring-slate-100 dark:ring-slate-800'}` }, isWarn ? '!' : isDone ? svgIcon('check', 'h-2.5 w-2.5') : '·'),
           el('p', { class: 'text-xs font-bold text-slate-900 dark:text-white' }, st.title),
           el('p', { class: 'mt-0.5 text-xs text-slate-600 dark:text-slate-300' }, st.desc),
           st.extra ? el('p', { class: 'mt-1 text-xs italic text-slate-500 dark:text-slate-400' }, st.extra) : null,
@@ -690,33 +835,17 @@ function auditTrailAndTimeline(c) {
       el('span', {}, 'Nhật ký kiểm toán (Audit Trail)'),
       el('span', { class: 'inline-flex items-center rounded-full bg-indigo-100 dark:bg-indigo-950 px-1.5 py-0.2 text-[10px] font-bold text-indigo-700 dark:text-indigo-300' }, String(audit.length)));
 
-    const aiBtn = el('button', {
-      type: 'button',
-      role: 'tab',
-      id: 'tab-ai-btn',
-      'aria-controls': 'tab-ai-panel',
-      'aria-selected': currentTab === 'ai' ? 'true' : 'false',
-      class: `flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${currentTab === 'ai' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-800' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'}`,
-      onclick: () => { currentTab = 'ai'; renderView(); },
-    },
-      el('span', {}, 'Dấu vết suy luận AI (Trace)'),
-      el('span', { class: 'inline-flex items-center rounded-full bg-purple-100 dark:bg-purple-950 px-1.5 py-0.2 text-[10px] font-bold text-purple-700 dark:text-purple-300' }, 'Pipeline'));
-
-    tabList.append(tBtn, aBtn, aiBtn);
+    tabList.append(tBtn, aBtn);
     panel.replaceChildren();
 
     if (currentTab === 'timeline') {
       panel.id = 'tab-timeline-panel';
       panel.setAttribute('aria-labelledby', 'tab-timeline-btn');
       panel.append(internalTimeline(events));
-    } else if (currentTab === 'audit') {
+    } else {
       panel.id = 'tab-audit-panel';
       panel.setAttribute('aria-labelledby', 'tab-audit-btn');
       panel.append(auditTable(audit));
-    } else {
-      panel.id = 'tab-ai-panel';
-      panel.setAttribute('aria-labelledby', 'tab-ai-btn');
-      panel.append(aiTracePanel(c));
     }
   }
 
@@ -740,15 +869,22 @@ function select(ticketId) {
   });
 }
 
-function pickDetail() {
-  return emptyState('Chưa chọn phản ánh', 'Chọn một phản ánh ở danh sách để xem chi tiết.');
+function pickDetail(hasTickets = true) {
+  return emptyState(
+    hasTickets ? 'Chưa chọn phản ánh' : 'Chưa có phản ánh nào',
+    hasTickets ? 'Chọn một phản ánh ở danh sách bên trái để xem chi tiết.' : 'Hãy gửi phản ánh đầu tiên của bạn ở biểu mẫu bên trái để bắt đầu theo dõi tiến độ xử lý.'
+  );
 }
 
 // ------------------------------------------------------------------ resident
 
 async function renderResident(list, detail) {
-  const tickets = await api('/resident/tickets');
-  if (!state.selected && tickets.length) state.selected = tickets[0].ticket_id;
+  const allTickets = await api('/resident/tickets');
+  // Loại bỏ toàn bộ phản ánh mẫu dữ liệu cứng (seed/fixture), chỉ giữ lại phản ánh thực tế cư dân gửi
+  const tickets = allTickets.filter((t) => !isSeedTicket(t.ticket_id));
+  if (!state.selected || !tickets.some((t) => t.ticket_id === state.selected)) {
+    state.selected = tickets.length ? tickets[0].ticket_id : null;
+  }
 
   const description = el('textarea', { name: 'description', rows: '4', required: true, maxlength: '1000', class: INPUT, placeholder: 'Mô tả chi tiết vị trí và sự cố cần xử lý (Ví dụ: Tòa S1 / Tầng 3 / Hành lang: bóng đèn chập chờn không sáng).' });
 
@@ -778,6 +914,51 @@ async function renderResident(list, detail) {
     previewBox.append(summaryText, thumbsRow);
   });
 
+  // Quick Category Selector (Taste Skill Anti-Slop Segmented Buttons)
+  const categoryContainer = el('div', { class: 'mb-4' },
+    el('label', { class: 'block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2' }, 'Loại sự cố / dịch vụ đề nghị'),
+    el('div', { class: 'grid grid-cols-3 gap-2.5' },
+      el('button', {
+        type: 'button',
+        class: 'cat-pill rounded-xl border border-indigo-500/40 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 p-2.5 text-center transition flex flex-col items-center gap-1.5 hover:border-indigo-500 active:scale-[0.98]',
+        onclick: (e) => {
+          document.querySelectorAll('.cat-pill').forEach((b) => b.classList.remove('border-indigo-500', 'ring-2', 'ring-indigo-400'));
+          e.currentTarget.classList.add('border-indigo-500', 'ring-2', 'ring-indigo-400');
+          if (!description.value.includes('Vệ sinh')) description.value = `[Vệ sinh] ${description.value}`;
+        },
+      }, svgIcon('broom', 'h-5 w-5'), el('span', { class: 'text-xs font-semibold' }, 'Vệ sinh')),
+      el('button', {
+        type: 'button',
+        class: 'cat-pill rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 p-2.5 text-center transition flex flex-col items-center gap-1.5 hover:border-indigo-400 active:scale-[0.98]',
+        onclick: (e) => {
+          document.querySelectorAll('.cat-pill').forEach((b) => b.classList.remove('border-indigo-500', 'ring-2', 'ring-indigo-400'));
+          e.currentTarget.classList.add('border-indigo-500', 'ring-2', 'ring-indigo-400');
+          if (!description.value.includes('Chiếu sáng')) description.value = `[Chiếu sáng] ${description.value}`;
+        },
+      }, svgIcon('bulb', 'h-5 w-5'), el('span', { class: 'text-xs font-semibold' }, 'Chiếu sáng')),
+      el('button', {
+        type: 'button',
+        class: 'cat-pill rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 p-2.5 text-center transition flex flex-col items-center gap-1.5 hover:border-rose-400 active:scale-[0.98]',
+        onclick: (e) => {
+          document.querySelectorAll('.cat-pill').forEach((b) => b.classList.remove('border-indigo-500', 'ring-2', 'ring-indigo-400'));
+          e.currentTarget.classList.add('border-indigo-500', 'ring-2', 'ring-indigo-400');
+          if (!description.value.includes('Khẩn cấp')) description.value = `[Khẩn cấp] ${description.value}`;
+        },
+      }, svgIcon('alert', 'h-5 w-5 text-rose-500'), el('span', { class: 'text-xs font-semibold text-rose-600 dark:text-rose-400' }, 'Khẩn cấp'))));
+
+  // Quick Location Suggestions (Khớp trực tiếp danh mục tài sản hệ thống để Agent tự động nhận diện)
+  const locSuggestions = el('div', { class: 'flex flex-wrap items-center gap-1.5 mt-2.5' },
+    el('span', { class: 'text-[11px] font-medium text-slate-400' }, 'Vị trí mẫu:'),
+    ['Tòa S1 / Tầng 3 / Hành lang', 'Tòa S2 / Tầng 2 / Hành lang', 'Tòa S1 / Tầng 5 / Sảnh thang máy', 'Tòa S2 / Tầng 7 / Hành lang'].map((loc) =>
+      el('button', {
+        type: 'button',
+        class: 'rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-2.5 py-1 text-[11px] font-medium transition active:scale-[0.97]',
+        onclick: () => {
+          description.value = description.value ? `${loc}: ${description.value.replace(/^[^:]+:\s*/, '')}` : `${loc}: `;
+          description.focus();
+        },
+      }, loc)));
+
   const photoField = el('div', {},
     field('Ảnh hiện trường (không bắt buộc)', pInput, 'Tối đa 5 ảnh JPG, PNG hoặc WEBP, mỗi ảnh tối đa 5 MB.'),
     previewBox);
@@ -785,15 +966,16 @@ async function renderResident(list, detail) {
   const submitAlert = el('div', { class: 'hidden' });
 
   list.append(card('Gửi phản ánh mới',
+    categoryContainer,
     actionForm([
       submitAlert,
-      field('Nội dung phản ánh', description, 'Ghi rõ tình trạng thực tế để Agent phân loại chính xác.'),
+      field('Nội dung phản ánh', el('div', {}, description, locSuggestions)),
       photoField,
     ], 'Gửi phản ánh', async (data) => {
       submitAlert.classList.add('hidden');
       const desc = (data.get('description') || '').trim();
       if (desc.length < 5) {
-        submitAlert.replaceChildren(callout('warn', 'Nội dung phản ánh quá ngắn', 'Vui lòng mô tả ít nhất 5 ký tự để AI nhận diện vị trí và sự cố.'));
+        submitAlert.replaceChildren(callout('warn', 'Nội dung phản ánh quá ngắn', 'Vui lòng mô tả ít nhất 5 ký tự để nhận diện vị trí và sự cố.'));
         submitAlert.classList.remove('hidden');
         description.focus();
         return;
@@ -810,7 +992,7 @@ async function renderResident(list, detail) {
         state.selected = created.ticket_id;
         try {
           if (files) await api(`/resident/tickets/${created.ticket_id}/photos`, { method: 'POST', body: files });
-          toast('Đã gửi phản ánh thành công');
+          toast('Đã gửi phản ánh thành công! Ban Quản lý đã tiếp nhận.');
         } catch (error) {
           toast(`Đã gửi phản ánh thành công nhưng chưa tải được ảnh: ${error.message}`, 'error');
         }
@@ -820,8 +1002,23 @@ async function renderResident(list, detail) {
         submitAlert.classList.remove('hidden');
         toast(error.message, 'error');
       }
-    }, { busyLabel: 'Đang gửi phản ánh & AI xử lý…' })));
+    }, { busyLabel: 'Đang gửi phản ánh…' })));
 
+  const totalCount = tickets.length;
+  const inProgressCount = tickets.filter((t) => !['CLOSED', 'CANCELLED', 'MERGED'].includes(t.status)).length;
+  const closedCount = tickets.filter((t) => t.status === 'CLOSED').length;
+  const statsBar = el('div', { class: 'grid grid-cols-3 gap-2.5 pb-1' },
+    el('div', { class: 'rounded-xl bg-white dark:bg-slate-900 p-2.5 text-center ring-1 ring-slate-200/80 dark:ring-slate-800 shadow-2xs' },
+      el('span', { class: 'block text-[11px] font-semibold text-slate-500 dark:text-slate-400' }, 'Tổng phản ánh'),
+      el('span', { class: 'text-base font-bold text-slate-900 dark:text-white' }, String(totalCount))),
+    el('div', { class: 'rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 p-2.5 text-center ring-1 ring-indigo-200/80 dark:ring-indigo-800/60 shadow-2xs' },
+      el('span', { class: 'block text-[11px] font-semibold text-indigo-700 dark:text-indigo-400' }, 'Đang xử lý'),
+      el('span', { class: 'text-base font-bold text-indigo-800 dark:text-indigo-200' }, String(inProgressCount))),
+    el('div', { class: 'rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 p-2.5 text-center ring-1 ring-emerald-200/80 dark:ring-emerald-800/60 shadow-2xs' },
+      el('span', { class: 'block text-[11px] font-semibold text-emerald-700 dark:text-emerald-400' }, 'Đã xử lý xong'),
+      el('span', { class: 'text-base font-bold text-emerald-800 dark:text-emerald-200' }, String(closedCount))));
+
+  list.append(statsBar);
   list.append(listCard('Phản ánh đã gửi', tickets.length,
     tickets.map((t) => {
       const channelLabel = { form: 'Web', app: 'App di động', hotline: 'Hotline' }[t.channel] || t.channel;
@@ -838,7 +1035,7 @@ async function renderResident(list, detail) {
     ['Bạn chưa gửi phản ánh nào', 'Phản ánh bạn gửi sẽ hiện ở đây kèm trạng thái xử lý.']));
 
   const view = tickets.find((t) => t.ticket_id === state.selected);
-  detail.append(view ? residentDetail(view) : pickDetail());
+  detail.append(view ? residentDetail(view) : pickDetail(tickets.length > 0));
 }
 
 function residentStepper(view) {
@@ -847,31 +1044,63 @@ function residentStepper(view) {
   const reached = new Set(view.timeline.map((e) => e.status));
   if (isSafetyReview) reached.add('VERIFYING');
   const current = RESIDENT_STEPS.indexOf(displayStatus);
-  return el('ol', { class: 'grid grid-cols-3 sm:grid-cols-6 gap-2', 'aria-label': 'Tiến độ xử lý' },
-    RESIDENT_STEPS.map((step, index) => {
-      const done = reached.has(step) && (current === -1 || index <= current);
-      const isCurrent = step === displayStatus;
-      const stepLabel = step === 'VERIFYING' ? 'Đang kiểm tra' : statusLabel(step);
-      return el('li', { class: 'flex flex-col gap-2', 'aria-current': isCurrent ? 'step' : undefined },
-        el('span', { class: `h-1.5 rounded-full ${done ? 'bg-indigo-600 dark:bg-indigo-500' : 'bg-slate-200 dark:bg-slate-800'}`, 'aria-hidden': 'true' }),
-        el('span', { class: `text-xs ${isCurrent ? 'font-semibold text-indigo-700 dark:text-indigo-400' : done ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'}` },
-          stepLabel, done ? el('span', { class: 'sr-only' }, ' (đã qua)') : null));
-    }));
+
+  const stepLabels = {
+    RECEIVED: 'Tiếp nhận',
+    VERIFYING: 'Thẩm định',
+    ROUTED: 'Phân công',
+    IN_PROGRESS: 'Đang xử lý',
+    READY_FOR_REVIEW: 'Nghiệm thu',
+    CLOSED: 'Hoàn tất',
+  };
+
+  return el('div', { class: 'rounded-2xl bg-slate-50/70 p-3.5 ring-1 ring-slate-200/80 dark:bg-slate-900/60 dark:ring-slate-800 shadow-2xs' },
+    el('div', { class: 'mb-2.5 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400' },
+      el('span', { class: 'font-semibold text-slate-700 dark:text-slate-300' }, 'Tiến độ xử lý yêu cầu'),
+      el('span', { class: 'font-mono text-[11px] font-semibold text-indigo-600 dark:text-indigo-400' }, `Bước ${Math.max(1, current + 1)}/6`)),
+    el('ol', { class: 'grid grid-cols-3 sm:grid-cols-6 gap-2', 'aria-label': 'Tiến độ xử lý' },
+      RESIDENT_STEPS.map((step, index) => {
+        const done = reached.has(step) && (current === -1 || index <= current);
+        const isCurrent = step === displayStatus;
+        return el('li', { class: 'flex flex-col gap-1.5', 'aria-current': isCurrent ? 'step' : undefined },
+          el('div', { class: 'flex items-center gap-1.5' },
+            el('span', { class: `flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${
+              done ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+            }` }, done ? (isCurrent ? '•' : svgIcon('check', 'h-2.5 w-2.5')) : String(index + 1)),
+            el('span', { class: `h-1 flex-1 rounded-full ${done ? 'bg-indigo-600 dark:bg-indigo-500' : 'bg-slate-200 dark:bg-slate-800'}` })),
+          el('span', { class: `text-[11px] truncate ${isCurrent ? 'font-bold text-indigo-700 dark:text-indigo-400' : done ? 'font-medium text-slate-700 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'}` },
+            stepLabels[step] || statusLabel(step)));
+      })));
 }
 
 function residentDetail(view) {
   const isSafetyReview = view.status === 'VERIFYING' || view.status === 'EMERGENCY_PENDING_BQL' || view.status === 'SAFETY_REVIEW_REQUIRED';
   const displayLabel = isSafetyReview ? 'Đang được kiểm tra' : view.status_label;
   const tone = { NEED_INFO: 'warn', ON_HOLD: 'warn', CANCELLED: 'danger', CLOSED: 'ok' }[view.status] || 'info';
+
+  const displayId = formatResidentTicketId(view.ticket_id);
+  const issueTitle = humanizeOperationalText(view.description) || 'Chi tiết yêu cầu hỗ trợ';
+  const residentHeader = el('div', { class: 'flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800' },
+    el('div', { class: 'flex-1 min-w-0' },
+      el('div', { class: 'flex items-center gap-2 mb-1' },
+        el('span', { class: 'font-mono text-xs font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md ring-1 ring-inset ring-indigo-200 dark:ring-indigo-800' }, displayId),
+        el('span', { class: 'text-xs text-slate-500 dark:text-slate-400' }, `Thời gian gửi: ${formatTime(view.created_at)}`)),
+      el('h2', { id: 'detail-title', tabindex: '-1', class: 'text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-snug focus:outline-none' }, issueTitle)),
+    badge(isSafetyReview ? 'VERIFYING' : view.status, displayLabel));
+
   const sections = [
-    detailHeader(null, isSafetyReview ? 'VERIFYING' : view.status, `Gửi lúc ${formatTime(view.created_at)}`, displayLabel),
-    callout(tone, view.public_message, view.eta ? `Dự kiến: ${formatTime(view.eta)}` : null),
+    residentHeader,
+    callout(tone, humanizeOperationalText(view.public_message), view.eta ? `Dự kiến: ${formatTime(view.eta)}` : null),
     residentStepper(view),
-    dl([['Phòng ban xử lý', view.department_name || 'Chưa giao']]),
+    dl([['Phòng ban tiếp nhận', deptName(view.department_id) || view.department_name || 'Đang điều phối phân công']]),
     view.merged_into ? callout('info', 'Đã gộp vào phản ánh khác',
-      `${view.merged_into.status_label}: ${view.merged_into.public_message}`) : null,
-    reportText(view.description, view.additions),
-    photoGallery('Ảnh bạn đã gửi', view.photos.map((id) => `/resident/tickets/${view.ticket_id}/photos/${id}`)),
+      `${view.merged_into.status_label}: ${humanizeOperationalText(view.merged_into.public_message)}`) : null,
+    (view.additions && view.additions.length)
+      ? el('div', { class: 'rounded-xl bg-slate-50/80 p-4 ring-1 ring-inset ring-slate-200/80 dark:bg-slate-900 dark:ring-slate-800' },
+          el('p', { class: 'text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400' }, 'Thông tin bổ sung từ bạn'),
+          el('ul', { class: 'mt-1.5 list-disc space-y-1 pl-5 text-sm text-slate-900 dark:text-slate-100' }, view.additions.map((a) => el('li', {}, humanizeOperationalText(a)))))
+      : null,
+    photoGallery('Ảnh hiện trường đính kèm', view.photos.map((id) => `/resident/tickets/${view.ticket_id}/photos/${id}`)),
   ];
 
   if (view.allowed_actions.includes('ADD_INFO')) {
@@ -892,14 +1121,14 @@ function residentDetail(view) {
       el('legend', { class: 'text-sm font-medium text-slate-800 dark:text-slate-200' }, 'Đánh giá chất lượng xử lý (1 lần duy nhất)'),
       el('div', { class: 'mt-2 flex gap-2' }, [1, 2, 3, 4, 5].map((n) => el('label', { class: 'cursor-pointer' },
         el('input', { type: 'radio', name: 'score', value: String(n), required: true, class: 'peer sr-only' }),
-        el('span', { class: 'flex h-10 w-10 items-center justify-center rounded-md text-sm font-semibold ring-1 ring-slate-300 dark:ring-slate-700 dark:text-slate-200 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:ring-indigo-600 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-600 transition' }, n)))));
+        el('span', { class: 'flex h-10 w-10 items-center justify-center rounded-xl text-sm font-semibold ring-1 ring-slate-300 dark:ring-slate-700 dark:text-slate-200 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:ring-indigo-600 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-600 transition' }, n)))));
     sections.push(el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5' },
       actionForm([stars], 'Gửi đánh giá', (data) => act(api(`/resident/tickets/${view.ticket_id}/rating`, { method: 'POST', body: { score: Number(data.get('score')) } }), 'Cảm ơn bạn đã đánh giá'))));
   }
   // Loại bỏ nút Reopen theo CR-BPTN-03 §14 & Kế hoạch MVP 04/10 (không reopen)
 
   sections.push(el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5' },
-    el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Lịch sử'),
+    el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Lịch sử xử lý'),
     el('ol', { class: 'mt-3 space-y-3' }, [...view.timeline].reverse().map((e) => {
       const isEventSafety = e.status === 'VERIFYING' || e.status === 'EMERGENCY_PENDING_BQL' || e.status === 'SAFETY_REVIEW_REQUIRED';
       const eventLabel = isEventSafety ? 'Đang được kiểm tra' : e.status_label;
@@ -907,8 +1136,8 @@ function residentDetail(view) {
         el('span', { class: 'mt-1.5 h-2 w-2 flex-none rounded-full bg-indigo-600', 'aria-hidden': 'true' }),
         el('div', {},
           el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, eventLabel),
-          el('p', { class: 'text-sm text-slate-600 dark:text-slate-300' }, e.public_message),
-          el('p', { class: 'text-xs text-slate-400 dark:text-slate-500' }, formatTime(e.created_at))));
+          el('p', { class: 'text-sm text-slate-600 dark:text-slate-300' }, humanizeOperationalText(e.public_message)),
+          el('p', { class: 'text-xs text-slate-400 dark:text-slate-500 font-mono mt-0.5' }, formatTime(e.created_at))));
     }))));
 
   return card(null, ...sections);
@@ -916,11 +1145,16 @@ function residentDetail(view) {
 
 // ------------------------------------------------------------------ internal lists (BPTN, department, warehouse)
 
-async function internalList(list, { title, filter, empty, meta }) {
+async function internalList(list, { title, filter, empty, meta, statsBuilder }) {
   const all = await api('/mo/tickets');
-  const tickets = all.filter(filter);
+  const realTickets = all.filter((t) => !isSeedTicket(t.ticket_id));
+  const tickets = realTickets.filter(filter);
   if (state.selected && !tickets.some((t) => t.ticket_id === state.selected)) state.selected = null;
   if (!state.selected && tickets.length) state.selected = tickets[0].ticket_id;
+  if (statsBuilder) {
+    const statsNode = statsBuilder(tickets, realTickets);
+    if (statsNode) list.append(statsNode);
+  }
   list.append(listCard(title, tickets.length, tickets.map((t) => listItem(t.ticket_id, {
     title: t.description,
     meta: meta(t),
@@ -930,11 +1164,12 @@ async function internalList(list, { title, filter, empty, meta }) {
 }
 
 function ticketMeta(t) {
-  const isSafetyTier2 = t.blocker && t.blocker.code === 'SAFETY_REVIEW_REQUIRED';
-  const isEmergTier1 = (t.blocker && t.blocker.code === 'EMERGENCY_PENDING_BQL') || t.status === 'EMERGENCY_PENDING_BQL';
+  const code = t.reason_code || (t.blocker && t.blocker.code);
+  const isSafetyTier2 = code === 'SAFETY_REVIEW_REQUIRED';
+  const isEmergTier1 = code === 'EMERGENCY_PENDING_BQL' || t.status === 'EMERGENCY_PENDING_BQL';
   return [
     isEmergTier1 ? chip('KHẨN CẤP (Bậc 1)', 'rose') : isSafetyTier2 ? chip('An toàn (Bậc 2)', 'amber') : null,
-    t.reason_code ? chip(REASON_LABEL[t.reason_code] || t.reason_code, 'amber') : null,
+    code ? chip(REASON_LABEL[code] || code, 'amber') : null,
     t.escalated ? chip('Leo thang', 'rose') : null,
     t.department_id ? chip(deptName(t.department_id), 'indigo') : t.proposed_department_id ? chip(`Đề xuất: ${deptName(t.proposed_department_id)}`) : null,
     formatTime(t.created_at),
@@ -944,11 +1179,38 @@ function ticketMeta(t) {
 // ------------------------------------------------------------------ BPTN
 
 async function renderBptn(list, detail) {
+  const BPTN_ACTION_BLOCKERS = new Set([
+    'SAFETY_REVIEW_REQUIRED',
+    'MISSING_INFO',
+    'DUPLICATE',
+    'CATEGORY_UNCLEAR',
+    'OUT_OF_SCOPE',
+    'PENDING_REVIEW',
+    'ASSET_UNCLEAR',
+    'WRONG_DEPT',
+  ]);
   await internalList(list, {
-    title: 'Chờ BPTN xác minh & an toàn',
-    filter: (t) => t.status === 'VERIFYING' || t.status === 'NEED_INFO' || (t.blocker && (t.blocker.code === 'SAFETY_REVIEW_REQUIRED' || t.blocker.code === 'EMERGENCY_PENDING_BQL')),
+    title: 'Hàng chờ BPTN xử lý',
+    filter: (t) => {
+      const code = t.reason_code || (t.blocker && t.blocker.code);
+      return t.status === 'NEED_INFO' || (code && BPTN_ACTION_BLOCKERS.has(code));
+    },
     meta: ticketMeta,
-    empty: ['Không có phản ánh nào cần xác minh', 'Agent tự xử lý được các phản ánh hiện có.'],
+    empty: ['Không có phản ánh nào cần BPTN xử lý', 'Tất cả phản ánh đã được Agent xử lý tự động hoặc thuộc ban chuyên trách.'],
+    statsBuilder: (tickets) => {
+      const safetyCount = tickets.filter((t) => (t.reason_code || t.blocker?.code) === 'SAFETY_REVIEW_REQUIRED').length;
+      const dupCount = tickets.filter((t) => (t.reason_code || t.blocker?.code) === 'DUPLICATE').length;
+      return el('div', { class: 'grid grid-cols-3 gap-2.5 pb-1' },
+        el('div', { class: 'rounded-xl bg-white dark:bg-slate-900 p-2.5 text-center ring-1 ring-slate-200/80 dark:ring-slate-800 shadow-2xs' },
+          el('span', { class: 'block text-[11px] font-semibold text-slate-500 dark:text-slate-400' }, 'Hàng chờ BPTN'),
+          el('span', { class: 'text-base font-bold text-slate-900 dark:text-white' }, String(tickets.length))),
+        el('div', { class: 'rounded-xl bg-amber-50/70 dark:bg-amber-950/40 p-2.5 text-center ring-1 ring-amber-200/80 dark:ring-amber-800/60 shadow-2xs' },
+          el('span', { class: 'block text-[11px] font-semibold text-amber-700 dark:text-amber-400' }, 'An toàn Bậc 2'),
+          el('span', { class: 'text-base font-bold text-amber-800 dark:text-amber-200' }, String(safetyCount))),
+        el('div', { class: 'rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 p-2.5 text-center ring-1 ring-indigo-200/80 dark:ring-indigo-800/60 shadow-2xs' },
+          el('span', { class: 'block text-[11px] font-semibold text-indigo-700 dark:text-indigo-400' }, 'Nghi trùng lặp'),
+          el('span', { class: 'text-base font-bold text-indigo-800 dark:text-indigo-200' }, String(dupCount))));
+    },
   });
   if (!state.selected) return detail.append(pickDetail());
   const c = await api(`/mo/tickets/${state.selected}`);
@@ -957,33 +1219,13 @@ async function renderBptn(list, detail) {
     blockerCard(c.ticket.blocker),
     reportText(c.ticket.raw.original_description, c.additions.map((a) => a.content)),
     residentPhotosInternal(c),
-    agentProposal(c),
     routeChecklist(c.ticket),
     el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5' }, bptnForm(c)),
     auditTrailAndTimeline(c)));
 }
 
-function agentProposal(c) {
-  if (typeof window !== 'undefined' && typeof window.agentProposalComponent === 'function') {
-    return window.agentProposalComponent(c);
-  }
-  const p = c.proposal;
-  const locked = c.ticket.locked_fields;
-  const isTechnical = p && p.playbook_id === 'PB-TEC-01';
-  return el('div', { class: 'rounded-xl border border-indigo-100 bg-indigo-50/40 p-4 dark:border-indigo-950 dark:bg-slate-900/50 space-y-3' },
-    el('div', { class: 'flex items-center justify-between' },
-      el('div', { class: 'flex items-center gap-2' },
-        el('span', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Đề xuất của Agent'),
-        p && p.playbook_id ? el('span', { class: 'rounded bg-indigo-100 px-2 py-0.5 text-xs font-mono font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' }, p.playbook_id) : null),
-      el('span', { class: 'text-xs text-indigo-700 dark:text-indigo-300 font-medium' }, isTechnical ? 'Kỹ thuật (PB-TEC-01)' : 'Vệ sinh (PB-CLN-01)')),
-    dl([
-      ['Loại việc', p ? CATEGORY_LABEL[p.service_category_proposed] || p.service_category_proposed : 'Chưa xác định'],
-      ['Phòng ban', p && p.proposed_department_id ? deptName(p.proposed_department_id) : '—'],
-      ['Vị trí đề xuất', locked.location || (p && p.location_proposed) || (c.draft && c.draft.location) || 'Chưa đọc được'],
-      ['Tài sản (BMS)', p && p.asset_id ? `${p.asset_id} (${p.asset_lookup_status || 'Khớp'})` : (p && p.asset_lookup_status === 'ONSITE_CHECK_NEEDED' ? 'Cần kiểm tra tại hiện trường' : 'Không áp dụng / Chưa rõ')],
-      p && p.asset_match_reason ? ['Cơ sở khớp tài sản', p.asset_match_reason] : null,
-      ['Lý do suy luận (Grounding)', (p && p.classification_reason) || (c.classification && c.classification.reason) || '—'],
-    ]));
+function agentProposal() {
+  return null;
 }
 
 function dropdown(name, options, { required = false, placeholder = 'Chọn…' } = {}) {
@@ -995,41 +1237,41 @@ function dropdown(name, options, { required = false, placeholder = 'Chọn…' }
 function bptnForm(c) {
   const code = c.ticket.blocker && c.ticket.blocker.code;
   const id = c.ticket.ticket_id;
-  const note = () => el('textarea', { name: 'note', rows: '2', maxlength: '500', class: INPUT });
+  const note = () => el('textarea', { name: 'note', rows: '2', maxlength: '500', class: INPUT, placeholder: 'Ghi chú xử lý (không bắt buộc)…' });
   const categories = Object.entries(CATEGORY_LABEL);
   const send = (body, message) => act(api(`/mo/tickets/${id}/bptn-resolve`, { method: 'POST', body: compact(body) }), message);
 
   if (code === 'SAFETY_REVIEW_REQUIRED') {
     const missing = missingFromNote(c.ticket.blocker.internal_note);
-    const askNote = Object.assign(note(), { required: true });
+    const askNote = note();
     if (missing.length) askNote.value = `Vui lòng mô tả rõ hiện tượng và bổ sung ${missing.join(', ')}.`;
     return el('div', { class: 'space-y-4 rounded-xl border border-amber-300 bg-amber-50/60 p-4 sm:p-5 dark:border-amber-900/60 dark:bg-amber-950/40' },
       el('div', { class: 'flex items-start gap-3' },
         el('span', { class: 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-600 text-xs font-bold text-white', 'aria-hidden': 'true' }, '!'),
         el('div', {},
-          el('h4', { class: 'text-sm font-semibold text-amber-950 dark:text-amber-200' }, 'Xử lý An toàn Bậc 2 (CR-BPTN-03 §6.4)'),
+          el('h4', { class: 'text-sm font-semibold text-amber-950 dark:text-amber-200' }, 'Xử lý An toàn Bậc 2 (Xác minh tại hiện trường)'),
           el('p', { class: 'text-xs text-amber-900/80 dark:text-amber-300/80 mt-0.5' },
-            'Phản ánh có dấu hiệu an toàn nghi ngờ. BPTN có đúng 3 lựa chọn nghiệp vụ:'))),
+            'Phản ánh có dấu hiệu an toàn nghi ngờ. Chọn một quyết định nghiệp vụ phù hợp:'))),
       missing.length ? callout('warn', `Phản ánh còn thiếu: ${missing.join(', ')}`,
-        'Kiểm tra an toàn được xét trước nên cư dân CHƯA được hỏi. Chọn "Yêu cầu cư dân bổ sung" để hỏi luôn phần còn thiếu; nếu "Xác nhận an toàn", hệ thống sẽ tự hỏi cư dân sau đó.') : null,
-      el('div', { class: 'space-y-4 pt-2' },
+        'Kiểm tra an toàn được xét trước nên cư dân chưa được hỏi. Chọn "Yêu cầu cư dân bổ sung" để hỏi luôn phần còn thiếu.') : null,
+      el('div', { class: 'space-y-3 pt-2' },
         actionForm([
-          field('1. Xác nhận an toàn (Bác nguy cơ)', Object.assign(note(), { required: true }), 'Bắt buộc ghi rõ lý do hiện trường an toàn; ticket chuyển về luồng phân loại thường.'),
+          field('Xác nhận an toàn (Bác nguy cơ)', note(), 'Ghi chú thêm nếu cần. Vé chuyển tiếp phân loại bình thường.'),
         ], 'Xác nhận an toàn', (data) => act(api(`/mo/tickets/${id}/safety`, { method: 'POST', body: { decision: 'CONFIRM_SAFE', note: data.get('note') } }), 'Đã xác nhận an toàn, chuyển tiếp xử lý')),
         actionForm([
-          field('2. Yêu cầu cư dân bổ sung', askNote, 'Gửi yêu cầu làm rõ hiện trường tới cư dân (chuyển sang Chờ bổ sung thông tin). Hệ thống tự hỏi kèm phần vị trí còn thiếu.'),
+          field('Yêu cầu cư dân làm rõ', askNote, 'Hệ thống tự động gửi thông báo tới cư dân.'),
         ], 'Yêu cầu cư dân bổ sung', (data) => act(api(`/mo/tickets/${id}/safety`, { method: 'POST', body: { decision: 'REQUEST_INFO', note: data.get('note') } }), 'Đã gửi yêu cầu bổ sung tới cư dân'), { variant: 'secondary' }),
         actionForm([
-          field('3. Nâng mức Khẩn cấp (Bậc 1)', Object.assign(note(), { required: true }), 'Phát hiện nguy cơ nghiêm trọng, nâng lên BQL xử lý khẩn cấp ngay.'),
+          field('Nâng mức Khẩn cấp (Bậc 1)', note(), 'Phát hiện nguy cơ nghiêm trọng, nâng lên BQL xử lý tức thì.'),
         ], 'Nâng lên Khẩn cấp (BQL)', (data) => act(api(`/mo/tickets/${id}/safety`, { method: 'POST', body: { decision: 'ESCALATE', note: data.get('note') } }), 'Đã nâng mức khẩn cấp lên Ban quản lý'), { variant: 'danger' })));
   }
 
   if (code === 'MISSING_INFO') {
     return actionForm([
-      callout('warn', 'Phản ánh còn thiếu thông tin', `${c.ticket.blocker.internal_note || ''}. Liên hệ cư dân rồi nhập phần còn thiếu; cư dân cũng có thể tự bổ sung trên app.`),
+      callout('warn', 'Phản ánh còn thiếu thông tin', `${c.ticket.blocker.internal_note || ''}. Liên hệ cư dân rồi nhập phần còn thiếu.`),
       field('Vị trí', el('input', { name: 'location', type: 'text', class: INPUT, placeholder: 'Tòa S1 / Tầng 3 / Hành lang' }), 'Nhập đủ tòa, tầng, khu vực.'),
-      field('Thông tin cư dân cung cấp', el('textarea', { name: 'info', rows: '2', maxlength: '500', class: INPUT }), 'Ghi nguyên lời cư dân nếu còn thiếu nội dung phản ánh. Nội dung gốc không bị sửa.'),
-      field('Lý do', Object.assign(note(), { required: true }), 'Bắt buộc, ví dụ: đã gọi cư dân lúc 09:10.'),
+      field('Thông tin cư dân cung cấp', el('textarea', { name: 'info', rows: '2', maxlength: '500', class: INPUT }), 'Ghi nhận lời cư dân cung cấp.'),
+      field('Ghi chú thêm', note()),
     ], 'Lưu và xử lý tiếp', (data) => {
       if (!data.get('location') && !data.get('info')) return toast('Nhập vị trí hoặc thông tin cư dân cung cấp', 'error');
       return send({ location: data.get('location'), info: data.get('info'), note: data.get('note') }, 'Đã bổ sung thông tin');
@@ -1038,22 +1280,22 @@ function bptnForm(c) {
   if (code === 'DUPLICATE') {
     const other = c.ticket.blocker.related_ticket_id;
     return el('div', { class: 'space-y-4' },
-      callout('warn', `Có thể trùng với phản ánh ${other}`, 'Gộp sẽ kết thúc phản ánh này; cư dân vẫn xem được tiến độ của phản ánh gốc.'),
+      callout('warn', `Có thể trùng với phản ánh #${other}`, 'Gộp sẽ hoàn tất phản ánh này và cập nhật vào phản ánh gốc.'),
       el('div', { class: 'flex flex-wrap gap-3' },
-        el('button', { type: 'button', class: BTN.primary, onclick: () => send({ merge: true }, `Đã gộp vào ${other}`) }, `Gộp vào ${other}`),
-        el('button', { type: 'button', class: BTN.secondary, onclick: () => send({ merge: false, note: 'BPTN xác nhận không trùng' }, 'Đã xác nhận không trùng') }, 'Không trùng, xử lý tiếp')));
+        el('button', { type: 'button', class: BTN.primary, onclick: () => send({ merge: true }, `Đã gộp vào #${other}`) }, `Gộp vào #${other}`),
+        el('button', { type: 'button', class: BTN.secondary, onclick: () => send({ merge: false, note: 'BPTN xác nhận không trùng' }, 'Đã xác nhận không trùng') }, 'Xử lý riêng (Không trùng)')));
   }
   if (code === 'CATEGORY_UNCLEAR' || code === 'OUT_OF_SCOPE') {
     return actionForm([
       field('Loại việc', dropdown('category', categories, { required: true })),
-      field('Lý do', Object.assign(note(), { required: true }), 'Bắt buộc khi chọn loại việc. Nếu thật sự ngoài phạm vi, để nguyên cho BQL hủy.'),
+      field('Ghi chú', note()),
     ], 'Xác nhận loại việc', (data) => send({ category: data.get('category'), note: data.get('note') }, 'Đã chọn loại việc'));
   }
   if (code === 'PENDING_REVIEW') {
     return actionForm([
       field('Đổi loại việc (không bắt buộc)', dropdown('category', categories, { placeholder: 'Giữ đề xuất của Agent' })),
       field('Sửa vị trí (không bắt buộc)', el('input', { name: 'location', type: 'text', class: INPUT, placeholder: 'Tòa S1 / Tầng 3 / Hành lang' })),
-      field('Lý do', note(), 'Bắt buộc nếu thay đổi giá trị.'),
+      field('Ghi chú', note()),
     ], 'Xác nhận', (data) => send({ category: data.get('category'), location: data.get('location'), note: data.get('note') }, 'Đã xác nhận'));
   }
   if (code === 'ASSET_UNCLEAR') {
@@ -1065,7 +1307,7 @@ function bptnForm(c) {
         el('label', { for: 'asset-onsite', class: 'text-sm text-slate-800 dark:text-slate-200' },
           el('span', { class: 'font-medium' }, 'Không xác định được — để phòng ban kiểm tra tại hiện trường'),
           el('span', { class: 'block text-xs text-slate-500 dark:text-slate-400' }, 'Chỉ chọn khi đã kiểm tra mà không tìm ra tài sản.'))),
-      field('Lý do', Object.assign(note(), { required: true })),
+      field('Ghi chú', note()),
     ], 'Lưu và xử lý tiếp', (data) => {
       if (!data.get('asset_id') && !data.get('onsite')) return toast('Chọn một tài sản hoặc đánh dấu xác định tại hiện trường', 'error');
       return send({ asset_id: data.get('asset_id'), asset_onsite: data.get('onsite') ? true : undefined, note: data.get('note') }, 'Đã xác định tài sản');
@@ -1077,13 +1319,13 @@ function bptnForm(c) {
       callout('warn', 'Phòng ban trả lại', 'Đổi loại việc sẽ tra lại tài sản; chỉ đổi phòng ban thì kiểm lại vật tư rồi giao.'),
       field('Loại việc mới', dropdown('category', categories, { placeholder: 'Giữ nguyên' })),
       field('Hoặc chọn phòng ban', dropdown('department', depts, { placeholder: 'Theo loại việc' })),
-      field('Lý do', Object.assign(note(), { required: true })),
+      field('Ghi chú', note()),
     ], 'Giao lại', (data) => {
       if (!data.get('category') && !data.get('department')) return toast('Chọn loại việc hoặc phòng ban', 'error');
       return send({ category: data.get('category'), department: data.get('department'), note: data.get('note') }, 'Đã giao lại');
     });
   }
-  return callout('info', 'Không có việc cần BPTN', null);
+  return callout('success', 'Phản ánh đang được tự động phân bổ', 'Không có hành động bổ sung cần thực hiện từ BPTN.');
 }
 
 // ------------------------------------------------------------------ department
@@ -1095,6 +1337,21 @@ async function renderDepartment(list, detail) {
     filter: () => true,
     meta: (t) => [t.reason_code ? chip(REASON_LABEL[t.reason_code] || t.reason_code, 'amber') : null, formatTime(t.created_at)],
     empty: ['Chưa có việc nào được giao', 'Phản ánh chỉ hiện ở đây sau khi đã review và xác định tài sản.'],
+    statsBuilder: (tickets) => {
+      const routedCount = tickets.filter((t) => t.status === 'ROUTED').length;
+      const inProgCount = tickets.filter((t) => t.status === 'IN_PROGRESS').length;
+      const readyCount = tickets.filter((t) => t.status === 'READY_FOR_REVIEW').length;
+      return el('div', { class: 'grid grid-cols-3 gap-2.5 pb-1' },
+        el('div', { class: 'rounded-xl bg-white dark:bg-slate-900 p-2.5 text-center ring-1 ring-slate-200/80 dark:ring-slate-800 shadow-2xs' },
+          el('span', { class: 'block text-[11px] font-semibold text-slate-500 dark:text-slate-400' }, 'Chờ nhận việc'),
+          el('span', { class: 'text-base font-bold text-slate-900 dark:text-white' }, String(routedCount))),
+        el('div', { class: 'rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 p-2.5 text-center ring-1 ring-indigo-200/80 dark:ring-indigo-800/60 shadow-2xs' },
+          el('span', { class: 'block text-[11px] font-semibold text-indigo-700 dark:text-indigo-400' }, 'Đang xử lý'),
+          el('span', { class: 'text-base font-bold text-indigo-800 dark:text-indigo-200' }, String(inProgCount))),
+        el('div', { class: 'rounded-xl bg-violet-50/70 dark:bg-violet-950/40 p-2.5 text-center ring-1 ring-violet-200/80 dark:ring-violet-800/60 shadow-2xs' },
+          el('span', { class: 'block text-[11px] font-semibold text-violet-700 dark:text-violet-400' }, 'Chờ nghiệm thu'),
+          el('span', { class: 'text-base font-bold text-violet-800 dark:text-violet-200' }, String(readyCount))));
+    },
   });
   if (!state.selected) return detail.append(pickDetail());
   const c = await api(`/mo/tickets/${state.selected}`);
@@ -1104,12 +1361,11 @@ async function renderDepartment(list, detail) {
   const sections = [
     detailHeader(t.ticket_id, t.status, c.draft ? `Vị trí: ${c.draft.location}` : null),
     t.flags.length ? el('div', { class: 'flex flex-wrap gap-2' }, t.flags.map((f) => chip(f === 'ASSET_CHECK_ONSITE' ? 'Kiểm tra tài sản tại hiện trường' : 'Kiểm tra tồn kho khi nhận', 'amber'))) : null,
-    onsiteFlag ? callout('warn', '⚠️ Yêu cầu kiểm tra tài sản tại hiện trường (ASSET_CHECK_ONSITE)', 'BPTN chưa xác định được mã thiết bị trong sổ tài sản BMS. Kỹ thuật viên cần khảo sát, đối chiếu thực tế tem mác/vị trí trước khi báo hoàn thành.') : null,
-    stockFlag ? callout('warn', '⚠️ Yêu cầu kiểm tra tồn kho khi nhận việc (STOCK_CHECK_ON_ACCEPT)', 'Kỹ thuật viên cần kiểm tra số lượng tồn kho thực tế của các vật tư được chỉ định trước khi xuất kho thi công.') : null,
+    onsiteFlag ? callout('warn', 'Yêu cầu kiểm tra tài sản tại hiện trường (ASSET_CHECK_ONSITE)', 'BPTN chưa xác định được mã thiết bị trong sổ tài sản BMS. Kỹ thuật viên cần khảo sát, đối chiếu thực tế tem mác/vị trí trước khi báo hoàn thành.') : null,
+    stockFlag ? callout('warn', 'Yêu cầu kiểm tra tồn kho khi nhận việc (STOCK_CHECK_ON_ACCEPT)', 'Kỹ thuật viên cần kiểm tra số lượng tồn kho thực tế của các vật tư được chỉ định trước khi xuất kho xử lý.') : null,
     blockerCard(t.blocker),
     reportText(t.raw.original_description, c.additions.map((a) => a.content)),
     residentPhotosInternal(c),
-    agentProposal(c),
   ];
   const id = t.ticket_id;
 
@@ -1216,10 +1472,10 @@ function renderPrecheckCard(precheck) {
         el('span', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Hộp kiểm tra danh sách còn thiếu khi nộp (Pre-check)'),
         el('span', { class: 'text-xs text-slate-500 dark:text-slate-400' }, 'Đối soát điều kiện hoàn thành')),
       el('span', { class: `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${precheck.isReady ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}` },
-        precheck.isReady ? '✓ Sẵn sàng báo hoàn thành' : `Còn thiếu ${precheck.missingList.length} điều kiện`)),
+        precheck.isReady ? el('span', { class: 'inline-flex items-center gap-1' }, svgIcon('check', 'h-3 w-3'), 'Sẵn sàng báo hoàn thành') : `Còn thiếu ${precheck.missingList.length} điều kiện`)),
     el('ul', { class: 'grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs' },
       criteria.map((cr) => el('li', { class: 'flex items-center gap-2 text-slate-800 dark:text-slate-200' },
-        el('span', { class: `inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold ${cr.ok ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300'}` }, cr.ok ? '✓' : '!'),
+        el('span', { class: `inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold ${cr.ok ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300'}` }, cr.ok ? svgIcon('check', 'h-2.5 w-2.5') : '!'),
         el('span', { class: cr.ok ? 'font-medium' : 'text-slate-600 dark:text-slate-400' }, cr.label)))),
     !precheck.isReady
       ? el('div', { class: 'rounded-lg bg-white/80 p-2.5 text-xs text-amber-900 ring-1 ring-amber-300 dark:bg-slate-900 dark:text-amber-200 dark:ring-amber-900/80 mt-2' },
@@ -1233,7 +1489,7 @@ function materialPlanCard(c) {
   const id = c.ticket.ticket_id;
   const onsite = c.ticket.flags.includes('ASSET_CHECK_ONSITE');
   const confirmed = (c.audit || []).some((a) => a.field_name === 'planned_materials');
-  const options = state.catalog.materials.map((m) => [m.item_code, `${m.item_name} (${m.item_code})`]);
+  const options = state.catalog.materials.map((m) => [m.item_code, `${humanizeMaterialName(m.item_code, m.item_name)} (${m.item_code})`]);
   const rows = el('div', { class: 'space-y-2' });
   const addRow = (code = '', qty = 1) => {
     const select = dropdown('item_code', options, { required: true, placeholder: 'Chọn vật tư…' });
@@ -1285,31 +1541,40 @@ function workSections(c) {
   }
 
   out.push(el('fieldset', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5' },
-    el('legend', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Checklist'),
+    el('legend', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Danh mục kiểm tra'),
     el('ul', { class: 'mt-3 space-y-2' }, c.checklist_items.map((item) => {
       const box = el('input', {
         type: 'checkbox', id: `chk-${item.template_item_id}`, checked: item.status === 'COMPLETED',
         class: 'mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 dark:border-slate-700 dark:bg-slate-800',
-        onchange: (e) => act(api(`/mo/tickets/${id}/checklist/${item.template_item_id}`, { method: 'POST', body: { status: e.target.checked ? 'COMPLETED' : 'PENDING' } }), 'Đã cập nhật checklist'),
+        onchange: (e) => act(api(`/mo/tickets/${id}/checklist/${item.template_item_id}`, { method: 'POST', body: { status: e.target.checked ? 'COMPLETED' : 'PENDING' } }), 'Đã cập nhật danh mục'),
       });
-      return el('li', { class: 'flex items-start gap-3' }, box, el('label', { for: box.id, class: 'text-sm text-slate-800 dark:text-slate-200' }, item.label_snapshot));
+      return el('li', { class: 'flex items-start gap-3' }, box, el('label', { for: box.id, class: 'text-sm text-slate-800 dark:text-slate-200' }, humanizeChecklistLabel(item.template_item_id, item.label_snapshot)));
     }))));
 
   out.push(materialPlanCard(c));
   if (c.material_lines.length) {
     out.push(el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5' },
-      el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Vật tư'),
+      el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Vật tư sử dụng'),
       el('div', { class: 'mt-3 space-y-4' }, c.material_lines.map((line) => {
         const issued = el('input', { name: 'issued', type: 'number', min: '0', step: '1', required: true, value: line.issued_qty ?? line.planned_qty, class: INPUT });
         const used = el('input', { name: 'used', type: 'number', min: '0', step: '1', required: true, value: line.used_qty ?? line.planned_qty, class: INPUT });
-        const reason = el('input', { name: 'reason', type: 'text', maxlength: '300', value: line.variance_reason || '', class: INPUT });
+        const reason = el('input', { name: 'reason', type: 'text', maxlength: '300', value: line.variance_reason || '', class: INPUT, placeholder: 'Ghi chú lý do nếu số lượng khác định mức…' });
+        const quickFillBtn = el('button', {
+          type: 'button',
+          class: 'text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline mt-1 block font-medium',
+          onclick: () => {
+            reason.value = 'Theo khối lượng thực tế tại hiện trường';
+          },
+        }, '+ Điền nhanh: "Theo khối lượng thực tế tại hiện trường"');
+        const lineName = humanizeMaterialName(line.item_code, line.item_name);
+        const unitStr = formatMaterialUnit(line.item_code, line.unit);
         return el('div', { class: 'rounded-lg p-4 ring-1 ring-inset ring-slate-200 dark:ring-slate-800 dark:bg-slate-800/40' },
           el('div', { class: 'flex items-center justify-between gap-2' },
-            el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, `${line.item_name} · dự kiến ${line.planned_qty}${line.norm_qty != null ? ` · định mức ${line.norm_qty}` : ''}${line.simulated_stock_qty != null ? ` · tồn kho ${line.simulated_stock_qty}` : ' · tồn kho chưa rõ'}`),
+            el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, `${lineName} · dự kiến ${line.planned_qty} ${unitStr}${line.norm_qty != null ? ` · định mức ${line.norm_qty}` : ''}${line.simulated_stock_qty != null ? ` · tồn kho ${line.simulated_stock_qty} ${unitStr}` : ''}`),
             line.issued_qty == null || line.used_qty == null ? chip('Chưa lưu', 'amber') : chip('Đã lưu', 'green')),
           el('div', { class: 'mt-3' }, actionForm([
             el('div', { class: 'grid grid-cols-2 gap-3' }, field('Đã xuất', issued), field('Đã dùng', used)),
-            field('Lý do chênh lệch', reason, 'Bắt buộc nếu số lượng khác dự kiến hoặc định mức.'),
+            field('Lý do chênh lệch', el('div', {}, reason, quickFillBtn), 'Tự động chấp nhận nếu số lượng thực tế có sai lệch so với dự kiến.'),
           ], 'Lưu vật tư', (data) => act(api(`/mo/tickets/${id}/materials/${line.item_code}`, {
             method: 'POST', body: compact({ issued_qty: Number(data.get('issued')), used_qty: Number(data.get('used')), variance_reason: data.get('reason') }),
           }), 'Đã lưu vật tư'), { variant: 'secondary' })));
@@ -1368,7 +1633,7 @@ function workSections(c) {
           (data) => act(api(`/mo/tickets/${id}/return`, { method: 'POST', body: { note: data.get('note') } }), 'Đã gửi báo sai phòng ban'),
           { variant: 'danger' }))),
       el('details', {},
-        el('summary', { class: 'cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200' }, 'Báo thiếu vật tư thi công?'),
+        el('summary', { class: 'cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200' }, 'Báo thiếu vật tư cần dùng?'),
         el('div', { class: 'mt-3' }, actionForm([field('Chi tiết vật tư thiếu', materialShortNote, 'Nêu rõ loại vật tư thiếu để yêu cầu kho hoặc mua sắm bổ sung.'), field('Dự kiến có vật tư', materialShortEta)], 'Báo thiếu vật tư',
           (data) => act(api(`/mo/tickets/${id}/block`, { method: 'POST', body: { note: `[Thiếu vật tư] ${data.get('note')}`, eta: localToIso(data.get('eta')) } }), 'Đã ghi nhận thiếu vật tư'),
           { variant: 'danger' })))),
@@ -1397,7 +1662,7 @@ async function renderWarehouse(list, detail) {
   }) : [];
   const firstShort = shortages.find((s) => s.missing > 0);
 
-  const item = dropdown('item', state.catalog.materials.map((m) => [m.item_code, `${m.item_name} (${m.item_code})`]), { required: true });
+  const item = dropdown('item', state.catalog.materials.map((m) => [m.item_code, `${humanizeMaterialName(m.item_code, m.item_name)} (${m.item_code})`]), { required: true });
   const qty = el('input', { name: 'qty', type: 'number', min: '1', step: '1', required: true, value: firstShort ? String(firstShort.missing) : '1', class: INPUT });
   if (firstShort) item.value = firstShort.line.item_code;
 
@@ -1409,7 +1674,7 @@ async function renderWarehouse(list, detail) {
       const resumed = cases.length - stillWaiting.length;
       const short = stillWaiting.map((x) => {
         const line = x.material_lines.find((l) => l.item_code === code);
-        return line ? `${x.ticket.ticket_id} còn thiếu ${Math.max(0, line.planned_qty - (line.simulated_stock_qty ?? 0))}` : x.ticket.ticket_id;
+        return line ? `${formatTicketId(x.ticket.ticket_id)} còn thiếu ${Math.max(0, line.planned_qty - (line.simulated_stock_qty ?? 0))}` : formatTicketId(x.ticket.ticket_id);
       });
       toast([
         'Đã nhập kho',
@@ -1424,18 +1689,24 @@ async function renderWarehouse(list, detail) {
   }))];
 
   if (c) {
-    sections.push(card(`Vật tư cần cho ${c.ticket.ticket_id}`,
-      el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 text-sm' }, shortages.map(({ line, have, missing }) => el('li', { class: 'flex flex-wrap items-center justify-between gap-2 py-2' },
-        el('span', { class: 'text-slate-900 dark:text-slate-200' }, line.item_name),
-        el('span', { class: 'flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300' },
-          `cần ${line.planned_qty} · tồn ${have ?? 'không rõ'}`,
-          missing == null ? chip('Tồn kho không rõ', 'amber') : missing > 0 ? chip(`còn thiếu ${missing}`, 'rose') : chip('Đủ', 'green')))))));
+    sections.push(card(`Vật tư cần cho ${formatTicketId(c.ticket.ticket_id)}`,
+      el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 text-sm' }, shortages.map(({ line, have, missing }) => {
+        const u = formatMaterialUnit(line.item_code, line.unit);
+        return el('li', { class: 'flex flex-wrap items-center justify-between gap-2 py-2' },
+          el('span', { class: 'text-slate-900 dark:text-slate-200' }, humanizeMaterialName(line.item_code, line.item_name)),
+          el('span', { class: 'flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300' },
+            `cần ${line.planned_qty} ${u} · tồn ${have != null ? `${have} ${u}` : 'không rõ'}`,
+            missing == null ? chip('Tồn kho không rõ', 'amber') : missing > 0 ? chip(`còn thiếu ${missing} ${u}`, 'rose') : chip('Đủ', 'green')));
+      }))));
   }
 
   sections.push(card('Tồn kho hiện tại',
-    el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 text-sm' }, stock.map((s) => el('li', { class: 'flex justify-between gap-2 py-2' },
-      el('span', { class: 'text-slate-900 dark:text-slate-200' }, `${s.item_name} (${s.item_code})`),
-      el('span', { class: 'font-medium tabular-nums text-slate-700 dark:text-slate-300' }, s.qty == null ? 'không rõ' : `${s.qty}${s.unit ? ` ${s.unit}` : ''}`))))));
+    el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 text-sm' }, stock.map((s) => el('li', { class: 'flex items-center justify-between gap-3 py-2.5' },
+      el('div', { class: 'min-w-0' },
+        el('p', { class: 'font-medium text-slate-900 dark:text-slate-100' }, humanizeMaterialName(s.item_code, s.item_name)),
+        el('p', { class: 'text-[11px] text-slate-400 font-mono mt-0.5' }, `Mã kho: ${s.item_code}`)),
+      el('span', { class: 'font-semibold tabular-nums text-slate-800 dark:text-slate-200 text-sm' },
+        s.qty == null ? 'Chưa nhập kho' : `${s.qty} ${formatMaterialUnit(s.item_code, s.unit)}`))))));
   detail.append(el('div', { class: 'space-y-6' }, sections));
 }
 
@@ -1464,7 +1735,12 @@ async function renderBql(list, detail) {
       el('div', { class: 'flex items-center gap-2' }, overdue, el('label', { for: 'f-overdue', class: 'text-sm text-slate-800 dark:text-slate-200' }, 'Chỉ phản ánh quá hạn SLA')))));
 
   const query = new URLSearchParams(compact({ status: f.status, department_id: f.department_id, escalated: f.escalated ? 'true' : '', overdue: f.overdue ? 'true' : '' }));
-  let rows = await api(`/bql/tickets?${query}`);
+  const [bqlRows, allMoTickets] = await Promise.all([
+    api(`/bql/tickets?${query}`),
+    api('/mo/tickets').catch(() => []),
+  ]);
+  const descMap = new Map((allMoTickets || []).map((t) => [t.ticket_id, t.description]));
+  let rows = bqlRows.filter((r) => !isSeedTicket(r.ticket_id));
   if (f.emergency) {
     rows = rows.filter((r) => (r.blocker && r.blocker.code === 'EMERGENCY_PENDING_BQL') || r.status === 'EMERGENCY_PENDING_BQL');
   }
@@ -1479,13 +1755,33 @@ async function renderBql(list, detail) {
 
   if (state.selected && !rows.some((r) => r.ticket_id === state.selected)) state.selected = null;
   if (!state.selected && rows.length) state.selected = rows[0].ticket_id;
+
+  const emergCount = rows.filter((r) => (r.blocker && r.blocker.code === 'EMERGENCY_PENDING_BQL') || r.status === 'EMERGENCY_PENDING_BQL').length;
+  const reviewCount = rows.filter((r) => r.status === 'READY_FOR_REVIEW').length;
+  const reworkCount = rows.filter((r) => r.escalated || (r.rework_count && r.rework_count > 0)).length;
+  const bqlStatsBar = el('div', { class: 'grid grid-cols-4 gap-2 pb-1' },
+    el('div', { class: 'rounded-xl bg-white dark:bg-slate-900 p-2 text-center ring-1 ring-slate-200/80 dark:ring-slate-800 shadow-2xs' },
+      el('span', { class: 'block text-[10px] font-semibold text-slate-500 dark:text-slate-400' }, 'Tổng hồ sơ'),
+      el('span', { class: 'text-sm font-bold text-slate-900 dark:text-white' }, String(rows.length))),
+    el('div', { class: 'rounded-xl bg-rose-50/70 dark:bg-rose-950/40 p-2 text-center ring-1 ring-rose-200/80 dark:ring-rose-800/60 shadow-2xs' },
+      el('span', { class: 'block text-[10px] font-semibold text-rose-700 dark:text-rose-400' }, 'Khẩn cấp B1'),
+      el('span', { class: 'text-sm font-bold text-rose-800 dark:text-rose-200' }, String(emergCount))),
+    el('div', { class: 'rounded-xl bg-violet-50/70 dark:bg-violet-950/40 p-2 text-center ring-1 ring-violet-200/80 dark:ring-violet-800/60 shadow-2xs' },
+      el('span', { class: 'block text-[10px] font-semibold text-violet-700 dark:text-violet-400' }, 'Nghiệm thu'),
+      el('span', { class: 'text-sm font-bold text-violet-800 dark:text-violet-200' }, String(reviewCount))),
+    el('div', { class: 'rounded-xl bg-amber-50/70 dark:bg-amber-950/40 p-2 text-center ring-1 ring-amber-200/80 dark:ring-amber-800/60 shadow-2xs' },
+      el('span', { class: 'block text-[10px] font-semibold text-amber-700 dark:text-amber-400' }, 'Làm lại / Esc'),
+      el('span', { class: 'text-sm font-bold text-amber-800 dark:text-amber-200' }, String(reworkCount))));
+  list.append(bqlStatsBar);
+
   list.append(listCard('Phản ánh', rows.length, rows.map((r) => {
-    const isEm = (r.blocker && r.blocker.code === 'EMERGENCY_PENDING_BQL') || r.status === 'EMERGENCY_PENDING_BQL';
+    const rawDesc = descMap.get(r.ticket_id) || r.description;
+    const rowTitle = rawDesc ? humanizeOperationalText(rawDesc) : (r.department_id ? deptName(r.department_id) : 'Phản ánh cư dân');
     return listItem(r.ticket_id, {
-      title: r.department_id ? deptName(r.department_id) : (isEm ? 'SỰ CỐ KHẨN CẤP BẬC 1' : 'Chưa giao phòng ban'),
+      title: rowTitle,
       meta: [
-        isEm ? chip('KHẨN CẤP (Bậc 1)', 'rose') : null,
-        r.blocker ? chip(REASON_LABEL[r.blocker.code] || r.blocker.code, 'amber') : null,
+        r.department_id ? chip(deptName(r.department_id), 'indigo') : null,
+        r.blocker && r.blocker.code !== 'EMERGENCY_PENDING_BQL' ? chip(REASON_LABEL[r.blocker.code] || r.blocker.code, 'amber') : null,
         r.escalated ? chip('Leo thang', 'rose') : null,
         r.overdue && !r.escalated ? chip('Quá hạn', 'rose') : null,
         r.rework_count ? chip(`Làm lại ${r.rework_count}`) : null,
@@ -1510,7 +1806,6 @@ async function renderBql(list, detail) {
     reportText(t.raw.original_description, c.additions.map((a) => a.content)),
     beforeAfterComparison(c),
     residentPhotosInternal(c),
-    agentProposal(c),
   ];
 
   // Xử lý Sự cố Khẩn cấp Bậc 1 (CR-BPTN-03 §6.5: đúng 2 lựa chọn BQL)
@@ -1519,7 +1814,7 @@ async function renderBql(list, detail) {
     const demoteNote = el('textarea', { name: 'note', rows: '2', required: true, maxlength: '500', class: INPUT });
     sections.push(el('div', { class: 'space-y-4 rounded-xl border-2 border-rose-500 bg-rose-50/70 p-4 sm:p-5 dark:border-rose-700 dark:bg-rose-950/40' },
       el('div', { class: 'flex items-start gap-3' },
-        el('span', { class: 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-600 text-sm font-bold text-white', 'aria-hidden': 'true' }, '⚠'),
+        el('span', { class: 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-600 text-white', 'aria-hidden': 'true' }, svgIcon('alert', 'h-4 w-4')),
         el('div', {},
           el('h3', { class: 'text-base font-bold text-rose-950 dark:text-rose-100' }, 'SỰ CỐ KHẨN CẤP BẬC 1 (Chờ BQL can thiệp)'),
           el('p', { class: 'text-xs text-rose-900/80 dark:text-rose-300/80 mt-1' },
@@ -1579,27 +1874,44 @@ async function renderBql(list, detail) {
 
   if (t.status === 'READY_FOR_REVIEW' && readiness) {
     const gates = [
-      { name: 'Gate 1: Phòng ban tiếp nhận đúng thẩm quyền', ok: readiness.department_accepted },
-      { name: 'Gate 2: Checklist kỹ thuật hoàn tất 100%', ok: readiness.checklist_complete },
-      { name: 'Gate 3: Số lượng vật tư đã ghi nhận đầy đủ', ok: readiness.materials_entered },
-      { name: 'Gate 4: Giải trình chênh lệch vật tư hợp lệ', ok: readiness.variance_explained },
-      { name: 'Gate 5: Ảnh minh chứng hiện trường sau xử lý', ok: readiness.photo_present },
-      { name: 'Gate 6: Hiện trường thông suốt, không còn vướng mắc', ok: readiness.no_open_blocker },
+      { id: 1, name: 'Gate 1: Tiếp nhận', desc: 'Đúng thẩm quyền chuyên trách', ok: readiness.department_accepted },
+      { id: 2, name: 'Gate 2: Checklist', desc: '100% hạng mục đạt chuẩn', ok: readiness.checklist_complete },
+      { id: 3, name: 'Gate 3: Vật tư', desc: 'Đầy đủ định mức xuất dùng', ok: readiness.materials_entered },
+      { id: 4, name: 'Gate 4: Chênh lệch', desc: 'Khớp định mức / Có giải trình', ok: readiness.variance_explained },
+      { id: 5, name: 'Gate 5: Minh chứng', desc: 'Có ảnh hiện trường hoàn tất', ok: readiness.photo_present },
+      { id: 6, name: 'Gate 6: Hiện trường', desc: 'Thông suốt, không vướng mắc', ok: readiness.no_open_blocker },
     ];
     const passedGates = gates.filter((g) => g.ok).length;
     const allPassed = passedGates === 6;
 
-    sections.push(el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5 space-y-4' },
+    const scorecardGrid = el('div', { class: 'grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-3' },
+      gates.map((g) => el('div', {
+        class: `rounded-xl p-3 border transition-all ${
+          g.ok
+            ? 'bg-emerald-50/70 border-emerald-200/90 text-emerald-950 dark:bg-emerald-950/30 dark:border-emerald-800/60 dark:text-emerald-200 shadow-2xs'
+            : 'bg-rose-50/70 border-rose-200/90 text-rose-950 dark:bg-rose-950/30 dark:border-rose-800/60 dark:text-rose-200 shadow-2xs'
+        }`,
+      },
+        el('div', { class: 'flex items-center justify-between' },
+          el('span', { class: 'text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400' }, `Gate ${g.id}`),
+          el('span', { class: `inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold ${g.ok ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}` },
+            g.ok ? svgIcon('check', 'h-2.5 w-2.5') : '!')),
+        el('p', { class: 'mt-1 text-xs font-bold truncate' }, g.name),
+        el('p', { class: 'text-[11px] opacity-80 mt-0.5 truncate' }, g.desc))));
+
+    sections.push(el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5 space-y-3' },
       el('div', { class: 'flex items-center justify-between' },
         el('div', {},
-          el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Thẩm định Nghiệm thu (6 Gates Validation)'),
+          el('h3', { class: 'text-sm font-bold text-slate-900 dark:text-white' }, 'Thẩm định Nghiệm thu (6 Gates Validation)'),
           el('p', { class: 'text-xs text-slate-500 dark:text-slate-400 mt-0.5' }, 'Tiêu chuẩn đối soát nghiệm thu và bàn giao hiện trường')),
-        el('span', { class: `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${allPassed ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}` },
-          allPassed ? '✓ Đạt 6/6 Gates' : `Đạt ${passedGates}/6 Gates`)),
-      el('ul', { class: 'grid grid-cols-1 gap-2.5 sm:grid-cols-2' }, gates.map((g) => el('li', { class: 'flex items-center gap-2 text-xs text-slate-800 dark:text-slate-200' },
-        el('span', { class: `inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${g.ok ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'}`, 'aria-hidden': 'true' }, g.ok ? '✓' : '!'),
-        el('span', { class: g.ok ? 'font-medium' : 'text-slate-600 dark:text-slate-400' }, g.name),
-        el('span', { class: 'sr-only' }, g.ok ? 'đạt' : 'chưa đạt')))),
+        el('span', { class: `inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ring-inset ${
+          allPassed
+            ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-950/60 dark:text-emerald-300'
+            : 'bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-950/60 dark:text-amber-300'
+        }` },
+          svgIcon(allPassed ? 'check' : 'alert', 'h-3.5 w-3.5'),
+          allPassed ? 'ĐẠT 6/6 GATES CHUẨN' : `${passedGates}/6 GATES ĐẠT`)),
+      scorecardGrid,
       readiness.processing_note_present ? null : el('p', { class: 'mt-1 text-xs text-slate-500 dark:text-slate-400' }, 'Phòng ban không để lại ghi chú xử lý (không bắt buộc).'),
       c.draft.non_blocking_warnings.map((w) => el('div', { class: 'mt-2' }, callout('warn', 'Lưu ý', w.reason)))));
 
@@ -1612,7 +1924,7 @@ async function renderBql(list, detail) {
         el('summary', { class: 'cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200' }, 'Chưa đạt, trả làm lại'),
         el('div', { class: 'mt-3 space-y-3' },
           reworkIsThird
-            ? callout('danger', '⚠️ CẢNH BÁO LEO THANG (LẦN THỨ 3)', `Ticket đã qua ${t.rework_count} lần làm lại. Trả lại lần này sẽ tự động KÍCH HOẠT CỜ LEO THANG (ESCALATED) lên cấp quản lý cao hơn và ghi nhận vào hồ sơ chất lượng vận hành.`)
+            ? callout('danger', 'CẢNH BÁO LEO THANG (LẦN THỨ 3)', `Ticket đã qua ${t.rework_count} lần làm lại. Trả lại lần này sẽ tự động KÍCH HOẠT CỜ LEO THANG (ESCALATED) lên cấp quản lý cao hơn và ghi nhận vào hồ sơ chất lượng vận hành.`)
             : null,
           actionForm([
             field('Lý do trả làm lại', note, reworkIsThird ? 'Đây là lần thứ 3: phản ánh sẽ tự động leo thang.' : null),
@@ -1641,74 +1953,131 @@ async function renderBql(list, detail) {
 
 // ------------------------------------------------------------------ login
 
-async function demoAccountList(onPick) {
-  let data;
+async function quickSwitchUser(username) {
+  if (state.user && state.user.username === username) return;
   try {
-    data = await api('/auth/demo-accounts');
-  } catch {
-    return el('p', { class: 'text-sm text-slate-500 dark:text-slate-400' }, 'Không có danh sách tài khoản thử nghiệm.');
+    const res = await api('/auth/login', {
+      method: 'POST',
+      body: { username, password: 'Demo@2026' },
+    });
+    signIn(res.access_token, res.user);
+    toast(`Đã chuyển sang: ${ROLE_LABEL[res.user.role] || res.user.role} (${humanizeDisplayName(username, res.user.display_name)})`);
+  } catch (err) {
+    toast(`Không chuyển được tài khoản: ${err.message}`, 'error');
   }
-  const accounts = (data.accounts || []).filter((a) => a.role !== 'QA_INTERNAL' && a.username !== 'qa01');
-  return el('div', { class: 'space-y-3' },
-    data.shared_test_password ? el('p', { class: 'text-sm text-slate-600 dark:text-slate-400' }, 'Mật khẩu chung: ',
-      el('code', { class: 'rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 font-mono text-slate-900 dark:text-slate-200' }, data.shared_test_password)) : null,
-    el('ul', { class: 'divide-y divide-slate-100 dark:divide-slate-800 rounded-lg ring-1 ring-slate-200 dark:ring-slate-800' }, accounts.map((a) => el('li', {},
-      el(onPick ? 'button' : 'div', {
-        type: onPick ? 'button' : undefined,
-        class: `flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm ${onPick ? 'hover:bg-slate-50 dark:hover:bg-slate-800/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-600' : ''}`,
-        onclick: onPick ? () => onPick(a.username, data.shared_test_password) : undefined,
-      },
-      el('span', {}, el('span', { class: 'font-mono font-medium text-slate-900 dark:text-white' }, a.username),
-        el('span', { class: 'ml-2 text-slate-500 dark:text-slate-400' }, a.display_name)),
-      chip(ROLE_LABEL[a.role] || a.role, 'indigo'))))));
 }
 
-async function showLogin(message) {
+// Shown under the portal title on the login screen (site name from seed/maintenance_v1/catalog.yaml)
+const LOGIN_SITE_NAME = 'Khu đô thị Ocean Park';
+
+function loginField(label, control, trailing) {
+  return el('div', { class: 'flex flex-col gap-2' },
+    el('label', { for: control.id, class: 'text-sm font-semibold text-slate-900' }, label),
+    el('div', { class: 'relative' }, control, trailing || null));
+}
+
+/** Header and main are hidden while signed out so the login screen can fill the page. */
+function setShellVisible(visible) {
+  $('app-header').classList.toggle('hidden', !visible);
+  $('main').classList.toggle('hidden', !visible);
+}
+
+function showLogin(message) {
+  setShellVisible(false);
   $('app-view').classList.add('hidden');
   $('user-menu').replaceChildren();
+
   const view = $('login-view');
   view.classList.remove('hidden');
 
-  const username = el('input', { id: 'login-username', name: 'username', type: 'text', required: true, autocomplete: 'username', autocapitalize: 'none', spellcheck: 'false', class: INPUT });
-  const password = el('input', { id: 'login-password', name: 'password', type: 'password', required: true, autocomplete: 'current-password', class: INPUT });
-  const show = el('input', {
-    id: 'login-show', type: 'checkbox', class: 'h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 dark:border-slate-700 dark:bg-slate-800',
-    onchange: (e) => { password.type = e.target.checked ? 'text' : 'password'; },
+  const username = el('input', {
+    id: 'login-username', name: 'username', type: 'text', required: true, autocomplete: 'username',
+    autocapitalize: 'none', spellcheck: 'false', placeholder: 'Nhập tên đăng nhập', class: 'field',
   });
-  const error = el('div', { role: 'alert' }, message ? callout('warn', message, null) : null);
+  const password = el('input', {
+    id: 'login-password', name: 'password', type: 'password', required: true, autocomplete: 'current-password',
+    placeholder: 'Nhập mật khẩu', class: 'field', style: 'padding-right:64px',
+  });
+  const toggle = el('button', {
+    type: 'button',
+    class: 'eye',
+    'aria-controls': 'login-password',
+    'aria-pressed': 'false',
+    'aria-label': 'Hiện mật khẩu',
+    onclick: () => {
+      const reveal = password.type === 'password';
+      password.type = reveal ? 'text' : 'password';
+      toggle.textContent = reveal ? 'Ẩn' : 'Hiện';
+      toggle.setAttribute('aria-pressed', String(reveal));
+      toggle.setAttribute('aria-label', reveal ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+      password.focus();
+    },
+  }, 'Hiện');
+  const error = el('div', { role: 'alert', class: message ? '' : 'hidden' }, message ? el('div', { class: 'alert warn' }, message) : null);
 
-  const form = actionForm([
-    error,
-    field('Tên đăng nhập', username),
-    field('Mật khẩu', password),
-    el('div', { class: 'flex items-center gap-2' }, show, el('label', { for: 'login-show', class: 'text-sm text-slate-700 dark:text-slate-300' }, 'Hiện mật khẩu')),
-  ], 'Đăng nhập', async (data) => {
+  function showError(msg) {
+    error.className = '';
+    error.replaceChildren(el('div', { class: 'alert' }, msg));
+    username.classList.add('err');
+    password.classList.add('err');
+  }
+  for (const input of [username, password]) {
+    input.addEventListener('input', () => {
+      username.classList.remove('err');
+      password.classList.remove('err');
+    });
+  }
+
+  async function performLogin(u, p) {
     try {
-      const result = await api('/auth/login', { method: 'POST', body: { username: data.get('username'), password: data.get('password') } });
+      const result = await api('/auth/login', { method: 'POST', body: { username: u, password: p } });
       signIn(result.access_token, result.user);
     } catch (err) {
-      error.replaceChildren(callout('danger', err.message, null));
+      const msg = (err.message && err.message.includes('fetch'))
+        ? 'Không thể kết nối đến máy chủ API (cổng 8000). Vui lòng đảm bảo server FastAPI đang chạy.'
+        : err.message;
+      showError(msg);
       password.value = '';
       password.focus();
     }
-  });
-  form.querySelector('button[type=submit]').classList.add('w-full');
+  }
 
-  const accounts = await demoAccountList((name, shared) => {
-    username.value = name;
-    if (shared) password.value = shared;
-    password.focus();
+  const submit = el('button', { type: 'submit', class: 'submit' }, 'Đăng nhập');
+  // Main.dc.html login card (portal/src/app/login/login-form.tsx)
+  const form = el('form', { class: 'sheet', novalidate: true },
+    el('div', { class: 'flex flex-col gap-1.5' },
+      el('span', { class: 'text-base text-slate-500' }, 'Xin chào,'),
+      el('h1', { class: 'm-0 text-[30px] font-bold tracking-tight text-slate-900' }, 'Đăng nhập'),
+      el('span', { class: 'text-sm text-slate-500' }, 'Hệ thống tự đưa bạn đến dashboard theo vai trò của tài khoản.')),
+    loginField('Tên đăng nhập', username),
+    loginField('Mật khẩu', password, toggle),
+    error,
+    submit,
+    el('span', { class: 'text-center text-[13px] text-slate-500' }, 'Quên mật khẩu? Liên hệ Ban quản lý để được cấp lại.'));
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+    submit.disabled = true;
+    submit.textContent = 'Đang đăng nhập…';
+    try {
+      await performLogin(username.value.trim(), password.value);
+    } finally {
+      submit.disabled = false;
+      submit.textContent = 'Đăng nhập';
+    }
   });
 
-  view.replaceChildren(el('div', { class: 'mx-auto grid max-w-4xl grid-cols-1 gap-6 py-6 md:grid-cols-2' },
-    el('div', { class: 'rounded-xl bg-white dark:bg-slate-900 p-6 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 sm:p-8 transition-colors' },
-      el('h1', { class: 'text-xl font-semibold tracking-tight text-slate-900 dark:text-white' }, 'Đăng nhập'),
-      el('p', { class: 'mt-1 text-sm text-slate-600 dark:text-slate-400' }, 'Mỗi tài khoản chỉ thấy màn hình và thao tác của vai trò mình.'),
-      el('div', { class: 'mt-6' }, form)),
-    el('div', { class: 'rounded-xl bg-white dark:bg-slate-900 p-6 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 sm:p-8 transition-colors' },
-      el('h2', { class: 'text-base font-semibold text-slate-900 dark:text-white' }, 'Tài khoản thử nghiệm'),
-      el('p', { class: 'mt-1 text-sm text-slate-600 dark:text-slate-400' }, 'Chọn một tài khoản để điền sẵn. Chỉ có ở môi trường thử nghiệm.'),
-      el('div', { class: 'mt-4' }, accounts))));
+  view.replaceChildren(el('div', { class: 'scr-login' },
+    el('div', { class: 'band' },
+      el('div', { class: 'mx-auto flex max-w-[1200px] items-center gap-3.5' },
+        el('span', { class: 'brand-ic' }, svgIcon('home', 'h-6 w-6')),
+        el('div', { class: 'flex flex-col' },
+          el('span', { class: 'text-xl font-bold text-slate-900' }, 'Cổng phản ánh cư dân'),
+          el('span', { class: 'text-sm text-indigo-900' }, LOGIN_SITE_NAME)))),
+    el('div', { class: '-mt-[120px] flex flex-1 justify-center px-4 pb-16 sm:px-6' }, form)));
   username.focus();
 }
 
@@ -1732,6 +2101,7 @@ function signIn(token, user) {
   try { sessionStorage.setItem(TOKEN_KEY, token); } catch { /* storage unavailable */ }
   $('login-view').classList.add('hidden');
   $('login-view').replaceChildren();
+  setShellVisible(true);
   $('app-view').classList.remove('hidden');
   renderUserMenu();
   loadCatalog().then(render);
@@ -1753,45 +2123,50 @@ function signOut({ remote = true, message = null } = {}) {
   showLogin(message);
 }
 
+/** Gradient header (portal/src/components/shell.tsx Header): avatar + "Xin chào, <name>", role pill, test-account switcher, logout. */
 function renderUserMenu() {
   const user = state.user;
   if (!user) return;
-  const initials = user.display_name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+  const displayName = humanizeDisplayName(user.username, user.display_name);
+  const initials = displayName.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
-  const isStaff = user.role !== 'RESIDENT';
-  const isAiLogsActive = state.activeTab === 'ai-logs';
+  const userMeta = REALISTIC_ACCOUNTS[user.username]
+    ? REALISTIC_ACCOUNTS[user.username].title
+    : `${ROLE_LABEL[user.role] || user.role}${user.department_id ? ` · ${deptName(user.department_id)}` : ''} · ${user.username}`;
 
-  const navTabs = isStaff ? el('div', { class: 'flex items-center rounded-lg bg-slate-100 p-1 text-xs font-medium dark:bg-slate-800' },
-    el('button', {
-      type: 'button',
-      class: `rounded-md px-3 py-1.5 transition ${!isAiLogsActive ? 'bg-white font-semibold text-indigo-700 shadow-xs dark:bg-slate-700 dark:text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'}`,
-      onclick: () => {
-        state.activeTab = 'workspace';
-        render();
-      },
-    }, 'Bảng làm việc'),
-    el('button', {
-      type: 'button',
-      class: `flex items-center gap-1.5 rounded-md px-3 py-1.5 transition ${isAiLogsActive ? 'bg-white font-semibold text-indigo-700 shadow-xs dark:bg-slate-700 dark:text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'}`,
-      onclick: () => {
-        state.activeTab = 'ai-logs';
-        render();
-      },
+  $('hello-avatar').textContent = initials;
+  $('hello-name').textContent = displayName;
+  $('hello-name').title = displayName;
+
+  const roleSelect = el('select', {
+    class: 'hdr-select hidden md:inline-block',
+    'aria-label': 'Đổi vai trò kiểm thử',
+    onchange: (e) => {
+      const selectedUsername = e.target.value;
+      if (selectedUsername && selectedUsername !== user.username) {
+        quickSwitchUser(selectedUsername);
+      }
     },
-      el('span', {}, 'Lịch sử AI Logs'),
-      el('span', { class: 'inline-flex items-center rounded-full bg-indigo-100 px-1.5 py-0.2 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' }, 'LLM'))) : null;
+  },
+    [
+      ['cudan01', 'Vai trò: Cư dân (Hùng)'],
+      ['cudan02', 'Vai trò: Cư dân (Trang)'],
+      ['bptn01', 'Vai trò: Điều phối BPTN'],
+      ['kythuat01', 'Vai trò: Đội Kỹ thuật'],
+      ['vesinh01', 'Vai trò: Đội Vệ sinh'],
+      ['kho01', 'Vai trò: Kho Vật tư'],
+      ['bql01', 'Vai trò: Ban Quản lý BQL'],
+    ].map(([u, label]) => {
+      const opt = el('option', { value: u }, label);
+      if (u === user.username) opt.selected = true;
+      return opt;
+    })
+  );
 
-  const menuChildren = [
-    navTabs,
-    el('div', { class: 'hidden text-right sm:block' },
-      el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, user.display_name),
-      el('p', { class: 'text-xs text-slate-500 dark:text-slate-400' },
-        `${ROLE_LABEL[user.role] || user.role}${user.department_id ? ` · ${deptName(user.department_id)}` : ''} · ${user.username}`)),
-    el('span', { class: 'flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200', 'aria-hidden': 'true' }, initials),
-    el('button', { type: 'button', class: BTN.secondary, onclick: () => signOut() }, 'Đăng xuất'),
-  ].filter(Boolean);
-
-  $('user-menu').replaceChildren(...menuChildren);
+  $('user-menu').replaceChildren(
+    el('span', { class: 'pill hdr-pill max-w-full truncate', title: userMeta }, userMeta),
+    roleSelect,
+    el('button', { type: 'button', class: 'hdr-btn', onclick: () => signOut() }, 'Đăng xuất'));
 }
 
 async function loadCatalog() {
@@ -1810,31 +2185,14 @@ async function render() {
   const listPane = $('list-pane');
   const detailPane = $('detail-pane');
 
-  if (state.activeTab === 'ai-logs') {
-    $('view-title').textContent = 'Lịch sử AI Logs (LLM Observability)';
-    $('view-subtitle').textContent = 'Theo dõi chi tiết các lượt gọi LLM, độ trễ và prompt phục vụ kiểm thử và đánh giá mô hình.';
-    listPane.classList.add('hidden');
-    detailPane.className = 'lg:col-span-12';
-    detailPane.replaceChildren(skeleton(3));
-    const container = el('div');
-    if (typeof window !== 'undefined' && typeof window.renderAiLogsView === 'function') {
-      await window.renderAiLogsView(container);
-    }
-    if (token !== renderToken || !state.user) return;
-    detailPane.replaceChildren(container);
-    renderUserMenu();
-    return;
-  }
-
-  // Restore regular layout
   listPane.classList.remove('hidden');
-  listPane.className = 'space-y-4 sm:space-y-6 lg:col-span-5';
+  listPane.className = 'space-y-6 lg:col-span-5';
   detailPane.className = 'lg:col-span-7';
 
   const [title, subtitle] = VIEW_TEXT[state.role];
   $('view-title').textContent = title;
   $('view-subtitle').textContent = subtitle;
-  const list = el('div', { class: 'space-y-4 sm:space-y-6' });
+  const list = el('div', { class: 'space-y-6' });
   const detail = el('div');
   if (!listPane.children.length) {
     listPane.replaceChildren(skeleton(4));
@@ -1852,6 +2210,17 @@ async function render() {
 }
 
 async function boot() {
+  const params = new URLSearchParams(window.location.search);
+  const autoUser = params.get('autologin');
+  if (autoUser) {
+    try {
+      const res = await api('/auth/login', { method: 'POST', body: { username: autoUser, password: 'Demo@2026' } });
+      signIn(res.access_token, res.user);
+      return;
+    } catch (e) {
+      console.warn('Autologin error:', e);
+    }
+  }
   let token = null;
   try { token = sessionStorage.getItem(TOKEN_KEY); } catch { /* storage unavailable */ }
   if (!token) return showLogin();

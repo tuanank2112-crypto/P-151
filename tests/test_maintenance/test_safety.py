@@ -63,11 +63,12 @@ def test_normalize_with_map_quote_roundtrip():
 
 
 def test_lexicon_loads_and_every_pattern_compiles():
-    """01 §11 M-04: 17 signals, 10 active in P0, 2 components; every pattern compiles (validator ran at load)."""
-    assert len(LEX.signals) == 17
+    """01 §11 M-04: 18 signals (plan 06: + S-00, agent only), 10 of phase P0, 2 components; P0 and P1 active (plan 06
+    SPEC-P03 §2); every pattern compiles (validator ran at load)."""
+    assert len(LEX.signals) == 18
     assert sum(s.phase == "P0" for s in LEX.signals) == 10
     assert len(LEX.components) == 2
-    assert LEX.active_phases == ("P0",)
+    assert LEX.active_phases == ("P0", "P1")
     assert load_lexicon() is LEXICON  # cached
 
 
@@ -244,11 +245,12 @@ def test_llm_error_keeps_rules():
 
 
 def test_llm_p1_signal_ignored_in_p0():
-    """P01 §4: a judgement for a signal outside the active phases is ignored."""
+    """P01 §4: a judgement for a signal outside the active vocabulary (plan 06: S-10 is now active, so "S-99") is
+    ignored with a note."""
     rule = assess(TEXT_NONE, LEX)
-    merged = merge_llm(rule, judged("S-10", "PRESENT", "mùi lạ"), TEXT_NONE, LEX)
+    merged = merge_llm(rule, judged("S-99", "PRESENT", "mùi lạ"), TEXT_NONE, LEX)
     assert merged.risk_level == rule.risk_level and merged.signals == rule.signals
-    assert any("ngoài từ vựng P0" in n for n in merged.notes)
+    assert any("ngoài từ vựng" in n for n in merged.notes)
 
 
 def test_engine_with_safety_llm_never_lowers(clock):
@@ -632,7 +634,10 @@ def test_b01_closed_prefix_twenty_tokens_and_lamp_accent():
     assert level(twenty.replace(" bị cháy", " tòa bị cháy")) == RiskLevel.UNCLEAR  # 21 tokens
     assert level("Cháy đến tầng 3 tòa SIM-A rồi") == RiskLevel.UNCLEAR
     assert level("Bông bị cháy ở hành lang") == RiskLevel.UNCLEAR
-    assert level("Bong den hanh lang tang 3 bi chay") == RiskLevel.UNCLEAR  # unaccented lamp noun is not proven (P1-11)
+    # P1-11 replaced (user decision 2026-10-05, plan 05b: "đèn cháy / đèn chập = đèn hỏng"): a report typed entirely
+    # without accents cannot prove the accent, its lamp noun is taken as written. Mixed text still needs the accent.
+    assert level("Bong den hanh lang tang 3 bi chay") == RiskLevel.NONE
+    assert level("Bông bị cháy ở hanh lang") == RiskLevel.UNCLEAR  # accented elsewhere: "bông" is not a lamp
     nobble = assess("Nổ bóng đèn hành lang tầng 7 tòa SIM-B, cần thay bóng.", LEX)
     assert triple(nobble, "T2-03", SignalStatus.ABSENT) == ("B-01", "Nổ bóng")
 
@@ -682,7 +687,8 @@ def test_tier2_net_outside_spans():
     """R9 §3.6.2: an accented 'khói/lửa/máu/bất động' outside every span is a tier-2 net."""
     smoke = assess("Hành lang tầng 3 tòa S1 có tiếng nổ lớn và khói", LEX)
     assert smoke.risk_level == RiskLevel.UNCLEAR and triple(smoke, "T2-03", SignalStatus.PRESENT) == ("B-03N", "khói")
-    assert triple(assess("Thấy máu ở cầu thang bộ tòa S1", LEX), "T2-03", SignalStatus.PRESENT) == ("B-03N", "máu")
+    blood = assess("Thấy máu ở cầu thang bộ tòa S1", LEX)  # plan 06 D-11: accented "máu" is now S-13 (tier 1)
+    assert blood.risk_level == RiskLevel.EMERGENCY and sig(blood, "S-13", SignalStatus.PRESENT) is not None
     assert triple(assess("Có người nằm bất động ở sảnh tầng 1 tòa S1", LEX), "T2-03", SignalStatus.PRESENT) == (
         "B-03N",
         "bất động",
@@ -745,9 +751,9 @@ def test_lexicon_wp3c_keys_and_validator():
         "S-09",
     )
     assert sorted(safety.tier2_net_roots) == ["bat dong", "khoi", "lua", "mau"]
-    assert priority.negation_fillers == safety.negation_fillers and lexicon.lexicon_version == "2026-10-04.p0f"
+    assert priority.negation_fillers == safety.negation_fillers and lexicon.lexicon_version == "2026-10-05.p1d"
     assert not hasattr(safety, "non_lamp_electrical") and not hasattr(safety, "negation_window_words")
-    assert (len(safety.signals), sum(s.phase == "P0" for s in safety.signals), len(safety.components)) == (17, 10, 2)
+    assert (len(safety.signals), sum(s.phase == "P0" for s in safety.signals), len(safety.components)) == (18, 10, 2)
     data = yaml.safe_load((FIXTURE_DIR / "lexicon.yaml").read_text(encoding="utf-8"))
     Lexicon.model_validate(data)
 

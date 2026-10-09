@@ -1,0 +1,182 @@
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/extra_dup_count_walk.py
+[rules seed=1] steps=34 violations=1 ops=[(('cancel', 'ok'), 9), (('danger', 'ok'), 6), (('downgrade', 'ok'), 3), (('merge', 'ok'), 1), (('mixed', 'ok'), 2), (('nomerge', 'ok'), 3), (('priority', 'ok'), 1), (('receive', 'ok'), 7), (('undo_split', 'GuardError'), 1), (('undo_split', 'ok'), 1)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (33, 'undo_split', 'SIM-TKT-0015', 'SIM-TKT-0008', 1, 0)
+   trace (28, 'nomerge', 'SIM-TKT-0014', 'ok')
+   trace (29, 'danger', None, 'ok')
+   trace (30, 'downgrade', 'SIM-TKT-0017', 'ok')
+   trace (31, 'cancel', 'SIM-TKT-0013', 'ok')
+   trace (32, 'priority', 'SIM-TKT-0003', 'ok')
+   trace (33, 'undo_split', 'SIM-TKT-0015', 'ok')
+[rules seed=2] steps=181 violations=1 ops=[(('cancel', 'ok'), 36), (('danger', 'ok'), 8), (('downgrade', 'ok'), 7), (('merge', 'GuardError'), 10), (('merge', 'ok'), 15), (('mixed', 'ok'), 11), (('nomerge', 'ok'), 25), (('priority', 'ok'), 17), (('receive', 'ok'), 35), (('undo', 'ok'), 6), (('undo_split', 'GuardError'), 4), (('undo_split', 'ok'), 7)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (180, 'undo_split', 'SIM-TKT-0065', 'SIM-TKT-0037', 2, 1)
+   trace (175, 'receive', None, 'ok')
+   trace (176, 'nomerge', 'SIM-TKT-0059', 'ok')
+   trace (177, 'mixed', None, 'ok')
+   trace (178, 'cancel', 'SIM-TKT-0031', 'ok')
+   trace (179, 'merge', 'SIM-TKT-0054', 'ok')
+   trace (180, 'undo_split', 'SIM-TKT-0065', 'ok')
+[rules seed=3] steps=222 violations=1 ops=[(('bql_merge', 'GuardError'), 2), (('bql_merge', 'ok'), 3), (('cancel', 'ok'), 63), (('danger', 'ok'), 12), (('downgrade', 'ok'), 5), (('merge', 'GuardError'), 13), (('merge', 'ok'), 9), (('mixed', 'ok'), 16), (('nomerge', 'ok'), 25), (('priority', 'ActionDeniedError'), 3), (('priority', 'ok'), 21), (('receive', 'ok'), 32), (('undo', 'ActionDeniedError'), 3), (('undo', 'ok'), 6), (('undo_split', 'GuardError'), 6), (('undo_split', 'ok'), 3)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (221, 'undo_split', 'SIM-TKT-0076', 'SIM-TKT-0067', 1, 0)
+   trace (216, 'downgrade', 'SIM-TKT-0059', 'ok')
+   trace (217, 'priority', 'SIM-TKT-0059', 'ok')
+   trace (218, 'receive', None, 'ok')
+   trace (219, 'cancel', 'SIM-TKT-0066', 'ok')
+   trace (220, 'mixed', None, 'ok')
+   trace (221, 'undo_split', 'SIM-TKT-0076', 'ok')
+[rules seed=4] steps=53 violations=1 ops=[(('cancel', 'ok'), 14), (('danger', 'ok'), 4), (('downgrade', 'ok'), 2), (('merge', 'GuardError'), 2), (('merge', 'ok'), 2), (('mixed', 'ok'), 4), (('nomerge', 'ok'), 5), (('priority', 'ok'), 6), (('receive', 'ok'), 11), (('undo', 'ok'), 1), (('undo_split', 'ok'), 2)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (52, 'undo_split', 'SIM-TKT-0022', 'SIM-TKT-0016', 1, 0)
+   trace (47, 'priority', 'SIM-TKT-0010', 'ok')
+   trace (48, 'cancel', 'SIM-TKT-0018', 'ok')
+   trace (49, 'cancel', 'SIM-TKT-0010', 'ok')
+   trace (50, 'mixed', None, 'ok')
+   trace (51, 'receive', None, 'ok')
+   trace (52, 'undo_split', 'SIM-TKT-0022', 'ok')
+[rules seed=5] steps=18 violations=1 ops=[(('cancel', 'ok'), 3), (('danger', 'ok'), 3), (('merge', 'ok'), 1), (('mixed', 'ok'), 3), (('priority', 'ok'), 1), (('receive', 'ok'), 3), (('undo_split', 'GuardError'), 2), (('undo_split', 'ok'), 2)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (17, 'undo_split', 'SIM-TKT-0009', 'SIM-TKT-0002', 2, 1)
+   trace (12, 'undo_split', 'SIM-TKT-0002', 'GuardError')
+   trace (13, 'undo_split', 'SIM-TKT-0002', 'GuardError')
+   trace (14, 'mixed', None, 'ok')
+   trace (15, 'mixed', None, 'ok')
+   trace (16, 'receive', None, 'ok')
+   trace (17, 'undo_split', 'SIM-TKT-0009', 'ok')
+[rules seed=6] steps=32 violations=1 ops=[(('bql_merge', 'ok'), 1), (('cancel', 'ok'), 5), (('danger', 'ok'), 3), (('downgrade', 'ok'), 1), (('merge', 'GuardError'), 2), (('merge', 'ok'), 1), (('mixed', 'ok'), 3), (('nomerge', 'ok'), 2), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 6), (('receive', 'ok'), 4), (('undo_split', 'GuardError'), 2), (('undo_split', 'ok'), 1)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (31, 'undo_split', 'SIM-TKT-0011', 'SIM-TKT-0009', 1, 0)
+   trace (26, 'priority', 'SIM-TKT-0004', 'ok')
+   trace (27, 'bql_merge', ('SIM-TKT-0006', 'SIM-TKT-0012'), 'ok')
+   trace (28, 'nomerge', 'SIM-TKT-0010', 'ok')
+   trace (29, 'danger', None, 'ok')
+   trace (30, 'downgrade', 'SIM-TKT-0013', 'ok')
+   trace (31, 'undo_split', 'SIM-TKT-0011', 'ok')
+[rules seed=7] steps=242 violations=1 ops=[(('bql_merge', 'ok'), 1), (('cancel', 'ok'), 66), (('danger', 'ok'), 13), (('downgrade', 'ok'), 10), (('merge', 'GuardError'), 2), (('merge', 'ok'), 18), (('mixed', 'ok'), 12), (('nomerge', 'ok'), 26), (('priority', 'ActionDeniedError'), 2), (('priority', 'ok'), 29), (('receive', 'ok'), 41), (('undo', 'ok'), 10), (('undo_split', 'GuardError'), 5), (('undo_split', 'ValidationError'), 2), (('undo_split', 'ok'), 5)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (241, 'undo_split', 'SIM-TKT-0073', 'SIM-TKT-0066', 3, 2)
+   trace (236, 'undo_split', 'SIM-TKT-0066', 'GuardError')
+   trace (237, 'priority', 'SIM-TKT-0066', 'ok')
+   trace (238, 'priority', 'SIM-TKT-0068', 'ok')
+   trace (239, 'mixed', None, 'ok')
+   trace (240, 'mixed', None, 'ok')
+   trace (241, 'undo_split', 'SIM-TKT-0073', 'ok')
+[rules seed=8] steps=34 violations=1 ops=[(('cancel', 'ok'), 12), (('danger', 'ok'), 6), (('downgrade', 'ok'), 1), (('merge', 'GuardError'), 2), (('mixed', 'ok'), 2), (('nomerge', 'ok'), 2), (('priority', 'ok'), 1), (('receive', 'ok'), 7), (('undo_split', 'ok'), 1)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (33, 'undo_split', 'SIM-TKT-0016', 'SIM-TKT-0010', 1, 0)
+   trace (28, 'merge', 'SIM-TKT-0007', 'GuardError')
+   trace (29, 'mixed', None, 'ok')
+   trace (30, 'cancel', 'SIM-TKT-0011', 'ok')
+   trace (31, 'receive', None, 'ok')
+   trace (32, 'cancel', 'SIM-TKT-0017', 'ok')
+   trace (33, 'undo_split', 'SIM-TKT-0016', 'ok')
+[mirror-agent seed=1] steps=34 violations=1 ops=[(('cancel', 'ok'), 9), (('danger', 'ok'), 6), (('downgrade', 'ok'), 3), (('merge', 'ok'), 1), (('mixed', 'ok'), 2), (('nomerge', 'ok'), 3), (('priority', 'ok'), 1), (('receive', 'ok'), 7), (('undo_split', 'GuardError'), 1), (('undo_split', 'ok'), 1)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (33, 'undo_split', 'SIM-TKT-0015', 'SIM-TKT-0008', 1, 0)
+   trace (28, 'nomerge', 'SIM-TKT-0014', 'ok')
+   trace (29, 'danger', None, 'ok')
+   trace (30, 'downgrade', 'SIM-TKT-0017', 'ok')
+   trace (31, 'cancel', 'SIM-TKT-0013', 'ok')
+   trace (32, 'priority', 'SIM-TKT-0003', 'ok')
+   trace (33, 'undo_split', 'SIM-TKT-0015', 'ok')
+[mirror-agent seed=2] steps=178 violations=1 ops=[(('cancel', 'ok'), 38), (('danger', 'ok'), 8), (('downgrade', 'ok'), 6), (('merge', 'GuardError'), 3), (('merge', 'ok'), 15), (('mixed', 'ok'), 10), (('nomerge', 'ok'), 25), (('priority', 'ok'), 16), (('receive', 'ok'), 38), (('undo', 'ok'), 7), (('undo_split', 'GuardError'), 4), (('undo_split', 'ValidationError'), 3), (('undo_split', 'ok'), 5)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (177, 'undo_split', 'SIM-TKT-0066', 'SIM-TKT-0063', 1, 0)
+   trace (172, 'receive', None, 'ok')
+   trace (173, 'nomerge', 'SIM-TKT-0058', 'ok')
+   trace (174, 'mixed', None, 'ok')
+   trace (175, 'cancel', 'SIM-TKT-0035', 'ok')
+   trace (176, 'merge', 'SIM-TKT-0057', 'ok')
+   trace (177, 'undo_split', 'SIM-TKT-0066', 'ok')
+[mirror-agent seed=3] steps=222 violations=1 ops=[(('bql_merge', 'GuardError'), 2), (('bql_merge', 'ok'), 3), (('cancel', 'ok'), 63), (('danger', 'ok'), 12), (('downgrade', 'ok'), 5), (('merge', 'GuardError'), 13), (('merge', 'ok'), 9), (('mixed', 'ok'), 16), (('nomerge', 'ok'), 25), (('priority', 'ActionDeniedError'), 3), (('priority', 'ok'), 21), (('receive', 'ok'), 32), (('undo', 'ActionDeniedError'), 3), (('undo', 'ok'), 6), (('undo_split', 'GuardError'), 6), (('undo_split', 'ok'), 3)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (221, 'undo_split', 'SIM-TKT-0076', 'SIM-TKT-0067', 1, 0)
+   trace (216, 'downgrade', 'SIM-TKT-0059', 'ok')
+   trace (217, 'priority', 'SIM-TKT-0059', 'ok')
+   trace (218, 'receive', None, 'ok')
+   trace (219, 'cancel', 'SIM-TKT-0066', 'ok')
+   trace (220, 'mixed', None, 'ok')
+   trace (221, 'undo_split', 'SIM-TKT-0076', 'ok')
+[mirror-agent seed=4] steps=53 violations=1 ops=[(('cancel', 'ok'), 14), (('danger', 'ok'), 4), (('downgrade', 'ok'), 2), (('merge', 'GuardError'), 2), (('merge', 'ok'), 2), (('mixed', 'ok'), 4), (('nomerge', 'ok'), 5), (('priority', 'ok'), 6), (('receive', 'ok'), 11), (('undo', 'ok'), 1), (('undo_split', 'ok'), 2)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (52, 'undo_split', 'SIM-TKT-0022', 'SIM-TKT-0016', 1, 0)
+   trace (47, 'priority', 'SIM-TKT-0010', 'ok')
+   trace (48, 'cancel', 'SIM-TKT-0018', 'ok')
+   trace (49, 'cancel', 'SIM-TKT-0010', 'ok')
+   trace (50, 'mixed', None, 'ok')
+   trace (51, 'receive', None, 'ok')
+   trace (52, 'undo_split', 'SIM-TKT-0022', 'ok')
+[mirror-agent seed=5] steps=18 violations=1 ops=[(('cancel', 'ok'), 3), (('danger', 'ok'), 3), (('merge', 'ok'), 1), (('mixed', 'ok'), 3), (('priority', 'ok'), 1), (('receive', 'ok'), 3), (('undo_split', 'GuardError'), 2), (('undo_split', 'ok'), 2)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (17, 'undo_split', 'SIM-TKT-0009', 'SIM-TKT-0002', 2, 1)
+   trace (12, 'undo_split', 'SIM-TKT-0002', 'GuardError')
+   trace (13, 'undo_split', 'SIM-TKT-0002', 'GuardError')
+   trace (14, 'mixed', None, 'ok')
+   trace (15, 'mixed', None, 'ok')
+   trace (16, 'receive', None, 'ok')
+   trace (17, 'undo_split', 'SIM-TKT-0009', 'ok')
+[mirror-agent seed=6] steps=32 violations=1 ops=[(('bql_merge', 'ok'), 1), (('cancel', 'ok'), 5), (('danger', 'ok'), 3), (('downgrade', 'ok'), 1), (('merge', 'GuardError'), 2), (('merge', 'ok'), 1), (('mixed', 'ok'), 3), (('nomerge', 'ok'), 2), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 6), (('receive', 'ok'), 4), (('undo_split', 'GuardError'), 2), (('undo_split', 'ok'), 1)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (31, 'undo_split', 'SIM-TKT-0011', 'SIM-TKT-0009', 1, 0)
+   trace (26, 'priority', 'SIM-TKT-0004', 'ok')
+   trace (27, 'bql_merge', ('SIM-TKT-0006', 'SIM-TKT-0012'), 'ok')
+   trace (28, 'nomerge', 'SIM-TKT-0010', 'ok')
+   trace (29, 'danger', None, 'ok')
+   trace (30, 'downgrade', 'SIM-TKT-0013', 'ok')
+   trace (31, 'undo_split', 'SIM-TKT-0011', 'ok')
+[mirror-agent seed=7] steps=242 violations=1 ops=[(('bql_merge', 'ok'), 1), (('cancel', 'ok'), 66), (('danger', 'ok'), 13), (('downgrade', 'ok'), 10), (('merge', 'GuardError'), 2), (('merge', 'ok'), 18), (('mixed', 'ok'), 12), (('nomerge', 'ok'), 26), (('priority', 'ActionDeniedError'), 2), (('priority', 'ok'), 29), (('receive', 'ok'), 41), (('undo', 'ok'), 10), (('undo_split', 'GuardError'), 5), (('undo_split', 'ValidationError'), 2), (('undo_split', 'ok'), 5)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (241, 'undo_split', 'SIM-TKT-0073', 'SIM-TKT-0066', 2, 1)
+   trace (236, 'undo_split', 'SIM-TKT-0066', 'GuardError')
+   trace (237, 'priority', 'SIM-TKT-0066', 'ok')
+   trace (238, 'priority', 'SIM-TKT-0068', 'ok')
+   trace (239, 'mixed', None, 'ok')
+   trace (240, 'mixed', None, 'ok')
+   trace (241, 'undo_split', 'SIM-TKT-0073', 'ok')
+[mirror-agent seed=8] steps=34 violations=1 ops=[(('cancel', 'ok'), 12), (('danger', 'ok'), 6), (('downgrade', 'ok'), 1), (('merge', 'GuardError'), 2), (('mixed', 'ok'), 2), (('nomerge', 'ok'), 2), (('priority', 'ok'), 1), (('receive', 'ok'), 7), (('undo_split', 'ok'), 1)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (33, 'undo_split', 'SIM-TKT-0016', 'SIM-TKT-0010', 1, 0)
+   trace (28, 'merge', 'SIM-TKT-0007', 'GuardError')
+   trace (29, 'mixed', None, 'ok')
+   trace (30, 'cancel', 'SIM-TKT-0011', 'ok')
+   trace (31, 'receive', None, 'ok')
+   trace (32, 'cancel', 'SIM-TKT-0017', 'ok')
+   trace (33, 'undo_split', 'SIM-TKT-0016', 'ok')
+[rules skip-known seed=1] steps=250 violations=0 ops=[(('bql_merge', 'GuardError'), 1), (('bql_merge', 'ok'), 1), (('cancel', 'ok'), 56), (('danger', 'ok'), 15), (('downgrade', 'ok'), 9), (('merge', 'GuardError'), 8), (('merge', 'ok'), 28), (('mixed', 'ok'), 8), (('nomerge', 'ok'), 24), (('priority', 'ok'), 32), (('receive', 'ok'), 44), (('undo', 'ok'), 18), (('undo_split', 'GuardError'), 2), (('undo_split', 'ValidationError'), 1), (('undo_split', 'ok'), 3)]
+[rules skip-known seed=2] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 4), (('cancel', 'ok'), 54), (('danger', 'ok'), 12), (('downgrade', 'ok'), 9), (('merge', 'GuardError'), 12), (('merge', 'ok'), 16), (('mixed', 'ok'), 12), (('nomerge', 'ok'), 38), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 20), (('receive', 'ok'), 40), (('undo', 'ActionDeniedError'), 6), (('undo', 'ok'), 12), (('undo_split', 'GuardError'), 5), (('undo_split', 'ValidationError'), 2), (('undo_split', 'ok'), 7)]
+[rules skip-known seed=3] steps=146 violations=1 ops=[(('cancel', 'ok'), 42), (('danger', 'ok'), 7), (('downgrade', 'ok'), 5), (('merge', 'GuardError'), 6), (('merge', 'ok'), 7), (('mixed', 'ok'), 11), (('nomerge', 'ok'), 21), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 18), (('receive', 'ok'), 22), (('undo', 'ok'), 4), (('undo_split', 'GuardError'), 1), (('undo_split', 'ok'), 1)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (145, 'undo', 'SIM-TKT-0047', 'SIM-TKT-0047', 1, 0)
+   trace (140, 'nomerge', 'SIM-TKT-0044', 'ok')
+   trace (141, 'undo_split', 'SIM-TKT-0047', 'ok')
+   trace (142, 'danger', None, 'ok')
+   trace (143, 'priority', 'SIM-TKT-0043', 'ok')
+   trace (144, 'nomerge', 'SIM-TKT-0050', 'ok')
+   trace (145, 'undo', 'SIM-TKT-0047', 'ok')
+[rules skip-known seed=4] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 3), (('cancel', 'ok'), 69), (('danger', 'ok'), 16), (('downgrade', 'ok'), 8), (('merge', 'GuardError'), 11), (('merge', 'ok'), 17), (('mixed', 'ok'), 8), (('nomerge', 'ok'), 28), (('priority', 'ok'), 29), (('receive', 'ok'), 39), (('undo', 'ActionDeniedError'), 2), (('undo', 'ok'), 12), (('undo_split', 'GuardError'), 5), (('undo_split', 'ok'), 3)]
+[rules skip-known seed=5] steps=131 violations=1 ops=[(('bql_merge', 'ok'), 1), (('cancel', 'ok'), 36), (('danger', 'ok'), 7), (('downgrade', 'ok'), 4), (('merge', 'GuardError'), 5), (('merge', 'ok'), 11), (('mixed', 'ok'), 10), (('nomerge', 'ok'), 21), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 5), (('receive', 'ok'), 18), (('undo', 'ok'), 2), (('undo_split', 'GuardError'), 8), (('undo_split', 'ok'), 2)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (130, 'cancel', 'SIM-TKT-0031', 'SIM-TKT-0032', 3, 0)
+   trace (125, 'cancel', 'SIM-TKT-0036', 'ok')
+   trace (126, 'nomerge', 'SIM-TKT-0042', 'ok')
+   trace (127, 'cancel', 'SIM-TKT-0041', 'ok')
+   trace (128, 'downgrade', 'SIM-TKT-0040', 'ok')
+   trace (129, 'cancel', 'SIM-TKT-0042', 'ok')
+   trace (130, 'cancel', 'SIM-TKT-0031', 'ok')
+[rules skip-known seed=6] steps=202 violations=1 ops=[(('bql_merge', 'ok'), 1), (('cancel', 'ok'), 50), (('danger', 'ok'), 8), (('downgrade', 'ok'), 5), (('merge', 'GuardError'), 10), (('merge', 'ok'), 17), (('mixed', 'ok'), 15), (('nomerge', 'ok'), 21), (('priority', 'ActionDeniedError'), 2), (('priority', 'ok'), 28), (('receive', 'ok'), 25), (('undo', 'ok'), 10), (('undo_split', 'GuardError'), 3), (('undo_split', 'ValidationError'), 3), (('undo_split', 'ok'), 4)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (201, 'cancel', 'SIM-TKT-0038', 'SIM-TKT-0045', 1, 0)
+   trace (196, 'mixed', None, 'ok')
+   trace (197, 'nomerge', 'SIM-TKT-0061', 'ok')
+   trace (198, 'cancel', 'SIM-TKT-0040', 'ok')
+   trace (199, 'merge', 'SIM-TKT-0053', 'GuardError')
+   trace (200, 'priority', 'SIM-TKT-0051', 'ok')
+   trace (201, 'cancel', 'SIM-TKT-0038', 'ok')
+[rules skip-known seed=7] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 2), (('cancel', 'ok'), 69), (('danger', 'ok'), 12), (('downgrade', 'ok'), 3), (('merge', 'GuardError'), 8), (('merge', 'ok'), 27), (('mixed', 'ok'), 13), (('nomerge', 'ok'), 23), (('priority', 'ActionDeniedError'), 4), (('priority', 'ok'), 19), (('receive', 'ok'), 45), (('undo', 'ok'), 13), (('undo_split', 'GuardError'), 8), (('undo_split', 'ValidationError'), 1), (('undo_split', 'ok'), 3)]
+[rules skip-known seed=8] steps=250 violations=0 ops=[(('bql_merge', 'GuardError'), 1), (('bql_merge', 'ok'), 4), (('cancel', 'ok'), 73), (('danger', 'ok'), 21), (('downgrade', 'ok'), 7), (('merge', 'GuardError'), 13), (('merge', 'ok'), 11), (('mixed', 'ok'), 14), (('nomerge', 'ok'), 33), (('priority', 'ActionDeniedError'), 4), (('priority', 'ok'), 20), (('receive', 'ok'), 37), (('undo', 'ActionDeniedError'), 2), (('undo', 'ok'), 3), (('undo_split', 'GuardError'), 6), (('undo_split', 'ok'), 1)]
+[mirror-agent skip-known seed=1] steps=250 violations=0 ops=[(('bql_merge', 'GuardError'), 1), (('bql_merge', 'ok'), 3), (('cancel', 'ok'), 59), (('danger', 'ok'), 15), (('downgrade', 'ok'), 7), (('merge', 'GuardError'), 8), (('merge', 'ok'), 29), (('mixed', 'ok'), 8), (('nomerge', 'ok'), 22), (('priority', 'ok'), 30), (('receive', 'ok'), 44), (('undo', 'ok'), 18), (('undo_split', 'GuardError'), 2), (('undo_split', 'ValidationError'), 1), (('undo_split', 'ok'), 3)]
+[mirror-agent skip-known seed=2] steps=250 violations=0 ops=[(('bql_merge', 'GuardError'), 1), (('bql_merge', 'ok'), 7), (('cancel', 'ok'), 50), (('danger', 'ok'), 10), (('downgrade', 'ok'), 8), (('merge', 'GuardError'), 8), (('merge', 'ok'), 23), (('mixed', 'ok'), 13), (('nomerge', 'ok'), 32), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 19), (('receive', 'ok'), 38), (('undo', 'ActionDeniedError'), 4), (('undo', 'ok'), 19), (('undo_split', 'GuardError'), 9), (('undo_split', 'ValidationError'), 2), (('undo_split', 'ok'), 6)]
+[mirror-agent skip-known seed=3] steps=146 violations=1 ops=[(('cancel', 'ok'), 42), (('danger', 'ok'), 7), (('downgrade', 'ok'), 5), (('merge', 'GuardError'), 6), (('merge', 'ok'), 7), (('mixed', 'ok'), 11), (('nomerge', 'ok'), 21), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 18), (('receive', 'ok'), 22), (('undo', 'ok'), 4), (('undo_split', 'GuardError'), 1), (('undo_split', 'ok'), 1)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (145, 'undo', 'SIM-TKT-0047', 'SIM-TKT-0047', 1, 0)
+   trace (140, 'nomerge', 'SIM-TKT-0044', 'ok')
+   trace (141, 'undo_split', 'SIM-TKT-0047', 'ok')
+   trace (142, 'danger', None, 'ok')
+   trace (143, 'priority', 'SIM-TKT-0043', 'ok')
+   trace (144, 'nomerge', 'SIM-TKT-0050', 'ok')
+   trace (145, 'undo', 'SIM-TKT-0047', 'ok')
+[mirror-agent skip-known seed=4] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 5), (('cancel', 'ok'), 68), (('danger', 'ok'), 13), (('downgrade', 'ok'), 8), (('merge', 'GuardError'), 8), (('merge', 'ok'), 22), (('mixed', 'ok'), 9), (('nomerge', 'ok'), 26), (('priority', 'ActionDeniedError'), 3), (('priority', 'ok'), 19), (('receive', 'ok'), 41), (('undo', 'ActionDeniedError'), 4), (('undo', 'ok'), 15), (('undo_split', 'GuardError'), 6), (('undo_split', 'ok'), 3)]
+[mirror-agent skip-known seed=5] steps=131 violations=1 ops=[(('bql_merge', 'ok'), 1), (('cancel', 'ok'), 36), (('danger', 'ok'), 7), (('downgrade', 'ok'), 4), (('merge', 'GuardError'), 5), (('merge', 'ok'), 11), (('mixed', 'ok'), 10), (('nomerge', 'ok'), 21), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 5), (('receive', 'ok'), 18), (('undo', 'ok'), 2), (('undo_split', 'GuardError'), 8), (('undo_split', 'ok'), 2)]
+   FIRST VIOLATION (step, op, arg, ticket, duplicate_count, expected): (130, 'cancel', 'SIM-TKT-0031', 'SIM-TKT-0032', 2, 0)
+   trace (125, 'cancel', 'SIM-TKT-0036', 'ok')
+   trace (126, 'nomerge', 'SIM-TKT-0042', 'ok')
+   trace (127, 'cancel', 'SIM-TKT-0041', 'ok')
+   trace (128, 'downgrade', 'SIM-TKT-0040', 'ok')
+   trace (129, 'cancel', 'SIM-TKT-0042', 'ok')
+   trace (130, 'cancel', 'SIM-TKT-0031', 'ok')
+[mirror-agent skip-known seed=6] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 1), (('cancel', 'ok'), 62), (('danger', 'ok'), 10), (('downgrade', 'ok'), 8), (('merge', 'GuardError'), 18), (('merge', 'ok'), 17), (('mixed', 'ok'), 16), (('nomerge', 'ok'), 29), (('priority', 'ActionDeniedError'), 2), (('priority', 'ok'), 24), (('receive', 'ok'), 34), (('undo', 'ok'), 12), (('undo_split', 'GuardError'), 10), (('undo_split', 'ValidationError'), 3), (('undo_split', 'ok'), 4)]
+[mirror-agent skip-known seed=7] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 2), (('cancel', 'ok'), 69), (('danger', 'ok'), 13), (('downgrade', 'ok'), 4), (('merge', 'GuardError'), 13), (('merge', 'ok'), 23), (('mixed', 'ok'), 13), (('nomerge', 'ok'), 23), (('priority', 'ActionDeniedError'), 4), (('priority', 'ok'), 19), (('receive', 'ok'), 44), (('undo', 'ok'), 11), (('undo_split', 'GuardError'), 8), (('undo_split', 'ValidationError'), 1), (('undo_split', 'ok'), 3)]
+[mirror-agent skip-known seed=8] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 2), (('cancel', 'ok'), 73), (('danger', 'ok'), 21), (('downgrade', 'ok'), 7), (('merge', 'GuardError'), 6), (('merge', 'ok'), 20), (('mixed', 'ok'), 15), (('nomerge', 'ok'), 32), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 17), (('receive', 'ok'), 35), (('undo', 'ActionDeniedError'), 2), (('undo', 'ok'), 9), (('undo_split', 'GuardError'), 4), (('undo_split', 'ValidationError'), 1), (('undo_split', 'ok'), 5)]
+RESULT walks=32 walks_with_violation=21
+EXIT=1

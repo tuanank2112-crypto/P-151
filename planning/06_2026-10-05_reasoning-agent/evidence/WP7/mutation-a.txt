@@ -1,0 +1,171 @@
+FFF......FFFF.....F.                                                     [100%]
+================================== FAILURES ===================================
+__________________ test_m01_detection_counts_on_root[memory] __________________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000002BBFC9F66D0>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000002BBFC98E5D0>
+
+    def test_m01_detection_counts_on_root(clock, eng):
+        """M-01: step 4 finds the root: duplicate_count 0 -> 1 with one LINK_TICKETS row on the root."""
+        root = report(eng, CLEANING)
+        assert eng.get(root).ticket.duplicate_count == 0
+        child = later(clock, eng, CLEANING)
+        case = eng.get(root)
+>       assert case.ticket.duplicate_count == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).duplicate_count
+E        +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_merge.py:72: AssertionError
+________________ test_m01b_every_extra_report_adds_one[memory] ________________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000002BBFCA355D0>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000002BBFCA21FD0>
+
+    def test_m01b_every_extra_report_adds_one(clock, eng):
+        root, _ = dup_pair(clock, eng)
+        later(clock, eng, CLEANING)
+>       assert eng.get(root).ticket.duplicate_count == 2
+E       AssertionError: assert 0 == 2
+E        +  where 0 = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).duplicate_count
+E        +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+E        +      where Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None) = get('SIM-TKT-0001')
+E        +        where get = <src.maintenance.engine.MaintenanceEngine object at 0x000002BBFCA21FD0>.get
+
+tests\test_maintenance\test_p1_merge.py:81: AssertionError
+________ test_m02_bptn_rejects_then_merge_does_not_count_again[memory] ________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000002BBFCA592D0>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000002BBFCA5BDD0>
+
+    def test_m02_bptn_rejects_then_merge_does_not_count_again(clock, eng):
+        """M-02: BPTN says "not a duplicate" 1 -> 0; confirming a duplicate (T08) adds nothing on top of detection."""
+        root, child = dup_pair(clock, eng)
+        case = eng.bptn_resolve(child, BPTN, merge=False)
+        assert case.not_duplicate_of == [root] and case.ticket.status == "ROUTED"
+        assert eng.get(root).ticket.duplicate_count == 0
+        other = later(clock, eng, CLEANING)
+>       assert eng.get(root).ticket.duplicate_count == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).duplicate_count
+E        +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+E        +      where Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None) = get('SIM-TKT-0001')
+E        +        where get = <src.maintenance.engine.MaintenanceEngine object at 0x000002BBFCA5BDD0>.get
+
+tests\test_maintenance\test_p1_merge.py:92: AssertionError
+______ test_m08_root_cancel_unmerges_children_in_one_transaction[memory] ______
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000002BBFC9CF4D0>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000002BBFCA81510>
+
+    def test_m08_root_cancel_unmerges_children_in_one_transaction(clock, eng):
+        """M-08 (pg): cancelling the root sends every MERGED child back (T09 SYSTEM); two children of one incident do not
+        both get routed: the later becomes a duplicate of the earlier."""
+        root, b = dup_pair(clock, eng)
+        c = later(clock, eng, CLEANING)
+        eng.bptn_resolve(b, BPTN, merge=True)
+        eng.bptn_resolve(c, BPTN, merge=True)
+        assert eng.get(root).ticket.merged_children == [b, c]
+        eng.cancel(root, BQL, cancel_reason="Gốc nhập nhầm")
+        first, second = eng.get(b), eng.get(c)
+        assert eng.get(root).ticket.status == "CANCELLED"
+        assert state(eng, b) == ("ROUTED", None)
+        assert state(eng, c) == ("VERIFYING", "DUPLICATE") and second.ticket.blocker.related_ticket_id == b
+        for case in (first, second):
+            event = next(e for e in case.events if e.from_status == "MERGED" and e.to_status == "RECEIVED")
+            assert (event.actor_role, event.internal_note) == ("SYSTEM", SYSTEM_NOTE)
+            assert root in case.not_duplicate_of and case.ticket.merged_into is None
+>       assert eng.get(b).ticket.duplicate_count == 1  # the later report now counts on the earlier child
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 0 == 1
+E        +  where 0 = Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:05:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).duplicate_count
+E        +    where Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:05:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:05:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+E        +      where Case(ticket=Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:05:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None) = get('SIM-TKT-0002')
+E        +        where get = <src.maintenance.engine.MaintenanceEngine object at 0x000002BBFCA81510>.get
+
+tests\test_maintenance\test_p1_merge.py:235: AssertionError
+__________ test_m09_pri_u1_raises_one_level_at_the_threshold[memory] __________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000002BBFCA32410>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000002BBFCA33A90>
+
+    def test_m09_pri_u1_raises_one_level_at_the_threshold(clock, eng):
+        """M-09: 3 duplicates raise MEDIUM to HIGH ("PRI-U1" in the reason, rule kept); one rejected goes back."""
+        root = report(eng, CLEANING)
+        assert (eng.get(root).ticket.priority, eng.get(root).ticket.priority_rule_id) == ("MEDIUM", "PRI-M2")
+        kids = [later(clock, eng, CLEANING) for _ in range(3)]
+        ticket = eng.get(root).ticket
+>       assert (ticket.priority, ticket.priority_rule_id, ticket.priority_source) == ("HIGH", "PRI-M2", "AGENT_RULE")
+E       AssertionError: assert (<Priority.ME...'AGENT_RULE'>) == ('HIGH', 'PRI... 'AGENT_RULE')
+E         
+E         At index 0 diff: <Priority.MEDIUM: 'MEDIUM'> != 'HIGH'
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_merge.py:248: AssertionError
+______________ test_m09b_human_override_is_never_touched[memory] ______________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000002BBFCA33A10>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000002BBFCAB8B50>
+
+    def test_m09b_human_override_is_never_touched(clock, eng):
+        root = report(eng, CLEANING)
+        eng.set_priority(root, BPTN, "LOW", note="Đã có người dọn")
+        for _ in range(3):
+            later(clock, eng, CLEANING)
+        ticket = eng.get(root).ticket
+>       assert (ticket.duplicate_count, ticket.priority, ticket.priority_source) == (3, "LOW", "HUMAN_OVERRIDE")
+E       AssertionError: assert (0, <Priority...AN_OVERRIDE'>) == (3, 'LOW', 'HUMAN_OVERRIDE')
+E         
+E         At index 0 diff: 0 != 3
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_merge.py:264: AssertionError
+_____________ test_m09c_threshold_is_data_not_a_constant[memory] ______________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000002BBFCA31250>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000002BBFCA32410>
+
+    def test_m09c_threshold_is_data_not_a_constant(clock, eng):
+        """The threshold is `sla_config.priority.duplicate_raise_at_count`; 2 raises at two duplicates."""
+        sla = eng.catalog.sla_config
+        eng.catalog = eng.catalog.model_copy(
+            update={"sla_config": sla.model_copy(update={"priority": PrioritySla(duplicate_raise_at_count=2)})}
+        )
+        root = report(eng, CLEANING)
+        later(clock, eng, CLEANING)
+        assert eng.get(root).ticket.priority == "MEDIUM"
+        later(clock, eng, CLEANING)
+>       assert eng.get(root).ticket.priority == "HIGH"
+E       AssertionError: assert <Priority.MEDIUM: 'MEDIUM'> == 'HIGH'
+E         
+E         - HIGH
+E         + MEDIUM
+
+tests\test_maintenance\test_p1_merge.py:277: AssertionError
+____ test_m12_cancelling_a_suspected_duplicate_releases_the_count[memory] _____
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000002BBFCA6B7D0>
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000002BBFCA6BD10>
+
+    def test_m12_cancelling_a_suspected_duplicate_releases_the_count(clock, eng):
+        """M-12: BQL cancels the suspected duplicate: the root count drops by one, and never below zero."""
+        root, child = dup_pair(clock, eng)
+>       assert eng.get(root).ticket.duplicate_count == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).duplicate_count
+E        +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+E        +      where Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None) = get('SIM-TKT-0001')
+E        +        where get = <src.maintenance.engine.MaintenanceEngine object at 0x000002BBFCA6BD10>.get
+
+tests\test_maintenance\test_p1_merge.py:362: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_merge.py::test_m01_detection_counts_on_root[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m01b_every_extra_report_adds_one[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m02_bptn_rejects_then_merge_does_not_count_again[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m08_root_cancel_unmerges_children_in_one_transaction[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m09_pri_u1_raises_one_level_at_the_threshold[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m09b_human_override_is_never_touched[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m09c_threshold_is_data_not_a_constant[memory]
+FAILED tests/test_maintenance/test_p1_merge.py::test_m12_cancelling_a_suspected_duplicate_releases_the_count[memory]
+8 failed, 12 passed, 20 deselected in 1.03s
+EXIT=1

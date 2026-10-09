@@ -1,0 +1,40 @@
+.......................F...........                                      [100%]
+================================== FAILURES ===================================
+____________ test_s08_a_ticket_already_split_is_never_split_again _____________
+
+    def test_s08_a_ticket_already_split_is_never_split_again():
+        engine = build("rules")
+        root, child = pair(engine, report(engine, MIXED))
+        for case in (root, child):
+            engine.resume(case.ticket.ticket_id)  # the pipeline never reads a split ticket as a new report
+        assert len(engine.repo.list()) == 2
+        for case in (root, child):
+            work = case.model_copy(deep=True)
+            assert work.ticket.risk_level == RiskLevel.NONE and engine.effective_location(work) is not None
+>           assert engine._try_split(work, engine.clock()) is False  # the guard itself (SPEC-P05 §3 condition 3)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:289: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\maintenance\coordination\split.py:52: in _try_split
+    self._split_mixed_report(work, now)
+src\maintenance\coordination\split.py:109: in _split_mixed_report
+    self._insert_case(child)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x00000274DBD8CDD0>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0003', raw=RawTicket(ticket_id='SIM-TKT-0003', created_at='2026-09-28T09:00:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+
+    def _insert_case(self, work: Case) -> None:
+        """A ticket this operation creates (built by `_build_case`); stored at commit, after the main ticket."""
+        scope = self._scope()
+        ticket_id = work.ticket.ticket_id
+        if scope is None:
+>           raise EngineError("Ghi ticket liên quan ngoài một thao tác", {"ticket_id": ticket_id})
+E           src.maintenance.store.base.EngineError: Ghi ticket liên quan ngoài một thao tác
+
+src\maintenance\engine.py:1895: EngineError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_split.py::test_s08_a_ticket_already_split_is_never_split_again
+1 failed, 34 passed, 2 deselected in 2.27s
+EXIT=1

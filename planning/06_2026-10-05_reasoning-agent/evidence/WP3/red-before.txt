@@ -1,0 +1,39 @@
+
+=================================== ERRORS ====================================
+_________ ERROR collecting tests/test_maintenance/test_agent_unit.py __________
+ImportError while importing test module 'D:\P151\.claude\worktrees\agent-a22c6c85a1a57a558\tests\test_maintenance\test_agent_unit.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\lenku\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_maintenance\test_agent_unit.py:16: in <module>
+    from src.maintenance.agent import prompt, reconcile
+E   ImportError: cannot import name 'prompt' from 'src.maintenance.agent' (D:\P151\.claude\worktrees\agent-a22c6c85a1a57a558\src\maintenance\agent\__init__.py)
+________ ERROR collecting tests/test_maintenance/test_agent_prompt.py _________
+ImportError while importing test module 'D:\P151\.claude\worktrees\agent-a22c6c85a1a57a558\tests\test_maintenance\test_agent_prompt.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\lenku\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_maintenance\test_agent_prompt.py:8: in <module>
+    from src.maintenance.agent import prompt
+E   ImportError: cannot import name 'prompt' from 'src.maintenance.agent' (D:\P151\.claude\worktrees\agent-a22c6c85a1a57a558\src\maintenance\agent\__init__.py)
+________ ERROR collecting tests/test_maintenance/test_rule_evidence.py ________
+ImportError while importing test module 'D:\P151\.claude\worktrees\agent-a22c6c85a1a57a558\tests\test_maintenance\test_rule_evidence.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\lenku\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_maintenance\test_rule_evidence.py:14: in <module>
+    from src.maintenance.rules import (
+E   ImportError: cannot import name 'SplitVerdict' from 'src.maintenance.rules' (D:\P151\.claude\worktrees\agent-a22c6c85a1a57a558\src\maintenance\rules.py)
+=========================== short test summary info ===========================
+ERROR tests/test_maintenance/test_agent_unit.py
+ERROR tests/test_maintenance/test_agent_prompt.py
+ERROR tests/test_maintenance/test_rule_evidence.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!
+3 errors in 0.84s
+EXIT=2

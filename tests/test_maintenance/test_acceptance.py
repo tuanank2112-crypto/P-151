@@ -98,7 +98,7 @@ def test_03_bptn_category_is_locked_and_never_reclassified(fresh, monkeypatch):
     real = engine_module.propose
     monkeypatch.setattr(engine_module, "propose", lambda *a, **k: calls.append(a) or real(*a, **k))
 
-    tid = report(fresh, "Hành lang tầng 3 tòa S1 nhiều rác và bóng đèn hành lang không sáng")
+    tid = report(fresh, "Hành lang tầng 3 tòa S1 nhiều rác vì bóng đèn hành lang không sáng")
     case = fresh.get(tid)
     assert case.ticket.status == "VERIFYING" and case.ticket.blocker.code == "CATEGORY_UNCLEAR"
     assert case.ticket.blocker.resume_step == 4 and len(calls) == 1  # BPTN's category still gets the duplicate check
@@ -292,7 +292,7 @@ def test_10e_unclear_category_stops_before_reading_other_tickets(fresh, clock, m
     monkeypatch.setattr(
         MaintenanceEngine, "_find_duplicate_ticket_id", lambda self, work: scans.append(1) or real(self, work)
     )
-    tid = report(fresh, "Hành lang tầng 3 tòa S1 nhiều rác và bóng đèn hành lang không sáng")
+    tid = report(fresh, "Hành lang tầng 3 tòa S1 nhiều rác vì bóng đèn hành lang không sáng")
     assert fresh.get(tid).ticket.blocker.code == "CATEGORY_UNCLEAR" and scans == []
 
 

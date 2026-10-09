@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 SCHEMA = "maintops"
 SUPABASE_HOST_SUFFIXES = (".supabase.com", ".supabase.co")
-HEAD_REVISION = "0001_maintops_initial"
+HEAD_REVISION = "0002_p1_doc_shape"
 ALEMBIC_INI = Path(__file__).with_name("alembic.ini")
 UPGRADE_COMMAND = "python -m alembic -c src/maintenance/store/alembic.ini upgrade head"
 KEY_JOBS = 151001  # advisory lock keys (transaction-scoped)

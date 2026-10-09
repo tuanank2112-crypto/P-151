@@ -11,7 +11,7 @@ import unicodedata
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from src.maintenance.enums import PlaybookId, ReasonCode, ServiceCategory, TicketType
+from src.maintenance.enums import SPLIT_PAIR, PlaybookId, ReasonCode, ServiceCategory, TicketType
 
 
 def normalize(text: str) -> str:
@@ -145,7 +145,8 @@ LIGHTING_PATTERNS = [
 # too when a common area is named; arrival ("khi den", "toi den noi") is excluded as above.
 NOT_WORKING_WORDS = (
     r"(?:chap chon|nhap nhay|nhay nhay|chop|tat|hong|hu|vo|chet|dut|khong (?:sang|len|bat|hoat dong)"
-    r"|bat khong (?:len|sang)|sang (?:yeu|lo mo)|lo mo|mo qua|toi (?:om|thui|mu)|roi xuong|rot|bi no|lung lang|re re|bi chay|chay bong)"
+    r"|bat khong (?:len|sang)|sang (?:yeu|lo mo)|lo mo|mo qua|toi (?:om|thui|mu)|roi xuong|rot|bi no|lung lang|re re|bi chay|chay bong"
+    r"|bi chap|chap(?: dien| mach)?)"
 )
 UNACCENTED_LAMP = rf"(?<!khi )(?<!di )(?<!toi )(?<!moi )(?<!vua )\bden(?: [a-z]+){{0,3}}? {NOT_WORKING_WORDS}\b"
 # A lamp inside a flat or out on the street is not a common-area lamp (Playbook §7.1), even when the resident
@@ -188,6 +189,8 @@ NOT_WORKING_PATTERNS = [
     r"\b(?:dut|chet)\b",
     r"\b(?:lung lang|re re)\b",
     r"\b(?:bong (?:den|luminaire) chay|chay bong)\b",  # Q22 typed without accents: "bong den chay roi"
+    r"\bchap(?: dien| mach)?\b(?! chon\b| nhan\b| hanh\b)",  # plan 05b: "đèn bị chập" = broken lamp (not "chấp nhận")
+    r"\b(?:bi|da) chay\b",  # plan 05b: "den hanh lang ... bi chay" typed without accents (2b already caught a real fire)
 ]
 # Plan 05 H04 (d): liquid reaching electrical equipment, or bare wires, is neither a spill to mop up nor an ordinary
 # broken lamp. The report gets no playbook (OUT_OF_SCOPE, BPTN reads it); the safety step 2b runs first and is the
@@ -212,6 +215,22 @@ class Classification:
     reason_code: ReasonCode | None = None  # why there is no playbook: CATEGORY_UNCLEAR or OUT_OF_SCOPE
 
 
+def _matches_both(text: str) -> tuple[bool, bool]:
+    """(cleaning, lighting): whether the already normalised classification text matches each playbook.
+
+    One definition for `classify`, `category_evidence` and `split_verdict`, so the evidence the Agent is checked
+    against can never drift from the classification itself (plan 06 SPEC-P05 section 2.1).
+    """
+    in_common_area = _any(COMMON_AREA_PATTERNS, text)
+    cleaning = _any(CLEANING_PATTERNS, text) or (in_common_area and _any(SOFT_CLEANING_PATTERNS, text))
+    lit_subject = _any(LIGHTING_PATTERNS, text) or (
+        in_common_area and _any([LUMINAIRE, UNACCENTED_LAMP, LUMINAIRE_LOST, TUBE_LAMP], text)
+    )
+    not_common_lamp = _any(PRIVATE_LAMP_PATTERNS, text) or _any(OUTSIDE_PATTERNS, text)
+    lighting = bool(lit_subject) and _any(NOT_WORKING_PATTERNS, text) and not not_common_lamp
+    return bool(cleaning), bool(lighting)
+
+
 def classify(description: str) -> Classification:
     """PB-CLN-R-TRG-01 / PB-TEC-R-TRG-01; anything else is PB-COM-R-CLS-01 (no invented playbook).
 
@@ -227,13 +246,7 @@ def classify(description: str) -> Classification:
             "Nội dung có chất lỏng ở thiết bị điện hoặc dây điện hở: không thuộc playbook nào trong v1.1",
             ReasonCode.OUT_OF_SCOPE,
         )
-    in_common_area = _any(COMMON_AREA_PATTERNS, text)
-    cleaning = _any(CLEANING_PATTERNS, text) or (in_common_area and _any(SOFT_CLEANING_PATTERNS, text))
-    lit_subject = _any(LIGHTING_PATTERNS, text) or (
-        in_common_area and _any([LUMINAIRE, UNACCENTED_LAMP, LUMINAIRE_LOST, TUBE_LAMP], text)
-    )
-    not_common_lamp = _any(PRIVATE_LAMP_PATTERNS, text) or _any(OUTSIDE_PATTERNS, text)
-    lighting = bool(lit_subject) and _any(NOT_WORKING_PATTERNS, text) and not not_common_lamp
+    cleaning, lighting = _matches_both(text)
     if cleaning and not lighting:
         return Classification(
             PlaybookId.CLN,
@@ -383,3 +396,134 @@ def _location_parts(description: str, buildings: Sequence[str]) -> tuple[str | N
     floor_label = _floor_label(floor.group(1)) if floor else IMPLIED_FLOOR.get(area)
     code = building.group(1).upper() if building else None
     return code, floor_label, area
+
+
+# --- Evidence for the reasoning Agent (plan 06 SPEC-P01 / SPEC-P05 section 2) ---------------------------------------
+# The Agent decides; these functions only say what the fixed rules see, so the engine can compare (disagreement table
+# G-1..G-9) and so a split still works when there is no Agent. None of them changes `classify`.
+
+
+def category_evidence(description: str) -> frozenset[ServiceCategory]:
+    """R: the categories the fixed rules find in the text (cleaning, lighting). Raw evidence: no electrical-hazard
+    branch (that is `electrical_hazard`), so a report both playbooks match gives both categories."""
+    cleaning, lighting = _matches_both(_classification_text(description))
+    found: set[ServiceCategory] = set()
+    if cleaning:
+        found.add(ServiceCategory.VE_SINH)
+    if lighting:
+        found.add(ServiceCategory.KY_THUAT)
+    return frozenset(found)
+
+
+def electrical_hazard(description: str) -> bool:
+    """Liquid at electrical equipment or bare wires (the patterns `classify` stops on)."""
+    return _any(ELECTRICAL_HAZARD_PATTERNS, _classification_text(description))
+
+
+@dataclass(frozen=True)
+class SplitVerdict:
+    categories: tuple[ServiceCategory, ...]  # SPLIT_PAIR when the report holds two independent jobs, else ()
+    reason: str  # "split" or the rule that blocked: "electrical-hazard" | "not-both" | "marker:<phrase>" | ...
+
+
+# R-S3: words that make one job the cause or effect of the other, or the report unsure. Accented forms are compared on
+# NFC lowercase text, unaccented forms on `normalize`d text, so a missing accent never invents a marker.
+CAUSAL_ACCENTED = (
+    "nên",
+    "vì",
+    "bởi",
+    "do",
+    "khiến",
+    "làm cho",
+    "dẫn đến",
+    "gây ra",
+    "không thấy",
+    "mảnh vỡ",
+    "mảnh kính",
+)
+HEDGE_ACCENTED = ("hình như", "có vẻ", "không biết", "không rõ", "chắc là", "có lẽ", "nghi là", "hay là", "hoặc")
+CAUSAL_FOLDED = (
+    "nen",
+    "vi",
+    "boi",
+    "do",
+    "khien",
+    "lam cho",
+    "dan den",
+    "gay ra",
+    "khong thay",
+    "manh vo",
+    "manh kinh",
+)
+HEDGE_FOLDED = ("hinh nhu", "co ve", "khong biet", "khong ro", "chac la", "co le", "nghi la", "hay la", "hoac")
+
+
+def _has_phrase(text: str, phrases: tuple[str, ...]) -> str | None:
+    for phrase in phrases:
+        if re.search(r"(?<!\w)" + re.escape(phrase) + r"(?!\w)", text):
+            return phrase
+    return None
+
+
+def _has_no_accent(text: str) -> bool:
+    folded = unicodedata.normalize("NFD", text.replace("đ", "d").replace("Đ", "D"))
+    return all(unicodedata.category(c) != "Mn" for c in folded)
+
+
+def location_mentions(
+    description: str, buildings: Sequence[str]
+) -> tuple[frozenset[str], frozenset[str], frozenset[str]]:
+    """Distinct (area labels, floors, buildings) named outside the residence clauses. A "tầng hầm B1" is a floor,
+    not an area label."""
+    text = normalize(description.replace("\n", ". "))
+    areas = [m for pattern, _ in AREA_PATTERNS for m in re.finditer(pattern, text)]
+    spans = _residence_spans(text, areas)
+
+    def outside(m: re.Match) -> bool:
+        return not any(s <= m.start() < e for s, e in spans)
+
+    floor_matches = [m for m in re.finditer(FLOOR_PATTERN, text) if outside(m)]
+    floor_spans = [m.span() for m in floor_matches]
+
+    def inside_floor(m: re.Match) -> bool:
+        return any(a <= m.start() and m.end() <= b for a, b in floor_spans)
+
+    labels = {
+        label
+        for pattern, label in AREA_PATTERNS
+        for m in re.finditer(pattern, text)
+        if outside(m) and not inside_floor(m)
+    }
+    floors = {m.group(1).lstrip("0") or "0" for m in floor_matches}
+    found_buildings = {
+        m.group(1).replace(" ", "-") for m in re.finditer(_building_pattern(buildings), text) if outside(m)
+    }
+    return frozenset(labels), frozenset(floors), frozenset(found_buildings)
+
+
+def split_verdict(description: str, buildings: Sequence[str]) -> SplitVerdict:
+    """Whether the report holds TWO independent jobs (cleaning + lighting) at ONE place. Conservative: the first
+    blocking rule wins (R-S1..R-S5, SPEC-P05 section 2.2); a wrong split is worse than none."""
+    text = _classification_text(description)
+    if _any(ELECTRICAL_HAZARD_PATTERNS, text):
+        return SplitVerdict((), "electrical-hazard")
+    cleaning, lighting = _matches_both(text)
+    if not (cleaning and lighting):
+        return SplitVerdict((), "not-both")
+    raw = unicodedata.normalize("NFC", description).lower()
+    folded = normalize(description)
+    building_pattern = _building_pattern(buildings)
+    for pattern in [p for p, _ in AREA_PATTERNS] + [FLOOR_PATTERN, building_pattern]:
+        folded = re.sub(pattern, " ", folded)  # "bai do xe" is a place, not the cause word "do"
+    if _has_no_accent(description):
+        hit = _has_phrase(folded, CAUSAL_FOLDED) or _has_phrase(folded, HEDGE_FOLDED)
+    else:
+        hit = _has_phrase(raw, CAUSAL_ACCENTED) or _has_phrase(raw, HEDGE_ACCENTED)
+    if hit:
+        return SplitVerdict((), f"marker:{hit}")
+    if "?" in description:
+        return SplitVerdict((), "question")
+    labels, floors, found_buildings = location_mentions(description, buildings)
+    if len(labels) > 1 or len(floors) > 1 or len(found_buildings) > 1:
+        return SplitVerdict((), "two-places")
+    return SplitVerdict(SPLIT_PAIR, "split")

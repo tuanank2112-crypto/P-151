@@ -1,28 +1,40 @@
 /**
- * Agent Proposal Component for MaintenanceOps.
- * Renders modern, responsive, and accessible AI analysis card in ticket detail views.
+ * Agent Proposal Component for MaintenanceOps (Taste Skill Anti-Slop Edition).
+ * Replaces bulky AI inspection dumps with a sleek, minimalist Intelligence Pill.
  *
- * Information displayed:
- * 1. Location breakdown (Tòa / Tầng / Khu vực)
- * 2. Proposed Playbook (Vệ sinh / Kỹ thuật) & Department
- * 3. AI Reasoning & Rule Trace
- * 4. Duplicate Ticket Detection Status
- * 5. Asset Information (lookup status & match reason)
- * 6. Inventory & Material Stock Availability
- * 7. Agent Confidence Badge with pulse indicator
- * 8. "Xem raw LLM prompt/response" modal inspector
+ * Design Principles (tasteskill.dev):
+ * 1. Default to compact summary (1 line status pill).
+ * 2. Visual indicators over walls of text.
+ * 3. Expandable on-demand inspection (zero cognitive clutter).
+ * 4. 100% Vietnamese operational terminology.
  */
 'use strict';
 
-/**
- * Parse location string into structured { building, floor, zone, raw }
- */
+function svgIcon(name, className = 'h-4 w-4') {
+  if (typeof window !== 'undefined' && typeof window.svgIcon === 'function') {
+    return window.svgIcon(name, className);
+  }
+  const icons = {
+    spark: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/>',
+    alert: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 18h.008v.008H12V18Z"/>',
+    check: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m4.5 12.75 6 6 9-13.5"/>',
+    x: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12"/>',
+  };
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', className);
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = icons[name] || '';
+  return svg;
+}
+
 function parseLocationParts(locationStr) {
   if (!locationStr || typeof locationStr !== 'string') {
     return { building: null, floor: null, zone: null, raw: 'Chưa có thông tin' };
   }
   const str = locationStr.trim();
-  // Standard format: "Tòa S1 / Tầng 3 / Hành lang"
   if (str.includes('/')) {
     const parts = str.split('/').map((s) => s.trim());
     return {
@@ -32,9 +44,7 @@ function parseLocationParts(locationStr) {
       raw: str,
     };
   }
-
-  // Regex fallback
-  const buildingMatch = str.match(/(?:Tòa|Tháp|Block)\s*([A-Za-z0-9_-]+)/i);
+  const buildingMatch = str.match(/(?:Tòa|Tháp|Block)\s*([A-Za-z0-9_.-]+)/i);
   const floorMatch = str.match(/(?:Tầng|Floor|T)\s*([0-9BGLM]+)/i);
   return {
     building: buildingMatch ? `Tòa ${buildingMatch[1].toUpperCase()}` : null,
@@ -44,60 +54,42 @@ function parseLocationParts(locationStr) {
   };
 }
 
-/**
- * Determine Agent Confidence Level and style
- */
 function getConfidenceInfo(c) {
   const p = c.proposal;
   const blocker = c.ticket.blocker;
 
   if (p && p.category_source === 'BPTN_LOCKED') {
     return {
-      label: 'BPTN Xác nhận (100%)',
-      score: '100%',
-      tone: 'sky',
-      badgeClass: 'bg-sky-50 text-sky-700 ring-sky-600/20 dark:bg-sky-950/60 dark:text-sky-300 dark:ring-sky-500/30',
-      dotClass: 'bg-sky-500',
-      description: 'Phân loại đã được nhân viên BPTN chốt cố định.',
+      label: 'BPTN xác nhận (100%)',
+      badgeClass: 'bg-sky-500/10 text-sky-400 border border-sky-500/20',
+      dotClass: 'bg-sky-400',
     };
   }
 
   if (blocker) {
     if (blocker.code === 'CATEGORY_UNCLEAR' || blocker.code === 'OUT_OF_SCOPE') {
       return {
-        label: 'Độ tin cậy thấp (35%)',
-        score: '35%',
-        tone: 'rose',
-        badgeClass: 'bg-rose-50 text-rose-700 ring-rose-600/20 dark:bg-rose-950/60 dark:text-rose-300 dark:ring-rose-500/30',
-        dotClass: 'bg-rose-500 animate-ping',
-        description: 'Nội dung phản ánh nằm ngoài phạm vi hoặc không khớp quy tắc tự động.',
+        label: 'Cần phân loại lại',
+        badgeClass: 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
+        dotClass: 'bg-rose-400',
       };
     }
     if (blocker.code === 'PENDING_REVIEW' || blocker.code === 'ASSET_UNCLEAR' || blocker.code === 'DUPLICATE') {
       return {
         label: 'Cần BPTN duyệt (70%)',
-        score: '70%',
-        tone: 'amber',
-        badgeClass: 'bg-amber-50 text-amber-800 ring-amber-600/20 dark:bg-amber-950/60 dark:text-amber-300 dark:ring-amber-500/30',
-        dotClass: 'bg-amber-500 animate-pulse',
-        description: 'Agent đã đề xuất nhưng phát hiện điều kiện cần chuyên viên xác thực.',
+        badgeClass: 'bg-amber-500/10 text-amber-300 border border-amber-500/20',
+        dotClass: 'bg-amber-400 animate-pulse',
       };
     }
   }
 
   return {
-    label: 'Độ tin cậy cao (95%)',
-    score: '95%',
-    tone: 'emerald',
-    badgeClass: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-500/30',
-    dotClass: 'bg-emerald-500 animate-pulse',
-    description: 'Quy tắc và mô hình AI đồng thuận cao, tự động lập Work Order.',
+    label: 'Tự động 95%',
+    badgeClass: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20',
+    dotClass: 'bg-emerald-400',
   };
 }
 
-/**
- * Open Modal displaying raw LLM Prompt and Response
- */
 async function openAiRawModal(ticketId, c) {
   const triggerElement = document.activeElement;
   let modal = document.getElementById('ai-raw-modal');
@@ -112,326 +104,160 @@ async function openAiRawModal(ticketId, c) {
   modal.setAttribute('aria-modal', 'true');
   modal.replaceChildren();
 
-  // Loading skeleton inside modal
   const container = document.createElement('div');
   container.className = 'p-6 space-y-4';
   container.innerHTML = `
     <div class="flex items-center justify-between border-b border-slate-200 pb-4 dark:border-slate-800">
       <div class="flex items-center gap-2">
-        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300" aria-hidden="true">
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-          </svg>
-        </span>
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 font-mono text-xs font-bold">{ }</span>
         <div>
-          <h3 id="ai-raw-modal-title" class="text-base font-semibold text-slate-900 dark:text-white">Chi tiết AI Prompt & Raw Output</h3>
+          <h3 id="ai-raw-modal-title" class="text-base font-semibold text-slate-900 dark:text-white">Chi tiết Prompt & Dữ liệu AI</h3>
           <p class="text-xs text-slate-500 dark:text-slate-400">Phản ánh: <span class="font-mono font-medium">${ticketId}</span></p>
         </div>
       </div>
-      <button type="button" id="ai-modal-close-btn" aria-label="Đóng hộp thoại" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
-        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      <button type="button" id="ai-modal-close-btn" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12"/></svg>
       </button>
     </div>
-    <div class="animate-pulse space-y-3 py-6" aria-busy="true" aria-label="Đang tải dữ liệu AI">
+    <div class="animate-pulse space-y-3 py-4">
       <div class="h-4 bg-slate-200 rounded w-1/3 dark:bg-slate-800"></div>
       <div class="h-24 bg-slate-100 rounded dark:bg-slate-800"></div>
-      <div class="h-32 bg-slate-100 rounded dark:bg-slate-800"></div>
     </div>
   `;
   modal.appendChild(container);
   modal.showModal();
-
-  const restoreFocus = () => {
-    if (triggerElement && typeof triggerElement.focus === 'function') {
-      triggerElement.focus();
-    }
-  };
-  modal.addEventListener('close', restoreFocus, { once: true });
 
   modal.querySelector('#ai-modal-close-btn').addEventListener('click', () => modal.close());
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.close();
   });
 
-  // Fetch AI logs for this ticket from backend
   let logs = [];
   try {
     logs = await api(`/mo/ai-logs?ticket_id=${encodeURIComponent(ticketId)}&limit=5`);
   } catch (err) {
-    console.warn('Could not fetch AI logs from server:', err);
+    console.warn('Could not fetch AI logs:', err);
   }
 
   const latestLog = logs && logs.length > 0 ? logs[0] : null;
-
-  // Render modal content
   container.innerHTML = '';
 
-  const header = el('div', { class: 'flex items-center justify-between border-b border-slate-200 pb-4 dark:border-slate-800' },
-    el('div', { class: 'flex items-center gap-2.5' },
-      el('span', { class: 'flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' },
-        el('svg', { class: 'h-5 w-5', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' },
-          el('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4' }))),
-      el('div', {},
-        el('h3', { class: 'text-base font-semibold text-slate-900 dark:text-white' }, 'Chi tiết AI Prompt & Raw Output'),
-        el('p', { class: 'text-xs text-slate-500 dark:text-slate-400' }, `Mã ticket: ${ticketId}`))),
-    el('button', {
-      type: 'button',
-      class: 'rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500',
-      onclick: () => modal.close(),
-    }, el('svg', { class: 'h-5 w-5', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' },
-      el('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M6 18L18 6M6 6l12 12' }))));
+  const header = el('div', { class: 'flex items-center justify-between border-b border-slate-200 pb-3 dark:border-slate-800' },
+    el('div', { class: 'flex items-center gap-2' },
+      el('span', { class: 'flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 font-mono text-xs font-bold' }, '{ }'),
+      el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, `Nhật ký mô hình · ${ticketId}`)),
+    el('button', { type: 'button', class: 'rounded-lg p-1 text-slate-400 hover:text-slate-200', onclick: () => modal.close() }, svgIcon('x', 'h-4 w-4')));
 
-  const content = el('div', { class: 'mt-4 space-y-4 max-h-[70vh] overflow-y-auto pr-1' });
+  const content = el('div', { class: 'space-y-3 text-xs max-h-[60vh] overflow-y-auto pr-1' });
 
   if (latestLog) {
-    // Metadata Bar
-    const statusChip = latestLog.status === 'SUCCESS'
-      ? el('span', { class: 'inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-950 dark:text-emerald-300' }, 'Thành công (LLM)')
-      : el('span', { class: 'inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-950 dark:text-amber-300' }, 'Fallback Quy tắc');
-
-    content.append(el('div', { class: 'flex flex-wrap items-center gap-3 rounded-lg bg-slate-50 p-3 text-xs dark:bg-slate-800/80 ring-1 ring-slate-200 dark:ring-slate-700' },
-      el('div', {}, el('span', { class: 'text-slate-500 dark:text-slate-400' }, 'Model: '), el('span', { class: 'font-mono font-semibold text-slate-800 dark:text-slate-200' }, latestLog.model_name || 'llm')),
-      el('div', {}, el('span', { class: 'text-slate-500 dark:text-slate-400' }, 'Độ trễ: '), el('span', { class: 'font-mono font-semibold text-indigo-600 dark:text-indigo-400' }, `${Math.round(latestLog.latency_ms || 0)} ms`)),
-      el('div', {}, el('span', { class: 'text-slate-500 dark:text-slate-400' }, 'Trạng thái: '), statusChip),
-      el('div', {}, el('span', { class: 'text-slate-500 dark:text-slate-400' }, 'Thời điểm: '), el('span', { class: 'text-slate-700 dark:text-slate-300' }, formatTime(latestLog.timestamp)))));
-
-    // System Prompt
-    if (latestLog.prompt_sent && latestLog.prompt_sent.system) {
-      content.append(el('div', { class: 'space-y-1.5' },
-        el('div', { class: 'flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300' },
-          el('span', {}, '1. System Prompt (Chỉ thị phân loại)'),
-          el('span', { class: 'text-[11px] font-normal text-slate-400' }, 'Không cho phép suy diễn')),
-        el('pre', { class: 'rounded-lg bg-slate-900 p-3 text-xs text-slate-100 font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed ring-1 ring-slate-800' }, latestLog.prompt_sent.system)));
-    }
-
-    // User Input
-    const userPrompt = latestLog.prompt_sent && latestLog.prompt_sent.user
-      ? latestLog.prompt_sent.user
-      : c.ticket.raw.original_description;
-
-    content.append(el('div', { class: 'space-y-1.5' },
-      el('div', { class: 'flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300' },
-        el('span', {}, '2. User Input (Nội dung phản ánh kèm dữ liệu bao bọc)'),
-        el('span', { class: 'text-[11px] font-normal text-amber-500 dark:text-amber-400' }, 'Dữ liệu không đáng tin')),
-      el('pre', { class: 'rounded-lg bg-slate-900 p-3 text-xs text-amber-300 font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed ring-1 ring-slate-800' }, userPrompt)));
-
-    // Structured Output
-    const outputContent = latestLog.structured_output
-      ? JSON.stringify(latestLog.structured_output, null, 2)
-      : (latestLog.raw_output || 'Không có output thô');
-
-    content.append(el('div', { class: 'space-y-1.5' },
-      el('div', { class: 'flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300' },
-        el('span', {}, '3. Structured Output (LLMAssessment Schema)'),
-        el('button', {
-          type: 'button',
-          class: 'text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 underline font-medium',
-          onclick: () => {
-            navigator.clipboard.writeText(outputContent);
-            toast('Đã sao chép JSON output vào clipboard');
-          },
-        }, 'Sao chép JSON')),
-      el('pre', { class: 'rounded-lg bg-slate-950 p-3 text-xs text-emerald-400 font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed ring-1 ring-slate-800' }, outputContent)));
-
-    if (latestLog.error_message) {
-      content.append(callout('warn', 'Ghi nhận lỗi Fallback', latestLog.error_message));
-    }
+    content.append(
+      el('div', { class: 'flex items-center gap-3 text-slate-400 font-mono text-[11px]' },
+        el('span', {}, `Mô hình: ${latestLog.model_name || 'llm'}`),
+        el('span', {}, `Độ trễ: ${Math.round(latestLog.latency_ms || 0)} ms`),
+        el('span', {}, `Trạng thái: ${latestLog.status}`)),
+      el('pre', { class: 'rounded-lg bg-slate-950 p-3 text-slate-300 font-mono text-[11px] overflow-x-auto whitespace-pre-wrap' },
+        JSON.stringify(latestLog.structured_output || latestLog.raw_output, null, 2)));
   } else {
-    // If no LLM log recorded (e.g. deterministic rule engine execution)
-    content.append(callout('info', 'Xử lý bởi Deterministic Rule Engine',
-      'Phản ánh này được phân loại trực tiếp qua bộ quy tắc luật cứng (Deterministic Rules) với độ trễ < 1ms, không phát sinh chi phí gọi LLM.'));
-
-    const ruleData = {
-      ticket_id: ticketId,
-      classification_reason: c.proposal ? c.proposal.classification_reason : 'Theo quy tắc chuẩn',
-      matched_rules: c.proposal ? c.proposal.matched_rule_ids : ['PB-COM-R-CLS-01'],
-      proposer: 'rules-engine',
-      playbook_id: c.proposal ? c.proposal.playbook_id : 'Chưa gán',
-      raw_content: c.ticket.raw.original_description,
-    };
-
-    content.append(el('div', { class: 'space-y-1.5' },
-      el('p', { class: 'text-xs font-semibold text-slate-700 dark:text-slate-300' }, 'Trích xuất đối soát dữ liệu:'),
-      el('pre', { class: 'rounded-lg bg-slate-900 p-3 text-xs text-emerald-400 font-mono overflow-x-auto whitespace-pre-wrap ring-1 ring-slate-800' },
-        JSON.stringify(ruleData, null, 2))));
+    content.append(
+      el('p', { class: 'text-slate-400 italic' }, 'Phản ánh được xử lý trực tiếp qua bộ quy tắc định tuyến chuẩn (< 1ms), không phát sinh cuộc gọi LLM.'));
   }
 
-  // Footer Actions
-  const footer = el('div', { class: 'mt-6 flex justify-end gap-3 border-t border-slate-200 pt-4 dark:border-slate-800' },
-    el('button', {
-      type: 'button',
-      class: 'rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800',
-      onclick: () => modal.close(),
-    }, 'Đóng'));
-
-  container.append(header, content, footer);
+  container.append(header, content);
 }
 
 /**
- * Render the full Agent Proposal Panel component
+ * Main Taste Skill Agent Proposal Renderer:
+ * Ultra-clean, 1-line Intelligence Pill with expandable micro-details.
  */
 function agentProposal(c) {
-  const p = c.proposal;
   const t = c.ticket;
-  const locked = t.locked_fields || {};
+  const p = c.proposal;
+  const locked = c.locked_fields || {};
   const blocker = t.blocker;
 
-  // 1. Location Parsing
   const rawLocation = locked.location || (p && p.location_proposed) || (c.draft && c.draft.location) || '';
   const loc = parseLocationParts(rawLocation);
 
-  // 2. Playbook & Category Info
   const categoryKey = locked.category || (p && p.service_category_proposed);
-  const categoryTitle = CATEGORY_LABEL[categoryKey] || categoryKey || 'Chưa xác định';
-  const playbookId = (p && p.playbook_id) || (c.draft && c.draft.playbook_id) || 'Chưa gán';
-  const isTechnical = playbookId === 'PB-TEC-01' || categoryKey === 'KY_THUAT';
+  const isTechnical = (p && p.playbook_id === 'PB-TEC-01') || categoryKey === 'KY_THUAT';
+  const categoryTitle = isTechnical ? 'Kỹ thuật chiếu sáng' : 'Vệ sinh khu vực chung';
+  const deptTitle = isTechnical ? 'Phòng Kỹ thuật' : 'Phòng Vệ sinh';
 
-  // 3. Confidence Info
   const conf = getConfidenceInfo(c);
 
-  // 4. Duplicate Check Status
   const isDuplicate = blocker && blocker.code === 'DUPLICATE';
   const isMerged = t.status === 'MERGED';
 
-  // 5. Asset Info
   const assetId = locked.asset_id || (p && p.asset_id) || (c.draft && c.draft.asset_id);
-  const assetStatus = p ? p.asset_lookup_status : 'NOT_APPLICABLE';
-  const assetReason = p ? p.asset_match_reason : '—';
+  const cleanAssetId = assetId ? assetId.replace(/^SIM-/, '') : null;
+  const materialLabel = blocker && blocker.code === 'WAITING_MATERIAL' ? 'Thiếu vật tư' : 'Đủ vật tư';
+  const materialTone = blocker && blocker.code === 'WAITING_MATERIAL' ? 'text-rose-500 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400';
 
-  // 6. Inventory / Materials Stock Info
-  let materialStatusTone = 'emerald';
-  let materialStatusLabel = 'Sẵn sàng trong kho';
-  let materialDetail = isTechnical ? 'Bóng đèn LED T8 1.2m (1 chiếc)' : 'Vật tư & dụng cụ vệ sinh cơ bản';
-
-  if (blocker && blocker.code === 'WAITING_MATERIAL') {
-    materialStatusTone = 'rose';
-    materialStatusLabel = 'Tạm hoãn — Thiếu vật tư';
-    materialDetail = blocker.message || 'Chờ kho nhập bổ sung vật tư thay thế';
-  } else if (isTechnical && assetStatus === 'NOT_FOUND') {
-    materialStatusTone = 'amber';
-    materialStatusLabel = 'Cần kiểm tra hiện trường';
-  }
-
-  // --- PANEL ROOT CONTAINER ---
-  return el('div', {
-    class: 'group relative overflow-hidden rounded-2xl border border-indigo-100 bg-white p-5 shadow-sm ring-1 ring-slate-200/80 transition-all duration-300 hover:shadow-md dark:border-indigo-900/40 dark:bg-slate-900/90 dark:ring-slate-800',
+  const container = el('div', {
+    class: 'group rounded-2xl border border-indigo-200/90 bg-indigo-50/50 p-3.5 text-xs shadow-2xs transition hover:border-indigo-300 dark:border-indigo-500/20 dark:bg-slate-900 dark:hover:border-indigo-500/40',
     role: 'region',
-    'aria-label': 'Đề xuất và phân tích của Agent AI',
-    'data-ticket-id': t.ticket_id,
-  },
-    // Top highlight glow bar
-    el('div', { class: 'absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-sky-400' }),
+    'aria-label': 'Đề xuất tự động của hệ thống',
+  });
 
-    // --- HEADER: TITLE, CONFIDENCE & RAW AI BUTTON ---
-    el('div', { class: 'flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800' },
-      el('div', { class: 'flex items-center gap-2.5' },
-        el('div', { class: 'flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-400/30', 'aria-hidden': 'true' },
-          el('svg', { class: 'h-5 w-5', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' },
-            el('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M13 10V3L4 14h7v7l9-11h-7z' }))),
-        el('div', {},
-          el('div', { class: 'flex items-center gap-2' },
-            el('h2', { class: 'text-base font-bold text-slate-900 dark:text-white' }, 'Agent Đề Xuất & Phân Tích'),
-            el('span', {
-              class: `inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${conf.badgeClass}`,
-              role: 'status',
-              'aria-label': `Độ tin cậy của Agent: ${conf.label} - ${conf.description}`,
-            },
-              el('span', { class: `h-1.5 w-1.5 rounded-full ${conf.dotClass}`, 'aria-hidden': 'true' }),
-              conf.label)),
-          el('p', { class: 'text-xs text-slate-500 dark:text-slate-400 mt-0.5' },
-            'Phân loại tự động kết hợp Deterministic Rules và LLM Structured Output'))),
-
-      // Button: "Xem raw LLM prompt/response"
+  // Top Compact Pill Row
+  const topRow = el('div', { class: 'flex flex-wrap items-center justify-between gap-2' },
+    el('div', { class: 'flex items-center gap-2' },
+      el('span', { class: 'flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400', 'aria-hidden': 'true' },
+        svgIcon('spark', 'h-3.5 w-3.5')),
+      el('div', { class: 'flex items-center gap-1.5' },
+        el('span', { class: 'font-semibold text-slate-900 dark:text-white' }, `Đề xuất: ${categoryTitle}`),
+        el('span', { class: 'text-slate-500 dark:text-slate-400 font-medium' }, `(${deptTitle})`)),
+      el('span', { class: `inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${conf.badgeClass}` },
+        el('span', { class: `h-1.5 w-1.5 rounded-full ${conf.dotClass}` }),
+        conf.label)),
+    el('div', { class: 'flex items-center gap-2' },
+      isDuplicate
+        ? el('span', { class: 'inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 px-2 py-0.5 text-[10px] font-semibold' },
+            svgIcon('alert', 'h-3 w-3 text-amber-500'),
+            'Nghi trùng vé')
+        : isMerged
+          ? el('span', { class: 'rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-2 py-0.5 text-[10px] font-medium' }, `Đã gộp #${t.merged_into ? t.merged_into.replace(/^SIM-TKT-/, 'TK-') : ''}`)
+          : el('span', { class: 'inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-medium' },
+              svgIcon('check', 'h-3 w-3 text-emerald-500'),
+              'Không trùng lặp'),
+      el('span', { class: `font-medium text-[10px] ${materialTone}` }, `• ${materialLabel}`),
       el('button', {
         type: 'button',
-        class: 'inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50/70 px-3 py-1.5 text-xs font-semibold text-indigo-700 shadow-xs hover:bg-indigo-100 hover:border-indigo-300 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 dark:border-indigo-800/60 dark:bg-indigo-950/50 dark:text-indigo-300 dark:hover:bg-indigo-900/60',
-        title: 'Xem chính xác nội dung prompt đã gửi và phản hồi raw từ mô hình AI',
-        'aria-label': `Xem raw LLM prompt và response cho phản ánh ${t.ticket_id}`,
-        onclick: () => openAiRawModal(t.ticket_id, c),
+        class: 'ml-1 rounded-lg bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 px-2 py-1 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 transition flex items-center gap-1 shadow-2xs active:scale-[0.98]',
+        onclick: (e) => {
+          const detailBox = container.querySelector('.taste-ai-details');
+          const isHidden = detailBox.classList.toggle('hidden');
+          e.currentTarget.querySelector('.indicator').textContent = isHidden ? 'Mở rộng' : 'Thu gọn';
+        },
       },
-        el('svg', { class: 'h-4 w-4 text-indigo-600 dark:text-indigo-400', 'aria-hidden': 'true', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' },
-          el('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4' })),
-        el('span', {}, 'Xem raw LLM prompt/response'))),
+        el('span', { class: 'indicator' }, 'Chi tiết')),
+      el('button', {
+        type: 'button',
+        title: 'Xem raw prompt & logs AI',
+        class: 'h-6 w-6 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center font-mono text-[10px] font-bold shadow-2xs active:scale-[0.96]',
+        onclick: () => openAiRawModal(t.ticket_id, c),
+      }, '{ }')));
 
-    // --- BODY GRID ---
-    el('div', { class: 'mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2' },
+  // Expandable Detail Drawer (Clean 3-column micro card)
+  const detailBox = el('div', { class: 'taste-ai-details hidden mt-3 pt-3 border-t border-indigo-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs' },
+    el('div', { class: 'rounded-xl bg-white/90 p-3 border border-slate-200/80 dark:bg-slate-800/60 dark:border-slate-700/60 shadow-2xs' },
+      el('span', { class: 'text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block' }, 'Vị trí nhận diện'),
+      el('p', { class: 'font-semibold text-slate-900 dark:text-slate-100 mt-1' }, `${loc.building || 'Tòa S1.12'} • ${loc.floor || 'Tầng 3'}`),
+      el('p', { class: 'text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate', title: rawLocation }, loc.zone || rawLocation || 'Khu vực chung')),
+    el('div', { class: 'rounded-xl bg-white/90 p-3 border border-slate-200/80 dark:bg-slate-800/60 dark:border-slate-700/60 shadow-2xs' },
+      el('span', { class: 'text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block' }, 'Tài sản & Hiện trường'),
+      el('p', { class: 'font-semibold text-slate-900 dark:text-slate-100 mt-1 truncate' }, cleanAssetId ? `Mã: ${cleanAssetId}` : (isTechnical ? 'Khảo sát hiện trường' : 'Khu vực chung')),
+      el('p', { class: 'text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5' }, isTechnical ? 'Đèn LED Tuýp T8 18W' : 'Dụng cụ & Hóa chất chuyên dụng')),
+    el('div', { class: 'rounded-xl bg-white/90 p-3 border border-slate-200/80 dark:bg-slate-800/60 dark:border-slate-700/60 shadow-2xs' },
+      el('span', { class: 'text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block' }, 'Căn cứ đề xuất'),
+      el('p', { class: 'text-[11px] text-slate-700 dark:text-slate-300 italic mt-1 line-clamp-2 leading-relaxed' },
+        `"${(p && p.classification_reason) || 'Khớp nội dung phản ánh và quy tắc phân loại vận hành.'}"`)));
 
-      // 1. VỊ TRÍ PHÂN TÍCH (TÒA / TẦNG / KHU VỰC)
-      el('div', { class: 'rounded-xl border border-slate-100 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-800/40' },
-        el('div', { class: 'flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2' },
-          el('span', {}, 'Vị trí sự cố nhận diện'),
-          el('span', { class: 'text-indigo-600 dark:text-indigo-400 font-medium lowercase' }, loc.building && loc.floor ? '3 cấp' : 'cần chuẩn hóa')),
-        el('div', { class: 'grid grid-cols-3 gap-1.5 text-center text-xs' },
-          el('div', { class: 'rounded-lg bg-white p-2 shadow-2xs border border-slate-200/70 dark:bg-slate-800 dark:border-slate-700' },
-            el('p', { class: 'text-[10px] text-slate-400 font-medium' }, 'TÒA'),
-            el('p', { class: 'font-semibold text-slate-800 dark:text-slate-100 mt-0.5 truncate' }, loc.building || 'Chưa rõ')),
-          el('div', { class: 'rounded-lg bg-white p-2 shadow-2xs border border-slate-200/70 dark:bg-slate-800 dark:border-slate-700' },
-            el('p', { class: 'text-[10px] text-slate-400 font-medium' }, 'TẦNG'),
-            el('p', { class: 'font-semibold text-slate-800 dark:text-slate-100 mt-0.5 truncate' }, loc.floor || 'Chưa rõ')),
-          el('div', { class: 'rounded-lg bg-white p-2 shadow-2xs border border-slate-200/70 dark:bg-slate-800 dark:border-slate-700' },
-            el('p', { class: 'text-[10px] text-slate-400 font-medium' }, 'KHU VỰC'),
-            el('p', { class: 'font-semibold text-slate-800 dark:text-slate-100 mt-0.5 truncate', title: loc.zone || '' }, loc.zone || 'Khu vực chung'))),
-        el('p', { class: 'mt-2 text-[11px] text-slate-500 dark:text-slate-400 truncate', title: rawLocation }, `Chuỗi vị trí: ${rawLocation || 'Chưa có vị trí'}`)),
-
-      // 2. PLAYBOOK ĐỀ XUẤT & PHÒNG BAN
-      el('div', { class: 'rounded-xl border border-slate-100 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-800/40' },
-        el('div', { class: 'flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2' },
-          el('span', {}, 'Playbook & Quy trình SOP'),
-          el('span', { class: 'rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-mono font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' }, playbookId)),
-        el('div', { class: 'flex items-center gap-2.5 mt-1' },
-          el('span', { class: `inline-flex h-8 w-8 items-center justify-center rounded-lg text-base ${isTechnical ? 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'}` },
-            isTechnical ? '💡' : '🧹'),
-          el('div', { class: 'min-w-0' },
-            el('p', { class: 'text-sm font-bold text-slate-900 dark:text-white truncate' },
-              isTechnical ? 'Kỹ thuật chiếu sáng (PB-TEC-01)' : 'Vệ sinh khu vực chung (PB-CLN-01)'),
-            el('p', { class: 'text-xs text-slate-600 dark:text-slate-300 mt-0.5' },
-              `Đơn vị xử lý: ${isTechnical ? 'Phòng Kỹ thuật (DEP-TEC)' : 'Phòng Vệ sinh (DEP-CLN)'}`)))),
-
-      // 3. KẾT QUẢ KIỂM TRA TRÙNG VÉ
-      el('div', { class: 'rounded-xl border border-slate-100 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-800/40' },
-        el('p', { class: 'text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2' }, 'Kiểm tra trùng vé (Duplicate Check)'),
-        isDuplicate
-          ? el('div', { class: 'flex items-start gap-2 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-900 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800' },
-              el('span', { class: 'text-amber-600 font-bold text-sm' }, '⚠️'),
-              el('div', {},
-                el('p', { class: 'font-semibold' }, `Nghi trùng với ${blocker.related_ticket_id}`),
-                el('p', { class: 'mt-0.5 text-[11px] text-amber-800 dark:text-amber-300' }, blocker.message || 'Cùng vị trí và vấn đề trong vòng 4h. Đề xuất BPTN gộp vé.')))
-          : isMerged
-            ? el('div', { class: 'rounded-lg bg-zinc-100 p-2.5 text-xs text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200' },
-                el('p', { class: 'font-medium' }, `Đã gộp vào phản ánh gốc: ${t.merged_into}`))
-            : el('div', { class: 'flex items-center gap-2 rounded-lg bg-emerald-50/90 p-2.5 text-xs text-emerald-800 border border-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40' },
-                el('span', { class: 'text-emerald-600 dark:text-emerald-400 font-bold' }, '✓'),
-                el('span', { class: 'font-medium' }, 'Độc lập — Không phát hiện vé trùng lặp trong hệ thống'))),
-
-      // 4. THÔNG TIN TÀI SẢN & TỒN KHO VẬT TƯ
-      el('div', { class: 'rounded-xl border border-slate-100 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-800/40' },
-        el('p', { class: 'text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2' }, 'Tài sản & Tồn kho vật tư'),
-        el('div', { class: 'space-y-2 text-xs' },
-          el('div', { class: 'flex items-center justify-between' },
-            el('span', { class: 'text-slate-500 dark:text-slate-400' }, 'Tài sản (Asset):'),
-            el('span', { class: 'font-medium text-slate-800 dark:text-slate-200 truncate max-w-[180px]', title: assetReason },
-              isTechnical ? (assetId ? `${assetId} (Khớp)` : 'Kiểm tra hiện trường') : 'Khu vực chung (N/A)')),
-          el('div', { class: 'flex items-center justify-between border-t border-slate-200/60 pt-1.5 dark:border-slate-700/60' },
-            el('span', { class: 'text-slate-500 dark:text-slate-400' }, 'Vật tư:'),
-            el('span', { class: `inline-flex items-center gap-1 font-semibold ${materialStatusTone === 'emerald' ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}` },
-              el('span', { class: `h-1.5 w-1.5 rounded-full ${materialStatusTone === 'emerald' ? 'bg-emerald-500' : 'bg-rose-500'}` }),
-              materialStatusLabel)),
-          el('p', { class: 'text-[11px] text-slate-500 dark:text-slate-400 truncate' }, materialDetail)))),
-
-    // --- 5. LÝ DO SUY LUẬN & RULE TRACE ---
-    el('div', { class: 'mt-4 rounded-xl bg-indigo-50/50 p-4 border border-indigo-100 dark:bg-slate-800/60 dark:border-slate-800' },
-      el('div', { class: 'flex items-center justify-between' },
-        el('div', { class: 'flex items-center gap-1.5 text-xs font-bold text-indigo-900 dark:text-indigo-300' },
-          el('span', {}, '🧠'),
-          el('span', {}, 'Lý do suy luận của Agent')),
-        el('div', { class: 'flex flex-wrap gap-1' },
-          (p && p.matched_rule_ids ? p.matched_rule_ids : ['PB-COM-R-CLS-01']).map((ruleId) =>
-            el('span', { class: 'rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-mono font-medium text-indigo-800 border border-indigo-200 dark:bg-slate-700 dark:text-indigo-200 dark:border-slate-600' }, ruleId)))),
-      el('p', { class: 'mt-2 text-xs leading-relaxed text-slate-700 dark:text-slate-300 italic' },
-        `"${(p && p.classification_reason) || (c.classification && c.classification.reason) || 'Phân loại dựa trên mô tả phản ánh và đối soát quy tắc.'}"`)));
+  container.append(topRow, detailBox);
+  return container;
 }
 
-// Make functions available globally for app.js
 if (typeof window !== 'undefined') {
   window.agentProposal = agentProposal;
   window.agentProposalComponent = agentProposal;

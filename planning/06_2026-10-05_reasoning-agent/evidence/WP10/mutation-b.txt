@@ -1,0 +1,29 @@
+﻿.......F........                                                         [100%]
+================================== FAILURES ===================================
+_______ test_e06_one_of_two_emergencies_handled_the_ticket_still_waits ________
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000021A8B138410>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000021A8B13A750>
+
+    def test_e06_one_of_two_emergencies_handled_the_ticket_still_waits(engine, clock):
+        hold_on(engine)
+        first = report(engine, SMOKE)
+        clock.advance(minutes=5)
+        second = report(engine, SMOKE_2)
+        assert engine.get(second).ticket.blocker.code == "EMERGENCY_PENDING_BQL"
+        clock.advance(minutes=5)
+        lamp = report(engine, LAMP)
+        assert engine.get(lamp).ticket.status == TicketStatus.ON_HOLD
+        assert linked(engine, first, lamp) and linked(engine, second, lamp)
+        engine.emergency_close(first, BQL, note="Đã xử lý điểm thứ nhất")
+        ticket = engine.get(lamp).ticket
+        assert (ticket.status, ticket.blocker.code) == ("ON_HOLD", "WAITING_EMERGENCY")  # the second is still open
+>       assert not [e for e in engine.get(lamp).events if e.from_status == "ON_HOLD"]  # it was never released and held again
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert not [StatusEvent(id='SIM-EVT-0003-0003', ticket_id='SIM-TKT-0003', from_status=<TicketStatus.ON_HOLD: 'ON_HOLD'>, to_statu...c=True, created_at=datetime.datetime(2026, 9, 28, 9, 10, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200))))]
+
+tests\test_maintenance\test_p1_neighbors.py:157: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_neighbors.py::test_e06_one_of_two_emergencies_handled_the_ticket_still_waits
+1 failed, 15 passed, 5 deselected in 1.11s
+EXIT=1

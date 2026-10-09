@@ -107,4 +107,18 @@ sla_config:
   waiting_material: {escalate_after_hours: 24}  # kiểm lại tồn kho ở đầu mỗi ca
   not_accepted: {start_after_hours: 2, retry_every_hours: 2}
   rework: {escalate_at_count: 3}
-  priority: {duplicate_raise_at_count: 3}  # CR-03 §7 / D-03: P0 chỉ nạp (PRI-U1 là P1)
+  wrong_dept_return: {escalate_at_count: 2}  # CR-03 §9.2 / §12.2 (đã chốt): lần trả sai phòng ban thứ 2 leo thang BQL
+  priority: {duplicate_raise_at_count: 3}  # CR-03 §7 PRI-U1 / D-03 — plan 06 Q19: người dùng chốt 3
+
+# Plan 06 (01-CONTRACTS §4.2): vật tư Agent được chọn theo playbook; default_materials phải nằm trong đây.
+playbook_materials:
+  PB-CLN-01: [SIM-MAT-CLEAN-01, SIM-MAT-BAG-01]
+  PB-TEC-01: [SIM-MAT-LAMP-01, SIM-MAT-LAMP-02, SIM-MAT-STARTER-01]
+
+# Plan 06: công tắc hành vi và giới hạn của Agent (I-29) — tắt được không sửa code.
+agent_policy:
+  auto_split_mixed_reports: true  # Q03 người dùng chốt: Agent tự tách phản ánh hai việc
+  hold_near_open_emergency: false  # Q18 CHỜ DUYỆT: mặc định chỉ liên kết, không giữ ticket thường
+  max_material_qty: 10
+  max_duplicate_candidates: 8
+  max_job_agent_calls: 5  # số lần gọi mô hình tối đa mỗi vòng job (chỉ ticket mồ côi)

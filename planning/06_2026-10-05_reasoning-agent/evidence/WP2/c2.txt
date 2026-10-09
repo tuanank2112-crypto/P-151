@@ -1,0 +1,7 @@
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. C:/Users/lenku/AppData/Local/Temp/claude/d--P151/640e8089-3b43-4a75-9055-cbb167391b76/scratchpad/venv311/Scripts/python.exe -m pytest -q -s -p no:cacheprovider tests/test_maintenance/test_safety.py -k false_alarm_budget   # lexicon 2026-10-05.p1d, base 3e3a3f8
+b_fp {'EMERGENCY': 0, 'UNCLEAR': 4, 'NONE': 55} [('UNCLEAR', 'Hành lang tầng 3 tòa SIM-A có mùi cơm khét từ căn hộ bên cạnh.'), ('UNCLEAR', 'Hành lang tầng 3 tòa SIM-A có mùi nấu ăn khét.'), ('UNCLEAR', 'Đèn tuýp hành lang tầng 3 tòa SIM-A bị nhấp nháy và kêu ù ù.'), ('UNCLEAR', 'Phòng sinh hoạt chung tầng 2 tòa SIM-A tổ chức tiệc nướng, khói bếp nướng bay vào hành lang.')]
+.b_fp2 {'EMERGENCY': 3, 'UNCLEAR': 1, 'NONE': 29} [('EMERGENCY', 'Bàn ghế sảnh tầng 1 tòa SIM-A bị gãy chân.'), ('EMERGENCY', 'Hành lang tầng 3 tòa SIM-A thùng rác bị gãy tay cầm.'), ('EMERGENCY', 'Biển báo hành lang tầng 3 tòa SIM-A bị gãy tay.'), ('UNCLEAR', 'Hành lang tầng 3 tòa SIM-A mùi sơn nồng, cư dân khó thở nhẹ.')]
+.jx_negfp {'EMERGENCY': 1, 'UNCLEAR': 0, 'NONE': 19} [('EMERGENCY', 'Không có ai bị thương, chỉ là đèn hành lang tầng 3 tòa SIM-A rơi xuống sàn.')]
+..
+4 passed, 1467 deselected in 0.72s
+EXIT=0

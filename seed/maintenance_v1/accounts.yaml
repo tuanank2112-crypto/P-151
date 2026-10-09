@@ -5,31 +5,31 @@ synthetic: true
 shared_test_password: "Demo@2026"
 accounts:
   - username: cudan01
-    display_name: "Cư dân 01 (mô phỏng)"
+    display_name: "Cư dân Nguyễn Văn Hùng (S2.05-1402)"
     actor_id: SIM-ACTOR-RESIDENT-01
     password_hash: "pbkdf2_sha256$200000$7838d6f743914224a1df613e223dbe15$5cccf060e54d684eac77cf035cc1cc6840f8958fbf011c2884c9b92908df90e1"
   - username: cudan02
-    display_name: "Cư dân 02 (mô phỏng)"
+    display_name: "Cư dân Lê Thu Trang (S1.12-0805)"
     actor_id: SIM-ACTOR-RESIDENT-02
     password_hash: "pbkdf2_sha256$200000$64ad7aac3022087af3558bf3e337c058$c15708600839dd581c146827fe3f18523ab6d1e85a2400c102dab4fcffb3296a"
   - username: bptn01
-    display_name: "Nhân viên BPTN 01"
+    display_name: "Điều phối viên Trần Mai Anh (BPTN)"
     actor_id: SIM-ACTOR-BPTN-01
     password_hash: "pbkdf2_sha256$200000$668d9c91f487f47016629bd2f0f2aa75$10868fa7f59befbe0e0f6be041a803c3a3459598d55d12104dfa1a7b9411a2dd"
   - username: vesinh01
-    display_name: "Phòng Vệ sinh 01"
+    display_name: "Đội Vệ sinh Môi trường (Ca 1)"
     actor_id: SIM-ACTOR-DEPT-CLN-01
     password_hash: "pbkdf2_sha256$200000$26fbf7fe4d93ce393a7d59ca1b021979$e9df60103e2baa704870f01bdc43f618fd83ff8249e07791efbb6023e8256376"
   - username: kythuat01
-    display_name: "Phòng Kỹ thuật 01"
+    display_name: "Đội Kỹ thuật Tòa nhà M&E (Ca 1)"
     actor_id: SIM-ACTOR-DEPT-TEC-01
     password_hash: "pbkdf2_sha256$200000$f43a40dae81ad9b4b51281df4e7f308f$37fbc112ae23163c84677abc412c8ba010be3d3eff690acc0160ddb020075f73"
   - username: kho01
-    display_name: "Kho vật tư 01"
+    display_name: "Kho Vật tư Kỹ thuật Trung tâm"
     actor_id: SIM-ACTOR-WAREHOUSE-01
     password_hash: "pbkdf2_sha256$200000$c74de0317a8a3d08f07d4e4d51f996e0$daf8cd446598d6b39a4d207bf59874d6f679dad9b2e3ac98dee46fe16b339c86"
   - username: bql01
-    display_name: "Ban quản lý 01"
+    display_name: "Ban Quản lý Tòa nhà (Vận hành BQL)"
     actor_id: SIM-ACTOR-BQL-01
     password_hash: "pbkdf2_sha256$200000$3088e3bb8431ddbcb5afc08f5b989773$a2558addc843bc60d874aaf3d96c10c61f86759958903e24ad312d41bb7972fc"
   - username: qa01

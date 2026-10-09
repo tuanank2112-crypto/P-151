@@ -1,0 +1,334 @@
+﻿FFFFFFFFFFFFFFFF                                                         [100%]
+================================== FAILURES ===================================
+_________ test_e00_the_catalog_switch_is_off_and_the_hook_follows_it __________
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EF0C810>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000024B6EF0C650>
+
+    def test_e00_the_catalog_switch_is_off_and_the_hook_follows_it(engine, clock):
+        assert engine.catalog.agent_policy.hold_near_open_emergency is False  # Q18: not turned on in the YAML
+        smoke, lamp = emergency_then_lamp(engine, clock)
+        case = engine.get(lamp)
+>       assert engine._open_emergencies_at("Tòa S1 / Tầng 3 / Hành lang", exclude=set()) == [smoke]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute '_open_emergencies_at'
+
+tests\test_maintenance\test_p1_neighbors.py:55: AttributeError
+___ test_e01_a_new_emergency_is_listed_by_the_open_ticket_at_the_same_place ___
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EEF0890>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000024B6EEF0290>
+
+    def test_e01_a_new_emergency_is_listed_by_the_open_ticket_at_the_same_place(engine, clock):
+        lamp = report(engine, LAMP)
+        elsewhere = report(engine, LAMP_ELSEWHERE)
+        before = engine.get(lamp).ticket.status
+        clock.advance(minutes=10)
+        smoke = report(engine, SMOKE)
+        assert engine.get(smoke).ticket.blocker.code == "EMERGENCY_PENDING_BQL"
+>       assert linked(engine, lamp, smoke)  # both ways, whatever the switch says
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert False
+E        +  where False = linked(<src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EEF0890>, 'SIM-TKT-0001', 'SIM-TKT-0003')
+
+tests\test_maintenance\test_p1_neighbors.py:77: AssertionError
+____ test_e02_with_the_switch_off_an_ordinary_ticket_is_routed_and_linked _____
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EEADE50>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000024B6EEAE750>
+
+    def test_e02_with_the_switch_off_an_ordinary_ticket_is_routed_and_linked(engine, clock):
+        smoke, lamp = emergency_then_lamp(engine, clock)
+        ticket = engine.get(lamp).ticket
+        assert ticket.status == TicketStatus.ROUTED and ticket.blocker is None
+>       assert linked(engine, smoke, lamp)
+E       AssertionError: assert False
+E        +  where False = linked(<src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EEADE50>, 'SIM-TKT-0001', 'SIM-TKT-0002')
+
+tests\test_maintenance\test_p1_neighbors.py:88: AssertionError
+_ test_e03_with_the_switch_on_the_ticket_waits_and_the_resident_sees_a_neutral_label _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EEAE850>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000024B6EEAFB10>
+
+    def test_e03_with_the_switch_on_the_ticket_waits_and_the_resident_sees_a_neutral_label(engine, clock):
+        hold_on(engine)
+        smoke, lamp = emergency_then_lamp(engine, clock)
+        ticket = engine.get(lamp).ticket
+>       assert (ticket.status, ticket.blocker.code, ticket.blocker.owner_role) == ("ON_HOLD", "WAITING_EMERGENCY", "SYSTEM")
+                               ^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'NoneType' object has no attribute 'code'
+
+tests\test_maintenance\test_p1_neighbors.py:96: AttributeError
+_________ test_e04_run_jobs_and_resume_never_release_a_waiting_ticket _________
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EE9E510>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000024B6EE9EB10>
+
+    def test_e04_run_jobs_and_resume_never_release_a_waiting_ticket(engine, clock):
+        hold_on(engine)
+        smoke, lamp = emergency_then_lamp(engine, clock)
+        clock.advance(hours=30)
+        engine.run_jobs()
+        engine.resume(lamp)
+        clock.advance(hours=30)
+        engine.run_jobs()
+        ticket = engine.get(lamp).ticket
+>       assert (ticket.status, ticket.blocker.code) == ("ON_HOLD", "WAITING_EMERGENCY")
+E       AssertionError: assert (<TicketStatu...OT_ACCEPTED'>) == ('ON_HOLD', '...NG_EMERGENCY')
+E         
+E         At index 0 diff: <TicketStatus.ROUTED: 'ROUTED'> != 'ON_HOLD'
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_neighbors.py:119: AssertionError
+_________ test_e05_closing_the_emergency_releases_the_waiting_ticket __________
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EE9FBD0>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000024B6EE9E450>
+
+    def test_e05_closing_the_emergency_releases_the_waiting_ticket(engine, clock):
+        hold_on(engine)
+        smoke, lamp = emergency_then_lamp(engine, clock)
+        engine.emergency_close(smoke, BQL, note="Đã xử lý tại chỗ")
+        ticket = engine.get(lamp).ticket
+        assert (ticket.status, ticket.blocker) == ("ROUTED", None)
+        assert ticket.department_id == "DEPT_TECHNICAL"
+        released = [e for e in engine.get(lamp).events if e.from_status == "ON_HOLD"]
+>       assert len(released) == 1 and released[0].actor_id == SYSTEM
+E       assert (0 == 1)
+E        +  where 0 = len([])
+
+tests\test_maintenance\test_p1_neighbors.py:132: AssertionError
+_____ test_e05b_downgrading_the_emergency_releases_the_waiting_ticket_too _____
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EE93C90>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000024B6EE911D0>
+
+    def test_e05b_downgrading_the_emergency_releases_the_waiting_ticket_too(engine, clock):
+        hold_on(engine)
+        smoke, lamp = emergency_then_lamp(engine, clock)
+>       assert engine.get(lamp).ticket.status == TicketStatus.ON_HOLD
+E       AssertionError: assert <TicketStatus...TED: 'ROUTED'> == <TicketStatus...LD: 'ON_HOLD'>
+E         
+E         - ON_HOLD
+E         + ROUTED
+
+tests\test_maintenance\test_p1_neighbors.py:138: AssertionError
+_______ test_e06_one_of_two_emergencies_handled_the_ticket_still_waits ________
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EE92610>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000024B6EE93B10>
+
+    def test_e06_one_of_two_emergencies_handled_the_ticket_still_waits(engine, clock):
+        hold_on(engine)
+        first = report(engine, SMOKE)
+        clock.advance(minutes=5)
+        second = report(engine, SMOKE_2)
+        assert engine.get(second).ticket.blocker.code == "EMERGENCY_PENDING_BQL"
+        clock.advance(minutes=5)
+        lamp = report(engine, LAMP)
+>       assert engine.get(lamp).ticket.status == TicketStatus.ON_HOLD
+E       AssertionError: assert <TicketStatus...TED: 'ROUTED'> == <TicketStatus...LD: 'ON_HOLD'>
+E         
+E         - ON_HOLD
+E         + ROUTED
+
+tests\test_maintenance\test_p1_neighbors.py:152: AssertionError
+________ test_e07_cancelling_the_emergency_releases_the_waiting_ticket ________
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6ED2E810>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000024B6ED2D0D0>
+
+    def test_e07_cancelling_the_emergency_releases_the_waiting_ticket(engine, clock):
+        hold_on(engine)
+        smoke, lamp = emergency_then_lamp(engine, clock)
+>       assert engine.get(lamp).ticket.status == TicketStatus.ON_HOLD
+E       AssertionError: assert <TicketStatus...TED: 'ROUTED'> == <TicketStatus...LD: 'ON_HOLD'>
+E         
+E         - ON_HOLD
+E         + ROUTED
+
+tests\test_maintenance\test_p1_neighbors.py:164: AssertionError
+________ test_e08_the_fixtures_with_the_switch_off_still_pass_12_of_12 ________
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EEAC350>
+
+    def test_e08_the_fixtures_with_the_switch_off_still_pass_12_of_12(engine):
+        report_ = evaluate(engine)
+        failed = {r.ticket_id: r.mismatches for r in report_.results if not r.passed}
+        assert (report_.total, report_.passed, failed) == (12, 12, {})
+        tec6 = engine.get("SIM-TKT-TEC-006")
+        assert tec6.ticket.status == TicketStatus.ROUTED  # still ROUTED next to SIM-TKT-CLN-004's open emergency
+>       assert linked(engine, "SIM-TKT-TEC-006", "SIM-TKT-CLN-004")  # but linked both ways
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert False
+E        +  where False = linked(<src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EEAC350>, 'SIM-TKT-TEC-006', 'SIM-TKT-CLN-004')
+
+tests\test_maintenance\test_p1_neighbors.py:177: AssertionError
+_ test_f01_bql_opens_a_follow_up_that_inherits_the_clearance_and_leaves_the_source_alone[memory] _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6ED2EED0>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000024B6ED2E6D0>
+
+    def test_f01_bql_opens_a_follow_up_that_inherits_the_clearance_and_leaves_the_source_alone(engine, clock):
+        smoke = emergency(engine, clock)
+        give_resident_material(engine, smoke)
+        source_before = engine.get(smoke).ticket
+>       new = engine.create_follow_up(smoke, BQL, note=NOTE)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_follow_up.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6ED2EED0>
+ticket_id = 'SIM-TKT-0001', actor_id = 'SIM-ACTOR-BQL-01'
+note = 'BQL đã kiểm tra hiện trường, an toàn; cần thợ sửa dây điện'
+
+    def create_follow_up(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
+>       raise NotImplementedError("plan 06 WP10: create_follow_up")
+E       NotImplementedError: plan 06 WP10: create_follow_up
+
+src\maintenance\coordination\neighbors.py:21: NotImplementedError
+__ test_f02_step_2b_is_skipped_and_the_pipeline_ends_at_a_valid_stop[memory] __
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EE637D0>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000024B6EE612D0>
+
+    def test_f02_step_2b_is_skipped_and_the_pipeline_ends_at_a_valid_stop(engine, clock):
+        smoke = emergency(engine, clock)
+>       new = engine.create_follow_up(smoke, BQL, note=NOTE)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_follow_up.py:144: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EE637D0>
+ticket_id = 'SIM-TKT-0001', actor_id = 'SIM-ACTOR-BQL-01'
+note = 'BQL đã kiểm tra hiện trường, an toàn; cần thợ sửa dây điện'
+
+    def create_follow_up(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
+>       raise NotImplementedError("plan 06 WP10: create_follow_up")
+E       NotImplementedError: plan 06 WP10: create_follow_up
+
+src\maintenance\coordination\neighbors.py:21: NotImplementedError
+_ test_f03_one_transaction_a_failure_while_writing_leaves_no_new_ticket[memory] _
+
+repo = <src.maintenance.store.memory.InMemoryRepository object at 0x0000024B6EE0CC50>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000024B6EE0E190>
+
+    def test_f03_one_transaction_a_failure_while_writing_leaves_no_new_ticket(repo, clock):
+        failing = {"on": False}
+    
+        def sink(rows):
+            if failing["on"] and any(row.ticket_id != smoke for row in rows):
+                raise RuntimeError("audit sink down")
+    
+        engine = MaintenanceEngine(clock=clock, repo=repo, audit_sink=sink)
+        engine.reset(with_fixtures=False)
+        smoke = emergency(engine, clock)
+        version, ledger, count = repo.version_of(smoke), len(repo.log_rows()), repo.count()
+        failing["on"] = True
+        with pytest.raises(AuditWriteError):
+>           engine.create_follow_up(smoke, BQL, note=NOTE)
+
+tests\test_maintenance\test_p1_follow_up.py:166: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EE0C390>
+ticket_id = 'SIM-TKT-0001', actor_id = 'SIM-ACTOR-BQL-01'
+note = 'BQL đã kiểm tra hiện trường, an toàn; cần thợ sửa dây điện'
+
+    def create_follow_up(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
+>       raise NotImplementedError("plan 06 WP10: create_follow_up")
+E       NotImplementedError: plan 06 WP10: create_follow_up
+
+src\maintenance\coordination\neighbors.py:21: NotImplementedError
+___________ test_f04_only_bql_an_open_emergency_and_a_note[memory] ____________
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EE7B350>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000024B6EE7AB90>
+
+    def test_f04_only_bql_an_open_emergency_and_a_note(engine, clock):
+        smoke = emergency(engine, clock)
+        lamp = report(engine, LAMP)
+        count = engine.repo.count()
+        for actor in (BPTN, RESIDENT):
+            with pytest.raises(ActionDeniedError):
+>               engine.create_follow_up(smoke, actor, note=NOTE)
+
+tests\test_maintenance\test_p1_follow_up.py:180: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EE7B350>
+ticket_id = 'SIM-TKT-0001', actor_id = 'SIM-ACTOR-BPTN-01'
+note = 'BQL đã kiểm tra hiện trường, an toàn; cần thợ sửa dây điện'
+
+    def create_follow_up(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
+>       raise NotImplementedError("plan 06 WP10: create_follow_up")
+E       NotImplementedError: plan 06 WP10: create_follow_up
+
+src\maintenance\coordination\neighbors.py:21: NotImplementedError
+_ test_f05_a_follow_up_does_not_wait_for_its_own_source_with_the_switch_on[memory] _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6EF1E5D0>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000024B6EF1F810>
+
+    def test_f05_a_follow_up_does_not_wait_for_its_own_source_with_the_switch_on(engine, clock):
+        hold_on(engine)
+        smoke = report(engine, SMOKE_LAMP)  # an emergency whose repair is a lamp job, so the follow-up can be routed
+        assert engine.get(smoke).ticket.blocker.code == "EMERGENCY_PENDING_BQL"
+        clock.advance(minutes=20)
+        control = report(engine, SWEEP)  # an ordinary report at the same place does wait: the switch is effective
+>       assert engine.get(control).ticket.status == TicketStatus.ON_HOLD
+E       AssertionError: assert <TicketStatus...TED: 'ROUTED'> == <TicketStatus...LD: 'ON_HOLD'>
+E         
+E         - ON_HOLD
+E         + ROUTED
+
+tests\test_maintenance\test_p1_follow_up.py:199: AssertionError
+_____ test_f06_with_an_agent_the_model_is_asked_once_and_outside_the_lock _____
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000024B6EF1F110>
+
+    def test_f06_with_an_agent_the_model_is_asked_once_and_outside_the_lock(clock):
+        probe = LockProbeClient(None, None)
+        counting = CountingClient(MirrorClient(load_catalog(), load_lexicon()))
+        probe.inner = counting
+        engine = agent_engine(clock, probe)
+        probe.engine = engine
+        smoke = emergency(engine, clock)
+        assert counting.calls == 0  # a rule emergency is never put to the model (A-24)
+>       new = engine.create_follow_up(smoke, BQL, note=NOTE)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_follow_up.py:216: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x0000024B6ED60E90>
+ticket_id = 'SIM-TKT-0001', actor_id = 'SIM-ACTOR-BQL-01'
+note = 'BQL đã kiểm tra hiện trường, an toàn; cần thợ sửa dây điện'
+
+    def create_follow_up(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
+>       raise NotImplementedError("plan 06 WP10: create_follow_up")
+E       NotImplementedError: plan 06 WP10: create_follow_up
+
+src\maintenance\coordination\neighbors.py:21: NotImplementedError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_neighbors.py::test_e00_the_catalog_switch_is_off_and_the_hook_follows_it
+FAILED tests/test_maintenance/test_p1_neighbors.py::test_e01_a_new_emergency_is_listed_by_the_open_ticket_at_the_same_place
+FAILED tests/test_maintenance/test_p1_neighbors.py::test_e02_with_the_switch_off_an_ordinary_ticket_is_routed_and_linked
+FAILED tests/test_maintenance/test_p1_neighbors.py::test_e03_with_the_switch_on_the_ticket_waits_and_the_resident_sees_a_neutral_label
+FAILED tests/test_maintenance/test_p1_neighbors.py::test_e04_run_jobs_and_resume_never_release_a_waiting_ticket
+FAILED tests/test_maintenance/test_p1_neighbors.py::test_e05_closing_the_emergency_releases_the_waiting_ticket
+FAILED tests/test_maintenance/test_p1_neighbors.py::test_e05b_downgrading_the_emergency_releases_the_waiting_ticket_too
+FAILED tests/test_maintenance/test_p1_neighbors.py::test_e06_one_of_two_emergencies_handled_the_ticket_still_waits
+FAILED tests/test_maintenance/test_p1_neighbors.py::test_e07_cancelling_the_emergency_releases_the_waiting_ticket
+FAILED tests/test_maintenance/test_p1_neighbors.py::test_e08_the_fixtures_with_the_switch_off_still_pass_12_of_12
+FAILED tests/test_maintenance/test_p1_follow_up.py::test_f01_bql_opens_a_follow_up_that_inherits_the_clearance_and_leaves_the_source_alone[memory]
+FAILED tests/test_maintenance/test_p1_follow_up.py::test_f02_step_2b_is_skipped_and_the_pipeline_ends_at_a_valid_stop[memory]
+FAILED tests/test_maintenance/test_p1_follow_up.py::test_f03_one_transaction_a_failure_while_writing_leaves_no_new_ticket[memory]
+FAILED tests/test_maintenance/test_p1_follow_up.py::test_f04_only_bql_an_open_emergency_and_a_note[memory]
+FAILED tests/test_maintenance/test_p1_follow_up.py::test_f05_a_follow_up_does_not_wait_for_its_own_source_with_the_switch_on[memory]
+FAILED tests/test_maintenance/test_p1_follow_up.py::test_f06_with_an_agent_the_model_is_asked_once_and_outside_the_lock
+16 failed, 5 deselected in 1.19s
+EXIT=1

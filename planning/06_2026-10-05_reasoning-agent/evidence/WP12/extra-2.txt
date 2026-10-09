@@ -1,0 +1,22 @@
+$ LLM_MODE=mock PYTHONUTF8=1 python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/extra_context_lowers.py .    # HEAD (this worktree)
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang không sáng' + 'Khói rất nhiều ở hành lang tầng 9' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang tầng 3 tòa S1 không sáng' + 'Khói rất nhiều ở hành lang tầng 9' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang không sáng' + 'khoi rat nhieu o tang ham' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang tầng 3 tòa S1 không sáng' + 'khoi rat nhieu o tang ham' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang không sáng' + 'Hành lang tầng 9 khói rất nhiều, mọi người chạy hết xuống' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang tầng 3 tòa S1 không sáng' + 'Hành lang tầng 9 khói rất nhiều, mọi người chạy hết xuống' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang không sáng' + 'khoi nhieu o hanh lang tang 4' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang tầng 3 tòa S1 không sáng' + 'khoi nhieu o hanh lang tang 4' :: [('T2-03', 'PRESENT', 'B-03')]
+RESULT root=. pairs=32 combined_lower_than_addition_alone=8
+EXIT=1
+$ LLM_MODE=mock PYTHONUTF8=1 python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/extra_context_lowers.py <scratchpad>/old82    # base 82f01f0
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang không sáng' + 'Khói rất nhiều ở hành lang tầng 9' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang tầng 3 tòa S1 không sáng' + 'Khói rất nhiều ở hành lang tầng 9' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang không sáng' + 'khoi rat nhieu o tang ham' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang tầng 3 tòa S1 không sáng' + 'khoi rat nhieu o tang ham' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang không sáng' + 'Hành lang tầng 9 khói rất nhiều, mọi người chạy hết xuống' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang tầng 3 tòa S1 không sáng' + 'Hành lang tầng 9 khói rất nhiều, mọi người chạy hết xuống' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang không sáng' + 'khoi nhieu o hanh lang tang 4' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang tầng 3 tòa S1 không sáng' + 'khoi nhieu o hanh lang tang 4' :: [('T2-03', 'PRESENT', 'B-03')]
+RESULT root=C:/Users/lenku/AppData/Local/Temp/claude/d--P151/640e8089-3b43-4a75-9055-cbb167391b76/scratchpad/old82 pairs=32 combined_lower_than_addition_alone=8
+EXIT=1

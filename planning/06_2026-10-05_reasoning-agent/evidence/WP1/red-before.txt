@@ -1,0 +1,577 @@
+FFFFFFFFFFFFFFFFFFFF.FFF                                                 [100%]
+================================== FAILURES ===================================
+___________________ test_c01_transitions_count_and_new_rows ___________________
+
+    def test_c01_transitions_count_and_new_rows():
+        s = enums.TicketStatus
+>       assert len(TRANSITIONS) == 23 + 7
+E       AssertionError: assert 25 == (23 + 7)
+E        +  where 25 = len({(<TicketStatus.RECEIVED: 'RECEIVED'>, <TicketStatus.NEED_INFO: 'NEED_INFO'>): TransitionRule(actors=frozenset({<Actor...le(actors=frozenset({<ActorRole.BPTN: 'BPTN'>}), reasons=frozenset(), reason_required=False, pipeline_only=False), ...})
+
+tests\test_maintenance\test_p1_contracts.py:57: AssertionError
+_______________ test_c02_blocker_owners_cover_every_reason_code _______________
+
+    def test_c02_blocker_owners_cover_every_reason_code():
+        assert set(BLOCKER_OWNERS) == set(ReasonCode)
+>       assert BLOCKER_OWNERS[ReasonCode.WAITING_EMERGENCY] == BlockerOwner.SYSTEM
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_contracts.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cls = <enum 'ReasonCode'>, name = 'WAITING_EMERGENCY'
+
+    def __getattr__(cls, name):
+        """
+        Return the enum member matching `name`
+    
+        We use __getattr__ instead of descriptors or inserting into the enum
+        class' __dict__ in order to support `name` and `value` being both
+        properties for enum members (which live in the class' __dict__) and
+        enum members themselves.
+        """
+        if _is_dunder(name):
+            raise AttributeError(name)
+        try:
+            return cls._member_map_[name]
+        except KeyError:
+>           raise AttributeError(name) from None
+E           AttributeError: WAITING_EMERGENCY
+
+C:\Users\lenku\AppData\Local\Programs\Python\Python311\Lib\enum.py:784: AttributeError
+_________________ test_c03_permissions_exactly_four_new_keys __________________
+
+    def test_c03_permissions_exactly_four_new_keys():
+>       assert PERMISSIONS[Action.BQL_MERGE] == {"BQL"}
+                           ^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_contracts.py:83: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cls = <enum 'Action'>, name = 'BQL_MERGE'
+
+    def __getattr__(cls, name):
+        """
+        Return the enum member matching `name`
+    
+        We use __getattr__ instead of descriptors or inserting into the enum
+        class' __dict__ in order to support `name` and `value` being both
+        properties for enum members (which live in the class' __dict__) and
+        enum members themselves.
+        """
+        if _is_dunder(name):
+            raise AttributeError(name)
+        try:
+            return cls._member_map_[name]
+        except KeyError:
+>           raise AttributeError(name) from None
+E           AttributeError: BQL_MERGE
+
+C:\Users\lenku\AppData\Local\Programs\Python\Python311\Lib\enum.py:784: AttributeError
+____________ test_c04_v_t1_split_category_only_ve_sinh_or_ky_thuat ____________
+
+    def test_c04_v_t1_split_category_only_ve_sinh_or_ky_thuat():
+>       _good_pair()
+
+tests\test_maintenance\test_p1_contracts.py:121: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _good_pair() -> dict:
+        """Positive control: the fields exist and a valid combination builds (so a failure below is the validator)."""
+>       ticket = Ticket.model_validate(_ticket_doc(split_from="SIM-TKT-9001", split_category="KY_THUAT"))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for Ticket
+E       split_from
+E         Extra inputs are not permitted [type=extra_forbidden, input_value='SIM-TKT-9001', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+E       split_category
+E         Extra inputs are not permitted [type=extra_forbidden, input_value='KY_THUAT', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+tests\test_maintenance\test_p1_contracts.py:113: ValidationError
+_________________ test_c04_v_t2_split_category_iff_split_link _________________
+
+    def test_c04_v_t2_split_category_iff_split_link():
+>       _good_pair()
+
+tests\test_maintenance\test_p1_contracts.py:127: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _good_pair() -> dict:
+        """Positive control: the fields exist and a valid combination builds (so a failure below is the validator)."""
+>       ticket = Ticket.model_validate(_ticket_doc(split_from="SIM-TKT-9001", split_category="KY_THUAT"))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for Ticket
+E       split_from
+E         Extra inputs are not permitted [type=extra_forbidden, input_value='SIM-TKT-9001', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+E       split_category
+E         Extra inputs are not permitted [type=extra_forbidden, input_value='KY_THUAT', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+tests\test_maintenance\test_p1_contracts.py:113: ValidationError
+___________________ test_c04_v_t3_not_both_child_and_parent ___________________
+
+    def test_c04_v_t3_not_both_child_and_parent():
+>       _good_pair()
+
+tests\test_maintenance\test_p1_contracts.py:137: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _good_pair() -> dict:
+        """Positive control: the fields exist and a valid combination builds (so a failure below is the validator)."""
+>       ticket = Ticket.model_validate(_ticket_doc(split_from="SIM-TKT-9001", split_category="KY_THUAT"))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for Ticket
+E       split_from
+E         Extra inputs are not permitted [type=extra_forbidden, input_value='SIM-TKT-9001', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+E       split_category
+E         Extra inputs are not permitted [type=extra_forbidden, input_value='KY_THUAT', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+tests\test_maintenance\test_p1_contracts.py:113: ValidationError
+_________________________ test_c04_v_t4_no_self_link __________________________
+
+    def test_c04_v_t4_no_self_link():
+>       _good_pair()
+
+tests\test_maintenance\test_p1_contracts.py:145: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _good_pair() -> dict:
+        """Positive control: the fields exist and a valid combination builds (so a failure below is the validator)."""
+>       ticket = Ticket.model_validate(_ticket_doc(split_from="SIM-TKT-9001", split_category="KY_THUAT"))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for Ticket
+E       split_from
+E         Extra inputs are not permitted [type=extra_forbidden, input_value='SIM-TKT-9001', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+E       split_category
+E         Extra inputs are not permitted [type=extra_forbidden, input_value='KY_THUAT', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+tests\test_maintenance\test_p1_contracts.py:113: ValidationError
+___________________ test_c04_v_t5_links_have_no_duplicates ____________________
+
+    def test_c04_v_t5_links_have_no_duplicates():
+>       _good_pair()
+
+tests\test_maintenance\test_p1_contracts.py:166: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _good_pair() -> dict:
+        """Positive control: the fields exist and a valid combination builds (so a failure below is the validator)."""
+>       ticket = Ticket.model_validate(_ticket_doc(split_from="SIM-TKT-9001", split_category="KY_THUAT"))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for Ticket
+E       split_from
+E         Extra inputs are not permitted [type=extra_forbidden, input_value='SIM-TKT-9001', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+E       split_category
+E         Extra inputs are not permitted [type=extra_forbidden, input_value='KY_THUAT', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+tests\test_maintenance\test_p1_contracts.py:113: ValidationError
+_____________________ test_c04_counters_are_non_negative ______________________
+
+    def test_c04_counters_are_non_negative():
+>       Ticket.model_validate(_ticket_doc(duplicate_count=2, wrong_department_return_count=1))
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for Ticket
+E       duplicate_count
+E         Extra inputs are not permitted [type=extra_forbidden, input_value=2, input_type=int]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+E       wrong_department_return_count
+E         Extra inputs are not permitted [type=extra_forbidden, input_value=1, input_type=int]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+tests\test_maintenance\test_p1_contracts.py:178: ValidationError
+_____________ test_c04_merged_from_and_copied_from_are_exclusive ______________
+
+    def test_c04_merged_from_and_copied_from_are_exclusive():
+        base = {
+            "addition_id": "SIM-ADD-X-01",
+            "ticket_id": "SIM-TKT-9001",
+            "content": "x",
+            "submitted_by": "SIM-ACTOR-RESIDENT-01",
+            "submitted_at": "2026-10-05T09:00:00+07:00",
+        }
+>       assert ResidentAddition.model_validate({**base, "merged_from": "SIM-TKT-9002"}).merged_from == "SIM-TKT-9002"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ResidentAddition
+E       merged_from
+E         Extra inputs are not permitted [type=extra_forbidden, input_value='SIM-TKT-9002', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+tests\test_maintenance\test_p1_contracts.py:192: ValidationError
+_____________ test_c05_pre_p1_case_docs_still_load_with_defaults ______________
+
+    def test_c05_pre_p1_case_docs_still_load_with_defaults():
+        docs = _pre_p1()
+        assert set(docs) == {"SIM-TKT-CLN-001", "SIM-TKT-CLN-004", "SIM-TKT-TEC-003"}
+        for tid, doc in docs.items():
+            case = Case.model_validate(doc)
+            t = case.ticket
+>           assert (t.duplicate_count, t.wrong_department_return_count) == (0, 0), tid
+                    ^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_contracts.py:226: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = Ticket(ticket_id='SIM-TKT-CLN-001', raw=RawTicket(ticket_id='SIM-TKT-CLN-001', created_at='2026-09-27T08:00:00+07:00',...E: 'AGENT_RULE'>, priority_rule_id='PRI-M2', priority_reason="PRI-M2: ảnh hưởng sử dụng ('nhieu rac')", synthetic=True)
+item = 'duplicate_count'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'Ticket' object has no attribute 'duplicate_count'
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\640e8089-3b43-4a75-9055-cbb167391b76\scratchpad\venv311\Lib\site-packages\pydantic\main.py:1042: AttributeError
+_____________ test_c05_category_source_accepts_the_two_new_values _____________
+
+    def test_c05_category_source_accepts_the_two_new_values():
+        from src.maintenance.models import AgentClassificationProposal
+    
+        literal = AgentClassificationProposal.model_fields["category_source"].annotation
+>       assert set(literal.__args__) == {"AGENT", "BPTN_LOCKED", "AGENT_SPLIT", "AGENT_LLM"}
+E       AssertionError: assert {'AGENT', 'BPTN_LOCKED'} == {'AGENT', 'AG...'BPTN_LOCKED'}
+E         
+E         Extra items in the right set:
+E         'AGENT_SPLIT'
+E         'AGENT_LLM'
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_contracts.py:242: AssertionError
+____________ test_c12_catalog_requires_the_new_keys[agent_policy] _____________
+
+path = ('agent_policy',)
+
+    @pytest.mark.parametrize(
+        "path",
+        [("agent_policy",), ("playbook_materials",), ("sla_config", "wrong_dept_return")],
+        ids=lambda p: ".".join(p),
+    )
+    def test_c12_catalog_requires_the_new_keys(path):
+        full = _catalog_raw()
+        catalog = Catalog.model_validate(full)  # positive control
+>       assert catalog.agent_policy.auto_split_mixed_reports is True
+               ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_contracts.py:256: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = Catalog(dataset_version='maintenanceops-sim-v1.1', synthetic=True, site=Site(name='Ocean Park', buildings=('S1', 'S2')...=2.0, retry_every_hours=2.0), rework=ReworkSla(escalate_at_count=3), priority=PrioritySla(duplicate_raise_at_count=3)))
+item = 'agent_policy'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'Catalog' object has no attribute 'agent_policy'
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\640e8089-3b43-4a75-9055-cbb167391b76\scratchpad\venv311\Lib\site-packages\pydantic\main.py:1042: AttributeError
+_________ test_c12_catalog_requires_the_new_keys[playbook_materials] __________
+
+path = ('playbook_materials',)
+
+    @pytest.mark.parametrize(
+        "path",
+        [("agent_policy",), ("playbook_materials",), ("sla_config", "wrong_dept_return")],
+        ids=lambda p: ".".join(p),
+    )
+    def test_c12_catalog_requires_the_new_keys(path):
+        full = _catalog_raw()
+        catalog = Catalog.model_validate(full)  # positive control
+>       assert catalog.agent_policy.auto_split_mixed_reports is True
+               ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_contracts.py:256: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = Catalog(dataset_version='maintenanceops-sim-v1.1', synthetic=True, site=Site(name='Ocean Park', buildings=('S1', 'S2')...=2.0, retry_every_hours=2.0), rework=ReworkSla(escalate_at_count=3), priority=PrioritySla(duplicate_raise_at_count=3)))
+item = 'agent_policy'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'Catalog' object has no attribute 'agent_policy'
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\640e8089-3b43-4a75-9055-cbb167391b76\scratchpad\venv311\Lib\site-packages\pydantic\main.py:1042: AttributeError
+____ test_c12_catalog_requires_the_new_keys[sla_config.wrong_dept_return] _____
+
+path = ('sla_config', 'wrong_dept_return')
+
+    @pytest.mark.parametrize(
+        "path",
+        [("agent_policy",), ("playbook_materials",), ("sla_config", "wrong_dept_return")],
+        ids=lambda p: ".".join(p),
+    )
+    def test_c12_catalog_requires_the_new_keys(path):
+        full = _catalog_raw()
+        catalog = Catalog.model_validate(full)  # positive control
+>       assert catalog.agent_policy.auto_split_mixed_reports is True
+               ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_contracts.py:256: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = Catalog(dataset_version='maintenanceops-sim-v1.1', synthetic=True, site=Site(name='Ocean Park', buildings=('S1', 'S2')...=2.0, retry_every_hours=2.0), rework=ReworkSla(escalate_at_count=3), priority=PrioritySla(duplicate_raise_at_count=3)))
+item = 'agent_policy'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'Catalog' object has no attribute 'agent_policy'
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\640e8089-3b43-4a75-9055-cbb167391b76\scratchpad\venv311\Lib\site-packages\pydantic\main.py:1042: AttributeError
+___________ test_c12_catalog_policy_values_and_material_validators ____________
+
+    def test_c12_catalog_policy_values_and_material_validators():
+        catalog = load_catalog()
+>       policy = catalog.agent_policy
+                 ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_contracts.py:268: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = Catalog(dataset_version='maintenanceops-sim-v1.1', synthetic=True, site=Site(name='Ocean Park', buildings=('S1', 'S2')...=2.0, retry_every_hours=2.0), rework=ReworkSla(escalate_at_count=3), priority=PrioritySla(duplicate_raise_at_count=3)))
+item = 'agent_policy'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'Catalog' object has no attribute 'agent_policy'
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\640e8089-3b43-4a75-9055-cbb167391b76\scratchpad\venv311\Lib\site-packages\pydantic\main.py:1042: AttributeError
+________________________ test_c12_agent_policy_bounds _________________________
+
+    def test_c12_agent_policy_bounds():
+        full = _catalog_raw()
+        Catalog.model_validate(full)
+        for key, bad in (("max_material_qty", 0), ("max_duplicate_candidates", 9), ("max_job_agent_calls", 51)):
+            broken = _catalog_raw()
+>           broken["agent_policy"][key] = bad
+            ^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'agent_policy'
+
+tests\test_maintenance\test_p1_contracts.py:288: KeyError
+____________________ test_c12_signal_def_agent_only_rules _____________________
+
+    def test_c12_signal_def_agent_only_rules():
+>       assert SignalDef(signal_id="S-00", name="agent_other_hazard", tier=1, phase="P1", agent_only=True).agent_only
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for SignalDef
+E       agent_only
+E         Extra inputs are not permitted [type=extra_forbidden, input_value=True, input_type=bool]
+E           For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+tests\test_maintenance\test_p1_contracts.py:298: ValidationError
+_____________________ test_c13_i18n_new_keys_and_messages _____________________
+
+    def test_c13_i18n_new_keys_and_messages():
+        from src.maintenance import messages
+    
+        t = _templates()
+>       assert t["reason_messages"]["WAITING_EMERGENCY"] == "Phản ánh đang được kiểm tra trước khi chuyển phòng ban."
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'WAITING_EMERGENCY'
+
+tests\test_maintenance\test_p1_contracts.py:320: KeyError
+__________________________ test_c14_views_new_fields __________________________
+
+    def test_c14_views_new_fields():
+        row_fields = set(BqlTicketRow.model_fields)
+>       assert {
+            "duplicate_count",
+            "merged_children",
+            "related_ticket_ids",
+            "split_from",
+            "split_children",
+            "follow_up_of",
+            "wrong_department_return_count",
+            "agent_source",
+            "agent_disagreements",
+        } <= row_fields
+E       AssertionError: assert {'agent_disag...ket_ids', ...} <= {'accepted_at..._reason', ...}
+E         
+E         Extra items in the left set:
+E         'merged_children'
+E         'split_children'
+E         'duplicate_count'
+E         'wrong_department_return_count'
+E         'split_from'...
+E         
+E         ...Full output truncated (4 lines hidden), use '-vv' to show
+
+tests\test_maintenance\test_p1_contracts.py:339: AssertionError
+_______________ test_q20_agent_schema_matches_reference_example _______________
+
+    def test_q20_agent_schema_matches_reference_example():
+>       from src.maintenance.agent.schema import AgentDecision, AgentDecisionRecord, Disagreement
+E       ModuleNotFoundError: No module named 'src.maintenance.agent'
+
+tests\test_maintenance\test_p1_contracts.py:380: ModuleNotFoundError
+_________ test_q20_decision_input_and_case_agent_decision_round_trip __________
+
+    def test_q20_decision_input_and_case_agent_decision_round_trip():
+>       from src.maintenance.agent.inputs import AssetCandidate, DecisionInput, DuplicateCandidate
+E       ModuleNotFoundError: No module named 'src.maintenance.agent'
+
+tests\test_maintenance\test_p1_contracts.py:419: ModuleNotFoundError
+______________________ test_q20_execution_snapshot_shape ______________________
+
+    def test_q20_execution_snapshot_shape():
+>       from src.maintenance.models import ExecutionSnapshot
+E       ImportError: cannot import name 'ExecutionSnapshot' from 'src.maintenance.models' (D:\P151\.claude\worktrees\agent-ab1fd4bc145dfa1ca\src\maintenance\models.py)
+
+tests\test_maintenance\test_p1_contracts.py:463: ImportError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c01_transitions_count_and_new_rows
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c02_blocker_owners_cover_every_reason_code
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c03_permissions_exactly_four_new_keys
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c04_v_t1_split_category_only_ve_sinh_or_ky_thuat
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c04_v_t2_split_category_iff_split_link
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c04_v_t3_not_both_child_and_parent
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c04_v_t4_no_self_link
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c04_v_t5_links_have_no_duplicates
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c04_counters_are_non_negative
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c04_merged_from_and_copied_from_are_exclusive
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c05_pre_p1_case_docs_still_load_with_defaults
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c05_category_source_accepts_the_two_new_values
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c12_catalog_requires_the_new_keys[agent_policy]
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c12_catalog_requires_the_new_keys[playbook_materials]
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c12_catalog_requires_the_new_keys[sla_config.wrong_dept_return]
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c12_catalog_policy_values_and_material_validators
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c12_agent_policy_bounds
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c12_signal_def_agent_only_rules
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c13_i18n_new_keys_and_messages
+FAILED tests/test_maintenance/test_p1_contracts.py::test_c14_views_new_fields
+FAILED tests/test_maintenance/test_p1_contracts.py::test_q20_agent_schema_matches_reference_example
+FAILED tests/test_maintenance/test_p1_contracts.py::test_q20_decision_input_and_case_agent_decision_round_trip
+FAILED tests/test_maintenance/test_p1_contracts.py::test_q20_execution_snapshot_shape
+23 failed, 1 passed in 2.35s
+EXIT=1

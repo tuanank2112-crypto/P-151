@@ -42,5 +42,21 @@ services:
       timeout: 10s
       retries: 3
 
+  # Cổng phản ánh cư dân (Next.js, portal/): http://localhost:3000. Own database "portal" on the local "db",
+  # created + migrated + seeded (only when empty) at start; never the shared Supabase of the backend
+  portal:
+    build:
+      context: ./portal
+    ports:
+      - "${PORTAL_PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-p151}:${POSTGRES_PASSWORD:-p151}@db:5432/portal
+      SESSION_COOKIE_SECURE: "false"
+      TZ: Asia/Ho_Chi_Minh
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   pgdata:

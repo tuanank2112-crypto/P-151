@@ -1,0 +1,4 @@
+HEAD=bd0ca175a2a77fda5bc7a066b66d952d54bb6e6b
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. python -m pytest -q -p no:cacheprovider
+3338 passed, 75 deselected in 123.40s (0:02:03)
+EXIT=0

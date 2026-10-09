@@ -1,0 +1,59 @@
+================================================================================
+WP16 VÒNG 3 VERIFICATION & PACKAGE CHECK — 2026-10-07T04:31:56.414530+00:00
+================================================================================
+
+--- 1. KIỂM TRA MÃ NGUỒN & GIT WORKSPACE ---
+git diff --check exit code: 0
+git diff --check: PASS (không có lỗi whitespace/conflict)
+Runtime files changed (src/, tests/, seed/): 0
+BẢO TOÀN RUNTIME: PASS (0 file runtime bị thay đổi, giữ nguyên nguyên tắc SPEC-first)
+
+--- 2. KIỂM TRA ĐỘ DÀI HANDOFF (<= 80 DÒNG) ---
+planning/06_2026-10-05_reasoning-agent/handoffs/H15_thi-cong_WP16.md: 37 dòng (giới hạn <= 80) -> PASS
+planning/06_2026-10-05_reasoning-agent/handoffs/H16_thi-cong_WP17.md: 34 dòng (giới hạn <= 80) -> PASS
+
+--- 3. KIỂM TRA TÍNH TOÀN VẸN SPEC-P09 ---
+SPEC-P09 Status: PROPOSED -> PASS (chưa thay thế P01/P08, đúng quy chuẩn)
+SPEC-P09 Internal Markdown Links: 0 broken links
+SPEC-P09 Anchor Links: 100% PASS
+
+--- 4. BỘ PROBE KIỂM CHỨNG KIẾN TRÚC B1–B4 ---
+>>> Probe B1: Liên kết giá trị - bằng chứng vị trí (Location Evidence Binding)
+  [PASS] B1.1 Chặn S2 bịa đặt khi quote là 'Hành lang'
+  [PASS] B1.2 Chặn S1 khớp nhầm chuỗi 'S1.12'
+  [PASS] B1.3 Nhận đúng S1.12
+  [PASS] B1.4 Chặn tầng 1 khớp nhầm 'tầng 10'
+  [PASS] B1.5 Nhận đúng tầng 10
+  [PASS] B1.6 Chặn tầng 7 bịa từ 'căn hộ 1702'
+  [PASS] B1.7 Chặn thang máy bịa đặt khi quote là 'Hành lang'
+  [PASS] B1.8 Nhận đúng hanh_lang từ 'Hành lang'
+>>> Probe B2: Phân tích tách việc (Split Analysis & Two Locations Invariant)
+  [PASS] B2.1 Chặn should_split=True với 1 job
+  [PASS] B2.2 Chặn should_split=True với 2 jobs cùng loại
+  [PASS] B2.3 Chặn should_split=True khi 2 vị trí khác nhau
+  [PASS] B2.4 Chặn should_split=True khi có quan hệ nhân quả
+  [PASS] B2.5 Chặn should_split=True khi có rủi ro an toàn
+  [PASS] B2.6 Cho phép should_split=True khi đủ SPLIT_PAIR độc lập cùng vị trí
+>>> Probe B3: Bất biến next_step & Thứ tự an toàn (Next Step Invariants & Safety Priority)
+  [PASS] B3.1 Chặn PROCEED nhưng ask_fields không rỗng
+  [PASS] B3.2 Cho phép PROCEED khi ask_fields rỗng
+  [PASS] B3.3 Chặn ASK_RESIDENT khi ask_fields rỗng
+  [PASS] B3.4 Chặn ASK_RESIDENT khi message quá ngắn (<10 ký tự)
+  [PASS] B3.5 Cho phép ASK_RESIDENT chuẩn
+  [PASS] B3.6 Chặn TO_BPTN khi bptn_reason không hợp lệ
+  [PASS] B3.7 Chặn needs_review=True khi review_reason rỗng
+>>> Probe B4: Tương thích đọc kép P01 & Ánh xạ Decision (Dual-Read Adapter & P01 Mapping)
+  [PASS] B4.1 Adapter tạo AgentDecision hợp lệ cho P01
+  [PASS] B4.2 Tự suy department_id đúng ('DEPT_TECHNICAL')
+  [PASS] B4.3 Tự suy priority_rule_id đúng ('PRI-M2')
+  [PASS] B4.4 Next step đúng (PROCEED)
+  [PASS] B4.5 Scope đúng (IN_SCOPE)
+  [PASS] B4.6 Số jobs đúng (1 job)
+
+================================================================================
+KẾT LUẬN TOÀN DIỆN VÒNG 3:
+- 100% Probe kiến trúc B1, B2, B3, B4 PASS.
+- 0 file runtime bị thay đổi trong gói WP16.
+- Handoff H15, H16 đạt chuẩn độ dài <= 80 dòng.
+- SPEC-P09 bảo toàn trạng thái PROPOSED, liên kết nội bộ 100% hợp lệ.
+================================================================================

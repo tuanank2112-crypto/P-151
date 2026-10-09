@@ -21,7 +21,10 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | **Tài liệu kỹ thuật module** | [`docs/`](../docs/) · [`../docs/maintenance.md`](../docs/maintenance.md) | Tài liệu chuyên trách 1-1; `maintenance.md` = module `src/maintenance/` (pipeline, tầng an toàn R1–R10, 5 method khẩn cấp, priority, cấu hình, test). Đọc TRƯỚC khi sửa engine. |
 | **Kế hoạch 01 — CR-03 P0 engine (✅ 2026-10-02)** | [`../planning/01_2026-10-01_cr03-p0-engine/`](../planning/01_2026-10-01_cr03-p0-engine/) | `plan.md` (Q01–Q33), `specs/` (SPEC-P01 an toàn, P02 khẩn cấp, P03 priority, P04 chốt chặn, TESTING, OPERATIONS), `reports/R01…R11`, `evidence/`. Hợp đồng từ vựng: `specs/01-CONTRACTS.md` §5 + `seed/maintenance_v1/lexicon.yaml`. |
 | **Kế hoạch 04 — sửa logic sau rà soát (v1.1.3, 2026-10-04)** | [`../planning/04_2026-10-04_logic-review-fix/`](../planning/04_2026-10-04_logic-review-fix/) | `plan.md` (§1 16 lỗi đo được, Q01–Q12), `handoffs/H01` từ vựng an toàn, `H02` rules/proposer, `H03` backend (bản vá cho Châm Anh), `H04` UI (Trí), `H05` rules/spec (Trường), `reports/R01–R02`, `evidence/`. Test hồi quy: `tests/test_maintenance/test_logic_review_fixes.py`, `test_rules_review_fixes.py`, `test_safety_review_fixes.py`. Tóm tắt: `docs/maintenance.md` §12. |
+| **⭐ Kế hoạch 07 — UI `src/web/` theo design portal (v1.3.0, 2026-10-07)** | [`../planning/07_2026-10-07_web-portal-reskin/`](../planning/07_2026-10-07_web-portal-reskin/plan.md) · [`../docs/web.md`](../docs/web.md) | Reskin UI tĩnh backend: `theme.css` + remap palette Tailwind CDN + header gradient/đăng nhập/helper; API/logic không đổi. SPEC: `01-CONTRACTS.md` (token, DOM id, màu trạng thái). Đọc `docs/web.md` TRƯỚC khi sửa `src/web/`. |
+| **⭐ Kế hoạch 06 — Cổng phản ánh cư dân `portal/` (v1.2.0, 2026-10-07)** | [`../planning/06_2026-10-07_resident-portal-next/`](../planning/06_2026-10-07_resident-portal-next/plan.md) · [`../docs/portal.md`](../docs/portal.md) | Website Next.js 16 + TypeScript + Tailwind v4 + PostgreSQL (Drizzle) dựng từ `design-ticket-cu-dan/…/HANDOFF.md` + 6 file `.dc.html`. ĐỘC LẬP backend Python. SPEC: `specs/00-ARCHITECTURE.md` (bất biến, lệch D1–D9), `01-CONTRACTS.md` (schema, stage 1..6, action, lỗi). Đọc `docs/portal.md` TRƯỚC khi sửa `portal/`. |
 | **Kế hoạch 05 — làm cứng Agent (v1.1.4, 2026-10-05)** | [`../planning/05_2026-10-04_agent-hardening/`](../planning/05_2026-10-04_agent-hardening/plan.md) | `plan.md` (Q01–Q10), `handoffs/H01–H04`, `reports/R01–R04`, `evidence/`. Bộ biến thể: `tests/test_maintenance/test_safety_metamorphic.py`, `test_classify_metamorphic.py`; điều phối: `test_agent_coordination.py`. Tóm tắt: `docs/maintenance.md` §13. |
+| **Kế hoạch 06 — Reasoning Agent & P1 (2026-10-05)** | [`../planning/06_2026-10-05_reasoning-agent/`](../planning/06_2026-10-05_reasoning-agent/) | `plan.md` (Q01–Q29), `specs/` (00-ARCHITECTURE, 01-CONTRACTS, P01–P09, OPERATIONS, TESTING), `SPEC-P09-semantic-coordination.md` (điều phối ngữ nghĩa, B1–B4), `handoffs/H15`, `H16` (WP17 runtime CHỜ DUYỆT), `reports/R15` (§01–§17), `evidence/WP16/`. |
 | **⭐ SPEC DUY NHẤT — MaintenanceOps** | [`../docs/CR-BPTN-03.md`](../docs/CR-BPTN-03.md) | Vai trò/quyền, 10 trạng thái, T01–T23, pipeline §5.1, tầng an toàn §6, priority §7, gộp §8, AC-01..18, P0/P1. CR-01/02 đã xoá. |
 | **Sản phẩm (nền v0.3, lệch thì CR-03 thắng)** | [`../docs/01_problem_statement.md`](../docs/01_problem_statement.md) … [`05_traceability_and_review.md`](../docs/05_traceability_and_review.md), [`data-contract-v1.md`](../docs/data-contract-v1.md), [`playbook-v1.md`](../docs/playbook-v1.md) | Bài toán, PRD, UI flow, data contract, playbook. |
 | **Swimlane / sơ đồ flow** | [`../docs/Activity Diagram.png`](../docs/Activity%20Diagram.png) | Bản nháp, CHƯA khớp CR-03 (thiếu Bậc 2, sai thứ tự an toàn). `flow_maintenanceops_v04.png` là flow cũ. |
@@ -60,6 +63,10 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | `seed/maintenance_v1/` | Fixture: tickets, catalog (`sla_config`), accounts, `lexicon.yaml` (từ vựng an toàn + priority) |
 | `tests/test_maintenance/` | Test engine, API, auth, acceptance, safety/emergency/priority (CR-03), store (pg chỉ chạy `--pg` trên docker `*_test`), `test_cr03_store.py` (CR-03 qua repository + Q04) |
 | `seed/maintenance_cr03/` | Fixture đích CR-03: nhãn safety + expected outcome (Trường) |
+| `portal/src/server/workflow.ts` | [Next.js] MỌI ghi ticket của Cổng phản ánh (FOR UPDATE + stage có điều kiện + history) |
+| `portal/src/server/queries.ts`, `session.ts` | [Next.js] Đọc theo vai; session cookie ↔ bảng `sessions` |
+| `portal/src/app/{login,resident,reception,management,cleaning,technical}/` | [Next.js] 6 màn ↔ 6 file `.dc.html`; Server Actions ở `app/actions/` |
+| `portal/src/db/schema.ts`, `portal/drizzle/` | [Next.js] 10 bảng + migration SQL; seed `src/db/seed.ts` |
 
 ---
 
@@ -72,6 +79,10 @@ project-root/
 ├── brain4agent-v1.7.1.md             # [MARKER] Phiên bản khung não — soi nhanh ở root
 ├── README.md                         # Giới thiệu + cách chạy (phần v0.3 đã cũ; spec là docs/CR-BPTN-03.md)
 ├── requirements.txt                  # Dependency Python
+├── portal/                           # [Next.js 16 + TS + Tailwind + PostgreSQL/Drizzle] Cổng phản ánh cư dân (plan 06, docs/portal.md) — ĐỘC LẬP src/
+│   ├── src/{app,components,lib,server,db}/  # màn + actions · UI dùng chung · thuần (agent, sla…) · chỉ server (workflow, queries, session) · schema/seed
+│   ├── drizzle/, scripts/, tests/{unit,db}/ # migration SQL · migrate/seed/e2e/screens · vitest
+├── design-ticket-cu-dan/             # Bộ thiết kế nguồn (HANDOFF.md + design/*.dc.html) của portal/
 ├── src/
 │   ├── main.py                       # FastAPI app; lifespan tạo engine + job retry/leo thang (asyncio.to_thread); mount /api/v1, /ui
 │   ├── config.py                     # Pydantic Settings (LLM_MODE, MO_JOBS_ENABLED, ...)
@@ -86,7 +97,7 @@ project-root/
 │   │   └── migration.py, demo.py     # Ánh xạ v0.4→v0.5; demo/evaluate
 │   ├── api/routers/maintenance.py    # /api/v1/mo, /resident, /bql
 │   ├── api/auth.py, api/photos.py    # Đăng nhập + session in-memory + khoá theo client; ảnh (kiểm magic bytes)
-│   ├── web/                          # UI tĩnh (index.html, app.js)
+│   ├── web/                          # UI tĩnh (index.html, app.js, theme.css = design portal, plan 07) — docs/web.md
 │   ├── agents/                       # LangGraph MẪU của template, chưa trên đường chạy
 │   └── services/llm.py               # Factory LLM
 ├── seed/maintenance_v1/              # catalog.yaml, tickets.yaml (12 ca + expected), accounts.yaml, lexicon.yaml (từ vựng an toàn + priority = DỮ LIỆU)
@@ -102,9 +113,9 @@ project-root/
 │   ├── -known-gotchas.md             # [GOTCHAS] Tổng hợp lỗi dị biệt & bẫy kỹ thuật
 │   ├── -data-architecture.md         # [DATA ARCH] Kiến trúc dữ liệu & Data Flow
 │   └── project-intro.md              # [INTRO] Tổng quan dự án & Tech stack
-├── planning/                         # [QUẢN LÝ KẾ HOẠCH NÂNG CẤP] 01 supabase-persistence, 02 truong-mvp-prep
+├── planning/                         # [QUẢN LÝ KẾ HOẠCH NÂNG CẤP] 01 … 05, 06 resident-portal-next (portal/)
 ├── .agents/skills/                   # [WORKSPACE SKILLS] Kỹ năng chuyên dụng cục bộ dự án
-└── docs/                             # [MODULE DOCS] CR-BPTN-03.md, maintenance.md (module engine), 01–05, data-contract, playbook
+└── docs/                             # [MODULE DOCS] CR-BPTN-03.md, maintenance.md (module engine), portal.md (portal/), 01–05, data-contract, playbook
 ```
 
 ## Trường MVP preparation — 2026-10-03
