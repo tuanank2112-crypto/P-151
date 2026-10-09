@@ -1,0 +1,15 @@
+mutant c-turn-calls-render: harness exit=1
+PASS P1 20 rows, "Trang 1 / 2", prev disabled, pill 30
+FAIL P2 page 2 rows ok, label "Trang 2 / 2", API calls on turn = 1
+FAIL P3 after selecting #PA-0022 on page 2 and render(): "Trang 1 / 2", selected #PA-0002
+FAIL resident-1440 stopped: page.click: Timeout 8000ms exceeded.
+PASS P4 cudan02 has 0 tickets, pager count = 0
+PASS P5-bptn 20 rows, stat "Hàng chờ BPTN" = 30, pager present
+PASS P7-1440-bptn pageerror=0
+PASS P5-bql 20 rows, stat "Tổng hồ sơ" = 30
+PASS P6 on "Trang 2 / 2", filter NEED_INFO (30 rows) -> "Trang 1 / 2"
+PASS P7-1440-bql pageerror=0
+PASS P7-390-resident overflow page=false pager=false, pageerror=0
+PASS P7-390-bptn overflow page=false pager=false, pageerror=0
+PASS P7-390-bql overflow page=false pager=false, pageerror=0
+RESULT: 3 FAILED

@@ -1,0 +1,9 @@
+PASS cudan01@1440 total=38 shown=20 pager=1 next→"Trang 2 / 2" overflow=false pageerror=0 writes=0
+PASS cudan01@390 total=38 shown=20 pager=1 next→"Trang 2 / 2" overflow=false pageerror=0 writes=0
+PASS bptn01@1440 total=20 shown=20 pager=0 next→"n/a" overflow=false pageerror=0 writes=0
+PASS bptn01@390 total=20 shown=20 pager=0 next→"n/a" overflow=false pageerror=0 writes=0
+PASS kythuat01@1440 total=8 shown=8 pager=0 next→"n/a" overflow=false pageerror=0 writes=0
+PASS kythuat01@390 total=8 shown=8 pager=0 next→"n/a" overflow=false pageerror=0 writes=0
+PASS bql01@1440 total=55 shown=20 pager=1 next→"Trang 2 / 3" overflow=false pageerror=0 writes=0
+PASS bql01@390 total=55 shown=20 pager=1 next→"Trang 2 / 3" overflow=false pageerror=0 writes=0
+RESULT: ALL PASS

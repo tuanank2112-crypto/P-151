@@ -258,7 +258,7 @@
 - Vật tư kiểm tại hiện trường: `confirm_materials` + `POST /mo/tickets/{id}/material-plan` + khung UI phòng ban. Không thêm gate nghiệm thu, không chặn theo tồn kho.
 - Đo: pytest 1649 pass (29 deselected), ruff check/format sạch, `node --check app.js` OK. CHƯA: bấm thử UI trên trình duyệt, `pytest --pg`, reset DB online (dữ liệu SIM-A cũ còn trên Supabase).
 - Mở cho nhóm: đổi Q08 để hỏi cư dân song song? bắt buộc xác nhận vật tư trước nghiệm thu?
-
+- Lỗi kho (người dùng báo): dùng vật tư không trừ DB, dùng vượt tồn được. Nguyên nhân: `record_material` không chạm tồn kho. Sửa: `Tx.take_stock` (memory + Postgres UPDATE có điều kiện), `engine._issue_stock` trong transaction `_mutate`; chặn xuất > tồn và dùng > xuất; bỏ dòng ⇒ hoàn kho; tồn null không trừ. Test cũ `confirms_onsite_materials` từng nghiệm thu với LAMP-02 kho 0 — nay phải nhập kho trước. Đo: pytest 2955 pass; `--pg` 2985 pass; ruff sạch; 3 test mới đỏ trên code cũ. CHƯA: giữ chỗ khi giao việc, hoàn kho khi huỷ, bấm thử UI.
 
 ## Local develop integration — 2026-10-07T03:04:07.271Z
 - Integrated origin/develop 52ae81c into feature/truong; runtime src/tests/seed equals upstream; local diagrams/submission preserved. pytest 2971 passed, 29 PostgreSQL tests deselected, 0 fail, 0 skip; ruff check/format and four JavaScript syntax checks pass. PostgreSQL/Docker/live LLM/browser not verified; no typecheck configured. Day05 labels/backlog and Day06 blocker/resume comparison still need acceptance; LangGraph runtime pending. No remote push.
@@ -423,8 +423,6 @@ User requested report in docs/submission for task closure. Created day05-report.
 - Kết quả kiểm chứng độc lập: 27/27 probes đạt PASS (package-check-v6.txt). 0 file runtime bị thay đổi.
 - Chuẩn bị lưu trữ git và rà soát điều kiện đẩy nhánh theo quy định an toàn hệ thống.
 
-
-
 ## Latest develop merge — 2026-10-07T13:30:26.152115+00:00
 User requested merge before Day05 sign-off. Fetch04491ad, merge 79f9444. Backup branch backup/truong-before-develop-20261007-1530 and stash e336905 retained. Stash cleanup/application blocked by open server logs/line endings; tracked changes manually three-way restored. Initial conflict-marker parser consumed trailing content; reconstructed full docs/tests from backup and amended merge; final3341 pass/76 deselected/0 skip,ruff0,tools270 pass.90 Day05 package hashes verified;134 untracked files present,2 active logs evolved. No shared writes/migration/restart/LLM/push. Must coordinate0002 revision rollout; portal dependencies absent. Safety rules D4-11 still NONE S1/S5; new live agent not verified.
 
@@ -485,3 +483,11 @@ Trường xác nhận đánh giá sơ bộ bằng 15 câu do Trường tự so�
 - 2026-10-08T09:42:49.903373+00:00: Trường duyệt 4 mục cuối 009/010 NEXT, 013/014 DEFER nghiệm thu riêng. Hướng xử lý backlog đủ15/15; không có mục nào mới CLOSED. Sửa mô tả lỗi thời 013 (đã có module StateGraph/engine integration) và 014 (lexicon P0/P1); chưa coi code tồn tại là runtime PASS. Tổng hợp backlog-handoff-summary.md để người dùng bàn giao, chưa gửi tin/commit/push.
 
 - 2026-10-08T10:10:44.796289+00:00: Trường báo Như Ý/Châm Anh đã duyệt và nhận phần việc, yêu cầu push nhánh và PR vào develop. Ghi owner-acknowledgement.json, 12/15 owner CONFIRMED (3 mục còn có Trí/leader không suy nhận việc); review nhãn và runtime retest vẫn PENDING. Chuẩn bị commit gói Day05 cùng bằng chứng Day04 liên quan, không thêm thay đổi runtime chưa thuộc scope.
+
+## ⚡ Phiên 2026-10-08 — Merge develop, Docker, gpt-6-luna, plan 09 tăng tốc backend (feature/chamanh)
+- :8000 "mất UI": DB Supabase chung ở migration `0002_p1_doc_shape` (plan 06), nhánh chưa merge `develop` chỉ biết `0001` ⇒ fail-fast. Merge `develop` (2 conflict nhật ký não, giữ cả hai) — CHƯA commit (chờ người dùng gật).
+- Container `backend` restart vòng: image kéo SQLAlchemy 2.1.4 ⇒ `postgresql://` dùng psycopg v3 không cài. Ghim `sqlalchemy<2.1`.
+- `.env`: `MODEL_NAME=gpt-6-luna` (tên `gpt6-luna` không tồn tại), `OPENAI_BASE_URL` trống. Model từ chối `max_tokens` và `temperature=0` ⇒ agent luôn FALLBACK_RULE; sửa client đổi contract plan 06 ⇒ CHỜ người dùng duyệt.
+- Plan 09 (v1.5.0): audit đo `list()` kéo 725 KB/request. Cache `xmin` 1 câu SQL + `lookup` màn cư dân. pytest 3344 passed, `--pg` 3429 passed, ruff sạch, 4/4 mutant đỏ, parity API 8/8. Median: cư dân 2676→201 ms, BPTN 1514→224, BQL 503→219.
+- Còn treo: commit merge + plan 09; client `gpt-6-luna`; Idea Vault (agent chạy nền, session DB, bỏ audit/notifications khỏi doc, phân trang, gzip).
+- Plan 10 (v1.6.0): chia trang 20 ticket ở giao diện (`listCard` + pager, 4 màn), API không đổi. Harness Playwright `:8001` P1–P8 + P3b xanh, 3/3 phép phá đỏ; 2 mutant reset (đăng xuất, lọc BQL) là tương đương vì mọi màn tự chọn ticket đầu. Server `:8000` chỉ đọc: 8/8 (cudan01 38 → 2 trang, BQL 55 → 3 trang). pytest 3344 passed. Người dùng hỏi "đã phân trang chưa" ⇒ có thể đã hiểu sai "làm cái 1 và 2" ở plan 09; AI chạy nền + giữ đăng nhập vẫn chưa làm.

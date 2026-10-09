@@ -1,0 +1,5 @@
+GET /ui/ -> 200
+cudan01    login=200 list=200 rows=49 detail=200
+bptn01     login=200 list=200 rows=66 detail=200
+kythuat01  login=200 list=200 rows=11 detail=200
+bql01      login=200 list=200 rows=66 detail=200

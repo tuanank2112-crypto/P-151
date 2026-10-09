@@ -4,7 +4,7 @@ The resident view is built field by field from an allow-list, so internal data (
 assignee_id, staff, materials, retries, escalation) cannot leak through a new model field.
 """
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime
 from typing import Literal
 
@@ -119,10 +119,19 @@ def _resident_status_label(case: Case) -> str:
     return status_label(case.ticket.status)
 
 
-def _linked(engine: MaintenanceEngine, ticket_id: str, resident_id: str) -> LinkedTicket | None:
+def _related(engine: MaintenanceEngine, ticket_id: str, lookup: Mapping[str, Case] | None) -> Case:
+    """Same snapshot when the list already holds it; otherwise a fresh read (raises NotFoundError like engine.get)."""
+    if lookup is not None and ticket_id in lookup:
+        return lookup[ticket_id]
+    return engine.get(ticket_id)
+
+
+def _linked(
+    engine: MaintenanceEngine, ticket_id: str, resident_id: str, lookup: Mapping[str, Case] | None = None
+) -> LinkedTicket | None:
     """Only a ticket of the same resident is shown; a missing or foreign one is silently left out."""
     try:
-        other = engine.get(ticket_id)
+        other = _related(engine, ticket_id, lookup)
     except NotFoundError:
         return None
     if other.ticket.resident_id != resident_id:
@@ -135,7 +144,7 @@ def _linked(engine: MaintenanceEngine, ticket_id: str, resident_id: str) -> Link
     )
 
 
-def _can_rate(engine: MaintenanceEngine, ticket: Ticket) -> bool:
+def _can_rate(engine: MaintenanceEngine, ticket: Ticket, lookup: Mapping[str, Case] | None = None) -> bool:
     """CLOSED, or MERGED into a root that is CLOSED (plan 06 P04 §7); one rating only."""
     if ticket.rating is not None:
         return False
@@ -143,25 +152,28 @@ def _can_rate(engine: MaintenanceEngine, ticket: Ticket) -> bool:
         return True
     if ticket.status == TicketStatus.MERGED and ticket.merged_into:
         try:
-            return engine.get(ticket.merged_into).ticket.status == TicketStatus.CLOSED
+            return _related(engine, ticket.merged_into, lookup).ticket.status == TicketStatus.CLOSED
         except NotFoundError:
             return False
     return False
 
 
-def resident_view(engine: MaintenanceEngine, case: Case, now: datetime) -> ResidentTicketView:
+def resident_view(
+    engine: MaintenanceEngine, case: Case, now: datetime, lookup: Mapping[str, Case] | None = None
+) -> ResidentTicketView:
+    """`lookup`: ticket_id -> Case of the same snapshot (the resident list), so linked tickets are not read again."""
     ticket = case.ticket
     actions: list[ResidentAction] = []
     if ticket.status == TicketStatus.NEED_INFO:  # BPTN follows up, but the resident may still add it directly
         actions.append("ADD_INFO")
-    if _can_rate(engine, ticket):
+    if _can_rate(engine, ticket, lookup):
         actions.append("RATE")
-    split_into = [item for tid in ticket.split_children if (item := _linked(engine, tid, ticket.resident_id))]
+    split_into = [item for tid in ticket.split_children if (item := _linked(engine, tid, ticket.resident_id, lookup))]
     eta = ticket.blocker.eta if ticket.blocker else None
     eta_passed = eta is not None and eta <= now
     merged = None
     if ticket.merged_into:
-        original = engine.get(ticket.merged_into)
+        original = _related(engine, ticket.merged_into, lookup)
         merged = MergedInto(
             ticket_id=original.ticket.ticket_id,
             status=original.ticket.status,
@@ -192,9 +204,11 @@ def resident_view(engine: MaintenanceEngine, case: Case, now: datetime) -> Resid
         ],
         allowed_actions=actions,
         merged_into=merged,
-        split_from=_linked(engine, ticket.split_from, ticket.resident_id) if ticket.split_from else None,
+        split_from=_linked(engine, ticket.split_from, ticket.resident_id, lookup) if ticket.split_from else None,
         split_into=split_into,
-        follow_up_of=_linked(engine, ticket.follow_up_of, ticket.resident_id) if ticket.follow_up_of else None,
+        follow_up_of=(
+            _linked(engine, ticket.follow_up_of, ticket.resident_id, lookup) if ticket.follow_up_of else None
+        ),
     )
 
 

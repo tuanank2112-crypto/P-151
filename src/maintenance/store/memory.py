@@ -16,7 +16,7 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 
 from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent
-from src.maintenance.store.base import ConcurrencyError, GuardError, NotFoundError
+from src.maintenance.store.base import ConcurrencyError, GuardError, NotFoundError, short_stock_error
 
 _TICKET_NUMBER = re.compile(r"^SIM-TKT-(\d+)$")
 
@@ -87,6 +87,15 @@ class _MemoryTx:
         new = (current or 0) + qty
         self.stock[item_code] = new
         return new
+
+    def take_stock(self, item_code: str, qty: float) -> float | None:
+        current = self.stock[item_code] if item_code in self.stock else self._repo.stock_of(item_code)
+        if current is None:
+            return None
+        if qty > current:
+            raise short_stock_error(item_code, current, qty)
+        self.stock[item_code] = current - qty
+        return current - qty
 
 
 class InMemoryRepository:

@@ -77,6 +77,17 @@ Cư dân chỉ thấy nhãn "Đang được kiểm tra" và lời trong `i18n/vi
 ### Kho: tồn kho và nhập thiếu (2026-10-05)
 `stock_levels(actor)` — route `GET /mo/warehouse/stock` → `[{item_code, item_name, unit, qty}]` (`qty` null = không rõ); mọi vai trừ cư dân (cư dân ⇒ 403). `_resume` của ticket `WAITING_MATERIAL` luôn gọi `_refresh_line_stock` trước khi xét gỡ: nhập thiếu (cần 2, có 1) ⇒ ticket vẫn chờ nhưng dòng vật tư hiện tồn mới. `POST /mo/warehouse/stock/{item}` trả MỌI ticket đã xét (kể cả còn chờ) — UI đếm "chạy tiếp" theo blocker, không theo độ dài mảng. Màn Kho: bảng tồn kho, "cần · tồn · còn thiếu" theo tồn hiện tại, điền sẵn số còn thiếu.
 
+### Xuất kho khi phòng ban ghi vật tư (2026-10-05)
+`record_material(tid, actor, item, *, issued_qty, used_qty, variance_reason)` trừ kho **phần chênh** `issued_qty − issued_qty cũ` (sửa giảm ⇒ hoàn kho) bằng `Tx.take_stock(item, qty)` trong CÙNG transaction của `_mutate` (`engine._issue_stock`): ticket và tồn kho cùng commit hoặc cùng huỷ. `confirm_materials` bỏ một dòng đã xuất ⇒ hoàn lại số đã xuất. Audit `UPDATE_MATERIAL` ghi thêm `stock_qty` (tồn sau khi xuất; null = không rõ).
+
+| Lỗi | Hành vi |
+| :--- | :--- |
+| Xuất thêm > tồn hiện tại | `GuardError` 409 "Kho chỉ còn X …", không ghi gì; phòng ban dùng `block` → `WAITING_MATERIAL` |
+| `used_qty > issued_qty` | `GuardError` 409 — chỉ được dùng hàng đã xuất kho |
+| Tồn không rõ (`null`, D-05) | Không trừ, không chặn, tồn vẫn `null` |
+
+Postgres: một `UPDATE … WHERE qty >= :q` có điều kiện (hai worker không cùng lấy được phần cuối); bảng `maintops.stock` còn `check (qty >= 0)`. **Vùng cấm:** KHÔNG giữ chỗ (reserve) ở bước 7/khi giao việc — bước 7 chỉ đoán theo playbook, giữ chỗ sẽ khoá hàng của ticket chưa chắc dùng; huỷ ticket sau khi đã xuất KHÔNG tự hoàn kho (hàng có thể đã dùng; chưa có luồng trả hàng).
+
 ### Xác nhận vật tư tại hiện trường (2026-10-05)
 `confirm_materials(tid, actor, *, lines: list[PlannedMaterial], note)` — route `POST /mo/tickets/{id}/material-plan` `{lines: [{item_code, planned_qty}], note}`. Chỉ DEPARTMENT đúng phòng ban, ticket `IN_PROGRESS`; `note` bắt buộc. Thay `planned_materials` + dựng lại `material_lines` (giữ `issued_qty`/`used_qty`/`variance_reason` của item_code không đổi), cập nhật `draft.material_line_ids`/`material_stock_status`/`material_requirement_mode` (rỗng ⇒ `N_A`). Audit `UPDATE_MATERIAL` field `planned_materials`. Lỗi: item không có trong catalog / trùng dòng / qty ≤ 0 / note rỗng / chưa nhận việc ⇒ `GuardError` (409); sai vai/phòng ban ⇒ 403; item_code sai mẫu `SIM-` ⇒ 422. **Vùng cấm:** KHÔNG chặn khi tồn kho thiếu (đi `block` → `WAITING_MATERIAL`), KHÔNG thêm điều kiện nghiệm thu mới (6 gate §9.4 giữ nguyên). Lý do: bước 7 chỉ đoán vật tư mặc định của playbook; khi tài sản `ASSET_CHECK_ONSITE` UI phòng ban hiện khung này nổi bật, ca khác để thu gọn.
 
@@ -151,7 +162,6 @@ Hồ sơ: [`planning/05_2026-10-04_agent-hardening/`](../planning/05_2026-10-04_
 - **Bản vá 05b (Q11):** "đèn cháy / đèn chập = đèn hỏng": `benign_phrases`/`benign_with_lamp_noun` thêm "chập (điện/mạch)" sau danh từ đèn; `safety._proven_lamp` nhận "den"/"bong" không dấu khi chính triệu chứng ("bi chay", "bi chap") cũng gõ không dấu — xét từng chữ, vị trí có dấu xung quanh không ảnh hưởng; chữ có dấu khác ("đen", "bông") vẫn không phải đèn; `rules.py` thêm "chập", "bị/đã cháy" vào triệu chứng đèn hỏng. Có khói/tóe lửa/khét kèm thì vẫn khẩn cấp.
 - Để P1: tín hiệu an toàn P1 (gas, kim tiêm, nước vào tủ điện, đèn nóng), luồng trùng đầy đủ (CR §8), tách ticket khi một phản ánh có hai việc, đếm trả sai phòng ban.
 
-
 ## Local GPT-6 Luna configuration — 2026-10-07
 - Set `LLM_MODE=openai`, `MODEL_NAME=gpt-6-luna`, and a valid `OPENAI_API_KEY` in ignored `.env`. Model defaults and test mode remain unchanged.
 - `openai_client()` sets `reasoning_effort=none` for Luna (including vendor-prefixed name) to support the existing Chat Completions path; temperature stays 0. Safety still uses fixed rules.
@@ -199,3 +209,14 @@ Day05 submission entry point: [main report](submission/day05-report.md), with ve
 
 ## Latest develop integration — 2026-10-07T13:30:26.152115+00:00
 Imported reasoning Agent/P1 from develop04491ad; local proposer Luna option preserved.3341 Python tests and270 Day05 tools pass,ruff clean. New JSON reasoning client has not been live-tested with Luna. Postgres requires revision0002_p1_doc_shape; shared DB rollout must follow reasoning-agent OPERATIONS §5 (coordinate stopping old backends). No migration/restart/shared writes performed. [Integration evidence](../planning/06_2026-10-04_readme-refresh/evidence/integration-latest-20261007/integration-report.md).
+
+## 14. Tốc độ đọc danh sách — cache `list()` theo `xmin` (plan 09, v1.5.0, 2026-10-08)
+Hồ sơ: [`planning/09_2026-10-08_backend-speed/`](../planning/09_2026-10-08_backend-speed/plan.md). Audit: `PostgresRepository.list()` kéo toàn bộ doc
+(725 KB với 65 ticket) mỗi request ⇒ danh sách cư dân 2.7 s, BPTN 1.5 s trên Supabase.
+- **`PostgresRepository.list()`** (`store/postgres.py`, `_LIST_CHANGED`): MỘT câu SQL gửi cặp `(ticket_id, xmin)` đang giữ; DB trả `xmin` mọi dòng và
+  `doc` CHỈ của dòng mới/đổi. Không TTL ⇒ ghi từ backend khác thấy ngay ở lần đọc sau. Doc lỗi ⇒ ném, cache giữ nguyên. `cache_stats()` cho test/log
+  (INFO mỗi 100 lần). `get()`/`get_for_update()`/`transaction()` KHÔNG dùng cache.
+- **Object trả từ `list()` là CHỈ ĐỌC, dùng chung** (như `InMemoryRepository.list()`): sửa ticket luôn qua `_mutate`/`transaction`. CẤM sửa trực tiếp.
+- **`resident_view(..., lookup=None)`** (`views.py`): `resident_list` truyền `{ticket_id: Case}` của cùng snapshot ⇒ ticket gộp/tách/follow-up không đọc lại DB.
+  Route đơn (`/resident/tickets/{id}`…) không truyền `lookup`, vẫn đọc tươi.
+- Số đo (median, Supabase): cư dân 2676→201 ms, BPTN 1514→224 ms, BQL 503→219 ms; API trả về giống hệt từng byte (8/8 vai). Test: `test_list_cache.py` (T1–T8).
