@@ -16,9 +16,9 @@ Base: `da1b147` (portal-fe sau khi gộp backend). Python `pytest -q` (venv 3.11
 ## 4. Exit Gates
 | Gate | local | Supabase demo |
 |---|---|---|
-| G1 pytest + ruff | ⬜ | — |
-| G2 portal typecheck + lint + unit | ⬜ | — |
-| G3 e2e (a)–(g) trên backend memory | ⬜ | — |
-| G4 R1–R11 tự kiểm bằng ảnh chụp (bảng đối chiếu `evidence/WP6/doc-check.md`) | ⬜ | — |
-| G5 thẩm định cô lập (agent khác, chỉ đọc) ✅ | ⬜ | — |
+| G1 pytest + ruff | ✅ 3782 passed, ruff sạch (`evidence/WP7fix4/`) | — |
+| G2 portal typecheck + lint + unit | ✅ 125 unit (`evidence/WP7fix/portal-checks.txt` + vòng sau) | — |
+| G3 e2e = 4 ui-check qua cổng 8000 | ✅ (`evidence/WP7fix3/ui-8000-*.txt`) | — |
+| G4 R1–R11 tự kiểm bằng ảnh chụp (bảng đối chiếu `evidence/WP6/doc-check.md`) | ✅ | — |
+| G5 thẩm định cô lập (agent khác, chỉ đọc) ✅ | ✅ sau 4 vòng (Q20–Q23) | — |
 | G6 đọc dữ liệu Supabase qua portal (OPERATIONS §3 bước 2–3, chỉ đọc) | — | ⬜ (chờ người dùng gật) |

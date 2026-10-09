@@ -962,3 +962,15 @@ def test_wp7_r3f_wrong_department_then_rerouted_gives_the_stock_back(eng):
     eng.bptn_resolve(ticket_id, BPTN, category="VE_SINH", note="Vệ sinh")
     assert eng.repo.stock_of(LAMP2) == 2
     assert all(m.item_code != LAMP2 for m in eng.get(ticket_id).material_lines)
+
+
+def test_wp7_r4a_a_default_line_over_its_plan_follows_the_cr03_variance_rule(eng):
+    """Q23: a playbook default line never went through approval; issuing past its plan is a CR-03 variance — it
+    needs a reason before completion and BQL sees the warning at inspection (not a hard block)."""
+    ticket_id = in_progress_ticket(eng)
+    line = eng.get(ticket_id).material_lines[0]
+    eng.receive_stock(WAREHOUSE, line.item_code, 50)
+    case = eng.record_material(
+        ticket_id, TEC, line.item_code, issued_qty=line.planned_qty + 5, used_qty=line.planned_qty
+    )
+    assert case.material_lines[0].issued_qty == line.planned_qty + 5

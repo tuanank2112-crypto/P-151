@@ -209,3 +209,4 @@ Trường xác nhận đánh giá sơ bộ bằng 15 câu do Trường tự so�
 
 - 2026-10-08T10:10:44.796289+00:00: Trường báo Như Ý/Châm Anh đã duyệt và nhận phần việc, yêu cầu push nhánh và PR vào develop. Ghi owner-acknowledgement.json, 12/15 owner CONFIRMED (3 mục còn có Trí/leader không suy nhận việc); review nhãn và runtime retest vẫn PENDING. Chuẩn bị commit gói Day05 cùng bằng chứng Day04 liên quan, không thêm thay đổi runtime chưa thuộc scope.
 - [ ] **(2026-10-10, WP7 P8) Vật tư chờ duyệt không có đường thoát:** phòng ban rút yêu cầu / kho từ chối cấp (hiện chỉ nhập kho + duyệt, hoặc BQL hủy ticket).
+- [ ] **(2026-10-10, WP7 R4-D) Đóng ticket còn dư vật tư:** xuất 2 dùng 1 rồi BQL đóng ⇒ đơn vị dư không về kho. Cần quyết: trả về kho khi đóng, hay coi như phòng ban giữ.

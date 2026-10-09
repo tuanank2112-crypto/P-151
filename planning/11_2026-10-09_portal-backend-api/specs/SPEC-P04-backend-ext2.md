@@ -22,6 +22,7 @@ Nguyên tắc như SPEC-P01: KHÔNG thêm trường/giá trị enum vào doc tic
 - **Yêu cầu cộng dồn (WP7 P6):** `material-plan` là THAY THẾ; portal `requestMaterialsAction` luôn gửi dòng đang có + dòng mới (cộng số lượng cùng mã), không làm mất dòng đã duyệt/đã xuất.
 - **Thẩm định vòng 2 (2026-10-10):** (a) đủ/thiếu hàng tính trên PHẦN CÒN PHẢI XUẤT `planned_qty − issued_qty` (`_still_to_issue`) ở `_refresh_line_stock`, `_cleared`, duyệt cấp, và `shortage` của portal; (b) giảm số lượng dưới số đã xuất ⇒ trả phần thừa về kho (`confirm_materials`); (c) hủy ticket ⇒ trả về kho phần đã xuất chưa dùng (`_after_cancel`). Test `test_wp7_new*` (đỏ trên `b42f9c3`).
 - **Thẩm định vòng 3 (2026-10-10):** MỌI đường làm mất dòng vật tư trả về kho đúng `issued − used` qua MỘT hàm `_give_back_unused`: bỏ dòng ở `confirm_materials` (R3-D), hủy ticket (NEW-3), kế hoạch bị thay khi đổi phòng/quy trình ở `_check_material_lines_against_stock` (R3-F). Khi luồng duyệt bật, `record_material` CẤM xuất vượt số đã cấp (`issued_qty` hiện có) — xin thêm phải gửi yêu cầu + duyệt (R3-E). Test `test_wp7_r3*` (đỏ trên `17d7a8d`).
+- **Vòng 4 (Q23):** dòng vật tư mặc định (chưa qua duyệt) xuất vượt kế hoạch = chênh lệch CR-03 (bắt lý do, BQL thấy khi nghiệm thu), KHÔNG chặn cứng. Test `test_wp7_r4a_*`.
 - **Chưa làm (Idea Vault, WP7 P8):** phòng ban rút yêu cầu / kho từ chối cấp. Hiện thoát trạng thái chờ duyệt chỉ bằng nhập kho + duyệt, hoặc BQL hủy ticket.
 - Test: `test_wp7_*` trong `test_portal_backend_ext2.py` (đỏ trên `091bc45`, xanh sau sửa).
 

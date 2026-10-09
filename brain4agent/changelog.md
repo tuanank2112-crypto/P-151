@@ -2,6 +2,19 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.7.0] - 2026-10-10: Portal gọi backend theo ghi chú anh Cố (hồ sơ 11)
+### Changed
+- `portal/` (UI mới) bỏ DB riêng: mọi dữ liệu qua backend `/api/v1` (engine CR-03, Agent LLM, tầng an toàn); phiên = cookie httpOnly ký HMAC chứa token backend; ảnh qua proxy. Mở ở cổng 8000 (backend `PORTAL_URL` → portal production 3000).
+- 6 màn theo ghi chú anh Cố (R1–R11) + trả lời người dùng (Q08–Q19): ô tổng quan/phụ tải bấm được, modal chi tiết với khối Agent THẬT, Hiệu suất Agent đúng/sai, Việc của BQL (lọc Đã tiếp nhận/Đã hoàn thành/Tất cả), yêu cầu vật tư "+ ngoài danh mục", form hoàn thành từng phòng, tài khoản `kho`…/`123456`.
+### Added (backend, không đổi hình doc ticket — Render cũ đọc chung Supabase)
+- Route: `to-bql`, `bql/handled`, `bql/return-to-bptn`, 2 route sai phòng ban, `warehouse/items`, `materials/approve`, `mo/staff`, `assign`; rating có thẻ + bình luận; trường Agent/nhân viên/đánh giá ở list rows.
+- Bảng mới `maintops.material_items` (Alembic 0003), `assignments` + `rating_details` (0004); cờ `MO_CUSTOM_MATERIALS`, `MO_PORTAL_EXTRAS` (tắt mặc định trên postgres).
+### Decisions
+- Việc của BQL = OUT_OF_SCOPE + `blocker.escalated`; BQL đóng bằng `EMERGENCY_HANDLED` (Q09). Mọi yêu cầu vật tư phòng ban chờ Kho/BQL duyệt; duyệt = xuất kho; mọi đường bỏ dòng trả `issued − used` (Q15, Q20–Q23). Dòng vật tư mặc định xuất vượt kế hoạch theo luật chênh lệch CR-03 (Q23).
+### Evidence
+- Thẩm định cô lập 4 vòng (agent Opus khác), sửa mọi mục đỏ: pytest 3782 passed, ruff sạch; portal 125 unit, typecheck, lint; 4 bộ Playwright qua cổng 8000 đạt; `planning/11_2026-10-09_portal-backend-api/evidence/`.
+- Chưa: chạy trên Supabase (G6) — mật khẩu DB chưa đúng.
+
 ## [v1.4.0] - 2026-10-08: Gate nghiệm thu BQL lấy từ dữ liệu thật
 ### Changed
 - Tab "Việc của BQL": bỏ 6 dấu ✓ viết cứng. 4 gate hệ thống tự kiểm (`portal/src/lib/inspection.ts`: phòng ban, ảnh sau xử lý, vật tư đã nhận, SLA theo giờ báo xong) + 2 mục BQL tự tích tại hiện trường; nút "Nghiệm thu đạt" khoá tới khi tích đủ. `MgmtTicket` thêm `materials`.

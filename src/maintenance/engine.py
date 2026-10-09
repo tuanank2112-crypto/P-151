@@ -1644,7 +1644,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                     {"item_code": item_code, "issued_qty": issued_qty, "used_qty": used_qty},
                 )
             if line.issued_qty is not None and issued_qty > line.issued_qty and _material_approval_required():
-                raise GuardError(  # WP7 review R3-E: more than handed out needs a request + approval (Q15)
+                raise GuardError(  # WP7 R3-E: past what the warehouse handed out needs a request + approval (Q15)
                     "Xuất thêm vượt số đã cấp: gửi yêu cầu vật tư để kho duyệt",
                     {"item_code": item_code, "issued_qty": line.issued_qty, "asked": issued_qty},
                 )

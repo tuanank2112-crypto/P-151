@@ -1,0 +1,7 @@
+$ pytest -q -p no:cacheprovider
+......................................                                   [100%]
+3782 passed, 95 deselected in 181.58s (0:03:01)
+EXIT=0
+$ ruff check src tests
+All checks passed!
+EXIT=0
