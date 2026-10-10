@@ -52,7 +52,7 @@
   "next_step": "Chờ người duyệt SPEC-P09 (PROPOSED -> APPROVED); nhận H16 thi công runtime WP17",
   "active_plan": {
     "id": "17_2026-10-10_develop-web-sync",
-    "status": "local_verified_pending_merge_commit"
+    "status": "local_committed_rollout_pending"
   },
   "last_session": {
     "date": "2026-10-03",
@@ -189,7 +189,7 @@
   "develop_ui_sync": {
     "source": "b6590ce",
     "branch": "feature/chamanh",
-    "status": "merged_worktree_pending_commit",
+    "status": "merge_committed_and_pushed",
     "backup_stash": "backup-before-develop-ui-b6590ce-20261010",
     "backend_preserved": true,
     "main_proxy_added": true,
@@ -212,7 +212,8 @@
       "browser_login_js_errors": 0,
       "db_workflow": "not run",
       "docker": "not run"
-    }
+    },
+    "merge_commit": "106a37aa1aa06e347643e529e82bcafcd816eed2"
   },
   "preserved_prior_plan_context": {
     "id": "06_2026-10-05_reasoning-agent",
