@@ -49,8 +49,8 @@
     "spec_p09_v6_probes": "27/27 passed (B1 interval overlap, B2 3-part overrides & shared location, B3 next_step, B4 cardinality & quiesce)",
     "g_live_2026_10_07": "agy gemini-3.8-flash-low: A2 khẩn cấp khó 16/16 (prompt /5, 0 fallback, p50 17 s); phủ định 10/10; nhờ thay đèn Agent 19/19 (3 sang BPTN do luật UNCLEAR, Q33); draft1 56/60 0 bỏ sót"
   },
-  "last_sync": "2026-10-09T10:01:23+0700",
-  "next_step": "--pg khi bật Docker; handoff WP14b (F2/F11 bằng Agent); H14/WP15 (F4–F9); chạy lại G-LIVE 76 câu prompt /5; chờ duyệt hồ sơ 08 (H13 F1 nay đã ✅ local) · Nhóm (develop): User hands off prepared reviewer/API/UI packets after push; receive human review for15 cases, verify families/export/freeze, baseline and final report. Backlog scope decisions 15/15 confirmed; runtime issues stay open.",
+  "last_sync": "2026-10-10T08:55:11+0700",
+  "next_step": "Q35 (2026-10-10): chờ người duyệt gỡ khớp chuỗi trích dẫn (WP14 F3, P09 B1/B2) — sửa SPEC trước rồi code · --pg khi bật Docker; handoff WP14b (F2/F11 bằng Agent); H14/WP15 (F4–F9); chạy lại G-LIVE 76 câu prompt /5; chờ duyệt hồ sơ 08 (H13 F1 nay đã ✅ local) · Nhóm (develop): User hands off prepared reviewer/API/UI packets after push; receive human review for15 cases, verify families/export/freeze, baseline and final report. Backlog scope decisions 15/15 confirmed; runtime issues stay open.",
   "active_plan": {
     "id": "09_2026-10-07_day05-labels",
     "status": "preliminary15_approved_waiting_review",
