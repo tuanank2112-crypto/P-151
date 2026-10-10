@@ -36,3 +36,10 @@
 - WP18 xong (architect Opus): SPEC-P10 PROPOSED, H18 chờ duyệt, R17; kiểm kê 28 chỗ = 9 cổng chặn LLM/6 lưới sàn/13 audit. SO đo lại: REF selftest 0, banner P01/P08/P09 chỉ thêm dòng. Chờ người: Q-P10-1..5.
 - WP19 (Sonnet) xong 2 vòng: vòng 1 R19 (Opus cô lập) 🔁 vì test không bắt cổng "không chung từ"; vòng 2 thêm T-P10-09/10/11 + khẳng định chính xác invented-place. SO đo lại đột biến X1b/X2b/X6/X9 đều đỏ. Worker: 3685 passed. SO sửa SPEC-P10 §9.1/§9.3 (m8/m9). Người dùng dừng giữa lúc SO chạy lại pytest toàn bộ ⇒ cập nhật não; code CHƯA commit.
 - 11:20 SO đo lại toàn bộ: 3685 passed/0 fail/0 skip, ruff+format sạch ⇒ WP19 ✅ DUYỆT local; commit + push nhánh (PR #19 vào develop tự cập nhật, KHÔNG merge thẳng develop).
+
+## Phiên 2026-10-10 18:03:31 +0700 — Q36: F8 "hai nơi" không gác Agent
+- Bước 0 exit 0. HEAD = origin `8cf52d4` (WP19 đã push). Docker tắt ⇒ `--pg` NOT_RUN.
+- Người dùng nhắc "đừng có word by word" ⇒ rà H14/WP15 trước khi giao: SPEC-P08 §6 F8 dùng `rules.location_mentions` (đếm từ) gác CẢ đường Agent = cổng từ khoá chặn LLM (Q-P10-3). Đo `break6_wrong_split.py`: luật/Mirror đã không tách 3/3 câu hai nơi (`split_verdict` two-places); chỉ client "reckless" tách.
+- Chốt Q36 (plan 06): bỏ vế Agent; P08 §6 banner, P10 §7 Q-P10-3 chốt; H14 viết lại (F8 = test ghim hai chiều + đột biến b1/b2, venv `.venv`, Docker tắt). Giao WP15 cho worker 🟠 chạy nền.
+- 18:15 WP15 xong (worker 🟠): SO đo lại 3704 passed/0 fail/0 skip, ruff check sạch; format chỉ lệch `src/main.py` có sẵn từ HEAD (ngoài phạm vi). R14 ✅ DUYỆT local; `--pg` ⬜. Chưa commit — chờ người gật.
+- 19:41 Người dùng: "đừng cho data đăng nhập hiển thị trên frontend" (KHÔNG xoá data mock). Bỏ ô đổi vai trò + `autologin` (`src/web`) và khối tài khoản demo portal login. `node --check` 0; portal typecheck/lint/test 0 (17 passed); pytest web/auth 51 passed. Chưa commit; `feature/nhuy-portal-fe` (PR #20) có cùng file login, chưa áp.

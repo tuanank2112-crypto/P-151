@@ -39,8 +39,6 @@ body {
 .hdr-btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 999px; background: #fff; color: var(--ink); text-decoration: none; font-weight: 600; font-size: 14px; border: 0; cursor: pointer; font-family: inherit; }
 .hdr-btn:hover { color: var(--brand); }
 .hdr-pill { background: rgba(255, 255, 255, 0.88); color: var(--ink); font-size: 13px; padding: 8px 14px; }
-.hdr-select { min-height: 44px; border: 0; border-radius: 999px; background-color: rgba(255, 255, 255, 0.88); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; padding: 0 36px 0 16px; cursor: pointer; }
-.hdr-select:focus { outline: 2px solid var(--brand-mid); outline-offset: 1px; }
 
 /* ---------- Pills, buttons, fields ---------- */
 .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; line-height: 1.4; }

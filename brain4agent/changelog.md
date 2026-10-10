@@ -10,6 +10,12 @@ Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên 
 - Chấp nhận rủi ro LLM bịa vị trí có trong danh mục (BPTN xem lại); không có cờ bật lại cổng quote. Bản ghi P10 không đọc được bằng code cũ ⇒ không chạy lẫn trên DB chung.
 - Subagent không dùng họ Fable (architect chạy Opus).
 
+## [Unreleased] - 2026-10-10: Ẩn tài khoản đăng nhập khỏi giao diện
+### Removed
+- `src/web/app.js`: ô "Đổi vai trò kiểm thử" (7 tài khoản, mật khẩu `Demo@2026` viết cứng) và `?autologin=`; `theme.css` bỏ `.hdr-select`; cache `app.js?v=4.1`, `theme.css?v=1.1`.
+- `portal/src/app/login/login-form.tsx`: khối "Tài khoản demo nghiệm thu (mật khẩu: 123456)".
+- Người dùng: không xoá data mock, chỉ không hiển thị dữ liệu đăng nhập trên frontend. Tài khoản/seed backend, `/auth/demo-accounts` (tắt khi production) và README giữ nguyên.
+
 ## [v1.6.0] - 2026-10-08: Danh sách hiện 20 phản ánh một trang (plan 10)
 ### Added
 - `src/web/app.js`: `listCard(..., { key, ids })` chia trang 20 dòng cho màn cư dân, BPTN, phòng ban, BQL; khối "‹ Trước · Trang x / y · Sau ›" chỉ hiện khi > 20.
