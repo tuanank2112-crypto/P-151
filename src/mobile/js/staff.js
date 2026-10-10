@@ -1,7 +1,7 @@
 // Shared pieces of the staff screens (BQL, Phòng ban, BPTN, Kho) — plan 11 SPEC-P05 Q31.
 // Labels copied from src/web/app.js so web and app name things the same way.
-import { api, apiImage } from './api.js?v=12';
-import { el, emptyState, fill, formatTime, history, notice, pageHead, pagedList, pill, refreshButton, toast } from './ui.js?v=12';
+import { api, apiImage } from './api.js?v=15';
+import { boxOf, el, emptyState, fill, formatTime, history, notice, pageHead, pagedList, pill, refreshButton, toast } from './ui.js?v=15';
 
 export const REASON_LABEL = {
   MISSING_INFO: 'Thiếu thông tin', DUPLICATE: 'Nghi trùng', CATEGORY_UNCLEAR: 'Loại việc chưa rõ', OUT_OF_SCOPE: 'Ngoài phạm vi',
@@ -163,8 +163,10 @@ export function summaryCard(cat, base) {
 
 /**
  * List screen shared by Phòng ban / BPTN / Kho: stat cards, filter tiles (#staff-tabs), page head, paged cards (#staff-list).
- * opts: { tiles: [[key, label, icon, test]], tab: { get, set }, heads: { key: [title, sub] }, base, stats?: [[key, label, test]], empty }
+ * opts: { tiles: [[key, label, icon, test]], tab: { get, set }, heads: { key: [title, sub] }, base, stats?: [[key, label, test]], priority?, empty }
  * Without `stats` no stat cards are drawn (Phòng ban, Q32); with it each card filters the list like a tile (Q39).
+ * Q40: tiles and stat cards are ONE set of boxes — a ticket lands in the first box whose test passes, testing the tiles in
+ * `priority` order (default: display order), then the stats. Counts, badges, bell and list all read that single box.
  */
 export async function queueScreen(ctx, opts) {
   const statsBox = el('div', { class: 'stats', id: 'staff-stats', role: 'toolbar' });
@@ -172,25 +174,26 @@ export async function queueScreen(ctx, opts) {
   const body = el('div', { id: 'staff-list' });
   let rows = [];
   let cat = null;
-  // Q39: a stat card [key, label, test] is a filter too (same .stat.pick buttons as BQL Q36); its key may equal a tile's
-  const filters = [...opts.tiles.map(([key, , , t]) => [key, t]), ...(opts.stats || []).map(([key, , t]) => [key, t])];
-  const test = () => (filters.find(([key]) => key === opts.tab.get()) || filters[0])[1];
+  const boxes = [...(opts.priority || opts.tiles).map(([key, , , t]) => [key, t]), ...(opts.stats || []).map(([key, , t]) => [key, t])];
+  const box = boxOf(boxes);
+  const inBox = (key) => rows.filter((r) => box(r) === key);
+  const current = () => (boxes.some(([key]) => key === opts.tab.get()) ? opts.tab.get() : opts.tiles[0][0]);
   const chrome = () => ctx.chrome({
     navId: 'staff-tabs', active: opts.tab.get(),
     items: opts.tiles.map(([key, label, iconName]) => ({ key, label, icon: iconName, onclick: () => { opts.tab.set(key); draw(false); } })),
   });
   const draw = (keep) => {
     chrome();
-    ctx.counts(Object.fromEntries([...opts.tiles.map(([key, , , t]) => [key, rows.filter(t).length]), ['bell', rows.filter(opts.tiles[0][3]).length]]));
+    ctx.counts(Object.fromEntries([...opts.tiles.map(([key]) => [key, inBox(key).length]), ['bell', inBox(opts.tiles[0][0]).length]]));
     statsBox.hidden = !opts.stats;
-    fill(statsBox, (opts.stats || []).map(([key, label, t]) => el('button', {
+    fill(statsBox, (opts.stats || []).map(([key, label]) => el('button', {
       type: 'button', class: key === opts.tab.get() ? 'card stat pick on' : 'card stat pick', dataset: { tab: key }, 'aria-pressed': String(key === opts.tab.get()),
       onclick: () => { opts.tab.set(key); draw(false); },
-    }, el('span', {}, label), el('b', {}, String(rows.filter(t).length)))));
-    const [title, sub] = opts.heads[opts.tab.get()] || opts.heads[opts.tiles[0][0]];
+    }, el('span', {}, label), el('b', {}, String(inBox(key).length)))));
+    const [title, sub] = opts.heads[current()];
     fill(head, pageHead(title, sub, { right: refreshButton(load, ctx) }));
     const previous = keep ? body.firstElementChild : null;
-    fill(body, pagedList(rows.filter(test()), summaryCard(cat, opts.base), { empty: opts.empty, keep: previous }));
+    fill(body, pagedList(inBox(current()), summaryCard(cat, opts.base), { empty: opts.empty, keep: previous }));
   };
   const load = async () => {
     const [all, catalogView] = await Promise.all([api('/mo/tickets'), loadCatalog().catch(() => null)]);

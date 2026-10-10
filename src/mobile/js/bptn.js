@@ -1,24 +1,32 @@
 // BPTN screens (Bộ phận tiếp nhận) — plan 11 SPEC-P05 §3. Same queue filter and bodies as renderBptn / bptnForm in src/web/app.js.
-import { api } from './api.js?v=12';
-import { confirmSheet, el, field, fill, notice, writeButton } from './ui.js?v=12';
+import { api } from './api.js?v=15';
+import { TERMINAL, confirmSheet, el, field, fill, notice, writeButton } from './ui.js?v=15';
 import {
   CATEGORY_LABEL, caseHead, caseScreen, codeOf, compact, eventsHistory, imagesOf, photoBox, queueScreen, reportBox, select,
   webButton, writer,
-} from './staff.js?v=12';
+} from './staff.js?v=15';
 
 const QUEUE = new Set(['SAFETY_REVIEW_REQUIRED', 'MISSING_INFO', 'DUPLICATE', 'CATEGORY_UNCLEAR', 'OUT_OF_SCOPE', 'PENDING_REVIEW', 'ASSET_UNCLEAR', 'WRONG_DEPT']);
 const needsBptn = (t) => t.status === 'NEED_INFO' || QUEUE.has(codeOf(t));
+// Q40: one box per ticket — An toàn B2 and Nghi trùng have their own tile, so "Cần xử lý" is the rest of the BPTN queue;
+// "Tất cả"/"Tổng"/"Hàng chờ" are gone (they repeated other boxes). Hủy/gộp (MERGED, CANCELLED) are in no box.
 const TILES = [
   ['queue', 'Cần xử lý', 'briefcase', needsBptn],
   ['safety', 'An toàn B2', 'shield', (t) => codeOf(t) === 'SAFETY_REVIEW_REQUIRED'],
-  ['all', 'Tất cả', 'table', () => true],
+  ['duplicate', 'Nghi trùng', 'layers', (t) => codeOf(t) === 'DUPLICATE'],
 ];
+const STATS = [
+  ['progress', 'Đang xử lý', (t) => !TERMINAL.has(t.status) && !needsBptn(t)],
+  ['done', 'Hoàn thành', (t) => t.status === 'CLOSED'],
+];
+// queueScreen gives a ticket to the FIRST box whose test passes: the two specific queues are tested before "Cần xử lý"
+const PRIORITY = [TILES[1], TILES[2], TILES[0]];
 const HEADS = {
-  queue: ['Hàng chờ BPTN', 'Phản ánh Agent chưa tự xử lý được: thiếu thông tin, nghi trùng, loại việc, tài sản, an toàn.'],
+  queue: ['Hàng chờ BPTN', 'Agent chưa tự xử lý được: thiếu thông tin, loại việc, tài sản, sai phòng ban.'],
   safety: ['An toàn Bậc 2', 'Xác minh tại hiện trường rồi chọn một trong ba quyết định.'],
-  all: ['Tất cả phản ánh', 'Toàn bộ ticket thật (ẩn ticket mẫu).'],
-  done: ['Phản ánh đã hoàn thành', 'Ticket đã nghiệm thu và đóng.'],
   duplicate: ['Phản ánh nghi trùng', 'Agent nghi trùng với ticket đang mở: gộp hoặc tách.'],
+  progress: ['Đang xử lý', 'Không cần BPTN: đang ở Agent, phòng ban hoặc Ban quản lý.'],
+  done: ['Phản ánh đã hoàn thành', 'Ticket đã nghiệm thu và đóng.'],
 };
 // Field codes the engine writes after "Thiếu:" in blocker.internal_note (src/web/app.js MISSING_LABEL)
 const MISSING_LABEL = {
@@ -35,10 +43,7 @@ export function focusQueue() { tab = 'queue'; }
 const tabState = { get: () => tab, set: (key) => { tab = key; } };
 
 export const list = (ctx) => queueScreen(ctx, {
-  tiles: TILES, tab: tabState, heads: HEADS, base: '#/p', empty: 'Không có phản ánh nào cần BPTN xử lý.',
-  // Q39: the four stat cards filter the list (Hàng chờ = tile Cần xử lý, Tổng = tile Tất cả)
-  stats: [['queue', 'Hàng chờ', needsBptn], ['done', 'Hoàn thành', (t) => t.status === 'CLOSED'],
-    ['duplicate', 'Nghi trùng', (t) => codeOf(t) === 'DUPLICATE'], ['all', 'Tổng', () => true]],
+  tiles: TILES, priority: PRIORITY, stats: STATS, tab: tabState, heads: HEADS, base: '#/p', empty: 'Không có phản ánh nào ở mục này.',
 });
 
 // ---------------------------------------------------------------- #/p/<id>

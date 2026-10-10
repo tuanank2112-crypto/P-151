@@ -2,6 +2,25 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.9.7] - 2026-10-10: App Phòng ban — bỏ đề xuất vật tư của Agent
+### Changed
+- `src/mobile/js/dept.js`: khối vật tư không hiện, không điền sẵn vật tư Agent dự kiến; mở với 1 dòng trống, chỉ hiện lựa chọn đã lưu của phòng ban (`deptChoseMaterials`). Lưu qua `material-plan` rồi đã xuất = đã dùng; lý do chỉ bắt buộc khi khác định mức (hỏi sau material-plan, chưa xuất kho). Điều kiện "Đã chọn vật tư sử dụng" (plan 11 Q42). Harness M14 chọn CLEAN-01 ×2. `?v=15` + `SHELL_CACHE` v15. Engine/API không đổi (bước 7 vẫn dự kiến vật tư cho Kho).
+### Measured
+- `node --check` 11 file; pytest 3381 passed / 1 failed (lỗi có sẵn `test_emergency_downgrade_bql_200`). Playwright `:8001` 16/16 PASS (`evidence/q42-no-agent-materials.txt`): engine có LAMP-01 / CLEAN-01 dự kiến nhưng app hiện dòng trống, không chữ "Agent/đề xuất"; lưu trống ⇒ chặn, không POST; LAMP-01 ×3 ⇒ hỏi lý do, kế hoạch 3 chưa xuất ⇒ có lý do ⇒ 3/3; vệ sinh không dùng ⇒ `N_A`; ticket kỹ thuật ⇒ `READY_FOR_REVIEW`. Phép phá (hiện lại đề xuất + bỏ chặn định mức) ⇒ 5 FAIL (`evidence/q42-mutant.txt`), khôi phục từng byte.
+
+## [v1.9.6] - 2026-10-10: App Phòng ban — một khối chọn vật tư sử dụng
+### Changed
+- `src/mobile/js/dept.js` `materialsBlock`: một khối — dòng `[vật tư][số lượng đã dùng][Bỏ]` điền sẵn đề xuất Agent, `+ Thêm vật tư`, một ô lý do, một nút lưu; Vệ sinh tick "Không sử dụng vật tư" (`lines: []`), Kỹ thuật ≥1 vật tư; danh sách theo `MATERIAL_GROUP` (plan 11 Q41). Bỏ khối "Vật tư thực tế khác đề xuất" + Đã xuất/Đã dùng (đã xuất = đã dùng). `?v=14` + `SHELL_CACHE` v14. API/engine không đổi.
+### Measured
+- `node --check` 11 file; pytest 3381 passed / 1 failed (lỗi có sẵn `test_emergency_downgrade_bql_200`, như v1.9.5). Playwright `:8001` 14/14 PASS (`evidence/q41-dept-materials.txt`): kỹ thuật đổi LAMP-01 ⇒ STARTER-01 ×2 (thiếu lý do ⇒ không gửi), hết hàng LAMP-02 ⇒ toast "Kho chỉ còn 0…", vệ sinh không dùng vật tư ⇒ `N_A` + điều kiện vật tư xanh, giữ đề xuất = định mức ⇒ không gọi material-plan, ticket kỹ thuật báo hoàn thành ⇒ `READY_FOR_REVIEW`. Phép phá (bỏ chặn lý do + bỏ lọc phòng ban) ⇒ 4 FAIL (`evidence/q41-mutant.txt`), khôi phục từng byte.
+
+## [v1.9.5] - 2026-10-10: App điện thoại — mỗi ticket chỉ hiện ở một ô
+### Changed
+- `src/mobile/js/ui.js` thêm `boxOf([[key, test], …])`: ticket thuộc ô đầu tiên khớp; `staff.js` `queueScreen` (tile + ô số liệu là một bộ ô, `priority` cho thứ tự tile), `bql.js`, `resident.js` đếm/lọc qua nó (plan 11 Q40).
+- BPTN: tile Cần xử lý · An toàn B2 · Nghi trùng + ô Đang xử lý · Hoàn thành (bỏ Tất cả/Hàng chờ/Tổng). BQL: Khẩn cấp ⇒ Cần BQL ⇒ Hoàn thành ⇒ Quá hạn, chuông mở Khẩn cấp khi có. Cư dân: Cần bạn ⇒ Chờ nghiệm thu ⇒ Đang xử lý ⇒ Đã xong. `?v=13` + `SHELL_CACHE` v13. API không đổi.
+### Measured
+- `node --check` 11 file; `test_mobile_static.py` 5 passed; pytest 3381 passed / 1 failed (`test_emergency_downgrade_bql_200`, đỏ cả trên HEAD sạch — có sẵn, không do đợt này). Playwright `:8001` (9 ticket: ROUTED, MISSING_INFO, CLOSED, READY_FOR_REVIEW, khẩn cấp, an toàn B2, trùng, hủy) bptn01/bql01/vesinh01/kythuat01/cudan01/cudan02: số trên ô = số thẻ, 0 ticket trùng ô, BPTN/cư dân phủ đủ — 34/34 PASS (`evidence/q40-one-box.txt`). Phép phá lọc thô ⇒ 9 FAIL ở BPTN/BQL/Cư dân (`evidence/q40-mutant-raw-filters.txt`), khôi phục từng byte.
+
 ## [v1.9.4] - 2026-10-10: App BPTN — 4 ô số liệu bấm được để lọc
 ### Changed
 - `src/mobile/js/staff.js` `queueScreen`: `stats` đổi thành `[[key, label, test]]`, mỗi ô là `button.card.stat.pick[data-tab]` trong `#staff-stats` (lọc như tile, ô đang chọn viền xanh). `bptn.js`: Hàng chờ (`queue`) · Hoàn thành (`done`, `CLOSED`) · Nghi trùng (`duplicate`) · Tổng (`all`) (plan 11 Q39). `?v=12` + `SHELL_CACHE` v12. API không đổi.

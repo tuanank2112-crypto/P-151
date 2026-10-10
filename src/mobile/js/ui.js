@@ -133,6 +133,12 @@ export function pill(cls, label, { dot = true } = {}) {
 
 export const TERMINAL = new Set(['CLOSED', 'MERGED', 'CANCELLED']);
 
+/**
+ * Q40: a ticket shows in ONE box only. boxes = [[key, test], …] in priority order; returns row → key of the first box
+ * whose test passes (null = no box). Every count and filter of a box must go through this, never through its raw test.
+ */
+export const boxOf = (boxes) => (row) => (boxes.find(([, test]) => test(row)) || [null])[0];
+
 export function formatTime(value) {
   if (!value) return '';
   const d = new Date(value);

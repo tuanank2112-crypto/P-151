@@ -1,11 +1,11 @@
 // Resident screens (plan 11, SPEC-P02 rules, SPEC-P04 §4 layout from portal/src/app/resident/resident-app.tsx).
 // Only /resident/* endpoints; data = ResidentTicketView.
-import { api, apiForm, apiImage } from './api.js?v=12';
+import { api, apiForm, apiImage } from './api.js?v=15';
 import {
-  TERMINAL, el, emptyState, fill, formatTime, history, icon, infoGrid, notice, pageHead, pagedList, pill,
+  TERMINAL, boxOf, el, emptyState, fill, formatTime, history, icon, infoGrid, notice, pageHead, pagedList, pill,
   refreshButton, stepHead, toast, writeButton,
-} from './ui.js?v=12';
-import { MAX_PHOTOS, photoFormData, photoPicker } from './photo.js?v=12';
+} from './ui.js?v=15';
+import { MAX_PHOTOS, photoFormData, photoPicker } from './photo.js?v=15';
 
 const MIN_DESCRIPTION = 10;
 const RECOVER_WINDOW_MS = 3 * 60 * 1000;
@@ -44,6 +44,9 @@ const FILTERS = {
   need: ['Cần bạn', (t) => t.allowed_actions.length > 0],
   done: ['Đã xong', (t) => TERMINAL.has(t.status)],
 };
+// Q40: one box per ticket — "Cần bạn" first (a ticket waiting for the resident leaves its status box until they act)
+const boxOfTicket = boxOf(['need', 'accept', 'run', 'done'].map((key) => [key, FILTERS[key][1]]));
+const inFilter = (key) => (t) => key === 'all' || boxOfTicket(t) === key;
 const OVERVIEW = [
   ['run', '#2563EB', 'Từ tiếp nhận đến đang xử lý'],
   ['accept', '#6D5BD0', 'Phòng ban báo xong, BQL kiểm tra'],
@@ -94,7 +97,7 @@ export async function list(ctx) {
   const body = el('div', { id: 'resident-list' });
   let rows = [];
   const draw = (keep) => {
-    const count = (key) => rows.filter(FILTERS[key][1]).length;
+    const count = (key) => rows.filter(inFilter(key)).length;
     fill(overview, OVERVIEW.map(([key, color, hint]) => el('button', {
       type: 'button', class: filter === key ? 'ov on' : 'ov', 'aria-pressed': String(filter === key),
       onclick: () => { filter = filter === key ? 'all' : key; draw(false); },
@@ -104,7 +107,7 @@ export async function list(ctx) {
     fill(filterLine, filter === 'all' ? `Tất cả · ${rows.length} phản ánh` : [`Đang lọc: ${FILTERS[filter][0]} · ${count(filter)}`,
       el('button', { type: 'button', class: 'btn ghost', onclick: () => { filter = 'all'; draw(false); } }, 'Bỏ lọc')]);
     const previous = keep ? body.firstElementChild : null;
-    fill(body, pagedList(rows.filter(FILTERS[filter][1]), ticketItem, {
+    fill(body, pagedList(rows.filter(inFilter(filter)), ticketItem, {
       empty: rows.length ? 'Không có phản ánh nào ở mục này.' : 'Bạn chưa gửi phản ánh nào.', keep: previous,
     }));
   };
@@ -112,7 +115,7 @@ export async function list(ctx) {
     rows = await api('/resident/tickets');
     if (!ctx.alive()) return;
     draw(true);
-    ctx.counts({ bell: rows.filter(FILTERS.need[1]).length, mine: rows.filter((t) => !TERMINAL.has(t.status)).length });
+    ctx.counts({ bell: rows.filter(inFilter('need')).length, mine: rows.filter((t) => !TERMINAL.has(t.status)).length });
     ctx.updatedNow();
   };
   ctx.screen.append(

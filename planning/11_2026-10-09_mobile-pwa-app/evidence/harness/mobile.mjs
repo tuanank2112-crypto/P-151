@@ -393,11 +393,11 @@ await block('M14', async () => {
     await open.first().click();
     await dp.waitForFunction((n) => document.querySelectorAll('#dept-checklist input:checked').length > n, before);
   }
-  const lines = await dp.$$eval('#dept-materials .mat-line', (n) => n.map((x) => x.dataset.item));
-  for (const item of lines) {
-    await dp.click(`#dept-materials .mat-line[data-item="${item}"] >> button:has-text("Lưu vật tư")`);
-    await dp.waitForSelector(`#dept-materials .mat-line[data-item="${item}"] >> text=Đã lưu`);
-  }
+  // Q41/Q42: one materials block, nothing pre-filled ⇒ pick the cleaning liquid at its norm (2), no reason needed
+  await dp.selectOption('#dept-material-rows select', 'SIM-MAT-CLEAN-01');
+  await dp.fill('#dept-material-rows input.qty', '2');
+  await dp.click('#dept-material-save');
+  await dp.waitForSelector('#dept-materials .pill:has-text("Đã lưu")');
   await dp.setInputFiles('#dept-photos input[type=file]:not([capture])', [path.join(tmpDir, 'big-1.jpg')]);
   await dp.waitForFunction(() => document.querySelectorAll('#dept-photos .photos .ph img').length === 1);
   await dp.click('#dept-photos >> button:has-text("Tải ảnh lên")');

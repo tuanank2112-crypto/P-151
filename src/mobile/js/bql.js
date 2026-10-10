@@ -1,13 +1,13 @@
 // BQL screens on the phone (plan 11, SPEC-P03 rules, SPEC-P04 §5 layout from portal/src/app/management/management-app.tsx).
 // Buttons follow the BqlTicketRow; the server stays the referee (403/409 go through the error table).
-import { api, apiImage } from './api.js?v=12';
+import { api, apiImage } from './api.js?v=15';
 import {
-  TERMINAL, confirmSheet, el, emptyState, field, fill, formatTime, history, icon, infoGrid, notice, pageHead, pagedList,
+  TERMINAL, boxOf, confirmSheet, el, emptyState, field, fill, formatTime, history, icon, infoGrid, notice, pageHead, pagedList,
   refreshButton, toast, writeButton,
-} from './ui.js?v=12';
+} from './ui.js?v=15';
 import {
   PRIORITY_LABEL, REASON_LABEL, deptName, deptPill as deptPillOf, flags, imagesOf, isEmergency, isSeedTicket, loadCatalog, statusPill,
-} from './staff.js?v=12';
+} from './staff.js?v=15';
 
 export { isEmergency, isSeedTicket };
 const deptPill = (cat, r) => deptPillOf(cat, r.department_id);
@@ -19,17 +19,20 @@ const STATS = [
   ['mine', 'Cần BQL', needsBql], ['emergency', 'Khẩn cấp', isEmergency], ['overdue', 'Quá hạn', (r) => r.overdue],
   ['done', 'Hoàn thành', (r) => r.status === 'CLOSED'],
 ];
-const FILTERS = Object.fromEntries(STATS.map(([key, , test]) => [key, test]));
+// Q40: one box per ticket, first match in this order — a Bậc 1 ticket is only in "Khẩn cấp", "Quá hạn" keeps what no other box took
+const TEST = Object.fromEntries(STATS.map(([key, , test]) => [key, test]));
+const boxOfRow = boxOf(['emergency', 'mine', 'done', 'overdue'].map((key) => [key, TEST[key]]));
 const HEAD = {
-  mine: ['Việc cần Ban quản lý', 'Nghiệm thu, khẩn cấp Bậc 1 và ticket an toàn đã leo thang.'],
+  mine: ['Việc cần Ban quản lý', 'Nghiệm thu và ticket an toàn đã leo thang (khẩn cấp Bậc 1 ở ô riêng).'],
   emergency: ['Sự cố khẩn cấp', 'Ticket Bậc 1 đang chờ Ban quản lý xử lý.'],
   overdue: ['Phản ánh quá hạn', 'Vướng mắc đã leo thang hoặc quá giờ xử lý.'],
   done: ['Phản ánh đã hoàn thành', 'Ticket đã nghiệm thu và đóng (ẩn ticket mẫu).'],
 };
 
 let tab = 'mine'; // kept while the app is open
-/** The header bell opens the "Cần tôi" list. */
-export function focusMine() { tab = 'mine'; }
+let emergencies = 0; // from the last list load
+/** The header bell (Khẩn cấp + Cần BQL) opens "Khẩn cấp" while there is one, else "Cần BQL". */
+export function focusMine() { tab = emergencies ? 'emergency' : 'mine'; }
 
 
 // ---------------------------------------------------------------- #/b
@@ -48,14 +51,16 @@ export async function list(ctx) {
   let rows = [];
   let cat = null;
   const draw = (keep) => {
-    ctx.counts({ bell: rows.filter(needsBql).length });
-    fill(statsBox, STATS.map(([key, label, test]) => el('button', {
+    const inBox = (key) => rows.filter((r) => boxOfRow(r) === key);
+    emergencies = inBox('emergency').length;
+    ctx.counts({ bell: emergencies + inBox('mine').length });
+    fill(statsBox, STATS.map(([key, label]) => el('button', {
       type: 'button', class: key === tab ? 'card stat pick on' : 'card stat pick', dataset: { tab: key }, 'aria-pressed': String(key === tab),
       onclick: () => { tab = key; draw(false); },
-    }, el('span', {}, label), el('b', {}, String(rows.filter(test).length)))));
+    }, el('span', {}, label), el('b', {}, String(inBox(key).length)))));
     fill(head, pageHead(HEAD[tab][0], HEAD[tab][1], { right: refreshButton(load, ctx) }));
     const previous = keep ? body.firstElementChild : null;
-    fill(body, pagedList(rows.filter(FILTERS[tab]), rowItem(cat), {
+    fill(body, pagedList(inBox(tab), rowItem(cat), {
       empty: tab === 'mine' ? 'Không có việc nào cần BQL xử lý.' : 'Không có phản ánh nào.', keep: previous,
     }));
   };
