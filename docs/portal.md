@@ -1,72 +1,61 @@
-# portal — Cổng phản ánh cư dân (Next.js)
+# portal — Web Next.js dùng backend Python (plan 18, v1.11.0 local)
 
-Website thật dựng từ bộ thiết kế `design-ticket-cu-dan/design-ticket-cu-dan/` (`HANDOFF.md` + 6 file `design/*.dc.html`).
-Một PostgreSQL dùng chung cho 5 vai trò. Độc lập với backend Python `src/` (KHÔNG nối engine MaintenanceOps / CR-BPTN-03).
-Hồ sơ thiết kế + quyết định: [`planning/06_2026-10-07_resident-portal-next/`](../planning/06_2026-10-07_resident-portal-next/plan.md).
+Python `/api/v1` là nguồn duy nhất cho đăng nhập, ticket, Agent, an toàn, vật tư và kho. Next.js giữ giao diện mới từ develop, Server Actions và BFF ảnh. `/`, `/app/` và `/ui/` dùng cùng ticket ID/trạng thái khi nối cùng backend. Code Python, contract API, safety/G-1/SPEC-P09 và `.env` không thay trong plan18.
 
-## 1. Chạy
-**Sau tích hợp develop b6590ce (local 1.10.1):** portal chạy nội bộ cổng 3000, `PORTAL_URL=http://portal:3000` cho backend proxy giao diện tại http://localhost:8000. `/ui/` và `/app/` vẫn là client của engine Python. Service portal migrate/seed DB riêng `portal` khi khởi động; migration `0002_fair_cargill.sql` bổ sung role Kho và bảng `warehouse_stock` đã được sinh, chưa áp DB trong lượt tích hợp.
-Portal có workflow/DB riêng; proxy không nối các màn portal với engine Python, Supabase backend hoặc API `material-usage`. Không coi việc mở chung cổng là dữ liệu đã đồng bộ.
+Hồ sơ: [plan18](../planning/18_2026-10-10_portal-python-api/plan.md). Kiến trúc DB/workflow portal riêng của plan06/17 là lịch sử đã được thay thế cho runtime mới; DB cũ được giữ để rollback, không chuyển dữ liệu.
 
-**Chạy dev trên máy:**
-```bash
-docker compose up -d db                       # Postgres 16 của repo (container p151-db-1)
-docker exec p151-db-1 psql -U p151 -d p151 -c "create database portal" -c "create database portal_test"   # một lần
-cd portal && npm ci && cp .env.example .env.local
-npm run db:migrate && npm run db:seed         # seed chỉ chạy khi DB rỗng; --reset để làm lại
-npm run dev                                   # http://localhost:3000
-```
-Tài khoản mẫu (mật khẩu `123456`): `cudan`, `tiepnhan`, `quanly`, `vesinh`, `kythuat`.
+## Chạy local
 
-## 2. Lệnh
-| Lệnh | Việc |
-|---|---|
-| `npm run typecheck` | `next typegen` + `tsc --noEmit` |
-| `npm run lint` | ESLint (config Next) |
-| `npm test` | Unit: Agent, SLA, định dạng, ma trận quyền, kiểm ảnh, mật khẩu |
-| `npm run test:db` | Toàn bộ workflow trên Postgres thật (`TEST_DATABASE_URL`, tên DB phải kết thúc `_test`) |
-| `npm run db:generate` / `db:migrate [-- --test]` / `db:seed [-- --reset]` | Migration Drizzle (SQL trong `drizzle/`), seed dữ liệu mẫu |
-| `npm run e2e -- --base=URL` | Luồng đầy đủ qua giao diện (Playwright) — cần DB vừa `--reset` |
-| `npm run screenshots -- [role…] --base=URL` | Chụp mọi tab ở 1440/390px vào `planning/06_…/evidence/screens/`, lỗi nếu trang tràn ngang |
+Khởi động Python theo cấu hình hiện có, sau đó trong PowerShell:
 
-## 3. Cấu trúc
-```text
-portal/
-├── drizzle/                 # migration SQL (CẤM sửa tay file đã commit)
-├── scripts/                 # migrate.mts, seed.mts, e2e-flow.mts, screens.mts
-├── tests/unit, tests/db     # vitest (2 project)
-└── src/
-    ├── db/                  # schema.ts (10 bảng), client.ts, index.ts (pool dùng chung), seed.ts
-    ├── lib/                 # thuần, dùng cả client: agent.ts, constants.ts, sla.ts, format.ts, permissions.ts, photos.ts, dto.ts, result.ts
-    ├── server/              # chỉ server: workflow.ts (MỌI ghi), queries.ts (đọc theo vai), session.ts, password.ts, act.ts
-    ├── components/          # shell (header/menu/skeleton), board, icons, photo-strip, toast, use-action
-    └── app/                 # login, resident, reception, management, cleaning, technical, api/photos/[id], actions/*
+```powershell
+cd C:\P-151\portal
+$env:BACKEND_URL = 'http://127.0.0.1:8000'
+$env:SESSION_COOKIE_SECURE = 'false'
+npm.cmd ci
+npm.cmd run build
+npm.cmd run start
 ```
 
-## 4. Màn hình ↔ thiết kế
-| Route | Vai | File thiết kế |
-|---|---|---|
-| `/login` | — | `Main.dc.html` |
-| `/resident` | resident | `Resident.dc.html` |
-| `/reception` | reception | `Reception.dc.html` (bỏ tab Quy tắc từ khóa) |
-| `/management` | management | `Management.dc.html` (bỏ tab Phân quyền) |
-| `/cleaning` | cleaning | `Cleaning.dc.html` |
-| `/technical` | technical | `Technical.dc.html` |
-CSS của thiết kế được chép nguyên vào `src/app/globals.css` (class dùng chung + khối riêng `.scr-<màn>`). Lệch có chủ đích D1–D9: `planning/06_…/specs/00-ARCHITECTURE.md` §5.
+Không cần DATABASE_URL hoặc chạy migrate/seed portal. Đăng nhập tài khoản Python; demo accounts/password chỉ hiện khi API Python cho phép, không tạo alias từ tài khoản portal cũ.
 
-## 5. Mô hình ticket
-`stage` 1 Tiếp nhận → 2 Thẩm định (đã chuyển phòng ban) → 3 Phân công → 4 Đang xử lý → 5 Nghiệm thu (phòng ban báo xong) → 6 Hoàn tất; cờ `need_info`, `paused`, `cancelled` (+`merged_into`).
-Bảng ánh xạ nhãn từng dashboard + tiền điều kiện từng action: `specs/01-CONTRACTS.md` §2, §4.
-Mọi ghi đi qua `src/server/workflow.ts`: kiểm quyền → `SELECT … FOR UPDATE` → kiểm phạm vi/stage → `UPDATE … WHERE stage = <cũ>` → 1 dòng `history`. Lỗi trả `ActionResult` (`UNAUTHENTICATED | FORBIDDEN | NOT_FOUND | INVALID_INPUT | CONFLICT`); ticket ngoài phạm vi luôn là `NOT_FOUND`.
+## Docker / rollout
 
-## 6. Agent phân loại (`src/lib/agent.ts`)
-`classify(text, rules, home) → { dept, confidence, keywords, urgent, locationFromText }`. Từ khóa theo phòng ban ở bảng `keywords` (Ban tiếp nhận sửa). So khớp **nguyên từ** (Unicode), tin cậy `min(97, round(48 + 38·best/total + 5·min(best,3)))`, không khớp ⇒ `dept=null`, 0%. Hạn: khẩn cấp 4 giờ, thường 48 giờ.
+```powershell
+cd C:\P-151
+docker compose up -d --build --force-recreate backend portal
+docker compose ps
+docker compose logs --tail 100 backend portal
+Invoke-RestMethod http://localhost:8000/health
+```
 
-### Agent phát hiện trùng (`src/lib/duplicates.ts`)
-Ticket mới được so với ticket cũ hơn còn mở trong 7 ngày: cùng phòng ban gợi ý + cùng vị trí (tòa + tầng / thang máy) + ≥1 từ khóa chung.
-Thẻ chờ phân loại hiện hai ticket cạnh nhau với lý do và %; Ban tiếp nhận chỉ duyệt "Đúng, gộp" hoặc "Không trùng" (lưu `dup_dismissed`).
-Server chặn gộp cặp Agent không đề xuất. Từ khóa của Agent KHÔNG còn sửa trên UI: đổi qua `SEED_KEYWORDS` (`src/db/seed.ts`) hoặc SQL bảng `keywords`.
+Backend proxy `/` sang portal3000; `/api/v1`, `/app/`, `/ui/` vẫn do Python phục vụ. Portal BACKEND_URL=http://backend:8000 và chỉ chạy next start; không migrate/seed hoặc phụ thuộc DB portal. Service db/pgdata giữ nguyên. Backend vẫn đọc `.env` và kho dữ liệu đã cấu hình, gồm Supabase nếu người dùng chọn. Rebuild này chưa được chạy trong môi trường agent; không suy image hiện tại đã cập nhật.
 
-## 7. Bảo mật
-- **Phòng vệ sinh / kỹ thuật không biết ai gửi** (plan Q11): `deptData()` không trả tên, tài khoản, `resident_id`; tên file ảnh thành "Ảnh N". Họ VẪN thấy số sao, thẻ nhận xét và bình luận của việc phòng mình (`RatingSummary`). Số căn hộ chỉ có trong vị trí khi sự cố "Trong căn hộ". Khoá bằng `tests/db/queries.test.ts`.
-Session cookie `httpOnly` ↔ bảng `sessions` (lưu SHA-256 token, hạn 7 ngày); mật khẩu scrypt; lỗi đăng nhập chung một câu. Ảnh: kiểm magic bytes JPG/PNG/WEBP, ≤5 ảnh × 5 MB, trả qua `/api/photos/[id]` có kiểm phạm vi và `Cache-Control: private, no-store`.
+## Cấu trúc / hợp đồng
+
+- `server/backend-client.ts`: server-only, cookie token → Bearer Python, no-store, timeout15s, không retry POST, loại header actor/auth/cookie do caller cung cấp.
+- `server/session.ts`: cookie python_portal_session HttpOnly/SameSiteLax/Path=/, TTL theo Python; `/auth/me` kiểm phiên mỗi request/action; logout xoá cookie cả khi backend lỗi.
+- `server/backend-dto.ts`, `queries.ts`: ID string, 6 vai Python → dashboard, list summary rồi detail on demand; cư dân chỉ ResidentTicketView, không nhận catalog vật tư/kho/Case nội bộ.
+- `app/actions/backend.ts` + `lib/backend-actions.ts`: endpoint/body allowlist, kiểm vai, Python kiểm trạng thái/phạm vi. Không actor_id từ browser.
+- `lib/case-view.ts`: projection Case trước gửi client; bỏ resident_id/audit/actor IDs/prompt. ResidentTicketView không bổ sung dữ liệu nội bộ.
+- `components/python-dashboard.tsx`: shell/CSS/icon của UI mới, 6 dashboard, modal và form dùng Python; không classify JS.
+- `/api/backend-photos/{scope}/{ticketId}/{evidenceId}`: BFF xác thực, private,no-cache/ETag; Python kiểm quyền trước304. Resident internal scope403. `/api/photos/{integer}` legacy410 sau kiểm phiên.
+- `server/workflow.ts`, `legacy-queries.ts`, `db/`, Drizzle/scripts seed còn để rollback/test lịch sử, không reachable từ runtime. `act.ts` fail closed.
+
+## Nghiệp vụ hiển thị
+
+ROUTED là đã giao phòng ban, không chờ BPTN click. BPTN chỉ gỡ blocker thuộc vai của mình. Phòng ban nhận việc, checklist, nhập vật tư đã dùng, ảnh, ghi chú, báo hoàn thành. BQL nghiệm thu/làm lại/huỷ/khẩn cấp; safety BQL chỉ sau escalation ở VERIFYING, hoặc CONFIRM_SAFE/ESCALATE khi NEED_INFO+safety_context.
+
+Vật tư: danh mục/lọc phòng ban từ server, không điền sẵn đề xuất Agent; một POST material-usage thay toàn bộ thực tế. Không yêu cầu lý do vì lệch định mức. Backend giữ guard plan16 và delta/rollback tồn kho. Qty nguyên dương, technical ≥1; cleaning có lựa chọn không dùng. Lỗi giữ draft và không tự reload30s. Complete200 nhưng IN_PROGRESS là chưa đạt, hiển thị failing_items.
+
+Các controls không có API đã bỏ theo SPEC duyệt: gán nhân viên, pause SLA riêng, cư dân huỷ/nghiệm thu, tags/comment rating, vật tư tự do/catalog mới, keyword/notice DB. Không thay luồng Agent/safety bằng frontend. Trạng thái MERGED/CANCELLED riêng; ON_HOLD giữ nhãn tạm dừng.
+
+401 → đăng nhập;404 → tải danh sách;403/409/422 giữ input; lỗi mạng/5xx của ghi không auto retry, yêu cầu kiểm tra trạng thái trước thử lại. Offline khoá nút ghi. Tài khoản Python hết phiên sau backend restart; restart portal không làm mất phiên còn hợp lệ.
+
+## Kiểm tra
+
+`npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd test`, `npm.cmd run build` không DATABASE_URL. Test unit giữ bộ cũ và bổ sung auth/DTO/actions/ảnh/privacy/import graph/form policy. Tests DB legacy trỏ legacy-queries, không chứng minh workflow mới.
+
+Python memory riêng8018, LLM_MODE=mock, MO_STORE=memory, MO_PHOTO_STORE=local, jobsfalse; portal production3018. Browser/evidence tại plan18; tuyệt đối không ghi test vào Supabase chung. Docker/điện thoại/boot hub là gate riêng, chưa coi viewport390 là điện thoại thật. H/R lưu từng gói và thẩm định độc lập.
+
+Rollback: checkout snapshot UI/compose plan17 và rebuild portal; không xoá volumes/ticket Python. DB portal cũ không chứa ticket mới đã tạo qua Python; phải chọn giao diện/API phù hợp khi rollback.

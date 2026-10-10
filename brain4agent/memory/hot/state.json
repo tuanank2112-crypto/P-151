@@ -1,10 +1,10 @@
 {
-  "current_version": "1.10.1",
+  "current_version": "1.11.0",
   "brain_template_version": "1.7.1",
   "system_status": "active",
   "last_verification": {
-    "timestamp": "2026-10-10T11:18:44.000Z",
-    "grade": "plan 16 v1.10.0 (uncommitted on 7131510): pytest 3438 passed, --pg 3533 passed (in backend image; host psycopg2 blocked), ruff/diff-check clean; RED baseline 48/51 + legacy probe 8/8 accepted -> 0/8; mutants m1-m5 red; Playwright web+app 42/42 on Docker memory :8017; independent audit R04 round1 FIX (F1-F6) -> round2 APPROVED"
+    "timestamp": "2026-10-10T21:39:55+07:00",
+    "grade": "Plan18 local implementation verified; Python3441 passed/95pg deselected; portal71; browsers46+9+5+4; 5 source mutants RED/restored GREEN; independent R04 approved round3. Boot/Docker/phone/server not satisfied. Supplemental actions6/6; independent final delta11/11+6/6."
   },
   "active_plans_completed": 4,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
@@ -31,10 +31,10 @@
     "license": ""
   },
   "active_spec": "docs/CR-BPTN-03.md",
-  "working_branch": "feature/nhuy-reasoning-agent",
-  "code_baseline": "aafdf6a (feature/nhuy-reasoning-agent)",
+  "working_branch": "feature/chamanh",
+  "code_baseline": "2ced2656c66ceb6cdc44790a91f676ab1b8d710d + plan18 working tree",
   "last_benchmark": {
-    "pytest": "2941 passed, 29 deselected, 0 skip (pg: 1872 passed on develop 37a0fb3, 2026-10-04)",
+    "pytest": "3441 passed, 95 PostgreSQL deselected, 0 skipped, memory, 2026-10-10",
     "safety_stop_sets": "1065 green",
     "false_alarm_budget": {
       "b_fp": "EM 0 / UNCLEAR 4",
@@ -45,14 +45,40 @@
     "assess_24kb_seconds": 0.28,
     "review_set_2026_10_04": "adversarial 107: HEAD 50 errors -> 7; SO holdout 18/18; live API corpus 34: only out-of-scope-asks-location left (spec)",
     "agent_audit_2026_10_05": "independent E2E audit scripts rerun: 77 sentences 16->7 errors, group D 9->2; rest P1/spec",
-    "portal": "unit 14/14, test:db 15/15 (portal_test), next build ok, e2e PASS on next start (2026-10-07)",
+    "portal": "plan18: unit71, production build without DATABASE_URL, browser46+crossapp9+restart5+cleaning4; Docker not measured",
     "spec_p09_v6_probes": "27/27 passed (B1 interval overlap, B2 3-part overrides & shared location, B3 next_step, B4 cardinality & quiesce)"
   },
-  "last_sync": "2026-10-07T12:30:00.000Z",
-  "next_step": "Chờ người duyệt SPEC-P09 (PROPOSED -> APPROVED); nhận H16 thi công runtime WP17",
+  "last_sync": "2026-10-10T22:34:58+07:00",
+  "next_step": "Sau commit/push plan18: rebuild backend+portal trên Docker của người dùng; đo boot/Docker/điện thoại, không tự deploy server.",
   "active_plan": {
-    "id": "17_2026-10-10_develop-web-sync",
-    "status": "local_committed_rollout_pending"
+    "id": "18_2026-10-10_portal-python-api",
+    "status": "implementation_verified_rollout_pending",
+    "scope_confirmed_by_user": true,
+    "runtime_changes_allowed": true,
+    "target_version": "1.11.0",
+    "local_verified_at": "2026-10-10T21:39:55+07:00",
+    "version": "1.11.0",
+    "python_backend_shared": true,
+    "docker": "not run: CLI absent",
+    "boot": "exit1: hub missing",
+    "phone": "not run",
+    "server": "not deployed",
+    "commit": "approved; snapshot prepared for commit",
+    "evidence": "planning/18_2026-10-10_portal-python-api/evidence",
+    "verification": {
+      "pytest_memory": 3441,
+      "pytest_pg_deselected": 95,
+      "portal_unit": 71,
+      "main_browser": 46,
+      "cross_app": 9,
+      "restarts": 5,
+      "cleaning": 4,
+      "source_mutants_red": 5,
+      "lint_errors": 0,
+      "lint_warnings": 1,
+      "extra_actions": 6
+    },
+    "push": "authorized to origin/feature/chamanh; verify using Git remote"
   },
   "last_session": {
     "date": "2026-10-03",
@@ -173,18 +199,8 @@
     "runtime_code_changed_by_reviewer": false
   },
   "previous_active_plan": {
-    "id": "16_2026-10-10_material-guards",
-    "status": "done_local_docker_server_pending",
-    "runtime_changes_allowed": true,
-    "target_version": "1.10.0",
-    "baseline_head": "71315109d845fe69935050b09d4ab4c67efb024a",
-    "signed_off_at": "2026-10-10T18:18:44+07:00",
-    "open_gates": [
-      "G0 boot (hub missing)",
-      "G4 server (not deployed)",
-      "real phone",
-      "commit"
-    ]
+    "id": "17_2026-10-10_develop-web-sync",
+    "status": "local_committed_rollout_pending"
   },
   "develop_ui_sync": {
     "source": "b6590ce",

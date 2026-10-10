@@ -1,7 +1,7 @@
 # `src/web/` — UI tĩnh của backend MaintenanceOps
 
 FastAPI phục vụ thư mục này ở `/ui` (`src/main.py`). Plain JS + Tailwind Play CDN, không có bước build.
-Sau merge develop b6590ce (local 1.10.1), `/` có thể proxy portal Next.js theo `PORTAL_URL`; `/ui/` giữ UI engine Python và luồng vật tư plan16. Portal được cập nhật từ develop nhưng dùng workflow/DB riêng (xem `portal.md`).
+Sau merge develop b6590ce (local 1.10.1), `/` có thể proxy portal Next.js theo `PORTAL_URL`; `/ui/` giữ UI engine Python và luồng vật tư plan16. Từ plan18 v1.11.0 local, portal dùng cùng API Python; workflow/DB riêng chỉ còn legacy rollback (xem `portal.md`).
 Từ v1.3.0 (plan 07) giao diện mang design của `portal/`. Hồ sơ: `planning/07_2026-10-07_web-portal-reskin/`.
 
 ## 1. File

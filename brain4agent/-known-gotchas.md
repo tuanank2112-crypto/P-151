@@ -153,3 +153,13 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 - **`shutil.rmtree` thư mục snapshot trong scratchpad có thể `WinError 5`** — tạo snapshot vào thư mục mới mỗi lần.
 - Đổi luật vật tư ⇒ guard nằm ở `material_policy.py` (API + engine + `_reconcile`); client CHỈ lọc theo `catalog.material_codes_by_department`, CẤM map vật tư trong JS.
 - **`p151_test` dùng chung giữa các agent/phiên:** fixture `pg_repo` TRUNCATE bảng ⇒ hai đợt `--pg` song song làm nhau `NotFoundError`. Chạy tuần tự (hoặc mỗi đợt một DB `*_test` riêng).
+
+## Plan18 — BFF/UI Python (2026-10-10)
+- Không chuyển nguyên Case vào browser phòng ban: Python internal response có resident_id/audit. Dùng allowlist case-view cho cả detail, mutation, upload và Case lỗi complete.
+- CompleteHTTP200 có thể vẫn IN_PROGRESS; phải đọc status/failing_items, không toast hoàn tất giả.
+- BQL safety VERIFYING cần escalated=true; NEED_INFO+safety_context chỉ CONFIRM_SAFE/ESCALATE. Owner BPTN có thể vẫn giữ sau escalation; không suy quyền chỉ từ owner.
+- Form đăng nhập không đặt interactive LoginForm trong Suspense fallback: backend demo-data stream có thể thay form và làm mất input trước click. Fallback loading tĩnh.
+- Windows PowerShell dùng npm.cmd; script stdin chứa tiếng Việt cần OutputEncoding UTF8. Playwright controlled checklist phải click rồi đợi server xác nhận checked, không dùng check() kỳ vọng synchronous.
+- Không build ghi đè .next trong lúc đo server production đang chạy; stop/rebuild/restart trước browser. Fixtures memory dùng kho hữu hạn; harness reset chỉ tại loopback8018 memory riêng, cấm chuyển đến DB chung.
+
+- Plan18: emergency_close Python bắt buộc note; UI không được ghi tùy chọn. Cleaning blankTRACKED khác N_A: phải lưu xác nhận không sử dụng trước khi nút giữ trạng thái đã lưu. Browser4/4+6/6, reviewer11/11+6/6.

@@ -1,0 +1,36 @@
+
+ RUN  v5.0.3 C:/P-151/portal
+
+ ❯ |unit| tests/unit/backend-actions.test.ts (6 tests | 1 failed) 11ms
+   ❯ Python action contract (6)
+     × rejects caller role escalation and unapproved workflow transitions 6ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  21:23:01
+   Duration  975ms (transform 60%, import 21%, tests 13%, worker 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| tests/unit/backend-actions.test.ts > Python action contract > rejects caller role escalation and unapproved workflow transitions
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ tests/unit/backend-actions.test.ts:10:80
+      8|   });
+      9|   it("rejects caller role escalation and unapproved workflow transitio…
+     10|     expect(() => ticketActionRequest("resident", "SIM-TKT-0062", "clos…
+       |                                                                                ^
+     11|     expect(() => ticketActionRequest("reception", "SIM-TKT-0062", "acc…
+     12|     expect(() => ticketActionRequest("management", "SIM-TKT-0062", "tr…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+EXIT=1

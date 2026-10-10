@@ -8,8 +8,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createDb } from "@/db/client";
 import { users } from "@/db/schema";
 import { seed } from "@/db/seed";
-import { deptData } from "@/server/queries";
-import type { SessionUser } from "@/server/session";
+import { deptData } from "@/server/legacy-queries";
+import type { SessionUser } from "@/server/legacy-queries";
 import * as wf from "@/server/workflow";
 
 const url = process.env.TEST_DATABASE_URL;

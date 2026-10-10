@@ -1,0 +1,40 @@
+
+ RUN  v5.0.3 C:/P-151/portal
+
+ ❯ |unit| tests/unit/runtime-graph.test.ts (2 tests | 1 failed) 152ms
+   ❯ production import graph (2)
+     × all pages/actions/photo routes are independent of portal DB and workflow 114ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  21:22:55
+   Duration  1.30s (import 46%, tests 32%, transform 20%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| tests/unit/runtime-graph.test.ts > production import graph > all pages/actions/photo routes are independent of portal DB and workflow
+AssertionError: expected [ 'db/index.ts', 'db/client.ts', …(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "db/index.ts",
++   "db/client.ts",
++   "db/schema.ts",
++ ]
+
+ ❯ tests/unit/runtime-graph.test.ts:30:29
+     28|   it("all pages/actions/photo routes are independent of portal DB and …
+     29|     const graph = runtimeGraph(files(path.join(root, "app")));
+     30|     expect(graph.forbidden).toEqual([]);
+       |                             ^
+     31|     expect(graph.visited.size).toBeGreaterThan(20);
+     32|     for (const file of graph.visited) expect(fs.readFileSync(file, "ut…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+EXIT=1

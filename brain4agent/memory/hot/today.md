@@ -1,5 +1,10 @@
 # 📅 Nhật Ký Làm Việc Ngày 2026-09-30 (Session Memory Log)
 
+## Phiên 2026-10-10 — Plan18 portal dùng Python
+- Người dùng xác nhận giữ UI mới và dùng backend Python; rà portal auth/queries/actions/workflow với API hiện có.
+- Dựng plan18 +6SPEC, PROPOSED theo AGENTS §3.4; chưa đổi runtime/version/API/DB. Đích1.11.0, không thi công P09/G-1 trong đợt nối UI.
+- Các thay đổi phải duyệt: dùng tài khoản Python, ID string, BPTN theo blocker thực; thay nút staff/pause/cư dân nghiệm thu-hủy/rating tags/warehouse custom items không có API. Giữ DB portal cũ cho rollback, không migrate hoặc xoá dữ liệu.
+
 ## Phiên 2026-10-10 — Merge develop UI b6590ce
 - Người dùng xác nhận duyệt commit và push feature/chamanh. Chốt merge + local backend/material guards + UI + migration + hồ sơ, không stage integration hoặc .env; backup stash giữ lại.
 - Browser login portal thật1440/390: HTTP200, không overflow/JS error. Proxy regression3 passed; raw checks evidence plan17. Server smoke đã dừng; diff source/docs liên quan sạch, raw evidence upstream giữ whitespace nguyên trạng.
@@ -630,3 +635,16 @@ Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lậ
 - Isolated memory probes: technical department accepts cleaning material; accepts and records 0.5 lamps; accepts empty list and reaches READY_FOR_REVIEW/all_pass. These are required guards from the user brief, not optional new scope.
 - Web still pre-fills Agent material lines and retains separate confirm-plan and per-line save forms. Phone save is multiple requests: replacing issued LAMP-01 x4 with unavailable LAMP-02 x1 changes plan and refunds old stock before issue is rejected. No full-save rollback.
 - Verdict: changes requested before calling the whole requirement complete. Core off-norm/off-plan no-reason logic confirmed. No runtime code, user DB, or worker evidence changed.
+
+
+## Session 2026-10-10T21:39:55+07:00 — Plan18 portal/Python local verified
+- Người dùng duyệt; giữ UI mới, thay auth/read/actions/photo bằng BFF Python. Python source/API/.env không đổi; không test trên Supabase dùng chung.
+- 1.11.0 working tree trên feature/chamanh/2ced265, chưa commit/push/deploy. Dockerfile không migrate/seed DB portal; compose portal chỉ gọi backend.
+- Đo: Python3441 pass/95pg deselected/0skip; portal71pass; browser46+9crossapp+5restart+4cleaning+6extraactions; 5 mutants source đỏ→phục hồi xanh. Build không DATABASE_URL; lint0errors/1warning legacy; thẩm định R04 vòng3 duyệt UI/BFF.
+- Vệ sinh blankTRACKED phải save rỗng để lưu N_A; browser thấy đúng một POST và reopen phản ánh acknowledgement.
+- G0 thiếu hub exit1; Docker CLI không có; không đo PostgreSQL/Docker/điện thoại/server; hồ sơ còn gate. CSS/shell không đổi; ảnh sau đã xem, không có baseline pixel browser cũ.
+- Tài liệu/6điểm+intro/dataflow đã đồng bộ, raw evidence và H/R tại plan18. Tiếp theo rebuild backend+portal, chạy gate Docker; không tự tạo lại backend8000 nối Supabase.
+
+## Session 2026-10-10T22:34:58+07:00 — User approved plan18 commit/push
+- Branch feature/chamanh, base2ced265; remote same SHA verified. Snapshot1.11.0 source/tests/compose/docs/brain/plan18 evidence prepared; integration/ excluded. No .env/API/Python changes.
+- User explicitly authorized git commit + normal push; no force push/rebase/deploy. Prior local acceptance remains; boot hub still missing exit1, Docker/phone gates pending.

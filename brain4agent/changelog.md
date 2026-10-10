@@ -2,7 +2,15 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
-# v1.10.1 — Tích hợp UI develop (local, chưa commit)
+## [v1.11.0] - 2026-10-10: UI portal dùng backend Python (plan18, snapshot được duyệt commit/push)
+- Giữ giao diện Next mới; login, danh sách, chi tiết, thao tác, vật tư/kho và ảnh dùng Python qua BFF. Runtime không dùng DB/workflow portal; dữ liệu legacy giữ nguyên để rollback.
+- Cookie HttpOnly, ID string; reauth/role mỗi action; projection Case bỏ dữ liệu cá nhân/audit; ảnh kiểm ownership trước304.
+- Cùng ticket và stock với /app/ và /ui/; không prefill vật tư Agent, mỗi lưu usage một POST, lỗi giữ input. Complete200 chưa READY hiển thị failing_items. Safety controls theo blocker/status/escalation Python.
+- Local: pytest3441/95pg deselected; portal71; browser46+crossapp9+restart5+cleaning4+extraactions6; independent review vòng3 duyệt; 5 source mutants đỏ→phục hồi xanh. Build không DATABASE_URL; lint0errors/1warning legacy.
+- Boot thiếu hub (exit1), Docker CLI thiếu, chưa PostgreSQL/điện thoại/server. Chưa đóng gate toàn hồ sơ, chưa ghi Supabase/deploy. Người dùng đã duyệt lưu Git snapshot1.11.0.
+
+
+# v1.10.1 — Tích hợp UI develop (plan17 đã commit/push 2ced265)
 - Nhập origin/develop b6590ce: portal có màn Kho, modal ticket và cập nhật các vai; main/compose có proxy portal.
 - Giữ backend plan16, OpenAI Luna, Docker exclusions và app điện thoại. Sinh migration warehouse theo schema upstream, chưa áp DB.
 - Typecheck/build đạt, unit17; lint0 errors/5 warnings upstream; pytest3438 và proxy/material focus47 đạt. Docker/DB workflow chưa đo trong lượt merge.

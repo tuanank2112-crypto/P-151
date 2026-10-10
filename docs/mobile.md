@@ -4,7 +4,7 @@ FastAPI phục vụ thư mục này ở `/app/` (`src/main.py`), cùng origin v�
 Plain JS (ES module) + CSS, KHÔNG Tailwind, KHÔNG bước build. Hồ sơ: [`planning/11_2026-10-09_mobile-pwa-app/`](../planning/11_2026-10-09_mobile-pwa-app/plan.md).
 **Giao diện = thiết kế `portal/`** (đợt 2, [`specs/SPEC-P04-PORTAL-UI.md`](../planning/11_2026-10-09_mobile-pwa-app/specs/SPEC-P04-PORTAL-UI.md)): class chép nguyên từ
 `portal/src/app/globals.css`, icon từ `portal/src/components/icons.tsx`, bố cục từ `shell.tsx`/`resident-app.tsx`/`management-app.tsx`.
-Backend vẫn là FastAPI gốc (Docker `:8000`); app KHÔNG gọi API/DB của portal.
+Backend vẫn là FastAPI gốc (Docker `:8000`); app gọi API Python trực tiếp. Từ plan18 v1.11.0 local, web portal cũng gọi cùng API Python qua BFF nên cùng ticket/kho/Agent; không có DB portal runtime.
 
 ## 1. Nguyên tắc (đọc trước khi sửa)
 - App là **client mỏng**: chỉ gọi endpoint có sẵn (`/auth/*`, `/resident/*`, `/bql/*`, `/mo/*` của phòng ban/BPTN/kho, ảnh) — bảng ở

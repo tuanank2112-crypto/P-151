@@ -1,0 +1,15 @@
+
+ RUN  v5.0.3 C:/P-151/portal
+
+
+ Test Files  10 passed (10)
+      Tests  68 passed (68)
+   Start at  21:23:09
+   Duration  8.29s (transform 47%, import 32%, tests 18%, worker 4%)
+
+  Transform  |unit| transforming modules took 2.54s · 47% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+
+
+EXIT=0
