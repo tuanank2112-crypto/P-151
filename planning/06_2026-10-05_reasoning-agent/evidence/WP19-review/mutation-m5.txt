@@ -1,0 +1,11 @@
+# mutation m5: SPEC m5: Mirror job quote = report_text
+# sandbox copy: C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\repo3
+sha256 before src\maintenance\agent\baseline.py = 17883dd0e9481671699f5e2c97d0d4e624ddc35f466df4f6587d7c1dd8e43762
+applied in src/maintenance/agent/baseline.py: anchor x1
+$ (cwd=sandbox) -m pytest -q -p no:cacheprovider -rf tests/test_maintenance/test_p10_catalog_not_quote.py tests/test_maintenance/test_agent_unit.py tests/test_maintenance/test_p1_audit_fixes_safety.py tests/test_maintenance/test_safety.py tests/test_maintenance/test_agent_engine.py tests/test_maintenance/test_agent_parity.py tests/test_maintenance/test_p1_contracts.py tests/test_maintenance/test_agent_prompt.py
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_04_mirror_writes_no_quote_of_its_own[Ch\u1ed7 \u0111i b\u1ed9 tr\u01b0\u1edbc thang m\xe1y t\u1ea7ng 3 t\xf2a S1 c\xf3 nhi\u1ec1u r\xe1c]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_04_mirror_writes_no_quote_of_its_own[H\xe0nh lang t\u1ea7ng 3 t\xf2a S1 nhi\u1ec1u r\xe1c, c\u1ea7n v\u1ec7 sinh.]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_08_a_missing_job_quote_is_not_shown_as_none
+3 failed, 1643 passed in 73.53s (0:01:13)
+EXIT=1
+sha256 after  src\maintenance\agent\baseline.py = 17883dd0e9481671699f5e2c97d0d4e624ddc35f466df4f6587d7c1dd8e43762 restored=YES

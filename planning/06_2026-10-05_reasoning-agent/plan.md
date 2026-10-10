@@ -103,7 +103,7 @@ Song song: Wave 1 = WP2 ∥ WP3 ∥ WP4 (WP1 trước WP3); Wave 4 = WP7 ∥ WP8
 - [ ] WP14b (Q30, 2026-10-07 20:18:06 +0700): F2/F11 bằng Agent (`agent/prompt.py` + test nối dây + G-LIVE), KHÔNG từ vựng — SPEC-P08 §4; chưa có handoff. H13 thu hẹp còn F1/F3/F10; phần `lexicon.yaml` worker đã sửa bị hoàn tác
 - [ ] Exit Gates local ✅ (TESTING §7) · [ ] `--pg` ✅ · [ ] live ✅ · [ ] server ✅
 - [x] Đóng gói H13/H14/H15 ngày 2026-10-07 (chỉ tài liệu, chưa thi công) · [ ] WP16 thiết kế P09 — đã nộp vòng 1, 🔁 SỬA A1–A6 tại [R15 §8](reports/R15_thi-cong_WP16.md#8-phán-quyết-người-duyệt--2026-10-07-110315-0700) · [ ] duyệt P09 trước H16
-- [x] Q35 duyệt hướng 2026-10-10 08:59:52 +0700 · [ ] WP18 SPEC-P10 + H18 ([H17](handoffs/H17_thi-cong_WP18.md)) · [ ] duyệt P10 · [ ] WP19 runtime (H18) · [ ] thẩm định cô lập WP19
+- [x] Q35 duyệt hướng 2026-10-10 08:59:52 +0700 · [x] WP18 SPEC-P10 + H18 ([H17](handoffs/H17_thi-cong_WP18.md), R17, SO đo lại REF selftest 0) · [x] duyệt P10 2026-10-10 10:08:38 +0700 (Q-P10-1…4 chờ người) · [x] WP19 runtime (H18, R18 vòng 2) · [x] thẩm định cô lập WP19: R19 🔁 test ⇒ vòng 2; SO đo lại 2026-10-10 11:20 ✅ DUYỆT local (pytest 3685 passed/0 fail/0 skip, ruff + format sạch, đột biến X1b/X2b/X6/X9 + m1–m7 đỏ; `--pg` ⬜ Docker tắt, live NOT_RUN)
 - [ ] WP13 đồng bộ não + `changelog.md` + version · [ ] Sign-off `✅ ĐÃ HOÀN THÀNH` + mốc giây
 
 ## §5. Bảng trỏ SPEC

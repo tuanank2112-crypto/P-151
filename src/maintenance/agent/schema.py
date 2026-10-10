@@ -7,7 +7,7 @@ Q20: WP1 creates it because `Case.agent_decision` needs `AgentDecisionRecord`). 
 
 from typing import Annotated, Literal
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import AwareDatetime, BaseModel, BeforeValidator, ConfigDict, Field, StringConstraints, model_validator
 
 from src.maintenance.enums import RiskLevel, ServiceCategory
 
@@ -16,7 +16,17 @@ from src.maintenance.enums import RiskLevel, ServiceCategory
 # =====================================================================================================================
 
 Short = Annotated[str, StringConstraints(min_length=1, max_length=300)]
-Quote = Annotated[str, StringConstraints(min_length=2, max_length=300)]
+
+
+def _audit_quote(value: object) -> object:
+    """Quote = display/audit only (plan 06 Q35, SPEC-P10 §3.1): never a reason to reject a decision.
+    A string is stripped, a blank one becomes None, a long one is cut to 300 characters; None stays None."""
+    if isinstance(value, str):
+        return value.strip()[:300] or None
+    return value
+
+
+AuditQuote = Annotated[Annotated[str, StringConstraints(max_length=300)] | None, BeforeValidator(_audit_quote)]
 SignalId = Annotated[str, StringConstraints(pattern=r"^(S-\d{2}|T2-0[1-5])$")]
 AskField = Literal["location", "location_building", "location_floor", "location_area"]
 Step = Literal[
@@ -37,7 +47,7 @@ class ReasoningStep(_Strict):
 class SignalJudgement(_Strict):
     signal_id: SignalId
     status: Literal["PRESENT", "UNCLEAR", "ABSENT"]
-    quote: Quote | None = None
+    quote: AuditQuote = None
 
 
 class SafetyDecision(_Strict):
@@ -50,7 +60,7 @@ class LocationDecision(_Strict):
     building: Annotated[str, StringConstraints(max_length=20)] | None = None
     floor: Annotated[str, StringConstraints(max_length=10)] | None = None
     area: Annotated[str, StringConstraints(max_length=40)] | None = None
-    quote: Quote | None = None
+    quote: AuditQuote = None
     reason: Short | None = None  # agent-prompt/3: optional, no consumer
 
 
@@ -62,7 +72,7 @@ class MaterialChoice(_Strict):
 
 class JobDecision(_Strict):
     category: Literal["VE_SINH", "KY_THUAT"]
-    quote: Quote
+    quote: AuditQuote = None
     reason: Annotated[str, StringConstraints(min_length=1, max_length=400)]
     department_id: Literal["DEPT_CLEANING", "DEPT_TECHNICAL"]
     priority: Literal["HIGH", "MEDIUM", "LOW"]

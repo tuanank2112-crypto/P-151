@@ -34,3 +34,5 @@
 - Bài học khởi động: ĐỌC kernel + index (Bước 1–2) trước khi tóm tắt/đánh giá, không chỉ chạy Bước 0.
 - 09:xx Đóng gói WP18 (🔴 SPEC-P10, architect chạy Opus — không Fable) / WP19 (🟠 runtime) trong plan 06; handoff H17. Push tạm `feature/nhuy-reasoning-agent`. Frontend mới (portal gọi backend v1.7.0, PR #20 `feature/nhuy-portal-fe`; mobile PWA v1.9.4 `feature/chamanh`) CHƯA vào develop/nhánh này.
 - WP18 xong (architect Opus): SPEC-P10 PROPOSED, H18 chờ duyệt, R17; kiểm kê 28 chỗ = 9 cổng chặn LLM/6 lưới sàn/13 audit. SO đo lại: REF selftest 0, banner P01/P08/P09 chỉ thêm dòng. Chờ người: Q-P10-1..5.
+- WP19 (Sonnet) xong 2 vòng: vòng 1 R19 (Opus cô lập) 🔁 vì test không bắt cổng "không chung từ"; vòng 2 thêm T-P10-09/10/11 + khẳng định chính xác invented-place. SO đo lại đột biến X1b/X2b/X6/X9 đều đỏ. Worker: 3685 passed. SO sửa SPEC-P10 §9.1/§9.3 (m8/m9). Người dùng dừng giữa lúc SO chạy lại pytest toàn bộ ⇒ cập nhật não; code CHƯA commit.
+- 11:20 SO đo lại toàn bộ: 3685 passed/0 fail/0 skip, ruff+format sạch ⇒ WP19 ✅ DUYỆT local; commit + push nhánh (PR #19 vào develop tự cập nhật, KHÔNG merge thẳng develop).

@@ -1,0 +1,16 @@
+# mutation X7: schema: blank quote no longer becomes None and quote needs >= 2 chars
+# sandbox copy: C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\repo
+sha256 before src\maintenance\agent\schema.py = 5493c7af9e96f58c5c7b1994f29eb2bf5b3cf09f0453a8d9c837c6780ce84fe6
+applied in src/maintenance/agent/schema.py: anchor x1
+applied in src/maintenance/agent/schema.py: anchor x1
+$ (cwd=sandbox) -m pytest -q -p no:cacheprovider -rf tests/test_maintenance/test_p10_catalog_not_quote.py tests/test_maintenance/test_agent_unit.py tests/test_maintenance/test_p1_audit_fixes_safety.py tests/test_maintenance/test_safety.py tests/test_maintenance/test_agent_engine.py tests/test_maintenance/test_agent_parity.py tests/test_maintenance/test_p1_contracts.py tests/test_maintenance/test_agent_prompt.py
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[location-]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[location-   ]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_07_runtime_schema_is_the_reference_schema
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_p10_location_is_kept_whatever_its_quote[! -parts0-expected0]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_p10_location_is_kept_whatever_its_quote[! -parts1-expected1]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_p10_location_is_kept_whatever_its_quote[! -parts2-expected2]
+7 failed, 1639 passed in 72.25s (0:01:12)
+EXIT=1
+sha256 after  src\maintenance\agent\schema.py = 5493c7af9e96f58c5c7b1994f29eb2bf5b3cf09f0453a8d9c837c6780ce84fe6 restored=YES

@@ -1,0 +1,10 @@
+$ PYTHONPATH=. PYTHONUTF8=1 .venv/Scripts/python.exe planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py --selftest
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+not_verbatim_is_ok=OK quote_audit=['jobs[1].quote']
+  OK  job quote empty string: kind=OK
+  OK  job quote missing: kind=OK
+  OK  location quote blank: kind=OK
+  OK  signal quote 400 chars: kind=OK
+  OK  job quote not a string: kind=SCHEMA_INVALID
+SELFTEST_FAILURES=0
+EXIT=0

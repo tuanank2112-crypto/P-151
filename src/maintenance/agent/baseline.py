@@ -103,7 +103,7 @@ def _mirror_categories(data: DecisionInput, rv: RuleView, catalog: Catalog) -> l
 
 
 def _mirror_job(
-    category: ServiceCategory, quote: str, data: DecisionInput, rv: RuleView, catalog: Catalog, lexicon: Lexicon
+    category: ServiceCategory, data: DecisionInput, rv: RuleView, catalog: Catalog, lexicon: Lexicon
 ) -> JobDecision:
     playbook: PlaybookId = PLAYBOOK_BY_CATEGORY[category][1]
     department = data.locks.department or catalog.playbook_departments[playbook]
@@ -125,7 +125,7 @@ def _mirror_job(
     ]
     return JobDecision(
         category=category.value,
-        quote=quote,
+        quote=None,
         reason="Theo luật cố định: nội dung khớp loại việc này",
         department_id=department.value,
         priority=proposal.priority.value,
@@ -146,9 +146,8 @@ def _mirror_job(
 def mirror_decision(data: DecisionInput, catalog: Catalog, lexicon: Lexicon) -> AgentDecision:
     """The decision the fixed rules make, as a valid `AgentDecision` (SPEC-P01 section 2)."""
     rv = rule_view(data, catalog, lexicon)
-    quote = data.report_text.strip()[:300]
-    categories = _mirror_categories(data, rv, catalog) if len(quote) >= 2 else []
-    jobs = [_mirror_job(category, quote, data, rv, catalog, lexicon) for category in categories]
+    categories = _mirror_categories(data, rv, catalog) if data.report_text.strip() else []
+    jobs = [_mirror_job(category, data, rv, catalog, lexicon) for category in categories]
 
     cls = rv.classification
     if jobs:
@@ -180,13 +179,10 @@ def mirror_decision(data: DecisionInput, catalog: Catalog, lexicon: Lexicon) -> 
     building, floor, area = _split_location(rv.location)
     if rv.location is None:
         building, floor, area = rules._location_parts(data.location_text, catalog.site.buildings)
-    # SPEC-P08 §2: a location with no quote is rejected; the rules read it from the location text, so quote that
-    location_quote = data.location_text.strip()[:300] if building or floor or area else ""
-    location_quote = location_quote if len(location_quote) >= 2 else None  # a locked place may have no text
     signals = [
-        SchemaSignal(signal_id=s.signal_id, status=s.status.value, quote=s.source_quote[:300])
+        SchemaSignal(signal_id=s.signal_id, status=s.status.value, quote=s.source_quote)
         for s in rv.safety.signals
-        if s.status in (SignalStatus.PRESENT, SignalStatus.UNCLEAR) and len(s.source_quote) >= 2
+        if s.status in (SignalStatus.PRESENT, SignalStatus.UNCLEAR)
     ][:10]
     return AgentDecision(
         schema_version="agent-decision/1",
@@ -197,7 +193,7 @@ def mirror_decision(data: DecisionInput, catalog: Catalog, lexicon: Lexicon) -> 
             reason="Theo luật cố định: mức " + rv.safety.risk_level.value,
         ),
         location=LocationDecision(
-            building=building, floor=floor, area=area, quote=location_quote, reason="Vị trí theo luật cố định"
+            building=building, floor=floor, area=area, quote=None, reason="Vị trí theo luật cố định"
         ),
         scope=scope,
         jobs=jobs,

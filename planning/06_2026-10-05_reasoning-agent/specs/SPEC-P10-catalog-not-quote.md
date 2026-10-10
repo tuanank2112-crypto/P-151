@@ -2,7 +2,7 @@
 
 | Trường | Giá trị |
 |---|---|
-| Trạng thái | **PROPOSED — CHỜ NGƯỜI DUYỆT.** Hướng đã duyệt (plan Q35, 2026-10-10 08:59:52 +0700); câu chữ hợp đồng này CHƯA duyệt. Trước khi duyệt: code chạy theo P01/P08; KHÔNG thi công [H18](../handoffs/H18_thi-cong_WP19.md) |
+| Trạng thái | **ĐÃ DUYỆT 2026-10-10 10:08:38 +0700** (người dùng: "nếu không [ảnh hưởng nhiều] thì push trước"). Phạm vi WP19 = §3; Q-P10-1…4 (§7) vẫn CHỜ NGƯỜI — mặc định §7 giữ nguyên, KHÔNG thuộc WP19. Thi công [H18](../handoffs/H18_thi-cong_WP19.md) |
 | Ngày | 2026-10-10 09:38:51 +0700 (architect 🔴, WP18 / [H17](../handoffs/H17_thi-cong_WP18.md)) |
 | Nguồn | Bất biến người dùng Q01/Q29/Q30 + Q35 ([kernel dòng 21](../../../brain4agent/memory-distill.txt)); gotcha "⚠ Kiểm trích dẫn bằng chuỗi con" ([-known-gotchas](../../../brain4agent/-known-gotchas.md)); Q02/Q33 (Agent chỉ nâng; chấp nhận báo nhầm, không bỏ sót) |
 | Gói | WP18 (🔴) viết SPEC này + sửa REF · WP19 (🟠, H18) thi công runtime |
@@ -223,7 +223,7 @@ Mô phỏng P10 trong bộ nhớ trên toàn suite: **19 failed / 3645 passed / 
 | ★ `test_agent_unit.py::test_a_09b_location_parts_are_normalised_and_checked` | 3 dòng cuối: quote "tầng 9 tòa S3" ⇒ loại vị trí | 3 dòng cuối: `agent_location == LOC`, `rejected == []` (phần còn lại giữ) |
 | ☆ `test_p1_audit_fixes_safety.py` dòng 4, 12 | docstring F3; import `grounded` | docstring "F3 thay bởi SPEC-P10"; import chỉ `_check_location` |
 | ★ `test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected` (12 tham số) | quote None/".."/"--"/"! " ⇒ loại cả vị trí | thay `test_p10_location_is_kept_whatever_its_quote` cùng 12 tham số: `_check_location(loc, CATALOG)` ⇒ đủ 3 phần `("Tòa S1 / Tầng 1 / Hành lang", (), [])`; chỉ tòa `(None, ("floor", "area"), [])`; chỉ khu `(None, ("building", "floor"), [])` (đo bằng mô phỏng) |
-| ★ `test_p1_audit_fixes_safety.py::test_f3_punctuation_quote_does_not_ground_an_invented_place` | quote ".." + S2/7 ⇒ loại, NEED_INFO | thay `test_p10_an_invented_place_in_the_catalog_is_kept_and_audited`: `rejected == []`, `agent_location == "Tòa S2 / Tầng 7 / Hành lang"`, `decision.location.quote == ".."` (rủi ro §5, có chủ đích) |
+| ★ `test_p1_audit_fixes_safety.py::test_f3_punctuation_quote_does_not_ground_an_invented_place` | quote ".." + S2/7 ⇒ loại, NEED_INFO | thay `test_p10_an_invented_place_in_the_catalog_is_kept_and_audited`: `rejected == ["jobs[1].asset_id"]` (sửa 2026-10-10 theo R19: asset mẫu không thuộc S2/7 — kiểm danh mục tài sản, không phải quote), `agent_location == "Tòa S2 / Tầng 7 / Hành lang"`, `decision.location.quote == ".."` (rủi ro §5, có chủ đích) |
 | ☆ `test_p1_audit_fixes_safety.py::test_f3_no_location_and_no_quote_is_not_a_rejection` | chữ ký 3 tham số | `_check_location(loc, CATALOG)[2] == []` |
 | ☆ `test_p1_audit_fixes_safety.py::test_f3_mirror_quotes_the_location_it_read` | quote vị trí Mirror grounded | thay `test_p10_mirror_location_has_no_quote_and_is_kept`: `decision.location.quote is None`, `"location" not in rejected`, `agent_location == "Tòa S1 / Tầng 3 / Hành lang"` |
 | ★ `test_safety.py::test_llm_present_needs_grounded_quote` | quote bịa ⇒ UNCLEAR; không quote ⇒ NONE | tên `test_llm_present_counts_whatever_its_quote`: quote có thật ⇒ EMERGENCY (giữ); "có khói đen" ⇒ EMERGENCY, `rule_id == "LLM"`; không quote ⇒ EMERGENCY, `rule_id == "LLM-NOQUOTE"`, `source_quote == first_sentence(TEXT_NONE)` |
@@ -254,6 +254,8 @@ Dùng `agent_engine(Clock(MONDAY_9AM), client)` với client giả trả JSON c�
 | m5 | Mirror: `_mirror_job(…)` đặt `quote=data.report_text.strip()[:300]` | T-P10-04 |
 | m6 | `schema.py`: `JobDecision.quote: Annotated[str, StringConstraints(min_length=2, max_length=300)]` | T-P10-03[job…], T-P10-07 |
 | m7 | `engine.py:3420` về biểu thức cũ | T-P10-08 |
+| m8 (R19 X1b) | `_check_location` loại vị trí khi quote không chung từ nào với câu cư dân | test quote vị trí không chung từ (thêm theo R19) |
+| m9 (R19 X2b) | loại job khi quote không chung từ nào với câu cư dân | test quote việc không chung từ (thêm theo R19) |
 
 ### 9.4 Số đo nghiệm thu (WP19 nộp output máy; người duyệt chạy lại)
 | # | Lệnh (env `LLM_MODE=mock MO_STORE=memory MO_PHOTO_STORE=local PYTHONUTF8=1 PYTHONPATH=.`) | Kỳ vọng |
@@ -267,7 +269,7 @@ Dùng `agent_engine(Clock(MONDAY_9AM), client)` với client giả trả JSON c�
 | 7 | `python -m pytest -q -p no:cacheprovider tests/test_maintenance/test_safety_metamorphic.py tests/test_maintenance/test_classify_metamorphic.py` + `pytest -q tests/test_maintenance/test_safety.py -k "stop_set or false_alarm_budget"` | `EXIT=0` (`assess` không đổi) |
 | 8 | REF `--selftest` (OPERATIONS §1) | `SELFTEST_FAILURES=0` |
 | 9 | probe `evidence/WP12/probes/extra_invented_location.py` | ghi `tickets_routed_to_invented_place` (mô phỏng: 3) — số đo rủi ro §5, không phải cổng |
-| 10 | m1–m7 (§9.3) | mỗi cái `EXIT≠0` với tên test đỏ |
+| 10 | m1–m9 (§9.3) | mỗi cái `EXIT≠0` với tên test đỏ |
 | 11 | `git diff --stat` | ⊆ hàng "File WP19 được ghi" |
 | 12 | `--pg` (OPERATIONS §1) | chạy nếu có Docker; không có ⇒ ⬜ + lý do (WP19 không đổi store) |
 

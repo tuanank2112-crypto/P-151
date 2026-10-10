@@ -1,0 +1,9 @@
+# m6: JobDecision.quote required again
+$ python -m pytest -q tests/test_maintenance/test_p10_catalog_not_quote.py -k test_p10_03 or test_p10_07   (file mutated: src/maintenance/agent/schema.py)
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-None]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-value5]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_07_runtime_schema_is_the_reference_schema
+4 failed, 3 passed, 14 deselected in 0.97s
+restored: sha256 before == after: True; git diff --stat unchanged: True
+EXIT=1

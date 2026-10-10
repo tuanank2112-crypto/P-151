@@ -915,7 +915,9 @@ def derive_risk_level(signals: Sequence[RiskSignal], lexicon: SafetyLexicon) -> 
 class SignalJudgement(BaseModel):
     signal_id: str
     status: Literal["PRESENT", "ABSENT", "UNCLEAR"]
-    quote: str | None = Field(default=None, description="Verbatim excerpt of the report; required for PRESENT/UNCLEAR")
+    quote: str | None = Field(
+        default=None, description="Excerpt of the report for display/audit; never compared with the text (plan 06 Q35)"
+    )
 
 
 class LLMSafetyAssessment(BaseModel):
@@ -925,10 +927,10 @@ class LLMSafetyAssessment(BaseModel):
 SafetyLLMClient = Callable[[str], LLMSafetyAssessment]
 
 
-def _grounded(quote: str | None, text: str) -> bool:
-    if not quote or not quote.strip():
-        return False
-    return normalize_with_map(quote)[0] in normalize_with_map(text)[0]
+def first_sentence(text: str, limit: int = 120) -> str:
+    stripped = text.strip()
+    first = re.split(r"(?<=[.!?\n])\s+", stripped, maxsplit=1)[0].strip()
+    return (first or stripped)[:limit]
 
 
 def merge_llm(
@@ -939,7 +941,10 @@ def merge_llm(
     *,
     model_label: str = "llm",
 ) -> SafetyAssessment:
-    """Fold LLM judgements into the rule result. Never lowers the level, never drops a rule record (I-12)."""
+    """Fold LLM judgements into the rule result. Never lowers the level, never drops a rule record (I-12).
+
+    Valid = a signal of the active lexicon with status PRESENT/UNCLEAR. The quote is for display and audit only: it is
+    never compared with the text (plan 06 Q35, SPEC-P10 section 3.3)."""
     signals = list(rule.signals)
     notes = list(rule.notes)
     known = {s.signal_id for s in lexicon.signals if s.phase in lexicon.active_phases}
@@ -949,20 +954,22 @@ def merge_llm(
             notes.append(f"{sid}: LLM nêu tín hiệu ngoài từ vựng P0; bỏ qua")
             continue
         status = SignalStatus(judgement.status)
-        quote = (judgement.quote or "").strip()
         if status == SignalStatus.ABSENT:
             notes.append(f"{sid}: LLM ABSENT không bao giờ hạ mức luật; bỏ qua")
             continue
+        quote = (judgement.quote or "").strip()[:300]
         if not quote:
-            notes.append(f"{sid}: LLM {status} không có trích dẫn; bỏ qua")
-            continue
-        if not _grounded(quote, text):
-            notes.append(f"{sid}: trích dẫn LLM không có trong phản ánh -> UNCLEAR")
-            status = SignalStatus.UNCLEAR
+            notes.append(f"{sid}: LLM {status} không kèm trích dẫn; vẫn tính (trích dẫn chỉ để audit)")
         best_rule = max((SEVERITY[s.status] for s in signals if s.signal_id == sid), default=-1)
         if SEVERITY[status] > best_rule:
             signals.append(
-                RiskSignal(signal_id=sid, status=status, source_quote=quote, detected_by=DetectedBy.LLM, rule_id="LLM")
+                RiskSignal(
+                    signal_id=sid,
+                    status=status,
+                    source_quote=quote or first_sentence(text) or "(trống)",
+                    detected_by=DetectedBy.LLM,
+                    rule_id="LLM" if quote else "LLM-NOQUOTE",
+                )
             )
         else:
             notes.append(f"{sid}: LLM {judgement.status} không cao hơn luật; giữ luật")

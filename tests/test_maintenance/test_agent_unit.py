@@ -30,7 +30,6 @@ from src.maintenance.agent.client import (
 )
 from src.maintenance.agent.inputs import AssetCandidate, DecisionInput, DuplicateCandidate
 from src.maintenance.agent.schema import AgentDecision, AgentDecisionRecord
-from src.maintenance.agent.validate import grounded
 from src.maintenance.ai_logger import ai_logger
 from src.maintenance.catalog import load_catalog, load_lexicon
 from src.maintenance.enums import RiskLevel, ServiceCategory, TicketStatus
@@ -250,7 +249,7 @@ def test_a_02b_the_client_gets_the_rendered_prompts_and_the_input():
 # ----------------------------------------------------------------------------------------------- safety (I-17, I-18)
 
 
-def test_a_04_an_ungrounded_safety_quote_is_at_most_unclear():
+def test_a_04_an_agent_raise_keeps_its_level_whatever_its_quote():
     report = "Hành lang tầng 3 tòa S1 nhiều rác"
     reply = one_job_decision(
         job(JOB_VS, quote="nhiều rác"),
@@ -264,9 +263,9 @@ def test_a_04_an_ungrounded_safety_quote_is_at_most_unclear():
     record, data = run(reply, new_input(report))
     merged = reconcile.safety_for(record, data.safety_text, LEXICON, "fake-model")
     llm = [s for s in merged.signals if s.detected_by.value == "LLM"]
-    assert [(s.signal_id, s.status.value) for s in llm] == [("S-02", "UNCLEAR")]
-    assert merged.risk_level == RiskLevel.UNCLEAR
-    assert record.agent_risk_level == RiskLevel.UNCLEAR and record.rule_risk_level == RiskLevel.NONE
+    assert [(s.signal_id, s.status.value) for s in llm] == [("S-02", "PRESENT")]
+    assert merged.risk_level == RiskLevel.EMERGENCY
+    assert record.agent_risk_level == RiskLevel.EMERGENCY and record.rule_risk_level == RiskLevel.NONE
 
 
 def test_a_05_rule_emergency_skips_the_model_and_rule_unclear_stays_unclear():
@@ -337,7 +336,6 @@ def test_a_06c_emergency_claim_without_any_valid_signal_adds_s00_unclear():
     (s00,) = [s for s in merged.signals if s.signal_id == "S-00"]
     assert (s00.status.value, s00.detected_by.value, s00.rule_id) == ("UNCLEAR", "LLM", "LLM-UNGROUNDED")
     assert s00.source_quote == "Hành lang tầng 3 tòa S1 nhiều rác." and len(s00.source_quote) <= 120
-    assert grounded(s00.source_quote, data.safety_text)
     assert merged.risk_level == RiskLevel.UNCLEAR and record.agent_risk_level == RiskLevel.UNCLEAR
 
 
@@ -368,16 +366,18 @@ def test_safety_for_a_record_without_decision_is_the_rule_assessment():
 # ----------------------------------------------------------------------------------------------- validation (3.2)
 
 
-def test_a_08_a_job_with_an_ungrounded_quote_is_dropped():
+def test_a_08_a_job_quote_not_in_the_text_is_kept_for_audit():
     record, _ = run(decision(**{"jobs.1.quote": "bóng đèn nổ tung"}))
-    assert "jobs[1]" in record.rejected
-    assert record.valid_job_indexes == [0]
-    assert "category" in minor(record)
+    assert record.rejected == []
+    assert record.valid_job_indexes == [0, 1]
+    assert record.decision.jobs[1].quote == "bóng đèn nổ tung"
+    assert "category" not in minor(record)
 
 
-def test_a_08b_all_jobs_dropped_while_in_scope_leaves_no_valid_job():
+def test_a_08b_no_job_is_dropped_for_its_quote():
     record, _ = run(decision(**{"jobs.0.quote": "rác khắp nơi", "jobs.1.quote": "bóng đèn nổ tung"}))
-    assert record.valid_job_indexes == [] and {"jobs[0]", "jobs[1]"} <= set(record.rejected)
+    assert record.valid_job_indexes == [0, 1]
+    assert not any(path.startswith("jobs[") for path in record.rejected)
     assert record.decision.scope == "IN_SCOPE"
 
 
@@ -400,9 +400,8 @@ def test_a_09b_location_parts_are_normalised_and_checked():
     assert basement.agent_location == "Tòa S1 / Tầng B1 / Hầm xe"
     implied, _ = run(decision(**{"location.floor": None, "location.area": "Sảnh chính"}))
     assert implied.agent_location == "Tòa S1 / Tầng 1 / Sảnh chính"
-    ungrounded, _ = run(decision(**{"location.quote": "tầng 9 tòa S3"}))
-    assert ungrounded.agent_location is None and ungrounded.agent_missing_parts == ["building", "floor", "area"]
-    assert "location" in ungrounded.rejected
+    other_quote, _ = run(decision(**{"location.quote": "tầng 9 tòa S3"}))
+    assert other_quote.agent_location == LOC and other_quote.rejected == []  # the quote is for audit only
 
 
 def test_a_10_an_asset_at_another_place_or_one_of_several_is_rejected():

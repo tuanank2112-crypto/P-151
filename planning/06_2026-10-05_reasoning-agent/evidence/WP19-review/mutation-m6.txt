@@ -1,0 +1,24 @@
+# mutation m6: SPEC m6: JobDecision.quote required, min_length 2
+# sandbox copy: C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\repo3
+sha256 before src\maintenance\agent\schema.py = 5493c7af9e96f58c5c7b1994f29eb2bf5b3cf09f0453a8d9c837c6780ce84fe6
+applied in src/maintenance/agent/schema.py: anchor x1
+$ (cwd=sandbox) -m pytest -q -p no:cacheprovider -rf tests/test_maintenance/test_p10_catalog_not_quote.py tests/test_maintenance/test_agent_unit.py tests/test_maintenance/test_p1_audit_fixes_safety.py tests/test_maintenance/test_safety.py tests/test_maintenance/test_agent_engine.py tests/test_maintenance/test_agent_parity.py tests/test_maintenance/test_p1_contracts.py tests/test_maintenance/test_agent_prompt.py
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-None]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-value5]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_04_mirror_writes_no_quote_of_its_own[Ch\u1ed7 \u0111i b\u1ed9 tr\u01b0\u1edbc thang m\xe1y t\u1ea7ng 3 t\xf2a S1 c\xf3 nhi\u1ec1u r\xe1c]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_04_mirror_writes_no_quote_of_its_own[H\xe0nh lang t\u1ea7ng 3 t\xf2a S1 nhi\u1ec1u r\xe1c, c\u1ea7n v\u1ec7 sinh.]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_07_runtime_schema_is_the_reference_schema
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_08_a_missing_job_quote_is_not_shown_as_none
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_01_mirror_decision_is_valid_for_every_corpus_sentence
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_01b_mirror_follows_the_rules_for_one_job_two_jobs_and_no_job
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_01c_mirror_picks_duplicate_asset_and_materials_like_the_engine
+FAILED tests/test_maintenance/test_agent_unit.py::test_mirror_client_replies_with_the_mirror_decision
+FAILED tests/test_maintenance/test_agent_unit.py::test_caching_client_reuses_identical_requests_until_ttl_and_evicts_lru
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_p10_mirror_location_has_no_quote_and_is_kept
+FAILED tests/test_maintenance/test_agent_engine.py::test_a03_one_agent_decision_audit_and_resume_adds_none
+FAILED tests/test_maintenance/test_agent_engine.py::test_a25_a_request_that_slips_in_makes_the_decision_stale_and_it_is_asked_again
+FAILED tests/test_maintenance/test_agent_engine.py::test_a27_two_valid_jobs_split_when_the_split_hook_accepts_and_stop_when_it_does_not
+16 failed, 1630 passed in 81.15s (0:01:21)
+EXIT=1
+sha256 after  src\maintenance\agent\schema.py = 5493c7af9e96f58c5c7b1994f29eb2bf5b3cf09f0453a8d9c837c6780ce84fe6 restored=YES

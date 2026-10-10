@@ -2,6 +2,14 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Unreleased] - 2026-10-10: Kiểm danh mục, không khớp trích dẫn (plan 06 Q35, SPEC-P10)
+### Changed
+- `agent/schema.py` `AuditQuote`; `agent/validate.py` bỏ `grounded`/`_fold`, vị trí/job chỉ kiểm danh mục; `safety.merge_llm` không so quote; `agent/baseline.py` Mirror không bịa quote; `engine.py` ghi chú tách không in "None" (WP19, ✅ local: 3685 passed).
+### Decisions
+- Q35 (người dùng): khớp chuỗi/khoảng ký tự của quote làm cổng chặn LLM = word-by-word ⇒ CẤM. Thay SPEC-P08 §2 (F3), P01 §3.1–3.2, P09 B1/B2; Q28-F3 và phần quote của Q34 bị thay.
+- Chấp nhận rủi ro LLM bịa vị trí có trong danh mục (BPTN xem lại); không có cờ bật lại cổng quote. Bản ghi P10 không đọc được bằng code cũ ⇒ không chạy lẫn trên DB chung.
+- Subagent không dùng họ Fable (architect chạy Opus).
+
 ## [v1.6.0] - 2026-10-08: Danh sách hiện 20 phản ánh một trang (plan 10)
 ### Added
 - `src/web/app.js`: `listCard(..., { key, ids })` chia trang 20 dòng cho màn cư dân, BPTN, phòng ban, BQL; khối "‹ Trước · Trang x / y · Sau ›" chỉ hiện khi > 20.

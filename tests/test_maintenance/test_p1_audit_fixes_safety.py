@@ -1,7 +1,7 @@
 """Plan 06 WP14 (SPEC-P08 §1–§3): fixes after the adversarial review R12.
 
 F1: a resident's addition while the ticket waits for its location always reruns 2b (rules and Agent paths).
-F3: an Agent location with no quote (or one that folds to nothing, like "..") is rejected as a whole.
+F3: replaced by SPEC-P10 (plan 06 Q35): an Agent location is checked against the catalog, not by its quote.
 F10: a role the CR §3 row does not name gets 403 + ACTION_DENIED, not 409.
 """
 
@@ -9,7 +9,7 @@ import pytest
 
 from src.maintenance.agent.client import ClientReply, MirrorClient
 from src.maintenance.agent.schema import LocationDecision
-from src.maintenance.agent.validate import _check_location, grounded
+from src.maintenance.agent.validate import _check_location
 from src.maintenance.catalog import load_catalog, load_lexicon
 from src.maintenance.engine import MaintenanceEngine
 from src.maintenance.errors import ActionDeniedError, InvalidTransitionError
@@ -127,24 +127,20 @@ def test_f1_harmless_addition_keeps_waiting_for_the_location(any_engine, clock):
 
 
 @pytest.mark.parametrize(
-    "parts",
+    ("parts", "expected"),
     [
-        {"building": "S1", "floor": "1", "area": "Hành lang"},
-        {"building": "S1"},
-        {"area": "Hành lang"},
+        ({"building": "S1", "floor": "1", "area": "Hành lang"}, ("Tòa S1 / Tầng 1 / Hành lang", (), [])),
+        ({"building": "S1"}, (None, ("floor", "area"), [])),
+        ({"area": "Hành lang"}, (None, ("building", "floor"), [])),
     ],
 )
-@pytest.mark.parametrize("quote", [None, "..", "--", "! "])  # punctuation folds to nothing: no quote either
-def test_f3_location_without_quote_is_rejected(parts, quote):
+@pytest.mark.parametrize("quote", [None, "..", "--", "! "])  # whatever the quote, only the catalog decides
+def test_p10_location_is_kept_whatever_its_quote(parts, expected, quote):
     loc = LocationDecision(**parts, quote=quote, reason="test")
-    assert _check_location(loc, "Đèn hành lang không sáng", CATALOG) == (
-        None,
-        ("building", "floor", "area"),
-        ["location"],
-    )
+    assert _check_location(loc, CATALOG) == expected
 
 
-def test_f3_punctuation_quote_does_not_ground_an_invented_place(clock):
+def test_p10_an_invented_place_in_the_catalog_is_kept_and_audited(clock):
     def invented(system, user, data):
         return ClientReply(
             text=decision(**{"location.building": "S2", "location.floor": "7", "location.quote": ".."}), latency_ms=0.0
@@ -152,21 +148,26 @@ def test_f3_punctuation_quote_does_not_ground_an_invented_place(clock):
 
     engine = agent_engine(clock, invented)
     case = engine.receive("Hành lang nhiều rác, đèn cũng không sáng", resident_id=RESIDENT)
-    assert case.agent_decision.rejected[:1] == ["location"] and case.ticket.status == "NEED_INFO"
+    record = case.agent_decision
+    # the example job's asset is not at S2/7, so only `jobs[1].asset_id` is rejected: the catalog check, not the quote
+    assert record.rejected == ["jobs[1].asset_id"]
+    assert record.agent_location == "Tòa S2 / Tầng 7 / Hành lang"
+    assert record.decision.location.quote == ".."  # risk accepted on purpose (SPEC-P10 section 5)
 
 
 def test_f3_no_location_and_no_quote_is_not_a_rejection():
     loc = LocationDecision(quote=None, reason="test")
-    assert _check_location(loc, "Đèn hành lang không sáng", CATALOG)[2] == []
+    assert _check_location(loc, CATALOG)[2] == []
 
 
-def test_f3_mirror_quotes_the_location_it_read(clock):
-    """The Mirror Agent (rules as a decision) quotes the location text, so its location is grounded and kept."""
+def test_p10_mirror_location_has_no_quote_and_is_kept(clock):
+    """The Mirror Agent (rules as a decision) writes no quote of its own; its location is kept all the same."""
     engine = agent_engine(clock, MirrorClient(CATALOG, LEXICON))
     tid = engine.receive(CLEANING, resident_id=RESIDENT).ticket.ticket_id
     record = engine.get(tid).agent_decision
     assert record.source == "AGENT" and "location" not in record.rejected
-    assert grounded(record.decision.location.quote, CLEANING)
+    assert record.decision.location.quote is None
+    assert record.agent_location == "Tòa S1 / Tầng 3 / Hành lang"
 
 
 # --------------------------------------------------------------------------------------------- F10 (SPEC-P08 §3)

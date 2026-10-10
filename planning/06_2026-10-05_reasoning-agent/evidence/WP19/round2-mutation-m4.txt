@@ -1,0 +1,6 @@
+# m4: signal without quote is dropped
+$ python -m pytest -q tests/test_maintenance/test_p10_catalog_not_quote.py -k test_p10_05   (file mutated: src/maintenance/safety.py)
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_05_an_agent_raise_is_kept_whatever_its_quote[None]
+1 failed, 1 passed, 19 deselected in 1.03s
+restored: sha256 before == after: True; git diff --stat unchanged: True
+EXIT=1
