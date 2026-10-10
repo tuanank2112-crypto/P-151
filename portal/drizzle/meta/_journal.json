@@ -15,6 +15,13 @@
       "when": 1791349618774,
       "tag": "0001_dup_dismissed",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791631971787,
+      "tag": "0002_fair_cargill",
+      "breakpoints": true
     }
   ]
 }

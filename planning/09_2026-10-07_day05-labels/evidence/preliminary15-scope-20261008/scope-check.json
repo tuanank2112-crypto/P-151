@@ -1,0 +1,39 @@
+{
+  "recorded_at": "2026-10-08T09:00:19.843254+00:00",
+  "scope_update_checks": {
+    "approved_profile": true,
+    "exactly_15_authored": true,
+    "ids_match_scope": true,
+    "review_map_bijection": true,
+    "safety_assigned": true,
+    "safety_text_preserved": true,
+    "safety_no_fake_review": true,
+    "classification_assigned": true,
+    "classification_text_preserved": true,
+    "classification_no_fake_review": true,
+    "router_00-ARCHITECTURE.md": true,
+    "router_01-CONTRACTS.md": true,
+    "router_SPEC-P02-LABELS.md": true,
+    "router_TESTING-ACCEPTANCE.md": true,
+    "router_OPERATIONS.md": true,
+    "d411_still_open": true
+  },
+  "checks_passed": 16,
+  "checks_failed": 0,
+  "review_completed": {
+    "safety": 0,
+    "classification": 0
+  },
+  "baseline_status": "NOT_EVALUATED_PENDING_REVIEW",
+  "scope_update_result": "PASS",
+  "day05_acceptance": "OPEN",
+  "backlog_command": [
+    "C:\\P-151\\.python\\cpython-3.11.16-windows-x86_64-none\\python.exe",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\tools\\validate_day05.py",
+    "--backlog",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\backlog.json",
+    "--issues",
+    "planning/07_2026-10-04_online-acceptance/deliverables/issues.json"
+  ],
+  "backlog_exit": 0
+}

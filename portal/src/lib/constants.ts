@@ -23,6 +23,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   management: "Ban quản lý",
   cleaning: "Phòng vệ sinh",
   technical: "Phòng kỹ thuật",
+  warehouse: "Thủ kho vật tư",
 };
 
 export const ROLE_HOME: Record<Role, string> = {
@@ -31,6 +32,7 @@ export const ROLE_HOME: Record<Role, string> = {
   management: "/management",
   cleaning: "/cleaning",
   technical: "/technical",
+  warehouse: "/warehouse",
 };
 
 /** Department a staff role works for (dashboards of departments) */

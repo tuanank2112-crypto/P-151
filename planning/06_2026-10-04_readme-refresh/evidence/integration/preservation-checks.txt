@@ -1,0 +1,19 @@
+PASS original HEAD unchanged
+PASS original branch unchanged
+PASS origin/develop ref unchanged
+PASS origin/feature/truong ref unchanged
+PASS original index bytes unchanged
+FAIL original status unchanged
+PASS original files unchanged: 872
+PASS integration runtime/tests/seed exactly match develop
+PASS preserved diagram content docs/diagrams/Diagrams Components.drawio
+PASS preserved diagram content docs/diagrams/Diagrams Components.drawio.svg
+PASS preserved diagram content docs/diagrams/Diagrams Components.mmd
+PASS preserved diagram content docs/diagrams/Diagrams Components.svg
+PASS preserved diagram content docs/diagrams/maintenanceops-data-flow-20261019/data-flow.drawio
+PASS preserved diagram content docs/diagrams/maintenanceops-data-flow-20261019/data-flow.mmd
+PASS preserved diagram content docs/diagrams/maintenanceops-data-flow-20261019/data-flow.svg
+PASS no unmerged paths
+PASS merged state JSON parses
+PASS kernel under 100 lines: 63
+Failures: 1

@@ -1,3 +1,5 @@
+// OBSOLETE since plan 16 (v1.10.0): expects POST material-plan + materials/{code}; the app now sends ONE POST material-usage.
+// Not an acceptance gate any more — use planning/16_2026-10-10_material-guards/evidence/harness/material_usage.mjs.
 // Q42: department picks materials with NO Agent suggestion shown or pre-filled. Usage: node q42.mjs <base> <portal-dir>
 import { createRequire } from 'node:module';
 import path from 'node:path';

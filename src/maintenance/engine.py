@@ -79,6 +79,13 @@ from src.maintenance.enums import (
     TicketType,
 )
 from src.maintenance.errors import ActionDeniedError, AuditWriteError, InvalidTransitionError
+from src.maintenance.material_policy import (
+    MaterialUsageLine,
+    allowed_material_codes,
+    check_selection,
+    selection_problem,
+    whole_positive,
+)
 from src.maintenance.messages import field_label, public_message, safety_info_message
 from src.maintenance.models import (
     AgentClassificationProposal,
@@ -124,6 +131,7 @@ logger = logging.getLogger(__name__)
 MAX_RESIDENT_PHOTOS = 5
 MAX_EXECUTION_PHOTOS = 10
 EXECUTION_PHOTO = "execution_photo"  # failing_items entry when the department sent no photo
+MATERIAL_USAGE_FIELD = "material_usage"  # audit field_name of `save_material_usage` (clients read it as "saved")
 SOURCE_REVISION = "SRC-001"
 DENIED_TEXT_MAX = 500  # a denied request cannot grow the ticket's audit by more than this per field (plan 04 A1)
 ORPHAN_GRACE = timedelta(minutes=2)  # a RECEIVED ticket left without a pipeline run is picked up by the job after this
@@ -1401,11 +1409,15 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             line = next((m for m in work.material_lines if m.item_code == item_code), None)
             if line is None:
                 raise GuardError(f"Không có dòng vật tư {item_code} trong draft")
+            if not (whole_positive(issued_qty) and whole_positive(used_qty)):  # first: "1"/None must not reach `>`
+                raise GuardError("Số lượng vật tư phải là số nguyên dương", {"item_code": item_code})
             if used_qty > issued_qty:
                 raise GuardError(
                     "Số đã dùng không được lớn hơn số đã xuất kho",
                     {"item_code": item_code, "issued_qty": issued_qty, "used_qty": used_qty},
                 )
+            if item_code not in allowed_material_codes(self.catalog, work.ticket.department_id):
+                raise GuardError("Vật tư không thuộc phòng ban xử lý", {"item_codes": [item_code]})
             old = {"issued_qty": line.issued_qty, "used_qty": line.used_qty, "variance_reason": line.variance_reason}
             stock_qty = self._issue_stock(item_code, issued_qty - (line.issued_qty or 0))
             line.issued_qty = issued_qty
@@ -1433,26 +1445,26 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
 
         return self._mutate(ticket_id, actor_id, Action.UPDATE_MATERIAL, op)
 
-    def confirm_materials(self, ticket_id: str, actor_id: str, *, lines: list[PlannedMaterial], note: str) -> Case:
+    def confirm_materials(
+        self, ticket_id: str, actor_id: str, *, lines: list[PlannedMaterial], note: str | None = None
+    ) -> Case:
         """The department replaces the Agent's planned materials with what the site really needs (IN_PROGRESS).
 
         Step 7 can only guess from the playbook defaults (e.g. an asset checked on site). An empty list means no
         material is used (mode N_A). Issued/used quantities already entered are kept for an unchanged item_code.
         Stock is shown per line but never stops the work here: a shortage goes through `block` (WAITING_MATERIAL).
+        `note` is optional (plan 11 Q43): differing from the Agent's plan needs no reason.
         """
 
         def op(work: Case, now: datetime) -> None:
             self._require_in_progress(work)
-            if _blank(note):
-                raise GuardError("Xác nhận vật tư bắt buộc ghi lý do")
             codes = [line.item_code for line in lines]
             unknown = sorted({code for code in codes if self.catalog.material(code) is None})
             if unknown:
                 raise GuardError("Vật tư không có trong catalog", {"item_codes": unknown})
-            if len(set(codes)) != len(codes):
-                raise GuardError("Mỗi vật tư chỉ được một dòng")
-            if any(line.planned_qty <= 0 for line in lines):
-                raise GuardError("Số lượng vật tư phải lớn hơn 0; bỏ dòng nếu không dùng")
+            check_selection(
+                self.catalog, work.ticket.department_id, [(line.item_code, line.planned_qty) for line in lines]
+            )
             draft = work.draft
             suffix = _suffix(ticket_id)
             entered = {line.item_code: line for line in work.material_lines}
@@ -1489,7 +1501,72 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 "planned_materials",
                 old,
                 [{"item_code": m.item_code, "planned_qty": m.planned_qty} for m in new_lines],
-                note.strip(),
+                "Phòng ban chọn vật tư tại hiện trường" if _blank(note) else note.strip(),
+                now=now,
+            )
+
+        return self._mutate(ticket_id, actor_id, Action.UPDATE_MATERIAL, op)
+
+    def save_material_usage(self, ticket_id: str, actor_id: str, *, lines: list[MaterialUsageLine]) -> Case:
+        """Plan 16 CONTRACTS §C2: the department's whole material selection in one transaction.
+
+        Replaces every line; each new line is `planned = issued = used` (no Agent prefill, the norm stays reference).
+        The warehouse moves only by `new issued - old issued` per item (dropped item: new = 0), in item-code order.
+        Any failure (guard, shortage, audit, save) rolls back the ticket, the stock and the audit together.
+        """
+
+        def op(work: Case, now: datetime) -> None:
+            self._require_in_progress(work)
+            chosen = [(line.item_code, line.used_qty) for line in lines]
+            check_selection(self.catalog, work.ticket.department_id, chosen)
+            draft = work.draft
+            suffix = _suffix(ticket_id)
+            old_issued = {m.item_code: m.issued_qty or 0 for m in work.material_lines}
+            new_issued = dict(chosen)
+            stock_after: dict[str, float | None] = {}
+            for code in sorted(old_issued.keys() | new_issued.keys()):
+                stock_after[code] = self._issue_stock(code, new_issued.get(code, 0) - old_issued.get(code, 0))
+            planned = [PlannedMaterial(item_code=code, planned_qty=qty) for code, qty in chosen]
+            new_lines = []
+            for index, plan in enumerate(planned, start=1):
+                line = self._material_line(draft.work_order_draft_id, suffix, index, plan)
+                line.issued_qty = line.used_qty = plan.planned_qty
+                line.simulated_stock_qty = stock_after[plan.item_code]
+                line.material_stock_status = (  # already taken out: enough by definition, unless never counted
+                    MaterialStockStatus.UNKNOWN if line.simulated_stock_qty is None else MaterialStockStatus.SUFFICIENT
+                )
+                new_lines.append(line)
+            old = [
+                {"item_code": m.item_code, "issued_qty": m.issued_qty, "used_qty": m.used_qty}
+                for m in work.material_lines
+            ]
+            work.planned_materials = planned
+            work.material_lines = new_lines
+            draft.material_line_ids = [m.material_line_id for m in new_lines]
+            draft.material_stock_status = _aggregate_stock(new_lines)
+            draft.material_requirement_mode = (
+                MaterialRequirementMode.TRACKED if new_lines else MaterialRequirementMode.N_A
+            )
+            draft.material_gate_status = MaterialGateStatus.NEEDS_CLARIFICATION if new_lines else MaterialGateStatus.NA
+            self._audit(
+                work,
+                Action.UPDATE_MATERIAL,
+                "WorkOrderDraft",
+                draft.work_order_draft_id,
+                actor_id,
+                Role.DEPARTMENT,
+                MATERIAL_USAGE_FIELD,
+                old,
+                [
+                    {
+                        "item_code": m.item_code,
+                        "issued_qty": m.issued_qty,
+                        "used_qty": m.used_qty,
+                        "stock_qty": m.simulated_stock_qty,
+                    }
+                    for m in new_lines
+                ],
+                "Phòng ban lưu vật tư đã dùng",
                 now=now,
             )
 
@@ -3949,6 +4026,11 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         for photo in photos:
             photo.evidence_validation_status = EvidenceValidationStatus.PRESENT
         incomplete, unexplained = self._compare_materials(work, now)
+        # plan 16 §C3: a technical ticket needs a saved material, and no stored line may break §C1 (no N_A bypass)
+        problem = selection_problem(self.catalog, ticket.department_id, work.material_lines)
+        if problem:
+            incomplete.append(problem)
+            work.draft.material_gate_status = MaterialGateStatus.NEEDS_CLARIFICATION
         # REWORK is the reason the department is working again, not something still to clear
         open_blocker = ticket.blocker is not None and ticket.blocker.code != R.REWORK
         evaluation = ReadinessEvaluation(
@@ -3973,7 +4055,10 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
 
     def _compare_materials(self, work: Case, now: datetime) -> tuple[list[str], list[str]]:
         """Three comparisons per line (VAL-MAT-CMP-001). Returns (lines missing qty, lines with unexplained variance).
-        An explained variance is a non-blocking warning."""
+
+        Plan 11 Q43: PLANNED_VS_NORM and ISSUED_VS_PLANNED are kept as reference data only — differing from the norm
+        or the Agent's plan never needs a reason and never blocks. Only used ≠ issued (stock taken out but not used)
+        still needs `variance_reason`; an explained one is a non-blocking warning."""
         incomplete, unexplained = [], []
         warnings: list[NonBlockingWarning] = []
         for line in work.material_lines:
@@ -3989,7 +4074,11 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 ),
                 _compare(ComparisonType.USED_VS_ISSUED, "used_qty", "issued_qty", line.used_qty, line.issued_qty),
             ]
-            variances = [c for c in comparisons if c.status == ComparisonStatus.VARIANCE]
+            variances = [
+                c
+                for c in comparisons
+                if c.status == ComparisonStatus.VARIANCE and c.comparison_type == ComparisonType.USED_VS_ISSUED
+            ]
             for c in variances:
                 c.reason_reference = "variance_reason" if line.variance_reason else None
             line.comparison_results = comparisons

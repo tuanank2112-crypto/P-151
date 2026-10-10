@@ -1,0 +1,65 @@
+### CONTROL file-level missing-file
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/file-ctl/missing-file --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR MISSING_FILE disputes.json
+RESULT: FAIL
+EXIT=1
+
+### CONTROL file-level bad-json
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/file-ctl/bad-json --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_JSON disputes.json: JSONDecodeError
+RESULT: FAIL
+EXIT=1
+
+### CONTROL file-level bad-root
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/file-ctl/bad-root --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_ROOT disputes.json
+RESULT: FAIL
+EXIT=1
+
+### CONTROL file-level empty-dir
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/file-ctl/empty-dir --structure-only
+COUNT safety ALL EMERGENCY=0 UNCLEAR=0 NONE=0
+COUNT cls ALL VE_SINH=0 KY_THUAT=0 UNKNOWN=0
+COUNT safety DEVELOP EMERGENCY=0 UNCLEAR=0 NONE=0
+COUNT cls DEVELOP VE_SINH=0 KY_THUAT=0 UNKNOWN=0
+COUNT safety HELD_OUT EMERGENCY=0 UNCLEAR=0 NONE=0
+COUNT cls HELD_OUT VE_SINH=0 KY_THUAT=0 UNKNOWN=0
+COUNT cases=0 families_accepted=0 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR MISSING_FILE cases.json
+ERR MISSING_FILE classification-gold.json
+ERR MISSING_FILE safety-gold.json
+ERR MISSING_FILE disputes.json
+ERR MISSING_FILE split-manifest.json
+ERR MISSING_FILE label-proposals.json
+RESULT: FAIL
+EXIT=1
+

@@ -1,0 +1,15 @@
+{
+  "recorded_at": "2026-10-08T08:45:45.700329+00:00",
+  "records": 15,
+  "original_texts_retained": true,
+  "scope_confirmed_ids": [
+    "HA-001-08",
+    "HA-001-09",
+    "HA-001-13",
+    "HA-001-14",
+    "HA-001-15"
+  ],
+  "accepted_labels": 0,
+  "held_out_imported": 0,
+  "intake_sha256": "4bd28e338f750c210b5e32fa9b9c4139c197465a06008da377ce99a16c8d2188"
+}

@@ -64,10 +64,37 @@ export type DuplicateCandidate = {
   reasons: string[];
 };
 
+export type TicketDetail = {
+  id: number;
+  code: string;
+  text: string;
+  location: string;
+  createdAt: string;
+  dept: Dept | null;
+  aiDept: Dept | null;
+  conf: number;
+  stage: number;
+  cancelled: boolean;
+  urgent: boolean;
+  staffName: string | null;
+  keywords: string[];
+  skill: string | null;
+  extras: string[];
+  history: { label: string; note: string; time: string }[];
+  beforePhotos: PhotoRef[];
+  afterPhotos: PhotoRef[];
+  disputed?: boolean;
+  disputeReason?: string | null;
+};
+
+export type ReceptionRoutedItem = TicketDetail & {
+  needInfo: boolean;
+};
+
 export type ReceptionData = {
   user: { name: string; avatar: string };
   inbox: ReceptionInboxItem[];
-  routed: { id: number; code: string; text: string; aiDept: Dept | null; dept: Dept | null; needInfo: boolean }[];
+  routed: ReceptionRoutedItem[];
 };
 
 export type DeptTicket = {
@@ -98,18 +125,7 @@ export type DeptData = {
   materials: { id: number; item: string; ticketCode: string; staffName: string | null; received: boolean }[];
 };
 
-export type MgmtTicket = {
-  id: number;
-  code: string;
-  text: string;
-  location: string;
-  createdAt: string;
-  dept: Dept | null;
-  aiDept: Dept | null;
-  conf: number;
-  stage: number;
-  cancelled: boolean;
-  urgent: boolean;
+export type MgmtTicket = TicketDetail & {
   late: boolean;
   ageH: number;
   stars: number | null;
@@ -119,4 +135,33 @@ export type MgmtTicket = {
 export type ManagementData = {
   user: { name: string; avatar: string };
   tickets: MgmtTicket[];
+};
+
+export type WarehouseItem = {
+  id: number;
+  code: string;
+  name: string;
+  category: string;
+  unit: string;
+  stock: number;
+  minStock: number;
+  location: string;
+};
+
+export type MaterialRequest = {
+  id: number;
+  ticketId: number;
+  ticketCode: string;
+  ticketDescription: string;
+  item: string;
+  requestedBy: string;
+  staffName: string | null;
+  createdAt: string;
+  received: boolean;
+};
+
+export type WarehouseData = {
+  user: { name: string; avatar: string };
+  inventory: WarehouseItem[];
+  requests: MaterialRequest[];
 };

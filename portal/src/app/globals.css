@@ -149,3 +149,54 @@ a:hover { color: #1e3a8a; }
 /* Resident rating shown to departments (plan 06 Q11) — same colors as .rs / .s-run of Resident.dc.html */
 .rstars{display:inline-flex;gap:2px;color:#D5DBE5}.rstars .on{color:#E5A100}.rstars span{display:flex}
 .ftag{background:#E1EAF9;color:#1E3F7A}
+
+/* ---------- Senior Designer Enhancements: Micro-interactions & Animations ---------- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.anim-fade {
+  animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.card-hover {
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15, 30, 60, 0.09);
+}
+
+.titem, .ov, .btn, .chip {
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn:active, .chip:active {
+  transform: scale(0.98);
+}
+
+/* Modal Backdrop & Container */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+  animation: fadeIn 0.15s ease-out;
+}
+.modal-card {
+  background: #FFFFFF;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(15, 30, 60, 0.16);
+  max-width: 520px;
+  width: 100%;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}

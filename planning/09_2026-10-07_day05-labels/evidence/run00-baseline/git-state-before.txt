@@ -1,0 +1,35 @@
+# git rev-parse HEAD
+8dd6baa5e733fd9dd917b30522b131d520471e05
+# git branch
+feature/truong
+# git status --porcelain (tại thời điểm bắt đầu Day05 thi công)
+ M .env.example
+ M brain4agent/-known-gotchas.md
+ M brain4agent/changelog.md
+ M brain4agent/index.md
+ M brain4agent/memory-distill.txt
+ M brain4agent/memory/hot/state.json
+ M brain4agent/memory/hot/today.md
+ M brain4agent/roadmap.md
+ M docs/maintenance.md
+ M evaluation.md
+ M planning/07_2026-10-04_online-acceptance/deliverables/day04-summary.md
+ M planning/07_2026-10-04_online-acceptance/plan.md
+ M planning/07_2026-10-04_online-acceptance/specs/00-ARCHITECTURE.md
+ M planning/07_2026-10-04_online-acceptance/specs/01-CONTRACTS.md
+ M planning/07_2026-10-04_online-acceptance/specs/OPERATIONS.md
+ M planning/07_2026-10-04_online-acceptance/specs/SPEC-P01-DAY04.md
+ M planning/07_2026-10-04_online-acceptance/specs/TESTING-ACCEPTANCE.md
+ M src/maintenance/models.py
+ M src/maintenance/proposer.py
+ M tests/test_maintenance/test_store_memory.py
+?? planning/06_2026-10-04_readme-refresh/evidence/integration-20261007/supabase-app-config.txt
+?? planning/06_2026-10-04_readme-refresh/evidence/integration-20261007/supabase-readonly.txt
+?? planning/06_2026-10-04_readme-refresh/evidence/integration-20261007/supabase-storage-readonly.txt
+?? planning/07_2026-10-04_online-acceptance/deliverables/issues.json
+?? planning/07_2026-10-04_online-acceptance/deliverables/manifest.json
+?? planning/07_2026-10-04_online-acceptance/deliverables/results.json
+?? planning/07_2026-10-04_online-acceptance/deliverables/shared-supabase-demo-20261007.md
+?? planning/07_2026-10-04_online-acceptance/evidence/normalization-20261007/
+?? planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/
+?? planning/09_2026-10-07_day05-labels/

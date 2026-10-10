@@ -1,0 +1,12 @@
+{
+  "validation_errors": [
+    {
+      "type": "extra_forbidden",
+      "loc": [
+        "ticket",
+        "merged_children"
+      ],
+      "msg": "Extra inputs are not permitted"
+    }
+  ]
+}

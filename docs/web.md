@@ -1,6 +1,7 @@
 # `src/web/` — UI tĩnh của backend MaintenanceOps
 
 FastAPI phục vụ thư mục này ở `/ui` (`src/main.py`). Plain JS + Tailwind Play CDN, không có bước build.
+Sau merge develop b6590ce (local 1.10.1), `/` có thể proxy portal Next.js theo `PORTAL_URL`; `/ui/` giữ UI engine Python và luồng vật tư plan16. Portal được cập nhật từ develop nhưng dùng workflow/DB riêng (xem `portal.md`).
 Từ v1.3.0 (plan 07) giao diện mang design của `portal/`. Hồ sơ: `planning/07_2026-10-07_web-portal-reskin/`.
 
 ## 1. File
@@ -43,3 +44,11 @@ Hồ sơ: [`planning/13_2026-10-09_bptn-reason-web/`](../planning/13_2026-10-09_
   ESCALATE không bắt buộc (engine `note_required=False`).
 - Đổi luật lý do ở engine ⇒ sửa CẢ `VALUE_KEYS` ở web và app. Kiểm: `bash planning/13_2026-10-09_bptn-reason-web/evidence/harness/run_all.sh <python> <scratch>`
   (`:8001`, W1–W6 + 2 phép phá). Web ẩn ticket mẫu (`isSeedTicket`) ⇒ harness tự tạo ticket thật.
+
+## 6. Vật tư phòng ban — không đối chiếu định mức (plan 15, v1.9.9, 2026-10-10)
+- `materialPlanCard`: ghi chú KHÔNG bắt buộc (`compact` bỏ `note` rỗng). Dòng vật tư (`workSections`) một ô "Số lượng đã dùng" ⇒ `POST materials/{code}` với `issued_qty = used_qty`; không ô lý do, không hiện định mức.
+- Precheck/Gate 4 chỉ còn "đã dùng = đã xuất" (khớp engine `_compare_materials`). Đổi file ⇒ `app.js?v=` trong `index.html` (hiện 4.3).
+
+## 7. Vật tư phòng ban — một form, một request (plan 16, v1.10.0, 2026-10-10; thay luồng lưu của §6)
+- `materialsCard` thay `materialPlanCard` + form từng dòng: dòng `[vật tư][số lượng đã dùng][Bỏ]`, `+ Thêm vật tư`, Vệ sinh có "Không sử dụng vật tư". Một lần bấm ⇒ đúng 1 `POST material-usage` với toàn bộ dòng; không gọi `material-plan`/`materials/{code}`. Không prefill kế hoạch Agent (một dòng rỗng qty 1); đã lưu = audit `material_usage`/`planned_materials` hoặc `issued_qty` đã ghi (`deptChoseMaterials`/`materialsSaved`, cùng luật `src/mobile/js/dept.js`).
+- Danh sách lọc theo `catalog.material_codes_by_department`; thiếu field ⇒ khoá Lưu + callout "cần cập nhật máy chủ". Lỗi (409 thiếu kho, mạng) ⇒ toast, giữ input (`act` chỉ render sau 200); cờ `busy` chặn POST đôi. `app.js?v=4.4`.

@@ -24,7 +24,7 @@ export const SEED_KEYWORDS: KeywordRules = {
   ],
 };
 
-type UserSeed = { username: string; name: string; role: "resident" | "reception" | "management" | "cleaning" | "technical"; login: boolean; home?: Home };
+type UserSeed = { username: string; name: string; role: "resident" | "reception" | "management" | "cleaning" | "technical" | "warehouse"; login: boolean; home?: Home };
 
 const USERS: UserSeed[] = [
   { username: "cudan", name: "Nguyễn Minh Anh", role: "resident", login: true, home: { tower: "S2.05", floor: "12", apartment: "1208" } },
@@ -32,6 +32,7 @@ const USERS: UserSeed[] = [
   { username: "quanly", name: "Vũ Hoàng Long", role: "management", login: true },
   { username: "vesinh", name: "Ngô Thị Lan", role: "cleaning", login: true },
   { username: "kythuat", name: "Đặng Văn Hùng", role: "technical", login: true },
+  { username: "kho", name: "Trần Minh Kho", role: "warehouse", login: true },
   { username: "tranquocbao", name: "Trần Quốc Bảo", role: "resident", login: false, home: { tower: "S2.05", floor: "9", apartment: "0903" } },
   { username: "lethuha", name: "Lê Thu Hà", role: "resident", login: false, home: { tower: "S1.03", floor: "22", apartment: "2210" } },
   { username: "hoangnam", name: "Hoàng Nam", role: "resident", login: false, home: { tower: "S1.01", floor: "7", apartment: "0705" } },

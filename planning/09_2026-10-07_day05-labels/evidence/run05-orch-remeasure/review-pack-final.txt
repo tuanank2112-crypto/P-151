@@ -1,0 +1,4 @@
+# cmd: build_review_pack.py --data-dir D --out D/review --map-out D/review-key/id-map.json
+OK blind-review-sheet.json records=50
+WARNING planning\09_2026-10-07_day05-labels\deliverables\review-key\id-map.json: CHỈ cho điều phối, không đưa reviewer
+EXIT=0

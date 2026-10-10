@@ -5,7 +5,7 @@
  */
 import { and, eq, gt, lt, lte, ne } from "drizzle-orm";
 import type { Db } from "@/db/client";
-import { history, keywords, materials, photos, ratings, staff, tickets, PLACES, type TicketRow } from "@/db/schema";
+import { history, keywords, materials, photos, ratings, staff, tickets, warehouseStock, PLACES, type TicketRow } from "@/db/schema";
 import { classify, type KeywordRules } from "@/lib/agent";
 import { DUP_WINDOW_HOURS, findDuplicates, type DupMatch, type DupTicket } from "@/lib/duplicates";
 import {
@@ -69,6 +69,7 @@ export function inScope(actor: Actor, t: Pick<TicketRow, "residentId" | "dept" |
       return t.residentId === actor.id;
     case "reception":
     case "management":
+    case "warehouse":
       return true;
     default:
       return !t.cancelled && t.dept === ROLE_DEPT[actor.role];
@@ -415,7 +416,12 @@ export async function assignStaff(db: Db, actor: Actor, id: number, staffId: num
   });
 }
 
-export async function finishTicket(db: Db, actor: Actor, id: number) {
+export async function finishTicket(
+  db: Db,
+  actor: Actor,
+  id: number,
+  evidence?: { note?: string; photo?: { name: string; mime: string; data: Uint8Array } },
+) {
   return run(db, async (tx) => {
     need(actor, "update_progress");
     const t = await lock(tx, actor, id);
@@ -426,13 +432,43 @@ export async function finishTicket(db: Db, actor: Actor, id: number) {
       const [s] = await tx.select({ name: staff.name }).from(staff).where(eq(staff.id, t.assigneeId));
       if (s) who = s.name;
     }
+    if (evidence?.photo) {
+      await tx.insert(photos).values({
+        ticketId: t.id,
+        name: `after_${evidence.photo.name.slice(0, 180) || "evidence.jpg"}`,
+        mime: evidence.photo.mime,
+        size: evidence.photo.data.byteLength,
+        data: Buffer.from(evidence.photo.data),
+      });
+    }
+    const noteText = evidence?.note ? ` (${evidence.note})` : "";
     await write(
       tx,
       actor,
       t,
       { stage: 5, doneAt: new Date(), paused: false, pausedUntil: null },
       "Nghiệm thu",
-      `${who} báo đã xử lý xong, chờ bạn xác nhận.`,
+      `${who} báo đã xử lý xong${noteText}, chờ Ban quản lý nghiệm thu.`,
+    );
+    return null;
+  });
+}
+
+export async function reportWrongDept(db: Db, actor: Actor, id: number, reason: string) {
+  return run(db, async (tx) => {
+    need(actor, "update_progress");
+    const note = (reason ?? "").trim();
+    if (!note) abort("INVALID_INPUT", "Vui lòng nhập lý do báo cần BQL xem.");
+    const t = await lock(tx, actor, id);
+    ownDept(actor, t);
+    expect(!t.cancelled && (t.stage === 3 || t.stage === 4));
+    await write(
+      tx,
+      actor,
+      t,
+      { paused: true, extras: [...t.extras, `[Báo cần BQL xem] ${note}`] },
+      "Báo cần BQL xem",
+      `Đơn vị báo sai phòng ban: ${note}`,
     );
     return null;
   });
@@ -492,6 +528,125 @@ export async function receiveMaterial(db: Db, actor: Actor, materialId: number) 
       .where(eq(materials.id, materialId))
       .for("update", { of: materials });
     if (!m || m.dept !== "ky_thuat") abort("NOT_FOUND");
+    expect(!m.received);
+    await tx.update(materials).set({ received: true }).where(eq(materials.id, materialId));
+    return null;
+  });
+}
+
+// ───────────────────────────── Nghiệm thu & Giám sát BQL ─────────────────────────────
+
+export async function approveInspection(db: Db, actor: Actor, id: number) {
+  return run(db, async (tx) => {
+    need(actor, "update_progress", "management");
+    const t = await lock(tx, actor, id);
+    expect(!t.cancelled && t.stage === 5);
+    await write(
+      tx,
+      actor,
+      t,
+      { stage: 6 },
+      "Nghiệm thu hoàn tất",
+      "Ban quản lý đối soát đạt 6/6 tiêu chuẩn và nghiệm thu thành công.",
+    );
+    return null;
+  });
+}
+
+export async function rejectInspection(db: Db, actor: Actor, id: number, reason?: string) {
+  return run(db, async (tx) => {
+    need(actor, "update_progress", "management");
+    const t = await lock(tx, actor, id);
+    expect(!t.cancelled && t.stage === 5);
+    const note = (reason ?? "Chưa đạt tiêu chuẩn hoàn tất hiện trường").trim();
+    await write(
+      tx,
+      actor,
+      t,
+      { stage: 4, doneAt: null },
+      "Yêu cầu làm lại",
+      `Ban quản lý trả làm lại: ${note}. Ticket quay về bước Đang xử lý.`,
+    );
+    return null;
+  });
+}
+
+export async function bqlDecideWrongDept(db: Db, actor: Actor, id: number, choice: "TO_BPTN" | "KEEP") {
+  return run(db, async (tx) => {
+    need(actor, "update_progress", "management");
+    const t = await lock(tx, actor, id);
+    expect(!t.cancelled);
+    if (choice === "TO_BPTN") {
+      await write(
+        tx,
+        actor,
+        t,
+        { stage: 1, dept: null, assigneeId: null, paused: false },
+        "Chuyển về Tiếp nhận",
+        "Ban quản lý đồng ý khiếu nại sai phòng ban, chuyển lại Ban tiếp nhận phân loại.",
+      );
+    } else {
+      await write(
+        tx,
+        actor,
+        t,
+        { stage: 4, paused: false },
+        "Yêu cầu làm tiếp",
+        "Ban quản lý bác bỏ khiếu nại sai phòng ban, yêu cầu đơn vị tiếp tục xử lý.",
+      );
+    }
+    return null;
+  });
+}
+
+// ───────────────────────────── Quản lý Kho vật tư ─────────────────────────────
+
+export async function receiveStock(db: Db, actor: Actor, code: string, qty: number, note?: string) {
+  return run(db, async (tx) => {
+    if (actor.role !== "warehouse" && actor.role !== "management") abort("FORBIDDEN");
+    if (!code || qty <= 0) abort("INVALID_INPUT", "Mã vật tư và số lượng nhập phải hợp lệ.");
+    const [row] = await tx.select().from(warehouseStock).where(eq(warehouseStock.code, code));
+    if (!row) abort("NOT_FOUND", "Không tìm thấy mã vật tư.");
+    await tx
+      .update(warehouseStock)
+      .set({ stock: row.stock + Math.round(qty) })
+      .where(eq(warehouseStock.code, code));
+    return null;
+  });
+}
+
+export async function addStockItem(
+  db: Db,
+  actor: Actor,
+  item: { code: string; name: string; category: string; unit: string; stock: number; minStock?: number; location?: string },
+) {
+  return run(db, async (tx) => {
+    if (actor.role !== "warehouse" && actor.role !== "management") abort("FORBIDDEN");
+    const code = (item.code ?? "").trim().toUpperCase();
+    const name = (item.name ?? "").trim();
+    if (!code || !name) abort("INVALID_INPUT", "Vui lòng nhập mã và tên vật tư.");
+    await tx.insert(warehouseStock).values({
+      code,
+      name,
+      category: item.category || "Phụ kiện",
+      unit: item.unit || "cái",
+      stock: Math.max(0, Math.round(item.stock || 0)),
+      minStock: item.minStock ?? 5,
+      location: item.location || "Kho trung tâm",
+    });
+    return null;
+  });
+}
+
+export async function approveMaterial(db: Db, actor: Actor, materialId: number) {
+  return run(db, async (tx) => {
+    if (actor.role !== "warehouse" && actor.role !== "management") abort("FORBIDDEN");
+    const [m] = await tx
+      .select({ id: materials.id, item: materials.item, received: materials.received })
+      .from(materials)
+      .where(eq(materials.id, materialId))
+      .for("update", { of: materials });
+    if (!m) abort("NOT_FOUND");
     expect(!m.received);
     await tx.update(materials).set({ received: true }).where(eq(materials.id, materialId));
     return null;

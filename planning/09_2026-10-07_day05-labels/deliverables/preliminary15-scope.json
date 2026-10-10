@@ -1,0 +1,53 @@
+{
+  "schema_version": "day05-scope-1",
+  "profile_id": "PRELIMINARY_15",
+  "status": "APPROVED",
+  "approved_by": "Cao Văn Trường",
+  "recorded_at": "2026-10-08T08:59:38.730526+00:00",
+  "approval_source": "User explicitly confirmed preliminary assessment with 15 sentences replacing the 30-sentence requirement",
+  "source_file": "human-authored-intake.json",
+  "required_intake_ids": [
+    "HA-001-01",
+    "HA-001-02",
+    "HA-001-03",
+    "HA-001-04",
+    "HA-001-05",
+    "HA-001-06",
+    "HA-001-07",
+    "HA-001-08",
+    "HA-001-09",
+    "HA-001-10",
+    "HA-001-11",
+    "HA-001-12",
+    "HA-001-13",
+    "HA-001-14",
+    "HA-001-15"
+  ],
+  "required_source_count": 15,
+  "source_kind": "AUTHORED",
+  "safety_reviewer": "Như Ý",
+  "classification_reviewer": "Châm Anh",
+  "replaces_for_day05": [
+    "30 new held-out sentences",
+    "80 accepted safety gold and 40 classification gold as Day05 closure minimum",
+    "50/30 split quota and 32-family minimum as Day05 closure gates"
+  ],
+  "retained_requirements": [
+    "All 15 receive independent human safety review",
+    "Classification review for each case; score only safety NONE cases with accepted classification gold",
+    "Preserve original text, review rationale and real reviewer timestamps",
+    "Check family overlap with existing DEVELOP before claiming held-out independence",
+    "Do not tune on evaluation cases",
+    "Backlog decisions and ownership confirmations; report all errors and exclusions",
+    "D4-11 regression and outside-pilot policy stay separate; no full safety or product sign-off"
+  ],
+  "metrics": [
+    "classification correct/eligible plus mismatch/error/excluded counts",
+    "safety observed outcomes only, no full safety coverage claim",
+    "actual family count and exclusions; no minimum family quota invented"
+  ],
+  "accuracy_threshold": null,
+  "legacy_files_retained": true,
+  "review_status": "PENDING",
+  "baseline_status": "BLOCKED_PENDING_REVIEW"
+}

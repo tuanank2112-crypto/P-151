@@ -85,6 +85,7 @@
 - Q36 "Cần BQL" gồm cả khẩn cấp Bậc 1, "Quá hạn" lọc độc lập (→ Q40, 2026-10-10): Khẩn cấp chỉ ở ô Khẩn cấp; Quá hạn chỉ giữ ticket không thuộc ô nào khác.
 - Q30 4 ô tổng quan Cư dân lọc độc lập (→ Q40, 2026-10-10): "Cần bạn" thắng, ba ô còn lại theo trạng thái.
 - Q41 điền sẵn đề xuất của Agent + lý do bắt buộc khi khác đề xuất (→ Q42, 2026-10-10): không hiện đề xuất; lý do chỉ bắt buộc khi khác định mức.
+- Q42 lý do bắt buộc khi khác định mức + toast "Khác định mức … bấm Lưu vật tư lần nữa" + "bỏ ở engine chờ người duyệt" (→ plan 15 Q01–Q04, 2026-10-10, người dùng duyệt): không ô lý do, không so định mức/đề xuất Agent ở app/web/engine; một lần bấm lưu.
 - SPEC-P05 §2 khối vật tư Phòng ban (dòng đề xuất + Đã xuất/Đã dùng/Lý do chênh lệch từng dòng + khối "Vật tư thực tế khác đề xuất") (→ Q41, 2026-10-10): một khối chọn vật tư + số lượng đã dùng + một ô lý do; đã xuất = đã dùng.
 - 01-CONTRACTS §1 `#tabbar` thanh đáy + FAB `#new-ticket` (→ Q21): `#tabbar` là NavTiles, `#new-ticket` là tile "Gửi phản ánh".
 

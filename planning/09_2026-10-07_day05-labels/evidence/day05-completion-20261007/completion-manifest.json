@@ -1,0 +1,18 @@
+{
+  "created_at": "2026-10-07T16:47:40.721485+00:00",
+  "status": "PREPARED_NOT_ACCEPTED",
+  "historical_manifest_retained": true,
+  "files": {
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\backlog.json": "11536a13061df40e543bf0abec3146220b568bc0d9dd19db09278d81a2b861b4",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\d411-test-matrix.json": "1cead85426afcb2da369e3f51d3b8f96b2ed8daf00d6f20837b5ef0a63ae4f34",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\held-out-authoring-form.json": "eca3232870559ab5ecc76a0b5406dea7d8aa1c39faa4ac5940429435b84a1cfb",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\backlog-approval-form.json": "5f24d9ab981ca57e39b666310f3eaedbb1c45622e7430a263244396261c2b562",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\completion-guide.md": "5c0a582b400c6121614e68ef7c9e8b7908598022a0a138c3ab1a52224988b931",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\cases.json": "4c2e59c87f683a246767056fdebdf584179b9227ede9f67dd8962cb4339c972a",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\safety-gold.json": "acaaf46eb20a02d131a4e9db06b1c8ef3789690b41e6f582838d661d8f572051",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\classification-gold.json": "acaaf46eb20a02d131a4e9db06b1c8ef3789690b41e6f582838d661d8f572051",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\split-manifest.json": "39ef22bdf8d3ccdc82093ea5620b42e61ad9be6c6e1fb4262457b386ce3fb806",
+    "planning\\09_2026-10-07_day05-labels\\evidence\\day05-completion-20261007\\commands.json": "fda6ee5de5a682ecd61bece18bd5826bf3dd91068a62d3f21069db40fa34838d",
+    "planning\\09_2026-10-07_day05-labels\\evidence\\day05-completion-20261007\\d411-rules-probe.json": "e878e5bab0627460eeedf88e1576816a1affcbaaa5e598df9cebf90e6522f2ed"
+  }
+}

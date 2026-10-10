@@ -14,6 +14,8 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | **Khởi động / Quy tắc chung** | [`memory-distill.txt`](memory-distill.txt) | Kernel hiện trạng, Startup Protocol, Tech stack cốt lõi. |
 | **Tổng quan dự án** | [`project-intro.md`](project-intro.md) | Mục tiêu, kiến trúc tổng thể. |
 | **Kế hoạch nâng cấp & RFCs** | [`planning/`](../planning/) | Thư mục chứa các bản kế hoạch theo chuẩn `[STT]_[YYYY-MM-DD]_[Ten-Ngan]`. |
+| **Plan 17 — đồng bộ UI develop** | [`plan.md`](../planning/17_2026-10-10_develop-web-sync/plan.md) · [`../docs/portal.md`](../docs/portal.md) | Merge b6590ce chưa commit; UI portal + proxy, giữ backend plan16; migration Kho chưa áp DB. |
+| **Plan 16 — guard và lưu vật tư nguyên tử (v1.10.0)** | [`plan.md`](../planning/16_2026-10-10_material-guards/plan.md) · [`../docs/maintenance.md`](../docs/maintenance.md) §5 "Lưu vật tư nguyên tử" | ✅ Hoàn thành local + Docker 2026-10-10 18:18:44: `POST material-usage` một giao dịch, guard phòng ban/số nguyên/Kỹ thuật ≥1 ở API + engine + hoàn thành; web/app một form một request; thẩm định độc lập ✅. Server ⬜. |
 | **Lỗi khó / Cạm bẫy / Gotchas** | [`-known-gotchas.md`](-known-gotchas.md) | Tổng hợp các bẫy kỹ thuật và lỗi dị biệt đã gặp. |
 | **Kiến trúc dữ liệu & Data Flow** | [`-data-architecture.md`](-data-architecture.md) | Cấu trúc dữ liệu, cơ chế lưu trữ và State Flow. |
 | **Lộ trình nâng cấp & Ý tưởng** | [`roadmap.md`](roadmap.md) | Active tasks, Kho Ý Tưởng (Idea Vault) và các mốc đã hoàn thành. |
@@ -21,6 +23,7 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | **Tài liệu kỹ thuật module** | [`docs/`](../docs/) · [`../docs/maintenance.md`](../docs/maintenance.md) | Tài liệu chuyên trách 1-1; `maintenance.md` = module `src/maintenance/` (pipeline, tầng an toàn R1–R10, 5 method khẩn cấp, priority, cấu hình, test). Đọc TRƯỚC khi sửa engine. |
 | **Kế hoạch 01 — CR-03 P0 engine (✅ 2026-10-02)** | [`../planning/01_2026-10-01_cr03-p0-engine/`](../planning/01_2026-10-01_cr03-p0-engine/) | `plan.md` (Q01–Q33), `specs/` (SPEC-P01 an toàn, P02 khẩn cấp, P03 priority, P04 chốt chặn, TESTING, OPERATIONS), `reports/R01…R11`, `evidence/`. Hợp đồng từ vựng: `specs/01-CONTRACTS.md` §5 + `seed/maintenance_v1/lexicon.yaml`. |
 | **Kế hoạch 04 — sửa logic sau rà soát (v1.1.3, 2026-10-04)** | [`../planning/04_2026-10-04_logic-review-fix/`](../planning/04_2026-10-04_logic-review-fix/) | `plan.md` (§1 16 lỗi đo được, Q01–Q12), `handoffs/H01` từ vựng an toàn, `H02` rules/proposer, `H03` backend (bản vá cho Châm Anh), `H04` UI (Trí), `H05` rules/spec (Trường), `reports/R01–R02`, `evidence/`. Test hồi quy: `tests/test_maintenance/test_logic_review_fixes.py`, `test_rules_review_fixes.py`, `test_safety_review_fixes.py`. Tóm tắt: `docs/maintenance.md` §12. |
+| **⭐ Kế hoạch 15 — Vật tư không đối chiếu định mức/đề xuất Agent (v1.9.9, PATCH, 2026-10-10)** | [`../planning/15_2026-10-10_material-no-variance/`](../planning/15_2026-10-10_material-no-variance/plan.md) · [`../docs/maintenance.md`](../docs/maintenance.md) §5 |
 | **⭐ Kế hoạch 14 — Tài sản đèn theo khu vực (v1.9.0, MINOR, 2026-10-10)** | [`../planning/14_2026-10-10_area-assets/`](../planning/14_2026-10-10_area-assets/plan.md) · [`../docs/maintenance.md`](../docs/maintenance.md) §2 · [`../docs/data-contract-v1.md`](../docs/data-contract-v1.md) §5.4 | 4 tài sản active (Hành lang, Sảnh thang máy, Cầu thang bộ, Phòng rác), tra theo `rules.location_area`; mã `…-001…006` RETIRED; prompt `agent-prompt/2`; test `tests/test_maintenance/test_area_assets.py`, phép phá `evidence/harness/mutate_p14.py`. |
 | **⭐ Kế hoạch 13 — Hotfix lý do bắt buộc form BPTN web (v1.8.1, PATCH, 2026-10-09)** | [`../planning/13_2026-10-09_bptn-reason-web/`](../planning/13_2026-10-09_bptn-reason-web/plan.md) · [`../docs/web.md`](../docs/web.md) §5 | `bptnForm` chặn lý do trống theo `VALUE_KEYS` (chung với `src/mobile/js/bptn.js`); kiểm `evidence/harness/run_all.sh` (`:8001`, W1–W6 + 2 phép phá). |
 | **⭐ Kế hoạch 12 — Giảm độ trễ backend (v1.8.0, 2026-10-09)** | [`../planning/12_2026-10-09_backend-latency/`](../planning/12_2026-10-09_backend-latency/plan.md) · [`../docs/maintenance.md`](../docs/maintenance.md) §15 | Engine đọc AUTOCOMMIT (`sql_read_engine`, `_read`), ảnh khỏi event loop + 1 transaction/lô, cache ảnh, gzip. Đo: `evidence/harness/probe_http.py` (trong container, chỉ GET), phép phá `mutate12.py`. |
@@ -60,6 +63,7 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | `src/api/auth.py` | Đăng nhập, session in-memory, `get_actor` |
 | `src/api/routers/maintenance.py` | Router `/mo` (nội bộ), `/resident`, `/bql` |
 | `src/api/photos.py` | Kiểm tra magic bytes; `save`/`discard`/`load` qua `PhotoStore` (502 `PHOTO_STORE_FAILED`) |
+| `src/maintenance/material_policy.py` | Plan 16 §C1: `allowed_material_codes`, `whole_positive`, `check_selection`, `selection_problem`, `MaterialUsageLine` — guard vật tư dùng chung API/engine/hoàn thành |
 | `src/maintenance/engine.py` | State machine, pipeline bước 2–8 (+2b an toàn), đối soát bước 10, jobs, 5 method `safety_*`/`emergency_*` + `set_priority`; `build_engine(settings)`, `seed_if_empty` |
 | `src/maintenance/{safety,priority}.py` | Tầng an toàn 2b (luật R1–R10, từ vựng `lexicon.yaml`); luật priority PRI-* |
 | `src/maintenance/store/` | `base.py` (Protocol + lỗi), `memory.py`, `postgres.py` (`MO_STORE=postgres`, schema `maintops`), `photos.py` (local/Supabase Storage), Alembic `alembic.ini` + `migrations/` |
@@ -98,6 +102,7 @@ project-root/
 │   │   ├── rules.py, proposer.py     # Luật cố định + LLM structured proposal (fallback khi lỗi)
 │   │   ├── safety.py                 # Bước 2b: assess() Bậc 1/Bậc 2 theo luật R1–R10 (hàm thuần), scope_before dùng chung; guard LLM chỉ nâng mức
 │   │   ├── priority.py               # PRI-H1/H2/M1/M2/L1/D0 (hàm thuần; phủ định qua safety.scope_before)
+│   │   ├── material_policy.py        # Guard vật tư plan 16 (phòng ban, số nguyên dương, Kỹ thuật ≥1)
 │   │   ├── catalog.py                # Đọc seed catalog + sla_config + lexicon.yaml (validator V-01…V-12, khoá WP3d)
 │   │   ├── views.py, messages.py, i18n/vi.yaml  # View cư dân (allow-list) / BQL; lời cho cư dân
 │   │   └── migration.py, demo.py     # Ánh xạ v0.4→v0.5; demo/evaluate
@@ -132,3 +137,5 @@ project-root/
 - User xác nhận D-01 delta + persisted structured context; D-02–07 defaults. D-08 group approval recorded (leader Lê Thị Châm Anh, reported date 2026-10-02, recorded 2026-10-03); chưa tích hợp engine/runtime.
 
 - Ngày 03: `planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md`; đã chạy local (17 PASS/1 FAIL/5 BLOCKED); kết quả: `deliverables/day03-summary.md`, `day03-wording.md`, `day03-results.json` của cùng package; harness `evidence/d3-06/harness.py`.
+
+- OpenAI GPT-6 Luna: `src/maintenance/agent/client.py`, c?u h?nh `.env`, h??ng d?n v? ph?n lo?i l?i t?i `docs/maintenance.md` ?16 (v1.8.3).

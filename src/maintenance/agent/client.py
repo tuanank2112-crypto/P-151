@@ -62,6 +62,13 @@ def openai_json_client(
             "max_tokens": max_output_tokens,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
         }
+        if model == "gpt-6-luna":
+            # Luna rejects max_tokens. Use the verified non-reasoning chat path
+            # so the output budget is available for the decision JSON.
+            kwargs.pop("temperature")
+            kwargs.pop("max_tokens")
+            kwargs["max_completion_tokens"] = max_output_tokens
+            kwargs["reasoning_effort"] = "none"
         if json_mode == "json_object":
             kwargs["response_format"] = {"type": "json_object"}
         started = time.perf_counter()

@@ -2,6 +2,42 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+# v1.10.1 — Tích hợp UI develop (local, chưa commit)
+- Nhập origin/develop b6590ce: portal có màn Kho, modal ticket và cập nhật các vai; main/compose có proxy portal.
+- Giữ backend plan16, OpenAI Luna, Docker exclusions và app điện thoại. Sinh migration warehouse theo schema upstream, chưa áp DB.
+- Typecheck/build đạt, unit17; lint0 errors/5 warnings upstream; pytest3438 và proxy/material focus47 đạt. Docker/DB workflow chưa đo trong lượt merge.
+
+## [v1.10.0] - 2026-10-10: Vật tư — guard backend và lưu nguyên tử (plan 16)
+### Added
+- `POST /mo/tickets/{id}/material-usage` `{lines:[{item_code, used_qty}]}` → `MaintenanceEngine.save_material_usage`: một `_mutate`, thay toàn bộ lựa chọn, `planned = issued = used`, kho đi theo delta từng mã (mã tăng dần), audit field `material_usage`. Lỗi bất kỳ ⇒ rollback ticket + kho + audit + outbox (đo memory + PostgreSQL).
+- `src/maintenance/material_policy.py`; `GET /mo/catalog` thêm `material_codes_by_department`.
+### Changed (thay đổi có chủ ý — request cũ từng được nhận nay bị từ chối)
+- `material-plan`, `materials/{code}`, engine `confirm_materials`/`record_material`: vật tư phải thuộc phòng ban; số lượng nguyên dương (API 422 trước coercion, engine 409); Kỹ thuật không được rỗng. Hoàn thành: `material_required`/`material_invalid` chặn Kỹ thuật không vật tư (kể cả qua N_A) và dòng cũ sai guard. Thay plan 15 §1 vùng cấm "chỉ app kiểm".
+- Web `materialsCard` + app `dept.js`: một form, một POST, không prefill Agent, lỗi giữ input; bỏ `MATERIAL_GROUP`. `app.js?v=4.4`, app `?v=17`/`mo-app-shell-v17`.
+- `src/main.py`: 422 với input NaN/Infinity không còn thành 500.
+### Giữ nguyên
+- Plan 15 Q01/Q02: khác định mức/đề xuất Agent không chặn, không cần lý do; chỉ `USED_VS_ISSUED`.
+### Validation
+- pytest 3438 passed (3387 + 51), `--pg` 3533 passed, 0 fail/skip; ruff/format/diff-check exit 0; RED nền 48/51 đỏ + probe đường cũ nền ACCEPTED 8/8 → HEAD REFUSED 8/8; mutants m1–m5 đều đỏ; Playwright web + app 390px 42/42 trên container Docker memory. Thẩm định độc lập R04 lần 1 🔁 (F1 số nguyên khổng lồ ⇒ 500, F2 engine TypeError, F3 app refresh xoá lựa chọn sau lỗi, F4 nút Lưu bật lại, F5 phạm vi `src/main.py`, F6 diff-check) ⇒ đã sửa, đo lại bằng probe của auditor 0 BROKEN. Server chưa deploy.
+
+## [v1.9.9] - 2026-10-10: Vật tư — bỏ đối chiếu định mức và đề xuất Agent (plan 15)
+### Changed
+- Engine `_compare_materials`: chỉ `USED_VS_ISSUED` lệch không lý do mới chặn hoàn thành; `PLANNED_VS_NORM`/`ISSUED_VS_PLANNED` giữ làm dữ liệu tham khảo, không chặn, không warning. `confirm_materials`/`POST material-plan`: `note` không bắt buộc. Thay luật CR-03 §9.4 (5) cũ + plan 11 Q41/Q42 (người dùng duyệt).
+- App `dept.js`: bỏ ô Lý do, toast "Khác định mức", điều kiện "Chênh lệch vật tư có lý do"; một lần bấm lưu. `?v=16`, `SHELL_CACHE` v16.
+- Web `app.js`: dòng vật tư một ô "Số lượng đã dùng" (đã xuất = đã dùng), bỏ ô lý do/định mức; ghi chú xác nhận vật tư không bắt buộc; Gate 4 "Xuất – dùng". `app.js?v=4.3`.
+- Oracle ticket mẫu CLN-001 (2 bộ seed): khác định mức không lý do ⇒ READY, `warnings: []`.
+### Validation
+- pytest `--ignore=integration` 3387 passed / 0 fail / 0 skip (trước 3383); ruff check/format exit 0; phép phá (khôi phục so 3 phép) ⇒ 4 test đỏ. UI harness chưa chạy (thiếu Playwright).
+
+## [v1.9.8] - 2026-10-10: Preserve local Docker and GPT-6 Luna fixes
+### Fixed
+- Integrate upstream 1.9.7 with local Docker build-context exclusions and the verified GPT-6 Luna request parameters.
+- Luna uses max_completion_tokens and reasoning_effort=none; other model requests remain unchanged.
+- Update the emergency downgrade API test to accept no blocker after area-based asset matching; the pre-fix test failed on a None blocker.
+### Validation
+- On 7131510: 97 focused tests PASS, ruff check/format PASS, 12 JS syntax checks PASS; UI harness not rerun (Playwright absent).
+- Live client request before integration: PASS, 33 tokens. Full tests on prior 4663b7f integration: 3383 passed, 88 deselected, 0 skip (129.98 s); ruff check/format and 12 JS syntax checks PASS. Docker runtime pending user rebuild.
+
 ## [v1.9.7] - 2026-10-10: App Phòng ban — bỏ đề xuất vật tư của Agent
 ### Changed
 - `src/mobile/js/dept.js`: khối vật tư không hiện, không điền sẵn vật tư Agent dự kiến; mở với 1 dòng trống, chỉ hiện lựa chọn đã lưu của phòng ban (`deptChoseMaterials`). Lưu qua `material-plan` rồi đã xuất = đã dùng; lý do chỉ bắt buộc khi khác định mức (hỏi sau material-plan, chưa xuất kho). Điều kiện "Đã chọn vật tư sử dụng" (plan 11 Q42). Harness M14 chọn CLEAN-01 ×2. `?v=15` + `SHELL_CACHE` v15. Engine/API không đổi (bước 7 vẫn dự kiến vật tư cho Kho).
@@ -276,6 +312,15 @@ Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên 
 - Giữ contract "ngoài phạm vi ⇒ 403 + audit" (8 test đã duyệt); đổi sang 404 cần nhóm quyết. Ghi chú kết quả bắt buộc, ảnh cư
   dân ngoài NEED_INFO, đánh giá ticket MERGED: giữ nguyên (Idea Vault).
 
+## [docs] - 2026-10-04: Sơ đồ kiến trúc thành phần Target v0.6 (3-Tier Enterprise) nhúng README
+- Hoàn thành thiết kế và nghiệm thu Architecture Component Diagram (Target v0.6) theo chuẩn `docs/CR-BPTN-03.md`.
+- Tái cấu trúc theo chuẩn Enterprise 3-Tier (Clients/Gateway, Safety & Agent Decision Pipeline 5 trạm & Human Operations, Persistence & Telemetry) triệt tiêu hoàn toàn hiện tượng dây nối chồng chéo và cắt ngang chữ.
+- Nhúng SVG vector và mã nguồn Mermaid collapsible vào mục "## Kiến trúc hệ thống (System Architecture)" trong root `README.md`.
+- Xuất xưởng đầy đủ bộ artifact tại `docs/diagrams/maintenanceops-target-20261019/`: SVG, .drawio, .mmd và tài liệu hướng dẫn. Hồ sơ `planning/05_2026-10-04_component-diagram/`.
+
+## [docs] - 2026-10-04: Làm mới README (không đổi version app)
+- Viết lại `README.md` cho giảng viên chấm: chạy nhanh Docker không khoá, bảng biến môi trường đủ, câu phản ánh mẫu + curl/PowerShell, API theo code đang chạy (không phải CR-03 đích), Supabase là tuỳ chọn. Bỏ mục `log_manual.py` sai, `/reopen` không còn, Deliverables Checklist, các dòng Team `[Tên]`. Hồ sơ `planning/06_2026-10-04_readme-refresh/`.
+
 ## [v1.1.2] - 2026-10-03: `/close` thường không còn đóng được ticket khẩn cấp
 ### Fixed
 - `engine.close` gắn `expected_from=READY_FOR_REVIEW`. Trước đây `POST /bql/tickets/{id}/close` kèm note trên ticket
@@ -373,3 +418,74 @@ Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên 
 ## Day03 results recorded — 2026-10-03
 - Day03 chạy local cô lập, nhánh feature/truong, SHA 0ea04adedd023654947e2e97e645043f0ba89159: 23 record = 17 PASS / 1 FAIL / 5 BLOCKED / 0 NOT_RUN. Asset 3/3, vật tư 4/4, trùng 4/4 PASS; wording WORD-03 PASS, WORD-01/02/04 BLOCKED; demo 5 PASS / 1 FAIL (DEMO-01-RATING, engine.py:548-553) / 2 BLOCKED (DEMO-04).
 - Không đổi code/runtime, không tăng version ứng dụng, không đóng plan; runtime/online/group-runtime gates vẫn mở. Chờ người quyết: ASSET-03, STOCK-04, owner reopen/rating-once (Như Ý). Bước 0 vẫn exit 1 (thiếu hub).
+
+## [docs draft] - 2026-10-04: Target component diagram specification
+- User confirmed: target 19/10; LangGraph, Render/Supabase/OpenAI, Phoenix, human review. GPT-4o + vision proposed.
+- Hồ sơ 05: plan + 5 SPEC, 10 components/12 edges, draw.io+SVG 16:9; pending approval, chưa dựng hình. Không release/bump app ở bước draft, không sửa CR-03/API/code.
+
+## [docs] - 2026-10-04: Target component diagram delivered locally
+- Spec05 được người dùng duyệt; draw.io native editable + SVG1920×1080 đã dựng, draw.io31.7.0 export exit0.
+- 10 components/12 edges; 3 negative checks đỏ đúng exit1; final exit0; 0 overlap/clipping/node crossing, 2 connector crossings; Phoenix/HITL rõ, GPT-4o+vision proposed.
+- Nguồn/usage tại docs/diagrams/maintenanceops-target-20261019/README.md; artifacts cũ và root README giữ nguyên. Không app release/version bump; user visual review pending.
+
+## [docs] — 2026-10-04: README and architecture consistency correction
+- Correct broken components paths, clone URL, sample ticket ID and APP_HOST/APP_PORT documentation.
+- Current artifacts are implementation views; LangGraph/Phoenix/GPT-4o remain targets. Add step 5, safety-first ordering, REWORK and persistence throughout processing. Previous target-only and Zero-Crossing statements describe superseded artifacts. No application version change (docs-only scope of plan 06).
+
+## [docs] — 2026-10-04: Restore user-selected diagram layouts
+- Restored components SVG from Downloads and extracted its embedded draw.io source; restored exact data-flow SVG/draw.io/Mermaid from VS Code history.
+- Supersedes replacement implementation layouts introduced in the correction. README keeps setup/link fixes; current-code differences remain in text next to target diagrams. App version unchanged.
+
+## [docs] — 2026-10-04: Isolated develop integration
+- Merge develop 37a0fb3 with the preserved local documentation snapshot on integration/truong-develop-20261004 only. Both sides of brain-memory conflicts retained. Original feature/truong and develop refs are protected; no remote push.
+
+## [docs] — 2026-10-04: Adopt tested develop integration on feature/truong
+- User authorized feature/truong update; branch fast-forwarded from saved local snapshot5f7c354 to integrationf4155d6 (develop37a0fb3). Source already validated, no new runtime implementation.
+- Tests rerun on actual feature worktree: 1843 passed, 29 pg deselected; ruff check/format pass. Diagrams and three new submission files preserved; develop and remote feature ref unchanged, no push.
+
+
+## Local develop integration — 2026-10-07T03:04:07.271Z
+- Integrated origin/develop 52ae81c into feature/truong; runtime src/tests/seed equals upstream; local diagrams/submission preserved. pytest 2971 passed, 29 PostgreSQL tests deselected, 0 fail, 0 skip; ruff check/format and four JavaScript syntax checks pass. PostgreSQL/Docker/live LLM/browser not verified; no typecheck configured. Day05 labels/backlog and Day06 blocker/resume comparison still need acceptance; LangGraph runtime pending. No remote push.
+- Backups: backup/truong-before-integration-20261007 (e52c655), backup/truong-local-20261007 (0f7bf85).
+- Evidence: planning/06_2026-10-04_readme-refresh/evidence/integration-20261007/. Initial proposal JS check used an incorrect path; corrected check covers src/web/js/components/agent_proposal.js.
+
+
+## GPT-6 Luna local configuration — 2026-10-07T03:15:09.129Z
+- Local GPT-6 Luna activation requested: .env now LLM_MODE=openai, MODEL_NAME=gpt-6-luna; proposer sets reasoning_effort=none for Luna Chat Completions. Real smoke call failed with OpenAIAuthenticationError (placeholder key), logged FALLBACK_RULE; successful real LLM usage is NOT verified. Replace OPENAI_API_KEY locally, then restart and verify AI Logs SUCCESS + rules+llm:gpt-6-luna. Targeted regression: 30 pass, ruff check/format exit0. No server running on localhost8000/8001/8080 at inspection; no push.
+
+## [Unreleased] — 2026-10-07: Shared Supabase compatibility and demo
+- Shared Supabase demo SIM-TKT-0042 CLOSED; 2 simulated PNG photos byte/hash verified through API and Storage after restart; cases53->54, preexisting53 unchanged, stock unchanged; GPT-6 Luna SUCCESS / rules+llm:gpt-6-luna (2000.82ms); missing execution photo blocked completion; pytest2973 passed,29 pg deselected, ruff clean. Server127.0.0.1:8001 (jobs/seed/reset false).
+- Evidence: planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json; run_demo.py; pytest.txt; ruff-check.txt. Real AI response preserved in recovery_ai_logs; in-memory API AI Logs are empty after restart. No rating submitted. API flow exercised; no manual browser walkthrough/public deployment/physical maintenance acceptance. Day05/06 remain open.
+- Fixed Ticket.merged_children missing from the local model although CR-BPTN-03 §8/§13 defines it. Before fix, reading shared cases failed extra_forbidden and create returned422 after ingest. Typed list with empty default preserves stored links; unknown fields still forbidden. No migration, filtering, or rewriting of existing shared tickets. Recovered existing demo through engine.run_agent; no second ticket created. Two repository regression tests added. No merge/unmerge behavior newly implemented.
+
+## [Unreleased] — Day04 evidence contract day04-3 — 2026-10-07T04:32:59.390139+00:00
+- User removed six unused cases from personal acceptance scope; active9=H01,H02,I01,A01,M01,U01,S04,G03,R01. day04-3 manifest/results/issues normalized from valid references, separated legacy8PASS/1BLOCKED and Supabase1PASS/1FAIL (create422 recovered but pending clean201 retest). No cross-build9/9 claim. All references/counts/source time provenance checked;3 corruption controls rejected. No app execution/shared writes/commit/push.
+- Records: planning/07_2026-10-04_online-acceptance/deliverables/manifest.json, results.json, issues.json, day04-summary.md; validation: evidence/normalization-20261007/validation.txt in that plan.
+
+## Unreleased — Day05 planning 2026-10-07T05:07:58.261170+00:00
+
+Added proposed package09 for backlog triage and independent classification/safety gold; target80 safety/40 classification, family-held-out protocol and D4-11 regression. Planning validation exit0,3 negative controls. No runtime/API change, app release or version bump; data contracts remain proposed day05-1.
+
+## Unreleased — Day05 local execution 2026-10-07
+
+Executed the offline part of package 09: 15-item backlog (PROPOSED, D4-11 re-measured still failing), 50 DEVELOP cases with separate safety/classification proposals (agent-drafted, no gold), review pack with opaque IDs, validator/baseline runner/review-pack tools (270 tests, 0 skip; ruff clean). Decision: workers' H01/H02 outputs rejected after independent measurement and redone at a higher tier; cold audit found 1 blocker + 5 majors in the tools, fixed in H05. Freeze hash definition chosen by orchestrator (sha256 of `<file>:<sha256>` lines). No gold, held-out, freeze or baseline yet; no runtime/API change, app release or version bump.
+
+## Unreleased — Day05 daily report 2026-10-07T06:16:13.491588+00:00
+
+Added docs/submission/daily/2026-10-05.md from freshly measured evidence. Tools270 pass;95 manifest hashes match; full dataset gate fails honestly for absent gold/held-out. No runtime contract, app release or app version change; Day05 not closed.
+
+
+### Unreleased — Day05 submission report 2026-10-07T06:21:49.340237+00:00
+Added main day05-report.md, submission index and daily backlink; explicit pending acceptance. Documentation only; no application version change.
+
+
+## Integration record — 2026-10-07T13:30:26.152115+00:00
+Merged develop04491ad into feature/truong 79f9444, importing upstream version1.3.0; no additional version bump/release. Preserved local dirty work, repaired conflicts, final3341 tests green/76 deselected and270 tools green. Shared rollout/real LLM/portal not verified.
+
+
+### Portal local startup ? 2026-10-07T13:50:36.821687+00:00
+Configured ignored portal/.env.local, installed locked dependencies, initialized local portal DB and started Next dev3000.17 unit tests pass; no source/runtime contract/app version changes, no shared DB writes.
+
+- 2026-10-07T16:47:40.721485+00:00 Unreleased documentation/data preparation: Day05 completion packet and fresh offline measurements; application version unchanged, no release or runtime modification.
+
+- 2026-10-08T08:59:38.730526+00:00 Unreleased documentation: user-approved PRELIMINARY_15 replaces broad Day05 evaluation quota; human review, evidence and runtime safety gates retained. No application release/version change.

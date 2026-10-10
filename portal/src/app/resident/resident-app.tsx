@@ -14,6 +14,7 @@ import {
   IconBuilding,
   IconCheck,
   IconClipboard,
+  IconInbox,
   IconInfo,
   IconLayers,
   IconLift,
@@ -206,9 +207,32 @@ export function ResidentApp({ data }: { data: ResidentData }) {
         avatar={user.avatar}
         name={user.name}
         rolePill={`Cư dân · ${user.tower}-${user.apartment}`}
-        bellLabel="Thông báo"
-        bellCount={notices.length}
-        onBell={() => pick("notice")}
+        bellLabel="Thông báo & Cảnh báo"
+        bellCount={notices.length + all.filter((t) => t.stage === 5 || (t.stage === 6 && !t.rating) || t.urgent).length}
+        notices={[
+          ...all
+            .filter((t) => t.stage === 5 || (t.stage === 6 && !t.rating) || t.urgent)
+            .map((t) => ({
+              id: `t-${t.id}`,
+              title: `${t.code}: ${t.title}`,
+              time: t.sentAt,
+              body:
+                t.stage === 5
+                  ? "Kỹ thuật đã xử lý xong · Cần bạn nghiệm thu"
+                  : t.stage === 6 && !t.rating
+                    ? "Đã hoàn thành · Mời bạn đánh giá chất lượng"
+                    : `Trạng thái: Bước ${t.stage}/6 · Khẩn cấp`,
+              urgent: t.urgent,
+              tag: "Phản ánh của bạn",
+            })),
+          ...notices.map((n) => ({
+            id: `n-${n.id}`,
+            title: n.title,
+            time: n.date,
+            body: n.body,
+            tag: "Ban quản lý",
+          })),
+        ]}
       />
       <Body>
         <NavTiles<Tab>
@@ -218,7 +242,6 @@ export function ResidentApp({ data }: { data: ResidentData }) {
           items={[
             { key: "compose", label: "Gửi phản ánh", icon: <IconPen /> },
             { key: "mine", label: "Phản ánh của tôi", icon: <IconClipboard />, count: mineCount },
-            { key: "notice", label: "Thông báo", icon: <IconBell size={30} width={1.7} /> },
           ]}
         />
 
@@ -258,15 +281,6 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                         Mô tả vấn đề
                       </label>
                     </div>
-                    <button
-                      type="button"
-                      className={urgent ? "urg on" : "urg"}
-                      aria-pressed={urgent}
-                      onClick={() => setUrgentPick(!urgent)}
-                    >
-                      <IconWarning />
-                      {urgent ? (urgentPick === null ? "Khẩn cấp (Agent phát hiện)" : "Khẩn cấp") : "Đánh dấu khẩn cấp"}
-                    </button>
                   </div>
                   <textarea
                     id="draft"
@@ -416,13 +430,31 @@ export function ResidentApp({ data }: { data: ResidentData }) {
 
               {/* Tóm tắt */}
               <aside className="card sticky top-4 flex min-w-0 flex-col gap-4 p-6" style={{ flex: "1 1 320px" }}>
-                <h2 className="m-0 text-lg font-bold">Tóm tắt</h2>
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs font-semibold text-muted">VỊ TRÍ</span>
-                  <span className="text-[15px] leading-[1.45] font-semibold">{finalLoc}</span>
+                <div className="flex items-center justify-between border-b border-line pb-3">
+                  <h2 className="m-0 text-lg font-bold text-body">Tóm tắt phiếu gửi</h2>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-soft text-brand">Xem trước</span>
                 </div>
+
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-xs font-semibold text-muted">AGENT DỰ KIẾN CHUYỂN ĐẾN</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted">Mô tả vấn đề</span>
+                  {draft.trim() ? (
+                    <div className="border-l-2 border-brand/70 pl-3 py-1 text-[14px] leading-relaxed font-medium text-body break-words bg-soft/40 rounded-r-lg">
+                      {draft}
+                    </div>
+                  ) : (
+                    <span className="text-[13px] italic text-muted">Chưa nhập nội dung</span>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted">Vị trí phản ánh</span>
+                  <span className="text-[14px] font-semibold text-body flex items-center gap-1.5">
+                    📍 {finalLoc}
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted">Đơn vị tiếp nhận dự kiến</span>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`pill cat-${dept ?? "none"}`}>
                       <span className="dot" />
@@ -432,14 +464,19 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                   </div>
                   <span className="text-[13px] text-muted">Dự kiến xử lý trong {urgent ? "4 giờ" : "48 giờ"}.</span>
                 </div>
+
                 <div className="flex flex-col gap-1">
-                  <span className="text-xs font-semibold text-muted">ẢNH</span>
-                  <span className="text-[15px] font-semibold">{photos.length ? `${photos.length} ảnh` : "Chưa có"}</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted">Hình ảnh đính kèm</span>
+                  <span className="text-[14px] font-semibold text-body">
+                    {photos.length ? `📷 Đã chọn ${photos.length} ảnh` : "Chưa có ảnh"}
+                  </span>
                 </div>
-                <div className="flex flex-col gap-2.5 border-t border-line pt-3.5">
+
+                <div className="flex flex-col gap-2 border-t border-line pt-3.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted mb-0.5">Điều kiện gửi</span>
                   {[
                     { label: "Mô tả ít nhất 10 ký tự", ok: descOk },
-                    { label: "Vị trí", ok: true },
+                    { label: "Vị trí hợp lệ", ok: true },
                   ].map((c) => (
                     <div key={c.label} className={c.ok ? "chk ok" : "chk"}>
                       <span className="bx">
@@ -449,12 +486,14 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                     </div>
                   ))}
                 </div>
+
                 {formError && (
                   <div role="alert" className="rounded-xl px-3.5 py-2.5 text-sm" style={{ background: "#FDE2DF", color: "#8A1C12" }}>
                     {formError}
                   </div>
                 )}
-                <button type="button" className="btn primary big" onClick={submit} disabled={pending}>
+
+                <button type="button" className="btn primary big mt-1" onClick={submit} disabled={pending}>
                   {pending ? "Đang gửi…" : "Gửi phản ánh"}
                 </button>
               </aside>
@@ -464,7 +503,7 @@ export function ResidentApp({ data }: { data: ResidentData }) {
 
         {/* ===================== PHẢN ÁNH CỦA TÔI ===================== */}
         {tab === "mine" && (
-          <div className="flex flex-col gap-5">
+          <div className="anim-fade flex flex-col gap-5">
             <div className="flex flex-col gap-1">
               <h1 className="mt-2 mb-0 text-[28px] font-bold tracking-[-0.01em]">Phản ánh của tôi</h1>
               <p className="m-0 text-[15px] text-muted">
@@ -476,7 +515,7 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                 <button
                   key={key}
                   type="button"
-                  className={filter === key ? "ov on" : "ov"}
+                  className={filter === key ? "ov on card-hover" : "ov card-hover"}
                   aria-pressed={filter === key}
                   onClick={() => setFilter(filter === key ? "all" : key)}
                 >
@@ -491,21 +530,35 @@ export function ResidentApp({ data }: { data: ResidentData }) {
             </div>
             <div className="flex flex-wrap items-start gap-5">
               <section className="flex min-w-0 flex-col gap-3" style={{ flex: "1 1 340px" }}>
-                <div className="flex flex-wrap gap-2">
-                  {FILTERS.map(([key, label]) => (
-                    <button key={key} type="button" className={filter === key ? "chip on" : "chip"} aria-pressed={filter === key} onClick={() => setFilter(key)}>
-                      {label} · {all.filter((t) => inFilter(t, key)).length}
-                    </button>
-                  ))}
-                </div>
-                {list.length === 0 && <div className="card p-7 text-center text-sm text-muted">Không có phản ánh nào ở mục này.</div>}
+                {list.length === 0 && (
+                  <div className="card flex flex-col items-center justify-center gap-3 p-10 text-center">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-soft text-brand">
+                      <IconInbox size={24} />
+                    </span>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[15px] font-semibold text-body">Không có phản ánh nào</span>
+                      <span className="text-xs text-muted">
+                        Chưa có ticket nào phù hợp với bộ lọc này.
+                      </span>
+                    </div>
+                    {filter !== "all" && (
+                      <button
+                        type="button"
+                        className="btn sm"
+                        onClick={() => setFilter("all")}
+                      >
+                        Xem tất cả ({all.length})
+                      </button>
+                    )}
+                  </div>
+                )}
                 {list.map((t) => {
                   const [stCls, stLabel] = status(t);
                   const needRate = t.stage === 6 && !t.rating && !t.cancelled;
                   const needAccept = t.stage === 5 && !t.cancelled;
                   const needInfo = t.needInfo && !t.cancelled;
                   return (
-                    <button key={t.id} type="button" className={cur?.id === t.id ? "titem on" : "titem"} onClick={() => selectTicket(t.id)}>
+                    <button key={t.id} type="button" className={cur?.id === t.id ? "titem on card-hover" : "titem card-hover"} onClick={() => selectTicket(t.id)}>
                       <span className="flex w-full items-center justify-between gap-2">
                         <span className="idb">{t.code}</span>
                         <span className={stCls}>
@@ -589,21 +642,106 @@ export function ResidentApp({ data }: { data: ResidentData }) {
 
         {/* ===================== THÔNG BÁO ===================== */}
         {tab === "notice" && (
-          <section className="flex max-w-[900px] flex-col gap-3.5">
-            <h1 className="mt-2 mb-0 text-[28px] font-bold tracking-[-0.01em]">Thông báo từ Ban quản lý</h1>
-            {notices.length === 0 && <div className="card p-7 text-center text-sm text-muted">Chưa có thông báo nào.</div>}
-            {notices.map((n) => (
-              <article key={n.id} className="card flex items-start gap-4 px-6 py-[22px]">
-                <span className="flex h-[52px] w-[52px] flex-none items-center justify-center rounded-full bg-line-soft text-brand-mid">
-                  <IconBell size={24} width={1.8} />
-                </span>
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-xs font-semibold text-brand">BAN QUẢN LÝ · {n.date}</span>
-                  <h2 className="m-0 text-[17px] font-bold">{n.title}</h2>
-                  <p className="m-0 text-sm leading-[1.55] text-body">{n.body}</p>
+          <section className="flex max-w-[900px] flex-col gap-6">
+            <div className="flex flex-col gap-1">
+              <h1 className="mt-2 mb-0 text-[28px] font-bold tracking-[-0.01em]">Thông báo & Hoạt động</h1>
+              <p className="m-0 text-[15px] text-muted">
+                Cập nhật trạng thái xử lý các phản ánh của bạn và thông báo chung từ Ban quản lý tòa nhà.
+              </p>
+            </div>
+
+            {/* Cập nhật phản ánh của cư dân */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <h2 className="m-0 text-[18px] font-bold">Trạng thái phản ánh của bạn ({all.length})</h2>
+                {all.length > 0 && (
+                  <button type="button" className="text-sm font-semibold text-brand hover:underline" onClick={() => pick("mine")}>
+                    Xem danh sách phản ánh →
+                  </button>
+                )}
+              </div>
+
+              {all.length === 0 && (
+                <div className="card p-7 text-center text-sm text-muted">
+                  Bạn chưa có phản ánh nào. Khi bạn gửi phản ánh, tiến độ xử lý và cập nhật sẽ hiển thị tại đây.
                 </div>
-              </article>
-            ))}
+              )}
+
+              {all.map((t) => {
+                const [stCls, stLabel] = status(t);
+                const latestHistory = t.history[0];
+                return (
+                  <article key={t.id} className="card flex items-start gap-4 px-6 py-4.5 transition-colors hover:border-brand-mid">
+                    <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-soft text-brand">
+                      {t.stage === 6 ? <IconCheck size={20} /> : t.urgent ? <IconWarning size={20} /> : <IconBell size={20} />}
+                    </span>
+                    <div className="flex flex-1 flex-col gap-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="idb">#{t.code}</span>
+                        <span className={stCls}>
+                          <span className="dot" />
+                          {stLabel}
+                        </span>
+                        {t.urgent && <span className="pill urgent">Khẩn cấp</span>}
+                        <span className="ml-auto text-xs text-muted">{latestHistory?.time ?? t.sentAt}</span>
+                      </div>
+                      <h3 className="m-0 text-[16px] font-semibold text-body">{t.title}</h3>
+                      <p className="m-0 text-sm text-muted">
+                        {latestHistory ? `${latestHistory.label}: ${latestHistory.note || "Đang được xử lý"}` : `Gửi lúc: ${t.sentAt}`}
+                      </p>
+                      {t.stage === 5 && !t.cancelled && (
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="pill need">Kỹ thuật đã xử lý xong · Cần bạn nghiệm thu</span>
+                          <button
+                            type="button"
+                            className="btn sm primary"
+                            onClick={() => {
+                              selectTicket(t.id);
+                              pick("mine");
+                            }}
+                          >
+                            Nghiệm thu ngay
+                          </button>
+                        </div>
+                      )}
+                      {t.stage === 6 && !t.rating && !t.cancelled && (
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="pill need">Đã hoàn thành · Mời bạn đánh giá chất lượng</span>
+                          <button
+                            type="button"
+                            className="btn sm"
+                            onClick={() => {
+                              selectTicket(t.id);
+                              pick("mine");
+                            }}
+                          >
+                            Đánh giá sao
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            {/* Thông báo chung từ Ban quản lý */}
+            <div className="flex flex-col gap-3 pt-2">
+              <h2 className="m-0 text-[18px] font-bold">Thông báo chung từ Ban quản lý</h2>
+              {notices.length === 0 && <div className="card p-7 text-center text-sm text-muted">Chưa có thông báo chung nào.</div>}
+              {notices.map((n) => (
+                <article key={n.id} className="card flex items-start gap-4 px-6 py-[22px]">
+                  <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-line-soft text-brand-mid">
+                    <IconBuilding size={20} />
+                  </span>
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-xs font-semibold text-brand">BAN QUẢN LÝ · {n.date}</span>
+                    <h2 className="m-0 text-[16px] font-bold">{n.title}</h2>
+                    <p className="m-0 text-sm leading-[1.55] text-body">{n.body}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
           </section>
         )}
       </Body>

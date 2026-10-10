@@ -1,0 +1,9 @@
+{
+  "files": 6,
+  "links": 5,
+  "records": 15,
+  "core_cases": 14,
+  "environment": "local-qa",
+  "status": "PASS",
+  "runtime_tested": false
+}

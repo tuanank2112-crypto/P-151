@@ -5,6 +5,7 @@
 > Trạng thái: P0 xong trên nhánh `feature/nhuy-cr03-p0` (1462 test). Router/UI chưa nối các hành động mới (xem §9).
 
 ## 1. Mục đích và ranh giới
+Tích hợp develop b6590ce (local 1.10.1): engine/API/app/test local được giữ so backup trước merge; main.py thêm proxy portal, giữ handler validation plan16. Routes Python đăng ký trước fallback proxy nên `/health`, `/api/v1`, `/ui/`, `/app/` giữ backend hiện có. Portal không gọi engine Python cho workflow của nó; chưa hợp nhất dữ liệu hai hệ.
 Engine nhận phản ánh của cư dân, chạy pipeline Agent, dừng ở blocker có chủ rõ ràng và giao phòng ban; BQL nghiệm thu/đóng.
 Mọi trạng thái đổi qua `_apply_transition` + bảng `TRANSITIONS` (25 dòng); mọi ghi qua `_mutate` (bản sao sâu, audit, commit, fail closed) và giữ `engine.lock`.
 Không làm ở P0: persistence, router/UI mới, LLM an toàn, gộp ticket (P1) — xem CR-03 §16.
@@ -90,7 +91,18 @@ Cư dân chỉ thấy nhãn "Đang được kiểm tra" và lời trong `i18n/vi
 Postgres: một `UPDATE … WHERE qty >= :q` có điều kiện (hai worker không cùng lấy được phần cuối); bảng `maintops.stock` còn `check (qty >= 0)`. **Vùng cấm:** KHÔNG giữ chỗ (reserve) ở bước 7/khi giao việc — bước 7 chỉ đoán theo playbook, giữ chỗ sẽ khoá hàng của ticket chưa chắc dùng; huỷ ticket sau khi đã xuất KHÔNG tự hoàn kho (hàng có thể đã dùng; chưa có luồng trả hàng).
 
 ### Xác nhận vật tư tại hiện trường (2026-10-05)
-`confirm_materials(tid, actor, *, lines: list[PlannedMaterial], note)` — route `POST /mo/tickets/{id}/material-plan` `{lines: [{item_code, planned_qty}], note}`. Chỉ DEPARTMENT đúng phòng ban, ticket `IN_PROGRESS`; `note` bắt buộc. Thay `planned_materials` + dựng lại `material_lines` (giữ `issued_qty`/`used_qty`/`variance_reason` của item_code không đổi), cập nhật `draft.material_line_ids`/`material_stock_status`/`material_requirement_mode` (rỗng ⇒ `N_A`). Audit `UPDATE_MATERIAL` field `planned_materials`. Lỗi: item không có trong catalog / trùng dòng / qty ≤ 0 / note rỗng / chưa nhận việc ⇒ `GuardError` (409); sai vai/phòng ban ⇒ 403; item_code sai mẫu `SIM-` ⇒ 422. **Vùng cấm:** KHÔNG chặn khi tồn kho thiếu (đi `block` → `WAITING_MATERIAL`), KHÔNG thêm điều kiện nghiệm thu mới (6 gate §9.4 giữ nguyên). Lý do: bước 7 chỉ đoán vật tư mặc định của playbook; khi tài sản `ASSET_CHECK_ONSITE` UI phòng ban hiện khung này nổi bật, ca khác để thu gọn.
+`confirm_materials(tid, actor, *, lines: list[PlannedMaterial], note)` — route `POST /mo/tickets/{id}/material-plan` `{lines: [{item_code, planned_qty}], note}`. Chỉ DEPARTMENT đúng phòng ban, ticket `IN_PROGRESS`; `note` KHÔNG bắt buộc (plan 15 Q03; trống ⇒ audit "Phòng ban chọn vật tư tại hiện trường"). Thay `planned_materials` + dựng lại `material_lines` (giữ `issued_qty`/`used_qty`/`variance_reason` của item_code không đổi), cập nhật `draft.material_line_ids`/`material_stock_status`/`material_requirement_mode` (rỗng ⇒ `N_A`). Audit `UPDATE_MATERIAL` field `planned_materials`. Lỗi: item không có trong catalog / không thuộc phòng ban / trùng dòng / qty không nguyên dương / Kỹ thuật rỗng / chưa nhận việc ⇒ `GuardError` (409) — guard plan 16 §C3; sai vai/phòng ban ⇒ 403; item_code sai mẫu `SIM-` ⇒ 422. **Vùng cấm:** KHÔNG chặn khi tồn kho thiếu (đi `block` → `WAITING_MATERIAL`), KHÔNG thêm điều kiện nghiệm thu mới (6 gate §9.4 giữ nguyên).
+
+### Đối soát vật tư bước 10 (plan 15, 2026-10-10, v1.9.9)
+`_compare_materials` vẫn ghi 3 phép so (VAL-MAT-CMP-001) vào `comparison_results`, nhưng CHỈ `USED_VS_ISSUED` lệch mà không `variance_reason` mới làm `variance_explained=false` (chặn); có lý do ⇒ warning `EXPLAINED_MATERIAL_VARIANCE`. `PLANNED_VS_NORM` / `ISSUED_VS_PLANNED` (khác định mức / khác đề xuất Agent) chỉ là dữ liệu tham khảo: không chặn, không warning, không cần lý do. Web và app gửi đã xuất = đã dùng. **Vùng cấm:** không xoá các field norm/variance khỏi model/API; không bỏ chặn vượt tồn / `used > issued`. Lý do: bước 7 chỉ đoán vật tư mặc định của playbook; khi tài sản `ASSET_CHECK_ONSITE` UI phòng ban hiện khung này nổi bật, ca khác để thu gọn.
+
+### Lưu vật tư nguyên tử (plan 16, 2026-10-10, v1.10.0)
+`save_material_usage(tid, actor, *, lines: list[MaterialUsageLine])` — route `POST /mo/tickets/{id}/material-usage` `{lines: [{item_code, used_qty}]}` (`extra=forbid`: không nhận `issued_qty`/`note`/`variance_reason`). MỘT `_mutate`: thay TOÀN BỘ lựa chọn, mỗi dòng `planned = issued = used`, kho chỉ đi theo `mới − cũ` từng mã (mã bị bỏ: mới = 0), xử lý theo mã tăng dần; audit `UPDATE_MATERIAL` field `material_usage` (old/new kèm `stock_qty`). Vệ sinh `[]` ⇒ `N_A` + hoàn kho; Kỹ thuật `[]` ⇒ 409. Lỗi bất kỳ (thiếu kho dòng 2, audit, save) ⇒ rollback ticket + kho + audit + outbox. Lưu lặp cùng số: kho không đổi, thêm 1 audit.
+- **Guard chung** `src/maintenance/material_policy.py`: `allowed_material_codes(catalog, dept)` = hợp `playbook_materials` của mọi playbook thuộc phòng ban (`playbook_departments`), giao mã có trong `materials`; `whole_positive` (1 và 1.0 nhận; 0, âm, 0.5, bool, chuỗi, NaN/Inf từ chối); `check_selection` dùng ở `confirm_materials`, `save_material_usage`; `record_material` kiểm số nguyên dương + mã thuộc phòng ban. API kiểm trước coercion (`WholeQty` BeforeValidator ⇒ 422), engine kiểm lại (⇒ 409).
+- **Hoàn thành**: `_reconcile` thêm failing item `material_required` (Kỹ thuật chưa có dòng đã lưu, kể cả qua `N_A`) / `material_invalid` (dòng cũ khác phòng ban hoặc số lẻ) ⇒ `materials_entered=false`.
+- `GET /mo/catalog` thêm `material_codes_by_department` (sorted) — nguồn duy nhất web/app lọc danh sách; thiếu field ⇒ client khoá nút Lưu.
+- `src/main.py` handler 422: input NaN/Infinity (json.loads chấp nhận) không echo lại được ⇒ trả 422 không có `input`/`ctx` thay vì 500.
+- **Vùng cấm:** không gọi nối `confirm_materials` + `record_material` công khai trong một lần lưu; không chặn vì khác định mức/đề xuất Agent (plan 15 giữ); không thêm cờ active vật tư; không migration/sửa ticket cũ (dòng cũ sai guard đọc được, phải lưu lại qua C2 mới hoàn thành được). Test: `test_material_guards.py`, `test_material_usage.py`, `test_material_usage_store.py` (memory + `--pg`).
 
 ## 6. Cấu hình
 - `seed/maintenance_v1/catalog.yaml` `site` (2026-10-05, thí điểm): `{name: Ocean Park, buildings: [S1, S2]}`. `rules.extract_location(text, buildings)` chỉ nhận tòa trong danh sách (viết "tòa S1" hoặc "S1"; giữ tòa con "S1.12", từ chối "S1.123"); tòa khác = thiếu `location_building` ⇒ hỏi lại cư dân. Khu vực "Sảnh cư dân" và "Sảnh chính" mặc định Tầng 1 (`IMPLIED_FLOOR`), không cần nêu tầng. Mở rộng tòa: thêm mã vào `buildings` + sửa `field_labels.location_building` trong `i18n/vi.yaml`. Vị trí BPTN nhập tay (`bptn_resolve location`) KHÔNG bị kiểm danh sách.
@@ -163,6 +175,54 @@ Hồ sơ: [`planning/05_2026-10-04_agent-hardening/`](../planning/05_2026-10-04_
 - **Bản vá 05b (Q11):** "đèn cháy / đèn chập = đèn hỏng": `benign_phrases`/`benign_with_lamp_noun` thêm "chập (điện/mạch)" sau danh từ đèn; `safety._proven_lamp` nhận "den"/"bong" không dấu khi chính triệu chứng ("bi chay", "bi chap") cũng gõ không dấu — xét từng chữ, vị trí có dấu xung quanh không ảnh hưởng; chữ có dấu khác ("đen", "bông") vẫn không phải đèn; `rules.py` thêm "chập", "bị/đã cháy" vào triệu chứng đèn hỏng. Có khói/tóe lửa/khét kèm thì vẫn khẩn cấp.
 - Để P1: tín hiệu an toàn P1 (gas, kim tiêm, nước vào tủ điện, đèn nóng), luồng trùng đầy đủ (CR §8), tách ticket khi một phản ánh có hai việc, đếm trả sai phòng ban.
 
+## Local GPT-6 Luna configuration — 2026-10-07
+- Set `LLM_MODE=openai`, `MODEL_NAME=gpt-6-luna`, and a valid `OPENAI_API_KEY` in ignored `.env`. Model defaults and test mode remain unchanged.
+- `openai_client()` sets `reasoning_effort=none` for Luna (including vendor-prefixed name) to support the existing Chat Completions path; temperature stays 0. Safety still uses fixed rules.
+- Source: https://developers.openai.com/api/docs/models/gpt-6-luna and https://developers.openai.com/api/docs/guides/latest-model .
+- Verify real use through AI Logs `SUCCESS` and classification proposer `rules+llm:gpt-6-luna`; `FALLBACK_RULE` means the model failed and rules were used. Logs are in-memory and reset on restart.
+- Local GPT-6 Luna activation requested: .env now LLM_MODE=openai, MODEL_NAME=gpt-6-luna; proposer sets reasoning_effort=none for Luna Chat Completions. Real smoke call failed with OpenAIAuthenticationError (placeholder key), logged FALLBACK_RULE; successful real LLM usage is NOT verified. Replace OPENAI_API_KEY locally, then restart and verify AI Logs SUCCESS + rules+llm:gpt-6-luna. Targeted regression: 30 pass, ruff check/format exit0. No server running on localhost8000/8001/8080 at inspection; no push.
+
+
+### Supabase connection diagnosis — 2026-10-07
+- Supabase read-only verification: truong authenticated, member of maintops_dev; schema USAGE and cases SELECT/INSERT/UPDATE privileges true (writes not exercised); revision0001_maintops_initial, cases53, transaction_read_only=on; client TLSv1.3 with verify-full. System DNS initially failed for pooler; DoH hostaddr override and official Supabase CA+certifi temporary bundle allowed verification. DNS/.env/system trust unchanged; no DB/Storage writes. Evidence: planning/06_2026-10-04_readme-refresh/evidence/integration-20261007/supabase-readonly.txt
+- Next normal-startup gate: resolve Session pooler hostname reliably and configure official CA bundle with sslmode=verify-full/sslrootcert; preserve MO_ALLOW_RESET=false. Temporary hostaddr probe is not application activation.
+- Official SSL guidance: https://supabase.com/docs/guides/platform/ssl-enforcement .
+
+
+### Local Supabase configuration verified — 2026-10-07
+- User supplied Supabase secret key in local .env; GET bucket metadata returned200, private maintenance-photos, 5MiB, JPEG/PNG/WebP. Normal Session pooler hostname now connects as truong with official CA+certifi bundle/TLS verify-full. Local .env updated to postgres/supabase, reset=false, seed_on_empty=false; backup and CA under ignored data/. Application factories verified PostgresRepository/SupabasePhotoStore and cases53 with database read-only override. Server/jobs/uploads/LLM calls not run. Evidence: planning/06_2026-10-04_readme-refresh/evidence/integration-20261007/supabase-app-config.txt and supabase-storage-readonly.txt in same directory.
+- .env DATABASE_URL uses normal hostname, sslmode=verify-full, sslrootcert=data/certs/supabase-ca-bundle.pem (absolute local path in URL). Keep CA and local config backup out of Git. No fixed pooler IP is persisted.
+- Startup/demo against shared DB can run jobs and write records; pending a separate authorized runtime run. GPT-6 Luna client construction does not establish a successful model response.
+
+### Shared Supabase demo — 2026-10-07
+- Shared Supabase demo SIM-TKT-0042 CLOSED; 2 simulated PNG photos byte/hash verified through API and Storage after restart; cases53->54, preexisting53 unchanged, stock unchanged; GPT-6 Luna SUCCESS / rules+llm:gpt-6-luna (2000.82ms); missing execution photo blocked completion; pytest2973 passed,29 pg deselected, ruff clean. Server127.0.0.1:8001 (jobs/seed/reset false).
+- Evidence: planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json; run_demo.py; pytest.txt; ruff-check.txt. Real AI response preserved in recovery_ai_logs; in-memory API AI Logs are empty after restart. No rating submitted. API flow exercised; no manual browser walkthrough/public deployment/physical maintenance acceptance. Day05/06 remain open.
+- Fixed Ticket.merged_children missing from the local model although CR-BPTN-03 §8/§13 defines it. Before fix, reading shared cases failed extra_forbidden and create returned422 after ingest. Typed list with empty default preserves stored links; unknown fields still forbidden. No migration, filtering, or rewriting of existing shared tickets. Recovered existing demo through engine.run_agent; no second ticket created. Two repository regression tests added. No merge/unmerge behavior newly implemented.
+- Prior placeholder-key/no-server/no-write entries above are historical and superseded for current runtime by this verification. MO_JOBS_ENABLED=false is set on this demo process (not changed in .env); use the same environment override on restart. UI: http://127.0.0.1:8001/ui/. Auth uses seeded demo accounts; no header bypass. Synthetic photos are solid-color fixtures explicitly labeled in PNG metadata and ticket notes; they do not show site work.
+
+## Day04 normalized acceptance scope — 2026-10-07T04:32:59.390139+00:00
+- User removed six unused cases from personal acceptance scope; active9=H01,H02,I01,A01,M01,U01,S04,G03,R01. day04-3 manifest/results/issues normalized from valid references, separated legacy8PASS/1BLOCKED and Supabase1PASS/1FAIL (create422 recovered but pending clean201 retest). No cross-build9/9 claim. All references/counts/source time provenance checked;3 corruption controls rejected. No app execution/shared writes/commit/push.
+- Records: planning/07_2026-10-04_online-acceptance/deliverables/manifest.json, results.json, issues.json, day04-summary.md; validation: evidence/normalization-20261007/validation.txt in that plan.
+
+## Child trapped safety false negative — 2026-10-07T04:38:20.572561+00:00
+- CRITICAL D4-11 OPEN: exact text có trẻ con bị kẹt ở sảnh chung cư tòa S5 -> local memory/mock NONE/OUT_OF_SCOPE/BPTN; S1 also fails, adding mắc gives EMERGENCY_PENDING_BQL/BQL. Root cause missing person+trapped wording in S-09 lexicon, primary owner Như Ý (engine/safety), Châm Anh integration/API retest. Screenshot TK-0046 live backend not queried/modified; no shared writes/LLM calls. Do not mark fixed; no source patch made.
+- Evidence: planning/07_2026-10-04_online-acceptance/evidence/normalization-20261007/safety-child-trapped.json; issue D4-11 in deliverables/issues.json. Safety runs before location/category and must catch this even when S5 is outside supported buildings.
+
+## Day05 labeling preparation — 2026-10-07T05:07:58.261170+00:00
+
+[Proposed data/backlog contracts](../planning/09_2026-10-07_day05-labels/specs/01-CONTRACTS.md) separate service classification from safety risk. Existing classify/assess behavior is unchanged; safety stop is evaluated before classification. Planned validators/runners are not implemented. Targets80 safety and40 classification require independent human acceptance and family-based held-out. D4-11 stays OPEN and owned by engine/safety; this plan does not claim a runtime fix.
+
+## Day05 tools and submission recheck — 2026-10-07T06:16:13.491588+00:00
+
+The earlier planned-tools note is superseded: offline tools now exist under planning/09_2026-10-07_day05-labels/deliverables/tools/. Fresh270 tests pass;ruff check/format pass. Backlog/structure validate; full dataset fails counts without gold, and baseline refuses to score.95 manifest hashes match; D4-11 still returns NONE for trapped-child wording at S1/S5. See [Day05 daily report](submission/daily/2026-10-05.md) and evidence/submission-review-20261007/ under that plan. This is documentation verification; no runtime changes or app version bump.
+
+
+Day05 submission entry point: [main report](submission/day05-report.md), with verified local preparation and pending human/data/baseline gates; no runtime change.
+
+
+## Latest develop integration — 2026-10-07T13:30:26.152115+00:00
+Imported reasoning Agent/P1 from develop04491ad; local proposer Luna option preserved.3341 Python tests and270 Day05 tools pass,ruff clean. New JSON reasoning client has not been live-tested with Luna. Postgres requires revision0002_p1_doc_shape; shared DB rollout must follow reasoning-agent OPERATIONS §5 (coordinate stopping old backends). No migration/restart/shared writes performed. [Integration evidence](../planning/06_2026-10-04_readme-refresh/evidence/integration-latest-20261007/integration-report.md).
+
 ## 14. Tốc độ đọc danh sách — cache `list()` theo `xmin` (plan 09, v1.5.0, 2026-10-08)
 Hồ sơ: [`planning/09_2026-10-08_backend-speed/`](../planning/09_2026-10-08_backend-speed/plan.md). Audit: `PostgresRepository.list()` kéo toàn bộ doc
 (725 KB với 65 ticket) mỗi request ⇒ danh sách cư dân 2.7 s, BPTN 1.5 s trên Supabase.
@@ -187,3 +247,10 @@ Hồ sơ: [`planning/12_2026-10-09_backend-latency/`](../planning/12_2026-10-09_
 - **`run_jobs`** dùng `Case` mà `_mutate` trả về, không đọc lại DB dưới `engine.lock`.
 - Số đo `:8000` (Supabase, median, đo trong container): GET 226–280 → 50–55 ms; danh sách trên dây 54–69 KB → ~4 KB; ảnh xem lại 527 → 56 ms.
   Test: `test_backend_latency.py` (P1–P5, Z1–Z2), `test_read_engine.py` (`--pg`, T1–T3); phép phá `evidence/harness/mutate12.py` m1–m5.
+
+
+## 16. OpenAI GPT-6 Luna (2026-10-10, v1.9.8)
+- Cấu hình `.env`: `LLM_MODE=openai`, `MODEL_NAME=gpt-6-luna`, `OPENAI_BASE_URL=https://api.openai.com/v1`, `MO_AGENT_ENABLED=true`, `MO_AGENT_JSON_MODE=json_object`; key chỉ ở `OPENAI_API_KEY`, không ghi vào Git hoặc tài liệu.
+- `openai_json_client(model, api_key, base_url, *, timeout, max_output_tokens, json_mode)` giữ nguyên chữ ký. Riêng `gpt-6-luna`: gửi `max_completion_tokens=max_output_tokens`, `reasoning_effort=none`, không gửi `temperature` hay `max_tokens`. Model khác giữ request cũ.
+- CẤM dùng `max_tokens` cho Luna: API thật trả 400 `unsupported_parameter`; caller giữ `FALLBACK_RULE` khi model lỗi, không coi kết quả luật là LLM thành công. 401: kiểm key; 403/404: kiểm quyền model; 429: kiểm quota/rate limit; timeout: kiểm mạng và timeout. Không log key.
+- Request tối thiểu qua chính client app đã thành công: JSON `{"ok":true}`, 33 token tổng. Chưa đo quyết định nghiệp vụ thật trong Docker. Sau đổi code: `docker compose up -d --build --force-recreate backend`; web `/ui/` và app `/app/` dùng cùng backend. Container chạy bằng `compose run -e LLM_MODE=mock` vẫn ghi đè cấu hình `.env`.

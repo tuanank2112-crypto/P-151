@@ -1,10 +1,10 @@
 // Warehouse screens (Kho vật tư) — plan 11 SPEC-P05 §4. Same endpoints as renderWarehouse in src/web/app.js.
-import { api } from './api.js?v=15';
-import { el, emptyState, field, fill, pageHead, pagedList, pill, refreshButton, toast, writeButton } from './ui.js?v=15';
+import { api } from './api.js?v=17';
+import { el, emptyState, field, fill, pageHead, pagedList, pill, refreshButton, toast, writeButton } from './ui.js?v=17';
 import {
   caseHead, caseScreen, codeOf, eventsHistory, isSeedTicket, loadCatalog, materialName, materialUnit, reportBox, select,
   summaryCard, webButton,
-} from './staff.js?v=15';
+} from './staff.js?v=17';
 
 // Q37: "Nhập vật tư" replaces "Chờ vật tư" (receipt form + the tickets it unblocks); "Cảnh báo" = stock under the threshold
 const TILES = [['receive', 'Nhập vật tư', 'box'], ['stock', 'Tồn kho', 'grid'], ['low', 'Cảnh báo', 'warning']];

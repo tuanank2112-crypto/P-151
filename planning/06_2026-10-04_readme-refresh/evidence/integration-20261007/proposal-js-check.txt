@@ -1,0 +1,16 @@
+node --check src/web/agent_proposal.js
+
+node:internal/modules/cjs/loader:1520
+  throw err;
+  ^
+
+Error: Cannot find module 'C:\Users\caotr\AppData\Local\Temp\truong-integrate-20261007-X4flae\worktree\src\web\agent_proposal.js'
+    at node:internal/modules/cjs/loader:1517:15
+    at node:internal/main/check_syntax:33:20 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v24.19.0
+
+EXIT_CODE=1

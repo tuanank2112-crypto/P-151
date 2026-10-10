@@ -11,6 +11,7 @@ import {
 import { IconBars, IconCheckSquare, IconInbox } from "@/components/icons";
 import { PhotoStrip } from "@/components/photo-strip";
 import { Body, Header, NavTiles, PageHead } from "@/components/shell";
+import { TicketDetailModal } from "@/components/ticket-detail-modal";
 import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
 import { DEPT_LABEL, DEPT_ORDER, ROLE_LABEL, type Dept } from "@/lib/constants";
@@ -40,6 +41,7 @@ function result(t: Routed): [string, string] {
 export function ReceptionApp({ data }: { data: ReceptionData }) {
   const { pending, error, setError, run } = useAction();
   const [tab, setTab] = useState<Tab>("inbox");
+  const [selectedTicket, setSelectedTicket] = useState<ReceptionData["routed"][number] | null>(null);
 
   const inbox = [...data.inbox].sort((a, b) => Number(b.urgent) - Number(a.urgent));
   const routed = data.routed;
@@ -55,7 +57,14 @@ export function ReceptionApp({ data }: { data: ReceptionData }) {
         rolePill={ROLE_LABEL.reception}
         bellLabel="Ticket chờ phân loại"
         bellCount={inbox.length}
-        onBell={() => setTab("inbox")}
+        notices={inbox.map((t) => ({
+          id: t.id,
+          title: `${t.code}: ${t.text}`,
+          urgent: t.urgent,
+          tag: t.urgent ? "Khẩn cấp" : "Hàng đợi tiếp nhận",
+          time: t.createdAt,
+          body: `Gợi ý Agent: ${t.aiDept ? DEPT_LABEL[t.aiDept] : "Chưa rõ"} (${t.conf}%) · Vị trí: ${t.location}`,
+        }))}
       />
       <Body>
         <NavTiles<Tab>
@@ -104,9 +113,25 @@ export function ReceptionApp({ data }: { data: ReceptionData }) {
                 {routed.map((t) => {
                   const [resCls, resLabel] = result(t);
                   return (
-                    <tr key={t.id}>
-                      <td className="font-bold whitespace-nowrap">{t.code}</td>
-                      <td className="max-w-[360px] leading-[1.45]">{t.text}</td>
+                    <tr key={t.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="font-bold whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTicket(t)}
+                          className="font-mono text-sky-700 hover:text-sky-900 hover:underline font-bold text-left"
+                          title="Bấm để xem chi tiết đầy đủ"
+                        >
+                          {t.code}
+                        </button>
+                      </td>
+                      <td className="max-w-[360px] leading-[1.45]">
+                        <span
+                          className="cursor-pointer hover:text-slate-900"
+                          onClick={() => setSelectedTicket(t)}
+                        >
+                          {t.text}
+                        </span>
+                      </td>
                       <td>
                         <span className={deptPill(t.aiDept)}>
                           <span className="dot" />
@@ -170,6 +195,7 @@ export function ReceptionApp({ data }: { data: ReceptionData }) {
         )}
 
       </Body>
+      <TicketDetailModal ticket={selectedTicket} onClose={() => setSelectedTicket(null)} />
       <Toast message={error} onClose={() => setError("")} />
     </div>
   );

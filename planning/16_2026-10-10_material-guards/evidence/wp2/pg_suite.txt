@@ -1,0 +1,7 @@
+captured_at=2026-10-10T18:09:11+07:00
+# host psycopg2 DLL is blocked by Windows Application Control; run in the backend image on the compose network, no .env
+$ docker run --rm --network p151_default -v C:/P-151:/app -w /app -e MO_TEST_DATABASE_URL=postgresql+psycopg2://p151:p151@db:5432/p151_test p151-backend python -m pytest tests --pg -q -p no:cacheprovider
+........................................................................ [ 99%]
+.....                                                                    [100%]
+3533 passed in 169.33s (0:02:49)
+exit=0

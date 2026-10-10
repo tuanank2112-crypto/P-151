@@ -1,0 +1,21 @@
+captured_at=2026-10-10T17:40:00+07:00
+# plan-16 delta = working tree vs hash-checked baseline snapshot (<scratch>/snap_red; engine/router sha256 = baseline.txt)
+$ git rev-parse HEAD; git diff HEAD | sha256sum
+71315109d845fe69935050b09d4ab4c67efb024a
+08a8c2abb8f501acab0e9fe75648f9116009118a9391a99cc7451d6ee565d056 *-
+85	4	src/maintenance/engine.py
+28	2	src/api/routers/maintenance.py
+13	0	src/main.py
+88	0	src/maintenance/material_policy.py (new)
+303	0	tests/test_maintenance/test_material_guards.py (new)
+144	0	tests/test_maintenance/test_material_usage.py (new)
+179	0	tests/test_maintenance/test_material_usage_store.py (new)
+# client + test_engine delta vs HEAD-tracked baseline hashes is in git diff; sha256 now:
+feae55d7db4547e090b4c99caf20397370c75fab38828096828dd5d6a90f554b *src/web/app.js
+1206b688ce9d25193e86e32c385950ed9fd7fb0cce65bdf3596fd4cde95aa0ac *src/web/index.html
+a17a2084efe433c05d218b76b69e33e8bdbc55f14b479b038fddd5d6656cf9f4 *src/mobile/js/dept.js
+44d481d2c9eaaeb537238c6fb2d1baf2994a64bf56b22354a28b8124d0bafa24 *src/mobile/sw.js
+bbc245b634580ee2725c374af15687680ce5729dd858d5e9abb20d0cc28fec99 *src/maintenance/engine.py
+f327845f2dc30bc5b33ab832585b53f9e9c135e228e42f9e0c5a1e1e64f7ff5e *src/api/routers/maintenance.py
+00a75a72cf0ea20395ac4bc0a689ca69114690244720f96b9ca0128c848bce43 *src/main.py
+6baa09e23e77cc60e5312a75d532fb064162f94b0ca1a7c1bf4c8f25585a84fb *src/maintenance/material_policy.py

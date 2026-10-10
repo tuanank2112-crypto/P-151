@@ -1,19 +1,14 @@
 // Department screens (Phòng ban Vệ sinh / Kỹ thuật) — plan 11 SPEC-P05 §2. Same endpoints and rules as
 // renderDepartment / workSections in src/web/app.js; photos first because the field team works from the phone (Q28).
-import { api, apiForm } from './api.js?v=15';
-import { MAX_PHOTOS, photoFormData, photoPicker } from './photo.js?v=15';
-import { confirmSheet, el, field, fill, icon, notice, pill, writeButton } from './ui.js?v=15';
+import { api, apiForm } from './api.js?v=17';
+import { MAX_PHOTOS, photoFormData, photoPicker } from './photo.js?v=17';
+import { confirmSheet, el, field, fill, icon, notice, pill, toast, writeButton } from './ui.js?v=17';
 import {
   REASON_LABEL, caseHead, caseScreen, checklistLabel, codeOf, eventsHistory, executionPhotoIds, imagesOf, materialName,
   materialUnit, photoBox, photoStrip, queueScreen, reportBox, select, webButton, writer,
-} from './staff.js?v=15';
+} from './staff.js?v=17';
 
 const MAX_EXECUTION_PHOTOS = 10; // src/maintenance/engine.py
-// Materials a department may pick (seed/maintenance_v1/catalog.yaml playbook_materials: PB-CLN-01 / PB-TEC-01)
-const MATERIAL_GROUP = {
-  DEPT_CLEANING: (code) => /CLEAN|BAG/.test(code),
-  DEPT_TECHNICAL: (code) => /LAMP|STARTER/.test(code),
-};
 const TILES = [
   ['todo', 'Chờ nhận', 'briefcase', (t) => t.status === 'ROUTED'],
   ['doing', 'Đang làm', 'clipboard', (t) => t.status === 'IN_PROGRESS' || t.status === 'ON_HOLD'],
@@ -37,15 +32,22 @@ export const list = (ctx) => queueScreen(ctx, {
 
 // ---------------------------------------------------------------- readiness (src/web/app.js failingLabel / computeReadinessPrecheck)
 
-/** Q42: the materials count only once the department chose them (material-plan or saved quantities); the Agent's step-7 plan is not shown. */
-const deptChoseMaterials = (c) => (c.audit || []).some((a) => a.field_name === 'planned_materials')
+/** Q42 + plan 16 §U1: the materials count only once the department saved them (material-usage, or an older
+ * material-plan / saved quantities); the Agent's step-7 plan is neither shown nor counted. */
+const deptChoseMaterials = (c) => (c.audit || []).some((a) => a.field_name === 'material_usage' || a.field_name === 'planned_materials')
   || c.material_lines.some((l) => l.issued_qty != null);
+/** Saved and complete: every line issued = used; Kỹ thuật needs at least one line (plan 16 §C3). */
+const materialsSaved = (c) => deptChoseMaterials(c)
+  && c.material_lines.every((l) => l.issued_qty != null && l.used_qty != null)
+  && (c.material_lines.length > 0 || c.ticket.department_id === 'DEPT_CLEANING');
 
 function failingLabel(c, item) {
   const line = c.material_lines.find((l) => l.material_line_id === item);
+  if (item === 'material_required') return 'chưa chọn vật tư sử dụng';
+  if (item === 'material_invalid') return 'vật tư đã lưu không hợp lệ — chọn lại và bấm Lưu vật tư';
   if (line) {
     const name = materialName(line.item_code, line.item_name);
-    return line.issued_qty == null || line.used_qty == null ? 'chưa chọn vật tư sử dụng' : `chưa ghi lý do chênh lệch vật tư "${name}"`;
+    return line.issued_qty == null || line.used_qty == null ? 'chưa chọn vật tư sử dụng' : `số đã dùng khác số đã xuất kho của "${name}" — bấm Lưu vật tư lại`;
   }
   const check = c.checklist_items.find((i) => i.template_item_id === item);
   if (check) return `chưa đánh dấu "${checklistLabel(check)}"`;
@@ -58,16 +60,11 @@ function failingLabel(c, item) {
 function precheck(c) {
   const items = c.checklist_items || [];
   const done = items.filter((i) => i.status === 'COMPLETED').length;
-  const lines = c.material_lines || [];
-  const entered = deptChoseMaterials(c) && lines.every((l) => l.issued_qty != null && l.used_qty != null);
-  const unexplained = lines.filter((l) => l.issued_qty != null && l.used_qty != null
-    && ((l.norm_qty != null && l.used_qty !== l.norm_qty) || (l.planned_qty != null && l.used_qty !== l.planned_qty))
-    && !(l.variance_reason || '').trim());
+  const entered = materialsSaved(c);
   const photos = executionPhotoIds(c).length;
   const rows = [
     [`Checklist (${done}/${items.length})`, done === items.length],
     ['Đã chọn vật tư sử dụng', entered],
-    ['Chênh lệch vật tư có lý do', unexplained.length === 0],
     [`Ảnh sau khi xử lý (${photos} ảnh)`, photos >= 1],
     ['Không còn vướng mắc', !c.ticket.blocker],
   ];
@@ -112,18 +109,19 @@ export async function detail(ctx) {
       }));
   };
 
-  // Q41 + Q42: ONE block where the department picks the materials really used and how many — the Agent's plan is neither
-  // shown nor pre-filled. Vệ sinh may tick "Không sử dụng vật tư". Save = POST material-plan (the choice replaces the plan),
-  // then every line issued = used. The reason box is required only when a quantity differs from the norm (engine reconcile).
+  // Q41 + Q42 + plan 16 §U1-U3: ONE block where the department picks the materials really used and how many — the
+  // Agent's plan is neither shown nor pre-filled. Vệ sinh may tick "Không sử dụng vật tư". Save = ONE POST material-usage
+  // with the whole selection (issued = used, one transaction). No reason box: the norm and the Agent's plan never block.
   const materialsBlock = (c, cat) => {
     const id = c.ticket.ticket_id;
     const cleaning = c.ticket.department_id === 'DEPT_CLEANING';
     const chose = deptChoseMaterials(c);
     const lines = chose ? c.material_lines : [];
     const noneChosen = chose && !lines.length;
-    const saved = chose && lines.every((l) => l.issued_qty != null && l.used_qty != null);
-    const fits = MATERIAL_GROUP[c.ticket.department_id] || (() => true);
-    const options = ((cat && cat.materials) || []).filter((m) => fits(m.item_code)).map((m) => [m.item_code, materialName(m.item_code, m.item_name)]);
+    const saved = materialsSaved(c);
+    const byDept = cat && cat.material_codes_by_department;
+    const allowed = new Set((byDept && byDept[c.ticket.department_id]) || []);
+    const options = ((cat && cat.materials) || []).filter((m) => allowed.has(m.item_code)).map((m) => [m.item_code, materialName(m.item_code, m.item_name)]);
     const rows = el('div', { class: 'plan-rows', id: 'dept-material-rows' });
     const addRow = (code = '', qty = 1) => {
       const qtyBox = el('input', { class: 'field qty', type: 'number', inputmode: 'numeric', min: '1', step: '1', value: String(qty), 'aria-label': 'Số lượng đã dùng' });
@@ -138,45 +136,50 @@ export async function detail(ctx) {
     const showRows = () => { rows.hidden = add.hidden = !!(none && none.checked); };
     if (none) none.addEventListener('change', showRows);
     showRows();
-    const reason = el('textarea', { class: 'field', id: 'dept-material-reason', rows: 2, maxlength: '300', placeholder: 'Bắt buộc khi số lượng khác định mức' });
-    reason.value = (lines.find((l) => l.variance_reason) || {}).variance_reason || '';
     const invalid = (message) => ctx.fail({ kind: 'invalid', message });
 
     const save = writeButton('Lưu vật tư', async () => {
-      const note = reason.value.trim();
-      if (none && none.checked) {
-        await run(post(id, '/material-plan', { lines: [], note: note || 'Không sử dụng vật tư' }), 'Đã lưu: không sử dụng vật tư');
+      let chosen = [];
+      if (!(none && none.checked)) {
+        chosen = [...rows.children].map((row, i) => ({ row: i + 1, item_code: row.querySelector('select').value, used_qty: Number(row.querySelector('input').value) }));
+        if (!chosen.length || chosen.every((l) => !l.item_code)) { invalid(cleaning ? 'Chọn vật tư hoặc đánh dấu "Không sử dụng vật tư"' : 'Chọn ít nhất một vật tư'); return; }
+        const empty = chosen.find((l) => !l.item_code);
+        if (empty) { invalid(`Dòng ${empty.row}: chọn vật tư hoặc bấm "Bỏ"`); return; }
+        const bad = chosen.find((l) => !(Number.isInteger(l.used_qty) && l.used_qty > 0));
+        if (bad) { invalid(`Dòng ${bad.row}: số lượng phải là số nguyên lớn hơn 0`); return; }
+        const twice = chosen.find((l, i) => chosen.findIndex((o) => o.item_code === l.item_code) !== i);
+        if (twice) { invalid(`Dòng ${twice.row}: mỗi vật tư chỉ chọn một dòng`); return; }
+      }
+      // §U3: an error keeps what was typed (no reload, no automatic retry); success reloads the case from the server
+      try {
+        await post(id, '/material-usage', { lines: chosen.map(({ item_code, used_qty }) => ({ item_code, used_qty })) })();
+      } catch (err) {
+        ctx.fail(err, { back: '#/d' });
         return;
       }
-      const chosen = [...rows.children].map((row) => ({ item_code: row.querySelector('select').value, planned_qty: Number(row.querySelector('input').value) }));
-      if (!chosen.length || chosen.every((l) => !l.item_code)) { invalid(cleaning ? 'Chọn vật tư hoặc đánh dấu "Không sử dụng vật tư"' : 'Chọn ít nhất một vật tư'); return; }
-      if (chosen.some((l) => !l.item_code)) { invalid('Chọn vật tư cho mọi dòng hoặc bấm "Bỏ"'); return; }
-      if (chosen.some((l) => !(Number.isInteger(l.planned_qty) && l.planned_qty > 0))) { invalid('Số lượng phải là số nguyên lớn hơn 0'); return; }
-      if (new Set(chosen.map((l) => l.item_code)).size !== chosen.length) { invalid('Mỗi vật tư chỉ chọn một dòng'); return; }
-      const changed = !chose || chosen.length !== lines.length
-        || chosen.some((l, i) => l.item_code !== lines[i].item_code || l.planned_qty !== lines[i].planned_qty);
-      await run(async () => {
-        const planned = changed
-          ? (await post(id, '/material-plan', { lines: chosen, note: note || 'Phòng ban chọn vật tư tại hiện trường' })()).material_lines
-          : lines;
-        // the norm of a picked item is only known once it is a line (the catalog view has no norm)
-        const offNorm = planned.filter((l) => l.norm_qty != null && l.planned_qty !== l.norm_qty);
-        if (offNorm.length && !note) {
-          throw { kind: 'invalid', message: `Khác định mức (${offNorm.map((l) => `${materialName(l.item_code, l.item_name)}: định mức ${l.norm_qty}`).join('; ')}) — nhập lý do rồi bấm Lưu vật tư lần nữa` };
-        }
-        for (const l of chosen) {
-          await post(id, `/materials/${encodeURIComponent(l.item_code)}`, { issued_qty: l.planned_qty, used_qty: l.planned_qty, ...(note ? { variance_reason: note } : {}) })();
-        }
-      }, 'Đã lưu vật tư');
+      toast(chosen.length ? 'Đã lưu vật tư' : 'Đã lưu: không sử dụng vật tư');
+      await reload().catch((err) => ctx.fail(err, { back: '#/d' }));
     });
     save.id = 'dept-material-save';
+    if (!byDept) { // §U2: an older server has no per-department list — never fall back to every item
+      delete save.dataset.write; // or applyOnline() would enable it again on every render
+      save.disabled = true;
+    }
 
-    return el('div', { class: 'act-box', id: 'dept-materials' },
+    const box = el('div', { class: 'act-box', id: 'dept-materials' },
       el('div', { class: 'trow' }, el('b', {}, 'Vật tư sử dụng'), pill(saved ? 'st-dang_xu_ly' : 'st-moi', saved ? 'Đã lưu' : 'Chưa lưu', { dot: false })),
       el('span', { class: 'muted small' }, cleaning ? 'Chọn vật tư đã dùng, hoặc đánh dấu không sử dụng vật tư.' : 'Chọn vật tư đã dùng và số lượng.'),
+      byDept ? null : notice('Máy chủ chưa hỗ trợ lưu vật tư theo phòng ban — cần cập nhật máy chủ.', 'danger'),
       c.ticket.flags.includes('ASSET_CHECK_ONSITE') ? notice('Chưa xác định được thiết bị: kiểm tra thực tế rồi chọn đúng vật tư.', 'pause') : null,
       none ? el('label', { class: 'check-row', for: 'dept-no-material' }, none, el('span', {}, 'Không sử dụng vật tư')) : null,
-      rows, add, field('Lý do', reason), save);
+      rows, add, save);
+    // §U3: a choice not saved yet (or kept after an error) pauses the 30 s refresh — screenIsDirty() ignores selects
+    const dirty = () => { box.dataset.dirty = '1'; };
+    box.addEventListener('input', dirty);
+    box.addEventListener('change', dirty);
+    add.addEventListener('click', dirty);
+    rows.addEventListener('click', (event) => { if (event.target.closest('button')) dirty(); });
+    return box;
   };
 
   const noteBlock = (c) => {

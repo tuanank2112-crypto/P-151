@@ -1,0 +1,40 @@
+{
+  "policy_id": "D5-POL-OUTSIDE-SAFETY-01",
+  "recorded_at": "2026-10-08T08:55:52.078704+00:00",
+  "status": "APPROVED_TARGET",
+  "approved_by": "Cao Văn Trường",
+  "approval_source": "User explicitly agreed with the proposed outside-pilot safety policy in conversation",
+  "implementation_status": "NOT_VERIFIED",
+  "pilot_buildings": [
+    "S1",
+    "S2"
+  ],
+  "rules": [
+    {
+      "risk_level": "NONE",
+      "pilot_scope": "OUT_OF_SCOPE",
+      "owner_role": "BPTN",
+      "blocker": "OUT_OF_SCOPE",
+      "action": "Verify scope; do not automatically route to pilot cleaning or technical departments."
+    },
+    {
+      "risk_level": "EMERGENCY",
+      "pilot_scope": "OUT_OF_SCOPE",
+      "owner_role": "BQL",
+      "blocker": "EMERGENCY_PENDING_BQL",
+      "action": "Urgent BQL review with explicit outside-pilot location warning and need for verification/forwarding. Do not automatically dispatch pilot teams."
+    },
+    {
+      "risk_level": "UNCLEAR",
+      "pilot_scope": "OUT_OF_SCOPE",
+      "owner_role": "BPTN",
+      "blocker": "SAFETY_REVIEW_REQUIRED",
+      "action": "Safety verification; outside-pilot location alone must not downgrade risk."
+    }
+  ],
+  "invariants": [
+    "Safety assessment precedes ordinary scope routing for every ticket.",
+    "Area scope and hazard recognition are distinct.",
+    "Approval of policy does not approve per-case gold, change dataset quota or certify runtime."
+  ]
+}

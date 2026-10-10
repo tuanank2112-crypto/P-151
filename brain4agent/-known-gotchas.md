@@ -86,9 +86,12 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 - **`gh` CLI trên máy Như Ý:** token trong Git Credential Manager (tài khoản `tuanank2112-crypto`) có scope `repo, workflow, gist`, THIẾU `read:org` ⇒ `gh auth login --with-token` và `gh pr edit` (GraphQL) lỗi. Dùng `GH_TOKEN=$(git credential fill ...)` + `gh api` (REST) cho từng lệnh. Agent KHÔNG được merge PR khi CI đỏ (chốt quyền "CI Bypass") ⇒ người bấm merge.
 - **CI GitHub Actions fail không do code (2026-10-03):** "job was not started because recent account payments have failed or your spending limit needs to be increased" — mọi run trên `develop` cũng vậy. Kiểm bằng `gh api .../actions/runs/<id>/jobs` (steps rỗng) + annotations.
 
+## curl tiếng Việt trên Git Bash Windows (2026-10-04)
+- `curl -d '{"original_description":"...có dấu..."}'` trả 422 `There was an error parsing the body` do mã hoá tham số; truyền qua file `--data-binary @body.json`, PowerShell dùng UTF-8 bytes, hoặc Swagger. Không phải bug API.
 ## Phạm vi tòa thí điểm Ocean Park S1/S2 (2026-10-05)
 - Vị trí cư dân chỉ hợp lệ khi tòa nằm trong `catalog.yaml` `site.buildings`; seed/test đã đổi `SIM-A`→`S1`, `SIM-B`→`S2`. Text test qua engine dùng tòa khác (vd `SIM-A`, `S3`) sẽ rơi NEED_INFO thiếu tòa.
 - KHÔNG đổi tòa trong bộ nhãn an toàn (`tests/.../data/safety_*_p0.yaml`, `test_safety_p0.py`) và `test_b01_closed_prefix_twenty_tokens_and_lamp_accent`: `assess()` không xét vị trí, còn "tòa SIM-A" = 3 token, "tòa S1" = 2 token ⇒ ca biên 20/21 token của B-01 lệch.
+
 
 ## UI tĩnh `src/web/` + Tailwind Play CDN (plan 07, 2026-10-07)
 - **Plugin `forms` của CDN đè class tự viết:** CDN chèn `<style>` SAU `theme.css`; selector `[type='text']`, `select` (0,1,1) thắng `.field` (0,1,0) ⇒ ô nhập mất nền/viền/bo góc. Viết `html body .field` (0,1,2). Áp cho mọi class tự viết đụng thuộc tính mà plugin `forms` đặt.
@@ -127,3 +130,26 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 - **(2026-10-09) Đáy độ trễ GET trên Supabase ≈ 50 ms = một câu SQL** (sau plan 12). Ảnh xem lại (56 ms) đã chỉ còn `repo.get` để kiểm quyền; muốn thấp hơn phải bỏ vòng DB đó = quyết định bảo mật, không phải tối ưu thường.
 - **(2026-10-09) Cache trình duyệt KHÔNG kiểm quyền:** ảnh trả `Cache-Control: private, max-age=…` (không `Vary`) ⇒ cùng profile trình duyệt, tài khoản khác `fetch` cùng URL nhận ảnh từ cache, server không thấy request (R01 plan 12 #2). Header cache của tài nguyên có kiểm quyền = quyết định bảo mật.
 - **(2026-10-09) `test_safety.py::test_assess_is_linear_*` đo thời gian, đỏ khi máy tải** (cả bộ chạy 332 s thay vì ~110 s). Chạy riêng + chạy lại cả bộ trước khi kết luận hồi quy; không đo khi auditor/trình duyệt test đang chạy.
+
+
+## Docker build context tr?n Windows (2026-10-10)
+- `docker compose up -d --build backend` c? th? d?ng ? `load build context` v?i `Access is denied` khi root repo ch?a worktree `integration/maintenanceops/.pytest_cache`. Khi build th?t b?i, backend ch?a ???c t?o n?n `/health` kh?ng k?t n?i v? `compose logs backend` tr?ng.
+- `.dockerignore` ph?i lo?i `integration/`, `.worktrees/`, `.python/`, `.uv-cache/`, th? m?c c?ng c? agent v? cache l?ng nhau. Kh?ng s?a ACL hay xo? worktree ?? x? l? l?i n?y. Backend c?n `src/`, `seed/`, `requirements.txt`; portal c? build context ri?ng `./portal`.
+- B?n s?a ?? ki?m tra t?nh; ch?a x?c nh?n Docker build th?nh c?ng tr?n m?y ng??i d?ng.
+
+
+## Area assets and emergency downgrade test (2026-10-10)
+- After plan 14 area-based asset lookup, TEC-005 can route after BQL clears the emergency, leaving blocker=None. API consumers/tests must accept no blocker; do not subscript it unconditionally. Before fix: 1 failed / 3382 passed; focused suite after fix: 40 passed. No production logic change.
+
+
+## Plan 15 verification gaps (2026-10-10)
+- material-plan + each materials/{code} is a sequence of independent transactions; a later stock failure does not revert the plan/refunds already committed. Test whole save sequences, not only failing record_material.
+- Current API permits fractional material quantities, cross-department items, and technical empty lists; browser-only guards do not enforce these business requirements. Full tests 3387 green do not cover rejecting these cases. Web materialPlanCard still pre-fills Agent plan and has a separate save flow.
+
+## Plan 16 vật tư guard (2026-10-10)
+- **Body JSON có `NaN`/`Infinity` làm 422 thành 500:** `json.loads` của Starlette nhận `NaN`, pydantic báo lỗi kèm `input=nan`, handler 422 mặc định của FastAPI không encode được ⇒ 500. Đã sửa một chỗ ở `src/main.py` (`_validation_error_handler`: bỏ `input`/`ctx` chỉ khi không encode được). Test gửi NaN phải dùng `content=json.dumps(...)`: `TestClient(json=...)` từ chối NaN trước khi gửi.
+- **psycopg2 bị Windows Application Control chặn trên host** (`DLL load failed … Application Control policy`) ⇒ `pytest --pg` chạy trong image: `docker run --rm --network p151_default -v C:/P-151:/app -w /app -e MO_TEST_DATABASE_URL=postgresql+psycopg2://p151:p151@db:5432/p151_test p151-backend python -m pytest tests --pg` (Git Bash cần `MSYS_NO_PATHCONV=1`). DB `p151_test` phải tạo trước trong `p151-db-1`.
+- **Harness web `/ui/`: `select(id)` không đồng bộ** — `#detail-pane` vẽ ticket đầu hàng đợi trước; chờ theo nội dung riêng của ticket (mô tả có RUN), không chỉ chờ selector, kẻo đo nhầm ticket khác.
+- **`shutil.rmtree` thư mục snapshot trong scratchpad có thể `WinError 5`** — tạo snapshot vào thư mục mới mỗi lần.
+- Đổi luật vật tư ⇒ guard nằm ở `material_policy.py` (API + engine + `_reconcile`); client CHỈ lọc theo `catalog.material_codes_by_department`, CẤM map vật tư trong JS.
+- **`p151_test` dùng chung giữa các agent/phiên:** fixture `pg_repo` TRUNCATE bảng ⇒ hai đợt `--pg` song song làm nhau `NotFoundError`. Chạy tuần tự (hoặc mỗi đợt một DB `*_test` riêng).

@@ -1,0 +1,6 @@
+A1 health (200, {'status': 'ok', 'env': 'development'})
+A2 login cudan01 200 True
+evaluate total/passed 12 12
+demo CLN-001 status READY_FOR_REVIEW
+A6 env vars in .env.example: 37 missing in README: ['AI_LOG_DIR', 'AI_LOG_SERVER', 'ANTHROPIC_API_KEY', 'CHROMA_PERSIST_DIR', 'GOOGLE_API_KEY', 'LANGCHAIN_API_KEY', 'LANGCHAIN_PROJECT', 'LANGCHAIN_TRACING_V2', 'NEXT_PUBLIC_API_URL', 'PINECONE_API_KEY', 'PINECONE_ENVIRONMENT']
+A6 after fix: missing = []

@@ -3,6 +3,9 @@
 File này chứa danh sách các tính năng, mục tiêu sắp tới và tình trạng công việc hiện tại.
 
 ## Mục tiêu hiện tại (Active)
+- [ ] **Plan 17, local 1.10.1:** UI develop b6590ce đã nhập; giữ backend Châm Anh, proxy và migration Kho. Build/typecheck/unit đạt; pytest memory 3438 + proxy/material focus47. Còn commit merge, DB/Docker workflow và điện thoại thật. Portal vẫn độc lập engine Python.
+- [ ] **Plan 16 rollout:** deploy server (G4 server ⬜), recreate `p151-backend-1` `:8000` bằng image mới (nối Supabase chung — người dùng quyết), thử trên điện thoại thật, cấp hub để boot G0.
+- [ ] Local v1.9.8: đã cập nhật `feature/chamanh` tới `7131510` (remote v1.9.7), giữ bản sửa Docker/GPT-6 Luna; cần rebuild Docker và test app trên điện thoại. Test API hạ khẩn cấp đã sửa để chấp nhận `blocker=null` sau tra tài sản theo khu vực.
 - [ ] **Plan 11 — App điện thoại PWA cho Cư dân + BQL (v1.7.0):** gate local G1–G4 ✅ (2026-10-09: pytest 3349, harness 26/26, 4/4 phép phá đỏ). Client mỏng `src/mobile/` ở `/app/`, cùng API ⇒ cùng DB với web; tải lại 30 s; SW không cache `/api/`. Còn: G5 thử trên điện thoại thật qua Wi-Fi; G6–G8 cần backend HTTPS công khai (Render); commit. Đợt 2 (2026-10-09): giao diện theo `portal/` trên backend FastAPI gốc (SPEC-P04). Đợt 3: mọi vai vận hành (Phòng ban chụp ảnh/báo cáo, BPTN, Kho) — SPEC-P05. Hồ sơ `planning/11_2026-10-09_mobile-pwa-app/`.
 - [ ] **Plan 07 — UI `src/web/` theo design portal (v1.3.0):** gate local G1–G4 ✅ (2026-10-07). Còn: dựng lại container `backend` để `:8000` có giao diện mới (gate server), commit.
 - [ ] **Plan 06 — Cổng phản ánh cư dân (`portal/`, v1.2.0):** gate local G1–G6 ✅ (2026-10-07). Còn: cột server (chọn nơi deploy + Postgres production, `npm run build && start` sau `db:migrate`), người dùng duyệt 9 lệch thiết kế D1–D9, commit.
@@ -21,11 +24,15 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 ## Tương lai (Upcoming)
 - [ ] **Bàn giao 19/10/2026 — CR-BPTN-03 P1:** T16/T17/E02 (08/10), gộp an toàn + hoàn tác (09/10), tín hiệu P1 + PRI-U1/U2 (10/10), follow-up + danh sách xác nhận an toàn (11/10); LangGraph trên đường chạy thật (05–07/10), thay boilerplate `src/agents/`; eval: an toàn ≥40 câu, 0 bỏ sót Bậc 1, classification ≥90% held-out, coverage ≥60%.
-- [ ] Cập nhật docs `01`–`05`, `data-contract-v1.md`, `playbook-v1.md`, README theo CR-03 (hiện còn ghi v0.3/CR-02, có link gãy tới CR-02).
+- [ ] Cập nhật docs `01`–`05`, `data-contract-v1.md`, `playbook-v1.md` theo CR-03 (hiện còn ghi v0.3/CR-02, có link gãy tới CR-02). README đã làm xong 2026-10-04 (hồ sơ 06).
 - [ ] Audit cho `receive_stock` (kho nhập vật tư): hiện không có dòng audit vì `AuditEvent` bắt buộc `ticket_id`.
 - [ ] Nếu deploy sau reverse proxy (Render): lấy IP client từ header tin cậy, nếu không khóa đăng nhập sẽ dồn về IP của proxy.
 
 ## 💡 Kho Ý Tưởng & Backlog (Idea Vault)
+- (plan 16) Chống sửa đè khi hai người cùng lưu vật tư một ticket (expected-version) — §C4 cố ý chưa làm; full replacement, lần sau thắng.
+- (plan 16) `screenIsDirty()` của app bỏ qua `<select>`/`input[type=number]`; hiện vá cục bộ bằng `data-dirty` ở khối vật tư — form khác có select nên rà lại.
+- (plan 16) Mỗi agent/đợt đo `--pg` dùng DB `*_test` riêng để chạy song song không truncate lẫn nhau.
+- [ ] (plan 15 §1 vùng cấm) Đưa "vật tư thuộc playbook/phòng ban" (`catalog.playbook_materials`), "số lượng nguyên" và "Kỹ thuật ≥1 vật tư" xuống engine — hiện chỉ app kiểm; cần người duyệt vì đổi contract (`test_confirm_no_materials_sets_mode_na`).
 - [ ] **(2026-10-10) Đèn theo KHU VỰC thay asset từng bóng (người dùng chốt ý, CHỜ Trường + Như Ý + bảng dữ liệu):** người dùng: mỗi loại khu vực dùng một loại bóng (hành lang = A, thang máy = B) ⇒ không cần BPTN chọn. Hiện: bước 6 khớp asset đúng Tòa/Tầng/Khu vực (catalog 6 đèn ⇒ SIM-TKT-0056 S2/T9/Phòng rác đứng `ASSET_UNCLEAR`), bước 7 lấy `default_materials` chung mọi khu vực. Đề xuất: `catalog.yaml` `area_lighting` (khu vực → `item_code`, có LAMP-01 LED / LAMP-02 tuýp), bước 6 khu vực có trong bảng ⇒ đi tiếp, bước 7 lấy bóng theo khu vực, BPTN chỉ khi khu vực ngoài bảng. Đổi CR-03 §9.1 ⇒ cần duyệt; người dùng cấp bảng 12 khu vực.
 - [ ] **(2026-10-10) Vị trí chữ ≠ vị trí chọn trên app (CHỜ NHÓM QUYẾT):** app ghép `Vị trí: …` vào cuối mô tả; `rules._location_parts` chọn khu vực theo THỨ TỰ `AREA_PATTERNS` (Sảnh thang máy > … > Hành lang > … > Phòng rác), không theo nguồn, không báo mâu thuẫn. Đo (mock, `:memory`): "Đèn hành lang hư" + chọn Phòng rác ⇒ asset Hành lang (chữ thắng); "Phòng rác bốc mùi" + chọn Hành lang ⇒ Hành lang (lựa chọn thắng, đội vệ sinh đi sai chỗ). Hướng: (1) app cảnh báo trước khi gửi khi chữ nhắc khu vực khác lựa chọn (client, Châm Anh/Trí); (2) engine coi dòng `Vị trí:` là nguồn chính hoặc mâu thuẫn ⇒ hỏi lại (đổi luật, Như Ý/Trường). Đường Agent LLM chưa đo.
 - [ ] **(2026-10-09) Từ thẩm định R01 plan 12 (mức 🟢/nghi ngờ):** `Accept-Encoding: gzip;q=0` vẫn nén (Starlette tìm chuỗi con); pool ghi 2+0 không dư khi `seed()`/tx dài > 30 s; đăng xuất khi offline không thu hồi phiên server; `apiImage` (app) 401 không gọi `onUnauthorized`; form an toàn của APP điện thoại chưa chặn lý do trống ở client (web đã sửa ở plan 13).
@@ -50,6 +57,8 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [ ] **(2026-10-04) Từ plan 04, cần nhóm quyết:** (1) ngoài phạm vi trả 404 thay vì 403 + audit (chặn dò ticket + phình audit do gọi lặp; đổi 8 test đã duyệt); (2) ghi chú kết quả có bắt buộc ở bước 10 (CR §9.4(2)) không; (3) cư dân gửi ảnh ngoài NEED_INFO; (4) đánh giá ticket MERGED khi ticket gốc CLOSED; (5) lỗ SPEC-P01 A2: marker "giờ hết rồi" hạ cả mệnh đề có người ngất — cần architect; (6) `_proven_lamp` trong `safety.py` coi mọi "đèn" có dấu trong mệnh đề là bằng chứng B-01 ("đèn … cháy đen" mới vá bằng từ vựng); (7) cụm cũ `ket nguoi` bắt "kẹt, người dùng phản ánh…"; (8) tồn kho mô phỏng không trừ khi giao việc — 2026-10-05 đã trừ khi phòng ban ghi "Đã xuất" (chặn vượt tồn); còn mở: giữ chỗ khi giao việc, hoàn kho khi huỷ; (9) `/mo/catalog` mở cho cư dân, `eta` không timezone trả 409; (10) từ vựng còn (sau vòng 3): "cháy" đứng riêng chỉ Bậc 2 (B-03, cần SPEC); "không có lửa nhưng khói rất nhiều" chỉ Bậc 2; ngữ cảnh khói thuốc ở câu khác không được loại; "kêu cứu" nghĩa bóng lên Bậc 1 (chủ ý).
 
 ## Đã hoàn thành (Done)
+- [x] **v1.10.0 (2026-10-10 18:18:44, Châm Anh) — guard vật tư backend + lưu nguyên tử** (plan 16): `POST material-usage` một giao dịch; guard phòng ban/số nguyên dương/Kỹ thuật ≥1 ở API cũ + mới + engine + hoàn thành; web/app một form một POST. Local + Docker ✅, thẩm định độc lập ✅ (lần 2). Còn: server, điện thoại thật, boot hub, commit.
+- [x] **v1.9.9 (2026-10-10, Châm Anh) — vật tư: bỏ đối chiếu định mức / đề xuất Agent** (plan 15): engine chỉ chặn đã dùng ≠ đã xuất; `material-plan` không bắt note; app/web bỏ ô lý do, một lần bấm lưu. Còn: harness UI Playwright (q41/q42 còn luật cũ), Docker `:8000`, commit.
 - [x] **v1.9.7 (2026-10-10, Châm Anh) — app Phòng ban: bỏ đề xuất vật tư của Agent** (plan 11 Q42): phòng ban chọn từ đầu; engine bước 7 giữ nguyên.
 - [x] **v1.9.6 (2026-10-10, Châm Anh) — app Phòng ban: một khối chọn vật tư sử dụng** (plan 11 Q41): kỹ thuật viên tự chọn, Vệ sinh được chọn không dùng vật tư. API không đổi.
 - [x] **v1.9.5 (2026-10-10, Châm Anh) — app điện thoại: mỗi ticket chỉ hiện ở một ô** (plan 11 Q40, `boxOf`): BPTN/BQL/Cư dân rời nhau; Phòng ban/Kho vốn rời. API không đổi.
@@ -65,6 +74,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [x] **v1.8.0 (2026-10-09, Châm Anh) — plan 12 giảm độ trễ backend:** `planning/12_2026-10-09_backend-latency/`. Engine đọc AUTOCOMMIT, ảnh khỏi event loop + 1 transaction/lô, cache ảnh, gzip, `run_jobs` bớt đọc. `:8000`: GET 230→53 ms, danh sách ~4 KB trên dây, ảnh xem lại 527→56 ms. API/schema không đổi.
 - [x] **v1.6.0 (2026-10-08, Châm Anh) — plan 10 chia trang danh sách:** `planning/10_2026-10-08_list-paging/`. 4 màn (cư dân, BPTN, phòng ban, BQL) hiện 20 ticket/trang, nút Trước/Sau không gọi API, ô đếm vẫn toàn bộ. API không đổi. Chia trang ở server vẫn ở Idea Vault.
 - [x] **v1.5.0 (2026-10-08, Châm Anh) — plan 09 tăng tốc đọc backend:** `planning/09_2026-10-08_backend-speed/`. Cache `list()` theo `xmin` + bỏ N+1 màn cư dân; danh sách cư dân 2.7 s → 0.2 s, BPTN 1.5 s → 0.22 s, BQL 0.5 s → 0.22 s (Supabase, 66 ticket). API không đổi (parity 8/8). Gzip/BQL 1 API, agent chạy nền, session DB, phân trang ⇒ Idea Vault.
+- [x] **README refresh (2026-10-04, Trường, docs-only, không bump version):** `planning/06_2026-10-04_readme-refresh/`. Đường chạy chính Docker + `MO_STORE=memory`, bảng biến môi trường đầy đủ, câu mẫu + curl/PowerShell đã chạy thật, API theo code đang chạy. Docker KHÔNG kiểm được trên máy (không có Docker Desktop): đã kiểm bằng uvicorn + pytest 1641 pass.
 - [x] **v1.2.0 (2026-10-07) — plan 06 Cổng phản ánh cư dân (local):** `portal/` Next.js + PostgreSQL, 6 màn theo bộ thiết kế `.dc.html`, 5 vai, luồng ticket 6 bước, Agent từ khóa sửa được. Unit 14, DB 15, E2E production PASS. `docs/portal.md`.
 - [x] **v1.1.5 (2026-10-05, Như Ý):** đèn cháy / đèn chập (kể cả gõ không dấu) = đèn hỏng giao Phòng Kỹ thuật, không còn bị coi là nghi nguy hiểm; có khói/tóe lửa vẫn khẩn cấp. 2941 test xanh.
 - [x] **Phản hồi demo 2026-10-05 (Unreleased):** nút Nghiệm thu một lần; thí điểm Ocean Park S1/S2 + Sảnh cư dân Tầng 1 + tòa con S1.12; BPTN thấy phần thiếu trên thẻ an toàn; phòng ban xác nhận vật tư tại hiện trường (`/material-plan`). 1649 test xanh.
@@ -84,10 +94,8 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [x] 01/10 — Phiên duyệt CR-03, phạm vi P0/P1, mặc định D-01–D-07, ghi người duyệt D-08, chốt 4 luồng demo (plan 02 WP1–WP3).
   D-08: leader Lê Thị Châm Anh duyệt MVP 04/10 + D-01–D-07; ngày báo 2026-10-02, ghi nhận 2026-10-03; tham chiếu a5e2705/PR #6.
 - [x] 02/10 — Rules P0 + ví dụ phủ định/không dấu/nghi ngờ; sửa expected CLN-004, TEC-005 (plan 02 WP4–WP5; 266 test, 57/57 hồ sơ).
-- [~] 03/10 — Kiểm tra asset/vật tư, trùng cơ bản, 4 script demo, rà wording theo quyền vai trò → D3-01..07 (SPEC-P06-DAY03).
-  Chạy local cô lập (SHA 0ea04ad): 23 record = 17 PASS / 1 FAIL / 5 BLOCKED / 0 NOT_RUN. D3-01/02/03/04/07 [x] (D3-07 = đã lập báo cáo); D3-05/06 chưa [x].
-  Asset 3/3, vật tư 4/4, trùng 4/4 PASS. Wording: WORD-03 PASS; WORD-01/02/04 BLOCKED (safety Bậc 2/Bậc 1, rating-once, reopen chưa tích hợp). Demo: 5 PASS, 1 FAIL (DEMO-01-RATING: `engine.rate` ghi đè rating, engine.py:548-553), 2 BLOCKED (DEMO-04 safety chưa tích hợp). Owner lỗi/BLOCKED: Như Ý.
-  Chờ người quyết: ASSET-03 (SPEC §3 vs OPERATIONS §3.2.2), STOCK-04 (cờ `STOCK_CHECK_ON_ACCEPT` chỉ đặt, accept không xử lý), owner reopen/rating-once.
+- [x] 03/10 — Kiểm tra asset/vật tư, trùng cơ bản, 4 script demo, rà wording theo quyền vai trò → D3-01..07 ĐÓNG (SPEC-P06-DAY03).
+  Kết quả cuối trên develop f46a53c (local cô lập): DEMO-01..04 và WORD-01..04 PASS; asset 3/3, vật tư 4/4, trùng 4/4 PASS. D-01 delta+snapshot NGOÀI phạm vi MVP 04/10 (D01-A/C giữ BLOCKED, Như Ý). ASSET-03 theo OPERATIONS (asset_onsite), STOCK-04 cờ chỉ là lời nhắc. Fixture CR03 đã khớp thứ tự an toàn trước phân loại (12/12). Runtime/online gate vẫn mở.
 - [ ] 04/10 — Chạy demo theo script trên bản online, đối chiếu expected, ghi phần chưa xong + giới hạn mô phỏng. 21:00 nghiệm thu MVP.
   (Chờ: Như Ý nối safety P0 + D-01 vào engine; Châm Anh deploy + persistence/restart.)
 - [ ] 05/10 — Chốt backlog sau MVP; mở rộng bộ câu gán nhãn, tách nhãn classification và safety.
@@ -108,3 +116,110 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 **Chỉ tiêu 19/10 phụ thuộc dữ liệu của Trường:** safety ≥40 câu nhãn, 0 bỏ sót Bậc 1 (báo false positive); classification
 ≥90% held-out; AC-01–AC-18 map test/kịch bản; user test 3–5 người độc lập (thiếu ⇒ ghi số thật).
+
+## Component diagram — 2026-10-04 (✅ Hoàn thành & Nhúng README)
+- [x] Đọc repo, phỏng vấn và soạn bộ SPEC target 19/10: [hồ sơ 05](../planning/05_2026-10-04_component-diagram/plan.md).
+- [x] Duyệt SPEC, dựng và kiểm local draw.io/SVG 16:9; native export exit0.
+- [x] Tái cấu trúc theo Phương án A (Bố cục 3 tầng Enterprise: Clients/Gateway, Safety/LangGraph/Human, Persistence/Telemetry) loại bỏ hoàn toàn hiện tượng dây nối chồng chéo và cắt ngang chữ.
+- [x] Người dùng nghiệm thu thị giác; đã nhúng trực tiếp sơ đồ SVG và mã nguồn Mermaid collapsible vào root `README.md`.
+- [x] Bàn giao đầy đủ các artifacts: SVG vector, .drawio native, Mermaid .mmd và tài liệu hướng dẫn tại [`docs/diagrams/maintenanceops-target-20261019/`](../docs/diagrams/).
+
+## Kế hoạch ngày 04 — Trường (2026-10-04)
+- [ ] [Hồ sơ07](../planning/07_2026-10-04_online-acceptance/plan.md): PROPOSED, 8 task/15 ca; preflight, 4 nhóm demo, guard/wording, đối chiếu restart và tổng hợp trước21:00. Chưa xác nhận URL/build QA, chưa chạy online.
+- Cập nhật hiện trạng: safety routes và rating đã PASS local Day03; không coi là online đạt. D-01 delta/snapshot ngoài MVP04/10, không còn là điều kiện chờ của ngày04.
+
+- 2026-10-04, hồ sơ07 cập nhật theo người dùng: chỉ localhost, chưa có online. Kiểm14 ca nghiệp vụ local; R01 postgres kiểm trước/sau restart, memory ghi BLOCKED_MEMORY_STORE. Online BLOCKED_NO_DEPLOYMENT; chưa chạy test trong lượt điều chỉnh kế hoạch.
+
+## README / diagram correction — 2026-10-04
+- [x] Fix two broken component links, real clone URL, response-derived ticket ID and port semantics. Synchronize implementation diagrams: 2b before 2, BPTN step 5, REWORK, lifecycle persistence, optional integrations. Supersedes earlier target-only / Zero-Crossing delivery claims for the current artifacts.
+- [ ] Re-run Docker/runtime and inspect SVG render on an available local renderer. Team details pending user input.
+
+## Diagram restoration — 2026-10-04
+- [x] Restore user-selected target layouts. Supersedes implementation-view replacement in previous correction; preserve layout and explain runtime discrepancies in surrounding text.
+
+## Isolated integration — 2026-10-04
+- [x] Preserve local work on backup/truong-local-20261004 and merge develop on separate integration branch.
+- [x] Tests and preservation verified on integration branch (1843 passed, ruff clean, README4/4, evaluate12/12). Original feature/truong/develop remain unchanged; no push. PostgreSQL/Docker/typecheck gates remain open.
+
+## Feature/truong update — 2026-10-04
+- [x] Adopt tested develop integration on feature/truong; rerun pytest1843 and ruff in original worktree. Preserve diagrams and untracked submission files. No push.
+- [ ] PostgreSQL/Docker and mypy checks remain unavailable/not run.
+
+
+## Integration foundation — 2026-10-07
+- [x] Update feature/truong to tested develop 52ae81c, preserve personal diagrams/reports.
+- [ ] Day05: approve post-MVP backlog and separate classification/safety labels with held-out evidence.
+- [ ] Day06: review every blocker/resume route and prepare engine-versus-graph cases.
+- Integration is not personal task acceptance; graph runtime remains pending.
+
+
+## GPT-6 Luna — 2026-10-07
+- [x] Local configuration and Luna compatibility; 30 targeted tests pass.
+- [x] Verify SUCCESS on a real synthetic classification request (SIM-TKT-0042, 2026-10-07; supersedes initial placeholder-key failure).
+
+## Shared Supabase demo — 2026-10-07
+- Shared Supabase demo SIM-TKT-0042 CLOSED; 2 simulated PNG photos byte/hash verified through API and Storage after restart; cases53->54, preexisting53 unchanged, stock unchanged; GPT-6 Luna SUCCESS / rules+llm:gpt-6-luna (2000.82ms); missing execution photo blocked completion; pytest2973 passed,29 pg deselected, ruff clean. Server127.0.0.1:8001 (jobs/seed/reset false).
+- Evidence: planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json; run_demo.py; pytest.txt; ruff-check.txt. Real AI response preserved in recovery_ai_logs; in-memory API AI Logs are empty after restart. No rating submitted. API flow exercised; no manual browser walkthrough/public deployment/physical maintenance acceptance. Day05/06 remain open.
+- [x] Shared DB + Storage demo and persistence of one ticket after server restart.
+- [x] Real GPT-6 Luna classification verified (supersedes earlier replace-placeholder pending item).
+- [ ] Public deployment, complete 14-case acceptance matrix, Day05/Day06 sign-off.
+
+## Day04 completion review — 2026-10-07T04:21:45.545224+00:00
+- Day04 review: narrowed personal demo scope executed with expected/actual and limitations recorded; formal acceptance package not closed. Preserve old8PASS/1BLOCKED/6NOT_RUN on mock/memory; separate Supabase/Luna one-case evidence. No combined9/15 claim. Missing day04-2 manifest/results/issues, same-build smoke/UI wording, old M01/S04/G03 evidence gaps, online/leader sign-off. User-approved reduced scope remains authoritative.
+- Current report: planning/07_2026-10-04_online-acceptance/deliverables/day04-summary.md. Two broken links corrected. This read-only evidence review did not run new demos or write shared DB/Storage.
+
+## Day04 scope normalization — 2026-10-07T04:32:59.390139+00:00
+- User removed six unused cases from personal acceptance scope; active9=H01,H02,I01,A01,M01,U01,S04,G03,R01. day04-3 manifest/results/issues normalized from valid references, separated legacy8PASS/1BLOCKED and Supabase1PASS/1FAIL (create422 recovered but pending clean201 retest). No cross-build9/9 claim. All references/counts/source time provenance checked;3 corruption controls rejected. No app execution/shared writes/commit/push.
+- Records: planning/07_2026-10-04_online-acceptance/deliverables/manifest.json, results.json, issues.json, day04-summary.md; validation: evidence/normalization-20261007/validation.txt in that plan.
+
+## Child trapped safety false negative — 2026-10-07T04:38:20.572561+00:00
+- CRITICAL D4-11 OPEN: exact text có trẻ con bị kẹt ở sảnh chung cư tòa S5 -> local memory/mock NONE/OUT_OF_SCOPE/BPTN; S1 also fails, adding mắc gives EMERGENCY_PENDING_BQL/BQL. Root cause missing person+trapped wording in S-09 lexicon, primary owner Như Ý (engine/safety), Châm Anh integration/API retest. Screenshot TK-0046 live backend not queried/modified; no shared writes/LLM calls. Do not mark fixed; no source patch made.
+- Evidence: planning/07_2026-10-04_online-acceptance/evidence/normalization-20261007/safety-child-trapped.json; issue D4-11 in deliverables/issues.json. Safety runs before location/category and must catch this even when S5 is outside supported buildings.
+
+## Day05 — kế hoạch đề xuất 2026-10-07T05:07:58.261170+00:00
+
+- [x] Lập [SPEC package](../planning/09_2026-10-07_day05-labels/plan.md):7 docs,10 source refs,3 negative controls rejected, exit0.
+- [ ] Duyệt contract/reviewer/owner; chốt backlog từ evidence, ưu tiên D4-11 CRITICAL/P0.
+- [ ] Chuẩn bị80 câu safety (20 EMERGENCY/20 UNCLEAR/40 NONE);40 câu NONE có thêm classification (15 vệ sinh/15 kỹ thuật/10 UNKNOWN). Chỉ nhãn được người độc lập duyệt mới là gold.
+- [ ] Freeze family split develop50/held-out30, validator/baseline riêng; báo lỗi thật, không đóng product safety gate còn mở.
+- Idea Vault: vision/LangGraph/P1 và Day06 blocker-resume tách ngoài Day05. Chưa tạo dữ liệu hoặc baseline mới.
+
+## Day05 — thực thi local 2026-10-07 (offline, chưa đóng)
+
+- [x] Backlog PROPOSED: 15 mục / 11 issue Day04 phủ hết, validator exit 0; D4-11 đo lại trên HEAD vẫn lỗi (S5/S1 "bị kẹt" ⇒ NONE) ⇒ giữ OPEN/CRITICAL/P0 (Như Ý). Chờ leader/owner xác nhận (owner_acceptance=PROPOSED).
+- [x] 50 câu DEVELOP + 50 safety / 20 classification proposal (agent soạn, chưa phải gold), 30 family, nhóm F-D4-11 = 8; blind review sheet ID mờ; công cụ validator/baseline/review-pack: pytest 270 pass/0 skip, ruff exit 0 (sau thẩm định cô lập + H05).
+- [ ] Gold ACCEPTED 0/80 safety, 0/40 classification (cần reviewer người độc lập); held-out 0/30 (người soạn AUTHORED); split nháp chưa freeze; baseline CHƯA chạy (runner `NO_VALID_GOLD` exit 2).
+- Idea Vault: soạn ≥1 ô held-out bằng người khác Trường; bổ sung thẩm định cô lập vòng 2 trước khi freeze; cân nhắc `review_id` thay khoá `case_id` trong sheet.
+- Evidence: planning/09_2026-10-07_day05-labels/ (deliverables/day05-summary.md, evidence/run00..05, reports/R01–R05, handoffs/H01–H05). Bước 0 `init_brain --check` exit 1 MODULE_NOT_FOUND (thiếu hub), luật managed giữ nguyên.
+
+## Day05 recheck and daily report — 2026-10-07T06:16:13.491588+00:00
+
+- [x] Recheck local tools/data and write [daily report](../docs/submission/daily/2026-10-05.md):270 pass/0 fail/0 skip, lint/format exit0, backlog and structure exit0,95 hashes match.
+- [ ] Day05 completion:15 owners PROPOSED;50 DEVELOP/70 proposals;0 accepted gold;0 held-out. Full validator exit1; runners exit2 and no baseline output. D4-11 still reproduces on S1/S5. Human review/held-out/ownership confirmations still required.
+
+
+### Day05 main report — 2026-10-07T06:21:49.340237+00:00
+- [x] Added docs/submission/day05-report.md and README/daily links; prior measurements retained, all new report links checked.
+- [ ] Full Day05 closure still requires human review/owner confirmation, held-out/gold/freeze and baseline; no requirement waived.
+
+
+## Latest develop merge — 2026-10-07T13:30:26.152115+00:00
+- [x] feature/truong integrates develop04491ad;3341 app tests +270 Day05 tools pass,ruff clean; local work and90 package hashes preserved.
+- [ ] Coordinate Supabase0002 migration/new backend restart; test real Luna reasoning client and portal separately. Day05 gold/held-out/reviewer gates unchanged.
+
+
+- [x] Start portal3000 for direct testing (07/10): local PostgreSQL schema/seed, login browser200,17 unit tests pass.
+- [ ] Portal connection to Python/Luna/Supabase is not implemented; do not treat portal test as Day05 engine evaluation.
+
+- 2026-10-07T16:47:40.721485+00:00: Day05 remaining-work packet prepared: D4-11 10 proposal cases, 30 human authoring slots, 15 backlog approval rows; tools270 PASS. Human gold/authorship and policy approvals still pending; no Day05 closure.
+
+- 2026-10-08T08:55:52.078704+00:00: Outside-pilot safety policy approved by Trường: EMERGENCY→BQL urgent review/forwarding, UNCLEAR→BPTN safety review, NONE→BPTN scope review. Runtime/API implementation pending; D4-11 OPEN.
+
+
+## Scope Day05 đã duyệt: PRELIMINARY_15 (2026-10-08T08:59:38.730526+00:00)
+
+Trường xác nhận đánh giá sơ bộ bằng 15 câu do Trường tự soạn thay yêu cầu 30 câu held-out. Các quota 80 safety/40 classification và minimum32 family của hồ sơ rộng không còn chặn nghiệm thu Day05 sơ bộ. Vẫn cần review safety bởi Như Ý, classification bởi Châm Anh, kiểm tra nhóm biến thể/nguồn, baseline thật, xác nhận backlog và report/manifest. Không suy nghiệm thu safety đầy đủ, API/online hoặc chất lượng tổng quát. Hiện: 15 AUTHORED, review hoàn tất 0, baseline chưa chạy. Contract đang hiệu lực: planning/09_2026-10-07_day05-labels/specs/SPEC-P03-PRELIMINARY15.md. Quota cũ và bằng chứng cũ được giữ làm lịch sử.
+
+- 2026-10-08T09:42:49.903373+00:00: Trường duyệt 4 mục cuối 009/010 NEXT, 013/014 DEFER nghiệm thu riêng. Hướng xử lý backlog đủ15/15; không có mục nào mới CLOSED. Sửa mô tả lỗi thời 013 (đã có module StateGraph/engine integration) và 014 (lexicon P0/P1); chưa coi code tồn tại là runtime PASS. Tổng hợp backlog-handoff-summary.md để người dùng bàn giao, chưa gửi tin/commit/push.
+
+- 2026-10-08T10:10:44.796289+00:00: Trường báo Như Ý/Châm Anh đã duyệt và nhận phần việc, yêu cầu push nhánh và PR vào develop. Ghi owner-acknowledgement.json, 12/15 owner CONFIRMED (3 mục còn có Trí/leader không suy nhận việc); review nhãn và runtime retest vẫn PENDING. Chuẩn bị commit gói Day05 cùng bằng chứng Day04 liên quan, không thêm thay đổi runtime chưa thuộc scope.

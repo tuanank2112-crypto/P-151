@@ -1,0 +1,6 @@
+captured_at=2026-10-10T18:06:26+07:00
+$ python -m pytest tests -q -p no:cacheprovider
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3438 passed, 95 deselected, 1 warning in 158.31s (0:02:38)
+exit=0

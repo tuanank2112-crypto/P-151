@@ -777,6 +777,20 @@ def test_openai_json_client_sends_temperature_zero_json_mode_and_no_retries(fake
     assert reply.usage == {"prompt_tokens": 11, "completion_tokens": 7, "total_tokens": 18}
 
 
+def test_openai_json_client_luna_uses_supported_completion_parameters(fake_openai):
+    client = openai_json_client(
+        "gpt-6-luna", "test-key", None, timeout=25, max_output_tokens=2500, json_mode="json_object"
+    )
+    client("SYS", "USR", new_input())
+    call = fake_openai.instances[0].calls[0]
+    assert call["model"] == "gpt-6-luna"
+    assert call["max_completion_tokens"] == 2500
+    assert call["reasoning_effort"] == "none"
+    assert call["response_format"] == {"type": "json_object"}
+    assert "max_tokens" not in call
+    assert "temperature" not in call
+
+
 def test_openai_json_client_prompt_only_sends_no_response_format_and_strips_fences(fake_openai):
     client = openai_json_client(
         "m", "k", "https://api.example", timeout=5, max_output_tokens=500, json_mode="prompt_only"

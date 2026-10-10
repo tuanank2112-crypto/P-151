@@ -1,0 +1,6 @@
+captured_at=2026-10-10T17:56:24+07:00
+$ sh planning/16_2026-10-10_material-guards/evidence/wp4/live_bigint.sh http://127.0.0.1:8017
+POST material-usage used/planned/issued=10**400 -> HTTP 500 body=Internal Server Error
+POST material-plan used/planned/issued=10**400 -> HTTP 500 body=Internal Server Error
+POST materials/SIM-MAT-LAMP-01 used/planned/issued=10**400 -> HTTP 500 body=Internal Server Error
+exit=0

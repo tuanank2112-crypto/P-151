@@ -21,7 +21,7 @@ tickets:
       created_at: "2026-09-27T08:00:00+07:00"
       original_description: "Hành lang tầng 3 tòa S1 có nhiều rác và vết bẩn, cần vệ sinh."
     flow: DEMO-1
-    purpose: "Vệ sinh 08:00: chuyển Phòng Vệ sinh, nhận việc, báo hoàn thành; chênh lệch vật tư có lý do → READY kèm warning không chặn"
+    purpose: "Vệ sinh 08:00: chuyển Phòng Vệ sinh, nhận việc, báo hoàn thành; dùng túi rác 3 > định mức 2, không lý do → READY, không warning (plan 11 Q43)"
     materials:
       - {item_code: SIM-MAT-CLEAN-01, planned_qty: 2}
       - {item_code: SIM-MAT-BAG-01, planned_qty: 3}
@@ -29,7 +29,7 @@ tickets:
       checklist: [CLN-CHK-01, CLN-CHK-02, CLN-CHK-03]
       materials:
         - {item_code: SIM-MAT-CLEAN-01, issued_qty: 2, used_qty: 2}
-        - {item_code: SIM-MAT-BAG-01, issued_qty: 3, used_qty: 3, variance_reason: "Khối lượng rác mô phỏng lớn hơn định mức"}
+        - {item_code: SIM-MAT-BAG-01, issued_qty: 3, used_qty: 3}
       evidence:
         - {requirement_id: CLN-EVD-PROCESSING-NOTE, evidence_type: PROCESSING_NOTE, content_or_metadata: "Ghi chú xử lý mô phỏng: đã thu gom rác và lau sàn hành lang", readability_status: NOT_APPLICABLE}
         - {requirement_id: null, evidence_type: SIMULATED_IMAGE, content_or_metadata: "Ảnh mô phỏng: hành lang sau khi dọn", readability_status: READABLE}
@@ -46,7 +46,7 @@ tickets:
       asset_lookup_status: NOT_APPLICABLE
       material_stock_status: SUFFICIENT
       flags: []
-      warnings: [EXPLAINED_MATERIAL_VARIANCE]
+      warnings: []
       failing_items: []
 
   - raw:

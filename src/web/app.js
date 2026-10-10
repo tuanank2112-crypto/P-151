@@ -1454,11 +1454,13 @@ async function renderDepartment(list, detail) {
 
 // Readiness names what is missing by internal ID; say it the way the department sees it on this page
 function failingLabel(c, item) {
+  if (item === 'material_required') return 'chưa chọn vật tư sử dụng';
+  if (item === 'material_invalid') return 'vật tư đã lưu không hợp lệ — chọn lại và bấm Lưu vật tư';
   const line = c.material_lines.find((l) => l.material_line_id === item);
   if (line) {
     return line.issued_qty == null || line.used_qty == null
       ? `chưa lưu số lượng vật tư "${line.item_name}"`
-      : `chưa ghi lý do chênh lệch vật tư "${line.item_name}"`;
+      : `số đã dùng khác số đã xuất kho của vật tư "${line.item_name}" — lưu lại số lượng`;
   }
   const check = c.checklist_items.find((i) => i.template_item_id === item);
   if (check) return `chưa đánh dấu "${check.label_snapshot}"`;
@@ -1474,12 +1476,10 @@ function computeReadinessPrecheck(c) {
   const checklistComplete = checklistTotal > 0 ? checklistDone === checklistTotal : true;
 
   const materials = c.material_lines || [];
-  const materialsEntered = materials.every((l) => l.issued_qty != null && l.used_qty != null);
-  const varianceUnexplained = materials.filter((l) => {
-    if (l.issued_qty == null || l.used_qty == null) return false;
-    const hasVariance = (l.norm_qty != null && l.used_qty !== l.norm_qty) || (l.planned_qty != null && l.used_qty !== l.planned_qty);
-    return hasVariance && (!l.variance_reason || !l.variance_reason.trim());
-  });
+  const materialsEntered = materialsSaved(c);
+  // Q43: only used ≠ issued still needs a reason; the norm and the Agent's plan are never compared here
+  const varianceUnexplained = materials.filter((l) => l.issued_qty != null && l.used_qty != null
+    && l.used_qty !== l.issued_qty && !(l.variance_reason || '').trim());
   const varianceExplained = varianceUnexplained.length === 0;
 
   const photos = executionPhotos(c);
@@ -1491,11 +1491,10 @@ function computeReadinessPrecheck(c) {
     missingList.push(`Checklist: còn ${checklistTotal - checklistDone}/${checklistTotal} hạng mục chưa hoàn thành`);
   }
   if (!materialsEntered) {
-    const unentered = materials.filter((l) => l.issued_qty == null || l.used_qty == null).map((l) => l.item_name);
-    missingList.push(`Vật tư: chưa lưu số lượng cho ${unentered.join(', ')}`);
+    missingList.push('Vật tư: chưa chọn và lưu vật tư đã dùng');
   }
   if (!varianceExplained) {
-    missingList.push(`Giải trình vật tư: chưa ghi lý do chênh lệch cho ${varianceUnexplained.map((l) => l.item_name).join(', ')}`);
+    missingList.push(`Vật tư: số đã dùng khác số đã xuất kho cho ${varianceUnexplained.map((l) => l.item_name).join(', ')} — lưu lại số lượng`);
   }
   if (!photoPresent) {
     missingList.push('Ảnh hiện trường: cần chụp ít nhất 1 ảnh sau khi xử lý');
@@ -1524,8 +1523,8 @@ function computeReadinessPrecheck(c) {
 function renderPrecheckCard(precheck) {
   const criteria = [
     { label: `Checklist công việc (${precheck.checklistDone}/${precheck.checklistTotal})`, ok: precheck.checklistComplete },
-    { label: 'Số lượng vật tư đã xuất & dùng', ok: precheck.materialsEntered },
-    { label: 'Giải trình chênh lệch vật tư hợp lệ', ok: precheck.varianceExplained },
+    { label: 'Đã lưu số lượng vật tư đã dùng', ok: precheck.materialsEntered },
+    { label: 'Số đã dùng khớp số đã xuất kho', ok: precheck.varianceExplained },
     { label: `Ảnh hiện trường sau xử lý (${precheck.photoCount} ảnh)`, ok: precheck.photoPresent },
     { label: 'Hiện trường không còn vướng mắc (blocker)', ok: !precheck.hasOpenBlocker },
   ];
@@ -1548,51 +1547,91 @@ function renderPrecheckCard(precheck) {
       : null);
 }
 
-/** The department confirms the materials the site really needs, replacing the Agent's playbook guess. */
-function materialPlanCard(c) {
+/** Q42 + plan 16 §U1: the materials count only once the department saved them (material-usage, or an older
+ * material-plan / saved quantities); the Agent's step-7 plan is neither shown nor counted. Same rule as src/mobile/js/dept.js. */
+const deptChoseMaterials = (c) => (c.audit || []).some((a) => a.field_name === 'material_usage' || a.field_name === 'planned_materials')
+  || c.material_lines.some((l) => l.issued_qty != null);
+/** Saved and complete: every line issued = used; Kỹ thuật needs at least one line (plan 16 §C3). */
+const materialsSaved = (c) => deptChoseMaterials(c)
+  && c.material_lines.every((l) => l.issued_qty != null && l.used_qty != null)
+  && (c.material_lines.length > 0 || c.ticket.department_id === 'DEPT_CLEANING');
+
+/** Plan 16 §U1-U3: ONE material form, as the phone app — rows [vật tư][số lượng đã dùng][Bỏ], "+ Thêm vật tư", Vệ sinh
+ * may tick "Không sử dụng vật tư". One click = one POST material-usage with every line (issued = used, one
+ * transaction). The Agent's plan is neither shown nor pre-filled; the norm is never compared, no reason box. */
+function materialsCard(c) {
   const id = c.ticket.ticket_id;
-  const onsite = c.ticket.flags.includes('ASSET_CHECK_ONSITE');
-  const confirmed = (c.audit || []).some((a) => a.field_name === 'planned_materials');
-  const options = state.catalog.materials.map((m) => [m.item_code, `${humanizeMaterialName(m.item_code, m.item_name)} (${m.item_code})`]);
-  const rows = el('div', { class: 'space-y-2' });
+  const cleaning = c.ticket.department_id === 'DEPT_CLEANING';
+  const chose = deptChoseMaterials(c);
+  const lines = chose ? c.material_lines : [];
+  const saved = materialsSaved(c);
+  const byDept = state.catalog.material_codes_by_department;
+  const allowed = new Set((byDept && byDept[c.ticket.department_id]) || []);
+  const options = state.catalog.materials.filter((m) => allowed.has(m.item_code))
+    .map((m) => [m.item_code, `${humanizeMaterialName(m.item_code, m.item_name)} (${m.item_code})`]);
+  const rows = el('div', { class: 'space-y-2', id: 'web-material-rows' });
   const addRow = (code = '', qty = 1) => {
-    const select = dropdown('item_code', options, { required: true, placeholder: 'Chọn vật tư…' });
+    const select = dropdown('item_code', options, { placeholder: 'Chọn vật tư…' });
     select.value = code;
-    const amount = el('input', { name: 'planned_qty', type: 'number', min: '1', step: '1', required: true, value: qty, class: INPUT, 'aria-label': 'Số lượng' });
-    const row = el('div', { class: 'grid grid-cols-[1fr_5.5rem_auto] items-center gap-2' }, select, amount,
+    const amount = el('input', { name: 'used_qty', type: 'number', min: '1', step: '1', value: qty, class: INPUT, 'aria-label': 'Số lượng đã dùng' });
+    const row = el('div', { class: 'grid grid-cols-[minmax(0,1fr)_5.5rem_auto] items-center gap-2' }, select, amount,
       el('button', { type: 'button', class: BTN.secondary, onclick: () => row.remove() }, 'Bỏ'));
     rows.append(row);
   };
-  c.material_lines.forEach((line) => addRow(line.item_code, line.planned_qty));
-  const note = el('textarea', { name: 'note', rows: '2', required: true, maxlength: '500', class: INPUT, placeholder: 'Ví dụ: kiểm tại chỗ là đèn tuýp 1m2, cần 2 bóng tuýp, không cần LED.' });
+  lines.forEach((line) => addRow(line.item_code, line.used_qty ?? line.planned_qty));
+  if (!lines.length) addRow();
+  const add = el('button', { type: 'button', id: 'web-material-add', class: BTN.secondary, onclick: () => addRow() }, '+ Thêm vật tư');
+  const none = cleaning ? el('input', { type: 'checkbox', id: 'web-no-material', checked: chose && !lines.length, class: 'h-4 w-4 rounded border-slate-300' }) : null;
+  const showRows = () => { rows.hidden = add.hidden = Boolean(none && none.checked); };
+  if (none) none.addEventListener('change', showRows);
+  showRows();
 
+  let busy = false; // Enter in a field submits too: never two POSTs for one save
   const form = actionForm([
-    rows,
-    el('button', { type: 'button', class: BTN.secondary, onclick: () => addRow() }, '+ Thêm vật tư'),
-    field('Lý do / kết quả kiểm tra tại hiện trường', note, 'Bắt buộc. Bỏ hết các dòng nếu không dùng vật tư nào.'),
-  ], confirmed ? 'Cập nhật vật tư' : 'Xác nhận vật tư', async (data) => {
-    const lines = [...rows.children].map((row) => ({
-      item_code: row.querySelector('select').value,
-      planned_qty: Number(row.querySelector('input').value),
-    }));
-    if (!lines.length && !(await confirmDialog('Không dùng vật tư?', 'Phản ánh sẽ được ghi nhận là không dùng vật tư nào.'))) return;
-    await act(api(`/mo/tickets/${id}/material-plan`, { method: 'POST', body: { lines, note: data.get('note') } }), 'Đã xác nhận vật tư');
-  }, { variant: onsite && !confirmed ? 'primary' : 'secondary' });
+    none ? el('label', { for: 'web-no-material', class: 'flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200' }, none, 'Không sử dụng vật tư') : null,
+    rows, add,
+  ].filter(Boolean), 'Lưu vật tư', async () => {
+    if (busy) return;
+    let chosen = [];
+    if (!(none && none.checked)) {
+      chosen = [...rows.children].map((row, i) => ({ row: i + 1, item_code: row.querySelector('select').value, used_qty: Number(row.querySelector('input').value) }));
+      const problem = !chosen.length || chosen.every((l) => !l.item_code)
+        ? (cleaning ? 'Chọn vật tư hoặc đánh dấu "Không sử dụng vật tư"' : 'Chọn ít nhất một vật tư')
+        : (() => {
+          const empty = chosen.find((l) => !l.item_code);
+          if (empty) return `Dòng ${empty.row}: chọn vật tư hoặc bấm "Bỏ"`;
+          const bad = chosen.find((l) => !(Number.isInteger(l.used_qty) && l.used_qty > 0));
+          if (bad) return `Dòng ${bad.row}: số lượng phải là số nguyên lớn hơn 0`;
+          const twice = chosen.find((l, i) => chosen.findIndex((o) => o.item_code === l.item_code) !== i);
+          return twice ? `Dòng ${twice.row}: mỗi vật tư chỉ chọn một dòng` : null;
+        })();
+      if (problem) { toast(problem, 'error'); return; }
+    }
+    if (navigator.onLine === false) { toast('Đang mất mạng — chưa lưu vật tư', 'error'); return; }
+    busy = true;
+    try { // §U3: an error keeps what was typed (act re-renders only after a 200), never retried automatically
+      await act(api(`/mo/tickets/${id}/material-usage`, {
+        method: 'POST', body: { lines: chosen.map(({ item_code, used_qty }) => ({ item_code, used_qty })) },
+      }), chosen.length ? 'Đã lưu vật tư' : 'Đã lưu: không sử dụng vật tư');
+    } finally {
+      busy = false;
+    }
+  });
+  form.id = 'web-materials-form';
+  const submit = form.querySelector('button[type="submit"]');
+  submit.id = 'web-material-save';
+  if (!byDept) submit.disabled = true; // §U2: an older server has no per-department list — never fall back to every item
 
-  const title = el('div', { class: 'flex flex-wrap items-center gap-2' },
-    el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Xác nhận vật tư tại hiện trường'),
-    confirmed ? chip('Đã xác nhận', 'green') : chip('Đang dùng đề xuất của Agent', 'amber'));
-  if (onsite) {
-    return el('div', { class: 'space-y-3 rounded-xl border border-amber-300 bg-amber-50/60 p-4 sm:p-5 dark:border-amber-900/60 dark:bg-amber-950/40' },
-      title,
-      el('p', { class: 'text-xs text-amber-900/80 dark:text-amber-300/80' },
-        'Chưa xác định được thiết bị nên vật tư dưới đây chỉ là đề xuất mặc định của Agent. Kiểm tra thực tế rồi chọn đúng loại và số lượng.'),
-      form);
-  }
-  return el('details', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5' },
-    el('summary', { class: 'cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200' },
-      confirmed ? 'Vật tư đã xác nhận — sửa lại?' : 'Vật tư thực tế khác đề xuất của Agent?'),
-    el('div', { class: 'mt-3 space-y-3' }, title, form));
+  return el('div', { class: 'space-y-3 border-t border-slate-200 dark:border-slate-800 pt-5', id: 'web-materials' },
+    el('div', { class: 'flex flex-wrap items-center gap-2' },
+      el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Vật tư sử dụng'),
+      saved ? chip('Đã lưu', 'green') : chip('Chưa lưu', 'amber')),
+    el('p', { class: 'text-xs text-slate-500 dark:text-slate-400' },
+      cleaning ? 'Chọn vật tư đã dùng và số lượng, hoặc đánh dấu không sử dụng vật tư.' : 'Chọn vật tư đã dùng và số lượng.'),
+    byDept ? null : callout('danger', 'Máy chủ chưa hỗ trợ lưu vật tư theo phòng ban', 'Cần cập nhật máy chủ trước khi lưu vật tư.'),
+    c.ticket.flags.includes('ASSET_CHECK_ONSITE')
+      ? callout('warn', 'Chưa xác định được thiết bị', 'Kiểm tra thực tế rồi chọn đúng vật tư.') : null,
+    form);
 }
 
 function workSections(c) {
@@ -1615,35 +1654,7 @@ function workSections(c) {
       return el('li', { class: 'flex items-start gap-3' }, box, el('label', { for: box.id, class: 'text-sm text-slate-800 dark:text-slate-200' }, humanizeChecklistLabel(item.template_item_id, item.label_snapshot)));
     }))));
 
-  out.push(materialPlanCard(c));
-  if (c.material_lines.length) {
-    out.push(el('div', { class: 'border-t border-slate-200 dark:border-slate-800 pt-5' },
-      el('h3', { class: 'text-sm font-semibold text-slate-900 dark:text-white' }, 'Vật tư sử dụng'),
-      el('div', { class: 'mt-3 space-y-4' }, c.material_lines.map((line) => {
-        const issued = el('input', { name: 'issued', type: 'number', min: '0', step: '1', required: true, value: line.issued_qty ?? line.planned_qty, class: INPUT });
-        const used = el('input', { name: 'used', type: 'number', min: '0', step: '1', required: true, value: line.used_qty ?? line.planned_qty, class: INPUT });
-        const reason = el('input', { name: 'reason', type: 'text', maxlength: '300', value: line.variance_reason || '', class: INPUT, placeholder: 'Ghi chú lý do nếu số lượng khác định mức…' });
-        const quickFillBtn = el('button', {
-          type: 'button',
-          class: 'text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline mt-1 block font-medium',
-          onclick: () => {
-            reason.value = 'Theo khối lượng thực tế tại hiện trường';
-          },
-        }, '+ Điền nhanh: "Theo khối lượng thực tế tại hiện trường"');
-        const lineName = humanizeMaterialName(line.item_code, line.item_name);
-        const unitStr = formatMaterialUnit(line.item_code, line.unit);
-        return el('div', { class: 'rounded-lg p-4 ring-1 ring-inset ring-slate-200 dark:ring-slate-800 dark:bg-slate-800/40' },
-          el('div', { class: 'flex items-center justify-between gap-2' },
-            el('p', { class: 'text-sm font-medium text-slate-900 dark:text-white' }, `${lineName} · dự kiến ${line.planned_qty} ${unitStr}${line.norm_qty != null ? ` · định mức ${line.norm_qty}` : ''}${line.simulated_stock_qty != null ? ` · tồn kho ${line.simulated_stock_qty} ${unitStr}` : ''}`),
-            line.issued_qty == null || line.used_qty == null ? chip('Chưa lưu', 'amber') : chip('Đã lưu', 'green')),
-          el('div', { class: 'mt-3' }, actionForm([
-            el('div', { class: 'grid grid-cols-2 gap-3' }, field('Đã xuất', issued), field('Đã dùng', used)),
-            field('Lý do chênh lệch', el('div', {}, reason, quickFillBtn), 'Tự động chấp nhận nếu số lượng thực tế có sai lệch so với dự kiến.'),
-          ], 'Lưu vật tư', (data) => act(api(`/mo/tickets/${id}/materials/${line.item_code}`, {
-            method: 'POST', body: compact({ issued_qty: Number(data.get('issued')), used_qty: Number(data.get('used')), variance_reason: data.get('reason') }),
-          }), 'Đã lưu vật tư'), { variant: 'secondary' })));
-      }))));
-  }
+  out.push(materialsCard(c));
 
   const photos = executionPhotos(c);
   out.push(el('div', { class: 'space-y-3 border-t border-slate-200 dark:border-slate-800 pt-5' },
@@ -1941,8 +1952,8 @@ async function renderBql(list, detail) {
     const gates = [
       { id: 1, name: 'Gate 1: Tiếp nhận', desc: 'Đúng thẩm quyền chuyên trách', ok: readiness.department_accepted },
       { id: 2, name: 'Gate 2: Checklist', desc: '100% hạng mục đạt chuẩn', ok: readiness.checklist_complete },
-      { id: 3, name: 'Gate 3: Vật tư', desc: 'Đầy đủ định mức xuất dùng', ok: readiness.materials_entered },
-      { id: 4, name: 'Gate 4: Chênh lệch', desc: 'Khớp định mức / Có giải trình', ok: readiness.variance_explained },
+      { id: 3, name: 'Gate 3: Vật tư', desc: 'Đã lưu vật tư đã dùng', ok: readiness.materials_entered },
+      { id: 4, name: 'Gate 4: Xuất – dùng', desc: 'Số đã dùng khớp số đã xuất kho', ok: readiness.variance_explained },
       { id: 5, name: 'Gate 5: Minh chứng', desc: 'Có ảnh hiện trường hoàn tất', ok: readiness.photo_present },
       { id: 6, name: 'Gate 6: Hiện trường', desc: 'Thông suốt, không vướng mắc', ok: readiness.no_open_blocker },
     ];

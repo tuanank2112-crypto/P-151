@@ -5,8 +5,8 @@ Một PostgreSQL dùng chung cho 5 vai trò. Độc lập với backend Python `
 Hồ sơ thiết kế + quyết định: [`planning/06_2026-10-07_resident-portal-next/`](../planning/06_2026-10-07_resident-portal-next/plan.md).
 
 ## 1. Chạy
-**Bằng Docker (đơn giản nhất):** `docker compose up -d --build` ⇒ http://localhost:3000. Service `portal` tự tạo DB `portal`
-trên service `db`, migrate, seed (chỉ khi rỗng) rồi `next start`. `localhost:8000` là UI CŨ của backend Python (`src/web/`), không phải portal.
+**Sau tích hợp develop b6590ce (local 1.10.1):** portal chạy nội bộ cổng 3000, `PORTAL_URL=http://portal:3000` cho backend proxy giao diện tại http://localhost:8000. `/ui/` và `/app/` vẫn là client của engine Python. Service portal migrate/seed DB riêng `portal` khi khởi động; migration `0002_fair_cargill.sql` bổ sung role Kho và bảng `warehouse_stock` đã được sinh, chưa áp DB trong lượt tích hợp.
+Portal có workflow/DB riêng; proxy không nối các màn portal với engine Python, Supabase backend hoặc API `material-usage`. Không coi việc mở chung cổng là dữ liệu đã đồng bộ.
 
 **Chạy dev trên máy:**
 ```bash

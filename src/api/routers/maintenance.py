@@ -51,6 +51,7 @@ from src.maintenance.enums import (
     ServiceCategory,
     TicketStatus,
 )
+from src.maintenance.material_policy import MaterialUsageLine, WholeQty, allowed_material_codes, whole_positive
 from src.maintenance.messages import status_label
 from src.maintenance.models import AuditEvent, Case, Notification, PlannedMaterial, StatusEvent
 from src.maintenance.store.base import ConcurrencyError, StorePermissionError, StoreUnavailableError
@@ -365,6 +366,7 @@ class CatalogView(BaseModel):
     assets: list[dict[str, str]]
     status_labels: dict[str, str]
     materials: list[dict[str, str]]
+    material_codes_by_department: dict[str, list[str]]  # plan 16 §U2: the only source the clients filter by
 
 
 @router.get("/catalog", response_model=CatalogView)
@@ -376,6 +378,9 @@ def read_catalog(actor: ActorDep, engine: EngineDep) -> CatalogView:
         assets=[{"asset_id": a.asset_id, "name": a.name, "area": a.area} for a in catalog.assets if a.active],
         status_labels={s.value: status_label(s) for s in TicketStatus},
         materials=[{"item_code": m.item_code, "item_name": m.item_name} for m in catalog.materials],
+        material_codes_by_department={
+            d.department_id.value: sorted(allowed_material_codes(catalog, d.department_id)) for d in catalog.departments
+        },
     )
 
 
@@ -541,8 +546,8 @@ def update_checklist(
 
 
 class MaterialRequest(BaseModel):
-    issued_qty: float = Field(ge=0)
-    used_qty: float = Field(ge=0)
+    issued_qty: WholeQty
+    used_qty: WholeQty
     variance_reason: str | None = None
 
 
@@ -553,13 +558,34 @@ def record_material(ticket_id: str, item_code: str, body: MaterialRequest, actor
 
 class MaterialPlanRequest(BaseModel):
     lines: list[PlannedMaterial] = Field(examples=[[{"item_code": "SIM-MAT-LAMP-02", "planned_qty": 2}]])
-    note: str = Field(examples=["Kiểm tại chỗ: đèn tuýp, không phải LED"])
+    note: str | None = Field(default=None, examples=["Kiểm tại chỗ: đèn tuýp, không phải LED"])
+
+    @field_validator("lines", mode="before")
+    @classmethod
+    def _whole_quantities(cls, lines: Any) -> Any:
+        """Plan 16 §C1: checked before pydantic turns true/"1"/0.5 into a float."""
+        for line in lines if isinstance(lines, list) else ():
+            if isinstance(line, dict) and not whole_positive(line.get("planned_qty")):
+                raise ValueError("Số lượng phải là số nguyên dương")
+        return lines
 
 
 @router.post("/tickets/{ticket_id}/material-plan", response_model=Case)
 def confirm_materials(ticket_id: str, body: MaterialPlanRequest, actor: ActorDep, engine: EngineDep) -> Case:
     """Phòng ban xác nhận vật tư thực tế tại hiện trường (thay đề xuất của Agent); `lines` rỗng = không dùng vật tư."""
     return _call(engine.confirm_materials, ticket_id, actor, lines=body.lines, note=body.note)
+
+
+class MaterialUsageRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    lines: list[MaterialUsageLine] = Field(examples=[[{"item_code": "SIM-MAT-LAMP-01", "used_qty": 4}]])
+
+
+@router.post("/tickets/{ticket_id}/material-usage", response_model=Case)
+def save_material_usage(ticket_id: str, body: MaterialUsageRequest, actor: ActorDep, engine: EngineDep) -> Case:
+    """Lưu toàn bộ vật tư đã dùng trong một giao dịch (plan 16 §C2): đã xuất = đã dùng; `lines` rỗng chỉ cho Vệ sinh."""
+    return _call(engine.save_material_usage, ticket_id, actor, lines=body.lines)
 
 
 class EvidenceRequest(BaseModel):
