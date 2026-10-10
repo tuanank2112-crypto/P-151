@@ -33,3 +33,4 @@
 - Đã ghi não: kernel dòng 21 + dòng plan 06, gotchas (mục ⚠ mới), roadmap Active, plan 06 Q35. Code CHƯA sửa — chờ người duyệt hướng "LLM quyết vị trí, code kiểm catalog, quote chỉ audit".
 - Bài học khởi động: ĐỌC kernel + index (Bước 1–2) trước khi tóm tắt/đánh giá, không chỉ chạy Bước 0.
 - 09:xx Đóng gói WP18 (🔴 SPEC-P10, architect chạy Opus — không Fable) / WP19 (🟠 runtime) trong plan 06; handoff H17. Push tạm `feature/nhuy-reasoning-agent`. Frontend mới (portal gọi backend v1.7.0, PR #20 `feature/nhuy-portal-fe`; mobile PWA v1.9.4 `feature/chamanh`) CHƯA vào develop/nhánh này.
+- WP18 xong (architect Opus): SPEC-P10 PROPOSED, H18 chờ duyệt, R17; kiểm kê 28 chỗ = 9 cổng chặn LLM/6 lưới sàn/13 audit. SO đo lại: REF selftest 0, banner P01/P08/P09 chỉ thêm dòng. Chờ người: Q-P10-1..5.

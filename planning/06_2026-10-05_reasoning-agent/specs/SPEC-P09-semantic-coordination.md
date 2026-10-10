@@ -13,6 +13,8 @@
 ## 1. Bối cảnh & Ranh giới phân quyền: Danh mục vs Ngữ nghĩa
 
 ### 1.1 Vấn đề hiện tại
+> ⚠ Bị thay thế bởi SPEC-P10 §2, §7 (Q35) — phần: gạch B1 và gạch B2
+
 - **Mâu thuẫn cốt lõi giữa Q01 và G-1:** Q01 khẳng định Agent là trung tâm điều phối, toàn quyền quyết định ngữ nghĩa. Tuy nhiên, bảng bất đồng hiện hành tại [`SPEC-P01`](SPEC-P01-reasoning-agent.md) §6 và `reconcile.py` lại đặt quy tắc `G-1` là `SERIOUS`: nếu Agent chọn loại việc không nằm trong tập `rv.categories` (tính bằng regex dò từ khóa cố định trong `rules.py`), ticket bị chặn và dừng tại `PENDING_REVIEW`. Điều này biến bộ regex cứng thành "cơ quan kiểm duyệt", tước đoạt năng lực hiểu ngôn ngữ tự nhiên của Agent.
 - **Lỗ hổng bằng chứng vị trí theo đơn vị (B1):** Thuật toán so khớp chuỗi con đơn thuần (`_fold(value) in _fold(quote)`) dẫn đến sai lệch nghiêm trọng: tầng 1 bị khớp nhầm vào `"tầng 10"`; tầng 7 bị khớp nhầm vào số căn hộ `"căn hộ 1702"`; tòa S1 bị khớp nhầm vào tòa con `"tòa S1.12"`. Hợp đồng vị trí bắt buộc phải so khớp đúng ranh giới từ (word boundary) và đúng đơn vị định danh thực thể.
 - **Tách hai việc & Hai vị trí (B2):** Schema cũ chấp nhận tách khi chỉ có 1 job hoặc 2 jobs cùng loại; đồng thời nếu 2 việc ở 2 vị trí khác biệt (vd rác ở S1 tầng 3, đèn ở S2 tầng 7), việc thiếu `location_override` sẽ khiến cả hai job tự kế thừa vị trí ticket gốc, dẫn tới tách sai nơi. Hợp đồng bắt buộc phải chốt chặt điều kiện tách chỉ dành cho co-located jobs thuộc đúng `SPLIT_PAIR` (`VE_SINH` + `KY_THUAT`).
@@ -20,6 +22,7 @@
 - **Kiến trúc Tương thích Đọc kép & Adapter (B4):** Schema P09 phải duy trì 100% tính tương thích với parser P01 và storage JSONB `extra="forbid"`. Dữ liệu ngữ nghĩa mở rộng được lưu trữ an toàn trong trường `semantic_metadata`, có adapter chuyển đổi hai chiều hoàn chỉnh và cơ chế invalidation cache bằng fingerprint chứa policy version.
 
 ### 1.2 Bảng phân định ranh giới bất biến (Hard Invariants vs Semantic Discretion)
+> ⚠ Bị thay thế bởi SPEC-P10 §2 (Q35) — phần: ý "kiểm tra liên kết giá trị - bằng chứng" (trụ 1) và "kiểm chứng bằng chứng trích dẫn" (trụ 4)
 
 | Trụ cột | Quyền hạn & Trách nhiệm của Engine (Bất biến, Hard Invariants) | Quyền quyết định của Agent (Semantic Discretion) |
 |---|---|---|
@@ -42,6 +45,8 @@
 **KẾT LUẬN KIẾN TRÚC:** Chọn **Mô hình B (Single-turn Structured Decision)** làm kiến trúc cốt lõi.
 
 ### 2.2 Phân định Rõ ràng: Trách nhiệm của Code vs Trách nhiệm của Model (A6)
+> ⚠ Bị thay thế bởi SPEC-P10 §2 (Q35) — phần: Code mục 1 (grounded) và mục 2 (liên kết giá trị với quote)
+
 - **Phần Code (Engine / Validator) kiểm tra tính toàn vẹn cấu trúc:**
   1. Kiểm tra trích dẫn nguyên văn: Chuỗi quote phải có mặt trong văn bản (`grounded`).
   2. Kiểm tra liên kết giá trị: Giá trị `building`, `floor`, `area` phải được phản ánh tường minh trong quote theo đúng ranh giới từ và đơn vị.
@@ -56,6 +61,7 @@
 ---
 
 ## 3. Hợp đồng Chứng minh Vị trí & Value-Evidence Binding Predicates (B1)
+> ⚠ Bị thay thế bởi SPEC-P10 §3.2, §5 (Q35)
 
 ### 3.1 Nhận diện Lỗ hổng So khớp Chuỗi Con
 Việc so khớp chuỗi con không kiểm tra ranh giới từ dẫn tới 3 sai lệch kinh điển:
@@ -170,6 +176,7 @@ class LocationValidationResult:
   - Ghi nhận bất đồng ở mức **`MINOR (ADVISORY)`** vào audit log. **TUYỆT ĐỐI KHÔNG CHẶN TICKET** tại `PENDING_REVIEW`.
 
 ### 4.2 Phân tích Nhân quả, Tách Ticket & Bất biến Nhiều Vị trí (B2)
+> ⚠ Bị thay thế bởi SPEC-P10 §7, §11 (Q35) — tách giữ P05 §3 + P08 §6 hiện hành
 
 ```python
 class SplitAnalysis(BaseModel):
@@ -245,6 +252,7 @@ class SplitAnalysis(BaseModel):
 ## 5. Hợp đồng Thiết kế Chi tiết & Tính Tương thích Đọc Kép (B4)
 
 ### 5.1 Schema `AgentSemanticDecision`
+> ⚠ Bị thay thế bởi SPEC-P10 §3.1 (Q35) — phần: khối "# 3. Ràng buộc tách ticket và hai vị trí (B2)" và các trường quote của `LocationEvidence`
 
 ```python
 class SemanticJobDecision(BaseModel):
@@ -483,6 +491,7 @@ class SemanticMetadata(BaseModel):
 ---
 
 ## 7. Phân loại Lỗi & Hành vi Caller
+> ⚠ Bị thay thế bởi SPEC-P10 §8 (Q35) — phần: dòng `UNBOUND_LOCATION_COMPONENT` và `RESIDENCE_CONTAMINATION`
 
 | Mã lỗi | Tình huống phát sinh | Hành vi bắt buộc của Engine / Caller |
 |---|---|---|
@@ -497,6 +506,8 @@ class SemanticMetadata(BaseModel):
 ## 8. BẮT BUỘC / CẤM / Vùng Cấm
 
 ### BẮT BUỘC
+> ⚠ Bị thay thế bởi SPEC-P10 §6 (Q35) — phần: gạch 1 (liên kết giá trị - bằng chứng theo ranh giới từ)
+
 - BẮT BUỘC kiểm tra liên kết giá trị - bằng chứng theo đúng ranh giới từ cho từng thành phần của vị trí.
 - BẮT BUỘC giữ nguyên tắc mức an toàn là ưu tiên số 1, chỉ nâng, không bao giờ hạ.
 - BẮT BUỘC ghi nhận đầy đủ nguồn gốc và bất đồng vào audit log.
@@ -544,6 +555,7 @@ P09 kế thừa nguyên văn các ngưỡng cổng của [`TESTING-ACCEPTANCE.md
 7. **G-LIVE-7 (Ổn định Biến thể):** Đổi mức do biến thể $\le 2.0\%$.
 
 ### 10.3 Bảng Chỉ số Đo lường Bổ sung của P09
+> ⚠ Bị thay thế bởi SPEC-P10 §5, §9 (Q35) — phần: dòng `P09-GATE-LOC-INV`
 
 | Mã Chỉ số | Định nghĩa / Công thức Đo lường | Ngưỡng Tối thiểu | Môi trường Đo | Trạng thái Hiện tại |
 |---|---|---|---|---|

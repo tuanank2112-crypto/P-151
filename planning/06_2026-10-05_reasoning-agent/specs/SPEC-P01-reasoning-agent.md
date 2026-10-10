@@ -42,9 +42,13 @@ def mirror_decision(data: DecisionInput, catalog: Catalog, lexicon: Lexicon) -> 
 ## 3. Kiểm hợp lệ — `agent/validate.py` (sau khi `AgentDecision` qua schema)
 
 ### 3.1 Trích dẫn
+> ⚠ Bị thay thế bởi SPEC-P10 §3.2, §3.3 (Q35)
+
 `grounded(quote, text)` = hàm `grounded` của REF (gấp NFKC + chữ thường + `đ→d` + bỏ dấu + mọi ký tự không chữ/số thành một khoảng trắng; quote rỗng ⇒ False) — tương đương `safety._grounded`. Áp: `jobs[i].quote` trong `report_text`; `location.quote` trong `location_text`; `safety.signals[j].quote` trong `safety_text`.
 
 ### 3.2 Bảng kiểm từng trường (sai ⇒ thêm đường dẫn vào `rejected`, trường đó dùng luật)
+> ⚠ Bị thay thế bởi SPEC-P10 §3.2 (Q35) — phần: vế `quote` của dòng `location` và dòng `jobs[i]` (toàn job); các dòng khác giữ
+
 | Trường | Hợp lệ khi | Sai ⇒ |
 |---|---|---|
 | `location` | `quote` grounded (nếu có); `building` (upper, bỏ "TÒA "/"TOA ") khớp `^(<mã tòa site>)(\.\d{1,2})?$`; `floor` chuẩn hoá bằng `rules._floor_label` khớp `^(B?\d{1,2}\|Trệt)$`; `area` trùng (NFC, không phân biệt hoa thường) một nhãn `rules.AREA_PATTERNS`; thiếu tầng mà khu vực ∈ `rules.IMPLIED_FLOOR` ⇒ điền | phần sai coi như `None` (thiếu); `quote` không grounded ⇒ loại cả `location` |
@@ -58,6 +62,8 @@ def mirror_decision(data: DecisionInput, catalog: Catalog, lexicon: Lexicon) -> 
 | `ask_fields` | ⊆ phần vị trí còn thiếu tính bởi engine | bỏ qua (engine tự tính phần thiếu) |
 
 ### 3.3 An toàn (I-17, I-18, V-11) — dùng LẠI code đã kiểm của plan 01
+> ⚠ Bị thay thế bởi SPEC-P10 §3.3 (Q35) — phần: "trích dẫn sai ⇒ UNCLEAR" và tín hiệu không trích dẫn bị bỏ; phần còn lại giữ
+
 ```python
 judgements = [safety.SignalJudgement(signal_id=s.signal_id, status=s.status, quote=s.quote) for s in decision.safety.signals]
 merged = safety.merge_llm(rules.safety, safety.LLMSafetyAssessment(judgements=judgements), data.safety_text,
@@ -140,6 +146,7 @@ Hàm thuần dùng lại lúc áp (tất định, không gọi mô hình): `reco
 - Chỉ dùng API: `StateGraph`, `add_node`, `add_edge`, `add_conditional_edges`, `set_entry_point` (hoặc `START`), `END`, `compile`, `invoke`. CẤM checkpointer, bộ nhớ hội thoại, `ainvoke` trong engine.
 
 ## 9. Luật
+> ⚠ Bị thay thế bởi SPEC-P10 §6 (Q35) — phần: BẮT BUỘC 2 vế "trích dẫn phải grounded"
 
 **BẮT BUỘC**
 1. Schema/prompt chép nguyên văn REF; `temperature=0`; một lượt gọi mỗi quyết định; mọi lần gọi ghi `ai_logger`.
@@ -163,6 +170,8 @@ Hàm thuần dùng lại lúc áp (tất định, không gọi mô hình): `reco
 | Không cắt ngắn nội dung để vừa prompt | cắt có thể bỏ mất tín hiệu; > 12000 ký tự ⇒ luật (`INPUT_TOO_LARGE`) |
 
 ## 10. Phân loại lỗi + hành vi caller (engine)
+> ⚠ Bị thay thế bởi SPEC-P10 §8 (Q35) — phần: vế "trích dẫn sai" của dòng 2
+
 | Lỗi | Nơi | Hành vi bắt buộc |
 |---|---|---|
 | Mô hình timeout/HTTP/JSON/schema | `decide()` | record `FALLBACK_RULE`; engine áp luật + cờ (P02) |
@@ -171,6 +180,8 @@ Hàm thuần dùng lại lúc áp (tất định, không gọi mô hình): `reco
 | Bug (TypeError, KeyError trong code) | bất kỳ | ném ra (không nuốt) — test bắt |
 
 ## 11. Nghiệm thu
+> ⚠ Bị thay thế bởi SPEC-P10 §9 (Q35) — phần: đột biến (a)(b)
+
 - `python -m pytest -q -p no:cacheprovider tests/test_maintenance/test_agent_unit.py tests/test_maintenance/test_agent_prompt.py tests/test_maintenance/test_rule_evidence.py; echo "EXIT=$?"` ⇒ `EXIT=0`; ca A-01…A-19 phần thuần (TESTING §3.1) + P-01…P-08 (§3.2) + RE-01…RE-06 (§3.3).
 - `PYTHONPATH=. python planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py --selftest` ⇒ `SELFTEST_FAILURES=0`; `test_agent_prompt.py` khẳng định `prompt.SYSTEM_PROMPT == REF.SYSTEM_PROMPT` và `prompt.EXAMPLE == REF.EXAMPLE` (chép nguyên văn).
 - Phải ĐỎ trước (`evidence/WP3/red-before.txt`): chạy ba file test mới trên base ⇒ lỗi import `src.maintenance.agent`.

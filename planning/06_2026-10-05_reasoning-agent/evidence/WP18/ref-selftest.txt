@@ -1,0 +1,52 @@
+# P10 §3.6: REF selftest (new), the same selftest on a copy whose section A keeps the pre-P10 quote types (must be red),
+# runtime schema vs REF (red until WP19), and the REF-dependent tests on the Base runtime.
+$ PYTHONPATH=. PYTHONUTF8=1 python planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py --selftest
+example_valid=OK quote_audit=[]
+  OK  want=INVALID_JSON got=INVALID_JSON
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+not_verbatim_is_ok=OK quote_audit=['jobs[1].quote']
+  OK  job quote empty string: kind=OK
+  OK  job quote missing: kind=OK
+  OK  location quote blank: kind=OK
+  OK  signal quote 400 chars: kind=OK
+  OK  job quote not a string: kind=SCHEMA_INVALID
+SELFTEST_FAILURES=0
+EXIT=0
+
+$ PYTHONPATH=. PYTHONUTF8=1 python 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/REF-broken-old-quote.py' --selftest
+example_valid=OK quote_audit=[]
+  OK  want=INVALID_JSON got=INVALID_JSON
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+not_verbatim_is_ok=OK quote_audit=['jobs[1].quote']
+  BAD job quote empty string: kind=SCHEMA_INVALID
+  BAD job quote missing: kind=SCHEMA_INVALID
+  BAD location quote blank: kind=OK
+  BAD signal quote 400 chars: kind=SCHEMA_INVALID
+  OK  job quote not a string: kind=SCHEMA_INVALID
+SELFTEST_FAILURES=4
+EXIT=1
+
+$ PYTHONPATH=. PYTHONUTF8=1 python 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/schema_vs_ref.py'
+runtime schema == REF: False
+JobDecision.required runtime: ['category', 'quote', 'reason', 'department_id', 'priority', 'priority_rule_id', 'priority_reason', 'needs_review']
+JobDecision.required REF    : ['category', 'reason', 'department_id', 'priority', 'priority_rule_id', 'priority_reason', 'needs_review']
+EXIT=0
+
+$ PYTHONPATH='.;C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18' PYTHONUTF8=1 python 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/schema_vs_ref.py' --sim
+SIM_P10 ACTIVE: schema AuditQuote, merge_llm catalog-only, grounded gates off, mirror quotes None
+runtime schema == REF: True
+JobDecision.required runtime: ['category', 'reason', 'department_id', 'priority', 'priority_rule_id', 'priority_reason', 'needs_review']
+JobDecision.required REF    : ['category', 'reason', 'department_id', 'priority', 'priority_rule_id', 'priority_reason', 'needs_review']
+EXIT=0
+
+$ LLM_MODE=mock MO_STORE=memory MO_PHOTO_STORE=local PYTHONUTF8=1 python -m pytest -q -p no:cacheprovider tests/test_maintenance/test_agent_prompt.py tests/test_maintenance/test_p1_contracts.py
+......................................                                   [100%]
+38 passed in 0.83s
+EXIT=0
+

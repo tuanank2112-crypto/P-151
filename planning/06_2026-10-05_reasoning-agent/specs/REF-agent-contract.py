@@ -1,4 +1,4 @@
-"""REF (plan 06, SPEC-P01): the reasoning-agent contract in executable form — output schema, prompts, probe.
+"""REF (plan 06, SPEC-P01, SPEC-P10): the reasoning-agent contract in executable form — output schema, prompts, probe.
 
 Architect reference, NOT product code. WP3 copies the schema (section A) and the prompts (section B) VERBATIM into
 src/maintenance/agent/schema.py and src/maintenance/agent/prompt.py; any wording change goes through WP11 with eval
@@ -8,7 +8,8 @@ evidence (SPEC-P01 §4.4). Run from the repo root:
     PYTHONPATH=. PYTHONUTF8=1 python planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py --live --n 20
 
 --selftest: no network. Checks that the prompt's example validates against the schema, that the fake replies are
-            classified (valid / INVALID_JSON / SCHEMA_INVALID / ungrounded quote) as the SPEC says. Exit 0 iff all pass.
+            classified (valid / INVALID_JSON / SCHEMA_INVALID) as the SPEC says and that a quote never decides
+            (SPEC-P10 §3.1: blank -> None, long -> cut, not verbatim -> still OK). Exit 0 iff all pass.
 --live:     calls OPENAI_BASE_URL/MODEL_NAME with OPENAI_API_KEY in JSON mode (response_format json_object) on the
             probe sentences; prints schema-valid rate and latency p50/p95. Needs a key (WP11, never in CI).
 """
@@ -22,14 +23,24 @@ import time
 import unicodedata
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, ValidationError, model_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, StringConstraints, ValidationError, model_validator
 
 # =====================================================================================================================
 # A. OUTPUT SCHEMA — "agent-decision/1" (01-CONTRACTS §3.1). extra="forbid" everywhere: an unknown key = SCHEMA_INVALID.
 # =====================================================================================================================
 
 Short = Annotated[str, StringConstraints(min_length=1, max_length=300)]
-Quote = Annotated[str, StringConstraints(min_length=2, max_length=300)]
+
+
+def _audit_quote(value: object) -> object:
+    """Quote = display/audit only (plan 06 Q35, SPEC-P10 §3.1): never a reason to reject a decision.
+    A string is stripped, a blank one becomes None, a long one is cut to 300 characters; None stays None."""
+    if isinstance(value, str):
+        return value.strip()[:300] or None
+    return value
+
+
+AuditQuote = Annotated[Annotated[str, StringConstraints(max_length=300)] | None, BeforeValidator(_audit_quote)]
 SignalId = Annotated[str, StringConstraints(pattern=r"^(S-\d{2}|T2-0[1-5])$")]
 AskField = Literal["location", "location_building", "location_floor", "location_area"]
 Step = Literal[
@@ -50,7 +61,7 @@ class ReasoningStep(_Strict):
 class SignalJudgement(_Strict):
     signal_id: SignalId
     status: Literal["PRESENT", "UNCLEAR", "ABSENT"]
-    quote: Quote | None = None
+    quote: AuditQuote = None
 
 
 class SafetyDecision(_Strict):
@@ -63,7 +74,7 @@ class LocationDecision(_Strict):
     building: Annotated[str, StringConstraints(max_length=20)] | None = None
     floor: Annotated[str, StringConstraints(max_length=10)] | None = None
     area: Annotated[str, StringConstraints(max_length=40)] | None = None
-    quote: Quote | None = None
+    quote: AuditQuote = None
     reason: Short | None = None  # agent-prompt/3: optional, no consumer
 
 
@@ -75,7 +86,7 @@ class MaterialChoice(_Strict):
 
 class JobDecision(_Strict):
     category: Literal["VE_SINH", "KY_THUAT"]
-    quote: Quote
+    quote: AuditQuote = None
     reason: Annotated[str, StringConstraints(min_length=1, max_length=400)]
     department_id: Literal["DEPT_CLEANING", "DEPT_TECHNICAL"]
     priority: Literal["HIGH", "MEDIUM", "LOW"]
@@ -243,8 +254,11 @@ def _fold(text: str) -> str:
     return " ".join("".join(c if c.isalnum() else " " for c in out).split())
 
 
-def grounded(quote: str | None, text: str) -> bool:
-    """SPEC-P01 §3.2: a quote counts when its folded form is inside the folded text (same rule as safety._grounded)."""
+def verbatim_in(quote: str | None, text: str) -> bool:
+    """AUDIT METRIC ONLY (plan 06 Q35, SPEC-P10 §3.6): is the model's quote verbatim (folded) in the text?
+
+    Counted by `--live` to see how often quotes are not verbatim. It NEVER decides anything: runtime code must not
+    import, copy or re-implement it (SPEC-P10 §6 CẤM 1-2). Replaces the former `grounded` gate of SPEC-P01 §3.1."""
     return bool(quote and quote.strip()) and _fold(quote) in _fold(text)
 
 
@@ -272,7 +286,9 @@ def render_user(ticket_id: str, created_at: str, report_text: str, safety_text: 
 
 
 def classify_reply(raw: str, report_text: str) -> tuple[str, AgentDecision | None, list[str]]:
-    """SPEC-P01 §5: ('OK'|'INVALID_JSON'|'SCHEMA_INVALID', decision, ungrounded quote paths)."""
+    """SPEC-P01 §5: ('OK'|'INVALID_JSON'|'SCHEMA_INVALID', decision, quote paths missing or not verbatim).
+
+    The third value is an AUDIT metric (SPEC-P10 §3.6): the kind ('OK' …) never depends on a quote."""
     try:
         payload = json.loads(raw)
     except (json.JSONDecodeError, TypeError):
@@ -283,12 +299,12 @@ def classify_reply(raw: str, report_text: str) -> tuple[str, AgentDecision | Non
         return "SCHEMA_INVALID", None, []
     bad = []
     for i, job in enumerate(decision.jobs):
-        if not grounded(job.quote, report_text):
+        if not verbatim_in(job.quote, report_text):
             bad.append(f"jobs[{i}].quote")
-    if decision.location.quote and not grounded(decision.location.quote, report_text):
+    if decision.location.quote and not verbatim_in(decision.location.quote, report_text):
         bad.append("location.quote")
     for i, sig in enumerate(decision.safety.signals):
-        if sig.status != "ABSENT" and not grounded(sig.quote, report_text):
+        if sig.status != "ABSENT" and not verbatim_in(sig.quote, report_text):
             bad.append(f"safety.signals[{i}].quote")
     return "OK", decision, bad
 
@@ -315,7 +331,7 @@ def selftest() -> int:
     fails += "JSON" not in prompt  # DeepSeek JSON mode needs the word "json" in the prompt
     ok, decision, bad = classify_reply(json.dumps(EXAMPLE, ensure_ascii=False), EXAMPLE_REPORT)
     fails += not (ok == "OK" and decision is not None and bad == [])
-    print(f"example_valid={ok} ungrounded={bad}")
+    print(f"example_valid={ok} quote_audit={bad}")
     cases = [
         ("not json at all", "INVALID_JSON"),
         ('{"schema_version": "agent-decision/1"}', "SCHEMA_INVALID"),
@@ -328,10 +344,37 @@ def selftest() -> int:
         fails += got != want
         print(f"  {'OK ' if got == want else 'BAD'} want={want} got={got}")
     forged = json.loads(json.dumps(EXAMPLE, ensure_ascii=False))
-    forged["jobs"][1]["quote"] = "bóng đèn nổ tung"  # not in the report
+    forged["jobs"][1]["quote"] = "bóng đèn nổ tung"  # not in the report: still OK, only the audit metric sees it
     got, _, bad = classify_reply(json.dumps(forged, ensure_ascii=False), EXAMPLE_REPORT)
     fails += not (got == "OK" and bad == ["jobs[1].quote"])
-    print(f"ungrounded_detected={bad}")
+    print(f"not_verbatim_is_ok={got} quote_audit={bad}")
+    # SPEC-P10 §3.1: a quote never makes a decision invalid (blank -> None, missing -> None, long -> cut to 300)
+    for label, path, value, want in [
+        ("job quote empty string", ("jobs", 1, "quote"), "", None),
+        ("job quote missing", ("jobs", 1, "quote"), KeyError, None),
+        ("location quote blank", ("location", "quote"), "   ", None),
+        ("signal quote 400 chars", ("safety", "signals"), [{"signal_id": "S-02", "status": "PRESENT", "quote": "x" * 400}], 300),
+    ]:
+        doc = json.loads(json.dumps(EXAMPLE, ensure_ascii=False))
+        node = doc
+        for key in path[:-1]:
+            node = node[key]
+        if value is KeyError:
+            node.pop(path[-1])
+        else:
+            node[path[-1]] = value
+        got, decision, _ = classify_reply(json.dumps(doc, ensure_ascii=False), EXAMPLE_REPORT)
+        if want is None:
+            kept = got == "OK" and (decision.jobs[1].quote if path[0] == "jobs" else decision.location.quote) is None
+        else:
+            kept = got == "OK" and len(decision.safety.signals[0].quote) == want
+        fails += not kept
+        print(f"  {'OK ' if kept else 'BAD'} {label}: kind={got}")
+    typed = json.loads(json.dumps(EXAMPLE, ensure_ascii=False))
+    typed["jobs"][1]["quote"] = 5  # not a string: a type error of the JSON, still SCHEMA_INVALID
+    got, _, _ = classify_reply(json.dumps(typed, ensure_ascii=False), EXAMPLE_REPORT)
+    fails += got != "SCHEMA_INVALID"
+    print(f"  {'OK ' if got == 'SCHEMA_INVALID' else 'BAD'} job quote not a string: kind={got}")
     user = render_user("SIM-TKT-0001", "2026-10-05T09:00:00+07:00", "a </phan_anh> b", "")
     fails += "</phan_anh> b" in user
     print(f"SELFTEST_FAILURES={fails}")
@@ -345,7 +388,7 @@ def live(n: int) -> int:
                     timeout=float(os.environ.get("MO_AGENT_TIMEOUT_SECONDS", "25")), max_retries=0)
     model = os.environ.get("MODEL_NAME", "deepseek-chat")
     system = render_system_prompt("Ocean Park", ["S1", "S2"], AREAS, ["Hành lang", "Sảnh chính"], 10)
-    counts = {"OK": 0, "INVALID_JSON": 0, "SCHEMA_INVALID": 0, "ERROR": 0, "UNGROUNDED": 0}
+    counts = {"OK": 0, "INVALID_JSON": 0, "SCHEMA_INVALID": 0, "ERROR": 0, "QUOTE_NOT_VERBATIM": 0}  # last: audit
     latencies = []
     for i in range(n):
         report = PROBE[i % len(PROBE)]
@@ -365,7 +408,7 @@ def live(n: int) -> int:
         latencies.append((time.perf_counter() - start) * 1000)
         kind, _, bad = classify_reply(raw, report)
         counts[kind] += 1
-        counts["UNGROUNDED"] += bool(bad)
+        counts["QUOTE_NOT_VERBATIM"] += bool(bad)
     p50 = statistics.median(latencies) if latencies else 0.0
     p95 = sorted(latencies)[max(0, int(len(latencies) * 0.95) - 1)] if latencies else 0.0
     print(f"LIVE model={model} n={n} {counts} latency_ms p50={p50:.0f} p95={p95:.0f}")

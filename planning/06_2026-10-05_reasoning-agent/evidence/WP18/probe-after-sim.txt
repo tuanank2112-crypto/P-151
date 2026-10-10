@@ -1,0 +1,39 @@
+# Same cases with the IN-MEMORY P10 simulation (sim_p10.py patches nothing on disk). Script source: probe-scripts.txt
+$ PYTHONPATH='.;C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18' LLM_MODE=mock MO_STORE=memory MO_PHOTO_STORE=local PYTHONUTF8=1 python 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/probe_cases.py' --sim
+SIM_P10 ACTIVE: schema AuditQuote, merge_llm catalog-only, grounded gates off, mirror quotes None
+[T1 location paraphrase, in catalog] 'Chỗ đi bộ trước thang máy tầng 3 tòa S1 có nhiều rác'
+   record: source=AGENT fallback=None rejected=[] agent_location=Tòa S1 / Tầng 3 / Hành lang missing=[] valid_jobs=[0] agent_risk=NONE job_quotes=['nhiều rác'] disagreements=[('location', 'MINOR')]
+   ticket: ROUTED/None fields=[] risk=NONE dept=DEPT_CLEANING signals=[] flags=[] emergency_notes=0
+[T2 building outside the catalog] 'Chỗ đi bộ trước thang máy tầng 3 tòa S1 có nhiều rác'
+   record: source=AGENT fallback=None rejected=['location.building'] agent_location=None missing=['building'] valid_jobs=[0] agent_risk=NONE job_quotes=['nhiều rác'] disagreements=[('location', 'MINOR'), ('next_step', 'MINOR')]
+   ticket: NEED_INFO/MISSING_INFO fields=[] risk=NONE dept=None signals=[] flags=[] emergency_notes=0
+[T3a location quote null] 'Chỗ đi bộ trước thang máy tầng 3 tòa S1 có nhiều rác'
+   record: source=AGENT fallback=None rejected=[] agent_location=Tòa S1 / Tầng 3 / Hành lang missing=[] valid_jobs=[0] agent_risk=NONE job_quotes=['nhiều rác'] disagreements=[('location', 'MINOR')]
+   ticket: ROUTED/None fields=[] risk=NONE dept=DEPT_CLEANING signals=[] flags=[] emergency_notes=0
+[T3a2 location quote blank] 'Chỗ đi bộ trước thang máy tầng 3 tòa S1 có nhiều rác'
+   record: source=AGENT fallback=None rejected=[] agent_location=Tòa S1 / Tầng 3 / Hành lang missing=[] valid_jobs=[0] agent_risk=NONE job_quotes=['nhiều rác'] disagreements=[('location', 'MINOR')]
+   ticket: ROUTED/None fields=[] risk=NONE dept=DEPT_CLEANING signals=[] flags=[] emergency_notes=0
+[T3b job quote empty string] 'Hành lang tầng 3 tòa S1 nhiều rác'
+   record: source=AGENT fallback=None rejected=[] agent_location=Tòa S1 / Tầng 3 / Hành lang missing=[] valid_jobs=[0] agent_risk=NONE job_quotes=[None] disagreements=[]
+   ticket: ROUTED/None fields=[] risk=NONE dept=DEPT_CLEANING signals=[] flags=[] emergency_notes=0
+[T3b2 job quote key missing] 'Hành lang tầng 3 tòa S1 nhiều rác'
+   record: source=AGENT fallback=None rejected=[] agent_location=Tòa S1 / Tầng 3 / Hành lang missing=[] valid_jobs=[0] agent_risk=NONE job_quotes=[None] disagreements=[]
+   ticket: ROUTED/None fields=[] risk=NONE dept=DEPT_CLEANING signals=[] flags=[] emergency_notes=0
+[T3c job quote paraphrase] 'Hành lang tầng 3 tòa S1 nhiều rác'
+   record: source=AGENT fallback=None rejected=[] agent_location=Tòa S1 / Tầng 3 / Hành lang missing=[] valid_jobs=[0] agent_risk=NONE job_quotes=['rác bừa bộn'] disagreements=[]
+   ticket: ROUTED/None fields=[] risk=NONE dept=DEPT_CLEANING signals=[] flags=[] emergency_notes=0
+[T5 raise, quote not in text] 'Hành lang tầng 3 tòa S1 nhiều rác, nghe tiếng xì xì từ bình gas'
+   record: source=AGENT fallback=None rejected=[] agent_location=Tòa S1 / Tầng 3 / Hành lang missing=[] valid_jobs=[0] agent_risk=EMERGENCY job_quotes=['nhiều rác'] disagreements=[]
+   ticket: VERIFYING/EMERGENCY_PENDING_BQL fields=[] risk=EMERGENCY dept=None signals=[('S-10', 'PRESENT', 'LLM', 'bình gas bị xì')] flags=[] emergency_notes=1
+[T5b raise, no quote] 'Hành lang tầng 3 tòa S1 nhiều rác, nghe tiếng xì xì từ bình gas'
+   record: source=AGENT fallback=None rejected=[] agent_location=Tòa S1 / Tầng 3 / Hành lang missing=[] valid_jobs=[0] agent_risk=EMERGENCY job_quotes=['nhiều rác'] disagreements=[]
+   ticket: VERIFYING/EMERGENCY_PENDING_BQL fields=[] risk=EMERGENCY dept=None signals=[('S-10', 'PRESENT', 'LLM-NOQUOTE', 'Hành lang tầng 3 tòa S1 nhiều rác, nghe tiếng xì xì từ bình gas')] flags=[] emergency_notes=1
+[T5c raise, verbatim quote (control)] 'Hành lang tầng 3 tòa S1 nhiều rác, nghe tiếng xì xì từ bình gas'
+   record: source=AGENT fallback=None rejected=[] agent_location=Tòa S1 / Tầng 3 / Hành lang missing=[] valid_jobs=[0] agent_risk=EMERGENCY job_quotes=['nhiều rác'] disagreements=[]
+   ticket: VERIFYING/EMERGENCY_PENDING_BQL fields=[] risk=EMERGENCY dept=None signals=[('S-10', 'PRESENT', 'LLM', 'tiếng xì xì từ bình gas')] flags=[] emergency_notes=1
+[T6 ABSENT cannot lower (control)] 'Hành lang tầng 3 tòa S1 có khói bốc ra từ hộp điện'
+   record: source=SKIPPED_RULE_EMERGENCY fallback=None rejected=[] agent_location=None missing=[] valid_jobs=[] agent_risk=NONE job_quotes=None disagreements=[]
+   ticket: VERIFYING/EMERGENCY_PENDING_BQL fields=[] risk=EMERGENCY dept=None signals=[('S-04', 'PRESENT', 'S-04', 'có khói bốc')] flags=[] emergency_notes=1
+[T4 mirror quotes] jobs=[None] location.quote=None signals=[]
+EXIT=0
+

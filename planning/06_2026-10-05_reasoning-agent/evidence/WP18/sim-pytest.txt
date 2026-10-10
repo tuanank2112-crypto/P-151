@@ -1,0 +1,510 @@
+# P10 §9.1: full suite with the in-memory P10 simulation loaded as a pytest plugin (no repo file changed). Lệnh:
+$ PYTHONPATH='.;C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18' LLM_MODE=mock MO_STORE=memory MO_PHOTO_STORE=local PYTHONUTF8=1 python -m pytest -q -p no:cacheprovider -p sim_p10 -rf
+SIM_P10 ACTIVE: schema AuditQuote, merge_llm catalog-only, grounded gates off, mirror quotes None
+........................................................................ [  1%]
+........................................................................ [  3%]
+........................................................................ [  5%]
+........................................................................ [  7%]
+........................................................................ [  9%]
+............F......FF.F................................................. [ 11%]
+........................................................................ [ 13%]
+........................................................................ [ 15%]
+........................................................................ [ 17%]
+........................................................................ [ 19%]
+........................................................................ [ 21%]
+........................................................................ [ 23%]
+........................................................................ [ 25%]
+........................................................................ [ 27%]
+........................................................................ [ 29%]
+........................................................................ [ 31%]
+........................................................................ [ 33%]
+........................................................................ [ 35%]
+........................................................................ [ 37%]
+........................................................................ [ 39%]
+........................................................................ [ 41%]
+........................................................................ [ 43%]
+..............FFFFFFFFFFFFF............................................. [ 45%]
+........................................................................ [ 47%]
+........................................................................ [ 49%]
+........................................................................ [ 51%]
+........................................................................ [ 53%]
+........................................................................ [ 55%]
+........................................................................ [ 56%]
+........................................................................ [ 58%]
+.....................................................................F.. [ 60%]
+F....................................................................... [ 62%]
+........................................................................ [ 64%]
+........................................................................ [ 66%]
+........................................................................ [ 68%]
+........................................................................ [ 70%]
+........................................................................ [ 72%]
+........................................................................ [ 74%]
+........................................................................ [ 76%]
+........................................................................ [ 78%]
+........................................................................ [ 80%]
+........................................................................ [ 82%]
+........................................................................ [ 84%]
+........................................................................ [ 86%]
+........................................................................ [ 88%]
+........................................................................ [ 90%]
+........................................................................ [ 92%]
+........................................................................ [ 94%]
+........................................................................ [ 96%]
+........................................................................ [ 98%]
+................................................................         [100%]
+================================== FAILURES ===================================
+___________ test_a_04_an_ungrounded_safety_quote_is_at_most_unclear ___________
+
+    def test_a_04_an_ungrounded_safety_quote_is_at_most_unclear():
+        report = "Hành lang tầng 3 tòa S1 nhiều rác"
+        reply = one_job_decision(
+            job(JOB_VS, quote="nhiều rác"),
+            scope="IN_SCOPE",
+            safety={
+                "risk_level": "EMERGENCY",
+                "signals": [{"signal_id": "S-02", "status": "PRESENT", "quote": "tia lửa bay"}],
+                "reason": "Có tia lửa",
+            },
+        )
+        record, data = run(reply, new_input(report))
+        merged = reconcile.safety_for(record, data.safety_text, LEXICON, "fake-model")
+        llm = [s for s in merged.signals if s.detected_by.value == "LLM"]
+>       assert [(s.signal_id, s.status.value) for s in llm] == [("S-02", "UNCLEAR")]
+E       AssertionError: assert [('S-02', 'PRESENT')] == [('S-02', 'UNCLEAR')]
+E         
+E         At index 0 diff: ('S-02', 'PRESENT') != ('S-02', 'UNCLEAR')
+E         Use -v to get more diff
+
+tests\test_maintenance\test_agent_unit.py:267: AssertionError
+_____________ test_a_08_a_job_with_an_ungrounded_quote_is_dropped _____________
+
+    def test_a_08_a_job_with_an_ungrounded_quote_is_dropped():
+        record, _ = run(decision(**{"jobs.1.quote": "bóng đèn nổ tung"}))
+>       assert "jobs[1]" in record.rejected
+E       AssertionError: assert 'jobs[1]' in []
+E        +  where [] = AgentDecisionRecord(record_version='agent-record/1', source='AGENT', model='fake-model', fingerprint='fp-1', safety_fi...ation='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[0, 1], prompt_version='agent-prompt/5').rejected
+
+tests\test_maintenance\test_agent_unit.py:373: AssertionError
+_______ test_a_08b_all_jobs_dropped_while_in_scope_leaves_no_valid_job ________
+
+    def test_a_08b_all_jobs_dropped_while_in_scope_leaves_no_valid_job():
+        record, _ = run(decision(**{"jobs.0.quote": "rác khắp nơi", "jobs.1.quote": "bóng đèn nổ tung"}))
+>       assert record.valid_job_indexes == [] and {"jobs[0]", "jobs[1]"} <= set(record.rejected)
+E       assert ([0, 1] == []
+E         
+E         Left contains 2 more items, first extra item: 0
+E         Use -v to get more diff)
+
+tests\test_maintenance\test_agent_unit.py:380: AssertionError
+____________ test_a_09b_location_parts_are_normalised_and_checked _____________
+
+    def test_a_09b_location_parts_are_normalised_and_checked():
+        ok, _ = run(decision(**{"location.building": "Tòa s1", "location.floor": "03", "location.area": "hành lang"}))
+        assert ok.agent_location == LOC and ok.rejected == []
+        bad_area, _ = run(decision(**{"location.area": "Ban công"}))
+        assert bad_area.agent_location is None and bad_area.agent_missing_parts == ["area"]
+        bad_floor, _ = run(decision(**{"location.floor": "tầng cao"}))
+        assert bad_floor.agent_missing_parts == ["floor"] and "location.floor" in bad_floor.rejected
+        basement, _ = run(decision(**{"location.floor": "b1", "location.area": "Hầm xe"}))
+        assert basement.agent_location == "Tòa S1 / Tầng B1 / Hầm xe"
+        implied, _ = run(decision(**{"location.floor": None, "location.area": "Sảnh chính"}))
+        assert implied.agent_location == "Tòa S1 / Tầng 1 / Sảnh chính"
+        ungrounded, _ = run(decision(**{"location.quote": "tầng 9 tòa S3"}))
+>       assert ungrounded.agent_location is None and ungrounded.agent_missing_parts == ["building", "floor", "area"]
+E       AssertionError: assert ('Tòa S1 / Tầng 3 / Hành lang' is None)
+E        +  where 'Tòa S1 / Tầng 3 / Hành lang' = AgentDecisionRecord(record_version='agent-record/1', source='AGENT', model='fake-model', fingerprint='fp-1', safety_fi...ation='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[0, 1], prompt_version='agent-prompt/5').agent_location
+
+tests\test_maintenance\test_agent_unit.py:404: AssertionError
+___________ test_f3_location_without_quote_is_rejected[None-parts0] ___________
+
+parts = {'building': 'S1', 'floor': '1', 'area': 'Hành lang'}, quote = None
+
+    @pytest.mark.parametrize(
+        "parts",
+        [
+            {"building": "S1", "floor": "1", "area": "Hành lang"},
+            {"building": "S1"},
+            {"area": "Hành lang"},
+        ],
+    )
+    @pytest.mark.parametrize("quote", [None, "..", "--", "! "])  # punctuation folds to nothing: no quote either
+    def test_f3_location_without_quote_is_rejected(parts, quote):
+        loc = LocationDecision(**parts, quote=quote, reason="test")
+>       assert _check_location(loc, "Đèn hành lang không sáng", CATALOG) == (
+            None,
+            ("building", "floor", "area"),
+            ["location"],
+        )
+E       AssertionError: assert ('Tòa S1 / Tầ...lang', (), []) == (None, ('buil... ['location'])
+E         
+E         At index 0 diff: 'Tòa S1 / Tầng 1 / Hành lang' != None
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py:140: AssertionError
+___________ test_f3_location_without_quote_is_rejected[None-parts1] ___________
+
+parts = {'building': 'S1'}, quote = None
+
+    @pytest.mark.parametrize(
+        "parts",
+        [
+            {"building": "S1", "floor": "1", "area": "Hành lang"},
+            {"building": "S1"},
+            {"area": "Hành lang"},
+        ],
+    )
+    @pytest.mark.parametrize("quote", [None, "..", "--", "! "])  # punctuation folds to nothing: no quote either
+    def test_f3_location_without_quote_is_rejected(parts, quote):
+        loc = LocationDecision(**parts, quote=quote, reason="test")
+>       assert _check_location(loc, "Đèn hành lang không sáng", CATALOG) == (
+            None,
+            ("building", "floor", "area"),
+            ["location"],
+        )
+E       AssertionError: assert (None, ('floor', 'area'), []) == (None, ('buil... ['location'])
+E         
+E         At index 1 diff: ('floor', 'area') != ('building', 'floor', 'area')
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py:140: AssertionError
+___________ test_f3_location_without_quote_is_rejected[None-parts2] ___________
+
+parts = {'area': 'Hành lang'}, quote = None
+
+    @pytest.mark.parametrize(
+        "parts",
+        [
+            {"building": "S1", "floor": "1", "area": "Hành lang"},
+            {"building": "S1"},
+            {"area": "Hành lang"},
+        ],
+    )
+    @pytest.mark.parametrize("quote", [None, "..", "--", "! "])  # punctuation folds to nothing: no quote either
+    def test_f3_location_without_quote_is_rejected(parts, quote):
+        loc = LocationDecision(**parts, quote=quote, reason="test")
+>       assert _check_location(loc, "Đèn hành lang không sáng", CATALOG) == (
+            None,
+            ("building", "floor", "area"),
+            ["location"],
+        )
+E       AssertionError: assert (None, ('buil... 'floor'), []) == (None, ('buil... ['location'])
+E         
+E         At index 1 diff: ('building', 'floor') != ('building', 'floor', 'area')
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py:140: AssertionError
+____________ test_f3_location_without_quote_is_rejected[..-parts0] ____________
+
+parts = {'building': 'S1', 'floor': '1', 'area': 'Hành lang'}, quote = '..'
+
+    @pytest.mark.parametrize(
+        "parts",
+        [
+            {"building": "S1", "floor": "1", "area": "Hành lang"},
+            {"building": "S1"},
+            {"area": "Hành lang"},
+        ],
+    )
+    @pytest.mark.parametrize("quote", [None, "..", "--", "! "])  # punctuation folds to nothing: no quote either
+    def test_f3_location_without_quote_is_rejected(parts, quote):
+        loc = LocationDecision(**parts, quote=quote, reason="test")
+>       assert _check_location(loc, "Đèn hành lang không sáng", CATALOG) == (
+            None,
+            ("building", "floor", "area"),
+            ["location"],
+        )
+E       AssertionError: assert ('Tòa S1 / Tầ...lang', (), []) == (None, ('buil... ['location'])
+E         
+E         At index 0 diff: 'Tòa S1 / Tầng 1 / Hành lang' != None
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py:140: AssertionError
+____________ test_f3_location_without_quote_is_rejected[..-parts1] ____________
+
+parts = {'building': 'S1'}, quote = '..'
+
+    @pytest.mark.parametrize(
+        "parts",
+        [
+            {"building": "S1", "floor": "1", "area": "Hành lang"},
+            {"building": "S1"},
+            {"area": "Hành lang"},
+        ],
+    )
+    @pytest.mark.parametrize("quote", [None, "..", "--", "! "])  # punctuation folds to nothing: no quote either
+    def test_f3_location_without_quote_is_rejected(parts, quote):
+        loc = LocationDecision(**parts, quote=quote, reason="test")
+>       assert _check_location(loc, "Đèn hành lang không sáng", CATALOG) == (
+            None,
+            ("building", "floor", "area"),
+            ["location"],
+        )
+E       AssertionError: assert (None, ('floor', 'area'), []) == (None, ('buil... ['location'])
+E         
+E         At index 1 diff: ('floor', 'area') != ('building', 'floor', 'area')
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py:140: AssertionError
+____________ test_f3_location_without_quote_is_rejected[..-parts2] ____________
+
+parts = {'area': 'Hành lang'}, quote = '..'
+
+    @pytest.mark.parametrize(
+        "parts",
+        [
+            {"building": "S1", "floor": "1", "area": "Hành lang"},
+            {"building": "S1"},
+            {"area": "Hành lang"},
+        ],
+    )
+    @pytest.mark.parametrize("quote", [None, "..", "--", "! "])  # punctuation folds to nothing: no quote either
+    def test_f3_location_without_quote_is_rejected(parts, quote):
+        loc = LocationDecision(**parts, quote=quote, reason="test")
+>       assert _check_location(loc, "Đèn hành lang không sáng", CATALOG) == (
+            None,
+            ("building", "floor", "area"),
+            ["location"],
+        )
+E       AssertionError: assert (None, ('buil... 'floor'), []) == (None, ('buil... ['location'])
+E         
+E         At index 1 diff: ('building', 'floor') != ('building', 'floor', 'area')
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py:140: AssertionError
+____________ test_f3_location_without_quote_is_rejected[---parts0] ____________
+
+parts = {'building': 'S1', 'floor': '1', 'area': 'Hành lang'}, quote = '--'
+
+    @pytest.mark.parametrize(
+        "parts",
+        [
+            {"building": "S1", "floor": "1", "area": "Hành lang"},
+            {"building": "S1"},
+            {"area": "Hành lang"},
+        ],
+    )
+    @pytest.mark.parametrize("quote", [None, "..", "--", "! "])  # punctuation folds to nothing: no quote either
+    def test_f3_location_without_quote_is_rejected(parts, quote):
+        loc = LocationDecision(**parts, quote=quote, reason="test")
+>       assert _check_location(loc, "Đèn hành lang không sáng", CATALOG) == (
+            None,
+            ("building", "floor", "area"),
+            ["location"],
+        )
+E       AssertionError: assert ('Tòa S1 / Tầ...lang', (), []) == (None, ('buil... ['location'])
+E         
+E         At index 0 diff: 'Tòa S1 / Tầng 1 / Hành lang' != None
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py:140: AssertionError
+____________ test_f3_location_without_quote_is_rejected[---parts1] ____________
+
+parts = {'building': 'S1'}, quote = '--'
+
+    @pytest.mark.parametrize(
+        "parts",
+        [
+            {"building": "S1", "floor": "1", "area": "Hành lang"},
+            {"building": "S1"},
+            {"area": "Hành lang"},
+        ],
+    )
+    @pytest.mark.parametrize("quote", [None, "..", "--", "! "])  # punctuation folds to nothing: no quote either
+    def test_f3_location_without_quote_is_rejected(parts, quote):
+        loc = LocationDecision(**parts, quote=quote, reason="test")
+>       assert _check_location(loc, "Đèn hành lang không sáng", CATALOG) == (
+            None,
+            ("building", "floor", "area"),
+            ["location"],
+        )
+E       AssertionError: assert (None, ('floor', 'area'), []) == (None, ('buil... ['location'])
+E         
+E         At index 1 diff: ('floor', 'area') != ('building', 'floor', 'area')
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py:140: AssertionError
+____________ test_f3_location_without_quote_is_rejected[---parts2] ____________
+
+parts = {'area': 'Hành lang'}, quote = '--'
+
+    @pytest.mark.parametrize(
+        "parts",
+        [
+            {"building": "S1", "floor": "1", "area": "Hành lang"},
+            {"building": "S1"},
+            {"area": "Hành lang"},
+        ],
+    )
+    @pytest.mark.parametrize("quote", [None, "..", "--", "! "])  # punctuation folds to nothing: no quote either
+    def test_f3_location_without_quote_is_rejected(parts, quote):
+        loc = LocationDecision(**parts, quote=quote, reason="test")
+>       assert _check_location(loc, "Đèn hành lang không sáng", CATALOG) == (
+            None,
+            ("building", "floor", "area"),
+            ["location"],
+        )
+E       AssertionError: assert (None, ('buil... 'floor'), []) == (None, ('buil... ['location'])
+E         
+E         At index 1 diff: ('building', 'floor') != ('building', 'floor', 'area')
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py:140: AssertionError
+____________ test_f3_location_without_quote_is_rejected[! -parts0] ____________
+
+parts = {'building': 'S1', 'floor': '1', 'area': 'Hành lang'}, quote = '! '
+
+    @pytest.mark.parametrize(
+        "parts",
+        [
+            {"building": "S1", "floor": "1", "area": "Hành lang"},
+            {"building": "S1"},
+            {"area": "Hành lang"},
+        ],
+    )
+    @pytest.mark.parametrize("quote", [None, "..", "--", "! "])  # punctuation folds to nothing: no quote either
+    def test_f3_location_without_quote_is_rejected(parts, quote):
+        loc = LocationDecision(**parts, quote=quote, reason="test")
+>       assert _check_location(loc, "Đèn hành lang không sáng", CATALOG) == (
+            None,
+            ("building", "floor", "area"),
+            ["location"],
+        )
+E       AssertionError: assert ('Tòa S1 / Tầ...lang', (), []) == (None, ('buil... ['location'])
+E         
+E         At index 0 diff: 'Tòa S1 / Tầng 1 / Hành lang' != None
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py:140: AssertionError
+____________ test_f3_location_without_quote_is_rejected[! -parts1] ____________
+
+parts = {'building': 'S1'}, quote = '! '
+
+    @pytest.mark.parametrize(
+        "parts",
+        [
+            {"building": "S1", "floor": "1", "area": "Hành lang"},
+            {"building": "S1"},
+            {"area": "Hành lang"},
+        ],
+    )
+    @pytest.mark.parametrize("quote", [None, "..", "--", "! "])  # punctuation folds to nothing: no quote either
+    def test_f3_location_without_quote_is_rejected(parts, quote):
+        loc = LocationDecision(**parts, quote=quote, reason="test")
+>       assert _check_location(loc, "Đèn hành lang không sáng", CATALOG) == (
+            None,
+            ("building", "floor", "area"),
+            ["location"],
+        )
+E       AssertionError: assert (None, ('floor', 'area'), []) == (None, ('buil... ['location'])
+E         
+E         At index 1 diff: ('floor', 'area') != ('building', 'floor', 'area')
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py:140: AssertionError
+____________ test_f3_location_without_quote_is_rejected[! -parts2] ____________
+
+parts = {'area': 'Hành lang'}, quote = '! '
+
+    @pytest.mark.parametrize(
+        "parts",
+        [
+            {"building": "S1", "floor": "1", "area": "Hành lang"},
+            {"building": "S1"},
+            {"area": "Hành lang"},
+        ],
+    )
+    @pytest.mark.parametrize("quote", [None, "..", "--", "! "])  # punctuation folds to nothing: no quote either
+    def test_f3_location_without_quote_is_rejected(parts, quote):
+        loc = LocationDecision(**parts, quote=quote, reason="test")
+>       assert _check_location(loc, "Đèn hành lang không sáng", CATALOG) == (
+            None,
+            ("building", "floor", "area"),
+            ["location"],
+        )
+E       AssertionError: assert (None, ('buil... 'floor'), []) == (None, ('buil... ['location'])
+E         
+E         At index 1 diff: ('building', 'floor') != ('building', 'floor', 'area')
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py:140: AssertionError
+_________ test_f3_punctuation_quote_does_not_ground_an_invented_place _________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000019C8F826CD0>
+
+    def test_f3_punctuation_quote_does_not_ground_an_invented_place(clock):
+        def invented(system, user, data):
+            return ClientReply(
+                text=decision(**{"location.building": "S2", "location.floor": "7", "location.quote": ".."}), latency_ms=0.0
+            )
+    
+        engine = agent_engine(clock, invented)
+        case = engine.receive("Hành lang nhiều rác, đèn cũng không sáng", resident_id=RESIDENT)
+>       assert case.agent_decision.rejected[:1] == ["location"] and case.ticket.status == "NEED_INFO"
+E       AssertionError: assert (['jobs[1].asset_id'] == ['location']
+E         
+E         At index 0 diff: 'jobs[1].asset_id' != 'location'
+E         Use -v to get more diff)
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py:155: AssertionError
+____________________ test_llm_present_needs_grounded_quote ____________________
+
+    def test_llm_present_needs_grounded_quote():
+        """AC-05: an LLM PRESENT with a quote found in the text raises to tier 1; an invented quote only reaches tier 2."""
+        rule = assess(TEXT_NONE, LEX)
+        assert rule.risk_level == RiskLevel.NONE
+        grounded = merge_llm(rule, judged("S-01", "PRESENT", "mùi lạ như cao su"), TEXT_NONE, LEX)
+        assert grounded.risk_level == RiskLevel.EMERGENCY and grounded.signals[-1].detected_by == "LLM"
+        # R6: "cao su" is outside the closed prefix, so a burnt rubber smell is tier 2, not a benign lamp (WP3c)
+        burnt = "Hành lang tầng 3 tòa S1 bóng đèn tối, nghe mùi lạ như cao su cháy."
+        assert assess(burnt, LEX).risk_level == RiskLevel.UNCLEAR
+        invented = merge_llm(rule, judged("S-01", "PRESENT", "có khói đen"), TEXT_NONE, LEX)
+>       assert invented.risk_level == RiskLevel.UNCLEAR
+E       AssertionError: assert <RiskLevel.EM...: 'EMERGENCY'> == <RiskLevel.UNCLEAR: 'UNCLEAR'>
+E         
+E         - UNCLEAR
+E         + EMERGENCY
+
+tests\test_maintenance\test_safety.py:230: AssertionError
+__________________ test_engine_with_safety_llm_never_lowers ___________________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000019C8E04F490>
+
+    def test_engine_with_safety_llm_never_lowers(clock):
+        """AC-05 / I-12 at engine level: an LLM cannot clear a tier-1 ticket and cannot raise past tier 2 on a fake quote."""
+        lowering = MaintenanceEngine(clock=clock, safety_llm=lambda text: judged("S-01", "ABSENT"))
+        lowering.reset(with_fixtures=False)
+        case = lowering.get(report(lowering, TEXT_EMERGENCY))
+        assert case.ticket.blocker.code == ReasonCode.EMERGENCY_PENDING_BQL
+    
+        inventing = MaintenanceEngine(clock=clock, safety_llm=lambda text: judged("S-01", "PRESENT", "có khói đen"))
+        inventing.reset(with_fixtures=False)
+        case = inventing.get(report(inventing, TEXT_NONE))
+>       assert case.ticket.risk_level == RiskLevel.UNCLEAR and case.ticket.blocker.code == "SAFETY_REVIEW_REQUIRED"
+E       AssertionError: assert (<RiskLevel.EM...: 'EMERGENCY'> == <RiskLevel.UNCLEAR: 'UNCLEAR'>
+E         
+E         - UNCLEAR
+E         + EMERGENCY)
+
+tests\test_maintenance\test_safety.py:266: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_04_an_ungrounded_safety_quote_is_at_most_unclear
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_08_a_job_with_an_ungrounded_quote_is_dropped
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_08b_all_jobs_dropped_while_in_scope_leaves_no_valid_job
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_09b_location_parts_are_normalised_and_checked
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[None-parts0]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[None-parts1]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[None-parts2]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[..-parts0]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[..-parts1]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[..-parts2]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[---parts0]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[---parts1]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[---parts2]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[! -parts0]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[! -parts1]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[! -parts2]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_punctuation_quote_does_not_ground_an_invented_place
+FAILED tests/test_maintenance/test_safety.py::test_llm_present_needs_grounded_quote
+FAILED tests/test_maintenance/test_safety.py::test_engine_with_safety_llm_never_lowers
+19 failed, 3645 passed, 85 deselected in 175.62s (0:02:55)
+EXIT=1
