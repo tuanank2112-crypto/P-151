@@ -32,3 +32,4 @@
 - Người dùng nhắc lại "không word by word": WP14 F3 (`validate.grounded` chặn vị trí LLM theo chuỗi con, `mirror_decision` quote giả) và P09 B1/B2 (span, đủ 3 thành phần) là khớp chữ trá hình. Lỗi quy trình: SPEC Q28 có trước Q29, không ai rà lại; agent tóm tắt phiên còn báo "✅ DUYỆT" mà không đối chiếu kernel dòng 21.
 - Đã ghi não: kernel dòng 21 + dòng plan 06, gotchas (mục ⚠ mới), roadmap Active, plan 06 Q35. Code CHƯA sửa — chờ người duyệt hướng "LLM quyết vị trí, code kiểm catalog, quote chỉ audit".
 - Bài học khởi động: ĐỌC kernel + index (Bước 1–2) trước khi tóm tắt/đánh giá, không chỉ chạy Bước 0.
+- 09:xx Đóng gói WP18 (🔴 SPEC-P10, architect chạy Opus — không Fable) / WP19 (🟠 runtime) trong plan 06; handoff H17. Push tạm `feature/nhuy-reasoning-agent`. Frontend mới (portal gọi backend v1.7.0, PR #20 `feature/nhuy-portal-fe`; mobile PWA v1.9.4 `feature/chamanh`) CHƯA vào develop/nhánh này.
