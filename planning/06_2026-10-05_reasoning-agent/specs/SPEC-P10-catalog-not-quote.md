@@ -183,12 +183,12 @@ Ai chịu: **BPTN** — xem lại qua audit/AI log khi phòng ban hoặc cư dâ
 | C7 G-1 `reconcile.py:62–76` | loại việc Agent ∉ `rules.category_evidence` ⇒ PENDING_REVIEW | từ khoá luật quyết Agent có được tự áp | Q06 (người dùng chốt bảng G) + Q29 "chưa duyệt thay bảng G"; P09 §4.1 PROPOSED | Q-P10-1 |
 | C8 G-2 `reconcile.py:78–89` | `extract_location` đủ và khác vị trí Agent ⇒ PENDING_REVIEW | như trên; sau P10 bắn đều cho MỌI câu chữ quote ([g2-probe.txt](../evidence/WP18/g2-probe.txt): quote diễn đạt khác — Base ROUTED theo luật, P10 PENDING_REVIEW, như quote nguyên văn ở Base) | như trên | Q-P10-1 |
 | C9 `proposer.py:116–129` (chỉ khi `MO_AGENT_ENABLED=false` + `LLM_MODE=openai`) | `rules.classify` phủ quyết playbook LLM | từ khoá luật | đường rollback tắt Agent có chủ đích (Q01 "Tắt bằng `MO_AGENT_ENABLED=false`") | — |
-| S1 SPEC-P08 §6 F8 (WP15/H14 chưa thi công) | `rules.location_mentions` > 1 nơi ⇒ không tách, cả đường Agent | từ khoá luật chặn quyết định tách của LLM | SPEC đã duyệt, không phải quote | Q-P10-3 |
+| S1 SPEC-P08 §6 F8 (WP15/H14 chưa thi công) | `rules.location_mentions` > 1 nơi ⇒ không tách, cả đường Agent | từ khoá luật chặn quyết định tách của LLM | SPEC đã duyệt, không phải quote | Q-P10-3 → Q36 đã chốt |
 | S2 SPEC-P09 §4.1 + §8 CẤM 1 | nhận phân loại Agent khi "job.quote grounded" | khớp quote | P09 ngoài B1/B2 PROPOSED (H17 cấm đụng) | Q-P10-4 |
 
 - **Q-P10-1:** G-1/G-2 (từ khoá luật ⇒ PENDING_REVIEW) giữ theo Q06, hay hạ MINOR theo "code chỉ kiểm danh mục" của Q35? Mặc định P10: giữ.
 - **Q-P10-2:** Rủi ro Agent bịa vị trí hợp lệ danh mục: chấp nhận với BPTN xem lại (mặc định), hay đòi ngưỡng đo live (cần thêm công cụ đo vị trí) trước khi bật trên DB chung?
-- **Q-P10-3:** Trước khi phóng H14: F8 chỉ áp đường luật (không chặn quyết định tách của Agent)?
+- **Q-P10-3:** Trước khi phóng H14: F8 chỉ áp đường luật (không chặn quyết định tách của Agent)? **Chốt Q36 (2026-10-10 18:03:31 +0700): CÓ** — chỉ đường luật/Mirror (`split_verdict`), Agent không bị gác; xem SPEC-P08 §6 banner.
 - **Q-P10-4:** Khi duyệt P09: bỏ điều kiện "job.quote grounded" ở §4.1 và §8 CẤM 1.
 - **Q-P10-5:** DB chung: chỉ thủ tục OPERATIONS §5 (dừng backend cũ trước), hay thêm marker revision `0003` để code trước P10 từ chối khởi động (theo V-10/Q13)? Mặc định: quyết trước G-SRV, không thuộc WP19.
 

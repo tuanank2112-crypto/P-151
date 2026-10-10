@@ -105,6 +105,40 @@ class MergeMixin:
         )
         return raised, text
 
+    def _recount_duplicates(self, work: Case, actor_id: str, role: ActorRole, now: datetime) -> None:
+        """Set `work.duplicate_count` to the P04 §2.1 definition: open tickets waiting as its suspected duplicate
+        (VERIFYING/DUPLICATE pointing at it) + tickets merged into it that are counted (not its own split children).
+        A ticket re-opened by T09 carries the number frozen while it was MERGED; this brings it back."""
+        ticket_id = work.ticket.ticket_id
+        wanted = 0
+        for case in self._cases_snapshot():
+            other = case.ticket
+            if other.ticket_id == ticket_id:
+                continue
+            if other.status == TicketStatus.VERIFYING:
+                blocker = other.blocker
+                if blocker is not None and blocker.code == ReasonCode.DUPLICATE:
+                    wanted += blocker.related_ticket_id == ticket_id
+            elif other.status == TicketStatus.MERGED and other.merged_into == ticket_id:
+                wanted += other.split_from != ticket_id
+        old = work.ticket.duplicate_count
+        if wanted == old:
+            return
+        self._audit(
+            work,
+            Action.LINK_TICKETS,
+            "Ticket",
+            ticket_id,
+            actor_id,
+            role,
+            "duplicate_count",
+            old,
+            wanted,
+            "Tính lại số nghi trùng khi mở lại ticket",
+            now=now,
+        )
+        self._set_ticket(work, duplicate_count=wanted)
+
     def _has_open_merged_children(self, work: Case) -> bool:
         """Some child in `merged_children` is still MERGED into `work` (merging `work` now would chain)."""
         for child_id in work.ticket.merged_children:
@@ -262,6 +296,7 @@ class MergeMixin:
         root_id = work.ticket.merged_into
         counted = work.ticket.split_from != root_id
         self._apply_transition(work, TicketStatus.RECEIVED, actor_id, role, now, note=note, merged_into=None)
+        self._recount_duplicates(work, actor_id, role, now)  # frozen while MERGED (I-26): back to P04 §2.1
         if root_id not in work.not_duplicate_of:
             work.not_duplicate_of.append(root_id)
         self._audit(

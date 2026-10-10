@@ -52,6 +52,13 @@ Bất biến P04 §2.1: `duplicate_count(R)` = số ticket MỞ đang `VERIFYING
 - Nghiệm thu: `extra_undo_split.py` (a)(b)(c)(d) đều đạt; `extra_dup_count_walk.py` 32 lượt ⇒ 0 vi phạm.
 
 ## 6. F8 — không tách khi nhắc hai nơi, CẢ đường Agent (WP15)
+> ⚠ Thu hẹp bởi plan 06 Q36 (2026-10-10, người dùng "đừng có word by word"): vế "CẢ đường Agent" BỊ BỎ — `location_mentions` là đếm từ, CẤM dùng gác quyết định tách của Agent (kernel dòng 21). Hiện hành:
+> - **Đường luật + Mirror:** đã đạt sẵn qua `rules.split_verdict` ⇒ `two-places` (`rules.py:526–528`); KHÔNG thêm điều kiện 6 vào `_try_split`.
+> - **Đường Agent (`source=AGENT`, có job view):** LLM quyết theo `agent/prompt.py` ("hai vị trí khác nhau ⇒ UNCLEAR, TO_BPTN"); code chỉ kiểm schema + danh mục như P10. Agent tách sai ⇒ BPTN xem lại; đo bằng G-LIVE, không bằng luật.
+> - **Nghiệm thu thay thế:** test ghim hai chiều — (i) luật/Mirror: 3 câu `[two-places]` của `break6_wrong_split.py` không tách; (ii) Agent trả 2 jobs hợp lệ (cùng vị trí danh mục) cho câu nhắc hai nơi ⇒ VẪN tách (code không gác bằng từ khoá). Đột biến: xoá nhánh `two-places` trong `split_verdict` ⇒ (i) đỏ; thêm `location_mentions` vào `_has_two_jobs` nhánh Agent ⇒ (ii) đỏ. 32 MUST_SPLIT REF vẫn tách.
+>
+> Đoạn dưới là lịch sử.
+
 Sửa P05 §3: thêm điều kiện 6 cho mọi đường: `rules.location_mentions(content, buildings)` có > 1 tòa HOẶC > 1 tầng HOẶC > 1 khu ⇒ `_try_split` trả False (ticket dừng `CATEGORY_UNCLEAR` cho BPTN như khi không tách). Chỗ: `coordination/split.py::_try_split`.
 - Nghiệm thu: dòng `[two-places]` của `break6_wrong_split.py` ⇒ không tách; 32 câu MUST_SPLIT REF vẫn tách (`VARIANT_FAILURES=0`).
 

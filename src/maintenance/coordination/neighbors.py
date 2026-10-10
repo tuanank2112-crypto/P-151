@@ -226,5 +226,10 @@ class NeighborMixin:
             safety_clear_reason=note.strip(),
             risk_level=RiskLevel.NONE,
         )
+        locked_location = src.ticket.locked_fields.location  # I-19: BPTN's place for the source holds for the follow-up
+        if locked_location:
+            self._set_ticket(
+                new, locked_fields=new.ticket.locked_fields.model_copy(update={"location": locked_location})
+            )
         new.not_duplicate_of.append(src.ticket.ticket_id)
         return new
