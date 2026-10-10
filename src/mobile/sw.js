@@ -1,21 +1,21 @@
 // Service worker of the phone app (plan 11, SPEC-P01 §3): caches the app shell only.
 // API responses are NEVER cached (00-ARCHITECTURE I-3): data on the phone must always come from the shared DB.
-const SHELL_CACHE = 'mo-app-shell-v7';
+const SHELL_CACHE = 'mo-app-shell-v12';
 const SHELL = [
   './',
   'index.html',
-  'app.css?v=7',
+  'app.css?v=12',
   'manifest.json',
-  'js/main.js?v=7',
-  'js/api.js?v=7',
-  'js/ui.js?v=7',
-  'js/photo.js?v=7',
-  'js/resident.js?v=7',
-  'js/bql.js?v=7',
-  'js/staff.js?v=7',
-  'js/dept.js?v=7',
-  'js/bptn.js?v=7',
-  'js/kho.js?v=7',
+  'js/main.js?v=12',
+  'js/api.js?v=12',
+  'js/ui.js?v=12',
+  'js/photo.js?v=12',
+  'js/resident.js?v=12',
+  'js/bql.js?v=12',
+  'js/staff.js?v=12',
+  'js/dept.js?v=12',
+  'js/bptn.js?v=12',
+  'js/kho.js?v=12',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/icon-maskable-512.png',

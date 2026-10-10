@@ -1,10 +1,10 @@
 // BPTN screens (Bộ phận tiếp nhận) — plan 11 SPEC-P05 §3. Same queue filter and bodies as renderBptn / bptnForm in src/web/app.js.
-import { api } from './api.js?v=7';
-import { confirmSheet, el, field, fill, notice, writeButton } from './ui.js?v=7';
+import { api } from './api.js?v=12';
+import { confirmSheet, el, field, fill, notice, writeButton } from './ui.js?v=12';
 import {
   CATEGORY_LABEL, caseHead, caseScreen, codeOf, compact, eventsHistory, imagesOf, photoBox, queueScreen, reportBox, select,
   webButton, writer,
-} from './staff.js?v=7';
+} from './staff.js?v=12';
 
 const QUEUE = new Set(['SAFETY_REVIEW_REQUIRED', 'MISSING_INFO', 'DUPLICATE', 'CATEGORY_UNCLEAR', 'OUT_OF_SCOPE', 'PENDING_REVIEW', 'ASSET_UNCLEAR', 'WRONG_DEPT']);
 const needsBptn = (t) => t.status === 'NEED_INFO' || QUEUE.has(codeOf(t));
@@ -17,6 +17,8 @@ const HEADS = {
   queue: ['Hàng chờ BPTN', 'Phản ánh Agent chưa tự xử lý được: thiếu thông tin, nghi trùng, loại việc, tài sản, an toàn.'],
   safety: ['An toàn Bậc 2', 'Xác minh tại hiện trường rồi chọn một trong ba quyết định.'],
   all: ['Tất cả phản ánh', 'Toàn bộ ticket thật (ẩn ticket mẫu).'],
+  done: ['Phản ánh đã hoàn thành', 'Ticket đã nghiệm thu và đóng.'],
+  duplicate: ['Phản ánh nghi trùng', 'Agent nghi trùng với ticket đang mở: gộp hoặc tách.'],
 };
 // Field codes the engine writes after "Thiếu:" in blocker.internal_note (src/web/app.js MISSING_LABEL)
 const MISSING_LABEL = {
@@ -34,8 +36,9 @@ const tabState = { get: () => tab, set: (key) => { tab = key; } };
 
 export const list = (ctx) => queueScreen(ctx, {
   tiles: TILES, tab: tabState, heads: HEADS, base: '#/p', empty: 'Không có phản ánh nào cần BPTN xử lý.',
-  stats: (rows) => [['Hàng chờ', rows.filter(needsBptn).length], ['Hoàn thành', rows.filter((t) => t.status === 'CLOSED').length],
-    ['Nghi trùng', rows.filter((t) => codeOf(t) === 'DUPLICATE').length], ['Tổng', rows.length]],
+  // Q39: the four stat cards filter the list (Hàng chờ = tile Cần xử lý, Tổng = tile Tất cả)
+  stats: [['queue', 'Hàng chờ', needsBptn], ['done', 'Hoàn thành', (t) => t.status === 'CLOSED'],
+    ['duplicate', 'Nghi trùng', (t) => codeOf(t) === 'DUPLICATE'], ['all', 'Tổng', () => true]],
 });
 
 // ---------------------------------------------------------------- #/p/<id>

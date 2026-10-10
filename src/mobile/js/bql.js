@@ -1,39 +1,36 @@
 // BQL screens on the phone (plan 11, SPEC-P03 rules, SPEC-P04 §5 layout from portal/src/app/management/management-app.tsx).
 // Buttons follow the BqlTicketRow; the server stays the referee (403/409 go through the error table).
-import { api, apiImage } from './api.js?v=7';
+import { api, apiImage } from './api.js?v=12';
 import {
   TERMINAL, confirmSheet, el, emptyState, field, fill, formatTime, history, icon, infoGrid, notice, pageHead, pagedList,
   refreshButton, toast, writeButton,
-} from './ui.js?v=7';
+} from './ui.js?v=12';
 import {
   PRIORITY_LABEL, REASON_LABEL, deptName, deptPill as deptPillOf, flags, imagesOf, isEmergency, isSeedTicket, loadCatalog, statusPill,
-} from './staff.js?v=7';
+} from './staff.js?v=12';
 
 export { isEmergency, isSeedTicket };
 const deptPill = (cat, r) => deptPillOf(cat, r.department_id);
 
 export const isEscalatedSafety = (r) => !!(r.blocker && r.blocker.code === 'SAFETY_REVIEW_REQUIRED' && (r.escalated || r.status === 'SAFETY_REVIEW_REQUIRED'));
 export const needsBql = (r) => isEmergency(r) || r.status === 'READY_FOR_REVIEW' || r.blocker_owner_role === 'BQL' || isEscalatedSafety(r);
-const FILTERS = { mine: needsBql, emergency: isEmergency, all: () => true };
-const TILES = [['mine', 'Cần tôi', 'briefcase'], ['emergency', 'Khẩn cấp', 'warning'], ['all', 'Tất cả', 'table']];
+// Q36: the four stat cards are the filters (no NavTiles row); the last one keeps only finished tickets.
+const STATS = [
+  ['mine', 'Cần BQL', needsBql], ['emergency', 'Khẩn cấp', isEmergency], ['overdue', 'Quá hạn', (r) => r.overdue],
+  ['done', 'Hoàn thành', (r) => r.status === 'CLOSED'],
+];
+const FILTERS = Object.fromEntries(STATS.map(([key, , test]) => [key, test]));
 const HEAD = {
   mine: ['Việc cần Ban quản lý', 'Nghiệm thu, khẩn cấp Bậc 1 và ticket an toàn đã leo thang.'],
   emergency: ['Sự cố khẩn cấp', 'Ticket Bậc 1 đang chờ Ban quản lý xử lý.'],
-  all: ['Tất cả phản ánh', 'Toàn bộ ticket thật của khu đô thị (ẩn ticket mẫu).'],
+  overdue: ['Phản ánh quá hạn', 'Vướng mắc đã leo thang hoặc quá giờ xử lý.'],
+  done: ['Phản ánh đã hoàn thành', 'Ticket đã nghiệm thu và đóng (ẩn ticket mẫu).'],
 };
 
 let tab = 'mine'; // kept while the app is open
 /** The header bell opens the "Cần tôi" list. */
 export function focusMine() { tab = 'mine'; }
 
-/** The three filter tiles (portal NavTiles). On the detail screen a tile goes back to the list. */
-function chromeFor(ctx, onPick) {
-  ctx.chrome({
-    navId: 'bql-tabs',
-    active: tab,
-    items: TILES.map(([key, label, iconName]) => ({ key, label, icon: iconName, onclick: () => { tab = key; onPick(); } })),
-  });
-}
 
 // ---------------------------------------------------------------- #/b
 
@@ -45,19 +42,17 @@ function rowItem(cat) {
 }
 
 export async function list(ctx) {
-  const statsBox = el('div', { class: 'stats' });
+  const statsBox = el('div', { class: 'stats', id: 'bql-tabs', role: 'toolbar' });
   const head = el('div');
   const body = el('div', { id: 'bql-list' });
   let rows = [];
   let cat = null;
   const draw = (keep) => {
-    chromeFor(ctx, () => draw(false));
-    ctx.counts(Object.fromEntries([...Object.entries(FILTERS).map(([key, test]) => [key, rows.filter(test).length]),
-      ['bell', rows.filter(needsBql).length]]));
-    fill(statsBox, [
-      ['Cần BQL', rows.filter(needsBql).length], ['Khẩn cấp', rows.filter(isEmergency).length],
-      ['Quá hạn', rows.filter((r) => r.overdue).length], ['Tổng', rows.length],
-    ].map(([label, value]) => el('div', { class: 'card stat' }, el('span', {}, label), el('b', {}, String(value)))));
+    ctx.counts({ bell: rows.filter(needsBql).length });
+    fill(statsBox, STATS.map(([key, label, test]) => el('button', {
+      type: 'button', class: key === tab ? 'card stat pick on' : 'card stat pick', dataset: { tab: key }, 'aria-pressed': String(key === tab),
+      onclick: () => { tab = key; draw(false); },
+    }, el('span', {}, label), el('b', {}, String(rows.filter(test).length)))));
     fill(head, pageHead(HEAD[tab][0], HEAD[tab][1], { right: refreshButton(load, ctx) }));
     const previous = keep ? body.firstElementChild : null;
     fill(body, pagedList(rows.filter(FILTERS[tab]), rowItem(cat), {
@@ -72,7 +67,7 @@ export async function list(ctx) {
     draw(true);
     ctx.updatedNow();
   };
-  chromeFor(ctx, () => draw(false));
+  ctx.chrome();
   ctx.screen.append(statsBox, head, el('div', { class: 'updated', dataset: { updated: '' } }), body);
   await load();
   ctx.setLoader(load);
@@ -82,7 +77,7 @@ export async function list(ctx) {
 
 export async function detail(ctx) {
   const [id] = ctx.params;
-  chromeFor(ctx, () => ctx.go('#/b'));
+  ctx.chrome();
   const images = new Map();
   const live = el('div', { id: 'bql-detail' });
   const actions = el('div', { id: 'bql-actions', class: 'actions-col' });
@@ -168,9 +163,29 @@ export async function detail(ctx) {
         }, { variant: '' })));
     }
     if (isEscalatedSafety(row)) {
-      blocks.push(el('div', { class: 'act-box danger' }, el('b', {}, 'Kiểm tra an toàn (Bậc 2) đã leo thang'),
-        el('span', { class: 'muted' }, 'Form đánh giá an toàn có nhiều trường — xử lý trên bản web.'),
-        el('a', { class: 'btn primary block', href: '/ui/', target: '_blank', rel: 'noopener' }, icon('web'), 'Xử lý trên web')));
+      // Q38: same three decisions as the BPTN app (POST /mo/tickets/{id}/safety); the engine lets BQL decide once escalated
+      const safety = (decision, note, success, confirm) => act({
+        confirm, call: () => api(`/mo/tickets/${encodeURIComponent(id)}/safety`, { method: 'POST', body: note ? { decision, note } : { decision } }), success,
+      });
+      const safeNote = noteBox({ id: 'safety-safe-note', placeholder: 'Đã kiểm tra hiện trường, không nguy hiểm vì…' });
+      const askNote = noteBox({ id: 'safety-ask-note', placeholder: 'Nội dung hỏi cư dân' });
+      const upNote = noteBox({ id: 'safety-up-note', placeholder: 'Lý do nâng mức (không bắt buộc)' });
+      blocks.push(el('div', { class: 'act-box danger', id: 'bql-safety' }, el('b', {}, 'Kiểm tra an toàn (Bậc 2) đã leo thang'),
+        el('span', { class: 'muted' }, 'Xác minh rồi chọn một trong ba quyết định.'),
+        field('Xác nhận an toàn', safeNote),
+        writeButton('Xác nhận an toàn', () => {
+          if (!safeNote.value.trim()) { toast('Nhập lý do xác nhận an toàn', 'warn'); return undefined; }
+          return safety('CONFIRM_SAFE', safeNote.value.trim(), 'Đã xác nhận an toàn, phản ánh chạy tiếp');
+        }),
+        field('Yêu cầu cư dân làm rõ', askNote),
+        writeButton('Yêu cầu cư dân bổ sung', () => {
+          if (!askNote.value.trim()) { toast('Nhập nội dung hỏi cư dân', 'warn'); return undefined; }
+          return safety('REQUEST_INFO', askNote.value.trim(), 'Đã gửi yêu cầu bổ sung tới cư dân');
+        }, { variant: '' }),
+        field('Nâng mức Khẩn cấp (Bậc 1)', upNote),
+        writeButton('Nâng lên Khẩn cấp (Bậc 1)', () => safety('ESCALATE', upNote.value.trim(), 'Đã nâng lên Khẩn cấp Bậc 1',
+          { title: 'Nâng lên Khẩn cấp Bậc 1?', body: 'Phản ánh chuyển thành sự cố khẩn cấp, Ban quản lý xử lý ngay.', label: 'Nâng mức', danger: true }),
+        { variant: 'danger-solid' })));
     }
     if (row.status === 'READY_FOR_REVIEW') {
       const note = noteBox({ id: 'rework-note', placeholder: 'Nêu rõ lý do chưa đạt yêu cầu…' });

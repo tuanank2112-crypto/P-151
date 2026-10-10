@@ -2,6 +2,40 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.9.4] - 2026-10-10: App BPTN — 4 ô số liệu bấm được để lọc
+### Changed
+- `src/mobile/js/staff.js` `queueScreen`: `stats` đổi thành `[[key, label, test]]`, mỗi ô là `button.card.stat.pick[data-tab]` trong `#staff-stats` (lọc như tile, ô đang chọn viền xanh). `bptn.js`: Hàng chờ (`queue`) · Hoàn thành (`done`, `CLOSED`) · Nghi trùng (`duplicate`) · Tổng (`all`) (plan 11 Q39). `?v=12` + `SHELL_CACHE` v12. API không đổi.
+### Measured
+- `node --check` 11 file; `test_mobile_static.py` 5 passed. Playwright bptn01 `:8001`, `GET /mo/tickets` giả 9 dòng: 4 ô = 4/2/2/9, bấm từng ô hiện đúng 4/2/2/9 thẻ + đúng ô sáng + đúng tiêu đề, tile An toàn B2 ⇒ không ô nào sáng, 0 lỗi JS — 7/7 PASS. Phép phá (Hoàn thành = mọi ticket) ⇒ P1/P-done ĐỎ. Phòng ban `vesinh01` vẫn PASS.
+
+## [v1.9.3] - 2026-10-10: App BQL xử lý an toàn Bậc 2 đã leo thang ngay trên điện thoại
+### Changed
+- `src/mobile/js/bql.js` `#/b/<id>`: bỏ nút "Xử lý trên web"; form `#bql-safety` 3 quyết định (Xác nhận an toàn · Yêu cầu cư dân bổ sung · Nâng lên Khẩn cấp Bậc 1) ⇒ `POST /mo/tickets/{id}/safety`; lý do trống ⇒ không gọi API (plan 11 Q38, thay vùng cấm SPEC-P03 §41). `?v=11` + `SHELL_CACHE` `mo-app-shell-v11`. API/engine không đổi.
+### Measured
+- `node --check` 11 file 0 lỗi; `test_mobile_static.py` 5 passed. Playwright bql01 trên backend memory `:8001` (3 ticket "tiếng nổ" Bậc 2, `run_jobs(+5 h)` ⇒ `escalated`): S0–S6 + JS 8/8 PASS — form 3 nút, lý do trống 0 request, CONFIRM_SAFE ⇒ hết vướng an toàn (chạy lại pipeline), REQUEST_INFO ⇒ `NEED_INFO`, ESCALATE ⇒ `EMERGENCY_PENDING_BQL` và màn chuyển sang khối khẩn cấp. Phép phá (nút Xác nhận gửi `REQUEST_INFO`) ⇒ S3 ĐỎ.
+### Not measured
+- Harness M1–M17; thao tác ghi trên Supabase `:8000` (chỉ đọc).
+
+## [v1.9.2] - 2026-10-10: App điện thoại Kho — Nhập vật tư + Cảnh báo tồn kho dưới ngưỡng
+### Changed
+- `src/mobile/js/kho.js` `#/k`: tile "Chờ vật tư" ⇒ "Nhập vật tư" (form `#kho-receive` + danh sách phản ánh chờ vật tư); "Tồn kho" chỉ còn danh sách; tile mới "Cảnh báo" (`#kho-low`): `qty < 30` tăng dần, đỏ `< 20`, vàng `20–29`, "Nhập thêm" điền sẵn `30 − qty`. Ô số liệu 1 = "Dưới ngưỡng" (plan 11 Q37, theo ảnh người dùng). Ngưỡng là hằng `LOW_STOCK`/`CRITICAL_STOCK`.
+- Harness plan 11 M16: bấm tile `receive` trước khi nhập kho. `?v=10` + `SHELL_CACHE` `mo-app-shell-v10`. API không đổi.
+### Measured
+- `node --check` 11 file 0 lỗi; `test_mobile_static.py` 5 passed; Playwright kho01 trên backend memory `:8001` mới: K1–K8 + JS 9/9 PASS (3 tile, cảnh báo = 4 dòng khớp `GET /mo/warehouse/stock` `< 30`, mức đỏ/vàng đúng, điền sẵn BAG-01 20 ⇒ 10, nhập xong 20 → 30 và rời cảnh báo, Tồn kho 5/5 dòng không form, 0 lỗi JS). Phép phá (lọc `< 20`) ⇒ K3/K5 ĐỎ.
+### Not measured
+- Harness đầy đủ M1–M17, server `:8000`, điện thoại thật.
+
+## [v1.9.1] - 2026-10-10: App điện thoại — Phòng ban và BQL chỉ lưu việc đã hoàn thành
+### Changed
+- `src/mobile/js/dept.js` `#/d`: tile 4 "Tất cả" (mọi ticket) ⇒ "Hoàn thành" (`status = CLOSED`), tiêu đề "Việc đã hoàn thành", theo ảnh người dùng (plan 11 Q35). Tile "Tất cả" của BPTN giữ.
+- `src/mobile/js/bql.js` + `app.css` `#/b`: bỏ hàng tile tròn (Cần tôi/Khẩn cấp/Tất cả); 4 ô số liệu thành bộ lọc (`#bql-tabs` `button.card.stat.pick[data-tab]`): Cần BQL · Khẩn cấp · Quá hạn · Hoàn thành (`CLOSED`, thay "Tổng") (plan 11 Q36). Chi tiết cũng không tile.
+- `?v=9` mọi import + `SHELL_CACHE` `mo-app-shell-v9`. API không đổi.
+### Measured
+- `node --check` 11 file 0 lỗi; `test_mobile_static.py` 5 passed; Playwright `:8001` (memory, `GET /mo/tickets` giả 9 trạng thái) vesinh01: badge 2, danh sách = 2 ticket `CLOSED`, Chờ nhận không đổi, 0 lỗi JS — 6/6 PASS; phép phá (lọc `() => true`) ⇒ T2/T3 ĐỎ.
+- Playwright `:8001` bql01, `GET /bql/tickets` giả 9 dòng: không tile, 4 ô = 2/1/1/2, mỗi ô lọc đúng, chi tiết có Quay lại và giữ lọc, 0 lỗi JS — 10/10 PASS; phép phá ("Hoàn thành" = mọi ticket) ⇒ B2/B5/B7 ĐỎ. Bộ chọn harness M11 `#bql-tabs [data-tab="emergency"]` giữ nguyên.
+### Not measured
+- Harness plan 11 M1–M17 (chỉ chạy 06:00–22:00), server `:8000`.
+
 ## [v1.9.0] - 2026-10-10: Tài sản đèn theo khu vực (plan 14, MINOR)
 ### Changed
 - Catalog: 4 tài sản active `SIM-ASSET-LIGHT-{HALLWAY,LIFT-LOBBY,STAIRS,WASTE-ROOM}` (mỗi khu vực một cái); 6 mã cũ `…-001…006` thành `RETIRED_SIMULATED` (ticket cũ vẫn giữ mã). `Asset` thêm `name`, `area`; validator ≤1 active mỗi khu vực.

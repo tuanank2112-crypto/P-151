@@ -32,11 +32,11 @@ Backend vẫn là FastAPI gốc (Docker `:8000`); app KHÔNG gọi API/DB của 
 | `js/ui.js` | `el`, `fill`, `icon` (path portal), `person`, `pageHead`, `stepHead`, `infoGrid`, `notice`, `history`, `pill`, `toast`, `confirmSheet`, `writeButton`, `lockWhile`, `refreshButton`, `pagedList` (20 + "Xem thêm") |
 | `js/photo.js` | `compressImage` (cạnh dài ≤1600 px, JPEG 0.82), `photoPicker` (Chụp ảnh / Chọn ảnh, tối đa 5) |
 | `js/resident.js` | `#/r` ô tổng quan + chip lọc + thẻ có 6 vạch tiến độ · `#/r/new` 3 thẻ đánh số (Vị trí tòa-tầng-khu vực / Mô tả / Ảnh — vị trí trước, Q33) + Tóm tắt · `#/r/<id>` stepper 6 bước, bổ sung, thêm ảnh, đánh giá sao, lịch sử. Ánh xạ trạng thái → bước: SPEC-P04 §4 |
-| `js/bql.js` | `#/b` ô số liệu + 3 tile lọc Cần tôi / Khẩn cấp / Tất cả · `#/b/<id>` nghiệm thu, trả làm lại, hủy, đóng/hạ mức khẩn cấp |
+| `js/bql.js` | `#/b` không tile; 4 ô số liệu là bộ lọc Cần BQL / Khẩn cấp / Quá hạn / Hoàn thành (`CLOSED`) (Q36) · `#/b/<id>` nghiệm thu, trả làm lại, hủy, đóng/hạ mức khẩn cấp, an toàn Bậc 2 đã leo thang `#bql-safety` (xác nhận an toàn / yêu cầu bổ sung / nâng Bậc 1, Q38) |
 | `js/staff.js` | Dùng chung cho vai nội bộ: nhãn (lý do, ưu tiên, loại việc, checklist, vật tư — chép từ `src/web/app.js`), pill, ảnh nội bộ, `queueScreen` (danh sách + tile `#staff-tabs`), `caseScreen` (khung chi tiết), `writer` (ghi → toast → tải lại) |
-| `js/dept.js` | Phòng ban `#/d`: 4 tile Chờ nhận / Đang làm / Chờ nghiệm thu / Tất cả, không ô số liệu (Q32) · `#/d/<id>`: nhận việc, **ảnh sau xử lý (đầu tiên)**, checklist, vật tư (+ xác nhận vật tư thực tế), ghi chú, tự kiểm, báo hoàn thành, vướng / sai phòng ban |
-| `js/bptn.js` | BPTN `#/p`: tile Cần xử lý / An toàn B2 / Tất cả; ô số liệu Hàng chờ / Hoàn thành (`CLOSED`) / Nghi trùng / Tổng (Q34); form tài sản chọn 1 trong 4 tài sản khu vực theo `name` (plan 14) · `#/p/<id>`: form theo mã vướng (an toàn Bậc 2, thiếu thông tin, trùng, loại việc, tài sản, sai phòng ban) |
-| `js/kho.js` | Kho `#/k`: Chờ vật tư / Tồn kho (nhập kho) · `#/k/<id>`: vật tư thiếu + nhập kho điền sẵn |
+| `js/dept.js` | Phòng ban `#/d`: 4 tile Chờ nhận / Đang làm / Chờ nghiệm thu / Hoàn thành (`CLOSED`, Q35), không ô số liệu (Q32) · `#/d/<id>`: nhận việc, **ảnh sau xử lý (đầu tiên)**, checklist, vật tư (+ xác nhận vật tư thực tế), ghi chú, tự kiểm, báo hoàn thành, vướng / sai phòng ban |
+| `js/bptn.js` | BPTN `#/p`: tile Cần xử lý / An toàn B2 / Tất cả; ô số liệu Hàng chờ / Hoàn thành (`CLOSED`) / Nghi trùng / Tổng (Q34) là bộ lọc bấm được `#staff-stats` (Q39); form tài sản chọn 1 trong 4 tài sản khu vực theo `name` (plan 14) · `#/p/<id>`: form theo mã vướng (an toàn Bậc 2, thiếu thông tin, trùng, loại việc, tài sản, sai phòng ban) |
+| `js/kho.js` | Kho `#/k`: 3 tile Nhập vật tư (form nhập kho + phản ánh chờ vật tư) / Tồn kho (chỉ danh sách) / Cảnh báo (`qty < LOW_STOCK=30`, đỏ `< CRITICAL_STOCK=20`, "Nhập thêm" điền sẵn `30 − qty`) (Q37) · `#/k/<id>`: vật tư thiếu + nhập kho điền sẵn |
 
 Chỉ `qa01` (QA_INTERNAL) đăng nhập ⇒ `#/web` (nút sang `/ui/`), không gọi API dữ liệu.
 

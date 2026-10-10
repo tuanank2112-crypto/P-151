@@ -1,25 +1,25 @@
 // Department screens (Phòng ban Vệ sinh / Kỹ thuật) — plan 11 SPEC-P05 §2. Same endpoints and rules as
 // renderDepartment / workSections in src/web/app.js; photos first because the field team works from the phone (Q28).
-import { api, apiForm } from './api.js?v=7';
-import { MAX_PHOTOS, photoFormData, photoPicker } from './photo.js?v=7';
-import { confirmSheet, el, field, fill, icon, notice, pill, writeButton } from './ui.js?v=7';
+import { api, apiForm } from './api.js?v=12';
+import { MAX_PHOTOS, photoFormData, photoPicker } from './photo.js?v=12';
+import { confirmSheet, el, field, fill, icon, notice, pill, writeButton } from './ui.js?v=12';
 import {
   REASON_LABEL, caseHead, caseScreen, checklistLabel, codeOf, eventsHistory, executionPhotoIds, imagesOf, materialName,
   materialUnit, photoBox, photoStrip, queueScreen, reportBox, select, webButton, writer,
-} from './staff.js?v=7';
+} from './staff.js?v=12';
 
 const MAX_EXECUTION_PHOTOS = 10; // src/maintenance/engine.py
 const TILES = [
   ['todo', 'Chờ nhận', 'briefcase', (t) => t.status === 'ROUTED'],
   ['doing', 'Đang làm', 'clipboard', (t) => t.status === 'IN_PROGRESS' || t.status === 'ON_HOLD'],
   ['review', 'Chờ nghiệm thu', 'checkSquare', (t) => t.status === 'READY_FOR_REVIEW'],
-  ['all', 'Tất cả', 'table', () => true],
+  ['done', 'Hoàn thành', 'table', (t) => t.status === 'CLOSED'], // Q35: archive keeps only finished work
 ];
 const HEADS = {
   todo: ['Việc chờ nhận', 'Phản ánh đã giao cho phòng ban, chưa có người nhận.'],
   doing: ['Việc đang làm', 'Chụp ảnh sau xử lý, tick checklist, ghi vật tư rồi báo hoàn thành.'],
   review: ['Chờ nghiệm thu', 'Đã báo hoàn thành, đang chờ Ban quản lý nghiệm thu.'],
-  all: ['Tất cả việc của phòng ban', 'Mọi phản ánh đã giao cho phòng ban của bạn.'],
+  done: ['Việc đã hoàn thành', 'Phản ánh đã được Ban quản lý nghiệm thu và đóng.'],
 };
 let tab = 'todo';
 /** The header bell opens "Chờ nhận". */

@@ -455,6 +455,9 @@ await block('M16', async () => {
   const stock = await ok('kho01', 'GET', '/mo/warehouse/stock');
   const shownRows = await kp.$$eval('#kho-stock li', (n) => n.length);
   const item = stock.find((s) => s.qty != null) || stock[0];
+  // Q37: the receipt form lives on the "Nhập vật tư" tile, no longer on "Tồn kho"
+  await kp.click('#staff-tabs [data-tab="receive"]');
+  await kp.waitForSelector('#kho-receive');
   await kp.selectOption('#kho-item', item.item_code);
   await kp.fill('#kho-qty', '1');
   await kp.click('#kho-receive >> button:has-text("Nhập kho")');

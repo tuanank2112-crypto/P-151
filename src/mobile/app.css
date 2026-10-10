@@ -288,6 +288,10 @@ p.body { margin: 0; font-size: 15px; line-height: 1.55; }
 .stat { display: flex; flex-direction: column; gap: 2px; padding: 16px 18px; }
 .stat span { font-size: 14px; color: #5b6578; }
 .stat b { font-size: 28px; letter-spacing: -0.02em; }
+/* BQL (Q36): the stat cards are the filters */
+.stat.pick { border: 2px solid transparent; font: inherit; color: #13203A; text-align: left; cursor: pointer; }
+.stat.pick:hover { border-color: #C9DAFF; }
+.stat.pick.on { border-color: #2563EB; }
 .bitem { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; color: #13203a; border: 2px solid transparent; }
 .bitem:hover { border-color: #c9daff; }
 .bitem.urgent { background: #fff; color: #13203a; box-shadow: inset 4px 0 0 #b42318, 0 2px 14px rgba(15, 30, 60, 0.06); }
@@ -312,6 +316,9 @@ details.more > summary { min-height: 48px; padding: 12px 16px; font-size: 14px; 
 .stock-list b { display: block; font-size: 15px; }
 .stock-list small { display: block; font-size: 12px; color: #5b6578; }
 .stock-list .qty { font-weight: 700; white-space: nowrap; }
+/* Kho (Q37): warning rows (pill + "Nhập thêm") and the waiting-ticket heading under the receipt form */
+.stock-list .low-act { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.kho-sec { margin: 20px 0 10px; font-size: 18px; font-weight: 700; }
 .filter-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 40px; margin: -2px 0 10px; font-size: 14px; color: #5b6578; }
 
 /* =============== Part C — app-only =============== */

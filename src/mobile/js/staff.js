@@ -1,7 +1,7 @@
 // Shared pieces of the staff screens (BQL, Phòng ban, BPTN, Kho) — plan 11 SPEC-P05 Q31.
 // Labels copied from src/web/app.js so web and app name things the same way.
-import { api, apiImage } from './api.js?v=7';
-import { el, emptyState, fill, formatTime, history, notice, pageHead, pagedList, pill, refreshButton, toast } from './ui.js?v=7';
+import { api, apiImage } from './api.js?v=12';
+import { el, emptyState, fill, formatTime, history, notice, pageHead, pagedList, pill, refreshButton, toast } from './ui.js?v=12';
 
 export const REASON_LABEL = {
   MISSING_INFO: 'Thiếu thông tin', DUPLICATE: 'Nghi trùng', CATEGORY_UNCLEAR: 'Loại việc chưa rõ', OUT_OF_SCOPE: 'Ngoài phạm vi',
@@ -163,16 +163,18 @@ export function summaryCard(cat, base) {
 
 /**
  * List screen shared by Phòng ban / BPTN / Kho: stat cards, filter tiles (#staff-tabs), page head, paged cards (#staff-list).
- * opts: { tiles: [[key, label, icon, test]], tab: { get, set }, heads: { key: [title, sub] }, base, stats?(rows) → [[label, n]], empty }
- * Without `stats` no stat cards are drawn (Phòng ban, Q32).
+ * opts: { tiles: [[key, label, icon, test]], tab: { get, set }, heads: { key: [title, sub] }, base, stats?: [[key, label, test]], empty }
+ * Without `stats` no stat cards are drawn (Phòng ban, Q32); with it each card filters the list like a tile (Q39).
  */
 export async function queueScreen(ctx, opts) {
-  const statsBox = el('div', { class: 'stats' });
+  const statsBox = el('div', { class: 'stats', id: 'staff-stats', role: 'toolbar' });
   const head = el('div');
   const body = el('div', { id: 'staff-list' });
   let rows = [];
   let cat = null;
-  const test = () => (opts.tiles.find(([key]) => key === opts.tab.get()) || opts.tiles[0])[3];
+  // Q39: a stat card [key, label, test] is a filter too (same .stat.pick buttons as BQL Q36); its key may equal a tile's
+  const filters = [...opts.tiles.map(([key, , , t]) => [key, t]), ...(opts.stats || []).map(([key, , t]) => [key, t])];
+  const test = () => (filters.find(([key]) => key === opts.tab.get()) || filters[0])[1];
   const chrome = () => ctx.chrome({
     navId: 'staff-tabs', active: opts.tab.get(),
     items: opts.tiles.map(([key, label, iconName]) => ({ key, label, icon: iconName, onclick: () => { opts.tab.set(key); draw(false); } })),
@@ -181,7 +183,10 @@ export async function queueScreen(ctx, opts) {
     chrome();
     ctx.counts(Object.fromEntries([...opts.tiles.map(([key, , , t]) => [key, rows.filter(t).length]), ['bell', rows.filter(opts.tiles[0][3]).length]]));
     statsBox.hidden = !opts.stats;
-    fill(statsBox, (opts.stats ? opts.stats(rows) : []).map(([label, value]) => el('div', { class: 'card stat' }, el('span', {}, label), el('b', {}, String(value)))));
+    fill(statsBox, (opts.stats || []).map(([key, label, t]) => el('button', {
+      type: 'button', class: key === opts.tab.get() ? 'card stat pick on' : 'card stat pick', dataset: { tab: key }, 'aria-pressed': String(key === opts.tab.get()),
+      onclick: () => { opts.tab.set(key); draw(false); },
+    }, el('span', {}, label), el('b', {}, String(rows.filter(t).length)))));
     const [title, sub] = opts.heads[opts.tab.get()] || opts.heads[opts.tiles[0][0]];
     fill(head, pageHead(title, sub, { right: refreshButton(load, ctx) }));
     const previous = keep ? body.firstElementChild : null;
