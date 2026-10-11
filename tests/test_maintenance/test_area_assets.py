@@ -12,10 +12,11 @@ CATALOG = load_catalog()
 ACTIVE = {a.area: a.asset_id for a in CATALOG.assets if a.active}
 
 
-def test_catalog_has_exactly_the_four_area_assets_active():
+def test_catalog_has_exactly_the_five_area_assets_active():
     assert ACTIVE == {
         "Hành lang": "SIM-ASSET-LIGHT-HALLWAY",
         "Sảnh thang máy": "SIM-ASSET-LIGHT-LIFT-LOBBY",
+        "Thang máy": "SIM-ASSET-LIGHT-LIFT-CABIN",
         "Cầu thang bộ": "SIM-ASSET-LIGHT-STAIRS",
         "Phòng rác": "SIM-ASSET-LIGHT-WASTE-ROOM",
     }

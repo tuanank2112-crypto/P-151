@@ -198,3 +198,7 @@ Stash push -u may save successfully but exit1 without cleaning tracked files whe
 - `MO_PORTAL_EXTRAS` BẬT mặc định ở store memory ⇒ luồng yêu cầu/duyệt vật tư của develop tự chạy và đè quyết định "ghi số đã dùng". Đã chặn bằng `_material_approval_required()` = False; đừng bật lại khi chưa có hồ sơ mới.
 - `pytest` từ root thu nhặt cả `integration/*/tests` (worktree cũ) ⇒ `ImportPathMismatchError`; chạy `python -m pytest tests`.
 - `.next/` cũ còn tham chiếu route đã xoá ⇒ typecheck lỗi giả; xoá `portal/.next` rồi chạy lại.
+- Mã tòa con (S2.05, S1.12): validator `_check_location` chấp nhận `S2(.\d{1,2})?`, NHƯNG prompt LLM từng bảo "tòa ngoài danh sách = thiếu tòa" ⇒ LLM tự chuyển BPTN với lý do do chính nó viết (không có chuỗi này trong code). Đổi chữ prompt ⇒ tăng `PROMPT_VERSION` + sửa REF plan 06 trước.
+- Portal "Khẩn cấp" = `risk_level EMERGENCY` thôi; `priority HIGH` là ticket thường (đèn không sáng hành lang vẫn HIGH).
+- Khu vực "Thang máy": mẫu `AREA_PATTERNS` chỉ khớp văn bản có `trong|buồng|cabin|lòng` (mốc "trước/cạnh thang máy" KHÔNG phải cabin) nên `location_area` phải nhận NGAY nhãn chuẩn "Thang máy" (nếu không tài sản đèn không bao giờ khớp). Tầng cabin = `—`. Mẫu cabin phải có ở CẢ `AREA_PATTERNS` và `COMMON_AREA_PATTERNS`.
+- Form portal có mục vị trí mà danh mục không biết ⇒ LLM kết luận OUT_OF_SCOPE ⇒ develop Q14 đẩy thẳng sang "Việc của BQL" (`blocker.escalated`, người thực hiện `SIM-ACTOR-AGENT`). Rà `PLACE_DEFS` của portal với `AREA_PATTERNS` khi thêm lựa chọn.

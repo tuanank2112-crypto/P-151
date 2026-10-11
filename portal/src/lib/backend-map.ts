@@ -49,8 +49,9 @@ export function lastKnownStage(toStatuses: string[]): number {
   return stage;
 }
 
+/** Only a safety emergency is "Khẩn cấp"; HIGH priority alone is an ordinary ticket (user decision 2026-10-11) */
 export function isUrgent(t: { risk_level?: string | null; priority?: string | null }): boolean {
-  return t.risk_level === "EMERGENCY" || t.priority === "HIGH";
+  return t.risk_level === "EMERGENCY";
 }
 
 /** "Việc của BQL": an OUT_OF_SCOPE blocker that was escalated (SPEC-P01 §2) */

@@ -13,6 +13,8 @@
 </agent_startup_protocol>
 
 <project_foundation>
+- **v1.12.2 (2026-10-11, PATCH):** khu vực `Thang máy` (đèn/bẩn/rác vào phòng ban; cơ khí ngoài phạm vi; quạt/nút bấm CHƯA có playbook), prompt `/9`, 5 tài sản đèn.
+- **v1.12.1 (2026-10-11, PATCH):** prompt `agent-prompt/7` dặn mã tòa con S2.05 thuộc tòa mẹ; portal "Khẩn cấp" chỉ khi EMERGENCY.
 - **v1.12.0 (2026-10-11): `feature/chamanh` gộp `develop` b8d1b81.** `portal/` = bản develop (gọi `/api/v1`, không DB riêng); phần nối plan18 (BFF) bị thay. VẬT TƯ giữ quyết định chamanh: phòng ban lưu số ĐÃ DÙNG một POST `material-usage` (UI chọn mã theo `material_codes_by_department`, Vệ sinh được rỗng, Kỹ thuật ≥1); `_material_approval_required()` luôn False (luồng yêu cầu/duyệt của develop NGỦ, test của nó đã xoá); `custom_materials_enabled` cố định False; kho ẩn tạo mã mới/hàng đợi duyệt. Backup: nhánh `backup/chamanh-before-develop-20261011`.
 - Sản phẩm: **MaintenanceOps Agent** (dữ liệu MÔ PHỎNG, tiền tố `SIM-`): cư dân gửi phản ánh vệ sinh/đèn khu vực chung → Agent kiểm tra, chạy tầng an toàn, phân loại, tra asset/vật tư → giao phòng ban → BQL kiểm duyệt. ResidentGPT/`Problem_Card.md` là hướng CŨ, đã bỏ.
 - SPEC DUY NHẤT: `docs/CR-BPTN-03.md` (v0.6 candidate, PROPOSED). CR-BPTN-01/02 đã XOÁ — KHÔNG dùng, KHÔNG khôi phục. Docs `01`–`05`, `data-contract-v1.md`, `playbook-v1.md`, README còn ghi v0.3/CR-02: lệch thì CR-03 THẮNG. Tài liệu module engine: `docs/maintenance.md` (đọc trước khi sửa `src/maintenance/`).

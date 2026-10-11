@@ -42,9 +42,9 @@ describe("mapStatus (01-CONTRACTS §3)", () => {
 });
 
 describe("urgent / dept", () => {
-  it("urgent = EMERGENCY risk or HIGH priority", () => {
+  it("urgent = EMERGENCY risk only; HIGH priority alone is an ordinary ticket", () => {
     expect(isUrgent({ risk_level: "EMERGENCY", priority: "LOW" })).toBe(true);
-    expect(isUrgent({ risk_level: "NONE", priority: "HIGH" })).toBe(true);
+    expect(isUrgent({ risk_level: "NONE", priority: "HIGH" })).toBe(false);
     expect(isUrgent({ risk_level: "UNCLEAR", priority: "MEDIUM" })).toBe(false);
     expect(isUrgent({ risk_level: null, priority: null })).toBe(false);
   });

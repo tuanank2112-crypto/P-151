@@ -2,6 +2,16 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.12.2] - 2026-10-11: thang máy là khu vực chung (PATCH)
+- Quyết định (người dùng, 2026-10-11): "Trong thang máy" là khu vực hợp lệ. Đèn trần và đèn hiển thị tầng ⇒ Kỹ thuật; bẩn/rác ⇒ Vệ sinh; người ngất/kẹt ⇒ tầng an toàn (không đổi); hỏng cơ khí (cửa không đóng, chạy rung, dừng không xuống) ⇒ NGOÀI phạm vi. Quạt và nút bấm được người dùng xếp TRONG phạm vi nhưng CHƯA có playbook ⇒ hiện vẫn OUT_OF_SCOPE (Idea Vault).
+- `rules.py`: khu vực `Thang máy` chỉ khớp cách nói TRONG cabin (`trong|buồng|cabin|lòng thang máy`; "trước/cạnh thang máy" là mốc, không phải cabin); tầng ngầm định `—`; `location_area` nhận ngay nhãn chuẩn. `COMMON_AREA_PATTERNS` thêm cabin. Catalog: tài sản `SIM-ASSET-LIGHT-LIFT-CABIN` (5 tài sản đèn ACTIVE). Prompt `agent-prompt/9` (cabin không cần tầng; đèn trần/đèn hiển thị tầng là đèn) + REF plan 06.
+- Đo (LLM thật): đèn trong thang máy, đèn hiển thị tầng, đèn trần ⇒ Kỹ thuật; bẩn, rác ⇒ Vệ sinh; ngất ⇒ EMERGENCY; cửa/rung ⇒ ngoài phạm vi; "dừng không xuống" ⇒ SAFETY_REVIEW_REQUIRED (tầng an toàn thận trọng, giữ). pytest 3596 passed (+11 test `test_lift_cabin.py`), ruff sạch.
+
+## [v1.12.1] - 2026-10-11: sửa tòa con S2.05 và nhãn Khẩn cấp (PATCH)
+- LLM đọc "Tòa S2.05" là ngoài danh sách tòa [S1, S2] (prompt ghi "Tòa ngoài danh sách = thiếu tòa") ⇒ ticket thường bị chuyển BPTN. Validator vốn đã nhận `S2.05`; lỗi nằm ở prompt. Thêm câu dặn mã tòa con thuộc tòa mẹ vào `prompt.py` + REF plan 06 (khớp từng chữ), `PROMPT_VERSION` = `agent-prompt/7`.
+- Portal: `isUrgent` chỉ còn `risk_level === "EMERGENCY"`; ưu tiên HIGH một mình KHÔNG phải "Khẩn cấp" (người dùng chốt 2026-10-11).
+- Đo: LLM thật (gpt-6-luna) ticket "Tòa S2.05 · Tầng 12" ⇒ ROUTED Kỹ thuật, rejected []; pytest 3585 passed, portal 125 passed, ruff sạch.
+
 ## [v1.12.0] - 2026-10-11: gộp develop b8d1b81, giữ nghiệp vụ vật tư của chamanh
 - Quyết định (người dùng, 2026-10-11): `portal/` lấy NGUYÊN bản develop làm nền; ẩn nút backend không hỗ trợ (chọn nhân viên, yêu cầu vật tư riêng, vật tư ngoài kho, tạo mã vật tư mới, hàng đợi duyệt cấp phát); phần nối plan18 (BFF `backend-client`…) bị bỏ vì develop đã gọi thẳng `/api/v1`.
 - Vật tư: giữ `material-usage` (plan 15-16). `_material_approval_required()` cố định False vì `MO_PORTAL_EXTRAS` bật mặc định ở memory sẽ kích hoạt luồng yêu cầu/duyệt của develop; `custom_materials_enabled=False`. Màn Vệ sinh/Kỹ thuật chọn vật tư đã dùng + số nguyên ≥1, một POST trước `complete`.

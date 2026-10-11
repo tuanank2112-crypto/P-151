@@ -151,8 +151,13 @@ def test_p_07_no_locks_means_khong_and_locks_are_listed_when_present():
     )
 
 
-def test_p_08_prompt_version_is_the_sixth_one():
-    assert prompt.PROMPT_VERSION == "agent-prompt/6"
+def test_p_08_prompt_version_is_the_ninth_one():
+    assert prompt.PROMPT_VERSION == "agent-prompt/9"
+
+
+def test_p_08e_sub_building_codes_belong_to_their_building():
+    system = prompt.render_system_prompt(CATALOG, LEXICON)
+    assert "Mã tòa con dạng S2.05 hoặc S1.12 thuộc tòa mẹ S2 hoặc S1" in system
 
 
 def test_p_08d_to_bptn_always_carries_a_reason_and_an_emergency_alone_is_out_of_scope():

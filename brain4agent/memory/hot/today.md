@@ -678,3 +678,5 @@ Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lậ
 - Backup `backup/chamanh-before-develop-20261011`; `git merge --no-commit develop` ⇒ 41 file xung đột. Python giải quyết trước (engine 5 hunk, router, postgres, prompt, test); `_material_approval_required()` ⇒ False.
 - Người dùng chọn: portal = develop làm nền, ẩn nút ngoài hỗ trợ. Làm: FinishModal chọn vật tư đã dùng + một POST material-usage, bỏ tab/nút yêu cầu vật tư (Kỹ thuật), kho bỏ tạo mã mới + hàng đợi duyệt.
 - Đo: pytest 3584 passed (pg deselected), ruff sạch; portal typecheck/lint sạch, 125 test. Chưa commit, chưa chạy `--pg`, chưa kiểm revision migration 0003/0004 trên Supabase chung.
+- 2026-10-11 (tối) Sửa theo ảnh SIM-TKT-0001: tòa "S2.05" bị LLM đẩy sang BPTN ⇒ thêm câu vào prompt + REF (agent-prompt/7); bỏ nhãn Khẩn cấp cho HIGH ở portal. v1.12.1. Đo LLM thật ROUTED; chưa commit/push.
+- 2026-10-11 (khuya) Thang máy thành khu vực chung (phương án A): khu vực `Thang máy`, tài sản đèn cabin, prompt /9. Cơ khí ngoài phạm vi theo người dùng; quạt/nút bấm chưa có playbook ⇒ Idea Vault. v1.12.2; pytest 3596; chưa commit.

@@ -262,6 +262,7 @@ def test_catalog_feeds_the_ui(api):
     assert [(a["name"], a["area"]) for a in catalog["assets"]] == [
         ("Đèn hành lang", "Hành lang"),
         ("Đèn sảnh thang máy", "Sảnh thang máy"),
+        ("Đèn thang máy", "Thang máy"),
         ("Đèn cầu thang bộ", "Cầu thang bộ"),
         ("Đèn phòng rác", "Phòng rác"),
     ]

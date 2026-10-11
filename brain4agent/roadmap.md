@@ -35,6 +35,9 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [ ] Nếu deploy sau reverse proxy (Render): lấy IP client từ header tin cậy, nếu không khóa đăng nhập sẽ dồn về IP của proxy.
 
 ## 💡 Kho Ý Tưởng & Backlog (Idea Vault)
+
+- [ ] **(2026-10-11) Playbook Kỹ thuật cho quạt và nút bấm trong thang máy:** người dùng xếp trong phạm vi nhưng Kỹ thuật hiện chỉ có `PB-TEC-01` (đèn). Cần SPEC (playbook, checklist, bằng chứng, vật tư, từ vựng, prompt), kế hoạch MINOR. Tới lúc đó các ca này đi OUT_OF_SCOPE.
+- [ ] **(2026-10-11) Rà `PLACE_DEFS` của portal** (Trong căn hộ, Khu vực chung, Thang 1/2/3…) với `AREA_PATTERNS`; cân nhắc có nên đổi Q14 để ca Agent đánh ngoài phạm vi qua BPTN trước.
 - (plan 16) Chống sửa đè khi hai người cùng lưu vật tư một ticket (expected-version) — §C4 cố ý chưa làm; full replacement, lần sau thắng.
 - (plan 16) `screenIsDirty()` của app bỏ qua `<select>`/`input[type=number]`; hiện vá cục bộ bằng `data-dirty` ở khối vật tư — form khác có select nên rà lại.
 - (plan 16) Mỗi agent/đợt đo `--pg` dùng DB `*_test` riêng để chạy song song không truncate lẫn nhau.
