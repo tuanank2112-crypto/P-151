@@ -1,0 +1,127 @@
+1
+00:00:00,033 --> 00:00:06,978
+Xin chào. Đây là bản demo Cổng phản ánh cư dân của khu đô thị Ocean Park, chạy trên dữ liệu mô phỏng.
+
+2
+00:00:07,430 --> 00:00:17,145
+Chúng ta sẽ theo chân một phản ánh duy nhất: từ lúc cư dân gửi, qua Ban tiếp nhận, phòng kỹ thuật, kho vật tư, đến khi Ban quản lý nghiệm thu và cư dân đánh giá.
+
+3
+00:00:18,337 --> 00:00:24,817
+Cư dân Nguyễn Minh Anh, căn 1208 tòa S2.05, đăng nhập vào cổng bằng tài khoản của mình.
+
+4
+00:00:25,282 --> 00:00:29,701
+Cư dân Minh Anh: Đèn hành lang tầng tôi tắt hẳn từ tối qua. Tôi gửi phản ánh ngay đây.
+
+5
+00:00:30,154 --> 00:00:37,564
+Chị nhập tiêu đề ngắn gọn, rồi mô tả chi tiết: đèn ở đoạn gần thang máy, chập chờn rồi tắt hẳn, buổi tối đi lại rất tối.
+
+6
+00:00:38,022 --> 00:00:45,377
+Phần vị trí, chị chọn Tầng của tôi, chi tiết là Hành lang. Tòa và tầng được lấy sẵn từ hồ sơ cư dân.
+
+7
+00:00:45,830 --> 00:00:50,760
+Chị đính kèm một ảnh hiện trường. Trong bản demo, đây là ảnh mô phỏng.
+
+8
+00:00:51,218 --> 00:00:56,218
+Bấm Gửi phản ánh. Hệ thống cấp ngay một mã ticket để cư dân theo dõi.
+
+9
+00:00:56,684 --> 00:01:01,679
+Trong mục Phản ánh của tôi, chị xem được tiến độ xử lý và lịch sử của từng bước.
+
+10
+00:01:02,144 --> 00:01:05,749
+Chuyển sang Ban tiếp nhận. Chị Phạm Thu Trang đăng nhập.
+
+11
+00:01:06,882 --> 00:01:15,482
+Phản ánh mới nằm trong mục Chờ phân loại. Thẻ ghi rõ ticket đã được đánh dấu khẩn cấp, lý do đang dừng là chưa rõ tài sản, và mức an toàn.
+
+12
+00:01:15,947 --> 00:01:21,447
+Bấm vào mã ticket để xem đầy đủ nội dung, vị trí, ảnh và phân tích của Agent.
+
+13
+00:01:22,346 --> 00:01:29,222
+Tiếp nhận Thu Trang: Hệ thống chưa tìm thấy thiết bị chiếu sáng nào ở vị trí này. Tôi bấm Kiểm tra tại chỗ để chuyển phòng kỹ thuật xuống kiểm tra.
+
+14
+00:01:29,682 --> 00:01:34,337
+Ticket rời hàng chờ và xuất hiện trong mục Đã phân loại, đã chuyển Phòng kỹ thuật.
+
+15
+00:01:34,796 --> 00:01:39,211
+Anh Đặng Văn Hùng của phòng kỹ thuật đăng nhập, và thấy ticket trong cột Cần nhận.
+
+16
+00:01:40,329 --> 00:01:45,969
+Kỹ thuật Hùng: Việc này phòng tôi nhận. Bấm Nhận việc là bắt đầu xử lý, không phải gán cho từng người.
+
+17
+00:01:46,428 --> 00:01:51,553
+Cần thay bóng đèn, anh Hùng mở Yêu cầu vật tư và chọn bóng đèn LED trong danh mục kho.
+
+18
+00:01:52,012 --> 00:01:57,282
+Anh ghi chú lý do rồi gửi. Ticket chuyển sang trạng thái chờ cấp trên duyệt vật tư.
+
+19
+00:01:57,735 --> 00:02:05,710
+Thủ kho Trần Minh Kho mở mục Yêu cầu cấp phát. Yêu cầu của phòng kỹ thuật ghi rõ vật tư cần, tồn kho hiện có và số còn thiếu.
+
+20
+00:02:06,174 --> 00:02:09,539
+Thủ kho Minh Kho: Đủ hàng rồi. Tôi duyệt cấp cho phòng kỹ thuật.
+
+21
+00:02:10,006 --> 00:02:13,886
+Thay bóng xong, anh Hùng quay lại và bấm Đánh dấu hoàn thành.
+
+22
+00:02:16,924 --> 00:02:21,544
+Anh tích xác nhận đã dùng từng vật tư được cấp, và các mục của biểu mẫu hoàn thành.
+
+23
+00:02:23,759 --> 00:02:27,654
+Kỹ thuật Hùng: Tôi đính kèm ảnh sau xử lý rồi gửi nghiệm thu cho Ban quản lý.
+
+24
+00:02:28,111 --> 00:02:35,511
+Anh Vũ Hoàng Long của Ban quản lý đăng nhập. Trang tổng quan cho thấy tổng số ticket, việc khẩn cấp, quá hạn và phụ tải từng phòng.
+
+25
+00:02:35,963 --> 00:02:42,623
+Trong Việc của Ban quản lý, ticket nằm ở mục Chờ nghiệm thu, kèm ảnh sau xử lý, checklist và vật tư đã cấp.
+
+26
+00:02:43,078 --> 00:02:48,590
+Ban quản lý Long: Hiện trường đã xử lý dứt điểm, đúng nội dung cư dân phản ánh. Tôi nghiệm thu đạt.
+
+27
+00:02:49,496 --> 00:02:55,696
+Cuối cùng, cư dân Minh Anh mở lại phản ánh của mình. Ticket đã hoàn tất và chờ chị đánh giá.
+
+28
+00:02:57,220 --> 00:03:01,308
+Cư dân Minh Anh: Năm sao nhé. Kỹ thuật đến nhanh, hành lang sáng lại rồi.
+
+29
+00:03:03,362 --> 00:03:08,417
+Đánh giá được lưu lại. Ban quản lý dùng nó để theo dõi chất lượng của từng phòng.
+
+30
+00:03:08,881 --> 00:03:13,106
+Quay lại Ban quản lý, số liệu đã cập nhật theo ticket vừa đóng.
+
+31
+00:03:14,544 --> 00:03:21,284
+Mục Hiệu suất phòng ban tổng hợp việc đang xử lý, quá hạn, đã đóng, số sao trung bình và thời gian hoàn thành.
+
+32
+00:03:21,801 --> 00:03:27,796
+Một phản ánh, sáu vai trò, một nơi theo dõi. Cảm ơn anh chị đã xem bản demo.

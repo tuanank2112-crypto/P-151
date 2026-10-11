@@ -1,0 +1,206 @@
+[
+ {
+  "id": "intro-1",
+  "scene": "Giới thiệu",
+  "speaker": "Thuyết minh",
+  "text": "Xin chào. Đây là bản demo Cổng phản ánh cư dân của khu đô thị Ocean Park, chạy trên dữ liệu mô phỏng."
+ },
+ {
+  "id": "intro-2",
+  "scene": "Giới thiệu",
+  "speaker": "Thuyết minh",
+  "text": "Chúng ta sẽ theo chân một phản ánh duy nhất: từ lúc cư dân gửi, qua Ban tiếp nhận, phòng kỹ thuật, kho vật tư, đến khi Ban quản lý nghiệm thu và cư dân đánh giá."
+ },
+ {
+  "id": "res-1",
+  "scene": "Bước 1 · Cư dân",
+  "speaker": "Thuyết minh",
+  "text": "Cư dân Nguyễn Minh Anh, căn 1208 tòa S2.05, đăng nhập vào cổng bằng tài khoản của mình."
+ },
+ {
+  "id": "res-2",
+  "scene": "Bước 1 · Cư dân",
+  "speaker": "Cư dân Minh Anh",
+  "text": "Đèn hành lang tầng tôi tắt hẳn từ tối qua. Tôi gửi phản ánh ngay đây."
+ },
+ {
+  "id": "res-3",
+  "scene": "Bước 1 · Cư dân",
+  "speaker": "Thuyết minh",
+  "text": "Chị nhập tiêu đề ngắn gọn, rồi mô tả chi tiết: đèn ở đoạn gần thang máy, chập chờn rồi tắt hẳn, buổi tối đi lại rất tối."
+ },
+ {
+  "id": "res-4",
+  "scene": "Bước 1 · Cư dân",
+  "speaker": "Thuyết minh",
+  "text": "Phần vị trí, chị chọn Tầng của tôi, chi tiết là Hành lang. Tòa và tầng được lấy sẵn từ hồ sơ cư dân."
+ },
+ {
+  "id": "res-5",
+  "scene": "Bước 1 · Cư dân",
+  "speaker": "Thuyết minh",
+  "text": "Chị đính kèm một ảnh hiện trường. Trong bản demo, đây là ảnh mô phỏng."
+ },
+ {
+  "id": "res-6",
+  "scene": "Bước 1 · Cư dân",
+  "speaker": "Thuyết minh",
+  "text": "Bấm Gửi phản ánh. Hệ thống cấp ngay một mã ticket để cư dân theo dõi."
+ },
+ {
+  "id": "res-7",
+  "scene": "Bước 1 · Cư dân",
+  "speaker": "Thuyết minh",
+  "text": "Trong mục Phản ánh của tôi, chị xem được tiến độ xử lý và lịch sử của từng bước."
+ },
+ {
+  "id": "rec-1",
+  "scene": "Bước 2 · Ban tiếp nhận",
+  "speaker": "Thuyết minh",
+  "text": "Chuyển sang Ban tiếp nhận. Chị Phạm Thu Trang đăng nhập."
+ },
+ {
+  "id": "rec-2",
+  "scene": "Bước 2 · Ban tiếp nhận",
+  "speaker": "Thuyết minh",
+  "text": "Phản ánh mới nằm trong mục Chờ phân loại. Thẻ ghi rõ ticket đã được đánh dấu khẩn cấp, lý do đang dừng là chưa rõ tài sản, và mức an toàn."
+ },
+ {
+  "id": "rec-3",
+  "scene": "Bước 2 · Ban tiếp nhận",
+  "speaker": "Thuyết minh",
+  "text": "Bấm vào mã ticket để xem đầy đủ nội dung, vị trí, ảnh và phân tích của Agent."
+ },
+ {
+  "id": "rec-4",
+  "scene": "Bước 2 · Ban tiếp nhận",
+  "speaker": "Tiếp nhận Thu Trang",
+  "text": "Hệ thống chưa tìm thấy thiết bị chiếu sáng nào ở vị trí này. Tôi bấm Kiểm tra tại chỗ để chuyển phòng kỹ thuật xuống kiểm tra."
+ },
+ {
+  "id": "rec-5",
+  "scene": "Bước 2 · Ban tiếp nhận",
+  "speaker": "Tiếp nhận Thu Trang",
+  "text": "Đây là sự cố đèn chiếu sáng. Tôi chuyển cho Phòng kỹ thuật."
+ },
+ {
+  "id": "rec-6",
+  "scene": "Bước 2 · Ban tiếp nhận",
+  "speaker": "Thuyết minh",
+  "text": "Ticket rời hàng chờ và xuất hiện trong mục Đã phân loại, đã chuyển Phòng kỹ thuật."
+ },
+ {
+  "id": "tec-1",
+  "scene": "Bước 3 · Phòng kỹ thuật",
+  "speaker": "Thuyết minh",
+  "text": "Anh Đặng Văn Hùng của phòng kỹ thuật đăng nhập, và thấy ticket trong cột Cần nhận."
+ },
+ {
+  "id": "tec-2",
+  "scene": "Bước 3 · Phòng kỹ thuật",
+  "speaker": "Kỹ thuật Hùng",
+  "text": "Việc này phòng tôi nhận. Bấm Nhận việc là bắt đầu xử lý, không phải gán cho từng người."
+ },
+ {
+  "id": "tec-3",
+  "scene": "Bước 3 · Phòng kỹ thuật",
+  "speaker": "Thuyết minh",
+  "text": "Cần thay bóng đèn, anh Hùng mở Yêu cầu vật tư và chọn bóng đèn LED trong danh mục kho."
+ },
+ {
+  "id": "tec-4",
+  "scene": "Bước 3 · Phòng kỹ thuật",
+  "speaker": "Thuyết minh",
+  "text": "Anh ghi chú lý do rồi gửi. Ticket chuyển sang trạng thái chờ cấp trên duyệt vật tư."
+ },
+ {
+  "id": "kho-1",
+  "scene": "Bước 4 · Kho vật tư",
+  "speaker": "Thuyết minh",
+  "text": "Thủ kho Trần Minh Kho mở mục Yêu cầu cấp phát. Yêu cầu của phòng kỹ thuật ghi rõ vật tư cần, tồn kho hiện có và số còn thiếu."
+ },
+ {
+  "id": "kho-2",
+  "scene": "Bước 4 · Kho vật tư",
+  "speaker": "Thuyết minh",
+  "text": "Tồn kho chưa đủ, nên thủ kho nhập thêm hàng trước khi cấp."
+ },
+ {
+  "id": "kho-3",
+  "scene": "Bước 4 · Kho vật tư",
+  "speaker": "Thủ kho Minh Kho",
+  "text": "Đủ hàng rồi. Tôi duyệt cấp cho phòng kỹ thuật."
+ },
+ {
+  "id": "tec-5",
+  "scene": "Bước 5 · Hoàn thành",
+  "speaker": "Thuyết minh",
+  "text": "Thay bóng xong, anh Hùng quay lại và bấm Đánh dấu hoàn thành."
+ },
+ {
+  "id": "tec-6",
+  "scene": "Bước 5 · Hoàn thành",
+  "speaker": "Thuyết minh",
+  "text": "Anh tích xác nhận đã dùng từng vật tư được cấp, và các mục của biểu mẫu hoàn thành."
+ },
+ {
+  "id": "tec-7",
+  "scene": "Bước 5 · Hoàn thành",
+  "speaker": "Kỹ thuật Hùng",
+  "text": "Tôi đính kèm ảnh sau xử lý rồi gửi nghiệm thu cho Ban quản lý."
+ },
+ {
+  "id": "bql-1",
+  "scene": "Bước 6 · Ban quản lý",
+  "speaker": "Thuyết minh",
+  "text": "Anh Vũ Hoàng Long của Ban quản lý đăng nhập. Trang tổng quan cho thấy tổng số ticket, việc khẩn cấp, quá hạn và phụ tải từng phòng."
+ },
+ {
+  "id": "bql-2",
+  "scene": "Bước 6 · Ban quản lý",
+  "speaker": "Thuyết minh",
+  "text": "Trong Việc của Ban quản lý, ticket nằm ở mục Chờ nghiệm thu, kèm ảnh sau xử lý, checklist và vật tư đã cấp."
+ },
+ {
+  "id": "bql-3",
+  "scene": "Bước 6 · Ban quản lý",
+  "speaker": "Ban quản lý Long",
+  "text": "Hiện trường đã xử lý dứt điểm, đúng nội dung cư dân phản ánh. Tôi nghiệm thu đạt."
+ },
+ {
+  "id": "res-8",
+  "scene": "Bước 7 · Cư dân đánh giá",
+  "speaker": "Thuyết minh",
+  "text": "Cuối cùng, cư dân Minh Anh mở lại phản ánh của mình. Ticket đã hoàn tất và chờ chị đánh giá."
+ },
+ {
+  "id": "res-9",
+  "scene": "Bước 7 · Cư dân đánh giá",
+  "speaker": "Cư dân Minh Anh",
+  "text": "Năm sao nhé. Kỹ thuật đến nhanh, hành lang sáng lại rồi."
+ },
+ {
+  "id": "res-10",
+  "scene": "Bước 7 · Cư dân đánh giá",
+  "speaker": "Thuyết minh",
+  "text": "Đánh giá được lưu lại. Ban quản lý dùng nó để theo dõi chất lượng của từng phòng."
+ },
+ {
+  "id": "bql-4",
+  "scene": "Bước 8 · Theo dõi",
+  "speaker": "Thuyết minh",
+  "text": "Quay lại Ban quản lý, số liệu đã cập nhật theo ticket vừa đóng."
+ },
+ {
+  "id": "bql-5",
+  "scene": "Bước 8 · Theo dõi",
+  "speaker": "Thuyết minh",
+  "text": "Mục Hiệu suất phòng ban tổng hợp việc đang xử lý, quá hạn, đã đóng, số sao trung bình và thời gian hoàn thành."
+ },
+ {
+  "id": "outro-1",
+  "scene": "Kết thúc",
+  "speaker": "Thuyết minh",
+  "text": "Một phản ánh, sáu vai trò, một nơi theo dõi. Cảm ơn anh chị đã xem bản demo."
+ }
+]
