@@ -339,3 +339,15 @@ def test_warehouse_reads_stock(api):
         "SIM-MAT-LAMP-02"
     ] == 1
     assert api.get("/api/v1/mo/warehouse/stock", headers=RESIDENT).status_code == 403
+
+
+def test_stock_rows_carry_unit_and_min_qty(api):
+    """Plan 19 (01-CONTRACTS §5): every catalog item has a real unit and its own alert threshold."""
+    rows = {r["item_code"]: r for r in api.get("/api/v1/mo/warehouse/stock", headers=WAREHOUSE).json()}
+    assert {code: (r["unit"], r["min_qty"]) for code, r in rows.items()} == {
+        "SIM-MAT-CLEAN-01": ("Chai", 10),
+        "SIM-MAT-BAG-01": ("Cuộn", 15),
+        "SIM-MAT-LAMP-01": ("Cái", 5),
+        "SIM-MAT-LAMP-02": ("Cái", 5),
+        "SIM-MAT-STARTER-01": ("Cái", 5),
+    }

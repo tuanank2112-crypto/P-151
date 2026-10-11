@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { receiveStockAction } from "@/app/actions/warehouse";
 import { IconBox } from "@/components/icons";
@@ -10,44 +8,44 @@ import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
 import { ROLE_LABEL } from "@/lib/constants";
 import type { WarehouseData, WarehouseItem } from "@/lib/dto";
+import { matchesDoneSearch } from "@/lib/reception-done";
+import { STOCK_BADGE, stockLevel } from "@/lib/stock";
 
 type Tab = "inventory";
+type View = "all" | "restock" | "unknown";
 
 const HEAD: Record<Tab, { title: string; sub: string }> = {
   inventory: {
     title: "Kho vật tư & linh kiện",
-    sub: "Danh mục vật tư và số lượng tồn kho. Phòng ban tự ghi vật tư đã dùng khi hoàn thành; kho nhập thêm số lượng.",
+    sub: "Danh mục vật tư, số lượng tồn và ngưỡng tồn tối thiểu. Phòng ban tự ghi vật tư đã dùng khi hoàn thành.",
   },
 };
 
-const CATEGORIES = ["Tất cả", "Tồn kho thấp"] as const;
+const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600";
+const chipCls = (on: boolean) =>
+  `min-h-9 cursor-pointer rounded-full px-4 text-[13px] font-semibold transition-colors ${FOCUS} ${
+    on ? "bg-[#1D4ED8] text-white" : "bg-[#EEF2F7] text-[#2A3447] hover:bg-[#DCE8FF]"
+  }`;
 
-const isLowStock = (i: WarehouseItem) => i.stock !== null && i.stock <= 0;
+const levelOf = (i: WarehouseItem) => stockLevel(i.stock, i.min);
+/** "Cần nhập thêm" = out of stock or at/under its own threshold (01-CONTRACTS §5) */
+const needsRestock = (i: WarehouseItem) => ["out", "low"].includes(levelOf(i));
 
 export function WarehouseApp({ data }: { data: WarehouseData }) {
   const { pending, error, setError, run } = useAction();
-  const fromManagement = useSearchParams().get("from") === "management";
-  const [tab, setTab] = useState<Tab>("inventory");
+  const [view, setView] = useState<View>("all");
   const [search, setSearch] = useState("");
-  const [selectedCat, setSelectedCat] = useState<string>("Tất cả");
-
-  // Modal State for Import Stock
   const [modalOpen, setModalOpen] = useState(false);
-  // Receive stock for an existing catalog code (new codes are not supported by the backend)
   const [selectedCode, setSelectedCode] = useState(data.inventory[0]?.code ?? "");
   const [importQty, setImportQty] = useState(10);
-  const lowStockCount = data.inventory.filter(isLowStock).length;
 
-  const filteredInventory = data.inventory.filter((item) => {
-    const matchesSearch =
-      !search.trim() ||
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.code.toLowerCase().includes(search.toLowerCase());
-    const matchesCat =
-      selectedCat === "Tất cả" ||
-      (selectedCat === "Tồn kho thấp" ? isLowStock(item) : true);
-    return matchesSearch && matchesCat;
-  });
+  const restock = data.inventory.filter(needsRestock);
+  const outCount = data.inventory.filter((i) => levelOf(i) === "out").length;
+  const unknownCount = data.inventory.filter((i) => levelOf(i) === "unknown").length;
+  const inView = (i: WarehouseItem) => view === "all" || (view === "restock" ? needsRestock(i) : levelOf(i) === "unknown");
+  const rows = data.inventory.filter(
+    (i) => inView(i) && matchesDoneSearch({ code: i.code, title: i.name, content: "", location: "" }, search),
+  );
 
   const handleImportSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,213 +59,190 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
     );
   };
 
-  const openQuickImport = (item: WarehouseItem) => {
-    setSelectedCode(item.code);
+  const openImport = (code?: string) => {
+    if (code) setSelectedCode(code);
     setImportQty(10);
     setModalOpen(true);
   };
+
+  const kpis: { label: string; n: number; tone: string; go?: View }[] = [
+    { label: "Tổng danh mục vật tư", n: data.inventory.length, tone: "text-slate-800" },
+    { label: "Cần nhập thêm", n: restock.length, tone: restock.length > 0 ? "text-rose-600" : "text-emerald-600", go: "restock" },
+    { label: "Hết hàng", n: outCount, tone: outCount > 0 ? "text-rose-600" : "text-slate-800", go: "restock" },
+  ];
 
   return (
     <div className="scr-warehouse min-h-screen bg-page">
       <Header
         avatar={data.user.avatar}
         name={data.user.name}
-        rolePill={fromManagement ? ROLE_LABEL.management : ROLE_LABEL.warehouse}
-        bellLabel="Thông báo kho"
-        bellCount={lowStockCount}
-        notices={data.inventory.filter(isLowStock).map((i) => ({
+        rolePill={ROLE_LABEL.warehouse}
+        bellLabel="Vật tư cần nhập thêm"
+        bellCount={restock.length}
+        notices={restock.map((i) => ({
           id: `low-${i.code}`,
-          title: `Hết hàng: ${i.name}`,
-          urgent: false,
+          title: `${STOCK_BADGE[levelOf(i)].label}: ${i.name}`,
+          urgent: levelOf(i) === "out",
           tag: "Tồn kho",
-          body: `Mã ${i.code}`,
+          body: `Còn ${i.stock ?? "--"} ${i.unit}${i.min !== null ? ` · tối thiểu ${i.min}` : ""}`,
         }))}
       />
       <Body>
         <NavTiles<Tab>
           label="Chức năng thủ kho"
-          active={tab}
-          onPick={setTab}
-          items={[
-            { key: "inventory", label: "Kho vật tư", icon: <IconBox />, count: data.inventory.length },
-          ]}
+          active="inventory"
+          onPick={() => undefined}
+          items={[{ key: "inventory", label: "Danh mục tồn kho", icon: <IconBox />, count: data.inventory.length }]}
         />
-        {fromManagement && (
-          <div>
-            <Link
-              href="/management"
-              className="inline-flex items-center rounded-full border border-line bg-white px-4 py-2 text-sm font-semibold text-body hover:border-sky-500 hover:text-sky-700 focus-visible:outline-2 focus-visible:outline-sky-600"
-            >
-              ← Về trang Ban quản lý
-            </Link>
-          </div>
-        )}
-        <PageHead {...HEAD[tab]} />
+        <PageHead {...HEAD.inventory} />
 
-        {tab === "inventory" && (
-          <div className="flex flex-col gap-5">
-            {/* Summary Metrics */}
-            <div className="flex flex-wrap gap-4">
-              <div className="card flex flex-col gap-1 px-6 py-5" style={{ flex: "1 1 200px" }}>
-                <span className="text-sm text-muted">Tổng danh mục vật tư</span>
-                <span className="text-[30px] font-bold text-slate-800">{data.inventory.length}</span>
-              </div>
-              <div className="card flex flex-col gap-1 px-6 py-5" style={{ flex: "1 1 200px" }}>
-                <span className="text-sm text-muted">Cảnh báo tồn kho thấp</span>
-                <span className={`text-[30px] font-bold ${lowStockCount > 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                  {lowStockCount}
-                </span>
-              </div>
-            </div>
-
-            {/* Filter & Actions Toolbar */}
-            <div className="card p-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    className={`fchip ${selectedCat === cat ? "on" : ""}`}
-                    onClick={() => setSelectedCat(cat)}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <input
-                  type="text"
-                  placeholder="Tìm mã hoặc tên vật tư..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="field text-xs py-1.5 px-3 w-full sm:w-56 rounded-xl"
-                />
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-wrap gap-4">
+            {kpis.map((k) => {
+              const body = (
+                <>
+                  <span className="text-sm text-muted">{k.label}</span>
+                  <span className={`text-[30px] font-bold ${k.tone}`}>{k.n}</span>
+                </>
+              );
+              return k.go ? (
                 <button
+                  key={k.label}
                   type="button"
-                  className="btn primary bg-sky-600 hover:bg-sky-700 text-white font-medium text-xs whitespace-nowrap shadow-xs"
-                  onClick={() => {
-                    setModalOpen(true);
-                  }}
+                  aria-pressed={view === k.go}
+                  onClick={() => setView(view === k.go ? "all" : (k.go as View))}
+                  className={`card flex flex-col items-start gap-1 px-6 py-5 text-left transition-all hover:shadow-md ${FOCUS} ${
+                    k.n > 0 && k.go === "restock" ? "border-l-4 border-l-rose-500" : ""
+                  }`}
+                  style={{ flex: "1 1 200px" }}
                 >
-                  + Nhập kho
+                  {body}
                 </button>
-              </div>
-            </div>
+              ) : (
+                <div key={k.label} className="card flex flex-col gap-1 px-6 py-5" style={{ flex: "1 1 200px" }}>
+                  {body}
+                </div>
+              );
+            })}
+          </div>
 
-            {/* Inventory Table */}
-            <section className="card overflow-x-auto p-2">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Mã VT</th>
-                    <th>Tên vật tư</th>
-                    <th>Đơn vị</th>
-                    <th>Tồn kho</th>
-                    <th>Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredInventory.map((item) => {
-                    const isLow = isLowStock(item);
-                    return (
-                      <tr key={item.code} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="font-mono font-bold text-slate-800 whitespace-nowrap">{item.code}</td>
-                        <td className="font-medium text-slate-900 max-w-[280px]">{item.name}</td>
-                        <td className="text-slate-700">{item.unit}</td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <span className={`font-bold text-sm ${isLow ? "text-rose-600" : "text-slate-800"}`}>
-                              {item.stock === null ? "Chưa rõ" : item.stock}
-                            </span>
-                            {isLow && (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">
-                                Sắp hết
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="btn text-xs py-1 px-2.5 hover:bg-sky-50 hover:text-sky-700"
-                            onClick={() => openQuickImport(item)}
-                          >
-                            + Nhập hàng
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {filteredInventory.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="text-center text-muted py-8">
-                        Không tìm thấy vật tư nào phù hợp.
+          <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
+            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Lọc vật tư">
+              <button type="button" className={chipCls(view === "all")} aria-pressed={view === "all"} onClick={() => setView("all")}>
+                Tất cả <span className="opacity-70">{data.inventory.length}</span>
+              </button>
+              <button type="button" className={chipCls(view === "restock")} aria-pressed={view === "restock"} onClick={() => setView("restock")}>
+                Cần nhập thêm <span className="opacity-70">{restock.length}</span>
+              </button>
+              {unknownCount > 0 && (
+                <button type="button" className={chipCls(view === "unknown")} aria-pressed={view === "unknown"} onClick={() => setView("unknown")}>
+                  Chưa kiểm kê <span className="opacity-70">{unknownCount}</span>
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                type="search"
+                placeholder="Tìm mã hoặc tên vật tư…"
+                aria-label="Tìm vật tư"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="field w-full rounded-xl px-3 py-1.5 text-xs sm:w-60"
+              />
+              <button type="button" className={`btn primary text-xs whitespace-nowrap ${FOCUS}`} onClick={() => openImport()}>
+                + Nhập kho
+              </button>
+            </div>
+          </div>
+
+          <section className="card overflow-x-auto p-2">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mã VT</th>
+                  <th>Tên vật tư</th>
+                  <th>Đơn vị tính</th>
+                  <th className="text-right">Số lượng tồn</th>
+                  <th className="text-right">Tồn tối thiểu</th>
+                  <th>Trạng thái</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((item) => {
+                  const badge = STOCK_BADGE[levelOf(item)];
+                  return (
+                    <tr key={item.code} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="whitespace-nowrap font-mono text-[13px] font-bold text-slate-800">{item.code}</td>
+                      <td className="font-medium text-slate-900">{item.name}</td>
+                      <td className="text-slate-700">{item.unit || "--"}</td>
+                      <td className="text-right font-bold tabular-nums">{item.stock === null ? "--" : item.stock}</td>
+                      <td className="text-right tabular-nums text-slate-600">{item.min === null ? "--" : item.min}</td>
+                      <td>
+                        <span className={`pill ${badge.cls}`}>{badge.label}</span>
+                      </td>
+                      <td>
+                        <button type="button" className={`btn text-xs whitespace-nowrap ${FOCUS}`} onClick={() => openImport(item.code)}>
+                          + Nhập hàng
+                        </button>
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </section>
-          </div>
-        )}
-
+                  );
+                })}
+                {rows.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="text-center text-muted py-8">
+                      Không có vật tư nào khớp bộ lọc.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </section>
+        </div>
       </Body>
 
-      {/* ────────────────── Modal: Nhập thêm kho ────────────────── */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 border border-slate-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-800">
-                Nhập thêm số lượng vật tư
-              </h3>
-            </div>
-
+            <h3 className="m-0 mb-3 border-b border-slate-100 pb-3 text-base font-bold text-slate-800">Nhập thêm số lượng vật tư</h3>
             <form onSubmit={handleImportSubmit} className="space-y-4 text-xs">
-              <div className="space-y-4">
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">Chọn vật tư nhập thêm:</label>
-                    <select
-                      className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white"
-                      value={selectedCode}
-                      onChange={(e) => setSelectedCode(e.target.value)}
-                    >
-                      {data.inventory.map((i) => (
-                        <option key={i.code} value={i.code}>
-                          [{i.code}] {i.name} (Hiện có: {i.stock === null ? "chưa rõ" : `${i.stock} ${i.unit}`})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="font-semibold text-slate-700 block mb-1">Số lượng nhập:</label>
-                      <input
-                        type="number"
-                        min={1}
-                        className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white"
-                        value={importQty}
-                        onChange={(e) => setImportQty(Number(e.target.value))}
-                      />
-                    </div>
-                  </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  className="btn text-xs"
-                  onClick={() => setModalOpen(false)}
+              <div>
+                <label htmlFor="import-item" className="font-semibold text-slate-700 block mb-1">
+                  Vật tư
+                </label>
+                <select
+                  id="import-item"
+                  className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white"
+                  value={selectedCode}
+                  onChange={(e) => setSelectedCode(e.target.value)}
                 >
+                  {data.inventory.map((i) => (
+                    <option key={i.code} value={i.code}>
+                      [{i.code}] {i.name} (hiện có: {i.stock === null ? "chưa kiểm kê" : `${i.stock} ${i.unit}`})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="import-qty" className="font-semibold text-slate-700 block mb-1">
+                  Số lượng nhập
+                </label>
+                <input
+                  id="import-qty"
+                  type="number"
+                  min={1}
+                  step={1}
+                  className="w-40 text-xs p-2.5 rounded-xl border border-slate-300 bg-white"
+                  value={importQty}
+                  onChange={(e) => setImportQty(Number(e.target.value))}
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button type="button" className="btn text-xs" onClick={() => setModalOpen(false)}>
                   Hủy
                 </button>
-                <button
-                  type="submit"
-                  className="btn primary bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold"
-                  disabled={pending}
-                >
+                <button type="submit" className="btn primary text-xs font-semibold" disabled={pending}>
                   Xác nhận nhập kho
                 </button>
               </div>

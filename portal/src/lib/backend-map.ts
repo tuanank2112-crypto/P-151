@@ -326,7 +326,15 @@ export function hoursBetween(from: string | null | undefined, to: string | null 
 
 const avg = (xs: number[]): number | null => (xs.length === 0 ? null : Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10);
 
-export type DeptPerf = { processing: number; late: number; closed: number; avgStars: number | null; avgHours: number | null };
+export type DeptPerf = {
+  processing: number;
+  late: number;
+  closed: number;
+  avgStars: number | null;
+  /** tickets with a rating (plan 19 01 §4) */
+  rated: number;
+  avgHours: number | null;
+};
 
 /** "Hiệu suất phòng ban" of one department (SPEC-P03 §5.5) */
 export function deptPerformance(rows: MgmtTicket[], dept: Dept): DeptPerf {
@@ -337,6 +345,7 @@ export function deptPerformance(rows: MgmtTicket[], dept: Dept): DeptPerf {
     late: mine.filter((t) => t.late).length,
     closed: closed.length,
     avgStars: avg(closed.flatMap((t) => (t.ratingStars === null ? [] : [t.ratingStars]))),
+    rated: closed.filter((t) => t.ratingStars !== null).length,
     avgHours: avg(closed.flatMap((t) => (t.doneHours === null ? [] : [t.doneHours]))),
   };
 }

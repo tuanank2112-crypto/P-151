@@ -20,6 +20,7 @@ export async function warehouseData(user: SessionUser): Promise<WarehouseData> {
       name: r.item_name,
       unit: r.unit ?? "",
       stock: r.qty,
+      min: r.min_qty ?? null,
       custom: isCustom(r.item_code),
     })),
     requests: cases

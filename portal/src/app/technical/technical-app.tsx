@@ -13,7 +13,7 @@ import type { DeptData } from "@/lib/dto";
 type Tab = "queue" | "history";
 
 const HEAD: Record<Tab, { title: string; sub: string }> = {
-  queue: { title: "Hàng việc kỹ thuật", sub: "Ticket khẩn cấp lên đầu, kèm thời hạn xử lý. Bấm Nhận việc để bắt đầu xử lý." },
+  queue: { title: "Danh sách công việc", sub: "Ticket khẩn cấp lên đầu, kèm thời hạn xử lý." },
   history: { title: "Lịch sử hoàn thành", sub: "Ticket chờ nghiệm thu hoặc đã hoàn tất, kèm đánh giá của cư dân (ẩn danh)." },
 };
 
@@ -47,8 +47,8 @@ export function TechnicalApp({ data }: { data: DeptData }) {
           active={tab}
           onPick={setTab}
           items={[
-            { key: "queue", label: "Hàng việc", icon: <IconKanban />, count: all.filter((t) => t.stage < 5).length },
-            { key: "history", label: "Lịch sử", icon: <IconClock /> },
+            { key: "queue", label: "Danh sách công việc", icon: <IconKanban />, count: all.filter((t) => t.stage < 5).length },
+            { key: "history", label: "Lịch sử hoàn thành", icon: <IconClock /> },
           ]}
         />
         <PageHead {...HEAD[tab]} />

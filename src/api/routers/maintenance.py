@@ -747,6 +747,7 @@ class StockRow(BaseModel):
     item_name: str
     unit: str | None = None
     qty: float | None = None  # null = tồn kho không rõ
+    min_qty: int | None = None  # ngưỡng cảnh báo (plan 19); null = không xét "sắp hết"
 
 
 @router.get("/warehouse/stock", response_model=list[StockRow])

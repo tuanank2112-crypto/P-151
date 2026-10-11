@@ -29,11 +29,11 @@ assets:
 
 # Định mức (norm) và tồn kho mô phỏng. simulated_stock_qty=null nghĩa là tồn kho không rõ.
 materials:
-  - {item_code: SIM-MAT-CLEAN-01, item_name: "Dung dịch vệ sinh mô phỏng", unit: unit-sim, norm_qty: 2, norm_label: SYNTHETIC, simulated_stock_qty: 10, synthetic: true}
-  - {item_code: SIM-MAT-BAG-01, item_name: "Túi rác mô phỏng", unit: unit-sim, norm_qty: 2, norm_label: SYNTHETIC, simulated_stock_qty: 20, synthetic: true}
-  - {item_code: SIM-MAT-LAMP-01, item_name: "Bóng đèn LED mô phỏng", unit: unit-sim, norm_qty: 1, norm_label: SYNTHETIC, simulated_stock_qty: 5, synthetic: true}
-  - {item_code: SIM-MAT-LAMP-02, item_name: "Bóng đèn tuýp mô phỏng", unit: unit-sim, norm_qty: 2, norm_label: SYNTHETIC, simulated_stock_qty: 0, synthetic: true}
-  - {item_code: SIM-MAT-STARTER-01, item_name: "Tắc te mô phỏng", unit: unit-sim, norm_qty: null, norm_label: N_A, simulated_stock_qty: null, synthetic: true}
+  - {item_code: SIM-MAT-CLEAN-01, item_name: "Dung dịch vệ sinh mô phỏng", unit: Chai, norm_qty: 2, norm_label: SYNTHETIC, simulated_stock_qty: 24, min_qty: 10, synthetic: true}
+  - {item_code: SIM-MAT-BAG-01, item_name: "Túi rác mô phỏng", unit: Cuộn, norm_qty: 2, norm_label: SYNTHETIC, simulated_stock_qty: 40, min_qty: 15, synthetic: true}
+  - {item_code: SIM-MAT-LAMP-01, item_name: "Bóng đèn LED mô phỏng", unit: Cái, norm_qty: 1, norm_label: SYNTHETIC, simulated_stock_qty: 4, min_qty: 5, synthetic: true}
+  - {item_code: SIM-MAT-LAMP-02, item_name: "Bóng đèn tuýp mô phỏng", unit: Cái, norm_qty: 2, norm_label: SYNTHETIC, simulated_stock_qty: 0, min_qty: 5, synthetic: true}
+  - {item_code: SIM-MAT-STARTER-01, item_name: "Tắc te mô phỏng", unit: Cái, norm_qty: null, norm_label: N_A, simulated_stock_qty: null, min_qty: 5, synthetic: true}
 
 # Vật tư dự kiến Agent tự đề xuất theo playbook khi ticket không có kế hoạch vật tư riêng (PRD §7 bước 7)
 default_materials:

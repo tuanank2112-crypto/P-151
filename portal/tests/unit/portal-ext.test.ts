@@ -211,8 +211,8 @@ describe("hoursBetween / deptPerformance", () => {
       mt({ dept: "ve_sinh", stage: 6 }),
       mt({ dept: "ky_thuat", stage: 6, ratingStars: 1, doneHours: 9 }),
     ];
-    expect(deptPerformance(rows, "ve_sinh")).toEqual({ processing: 2, late: 1, closed: 3, avgStars: 4.5, avgHours: 2.5 });
-    expect(deptPerformance([], "ve_sinh")).toEqual({ processing: 0, late: 0, closed: 0, avgStars: null, avgHours: null });
+    expect(deptPerformance(rows, "ve_sinh")).toEqual({ processing: 2, late: 1, closed: 3, avgStars: 4.5, rated: 2, avgHours: 2.5 });
+    expect(deptPerformance([], "ve_sinh")).toEqual({ processing: 0, late: 0, closed: 0, avgStars: null, rated: 0, avgHours: null });
   });
 });
 

@@ -4,6 +4,7 @@ import logging
 import os
 import re
 from contextlib import asynccontextmanager
+from http.cookiejar import DefaultCookiePolicy
 from pathlib import Path
 
 import httpx
@@ -129,7 +130,11 @@ _portal_client: httpx.AsyncClient | None = None
 def _get_portal_client() -> httpx.AsyncClient:
     global _portal_client
     if _portal_client is None or _portal_client.is_closed:
+        # ONE client serves every user: it must never keep a cookie, or a session set by one login (Set-Cookie) is
+        # sent on the next request that has no cookie of its own, i.e. another visitor gets that account.
+        # Only the browser's own Cookie header (forwarded below) may reach the portal.
         _portal_client = httpx.AsyncClient(base_url=PORTAL_URL, timeout=60.0, follow_redirects=False)
+        _portal_client.cookies.jar.set_policy(DefaultCookiePolicy(allowed_domains=[]))  # accept no cookie, ever
     return _portal_client
 
 

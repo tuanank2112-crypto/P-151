@@ -15,7 +15,8 @@ import { Body, Header, NavTiles, PageHead } from "@/components/shell";
 import { TicketDetailModal } from "@/components/ticket-detail-modal";
 import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
-import { DEPT_LABEL, ROLE_LABEL, STAGES, type Dept } from "@/lib/constants";
+import { DEPT_LABEL, ROLE_LABEL, type Dept } from "@/lib/constants";
+import { DONE_SEGMENTS, doneSegment, hasLocation, matchesDoneSearch, type DoneSegment } from "@/lib/reception-done";
 import type { AgentInfo, AgentPerf, ReceptionAllItem, ReceptionData, ReceptionInboxItem, TicketDetail } from "@/lib/dto";
 
 type Tab = "inbox" | "done" | "perf";
@@ -25,7 +26,7 @@ const HEAD: Record<Tab, { title: string; sub: string }> = {
     title: "Chờ phân loại",
     sub: "Ticket đang dừng ở Tiếp nhận: chọn việc cần làm theo lý do dừng. Ticket khẩn cấp ở trên cùng.",
   },
-  done: { title: "Đã phân loại", sub: "Ticket đã rời Tiếp nhận (đã giao phòng, ở Ban quản lý, đã đóng, hủy hoặc gộp). Bấm một dòng để xem chi tiết." },
+  done: { title: "Đã phân loại", sub: "Ticket đã rời Tiếp nhận: đã giao phòng, ở Ban quản lý, đã đóng, hủy hoặc gộp." },
   perf: { title: "Hiệu suất Agent", sub: "Agent gợi ý phòng ban so với phòng mà ticket thực sự được giao." },
 };
 
@@ -103,71 +104,129 @@ export function ReceptionApp({ data }: { data: ReceptionData }) {
   );
 }
 
+const PAGE = 20;
+const DONE_CHIP = "min-h-9 cursor-pointer rounded-full px-4 text-[13px] font-semibold transition-colors";
+
+/** Where the ticket is now, in one pill: the department (or BQL) with the plain status line under the code */
+function whereIs(t: ReceptionAllItem): { label: string; cls: string } {
+  const seg = doneSegment(t);
+  if (seg === "cancelled") return { label: "Đã hủy / gộp", cls: "pill cat-none" };
+  if (seg === "closed") return { label: "Hoàn tất", cls: "pill bg-[#D8EFE3] text-[#13553A]" };
+  if (seg === "bql") return { label: DEPT_LABEL.bql, cls: deptPill("bql") };
+  if (seg === "unassigned") return { label: "Chưa giao phòng", cls: "pill cat-none" };
+  return { label: deptName(t.dept), cls: deptPill(t.dept) };
+}
+
 function DoneTable({ rows, onOpen }: { rows: ReceptionAllItem[]; onOpen: (id: string) => void }) {
+  const [seg, setSeg] = useState<DoneSegment | "all">("all");
+  const [query, setQuery] = useState("");
+  const [limit, setLimit] = useState(PAGE);
+
+  const count = (k: DoneSegment) => rows.filter((t) => doneSegment(t) === k).length;
+  const shown = rows.filter((t) => (seg === "all" || doneSegment(t) === seg) && matchesDoneSearch(t, query));
+  const page = shown.slice(0, limit);
+  const showLocation = rows.some((t) => hasLocation(t.location)); // an empty column is noise
+  const choose = (k: DoneSegment | "all") => {
+    setSeg(k);
+    setLimit(PAGE);
+  };
+
   return (
-    <section className="card overflow-x-auto p-2">
-      <table>
-        <thead>
-          <tr>
-            <th>Mã</th>
-            <th>Tiêu đề</th>
-            <th>Vị trí</th>
-            <th>Trạng thái</th>
-            <th>Phòng ban</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((t) => (
-            <tr key={t.id} className="cursor-pointer transition-colors hover:bg-slate-50/70" onClick={() => onOpen(t.id)}>
-              <td className="font-bold whitespace-nowrap">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpen(t.id);
-                  }}
-                  className={`cursor-pointer text-left font-mono font-bold text-sky-700 hover:text-sky-900 hover:underline ${FOCUS}`}
-                  title="Bấm để xem chi tiết đầy đủ"
-                >
-                  {t.code}
-                </button>
-                {t.urgent && <span className="pill urgent ml-2">Khẩn cấp</span>}
-              </td>
-              <td className="max-w-[360px] leading-[1.45]">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpen(t.id);
-                  }}
-                  className={`cursor-pointer text-left font-semibold ${FOCUS}`}
-                >
-                  {t.title}
-                </button>
-                {t.content && <div className="line-clamp-2 text-[13px] text-muted">{t.content}</div>}
-              </td>
-              <td className="max-w-[220px] text-[13px] text-muted">{t.location}</td>
-              <td>
-                <span className="pill wait">{t.cancelled ? "Đã hủy" : `${t.statusLabel} · ${STAGES[t.stage - 1]}`}</span>
-              </td>
-              <td>
-                <span className={deptPill(t.dept)}>
-                  <span className="dot" />
-                  {deptName(t.dept)}
-                </span>
-              </td>
-            </tr>
-          ))}
-          {rows.length === 0 && (
+    <div className="flex flex-col gap-4">
+      <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Lọc theo nơi ticket đang ở">
+          {[{ key: "all" as const, label: "Tất cả", n: rows.length }, ...DONE_SEGMENTS.map((s) => ({ ...s, n: count(s.key) }))]
+            .filter((s) => s.key === "all" || s.n > 0)
+            .map((s) => (
+              <button
+                key={s.key}
+                type="button"
+                aria-pressed={seg === s.key}
+                onClick={() => choose(s.key)}
+                className={`${DONE_CHIP} ${FOCUS} ${seg === s.key ? "bg-[#1D4ED8] text-white" : "bg-[#EEF2F7] text-[#2A3447] hover:bg-[#DCE8FF]"}`}
+              >
+                {s.label} <span className="opacity-70">{s.n}</span>
+              </button>
+            ))}
+        </div>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setLimit(PAGE);
+          }}
+          placeholder="Tìm mã, tiêu đề, vị trí…"
+          aria-label="Tìm ticket đã phân loại"
+          className="field w-full rounded-xl px-3 py-1.5 text-xs sm:w-64"
+        />
+      </div>
+
+      <section className="card overflow-x-auto p-2">
+        <table>
+          <thead>
             <tr>
-              <td colSpan={5} className="text-center text-muted">
-                Chưa có ticket nào đã phân loại.
-              </td>
+              <th>Ticket</th>
+              {showLocation && <th>Vị trí</th>}
+              <th>Đang ở</th>
+              <th>Trạng thái</th>
             </tr>
-          )}
-        </tbody>
-      </table>
-    </section>
+          </thead>
+          <tbody>
+            {page.map((t) => {
+              const where = whereIs(t);
+              return (
+                <tr key={t.id} className="cursor-pointer transition-colors hover:bg-slate-50/70" onClick={() => onOpen(t.id)}>
+                  <td className="max-w-[420px] leading-[1.45]">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpen(t.id);
+                        }}
+                        className={`cursor-pointer text-left font-mono text-[13px] font-bold text-sky-700 hover:text-sky-900 hover:underline ${FOCUS}`}
+                        title="Bấm để xem chi tiết đầy đủ"
+                      >
+                        {t.code}
+                      </button>
+                      {t.urgent && <span className="pill urgent">Khẩn cấp</span>}
+                      <span className="text-xs text-muted">{t.createdAt}</span>
+                    </div>
+                    <div className="line-clamp-1 font-semibold">{t.title}</div>
+                  </td>
+                  {showLocation && <td className="max-w-[200px] text-[13px] text-muted">{t.location}</td>}
+                  <td>
+                    <span className={where.cls}>
+                      <span className="dot" />
+                      {where.label}
+                    </span>
+                  </td>
+                  <td className="text-[13px] text-body">{t.cancelled ? "Đã hủy" : t.statusLabel}</td>
+                </tr>
+              );
+            })}
+            {shown.length === 0 && (
+              <tr>
+                <td colSpan={showLocation ? 4 : 3} className="text-center text-muted">
+                  {rows.length === 0 ? "Chưa có ticket nào đã phân loại." : "Không có ticket nào khớp bộ lọc."}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+        {shown.length > page.length && (
+          <div className="flex items-center justify-between gap-3 px-3 py-3 text-[13px] text-muted">
+            <span>
+              Đang hiện {page.length} / {shown.length} ticket
+            </span>
+            <button type="button" className={`btn text-xs ${FOCUS}`} onClick={() => setLimit(limit + PAGE)}>
+              Xem thêm {Math.min(PAGE, shown.length - page.length)}
+            </button>
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
 

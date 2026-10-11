@@ -2,6 +2,19 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.13.0] - 2026-10-12: hồ sơ 19 đợt 1 — làm gọn UI/UX + vá rò phiên ở proxy cổng 8000 (MINOR)
+- **Bảo mật (vá):** proxy `src/main.py` dùng MỘT `httpx.AsyncClient` cho mọi người và client lưu cookie phiên từ phản hồi đăng nhập ⇒ yêu cầu KHÔNG cookie qua cổng 8000 nhận phiên của người đăng nhập gần nhất (đo: `/management` ẩn danh trả trang BQL "Vũ Hoàng Long"). Sửa: kho cookie của client chặn mọi cookie (`DefaultCookiePolicy(allowed_domains=[])`). Test `tests/test_portal_proxy_cookies.py` (đỏ khi bỏ vá, kèm đối chứng). Lỗi có từ develop `256da96` ⇒ develop cũng bị.
+- Tiếp nhận: "Đã phân loại" tách Phòng kỹ thuật/Phòng vệ sinh, thêm nhóm "Chưa giao phòng" (ticket tạm hoãn không phòng từng bị tính là vệ sinh).
+- Kỹ thuật/Vệ sinh: "Danh sách công việc", hai nút bằng nhau xếp dọc, "Lịch sử hoàn thành" với ô Hoàn thành S1/S2.
+- BQL: bỏ ô Kho; "Danh sách ticket" chip trạng thái phân hoạch (không "Tất cả") + lọc phòng/khẩn cấp/quá hạn/tìm; Việc của BQL = Cần BQL quyết · Chờ nghiệm thu · Hoàn tất (xử lý khẩn cấp tại chỗ); Tổng quan KPI cảnh báo đỏ/cam, thanh phụ tải, "Cần chú ý" một dòng; Hiệu suất hiện "Chưa có đánh giá"/`--`.
+- Kho: sửa dính chữ (bảng Kho không có CSS bảng), cột Đơn vị tính/Số lượng tồn/Tồn tối thiểu/Trạng thái; nhãn Hết hàng/Sắp hết/An toàn/Chưa kiểm kê; thẻ "Cần nhập thêm" bấm để lọc. Backend: `min_qty` ở danh mục + `StockRow`; seed đơn vị thật và tồn sát thực tế (01-CONTRACTS §5).
+- Đo: pytest 3599 passed/100 pg deselected, ruff sạch; portal typecheck+lint sạch, vitest 143; `next build` ok; 9 ảnh `planning/19_…/evidence/wave1/`.
+
+## [v1.12.3] - 2026-10-12: gọn lại tab "Đã phân loại" của Tiếp nhận (PATCH)
+- Bỏ cột trạng thái lặp ý ("Đang xác minh · Thẩm định") và cột "Phòng ban" ghi "Chưa chuyển" cho ticket khẩn cấp đang ở BQL. Thay bằng cột "Đang ở" (phòng ban hoặc Ban quản lý) + cột Trạng thái; cột Vị trí ẩn khi không ticket nào có vị trí.
+- Thêm chip lọc theo nơi ticket đang ở (Đang ở phòng ban / Ở Ban quản lý / Chờ nghiệm thu / Hoàn tất / Hủy-gộp, kèm số đếm), tìm kiếm không phân biệt hoa-thường và dấu, "Xem thêm" 20 dòng mỗi lần. Logic thuần ở `portal/src/lib/reception-done.ts`.
+- Chỉ đổi UI, API không đổi. Đo: portal typecheck+lint sạch, vitest 132 passed (+7). CHƯA kiểm bằng mắt trên trình duyệt (Playwright tự động không đăng nhập được).
+
 ## [v1.12.2] - 2026-10-11: thang máy là khu vực chung (PATCH)
 - Quyết định (người dùng, 2026-10-11): "Trong thang máy" là khu vực hợp lệ. Đèn trần và đèn hiển thị tầng ⇒ Kỹ thuật; bẩn/rác ⇒ Vệ sinh; người ngất/kẹt ⇒ tầng an toàn (không đổi); hỏng cơ khí (cửa không đóng, chạy rung, dừng không xuống) ⇒ NGOÀI phạm vi. Quạt và nút bấm được người dùng xếp TRONG phạm vi nhưng CHƯA có playbook ⇒ hiện vẫn OUT_OF_SCOPE (Idea Vault).
 - `rules.py`: khu vực `Thang máy` chỉ khớp cách nói TRONG cabin (`trong|buồng|cabin|lòng thang máy`; "trước/cạnh thang máy" là mốc, không phải cabin); tầng ngầm định `—`; `location_area` nhận ngay nhãn chuẩn. `COMMON_AREA_PATTERNS` thêm cabin. Catalog: tài sản `SIM-ASSET-LIGHT-LIFT-CABIN` (5 tài sản đèn ACTIVE). Prompt `agent-prompt/9` (cabin không cần tầng; đèn trần/đèn hiển thị tầng là đèn) + REF plan 06.

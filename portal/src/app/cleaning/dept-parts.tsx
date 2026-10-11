@@ -11,6 +11,8 @@ import { PhotoStrip } from "@/components/photo-strip";
 import { Feedback } from "@/components/rating-summary";
 import { useAction } from "@/components/use-action";
 import { MAX_PHOTOS } from "@/lib/constants";
+import { buildingOf, type Building } from "@/lib/building";
+import { hasLocation } from "@/lib/reception-done";
 import type { CatalogItem, DeptTicket, TicketDetail } from "@/lib/dto";
 import type { ActionResult, ErrorCode } from "@/lib/result";
 
@@ -337,7 +339,7 @@ export function WorkCard(props: {
       </div>
       <h3 className="m-0 text-[15px] font-semibold leading-normal">{t.title || t.text}</h3>
       {t.content && <p className="m-0 text-sm leading-normal text-body">{t.content}</p>}
-      <span className="text-[13px] text-muted">{t.location}</span>
+      {hasLocation(t.location) && <span className="text-[13px] text-muted">{t.location}</span>}
       {t.photos.length > 0 && <PhotoStrip photos={t.photos} />}
       {t.extras.length > 0 && (
         <div className="rounded-xl bg-field p-2.5 text-[13px]">
@@ -351,22 +353,22 @@ export function WorkCard(props: {
       )}
 
       {t.stage === 3 && (
-        <div className="flex flex-wrap items-center gap-2 border-t border-line-soft pt-2.5">
-          <button type="button" className={PRIMARY} disabled={props.pending} onClick={() => actions.accept(t.id)}>
+        <div className="grid grid-cols-1 gap-2 border-t border-line-soft pt-2.5">
+          <button type="button" className={`${PRIMARY} w-full justify-center`} disabled={props.pending} onClick={() => actions.accept(t.id)}>
             Nhận việc
           </button>
-          <button type="button" className={`${BTN} ml-auto text-xs`} disabled={props.pending} onClick={() => setDialog("return")}>
+          <button type="button" className={`${BTN} w-full justify-center`} disabled={props.pending} onClick={() => setDialog("return")}>
             Không phải việc phòng mình
           </button>
         </div>
       )}
 
       {inProgress && (
-        <div className="flex flex-wrap items-center gap-2 border-t border-line-soft pt-2.5">
-          <button type="button" className={PRIMARY} disabled={props.pending} onClick={() => setDialog("finish")}>
+        <div className="grid grid-cols-1 gap-2 border-t border-line-soft pt-2.5">
+          <button type="button" className={`${PRIMARY} w-full justify-center`} disabled={props.pending} onClick={() => setDialog("finish")}>
             Đánh dấu hoàn thành
           </button>
-          <button type="button" className={`${BTN} ml-auto text-xs`} disabled={props.pending} onClick={() => setDialog("wrong")}>
+          <button type="button" className={`${BTN} w-full justify-center`} disabled={props.pending} onClick={() => setDialog("wrong")}>
             Báo sai phòng ban
           </button>
         </div>
@@ -404,10 +406,40 @@ export function WorkCard(props: {
 }
 
 // ---------- lists ----------
+type HistoryBox = Building | "other";
+const HISTORY_BOXES: { key: HistoryBox; label: string }[] = [
+  { key: "S1", label: "Hoàn thành S1" },
+  { key: "S2", label: "Hoàn thành S2" },
+  { key: "other", label: "Chưa rõ tòa" },
+];
+
+/** Plan 19 SPEC-P01 §3: completed tickets per building, one box at a time; "Chưa rõ tòa" only when needed */
 export function HistoryList({ tickets, onOpen }: { tickets: DeptTicket[]; onOpen: (id: string) => void }) {
-  const done = tickets.filter((t) => t.stage >= 5);
+  const all = tickets.filter((t) => t.stage >= 5);
+  const boxOf = (t: DeptTicket): HistoryBox => buildingOf(t.location, t.title, t.text) ?? "other";
+  const count = (k: HistoryBox) => all.filter((t) => boxOf(t) === k).length;
+  const boxes = HISTORY_BOXES.filter((b) => b.key !== "other" || count("other") > 0);
+  const [picked, setPicked] = useState<HistoryBox | null>(null);
+  const box = picked ?? boxes.find((b) => count(b.key) > 0)?.key ?? "S1";
+  const done = all.filter((t) => boxOf(t) === box);
   return (
     <section className="flex max-w-[900px] flex-col gap-3.5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" role="group" aria-label="Lịch sử hoàn thành theo tòa">
+        {boxes.map((b) => (
+          <button
+            key={b.key}
+            type="button"
+            aria-pressed={box === b.key}
+            onClick={() => setPicked(b.key)}
+            className={`card flex flex-col items-start gap-1 px-5 py-4 text-left transition-colors ${FOCUS} ${
+              box === b.key ? "ring-2 ring-[#1D4ED8] bg-[#EEF4FF]" : "hover:bg-slate-50"
+            }`}
+          >
+            <span className="text-sm font-semibold text-body">{b.label}</span>
+            <span className="text-2xl font-bold">{count(b.key)}</span>
+          </button>
+        ))}
+      </div>
       {done.length === 0 && <div className="card p-10 text-center text-muted">Chưa có ticket hoàn thành.</div>}
       {done.map((t) => (
         <article key={t.id} className="card flex flex-col gap-2 px-6 py-[22px]">
@@ -417,7 +449,7 @@ export function HistoryList({ tickets, onOpen }: { tickets: DeptTicket[]; onOpen
           </div>
           <span className="text-[15px] font-semibold leading-normal">{t.title || t.text}</span>
           {t.content && <span className="text-sm text-body">{t.content}</span>}
-          <span className="text-[13px] text-muted">{t.location}</span>
+          {hasLocation(t.location) && <span className="text-[13px] text-muted">{t.location}</span>}
           {t.rating ? (
             <div className="flex flex-col gap-1.5 border-t border-line-soft pt-2">
               <Stars n={t.rating.stars} />

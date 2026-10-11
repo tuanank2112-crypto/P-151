@@ -125,10 +125,11 @@ a:hover { color: #1e3a8a; }
 .scr-management .fchip:hover{background:#DCE8FF}
 .scr-management .fchip.on{background:#1D4ED8;color:#FFFFFF}
 .scr-management table{border-collapse:collapse;width:100%;min-width:860px}
+.scr-warehouse table{border-collapse:collapse;width:100%;min-width:760px}
 
 /* Tables of Reception and Management share th/td */
-.scr-reception th,.scr-management th{text-align:left;font-size:12px;font-weight:600;color:#5B6578;text-transform:uppercase;letter-spacing:.04em;padding:14px 16px;border-bottom:1px solid #E9EDF3}
-.scr-reception td,.scr-management td{padding:16px;border-bottom:1px solid #EEF2F7;font-size:14px;vertical-align:top}
+.scr-reception th,.scr-management th,.scr-warehouse th{text-align:left;font-size:12px;font-weight:600;color:#5B6578;text-transform:uppercase;letter-spacing:.04em;padding:14px 16px;border-bottom:1px solid #E9EDF3}
+.scr-reception td,.scr-management td,.scr-warehouse td{padding:16px;border-bottom:1px solid #EEF2F7;font-size:14px;vertical-align:top}
 
 /* ---------- Cleaning.dc.html ---------- */
 .scr-cleaning .staff{background:#D3F0EC;color:#0E5A52}

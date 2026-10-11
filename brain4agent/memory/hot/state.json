@@ -1,5 +1,5 @@
 {
-  "current_version": "1.12.2",
+  "current_version": "1.13.0",
   "brain_template_version": "1.7.1",
   "system_status": "active",
   "last_verification": {
@@ -34,7 +34,7 @@
   "working_branch": "feature/chamanh",
   "code_baseline": "2ced2656c66ceb6cdc44790a91f676ab1b8d710d + plan18 working tree",
   "last_benchmark": {
-    "pytest": "3596 passed, 100 PostgreSQL deselected, 0 skipped, memory, 2026-10-11 (agent-prompt/9, lift cabin)",
+    "pytest": "3599 passed, 100 PostgreSQL deselected, 0 skipped, memory, 2026-10-12 (plan 19 wave 1)",
     "safety_stop_sets": "1065 green",
     "false_alarm_budget": {
       "b_fp": "EM 0 / UNCLEAR 4",
@@ -45,11 +45,11 @@
     "assess_24kb_seconds": 0.28,
     "review_set_2026_10_04": "adversarial 107: HEAD 50 errors -> 7; SO holdout 18/18; live API corpus 34: only out-of-scope-asks-location left (spec)",
     "agent_audit_2026_10_05": "independent E2E audit scripts rerun: 77 sentences 16->7 errors, group D 9->2; rest P1/spec",
-    "portal": "typecheck+lint sạch, vitest 125 passed (2026-10-11); LLM thật S2.05 ROUTED",
+    "portal": "typecheck+lint sạch, vitest 143 passed, next build ok, 9 ảnh evidence/wave1 (2026-10-12)",
     "spec_p09_v6_probes": "27/27 passed (B1 interval overlap, B2 3-part overrides & shared location, B3 next_step, B4 cardinality & quiesce)"
   },
-  "last_sync": "2026-10-11T23:00:00+07:00",
-  "next_step": "Người dùng duyệt commit merge develop; sau đó đo --pg + kiểm revision 0003/0004 của Supabase chung, chạy portal+backend để thử tay Vệ sinh/Kỹ thuật/Kho; chưa push.",
+  "last_sync": "2026-10-12T03:00:00+07:00",
+  "next_step": "Người dùng thử tay đợt 1 hồ sơ 19 và gật commit; báo nhóm vá rò phiên proxy (develop cũng bị); chi tiết hoá SPEC-P04 đợt 2.",
   "active_plan": {
     "id": "18_2026-10-10_portal-python-api",
     "status": "implementation_verified_rollout_pending",

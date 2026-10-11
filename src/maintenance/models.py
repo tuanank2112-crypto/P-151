@@ -114,6 +114,7 @@ class MaterialCatalogItem(Entity):
     norm_qty: float | None = Field(default=None, ge=0)
     norm_label: NormLabel
     simulated_stock_qty: float | None = Field(default=None, ge=0)
+    min_qty: int | None = Field(default=None, ge=0)  # warehouse alert threshold (plan 19); None = no "low" alert
     synthetic: Synthetic
 
     @model_validator(mode="after")
