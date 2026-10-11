@@ -1,0 +1,149 @@
+### extra_undo_split
+=== rules
+R SIM-TKT-0001 VERIFYING priority MEDIUM dup_count 0 raise_at 3
+ round 1: split SIM-TKT-0002 -> child SIM-TKT-0003 VERIFYING/DUPLICATE -> SIM-TKT-0001; R.dup_count=1
+   after undo_split: child MERGED; R.dup_count=0 (real suspects pointing at R: 0); R.priority=MEDIUM reason='PRI-M1: đèn tại khu vực khác (Phòng rác)'
+ round 2: split SIM-TKT-0004 -> child SIM-TKT-0005 VERIFYING/DUPLICATE -> SIM-TKT-0001; R.dup_count=1
+   after undo_split: child MERGED; R.dup_count=0 (real suspects pointing at R: 0); R.priority=MEDIUM reason='PRI-M1: đèn tại khu vực khác (Phòng rác)'
+ round 3: split SIM-TKT-0006 -> child SIM-TKT-0007 VERIFYING/DUPLICATE -> SIM-TKT-0001; R.dup_count=1
+   after undo_split: child MERGED; R.dup_count=0 (real suspects pointing at R: 0); R.priority=MEDIUM reason='PRI-M1: đèn tại khu vực khác (Phòng rác)'
+ok   [rules] (a) R.duplicate_count back to 0 after every child was taken back (got 0)
+ok   [rules] (a) no PRI-U1 raise with zero duplicates
+ (b) child after undo_merge: ROUTED/None root.merged_children=['SIM-TKT-0009']
+ (b) second undo_split -> MERGED
+ok   [rules] (b) second undo_split is not a ValidationError
+ (c) SIM-TKT-0012 VERIFYING/DUPLICATE -> SIM-TKT-0011; child SIM-TKT-0011 count=1
+ (c) child SIM-TKT-0011 back to ROUTED: duplicate_count=0, suspects=0
+ok   [rules] (c) count of a ticket re-opened by T09 matches its suspects (0 vs 0)
+ (d) SIM-TKT-0015 MERGED into SIM-TKT-0014; undo_split(SIM-TKT-0014) refused GuardError: VERIFYING into None
+ok   [rules] (d) undo_split refuses a child that has open merged children
+=== mirror
+R SIM-TKT-0001 VERIFYING priority MEDIUM dup_count 0 raise_at 3
+ round 1: split SIM-TKT-0002 -> child SIM-TKT-0003 VERIFYING/DUPLICATE -> SIM-TKT-0001; R.dup_count=1
+   after undo_split: child MERGED; R.dup_count=0 (real suspects pointing at R: 0); R.priority=MEDIUM reason='Agent: PRI-M1: đèn tại khu vực khác (Phòng rác)'
+ round 2: split SIM-TKT-0004 -> child SIM-TKT-0005 VERIFYING/DUPLICATE -> SIM-TKT-0001; R.dup_count=1
+   after undo_split: child MERGED; R.dup_count=0 (real suspects pointing at R: 0); R.priority=MEDIUM reason='Agent: PRI-M1: đèn tại khu vực khác (Phòng rác)'
+ round 3: split SIM-TKT-0006 -> child SIM-TKT-0007 VERIFYING/DUPLICATE -> SIM-TKT-0001; R.dup_count=1
+   after undo_split: child MERGED; R.dup_count=0 (real suspects pointing at R: 0); R.priority=MEDIUM reason='Agent: PRI-M1: đèn tại khu vực khác (Phòng rác)'
+ok   [mirror] (a) R.duplicate_count back to 0 after every child was taken back (got 0)
+ok   [mirror] (a) no PRI-U1 raise with zero duplicates
+ (b) child after undo_merge: ROUTED/None root.merged_children=['SIM-TKT-0009']
+ (b) second undo_split -> MERGED
+ok   [mirror] (b) second undo_split is not a ValidationError
+ (c) SIM-TKT-0012 VERIFYING/DUPLICATE -> SIM-TKT-0011; child SIM-TKT-0011 count=1
+ (c) child SIM-TKT-0011 back to ROUTED: duplicate_count=0, suspects=0
+ok   [mirror] (c) count of a ticket re-opened by T09 matches its suspects (0 vs 0)
+ (d) SIM-TKT-0015 MERGED into SIM-TKT-0014; undo_split(SIM-TKT-0014) refused GuardError: VERIFYING into None
+ok   [mirror] (d) undo_split refuses a child that has open merged children
+RESULT problems=0
+EXIT=0
+### extra_dup_count_walk
+[rules seed=1] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 1), (('cancel', 'ok'), 62), (('danger', 'ok'), 18), (('downgrade', 'ok'), 9), (('merge', 'GuardError'), 4), (('merge', 'ok'), 21), (('mixed', 'ok'), 8), (('nomerge', 'ok'), 29), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 23), (('receive', 'ok'), 43), (('undo', 'ActionDeniedError'), 1), (('undo', 'ok'), 14), (('undo_split', 'GuardError'), 10), (('undo_split', 'ok'), 6)]
+[rules seed=2] steps=250 violations=0 ops=[(('cancel', 'ok'), 52), (('danger', 'ok'), 10), (('downgrade', 'ok'), 9), (('merge', 'GuardError'), 17), (('merge', 'ok'), 19), (('mixed', 'ok'), 12), (('nomerge', 'ok'), 38), (('priority', 'ok'), 22), (('receive', 'ok'), 40), (('undo', 'ok'), 14), (('undo_split', 'GuardError'), 6), (('undo_split', 'ok'), 11)]
+[rules seed=3] steps=250 violations=0 ops=[(('bql_merge', 'GuardError'), 2), (('bql_merge', 'ok'), 3), (('cancel', 'ok'), 73), (('danger', 'ok'), 13), (('downgrade', 'ok'), 5), (('merge', 'GuardError'), 14), (('merge', 'ok'), 11), (('mixed', 'ok'), 17), (('nomerge', 'ok'), 31), (('priority', 'ActionDeniedError'), 3), (('priority', 'ok'), 22), (('receive', 'ok'), 37), (('undo', 'ActionDeniedError'), 3), (('undo', 'ok'), 6), (('undo_split', 'GuardError'), 6), (('undo_split', 'ok'), 4)]
+[rules seed=4] steps=250 violations=0 ops=[(('bql_merge', 'GuardError'), 1), (('bql_merge', 'ok'), 2), (('cancel', 'ok'), 66), (('danger', 'ok'), 12), (('downgrade', 'ok'), 6), (('merge', 'GuardError'), 11), (('merge', 'ok'), 16), (('mixed', 'ok'), 13), (('nomerge', 'ok'), 35), (('priority', 'ActionDeniedError'), 2), (('priority', 'ok'), 18), (('receive', 'ok'), 38), (('undo', 'ActionDeniedError'), 1), (('undo', 'ok'), 11), (('undo_split', 'GuardError'), 10), (('undo_split', 'ok'), 8)]
+[rules seed=5] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 2), (('cancel', 'ok'), 76), (('danger', 'ok'), 14), (('downgrade', 'ok'), 5), (('merge', 'GuardError'), 7), (('merge', 'ok'), 14), (('mixed', 'ok'), 17), (('nomerge', 'ok'), 30), (('priority', 'ok'), 16), (('receive', 'ok'), 34), (('undo', 'ActionDeniedError'), 2), (('undo', 'ok'), 11), (('undo_split', 'GuardError'), 12), (('undo_split', 'ok'), 10)]
+[rules seed=6] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 3), (('cancel', 'ok'), 53), (('danger', 'ok'), 12), (('downgrade', 'ok'), 7), (('merge', 'GuardError'), 16), (('merge', 'ok'), 21), (('mixed', 'ok'), 16), (('nomerge', 'ok'), 26), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 23), (('receive', 'ok'), 34), (('undo', 'ActionDeniedError'), 7), (('undo', 'ok'), 15), (('undo_split', 'GuardError'), 8), (('undo_split', 'ok'), 8)]
+[rules seed=7] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 1), (('cancel', 'ok'), 63), (('danger', 'ok'), 12), (('downgrade', 'ok'), 7), (('merge', 'GuardError'), 4), (('merge', 'ok'), 24), (('mixed', 'ok'), 13), (('nomerge', 'ok'), 26), (('priority', 'ActionDeniedError'), 3), (('priority', 'ok'), 23), (('receive', 'ok'), 43), (('undo', 'ok'), 19), (('undo_split', 'GuardError'), 4), (('undo_split', 'ok'), 8)]
+[rules seed=8] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 2), (('cancel', 'ok'), 65), (('danger', 'ok'), 17), (('downgrade', 'ok'), 8), (('merge', 'GuardError'), 19), (('merge', 'ok'), 18), (('mixed', 'ok'), 15), (('nomerge', 'ok'), 29), (('priority', 'ok'), 20), (('receive', 'ok'), 30), (('undo', 'ActionDeniedError'), 1), (('undo', 'ok'), 12), (('undo_split', 'GuardError'), 7), (('undo_split', 'ok'), 7)]
+[mirror-agent seed=1] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 2), (('cancel', 'ok'), 59), (('danger', 'ok'), 16), (('downgrade', 'ok'), 7), (('merge', 'GuardError'), 5), (('merge', 'ok'), 23), (('mixed', 'ok'), 8), (('nomerge', 'ok'), 31), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 22), (('receive', 'ok'), 44), (('undo', 'ActionDeniedError'), 1), (('undo', 'ok'), 15), (('undo_split', 'GuardError'), 11), (('undo_split', 'ok'), 5)]
+[mirror-agent seed=2] steps=250 violations=0 ops=[(('cancel', 'ok'), 52), (('danger', 'ok'), 10), (('downgrade', 'ok'), 9), (('merge', 'GuardError'), 9), (('merge', 'ok'), 17), (('mixed', 'ok'), 10), (('nomerge', 'ok'), 38), (('priority', 'ok'), 21), (('receive', 'ok'), 44), (('undo', 'ok'), 17), (('undo_split', 'GuardError'), 12), (('undo_split', 'ok'), 11)]
+[mirror-agent seed=3] steps=250 violations=0 ops=[(('bql_merge', 'GuardError'), 2), (('bql_merge', 'ok'), 3), (('cancel', 'ok'), 73), (('danger', 'ok'), 13), (('downgrade', 'ok'), 5), (('merge', 'GuardError'), 14), (('merge', 'ok'), 11), (('mixed', 'ok'), 17), (('nomerge', 'ok'), 31), (('priority', 'ActionDeniedError'), 3), (('priority', 'ok'), 22), (('receive', 'ok'), 37), (('undo', 'ActionDeniedError'), 3), (('undo', 'ok'), 6), (('undo_split', 'GuardError'), 6), (('undo_split', 'ok'), 4)]
+[mirror-agent seed=4] steps=250 violations=0 ops=[(('bql_merge', 'GuardError'), 1), (('bql_merge', 'ok'), 2), (('cancel', 'ok'), 66), (('danger', 'ok'), 12), (('downgrade', 'ok'), 6), (('merge', 'GuardError'), 11), (('merge', 'ok'), 16), (('mixed', 'ok'), 13), (('nomerge', 'ok'), 35), (('priority', 'ActionDeniedError'), 2), (('priority', 'ok'), 18), (('receive', 'ok'), 38), (('undo', 'ActionDeniedError'), 1), (('undo', 'ok'), 11), (('undo_split', 'GuardError'), 10), (('undo_split', 'ok'), 8)]
+[mirror-agent seed=5] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 2), (('cancel', 'ok'), 76), (('danger', 'ok'), 14), (('downgrade', 'ok'), 5), (('merge', 'GuardError'), 7), (('merge', 'ok'), 14), (('mixed', 'ok'), 17), (('nomerge', 'ok'), 30), (('priority', 'ok'), 16), (('receive', 'ok'), 34), (('undo', 'ActionDeniedError'), 2), (('undo', 'ok'), 11), (('undo_split', 'GuardError'), 12), (('undo_split', 'ok'), 10)]
+[mirror-agent seed=6] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 1), (('cancel', 'ok'), 65), (('danger', 'ok'), 10), (('downgrade', 'ok'), 6), (('merge', 'GuardError'), 12), (('merge', 'ok'), 20), (('mixed', 'ok'), 14), (('nomerge', 'ok'), 30), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 26), (('receive', 'ok'), 39), (('undo', 'ActionDeniedError'), 3), (('undo', 'ok'), 8), (('undo_split', 'GuardError'), 9), (('undo_split', 'ok'), 6)]
+[mirror-agent seed=7] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 1), (('cancel', 'ok'), 63), (('danger', 'ok'), 12), (('downgrade', 'ok'), 7), (('merge', 'GuardError'), 5), (('merge', 'ok'), 22), (('mixed', 'ok'), 14), (('nomerge', 'ok'), 30), (('priority', 'ActionDeniedError'), 3), (('priority', 'ok'), 22), (('receive', 'ok'), 41), (('undo', 'ok'), 18), (('undo_split', 'GuardError'), 3), (('undo_split', 'ok'), 9)]
+[mirror-agent seed=8] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 3), (('cancel', 'ok'), 54), (('danger', 'ok'), 18), (('downgrade', 'ok'), 10), (('merge', 'GuardError'), 17), (('merge', 'ok'), 17), (('mixed', 'ok'), 13), (('nomerge', 'ok'), 38), (('priority', 'ok'), 18), (('receive', 'ok'), 29), (('undo', 'ActionDeniedError'), 1), (('undo', 'ok'), 17), (('undo_split', 'GuardError'), 7), (('undo_split', 'ok'), 8)]
+[rules skip-known seed=1] steps=250 violations=0 ops=[(('bql_merge', 'GuardError'), 1), (('bql_merge', 'ok'), 1), (('cancel', 'ok'), 58), (('danger', 'ok'), 16), (('downgrade', 'ok'), 11), (('merge', 'GuardError'), 9), (('merge', 'ok'), 28), (('mixed', 'ok'), 8), (('nomerge', 'ok'), 23), (('priority', 'ok'), 27), (('receive', 'ok'), 44), (('undo', 'ActionDeniedError'), 1), (('undo', 'ok'), 17), (('undo_split', 'GuardError'), 2), (('undo_split', 'ok'), 4)]
+[rules skip-known seed=2] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 2), (('cancel', 'ok'), 50), (('danger', 'ok'), 15), (('downgrade', 'ok'), 13), (('merge', 'GuardError'), 14), (('merge', 'ok'), 15), (('mixed', 'ok'), 9), (('nomerge', 'ok'), 35), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 21), (('receive', 'ok'), 39), (('undo', 'ActionDeniedError'), 6), (('undo', 'ok'), 15), (('undo_split', 'GuardError'), 5), (('undo_split', 'ok'), 10)]
+[rules skip-known seed=3] steps=250 violations=0 ops=[(('cancel', 'ok'), 66), (('danger', 'ok'), 13), (('downgrade', 'ok'), 10), (('merge', 'GuardError'), 10), (('merge', 'ok'), 19), (('mixed', 'ok'), 16), (('nomerge', 'ok'), 33), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 27), (('receive', 'ok'), 38), (('undo', 'ok'), 8), (('undo_split', 'GuardError'), 4), (('undo_split', 'ok'), 5)]
+[rules skip-known seed=4] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 3), (('cancel', 'ok'), 69), (('danger', 'ok'), 16), (('downgrade', 'ok'), 8), (('merge', 'GuardError'), 11), (('merge', 'ok'), 17), (('mixed', 'ok'), 8), (('nomerge', 'ok'), 28), (('priority', 'ok'), 29), (('receive', 'ok'), 39), (('undo', 'ActionDeniedError'), 2), (('undo', 'ok'), 12), (('undo_split', 'GuardError'), 5), (('undo_split', 'ok'), 3)]
+[rules skip-known seed=5] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 2), (('cancel', 'ok'), 75), (('danger', 'ok'), 13), (('downgrade', 'ok'), 8), (('merge', 'GuardError'), 10), (('merge', 'ok'), 18), (('mixed', 'ok'), 15), (('nomerge', 'ok'), 36), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 15), (('receive', 'ok'), 38), (('undo', 'ok'), 4), (('undo_split', 'GuardError'), 13), (('undo_split', 'ok'), 2)]
+[rules skip-known seed=6] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 1), (('cancel', 'ok'), 62), (('danger', 'ok'), 9), (('downgrade', 'ok'), 5), (('merge', 'GuardError'), 17), (('merge', 'ok'), 16), (('mixed', 'ok'), 16), (('nomerge', 'ok'), 32), (('priority', 'ActionDeniedError'), 4), (('priority', 'ok'), 24), (('receive', 'ok'), 37), (('undo', 'ok'), 13), (('undo_split', 'GuardError'), 6), (('undo_split', 'ok'), 8)]
+[rules skip-known seed=7] steps=250 violations=0 ops=[(('cancel', 'ok'), 66), (('danger', 'ok'), 13), (('downgrade', 'ok'), 8), (('merge', 'GuardError'), 1), (('merge', 'ok'), 21), (('mixed', 'ok'), 14), (('nomerge', 'ok'), 32), (('priority', 'ActionDeniedError'), 2), (('priority', 'ok'), 27), (('receive', 'ok'), 39), (('undo', 'ok'), 18), (('undo_split', 'GuardError'), 3), (('undo_split', 'ok'), 6)]
+[rules skip-known seed=8] steps=250 violations=0 ops=[(('bql_merge', 'GuardError'), 1), (('bql_merge', 'ok'), 4), (('cancel', 'ok'), 73), (('danger', 'ok'), 21), (('downgrade', 'ok'), 7), (('merge', 'GuardError'), 13), (('merge', 'ok'), 11), (('mixed', 'ok'), 14), (('nomerge', 'ok'), 33), (('priority', 'ActionDeniedError'), 4), (('priority', 'ok'), 20), (('receive', 'ok'), 37), (('undo', 'ActionDeniedError'), 2), (('undo', 'ok'), 3), (('undo_split', 'GuardError'), 6), (('undo_split', 'ok'), 1)]
+[mirror-agent skip-known seed=1] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 1), (('cancel', 'ok'), 59), (('danger', 'ok'), 14), (('downgrade', 'ok'), 8), (('merge', 'GuardError'), 11), (('merge', 'ok'), 25), (('mixed', 'ok'), 8), (('nomerge', 'ok'), 22), (('priority', 'ok'), 29), (('receive', 'ok'), 45), (('undo', 'ok'), 19), (('undo_split', 'GuardError'), 5), (('undo_split', 'ok'), 4)]
+[mirror-agent skip-known seed=2] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 5), (('cancel', 'ok'), 59), (('danger', 'ok'), 14), (('downgrade', 'ok'), 9), (('merge', 'GuardError'), 4), (('merge', 'ok'), 28), (('mixed', 'ok'), 9), (('nomerge', 'ok'), 29), (('priority', 'ActionDeniedError'), 2), (('priority', 'ok'), 19), (('receive', 'ok'), 42), (('undo', 'ActionDeniedError'), 4), (('undo', 'ok'), 16), (('undo_split', 'GuardError'), 5), (('undo_split', 'ok'), 5)]
+[mirror-agent skip-known seed=3] steps=250 violations=0 ops=[(('cancel', 'ok'), 66), (('danger', 'ok'), 13), (('downgrade', 'ok'), 10), (('merge', 'GuardError'), 10), (('merge', 'ok'), 19), (('mixed', 'ok'), 16), (('nomerge', 'ok'), 32), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 27), (('receive', 'ok'), 38), (('undo', 'ok'), 9), (('undo_split', 'GuardError'), 4), (('undo_split', 'ok'), 5)]
+[mirror-agent skip-known seed=4] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 5), (('cancel', 'ok'), 68), (('danger', 'ok'), 13), (('downgrade', 'ok'), 8), (('merge', 'GuardError'), 8), (('merge', 'ok'), 22), (('mixed', 'ok'), 9), (('nomerge', 'ok'), 26), (('priority', 'ActionDeniedError'), 3), (('priority', 'ok'), 19), (('receive', 'ok'), 41), (('undo', 'ActionDeniedError'), 4), (('undo', 'ok'), 15), (('undo_split', 'GuardError'), 6), (('undo_split', 'ok'), 3)]
+[mirror-agent skip-known seed=5] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 2), (('cancel', 'ok'), 77), (('danger', 'ok'), 13), (('downgrade', 'ok'), 10), (('merge', 'GuardError'), 15), (('merge', 'ok'), 16), (('mixed', 'ok'), 16), (('nomerge', 'ok'), 30), (('priority', 'ActionDeniedError'), 1), (('priority', 'ok'), 15), (('receive', 'ok'), 37), (('undo', 'ok'), 5), (('undo_split', 'GuardError'), 11), (('undo_split', 'ok'), 2)]
+[mirror-agent skip-known seed=6] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 2), (('cancel', 'ok'), 55), (('danger', 'ok'), 9), (('downgrade', 'ok'), 4), (('merge', 'GuardError'), 16), (('merge', 'ok'), 23), (('mixed', 'ok'), 17), (('nomerge', 'ok'), 34), (('priority', 'ActionDeniedError'), 4), (('priority', 'ok'), 24), (('receive', 'ok'), 32), (('undo', 'ok'), 17), (('undo_split', 'GuardError'), 6), (('undo_split', 'ok'), 7)]
+[mirror-agent skip-known seed=7] steps=250 violations=0 ops=[(('cancel', 'ok'), 66), (('danger', 'ok'), 13), (('downgrade', 'ok'), 8), (('merge', 'GuardError'), 13), (('merge', 'ok'), 20), (('mixed', 'ok'), 15), (('nomerge', 'ok'), 30), (('priority', 'ActionDeniedError'), 2), (('priority', 'ok'), 25), (('receive', 'ok'), 37), (('undo', 'ok'), 12), (('undo_split', 'GuardError'), 4), (('undo_split', 'ok'), 5)]
+[mirror-agent skip-known seed=8] steps=250 violations=0 ops=[(('bql_merge', 'ok'), 1), (('cancel', 'ok'), 68), (('danger', 'ok'), 20), (('downgrade', 'ok'), 7), (('merge', 'GuardError'), 8), (('merge', 'ok'), 18), (('mixed', 'ok'), 13), (('nomerge', 'ok'), 35), (('priority', 'ok'), 20), (('receive', 'ok'), 38), (('undo', 'ok'), 11), (('undo_split', 'GuardError'), 4), (('undo_split', 'ok'), 7)]
+RESULT walks=32 walks_with_violation=0
+EXIT=0
+### extra_followup_split_safety
+(a1) Agent S-00 PRESENT: VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY children=[]
+ok   (a1) S-00 PRESENT: no split, root EMERGENCY
+(a1) Agent T2-04 UNCLEAR: VERIFYING/SAFETY_REVIEW_REQUIRED risk=UNCLEAR children=[]
+ok   (a1) T2-04 UNCLEAR: no split, root UNCLEAR
+(a2) MUST_SPLIT=32 split=32 child_below_root=0
+ok   (a2) no split child below its root's level
+(b/mirror) source SIM-TKT-0001: VERIFYING/EMERGENCY_PENDING_BQL lock=Tòa S1 / Tầng 3 / Hành lang
+(b/mirror) follow-up SIM-TKT-0002: VERIFYING/OUT_OF_SCOPE lock=Tòa S1 / Tầng 3 / Hành lang place=Tòa S1 / Tầng 3 / Hành lang dept=None
+ok   (b/mirror) follow-up keeps the place BPTN confirmed for the source
+(b/agent-reads-text) source SIM-TKT-0001: VERIFYING/EMERGENCY_PENDING_BQL lock=Tòa S1 / Tầng 3 / Hành lang
+(b/agent-reads-text) follow-up SIM-TKT-0002: VERIFYING/PENDING_REVIEW lock=Tòa S1 / Tầng 3 / Hành lang place=Tòa S1 / Tầng 3 / Hành lang dept=None
+ok   (b/agent-reads-text) follow-up keeps the place BPTN confirmed for the source
+RESULT problems=0
+EXIT=0
+### break6_wrong_split
+[REF-MUST_NOT_SPLIT] Đèn hành lang tầng 3 tòa S1 hỏng nên không thấy rác mà dọn
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Hành lang tầng 3 tòa S1 tối om vì đèn hỏng, đi vấp phải rác
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Sảnh thang máy tầng 2 tòa S2 đèn tắt nên lao công không dọn rác được
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S2 / Tầng 2 / Sảnh thang máy dept=None G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Do đèn cầu thang bộ tầng 6 tòa S1 không sáng mà rác ở đó không ai thấy để dọn
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S1 / Tầng 6 / Cầu thang bộ dept=None G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Đèn hành lang tầng 4 tòa S2 hỏng khiến cư dân đá đổ thùng rác
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S2 / Tầng 4 / Hành lang dept=None G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Bóng đèn hành lang tầng 7 tòa S2 vỡ, mảnh vỡ vương vãi khắp sàn
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S2 / Tầng 7 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Hành lang tầng 3 tòa S1 hình như có rác, đèn cũng không biết có hỏng không
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Sảnh chính tòa S1 có rác hoặc đèn không sáng?
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S1 / Tầng 1 / Sảnh chính dept=None G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Rác ở hành lang tầng 3 tòa S1, còn đèn sảnh thang máy tầng 5 tòa S1 không sáng
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S1 / Tầng 5 / Sảnh thang máy dept=None G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Phòng rác tầng 2 tòa S2 đầy tràn, đèn hành lang tầng 2 tòa S2 hỏng
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S2 / Tầng 2 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Hành lang tầng 3 tòa S1 nhiều rác, đèn hành lang tầng 4 tòa S1 cũng hỏng
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Hành lang tầng 3 tòa S1 nhiều rác, đèn trong căn hộ tôi cũng hỏng
+     rules=no-split ROUTED/- | mirror=no-split ROUTED/- | reckless=SPLIT root ROUTED/- child VERIFYING/PENDING_REVIEW @ Tòa S1 / Tầng 3 / Hành lang dept=None G1/2/3=['category']
+[REF-MUST_NOT_SPLIT] hanh lang tang 3 toa S1 nuoc ngot do ra san, den hong
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Hành lang tầng 3 tòa S1 đèn không sáng
+     rules=no-split ROUTED/- | mirror=no-split ROUTED/- | reckless=SPLIT root VERIFYING/PENDING_REVIEW child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=['category']
+[REF-MUST_NOT_SPLIT] Hành lang tầng 5 tòa S2 nhiều rác quá
+     rules=no-split ROUTED/- | mirror=no-split ROUTED/- | reckless=SPLIT root ROUTED/- child VERIFYING/PENDING_REVIEW @ Tòa S2 / Tầng 5 / Hành lang dept=None G1/2/3=['category']
+[REF-MUST_NOT_SPLIT] Đèn sảnh tầng 2 tòa S2 tắt có lẽ do mất điện, sàn thì bẩn
+     rules=no-split NEED_INFO/MISSING_INFO | mirror=no-split NEED_INFO/MISSING_INFO | reckless=no-split NEED_INFO/MISSING_INFO
+[REF-MUST_NOT_SPLIT] Hành lang tầng 6 tòa S1 rác nhiều, chắc là đèn cũng hỏng
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S1 / Tầng 6 / Hành lang dept=None G1/2/3=[]
+[REF-MUST_NOT_SPLIT] Hành lang tầng 3 tòa S1 nhiều rác vì bóng đèn hành lang không sáng
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[cause] Hành lang tầng 3 tòa S1 tối om vì đèn hỏng nên không thấy rác để dọn
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[cause] Đèn hành lang tầng 3 tòa S1 không sáng nên rác đổ ra không ai thấy
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[cause] Bóng đèn sảnh thang máy tầng 5 tòa S1 vỡ, mảnh vỡ vương vãi khắp sàn
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S1 / Tầng 5 / Sảnh thang máy dept=None G1/2/3=[]
+[cause] Do đèn cầu thang bộ tầng 4 tòa S2 hỏng nên cư dân vứt rác bừa
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S2 / Tầng 4 / Cầu thang bộ dept=None G1/2/3=[]
+[cause] Hành lang tầng 2 tòa S2 bẩn do đèn tắt cả tuần, lao công không dọn
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S2 / Tầng 2 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[two-places] Hành lang tầng 3 tòa S1 nhiều rác, còn đèn sảnh thang máy tầng 5 tòa S1 không sáng
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S1 / Tầng 5 / Sảnh thang máy dept=None G1/2/3=[]
+[two-places] Rác ở hầm xe tầng B1 tòa S1, đèn hành lang tầng 2 tòa S2 cũng hỏng
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child VERIFYING/ASSET_UNCLEAR @ Tòa S1 / Tầng 2 / Hành lang dept=None G1/2/3=[]
+[two-places] Tầng 3 tòa S1 hành lang nhiều rác; tầng 7 tòa S2 hành lang đèn không sáng
+     rules=no-split VERIFYING/CATEGORY_UNCLEAR | mirror=no-split VERIFYING/CATEGORY_UNCLEAR | reckless=SPLIT root ROUTED/- child ROUTED/- @ Tòa S1 / Tầng 3 / Hành lang dept=DEPT_TECHNICAL G1/2/3=[]
+[no-place] Hành lang nhiều rác, đèn cũng không sáng
+     rules=no-split NEED_INFO/MISSING_INFO | mirror=no-split NEED_INFO/MISSING_INFO | reckless=no-split NEED_INFO/MISSING_INFO
+[danger] Hành lang tầng 3 tòa S1 nhiều rác, đèn không sáng và hình như có mùi khét
+     rules=no-split VERIFYING/SAFETY_REVIEW_REQUIRED | mirror=no-split VERIFYING/SAFETY_REVIEW_REQUIRED | reckless=no-split VERIFYING/SAFETY_REVIEW_REQUIRED
+splits per mode: {'rules': 0, 'mirror': 0, 'reckless': 25} of 28
+RESULT sentences=28 splits_rules=0 splits_mirror=0 splits_reckless=25 violations=0
+EXIT=0

@@ -3830,7 +3830,9 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 )
             return self._stop(work, S.VERIFYING, code, now, resume_step=4, note=reason)
         # two valid jobs and `_try_split` refused (P05 §3 conditions not met): BPTN decides
-        reason = "Agent thấy hai việc: " + "; ".join(f"{j.category} ({j.quote})" for j in jobs)
+        reason = "Agent thấy hai việc: " + "; ".join(
+            f"{j.category} ({j.quote})" if j.quote else j.category for j in jobs
+        )
         reason += "; không tách: điều kiện tách chưa đủ"
         record = ClassificationRecord(
             playbook_id=None,

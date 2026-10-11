@@ -2,6 +2,20 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Unreleased] - 2026-10-10: Kiểm danh mục, không khớp trích dẫn (plan 06 Q35, SPEC-P10)
+### Changed
+- `agent/schema.py` `AuditQuote`; `agent/validate.py` bỏ `grounded`/`_fold`, vị trí/job chỉ kiểm danh mục; `safety.merge_llm` không so quote; `agent/baseline.py` Mirror không bịa quote; `engine.py` ghi chú tách không in "None" (WP19, ✅ local: 3685 passed).
+### Decisions
+- Q35 (người dùng): khớp chuỗi/khoảng ký tự của quote làm cổng chặn LLM = word-by-word ⇒ CẤM. Thay SPEC-P08 §2 (F3), P01 §3.1–3.2, P09 B1/B2; Q28-F3 và phần quote của Q34 bị thay.
+- Chấp nhận rủi ro LLM bịa vị trí có trong danh mục (BPTN xem lại); không có cờ bật lại cổng quote. Bản ghi P10 không đọc được bằng code cũ ⇒ không chạy lẫn trên DB chung.
+- Subagent không dùng họ Fable (architect chạy Opus).
+
+## [Unreleased] - 2026-10-10: Ẩn tài khoản đăng nhập khỏi giao diện
+### Removed
+- `src/web/app.js`: ô "Đổi vai trò kiểm thử" (7 tài khoản, mật khẩu `Demo@2026` viết cứng) và `?autologin=`; `theme.css` bỏ `.hdr-select`; cache `app.js?v=4.1`, `theme.css?v=1.1`.
+- `portal/src/app/login/login-form.tsx`: khối "Tài khoản demo nghiệm thu (mật khẩu: 123456)".
+- Người dùng: không xoá data mock, chỉ không hiển thị dữ liệu đăng nhập trên frontend. Tài khoản/seed backend, `/auth/demo-accounts` (tắt khi production) và README giữ nguyên.
+
 ## [v1.7.0] - 2026-10-10: Portal gọi backend theo ghi chú anh Cố (hồ sơ 11)
 ### Changed
 - `portal/` (UI mới) bỏ DB riêng: mọi dữ liệu qua backend `/api/v1` (engine CR-03, Agent LLM, tầng an toàn); phiên = cookie httpOnly ký HMAC chứa token backend; ảnh qua proxy. Mở ở cổng 8000 (backend `PORTAL_URL` → portal production 3000).

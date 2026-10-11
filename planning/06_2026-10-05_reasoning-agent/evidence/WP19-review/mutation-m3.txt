@@ -1,0 +1,12 @@
+# mutation m3: SPEC m3: merge_llm quote not in text => UNCLEAR
+# sandbox copy: C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\repo3
+sha256 before src\maintenance\safety.py = 32424002cc072cdd8c7669456435e414d667ce4978043211b7df7a12983313ce
+applied in src/maintenance/safety.py: anchor x1
+$ (cwd=sandbox) -m pytest -q -p no:cacheprovider -rf tests/test_maintenance/test_p10_catalog_not_quote.py tests/test_maintenance/test_agent_unit.py tests/test_maintenance/test_p1_audit_fixes_safety.py tests/test_maintenance/test_safety.py tests/test_maintenance/test_agent_engine.py tests/test_maintenance/test_agent_parity.py tests/test_maintenance/test_p1_contracts.py tests/test_maintenance/test_agent_prompt.py
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_05_an_agent_raise_is_kept_whatever_its_quote[b\xecnh gas b\u1ecb x\xec]
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_04_an_agent_raise_keeps_its_level_whatever_its_quote
+FAILED tests/test_maintenance/test_safety.py::test_llm_present_counts_whatever_its_quote
+FAILED tests/test_maintenance/test_safety.py::test_engine_with_safety_llm_never_lowers
+4 failed, 1642 passed in 89.86s (0:01:29)
+EXIT=1
+sha256 after  src\maintenance\safety.py = 32424002cc072cdd8c7669456435e414d667ce4978043211b7df7a12983313ce restored=YES

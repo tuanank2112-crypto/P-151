@@ -95,7 +95,6 @@ const DECOR_JS = String.raw`(() => {
   }, true);
 })();`;
 
-let page: Page;
 let t0 = 0;
 const timeline: { id: string; at: number }[] = [];
 const log = (s: string) => console.log(s);
@@ -454,7 +453,7 @@ const ctx = await browser.newContext({
   ...(DRY ? {} : { recordVideo: { dir: path.join(OUT, "raw"), size: { width: W, height: H } } }),
 });
 await ctx.addInitScript({ content: DECOR_JS });
-page = await ctx.newPage();
+const page: Page = await ctx.newPage();
 t0 = Date.now();
 let ok = false;
 try {

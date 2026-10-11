@@ -1,0 +1,65 @@
+FFFFFFFF.........FF                                                      [100%]
+================================== FAILURES ===================================
+E   AssertionError: ('SIM-TKT-0001', 1, 0)
+    assert 1 == 0
+     +  where 1 = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).duplicate_count
+     +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+D:\P151\tests\test_maintenance\test_p1_audit_fixes_coord.py:62: AssertionError: ('SIM-TKT-0001', 1, 0)
+E   AssertionError: ('SIM-TKT-0001', 1, 0)
+    assert 1 == 0
+     +  where 1 = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).duplicate_count
+     +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...ocation='Tòa S2 / Tầng 2 / Phòng rác', agent_missing_parts=[], valid_job_indexes=[0], prompt_version='agent-prompt/5')).ticket
+D:\P151\tests\test_maintenance\test_p1_audit_fixes_coord.py:62: AssertionError: ('SIM-TKT-0001', 1, 0)
+E   pydantic_core._pydantic_core.ValidationError: 1 validation error for Ticket
+      Value error, danh sách liên kết không được lặp id [type=value_error, input_value={'ticket_id': 'SIM-TKT-00...NH'>, 'synthetic': True}, input_type=dict]
+        For further information visit https://errors.pydantic.dev/2.13/v/value_error
+D:\P151\src\maintenance\engine.py:2286: pydantic_core._pydantic_core.ValidationError: 1 validation error for Ticket
+E   pydantic_core._pydantic_core.ValidationError: 1 validation error for Ticket
+      Value error, danh sách liên kết không được lặp id [type=value_error, input_value={'ticket_id': 'SIM-TKT-00...NH'>, 'synthetic': True}, input_type=dict]
+        For further information visit https://errors.pydantic.dev/2.13/v/value_error
+D:\P151\src\maintenance\engine.py:2286: pydantic_core._pydantic_core.ValidationError: 1 validation error for Ticket
+E   Failed: DID NOT RAISE GuardError
+D:\P151\tests\test_maintenance\test_p1_audit_fixes_coord.py:114: Failed: DID NOT RAISE GuardError
+E   Failed: DID NOT RAISE GuardError
+D:\P151\tests\test_maintenance\test_p1_audit_fixes_coord.py:114: Failed: DID NOT RAISE GuardError
+E   AssertionError: 1
+    assert 1 == 0
+     +  where 0 = pointing_at(<src.maintenance.engine.MaintenanceEngine object at 0x000002C4DDFA4650>, 'SIM-TKT-0002')
+D:\P151\tests\test_maintenance\test_p1_audit_fixes_coord.py:136: AssertionError: 1
+E   AssertionError: 1
+    assert 1 == 0
+     +  where 0 = pointing_at(<src.maintenance.engine.MaintenanceEngine object at 0x000002C4DDF762D0>, 'SIM-TKT-0002')
+D:\P151\tests\test_maintenance\test_p1_audit_fixes_coord.py:136: AssertionError: 1
+E   AssertionError: assert None == 'Tòa S1 / Tầng 3 / Hành lang'
+     +  where None = LockedFields(category=None, location=None, asset_id=None, department=None).location
+     +    where LockedFields(category=None, location=None, asset_id=None, department=None) = Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:40:00+07:00', origi...t_return_count=0, follow_up_of='SIM-TKT-0001', split_from=None, split_children=[], split_category=None, synthetic=True).locked_fields
+     +      where Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:40:00+07:00', origi...t_return_count=0, follow_up_of='SIM-TKT-0001', split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:40:00+0...cation=None, agent_missing_parts=['building', 'floor', 'area'], valid_job_indexes=[], prompt_version='agent-prompt/5')).ticket
+D:\P151\tests\test_maintenance\test_p1_audit_fixes_coord.py:237: AssertionError: assert None == 'Tòa S1 / Tầng 3 / Hành lang'
+E   AssertionError: assert None == 'Tòa S1 / Tầng 3 / Hành lang'
+     +  where None = LockedFields(category=None, location=None, asset_id=None, department=None).location
+     +    where LockedFields(category=None, location=None, asset_id=None, department=None) = Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:40:00+07:00', origi...t_return_count=0, follow_up_of='SIM-TKT-0001', split_from=None, split_children=[], split_category=None, synthetic=True).locked_fields
+     +      where Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:40:00+07:00', origi...t_return_count=0, follow_up_of='SIM-TKT-0001', split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:40:00+0...ocation='Tòa S2 / Tầng 7 / Hành lang', agent_missing_parts=[], valid_job_indexes=[0], prompt_version='agent-prompt/5')).ticket
+D:\P151\tests\test_maintenance\test_p1_audit_fixes_coord.py:237: AssertionError: assert None == 'Tòa S1 / Tầng 3 / Hành lang'
+=================================== PASSES ====================================
+=========================== short test summary info ===========================
+PASSED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f8_rules_and_mirror_do_not_split_a_two_places_report[rules-H\xe0nh lang t\u1ea7ng 3 t\xf2a S1 nhi\u1ec1u r\xe1c, c\xf2n \u0111\xe8n s\u1ea3nh thang m\xe1y t\u1ea7ng 5 t\xf2a S1 kh\xf4ng s\xe1ng]
+PASSED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f8_rules_and_mirror_do_not_split_a_two_places_report[rules-R\xe1c \u1edf h\u1ea7m xe t\u1ea7ng B1 t\xf2a S1, \u0111\xe8n h\xe0nh lang t\u1ea7ng 2 t\xf2a S2 c\u0169ng h\u1ecfng]
+PASSED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f8_rules_and_mirror_do_not_split_a_two_places_report[rules-T\u1ea7ng 3 t\xf2a S1 h\xe0nh lang nhi\u1ec1u r\xe1c; t\u1ea7ng 7 t\xf2a S2 h\xe0nh lang \u0111\xe8n kh\xf4ng s\xe1ng]
+PASSED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f8_rules_and_mirror_do_not_split_a_two_places_report[mirror-H\xe0nh lang t\u1ea7ng 3 t\xf2a S1 nhi\u1ec1u r\xe1c, c\xf2n \u0111\xe8n s\u1ea3nh thang m\xe1y t\u1ea7ng 5 t\xf2a S1 kh\xf4ng s\xe1ng]
+PASSED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f8_rules_and_mirror_do_not_split_a_two_places_report[mirror-R\xe1c \u1edf h\u1ea7m xe t\u1ea7ng B1 t\xf2a S1, \u0111\xe8n h\xe0nh lang t\u1ea7ng 2 t\xf2a S2 c\u0169ng h\u1ecfng]
+PASSED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f8_rules_and_mirror_do_not_split_a_two_places_report[mirror-T\u1ea7ng 3 t\xf2a S1 h\xe0nh lang nhi\u1ec1u r\xe1c; t\u1ea7ng 7 t\xf2a S2 h\xe0nh lang \u0111\xe8n kh\xf4ng s\xe1ng]
+PASSED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f8_agent_decision_to_split_is_not_gated_by_place_words[H\xe0nh lang t\u1ea7ng 3 t\xf2a S1 nhi\u1ec1u r\xe1c, c\xf2n \u0111\xe8n s\u1ea3nh thang m\xe1y t\u1ea7ng 5 t\xf2a S1 kh\xf4ng s\xe1ng]
+PASSED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f8_agent_decision_to_split_is_not_gated_by_place_words[R\xe1c \u1edf h\u1ea7m xe t\u1ea7ng B1 t\xf2a S1, \u0111\xe8n h\xe0nh lang t\u1ea7ng 2 t\xf2a S2 c\u0169ng h\u1ecfng]
+PASSED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f8_agent_decision_to_split_is_not_gated_by_place_words[T\u1ea7ng 3 t\xf2a S1 h\xe0nh lang nhi\u1ec1u r\xe1c; t\u1ea7ng 7 t\xf2a S2 h\xe0nh lang \u0111\xe8n kh\xf4ng s\xe1ng]
+FAILED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f4_undo_split_of_a_duplicate_child_gives_the_count_back[rules]
+FAILED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f4_undo_split_of_a_duplicate_child_gives_the_count_back[agent]
+FAILED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f5_second_undo_split_after_undo_merge_is_clean[rules]
+FAILED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f5_second_undo_split_after_undo_merge_is_clean[agent]
+FAILED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f6_undo_split_refuses_a_child_that_has_merged_children[rules]
+FAILED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f6_undo_split_refuses_a_child_that_has_merged_children[agent]
+FAILED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f7_ticket_reopened_by_t09_recounts_its_suspects[rules]
+FAILED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f7_ticket_reopened_by_t09_recounts_its_suspects[agent]
+FAILED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f9_follow_up_keeps_the_place_bptn_locked[mirror]
+FAILED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f9_follow_up_keeps_the_place_bptn_locked[agent-reads-text]
+10 failed, 9 passed in 0.59s
+EXIT=1

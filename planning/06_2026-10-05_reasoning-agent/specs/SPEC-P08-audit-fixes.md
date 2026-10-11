@@ -18,6 +18,8 @@ Nguồn: CR-BPTN-03 §5.2 "Sau mọi bổ sung văn bản … luôn chạy lại
 - Nghiệm thu: 6 câu + 1 ca T06 của `extra_addition_not_assessed.py` ⇒ 6 ticket rời `NEED_INFO` với `risk_level ≠ NONE`, ca T06 ⇒ `EMERGENCY` (đỏ trước sửa, xanh sau); câu bổ sung vô hại ("ở tầng 3 ạ") ⇒ vẫn `NEED_INFO/MISSING_INFO`, không thêm `emergency.created`.
 
 ## 2. F3 — vị trí của Agent BẮT BUỘC có trích dẫn (WP14)
+> ⚠ Bị thay thế bởi SPEC-P10 §3.2, §5 (Q35)
+
 Sửa P01 §3.2: `LocationDecision.quote` rỗng/None mà Agent điền bất kỳ phần nào (building/floor/area) ⇒ loại cả vị trí: trả `(None, ("building","floor","area"), ["location"])` như quote bịa. Chỗ: `agent/validate.py::_check_location`.
 - Hệ quả bắt buộc: thiếu vị trí ⇒ luật vị trí quyết (`rv.location`), luật cũng không có ⇒ hỏi cư dân (P02 §6.2). CẤM: dùng vị trí không trích dẫn dù hợp lệ danh mục.
 - Nghiệm thu: 3 ca ROUTED sai nơi của `extra_invented_location.py` ⇒ `NEED_INFO`/hỏi vị trí; câu trộn không vị trí ⇒ KHÔNG tách. Test cũ có vị trí kèm quote đúng vẫn xanh.
@@ -27,6 +29,8 @@ Chỗ: `MaintenanceEngine.transition` (`engine.py`, đoạn sau `reachable`). Kh
 - Nghiệm thu: `extra_permissions.py` ⇒ `accepted_forbidden=0`, `refused_allowed=0`, và 0 ca "409 không audit" cho vai sai; test cũ dùng 409 cho vai sai phải đổi khẳng định (liệt kê trong report).
 
 ## 4. F2, F11 — Agent suy luận ngữ nghĩa, luật giữ sàn (gói WP14b — TÁCH khỏi H13)
+> ⚠ Bị thay thế bởi SPEC-P10 §3.3 (Q35) — phần: vế "trích dẫn bắt buộc" ở gạch lý do kiến trúc và vế "client trả trích dẫn bịa ⇒ UNCLEAR (`LLM-UNGROUNDED`), không EMERGENCY" ở nghiệm thu 2; phần còn lại giữ
+
 Thay bản cũ "CHỈ dữ liệu — V-13 / Q28" bằng plan.md **Q30** (2026-10-07 20:18:06 +0700). Nguyên tắc Q01: ngữ nghĩa do LLM suy luận, KHÔNG khớp từ khoá.
 - Lý do kiến trúc: luật ra EMERGENCY ⇒ Agent bị bỏ qua (`agent/agent.py::_after_rules` → `skip`). Regex Bậc 1 bắt quá tay loại LLM khỏi quyết định; regex hẹp để câu mơ hồ ở UNCLEAR ⇒ Agent được gọi và được nâng (`validate.merge_agent_safety` → `safety.merge_llm`, chỉ nâng, trích dẫn bắt buộc).
 - **Luật (sàn) — KHÔNG đổi:** `lexicon.yaml` giữ `2026-10-05.p1d`. Đo trên bản này (2026-10-07): "Xin cứu, nhà cháy"/"giúp tôi với, cháy rồi" ⇒ UNCLEAR; "Hình như khói nhiều…" ⇒ UNCLEAR; "Không có khói nhiều", "Chưa thấy khói nhiều" ⇒ NONE; "Thay bóng đèn cháy giúp với" ⇒ NONE. Mô hình lỗi ⇒ các câu nguy hiểm vẫn ở Bậc 2 cho BPTN (không mất ca).
@@ -48,6 +52,13 @@ Bất biến P04 §2.1: `duplicate_count(R)` = số ticket MỞ đang `VERIFYING
 - Nghiệm thu: `extra_undo_split.py` (a)(b)(c)(d) đều đạt; `extra_dup_count_walk.py` 32 lượt ⇒ 0 vi phạm.
 
 ## 6. F8 — không tách khi nhắc hai nơi, CẢ đường Agent (WP15)
+> ⚠ Thu hẹp bởi plan 06 Q36 (2026-10-10, người dùng "đừng có word by word"): vế "CẢ đường Agent" BỊ BỎ — `location_mentions` là đếm từ, CẤM dùng gác quyết định tách của Agent (kernel dòng 21). Hiện hành:
+> - **Đường luật + Mirror:** đã đạt sẵn qua `rules.split_verdict` ⇒ `two-places` (`rules.py:526–528`); KHÔNG thêm điều kiện 6 vào `_try_split`.
+> - **Đường Agent (`source=AGENT`, có job view):** LLM quyết theo `agent/prompt.py` ("hai vị trí khác nhau ⇒ UNCLEAR, TO_BPTN"); code chỉ kiểm schema + danh mục như P10. Agent tách sai ⇒ BPTN xem lại; đo bằng G-LIVE, không bằng luật.
+> - **Nghiệm thu thay thế:** test ghim hai chiều — (i) luật/Mirror: 3 câu `[two-places]` của `break6_wrong_split.py` không tách; (ii) Agent trả 2 jobs hợp lệ (cùng vị trí danh mục) cho câu nhắc hai nơi ⇒ VẪN tách (code không gác bằng từ khoá). Đột biến: xoá nhánh `two-places` trong `split_verdict` ⇒ (i) đỏ; thêm `location_mentions` vào `_has_two_jobs` nhánh Agent ⇒ (ii) đỏ. 32 MUST_SPLIT REF vẫn tách.
+>
+> Đoạn dưới là lịch sử.
+
 Sửa P05 §3: thêm điều kiện 6 cho mọi đường: `rules.location_mentions(content, buildings)` có > 1 tòa HOẶC > 1 tầng HOẶC > 1 khu ⇒ `_try_split` trả False (ticket dừng `CATEGORY_UNCLEAR` cho BPTN như khi không tách). Chỗ: `coordination/split.py::_try_split`.
 - Nghiệm thu: dòng `[two-places]` của `break6_wrong_split.py` ⇒ không tách; 32 câu MUST_SPLIT REF vẫn tách (`VARIANT_FAILURES=0`).
 

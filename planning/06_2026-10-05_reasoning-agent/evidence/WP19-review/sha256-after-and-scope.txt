@@ -1,0 +1,38 @@
+$ sha256sum <same 17 files> | diff - sha256-before.txt
+EXIT=0
+$ git status --porcelain
+ M planning/06_2026-10-05_reasoning-agent/plan.md
+ M planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md
+ M src/maintenance/agent/baseline.py
+ M src/maintenance/agent/schema.py
+ M src/maintenance/agent/validate.py
+ M src/maintenance/engine.py
+ M src/maintenance/safety.py
+ M tests/test_maintenance/test_agent_unit.py
+ M tests/test_maintenance/test_p1_audit_fixes_safety.py
+ M tests/test_maintenance/test_safety.py
+?? .claude/worktrees/
+?? planning/06_2026-10-05_reasoning-agent/evidence/WP16-review-v6/
+?? planning/06_2026-10-05_reasoning-agent/evidence/WP19-review/
+?? planning/06_2026-10-05_reasoning-agent/evidence/WP19/
+?? planning/06_2026-10-05_reasoning-agent/handoffs/H19_tham-dinh_WP19.md
+?? planning/06_2026-10-05_reasoning-agent/reports/R18_thi-cong_WP19.md
+?? scratch/
+?? tests/test_maintenance/test_p10_catalog_not_quote.py
+$ git diff --stat HEAD -- src tests
+ src/maintenance/agent/baseline.py                  | 18 ++++------
+ src/maintenance/agent/schema.py                    | 20 ++++++++---
+ src/maintenance/agent/validate.py                  | 37 +++-----------------
+ src/maintenance/engine.py                          |  4 ++-
+ src/maintenance/safety.py                          | 33 ++++++++++--------
+ tests/test_maintenance/test_agent_unit.py          | 29 ++++++++--------
+ .../test_maintenance/test_p1_audit_fixes_safety.py | 39 +++++++++++-----------
+ tests/test_maintenance/test_safety.py              | 19 ++++++-----
+ 8 files changed, 95 insertions(+), 104 deletions(-)
+$ git rev-parse HEAD
+b6a1a413f73b61f7cb1ceafb549d7655350b1e01
+$ stat mtime plan.md / SPEC-P10 / first WP19 files
+2026-10-10 10:08:48.038418000 +0700 planning/06_2026-10-05_reasoning-agent/plan.md
+2026-10-10 10:08:48.037410800 +0700 planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md
+2026-10-10 10:09:35.699967500 +0700 tests/test_maintenance/test_p10_catalog_not_quote.py
+2026-10-10 10:09:49.145709800 +0700 planning/06_2026-10-05_reasoning-agent/evidence/WP19/red-before.txt

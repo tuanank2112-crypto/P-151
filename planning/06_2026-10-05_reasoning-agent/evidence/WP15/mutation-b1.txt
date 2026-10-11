@@ -1,0 +1,17 @@
+### mutation b1
+........FFFFFF.....                                                      [100%]
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f8_rules_and_mirror_do_not_split_a_two_places_report[rules-H\xe0nh lang t\u1ea7ng 3 t\xf2a S1 nhi\u1ec1u r\xe1c, c\xf2n \u0111\xe8n s\u1ea3nh thang m\xe1y t\u1ea7ng 5 t\xf2a S1 kh\xf4ng s\xe1ng]
+FAILED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f8_rules_and_mirror_do_not_split_a_two_places_report[rules-R\xe1c \u1edf h\u1ea7m xe t\u1ea7ng B1 t\xf2a S1, \u0111\xe8n h\xe0nh lang t\u1ea7ng 2 t\xf2a S2 c\u0169ng h\u1ecfng]
+FAILED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f8_rules_and_mirror_do_not_split_a_two_places_report[rules-T\u1ea7ng 3 t\xf2a S1 h\xe0nh lang nhi\u1ec1u r\xe1c; t\u1ea7ng 7 t\xf2a S2 h\xe0nh lang \u0111\xe8n kh\xf4ng s\xe1ng]
+FAILED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f8_rules_and_mirror_do_not_split_a_two_places_report[mirror-H\xe0nh lang t\u1ea7ng 3 t\xf2a S1 nhi\u1ec1u r\xe1c, c\xf2n \u0111\xe8n s\u1ea3nh thang m\xe1y t\u1ea7ng 5 t\xf2a S1 kh\xf4ng s\xe1ng]
+FAILED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f8_rules_and_mirror_do_not_split_a_two_places_report[mirror-R\xe1c \u1edf h\u1ea7m xe t\u1ea7ng B1 t\xf2a S1, \u0111\xe8n h\xe0nh lang t\u1ea7ng 2 t\xf2a S2 c\u0169ng h\u1ecfng]
+FAILED tests/test_maintenance/test_p1_audit_fixes_coord.py::test_f8_rules_and_mirror_do_not_split_a_two_places_report[mirror-T\u1ea7ng 3 t\xf2a S1 h\xe0nh lang nhi\u1ec1u r\xe1c; t\u1ea7ng 7 t\xf2a S2 h\xe0nh lang \u0111\xe8n kh\xf4ng s\xe1ng]
+6 failed, 13 passed in 0.65s
+EXIT=1
+--- git diff --stat -- src/maintenance/rules.py (after restore, must be empty)
+--- git diff --stat src (after restore: only intended fix)
+ src/maintenance/coordination/merge.py     | 35 ++++++++++++++++++++++++++++++
+ src/maintenance/coordination/neighbors.py |  5 +++++
+ src/maintenance/coordination/split.py     | 36 +++++++++++++++++++------------
+ 3 files changed, 62 insertions(+), 14 deletions(-)

@@ -1,0 +1,6 @@
+$ python planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py --selftest
+  OK  location quote blank: kind=OK
+  OK  signal quote 400 chars: kind=OK
+  OK  job quote not a string: kind=SCHEMA_INVALID
+SELFTEST_FAILURES=0
+EXIT=0

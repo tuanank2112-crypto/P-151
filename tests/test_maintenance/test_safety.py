@@ -19,6 +19,7 @@ from src.maintenance.safety import (
     SignalJudgement,
     assess,
     assess_with_llm,
+    first_sentence,
     is_invisible,
     merge_llm,
     normalize_with_map,
@@ -217,8 +218,8 @@ def test_llm_cannot_lower_present():
     assert any("không bao giờ hạ" in n for n in merged.notes)
 
 
-def test_llm_present_needs_grounded_quote():
-    """AC-05: an LLM PRESENT with a quote found in the text raises to tier 1; an invented quote only reaches tier 2."""
+def test_llm_present_counts_whatever_its_quote():
+    """AC-05 + plan 06 Q35: an LLM PRESENT of an active signal raises to tier 1 whatever its quote (audit only)."""
     rule = assess(TEXT_NONE, LEX)
     assert rule.risk_level == RiskLevel.NONE
     grounded = merge_llm(rule, judged("S-01", "PRESENT", "mùi lạ như cao su"), TEXT_NONE, LEX)
@@ -226,10 +227,12 @@ def test_llm_present_needs_grounded_quote():
     # R6: "cao su" is outside the closed prefix, so a burnt rubber smell is tier 2, not a benign lamp (WP3c)
     burnt = "Hành lang tầng 3 tòa S1 bóng đèn tối, nghe mùi lạ như cao su cháy."
     assert assess(burnt, LEX).risk_level == RiskLevel.UNCLEAR
-    invented = merge_llm(rule, judged("S-01", "PRESENT", "có khói đen"), TEXT_NONE, LEX)
-    assert invented.risk_level == RiskLevel.UNCLEAR
+    other = merge_llm(rule, judged("S-01", "PRESENT", "có khói đen"), TEXT_NONE, LEX)
+    assert other.risk_level == RiskLevel.EMERGENCY and other.signals[-1].rule_id == "LLM"
     no_quote = merge_llm(rule, judged("S-01", "PRESENT"), TEXT_NONE, LEX)
-    assert no_quote.risk_level == RiskLevel.NONE and no_quote.signals == rule.signals
+    assert no_quote.risk_level == RiskLevel.EMERGENCY
+    assert no_quote.signals[-1].rule_id == "LLM-NOQUOTE"
+    assert no_quote.signals[-1].source_quote == first_sentence(TEXT_NONE)
 
 
 def test_llm_error_keeps_rules():
@@ -254,7 +257,7 @@ def test_llm_p1_signal_ignored_in_p0():
 
 
 def test_engine_with_safety_llm_never_lowers(clock):
-    """AC-05 / I-12 at engine level: an LLM cannot clear a tier-1 ticket and cannot raise past tier 2 on a fake quote."""
+    """AC-05 / I-12 at engine level: an LLM cannot clear a tier-1 ticket; its raise counts whatever its quote."""
     lowering = MaintenanceEngine(clock=clock, safety_llm=lambda text: judged("S-01", "ABSENT"))
     lowering.reset(with_fixtures=False)
     case = lowering.get(report(lowering, TEXT_EMERGENCY))
@@ -263,9 +266,9 @@ def test_engine_with_safety_llm_never_lowers(clock):
     inventing = MaintenanceEngine(clock=clock, safety_llm=lambda text: judged("S-01", "PRESENT", "có khói đen"))
     inventing.reset(with_fixtures=False)
     case = inventing.get(report(inventing, TEXT_NONE))
-    assert case.ticket.risk_level == RiskLevel.UNCLEAR and case.ticket.blocker.code == "SAFETY_REVIEW_REQUIRED"
+    assert case.ticket.risk_level == RiskLevel.EMERGENCY and case.ticket.blocker.code == "EMERGENCY_PENDING_BQL"
     audit = next(e for e in case.audit if e.action == Action.ASSESS_SAFETY)
-    assert audit.new_value["proposer"] == "rules+llm:llm" and audit.new_value["notes"]
+    assert audit.new_value["proposer"] == "rules+llm:llm"
 
 
 # ---------------------------------------------------------------- engine wiring

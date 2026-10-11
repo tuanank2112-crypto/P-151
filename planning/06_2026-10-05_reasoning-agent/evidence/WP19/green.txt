@@ -1,0 +1,7 @@
+$ python -m pytest -q -p no:cacheprovider tests/test_maintenance/test_p10_catalog_not_quote.py test_agent_unit.py test_p1_audit_fixes_safety.py test_safety.py
+........................................................................ [ 90%]
+........................................................................ [ 95%]
+........................................................................ [ 99%]
+..                                                                       [100%]
+1586 passed in 13.93s
+EXIT=0

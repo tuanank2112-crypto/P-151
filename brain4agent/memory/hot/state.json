@@ -48,10 +48,12 @@
     "portal": "unit 14/14, test:db 15/15 (portal_test), next build ok, e2e PASS on next start (2026-10-07)",
     "spec_p09_v6_probes": "27/27 passed (B1 interval overlap, B2 3-part overrides & shared location, B3 next_step, B4 cardinality & quiesce)",
     "g_live_2026_10_07": "agy gemini-3.8-flash-low: A2 khẩn cấp khó 16/16 (prompt /5, 0 fallback, p50 17 s); phủ định 10/10; nhờ thay đèn Agent 19/19 (3 sang BPTN do luật UNCLEAR, Q33); draft1 56/60 0 bỏ sót",
-    "supabase_g6": "đọc ✅ 2026-10-10: 70 ticket, schema 0002_p1_doc_shape, trang Quản lý ~3 s"
+    "supabase_g6": "đọc ✅ 2026-10-10: 70 ticket, schema 0002_p1_doc_shape, trang Quản lý ~3 s",
+    "wp19_p10": "worker vòng 2: pytest 3685 passed/0 fail/0 skip, ruff sạch; SO đo lại đột biến X1b/X2b/X6/X9 EXIT=1; invented-place 3/5 ROUTED (rủi ro chấp nhận); --pg/live NOT_RUN (2026-10-10)",
+    "wp15_coord": "SO đo lại: pytest 3704 passed/0 fail/0 skip, ruff check sạch (format chỉ lệch src/main.py có sẵn), đột biến a/b1/b2/c đỏ (worker); --pg NOT_RUN Docker tắt (2026-10-10)"
   },
-  "last_sync": "2026-10-10 01:36:23 +0700",
-  "next_step": "PR #20 (feature/nhuy-portal-fe → develop) chờ nhóm review/merge + deploy Render; rồi Alembic 0003/0004 trên Supabase + bật MO_CUSTOM_MATERIALS/MO_PORTAL_EXTRAS (cần gật); OPENAI_API_KEY cho Agent LLM thật; quyết nhãn tách ticket. Demo: cổng 8000 = UI mới trên Supabase thật (--env-file /d/P151/.env).",
+  "last_sync": "2026-10-11T10:30:00+0700",
+  "next_step": "2026-10-11: develop = portal mới (hồ sơ 11, bỏ gán nhân viên, ảnh docs/screenshots) + Reasoning Agent mới nhất (gộp feature/nhuy-reasoning-agent: Q35 SPEC-P10, WP15) — PR #19/#20 MERGED. Còn: deploy Render/Vercel (tài khoản Vercel khác, chọn backend), Alembic 0003/0004 trên Supabase + bật MO_CUSTOM_MATERIALS/MO_PORTAL_EXTRAS (cần gật), WP14b, WP12 thẩm định lại, duyệt P09 B3/B4, --pg khi bật Docker, live eval chờ quota.",
   "active_plan": {
     "id": "11_2026-10-09_portal-backend-api",
     "status": "in_progress",

@@ -25,19 +25,6 @@ PRIORITY_RULES: dict[ServiceCategory, dict[str, str]] = {
 _LEVEL_ORDER = {RiskLevel.NONE: 0, RiskLevel.UNCLEAR: 1, RiskLevel.EMERGENCY: 2}
 
 
-def _fold(text: str) -> str:
-    low = unicodedata.normalize("NFKC", text).lower().replace("đ", "d")
-    out = "".join(c for c in unicodedata.normalize("NFD", low) if unicodedata.category(c) != "Mn")
-    return " ".join("".join(c if c.isalnum() else " " for c in out).split())
-
-
-def grounded(quote: str | None, text: str) -> bool:
-    """A quote counts when its folded form (NFKC, lowercase, no accents, punctuation as one space) is inside the
-    folded text. A quote that folds to nothing ("..", "--") never does: stricter than `safety._grounded` (P08 §2)."""
-    folded = _fold(quote or "")
-    return bool(folded) and folded in _fold(text)  # ".." folds to "": as empty as no quote
-
-
 @dataclass(frozen=True)
 class Validated:
     location: str | None  # "Tòa X / Tầng N / Khu" when the Agent's location is complete and valid
@@ -51,16 +38,10 @@ class Validated:
 # ------------------------------------------------------------------------------------------------ safety (3.3)
 
 
-def _first_sentence(text: str) -> str:
-    stripped = text.strip()
-    first = re.split(r"(?<=[.!?\n])\s+", stripped, maxsplit=1)[0].strip()
-    return (first or stripped)[:120]
-
-
 def merge_agent_safety(
     rule: safety.SafetyAssessment, decision: AgentDecision, safety_text: str, lexicon: Lexicon, model: str
 ) -> tuple[safety.SafetyAssessment, RiskLevel]:
-    """Rules + the Agent's signals through `safety.merge_llm` (only raises the level, a bad quote is UNCLEAR).
+    """Rules + the Agent's signals through `safety.merge_llm` (only raises the level; the quote is for audit).
 
     Returns (merged assessment, level derived from the signals the Agent added). An empty `safety_text` (already
     confirmed safe, nothing new) ignores the model's safety part altogether."""
@@ -79,7 +60,7 @@ def merge_agent_safety(
         ungrounded = RiskSignal(
             signal_id="S-00",
             status=SignalStatus.UNCLEAR,
-            source_quote=_first_sentence(safety_text),
+            source_quote=safety.first_sentence(safety_text),
             detected_by=DetectedBy.LLM,
             rule_id="LLM-UNGROUNDED",
         )
@@ -92,13 +73,8 @@ def merge_agent_safety(
 # ------------------------------------------------------------------------------------------------ location (3.2)
 
 
-def _check_location(
-    loc: LocationDecision, location_text: str, catalog: Catalog
-) -> tuple[str | None, tuple[str, ...], list[str]]:
-    """(complete location or None, missing parts, rejected paths)."""
-    has_parts = bool(loc.building or loc.floor or loc.area)
-    if (has_parts or loc.quote) and not grounded(loc.quote, location_text):
-        return None, ("building", "floor", "area"), ["location"]  # no quote or an invented one voids it (P08 §2)
+def _check_location(loc: LocationDecision, catalog: Catalog) -> tuple[str | None, tuple[str, ...], list[str]]:
+    """(complete location or None, missing parts, rejected paths). Catalog only (plan 06 Q35): `loc.quote` is not read."""
     rejected: list[str] = []
     codes = "|".join(re.escape(b.upper()) for b in catalog.site.buildings)
 
@@ -144,7 +120,7 @@ def validate(
 ) -> Validated:
     rejected: list[str] = []
 
-    agent_location, missing, location_rejected = _check_location(decision.location, data.location_text, catalog)
+    agent_location, missing, location_rejected = _check_location(decision.location, catalog)
     rejected += location_rejected
     final_location = data.locks.location or agent_location or rv.location  # lock > Agent > rules
 
@@ -155,9 +131,6 @@ def validate(
         category = ServiceCategory(job.category)
         if lock is not None and category != lock:
             continue  # a person already chose the category: the Agent's other job is simply not used
-        if not grounded(job.quote, data.report_text):
-            rejected.append(f"jobs[{index}]")
-            continue
         valid.append(index)
         prefix = f"jobs[{index}]"
         playbook = PLAYBOOK_BY_CATEGORY[category][1]

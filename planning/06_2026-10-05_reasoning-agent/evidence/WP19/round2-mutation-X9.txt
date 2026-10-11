@@ -1,0 +1,22 @@
+# mutation X9: an invented location quote rejects the first job instead of the location (non-location path)
+# sandbox copy: C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\sb
+sha256 before src\maintenance\agent\validate.py = 98a7be113a43b44c414f6ebf7eab70c62ace1d61432dc467f1f3f93355a272a2
+applied in src/maintenance/agent/validate.py: anchor x1
+$ (cwd=sandbox) -m pytest -q -p no:cacheprovider -rf tests/test_maintenance/test_p10_catalog_not_quote.py tests/test_maintenance/test_agent_unit.py tests/test_maintenance/test_p1_audit_fixes_safety.py tests/test_maintenance/test_safety.py tests/test_maintenance/test_agent_engine.py tests/test_maintenance/test_agent_parity.py tests/test_maintenance/test_p1_contracts.py tests/test_maintenance/test_agent_prompt.py tests/test_maintenance/test_zz_h19_exact.py
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_01_location_worded_differently_but_in_the_catalog_is_kept
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-None]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-value5]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_09_a_location_quote_sharing_no_word_with_the_text_is_kept
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_10_a_job_quote_sharing_no_word_with_the_text_is_kept
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_02_a_valid_reply_becomes_an_agent_record_with_one_log_line
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_08_a_job_quote_not_in_the_text_is_kept_for_audit
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_08b_no_job_is_dropped_for_its_quote
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_09b_location_parts_are_normalised_and_checked
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_12_a_locked_category_drops_the_other_job_without_a_disagreement
+FAILED tests/test_maintenance/test_agent_unit.py::test_rejected_paths_map_to_the_disagreement_field
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_p10_an_invented_place_in_the_catalog_is_kept_and_audited
+FAILED tests/test_maintenance/test_zz_h19_exact.py::test_exact_rejected_variant
+14 failed, 1636 passed in 82.41s (0:01:22)
+EXIT=1
+sha256 after  src\maintenance\agent\validate.py = 98a7be113a43b44c414f6ebf7eab70c62ace1d61432dc467f1f3f93355a272a2 restored=YES
