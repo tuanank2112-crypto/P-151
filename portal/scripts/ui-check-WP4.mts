@@ -1,6 +1,6 @@
 /**
  * Real-browser check of the cleaning + technical screens (plan 11 WP4, SPEC-P03 §4).
- * Usage: npx tsx scripts/ui-check-WP4.mts [cleaning|technical] [--base=http://localhost:3000] [--out=dir]
+ * Usage: npx tsx scripts/ui-check-WP4.mts [cleaning|technical] [--base=http://localhost:3000] [--api=http://127.0.0.1:8000/api/v1] [--out=dir]
  * Needs the backend (memory) on :8000 proxying to the portal. Mutates backend demo tickets.
  */
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -9,6 +9,7 @@ import { chromium, type Page } from "@playwright/test";
 
 const arg = (n: string, d: string) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split("=")[1] ?? d;
 const BASE = arg("base", "http://localhost:3000");
+const API = arg("api", "http://127.0.0.1:8000/api/v1");
 const OUT = arg("out", "../planning/11_2026-10-09_portal-backend-api/evidence/WP4");
 mkdirSync(OUT, { recursive: true });
 const log: string[] = [];
@@ -195,7 +196,6 @@ try {
       await both(page, "technical-queue-after-request");
     });
     await check("technical: after approval, finish needs every 'Đã dùng <tên> — số lượng' ticked", async () => {
-      const API = "http://127.0.0.1:8000/api/v1";
       const tok = async (u: string) =>
         ((await (await fetch(`${API}/auth/login`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ username: u, password: "123456" }) })).json()) as { access_token: string }).access_token;
       const kho = await tok("kho");

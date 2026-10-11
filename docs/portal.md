@@ -51,6 +51,7 @@ portal/src/
 `.gitignore` có `!portal/src/server/data/` (dòng `data/` từng nuốt thư mục này).
 
 ## 4. Màn hình (SPEC-P03 hồ sơ 11)
+Ảnh toàn bộ màn hình theo vai (desktop + mobile): [`docs/screenshots/`](screenshots/README.md).
 | Route | Vai | Điểm chính |
 |---|---|---|
 | `/resident` | cư dân | Tiêu đề + nội dung góp ý + nơi + ảnh; bổ sung; đánh giá sao + thẻ + bình luận. Không khẩn cấp tự chọn, không xác nhận/hủy |
