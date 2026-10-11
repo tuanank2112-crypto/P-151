@@ -27,9 +27,12 @@ from sqlalchemy.exc import DBAPIError, InterfaceError, OperationalError
 
 from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent
 from src.maintenance.store.base import (
+    Assignment,
     ConcurrencyError,
     GuardError,
+    MaterialItem,
     NotFoundError,
+    RatingDetail,
     StorePermissionError,
     StoreUnavailableError,
     UnstorableTextError,
@@ -40,7 +43,12 @@ logger = logging.getLogger(__name__)
 
 SCHEMA = "maintops"
 SUPABASE_HOST_SUFFIXES = (".supabase.com", ".supabase.co")
-HEAD_REVISION = "0002_p1_doc_shape"
+HEAD_REVISION = "0004_portal_extras"
+# Plan 11: 0003 and 0004 only add tables that older code never reads, so a database one step behind is accepted while
+# the feature that needs the table is off (MO_CUSTOM_MATERIALS / MO_PORTAL_EXTRAS = false, the default on postgres).
+PREVIOUS_REVISIONS = {"0004_portal_extras": "0003_material_items", "0003_material_items": "0002_p1_doc_shape"}
+MATERIALS_REVISION = "0003_material_items"
+EXTRAS_REVISION = "0004_portal_extras"
 ALEMBIC_INI = Path(__file__).with_name("alembic.ini")
 UPGRADE_COMMAND = "python -m alembic -c src/maintenance/store/alembic.ini upgrade head"
 KEY_JOBS = 151001  # advisory lock keys (transaction-scoped)
@@ -200,8 +208,9 @@ LIST_LOG_EVERY = 100  # one INFO line with the cache counters every N listings
 class _PgTx:
     """One open DB transaction. `conn` is public for white-box tests."""
 
-    def __init__(self, conn: Connection):
+    def __init__(self, conn: Connection, *, portal_extras: bool = True):
         self.conn = conn
+        self._portal_extras = portal_extras  # false ⇒ revision 0004 may be missing: its tables are never touched
         self.versions: dict[str, int] = {}
         self.inserted: dict[str, Case] = {}
 
@@ -338,6 +347,37 @@ class _PgTx:
                 {"c": item_code, "q": qty},
             ).scalar_one()
 
+    def put_assignment(self, assignment: Assignment) -> None:
+        self._require_extras()
+        with _db_errors():
+            self.conn.execute(
+                text(
+                    "insert into maintops.assignments (ticket_id, staff_id, assigned_by, assigned_at) "
+                    "values (:t, :s, :b, :a) on conflict (ticket_id) do update set "
+                    "staff_id = excluded.staff_id, assigned_by = excluded.assigned_by, assigned_at = excluded.assigned_at"
+                ),
+                {
+                    "t": assignment.ticket_id,
+                    "s": assignment.staff_id,
+                    "b": assignment.assigned_by,
+                    "a": assignment.assigned_at,
+                },
+            )
+
+    def put_rating_detail(self, detail: RatingDetail) -> None:
+        self._require_extras()
+        with _db_errors():
+            self.conn.execute(
+                text(
+                    "insert into maintops.rating_details (ticket_id, tags, comment, created_at) values (:t, :g, :c, :a)"
+                ),
+                {"t": detail.ticket_id, "g": list(detail.tags), "c": detail.comment, "a": detail.created_at},
+            )
+
+    def _require_extras(self) -> None:
+        if not self._portal_extras:
+            raise GuardError("Phân công và thẻ đánh giá chưa bật (MO_PORTAL_EXTRAS=false)")
+
     def take_stock(self, item_code: str, qty: float) -> float | None:
         with _db_errors():
             # One conditional UPDATE: two workers can never both issue the last units (the row lock serialises).
@@ -365,9 +405,11 @@ _T = TypeVar("_T")
 
 
 class PostgresRepository:
-    def __init__(self, url: str):
+    def __init__(self, url: str, *, custom_materials: bool = False, portal_extras: bool = False):
         self._engine = sql_engine(url)
         self._read_engine = sql_read_engine(url)
+        self._custom_materials = custom_materials  # needs revision 0003; off ⇒ the table is never touched
+        self._portal_extras = portal_extras  # needs revision 0004 (assignments, rating_details); off ⇒ never touched
         self._url_host = make_url(url).host
         self._local = threading.local()
         # list() cache (plan 09): ticket_id -> (xmin, validated Case); the Cases are shared and read-only
@@ -384,7 +426,7 @@ class PostgresRepository:
         self._local.in_tx = True
         try:
             with _db_errors(), self._engine.begin() as conn:
-                yield _PgTx(conn)
+                yield _PgTx(conn, portal_extras=self._portal_extras)
         finally:
             self._local.in_tx = False
 
@@ -461,6 +503,34 @@ class PostgresRepository:
             ).scalar()
         )
 
+    def material_items(self) -> list[MaterialItem]:
+        if not self._custom_materials:
+            return []
+        with _db_errors(), self._engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    "select item_code, item_name, unit, created_by, created_at "
+                    "from maintops.material_items order by created_at, item_code"
+                )
+            ).all()
+        return [MaterialItem.model_validate(row._asdict()) for row in rows]
+
+    def assignments(self) -> dict[str, Assignment]:
+        if not self._portal_extras:
+            return {}
+        with _db_errors(), self._engine.connect() as conn:
+            rows = conn.execute(
+                text("select ticket_id, staff_id, assigned_by, assigned_at from maintops.assignments")
+            ).all()
+        return {row.ticket_id: Assignment.model_validate(row._asdict()) for row in rows}
+
+    def rating_details(self) -> dict[str, RatingDetail]:
+        if not self._portal_extras:
+            return {}
+        with _db_errors(), self._engine.connect() as conn:
+            rows = conn.execute(text("select ticket_id, tags, comment, created_at from maintops.rating_details")).all()
+        return {row.ticket_id: RatingDetail.model_validate(row._asdict()) for row in rows}
+
     def stock(self) -> dict[str, float | None]:
         rows = self._read(
             lambda conn: conn.execute(text("select item_code, qty from maintops.stock order by item_code")).all()
@@ -515,10 +585,41 @@ class PostgresRepository:
                 {"c": item_code, "q": qty},
             )
 
+    def add_material_item(self, item: MaterialItem) -> MaterialItem:
+        if not self._custom_materials:
+            raise GuardError("Nhập vật tư mới chưa bật (MO_CUSTOM_MATERIALS=false)")
+        with _db_errors(), self._engine.begin() as conn:
+            conn.execute(
+                text(
+                    "insert into maintops.material_items (item_code, item_name, unit, created_by, created_at) "
+                    "values (:code, :name, :unit, :by, :at) on conflict (item_code) do nothing"
+                ),
+                {
+                    "code": item.item_code,
+                    "name": item.item_name,
+                    "unit": item.unit,
+                    "by": item.created_by,
+                    "at": item.created_at,
+                },
+            )
+            row = conn.execute(
+                text(
+                    "select item_code, item_name, unit, created_by, created_at "
+                    "from maintops.material_items where item_code = :code"
+                ),
+                {"code": item.item_code},
+            ).one()
+        return MaterialItem.model_validate(row._asdict())
+
     def wipe(self, stock: dict[str, float | None]) -> int:
         """Reset everything except `maintops.sessions`. TRUNCATE needs the schema owner (42501 for `maintops_dev`)."""
         with _db_errors(), self._engine.begin() as conn:
             conn.execute(text("truncate maintops.audit_log, maintops.notifications, maintops.cases restart identity"))
+            if self._custom_materials:
+                conn.execute(text("delete from maintops.material_items"))
+            if self._portal_extras:
+                conn.execute(text("delete from maintops.assignments"))
+                conn.execute(text("delete from maintops.rating_details"))
             conn.execute(text("delete from maintops.stock"))
             if stock:
                 conn.execute(
@@ -576,7 +677,16 @@ class PostgresRepository:
                     f"MO_STORE=postgres: schema maintops chưa sẵn sàng cho user này; chạy: {UPGRADE_COMMAND}"
                 ) from None
             raise
-        if revision != HEAD_REVISION:
+        if revision not in self._accepted_revisions():
             raise RuntimeError(
                 f"schema maintops ở revision {revision}, code cần {HEAD_REVISION}; chạy: {UPGRADE_COMMAND}"
             )
+
+    def _accepted_revisions(self) -> set[str]:
+        """The head, plus each earlier revision whose only change is a table for a feature that is switched off."""
+        needs = {MATERIALS_REVISION: self._custom_materials, EXTRAS_REVISION: self._portal_extras}
+        accepted, current = {HEAD_REVISION}, HEAD_REVISION
+        while current in PREVIOUS_REVISIONS and not needs.get(current, True):
+            current = PREVIOUS_REVISIONS[current]
+            accepted.add(current)
+        return accepted

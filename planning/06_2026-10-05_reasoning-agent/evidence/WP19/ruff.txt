@@ -1,0 +1,6 @@
+$ python -m ruff check src tests
+All checks passed!
+EXIT=0
+$ python -m ruff format --check src/maintenance/agent/schema.py src/maintenance/agent/validate.py src/maintenance/agent/baseline.py src/maintenance/safety.py src/maintenance/engine.py tests/test_maintenance/test_p10_catalog_not_quote.py tests/test_maintenance/test_agent_unit.py tests/test_maintenance/test_p1_audit_fixes_safety.py tests/test_maintenance/test_safety.py
+9 files already formatted
+EXIT=0

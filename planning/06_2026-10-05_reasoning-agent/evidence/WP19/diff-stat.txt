@@ -1,0 +1,29 @@
+$ git diff --stat -- src tests
+warning: in the working copy of 'src/maintenance/agent/schema.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/maintenance/safety.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/test_maintenance/test_p1_audit_fixes_safety.py', LF will be replaced by CRLF the next time Git touches it
+ src/maintenance/agent/baseline.py                  | 18 ++++------
+ src/maintenance/agent/schema.py                    | 20 ++++++++---
+ src/maintenance/agent/validate.py                  | 37 +++-----------------
+ src/maintenance/engine.py                          |  4 ++-
+ src/maintenance/safety.py                          | 33 ++++++++++--------
+ tests/test_maintenance/test_agent_unit.py          | 29 ++++++++--------
+ .../test_maintenance/test_p1_audit_fixes_safety.py | 39 +++++++++++-----------
+ tests/test_maintenance/test_safety.py              | 19 ++++++-----
+ 8 files changed, 95 insertions(+), 104 deletions(-)
+$ git status --porcelain
+ M planning/06_2026-10-05_reasoning-agent/plan.md
+ M planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md
+ M src/maintenance/agent/baseline.py
+ M src/maintenance/agent/schema.py
+ M src/maintenance/agent/validate.py
+ M src/maintenance/engine.py
+ M src/maintenance/safety.py
+ M tests/test_maintenance/test_agent_unit.py
+ M tests/test_maintenance/test_p1_audit_fixes_safety.py
+ M tests/test_maintenance/test_safety.py
+?? .claude/worktrees/
+?? planning/06_2026-10-05_reasoning-agent/evidence/WP16-review-v6/
+?? planning/06_2026-10-05_reasoning-agent/evidence/WP19/
+?? scratch/
+?? tests/test_maintenance/test_p10_catalog_not_quote.py

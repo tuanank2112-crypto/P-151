@@ -1,0 +1,5 @@
+
+> portal@1.6.0 lint
+> eslint
+
+EXIT=0

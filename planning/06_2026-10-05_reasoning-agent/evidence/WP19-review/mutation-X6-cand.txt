@@ -1,0 +1,9 @@
+# mutation X6: Vùng cấm row 1: substring check kept as an audit WARNING note only (no level change)
+# sandbox copy: C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\repo3
+sha256 before src\maintenance\safety.py = 32424002cc072cdd8c7669456435e414d667ce4978043211b7df7a12983313ce
+applied in src/maintenance/safety.py: anchor x1
+$ (cwd=sandbox) -m pytest -q -p no:cacheprovider -rf tests/test_maintenance/test_zz_h19_candidate.py
+FAILED tests/test_maintenance/test_zz_h19_candidate.py::test_merge_llm_output_does_not_depend_on_quote_wording
+1 failed, 3 passed in 0.78s
+EXIT=1
+sha256 after  src\maintenance\safety.py = 32424002cc072cdd8c7669456435e414d667ce4978043211b7df7a12983313ce restored=YES

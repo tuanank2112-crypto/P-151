@@ -11,6 +11,9 @@ from src.maintenance.catalog import load_catalog
 from src.maintenance.engine import MaintenanceEngine
 
 PASSWORD = "Demo@2026"
+# Plan 11: six portal accounts share the actors of the legacy ones and use the password 123456
+PORTAL_PASSWORD = "123456"
+PORTAL_USERNAMES = {"cudan", "tiepnhan", "quanly", "vesinh", "kythuat", "kho"}
 MORNING = "2026-09-28T09:00:00+07:00"
 
 
@@ -39,9 +42,14 @@ def test_every_account_maps_to_a_catalog_actor():
     roles = {catalog.actor_role(a.actor_id) for a in data.accounts}
     assert None not in roles
     assert {"RESIDENT", "BPTN", "DEPARTMENT", "WAREHOUSE", "BQL", "QA_INTERNAL"} <= {r.value for r in roles}
-    assert len({a.actor_id for a in data.accounts}) == len(data.accounts)  # one account per actor
+    legacy = [a for a in data.accounts if a.username not in PORTAL_USERNAMES]
+    portal = [a for a in data.accounts if a.username in PORTAL_USERNAMES]
+    assert len(portal) == len(PORTAL_USERNAMES)
+    assert len({a.actor_id for a in legacy}) == len(legacy)  # one legacy account per actor
+    assert {a.actor_id for a in portal} <= {a.actor_id for a in legacy}
     assert all(a.password_hash.startswith("pbkdf2_sha256$") for a in data.accounts)
-    assert all(verify_password(PASSWORD, a.password_hash) for a in data.accounts)
+    assert all(verify_password(PASSWORD, a.password_hash) for a in legacy)
+    assert all(verify_password(PORTAL_PASSWORD, a.password_hash) for a in portal)
 
 
 def test_login_returns_the_role_and_department(client):

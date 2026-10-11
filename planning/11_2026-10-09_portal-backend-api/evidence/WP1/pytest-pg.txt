@@ -1,0 +1,5 @@
+$ pytest --pg (files: ext, p1_store, store_postgres, persistence_*, cr03_store) on docker postgres:16 localhost:55434/p151_test
+........................................................................ [ 67%]
+...................................                                      [100%]
+107 passed in 29.55s
+EXIT=0

@@ -2,6 +2,12 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.12.0] - 2026-10-11: gộp develop b8d1b81, giữ nghiệp vụ vật tư của chamanh
+- Quyết định (người dùng, 2026-10-11): `portal/` lấy NGUYÊN bản develop làm nền; ẩn nút backend không hỗ trợ (chọn nhân viên, yêu cầu vật tư riêng, vật tư ngoài kho, tạo mã vật tư mới, hàng đợi duyệt cấp phát); phần nối plan18 (BFF `backend-client`…) bị bỏ vì develop đã gọi thẳng `/api/v1`.
+- Vật tư: giữ `material-usage` (plan 15-16). `_material_approval_required()` cố định False vì `MO_PORTAL_EXTRAS` bật mặc định ở memory sẽ kích hoạt luồng yêu cầu/duyệt của develop; `custom_materials_enabled=False`. Màn Vệ sinh/Kỹ thuật chọn vật tư đã dùng + số nguyên ≥1, một POST trước `complete`.
+- Từ develop lấy: Agent kiểm đầu ra theo catalog (SPEC-P10), gộp/tách ticket, endpoint `wrong-department`/`return-to-bptn`/`to-bql`/`handled`, rating có thẻ + bình luận, migration 0003/0004. `PROMPT_VERSION` = `agent-prompt/6` (gộp /5 develop + tài sản theo khu vực).
+- Test: xoá `test_portal_backend_ext2.py` và 3 test thuộc luồng đã loại; sửa 3 test; thêm 3 test portal cho `finishTicketAction`. Python 3584 passed/100 pg deselected, ruff sạch; portal typecheck+lint sạch, 125 test.
+
 ## [v1.11.0] - 2026-10-10: UI portal dùng backend Python (plan18, snapshot được duyệt commit/push)
 - Giữ giao diện Next mới; login, danh sách, chi tiết, thao tác, vật tư/kho và ảnh dùng Python qua BFF. Runtime không dùng DB/workflow portal; dữ liệu legacy giữ nguyên để rollback.
 - Cookie HttpOnly, ID string; reauth/role mỗi action; projection Case bỏ dữ liệu cá nhân/audit; ảnh kiểm ownership trước304.
@@ -164,6 +170,51 @@ Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên 
 ### Changed (đợt 2, cùng ngày — SPEC-P04, Q19–Q25)
 - Giao diện app chép từ `portal/`: header gradient + NavTiles (bỏ thanh tab đáy/FAB), form gửi 3 thẻ đánh số + Tóm tắt, ô tổng quan + 6 vạch tiến độ, stepper 6 bước, màn BQL kiểu Management; class `globals.css` chép nguyên, icon `icons.tsx` path-for-path. Backend vẫn FastAPI gốc `/api/v1` (Docker `:8000`), không chạm portal/DB portal.
 - Bước Vị trí ghép `Vị trí: Tòa … / Tầng … / <khu vực>` vào mô tả (API không đổi). Không làm phần portal mà API không có (khẩn cấp, tag đánh giá, cư dân nghiệm thu, Thông báo).
+## [Unreleased] - 2026-10-10: Kiểm danh mục, không khớp trích dẫn (plan 06 Q35, SPEC-P10)
+### Changed
+- `agent/schema.py` `AuditQuote`; `agent/validate.py` bỏ `grounded`/`_fold`, vị trí/job chỉ kiểm danh mục; `safety.merge_llm` không so quote; `agent/baseline.py` Mirror không bịa quote; `engine.py` ghi chú tách không in "None" (WP19, ✅ local: 3685 passed).
+### Decisions
+- Q35 (người dùng): khớp chuỗi/khoảng ký tự của quote làm cổng chặn LLM = word-by-word ⇒ CẤM. Thay SPEC-P08 §2 (F3), P01 §3.1–3.2, P09 B1/B2; Q28-F3 và phần quote của Q34 bị thay.
+- Chấp nhận rủi ro LLM bịa vị trí có trong danh mục (BPTN xem lại); không có cờ bật lại cổng quote. Bản ghi P10 không đọc được bằng code cũ ⇒ không chạy lẫn trên DB chung.
+- Subagent không dùng họ Fable (architect chạy Opus).
+
+## [Unreleased] - 2026-10-10: Ẩn tài khoản đăng nhập khỏi giao diện
+### Removed
+- `src/web/app.js`: ô "Đổi vai trò kiểm thử" (7 tài khoản, mật khẩu `Demo@2026` viết cứng) và `?autologin=`; `theme.css` bỏ `.hdr-select`; cache `app.js?v=4.1`, `theme.css?v=1.1`.
+- `portal/src/app/login/login-form.tsx`: khối "Tài khoản demo nghiệm thu (mật khẩu: 123456)".
+- Người dùng: không xoá data mock, chỉ không hiển thị dữ liệu đăng nhập trên frontend. Tài khoản/seed backend, `/auth/demo-accounts` (tắt khi production) và README giữ nguyên.
+
+## [v1.7.0] - 2026-10-10: Portal gọi backend theo ghi chú anh Cố (hồ sơ 11)
+### Changed
+- `portal/` (UI mới) bỏ DB riêng: mọi dữ liệu qua backend `/api/v1` (engine CR-03, Agent LLM, tầng an toàn); phiên = cookie httpOnly ký HMAC chứa token backend; ảnh qua proxy. Mở ở cổng 8000 (backend `PORTAL_URL` → portal production 3000).
+- 6 màn theo ghi chú anh Cố (R1–R11) + trả lời người dùng (Q08–Q19): ô tổng quan/phụ tải bấm được, modal chi tiết với khối Agent THẬT, Hiệu suất Agent đúng/sai, Việc của BQL (lọc Đã tiếp nhận/Đã hoàn thành/Tất cả), yêu cầu vật tư "+ ngoài danh mục", form hoàn thành từng phòng, tài khoản `kho`…/`123456`.
+### Added (backend, không đổi hình doc ticket — Render cũ đọc chung Supabase)
+- Route: `to-bql`, `bql/handled`, `bql/return-to-bptn`, 2 route sai phòng ban, `warehouse/items`, `materials/approve`, `mo/staff`, `assign`; rating có thẻ + bình luận; trường Agent/nhân viên/đánh giá ở list rows.
+- Bảng mới `maintops.material_items` (Alembic 0003), `assignments` + `rating_details` (0004); cờ `MO_CUSTOM_MATERIALS`, `MO_PORTAL_EXTRAS` (tắt mặc định trên postgres).
+### Decisions
+- Việc của BQL = OUT_OF_SCOPE + `blocker.escalated`; BQL đóng bằng `EMERGENCY_HANDLED` (Q09). Mọi yêu cầu vật tư phòng ban chờ Kho/BQL duyệt; duyệt = xuất kho; mọi đường bỏ dòng trả `issued − used` (Q15, Q20–Q23). Dòng vật tư mặc định xuất vượt kế hoạch theo luật chênh lệch CR-03 (Q23).
+### Evidence
+- Thẩm định cô lập 4 vòng (agent Opus khác), sửa mọi mục đỏ: pytest 3782 passed, ruff sạch; portal 125 unit, typecheck, lint; 4 bộ Playwright qua cổng 8000 đạt; `planning/11_2026-10-09_portal-backend-api/evidence/`.
+- G6 đọc trên Supabase thật ✅ (2026-10-10): 67→70 ticket hiện đúng qua cổng 8000; 2 bảng mới chưa tạo, cờ tương ứng tắt.
+- Sau phát hành: ô "Agent gợi ý đúng" hiện số lần đúng/sai cạnh % (`0f4e316`).
+
+## [v1.4.0] - 2026-10-08: Gate nghiệm thu BQL lấy từ dữ liệu thật
+### Changed
+- Tab "Việc của BQL": bỏ 6 dấu ✓ viết cứng. 4 gate hệ thống tự kiểm (`portal/src/lib/inspection.ts`: phòng ban, ảnh sau xử lý, vật tư đã nhận, SLA theo giờ báo xong) + 2 mục BQL tự tích tại hiện trường; nút "Nghiệm thu đạt" khoá tới khi tích đủ. `MgmtTicket` thêm `materials`.
+- Dọn 4 cảnh báo lint (import/biến thừa). `docs/portal.md` cập nhật theo đợt kho vật tư của Trí.
+### Decisions
+- Gate tự kiểm ✕ chỉ cảnh báo, không chặn (BQL vẫn quyết; seed có ticket chờ nghiệm thu chưa có ảnh). Action server `approveInspection` không đổi contract.
+- Giữ cảnh báo lint `note` ở `receiveStock`: dấu hiệu ghi chú nhập kho bị bỏ qua (chưa có bảng lịch sử) — Idea Vault.
+### Evidence
+- unit 23/23 (+6), test:db 18/18, typecheck 0; đối chứng ĐỎ: gate ảnh luôn đạt ⇒ 1 test fail. Playwright: nút khoá trước khi tích, mở sau khi tích; PA-0005 hiện "Đạt 5/6" (thiếu ảnh).
+
+## [v1.3.1] - 2026-10-08: Sửa portal sau đợt merge `feature/tri` (kho vật tư)
+### Fixed
+- `portal/drizzle/0002_warehouse.sql`: migration bị thiếu cho role `warehouse` + bảng `warehouse_stock` (schema có, migration không) ⇒ DB dựng mới vỡ seed ở user `kho` (`invalid input value for enum role`).
+- Seed nạp kho từ `STOCK_CATALOG` (`portal/src/lib/constants.ts`) — cùng danh mục form yêu cầu vật tư của Kỹ thuật dùng; trước đó kho trống và form dùng danh sách cứng riêng.
+- Modal chi tiết ticket thôi bịa "95%" khi Agent không có gợi ý.
+### Evidence
+- Đối chứng ĐỎ: DB chỉ có `0000`+`0001` ⇒ seed exit 1 đúng lỗi enum; có `0002` ⇒ migrate/seed exit 0. typecheck 0, unit 17/17, test:db 18/18, Playwright 9 luồng 0 lỗi trang (Postgres local cổng 5433).
 
 ## [v1.6.0] - 2026-10-08: Danh sách hiện 20 phản ánh một trang (plan 10)
 ### Added
@@ -233,6 +284,17 @@ Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên 
   nút cam `orange-700` bo tròn, dòng "Quên mật khẩu?". Header + `main` ẩn khi chưa đăng nhập (`setShellVisible`);
   `#login-view` chuyển ra ngoài `main`. Bỏ hẳn khối "Tài khoản thử nghiệm" + hàm `demoAccountList` khỏi màn đăng nhập
   (người dùng yêu cầu; đăng nhập nhanh còn `?autologin=<username>` và ô đổi vai trò sau khi vào). Cache bust `app.js?v=3.2`.
+
+## [Unreleased] - 2026-10-07: Agent suy luận bằng LLM thật qua Antigravity CLI (plan 06 Q30–Q33)
+### Changed
+- Q30: ngữ nghĩa an toàn (kêu cứu, phủ định, nghi ngờ, nhờ thay đèn cháy) chuyển về Agent suy luận; hoàn tác vá `lexicon.yaml` của worker H13 (bản p1e làm "Không có khói nhiều" thành EMERGENCY). Kernel thêm bất biến "ngữ nghĩa do LLM, không khớp từ khoá".
+- Prompt Agent `agent-prompt/2`→`/5` (REF SPEC sửa trước): hình dạng tín hiệu, đầu ra gọn, phủ định = ABSENT / kêu cứu = PRESENT, `TO_BPTN` luôn kèm `bptn_reason`. Schema chỉ NỚI (lý do trường trống thành tùy chọn), record cũ vẫn đọc được.
+- Q33: giữ "Agent không tự hạ mức" kể cả khi luật bắt nhầm (BPTN xác nhận bằng tay).
+### Added
+- Client Agent: streaming (`MO_AGENT_STREAM`), cache quyết định (`MO_AGENT_CACHE_*`), `MO_AGENT_REASONING_EFFORT`, backend CLI `LLM_MODE=agy_cli|claude_cli` (chỉ dev/demo local). Người dùng chọn `agy_cli` + `gemini-3.8-flash-low`.
+- G-LIVE: `scripts/agent_live_eval.py` + `tests/test_maintenance/data/agent_live_eval.yaml` (nhãn nháp). Kết quả: khẩn cấp khó 16/16, phủ định 10/10, nhờ thay đèn 19/19 (Agent).
+- Hồ sơ 08 `planning/08_2026-10-07_inflight-emergency/` (SPEC, CHỜ DUYỆT): báo khẩn khi ticket đã giao phòng ban.
+
 ## [Unreleased] - 2026-10-07: Hoàn thiện Đặc tả Thiết kế Điều phối Ngữ nghĩa SPEC-P09 (Plan 06 WP16)
 ### Added
 - Đặc tả hợp đồng điều phối ngữ nghĩa [`SPEC-P09-semantic-coordination.md`](../planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md) (PROPOSED) hoàn thiện qua 6 vòng thẩm định đối kháng nghiêm ngặt (R15 §01–§17).

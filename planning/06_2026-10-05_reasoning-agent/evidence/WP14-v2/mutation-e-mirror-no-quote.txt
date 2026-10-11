@@ -1,0 +1,6 @@
+MUTANT e-mirror-no-quote: src/maintenance/agent/baseline.py
+$ pytest tests/test_maintenance/test_p1_audit_fixes_safety.py tests/test_maintenance/test_agent_unit.py -q
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_mirror_quotes_the_location_it_read
+FAILED tests/test_maintenance/test_agent_unit.py::test_mirror_client_replies_with_the_mirror_decision
+2 failed, 95 passed in 5.33s
+EXIT=1

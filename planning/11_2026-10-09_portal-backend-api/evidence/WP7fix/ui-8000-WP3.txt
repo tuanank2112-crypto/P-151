@@ -1,0 +1,10 @@
+$ tsx scripts/ui-check-WP3.mts  --base=http://localhost:8000
+  step 0: [Chưa rõ tài sản] buttons: Kiểm tra tại chỗ
+PASS no horizontal overflow reception-step0 @1440 | scrollWidth=1440
+PASS no horizontal overflow reception-step0 @390 | scrollWidth=390
+PASS reception: ticket left inbox after the offered actions
+PASS reception: that ticket now appears in Đã phân loại | rows=1 routedByButton=false
+PASS no horizontal overflow reception-after-route @1440 | scrollWidth=1440
+PASS no horizontal overflow reception-after-route @390 | scrollWidth=390
+ALL PASS
+EXIT=0

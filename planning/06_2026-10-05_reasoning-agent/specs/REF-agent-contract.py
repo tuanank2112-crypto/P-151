@@ -1,4 +1,4 @@
-"""REF (plan 06, SPEC-P01): the reasoning-agent contract in executable form — output schema, prompts, probe.
+"""REF (plan 06, SPEC-P01, SPEC-P10): the reasoning-agent contract in executable form — output schema, prompts, probe.
 
 Architect reference, NOT product code. WP3 copies the schema (section A) and the prompts (section B) VERBATIM into
 src/maintenance/agent/schema.py and src/maintenance/agent/prompt.py; any wording change goes through WP11 with eval
@@ -8,7 +8,8 @@ evidence (SPEC-P01 §4.4). Run from the repo root:
     PYTHONPATH=. PYTHONUTF8=1 python planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py --live --n 20
 
 --selftest: no network. Checks that the prompt's example validates against the schema, that the fake replies are
-            classified (valid / INVALID_JSON / SCHEMA_INVALID / ungrounded quote) as the SPEC says. Exit 0 iff all pass.
+            classified (valid / INVALID_JSON / SCHEMA_INVALID) as the SPEC says and that a quote never decides
+            (SPEC-P10 §3.1: blank -> None, long -> cut, not verbatim -> still OK). Exit 0 iff all pass.
 --live:     calls OPENAI_BASE_URL/MODEL_NAME with OPENAI_API_KEY in JSON mode (response_format json_object) on the
             probe sentences; prints schema-valid rate and latency p50/p95. Needs a key (WP11, never in CI).
 """
@@ -22,14 +23,24 @@ import time
 import unicodedata
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, ValidationError, model_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, StringConstraints, ValidationError, model_validator
 
 # =====================================================================================================================
 # A. OUTPUT SCHEMA — "agent-decision/1" (01-CONTRACTS §3.1). extra="forbid" everywhere: an unknown key = SCHEMA_INVALID.
 # =====================================================================================================================
 
 Short = Annotated[str, StringConstraints(min_length=1, max_length=300)]
-Quote = Annotated[str, StringConstraints(min_length=2, max_length=300)]
+
+
+def _audit_quote(value: object) -> object:
+    """Quote = display/audit only (plan 06 Q35, SPEC-P10 §3.1): never a reason to reject a decision.
+    A string is stripped, a blank one becomes None, a long one is cut to 300 characters; None stays None."""
+    if isinstance(value, str):
+        return value.strip()[:300] or None
+    return value
+
+
+AuditQuote = Annotated[Annotated[str, StringConstraints(max_length=300)] | None, BeforeValidator(_audit_quote)]
 SignalId = Annotated[str, StringConstraints(pattern=r"^(S-\d{2}|T2-0[1-5])$")]
 AskField = Literal["location", "location_building", "location_floor", "location_area"]
 Step = Literal[
@@ -50,7 +61,7 @@ class ReasoningStep(_Strict):
 class SignalJudgement(_Strict):
     signal_id: SignalId
     status: Literal["PRESENT", "UNCLEAR", "ABSENT"]
-    quote: Quote | None = None
+    quote: AuditQuote = None
 
 
 class SafetyDecision(_Strict):
@@ -63,28 +74,28 @@ class LocationDecision(_Strict):
     building: Annotated[str, StringConstraints(max_length=20)] | None = None
     floor: Annotated[str, StringConstraints(max_length=10)] | None = None
     area: Annotated[str, StringConstraints(max_length=40)] | None = None
-    quote: Quote | None = None
-    reason: Short
+    quote: AuditQuote = None
+    reason: Short | None = None  # agent-prompt/3: optional, no consumer
 
 
 class MaterialChoice(_Strict):
     item_code: Annotated[str, StringConstraints(pattern=r"^SIM-[A-Z0-9-]+$")]
     planned_qty: float = Field(gt=0, le=100)
-    reason: Short
+    reason: Short | None = None  # agent-prompt/3: optional, no consumer
 
 
 class JobDecision(_Strict):
     category: Literal["VE_SINH", "KY_THUAT"]
-    quote: Quote
+    quote: AuditQuote = None
     reason: Annotated[str, StringConstraints(min_length=1, max_length=400)]
     department_id: Literal["DEPT_CLEANING", "DEPT_TECHNICAL"]
     priority: Literal["HIGH", "MEDIUM", "LOW"]
     priority_rule_id: Literal["PRI-H1", "PRI-H2", "PRI-M1", "PRI-M2", "PRI-L1", "PRI-D0"]
     priority_reason: Short
     duplicate_of: Annotated[str, StringConstraints(pattern=r"^SIM-TKT-[A-Z0-9-]+$")] | None = None
-    duplicate_reason: Short
+    duplicate_reason: Short | None = None  # agent-prompt/3: only with a duplicate_of
     asset_id: Annotated[str, StringConstraints(pattern=r"^SIM-ASSET-[A-Z0-9-]+$")] | None = None
-    asset_reason: Short
+    asset_reason: Short | None = None  # agent-prompt/3: only with an asset_id
     materials: list[MaterialChoice] = Field(default_factory=list, max_length=5)
     needs_review: bool
     review_reason: Annotated[str, StringConstraints(max_length=300)] | None = None
@@ -157,12 +168,14 @@ QUY TẮC BẮT BUỘC
 - An toàn trước hết: luật cố định của hệ thống đã quét phản ánh; bạn KHÔNG thể hạ mức nguy hiểm, chỉ có thể nêu thêm. Không chắc thì chọn UNCLEAR.
 - "BPTN đã chốt" là quyết định của con người: giữ nguyên, không đổi.
 
-CÁC BƯỚC SUY LUẬN (ghi vào "reasoning" theo thứ tự; facts = dữ kiện chép từ phản ánh, conclusion = kết luận của bước)
+CÁC BƯỚC SUY LUẬN (suy luận đủ 10 bước; chỉ GHI vào "reasoning", theo thứ tự, các bước AN_TOAN, LOAI_VIEC, VI_TRI, KET_LUAN và thêm THIEU_THONG_TIN, TRUNG, TAI_SAN khi có điều cần nói; facts = tối đa 2 đoạn ngắn chép từ phản ánh, conclusion = MỘT câu ngắn)
 1. DU_KIEN: sự việc, nơi xảy ra, thời điểm, mức độ cư dân mô tả.
 2. AN_TOAN: chỉ xét phần <an_toan_can_xet>. Đối chiếu bảng tín hiệu Bậc 1:
 {signal_table}
    Bậc 1 có thật (PRESENT) ⇒ risk_level EMERGENCY. Nghi ngờ ("hình như", "có vẻ"), đã xảy ra rồi hết ("hôm qua…, giờ hết rồi"), từ nhiều nghĩa đứng riêng ("cháy", "chập" không rõ là gì), âm thanh lạ (xèo xèo, lốp bốp), vệ sinh chỉ có một dấu hiệu nguy hại ⇒ UNCLEAR.
    KHÔNG phải nguy hiểm: đèn/bóng đèn bị cháy, chập, chập chờn, nhấp nháy, nổ bóng (đó là ĐÈN HỎNG) khi không kèm khói, lửa, khét, nóng, tia lửa; câu phủ định ("không có mùi khét"); "khét" do nấu ăn.
+   Cư dân PHỦ ĐỊNH một dấu hiệu ("không có khói nhiều", "chưa thấy lửa", "không phải cháy") ⇒ tín hiệu đó là ABSENT, KHÔNG phải UNCLEAR, và không làm tăng risk_level. UNCLEAR chỉ dành cho khi chính cư dân nghi ngờ hoặc mô tả chưa rõ. Ngược lại, lời kêu cứu, báo cháy, giục gọi cứu hỏa hay sơ tán là người đang gặp nguy ngay ⇒ PRESENT dù không dùng đúng từ trong bảng.
+   Mỗi phần tử của safety.signals là MỘT đối tượng có đúng ba khóa: signal_id (mã trong bảng trên, ví dụ "S-05"; S-00 cho nguy hiểm thật khác), status (chỉ PRESENT, UNCLEAR hoặc ABSENT) và quote (đoạn chép nguyên văn từ <an_toan_can_xet>). KHÔNG ghi tín hiệu dạng chuỗi. Không có tín hiệu ⇒ signals [].
 3. LOAI_VIEC: chỉ hai loại việc:
    - VE_SINH (PB-CLN-01): khu vực chung bẩn hoặc có thứ cần dọn (rác, bụi, vết bẩn, nước đọng, chất lỏng đổ, bãi nôn, phân, lá cây, mạng nhện…).
    - KY_THUAT (PB-TEC-01): ĐÈN chiếu sáng khu vực chung không hoạt động (không sáng, tắt, hỏng, cháy bóng, chập, chập chờn, nhấp nháy, rơi, vỡ).
@@ -171,11 +184,14 @@ CÁC BƯỚC SUY LUẬN (ghi vào "reasoning" theo thứ tự; facts = dữ ki�
    Không xác định được ⇒ scope UNCLEAR, TO_BPTN với CATEGORY_UNCLEAR.
 4. VI_TRI: nơi XẢY RA SỰ CỐ, không phải nơi cư dân ở ("em ở căn 1203 tầng 12" không phải vị trí sự cố). Tòa chỉ thuộc: {buildings}. Tầng là số, "B1"/"B2" (hầm) hoặc "Trệt". Khu vực chỉ thuộc: {areas}. Sảnh chính và Sảnh cư dân là tầng 1 nếu không nêu. Tòa ngoài danh sách = thiếu tòa. Thiếu phần nào để null.
 5. THIEU_THONG_TIN: thiếu tòa/tầng/khu vực ⇒ next_step ASK_RESIDENT với đúng các trường thiếu (location, location_building, location_floor, location_area). Phản ánh rõ ràng ngoài phạm vi và không nhắc khu vực chung nào ⇒ TO_BPTN với OUT_OF_SCOPE (không hỏi vị trí). Đủ thông tin và thuộc phạm vi ⇒ PROCEED.
+   next_step TO_BPTN LUÔN kèm bptn_reason (OUT_OF_SCOPE hoặc CATEGORY_UNCLEAR); thiếu bptn_reason thì CẢ quyết định bị loại, kể cả phần an toàn. Ca nguy hiểm thật (risk_level EMERGENCY) mà không có việc vệ sinh/đèn ⇒ scope OUT_OF_SCOPE, jobs [], next_step TO_BPTN, bptn_reason OUT_OF_SCOPE (BQL nhận ca khẩn cấp riêng).
 6. TRUNG: chỉ chọn trong <ung_vien_trung>; trùng khi cùng loại việc, cùng tòa/tầng/khu vực VÀ cùng một sự việc. Không chắc ⇒ duplicate_of null.
 7. UU_TIEN: PRI-H1 đèn ở lối đi chung ({high_areas}) = HIGH; PRI-M1 đèn ở chỗ khác = MEDIUM; PRI-H2 vệ sinh cản trở lối đi (chắn lối, trơn trượt, tràn ra lối đi) = HIGH; PRI-M2 vệ sinh ảnh hưởng sử dụng (nhiều rác, ẩm ướt, mùi) = MEDIUM; PRI-L1 vệ sinh chưa ảnh hưởng = LOW; PRI-D0 chưa rõ vị trí hoặc loại = MEDIUM.
 8. TAI_SAN: chỉ cho KY_THUAT; mỗi khu vực một asset, không phân biệt tòa/tầng. Chọn trong <tai_san> asset có khu vực TRÙNG khu vực của vị trí sự cố; không có asset cho khu vực đó ⇒ asset_id null.
 9. VAT_TU: chọn trong <vat_tu> đúng loại việc, số lượng hợp lý (không quá {max_qty}); không cần ⇒ [].
 10. KET_LUAN: tóm tắt quyết định. Đặt needs_review=true (kèm review_reason) khi bạn không chắc về loại việc hoặc vị trí.
+
+VIẾT GỌN: mỗi reason là MỘT câu ngắn, không lặp lại điều đã ghi ở reasoning. KHÔNG ghi location.reason, reason của vật tư, duplicate_reason khi duplicate_of null, asset_reason khi asset_id null (bỏ hẳn các khóa đó).
 
 ĐẦU RA: CHỈ MỘT đối tượng JSON hợp lệ, đúng các khóa như mẫu dưới (không thêm khóa, không thêm chữ ngoài JSON). Mẫu:
 {example}"""
@@ -201,32 +217,27 @@ Trả lời bằng JSON theo mẫu."""
 EXAMPLE = {
     "schema_version": "agent-decision/1",
     "reasoning": [
-        {"step": "DU_KIEN", "facts": ["hành lang tầng 3 tòa S1", "nhiều rác", "đèn cũng không sáng"],
-         "conclusion": "Cư dân báo rác và đèn không sáng ở cùng một hành lang"},
-        {"step": "AN_TOAN", "facts": [], "conclusion": "Không có tín hiệu nguy hiểm nào"},
+        {"step": "AN_TOAN", "facts": [], "conclusion": "Không có tín hiệu nguy hiểm"},
         {"step": "LOAI_VIEC", "facts": ["nhiều rác", "đèn cũng không sáng"],
          "conclusion": "Hai việc độc lập cùng chỗ: vệ sinh và đèn"},
         {"step": "VI_TRI", "facts": ["hành lang tầng 3 tòa S1"], "conclusion": "Tòa S1 / Tầng 3 / Hành lang"},
+        {"step": "TAI_SAN", "facts": [], "conclusion": "Một đèn duy nhất tại hành lang này"},
         {"step": "KET_LUAN", "facts": [], "conclusion": "Tách hai việc, cả hai đi tiếp"},
     ],
-    "safety": {"risk_level": "NONE", "signals": [], "reason": "Không có khói, lửa, khét, tia lửa hay người bị nạn"},
-    "location": {"building": "S1", "floor": "3", "area": "Hành lang", "quote": "hành lang tầng 3 tòa S1",
-                 "reason": "Cư dân nêu rõ nơi xảy ra"},
+    "safety": {"risk_level": "NONE", "signals": [], "reason": "Không có khói, lửa, khét hay người bị nạn"},
+    "location": {"building": "S1", "floor": "3", "area": "Hành lang", "quote": "hành lang tầng 3 tòa S1"},
     "scope": "IN_SCOPE",
     "jobs": [
         {"category": "VE_SINH", "quote": "nhiều rác", "reason": "Rác ở khu vực chung cần dọn",
          "department_id": "DEPT_CLEANING", "priority": "MEDIUM", "priority_rule_id": "PRI-M2",
-         "priority_reason": "Rác nhiều ảnh hưởng sử dụng, chưa chắn lối", "duplicate_of": None,
-         "duplicate_reason": "Không có ứng viên cùng sự việc", "asset_id": None,
-         "asset_reason": "Vệ sinh không tra tài sản",
-         "materials": [{"item_code": "SIM-MAT-BAG-01", "planned_qty": 2, "reason": "Túi đựng rác"}],
+         "priority_reason": "Nhiều rác, chưa chắn lối", "duplicate_of": None, "asset_id": None,
+         "materials": [{"item_code": "SIM-MAT-BAG-01", "planned_qty": 2}],
          "needs_review": False, "review_reason": None},
         {"category": "KY_THUAT", "quote": "đèn cũng không sáng", "reason": "Đèn khu vực chung không hoạt động",
          "department_id": "DEPT_TECHNICAL", "priority": "HIGH", "priority_rule_id": "PRI-H1",
-         "priority_reason": "Đèn ở hành lang là lối đi chung", "duplicate_of": None,
-         "duplicate_reason": "Không có ứng viên cùng sự việc", "asset_id": "SIM-ASSET-LIGHT-HALLWAY",
-         "asset_reason": "Asset của khu vực Hành lang",
-         "materials": [{"item_code": "SIM-MAT-LAMP-01", "planned_qty": 1, "reason": "Thay bóng LED"}],
+         "priority_reason": "Đèn ở lối đi chung", "duplicate_of": None,
+         "asset_id": "SIM-ASSET-LIGHT-HALLWAY", "asset_reason": "Asset của khu vực Hành lang",
+         "materials": [{"item_code": "SIM-MAT-LAMP-01", "planned_qty": 1}],
          "needs_review": False, "review_reason": None},
     ],
     "next_step": "PROCEED",
@@ -243,8 +254,11 @@ def _fold(text: str) -> str:
     return " ".join("".join(c if c.isalnum() else " " for c in out).split())
 
 
-def grounded(quote: str | None, text: str) -> bool:
-    """SPEC-P01 §3.2: a quote counts when its folded form is inside the folded text (same rule as safety._grounded)."""
+def verbatim_in(quote: str | None, text: str) -> bool:
+    """AUDIT METRIC ONLY (plan 06 Q35, SPEC-P10 §3.6): is the model's quote verbatim (folded) in the text?
+
+    Counted by `--live` to see how often quotes are not verbatim. It NEVER decides anything: runtime code must not
+    import, copy or re-implement it (SPEC-P10 §6 CẤM 1-2). Replaces the former `grounded` gate of SPEC-P01 §3.1."""
     return bool(quote and quote.strip()) and _fold(quote) in _fold(text)
 
 
@@ -272,7 +286,9 @@ def render_user(ticket_id: str, created_at: str, report_text: str, safety_text: 
 
 
 def classify_reply(raw: str, report_text: str) -> tuple[str, AgentDecision | None, list[str]]:
-    """SPEC-P01 §5: ('OK'|'INVALID_JSON'|'SCHEMA_INVALID', decision, ungrounded quote paths)."""
+    """SPEC-P01 §5: ('OK'|'INVALID_JSON'|'SCHEMA_INVALID', decision, quote paths missing or not verbatim).
+
+    The third value is an AUDIT metric (SPEC-P10 §3.6): the kind ('OK' …) never depends on a quote."""
     try:
         payload = json.loads(raw)
     except (json.JSONDecodeError, TypeError):
@@ -283,12 +299,12 @@ def classify_reply(raw: str, report_text: str) -> tuple[str, AgentDecision | Non
         return "SCHEMA_INVALID", None, []
     bad = []
     for i, job in enumerate(decision.jobs):
-        if not grounded(job.quote, report_text):
+        if not verbatim_in(job.quote, report_text):
             bad.append(f"jobs[{i}].quote")
-    if decision.location.quote and not grounded(decision.location.quote, report_text):
+    if decision.location.quote and not verbatim_in(decision.location.quote, report_text):
         bad.append("location.quote")
     for i, sig in enumerate(decision.safety.signals):
-        if sig.status != "ABSENT" and not grounded(sig.quote, report_text):
+        if sig.status != "ABSENT" and not verbatim_in(sig.quote, report_text):
             bad.append(f"safety.signals[{i}].quote")
     return "OK", decision, bad
 
@@ -315,7 +331,7 @@ def selftest() -> int:
     fails += "JSON" not in prompt  # DeepSeek JSON mode needs the word "json" in the prompt
     ok, decision, bad = classify_reply(json.dumps(EXAMPLE, ensure_ascii=False), EXAMPLE_REPORT)
     fails += not (ok == "OK" and decision is not None and bad == [])
-    print(f"example_valid={ok} ungrounded={bad}")
+    print(f"example_valid={ok} quote_audit={bad}")
     cases = [
         ("not json at all", "INVALID_JSON"),
         ('{"schema_version": "agent-decision/1"}', "SCHEMA_INVALID"),
@@ -328,10 +344,37 @@ def selftest() -> int:
         fails += got != want
         print(f"  {'OK ' if got == want else 'BAD'} want={want} got={got}")
     forged = json.loads(json.dumps(EXAMPLE, ensure_ascii=False))
-    forged["jobs"][1]["quote"] = "bóng đèn nổ tung"  # not in the report
+    forged["jobs"][1]["quote"] = "bóng đèn nổ tung"  # not in the report: still OK, only the audit metric sees it
     got, _, bad = classify_reply(json.dumps(forged, ensure_ascii=False), EXAMPLE_REPORT)
     fails += not (got == "OK" and bad == ["jobs[1].quote"])
-    print(f"ungrounded_detected={bad}")
+    print(f"not_verbatim_is_ok={got} quote_audit={bad}")
+    # SPEC-P10 §3.1: a quote never makes a decision invalid (blank -> None, missing -> None, long -> cut to 300)
+    for label, path, value, want in [
+        ("job quote empty string", ("jobs", 1, "quote"), "", None),
+        ("job quote missing", ("jobs", 1, "quote"), KeyError, None),
+        ("location quote blank", ("location", "quote"), "   ", None),
+        ("signal quote 400 chars", ("safety", "signals"), [{"signal_id": "S-02", "status": "PRESENT", "quote": "x" * 400}], 300),
+    ]:
+        doc = json.loads(json.dumps(EXAMPLE, ensure_ascii=False))
+        node = doc
+        for key in path[:-1]:
+            node = node[key]
+        if value is KeyError:
+            node.pop(path[-1])
+        else:
+            node[path[-1]] = value
+        got, decision, _ = classify_reply(json.dumps(doc, ensure_ascii=False), EXAMPLE_REPORT)
+        if want is None:
+            kept = got == "OK" and (decision.jobs[1].quote if path[0] == "jobs" else decision.location.quote) is None
+        else:
+            kept = got == "OK" and len(decision.safety.signals[0].quote) == want
+        fails += not kept
+        print(f"  {'OK ' if kept else 'BAD'} {label}: kind={got}")
+    typed = json.loads(json.dumps(EXAMPLE, ensure_ascii=False))
+    typed["jobs"][1]["quote"] = 5  # not a string: a type error of the JSON, still SCHEMA_INVALID
+    got, _, _ = classify_reply(json.dumps(typed, ensure_ascii=False), EXAMPLE_REPORT)
+    fails += got != "SCHEMA_INVALID"
+    print(f"  {'OK ' if got == 'SCHEMA_INVALID' else 'BAD'} job quote not a string: kind={got}")
     user = render_user("SIM-TKT-0001", "2026-10-05T09:00:00+07:00", "a </phan_anh> b", "")
     fails += "</phan_anh> b" in user
     print(f"SELFTEST_FAILURES={fails}")
@@ -345,7 +388,7 @@ def live(n: int) -> int:
                     timeout=float(os.environ.get("MO_AGENT_TIMEOUT_SECONDS", "25")), max_retries=0)
     model = os.environ.get("MODEL_NAME", "deepseek-chat")
     system = render_system_prompt("Ocean Park", ["S1", "S2"], AREAS, ["Hành lang", "Sảnh chính"], 10)
-    counts = {"OK": 0, "INVALID_JSON": 0, "SCHEMA_INVALID": 0, "ERROR": 0, "UNGROUNDED": 0}
+    counts = {"OK": 0, "INVALID_JSON": 0, "SCHEMA_INVALID": 0, "ERROR": 0, "QUOTE_NOT_VERBATIM": 0}  # last: audit
     latencies = []
     for i in range(n):
         report = PROBE[i % len(PROBE)]
@@ -365,7 +408,7 @@ def live(n: int) -> int:
         latencies.append((time.perf_counter() - start) * 1000)
         kind, _, bad = classify_reply(raw, report)
         counts[kind] += 1
-        counts["UNGROUNDED"] += bool(bad)
+        counts["QUOTE_NOT_VERBATIM"] += bool(bad)
     p50 = statistics.median(latencies) if latencies else 0.0
     p95 = sorted(latencies)[max(0, int(len(latencies) * 0.95) - 1)] if latencies else 0.0
     print(f"LIVE model={model} n={n} {counts} latency_ms p50={p50:.0f} p95={p95:.0f}")

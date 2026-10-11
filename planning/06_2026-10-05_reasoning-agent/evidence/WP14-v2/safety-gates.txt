@@ -1,0 +1,16 @@
+$ python planning/06_2026-10-05_reasoning-agent/specs/REF-p1-safety-meter.py
+MUST_CATCH total=47 failures=0
+MUST_NOT_RAISE total=21 failures=0
+P1_LOCATION_VARIANTS total=980 violations=0
+CORPUS changed_by_P1=259 not_lamp_fall=0
+GATES_FAILED=0
+EXIT=0
+$ python planning/06_2026-10-05_reasoning-agent/specs/REF-split-verdict.py --variants
+  OK  36/36 (want 36) | Bóng tuýp chết, rác thì chất đống
+SINGLE_JOB_VARIANTS_SPLIT=0
+VARIANT_FAILURES=0
+EXIT=0
+$ pytest tests/test_maintenance/test_safety_metamorphic.py tests/test_maintenance/test_classify_metamorphic.py -q
+.......................................................                  [100%]
+991 passed in 39.73s
+EXIT=0

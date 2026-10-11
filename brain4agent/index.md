@@ -33,10 +33,14 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | **⭐ Kế hoạch 09 — Tăng tốc đọc backend (v1.5.0, 2026-10-08)** | [`../planning/09_2026-10-08_backend-speed/`](../planning/09_2026-10-08_backend-speed/plan.md) · [`../docs/maintenance.md`](../docs/maintenance.md) §14 | `PostgresRepository.list()` cache theo `xmin` (1 câu SQL, không TTL), `resident_view(lookup=…)` bỏ N+1. Object từ `list()` CHỈ ĐỌC. Probe đo lại: `evidence/audit/probes/`. |
 | **⭐ Kế hoạch 07 — UI `src/web/` theo design portal (v1.3.0, 2026-10-07)** | [`../planning/07_2026-10-07_web-portal-reskin/`](../planning/07_2026-10-07_web-portal-reskin/plan.md) · [`../docs/web.md`](../docs/web.md) | Reskin UI tĩnh backend: `theme.css` + remap palette Tailwind CDN + header gradient/đăng nhập/helper; API/logic không đổi. SPEC: `01-CONTRACTS.md` (token, DOM id, màu trạng thái). Đọc `docs/web.md` TRƯỚC khi sửa `src/web/`. |
 | **⭐ Kế hoạch 06 — Cổng phản ánh cư dân `portal/` (v1.2.0, 2026-10-07)** | [`../planning/06_2026-10-07_resident-portal-next/`](../planning/06_2026-10-07_resident-portal-next/plan.md) · [`../docs/portal.md`](../docs/portal.md) | Website Next.js 16 + TypeScript + Tailwind v4 + PostgreSQL (Drizzle) dựng từ `design-ticket-cu-dan/…/HANDOFF.md` + 6 file `.dc.html`. Legacy độc lập Python đã thay bởi plan18 trong runtime. SPEC lịch sử: `specs/00-ARCHITECTURE.md` (bất biến, lệch D1–D9), `01-CONTRACTS.md` (schema, stage 1..6, action, lỗi). Đọc `docs/portal.md` TRƯỚC khi sửa `portal/`. |
+| **⭐ Kế hoạch 06 — Cổng phản ánh cư dân `portal/` (v1.2.0, 2026-10-07)** | [`../planning/06_2026-10-07_resident-portal-next/`](../planning/06_2026-10-07_resident-portal-next/plan.md) · [`../docs/portal.md`](../docs/portal.md) | Website Next.js 16 + TypeScript + Tailwind v4 + PostgreSQL (Drizzle) dựng từ `design-ticket-cu-dan/…/HANDOFF.md` + 6 file `.dc.html`. ĐỘC LẬP backend Python. SPEC: `specs/00-ARCHITECTURE.md` (bất biến, lệch D1–D9), `01-CONTRACTS.md` (schema, stage 1..6, action, lỗi). Đọc `docs/portal.md` TRƯỚC khi sửa `portal/`. |
+| **⭐ Kế hoạch 11 — Portal gọi backend theo ghi chú anh Cố (v1.7.0, 2026-10-09)** | [`../planning/11_2026-10-09_portal-backend-api/`](../planning/11_2026-10-09_portal-backend-api/plan.md) · [`../docs/portal.md`](../docs/portal.md) · [`../docs/maintenance.md`](../docs/maintenance.md) §16 |
 | **Kế hoạch 05 — làm cứng Agent (v1.1.4, 2026-10-05)** | [`../planning/05_2026-10-04_agent-hardening/`](../planning/05_2026-10-04_agent-hardening/plan.md) | `plan.md` (Q01–Q10), `handoffs/H01–H04`, `reports/R01–R04`, `evidence/`. Bộ biến thể: `tests/test_maintenance/test_safety_metamorphic.py`, `test_classify_metamorphic.py`; điều phối: `test_agent_coordination.py`. Tóm tắt: `docs/maintenance.md` §13. |
-| **Kế hoạch 06 — Reasoning Agent & P1 (2026-10-05)** | [`../planning/06_2026-10-05_reasoning-agent/`](../planning/06_2026-10-05_reasoning-agent/) | `plan.md` (Q01–Q29), `specs/` (00-ARCHITECTURE, 01-CONTRACTS, P01–P09, OPERATIONS, TESTING), `SPEC-P09-semantic-coordination.md` (điều phối ngữ nghĩa, B1–B4), `handoffs/H15`, `H16` (WP17 runtime CHỜ DUYỆT), `reports/R15` (§01–§17), `evidence/WP16/`. |
+| **Kế hoạch 06 — Reasoning Agent & P1 (2026-10-05)** | [`../planning/06_2026-10-05_reasoning-agent/`](../planning/06_2026-10-05_reasoning-agent/) | `plan.md` (Q01–Q33), `specs/` (00-ARCHITECTURE, 01-CONTRACTS, P01–P09, OPERATIONS, TESTING, `REF-agent-contract.py` = nguồn prompt/schema), `SPEC-P09-semantic-coordination.md` (điều phối ngữ nghĩa, B1–B4), `handoffs/H13` (WP14, R13 🔁), `H15`, `H16` (WP17 runtime CHỜ DUYỆT), `reports/R13`, `R15` (§01–§17), `evidence/WP14/`, `WP16/`, `G-LIVE/`; **Q35 (2026-10-10):** `SPEC-P10-catalog-not-quote.md` (ĐÃ DUYỆT — quote chỉ audit, kiểm danh mục; thay P01 §3.1–3.2, P08 §2, P09 B1/B2), `handoffs/H17`→`R17` (WP18 SPEC), `H18`→`R18` (WP19 runtime), `H19`→`R19` (thẩm định), `evidence/WP18/`, `WP19/`, `WP19-review/` (đo Agent với LLM thật). LLM thật, streaming, cache, CLI, G-LIVE: `docs/maintenance.md` §14. |
+| **Kế hoạch 08 — báo khẩn khi ticket đã giao (2026-10-07, CHỜ DUYỆT)** | [`../planning/08_2026-10-07_inflight-emergency/`](../planning/08_2026-10-07_inflight-emergency/plan.md) | `plan.md` (Q01–Q10, P1–P5 chờ người), `specs/` (00, 01, SPEC-P01 báo khẩn/trả về, OPERATIONS, TESTING A-01…A-24), `handoffs/H01–H03`. Chạy sau H13 plan 06. |
 | **⭐ SPEC DUY NHẤT — MaintenanceOps** | [`../docs/CR-BPTN-03.md`](../docs/CR-BPTN-03.md) | Vai trò/quyền, 10 trạng thái, T01–T23, pipeline §5.1, tầng an toàn §6, priority §7, gộp §8, AC-01..18, P0/P1. CR-01/02 đã xoá. |
 | **Sản phẩm (nền v0.3, lệch thì CR-03 thắng)** | [`../docs/01_problem_statement.md`](../docs/01_problem_statement.md) … [`05_traceability_and_review.md`](../docs/05_traceability_and_review.md), [`data-contract-v1.md`](../docs/data-contract-v1.md), [`playbook-v1.md`](../docs/playbook-v1.md) | Bài toán, PRD, UI flow, data contract, playbook. |
+| **Ảnh toàn bộ UI portal (2026-10-11)** | [`../docs/screenshots/`](../docs/screenshots/README.md) | 40 màn × desktop/mobile theo vai (0-login … 6-warehouse), chụp sau khi WP3/4/5 exit 0 trên backend memory. Chụp lại: `ui-check-WP3/4/5.mts --out=…` rồi chép theo README. |
 | **Swimlane / sơ đồ flow** | [`../docs/Activity Diagram.png`](../docs/Activity%20Diagram.png) | Bản nháp, CHƯA khớp CR-03 (thiếu Bậc 2, sai thứ tự an toàn). `flow_maintenanceops_v04.png` là flow cũ. |
 | **Chạy app / API hiện có** | [`../README.md`](../README.md) | Docker, endpoints `/api/v1/mo`, `/resident`, `/bql`. |
 | **Việc của Trường hôm nay / phân công nhóm** | [`roadmap.md` §Trường](roadmap.md) + [`memory-distill.txt` `<truong_focus>`](memory-distill.txt) | Lịch 01/10–19/10 theo Notion, chủ việc từng người, chỉ tiêu 19/10. |
@@ -78,6 +82,10 @@ Khi nhận nhiệm vụ, Agent tra cứu bảng này để đọc **chính xác*
 | `portal/src/server/backend-client.ts`, `backend-dto.ts`, `queries.ts`, `session.ts` | [Next.js BFF] API Python đọc theo vai, session cookie HttpOnly ↔ token Python |
 | `portal/src/app/{login,resident,reception,management,cleaning,technical,warehouse}/`, `components/python-dashboard.tsx`, `lib/case-view.ts` | [Next.js] 6 màn ↔ 6 file `.dc.html`; Server Actions ở `app/actions/` |
 | `portal/src/db/schema.ts`, `portal/drizzle/` | [Legacy rollback/test] Bảng/migration DB portal; runtime không migrate/seed |
+| `portal/src/server/backend.ts`, `server/data/<vai>.ts`, `app/actions/*` | [Next.js] Gọi backend `/api/v1` (Bearer từ cookie ký HMAC `session.ts`); loader đọc theo vai + server action ghi (hồ sơ 11) |
+| `portal/src/lib/backend-map.ts`, `lib/dto.ts` | [Next.js] Ánh xạ thuần JSON backend → DTO màn (status→stage, nhãn, Agent đúng/sai, lọc ô tổng quan, `readinessMessages`) |
+| `portal/src/app/{login,resident,reception,management,cleaning,technical,warehouse}/` | [Next.js] 6 màn ↔ 6 file `.dc.html` + màn kho; Server Actions ở `app/actions/`; gate nghiệm thu `src/lib/inspection.ts` |
+| `portal/src/db/`, `portal/drizzle/` | [Next.js] LỊCH SỬ bản DB riêng (hồ sơ 06) — không import ở luồng chạy |
 
 ---
 
@@ -91,6 +99,7 @@ project-root/
 ├── README.md                         # Giới thiệu + cách chạy (phần v0.3 đã cũ; spec là docs/CR-BPTN-03.md)
 ├── requirements.txt                  # Dependency Python
 ├── portal/                           # [Next.js 16 + TS + Tailwind] Web/BFF Python (plan18); DB/Drizzle chỉ legacy
+├── portal/                           # [Next.js 16 + TS + Tailwind] Cổng phản ánh cư dân — GỌI backend /api/v1 (hồ sơ 11, docs/portal.md); UI mới ở cổng 8000
 │   ├── src/{app,components,lib,server,db}/  # màn + actions · UI dùng chung · thuần (agent, sla…) · chỉ server (workflow, queries, session) · schema/seed
 │   ├── drizzle/, scripts/, tests/{unit,db}/ # migration SQL · migrate/seed/e2e/screens · vitest
 ├── design-ticket-cu-dan/             # Bộ thiết kế nguồn (HANDOFF.md + design/*.dc.html) của portal/
@@ -115,7 +124,7 @@ project-root/
 │   └── services/llm.py               # Factory LLM
 ├── seed/maintenance_v1/              # catalog.yaml, tickets.yaml (12 ca + expected), accounts.yaml, lexicon.yaml (từ vựng an toàn + priority = DỮ LIỆU)
 ├── tests/test_maintenance/           # acceptance, engine, api, auth, fixtures, proposer, migration, safety, emergency, priority; data/ (bộ dừng + ca nhãn — `git add -f`, .gitignore chặn `data/`)
-├── scripts/                           # Hook ghi log AI của template
+├── scripts/                           # Hook ghi log AI của template; agent_live_eval.py (G-LIVE: Agent + LLM thật, bộ câu tests/.../data/agent_live_eval.yaml)
 ├── .github/workflows/                 # CI
 ├── brain4agent/                      # [BỘ NHỚ DỰ ÁN] Single Source of Truth
 │   ├── memory/hot/                   # [HOT MEMORY] Ký ức nóng phiên (today.md, state.json)
@@ -140,3 +149,56 @@ project-root/
 - Ngày 03: `planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md`; đã chạy local (17 PASS/1 FAIL/5 BLOCKED); kết quả: `deliverables/day03-summary.md`, `day03-wording.md`, `day03-results.json` của cùng package; harness `evidence/d3-06/harness.py`.
 
 - OpenAI GPT-6 Luna: `src/maintenance/agent/client.py`, c?u h?nh `.env`, h??ng d?n v? ph?n lo?i l?i t?i `docs/maintenance.md` ?16 (v1.8.3).
+## Target component diagram — 2026-10-04
+- [Hồ sơ 05](../planning/05_2026-10-04_component-diagram/plan.md), router [Architecture](../planning/05_2026-10-04_component-diagram/specs/00-ARCHITECTURE.md): target 19/10, LangGraph/Phoenix confirmed; GPT-4o + vision proposed; SPEC approved; đã bàn giao local [draw.io/SVG](../docs/architecture_diagram.md), chờ user visual review.
+
+## Day04 online acceptance — 2026-10-04
+- [Hồ sơ 07](../planning/07_2026-10-04_online-acceptance/plan.md): PROPOSED, 8 task/15 ca; manifest/build QA pending, chưa thực thi online; Trường phụ trách nghiệp vụ, Châm Anh thực hiện restart.
+
+- 2026-10-04, hồ sơ07 cập nhật theo người dùng: chỉ localhost, chưa có online. Kiểm14 ca nghiệp vụ local; R01 postgres kiểm trước/sau restart, memory ghi BLOCKED_MEMORY_STORE. Online BLOCKED_NO_DEPLOYMENT; chưa chạy test trong lượt điều chỉnh kế hoạch.
+
+## Architecture data flow diagram — 2026-10-04
+- [Hồ sơ 08](../planning/08_2026-10-04_data-flow/plan.md), router [Architecture](../planning/08_2026-10-04_data-flow/specs/00-ARCHITECTURE.md): target 19/10, CR-BPTN-03 pipeline; bố cục 3 Hành lang Tuyến tính (Upper Escalation, Central Highway 6 trạm, Lower Feedback 4 loops, Bottom Data Stores bar) tỷ lệ 16:9 Zero-Crossing; SPEC approved; đã bàn giao [Mermaid/draw.io/SVG](../docs/diagrams/maintenanceops-data-flow-20261019/README.md), chờ user visual review.
+
+
+## Documentation correction — 2026-10-04
+- Restored target components: `docs/diagrams/Diagrams Components.drawio.svg` (original embedded source) + extracted `.drawio`; data flow restored at its existing path. Replaces the implementation-view redraw. `docs/architecture_diagram.md` explains differences with running code.
+
+## Isolated integration workspace
+- integration/truong-develop-20261004 combines local documentation snapshot 5f7c354 with develop 37a0fb3. Original feature/truong worktree remains unchanged. Evidence is in planning/06_2026-10-04_readme-refresh/evidence/integration/.
+
+## Current working branch — 2026-10-04
+- Work in feature/truong at C:/P-151-truong: tested integration f4155d6 adopted locally. Integration worktree remains a preparation reference; source is develop37a0fb3. Details and evidence: planning/06_2026-10-04_readme-refresh/.
+
+
+- Latest local integration: feature/truong + develop52ae81c, see planning/06_2026-10-04_readme-refresh/plan.md and evidence/integration-20261007/. No additional runtime module or entry point introduced by the integration itself.
+
+- GPT-6 Luna local configuration and verification: docs/maintenance.md §Local GPT-6 Luna configuration; src/maintenance/proposer.py openai_client. Real SUCCESS verified on shared-Supabase demo SIM-TKT-0042; see current runtime verification below.
+
+## Shared Supabase runtime verification — 2026-10-07
+- Shared Supabase demo SIM-TKT-0042 CLOSED; 2 simulated PNG photos byte/hash verified through API and Storage after restart; cases53->54, preexisting53 unchanged, stock unchanged; GPT-6 Luna SUCCESS / rules+llm:gpt-6-luna (2000.82ms); missing execution photo blocked completion; pytest2973 passed,29 pg deselected, ruff clean. Server127.0.0.1:8001 (jobs/seed/reset false).
+- Evidence: planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json; run_demo.py; pytest.txt; ruff-check.txt. Real AI response preserved in recovery_ai_logs; in-memory API AI Logs are empty after restart. No rating submitted. API flow exercised; no manual browser walkthrough/public deployment/physical maintenance acceptance. Day05/06 remain open.
+
+## Day04 normalized evidence router — 2026-10-07T04:32:59.390139+00:00
+- User removed six unused cases from personal acceptance scope; active9=H01,H02,I01,A01,M01,U01,S04,G03,R01. day04-3 manifest/results/issues normalized from valid references, separated legacy8PASS/1BLOCKED and Supabase1PASS/1FAIL (create422 recovered but pending clean201 retest). No cross-build9/9 claim. All references/counts/source time provenance checked;3 corruption controls rejected. No app execution/shared writes/commit/push.
+- Records: planning/07_2026-10-04_online-acceptance/deliverables/manifest.json, results.json, issues.json, day04-summary.md; validation: evidence/normalization-20261007/validation.txt in that plan.
+
+## Day05 labeling plan — 2026-10-07
+
+Proposed active package: [Day05 backlog and labels](../planning/09_2026-10-07_day05-labels/plan.md). Router: specs/00-ARCHITECTURE.md → 01-CONTRACTS.md → SPEC-P01-BACKLOG.md → SPEC-P02-LABELS.md → OPERATIONS.md → TESTING-ACCEPTANCE.md. Executed 2026-10-07 (offline): deliverables/{backlog,cases,label-proposals,*-gold(empty),split-manifest(draft)}.json, tools/{validate_day05,run_day05_baseline,build_review_pack}.py + tests, review/; summary deliverables/day05-summary.md; handoffs H01–H05 ↔ reports R01–R05. Existing engine/seed paths unchanged.
+
+## Day05 submission review — 2026-10-07T06:16:13.491588+00:00
+
+Report: [daily/2026-10-05.md](../docs/submission/daily/2026-10-05.md). Fresh command and artifact evidence: planning/09_2026-10-07_day05-labels/evidence/submission-review-20261007/. 270 tools tests pass; 95 manifest hashes match. Dataset gates remain OPEN; this report is not Day05 sign-off.
+
+- Day05 main submission report: [day05-report.md](../docs/submission/day05-report.md), linked from submission README and daily05; local preparation verified, full acceptance pending.
+
+
+Latest feature/truong merge: develop04491ad → 79f9444; [integration report](../planning/06_2026-10-04_readme-refresh/evidence/integration-latest-20261007/integration-report.md). Imported src/maintenance/agent/ runtime and portal/; portal docs/DB are independent. Shared revision0002 rollout not performed.
+
+
+Portal (hồ sơ 11): mở http://localhost:8000 (backend proxy → portal production 3000), tài khoản `cudan`…`kho`/`123456`; dữ liệu từ backend — chạy được trên Supabase thật (G6 đọc ✅ 2026-10-10, `--env-file /d/P151/.env`); [docs/portal.md](../docs/portal.md), [planning/11_2026-10-09_portal-backend-api/](../planning/11_2026-10-09_portal-backend-api/plan.md). PR #20 → develop.
+
+- Day05 completion router: `planning/09_2026-10-07_day05-labels/deliverables/completion-guide.md`; matrix and human-input forms live beside it.
+
+- Active Day05 scope: `planning/09_2026-10-07_day05-labels/specs/SPEC-P03-PRELIMINARY15.md`; user-approved preliminary15 supersedes old30-case closure quota.

@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 import type { DeptTicket } from "@/lib/dto";
 
-/** Department queue columns (Cleaning/Technical .dc.html cols): stage 2 · 3–4 · 5–6 (01-CONTRACTS §2) */
+/** Department queue columns (Cleaning/Technical .dc.html cols): stage 3 (routed) · 4 · 5–6 (01-CONTRACTS §3) */
 export const COLUMNS: { label: string; match: (t: DeptTicket) => boolean }[] = [
-  { label: "Cần nhận", match: (t) => t.stage === 2 },
-  { label: "Đang xử lý", match: (t) => t.stage === 3 || t.stage === 4 },
+  { label: "Cần nhận", match: (t) => t.stage === 3 },
+  { label: "Đang xử lý", match: (t) => t.stage === 4 },
   { label: "Hoàn thành", match: (t) => t.stage >= 5 },
 ];
 

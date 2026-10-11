@@ -544,6 +544,42 @@ def load_catalog(directory: Path = FIXTURE_DIR) -> Catalog:
     return Catalog.model_validate(_read(directory / "catalog.yaml"))
 
 
+class StaffMember(Frozen):
+    """A person a department can assign a ticket to (plan 11 SPEC-P04 §3). Static; assignments live in a table."""
+
+    staff_id: str = Field(pattern=r"^SIM-STAFF-[A-Z]+-[A-Z0-9]+$")
+    department_id: Department
+    name: str = Field(min_length=1)
+    skill: str | None = None
+    area: str | None = None
+    capacity: int | None = Field(default=None, gt=0)
+
+
+class RatingTags(Frozen):
+    good: tuple[str, ...] = Field(min_length=1)  # allowed with 4 or 5 stars
+    bad: tuple[str, ...] = Field(min_length=1)  # allowed with 1 to 3 stars
+
+
+class StaffDirectory(Frozen):
+    staff: tuple[StaffMember, ...]
+    rating_tags: RatingTags
+
+    @model_validator(mode="after")
+    def _unique_ids(self):
+        ids = [member.staff_id for member in self.staff]
+        if len(set(ids)) != len(ids):
+            raise ValueError("staff_id trùng nhau")
+        return self
+
+    def member(self, staff_id: str) -> StaffMember | None:
+        return next((m for m in self.staff if m.staff_id == staff_id), None)
+
+
+@lru_cache
+def load_staff(directory: Path = FIXTURE_DIR) -> StaffDirectory:
+    return StaffDirectory.model_validate(_read(directory / "staff.yaml"))
+
+
 @lru_cache
 def load_lexicon(directory: Path = FIXTURE_DIR) -> Lexicon:
     return Lexicon.model_validate(_read(directory / "lexicon.yaml"))

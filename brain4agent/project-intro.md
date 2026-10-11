@@ -30,3 +30,4 @@ AI Logs, Phoenix).
 
 
 Current feature/truong imported develop04491ad (07/10): src/maintenance/agent/ reasoning runtime/P1 coordination now present; portal legacy was independent; plan18 supersedes that runtime architecture. Integration tests3341 pass; portal and live model/shared rollout not measured here.
+Từ hồ sơ 11 (2026-10-09, v1.7.0) `portal/` GỌI backend Python `/api/v1` (engine CR-03, Agent LLM, tầng an toàn), không còn DB riêng; là UI mới, mở qua cổng 8000. UI tĩnh `src/web/` không dùng để demo.

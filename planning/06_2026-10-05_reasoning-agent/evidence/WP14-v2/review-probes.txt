@@ -1,0 +1,12 @@
+$ python reviewer-probe b1_punct_quote.py
+RESULT routed_to_invented_place=0
+EXIT=0
+$ python reviewer-probe b6b_agent_only_raise.py
+RESULT agent_raise_lost=0
+EXIT=0
+$ python reviewer-probe b4_f1.py
+RESULT fails=0 []
+EXIT=0
+$ python reviewer-probe b3_cancel_root.py
+RESULT cancel_root_unmerge_failures=0
+EXIT=0

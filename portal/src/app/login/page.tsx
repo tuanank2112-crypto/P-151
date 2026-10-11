@@ -4,8 +4,6 @@ import { Suspense } from "react";
 import { IconHouse } from "@/components/icons";
 import { ROLE_HOME, SITE_NAME } from "@/lib/constants";
 import { getSessionUser } from "@/server/session";
-import { backendFetch } from "@/server/backend-client";
-import type { DemoAccounts } from "@/server/backend-dto";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Đăng nhập · Cổng phản ánh cư dân" };
@@ -14,11 +12,6 @@ async function RedirectIfSignedIn(): Promise<null> {
   const user = await getSessionUser();
   if (user) redirect(ROLE_HOME[user.role]);
   return null;
-}
-
-async function BackendLoginForm() {
-  const demo = await backendFetch<DemoAccounts>("/api/v1/auth/demo-accounts").catch(() => null);
-  return <LoginForm demo={demo} />;
 }
 
 /** Main.dc.html */
@@ -40,7 +33,7 @@ export default function LoginPage() {
         </div>
       </div>
       <div className="-mt-[120px] flex flex-1 justify-center px-6 pb-16">
-        <Suspense fallback={<div className="card w-full max-w-[460px] p-9" role="status">Đang tải đăng nhập…</div>}><BackendLoginForm /></Suspense>
+        <LoginForm />
       </div>
     </div>
   );

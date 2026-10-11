@@ -94,15 +94,19 @@ def test_j02_old_docs_are_readable_by_get_list_and_get_for_update(repo):
 # ---------------------------------------------------------------------- J-03 / J-04 / J-05
 
 
-def test_j03_head_revision_is_the_marker_and_the_alembic_head():
-    assert HEAD_REVISION == MARKER
+def test_j03_head_revision_is_the_alembic_head_and_the_marker_is_still_accepted():
+    # plan 11 added 0003_material_items and 0004_portal_extras (new tables only): the marker stays a revision the
+    # code accepts while those two features are off
+    assert HEAD_REVISION == "0004_portal_extras"
+    assert postgres.PREVIOUS_REVISIONS[HEAD_REVISION] == "0003_material_items"
+    assert postgres.PREVIOUS_REVISIONS["0003_material_items"] == MARKER
     assert ScriptDirectory.from_config(Config(str(ALEMBIC_INI))).get_current_head() == HEAD_REVISION
 
 
 @pytest.mark.pg
 def test_j04_db_at_marker_revision_stops_code_that_only_knows_the_old_one(pg_repo, monkeypatch):
     with pg_repo._engine.connect() as conn:
-        assert conn.execute(text("select version_num from maintops.alembic_version")).scalar() == MARKER
+        assert conn.execute(text("select version_num from maintops.alembic_version")).scalar() == HEAD_REVISION
     pg_repo.check()  # current code: starts
     monkeypatch.setattr(postgres, "HEAD_REVISION", "0001_maintops_initial")  # what pre-plan-06 code carries
     with pytest.raises(RuntimeError, match="upgrade head"):

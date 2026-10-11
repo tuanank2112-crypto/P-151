@@ -1,0 +1,310 @@
+# P10 §9.2: scratch prototype of the required new tests (NOT the WP19 file) on Base, then on the in-memory P10 simulation.
+$ LLM_MODE=mock MO_STORE=memory MO_PHOTO_STORE=local PYTHONUTF8=1 PYTHONPATH=. python -m pytest -q -p no:cacheprovider -rA 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/proto_test_p10.py'
+F...FFFFFFFFFFFFFF                                                       [100%]
+================================== FAILURES ===================================
+_____ test_p10_01_location_worded_differently_but_in_the_catalog_is_kept ______
+
+    def test_p10_01_location_worded_differently_but_in_the_catalog_is_kept():
+        case = receive(T1, reply([VS], {**FULL, "quote": "hành lang tầng 3 tòa S1"}))
+        rec, ticket = case.agent_decision, case.ticket
+>       assert rec.rejected == [] and rec.agent_location == "Tòa S1 / Tầng 3 / Hành lang"
+E       AssertionError: assert (['location'] == []
+E         
+E         Left contains one more item: 'location'
+E         Use -v to get more diff)
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:60: AssertionError
+____ test_p10_03_a_blank_or_missing_quote_is_still_accepted[location-None] ____
+
+where = 'location', value = None
+
+    @pytest.mark.parametrize(("where", "value"), [("location", None), ("location", ""), ("location", "   "),
+                                                  ("job", None), ("job", ""), ("job", MISSING)])
+    def test_p10_03_a_blank_or_missing_quote_is_still_accepted(where, value):
+        if where == "location":
+            case = receive(T1, reply([VS], {**FULL, "quote": value}))
+>           assert case.agent_decision.rejected == []
+E           AssertionError: assert ['location'] == []
+E             
+E             Left contains one more item: 'location'
+E             Use -v to get more diff
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:84: AssertionError
+______ test_p10_03_a_blank_or_missing_quote_is_still_accepted[location-] ______
+
+where = 'location', value = ''
+
+    @pytest.mark.parametrize(("where", "value"), [("location", None), ("location", ""), ("location", "   "),
+                                                  ("job", None), ("job", ""), ("job", MISSING)])
+    def test_p10_03_a_blank_or_missing_quote_is_still_accepted(where, value):
+        if where == "location":
+            case = receive(T1, reply([VS], {**FULL, "quote": value}))
+            assert case.agent_decision.rejected == []
+>           assert case.agent_decision.agent_location == "Tòa S1 / Tầng 3 / Hành lang"
+E           AssertionError: assert None == 'Tòa S1 / Tầng 3 / Hành lang'
+E            +  where None = AgentDecisionRecord(record_version='agent-record/1', source='FALLBACK_RULE', model='rules', fingerprint='sha256:effb60...evel.NONE: 'NONE'>, agent_location=None, agent_missing_parts=[], valid_job_indexes=[], prompt_version='agent-prompt/5').agent_location
+E            +    where AgentDecisionRecord(record_version='agent-record/1', source='FALLBACK_RULE', model='rules', fingerprint='sha256:effb60...evel.NONE: 'NONE'>, agent_location=None, agent_missing_parts=[], valid_job_indexes=[], prompt_version='agent-prompt/5') = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...vel.NONE: 'NONE'>, agent_location=None, agent_missing_parts=[], valid_job_indexes=[], prompt_version='agent-prompt/5')).agent_decision
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:85: AssertionError
+____ test_p10_03_a_blank_or_missing_quote_is_still_accepted[location-   ] _____
+
+where = 'location', value = '   '
+
+    @pytest.mark.parametrize(("where", "value"), [("location", None), ("location", ""), ("location", "   "),
+                                                  ("job", None), ("job", ""), ("job", MISSING)])
+    def test_p10_03_a_blank_or_missing_quote_is_still_accepted(where, value):
+        if where == "location":
+            case = receive(T1, reply([VS], {**FULL, "quote": value}))
+>           assert case.agent_decision.rejected == []
+E           AssertionError: assert ['location'] == []
+E             
+E             Left contains one more item: 'location'
+E             Use -v to get more diff
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:84: AssertionError
+______ test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-None] _______
+
+where = 'job', value = None
+
+    @pytest.mark.parametrize(("where", "value"), [("location", None), ("location", ""), ("location", "   "),
+                                                  ("job", None), ("job", ""), ("job", MISSING)])
+    def test_p10_03_a_blank_or_missing_quote_is_still_accepted(where, value):
+        if where == "location":
+            case = receive(T1, reply([VS], {**FULL, "quote": value}))
+            assert case.agent_decision.rejected == []
+            assert case.agent_decision.agent_location == "Tòa S1 / Tầng 3 / Hành lang"
+        else:
+            job = {k: v for k, v in VS.items() if k != "quote"} if value is MISSING else dict(VS, quote=value)
+            case = receive(T3, reply([job]))
+            rec = case.agent_decision
+>           assert rec.source == "AGENT" and rec.valid_job_indexes == [0] and rec.decision.jobs[0].quote is None
+E           AssertionError: assert ('FALLBACK_RULE' == 'AGENT'
+E             
+E             - AGENT
+E             + FALLBACK_RULE)
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:90: AssertionError
+________ test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-] _________
+
+where = 'job', value = ''
+
+    @pytest.mark.parametrize(("where", "value"), [("location", None), ("location", ""), ("location", "   "),
+                                                  ("job", None), ("job", ""), ("job", MISSING)])
+    def test_p10_03_a_blank_or_missing_quote_is_still_accepted(where, value):
+        if where == "location":
+            case = receive(T1, reply([VS], {**FULL, "quote": value}))
+            assert case.agent_decision.rejected == []
+            assert case.agent_decision.agent_location == "Tòa S1 / Tầng 3 / Hành lang"
+        else:
+            job = {k: v for k, v in VS.items() if k != "quote"} if value is MISSING else dict(VS, quote=value)
+            case = receive(T3, reply([job]))
+            rec = case.agent_decision
+>           assert rec.source == "AGENT" and rec.valid_job_indexes == [0] and rec.decision.jobs[0].quote is None
+E           AssertionError: assert ('FALLBACK_RULE' == 'AGENT'
+E             
+E             - AGENT
+E             + FALLBACK_RULE)
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:90: AssertionError
+_____ test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-value5] ______
+
+where = 'job', value = <object object at 0x000001FD5176CB10>
+
+    @pytest.mark.parametrize(("where", "value"), [("location", None), ("location", ""), ("location", "   "),
+                                                  ("job", None), ("job", ""), ("job", MISSING)])
+    def test_p10_03_a_blank_or_missing_quote_is_still_accepted(where, value):
+        if where == "location":
+            case = receive(T1, reply([VS], {**FULL, "quote": value}))
+            assert case.agent_decision.rejected == []
+            assert case.agent_decision.agent_location == "Tòa S1 / Tầng 3 / Hành lang"
+        else:
+            job = {k: v for k, v in VS.items() if k != "quote"} if value is MISSING else dict(VS, quote=value)
+            case = receive(T3, reply([job]))
+            rec = case.agent_decision
+>           assert rec.source == "AGENT" and rec.valid_job_indexes == [0] and rec.decision.jobs[0].quote is None
+E           AssertionError: assert ('FALLBACK_RULE' == 'AGENT'
+E             
+E             - AGENT
+E             + FALLBACK_RULE)
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:90: AssertionError
+_ test_p10_04_mirror_writes_no_quote_of_its_own[Ch\u1ed7 \u0111i b\u1ed9 tr\u01b0\u1edbc thang m\xe1y t\u1ea7ng 3 t\xf2a S1 c\xf3 nhi\u1ec1u r\xe1c] _
+
+text = 'Chỗ đi bộ trước thang máy tầng 3 tòa S1 có nhiều rác'
+
+    @pytest.mark.parametrize("text", [T1, CLEANING, "Hình như có mùi khét ở hành lang tầng 3 tòa S1"])
+    def test_p10_04_mirror_writes_no_quote_of_its_own(text):
+        data = data_for(text)
+        decision = mirror_decision(data, CATALOG, LEXICON)
+>       assert all(j.quote is None for j in decision.jobs) and decision.location.quote is None
+E       assert (False)
+E        +  where False = all(<generator object test_p10_04_mirror_writes_no_quote_of_its_own.<locals>.<genexpr> at 0x000001FD55268930>)
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:99: AssertionError
+_ test_p10_04_mirror_writes_no_quote_of_its_own[H\xe0nh lang t\u1ea7ng 3 t\xf2a S1 nhi\u1ec1u r\xe1c, c\u1ea7n v\u1ec7 sinh.] _
+
+text = 'Hành lang tầng 3 tòa S1 nhiều rác, cần vệ sinh.'
+
+    @pytest.mark.parametrize("text", [T1, CLEANING, "Hình như có mùi khét ở hành lang tầng 3 tòa S1"])
+    def test_p10_04_mirror_writes_no_quote_of_its_own(text):
+        data = data_for(text)
+        decision = mirror_decision(data, CATALOG, LEXICON)
+>       assert all(j.quote is None for j in decision.jobs) and decision.location.quote is None
+E       assert (False)
+E        +  where False = all(<generator object test_p10_04_mirror_writes_no_quote_of_its_own.<locals>.<genexpr> at 0x000001FD515AEC20>)
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:99: AssertionError
+_ test_p10_04_mirror_writes_no_quote_of_its_own[H\xecnh nh\u01b0 c\xf3 m\xf9i kh\xe9t \u1edf h\xe0nh lang t\u1ea7ng 3 t\xf2a S1] _
+
+text = 'Hình như có mùi khét ở hành lang tầng 3 tòa S1'
+
+    @pytest.mark.parametrize("text", [T1, CLEANING, "Hình như có mùi khét ở hành lang tầng 3 tòa S1"])
+    def test_p10_04_mirror_writes_no_quote_of_its_own(text):
+        data = data_for(text)
+        decision = mirror_decision(data, CATALOG, LEXICON)
+>       assert all(j.quote is None for j in decision.jobs) and decision.location.quote is None
+E       AssertionError: assert (True and 'Hình như có mùi khét ở hành lang tầng 3 tòa S1' is None)
+E        +  where True = all(<generator object test_p10_04_mirror_writes_no_quote_of_its_own.<locals>.<genexpr> at 0x000001FD549FD150>)
+E        +  and   'Hình như có mùi khét ở hành lang tầng 3 tòa S1' = LocationDecision(building='S1', floor='3', area='Hành lang', quote='Hình như có mùi khét ở hành lang tầng 3 tòa S1', reason='Vị trí theo luật cố định').quote
+E        +    where LocationDecision(building='S1', floor='3', area='Hành lang', quote='Hình như có mùi khét ở hành lang tầng 3 tòa S1', reason='Vị trí theo luật cố định') = AgentDecision(schema_version='agent-decision/1', reasoning=[ReasoningStep(step='KET_LUAN', facts=[], conclusion='Quyết...nh'), scope='OUT_OF_SCOPE', jobs=[], next_step='TO_BPTN', ask_fields=[], bptn_reason='OUT_OF_SCOPE', note_for_staff='').location
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:99: AssertionError
+_ test_p10_05_an_agent_raise_is_kept_whatever_its_quote[b\xecnh gas b\u1ecb x\xec] _
+
+quote = 'bình gas bị xì'
+
+    @pytest.mark.parametrize("quote", ["bình gas bị xì", None])
+    def test_p10_05_an_agent_raise_is_kept_whatever_its_quote(quote):
+        assert rule_view(data_for(T5), CATALOG, LEXICON).safety.risk_level == RiskLevel.NONE  # the rules miss it
+        gas = {"risk_level": "EMERGENCY", "reason": "Tiếng xì từ bình gas",
+               "signals": [{"signal_id": "S-10", "status": "PRESENT", "quote": quote}]}
+        case = receive(T5, reply([VS], safety_part=gas))
+        t = case.ticket
+>       assert (t.status, t.blocker.code, t.risk_level) == ("VERIFYING", "EMERGENCY_PENDING_BQL", "EMERGENCY")
+E       AssertionError: assert (<TicketStatu...R: 'UNCLEAR'>) == ('VERIFYING',..., 'EMERGENCY')
+E         
+E         At index 1 diff: <ReasonCode.SAFETY_REVIEW_REQUIRED: 'SAFETY_REVIEW_REQUIRED'> != 'EMERGENCY_PENDING_BQL'
+E         Use -v to get more diff
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:113: AssertionError
+_________ test_p10_05_an_agent_raise_is_kept_whatever_its_quote[None] _________
+
+quote = None
+
+    @pytest.mark.parametrize("quote", ["bình gas bị xì", None])
+    def test_p10_05_an_agent_raise_is_kept_whatever_its_quote(quote):
+        assert rule_view(data_for(T5), CATALOG, LEXICON).safety.risk_level == RiskLevel.NONE  # the rules miss it
+        gas = {"risk_level": "EMERGENCY", "reason": "Tiếng xì từ bình gas",
+               "signals": [{"signal_id": "S-10", "status": "PRESENT", "quote": quote}]}
+        case = receive(T5, reply([VS], safety_part=gas))
+        t = case.ticket
+>       assert (t.status, t.blocker.code, t.risk_level) == ("VERIFYING", "EMERGENCY_PENDING_BQL", "EMERGENCY")
+E       AssertionError: assert (<TicketStatu...R: 'UNCLEAR'>) == ('VERIFYING',..., 'EMERGENCY')
+E         
+E         At index 1 diff: <ReasonCode.SAFETY_REVIEW_REQUIRED: 'SAFETY_REVIEW_REQUIRED'> != 'EMERGENCY_PENDING_BQL'
+E         Use -v to get more diff
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:113: AssertionError
+_________________ test_p10_06_no_text_matching_helper_is_left _________________
+
+    def test_p10_06_no_text_matching_helper_is_left():
+>       assert not hasattr(validate, "grounded") and not hasattr(validate, "_fold")
+E       AssertionError: assert (not True)
+E        +  where True = hasattr(validate, 'grounded')
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:120: AssertionError
+_____________ test_p10_07_runtime_schema_is_the_reference_schema ______________
+
+    def test_p10_07_runtime_schema_is_the_reference_schema():
+        path = Path("planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py").resolve()
+        spec = importlib.util.spec_from_file_location("ref_agent_contract", path)
+        ref = importlib.util.module_from_spec(spec)
+        sys.modules["ref_agent_contract"] = ref
+        spec.loader.exec_module(ref)
+>       assert AgentDecision.model_json_schema() == ref.AgentDecision.model_json_schema()
+E       AssertionError: assert {'$defs': {'J...t_step'], ...} == {'$defs': {'J...t_step'], ...}
+E         
+E         Omitting 5 identical items, use -vv to show
+E         Differing items:
+E         {'$defs': {'JobDecision': {'additionalProperties': False, 'properties': {'category': {'enum': ['VE_SINH', 'KY_THUAT'],...1, 'title': 'Conclusion', 'type': 'string'}}, 'required': ['step', 'conclusion'], 'title': 'ReasoningStep', ...}, ...}} != {'$defs': {'JobDecision': {'additionalProperties': False, 'properties': {'category': {'enum': ['VE_SINH', 'KY_THUAT'],...1, 'title': 'Conclusion', 'type': 'string'}}, 'required': ['step', 'conclusion'], 'title': 'ReasoningStep', ...}, ...}}
+E         Use -v to get more diff
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:130: AssertionError
+____________ test_p10_08_a_missing_job_quote_is_not_shown_as_none _____________
+
+    def test_p10_08_a_missing_job_quote_is_not_shown_as_none():
+        engine = agent_engine(Clock(MONDAY_9AM), MirrorClient(CATALOG, LEXICON))
+        engine._try_split = lambda work, now: False
+        note = engine.get(engine.receive(prompt.EXAMPLE_REPORT, resident_id=RESIDENT).ticket.ticket_id).ticket.blocker.internal_note
+>       assert "Agent thấy hai việc: VE_SINH; KY_THUAT" in note and "None" not in note
+E       AssertionError: assert ('Agent thấy hai việc: VE_SINH; KY_THUAT' in 'Agent thấy hai việc: VE_SINH (Hành lang tầng 3 tòa S1 nhiều rác, đèn cũng không sáng); KY_THUAT (Hành lang tầng 3 tòa S1 nhiều rác, đèn cũng không sáng); không tách: điều kiện tách chưa đủ')
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:137: AssertionError
+=================================== PASSES ====================================
+=========================== short test summary info ===========================
+PASSED ::test_p10_02_a_value_outside_the_catalog_is_rejected_on_its_own_field[building-S9-location.building]
+PASSED ::test_p10_02_a_value_outside_the_catalog_is_rejected_on_its_own_field[floor-t\u1ea7ng cao-location.floor]
+PASSED ::test_p10_02_a_value_outside_the_catalog_is_rejected_on_its_own_field[area-Ban c\xf4ng-location.area]
+FAILED ::test_p10_01_location_worded_differently_but_in_the_catalog_is_kept
+FAILED ::test_p10_03_a_blank_or_missing_quote_is_still_accepted[location-None]
+FAILED ::test_p10_03_a_blank_or_missing_quote_is_still_accepted[location-] - ...
+FAILED ::test_p10_03_a_blank_or_missing_quote_is_still_accepted[location-   ]
+FAILED ::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-None] - A...
+FAILED ::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-] - Asser...
+FAILED ::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-value5]
+FAILED ::test_p10_04_mirror_writes_no_quote_of_its_own[Ch\u1ed7 \u0111i b\u1ed9 tr\u01b0\u1edbc thang m\xe1y t\u1ea7ng 3 t\xf2a S1 c\xf3 nhi\u1ec1u r\xe1c]
+FAILED ::test_p10_04_mirror_writes_no_quote_of_its_own[H\xe0nh lang t\u1ea7ng 3 t\xf2a S1 nhi\u1ec1u r\xe1c, c\u1ea7n v\u1ec7 sinh.]
+FAILED ::test_p10_04_mirror_writes_no_quote_of_its_own[H\xecnh nh\u01b0 c\xf3 m\xf9i kh\xe9t \u1edf h\xe0nh lang t\u1ea7ng 3 t\xf2a S1]
+FAILED ::test_p10_05_an_agent_raise_is_kept_whatever_its_quote[b\xecnh gas b\u1ecb x\xec]
+FAILED ::test_p10_05_an_agent_raise_is_kept_whatever_its_quote[None] - Assert...
+FAILED ::test_p10_06_no_text_matching_helper_is_left - AssertionError: assert...
+FAILED ::test_p10_07_runtime_schema_is_the_reference_schema - AssertionError:...
+FAILED ::test_p10_08_a_missing_job_quote_is_not_shown_as_none - AssertionErro...
+15 failed, 3 passed in 9.29s
+EXIT=1
+
+$ LLM_MODE=mock MO_STORE=memory MO_PHOTO_STORE=local PYTHONUTF8=1 PYTHONPATH='.;C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18' python -m pytest -q -p no:cacheprovider -p sim_p10 -rA 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/proto_test_p10.py'
+SIM_P10 ACTIVE: schema AuditQuote, merge_llm catalog-only, grounded gates off, mirror quotes None
+...............F.F                                                       [100%]
+================================== FAILURES ===================================
+_________________ test_p10_06_no_text_matching_helper_is_left _________________
+
+    def test_p10_06_no_text_matching_helper_is_left():
+>       assert not hasattr(validate, "grounded") and not hasattr(validate, "_fold")
+E       AssertionError: assert (not True)
+E        +  where True = hasattr(validate, 'grounded')
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:120: AssertionError
+____________ test_p10_08_a_missing_job_quote_is_not_shown_as_none _____________
+
+    def test_p10_08_a_missing_job_quote_is_not_shown_as_none():
+        engine = agent_engine(Clock(MONDAY_9AM), MirrorClient(CATALOG, LEXICON))
+        engine._try_split = lambda work, now: False
+        note = engine.get(engine.receive(prompt.EXAMPLE_REPORT, resident_id=RESIDENT).ticket.ticket_id).ticket.blocker.internal_note
+>       assert "Agent thấy hai việc: VE_SINH; KY_THUAT" in note and "None" not in note
+E       AssertionError: assert ('Agent thấy hai việc: VE_SINH; KY_THUAT' in 'Agent thấy hai việc: VE_SINH (None); KY_THUAT (None); không tách: điều kiện tách chưa đủ')
+
+C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\wp18\proto_test_p10.py:137: AssertionError
+=================================== PASSES ====================================
+=========================== short test summary info ===========================
+PASSED ::test_p10_01_location_worded_differently_but_in_the_catalog_is_kept
+PASSED ::test_p10_02_a_value_outside_the_catalog_is_rejected_on_its_own_field[building-S9-location.building]
+PASSED ::test_p10_02_a_value_outside_the_catalog_is_rejected_on_its_own_field[floor-t\u1ea7ng cao-location.floor]
+PASSED ::test_p10_02_a_value_outside_the_catalog_is_rejected_on_its_own_field[area-Ban c\xf4ng-location.area]
+PASSED ::test_p10_03_a_blank_or_missing_quote_is_still_accepted[location-None]
+PASSED ::test_p10_03_a_blank_or_missing_quote_is_still_accepted[location-]
+PASSED ::test_p10_03_a_blank_or_missing_quote_is_still_accepted[location-   ]
+PASSED ::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-None]
+PASSED ::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-]
+PASSED ::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-value5]
+PASSED ::test_p10_04_mirror_writes_no_quote_of_its_own[Ch\u1ed7 \u0111i b\u1ed9 tr\u01b0\u1edbc thang m\xe1y t\u1ea7ng 3 t\xf2a S1 c\xf3 nhi\u1ec1u r\xe1c]
+PASSED ::test_p10_04_mirror_writes_no_quote_of_its_own[H\xe0nh lang t\u1ea7ng 3 t\xf2a S1 nhi\u1ec1u r\xe1c, c\u1ea7n v\u1ec7 sinh.]
+PASSED ::test_p10_04_mirror_writes_no_quote_of_its_own[H\xecnh nh\u01b0 c\xf3 m\xf9i kh\xe9t \u1edf h\xe0nh lang t\u1ea7ng 3 t\xf2a S1]
+PASSED ::test_p10_05_an_agent_raise_is_kept_whatever_its_quote[b\xecnh gas b\u1ecb x\xec]
+PASSED ::test_p10_05_an_agent_raise_is_kept_whatever_its_quote[None]
+PASSED ::test_p10_07_runtime_schema_is_the_reference_schema
+FAILED ::test_p10_06_no_text_matching_helper_is_left - AssertionError: assert...
+FAILED ::test_p10_08_a_missing_job_quote_is_not_shown_as_none - AssertionErro...
+2 failed, 16 passed in 8.47s
+EXIT=1
+

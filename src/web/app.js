@@ -2029,20 +2029,6 @@ async function renderBql(list, detail) {
 
 // ------------------------------------------------------------------ login
 
-async function quickSwitchUser(username) {
-  if (state.user && state.user.username === username) return;
-  try {
-    const res = await api('/auth/login', {
-      method: 'POST',
-      body: { username, password: 'Demo@2026' },
-    });
-    signIn(res.access_token, res.user);
-    toast(`Đã chuyển sang: ${ROLE_LABEL[res.user.role] || res.user.role} (${humanizeDisplayName(username, res.user.display_name)})`);
-  } catch (err) {
-    toast(`Không chuyển được tài khoản: ${err.message}`, 'error');
-  }
-}
-
 // Shown under the portal title on the login screen (site name from seed/maintenance_v1/catalog.yaml)
 const LOGIN_SITE_NAME = 'Khu đô thị Ocean Park';
 
@@ -2200,7 +2186,7 @@ function signOut({ remote = true, message = null } = {}) {
   showLogin(message);
 }
 
-/** Gradient header (portal/src/components/shell.tsx Header): avatar + "Xin chào, <name>", role pill, test-account switcher, logout. */
+/** Gradient header (portal/src/components/shell.tsx Header): avatar + "Xin chào, <name>", role pill, logout. */
 function renderUserMenu() {
   const user = state.user;
   if (!user) return;
@@ -2215,34 +2201,8 @@ function renderUserMenu() {
   $('hello-name').textContent = displayName;
   $('hello-name').title = displayName;
 
-  const roleSelect = el('select', {
-    class: 'hdr-select hidden md:inline-block',
-    'aria-label': 'Đổi vai trò kiểm thử',
-    onchange: (e) => {
-      const selectedUsername = e.target.value;
-      if (selectedUsername && selectedUsername !== user.username) {
-        quickSwitchUser(selectedUsername);
-      }
-    },
-  },
-    [
-      ['cudan01', 'Vai trò: Cư dân (Hùng)'],
-      ['cudan02', 'Vai trò: Cư dân (Trang)'],
-      ['bptn01', 'Vai trò: Điều phối BPTN'],
-      ['kythuat01', 'Vai trò: Đội Kỹ thuật'],
-      ['vesinh01', 'Vai trò: Đội Vệ sinh'],
-      ['kho01', 'Vai trò: Kho Vật tư'],
-      ['bql01', 'Vai trò: Ban Quản lý BQL'],
-    ].map(([u, label]) => {
-      const opt = el('option', { value: u }, label);
-      if (u === user.username) opt.selected = true;
-      return opt;
-    })
-  );
-
   $('user-menu').replaceChildren(
     el('span', { class: 'pill hdr-pill max-w-full truncate', title: userMeta }, userMeta),
-    roleSelect,
     el('button', { type: 'button', class: 'hdr-btn', onclick: () => signOut() }, 'Đăng xuất'));
 }
 
@@ -2287,17 +2247,6 @@ async function render() {
 }
 
 async function boot() {
-  const params = new URLSearchParams(window.location.search);
-  const autoUser = params.get('autologin');
-  if (autoUser) {
-    try {
-      const res = await api('/auth/login', { method: 'POST', body: { username: autoUser, password: 'Demo@2026' } });
-      signIn(res.access_token, res.user);
-      return;
-    } catch (e) {
-      console.warn('Autologin error:', e);
-    }
-  }
   let token = null;
   try { token = sessionStorage.getItem(TOKEN_KEY); } catch { /* storage unavailable */ }
   if (!token) return showLogin();

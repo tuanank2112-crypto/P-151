@@ -1,12 +1,28 @@
 import "server-only";
-import type { Db } from "@/db/client";
-import { fail, type ActionResult } from "@/lib/result";
-import type { Actor } from "./workflow";
+import { refresh } from "next/cache";
+import { fail, ok, type ActionResult } from "@/lib/result";
+import { BackendError, BackendUnavailable } from "./backend-error";
+import { getSessionUser, type SessionUser } from "./session";
 
-/** Re-reads the session inside every action (never trusts the client), runs the workflow, refreshes the router on success */
-export async function act<T>(_fn: (db: Db, actor: Actor) => Promise<ActionResult<T>>): Promise<ActionResult<T>> {
-  void _fn;
-  return fail("CONFLICT", "Luồng portal cũ đã ngừng. Vui lòng tải lại giao diện dùng backend Python.");
+/**
+ * Re-reads the session inside every action (never trusts the client), runs `fn`, maps backend errors to an
+ * ActionResult and refreshes the router on success. Permissions are the backend's job (I-02).
+ */
+export async function act<T>(fn: (user: SessionUser) => Promise<T>): Promise<ActionResult<T>> {
+  const user = await getSessionUser();
+  if (!user) return fail("UNAUTHENTICATED");
+  try {
+    const data = await fn(user);
+    refresh();
+    return ok(data);
+  } catch (e) {
+    if (e instanceof BackendError) return fail(e.code, e.message);
+    if (e instanceof BackendUnavailable) return fail("CONFLICT", "Không kết nối được máy chủ");
+    throw e;
+  }
 }
 
-export const toId = (v: unknown): number => (typeof v === "number" ? v : Number.NaN);
+/** Server-action argument guards: the client is not trusted to send the right types */
+export const str = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
+export const id = (v: unknown): string => (typeof v === "string" && /^[A-Za-z0-9._-]{1,64}$/.test(v) ? v : "");
+export const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : Number.NaN);

@@ -1,0 +1,11 @@
+$ ruff check src tests
+All checks passed!
+EXIT=0
+$ ruff format --check src tests (src/main.py is pre-existing from develop)
+unformatted: File would be reformatted
+   --> src\main.py:124:20
+1 file would be reformatted, 111 files already formatted
+EXIT=1
+$ ruff format --check files changed by WP1
+50 files already formatted
+EXIT=0

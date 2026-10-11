@@ -45,6 +45,11 @@ Chi tiết hợp đồng: `planning/01_2026-10-02_supabase-persistence/specs/01-
 - Photo BFF kiểm phiên + Python ownership trước304, cache private/no-cache; resident internal scope403. Portal startup không DATABASE_URL/migrate/seed. Không chuyển ticket/account DB cũ.
 
 ### Lưu trữ portal legacy (plan06/17), chỉ rollback/test, không runtime mới
+## Cổng phản ánh cư dân `portal/` — từ hồ sơ 11 (2026-10-09) KHÔNG còn kho riêng
+- Luồng chạy: trình duyệt → portal (Next.js server) → backend `/api/v1` (Bearer) → `maintops.*` (memory hoặc Supabase). Phiên = cookie httpOnly ký HMAC chứa token backend (8 giờ, RAM backend). Ảnh qua proxy `/api/photos/{ticket}/{evidence}`.
+- Bảng MỚI ở schema `maintops` (chỉ CREATE TABLE, code cũ không đọc): `material_items` (Alembic `0003`, vật tư ngoài danh mục), `assignments` + `rating_details` (`0004`, phân công + thẻ/bình luận đánh giá). Doc ticket JSONB KHÔNG thêm trường/enum. Supabase cần chạy 0003/0004 trước khi bật `MO_CUSTOM_MATERIALS`/`MO_PORTAL_EXTRAS`.
+
+### Lịch sử: kho riêng của hồ sơ 06 (2026-10-07, không còn dùng ở luồng chạy)
 - PostgreSQL DB `portal` (dev) / `portal_test` (test) trong container `p151-db-1` — KHÔNG phải schema `maintops`, không Supabase. Biến `DATABASE_URL` / `TEST_DATABASE_URL` ở `portal/.env.local` (riêng, không dùng `.env` gốc).
 - 10 bảng (Drizzle `portal/src/db/schema.ts`, migration SQL `portal/drizzle/`): `users`, `sessions` (SHA-256 token), `staff`, `tickets` (stage 1..6 + cờ `need_info/paused/cancelled`, `merged_into/merged_from`, `extras[]`, snapshot Agent `ai_*`), `photos` (bytea, đã kiểm magic bytes), `history`, `ratings` (1/ticket), `keywords` (dept, word), `materials`, `notices`.
 - Flow legacy (đã thay): Server Action → `act()` đọc lại session → `workflow.ts` (transaction: kiểm quyền → `FOR UPDATE` → phạm vi/stage → `UPDATE … WHERE stage=<cũ>` → 1 dòng `history`) → `refresh()`. Flow đọc: page (trong `<Suspense>`) → `requireUser(role)` → `queries.ts` trả DTO đã định dạng theo vai.

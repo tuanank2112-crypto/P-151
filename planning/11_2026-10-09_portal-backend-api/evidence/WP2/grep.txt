@@ -1,0 +1,13 @@
+# verification copy (removed files absent)
+$ rg -n "@/db|server/workflow|server/queries|lib/agent|lib/duplicates" portal/src
+portal/src\db\seed.ts:8:import { classify, type KeywordRules } from "@/lib/agent";
+RG_EXIT=0 (1 = no match except lines above)
+
+# in the real worktree (stale files still present):
+portal/src\db\seed.ts:8:import { classify, type KeywordRules } from "@/lib/agent";
+portal/src\server\workflow.ts:9:import { classify, type KeywordRules } from "@/lib/agent";
+portal/src\server\workflow.ts:10:import { DUP_WINDOW_HOURS, findDuplicates, type DupMatch, type DupTicket } from "@/lib/duplicates";
+portal/src\server\queries.ts:10:import { classify, techSkill } from "@/lib/agent";
+portal/src\app\api\photos\[id]\route.ts:3:import { photoFor } from "@/server/workflow";
+rg -c lines:
+5

@@ -1,0 +1,35 @@
+$ python -m ruff check src tests
+All checks passed!
+EXIT=0
+
+$ python -m ruff format --check src tests
+unformatted: File would be reformatted
+   --> src\main.py:124:20
+    |
+123 |     excluded_req_headers = {"host", "content-length", "accept-encoding"}
+    -     req_headers = {
+    -         k: v for k, v in request.headers.items()
+    -         if k.lower() not in excluded_req_headers
+    -     }
+124 +     req_headers = {k: v for k, v in request.headers.items() if k.lower() not in excluded_req_headers}
+125 |     req_headers["host"] = request.headers.get("host", "localhost:8000")
+--------------------------------------------------------------------------------
+173 |
+    - @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"], include_in_schema=False)
+174 + @app.api_route(
+175 +     "/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"], include_in_schema=False
+176 + )
+177 | async def portal_fallback(request: Request, path: str):
+178 |     if PORTAL_URL:
+179 |         return await _proxy_to_portal(request, path)
+180 |     return JSONResponse(status_code=404, content={"detail": "Not found"})
+    -
+    |
+
+1 file would be reformatted, 109 files already formatted
+EXIT=1
+
+$ git log --oneline -1 -- src/main.py
+256da96 feat(portal): implement warehouse management, ticket detail modal and enhance department workflows
+EXIT=0
+

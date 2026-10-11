@@ -2,9 +2,8 @@
 
 import { useActionState, useState } from "react";
 import { login, type LoginState } from "@/app/actions/auth";
-import type { DemoAccounts } from "@/server/backend-dto";
 
-export function LoginForm({ demo }: { demo?: DemoAccounts | null }) {
+export function LoginForm() {
   const [state, action, pending] = useActionState<LoginState, FormData>(login, { error: "", username: "" });
   const [show, setShow] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -70,28 +69,6 @@ export function LoginForm({ demo }: { demo?: DemoAccounts | null }) {
       <button type="submit" className="submit" disabled={pending}>
         Đăng nhập
       </button>
-
-      {demo?.shared_test_password ? <div className="pt-2 border-t border-slate-100 flex flex-col gap-2 text-xs text-muted">
-        <span className="font-semibold text-slate-600">Tài khoản demo backend (mật khẩu: {demo.shared_test_password}):</span>
-        <div className="flex flex-wrap gap-1.5">
-          {demo.accounts.filter((acc) => acc.role !== "QA_INTERNAL").map((acc) => (
-            <button
-              key={acc.username}
-              type="button"
-              className="px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[11px] transition-colors"
-              onClick={() => {
-                const userInput = document.getElementById("user") as HTMLInputElement;
-                const passInput = document.getElementById("pass") as HTMLInputElement;
-                if (userInput) userInput.value = acc.username;
-                if (passInput) passInput.value = demo.shared_test_password ?? "";
-                setDirty(true);
-              }}
-            >
-              {acc.display_name} ({acc.username})
-            </button>
-          ))}
-        </div>
-      </div> : null}
 
       <span className="text-center text-[13px] text-muted">Quên mật khẩu? Liên hệ Ban quản lý để được cấp lại.</span>
     </form>

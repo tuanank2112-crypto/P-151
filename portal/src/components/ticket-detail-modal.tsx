@@ -2,9 +2,84 @@
 
 import { useEffect } from "react";
 import { DEPT_LABEL } from "@/lib/constants";
-import type { TicketDetail } from "@/lib/dto";
+import type { AgentInfo, TicketDetail } from "@/lib/dto";
+import { TicketEvidence } from "./ticket-evidence";
 
 const STAGE_NAMES = ["Tiếp nhận", "Thẩm định", "Phân công", "Đang xử lý", "Nghiệm thu", "Hoàn tất"] as const;
+
+const RISK_LABEL: Record<string, string> = { NONE: "Không có dấu hiệu nguy hiểm", UNCLEAR: "Chưa rõ", EMERGENCY: "Khẩn cấp" };
+
+/** "Phân tích Agent" block: only what the backend recorded (SPEC-P04 §5) */
+function AgentAnalysis({ agent }: { agent: AgentInfo | null }) {
+  return (
+    <div data-testid="agent-analysis">
+      <h4 className="mb-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Phân tích Agent</h4>
+      {!agent ? (
+        <p className="m-0 rounded-xl border border-dashed border-slate-300 p-3 text-xs italic text-slate-500">
+          Chưa có quyết định của Agent
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2.5 rounded-xl border border-violet-200 bg-violet-50/50 p-3.5 text-xs">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <span className="block text-slate-500">Nguồn quyết định</span>
+              <span className="font-semibold text-slate-800">{agent.sourceLabel}</span>
+            </div>
+            <div>
+              <span className="block text-slate-500">Model</span>
+              <span className="font-semibold text-slate-800 break-all">{agent.model || "Không có"}</span>
+            </div>
+            <div>
+              <span className="block text-slate-500">Phòng đề xuất</span>
+              <span className="font-semibold text-slate-800">
+                {agent.proposedDept ? DEPT_LABEL[agent.proposedDept] : "Không đề xuất"}
+              </span>
+            </div>
+            <div>
+              <span className="block text-slate-500">Mức an toàn (Agent)</span>
+              <span className={`font-semibold ${agent.riskLevel === "EMERGENCY" ? "text-rose-600" : "text-slate-800"}`}>
+                {RISK_LABEL[agent.riskLevel] ?? agent.riskLevel}
+              </span>
+            </div>
+          </div>
+          {agent.reason && <p className="m-0 text-slate-700">{agent.reason}</p>}
+          {agent.signals.length > 0 && (
+            <div>
+              <span className="mb-1 block font-semibold text-slate-600">Dấu hiệu an toàn (trích dẫn)</span>
+              <ul className="m-0 flex list-none flex-col gap-1 p-0">
+                {agent.signals.map((x, i) => (
+                  <li key={`${x.id}-${i}`} className="rounded-lg bg-white px-2.5 py-1.5 text-slate-700">
+                    <span className="font-mono text-[11px] text-slate-500">{x.id}</span> — “{x.quote}”
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {agent.steps.length > 0 && (
+            <div>
+              <span className="mb-1 block font-semibold text-slate-600">Các bước suy luận</span>
+              <ol className="m-0 flex list-decimal flex-col gap-1 pl-5 text-slate-700">
+                {agent.steps.map((x, i) => (
+                  <li key={i}>{x}</li>
+                ))}
+              </ol>
+            </div>
+          )}
+          {agent.disagreements.length > 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-amber-900">
+              <span className="mb-1 block font-semibold">Bất đồng với luật cố định</span>
+              <ul className="m-0 list-disc pl-5">
+                {agent.disagreements.map((x, i) => (
+                  <li key={i}>{x}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function TicketDetailModal({
   ticket,
@@ -52,10 +127,6 @@ export function TicketDetailModal({
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-700">
                   Đã hủy
                 </span>
-              ) : ticket.disputed ? (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                  Cần BQL xem
-                </span>
               ) : currentStage === 6 ? (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
                   Hoàn tất
@@ -92,16 +163,7 @@ export function TicketDetailModal({
         {/* Scrollable Content */}
         <div className="overflow-y-auto p-5 space-y-6 text-sm text-slate-700">
           {/* Status banner */}
-          {ticket.disputed && (
-            <div className="rounded-xl p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs flex gap-2.5 items-start">
-              <span className="text-base leading-none">⚠️</span>
-              <div>
-                <strong className="font-semibold">Đơn vị báo cần BQL xem xét do khiếu nại sai phòng ban.</strong>
-                {ticket.disputeReason && <p className="mt-0.5 text-amber-800">Lý do: {ticket.disputeReason}</p>}
-              </div>
-            </div>
-          )}
-          {currentStage === 5 && !ticket.disputed && (
+          {currentStage === 5 && (
             <div className="rounded-xl p-3 bg-sky-50 border border-sky-200 text-sky-900 text-xs flex gap-2.5 items-start">
               <span className="text-base leading-none">🔔</span>
               <div>
@@ -158,14 +220,12 @@ export function TicketDetailModal({
             <div>
               <span className="text-slate-500 block">Phòng ban tiếp nhận</span>
               <span className="font-semibold text-slate-800">
-                {ticket.dept ? DEPT_LABEL[ticket.dept] : "Đang điều phối phân công"}
+                {ticket.deptName ?? (ticket.dept ? DEPT_LABEL[ticket.dept] : "Đang điều phối phân công")}
               </span>
             </div>
             <div>
-              <span className="text-slate-500 block">Người phụ trách</span>
-              <span className="font-semibold text-slate-800">
-                {ticket.staffName ?? "Chưa phân công"}
-              </span>
+              <span className="text-slate-500 block">Trạng thái</span>
+              <span className="font-semibold text-slate-800">{ticket.statusLabel}</span>
             </div>
             <div>
               <span className="text-slate-500 block">Vị trí</span>
@@ -174,7 +234,7 @@ export function TicketDetailModal({
             <div>
               <span className="text-slate-500 block">Mức độ</span>
               <span className={`font-semibold ${ticket.urgent ? "text-rose-600" : "text-slate-800"}`}>
-                {ticket.urgent ? "Khẩn cấp · xử lý trong 4 giờ" : "Thông thường · xử lý trong 48 giờ"}
+                {ticket.urgent ? "Khẩn cấp" : "Thông thường"}
               </span>
             </div>
           </div>
@@ -182,47 +242,29 @@ export function TicketDetailModal({
           {/* Original Description */}
           <div>
             <h4 className="text-xs font-bold text-slate-500 tracking-wide uppercase mb-1.5">Nội dung phản ánh</h4>
-            <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs text-slate-800 font-medium whitespace-pre-wrap leading-relaxed">
-              {ticket.text}
+            <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs text-slate-800 leading-relaxed">
+              <p className="m-0 font-bold" data-testid="detail-title">{ticket.title}</p>
+              {ticket.content && <p className="m-0 mt-1 whitespace-pre-wrap font-medium">{ticket.content}</p>}
             </div>
-          </div>
-
-          {/* Dynamic AI / Agent Analysis */}
-          <div className="p-4 rounded-xl bg-linear-to-br from-indigo-50/70 via-sky-50/50 to-white border border-sky-100 shadow-2xs">
-            <div className="flex items-center gap-1.5 mb-2.5 text-xs font-bold text-sky-900 tracking-wide uppercase">
-              <span className="text-base">✨</span>
-              <span>Phân tích Agent Thông Minh</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-              <div>
-                <span className="text-slate-500 block">Gợi ý phòng ban:</span>
-                <span className="font-semibold text-sky-800">
-                  {ticket.aiDept ? DEPT_LABEL[ticket.aiDept] : "Chưa xác định"}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-500 block">Độ tin cậy:</span>
-                <span className="font-semibold text-sky-800">{ticket.conf || 95}%</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block">Kỹ năng yêu cầu:</span>
-                <span className="font-semibold text-slate-800">{ticket.skill || "Tiêu chuẩn"}</span>
-              </div>
-            </div>
-            {ticket.keywords && ticket.keywords.length > 0 && (
-              <div className="mt-3 pt-2.5 border-t border-sky-100 flex flex-wrap items-center gap-1.5">
-                <span className="text-[11px] text-slate-500 mr-1">Từ khóa khớp:</span>
-                {ticket.keywords.map((kw, i) => (
-                  <span
-                    key={i}
-                    className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-sky-100 text-sky-700"
-                  >
-                    #{kw}
-                  </span>
-                ))}
+            {ticket.extras.length > 0 && (
+              <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
+                <span className="mb-1 block font-semibold text-slate-600">Cư dân bổ sung ({ticket.extras.length})</span>
+                <ul className="m-0 list-disc pl-5">
+                  {ticket.extras.map((x, i) => (
+                    <li key={i}>{x}</li>
+                  ))}
+                </ul>
               </div>
             )}
           </div>
+
+          {/* Current blocker / public message */}
+          {(ticket.blockerLabel || ticket.publicMessage) && (
+            <div className="p-4 rounded-xl bg-sky-50/60 border border-sky-100 text-xs">
+              {ticket.blockerLabel && <p className="m-0 font-bold text-sky-900">{ticket.blockerLabel}</p>}
+              {ticket.publicMessage && <p className="m-0 mt-1 text-slate-700">{ticket.publicMessage}</p>}
+            </div>
+          )}
 
           {/* Photos (Before & After) */}
           <div className="space-y-3">
@@ -236,13 +278,13 @@ export function TicketDetailModal({
                     {ticket.beforePhotos.map((p) => (
                       <a
                         key={p.id}
-                        href={`/api/photos/${p.id}`}
+                        href={p.url}
                         target="_blank"
                         rel="noreferrer"
                         className="block w-16 h-16 rounded-lg overflow-hidden border border-slate-300 hover:scale-105 transition-transform"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={`/api/photos/${p.id}`} alt={p.name} className="w-full h-full object-cover" />
+                        <img src={p.url} alt={p.name} className="w-full h-full object-cover" />
                       </a>
                     ))}
                   </div>
@@ -259,13 +301,13 @@ export function TicketDetailModal({
                     {ticket.afterPhotos.map((p) => (
                       <a
                         key={p.id}
-                        href={`/api/photos/${p.id}`}
+                        href={p.url}
                         target="_blank"
                         rel="noreferrer"
                         className="block w-16 h-16 rounded-lg overflow-hidden border border-emerald-300 ring-2 ring-emerald-100 hover:scale-105 transition-transform"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={`/api/photos/${p.id}`} alt={p.name} className="w-full h-full object-cover" />
+                        <img src={p.url} alt={p.name} className="w-full h-full object-cover" />
                       </a>
                     ))}
                   </div>
@@ -275,6 +317,34 @@ export function TicketDetailModal({
               </div>
             </div>
           </div>
+
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold text-slate-500 tracking-wide uppercase">Checklist và vật tư</h4>
+            <TicketEvidence detail={ticket} showPhotos={false} />
+          </div>
+
+          <div>
+            <h4 className="text-xs font-bold text-slate-500 tracking-wide uppercase mb-1.5">Đánh giá của cư dân</h4>
+            {ticket.rating ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-xs" data-testid="detail-rating">
+                <p className="m-0 font-bold text-amber-900">{ticket.rating.stars}/5 sao</p>
+                {ticket.rating.tags.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {ticket.rating.tags.map((t) => (
+                      <span key={t} className="rounded-full bg-white px-2 py-0.5 text-slate-700">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {ticket.rating.comment && <p className="m-0 mt-1.5 text-slate-700">{ticket.rating.comment}</p>}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 italic">Chưa có đánh giá.</p>
+            )}
+          </div>
+
+          <AgentAnalysis agent={ticket.agent} />
 
           {/* Audit Timeline / History */}
           <div>

@@ -1,0 +1,7 @@
+MUTANT b-f3-unquoted-passes: src/maintenance/agent/validate.py
+$ pytest tests/test_maintenance/test_p1_audit_fixes_safety.py tests/test_maintenance/test_agent_unit.py -q
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[None-parts0]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[None-parts1]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[None-parts2]
+3 failed, 94 passed in 3.91s
+EXIT=1

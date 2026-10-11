@@ -205,11 +205,17 @@ class SplitMixin:
                 )
             if _blank(note):
                 raise GuardError("Hoàn tác tách bắt buộc có lý do")
+            if self._has_open_merged_children(work):  # P04 §8: no chain merge
+                raise GuardError(
+                    "Ticket còn ticket con đang gộp vào nó; hoàn tác gộp các ticket con trước (không gộp dây chuyền)",
+                    {"merged_children": list(ticket.merged_children)},
+                )
             root_id = ticket.split_from
             root = self._related_case(root_id)
             if root.ticket.status in TERMINAL_STATUSES:
                 raise GuardError("Ticket gốc đã kết thúc; BQL hủy ticket con (T23)", {"root": root_id})
             role = self._role(actor_id)
+            previous_blocker = ticket.blocker
             self._apply_transition(
                 work,
                 TicketStatus.MERGED,
@@ -221,21 +227,23 @@ class SplitMixin:
                 department_id=None,
                 dispatched_at=None,
             )
+            self._release_duplicate_count(work, previous_blocker, now)  # P04 §2.1: it no longer points at its suspect
             old_children = list(root.ticket.merged_children)
-            self._set_ticket(root, merged_children=[*old_children, ticket.ticket_id])
-            self._audit(
-                root,
-                Action.LINK_TICKETS,
-                "Ticket",
-                root_id,
-                actor_id,
-                role,
-                "merged_children",
-                old_children,
-                root.ticket.merged_children,
-                f"Hoàn tác tách: nhận lại {ticket.ticket_id}",
-                now=now,
-            )
+            if ticket.ticket_id not in old_children:  # a second undo (after T09) must not list the child twice
+                self._set_ticket(root, merged_children=[*old_children, ticket.ticket_id])
+                self._audit(
+                    root,
+                    Action.LINK_TICKETS,
+                    "Ticket",
+                    root_id,
+                    actor_id,
+                    role,
+                    "merged_children",
+                    old_children,
+                    root.ticket.merged_children,
+                    f"Hoàn tác tách: nhận lại {ticket.ticket_id}",
+                    now=now,
+                )
             self._copy_additions(work, root, now, mode="merge")
             self._copy_resident_photos(work, root, now, mode="merge")
             self._audit(

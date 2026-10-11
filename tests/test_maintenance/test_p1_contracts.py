@@ -86,7 +86,8 @@ def test_c03_permissions_exactly_four_new_keys():
     assert PERMISSIONS[Action.SPLIT_UNDO] == {"BPTN", "BQL"}
     for internal in ("AGENT_DECISION", "SPLIT_TICKET", "LINK_TICKETS"):
         assert Action(internal) not in PERMISSIONS
-    assert len(PERMISSIONS) == 18 + 4
+    assert len(PERMISSIONS) == 18 + 4 + 1  # plan 11 SPEC-P04 §2 added APPROVE_MATERIAL
+    assert PERMISSIONS[Action.APPROVE_MATERIAL] == {"WAREHOUSE", "BQL"}
     assert enums.SPLIT_PAIR == (ServiceCategory.VE_SINH, ServiceCategory.KY_THUAT)
     assert enums.PrioritySource.AGENT_LLM == "AGENT_LLM"
     assert {TicketFlag.AGENT_FALLBACK, TicketFlag.AGENT_DISAGREEMENT} <= set(TicketFlag)

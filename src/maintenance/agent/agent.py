@@ -22,7 +22,7 @@ from src.maintenance.catalog import Catalog, Lexicon
 from src.maintenance.enums import RiskLevel
 
 from .baseline import rule_view
-from .client import DecisionClient, openai_json_client
+from .client import CachingClient, DecisionClient, agy_cli_client, claude_cli_client, openai_json_client
 from .graph import AgentState, GraphSteps, build_graph
 from .inputs import DecisionInput
 from .prompt import PROMPT_VERSION, render_system_prompt, render_user_message
@@ -218,16 +218,41 @@ class ReasoningAgent:
 def build_agent(
     settings: Settings, catalog: Catalog, lexicon: Lexicon, clock: Callable[[], datetime]
 ) -> ReasoningAgent | None:
-    """The Agent for this process, or None (the rules decide) unless LLM_MODE=openai, a key is set and the Agent
-    is switched on (`MO_AGENT_ENABLED`). Building never calls the model and never logs the key."""
-    if settings.llm_mode != "openai" or not settings.openai_api_key or not settings.mo_agent_enabled:
+    """The Agent for this process, or None (the rules decide) unless the Agent is switched on (`MO_AGENT_ENABLED`)
+    and either LLM_MODE=openai with a key or LLM_MODE=claude_cli / agy_cli (local development/demo only: the CLI
+    signed in with the operator's own subscription). Building never calls the model and never logs the key."""
+    if not settings.mo_agent_enabled:
         return None
-    client = openai_json_client(
-        settings.model_name,
-        settings.openai_api_key,
-        settings.openai_base_url or None,
-        timeout=settings.mo_agent_timeout_seconds,
-        max_output_tokens=settings.mo_agent_max_output_tokens,
-        json_mode=settings.mo_agent_json_mode,
-    )
+    client: DecisionClient
+    if settings.llm_mode == "claude_cli":
+        client = claude_cli_client(
+            settings.model_name,
+            timeout=settings.mo_agent_timeout_seconds,
+            effort=settings.mo_agent_reasoning_effort,
+            json_schema=AgentDecision.model_json_schema(),
+        )
+    elif settings.llm_mode == "agy_cli":
+        client = agy_cli_client(
+            settings.model_name,
+            timeout=settings.mo_agent_timeout_seconds,
+            effort=settings.mo_agent_reasoning_effort,
+            json_schema=AgentDecision.model_json_schema(),
+        )
+    elif settings.llm_mode == "openai" and settings.openai_api_key:
+        client = openai_json_client(
+            settings.model_name,
+            settings.openai_api_key,
+            settings.openai_base_url or None,
+            timeout=settings.mo_agent_timeout_seconds,
+            max_output_tokens=settings.mo_agent_max_output_tokens,
+            json_mode=settings.mo_agent_json_mode,
+            stream=settings.mo_agent_stream,
+            reasoning_effort=settings.mo_agent_reasoning_effort,
+        )
+    else:
+        return None
+    if settings.mo_agent_cache_entries > 0:  # the same request (ticket, content, candidates, locks) is asked once
+        client = CachingClient(
+            client, max_entries=settings.mo_agent_cache_entries, ttl_seconds=settings.mo_agent_cache_ttl_seconds
+        )
     return ReasoningAgent(client, catalog=catalog, lexicon=lexicon, model_label=settings.model_name, clock=clock)

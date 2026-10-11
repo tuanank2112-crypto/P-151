@@ -1,0 +1,14 @@
+# P10 §7: G-2 (rules location vs Agent location) before/after the location quote gate is removed.
+$ PYTHONPATH='.;C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18' LLM_MODE=mock MO_STORE=memory MO_PHOTO_STORE=local PYTHONUTF8=1 python 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/probe_g2.py'
+[G2a Agent area differs, quote paraphrased] rule_location=Tòa S1 / Tầng 3 / Lối đi agent_location=None rejected=['location'] serious=[] -> ROUTED/None flags=['AGENT_FALLBACK']
+[G2b Agent area same as rules, quote paraphrased] rule_location=Tòa S1 / Tầng 3 / Lối đi agent_location=None rejected=['location'] serious=[] -> ROUTED/None flags=['AGENT_FALLBACK']
+[G2c Agent area differs, quote verbatim] rule_location=Tòa S1 / Tầng 3 / Lối đi agent_location=Tòa S1 / Tầng 3 / Hành lang rejected=[] serious=['location'] -> VERIFYING/PENDING_REVIEW flags=['AGENT_DISAGREEMENT']
+EXIT=0
+
+$ PYTHONPATH='.;C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18' LLM_MODE=mock MO_STORE=memory MO_PHOTO_STORE=local PYTHONUTF8=1 python 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/probe_g2.py' --sim
+SIM_P10 ACTIVE: schema AuditQuote, merge_llm catalog-only, grounded gates off, mirror quotes None
+[G2a Agent area differs, quote paraphrased] rule_location=Tòa S1 / Tầng 3 / Lối đi agent_location=Tòa S1 / Tầng 3 / Hành lang rejected=[] serious=['location'] -> VERIFYING/PENDING_REVIEW flags=['AGENT_DISAGREEMENT']
+[G2b Agent area same as rules, quote paraphrased] rule_location=Tòa S1 / Tầng 3 / Lối đi agent_location=Tòa S1 / Tầng 3 / Lối đi rejected=[] serious=[] -> ROUTED/None flags=[]
+[G2c Agent area differs, quote verbatim] rule_location=Tòa S1 / Tầng 3 / Lối đi agent_location=Tòa S1 / Tầng 3 / Hành lang rejected=[] serious=['location'] -> VERIFYING/PENDING_REVIEW flags=['AGENT_DISAGREEMENT']
+EXIT=0
+

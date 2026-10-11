@@ -1,0 +1,250 @@
+# WP18 package check — 2026-10-10 09:54:56 +0700
+# Exit của 'git diff --no-index --check /dev/null <file mới>': 1 = chỉ có dòng thêm, KHÔNG lỗi khoảng trắng; 3 = có lỗi.
+
+## 1. Trạng thái git
+$ git rev-parse HEAD
+00a59bcd11ddfdc1abdf0a2075ff52627e6233cb
+EXIT=0
+
+$ git status --porcelain
+ M planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py
+ M planning/06_2026-10-05_reasoning-agent/specs/SPEC-P01-reasoning-agent.md
+ M planning/06_2026-10-05_reasoning-agent/specs/SPEC-P08-audit-fixes.md
+ M planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md
+?? .claude/worktrees/
+?? planning/06_2026-10-05_reasoning-agent/evidence/WP16-review-v6/
+?? planning/06_2026-10-05_reasoning-agent/evidence/WP18/
+?? planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md
+?? planning/06_2026-10-05_reasoning-agent/reports/R17_thi-cong_WP18.md
+?? planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md
+?? scratch/
+EXIT=0
+
+$ git diff --stat
+warning: in the working copy of 'planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P08-audit-fixes.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md', LF will be replaced by CRLF the next time Git touches it
+ .../specs/REF-agent-contract.py                    | 79 +++++++++++++++++-----
+ .../specs/SPEC-P01-reasoning-agent.md              | 11 +++
+ .../specs/SPEC-P08-audit-fixes.md                  |  4 ++
+ .../specs/SPEC-P09-semantic-coordination.md        | 12 ++++
+ 4 files changed, 88 insertions(+), 18 deletions(-)
+EXIT=0
+
+## 2. Khoảng trắng
+$ git diff --check
+warning: in the working copy of 'planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P08-audit-fixes.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md', LF will be replaced by CRLF the next time Git touches it
+EXIT=0
+
+$ test -f 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md' && git diff --no-index --check /dev/null 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md'
+warning: in the working copy of 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md', LF will be replaced by CRLF the next time Git touches it
+EXIT=1
+
+$ test -f 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md' && git diff --no-index --check /dev/null 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md'
+warning: in the working copy of 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md', LF will be replaced by CRLF the next time Git touches it
+EXIT=1
+
+$ test -f 'planning/06_2026-10-05_reasoning-agent/reports/R17_thi-cong_WP18.md' && git diff --no-index --check /dev/null 'planning/06_2026-10-05_reasoning-agent/reports/R17_thi-cong_WP18.md'
+warning: in the working copy of 'planning/06_2026-10-05_reasoning-agent/reports/R17_thi-cong_WP18.md', LF will be replaced by CRLF the next time Git touches it
+EXIT=1
+
+$ git diff --no-index --check /dev/null '/tmp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/ws-bad.md'   # đối chứng hỏng: phải ra 3
+warning: in the working copy of 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/ws-bad.md', LF will be replaced by CRLF the next time Git touches it
+C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/ws-bad.md:1: trailing whitespace.
++dòng có khoảng trắng cuối 
+EXIT=3
+
+## 3. Link nội bộ + đường dẫn repo trong P10, H18 (FUTURE = file WP19 sẽ tạo)
+$ PYTHONUTF8=1 python '/tmp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/check_links.py' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md' 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md' | grep -v '^OK ' ; PYTHONUTF8=1 python '/tmp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/check_links.py' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md' 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md' | awk '{print $1}' | sort | uniq -c
+FUTURE (WP19 tạo)  planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md path tests/test_maintenance/test_p10_catalog_not_quote.py
+FUTURE (WP19 tạo)  planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md path tests/test_maintenance/test_p10_catalog_not_quote.py
+FUTURE (WP19 tạo)  planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md path planning/06_2026-10-05_reasoning-agent/reports/R18_thi-cong_WP19.md
+FUTURE (WP19 tạo)  planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md path evidence/WP19/red-before.txt
+FUTURE (WP19 tạo)  planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md path evidence/WP19/green.txt
+FUTURE (WP19 tạo)  planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md path evidence/WP19/pytest.txt
+FUTURE (WP19 tạo)  planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md path evidence/WP19/mutation-m1.txt
+FUTURE (WP19 tạo)  planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md path evidence/WP19/invented-location.txt
+FUTURE (WP19 tạo)  planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md path evidence/WP19/pg.txt
+FUTURE (WP19 tạo)  planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md path reports/R18_thi-cong_WP19.md
+FUTURE (WP19 tạo)  planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md path planning/06_2026-10-05_reasoning-agent/reports/R18_thi-cong_WP19.md
+FUTURE (WP19 tạo)  planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md path planning/06_2026-10-05_reasoning-agent/evidence/WP19/
+MISSING=0
+     12 FUTURE
+      1 MISSING=0
+     50 OK
+EXIT=0
+
+$ PYTHONUTF8=1 python '/tmp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/check_links.py' '/tmp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/neg/specs/bad.md'   # đối chứng hỏng: phải MISSING=3, EXIT=1
+MISSING            C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/neg/specs/bad.md link ../evidence/WP18/khong-co.txt
+MISSING            C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/neg/specs/bad.md link SPEC-P10-catalog-not-quote.md
+MISSING            C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/neg/specs/bad.md path src/maintenance/agent/khong_co.py
+MISSING=3
+EXIT=1
+
+## 4. Độ dài handoff (≤ 80) + cấu trúc H18
+$ wc -l 'planning/06_2026-10-05_reasoning-agent/handoffs/H17_thi-cong_WP18.md' 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md'
+   34 planning/06_2026-10-05_reasoning-agent/handoffs/H17_thi-cong_WP18.md
+   35 planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md
+   69 total
+EXIT=0
+
+$ head -3 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md' | cut -c1-3
+1. 
+2. 
+3. 
+EXIT=0
+
+$ grep -c '^## ' 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md'
+6
+EXIT=0
+
+$ grep -c 'CHỜ DUYỆT P10' 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md'; grep -c 'reports/R18_thi-cong_WP19.md' 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md'
+1
+3
+EXIT=0
+
+## 5. REF selftest (OPERATIONS §1)
+$ PYTHONPATH=. PYTHONUTF8=1 python 'planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py' --selftest
+example_valid=OK quote_audit=[]
+  OK  want=INVALID_JSON got=INVALID_JSON
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+  OK  want=SCHEMA_INVALID got=SCHEMA_INVALID
+not_verbatim_is_ok=OK quote_audit=['jobs[1].quote']
+  OK  job quote empty string: kind=OK
+  OK  job quote missing: kind=OK
+  OK  location quote blank: kind=OK
+  OK  signal quote 400 chars: kind=OK
+  OK  job quote not a string: kind=SCHEMA_INVALID
+SELFTEST_FAILURES=0
+EXIT=0
+
+## 6. Banner + 'chỉ thêm banner' ở P01/P08/P09
+$ grep -c 'Bị thay thế bởi SPEC-P10' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P01-reasoning-agent.md' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P08-audit-fixes.md' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md'
+planning/06_2026-10-05_reasoning-agent/specs/SPEC-P01-reasoning-agent.md:6
+planning/06_2026-10-05_reasoning-agent/specs/SPEC-P08-audit-fixes.md:2
+planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md:9
+EXIT=0
+
+$ git diff --numstat -- 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P01-reasoning-agent.md' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P08-audit-fixes.md' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md'
+warning: in the working copy of 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P08-audit-fixes.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md', LF will be replaced by CRLF the next time Git touches it
+11	0	planning/06_2026-10-05_reasoning-agent/specs/SPEC-P01-reasoning-agent.md
+4	0	planning/06_2026-10-05_reasoning-agent/specs/SPEC-P08-audit-fixes.md
+12	0	planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md
+EXIT=0
+
+$ git diff -U0 -- 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P01-reasoning-agent.md' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P08-audit-fixes.md' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md' | grep '^[+-]' | grep -v '^+++\|^---' | grep -v '^+> ⚠ Bị thay thế bởi SPEC-P10 §' | grep -cv '^+\r\?$'   # dòng khác banner/dòng trống: phải 0
+warning: in the working copy of 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P08-audit-fixes.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md', LF will be replaced by CRLF the next time Git touches it
+0
+EXIT=1
+
+$ git diff -U0 -- 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P01-reasoning-agent.md' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P08-audit-fixes.md' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md' | grep '^+> ⚠' | grep -cv '(Q35)'   # banner thiếu '(Q35)': phải 0
+warning: in the working copy of 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P08-audit-fixes.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md', LF will be replaced by CRLF the next time Git touches it
+0
+EXIT=1
+
+## 7. Cấu trúc P10 (AGENTS §3.2.2)
+$ grep -n '^## [0-9]*\.\|^### [0-9]' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md'
+16:## 1. Vấn đề — đo trên Base bằng client giả (không mạng, không LLM)
+33:## 2. Nguyên tắc: việc của LLM hay của luật — và kiểm kê
+45:## 3. Hợp đồng (WP19 thi công đúng từng dòng)
+47:### 3.1 Schema — REF mục A (đã sửa), chép NGUYÊN VĂN sang `src/maintenance/agent/schema.py`
+74:### 3.2 `src/maintenance/agent/validate.py` — vị trí và job chỉ kiểm danh mục
+92:### 3.3 `src/maintenance/safety.py` — LLM chỉ nâng, hợp lệ theo danh mục
+109:### 3.4 `src/maintenance/agent/baseline.py` — Mirror không sinh quote
+119:### 3.5 Hiển thị quote rỗng
+123:### 3.6 REF (WP18 đã sửa — WP19 KHÔNG sửa)
+126:### 3.7 Không đổi
+129:## 4. Lưới sàn luật an toàn — GIỮ; vì sao không phải cổng chặn LLM
+139:## 5. Chống bịa vị trí KHÔNG bằng câu chữ — công cụ, rủi ro còn lại, ai chịu
+149:## 6. Luật
+180:## 7. Ngoài phạm vi Q35 — giữ nguyên trong P10, cần người quyết
+195:## 8. Phân loại lỗi + hành vi bắt buộc của caller
+212:## 9. Test và nghiệm thu
+213:### 9.1 Test cũ đang ghim cổng quote — hành vi mới (đổi khẳng định / thay 1–1; số test không giảm)
+233:### 9.2 Test mới bắt buộc — `tests/test_maintenance/test_p10_catalog_not_quote.py`
+247:### 9.3 Đột biến (mỗi cái áp riêng lên cây đã sửa, chạy test nêu tên ⇒ EXIT≠0, rồi khôi phục)
+258:### 9.4 Số đo nghiệm thu (WP19 nộp output máy; người duyệt chạy lại)
+276:### 9.5 Năng lực live — NOT_RUN
+279:## 10. Dữ liệu, triển khai, rollback
+285:## 11. Bảng mục bị thay thế (cũ → mới)
+EXIT=0
+
+$ for k in 'BẮT BUỘC' 'CẤM' 'Vùng cấm' 'Phân loại lỗi' 'Rollback' 'NOT_RUN' 'Đột biến' 'Bảng mục bị thay thế'; do printf '%-22s %s\n' "$k" "$(grep -c "$k" 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md')"; done
+BẮT BUỘC           4
+CẤM                  10
+Vùng cấm            1
+Phân loại lỗi     1
+Rollback               1
+NOT_RUN                5
+Đột biến          3
+Bảng mục bị thay thế 1
+EXIT=0
+
+## 8. Kiểm kê
+$ sed -n '/^## C\./,$p' 'planning/06_2026-10-05_reasoning-agent/evidence/WP18/inventory.txt'
+## C. Đếm (máy, từ phần B)
+$ grep -cE '^[CFA][0-9]+ · ' inventory.txt   # tổng chỗ
+28
+$ grep -cE '^C[0-9]+ · .*· cổng chặn LLM' inventory.txt   # cổng chặn LLM
+9
+$ grep -cE '^C[1-6] · ' inventory.txt   # trong đó khớp quote (P10 đổi)
+6
+$ grep -cE '^C[7-9] · ' inventory.txt   # trong đó từ khoá luật (ngoài Q35, giữ)
+3
+$ grep -cE '^F[0-9]+ · .*· lưới sàn luật hợp lệ' inventory.txt   # lưới sàn
+6
+$ grep -cE '^A[0-9]+ · .*· chỉ audit' inventory.txt   # chỉ audit
+13
+EXIT=0
+
+## 9. Evidence WP18 (tên không bắt đầu bằng 'test')
+$ ls 'planning/06_2026-10-05_reasoning-agent/evidence/WP18'
+baseline-pytest.txt
+baseline-ruff.txt
+forward-compat.txt
+g2-probe.txt
+invented-location.txt
+inventory.txt
+mirror-note-sim.txt
+package-check.txt
+probe-after-sim.txt
+probe-before.txt
+probe-scripts.txt
+proto-audit-quote.txt
+proto-tests.txt
+ref-selftest.txt
+sim-pytest.txt
+EXIT=0
+
+$ ls 'planning/06_2026-10-05_reasoning-agent/evidence/WP18' | grep -c '^test'
+0
+EXIT=1
+
+## 10. Checklist H17 §3 (mỗi dòng: điều kiện máy kiểm → ĐẠT/THIẾU)
+ĐẠT Kiểm kê: lệnh+output (phần A) và 28 dòng phân loại đủ 4 trường  ⟵  grep -q '^## A\. Lệnh và output' 'planning/06_2026-10-05_reasoning-agent/evidence/WP18/inventory.txt' && test $(grep -E '^[CFA][0-9]+ · ' 'planning/06_2026-10-05_reasoning-agent/evidence/WP18/inventory.txt' | awk -F ' · ' 'NF >= 5 && ($5 ~ /^cổng chặn LLM/ || $5 ~ /^lưới sàn luật hợp lệ/ || $5 ~ /^chỉ audit/)' | wc -l) -eq 28
+ĐẠT P10: hợp đồng từng cổng quote (schema/validate/merge_llm/Mirror/hiển thị)  ⟵  for k in '### 3.1' '### 3.2' '### 3.3' '### 3.4' '### 3.5' 'def _check_location(loc: LocationDecision, catalog: Catalog)' 'rule_id="LLM" if quote else "LLM-NOQUOTE"' 'quote=None'; do grep -qF "$k" 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md' || exit 1; done
+ĐẠT P10: cổng từ khoá luật C7–C9 nêu rõ giữ + lý do + câu hỏi  ⟵  grep -q '^| C7 G-1' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md' && grep -q '^| C8 G-2' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md' && grep -q '^| C9 ' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md' && test $(grep -c '^- \*\*Q-P10-[1-5]' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md') -eq 5
+ĐẠT P10: lưới sàn giữ + vì sao không phải cổng  ⟵  grep -q '^## 4\. Lưới sàn' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md' && grep -q 'Vì sao giữ' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md'
+ĐẠT P10: an toàn — khớp chữ không làm mất lần nâng (T5/T5b, BẮT BUỘC 2)  ⟵  grep -q 'bất kể quote' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md' && grep -q 'T-P10-05' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md'
+ĐẠT P10: chống bịa vị trí không bằng câu chữ + rủi ro còn lại + ai chịu  ⟵  grep -q '^## 5\. Chống bịa' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md' && grep -q 'Ai chịu: \*\*BPTN\*\*' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md' && grep -q 'NOT_RUN' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md'
+ĐẠT Bảng mục bị thay thế có P01 §3, P08 §2, P09 §3/§4.2, Q28, Q34  ⟵  for k in '| P01 §3.1' '| P08 §2' '§4.2 (B2)' 'Q28' 'Q34'; do grep -qF "$k" 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md' || exit 1; done
+ĐẠT Banner đặt ở P01/P08/P09 (6/2/9), diff chỉ là banner + dòng trống  ⟵  test $(grep -c 'Bị thay thế bởi SPEC-P10' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P01-reasoning-agent.md') -eq 6 && test $(grep -c 'Bị thay thế bởi SPEC-P10' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P08-audit-fixes.md') -eq 2 && test $(grep -c 'Bị thay thế bởi SPEC-P10' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md') -eq 9 && test $(git diff -U0 -- 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P01-reasoning-agent.md' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P08-audit-fixes.md' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P09-semantic-coordination.md' | grep '^[+-]' | grep -v '^+++\|^---' | grep -v '^+> ⚠ Bị thay thế bởi SPEC-P10 §' | grep -cv '^+\r\?$') -eq 0
+THIẾU Không còn hai luật trái nhau: mọi mục cũ đã có banner (ngoài P01/P08/P09 cũng vậy)  ⟵  ! grep -q 'chưa (SO)' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md'
+ĐẠT Test: liệt kê test ghim cổng (§9.1) + 5 ca bắt buộc mới (T-P10-01…05) + live NOT_RUN  ⟵  test $(grep -cE '^\| (★|☆) ' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md') -eq 13 && for k in T-P10-01 T-P10-02 T-P10-03 T-P10-04 T-P10-05 '### 9.5 Năng lực live — NOT_RUN'; do grep -qF "$k" 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md' || exit 1; done
+ĐẠT P10 đủ AGENTS §3.2.2: BẮT BUỘC/CẤM/vùng cấm, bảng lỗi, rollback, số đo  ⟵  for k in '**BẮT BUỘC**' '**CẤM**' '**Vùng cấm**' '## 8. Phân loại lỗi' '**Rollback:**' '### 9.4 Số đo nghiệm thu'; do grep -qF "$k" 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md' || exit 1; done
+ĐẠT H18: ≤ 80 dòng, 3 dòng đầu + 6 mục, CHỜ DUYỆT P10, report R18  ⟵  test $(wc -l < 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md') -le 80 && test $(grep -c '^## ' 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md') -eq 6 && test "$(head -3 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md' | cut -c1-2 | tr -d '\n\r')" = '1.2.3.' && grep -q 'CHỜ DUYỆT P10' 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md' && grep -q 'R18_thi-cong_WP19.md' 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md'
+ĐẠT Đo: git diff --check exit 0  ⟵  git diff --check
+ĐẠT Đo: link nội bộ P10/H18 tồn tại (MISSING=0)  ⟵  PYTHONUTF8=1 python '/tmp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/check_links.py' 'planning/06_2026-10-05_reasoning-agent/specs/SPEC-P10-catalog-not-quote.md' 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md'
+ĐẠT Đo: H17, H18 ≤ 80 dòng  ⟵  test $(wc -l < 'planning/06_2026-10-05_reasoning-agent/handoffs/H17_thi-cong_WP18.md') -le 80 && test $(wc -l < 'planning/06_2026-10-05_reasoning-agent/handoffs/H18_thi-cong_WP19.md') -le 80
+ĐẠT Đo: REF đổi ⇒ selftest exit 0  ⟵  PYTHONPATH=. PYTHONUTF8=1 python 'planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py' --selftest
+
+$ grep -c '^ĐẠT ' package-check.txt ; grep -c '^THIẾU ' package-check.txt
+15
+1

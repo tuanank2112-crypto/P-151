@@ -1,0 +1,20 @@
+mutation m6: allow assignment across departments
+1548c1548
+<             if member.department_id != ticket.department_id:
+---
+>             if False:
+        assert c.post(path, json={"staff_id": "SIM-STAFF-CLN-B"}, headers=tok("tiepnhan")).status_code == 403
+        assert c.post(path, json={"staff_id": "SIM-STAFF-CLN-B"}, headers=tok("kythuat")).status_code == 403
+>       assert c.post(path, json={"staff_id": "SIM-STAFF-TEC-1"}, headers=tok("vesinh")).status_code == 409
+E       AssertionError: assert 200 == 409
+E        +  where 200 = <Response [200 OK]>.status_code
+E        +    where <Response [200 OK]> = post('/api/v1/mo/tickets/SIM-TKT-0001/assign', json={'staff_id': 'SIM-STAFF-TEC-1'}, headers={'Authorization': 'Bearer Wv7k3irgMPubjlbp-t3OSUorrItvG3_-fMkRFb2okwQ'})
+E        +      where post = <starlette.testclient.TestClient object at 0x000002662E0A6190>.post
+E        +      and   {'Authorization': 'Bearer Wv7k3irgMPubjlbp-t3OSUorrItvG3_-fMkRFb2okwQ'} = <function make_env.<locals>.tok at 0x000002662DF56020>('vesinh')
+
+tests\test_maintenance\test_portal_backend_ext2.py:527: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s3_staff_of_another_department_is_refused
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s3_api_assign_and_staff_fields
+2 failed, 49 passed, 5 deselected in 6.88s
+EXIT=1

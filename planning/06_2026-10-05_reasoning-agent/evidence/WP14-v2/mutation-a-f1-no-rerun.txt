@@ -1,0 +1,20 @@
+MUTANT a-f1-no-rerun: src/maintenance/engine.py
+$ pytest tests/test_maintenance/test_p1_audit_fixes_safety.py tests/test_maintenance/test_agent_unit.py -q
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_addition_with_danger_reruns_2b[rules-C\xf3 m\xf9i gas n\u1ed3ng n\u1eb7c, s\u1ee3 qu\xe1]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_addition_with_danger_reruns_2b[rules-C\xf3 kh\xf3i b\u1ed1c ra t\u1eeb h\u1ed9p \u0111i\u1ec7n]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_addition_with_danger_reruns_2b[rules-H\u1ed9p \u0111\xe8n \u0111ang ch\xe1y, c\xf3 l\u1eeda!]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_addition_with_danger_reruns_2b[rules-C\xf3 ng\u01b0\u1eddi b\u1ecb \u0111i\u1ec7n gi\u1eadt ng\u1ea5t \u1edf \u0111\xe2y]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_addition_with_danger_reruns_2b[rules-\u1ede t\u1ea7ng 3, c\xf3 m\xf9i kh\xe9t v\xe0 tia l\u1eeda]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_addition_with_danger_reruns_2b[rules-C\xf3 kim ti\xeam v\u1ee9t b\u1eeba \u1edf \u0111\xf3]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_addition_with_danger_reruns_2b[agent-C\xf3 m\xf9i gas n\u1ed3ng n\u1eb7c, s\u1ee3 qu\xe1]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_addition_with_danger_reruns_2b[agent-C\xf3 kh\xf3i b\u1ed1c ra t\u1eeb h\u1ed9p \u0111i\u1ec7n]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_addition_with_danger_reruns_2b[agent-H\u1ed9p \u0111\xe8n \u0111ang ch\xe1y, c\xf3 l\u1eeda!]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_addition_with_danger_reruns_2b[agent-C\xf3 ng\u01b0\u1eddi b\u1ecb \u0111i\u1ec7n gi\u1eadt ng\u1ea5t \u1edf \u0111\xe2y]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_addition_with_danger_reruns_2b[agent-\u1ede t\u1ea7ng 3, c\xf3 m\xf9i kh\xe9t v\xe0 tia l\u1eeda]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_addition_with_danger_reruns_2b[agent-C\xf3 kim ti\xeam v\u1ee9t b\u1eeba \u1edf \u0111\xf3]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_addition_reruns_2b_with_the_agent_signals[Ch\xe1u b\xe9 tr\xe8o ra ngo\xe0i lan can]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_addition_reruns_2b_with_the_agent_signals[N\u01b0\u1edbc ng\u1eadp l\xean t\u1edbi \u1ed5 c\u1eafm \u0111i\u1ec7n]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_t06_answer_with_fire_becomes_emergency[rules]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_t06_answer_with_fire_becomes_emergency[agent]
+16 failed, 81 passed in 3.88s
+EXIT=1

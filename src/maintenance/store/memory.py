@@ -16,7 +16,15 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 
 from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent
-from src.maintenance.store.base import ConcurrencyError, GuardError, NotFoundError, short_stock_error
+from src.maintenance.store.base import (
+    Assignment,
+    ConcurrencyError,
+    GuardError,
+    MaterialItem,
+    NotFoundError,
+    RatingDetail,
+    short_stock_error,
+)
 
 _TICKET_NUMBER = re.compile(r"^SIM-TKT-(\d+)$")
 
@@ -37,6 +45,8 @@ class _MemoryTx:
         self.log: list[AuditEvent | StatusEvent] = []
         self.notifications: list[Notification] = []
         self.stock: dict[str, float | None] = {}
+        self.assignments: dict[str, Assignment] = {}
+        self.rating_details: dict[str, RatingDetail] = {}
 
     def get_for_update(self, ticket_id: str) -> Case:
         if ticket_id in self.cases:
@@ -88,6 +98,12 @@ class _MemoryTx:
         self.stock[item_code] = new
         return new
 
+    def put_assignment(self, assignment: Assignment) -> None:
+        self.assignments[assignment.ticket_id] = assignment
+
+    def put_rating_detail(self, detail: RatingDetail) -> None:
+        self.rating_details[detail.ticket_id] = detail
+
     def take_stock(self, item_code: str, qty: float) -> float | None:
         current = self.stock[item_code] if item_code in self.stock else self._repo.stock_of(item_code)
         if current is None:
@@ -106,6 +122,9 @@ class InMemoryRepository:
         self._log: list[AuditEvent | StatusEvent] = []
         self._notifications: list[Notification] = []
         self._stock: dict[str, float | None] = dict(stock or {})
+        self._material_items: dict[str, MaterialItem] = {}
+        self._assignments: dict[str, Assignment] = {}
+        self._rating_details: dict[str, RatingDetail] = {}
         self._ticket_number = 0
         self._run_number = 0
 
@@ -134,6 +153,8 @@ class InMemoryRepository:
             self._log.extend(tx.log)
             self._notifications.extend(tx.notifications)
             self._stock.update(tx.stock)
+            self._assignments.update(tx.assignments)
+            self._rating_details.update(tx.rating_details)
 
     # ------------------------------------------------------------------ reads
 
@@ -159,6 +180,18 @@ class InMemoryRepository:
 
     def run_number(self) -> int:
         return self._run_number
+
+    def material_items(self) -> list[MaterialItem]:
+        with self._lock:
+            return sorted(self._material_items.values(), key=lambda item: (item.created_at, item.item_code))
+
+    def assignments(self) -> dict[str, Assignment]:
+        with self._lock:
+            return dict(self._assignments)
+
+    def rating_details(self) -> dict[str, RatingDetail]:
+        with self._lock:
+            return dict(self._rating_details)
 
     def version_of(self, ticket_id: str) -> int:
         """Memory-only inspection for tests: the committed version of a ticket."""
@@ -192,8 +225,15 @@ class InMemoryRepository:
         with self._lock:
             self._stock[item_code] = qty
 
+    def add_material_item(self, item: MaterialItem) -> MaterialItem:
+        with self._lock:
+            return self._material_items.setdefault(item.item_code, item)
+
     def wipe(self, stock: dict[str, float | None]) -> int:
         with self._lock:
+            self._material_items = {}
+            self._assignments = {}
+            self._rating_details = {}
             self._cases = {}
             self._versions = {}
             self._log = []

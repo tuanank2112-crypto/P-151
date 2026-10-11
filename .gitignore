@@ -30,6 +30,8 @@ Thumbs.db
 
 # Data (never commit large data)
 data/
+# portal data loaders are source code, not data (plan 11)
+!portal/src/server/data/
 *.db
 *.sqlite3
 
