@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DONE_SEGMENTS, doneSegment, matchesDoneSearch } from "@/lib/reception-done";
+import { DONE_SEGMENTS, doneSegment, hasLocation, matchesDoneSearch } from "@/lib/reception-done";
 
 describe("doneSegment: where a ticket that left the inbox is now", () => {
   it("a cancelled or merged ticket is cancelled whatever its stage", () => {
@@ -13,9 +13,12 @@ describe("doneSegment: where a ticket that left the inbox is now", () => {
     expect(doneSegment({ stage: 2, dept: null, cancelled: false })).toBe("bql");
     expect(doneSegment({ stage: 2, dept: "bql", cancelled: false })).toBe("bql");
   });
-  it("routed or being worked on is at the department", () => {
-    expect(doneSegment({ stage: 3, dept: "ky_thuat", cancelled: false })).toBe("dept");
-    expect(doneSegment({ stage: 4, dept: "ve_sinh", cancelled: false })).toBe("dept");
+  it("routed or being worked on is split by department", () => {
+    expect(doneSegment({ stage: 3, dept: "ky_thuat", cancelled: false })).toBe("ky_thuat");
+    expect(doneSegment({ stage: 4, dept: "ve_sinh", cancelled: false })).toBe("ve_sinh");
+  });
+  it("no department after stage 2 (e.g. on hold) is 'unassigned', never cleaning", () => {
+    expect(doneSegment({ stage: 4, dept: null, cancelled: false })).toBe("unassigned");
   });
   it("every segment has a label and none repeats", () => {
     expect(new Set(DONE_SEGMENTS.map((s) => s.key)).size).toBe(DONE_SEGMENTS.length);
@@ -32,5 +35,12 @@ describe("matchesDoneSearch", () => {
   it("an empty query matches everything and a miss matches nothing", () => {
     expect(matchesDoneSearch(t, "   ")).toBe(true);
     expect(matchesDoneSearch(t, "thang may")).toBe(false);
+  });
+});
+
+describe("hasLocation", () => {
+  it("hides the parser's placeholder and blanks", () => {
+    expect(["—", "–", "-", "", "  ", null, undefined].map(hasLocation)).toEqual([false, false, false, false, false, false, false]);
+    expect(hasLocation("Tòa S1 · Tầng 3")).toBe(true);
   });
 });

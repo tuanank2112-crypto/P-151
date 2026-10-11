@@ -79,3 +79,8 @@ Backend chamanh chốt vật tư là **số thực tế đã dùng, một lần 
 - Kho: chỉ còn tồn kho + "Nhập kho" cho mã sẵn có; bỏ "Thêm vật tư mới" và hàng đợi "Yêu cầu cấp phát". Ô ghi chú nhập hàng bỏ vì backend chưa nhận (BE-3).
 - Backend: `_material_approval_required()` luôn False; `custom_materials_enabled` luôn False. Action `approveMaterialsAction`/`addStockItemAction` còn trong code nhưng không có nút gọi.
 - Tiếp nhận, tab "Đã phân loại" (v1.12.3): chip lọc theo nơi ticket đang ở, tìm kiếm không dấu, "Xem thêm" 20 dòng; phân nhóm ở `src/lib/reception-done.ts` (stage ≤ 2 mà không có phòng ban = của BQL, không phải "chưa chuyển").
+
+## 7. Hồ sơ 19 đợt 1 (v1.13.0)
+- Hợp đồng và lý do: `planning/19_2026-10-12_ui-ux-polish/specs/01-CONTRACTS.md`. Mọi phân nhóm "một ticket một ô" nằm ở `src/lib/reception-done.ts` (Tiếp nhận), `src/lib/bql-view.ts` (BQL: `bqlBox`, `listGroup`, `deptLoad`), `src/lib/building.ts` (S1/S2), `src/lib/stock.ts` (Hết hàng/Sắp hết/An toàn/Chưa kiểm kê theo `min_qty`). UI không tự viết lại điều kiện.
+- BQL không còn ô Kho; "Danh sách ticket" không có chip "Tất cả" (người dùng chốt).
+- Vị trí trống (`"—"`) không hiển thị: dùng `hasLocation()`.

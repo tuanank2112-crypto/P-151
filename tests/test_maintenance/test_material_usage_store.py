@@ -143,7 +143,7 @@ def test_save_failure_rolls_back_stock(repo, clock, monkeypatch):
 
 
 def test_two_tickets_racing_for_the_last_units(repo, clock, request):
-    """Two engines (two processes) on one store, two tickets each taking 4 of the 5 LED lamps at the same time:
+    """Two engines (two processes) on one store, two tickets each taking all 4 LED lamps (plan 19 seed) at the same time:
     exactly one wins, the other is refused, and the stock never goes below zero."""
     engine_a = engine_on(repo, clock)
     other = (
@@ -155,7 +155,7 @@ def test_two_tickets_racing_for_the_last_units(repo, clock, request):
     first = started(engine_a, LIGHTING, TEC)
     second = started(engine_a, "Đèn sảnh thang máy tầng 5 tòa S1 bị cháy.", TEC)
     start = repo.stock_of(LAMP)
-    assert start == 5
+    assert start == 4
     barrier = threading.Barrier(2)
     outcome: dict[str, BaseException | None] = {}
 

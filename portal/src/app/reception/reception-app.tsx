@@ -16,7 +16,7 @@ import { TicketDetailModal } from "@/components/ticket-detail-modal";
 import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
 import { DEPT_LABEL, ROLE_LABEL, type Dept } from "@/lib/constants";
-import { DONE_SEGMENTS, doneSegment, matchesDoneSearch, type DoneSegment } from "@/lib/reception-done";
+import { DONE_SEGMENTS, doneSegment, hasLocation, matchesDoneSearch, type DoneSegment } from "@/lib/reception-done";
 import type { AgentInfo, AgentPerf, ReceptionAllItem, ReceptionData, ReceptionInboxItem, TicketDetail } from "@/lib/dto";
 
 type Tab = "inbox" | "done" | "perf";
@@ -26,7 +26,7 @@ const HEAD: Record<Tab, { title: string; sub: string }> = {
     title: "Chờ phân loại",
     sub: "Ticket đang dừng ở Tiếp nhận: chọn việc cần làm theo lý do dừng. Ticket khẩn cấp ở trên cùng.",
   },
-  done: { title: "Đã phân loại", sub: "Ticket đã rời Tiếp nhận (đã giao phòng, ở Ban quản lý, đã đóng, hủy hoặc gộp). Bấm một dòng để xem chi tiết." },
+  done: { title: "Đã phân loại", sub: "Ticket đã rời Tiếp nhận: đã giao phòng, ở Ban quản lý, đã đóng, hủy hoặc gộp." },
   perf: { title: "Hiệu suất Agent", sub: "Agent gợi ý phòng ban so với phòng mà ticket thực sự được giao." },
 };
 
@@ -113,6 +113,7 @@ function whereIs(t: ReceptionAllItem): { label: string; cls: string } {
   if (seg === "cancelled") return { label: "Đã hủy / gộp", cls: "pill cat-none" };
   if (seg === "closed") return { label: "Hoàn tất", cls: "pill bg-[#D8EFE3] text-[#13553A]" };
   if (seg === "bql") return { label: DEPT_LABEL.bql, cls: deptPill("bql") };
+  if (seg === "unassigned") return { label: "Chưa giao phòng", cls: "pill cat-none" };
   return { label: deptName(t.dept), cls: deptPill(t.dept) };
 }
 
@@ -124,7 +125,7 @@ function DoneTable({ rows, onOpen }: { rows: ReceptionAllItem[]; onOpen: (id: st
   const count = (k: DoneSegment) => rows.filter((t) => doneSegment(t) === k).length;
   const shown = rows.filter((t) => (seg === "all" || doneSegment(t) === seg) && matchesDoneSearch(t, query));
   const page = shown.slice(0, limit);
-  const showLocation = rows.some((t) => t.location.trim() !== "" && t.location !== "—"); // an empty column is noise
+  const showLocation = rows.some((t) => hasLocation(t.location)); // an empty column is noise
   const choose = (k: DoneSegment | "all") => {
     setSeg(k);
     setLimit(PAGE);

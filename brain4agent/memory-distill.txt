@@ -13,7 +13,7 @@
 </agent_startup_protocol>
 
 <project_foundation>
-- **v1.12.3 (2026-10-12):** tab "Đã phân loại" của Tiếp nhận có chip lọc/tìm/xem thêm (`reception-done.ts`).
+- **v1.13.0 (2026-10-12, hồ sơ 19 đợt 1):** UI gọn theo danh sách người dùng (hàm thuần `portal/src/lib/{reception-done,bql-view,building,stock}.ts`, "một ticket một ô"); `min_qty` danh mục vật tư. **Proxy 8000 KHÔNG được giữ cookie** (đã vá rò phiên). Đợt 2 = SPEC-P04 PROPOSED.
 - **v1.12.2 (2026-10-11, PATCH):** khu vực `Thang máy` (đèn/bẩn/rác vào phòng ban; cơ khí ngoài phạm vi; quạt/nút bấm CHƯA có playbook), prompt `/9`, 5 tài sản đèn.
 - **v1.12.1 (2026-10-11, PATCH):** prompt `agent-prompt/7` dặn mã tòa con S2.05 thuộc tòa mẹ; portal "Khẩn cấp" chỉ khi EMERGENCY.
 - **v1.12.0 (2026-10-11): `feature/chamanh` gộp `develop` b8d1b81.** `portal/` = bản develop (gọi `/api/v1`, không DB riêng); phần nối plan18 (BFF) bị thay. VẬT TƯ giữ quyết định chamanh: phòng ban lưu số ĐÃ DÙNG một POST `material-usage` (UI chọn mã theo `material_codes_by_department`, Vệ sinh được rỗng, Kỹ thuật ≥1); `_material_approval_required()` luôn False (luồng yêu cầu/duyệt của develop NGỦ, test của nó đã xoá); `custom_materials_enabled` cố định False; kho ẩn tạo mã mới/hàng đợi duyệt. Backup: nhánh `backup/chamanh-before-develop-20261011`.

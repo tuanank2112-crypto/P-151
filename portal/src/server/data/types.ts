@@ -150,7 +150,7 @@ export type BResidentView = {
   rating_comment?: string;
 };
 
-export type BStockRow = { item_code: string; item_name: string; unit: string | null; qty: number | null };
+export type BStockRow = { item_code: string; item_name: string; unit: string | null; qty: number | null; min_qty?: number | null };
 
 export type BCatalog = {
   departments: Record<string, string>;

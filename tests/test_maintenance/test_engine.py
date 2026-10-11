@@ -535,7 +535,7 @@ def test_system_generates_unique_ids_and_reset_restores(engine):
     assert len(ids) == 3 and len(engine.cases) == 15
     engine.stock["SIM-MAT-LAMP-01"] = 0
     engine.reset()
-    assert len(engine.cases) == 12 and engine.stock["SIM-MAT-LAMP-01"] == 5
+    assert len(engine.cases) == 12 and engine.stock["SIM-MAT-LAMP-01"] == 4  # plan 19 seed
 
 
 def test_unknown_actor_is_denied(engine):

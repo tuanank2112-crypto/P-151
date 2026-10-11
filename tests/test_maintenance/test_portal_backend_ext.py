@@ -470,7 +470,13 @@ def test_s3_create_item_by_warehouse(eng):
     assert eng.material("SIM-MAT-LAMP-02").item_name  # catalog first
     assert eng.material("SIM-MAT-X-UNKNOWN0") is None
     rows = {r["item_code"]: r for r in eng.stock_levels(WAREHOUSE)}
-    assert rows[item.item_code] == {"item_code": item.item_code, "item_name": PVC, "unit": "cái", "qty": 0}
+    assert rows[item.item_code] == {
+        "item_code": item.item_code,
+        "item_name": PVC,
+        "unit": "cái",
+        "qty": 0,
+        "min_qty": None,
+    }
     assert "SIM-MAT-LAMP-02" in rows
     assert item.item_code in [m.item_code for m in eng.all_materials()]
     assert_codes_unique = [m.item_code for m in eng.all_materials()]

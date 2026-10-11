@@ -13,7 +13,7 @@ import { HistoryList, WorkCard, useDeptScreen } from "./dept-parts";
 type Tab = "queue" | "history";
 
 const HEAD: Record<Tab, { title: string; sub: string }> = {
-  queue: { title: "Hàng việc", sub: "Ticket vệ sinh đã được Ban tiếp nhận chuyển đến. Bấm Nhận việc để bắt đầu xử lý." },
+  queue: { title: "Danh sách công việc", sub: "Ticket vệ sinh đã được Ban tiếp nhận chuyển đến, khẩn cấp lên đầu." },
   history: { title: "Lịch sử hoàn thành", sub: "Ticket chờ nghiệm thu hoặc đã hoàn tất, kèm đánh giá của cư dân (ẩn danh)." },
 };
 
@@ -49,8 +49,8 @@ export function CleaningApp({ data }: { data: DeptData }) {
           active={tab}
           onPick={setTab}
           items={[
-            { key: "queue", label: "Hàng việc", icon: <IconKanban />, count: open },
-            { key: "history", label: "Lịch sử", icon: <IconClock /> },
+            { key: "queue", label: "Danh sách công việc", icon: <IconKanban />, count: open },
+            { key: "history", label: "Lịch sử hoàn thành", icon: <IconClock /> },
           ]}
         />
         <PageHead {...HEAD[tab]} />

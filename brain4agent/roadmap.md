@@ -36,6 +36,8 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 ## 💡 Kho Ý Tưởng & Backlog (Idea Vault)
 
+- [ ] **(2026-10-12) Hồ sơ 19 đợt 2 (SPEC-P04):** việc ngoài phạm vi chỉ ở Tiếp nhận (đổi Q14 develop), dashboard hiệu suất phòng ban có bộ lọc thời gian + endpoint, Kho lịch sử nhập/xuất + xuất hao hụt, dashboard Agent, app điện thoại dùng `min_qty` thay `qty < 30`.
+
 - [ ] **(2026-10-11) Playbook Kỹ thuật cho quạt và nút bấm trong thang máy:** người dùng xếp trong phạm vi nhưng Kỹ thuật hiện chỉ có `PB-TEC-01` (đèn). Cần SPEC (playbook, checklist, bằng chứng, vật tư, từ vựng, prompt), kế hoạch MINOR. Tới lúc đó các ca này đi OUT_OF_SCOPE.
 - [ ] **(2026-10-11) Rà `PLACE_DEFS` của portal** (Trong căn hộ, Khu vực chung, Thang 1/2/3…) với `AREA_PATTERNS`; cân nhắc có nên đổi Q14 để ca Agent đánh ngoài phạm vi qua BPTN trước.
 - (plan 16) Chống sửa đè khi hai người cùng lưu vật tư một ticket (expected-version) — §C4 cố ý chưa làm; full replacement, lần sau thắng.
@@ -74,6 +76,8 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [ ] **(2026-10-04) Từ plan 04, cần nhóm quyết:** (1) ngoài phạm vi trả 404 thay vì 403 + audit (chặn dò ticket + phình audit do gọi lặp; đổi 8 test đã duyệt); (2) ghi chú kết quả có bắt buộc ở bước 10 (CR §9.4(2)) không; (3) cư dân gửi ảnh ngoài NEED_INFO; (4) đánh giá ticket MERGED khi ticket gốc CLOSED; (5) lỗ SPEC-P01 A2: marker "giờ hết rồi" hạ cả mệnh đề có người ngất — cần architect; (6) `_proven_lamp` trong `safety.py` coi mọi "đèn" có dấu trong mệnh đề là bằng chứng B-01 ("đèn … cháy đen" mới vá bằng từ vựng); (7) cụm cũ `ket nguoi` bắt "kẹt, người dùng phản ánh…"; (8) tồn kho mô phỏng không trừ khi giao việc — 2026-10-05 đã trừ khi phòng ban ghi "Đã xuất" (chặn vượt tồn); còn mở: giữ chỗ khi giao việc, hoàn kho khi huỷ; (9) `/mo/catalog` mở cho cư dân, `eta` không timezone trả 409; (10) từ vựng còn (sau vòng 3): "cháy" đứng riêng chỉ Bậc 2 (B-03, cần SPEC); "không có lửa nhưng khói rất nhiều" chỉ Bậc 2; ngữ cảnh khói thuốc ở câu khác không được loại; "kêu cứu" nghĩa bóng lên Bậc 1 (chủ ý).
 
 ## Đã hoàn thành (Done)
+
+- [x] **v1.13.0 (2026-10-12) — hồ sơ 19 đợt 1 UI/UX** + vá rò phiên proxy 8000. `planning/19_2026-10-12_ui-ux-polish/`. Đợt 2 (SPEC-P04) chờ chi tiết hoá + duyệt.
 - [x] **v1.10.0 (2026-10-10 18:18:44, Châm Anh) — guard vật tư backend + lưu nguyên tử** (plan 16): `POST material-usage` một giao dịch; guard phòng ban/số nguyên dương/Kỹ thuật ≥1 ở API cũ + mới + engine + hoàn thành; web/app một form một POST. Local + Docker ✅, thẩm định độc lập ✅ (lần 2). Còn: server, điện thoại thật, boot hub, commit.
 - [x] **v1.9.9 (2026-10-10, Châm Anh) — vật tư: bỏ đối chiếu định mức / đề xuất Agent** (plan 15): engine chỉ chặn đã dùng ≠ đã xuất; `material-plan` không bắt note; app/web bỏ ô lý do, một lần bấm lưu. Còn: harness UI Playwright (q41/q42 còn luật cũ), Docker `:8000`, commit.
 - [x] **v1.9.7 (2026-10-10, Châm Anh) — app Phòng ban: bỏ đề xuất vật tư của Agent** (plan 11 Q42): phòng ban chọn từ đầu; engine bước 7 giữ nguyên.

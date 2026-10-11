@@ -265,7 +265,7 @@ export type ManagementData = {
 };
 
 // ---------- 5.5 Warehouse ----------
-export type WarehouseItem = { code: string; name: string; unit: string; stock: number | null; custom: boolean };
+export type WarehouseItem = { code: string; name: string; unit: string; stock: number | null; min: number | null; custom: boolean };
 
 export type WarehouseRequest = {
   ticketId: string;

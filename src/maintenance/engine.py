@@ -2062,7 +2062,13 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             raise ActionDeniedError("Chỉ nhân viên được xem tồn kho", {"code": "ACTION_DENIED", "actor_id": actor_id})
         stock = self.repo.stock()
         return [
-            {"item_code": m.item_code, "item_name": m.item_name, "unit": m.unit, "qty": stock.get(m.item_code)}
+            {
+                "item_code": m.item_code,
+                "item_name": m.item_name,
+                "unit": m.unit,
+                "qty": stock.get(m.item_code),
+                "min_qty": m.min_qty,
+            }
             for m in self.all_materials()
         ]
 
