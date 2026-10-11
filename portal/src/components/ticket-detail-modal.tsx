@@ -228,10 +228,6 @@ export function TicketDetailModal({
               <span className="font-semibold text-slate-800">{ticket.statusLabel}</span>
             </div>
             <div>
-              <span className="text-slate-500 block">Nhân viên phụ trách</span>
-              <span className="font-semibold text-slate-800">{ticket.staffName ?? "Chưa phân công"}</span>
-            </div>
-            <div>
               <span className="text-slate-500 block">Vị trí</span>
               <span className="font-semibold text-slate-800">{ticket.location}</span>
             </div>

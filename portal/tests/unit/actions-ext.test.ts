@@ -15,7 +15,7 @@ vi.mock("@/server/session", () => ({
 vi.mock("next/cache", () => ({ refresh: () => undefined }));
 vi.mock("next/navigation", () => ({ redirect: () => undefined }));
 
-import { assignStaffAction, requestMaterialsAction } from "@/app/actions/departments";
+import { requestMaterialsAction } from "@/app/actions/departments";
 import { rateTicketAction, submitTicketAction } from "@/app/actions/resident";
 import { approveMaterialsAction } from "@/app/actions/warehouse";
 
@@ -78,18 +78,7 @@ describe("rateTicketAction", () => {
   });
 });
 
-describe("assignStaffAction / approveMaterialsAction", () => {
-  it("assign posts the staff id", async () => {
-    const r = await assignStaffAction("SIM-TKT-1", "SIM-STAFF-CLN-B");
-    expect(r.ok).toBe(true);
-    expect(calls[0].url).toBe("/mo/tickets/SIM-TKT-1/assign");
-    expect(calls[0].opts?.json).toEqual({ staff_id: "SIM-STAFF-CLN-B" });
-  });
-  it("assign rejects empty ids", async () => {
-    expect((await assignStaffAction("SIM-TKT-1", "")).ok).toBe(false);
-    expect((await assignStaffAction("", "SIM-STAFF-CLN-B")).ok).toBe(false);
-    expect(calls).toHaveLength(0);
-  });
+describe("approveMaterialsAction", () => {
   it("approve posts to materials/approve with an optional note", async () => {
     await approveMaterialsAction("SIM-TKT-1");
     expect(calls[0].url).toBe("/mo/tickets/SIM-TKT-1/materials/approve");

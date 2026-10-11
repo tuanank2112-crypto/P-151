@@ -131,16 +131,6 @@ export type BBqlRow = BExt & {
   closed_at?: string | null;
 };
 
-export type BStaff = {
-  staff_id: string;
-  department_id: string;
-  name: string;
-  skill: string;
-  area: string;
-  capacity: number;
-  open_tickets: number;
-};
-
 export type BResidentView = {
   ticket_id: string;
   created_at: string;

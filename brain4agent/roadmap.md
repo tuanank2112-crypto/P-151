@@ -29,6 +29,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [ ] Nếu deploy sau reverse proxy (Render): lấy IP client từ header tin cậy, nếu không khóa đăng nhập sẽ dồn về IP của proxy.
 
 ## 💡 Kho Ý Tưởng & Backlog (Idea Vault)
+- **Portal — chia việc kỹ thuật Điện / Nước (2026-10-11):** thay cho gán từng nhân viên (đã bỏ). Nhãn chuyên môn phải đến từ Agent/danh mục đóng (vd `playbook_departments` thêm `specialty`), KHÔNG suy từ từ khoá ở portal. Backend hiện chỉ có playbook đèn `PB-TEC-01` ⇒ cần chốt phạm vi nước trước.
 - **Portal — lịch sử nhập/xuất kho (2026-10-08):** bảng `stock_movements` lưu ghi chú "Nguồn cấp" khi nhập kho (hiện bị bỏ) và trừ tồn khi kho duyệt cấp vật tư cho ticket. Cần chốt có làm trước demo không.
 
 - [ ] **(2026-10-09) Từ thẩm định WP14 vòng 2:** thống nhất SYSTEM gọi `transition` từ ngoài (T09 nay 403, T05/T03 vẫn 409 — test §11); đồng bộ SPEC-P01 dòng 45 + `REF-agent-contract.py:246` với `grounded` mới; `safety._grounded("--")` = True (vùng cấm safety.py, chỉ chiều nâng); Agent nhắc lại vị trí đã khoá không kèm quote ⇒ cờ AGENT_FALLBACK báo nhầm (P09); T06 + trả lời vô hại thiếu vị trí nay về `SAFETY_REVIEW_REQUIRED` — thêm test.

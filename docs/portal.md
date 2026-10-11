@@ -1,7 +1,7 @@
 # portal — Cổng phản ánh cư dân (Next.js) — UI mới, gọi backend
 
 Website dựng từ bộ thiết kế `design-ticket-cu-dan/` (Trí). Từ hồ sơ 11 (v1.7.0) portal **không còn DB riêng**: mọi dữ liệu
-(ticket, người dùng, ảnh, vật tư, phân công, đánh giá) đi qua API backend Python `/api/v1` (engine CR-BPTN-03, Agent LLM,
+(ticket, người dùng, ảnh, vật tư, đánh giá) đi qua API backend Python `/api/v1` (engine CR-BPTN-03, Agent LLM,
 tầng an toàn). Backend trỏ Supabase ⇒ portal hiện dữ liệu thật. Yêu cầu giao diện: ghi chú anh Cố (Google Doc
 `1tlvFRnAioxn7LFHTNlM9TQgYzIDzx25ZC4pFxqB3qiA`). Hồ sơ + quyết định Q01–Q19:
 [`planning/11_2026-10-09_portal-backend-api/`](../planning/11_2026-10-09_portal-backend-api/plan.md). Hồ sơ dựng ban đầu:
@@ -55,7 +55,7 @@ portal/src/
 |---|---|---|
 | `/resident` | cư dân | Tiêu đề + nội dung góp ý + nơi + ảnh; bổ sung; đánh giá sao + thẻ + bình luận. Không khẩn cấp tự chọn, không xác nhận/hủy |
 | `/reception` | tiếp nhận | Chờ phân loại (nút theo blocker, khối Agent thật), Đã phân loại, Hiệu suất Agent (ô "Agent gợi ý đúng": % + ✓ số đúng / ✗ số sai cạnh nhau) |
-| `/cleaning`, `/technical` | phòng ban | Phân công tổ/kỹ thuật viên, yêu cầu vật tư (+ ngoài danh mục, chờ duyệt cấp), form hoàn thành (vệ sinh: ảnh bắt buộc + vật tư đã dùng; kỹ thuật: checklist vật tư tích hết) |
+| `/cleaning`, `/technical` | phòng ban | Nhận việc cả phòng (không gán từng nhân viên; `/mo/staff`, `/assign` backend còn nhưng portal không gọi), yêu cầu vật tư (+ ngoài danh mục, chờ duyệt cấp), form hoàn thành (vệ sinh: ảnh bắt buộc + vật tư đã dùng; kỹ thuật: checklist vật tư tích hết) |
 | `/management` | BQL | 5 ô tổng quan bấm được, phụ tải VS/KT bấm được, Tất cả ticket → modal, Việc của BQL (Đã tiếp nhận / Đã hoàn thành / Tất cả), Hiệu suất phòng ban, lối vào Kho |
 | `/warehouse` | kho, BQL | Tồn kho, nhập kho, thêm vật tư, Duyệt cấp yêu cầu |
 

@@ -2,11 +2,11 @@ import "server-only";
 import type { DeptData } from "@/lib/dto";
 import type { SessionUser } from "../session";
 import { buildDeptTicket, deptTicketFromSummary, stockMap } from "./build";
-import { FINISHED, brief, listTickets, readCases, readCatalog, readStaff, readStock } from "./shared";
+import { FINISHED, brief, listTickets, readCases, readCatalog, readStock } from "./shared";
 
 /** Cleaning and technical screens. The backend already scopes `/mo/tickets` to the caller's department. */
 export async function deptData(user: SessionUser): Promise<DeptData> {
-  const [list, stockRows, catalog, staffRows] = await Promise.all([listTickets(), readStock(), readCatalog(), readStaff()]);
+  const [list, stockRows, catalog] = await Promise.all([listTickets(), readStock(), readCatalog()]);
   const now = new Date();
   const stock = stockMap(stockRows);
   const cases = await readCases(list.filter((s) => !FINISHED.has(s.status)).map((s) => s.ticket_id));
@@ -20,13 +20,5 @@ export async function deptData(user: SessionUser): Promise<DeptData> {
     tickets,
     catalog: stockRows.map((r) => ({ itemCode: r.item_code, itemName: r.item_name, unit: r.unit ?? "", stock: r.qty })),
     customMaterials: catalog.custom_materials_enabled === true,
-    staff: staffRows.map((r) => ({
-      staffId: r.staff_id,
-      name: r.name,
-      skill: r.skill,
-      area: r.area,
-      capacity: r.capacity,
-      openTickets: r.open_tickets,
-    })),
   };
 }

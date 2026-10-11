@@ -3,7 +3,7 @@ import type { UserBrief } from "@/lib/dto";
 import { initials } from "@/lib/format";
 import { api, BackendError } from "../backend";
 import type { SessionUser } from "../session";
-import type { BCase, BCatalog, BStaff, BStockRow, BSummary } from "./types";
+import type { BCase, BCatalog, BStockRow, BSummary } from "./types";
 
 export const brief = (u: SessionUser): UserBrief => ({ name: u.name, avatar: initials(u.name) });
 
@@ -28,16 +28,6 @@ export const listTickets = () => api<BSummary[]>("/mo/tickets");
 export const readCase = (id: string) => api<BCase>(`/mo/tickets/${encodeURIComponent(id)}`);
 export const readStock = () => api<BStockRow[]>("/mo/warehouse/stock");
 export const readCatalog = () => api<BCatalog>("/mo/catalog");
-
-/** `GET /mo/staff` (SPEC-P04 §3). A backend without the route (404/405) means no staff list, not a broken page. */
-export async function readStaff(): Promise<BStaff[]> {
-  try {
-    return await api<BStaff[]>("/mo/staff");
-  } catch (e) {
-    if (e instanceof BackendError && (e.status === 404 || e.status === 405)) return [];
-    throw e;
-  }
-}
 
 /** Detail of at most MAX_DETAIL_CALLS tickets, in list order, 6 at a time. A ticket that vanished meanwhile (404) is skipped; any other error propagates. */
 export async function readCases(ids: string[], limit = MAX_DETAIL_CALLS): Promise<BCase[]> {

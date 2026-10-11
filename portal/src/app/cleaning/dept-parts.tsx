@@ -1,17 +1,17 @@
 "use client";
 
 /**
- * Parts shared by the two department screens (cleaning, technical): ticket card, assign / reason / finish
- * modals, staff load and history lists. SPEC-P03 §4. Real data from the DTO only, no invented text or numbers.
+ * Parts shared by the two department screens (cleaning, technical): ticket card, reason / finish
+ * modals and history lists. No per-staff assignment: the department takes the ticket as a whole. SPEC-P03 §4. Real data from the DTO only, no invented text or numbers.
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { acceptAction, assignStaffAction, finishTicketAction, reportWrongDeptAction, returnAction } from "@/app/actions/departments";
+import { acceptAction, finishTicketAction, reportWrongDeptAction, returnAction } from "@/app/actions/departments";
 import { ticketDetailAction } from "@/app/actions/detail";
 import { PhotoStrip } from "@/components/photo-strip";
 import { Feedback } from "@/components/rating-summary";
 import { useAction } from "@/components/use-action";
 import { MAX_PHOTOS } from "@/lib/constants";
-import type { DeptData, DeptTicket, MaterialRow, StaffRow, TicketDetail } from "@/lib/dto";
+import type { DeptTicket, MaterialRow, TicketDetail } from "@/lib/dto";
 import type { ActionResult, ErrorCode } from "@/lib/result";
 
 /** Visible keyboard focus on every clickable element (globals.css has no ring for plain buttons) */
@@ -23,7 +23,6 @@ const FIELD = `w-full rounded-xl border border-slate-300 bg-white p-2.5 text-sm 
 export type CardActions = {
   open: (id: string) => void;
   accept: (id: string) => void;
-  assign: (id: string, staffId: string, done: () => void, fail: (msg: string) => boolean) => void;
   returnBack: (id: string, note: string, done: () => void, fail: (msg: string) => boolean) => void;
   wrongDept: (id: string, note: string, done: () => void, fail: (msg: string) => boolean) => void;
   finish: (id: string, fd: FormData, done: () => void, fail: (msg: string) => boolean) => void;
@@ -42,7 +41,6 @@ export function useDeptScreen() {
   const actions: CardActions = {
     open: (id) => run(() => ticketDetailAction(id), setSelected),
     accept: (id) => run(() => acceptAction(id)),
-    assign: (id, sid, done, fail) => send(() => assignStaffAction(id, sid), done, fail),
     returnBack: (id, note, done, fail) => send(() => returnAction(id, note), done, fail),
     wrongDept: (id, note, done, fail) => send(() => reportWrongDeptAction(id, note), done, fail),
     finish: (id, fd, done, fail) => send(() => finishTicketAction(id, fd), done, fail),
@@ -111,69 +109,7 @@ export function Stars({ n }: { n: number }) {
 }
 
 // ---------- modals ----------
-/** ROUTED "Phân công" (assign = accept, SPEC-P04 §3) and IN_PROGRESS "Đổi người" */
-export function AssignModal(props: {
-  t: DeptTicket;
-  staff: StaffRow[];
-  pending: boolean;
-  onClose: () => void;
-  onSubmit: (staffId: string, done: () => void, fail: (msg: string) => boolean) => void;
-}) {
-  const { t } = props;
-  const [pick, setPick] = useState(t.staffId ?? "");
-  const [err, setErr] = useState("");
-  const change = t.stage === 4;
-  return (
-    <Modal title={`${change ? "Đổi người xử lý" : "Phân công"} ${t.code}`} sub={change ? "Chọn người thay thế." : "Phân công cũng là nhận việc: ticket chuyển sang Đang xử lý."} onClose={props.onClose}>
-      <div role="radiogroup" aria-label="Nhân viên" className="flex flex-col gap-2">
-        {props.staff.map((s) => {
-          const on = pick === s.staffId;
-          const full = s.capacity > 0 && s.openTickets >= s.capacity;
-          return (
-            <button
-              key={s.staffId}
-              type="button"
-              role="radio"
-              aria-checked={on}
-              className={`flex cursor-pointer flex-col gap-0.5 rounded-xl border-2 bg-white p-3 text-left ${FOCUS} ${on ? "border-brand bg-soft" : "border-line hover:border-[#C9DAFF]"}`}
-              onClick={() => setPick(s.staffId)}
-            >
-              <span className="text-sm font-semibold">{s.name}</span>
-              <span className="text-xs text-muted">
-                {[s.skill, s.area].filter(Boolean).join(" · ")}
-              </span>
-              <span className={`text-xs ${full ? "font-semibold text-rose-700" : "text-muted"}`}>
-                Đang giữ {s.openTickets}
-                {s.capacity > 0 ? `/${s.capacity}` : ""} ticket{full ? " · đã đủ tải" : ""}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-      <div className="mt-3">
-        <ErrorBox msg={err} />
-      </div>
-      <div className="mt-3 flex justify-end gap-2 border-t border-slate-100 pt-3">
-        <button type="button" className={BTN} onClick={props.onClose}>
-          Hủy
-        </button>
-        <button
-          type="button"
-          className={PRIMARY}
-          disabled={props.pending || !pick || pick === t.staffId}
-          onClick={() => {
-            setErr("");
-            props.onSubmit(pick, props.onClose, (m) => (setErr(m), true));
-          }}
-        >
-          {change ? "Đổi người" : "Phân công"}
-        </button>
-      </div>
-    </Modal>
-  );
-}
 
-/** One required note (return to reception / wrong department) */
 export function ReasonModal(props: {
   title: string;
   sub: string;
@@ -410,12 +346,11 @@ export function FinishModal(props: {
 }
 
 // ---------- ticket card ----------
-export type Dialog = null | "assign" | "finish" | "return" | "wrong" | "request";
+export type Dialog = null | "finish" | "return" | "wrong" | "request";
 
 export function WorkCard(props: {
   t: DeptTicket;
   kind: "cleaning" | "technical";
-  staff: StaffRow[];
   pending: boolean;
   actions: CardActions;
   /** Technical only: extra buttons + dialogs of a card that is IN_PROGRESS */
@@ -428,7 +363,6 @@ export function WorkCard(props: {
   const left = t.hoursLeft;
   const waitingMaterial = t.stage === 4 && t.paused && t.blockerCode === "WAITING_MATERIAL";
   const inProgress = t.stage === 4 && !t.paused;
-  const canAssign = props.staff.length > 0;
 
   return (
     <article className="card flex flex-col gap-2.5 p-[18px]">
@@ -446,7 +380,6 @@ export function WorkCard(props: {
       <h3 className="m-0 text-[15px] font-semibold leading-normal">{t.title || t.text}</h3>
       {t.content && <p className="m-0 text-sm leading-normal text-body">{t.content}</p>}
       <span className="text-[13px] text-muted">{t.location}</span>
-      {t.staffName && t.stage >= 4 && <span className="text-[13px] text-body">Người xử lý: <b>{t.staffName}</b></span>}
       {t.photos.length > 0 && <PhotoStrip photos={t.photos} />}
       {t.extras.length > 0 && (
         <div className="rounded-xl bg-field p-2.5 text-[13px]">
@@ -495,15 +428,9 @@ export function WorkCard(props: {
 
       {t.stage === 3 && (
         <div className="flex flex-wrap items-center gap-2 border-t border-line-soft pt-2.5">
-          {canAssign ? (
-            <button type="button" className={PRIMARY} disabled={props.pending} onClick={() => setDialog("assign")}>
-              Phân công
-            </button>
-          ) : (
-            <button type="button" className={PRIMARY} disabled={props.pending} onClick={() => actions.accept(t.id)}>
-              Nhận việc
-            </button>
-          )}
+          <button type="button" className={PRIMARY} disabled={props.pending} onClick={() => actions.accept(t.id)}>
+            Nhận việc
+          </button>
           <button type="button" className={`${BTN} ml-auto text-xs`} disabled={props.pending} onClick={() => setDialog("return")}>
             Không phải việc phòng mình
           </button>
@@ -515,11 +442,6 @@ export function WorkCard(props: {
           <button type="button" className={PRIMARY} disabled={props.pending} onClick={() => setDialog("finish")}>
             Đánh dấu hoàn thành
           </button>
-          {canAssign && (
-            <button type="button" className={BTN} disabled={props.pending} onClick={() => setDialog("assign")}>
-              Đổi người
-            </button>
-          )}
           {props.requestButton?.(() => setDialog("request"))}
           <button type="button" className={`${BTN} ml-auto text-xs`} disabled={props.pending} onClick={() => setDialog("wrong")}>
             Báo sai phòng ban
@@ -529,15 +451,6 @@ export function WorkCard(props: {
 
       {t.stage >= 5 && <Feedback t={t} />}
 
-      {dialog === "assign" && (
-        <AssignModal
-          t={t}
-          staff={props.staff}
-          pending={props.pending}
-          onClose={close}
-          onSubmit={(sid, done, fail) => actions.assign(t.id, sid, done, fail)}
-        />
-      )}
       {dialog === "finish" && (
         <FinishModal t={t} kind={props.kind} pending={props.pending} onClose={close} onSubmit={(fd, done, fail) => actions.finish(t.id, fd, done, fail)} />
       )}
@@ -602,67 +515,6 @@ export function HistoryList({ tickets, onOpen }: { tickets: DeptTicket[]; onOpen
           )}
         </article>
       ))}
-    </section>
-  );
-}
-
-/** "Phân công tổ": workload per staff = open tickets held, plus the not-yet-assigned queue */
-export function StaffLoad({ data, onOpen }: { data: DeptData; onOpen: (id: string) => void }) {
-  const open = data.tickets.filter((t) => t.stage < 5);
-  const unassigned = open.filter((t) => t.stage === 3);
-  if (data.staff.length === 0) {
-    return <div className="card max-w-[900px] p-10 text-center text-muted">Chưa có danh sách nhân viên từ máy chủ.</div>;
-  }
-  return (
-    <section className="flex max-w-[900px] flex-col gap-3.5">
-      {data.staff.map((s) => {
-        const mine = open.filter((t) => t.staffId === s.staffId);
-        const pct = s.capacity > 0 ? Math.min(100, Math.round((s.openTickets / s.capacity) * 100)) : 0;
-        return (
-          <article key={s.staffId} className="card flex flex-col gap-2 px-6 py-[18px]">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="text-[15px] font-bold">{s.name}</span>
-              <span className="text-[13px] text-muted">{[s.skill, s.area].filter(Boolean).join(" · ")}</span>
-              <span className="pill cat-none ml-auto">
-                {s.openTickets}
-                {s.capacity > 0 ? `/${s.capacity}` : ""} ticket đang mở
-              </span>
-            </div>
-            {s.capacity > 0 && (
-              <div className="h-2 overflow-hidden rounded-full bg-line" role="img" aria-label={`Tải ${pct}%`}>
-                <div className="h-full rounded-full bg-brand-mid" style={{ width: `${pct}%` }} />
-              </div>
-            )}
-            {mine.length === 0 ? (
-              <span className="text-[13px] text-muted">Không có ticket đang giữ.</span>
-            ) : (
-              <ul className="m-0 flex list-none flex-col gap-1 p-0">
-                {mine.map((t) => (
-                  <li key={t.id} className="flex flex-wrap items-center gap-2 text-sm">
-                    <CodeButton t={t} onOpen={onOpen} />
-                    <span className="min-w-0 flex-1 truncate">{t.title || t.text}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </article>
-        );
-      })}
-      <article className="card flex flex-col gap-2 px-6 py-[18px]">
-        <span className="text-[15px] font-bold">Chưa phân công</span>
-        {unassigned.length === 0 ? (
-          <span className="text-[13px] text-muted">Không có ticket chờ phân công.</span>
-        ) : (
-          <ul className="m-0 flex list-none flex-col gap-1 p-0">
-            {unassigned.map((t) => (
-              <li key={t.id} className="flex flex-wrap items-center gap-2 text-sm">
-                <CodeButton t={t} onOpen={onOpen} />
-                <span className="min-w-0 flex-1 truncate">{t.title || t.text}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </article>
     </section>
   );
 }

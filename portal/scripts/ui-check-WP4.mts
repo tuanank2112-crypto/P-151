@@ -139,10 +139,7 @@ try {
       });
       await page.locator("section", { hasText: "Hoàn thành" }).locator("article", { hasText: mem.cleaning }).waitFor({ timeout: 15000 });
     });
-    await check("cleaning: staff tab + history tab render", async () => {
-      await tab(page, "Phân công tổ");
-      await page.waitForTimeout(500);
-      await both(page, "cleaning-staff");
+    await check("cleaning: history tab renders", async () => {
       await tab(page, "Lịch sử");
       await page.waitForTimeout(500);
       await both(page, "cleaning-history");

@@ -30,3 +30,4 @@
 - G6 đọc ✅: cổng 8000 chạy trên Supabase thật (67 ticket, schema 0002), cờ 0003/0004 tắt. Mật khẩu DB đúng nằm trong `D:\P151\.env` (gitignored). Gotcha psycopg2 + pooler bỏ qua read-only.
 - Tab Hiệu suất Agent: số lần đúng/sai đặt cạnh % trong ô "Agent gợi ý đúng" (yêu cầu người dùng); trên Supabase hiện 1 ticket có quyết định Agent để chấm.
 - Đồng bộ não (nao-dong-bo): docs/portal.md, index, roadmap, changelog, state.json, kernel theo G6 Supabase + ô Agent đúng/sai + PR #20.
+- 2026-10-11 Người dùng: bỏ gán từng nhân viên ở portal. Phòng vệ sinh/kỹ thuật chỉ "Nhận việc" cả phòng; bỏ nút Phân công/Đổi người, tab "Phân công tổ", dòng "Người xử lý/Nhân viên phụ trách", không gọi `/mo/staff`. Backend `/assign`, `/mo/staff` GIỮ (không đổi contract). typecheck/lint 0, vitest 123 passed. Chia Điện/Nước chưa làm: backend chỉ có playbook đèn PB-TEC-01, cần chốt nguồn nhãn (Agent/danh mục, không khớp từ khoá).

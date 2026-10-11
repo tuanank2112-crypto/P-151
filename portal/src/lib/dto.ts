@@ -52,8 +52,6 @@ export type AgentInfo = {
 /** none = no material plan; pending = enough stock, waiting for approval; waiting_stock = short, waiting for goods; approved = issued */
 export type MaterialStatus = "none" | "pending" | "waiting_stock" | "approved";
 
-export type StaffRow = { staffId: string; name: string; skill: string; area: string; capacity: number; openTickets: number };
-
 // ---------- 5.1 Resident ----------
 export type ResidentTicket = {
   id: string;
@@ -223,8 +221,6 @@ export type DeptData = {
   catalog: CatalogItem[];
   /** Backend flag `custom_materials_enabled` (SPEC-P01 §3); the "+" button is hidden when false */
   customMaterials: boolean;
-  /** `GET /mo/staff`: teams / technicians of this department with their open-ticket count */
-  staff: StaffRow[];
 };
 
 // ---------- 5.4 Management ----------

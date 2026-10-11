@@ -15,7 +15,7 @@ import { RequestModal } from "./request-modal";
 type Tab = "queue" | "mat" | "history";
 
 const HEAD: Record<Tab, { title: string; sub: string }> = {
-  queue: { title: "Hàng việc kỹ thuật", sub: "Ticket khẩn cấp lên đầu, kèm thời hạn xử lý. Phân công để bắt đầu xử lý." },
+  queue: { title: "Hàng việc kỹ thuật", sub: "Ticket khẩn cấp lên đầu, kèm thời hạn xử lý. Bấm Nhận việc để bắt đầu xử lý." },
   mat: { title: "Yêu cầu vật tư", sub: "Vật tư đã yêu cầu theo từng ticket và trạng thái duyệt cấp." },
   history: { title: "Lịch sử hoàn thành", sub: "Ticket chờ nghiệm thu hoặc đã hoàn tất, kèm đánh giá của cư dân (ẩn danh)." },
 };
@@ -85,7 +85,6 @@ export function TechnicalApp({ data }: { data: DeptData }) {
                 key={t.id}
                 t={t}
                 kind="technical"
-                staff={data.staff}
                 pending={s.pending}
                 actions={s.actions}
                 requestButton={(open) => (
