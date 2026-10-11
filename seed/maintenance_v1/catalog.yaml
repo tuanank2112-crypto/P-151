@@ -10,14 +10,22 @@ site:
   name: Ocean Park
   buildings: [S1, S2]
 
+# Mỗi khu vực MỘT tài sản đèn (plan 14): đèn hành lang tầng 1 giống tầng 6, không chia theo tòa-tầng.
+# Engine khớp theo phần khu vực của vị trí; khu vực không có ở đây (Hầm xe, Sảnh chính…) ⇒ ASSET_UNCLEAR, BPTN chọn.
+# `area` phải là nhãn trong src/maintenance/rules.py AREA_PATTERNS; mỗi khu vực tối đa một tài sản ACTIVE.
 assets:
-  - {asset_id: SIM-ASSET-LIGHT-001, asset_type: LIGHTING, location_normalized: "Tòa S1 / Tầng 3 / Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.001, synthetic: true, read_only: true}
-  # Hai asset cùng vị trí: dùng cho test lookup AMBIGUOUS
-  - {asset_id: SIM-ASSET-LIGHT-002, asset_type: LIGHTING, location_normalized: "Tòa S1 / Tầng 5 / Sảnh thang máy", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.002, synthetic: true, read_only: true}
-  - {asset_id: SIM-ASSET-LIGHT-003, asset_type: LIGHTING, location_normalized: "Tòa S1 / Tầng 5 / Sảnh thang máy", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.003, synthetic: true, read_only: true}
-  - {asset_id: SIM-ASSET-LIGHT-004, asset_type: LIGHTING, location_normalized: "Tòa S2 / Tầng 2 / Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.004, synthetic: true, read_only: true}
-  - {asset_id: SIM-ASSET-LIGHT-005, asset_type: LIGHTING, location_normalized: "Tòa S2 / Tầng 7 / Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.005, synthetic: true, read_only: true}
-  - {asset_id: SIM-ASSET-LIGHT-006, asset_type: LIGHTING, location_normalized: "Tòa S1 / Tầng B1 / Hầm xe", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.006, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-HALLWAY, asset_type: LIGHTING, name: "Đèn hành lang", area: "Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.area.hallway, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-LIFT-LOBBY, asset_type: LIGHTING, name: "Đèn sảnh thang máy", area: "Sảnh thang máy", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.area.lift-lobby, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-LIFT-CABIN, asset_type: LIGHTING, name: "Đèn thang máy", area: "Thang máy", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.area.lift-cabin, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-STAIRS, asset_type: LIGHTING, name: "Đèn cầu thang bộ", area: "Cầu thang bộ", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.area.stairs, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-WASTE-ROOM, asset_type: LIGHTING, name: "Đèn phòng rác", area: "Phòng rác", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.area.waste-room, synthetic: true, read_only: true}
+  # Ngừng dùng (trước plan 14, một tài sản mỗi tòa-tầng): giữ để mã trên ticket cũ vẫn tra được. KHÔNG được chọn.
+  - {asset_id: SIM-ASSET-LIGHT-001, asset_type: LIGHTING, name: "Đèn hành lang (cũ)", area: "Hành lang", location_normalized: "Tòa S1 / Tầng 3 / Hành lang", asset_status: RETIRED_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.001, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-002, asset_type: LIGHTING, name: "Đèn sảnh thang máy (cũ)", area: "Sảnh thang máy", location_normalized: "Tòa S1 / Tầng 5 / Sảnh thang máy", asset_status: RETIRED_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.002, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-003, asset_type: LIGHTING, name: "Đèn sảnh thang máy (cũ)", area: "Sảnh thang máy", location_normalized: "Tòa S1 / Tầng 5 / Sảnh thang máy", asset_status: RETIRED_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.003, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-004, asset_type: LIGHTING, name: "Đèn hành lang (cũ)", area: "Hành lang", location_normalized: "Tòa S2 / Tầng 2 / Hành lang", asset_status: RETIRED_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.004, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-005, asset_type: LIGHTING, name: "Đèn hành lang (cũ)", area: "Hành lang", location_normalized: "Tòa S2 / Tầng 7 / Hành lang", asset_status: RETIRED_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.005, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-006, asset_type: LIGHTING, name: "Đèn hầm xe (cũ)", area: "Hầm xe", location_normalized: "Tòa S1 / Tầng B1 / Hầm xe", asset_status: RETIRED_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.006, synthetic: true, read_only: true}
 
 # Định mức (norm) và tồn kho mô phỏng. simulated_stock_qty=null nghĩa là tồn kho không rõ.
 materials:

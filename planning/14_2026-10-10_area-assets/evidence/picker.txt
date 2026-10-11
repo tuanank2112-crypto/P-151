@@ -1,0 +1,4 @@
+ticket SIM-TKT-0001: VERIFYING / ASSET_UNCLEAR
+PASS phone #bptn-asset: ["Đèn hành lang","Đèn sảnh thang máy","Đèn cầu thang bộ","Đèn phòng rác"]
+PASS web select[name=asset_id]: ["Đèn hành lang","Đèn sảnh thang máy","Đèn cầu thang bộ","Đèn phòng rác"]
+ALL PASS

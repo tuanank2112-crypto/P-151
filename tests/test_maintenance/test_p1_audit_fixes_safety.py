@@ -149,8 +149,8 @@ def test_p10_an_invented_place_in_the_catalog_is_kept_and_audited(clock):
     engine = agent_engine(clock, invented)
     case = engine.receive("Hành lang nhiều rác, đèn cũng không sáng", resident_id=RESIDENT)
     record = case.agent_decision
-    # the example job's asset is not at S2/7, so only `jobs[1].asset_id` is rejected: the catalog check, not the quote
-    assert record.rejected == ["jobs[1].asset_id"]
+    # plan 14: the example asset belongs to the AREA (Hành lang), not to a floor, so S2/7 rejects nothing
+    assert record.rejected == []
     assert record.agent_location == "Tòa S2 / Tầng 7 / Hành lang"
     assert record.decision.location.quote == ".."  # risk accepted on purpose (SPEC-P10 section 5)
 

@@ -3,24 +3,20 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { addStockItemAction, approveMaterialsAction, receiveStockAction } from "@/app/actions/warehouse";
-import { IconBox, IconWrench } from "@/components/icons";
+import { receiveStockAction } from "@/app/actions/warehouse";
+import { IconBox } from "@/components/icons";
 import { Body, Header, NavTiles, PageHead } from "@/components/shell";
 import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
 import { ROLE_LABEL } from "@/lib/constants";
 import type { WarehouseData, WarehouseItem } from "@/lib/dto";
 
-type Tab = "inventory" | "requests";
+type Tab = "inventory";
 
 const HEAD: Record<Tab, { title: string; sub: string }> = {
   inventory: {
     title: "Kho vật tư & linh kiện",
-    sub: "Danh mục vật tư và số lượng tồn kho.",
-  },
-  requests: {
-    title: "Yêu cầu cấp phát vật tư",
-    sub: "Ticket phòng ban đã yêu cầu vật tư: duyệt cấp để ticket chạy tiếp, thiếu hàng thì nhập kho trước.",
+    sub: "Danh mục vật tư và số lượng tồn kho. Phòng ban tự ghi vật tư đã dùng khi hoàn thành; kho nhập thêm số lượng.",
   },
 };
 
@@ -37,19 +33,9 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
 
   // Modal State for Import Stock
   const [modalOpen, setModalOpen] = useState(false);
-  const [isNewItem, setIsNewItem] = useState(false);
-
-  // Existing item form
+  // Receive stock for an existing catalog code (new codes are not supported by the backend)
   const [selectedCode, setSelectedCode] = useState(data.inventory[0]?.code ?? "");
   const [importQty, setImportQty] = useState(10);
-  const [importNote, setImportNote] = useState("");
-
-  // New item form
-  const [newName, setNewName] = useState("");
-  const [newUnit, setNewUnit] = useState("cái");
-  const [newStock, setNewStock] = useState(10);
-
-  const pendingRequests = data.requests.filter((r) => !r.approved);
   const lowStockCount = data.inventory.filter(isLowStock).length;
 
   const filteredInventory = data.inventory.filter((item) => {
@@ -65,32 +51,18 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
 
   const handleImportSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isNewItem) {
-      if (!newName.trim() || !newUnit.trim()) return;
-      run(
-        () => addStockItemAction({ name: newName.trim(), unit: newUnit.trim(), qty: Number(newStock) }),
-        () => {
-          setModalOpen(false);
-          setIsNewItem(false);
-          setNewName("");
-        },
-      );
-    } else {
-      if (!selectedCode || importQty <= 0) return;
-      run(
-        () => receiveStockAction(selectedCode, Number(importQty)),
-        () => {
-          setModalOpen(false);
-          setImportQty(10);
-          setImportNote("");
-        },
-      );
-    }
+    if (!selectedCode || importQty <= 0) return;
+    run(
+      () => receiveStockAction(selectedCode, Number(importQty)),
+      () => {
+        setModalOpen(false);
+        setImportQty(10);
+      },
+    );
   };
 
   const openQuickImport = (item: WarehouseItem) => {
     setSelectedCode(item.code);
-    setIsNewItem(false);
     setImportQty(10);
     setModalOpen(true);
   };
@@ -101,15 +73,14 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
         avatar={data.user.avatar}
         name={data.user.name}
         rolePill={fromManagement ? ROLE_LABEL.management : ROLE_LABEL.warehouse}
-        bellLabel="Yêu cầu cấp vật tư"
-        bellCount={pendingRequests.length}
-        notices={pendingRequests.map((r) => ({
-          id: `req-${r.ticketId}`,
-          title: `Cấp vật tư: ${r.lines.map((l) => l.itemName).join(", ")}`,
+        bellLabel="Thông báo kho"
+        bellCount={lowStockCount}
+        notices={data.inventory.filter(isLowStock).map((i) => ({
+          id: `low-${i.code}`,
+          title: `Hết hàng: ${i.name}`,
           urgent: false,
-          tag: "Chờ xuất kho",
-          time: r.since,
-          body: `Ticket ${r.ticketCode} · ${r.departmentName}`,
+          tag: "Tồn kho",
+          body: `Mã ${i.code}`,
         }))}
       />
       <Body>
@@ -119,7 +90,6 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
           onPick={setTab}
           items={[
             { key: "inventory", label: "Kho vật tư", icon: <IconBox />, count: data.inventory.length },
-            { key: "requests", label: "Yêu cầu cấp phát", icon: <IconWrench />, count: pendingRequests.length },
           ]}
         />
         {fromManagement && (
@@ -146,12 +116,6 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
                 <span className="text-sm text-muted">Cảnh báo tồn kho thấp</span>
                 <span className={`text-[30px] font-bold ${lowStockCount > 0 ? "text-rose-600" : "text-emerald-600"}`}>
                   {lowStockCount}
-                </span>
-              </div>
-              <div className="card flex flex-col gap-1 px-6 py-5" style={{ flex: "1 1 200px" }}>
-                <span className="text-sm text-muted">Yêu cầu chờ xuất kho</span>
-                <span className={`text-[30px] font-bold ${pendingRequests.length > 0 ? "text-amber-600" : "text-slate-800"}`}>
-                  {pendingRequests.length}
                 </span>
               </div>
             </div>
@@ -181,19 +145,8 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
                 />
                 <button
                   type="button"
-                  className="btn text-xs whitespace-nowrap"
-                  onClick={() => {
-                    setIsNewItem(true);
-                    setModalOpen(true);
-                  }}
-                >
-                  + Thêm vật tư
-                </button>
-                <button
-                  type="button"
                   className="btn primary bg-sky-600 hover:bg-sky-700 text-white font-medium text-xs whitespace-nowrap shadow-xs"
                   onClick={() => {
-                    setIsNewItem(false);
                     setModalOpen(true);
                   }}
                 >
@@ -259,94 +212,6 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
           </div>
         )}
 
-        {tab === "requests" && (
-          <section className="flex flex-col gap-4">
-            {data.requests.length === 0 && (
-              <div className="card p-10 text-center text-muted">Chưa có yêu cầu cấp phát vật tư nào.</div>
-            )}
-            {data.requests.map((r) => (
-              <article key={r.ticketId} data-testid="material-request" className="card flex flex-col gap-4 p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex items-center gap-3.5">
-                    <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-slate-100 text-slate-700 font-bold">
-                      📦
-                    </span>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm font-bold text-sky-700">{r.ticketCode}</span>
-                        <span className="text-xs text-muted">· {r.since}</span>
-                      </div>
-                      <h4 className="text-sm font-bold text-slate-900 mt-0.5 mb-0.5">{r.ticketText}</h4>
-                      <p className="text-xs text-slate-500 m-0">{r.departmentName}</p>
-                    </div>
-                  </div>
-                  {r.approved ? (
-                    <span className="pill st-hoan_thanh">Đã cấp</span>
-                  ) : r.short ? (
-                    <span className="pill req">⏳ Thiếu hàng, chờ nhập kho</span>
-                  ) : (
-                    <span className="pill st-da_chuyen">Chờ duyệt cấp</span>
-                  )}
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Vật tư</th>
-                        <th>Cần</th>
-                        <th>Tồn</th>
-                        <th>Còn thiếu</th>
-                        <th />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {r.lines.map((l) => (
-                        <tr key={l.itemCode}>
-                          <td className="font-medium">{l.itemName}</td>
-                          <td>
-                            {l.plannedQty} {l.unit}
-                          </td>
-                          <td className={l.stock !== null && l.stock <= 0 ? "font-bold text-rose-600" : ""}>
-                            {l.stock ?? "chưa rõ"}
-                          </td>
-                          <td className={l.short ? "font-bold text-rose-600" : "text-slate-500"}>{l.shortage}</td>
-                          <td>
-                            {l.short && !r.approved && (
-                              <button
-                                type="button"
-                                className="btn text-xs py-1 px-2.5 hover:bg-sky-50 hover:text-sky-700"
-                                disabled={pending}
-                                onClick={() => run(() => receiveStockAction(l.itemCode, l.shortage))}
-                              >
-                                Nhập đủ {l.itemName} (+{l.shortage})
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {!r.approved && (
-                  <div className="flex flex-wrap items-center gap-3">
-                    <button
-                      type="button"
-                      className="btn primary bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs shadow-xs"
-                      disabled={pending || r.short}
-                      title={r.short ? "Nhập kho trước" : undefined}
-                      onClick={() => run(() => approveMaterialsAction(r.ticketId))}
-                    >
-                      Duyệt cấp
-                    </button>
-                    {r.short && <span className="text-xs text-rose-700">Nhập kho trước: kho chưa đủ số vật tư yêu cầu.</span>}
-                  </div>
-                )}
-              </article>
-            ))}
-          </section>
-        )}
       </Body>
 
       {/* ────────────────── Modal: Nhập thêm kho ────────────────── */}
@@ -355,20 +220,12 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
               <h3 className="text-base font-bold text-slate-800">
-                {isNewItem ? "Thêm vật tư mới vào danh mục kho" : "Nhập thêm số lượng vật tư"}
+                Nhập thêm số lượng vật tư
               </h3>
-              <button
-                type="button"
-                onClick={() => setIsNewItem(!isNewItem)}
-                className="text-xs text-sky-600 hover:underline font-medium cursor-pointer"
-              >
-                {isNewItem ? "← Chọn vật tư có sẵn" : "+ Thêm vật tư mới"}
-              </button>
             </div>
 
             <form onSubmit={handleImportSubmit} className="space-y-4 text-xs">
-              {!isNewItem ? (
-                <>
+              <div className="space-y-4">
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Chọn vật tư nhập thêm:</label>
                     <select
@@ -395,57 +252,8 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
                         onChange={(e) => setImportQty(Number(e.target.value))}
                       />
                     </div>
-                    <div>
-                      <label className="font-semibold text-slate-700 block mb-1">Ghi chú nhập hàng:</label>
-                      <input
-                        type="text"
-                        placeholder="Ví dụ: Lô nhập bảo trì tháng 10"
-                        className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white"
-                        value={importNote}
-                        onChange={(e) => setImportNote(e.target.value)}
-                      />
-                    </div>
                   </div>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">Tên vật tư:</label>
-                    <input
-                      type="text"
-                      placeholder="Ví dụ: Ống nước PVC 21"
-                      className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white"
-                      value={newName}
-                      onChange={(e) => setNewName(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="font-semibold text-slate-700 block mb-1">Đơn vị:</label>
-                      <input
-                        type="text"
-                        placeholder="Cái, Cuộn..."
-                        className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white"
-                        value={newUnit}
-                        onChange={(e) => setNewUnit(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="font-semibold text-slate-700 block mb-1">Số lượng đầu:</label>
-                      <input
-                        type="number"
-                        min={0}
-                        className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white"
-                        value={newStock}
-                        onChange={(e) => setNewStock(Number(e.target.value))}
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
+              </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
@@ -460,7 +268,7 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
                   className="btn primary bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold"
                   disabled={pending}
                 >
-                  {isNewItem ? "Lưu mã vật tư mới" : "Xác nhận nhập kho"}
+                  Xác nhận nhập kho
                 </button>
               </div>
             </form>

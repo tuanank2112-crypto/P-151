@@ -1,0 +1,14 @@
+captured_at=2026-10-10T17:52:30+07:00
+$ node planning/16_2026-10-10_material-guards/evidence/wp4/ui_probe.mjs http://127.0.0.1:8017 C:/P-151/portal planning/16_2026-10-10_material-guards/evidence/wp4/screens
+file:///C:/P-151/planning/16_2026-10-10_material-guards/evidence/wp4/ui_probe.mjs:31
+  if (r.status >= 300) throw new Error(`${method} ${p} -> ${r.status} ${JSON.stringify(data).slice(0, 200)}`);
+                             ^
+
+Error: POST /mo/tickets/SIM-TKT-0009/accept -> 403 {"detail":{"message":"Ticket không thuộc phòng ban của SIM-ACTOR-DEPT-TEC-01","decision":"DENY","code":"ACTION_DENIED","requested_action":"TRANSITION","actor_id":"SIM-ACTOR-DEPT-TEC-01","actor_role":"
+    at call (file:///C:/P-151/planning/16_2026-10-10_material-guards/evidence/wp4/ui_probe.mjs:31:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async started (file:///C:/P-151/planning/16_2026-10-10_material-guards/evidence/wp4/ui_probe.mjs:36:3)
+    at async file:///C:/P-151/planning/16_2026-10-10_material-guards/evidence/wp4/ui_probe.mjs:114:15
+
+Node.js v24.19.0
+exit=1

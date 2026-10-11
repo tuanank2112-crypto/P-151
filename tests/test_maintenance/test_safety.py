@@ -328,7 +328,9 @@ def test_benign_lamp_report_routes_normally(fresh):
     assert [(s.signal_id, s.status, s.rule_id) for s in case.ticket.risk_signals] == [("T2-03", "ABSENT", "B-01")]
     normal = fresh.get(report(fresh, "Đèn hành lang tầng 3 tòa S2 không sáng."))
     assert normal.ticket.risk_level == RiskLevel.NONE and normal.classification is not None  # step 3 ran
-    assert normal.ticket.blocker.code not in SAFETY_REASONS
+    assert normal.ticket.status == "ROUTED" and (
+        normal.ticket.blocker is None or normal.ticket.blocker.code not in SAFETY_REASONS
+    )
 
 
 def test_emergency_links_related_tickets_by_location(fresh, clock):

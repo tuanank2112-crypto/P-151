@@ -12,7 +12,7 @@ from src.maintenance.catalog import load_catalog
 from src.maintenance.engine import MaintenanceEngine, initial_stock
 from src.maintenance.models import Case
 from src.maintenance.store.memory import InMemoryRepository
-from src.maintenance.store.postgres import PostgresRepository, sql_engine
+from src.maintenance.store.postgres import PostgresRepository, sql_engine, sql_read_engine
 from src.maintenance.views import resident_view
 from tests.test_maintenance.helpers import BPTN, CLEANING, CLN, OTHER_RESIDENT, RESIDENT, report
 
@@ -34,15 +34,17 @@ class _Statements:
     """Statements that touch maintops.cases on one SQLAlchemy engine."""
 
     def __init__(self, url: str):
-        self.engine = sql_engine(url)
+        self.engines = (sql_engine(url), sql_read_engine(url))  # plan 12: reads use the AUTOCOMMIT engine
         self.seen: list[str] = []
 
     def __enter__(self):
-        event.listen(self.engine, "before_cursor_execute", self._seen)
+        for engine in self.engines:
+            event.listen(engine, "before_cursor_execute", self._seen)
         return self
 
     def __exit__(self, *exc_info):
-        event.remove(self.engine, "before_cursor_execute", self._seen)
+        for engine in self.engines:
+            event.remove(engine, "before_cursor_execute", self._seen)
 
     def _seen(self, conn, cursor, statement, parameters, context, executemany):
         if "maintops.cases" in statement:

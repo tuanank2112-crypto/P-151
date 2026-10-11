@@ -396,7 +396,7 @@ def test_a29_proceed_with_a_missing_location_still_asks_the_resident():
 
 
 def _light_job(quote: str = "không sáng", **changes) -> dict:
-    return job(JOB_KT, quote=quote, **{"asset_id": "SIM-ASSET-LIGHT-001", **changes})
+    return job(JOB_KT, quote=quote, **{"asset_id": "SIM-ASSET-LIGHT-HALLWAY", **changes})
 
 
 def test_a30_duplicate_decided_by_the_agent_is_checked_again_when_applied():

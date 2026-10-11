@@ -1,0 +1,42 @@
+captured_at=2026-10-10T17:32:05+07:00
+$ node evidence/harness/material_usage.mjs http://127.0.0.1:8016 portal planning/16_2026-10-10_material-guards/evidence/wp3/screens  (MO_STORE=memory LLM_MODE=mock MO_PHOTO_STORE=local, port 8016, fresh process)
+PASS app-T1-no-agent khối vật tư: "Vật tư sử dụngChưa lưuChọn vật tư đã dùng và số lượng.Chọn vật tư…Bóng đèn LED Tuýp T8 18W Duhal/Rạn"
+PASS app-T1-not-saved Agent plan không được tính là đã lưu
+PASS app-T1-no-prefill dòng=[":1"]; engine Agent=SIM-MAT-LAMP-01:1/null/null
+PASS app-T1-options SIM-MAT-LAMP-01,SIM-MAT-LAMP-02,SIM-MAT-STARTER-01
+PASS app-T2-empty-blocked POST=0
+PASS app-T3-one-post status=200 posts=["/material-usage"]
+PASS app-T3-saved SIM-MAT-LAMP-01:4/4/4; kho 8→4
+PASS app-T3-pill hiện "Đã lưu" sau 200
+PASS app-T4-repeat status=200 posts=1 kho=4
+PASS app-T5-shortage-409 status=409 posts=1
+PASS app-T5-rollback lines không đổi=true; kho LAMP-01=4 LAMP-02=0
+PASS app-T5-input-kept trước=["SIM-MAT-LAMP-01:1","SIM-MAT-LAMP-02:1"] sau=["SIM-MAT-LAMP-01:1","SIM-MAT-LAMP-02:1"]
+PASS app-T6-no-overflow scrollWidth<=innerWidth ở 390px
+PASS app-T6-no-js-error 0 lỗi JS
+PASS app-C1-saved status=200 kho 10→7
+PASS app-C2-none-one-post status=200 posts=1 mode=N_A
+PASS app-C2-stock-back kho CLEAN-01=10 (đầu 10)
+PASS app-C3-no-overflow 390px
+PASS app-C3-no-js-error 0 lỗi JS
+PASS web-T1-no-agent khối vật tư: "Vật tư sử dụngChưa lưuChọn vật tư đã dùng và số lượng.Chọn vật tư…Bóng đèn LED Tuýp T8 18W Duhal/Rạn"
+PASS web-T1-not-saved Agent plan không được tính là đã lưu
+PASS web-T1-no-prefill dòng=[":1"]; engine Agent=SIM-MAT-LAMP-01:1/null/null
+PASS web-T1-options SIM-MAT-LAMP-01,SIM-MAT-LAMP-02,SIM-MAT-STARTER-01
+PASS web-T2-empty-blocked POST=0
+PASS web-T3-one-post status=200 posts=["/material-usage"]
+PASS web-T3-saved SIM-MAT-LAMP-01:4/4/4; kho 8→4
+PASS web-T3-pill hiện "Đã lưu" sau 200
+PASS web-T4-repeat status=200 posts=1 kho=4
+PASS web-T5-shortage-409 status=409 posts=1
+PASS web-T5-rollback lines không đổi=true; kho LAMP-01=4 LAMP-02=0
+PASS web-T5-input-kept trước=["SIM-MAT-LAMP-01:1","SIM-MAT-LAMP-02:1"] sau=["SIM-MAT-LAMP-01:1","SIM-MAT-LAMP-02:1"]
+PASS web-T6-no-overflow scrollWidth<=innerWidth ở 1440px
+PASS web-T6-no-js-error 0 lỗi JS
+PASS web-C1-saved status=200 kho 10→7
+PASS web-C2-none-one-post status=200 posts=1 mode=N_A
+PASS web-C2-stock-back kho CLEAN-01=10 (đầu 10)
+PASS web-C3-no-overflow 1440px
+PASS web-C3-no-js-error 0 lỗi JS
+RESULT failures=0
+exit=0

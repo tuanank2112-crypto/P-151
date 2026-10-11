@@ -11,7 +11,7 @@ import { PhotoStrip } from "@/components/photo-strip";
 import { Feedback } from "@/components/rating-summary";
 import { useAction } from "@/components/use-action";
 import { MAX_PHOTOS } from "@/lib/constants";
-import type { DeptTicket, MaterialRow, TicketDetail } from "@/lib/dto";
+import type { CatalogItem, DeptTicket, TicketDetail } from "@/lib/dto";
 import type { ActionResult, ErrorCode } from "@/lib/result";
 
 /** Visible keyboard focus on every clickable element (globals.css has no ring for plain buttons) */
@@ -156,22 +156,22 @@ export function ReasonModal(props: {
 }
 
 /**
- * Completion form (SPEC-P03 §4.4): playbook checklist, ≥ 1 after photo, optional note.
- * Technical also gets one "Đã dùng <tên> — số lượng" tick per issued material; all must be ticked.
+ * Completion form: playbook checklist, ≥ 1 after photo, optional note, and the materials the department ACTUALLY used
+ * (one save, no request/approval step, no Agent suggestion, no reason). Cleaning may pick none; technical needs ≥ 1.
  * A backend refusal (failing items) is shown inside the form.
  */
 export function FinishModal(props: {
   t: DeptTicket;
   kind: "cleaning" | "technical";
+  catalog: CatalogItem[];
   pending: boolean;
   onClose: () => void;
   onSubmit: (fd: FormData, done: () => void, fail: (msg: string) => boolean) => void;
 }) {
-  const { t, kind } = props;
+  const { t, kind, catalog } = props;
   const [ticked, setTicked] = useState<Set<string>>(() => new Set(t.checklist.filter((c) => c.done).map((c) => c.templateItemId)));
-  const [usedTicked, setUsedTicked] = useState<Set<string>>(new Set());
-  const [usedQtys, setUsedQtys] = useState<Record<string, string>>({});
-  const [reasons, setReasons] = useState<Record<string, string>>({});
+  /** itemCode -> typed quantity; a code is "used" while it is a key */
+  const [picked, setPicked] = useState<Record<string, string>>({});
   const [files, setFiles] = useState<File[]>([]);
   const [note, setNote] = useState("");
   const [err, setErr] = useState("");
@@ -185,32 +185,25 @@ export function FinishModal(props: {
     else next.add(key);
     put(next);
   };
-  const usedQty = (m: MaterialRow) => m.issuedQty ?? m.plannedQty;
-  const mats = kind === "technical" ? t.materials : []; // technical: every requested material is a checklist line (R10)
-  /** Backend rule (VAL-MAT-CMP-001): a reason is required when planned≠norm, issued≠planned or used≠issued */
-  const needsReason = (m: MaterialRow) =>
-    (m.normQty !== null && m.plannedQty !== m.normQty) || usedQty(m) !== m.plannedQty || usedOf(m) !== usedQty(m);
-  const usedOf = (m: MaterialRow) => {
-    const typed = usedQtys[m.itemCode];
-    return typed === undefined || typed.trim() === "" ? usedQty(m) : Number(typed);
+  const togglePick = (code: string) => {
+    const { [code]: gone, ...rest } = picked;
+    setPicked(gone === undefined ? { ...picked, [code]: "1" } : rest);
   };
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const missing = t.checklist.filter((c) => c.required && !ticked.has(c.templateItemId));
     if (missing.length > 0) return setErr(`Chưa tích checklist: ${missing.map((c) => c.label).join("; ")}.`);
-    if (mats.some((m) => !usedTicked.has(m.itemCode))) return setErr("Phải tích hết checklist vật tư đã dùng.");
-    if (t.materials.some((m) => !Number.isFinite(usedOf(m)) || usedOf(m) < 0)) return setErr("Số vật tư đã dùng phải là số không âm.");
-    const noReason = t.materials.filter((m) => needsReason(m) && !reasons[m.itemCode]?.trim());
-    if (noReason.length > 0) return setErr(`Ghi lý do chênh lệch định mức: ${noReason.map((m) => m.itemName).join("; ")}.`);
+    const used = Object.entries(picked).map(([itemCode, qty]) => ({ itemCode, qty: Number(qty) }));
+    if (used.some((u) => !Number.isInteger(u.qty) || u.qty < 1)) return setErr("Số vật tư đã dùng phải là số nguyên từ 1 trở lên.");
+    if (kind === "technical" && used.length === 0) return setErr("Chọn ít nhất một vật tư đã dùng.");
     if (files.length === 0) return setErr("Bắt buộc có ít nhất 1 ảnh hiện trường sau khi xử lý.");
     setErr("");
     const fd = new FormData();
     if (note.trim()) fd.append("note", note.trim());
     files.forEach((f) => fd.append("photos", f));
     t.checklist.filter((c) => !c.done && ticked.has(c.templateItemId)).forEach((c) => fd.append("checklist", c.templateItemId));
-    // the backend needs issued + used for EVERY material line of the ticket (both departments), not only technical
-    t.materials.forEach((m) => fd.append("used", JSON.stringify({ itemCode: m.itemCode, issued: usedQty(m), used: usedOf(m), reason: reasons[m.itemCode]?.trim() || undefined })));
+    used.forEach((u) => fd.append("used", JSON.stringify(u)));
     props.onSubmit(fd, props.onClose, (m) => (setErr(m), true));
   }
 
@@ -237,66 +230,33 @@ export function FinishModal(props: {
           ))}
         </fieldset>
 
-        {kind === "technical" && (
-          <fieldset className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
-            <legend className="px-1 text-xs font-bold text-slate-800">Vật tư đã dùng (tích hết)</legend>
-            {mats.length === 0 && <p className="m-0 text-xs text-muted">Ticket không dùng vật tư.</p>}
-            {mats.map((m) => (
-              <div key={m.itemCode} className="flex flex-col gap-1">
-                <label className="flex cursor-pointer items-center gap-2 text-slate-700">
-                  <input
-                    type="checkbox"
-                    className={`h-4 w-4 ${FOCUS}`}
-                    checked={usedTicked.has(m.itemCode)}
-                    onChange={() => toggle(usedTicked, m.itemCode, setUsedTicked)}
-                  />
-                  <span>
-                    Đã dùng {m.itemName} — {usedQty(m)} {m.unit}
-                  </span>
-                </label>
+        <fieldset className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+          <legend className="px-1 text-xs font-bold text-slate-800">Vật tư đã dùng{kind === "technical" ? " (ít nhất 1)" : ""}</legend>
+          {kind === "cleaning" && <p className="m-0 text-xs text-muted">Không chọn gì nếu lần xử lý này không dùng vật tư.</p>}
+          {catalog.length === 0 && <p className="m-0 text-xs text-muted">Kho chưa có vật tư nào cho phòng này.</p>}
+          {catalog.map((m) => (
+            <div key={m.itemCode} className="flex flex-wrap items-center gap-2 text-slate-700">
+              <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+                <input type="checkbox" className={`h-4 w-4 ${FOCUS}`} checked={picked[m.itemCode] !== undefined} onChange={() => togglePick(m.itemCode)} />
+                <span className="truncate">
+                  {m.itemName} ({m.unit})
+                </span>
+              </label>
+              {picked[m.itemCode] !== undefined && (
                 <input
-                  className={`${FIELD} ml-6 text-xs`}
-                  placeholder={needsReason(m) ? `Bắt buộc: lý do khác định mức${m.normQty !== null ? ` (${m.normQty} ${m.unit})` : ""}` : "Lý do nếu số lượng khác định mức (không bắt buộc)"}
-                  aria-label={`Lý do chênh lệch ${m.itemName}`}
-                  value={reasons[m.itemCode] ?? ""}
-                  onChange={(e) => setReasons({ ...reasons, [m.itemCode]: e.target.value })}
+                  type="number"
+                  min={1}
+                  step={1}
+                  inputMode="numeric"
+                  className={`${FIELD} w-24 text-xs`}
+                  aria-label={`Số ${m.itemName} đã dùng`}
+                  value={picked[m.itemCode]}
+                  onChange={(e) => setPicked({ ...picked, [m.itemCode]: e.target.value })}
                 />
-              </div>
-            ))}
-          </fieldset>
-        )}
-
-        {kind === "cleaning" && t.materials.length > 0 && (
-          <fieldset className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
-            <legend className="px-1 text-xs font-bold text-slate-800">Vật tư đã dùng</legend>
-            {t.materials.map((m) => (
-              <div key={m.itemCode} className="space-y-1">
-                <label className="flex flex-wrap items-center gap-2 text-xs text-slate-700">
-                  <span className="min-w-0 flex-1">{m.itemName} (cấp {usedQty(m)} {m.unit})</span>
-                  <input
-                    type="number"
-                    min={0}
-                    step="any"
-                    inputMode="decimal"
-                    className={`${FIELD} w-24 text-xs`}
-                    aria-label={`Số ${m.itemName} đã dùng`}
-                    value={usedQtys[m.itemCode] ?? String(usedQty(m))}
-                    onChange={(e) => setUsedQtys({ ...usedQtys, [m.itemCode]: e.target.value })}
-                  />
-                </label>
-                {needsReason(m) && (
-                  <input
-                    className={`${FIELD} text-xs`}
-                    placeholder={`Bắt buộc: lý do khác định mức${m.normQty !== null ? ` (${m.normQty} ${m.unit})` : ""} hoặc số đã cấp`}
-                    aria-label={`Lý do chênh lệch ${m.itemName}`}
-                    value={reasons[m.itemCode] ?? ""}
-                    onChange={(e) => setReasons({ ...reasons, [m.itemCode]: e.target.value })}
-                  />
-                )}
-              </div>
-            ))}
-          </fieldset>
-        )}
+              )}
+            </div>
+          ))}
+        </fieldset>
 
         <div>
           <label htmlFor={`after-${t.id}`} className="mb-1 block text-xs font-bold text-slate-700">
@@ -346,22 +306,20 @@ export function FinishModal(props: {
 }
 
 // ---------- ticket card ----------
-export type Dialog = null | "finish" | "return" | "wrong" | "request";
+export type Dialog = null | "finish" | "return" | "wrong";
 
 export function WorkCard(props: {
   t: DeptTicket;
   kind: "cleaning" | "technical";
   pending: boolean;
   actions: CardActions;
-  /** Technical only: extra buttons + dialogs of a card that is IN_PROGRESS */
-  requestButton?: (open: () => void) => ReactNode;
-  renderDialog?: (dialog: Dialog, close: () => void) => ReactNode;
+  /** Materials this department may save as used */
+  catalog: CatalogItem[];
 }) {
   const { t, actions } = props;
   const [dialog, setDialog] = useState<Dialog>(null);
   const close = () => setDialog(null);
   const left = t.hoursLeft;
-  const waitingMaterial = t.stage === 4 && t.paused && t.blockerCode === "WAITING_MATERIAL";
   const inProgress = t.stage === 4 && !t.paused;
 
   return (
@@ -392,40 +350,6 @@ export function WorkCard(props: {
         </div>
       )}
 
-      {waitingMaterial && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-[13px]">
-          <span className="font-semibold text-amber-900">
-            {t.materialStatus === "waiting_stock" ? "Chờ kho nhập hàng" : "Chờ cấp trên duyệt vật tư"}
-          </span>
-          <ul className="m-0 mt-1 list-none p-0">
-            {t.materials.map((m) => (
-              <li key={m.itemCode} className="flex justify-between gap-2">
-                <span>{m.itemName}</span>
-                <span className={m.shortage > 0 ? "font-semibold text-rose-700" : "text-muted"}>
-                  {m.plannedQty} {m.unit}
-                  {m.shortage > 0 ? ` · thiếu ${m.shortage}` : ""}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {!waitingMaterial && t.stage === 4 && t.materials.length > 0 && (
-        <div className="rounded-xl bg-field p-2.5 text-[13px]">
-          <span className="font-semibold">Vật tư</span>
-          <ul className="m-0 mt-1 list-none p-0">
-            {t.materials.map((m) => (
-              <li key={m.itemCode} className="flex justify-between gap-2">
-                <span>{m.itemName}</span>
-                <span className="text-muted">
-                  {m.plannedQty} {m.unit}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {t.stage === 3 && (
         <div className="flex flex-wrap items-center gap-2 border-t border-line-soft pt-2.5">
           <button type="button" className={PRIMARY} disabled={props.pending} onClick={() => actions.accept(t.id)}>
@@ -442,7 +366,6 @@ export function WorkCard(props: {
           <button type="button" className={PRIMARY} disabled={props.pending} onClick={() => setDialog("finish")}>
             Đánh dấu hoàn thành
           </button>
-          {props.requestButton?.(() => setDialog("request"))}
           <button type="button" className={`${BTN} ml-auto text-xs`} disabled={props.pending} onClick={() => setDialog("wrong")}>
             Báo sai phòng ban
           </button>
@@ -452,7 +375,7 @@ export function WorkCard(props: {
       {t.stage >= 5 && <Feedback t={t} />}
 
       {dialog === "finish" && (
-        <FinishModal t={t} kind={props.kind} pending={props.pending} onClose={close} onSubmit={(fd, done, fail) => actions.finish(t.id, fd, done, fail)} />
+        <FinishModal t={t} kind={props.kind} catalog={props.catalog} pending={props.pending} onClose={close} onSubmit={(fd, done, fail) => actions.finish(t.id, fd, done, fail)} />
       )}
       {dialog === "return" && (
         <ReasonModal
@@ -476,7 +399,6 @@ export function WorkCard(props: {
           onSubmit={(note, done, fail) => actions.wrongDept(t.id, note, done, fail)}
         />
       )}
-      {props.renderDialog?.(dialog, close)}
     </article>
   );
 }

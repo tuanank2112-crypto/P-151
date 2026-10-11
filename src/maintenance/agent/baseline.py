@@ -116,7 +116,7 @@ def _mirror_job(
     duplicate = min(duplicates, key=lambda c: _created_key(c.created_at, c.ticket_id)) if duplicates else None
     asset_id = None
     if category == ServiceCategory.KY_THUAT and rv.location is not None:
-        here = [a for a in data.asset_candidates if a.location == rv.location]
+        here = [a for a in data.asset_candidates if a.area == rules.location_area(rv.location)]
         asset_id = here[0].asset_id if len(here) == 1 else None
     materials = [
         MaterialChoice(item_code=m.item_code, planned_qty=m.planned_qty, reason="Vật tư mặc định của playbook")

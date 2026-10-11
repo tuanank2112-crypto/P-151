@@ -1,0 +1,7 @@
+mutant m2 (src/maintenance/engine.py): pytest tests/test_maintenance/test_backend_latency.py -k p2 exit=1
+E       AssertionError: assert 3 == 1
+E        +  where 3 = <built-in method count of list object at 0x000001F83A737580>(<Action.ADD_RESIDENT_PHOTO: 'ADD_RESIDENT_PHOTO'>)
+E        +    where <built-in method count of list object at 0x000001F83A737580> = [<Action.ADD_RESIDENT_PHOTO: 'ADD_RESIDENT_PHOTO'>, <Action.ADD_RESIDENT_PHOTO: 'ADD_RESIDENT_PHOTO'>, <Action.ADD_RESIDENT_PHOTO: 'ADD_RESIDENT_PHOTO'>].count
+E        +    and   <Action.ADD_RESIDENT_PHOTO: 'ADD_RESIDENT_PHOTO'> = Action.ADD_RESIDENT_PHOTO
+1 failed, 9 deselected in 0.40s
+restored src/maintenance/engine.py byte for byte

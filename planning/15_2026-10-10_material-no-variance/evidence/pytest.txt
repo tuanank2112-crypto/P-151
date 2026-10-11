@@ -1,0 +1,11 @@
+$ python -m pytest -q -p no:cacheprovider --ignore=integration
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3387 passed, 88 deselected, 1 warning in 127.47s (0:02:07)
+exit=0
+$ python -m ruff check src tests
+All checks passed!
+exit=0
+$ python -m ruff format --check src tests
+113 files already formatted
+exit=0

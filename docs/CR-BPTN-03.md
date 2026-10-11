@@ -337,7 +337,7 @@ Phòng ban **không tự trả lại**. Phòng ban dùng hành động **"Báo c
 Hai lựa chọn này **khác** "trả lại làm lại" của T22 (chất lượng kém, đặt lại checklist). Không dùng chung nút.
 
 ### 9.4 Hồ sơ phòng ban nộp để sang `READY_FOR_REVIEW` (bước 10)
-Đủ cả 6 điều kiện: (1) checklist hoàn tất; (2) ghi chú kết quả không rỗng; (3) vật tư đã dùng (nếu không dùng: ghi "không áp dụng"); (4) **≥ 1 ảnh bằng chứng** (`EvidenceType.SIMULATED_IMAGE`; hợp lệ khi là tệp ảnh trong giới hạn kích thước/số lượng hiện có, không phân tích nội dung ảnh; **không có ngoại lệ miễn ảnh** trong phiên bản này); (5) đối soát vật tư xong; (6) không còn blocker mở (trừ `REWORK`).
+Đủ cả 6 điều kiện: (1) checklist hoàn tất; (2) ghi chú kết quả không rỗng; (3) vật tư đã dùng (nếu không dùng: ghi "không áp dụng"); (4) **≥ 1 ảnh bằng chứng** (`EvidenceType.SIMULATED_IMAGE`; hợp lệ khi là tệp ảnh trong giới hạn kích thước/số lượng hiện có, không phân tích nội dung ảnh; **không có ngoại lệ miễn ảnh** trong phiên bản này); (5) đối soát vật tư xong — mọi dòng đã lưu số lượng và đã dùng = đã xuất (hoặc có lý do); khác định mức hoặc khác đề xuất Agent KHÔNG cần lý do, KHÔNG chặn (plan 15, người dùng duyệt 2026-10-10); vật tư phải thuộc phòng ban xử lý, số lượng nguyên dương, Kỹ thuật phải có ≥ 1 vật tư đã lưu, Vệ sinh được "không sử dụng" (plan 16, v1.10.0); (6) không còn blocker mở (trừ `REWORK`).
 Thiếu → giữ `IN_PROGRESS`, `failing_items` ghi vào `draft.readiness_evaluation`, thông báo `department.reconcile_failed`.
 
 ### 9.5 Vật tư và kho

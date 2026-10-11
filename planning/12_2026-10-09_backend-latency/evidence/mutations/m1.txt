@@ -1,0 +1,7 @@
+mutant m1 (src/api/routers/maintenance.py): pytest tests/test_maintenance/test_backend_latency.py -k p1 exit=1
+E       AssertionError: event loop paused 1.01s during the upload (blocking I/O in an async route)
+E       assert 1.0122820999968098 < 0.3
+E       AssertionError: event loop paused 1.01s during the upload (blocking I/O in an async route)
+E       assert 1.006659300001047 < 0.3
+2 failed, 8 deselected in 2.45s
+restored src/api/routers/maintenance.py byte for byte

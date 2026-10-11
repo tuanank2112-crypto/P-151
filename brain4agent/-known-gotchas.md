@@ -61,7 +61,7 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
   Sửa = merge `develop` (hoặc `MO_STORE=mock` tạm). CẤM `alembic downgrade` DB chung — gãy các nhánh đã ở 0002.
 - **SQLAlchemy 2.1 đổi driver mặc định của `postgresql://` sang `psycopg` (v3) (2026-10-08):** image Docker build mới kéo 2.1.4
   ⇒ `ModuleNotFoundError: psycopg`, `p151-backend-1` restart vòng (exit 3) trong khi `.venv` (2.0.x) vẫn chạy. Ghim
-  `sqlalchemy<2.1` trong `requirements.txt`. Model OpenAI đời mới (vd `gpt-6-luna`) từ chối `max_tokens` và `temperature≠1`.
+  `sqlalchemy<2.1` trong `requirements.txt`. Ghim chỉ có trên nhánh đã sửa: dựng image từ nhánh cũ (vd `dev` 2026-10-09) vẫn crash ⇒ `git diff <nhánh> -- requirements.txt` trước khi `docker compose build`. Model OpenAI đời mới (vd `gpt-6-luna`) từ chối `max_tokens` và `temperature≠1`.
 - `maintops.cases` có CHECK `cases_doc_matches`: `doc.ticket.status`/`department_id` phải khớp cột ⇒ test muốn làm hỏng doc phải đổi trường KHÁC (vd thêm field lạ), không đổi status.
 - `PostgresRepository.list()` (plan 09) trả object dùng chung từ cache theo `xmin` ⇒ sửa trực tiếp Case lấy từ `list()`/`engine.cases` làm bẩn cache của mọi request sau; luôn sửa qua `_mutate`/`transaction`.
 - UI `src/web/`: mọi màn tự chọn ticket đầu khi `state.selected` rỗng ⇒ "trang đang xem" bị ghi đè bởi trang của ticket đang chọn sau mỗi `render()`; test UI muốn thấy khác biệt phải lật trang SAU khi chọn. Harness Playwright đăng nhập bằng `page.goto` = tải lại trang = xoá mọi state JS — thử luồng đăng xuất/đăng nhập thật phải điền form tại chỗ.
@@ -118,6 +118,22 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 - **Playwright `text=Nhận việc` khớp chuỗi con, không phân biệt hoa thường** ⇒ trúng ô thống kê "Chờ nhận việc". Dùng `getByRole('button', { name, exact: true })`. Bấm item danh sách gây render lại ⇒ chờ `networkidle` trước khi `fill`, nếu không giá trị bị xoá.
 - **`test_assess_is_linear_on_adversarial_24kb_texts` và `test_assess_is_linear_on_a_24kb_text` (ngưỡng 1 giây, đo thật ~0,6 giây) đỏ khi máy bận** (cả ngay sau checkout/merge nhiều file) (uvicorn + Playwright chạy song song); riêng lẻ ~2,6 giây cho 6 văn bản. Đỏ đơn lẻ ⇒ chạy lại khi máy rảnh trước khi kết luận.
 
+## Độ trễ backend (plan 12, 2026-10-09)
+- **`rotate_memory.js` (hub) xoay NGƯỢC trên `today.md` của repo này** (2026-10-09): file xếp phiên cũ ở đầu, mới ở cuối; script giữ 3 phiên ĐẦU (2026-09-30/10-01) và chuyển phiên mới nhất, kể cả hôm nay, sang `archive/`. Đã hoàn tác (xoá 5 archive vừa tạo, dựng lại `today.md`). CHƯA chạy lại script cho tới khi hub sửa thứ tự hoặc `today.md` đổi sang mới-trước; `BRN-028` (208 dòng) tạm để cảnh báo.
+- **`engine.connect()` (SQLAlchemy + psycopg2) = 4 vòng mạng**: pre-ping `SELECT 1`, `BEGIN` (psycopg2 gửi riêng), query, `ROLLBACK` khi trả kết nối ⇒ ~230 ms tới Supabase dù query 55 ms. Đổi AUTOCOMMIT theo TỪNG kết nối (`execution_options`) KHÔNG đỡ (vẫn 236 ms, psycopg2 gửi lệnh đặt chế độ) ⇒ phải đặt `isolation_level` ở mức engine (`sql_read_engine`).
+- **`async def` route + I/O đồng bộ = đứng cả server**: httpx đồng bộ, engine/DB, `time.sleep` trong thân `async def` chặn event loop (đo 1,0 s khi Storage chậm 1 s). Route async chỉ được `await`; việc chặn ⇒ `run_in_threadpool`. Test `test_p1_*` đo khoảng đứng lâu nhất của event loop bằng một ticker 10 ms.
+- **Đo độ trễ từ Windows host bằng Python `urllib` cộng ~180 ms mỗi lần gọi** (curl và đo trong container không bị) ⇒ đo bằng `evidence/harness/probe_http.py` chạy TRONG container (`MSYS_NO_PATHCONV=1 docker exec -i -w /app …`).
+- `docker exec -w /app` từ Git Bash bị đổi đường dẫn (`Cwd must be an absolute path`) ⇒ thêm `MSYS_NO_PATHCONV=1`; heredoc vào container cần `docker exec -i`.
+
+## App điện thoại `src/mobile/` (PWA, plan 11, 2026-10-09)
+- **`node.replaceChildren(a, null, b)` của DOM in `null` thành chữ "null"** (khác helper `el()` bỏ qua null). Ảnh lượt đầu lộ "null" ở thanh tiêu đề BQL và "nullnull" ở chi tiết cư dân, test vẫn xanh. Dùng `fill(node, …)` trong `js/ui.js`; harness quét chữ `null/undefined/NaN` mỗi lần chụp (phép phá `d-null-text`).
+- **Specifier import ES module phải giống hệt nhau:** `./api.js` và `./api.js?v=1` là HAI module khác nhau ⇒ hai biến token, handler 401 không gắn. Mọi file dùng cùng `?v=N`; đổi vỏ app ⇒ tăng N ở `index.html`, mọi `import`, danh sách `SHELL` trong `sw.js` và `SHELL_CACHE`.
+- **Cư dân chỉ có `ADD_INFO` khi `NEED_INFO`**, nhưng gửi ảnh được ở mọi trạng thái chưa kết thúc (`engine.add_resident_photo` chỉ chặn TERMINAL). Đừng gắn nút "Thêm ảnh" vào `ADD_INFO`. Ticket test có tòa/tầng rõ đi thẳng `ROUTED`; muốn `NEED_INFO` thì bỏ tòa/khu vực.
+- **`bptn_resolve` bắt buộc `note` khi BPTN chọn/sửa giá trị** (vị trí, info, loại việc, phòng ban, tài sản, `asset_onsite`) ⇒ `409 GUARD_FAILED`. Form web `bptnForm` (`src/web/app.js`) ghi ô ghi chú "không bắt buộc" ⇒ web cũng dính (chưa sửa, ngoài phạm vi plan 11); app bắt buộc lý do trước khi gửi.
+- **`evidence_requirements[].validation_status` chỉ đổi khi Agent đối soát (`report_complete`)**, không đổi ngay sau `POST …/evidence` ⇒ đừng dùng nó để xác nhận "đã lưu ghi chú".
+- **NavTiles kéo lên `-80px` đè header nên `#tabbar` PHẢI đứng trước `#screen` trong `index.html`** (đợt 2): đặt sau thì menu nằm cuối trang, đè lên thẻ cuối — harness vẫn 26/26 xanh, chỉ ảnh chụp lộ ra.
+- **Harness Playwright:** `text=Trả làm lại` trúng nhãn "Lý do trả làm lại" ⇒ dùng `button:has-text(...)`; toast cố định che nút ⇒ toast `pointer-events: none`; `setOffline(false)` bắn sự kiện `online` TRƯỚC khi promise trả về ⇒ lấy mốc thời gian trước khi bật mạng. `mutate.py` trên Windows cần đường dẫn Python tuyệt đối (CreateProcess không giải `.venv/Scripts/…` tương đối).
+
 ## Cổng phản ánh cư dân `portal/` (Next.js, 2026-10-07)
 - **Next 16.4 khác kiến thức cũ:** `create-next-app` bật `cacheComponents` + `partialPrefetching`; đọc `cookies()`/DB ngoài `<Suspense>` là lỗi build. Mọi page đọc session đặt trong `<Suspense fallback={<DashboardSkeleton/>}>`. Tài liệu đúng bản nằm ở `portal/node_modules/next/dist/docs/`. `portal/AGENTS.md` do `next dev` tự sinh lại — giữ, không coi là luật dự án (luật ở `AGENTS.md` gốc).
 - `RouteContext`/`LayoutProps` là kiểu Next sinh ra: chạy `next typegen` trước `tsc` (script `typecheck` đã gộp).
@@ -133,8 +149,43 @@ Tổng hợp các lỗi khó, các lưu ý dị biệt hoặc cách workaround �
 - **Supabase: tài khoản dashboard ≠ tài khoản DB.** Được thêm vào team supabase.com chỉ cho vào dashboard; script/app cần mật khẩu Postgres của project (Supabase KHÔNG hiện lại, chỉ người tạo biết; Reset làm đứt backend Render + máy cả nhóm). Không có mật khẩu ⇒ chạy SQL qua dashboard **SQL Editor** (chạy quyền `postgres`), agent soạn sẵn truy vấn. Qua Session pooler user có dạng `postgres.<project-ref>`, cổng 5432, DB `postgres`.
 - Chuỗi kết nối Supabase để ở `portal/.env.supabase` (gitignore `.env*`), KHÔNG để vào `.env.local`: `next dev` tự nạp lại `.env.local` khi đổi ⇒ UI local bấm thử là ghi thẳng DB chung. Kiểm DB chung luôn kèm `PGOPTIONS="-c default_transaction_read_only=on"`.
 - Cookie `secure` bật ở production làm đăng nhập lặp vòng khi mở bằng HTTP qua IP LAN; compose đặt `SESSION_COOKIE_SECURE=false`.
+- **(2026-10-09, plan 13) Web `src/web/` ẩn ticket mẫu (`isSeedTicket`) ở mọi danh sách và tự bỏ `state.selected` không có trong danh sách** ⇒ harness UI phải tạo ticket THẬT (vd câu của fixture `SIM-TKT-TEC-002` ra `ASSET_UNCLEAR`), không chọn được fixture bằng `select(id)`.
+- **(2026-10-09) Đáy độ trễ GET trên Supabase ≈ 50 ms = một câu SQL** (sau plan 12). Ảnh xem lại (56 ms) đã chỉ còn `repo.get` để kiểm quyền; muốn thấp hơn phải bỏ vòng DB đó = quyết định bảo mật, không phải tối ưu thường.
+- **(2026-10-09) Cache trình duyệt KHÔNG kiểm quyền:** ảnh trả `Cache-Control: private, max-age=…` (không `Vary`) ⇒ cùng profile trình duyệt, tài khoản khác `fetch` cùng URL nhận ảnh từ cache, server không thấy request (R01 plan 12 #2). Header cache của tài nguyên có kiểm quyền = quyết định bảo mật.
+- **(2026-10-09) `test_safety.py::test_assess_is_linear_*` đo thời gian, đỏ khi máy tải** (cả bộ chạy 332 s thay vì ~110 s). Chạy riêng + chạy lại cả bộ trước khi kết luận hồi quy; không đo khi auditor/trình duyệt test đang chạy.
 
 
+## Docker build context tr?n Windows (2026-10-10)
+- `docker compose up -d --build backend` c? th? d?ng ? `load build context` v?i `Access is denied` khi root repo ch?a worktree `integration/maintenanceops/.pytest_cache`. Khi build th?t b?i, backend ch?a ???c t?o n?n `/health` kh?ng k?t n?i v? `compose logs backend` tr?ng.
+- `.dockerignore` ph?i lo?i `integration/`, `.worktrees/`, `.python/`, `.uv-cache/`, th? m?c c?ng c? agent v? cache l?ng nhau. Kh?ng s?a ACL hay xo? worktree ?? x? l? l?i n?y. Backend c?n `src/`, `seed/`, `requirements.txt`; portal c? build context ri?ng `./portal`.
+- B?n s?a ?? ki?m tra t?nh; ch?a x?c nh?n Docker build th?nh c?ng tr?n m?y ng??i d?ng.
+
+
+## Area assets and emergency downgrade test (2026-10-10)
+- After plan 14 area-based asset lookup, TEC-005 can route after BQL clears the emergency, leaving blocker=None. API consumers/tests must accept no blocker; do not subscript it unconditionally. Before fix: 1 failed / 3382 passed; focused suite after fix: 40 passed. No production logic change.
+
+
+## Plan 15 verification gaps (2026-10-10)
+- material-plan + each materials/{code} is a sequence of independent transactions; a later stock failure does not revert the plan/refunds already committed. Test whole save sequences, not only failing record_material.
+- Current API permits fractional material quantities, cross-department items, and technical empty lists; browser-only guards do not enforce these business requirements. Full tests 3387 green do not cover rejecting these cases. Web materialPlanCard still pre-fills Agent plan and has a separate save flow.
+
+## Plan 16 vật tư guard (2026-10-10)
+- **Body JSON có `NaN`/`Infinity` làm 422 thành 500:** `json.loads` của Starlette nhận `NaN`, pydantic báo lỗi kèm `input=nan`, handler 422 mặc định của FastAPI không encode được ⇒ 500. Đã sửa một chỗ ở `src/main.py` (`_validation_error_handler`: bỏ `input`/`ctx` chỉ khi không encode được). Test gửi NaN phải dùng `content=json.dumps(...)`: `TestClient(json=...)` từ chối NaN trước khi gửi.
+- **psycopg2 bị Windows Application Control chặn trên host** (`DLL load failed … Application Control policy`) ⇒ `pytest --pg` chạy trong image: `docker run --rm --network p151_default -v C:/P-151:/app -w /app -e MO_TEST_DATABASE_URL=postgresql+psycopg2://p151:p151@db:5432/p151_test p151-backend python -m pytest tests --pg` (Git Bash cần `MSYS_NO_PATHCONV=1`). DB `p151_test` phải tạo trước trong `p151-db-1`.
+- **Harness web `/ui/`: `select(id)` không đồng bộ** — `#detail-pane` vẽ ticket đầu hàng đợi trước; chờ theo nội dung riêng của ticket (mô tả có RUN), không chỉ chờ selector, kẻo đo nhầm ticket khác.
+- **`shutil.rmtree` thư mục snapshot trong scratchpad có thể `WinError 5`** — tạo snapshot vào thư mục mới mỗi lần.
+- Đổi luật vật tư ⇒ guard nằm ở `material_policy.py` (API + engine + `_reconcile`); client CHỈ lọc theo `catalog.material_codes_by_department`, CẤM map vật tư trong JS.
+- **`p151_test` dùng chung giữa các agent/phiên:** fixture `pg_repo` TRUNCATE bảng ⇒ hai đợt `--pg` song song làm nhau `NotFoundError`. Chạy tuần tự (hoặc mỗi đợt một DB `*_test` riêng).
+
+## Plan18 — BFF/UI Python (2026-10-10)
+- Không chuyển nguyên Case vào browser phòng ban: Python internal response có resident_id/audit. Dùng allowlist case-view cho cả detail, mutation, upload và Case lỗi complete.
+- CompleteHTTP200 có thể vẫn IN_PROGRESS; phải đọc status/failing_items, không toast hoàn tất giả.
+- BQL safety VERIFYING cần escalated=true; NEED_INFO+safety_context chỉ CONFIRM_SAFE/ESCALATE. Owner BPTN có thể vẫn giữ sau escalation; không suy quyền chỉ từ owner.
+- Form đăng nhập không đặt interactive LoginForm trong Suspense fallback: backend demo-data stream có thể thay form và làm mất input trước click. Fallback loading tĩnh.
+- Windows PowerShell dùng npm.cmd; script stdin chứa tiếng Việt cần OutputEncoding UTF8. Playwright controlled checklist phải click rồi đợi server xác nhận checked, không dùng check() kỳ vọng synchronous.
+- Không build ghi đè .next trong lúc đo server production đang chạy; stop/rebuild/restart trước browser. Fixtures memory dùng kho hữu hạn; harness reset chỉ tại loopback8018 memory riêng, cấm chuyển đến DB chung.
+
+- Plan18: emergency_close Python bắt buộc note; UI không được ghi tùy chọn. Cleaning blankTRACKED khác N_A: phải lưu xác nhận không sử dụng trước khi nút giữ trạng thái đã lưu. Browser4/4+6/6, reviewer11/11+6/6.
 ### Stash + Windows live logs and line endings — 2026-10-07T13:30:26.152115+00:00
 Stash push -u may save successfully but exit1 without cleaning tracked files when open log files prevent removal. Check backup/state before merge. Keep stash, restore only verified tracked changes; never delete active logs. Git normalization can alter mixed LF/CRLF in untracked machine evidence; preserve/recover exact bytes only when original manifest hash matches. Conflict marker regex must use [^\n]* for marker lines: .* with DOTALL can consume trailing document/test content. Final preservation/test evidence is under plan06 integration-latest-20261007.
 
@@ -142,3 +193,12 @@ Stash push -u may save successfully but exit1 without cleaning tracked files whe
 - Dòng `data/` (cho dữ liệu lớn ở root) khớp MỌI thư mục tên `data` ⇒ `portal/src/server/data/` (mã nguồn) bị bỏ qua âm thầm, commit thiếu file mà typecheck local vẫn xanh. Đã thêm `!portal/src/server/data/`. Tạo thư mục mã tên `data` ở chỗ khác ⇒ kiểm `git check-ignore -v <file>`. `tests/test_maintenance/data/` thì đã `git add -f`.
 - **Portal sau proxy backend (cổng 8000) phải chạy production.** `next dev` cần WebSocket HMR (`/_next/hmr`); route bắt-tất của FastAPI chỉ chuyển HTTP ⇒ uvicorn trả 403 cho WebSocket ⇒ trang KHÔNG hydrate, bấm nút không gửi gì (đăng nhập "đứng"). Dev thì mở thẳng `localhost:3000`; demo qua 8000 thì `next build && next start`. `127.0.0.1:3000` cũng không hydrate ở dev (chặn cross-origin dev, cần `allowedDevOrigins`).
 - **Supabase qua Session pooler (hồ sơ 11, 2026-10-10):** (1) `DATABASE_URL=postgresql://…` làm SQLAlchemy bản trong venv đòi driver `psycopg` (v3, không cài) ⇒ backend exit 3 lúc khởi động; dùng `postgresql+psycopg2://…?sslmode=require`. (2) `options=-c default_transaction_read_only=on` KHÔNG áp qua pooler (`show transaction_read_only` = off) ⇒ "kiểm chỉ đọc" phải tự giữ bằng chỉ chạy SELECT. (3) Mật khẩu DB ≠ mật khẩu dashboard; sai 2 lần thì dừng (pooler có thể chặn IP). Chạy backend trên Supabase từ worktree: `uvicorn … --env-file /d/P151/.env` (biến shell thắng file).
+
+## Gộp develop (2026-10-11)
+- `MO_PORTAL_EXTRAS` BẬT mặc định ở store memory ⇒ luồng yêu cầu/duyệt vật tư của develop tự chạy và đè quyết định "ghi số đã dùng". Đã chặn bằng `_material_approval_required()` = False; đừng bật lại khi chưa có hồ sơ mới.
+- `pytest` từ root thu nhặt cả `integration/*/tests` (worktree cũ) ⇒ `ImportPathMismatchError`; chạy `python -m pytest tests`.
+- `.next/` cũ còn tham chiếu route đã xoá ⇒ typecheck lỗi giả; xoá `portal/.next` rồi chạy lại.
+- Mã tòa con (S2.05, S1.12): validator `_check_location` chấp nhận `S2(.\d{1,2})?`, NHƯNG prompt LLM từng bảo "tòa ngoài danh sách = thiếu tòa" ⇒ LLM tự chuyển BPTN với lý do do chính nó viết (không có chuỗi này trong code). Đổi chữ prompt ⇒ tăng `PROMPT_VERSION` + sửa REF plan 06 trước.
+- Portal "Khẩn cấp" = `risk_level EMERGENCY` thôi; `priority HIGH` là ticket thường (đèn không sáng hành lang vẫn HIGH).
+- Khu vực "Thang máy": mẫu `AREA_PATTERNS` chỉ khớp văn bản có `trong|buồng|cabin|lòng` (mốc "trước/cạnh thang máy" KHÔNG phải cabin) nên `location_area` phải nhận NGAY nhãn chuẩn "Thang máy" (nếu không tài sản đèn không bao giờ khớp). Tầng cabin = `—`. Mẫu cabin phải có ở CẢ `AREA_PATTERNS` và `COMMON_AREA_PATTERNS`.
+- Form portal có mục vị trí mà danh mục không biết ⇒ LLM kết luận OUT_OF_SCOPE ⇒ develop Q14 đẩy thẳng sang "Việc của BQL" (`blocker.escalated`, người thực hiện `SIM-ACTOR-AGENT`). Rà `PLACE_DEFS` của portal với `AREA_PATTERNS` khi thêm lựa chọn.

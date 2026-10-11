@@ -14,7 +14,8 @@ import threading
 from datetime import datetime
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
@@ -51,6 +52,7 @@ from src.maintenance.enums import (
     ServiceCategory,
     TicketStatus,
 )
+from src.maintenance.material_policy import MaterialUsageLine, WholeQty, allowed_material_codes, whole_positive
 from src.maintenance.messages import status_label
 from src.maintenance.models import AuditEvent, Case, Notification, PlannedMaterial, StatusEvent
 from src.maintenance.store.base import ConcurrencyError, StorePermissionError, StoreUnavailableError
@@ -183,28 +185,39 @@ class RequiredNoteBody(NoteBody):
 PhotoFiles = Annotated[list[UploadFile], File(description="Ảnh JPG, PNG hoặc WEBP, tối đa 5 MB mỗi ảnh")]
 
 
-async def _attach_photos(files: list[UploadFile], room: int, limit: int, attach) -> Case:
-    """Validate all files, then store and record them one by one. A file whose record is refused is deleted."""
-    batch = await photos.read_photos(files)
+def _store_and_attach(batch: list[tuple[bytes, str]], room: int, limit: int, attach_many) -> Case:
+    """Store every photo, then record them all in ONE engine transaction (plan 12 SPEC-P02). Blocking I/O (photo store,
+    database): run it in the threadpool, never on the event loop. Refused or failed ⇒ every stored photo is deleted."""
     if len(batch) > room:
         raise HTTPException(status_code=409, detail=f"Tối đa {limit} ảnh; còn gửi thêm được {room} ảnh")
-    case = None
-    for data, extension in batch:
-        ref = photos.save(data, extension)
-        try:
-            case = _call(attach, ref)
-        except Exception:
+    refs: list[str] = []
+    try:
+        for data, extension in batch:
+            refs.append(photos.save(data, extension))
+        return _call(attach_many, refs)
+    except Exception:
+        for ref in refs:
             photos.discard(ref)
-            raise
-    return case
+        raise
 
 
-def _photo_file(case: Case, evidence_id: str, allowed) -> Response:
+# The browser may keep the bytes but must ask first: a browser cache does not check who asks (another account on the
+# same browser, R01 #2) and a demo reset reuses the URL for another photo (R01 #3). The ETag is the stored name, so an
+# allowed viewer gets 304 without the bytes (plan 12 Q10). "identity": the gzip middleware leaves the image alone.
+_PHOTO_HEADERS = {"Cache-Control": "private, no-cache", "Content-Encoding": "identity"}
+
+
+def _photo_file(request: Request, case: Case, evidence_id: str, allowed) -> Response:
+    """Checked on every call, including revalidations: 304 only after `allowed` found the photo for this actor."""
     record = next((e for e in allowed(case) if e.evidence_id == evidence_id), None)
     if record is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy ảnh")
+    etag = photos.etag(record.content_or_metadata)
+    headers = {**_PHOTO_HEADERS, "ETag": etag} if etag else _PHOTO_HEADERS
+    if etag and etag in [tag.strip().removeprefix("W/") for tag in request.headers.get("if-none-match", "").split(",")]:
+        return Response(status_code=304, headers=headers)
     data, media_type = photos.load(record.content_or_metadata)
-    return Response(content=data, media_type=media_type, headers={"Cache-Control": "private, max-age=3600"})
+    return Response(content=data, media_type=media_type, headers=headers)
 
 
 # ------------------------------------------------------------------ demo control (internal, FR-DEMO-001)
@@ -378,8 +391,9 @@ class CatalogView(BaseModel):
     assets: list[dict[str, str]]
     status_labels: dict[str, str]
     materials: list[dict[str, str]]
-    custom_materials_enabled: bool = True  # plan 11: false ⇒ the portal hides the "+" that adds a material
-    portal_extras_enabled: bool = True  # plan 11 SPEC-P04: false ⇒ no staff assignment, no rating tags or comment
+    material_codes_by_department: dict[str, list[str]]  # plan 16 §U2: the only source the clients filter by
+    custom_materials_enabled: bool = False  # decision: no materials outside the warehouse catalog
+    portal_extras_enabled: bool = True  # plan 11 SPEC-P04: false => no rating tags or comment
 
 
 @router.get("/catalog", response_model=CatalogView)
@@ -388,12 +402,15 @@ def read_catalog(actor: ActorDep, engine: EngineDep) -> CatalogView:
     catalog = engine.catalog
     return CatalogView(
         departments={d.department_id.value: d.name for d in catalog.departments},
-        assets=[{"asset_id": a.asset_id, "location": a.location_normalized} for a in catalog.assets],
+        assets=[{"asset_id": a.asset_id, "name": a.name, "area": a.area} for a in catalog.assets if a.active],
         status_labels={s.value: status_label(s) for s in TicketStatus},
         materials=[
-            {"item_code": m.item_code, "item_name": m.item_name, "unit": m.unit or ""} for m in engine.all_materials()
+            {"item_code": m.item_code, "item_name": m.item_name, "unit": m.unit or ""} for m in catalog.materials
         ],
-        custom_materials_enabled=get_settings().custom_materials_enabled(),
+        material_codes_by_department={
+            d.department_id.value: sorted(allowed_material_codes(catalog, d.department_id)) for d in catalog.departments
+        },
+        custom_materials_enabled=False,
         portal_extras_enabled=get_settings().portal_extras_enabled(),
     )
 
@@ -631,8 +648,8 @@ def approve_materials(ticket_id: str, body: ApproveBody, actor: ActorDep, engine
 
 
 class MaterialRequest(BaseModel):
-    issued_qty: float = Field(ge=0)
-    used_qty: float = Field(ge=0)
+    issued_qty: WholeQty
+    used_qty: WholeQty
     variance_reason: str | None = None
 
 
@@ -643,13 +660,34 @@ def record_material(ticket_id: str, item_code: str, body: MaterialRequest, actor
 
 class MaterialPlanRequest(BaseModel):
     lines: list[PlannedMaterial] = Field(examples=[[{"item_code": "SIM-MAT-LAMP-02", "planned_qty": 2}]])
-    note: str = Field(examples=["Kiểm tại chỗ: đèn tuýp, không phải LED"])
+    note: str | None = Field(default=None, examples=["Kiểm tại chỗ: đèn tuýp, không phải LED"])
+
+    @field_validator("lines", mode="before")
+    @classmethod
+    def _whole_quantities(cls, lines: Any) -> Any:
+        """Plan 16 §C1: checked before pydantic turns true/"1"/0.5 into a float."""
+        for line in lines if isinstance(lines, list) else ():
+            if isinstance(line, dict) and not whole_positive(line.get("planned_qty")):
+                raise ValueError("Số lượng phải là số nguyên dương")
+        return lines
 
 
 @router.post("/tickets/{ticket_id}/material-plan", response_model=Case)
 def confirm_materials(ticket_id: str, body: MaterialPlanRequest, actor: ActorDep, engine: EngineDep) -> Case:
     """Phòng ban xác nhận vật tư thực tế tại hiện trường (thay đề xuất của Agent); `lines` rỗng = không dùng vật tư."""
     return _call(engine.confirm_materials, ticket_id, actor, lines=body.lines, note=body.note)
+
+
+class MaterialUsageRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    lines: list[MaterialUsageLine] = Field(examples=[[{"item_code": "SIM-MAT-LAMP-01", "used_qty": 4}]])
+
+
+@router.post("/tickets/{ticket_id}/material-usage", response_model=Case)
+def save_material_usage(ticket_id: str, body: MaterialUsageRequest, actor: ActorDep, engine: EngineDep) -> Case:
+    """Lưu toàn bộ vật tư đã dùng trong một giao dịch (plan 16 §C2): đã xuất = đã dùng; `lines` rỗng chỉ cho Vệ sinh."""
+    return _call(engine.save_material_usage, ticket_id, actor, lines=body.lines)
 
 
 class EvidenceRequest(BaseModel):
@@ -667,29 +705,27 @@ def add_evidence(ticket_id: str, body: EvidenceRequest, actor: ActorDep, engine:
 @router.post("/tickets/{ticket_id}/photos", response_model=Case)
 async def add_execution_photos(ticket_id: str, files: PhotoFiles, actor: ActorDep, engine: EngineDep) -> Case:
     """Phòng ban gửi ảnh sau khi xử lý (bắt buộc ít nhất một ảnh trước khi báo hoàn thành)."""
-    case = _staff_case(engine, actor, ticket_id)
-    room = MAX_EXECUTION_PHOTOS - len(execution_photos(case))
+    # who may send to which ticket BEFORE the files are judged: 404/403 stay ahead of 413/415/422 (plan 12 R01 #7)
+    await run_in_threadpool(_staff_case, engine, actor, ticket_id)
+    batch = await photos.read_photos(files)  # blocking work below runs in a thread, never on the event loop
 
-    def attach(ref: str) -> Case:
-        return engine.add_evidence(
-            ticket_id,
-            actor,
-            requirement_id=None,
-            evidence_type=EvidenceType.SIMULATED_IMAGE,
-            content_or_metadata=ref,
-            readability_status=ReadabilityStatus.READABLE,
+    def work() -> Case:
+        case = _staff_case(engine, actor, ticket_id)
+        room = MAX_EXECUTION_PHOTOS - len(execution_photos(case))
+        return _store_and_attach(
+            batch, room, MAX_EXECUTION_PHOTOS, lambda refs: engine.add_execution_photos(ticket_id, actor, refs)
         )
 
-    return await _attach_photos(files, room, MAX_EXECUTION_PHOTOS, attach)
+    return await run_in_threadpool(work)
 
 
 @router.get("/tickets/{ticket_id}/photos/{evidence_id}", response_class=Response)
-def read_photo(ticket_id: str, evidence_id: str, actor: ActorDep, engine: EngineDep) -> Response:
+def read_photo(request: Request, ticket_id: str, evidence_id: str, actor: ActorDep, engine: EngineDep) -> Response:
     """Ảnh của cư dân hoặc của phòng ban, cho người được xem ticket."""
     case = _staff_case(engine, actor, ticket_id)
     # every department photo, including those from before a rework, so BQL can compare
     images = (EvidenceType.RESIDENT_ORIGINAL, EvidenceType.SIMULATED_IMAGE)
-    return _photo_file(case, evidence_id, lambda c: [e for e in c.evidence if e.evidence_type in images])
+    return _photo_file(request, case, evidence_id, lambda c: [e for e in c.evidence if e.evidence_type in images])
 
 
 @router.post("/tickets/{ticket_id}/complete", response_model=Case)
@@ -835,18 +871,26 @@ async def resident_add_photos(
     ticket_id: str, files: PhotoFiles, actor: ActorDep, engine: EngineDep
 ) -> ResidentTicketView:
     """Đính kèm ảnh (không bắt buộc) vào phản ánh của chính mình."""
-    case = _own_case(engine, ticket_id, actor)
-    room = MAX_RESIDENT_PHOTOS - len(resident_photos(case))
-    case = await _attach_photos(
-        files, room, MAX_RESIDENT_PHOTOS, lambda ref: engine.add_resident_photo(ticket_id, actor, ref)
-    )
-    return resident_view(engine, case, engine.clock())
+    await run_in_threadpool(_own_case, engine, ticket_id, actor)  # 403/404 before judging the files (R01 #7)
+    batch = await photos.read_photos(files)  # blocking work below runs in a thread, never on the event loop
+
+    def work() -> ResidentTicketView:
+        case = _own_case(engine, ticket_id, actor)
+        room = MAX_RESIDENT_PHOTOS - len(resident_photos(case))
+        case = _store_and_attach(
+            batch, room, MAX_RESIDENT_PHOTOS, lambda refs: engine.add_resident_photos(ticket_id, actor, refs)
+        )
+        return resident_view(engine, case, engine.clock())
+
+    return await run_in_threadpool(work)
 
 
 @resident_router.get("/tickets/{ticket_id}/photos/{evidence_id}", response_class=Response)
-def resident_read_photo(ticket_id: str, evidence_id: str, actor: ActorDep, engine: EngineDep) -> Response:
+def resident_read_photo(
+    request: Request, ticket_id: str, evidence_id: str, actor: ActorDep, engine: EngineDep
+) -> Response:
     """Chỉ ảnh cư dân tự gửi."""
-    return _photo_file(_own_case(engine, ticket_id, actor), evidence_id, resident_photos)
+    return _photo_file(request, _own_case(engine, ticket_id, actor), evidence_id, resident_photos)
 
 
 class RatingRequest(BaseModel):

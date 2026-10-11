@@ -1,0 +1,58 @@
+captured_at=2026-10-10T17:48:15+07:00
+$ python planning/16_2026-10-10_material-guards/evidence/wp4/probe_api.py
+HELD   A1 usage used_qty=true :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","lines",0,"used_qty"],"msg":"Value error, Số lượng phải là số nguyên dương","input":true,"ctx":{"error":{}}}]}'
+HELD   A1 usage used_qty='1' :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","lines",0,"used_qty"],"msg":"Value error, Số lượng phải là số nguyên dương","input":"1","ctx":{"error":{}}}]}'
+HELD   A1 usage used_qty=0 :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","lines",0,"used_qty"],"msg":"Value error, Số lượng phải là số nguyên dương","input":0,"ctx":{"error":{}}}]}'
+HELD   A1 usage used_qty=-1 :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","lines",0,"used_qty"],"msg":"Value error, Số lượng phải là số nguyên dương","input":-1,"ctx":{"error":{}}}]}'
+HELD   A1 usage used_qty=0.5 :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","lines",0,"used_qty"],"msg":"Value error, Số lượng phải là số nguyên dương","input":0.5,"ctx":{"error":{}}}]}'
+HELD   A1 usage used_qty=null :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","lines",0,"used_qty"],"msg":"Value error, Số lượng phải là số nguyên dương","input":null,"ctx":{"error":{}}}]}'
+HELD   A1 usage used_qty=NaN :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","lines",0,"used_qty"],"msg":"Value error, Số lượng phải là số nguyên dương"}]}'
+HELD   A1 usage used_qty=Infinity :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","lines",0,"used_qty"],"msg":"Value error, Số lượng phải là số nguyên dương"}]}'
+HELD   A1 usage used_qty=1e400 :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","lines",0,"used_qty"],"msg":"Value error, Số lượng phải là số nguyên dương"}]}'
+BROKEN A1 usage used_qty=10**400 :: status=500 want=422 state_unchanged=True leak=[] body='Internal Server Error'
+HELD   A1 usage used_qty=[] :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","lines",0,"used_qty"],"msg":"Value error, Số lượng phải là số nguyên dương","input":[],"ctx":{"error":{}}}]}'
+HELD   A2 usage extra top-level note :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"extra_forbidden","loc":["body","note"],"msg":"Extra inputs are not permitted","input":"x"}]}'
+HELD   A2 usage extra line issued_qty :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"extra_forbidden","loc":["body","lines",0,"issued_qty"],"msg":"Extra inputs are not permitted","input":9}]}'
+HELD   A2 usage lines missing :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"missing","loc":["body","lines"],"msg":"Field required","input":{}}]}'
+HELD   A2 usage lines null :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"list_type","loc":["body","lines"],"msg":"Input should be a valid list","input":null}]}'
+HELD   A2 usage item_code number :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"string_type","loc":["body","lines",0,"item_code"],"msg":"Input should be a valid string","input":1}]}'
+HELD   A3 usage foreign code :: status=409 want=409 state_unchanged=True leak=[] body='{"detail":{"code":"GUARD_FAILED","message":"Vật tư không thuộc phòng ban xử lý","item_codes":["SIM-MAT-CLEAN-01"]}}'
+HELD   A3 usage duplicate :: status=409 want=409 state_unchanged=True leak=[] body='{"detail":{"code":"GUARD_FAILED","message":"Mỗi vật tư chỉ được một dòng"}}'
+HELD   A3 usage technical [] :: status=409 want=409 state_unchanged=True leak=[] body='{"detail":{"code":"GUARD_FAILED","message":"Phòng Kỹ thuật phải chọn ít nhất một vật tư đã dùng"}}'
+HELD   A3 usage shortage LAMP2 :: status=409 want=409 state_unchanged=True leak=[] body='{"detail":{"code":"GUARD_FAILED","message":"Kho chỉ còn 0 SIM-MAT-LAMP-02, không xuất thêm được 1","item_code":"SIM-MAT-LAMP-02","stock_qty":0.0,"requested_qty"'
+HELD   A3 usage on ROUTED ticket :: status=409 want=409 state_unchanged=True leak=[] body='{"detail":{"code":"GUARD_FAILED","message":"Phòng ban chưa nhận việc hoặc ticket không ở IN_PROGRESS","status":"ROUTED"}}'
+       denial audit rows added=1
+HELD   A4 usage by cleaning actor on technical :: status=403 want=403 state_unchanged=True leak=[] body='{"detail":{"message":"Ticket không thuộc phòng ban của SIM-ACTOR-DEPT-CLN-01","decision":"DENY","code":"ACTION_DENIED","requested_action":"UPDATE_MATERIAL","act'
+HELD   A4 usage bad bearer :: status=401 want=401 state_unchanged=True leak=[] body='{"detail":"Phiên đăng nhập đã hết hạn"}'
+HELD   A4 usage missing ticket :: status=404
+HELD   A5 plan planned_qty=true :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","lines"],"msg":"Value error, Số lượng phải là số nguyên dương","input":[{"item_code":"SIM-MAT-LAMP-01","planned_q'
+HELD   A5 plan planned_qty='1' :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","lines"],"msg":"Value error, Số lượng phải là số nguyên dương","input":[{"item_code":"SIM-MAT-LAMP-01","planned_q'
+HELD   A5 plan planned_qty=0 :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","lines"],"msg":"Value error, Số lượng phải là số nguyên dương","input":[{"item_code":"SIM-MAT-LAMP-01","planned_q'
+HELD   A5 plan planned_qty=0.5 :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","lines"],"msg":"Value error, Số lượng phải là số nguyên dương","input":[{"item_code":"SIM-MAT-LAMP-01","planned_q'
+HELD   A5 plan planned_qty=NaN :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","lines"],"msg":"Value error, Số lượng phải là số nguyên dương"}]}'
+BROKEN A5 plan planned_qty=10**400 :: status=500 want=422 state_unchanged=True leak=[] body='Internal Server Error'
+HELD   A5 plan foreign :: status=409 want=409 state_unchanged=True leak=[] body='{"detail":{"code":"GUARD_FAILED","message":"Vật tư không thuộc phòng ban xử lý","item_codes":["SIM-MAT-CLEAN-01"]}}'
+HELD   A5 plan technical [] :: status=409 want=409 state_unchanged=True leak=[] body='{"detail":{"code":"GUARD_FAILED","message":"Phòng Kỹ thuật phải chọn ít nhất một vật tư đã dùng"}}'
+HELD   A6 record issued_qty=true :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","issued_qty"],"msg":"Value error, Số lượng phải là số nguyên dương","input":true,"ctx":{"error":{}}}]}'
+HELD   A6 record used_qty=true :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","used_qty"],"msg":"Value error, Số lượng phải là số nguyên dương","input":true,"ctx":{"error":{}}}]}'
+HELD   A6 record issued_qty='1' :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","issued_qty"],"msg":"Value error, Số lượng phải là số nguyên dương","input":"1","ctx":{"error":{}}}]}'
+HELD   A6 record used_qty='1' :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","used_qty"],"msg":"Value error, Số lượng phải là số nguyên dương","input":"1","ctx":{"error":{}}}]}'
+HELD   A6 record issued_qty=0 :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","issued_qty"],"msg":"Value error, Số lượng phải là số nguyên dương","input":0,"ctx":{"error":{}}}]}'
+HELD   A6 record used_qty=0 :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","used_qty"],"msg":"Value error, Số lượng phải là số nguyên dương","input":0,"ctx":{"error":{}}}]}'
+HELD   A6 record issued_qty=0.5 :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","issued_qty"],"msg":"Value error, Số lượng phải là số nguyên dương","input":0.5,"ctx":{"error":{}}}]}'
+HELD   A6 record used_qty=0.5 :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","used_qty"],"msg":"Value error, Số lượng phải là số nguyên dương","input":0.5,"ctx":{"error":{}}}]}'
+HELD   A6 record issued_qty=NaN :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","issued_qty"],"msg":"Value error, Số lượng phải là số nguyên dương"}]}'
+HELD   A6 record used_qty=NaN :: status=422 want=422 state_unchanged=True leak=[] body='{"detail":[{"type":"value_error","loc":["body","used_qty"],"msg":"Value error, Số lượng phải là số nguyên dương"}]}'
+BROKEN A6 record issued_qty=10**400 :: status=500 want=422 state_unchanged=True leak=[] body='Internal Server Error'
+BROKEN A6 record used_qty=10**400 :: status=500 want=422 state_unchanged=True leak=[] body='Internal Server Error'
+HELD   A6 record foreign code path :: status=409 want=409 state_unchanged=True leak=[] body='{"detail":{"code":"GUARD_FAILED","message":"Không có dòng vật tư SIM-MAT-CLEAN-01 trong draft"}}'
+HELD   A7 save x4 twice :: status=200,200 stock=1.0,1.0
+HELD   A8 cleaning [] :: status=200 mode=N_A
+HELD   A9 catalog mapping :: status=200 by={'DEPT_CLEANING': ['SIM-MAT-BAG-01', 'SIM-MAT-CLEAN-01'], 'DEPT_TECHNICAL': ['SIM-MAT-LAMP-01', 'SIM-MAT-LAMP-02', 'SIM-MAT-STARTER-01']}
+INFO   A9b catalog as resident :: status=200 has_mapping=True
+SUMMARY probes=48 held=44 broken=4
+  BROKEN A1 usage used_qty=10**400
+  BROKEN A5 plan planned_qty=10**400
+  BROKEN A6 record issued_qty=10**400
+  BROKEN A6 record used_qty=10**400
+exit=1

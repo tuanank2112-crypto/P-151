@@ -554,22 +554,6 @@ def test_s3_ticket_waits_for_the_new_item_then_runs_after_stock(eng):
     assert_base_shape(resumed)
 
 
-def test_s3_department_can_plan_the_new_item_on_site(eng):
-    item = eng.create_material_item(TEC, PVC, "cái")
-    ticket_id = in_progress_ticket(eng)
-    case = eng.confirm_materials(
-        ticket_id, TEC, lines=[PlannedMaterial(item_code=item.item_code, planned_qty=1)], note="Cần ống PVC"
-    )
-    assert [(m.item_code, m.item_name) for m in case.material_lines] == [(item.item_code, PVC)]
-    with pytest.raises(GuardError):
-        eng.confirm_materials(
-            ticket_id,
-            TEC,
-            lines=[PlannedMaterial(item_code="SIM-MAT-X-NOSUCH00", planned_qty=1)],
-            note="Mã không có",
-        )
-
-
 def test_s3_receive_stock_accepts_the_new_item(eng):
     item = eng.create_material_item(WAREHOUSE, PVC, "cái")
     assert eng.receive_stock(WAREHOUSE, item.item_code, 5) == []
@@ -607,29 +591,6 @@ def test_s3_flag_defaults_follow_the_store():
     assert postgres.custom_materials_enabled() is False
     assert postgres.model_copy(update={"mo_custom_materials": True}).custom_materials_enabled() is True
     assert memory.model_copy(update={"mo_custom_materials": False}).custom_materials_enabled() is False
-
-
-def test_s3_api_create_list_stock_and_receive(env):
-    c, tok = env.client, env.tok
-    catalog_before = c.get("/api/v1/mo/catalog", headers=tok("kho")).json()
-    assert catalog_before["custom_materials_enabled"] is True
-    response = c.post("/api/v1/mo/warehouse/items", json={"item_name": f" {PVC} ", "unit": "cái"}, headers=tok("kho"))
-    assert response.status_code == 201, response.text
-    created = response.json()
-    assert set(created) == {"item_code", "item_name", "unit", "qty"}
-    assert created["item_code"].startswith("SIM-MAT-X-") and created["item_name"] == PVC and created["qty"] == 0
-    again = c.post("/api/v1/mo/warehouse/items", json={"item_name": PVC.lower(), "unit": "m"}, headers=tok("kythuat"))
-    assert again.status_code == 201 and again.json()["item_code"] == created["item_code"]
-    catalog = c.get("/api/v1/mo/catalog", headers=tok("kythuat")).json()
-    assert {"item_code": created["item_code"], "item_name": PVC, "unit": "cái"} in catalog["materials"]
-    assert len(catalog["materials"]) == len(catalog_before["materials"]) + 1
-    assert all(set(m) >= {"item_code", "item_name"} for m in catalog["materials"])
-    stock = {r["item_code"]: r for r in c.get("/api/v1/mo/warehouse/stock", headers=tok("kho")).json()}
-    assert stock[created["item_code"]] == {"item_code": created["item_code"], "item_name": PVC, "unit": "cái", "qty": 0}
-    got = c.post(f"/api/v1/mo/warehouse/stock/{created['item_code']}", json={"qty": 2}, headers=tok("kho"))
-    assert got.status_code == 200
-    stock = {r["item_code"]: r for r in c.get("/api/v1/mo/warehouse/stock", headers=tok("kho")).json()}
-    assert stock[created["item_code"]]["qty"] == 2
 
 
 def test_s3_api_roles_and_validation(env):

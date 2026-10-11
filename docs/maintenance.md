@@ -5,6 +5,7 @@
 > Trạng thái: P0 xong trên nhánh `feature/nhuy-cr03-p0` (1462 test). Router/UI chưa nối các hành động mới (xem §9).
 
 ## 1. Mục đích và ranh giới
+Tích hợp develop b6590ce (local 1.10.1): engine/API/app/test local được giữ so backup trước merge; main.py thêm proxy portal, giữ handler validation plan16. Routes Python đăng ký trước fallback proxy nên `/health`, `/api/v1`, `/ui/`, `/app/` giữ backend hiện có. Portal không gọi engine Python cho workflow của nó; chưa hợp nhất dữ liệu hai hệ.
 Engine nhận phản ánh của cư dân, chạy pipeline Agent, dừng ở blocker có chủ rõ ràng và giao phòng ban; BQL nghiệm thu/đóng.
 Mọi trạng thái đổi qua `_apply_transition` + bảng `TRANSITIONS` (25 dòng); mọi ghi qua `_mutate` (bản sao sâu, audit, commit, fail closed) và giữ `engine.lock`.
 Không làm ở P0: persistence, router/UI mới, LLM an toàn, gộp ticket (P1) — xem CR-03 §16.
@@ -22,6 +23,7 @@ Không làm ở P0: persistence, router/UI mới, LLM an toàn, gộp ticket (P1
 ## 2. Pipeline (CR-03 §5.1, D-09)
 `2` dữ liệu tối thiểu → **`2b` an toàn** → `3` phân loại + phòng ban + priority → `4` trùng → `5` review → `6` asset → `7` vật tư/kho → `8` `can_route` rồi `ROUTED` → `10` `report_complete`.
 - Thứ tự `_run_pipeline`: `2b` đứng TRƯỚC `2` (Bậc 1 > Bậc 2 > `MISSING_INFO`, Q08), cả hai mang số 2 nên `resume_step=2` chạy lại cả hai.
+- Bước `6` asset (plan 14): mỗi khu vực MỘT tài sản đèn active (Hành lang, Sảnh thang máy, Cầu thang bộ, Phòng rác); so `rules.location_area(location)` với `Asset.area`, bỏ qua tòa/tầng. Khu vực khác ⇒ `NOT_FOUND` ⇒ `ASSET_UNCLEAR`. Mã `SIM-ASSET-LIGHT-001…006` là `RETIRED_SIMULATED`: không lookup, BPTN chọn ⇒ `GuardError`. Contract: `planning/14_2026-10-10_area-assets/specs/01-CONTRACTS.md`.
 - Hàm bước tên `_step_<số>_<việc>` (`_step_2b_assess_safety`, `_step_2_check_required_data`, …).
 - Chạy lại sau khi gỡ blocker: `MISSING_INFO`/`SAFETY_REVIEW_REQUIRED`/`EMERGENCY_PENDING_BQL` → 2 (2b tự bỏ qua khi đã `safety_cleared_*` và chưa có bổ sung từ mốc đó); `CATEGORY_UNCLEAR`/`OUT_OF_SCOPE` → 4; `DUPLICATE` bác → 5; `PENDING_REVIEW`/`ASSET_UNCLEAR` → 6; `WRONG_DEPT` → 6 hoặc 7; `WAITING_MATERIAL` → 6.
 - **Bổ sung khi còn thiếu vị trí (SPEC-P08 §1, F1):** `MISSING_INFO` chưa gỡ được mà có bổ sung sau `blocker.since` ⇒ `_addition_raises_safety` chạy lại 2b qua `_assess_2b` (cùng đường với pipeline: view Agent khớp vân tay ⇒ `safety_for`, không ⇒ `assess_with_llm`), không ghi gì; mức > NONE ⇒ `RECEIVED` → pipeline từ 2 (Bậc 1 ⇒ `EMERGENCY_PENDING_BQL`), NONE ⇒ vẫn chờ vị trí. Job tick chỉ chạy lại khi tới `next_retry_at` (có giới hạn).
@@ -91,7 +93,18 @@ Cư dân chỉ thấy nhãn "Đang được kiểm tra" và lời trong `i18n/vi
 Postgres: một `UPDATE … WHERE qty >= :q` có điều kiện (hai worker không cùng lấy được phần cuối); bảng `maintops.stock` còn `check (qty >= 0)`. **Vùng cấm:** KHÔNG giữ chỗ (reserve) ở bước 7/khi giao việc — bước 7 chỉ đoán theo playbook, giữ chỗ sẽ khoá hàng của ticket chưa chắc dùng; huỷ ticket sau khi đã xuất KHÔNG tự hoàn kho (hàng có thể đã dùng; chưa có luồng trả hàng).
 
 ### Xác nhận vật tư tại hiện trường (2026-10-05)
-`confirm_materials(tid, actor, *, lines: list[PlannedMaterial], note)` — route `POST /mo/tickets/{id}/material-plan` `{lines: [{item_code, planned_qty}], note}`. Chỉ DEPARTMENT đúng phòng ban, ticket `IN_PROGRESS`; `note` bắt buộc. Thay `planned_materials` + dựng lại `material_lines` (giữ `issued_qty`/`used_qty`/`variance_reason` của item_code không đổi), cập nhật `draft.material_line_ids`/`material_stock_status`/`material_requirement_mode` (rỗng ⇒ `N_A`). Audit `UPDATE_MATERIAL` field `planned_materials`. Lỗi: item không có trong catalog / trùng dòng / qty ≤ 0 / note rỗng / chưa nhận việc ⇒ `GuardError` (409); sai vai/phòng ban ⇒ 403; item_code sai mẫu `SIM-` ⇒ 422. **Vùng cấm:** KHÔNG chặn khi tồn kho thiếu (đi `block` → `WAITING_MATERIAL`), KHÔNG thêm điều kiện nghiệm thu mới (6 gate §9.4 giữ nguyên). Lý do: bước 7 chỉ đoán vật tư mặc định của playbook; khi tài sản `ASSET_CHECK_ONSITE` UI phòng ban hiện khung này nổi bật, ca khác để thu gọn.
+`confirm_materials(tid, actor, *, lines: list[PlannedMaterial], note)` — route `POST /mo/tickets/{id}/material-plan` `{lines: [{item_code, planned_qty}], note}`. Chỉ DEPARTMENT đúng phòng ban, ticket `IN_PROGRESS`; `note` KHÔNG bắt buộc (plan 15 Q03; trống ⇒ audit "Phòng ban chọn vật tư tại hiện trường"). Thay `planned_materials` + dựng lại `material_lines` (giữ `issued_qty`/`used_qty`/`variance_reason` của item_code không đổi), cập nhật `draft.material_line_ids`/`material_stock_status`/`material_requirement_mode` (rỗng ⇒ `N_A`). Audit `UPDATE_MATERIAL` field `planned_materials`. Lỗi: item không có trong catalog / không thuộc phòng ban / trùng dòng / qty không nguyên dương / Kỹ thuật rỗng / chưa nhận việc ⇒ `GuardError` (409) — guard plan 16 §C3; sai vai/phòng ban ⇒ 403; item_code sai mẫu `SIM-` ⇒ 422. **Vùng cấm:** KHÔNG chặn khi tồn kho thiếu (đi `block` → `WAITING_MATERIAL`), KHÔNG thêm điều kiện nghiệm thu mới (6 gate §9.4 giữ nguyên).
+
+### Đối soát vật tư bước 10 (plan 15, 2026-10-10, v1.9.9)
+`_compare_materials` vẫn ghi 3 phép so (VAL-MAT-CMP-001) vào `comparison_results`, nhưng CHỈ `USED_VS_ISSUED` lệch mà không `variance_reason` mới làm `variance_explained=false` (chặn); có lý do ⇒ warning `EXPLAINED_MATERIAL_VARIANCE`. `PLANNED_VS_NORM` / `ISSUED_VS_PLANNED` (khác định mức / khác đề xuất Agent) chỉ là dữ liệu tham khảo: không chặn, không warning, không cần lý do. Web và app gửi đã xuất = đã dùng. **Vùng cấm:** không xoá các field norm/variance khỏi model/API; không bỏ chặn vượt tồn / `used > issued`. Lý do: bước 7 chỉ đoán vật tư mặc định của playbook; khi tài sản `ASSET_CHECK_ONSITE` UI phòng ban hiện khung này nổi bật, ca khác để thu gọn.
+
+### Lưu vật tư nguyên tử (plan 16, 2026-10-10, v1.10.0)
+`save_material_usage(tid, actor, *, lines: list[MaterialUsageLine])` — route `POST /mo/tickets/{id}/material-usage` `{lines: [{item_code, used_qty}]}` (`extra=forbid`: không nhận `issued_qty`/`note`/`variance_reason`). MỘT `_mutate`: thay TOÀN BỘ lựa chọn, mỗi dòng `planned = issued = used`, kho chỉ đi theo `mới − cũ` từng mã (mã bị bỏ: mới = 0), xử lý theo mã tăng dần; audit `UPDATE_MATERIAL` field `material_usage` (old/new kèm `stock_qty`). Vệ sinh `[]` ⇒ `N_A` + hoàn kho; Kỹ thuật `[]` ⇒ 409. Lỗi bất kỳ (thiếu kho dòng 2, audit, save) ⇒ rollback ticket + kho + audit + outbox. Lưu lặp cùng số: kho không đổi, thêm 1 audit.
+- **Guard chung** `src/maintenance/material_policy.py`: `allowed_material_codes(catalog, dept)` = hợp `playbook_materials` của mọi playbook thuộc phòng ban (`playbook_departments`), giao mã có trong `materials`; `whole_positive` (1 và 1.0 nhận; 0, âm, 0.5, bool, chuỗi, NaN/Inf từ chối); `check_selection` dùng ở `confirm_materials`, `save_material_usage`; `record_material` kiểm số nguyên dương + mã thuộc phòng ban. API kiểm trước coercion (`WholeQty` BeforeValidator ⇒ 422), engine kiểm lại (⇒ 409).
+- **Hoàn thành**: `_reconcile` thêm failing item `material_required` (Kỹ thuật chưa có dòng đã lưu, kể cả qua `N_A`) / `material_invalid` (dòng cũ khác phòng ban hoặc số lẻ) ⇒ `materials_entered=false`.
+- `GET /mo/catalog` thêm `material_codes_by_department` (sorted) — nguồn duy nhất web/app lọc danh sách; thiếu field ⇒ client khoá nút Lưu.
+- `src/main.py` handler 422: input NaN/Infinity (json.loads chấp nhận) không echo lại được ⇒ trả 422 không có `input`/`ctx` thay vì 500.
+- **Vùng cấm:** không gọi nối `confirm_materials` + `record_material` công khai trong một lần lưu; không chặn vì khác định mức/đề xuất Agent (plan 15 giữ); không thêm cờ active vật tư; không migration/sửa ticket cũ (dòng cũ sai guard đọc được, phải lưu lại qua C2 mới hoàn thành được). Test: `test_material_guards.py`, `test_material_usage.py`, `test_material_usage_store.py` (memory + `--pg`).
 
 ## 6. Cấu hình
 - `seed/maintenance_v1/catalog.yaml` `site` (2026-10-05, thí điểm): `{name: Ocean Park, buildings: [S1, S2]}`. `rules.extract_location(text, buildings)` chỉ nhận tòa trong danh sách (viết "tòa S1" hoặc "S1"; giữ tòa con "S1.12", từ chối "S1.123"); tòa khác = thiếu `location_building` ⇒ hỏi lại cư dân. Khu vực "Sảnh cư dân" và "Sảnh chính" mặc định Tầng 1 (`IMPLIED_FLOOR`), không cần nêu tầng. Mở rộng tòa: thêm mã vào `buildings` + sửa `field_labels.location_building` trong `i18n/vi.yaml`. Vị trí BPTN nhập tay (`bptn_resolve location`) KHÔNG bị kiểm danh sách.
@@ -223,6 +236,26 @@ Hồ sơ: [`planning/09_2026-10-08_backend-speed/`](../planning/09_2026-10-08_ba
   Route đơn (`/resident/tickets/{id}`…) không truyền `lookup`, vẫn đọc tươi.
 - Số đo (median, Supabase): cư dân 2676→201 ms, BPTN 1514→224 ms, BQL 503→219 ms; API trả về giống hệt từng byte (8/8 vai). Test: `test_list_cache.py` (T1–T8).
 
+## 15. Độ trễ: engine đọc, ảnh, gzip (plan 12, v1.8.0, 2026-10-09)
+Hồ sơ: [`planning/12_2026-10-09_backend-latency/`](../planning/12_2026-10-09_backend-latency/plan.md).
+- **Hai engine SQLAlchemy** (`store/postgres.py`): `sql_engine` = GHI (transaction, khoá dòng, lease; pre-ping; 2+0 kết nối);
+  `sql_read_engine` = ĐỌC (`isolation_level="AUTOCOMMIT"`, KHÔNG pre-ping, 2+1). Mọi đọc ngoài transaction qua `PostgresRepository._read(fn)`:
+  thử lại ĐÚNG một lần khi `DBAPIError.connection_invalidated`, lỗi khác dịch như cũ. CẤM `_read_engine.begin()`; ghi luôn qua `transaction()`.
+  Lý do: psycopg2 `connect()` thường = pre-ping + BEGIN + query + ROLLBACK = 4 vòng (~55 ms/vòng tới Supabase) ⇒ 230 ms; AUTOCOMMIT 1 vòng ⇒ ~53 ms.
+- **Ảnh**: route `async def` CHỈ `await photos.read_photos(files)`; kiểm quyền, lưu Storage, ghi engine chạy trong `run_in_threadpool`
+  (`_store_and_attach`). Cả lô = MỘT `_mutate` (`engine.add_resident_photos` / `add_execution_photos`), tất cả hoặc không; lỗi ⇒ xoá mọi file vừa lưu.
+  `add_resident_photo` (một ảnh) giữ, gọi bản lô. `photos.load` có cache LRU 32 MB theo `ref`; header ảnh `private, no-cache` + `ETag: "<ref>"` + `Content-Encoding: identity` (v1.8.2, R01: cache trình duyệt không kiểm quyền ⇒ trình duyệt luôn hỏi lại, server kiểm quyền rồi trả 304). Upload kiểm quyền/tồn tại TRƯỚC khi xét file (404/403 trước 413/415/422).
+- **Gzip**: `GZipMiddleware(minimum_size=1024)` trong `src/main.py` (sau CORS). Ảnh không bị nén lại.
+- **`run_jobs`** dùng `Case` mà `_mutate` trả về, không đọc lại DB dưới `engine.lock`.
+- Số đo `:8000` (Supabase, median, đo trong container): GET 226–280 → 50–55 ms; danh sách trên dây 54–69 KB → ~4 KB; ảnh xem lại 527 → 56 ms.
+  Test: `test_backend_latency.py` (P1–P5, Z1–Z2), `test_read_engine.py` (`--pg`, T1–T3); phép phá `evidence/harness/mutate12.py` m1–m5.
+
+
+## 16. OpenAI GPT-6 Luna (2026-10-10, v1.9.8)
+- Cấu hình `.env`: `LLM_MODE=openai`, `MODEL_NAME=gpt-6-luna`, `OPENAI_BASE_URL=https://api.openai.com/v1`, `MO_AGENT_ENABLED=true`, `MO_AGENT_JSON_MODE=json_object`; key chỉ ở `OPENAI_API_KEY`, không ghi vào Git hoặc tài liệu.
+- `openai_json_client(model, api_key, base_url, *, timeout, max_output_tokens, json_mode)` giữ nguyên chữ ký. Riêng `gpt-6-luna`: gửi `max_completion_tokens=max_output_tokens`, `reasoning_effort=none`, không gửi `temperature` hay `max_tokens`. Model khác giữ request cũ.
+- CẤM dùng `max_tokens` cho Luna: API thật trả 400 `unsupported_parameter`; caller giữ `FALLBACK_RULE` khi model lỗi, không coi kết quả luật là LLM thành công. 401: kiểm key; 403/404: kiểm quyền model; 429: kiểm quota/rate limit; timeout: kiểm mạng và timeout. Không log key.
+- Request tối thiểu qua chính client app đã thành công: JSON `{"ok":true}`, 33 token tổng. Chưa đo quyết định nghiệp vụ thật trong Docker. Sau đổi code: `docker compose up -d --build --force-recreate backend`; web `/ui/` và app `/app/` dùng cùng backend. Container chạy bằng `compose run -e LLM_MODE=mock` vẫn ghi đè cấu hình `.env`.
 ## 15. Agent chạy LLM thật: streaming, cache, CLI, G-LIVE (plan 06 Q30–Q33, 2026-10-07)
 - **Ngữ nghĩa an toàn do Agent suy luận, không vá regex (Q30):** kêu cứu, phủ định, "hình như", nhờ thay đèn cháy… viết thành hướng dẫn bằng lời trong `agent/prompt.py`; luật (`safety.py` + `lexicon.yaml` `p1d`) chỉ là sàn hẹp. Luật ra EMERGENCY ⇒ Agent bị bỏ qua, nên regex bắt quá tay = loại LLM.
 - **Prompt `agent-prompt/5`** (REF trong `planning/06_.../specs/REF-agent-contract.py` sửa trước, code chép theo): /2 hình dạng object tín hiệu `{signal_id, status, quote}`; /3 đầu ra gọn (chỉ bước suy luận cần thiết, bỏ lý do cho trường trống — schema NỚI tùy chọn); /4 phủ định = ABSENT, kêu cứu/báo cháy/giục sơ tán = PRESENT; /5 `TO_BPTN` luôn kèm `bptn_reason`, khẩn cấp không có việc ⇒ `OUT_OF_SCOPE`.

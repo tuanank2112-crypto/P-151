@@ -96,12 +96,12 @@ def test_invariant_2_nobody_writes_assignee(fresh):
 
 
 def test_invariant_3_locked_fields_survive_a_rerun(fresh):
-    tid = report(fresh, "Đèn cầu thang bộ tầng 9 tòa S1 không sáng")  # no asset at that location
+    tid = report(fresh, "Đèn sảnh chính tòa S1 không sáng")  # no asset for that area
     assert fresh.get(tid).ticket.blocker.code == "ASSET_UNCLEAR"
     fresh.bptn_resolve(
         tid,
         BPTN,
-        asset_id="SIM-ASSET-LIGHT-001",
+        asset_id="SIM-ASSET-LIGHT-HALLWAY",
         location="Tòa S1 / Tầng 3 / Hành lang",
         note="Kiểm tra lại: cư dân nhầm tầng",
     )
@@ -111,9 +111,9 @@ def test_invariant_3_locked_fields_survive_a_rerun(fresh):
     assert (locked.category, locked.location, locked.asset_id) == (
         "KY_THUAT",
         "Tòa S1 / Tầng 3 / Hành lang",
-        "SIM-ASSET-LIGHT-001",
+        "SIM-ASSET-LIGHT-HALLWAY",
     )
-    assert case.proposal.asset_id == "SIM-ASSET-LIGHT-001" and case.proposal.asset_lookup_status == "LOCKED_BY_BPTN"
+    assert case.proposal.asset_id == "SIM-ASSET-LIGHT-HALLWAY" and case.proposal.asset_lookup_status == "LOCKED_BY_BPTN"
     assert case.draft.location == "Tòa S1 / Tầng 3 / Hành lang"
 
 
@@ -277,7 +277,7 @@ def test_department_confirms_onsite_materials_and_can_finish(engine):
         PlannedMaterial(item_code="SIM-MAT-STARTER-01", planned_qty=1),
     ]
     case = engine.confirm_materials(tid, TEC, lines=lines, note="Kiểm tại chỗ: đèn tuýp")
-    assert case.ticket.status == "ON_HOLD"  # plan 11 Q15: every material request waits for approval
+    assert case.ticket.status == "IN_PROGRESS"  # no request/approval step: the department saves what it used
     assert [(m.item_code, m.planned_qty) for m in case.material_lines] == [
         ("SIM-MAT-LAMP-02", 2),
         ("SIM-MAT-STARTER-01", 1),
@@ -287,12 +287,8 @@ def test_department_confirms_onsite_materials_and_can_finish(engine):
     audit = case.audit[-1]
     assert (audit.field_name, audit.actor_id, audit.reason) == ("planned_materials", TEC, "Kiểm tại chỗ: đèn tuýp")
     assert audit.old_value == [{"item_code": "SIM-MAT-LAMP-01", "planned_qty": 1}]
-    with pytest.raises(GuardError, match="Phòng ban chưa nhận việc hoặc ticket không ở IN_PROGRESS"):
-        finish(engine, tid)  # waiting for approval: the department cannot work on it
     engine.receive_stock(WAREHOUSE, "SIM-MAT-LAMP-02", 2)
     engine.receive_stock(WAREHOUSE, "SIM-MAT-STARTER-01", 1)
-    assert engine.get(tid).ticket.status == "ON_HOLD"  # stock alone does not approve
-    assert engine.approve_materials(tid, WAREHOUSE).ticket.status == "IN_PROGRESS"
     assert finish(engine, tid).ticket.status == "READY_FOR_REVIEW"
     assert engine.repo.stock_of("SIM-MAT-LAMP-02") == 0
 
@@ -306,7 +302,6 @@ def test_confirm_materials_keeps_entered_quantities_and_guards(engine):
     )
     assert [(m.issued_qty, m.used_qty) for m in case.material_lines] == [(1, 1), (None, None)]
     for bad, note in [
-        ([lamp], " "),
         ([PlannedMaterial(item_code="SIM-MAT-NOPE", planned_qty=1)], "x"),
         ([lamp, lamp], "x"),
         ([PlannedMaterial(item_code="SIM-MAT-LAMP-01", planned_qty=0)], "x"),
@@ -320,11 +315,13 @@ def test_confirm_materials_keeps_entered_quantities_and_guards(engine):
         engine.confirm_materials("SIM-TKT-TEC-001", TEC, lines=[lamp], note="x")
 
 
-def test_confirm_no_materials_sets_mode_na(engine):
+def test_confirm_no_materials_is_refused_for_technical(engine):
+    """Plan 16 §C3 replaces the old N_A path for Kỹ thuật: an empty selection is refused and nothing changes."""
     tid = _onsite_in_progress(engine)
-    case = engine.confirm_materials(tid, TEC, lines=[], note="Chỉ cần siết lại chuôi đèn")
-    assert case.material_lines == [] and case.draft.material_requirement_mode == "N_A"
-    assert finish(engine, tid).ticket.status == "READY_FOR_REVIEW"
+    before = engine.get(tid)
+    with pytest.raises(GuardError, match="ít nhất một vật tư"):
+        engine.confirm_materials(tid, TEC, lines=[], note="Chỉ cần siết lại chuôi đèn")
+    assert engine.get(tid) == before and before.draft.material_requirement_mode == "TRACKED"
 
 
 def test_step7_unknown_stock_does_not_block(engine):
@@ -364,18 +361,38 @@ def test_step10_incomplete_work_keeps_in_progress_without_blocker(fresh):
     assert case.notifications[-1].type == "department.reconcile_failed"
 
 
-def test_step10_material_variance_needs_a_reason_but_only_warns(fresh):
+def test_step10_off_norm_and_off_plan_quantity_needs_no_reason(fresh):
+    """Plan 11 Q43: the norm (2) and the Agent's plan (2) are reference only — using 3 neither blocks nor warns."""
     tid = report(fresh, CLEANING)
     fresh.accept(tid, CLN)
     do_work(fresh, tid, issued_delta=1)
     case = fresh.report_complete(tid, CLN)
-    assert case.ticket.status == "IN_PROGRESS"
-    assert case.draft.readiness_evaluation.variance_explained is False
+    assert case.ticket.status == "READY_FOR_REVIEW"
+    evaluation = case.draft.readiness_evaluation
+    assert evaluation.variance_explained and evaluation.failing_items == []
+    assert case.draft.non_blocking_warnings == []
+    line = case.material_lines[0]
+    assert line.reconciliation_status == "RECONCILED" and line.variance_reason is None
+    assert {c.comparison_type: c.status for c in line.comparison_results} == {  # still kept as reference data
+        "PLANNED_VS_NORM": "MATCH",
+        "ISSUED_VS_PLANNED": "VARIANCE",
+        "USED_VS_ISSUED": "MATCH",
+    }
 
-    fresh.record_material(tid, CLN, "SIM-MAT-CLEAN-01", issued_qty=3, used_qty=3, variance_reason="Sàn rộng hơn")
+
+def test_step10_used_less_than_issued_still_needs_a_reason(fresh):
+    """Stock taken out but not used is not a norm question: it still needs a reason, then only warns."""
+    tid = report(fresh, CLEANING)
+    fresh.accept(tid, CLN)
+    do_work(fresh, tid)
+    fresh.record_material(tid, CLN, "SIM-MAT-CLEAN-01", issued_qty=3, used_qty=2)
+    case = fresh.report_complete(tid, CLN)
+    assert case.ticket.status == "IN_PROGRESS" and not case.draft.readiness_evaluation.variance_explained
+
+    fresh.record_material(tid, CLN, "SIM-MAT-CLEAN-01", issued_qty=3, used_qty=2, variance_reason="Còn 1 chai dự phòng")
     case = fresh.report_complete(tid, CLN)
     assert case.ticket.status == "READY_FOR_REVIEW"
-    assert [w.warning_type for w in case.draft.non_blocking_warnings] == ["EXPLAINED_MATERIAL_VARIANCE"]
+    assert [w.comparison_types for w in case.draft.non_blocking_warnings] == [["USED_VS_ISSUED"]]
 
 
 def test_step10_images_never_count_as_the_note(fresh):
@@ -718,23 +735,74 @@ def test_issuing_more_than_the_stock_or_using_more_than_issued_is_refused(engine
     with pytest.raises(GuardError, match="Kho chỉ còn"):
         engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=start + 1, used_qty=start + 1)
     with pytest.raises(GuardError, match="lớn hơn số đã xuất"):
-        engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=0, used_qty=1)
+        engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=1, used_qty=2)
     assert engine.repo.stock_of("SIM-MAT-LAMP-01") == start  # rolled back with the ticket
     assert engine.get(tid).material_lines[0].issued_qty is None
     engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=start, used_qty=start)
     assert engine.repo.stock_of("SIM-MAT-LAMP-01") == 0
 
 
-def test_unknown_stock_is_not_counted_and_a_dropped_line_returns_its_stock(engine):
-    """Unknown stock (null, D-05) stays unknown; dropping a line in confirm_materials gives back what it issued."""
+def test_q43_norm_one_used_four_saves_once_and_completes_without_reason(engine):
+    """Plan 11 Q43: LED norm 1, the technician used 4 and the stock holds 5 ⇒ one save (no note, no reason)
+    takes 4 out of stock; saving again takes nothing; a correction moves only the difference; completion passes."""
     tid = _onsite_in_progress(engine)
-    lamp = engine.repo.stock_of("SIM-MAT-LAMP-01")
-    # plan 11 WP7 R3-D: a dropped line gives back what it took and did NOT use (issued 1, used 0 ⇒ 1 back)
-    engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=1, used_qty=0, variance_reason="Chưa lắp")
-    starter = PlannedMaterial(item_code="SIM-MAT-STARTER-01", planned_qty=1)
-    engine.confirm_materials(tid, TEC, lines=[starter], note="Chỉ thay tắc te")
-    engine.approve_materials(tid, WAREHOUSE)  # plan 11 Q15; the starter's stock is unknown, which does not block
-    assert engine.repo.stock_of("SIM-MAT-LAMP-01") == lamp
-    # plan 11 WP7 R3-E: issuing more than approved (1) needs a new request; the approved 1 records fine
-    engine.record_material(tid, TEC, "SIM-MAT-STARTER-01", issued_qty=1, used_qty=1)
-    assert engine.repo.stock_of("SIM-MAT-STARTER-01") is None
+    start = engine.repo.stock_of("SIM-MAT-LAMP-01")
+    assert start >= 4 and engine.catalog.material("SIM-MAT-LAMP-01").norm_qty == 1
+    lamp4 = [PlannedMaterial(item_code="SIM-MAT-LAMP-01", planned_qty=4)]
+    case = engine.confirm_materials(tid, TEC, lines=lamp4)  # no note: differing from the Agent needs no reason
+    assert case.audit[-1].reason == "Phòng ban chọn vật tư tại hiện trường"
+    engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=4, used_qty=4)
+    assert engine.repo.stock_of("SIM-MAT-LAMP-01") == start - 4
+
+    engine.confirm_materials(tid, TEC, lines=lamp4, note=" ")  # the same save again keeps what was entered
+    engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=4, used_qty=4)
+    assert engine.repo.stock_of("SIM-MAT-LAMP-01") == start - 4
+
+    engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=2, used_qty=2)  # corrected down: 2 go back
+    assert engine.repo.stock_of("SIM-MAT-LAMP-01") == start - 2
+    case = engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=4, used_qty=4)  # and up again: 2 out
+    assert engine.repo.stock_of("SIM-MAT-LAMP-01") == start - 4
+    assert (case.audit[-1].old_value["issued_qty"], case.audit[-1].new_value["stock_qty"]) == (2, start - 4)
+
+    case = _finish_with_saved_materials(engine, tid)
+    assert case.ticket.status == "READY_FOR_REVIEW"
+    assert case.draft.readiness_evaluation.all_pass and case.draft.non_blocking_warnings == []
+    assert case.material_lines[0].variance_reason is None
+    assert engine.repo.stock_of("SIM-MAT-LAMP-01") == start - 4
+
+
+def test_q43_more_than_the_stock_is_still_refused_whatever_the_norm(engine):
+    tid = _onsite_in_progress(engine)
+    start = engine.repo.stock_of("SIM-MAT-LAMP-01")
+    engine.confirm_materials(tid, TEC, lines=[PlannedMaterial(item_code="SIM-MAT-LAMP-01", planned_qty=start + 1)])
+    with pytest.raises(GuardError, match="Kho chỉ còn"):
+        engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=start + 1, used_qty=start + 1)
+    assert engine.repo.stock_of("SIM-MAT-LAMP-01") == start
+    assert engine.get(tid).material_lines[0].issued_qty is None
+    case = engine.report_complete(tid, TEC)  # not saved ⇒ completion still blocked on the missing quantity
+    assert case.ticket.status == "IN_PROGRESS" and not case.draft.readiness_evaluation.materials_entered
+
+
+def _finish_with_saved_materials(engine, tid):
+    """Checklist, note and photo, then report completion: the quantities were saved by the test itself."""
+    case = engine.get(tid)
+    for item in case.checklist_items:
+        engine.update_checklist(tid, TEC, item.template_item_id, status=ChecklistStatus.COMPLETED)
+    requirement = case.draft.evidence_requirements[0]
+    engine.add_evidence(
+        tid,
+        TEC,
+        requirement_id=requirement.requirement_id,
+        evidence_type=requirement.allowed_evidence_types[0],
+        content_or_metadata="Thay 4 bóng LED",
+        readability_status=ReadabilityStatus.NOT_APPLICABLE,
+    )
+    engine.add_evidence(
+        tid,
+        TEC,
+        requirement_id=None,
+        evidence_type=EvidenceType.SIMULATED_IMAGE,
+        content_or_metadata="after.jpg",
+        readability_status=ReadabilityStatus.READABLE,
+    )
+    return engine.report_complete(tid, TEC)

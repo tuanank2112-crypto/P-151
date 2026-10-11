@@ -1,0 +1,12 @@
+src\mobile\js\api.js exit=0 
+src\mobile\js\bptn.js exit=0 
+src\mobile\js\bql.js exit=0 
+src\mobile\js\dept.js exit=0 
+src\mobile\js\kho.js exit=0 
+src\mobile\js\main.js exit=0 
+src\mobile\js\photo.js exit=0 
+src\mobile\js\resident.js exit=0 
+src\mobile\js\staff.js exit=0 
+src\mobile\js\ui.js exit=0 
+src\mobile\sw.js exit=0 
+src\web\app.js exit=0 

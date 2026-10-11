@@ -17,9 +17,7 @@ from src.maintenance.rules import AREA_PATTERNS
 
 from .inputs import DecisionInput
 
-PROMPT_VERSION = (
-    "agent-prompt/5"  # /2 signal shape; /3 compact; /4 negation ABSENT, help cry PRESENT; /5 TO_BPTN needs bptn_reason
-)
+PROMPT_VERSION = "agent-prompt/9"  # /2 signal shape; /3 compact; /4 negation ABSENT, help cry PRESENT; /5 TO_BPTN needs bptn_reason; /6 one asset per area (plan 14); /7 sub-building codes like S2.05 belong to S2; /8 lift cabin needs no floor; /9 cabin ceiling and floor-indicator lamps are lamps
 
 # CR-BPTN-03 §6.2 in plain Vietnamese, keyed by signal_id; S-00 is the agent-only catch-all (SPEC-P01 §3.3)
 SIGNAL_TEXT = {
@@ -59,16 +57,16 @@ CÁC BƯỚC SUY LUẬN (suy luận đủ 10 bước; chỉ GHI vào "reasoning"
    Mỗi phần tử của safety.signals là MỘT đối tượng có đúng ba khóa: signal_id (mã trong bảng trên, ví dụ "S-05"; S-00 cho nguy hiểm thật khác), status (chỉ PRESENT, UNCLEAR hoặc ABSENT) và quote (đoạn chép nguyên văn từ <an_toan_can_xet>). KHÔNG ghi tín hiệu dạng chuỗi. Không có tín hiệu ⇒ signals [].
 3. LOAI_VIEC: chỉ hai loại việc:
    - VE_SINH (PB-CLN-01): khu vực chung bẩn hoặc có thứ cần dọn (rác, bụi, vết bẩn, nước đọng, chất lỏng đổ, bãi nôn, phân, lá cây, mạng nhện…).
-   - KY_THUAT (PB-TEC-01): ĐÈN chiếu sáng khu vực chung không hoạt động (không sáng, tắt, hỏng, cháy bóng, chập, chập chờn, nhấp nháy, rơi, vỡ).
+   - KY_THUAT (PB-TEC-01): ĐÈN chiếu sáng khu vực chung không hoạt động (không sáng, tắt, hỏng, cháy bóng, chập, chập chờn, nhấp nháy, rơi, vỡ). Đèn trần và đèn hiển thị tầng trong thang máy cũng là đèn chiếu sáng khu vực chung.
    Ngoài phạm vi (OUT_OF_SCOPE): thang máy, nước/điện/đèn trong căn hộ, phí, an ninh, côn trùng, xin lắp mới, đèn đường ngoài cổng, hỏi đáp.
    HAI việc (2 jobs) chỉ khi hai việc ĐỘC LẬP ở CÙNG một vị trí ("hành lang nhiều rác, đèn cũng hỏng"). Nếu việc này là nguyên nhân hoặc hệ quả của việc kia ("đèn hỏng nên không thấy rác", "bóng đèn vỡ, mảnh vỡ vương vãi") thì là MỘT việc. Hai việc ở hai vị trí khác nhau ⇒ scope UNCLEAR, TO_BPTN.
    Không xác định được ⇒ scope UNCLEAR, TO_BPTN với CATEGORY_UNCLEAR.
-4. VI_TRI: nơi XẢY RA SỰ CỐ, không phải nơi cư dân ở ("em ở căn 1203 tầng 12" không phải vị trí sự cố). Tòa chỉ thuộc: {buildings}. Tầng là số, "B1"/"B2" (hầm) hoặc "Trệt". Khu vực chỉ thuộc: {areas}. Sảnh chính và Sảnh cư dân là tầng 1 nếu không nêu. Tòa ngoài danh sách = thiếu tòa. Thiếu phần nào để null.
+4. VI_TRI: nơi XẢY RA SỰ CỐ, không phải nơi cư dân ở ("em ở căn 1203 tầng 12" không phải vị trí sự cố). Tòa chỉ thuộc: {buildings}. Tầng là số, "B1"/"B2" (hầm) hoặc "Trệt". Khu vực chỉ thuộc: {areas}. Sảnh chính và Sảnh cư dân là tầng 1 nếu không nêu. Thang máy (trong cabin) không cần tầng: để floor null. Tòa ngoài danh sách = thiếu tòa. Mã tòa con dạng S2.05 hoặc S1.12 thuộc tòa mẹ S2 hoặc S1: ghi building đúng như phản ánh nêu, KHÔNG coi là ngoài danh sách. Thiếu phần nào để null.
 5. THIEU_THONG_TIN: thiếu tòa/tầng/khu vực ⇒ next_step ASK_RESIDENT với đúng các trường thiếu (location, location_building, location_floor, location_area). Phản ánh rõ ràng ngoài phạm vi và không nhắc khu vực chung nào ⇒ TO_BPTN với OUT_OF_SCOPE (không hỏi vị trí). Đủ thông tin và thuộc phạm vi ⇒ PROCEED.
    next_step TO_BPTN LUÔN kèm bptn_reason (OUT_OF_SCOPE hoặc CATEGORY_UNCLEAR); thiếu bptn_reason thì CẢ quyết định bị loại, kể cả phần an toàn. Ca nguy hiểm thật (risk_level EMERGENCY) mà không có việc vệ sinh/đèn ⇒ scope OUT_OF_SCOPE, jobs [], next_step TO_BPTN, bptn_reason OUT_OF_SCOPE (BQL nhận ca khẩn cấp riêng).
 6. TRUNG: chỉ chọn trong <ung_vien_trung>; trùng khi cùng loại việc, cùng tòa/tầng/khu vực VÀ cùng một sự việc. Không chắc ⇒ duplicate_of null.
 7. UU_TIEN: PRI-H1 đèn ở lối đi chung ({high_areas}) = HIGH; PRI-M1 đèn ở chỗ khác = MEDIUM; PRI-H2 vệ sinh cản trở lối đi (chắn lối, trơn trượt, tràn ra lối đi) = HIGH; PRI-M2 vệ sinh ảnh hưởng sử dụng (nhiều rác, ẩm ướt, mùi) = MEDIUM; PRI-L1 vệ sinh chưa ảnh hưởng = LOW; PRI-D0 chưa rõ vị trí hoặc loại = MEDIUM.
-8. TAI_SAN: chỉ cho KY_THUAT; chọn trong <tai_san> asset có vị trí TRÙNG vị trí sự cố; không có hoặc có từ hai asset trở lên ở vị trí đó ⇒ asset_id null.
+8. TAI_SAN: chỉ cho KY_THUAT; mỗi khu vực một asset, không phân biệt tòa/tầng. Chọn trong <tai_san> asset có khu vực TRÙNG khu vực của vị trí sự cố; không có asset cho khu vực đó ⇒ asset_id null.
 9. VAT_TU: chọn trong <vat_tu> đúng loại việc, số lượng hợp lý (không quá {max_qty}); không cần ⇒ [].
 10. KET_LUAN: tóm tắt quyết định. Đặt needs_review=true (kèm review_reason) khi bạn không chắc về loại việc hoặc vị trí.
 
@@ -135,8 +133,8 @@ EXAMPLE = {
             "priority_rule_id": "PRI-H1",
             "priority_reason": "Đèn ở lối đi chung",
             "duplicate_of": None,
-            "asset_id": "SIM-ASSET-LIGHT-001",
-            "asset_reason": "Đèn duy nhất tại vị trí này",
+            "asset_id": "SIM-ASSET-LIGHT-HALLWAY",
+            "asset_reason": "Asset của khu vực Hành lang",
             "materials": [{"item_code": "SIM-MAT-LAMP-01", "planned_qty": 1}],
             "needs_review": False,
             "review_reason": None,
@@ -211,7 +209,7 @@ def _candidates_text(data: DecisionInput) -> str:
 def _assets_text(data: DecisionInput) -> str:
     if not data.asset_candidates:
         return "(không có)"
-    return "\n".join(f"- {a.asset_id}: {_data(a.location)}" for a in data.asset_candidates)
+    return "\n".join(f"- {a.asset_id}: khu vực {_data(a.area)}" for a in data.asset_candidates)
 
 
 def _materials_text(catalog: Catalog) -> str:

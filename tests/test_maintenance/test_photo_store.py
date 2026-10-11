@@ -235,7 +235,9 @@ def test_t17_photo_api_is_unchanged(api):
         response = client.get(url, headers=headers)
         assert response.status_code == 200 and response.content == PNG
         assert response.headers["content-type"] == "image/png"
-        assert response.headers["cache-control"] == "private, max-age=3600"
+        # plan 12 Q10 (R01 #2/#3): the browser keeps the bytes but asks every time (was max-age=3600, then immutable)
+        assert response.headers["cache-control"] == "private, no-cache"
+        assert response.headers["etag"] == f'"{engine.get(tid).evidence[0].content_or_metadata}"'
 
     case = engine.add_resident_photo(tid, "SIM-ACTOR-RESIDENT-01", "../../etc/passwd")
     bad = case.evidence[-1].evidence_id

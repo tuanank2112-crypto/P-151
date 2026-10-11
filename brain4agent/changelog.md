@@ -2,6 +2,184 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.12.2] - 2026-10-11: thang máy là khu vực chung (PATCH)
+- Quyết định (người dùng, 2026-10-11): "Trong thang máy" là khu vực hợp lệ. Đèn trần và đèn hiển thị tầng ⇒ Kỹ thuật; bẩn/rác ⇒ Vệ sinh; người ngất/kẹt ⇒ tầng an toàn (không đổi); hỏng cơ khí (cửa không đóng, chạy rung, dừng không xuống) ⇒ NGOÀI phạm vi. Quạt và nút bấm được người dùng xếp TRONG phạm vi nhưng CHƯA có playbook ⇒ hiện vẫn OUT_OF_SCOPE (Idea Vault).
+- `rules.py`: khu vực `Thang máy` chỉ khớp cách nói TRONG cabin (`trong|buồng|cabin|lòng thang máy`; "trước/cạnh thang máy" là mốc, không phải cabin); tầng ngầm định `—`; `location_area` nhận ngay nhãn chuẩn. `COMMON_AREA_PATTERNS` thêm cabin. Catalog: tài sản `SIM-ASSET-LIGHT-LIFT-CABIN` (5 tài sản đèn ACTIVE). Prompt `agent-prompt/9` (cabin không cần tầng; đèn trần/đèn hiển thị tầng là đèn) + REF plan 06.
+- Đo (LLM thật): đèn trong thang máy, đèn hiển thị tầng, đèn trần ⇒ Kỹ thuật; bẩn, rác ⇒ Vệ sinh; ngất ⇒ EMERGENCY; cửa/rung ⇒ ngoài phạm vi; "dừng không xuống" ⇒ SAFETY_REVIEW_REQUIRED (tầng an toàn thận trọng, giữ). pytest 3596 passed (+11 test `test_lift_cabin.py`), ruff sạch.
+
+## [v1.12.1] - 2026-10-11: sửa tòa con S2.05 và nhãn Khẩn cấp (PATCH)
+- LLM đọc "Tòa S2.05" là ngoài danh sách tòa [S1, S2] (prompt ghi "Tòa ngoài danh sách = thiếu tòa") ⇒ ticket thường bị chuyển BPTN. Validator vốn đã nhận `S2.05`; lỗi nằm ở prompt. Thêm câu dặn mã tòa con thuộc tòa mẹ vào `prompt.py` + REF plan 06 (khớp từng chữ), `PROMPT_VERSION` = `agent-prompt/7`.
+- Portal: `isUrgent` chỉ còn `risk_level === "EMERGENCY"`; ưu tiên HIGH một mình KHÔNG phải "Khẩn cấp" (người dùng chốt 2026-10-11).
+- Đo: LLM thật (gpt-6-luna) ticket "Tòa S2.05 · Tầng 12" ⇒ ROUTED Kỹ thuật, rejected []; pytest 3585 passed, portal 125 passed, ruff sạch.
+
+## [v1.12.0] - 2026-10-11: gộp develop b8d1b81, giữ nghiệp vụ vật tư của chamanh
+- Quyết định (người dùng, 2026-10-11): `portal/` lấy NGUYÊN bản develop làm nền; ẩn nút backend không hỗ trợ (chọn nhân viên, yêu cầu vật tư riêng, vật tư ngoài kho, tạo mã vật tư mới, hàng đợi duyệt cấp phát); phần nối plan18 (BFF `backend-client`…) bị bỏ vì develop đã gọi thẳng `/api/v1`.
+- Vật tư: giữ `material-usage` (plan 15-16). `_material_approval_required()` cố định False vì `MO_PORTAL_EXTRAS` bật mặc định ở memory sẽ kích hoạt luồng yêu cầu/duyệt của develop; `custom_materials_enabled=False`. Màn Vệ sinh/Kỹ thuật chọn vật tư đã dùng + số nguyên ≥1, một POST trước `complete`.
+- Từ develop lấy: Agent kiểm đầu ra theo catalog (SPEC-P10), gộp/tách ticket, endpoint `wrong-department`/`return-to-bptn`/`to-bql`/`handled`, rating có thẻ + bình luận, migration 0003/0004. `PROMPT_VERSION` = `agent-prompt/6` (gộp /5 develop + tài sản theo khu vực).
+- Test: xoá `test_portal_backend_ext2.py` và 3 test thuộc luồng đã loại; sửa 3 test; thêm 3 test portal cho `finishTicketAction`. Python 3584 passed/100 pg deselected, ruff sạch; portal typecheck+lint sạch, 125 test.
+
+## [v1.11.0] - 2026-10-10: UI portal dùng backend Python (plan18, snapshot được duyệt commit/push)
+- Giữ giao diện Next mới; login, danh sách, chi tiết, thao tác, vật tư/kho và ảnh dùng Python qua BFF. Runtime không dùng DB/workflow portal; dữ liệu legacy giữ nguyên để rollback.
+- Cookie HttpOnly, ID string; reauth/role mỗi action; projection Case bỏ dữ liệu cá nhân/audit; ảnh kiểm ownership trước304.
+- Cùng ticket và stock với /app/ và /ui/; không prefill vật tư Agent, mỗi lưu usage một POST, lỗi giữ input. Complete200 chưa READY hiển thị failing_items. Safety controls theo blocker/status/escalation Python.
+- Local: pytest3441/95pg deselected; portal71; browser46+crossapp9+restart5+cleaning4+extraactions6; independent review vòng3 duyệt; 5 source mutants đỏ→phục hồi xanh. Build không DATABASE_URL; lint0errors/1warning legacy.
+- Boot thiếu hub (exit1), Docker CLI thiếu, chưa PostgreSQL/điện thoại/server. Chưa đóng gate toàn hồ sơ, chưa ghi Supabase/deploy. Người dùng đã duyệt lưu Git snapshot1.11.0.
+
+
+# v1.10.1 — Tích hợp UI develop (plan17 đã commit/push 2ced265)
+- Nhập origin/develop b6590ce: portal có màn Kho, modal ticket và cập nhật các vai; main/compose có proxy portal.
+- Giữ backend plan16, OpenAI Luna, Docker exclusions và app điện thoại. Sinh migration warehouse theo schema upstream, chưa áp DB.
+- Typecheck/build đạt, unit17; lint0 errors/5 warnings upstream; pytest3438 và proxy/material focus47 đạt. Docker/DB workflow chưa đo trong lượt merge.
+
+## [v1.10.0] - 2026-10-10: Vật tư — guard backend và lưu nguyên tử (plan 16)
+### Added
+- `POST /mo/tickets/{id}/material-usage` `{lines:[{item_code, used_qty}]}` → `MaintenanceEngine.save_material_usage`: một `_mutate`, thay toàn bộ lựa chọn, `planned = issued = used`, kho đi theo delta từng mã (mã tăng dần), audit field `material_usage`. Lỗi bất kỳ ⇒ rollback ticket + kho + audit + outbox (đo memory + PostgreSQL).
+- `src/maintenance/material_policy.py`; `GET /mo/catalog` thêm `material_codes_by_department`.
+### Changed (thay đổi có chủ ý — request cũ từng được nhận nay bị từ chối)
+- `material-plan`, `materials/{code}`, engine `confirm_materials`/`record_material`: vật tư phải thuộc phòng ban; số lượng nguyên dương (API 422 trước coercion, engine 409); Kỹ thuật không được rỗng. Hoàn thành: `material_required`/`material_invalid` chặn Kỹ thuật không vật tư (kể cả qua N_A) và dòng cũ sai guard. Thay plan 15 §1 vùng cấm "chỉ app kiểm".
+- Web `materialsCard` + app `dept.js`: một form, một POST, không prefill Agent, lỗi giữ input; bỏ `MATERIAL_GROUP`. `app.js?v=4.4`, app `?v=17`/`mo-app-shell-v17`.
+- `src/main.py`: 422 với input NaN/Infinity không còn thành 500.
+### Giữ nguyên
+- Plan 15 Q01/Q02: khác định mức/đề xuất Agent không chặn, không cần lý do; chỉ `USED_VS_ISSUED`.
+### Validation
+- pytest 3438 passed (3387 + 51), `--pg` 3533 passed, 0 fail/skip; ruff/format/diff-check exit 0; RED nền 48/51 đỏ + probe đường cũ nền ACCEPTED 8/8 → HEAD REFUSED 8/8; mutants m1–m5 đều đỏ; Playwright web + app 390px 42/42 trên container Docker memory. Thẩm định độc lập R04 lần 1 🔁 (F1 số nguyên khổng lồ ⇒ 500, F2 engine TypeError, F3 app refresh xoá lựa chọn sau lỗi, F4 nút Lưu bật lại, F5 phạm vi `src/main.py`, F6 diff-check) ⇒ đã sửa, đo lại bằng probe của auditor 0 BROKEN. Server chưa deploy.
+
+## [v1.9.9] - 2026-10-10: Vật tư — bỏ đối chiếu định mức và đề xuất Agent (plan 15)
+### Changed
+- Engine `_compare_materials`: chỉ `USED_VS_ISSUED` lệch không lý do mới chặn hoàn thành; `PLANNED_VS_NORM`/`ISSUED_VS_PLANNED` giữ làm dữ liệu tham khảo, không chặn, không warning. `confirm_materials`/`POST material-plan`: `note` không bắt buộc. Thay luật CR-03 §9.4 (5) cũ + plan 11 Q41/Q42 (người dùng duyệt).
+- App `dept.js`: bỏ ô Lý do, toast "Khác định mức", điều kiện "Chênh lệch vật tư có lý do"; một lần bấm lưu. `?v=16`, `SHELL_CACHE` v16.
+- Web `app.js`: dòng vật tư một ô "Số lượng đã dùng" (đã xuất = đã dùng), bỏ ô lý do/định mức; ghi chú xác nhận vật tư không bắt buộc; Gate 4 "Xuất – dùng". `app.js?v=4.3`.
+- Oracle ticket mẫu CLN-001 (2 bộ seed): khác định mức không lý do ⇒ READY, `warnings: []`.
+### Validation
+- pytest `--ignore=integration` 3387 passed / 0 fail / 0 skip (trước 3383); ruff check/format exit 0; phép phá (khôi phục so 3 phép) ⇒ 4 test đỏ. UI harness chưa chạy (thiếu Playwright).
+
+## [v1.9.8] - 2026-10-10: Preserve local Docker and GPT-6 Luna fixes
+### Fixed
+- Integrate upstream 1.9.7 with local Docker build-context exclusions and the verified GPT-6 Luna request parameters.
+- Luna uses max_completion_tokens and reasoning_effort=none; other model requests remain unchanged.
+- Update the emergency downgrade API test to accept no blocker after area-based asset matching; the pre-fix test failed on a None blocker.
+### Validation
+- On 7131510: 97 focused tests PASS, ruff check/format PASS, 12 JS syntax checks PASS; UI harness not rerun (Playwright absent).
+- Live client request before integration: PASS, 33 tokens. Full tests on prior 4663b7f integration: 3383 passed, 88 deselected, 0 skip (129.98 s); ruff check/format and 12 JS syntax checks PASS. Docker runtime pending user rebuild.
+
+## [v1.9.7] - 2026-10-10: App Phòng ban — bỏ đề xuất vật tư của Agent
+### Changed
+- `src/mobile/js/dept.js`: khối vật tư không hiện, không điền sẵn vật tư Agent dự kiến; mở với 1 dòng trống, chỉ hiện lựa chọn đã lưu của phòng ban (`deptChoseMaterials`). Lưu qua `material-plan` rồi đã xuất = đã dùng; lý do chỉ bắt buộc khi khác định mức (hỏi sau material-plan, chưa xuất kho). Điều kiện "Đã chọn vật tư sử dụng" (plan 11 Q42). Harness M14 chọn CLEAN-01 ×2. `?v=15` + `SHELL_CACHE` v15. Engine/API không đổi (bước 7 vẫn dự kiến vật tư cho Kho).
+### Measured
+- `node --check` 11 file; pytest 3381 passed / 1 failed (lỗi có sẵn `test_emergency_downgrade_bql_200`). Playwright `:8001` 16/16 PASS (`evidence/q42-no-agent-materials.txt`): engine có LAMP-01 / CLEAN-01 dự kiến nhưng app hiện dòng trống, không chữ "Agent/đề xuất"; lưu trống ⇒ chặn, không POST; LAMP-01 ×3 ⇒ hỏi lý do, kế hoạch 3 chưa xuất ⇒ có lý do ⇒ 3/3; vệ sinh không dùng ⇒ `N_A`; ticket kỹ thuật ⇒ `READY_FOR_REVIEW`. Phép phá (hiện lại đề xuất + bỏ chặn định mức) ⇒ 5 FAIL (`evidence/q42-mutant.txt`), khôi phục từng byte.
+
+## [v1.9.6] - 2026-10-10: App Phòng ban — một khối chọn vật tư sử dụng
+### Changed
+- `src/mobile/js/dept.js` `materialsBlock`: một khối — dòng `[vật tư][số lượng đã dùng][Bỏ]` điền sẵn đề xuất Agent, `+ Thêm vật tư`, một ô lý do, một nút lưu; Vệ sinh tick "Không sử dụng vật tư" (`lines: []`), Kỹ thuật ≥1 vật tư; danh sách theo `MATERIAL_GROUP` (plan 11 Q41). Bỏ khối "Vật tư thực tế khác đề xuất" + Đã xuất/Đã dùng (đã xuất = đã dùng). `?v=14` + `SHELL_CACHE` v14. API/engine không đổi.
+### Measured
+- `node --check` 11 file; pytest 3381 passed / 1 failed (lỗi có sẵn `test_emergency_downgrade_bql_200`, như v1.9.5). Playwright `:8001` 14/14 PASS (`evidence/q41-dept-materials.txt`): kỹ thuật đổi LAMP-01 ⇒ STARTER-01 ×2 (thiếu lý do ⇒ không gửi), hết hàng LAMP-02 ⇒ toast "Kho chỉ còn 0…", vệ sinh không dùng vật tư ⇒ `N_A` + điều kiện vật tư xanh, giữ đề xuất = định mức ⇒ không gọi material-plan, ticket kỹ thuật báo hoàn thành ⇒ `READY_FOR_REVIEW`. Phép phá (bỏ chặn lý do + bỏ lọc phòng ban) ⇒ 4 FAIL (`evidence/q41-mutant.txt`), khôi phục từng byte.
+
+## [v1.9.5] - 2026-10-10: App điện thoại — mỗi ticket chỉ hiện ở một ô
+### Changed
+- `src/mobile/js/ui.js` thêm `boxOf([[key, test], …])`: ticket thuộc ô đầu tiên khớp; `staff.js` `queueScreen` (tile + ô số liệu là một bộ ô, `priority` cho thứ tự tile), `bql.js`, `resident.js` đếm/lọc qua nó (plan 11 Q40).
+- BPTN: tile Cần xử lý · An toàn B2 · Nghi trùng + ô Đang xử lý · Hoàn thành (bỏ Tất cả/Hàng chờ/Tổng). BQL: Khẩn cấp ⇒ Cần BQL ⇒ Hoàn thành ⇒ Quá hạn, chuông mở Khẩn cấp khi có. Cư dân: Cần bạn ⇒ Chờ nghiệm thu ⇒ Đang xử lý ⇒ Đã xong. `?v=13` + `SHELL_CACHE` v13. API không đổi.
+### Measured
+- `node --check` 11 file; `test_mobile_static.py` 5 passed; pytest 3381 passed / 1 failed (`test_emergency_downgrade_bql_200`, đỏ cả trên HEAD sạch — có sẵn, không do đợt này). Playwright `:8001` (9 ticket: ROUTED, MISSING_INFO, CLOSED, READY_FOR_REVIEW, khẩn cấp, an toàn B2, trùng, hủy) bptn01/bql01/vesinh01/kythuat01/cudan01/cudan02: số trên ô = số thẻ, 0 ticket trùng ô, BPTN/cư dân phủ đủ — 34/34 PASS (`evidence/q40-one-box.txt`). Phép phá lọc thô ⇒ 9 FAIL ở BPTN/BQL/Cư dân (`evidence/q40-mutant-raw-filters.txt`), khôi phục từng byte.
+
+## [v1.9.4] - 2026-10-10: App BPTN — 4 ô số liệu bấm được để lọc
+### Changed
+- `src/mobile/js/staff.js` `queueScreen`: `stats` đổi thành `[[key, label, test]]`, mỗi ô là `button.card.stat.pick[data-tab]` trong `#staff-stats` (lọc như tile, ô đang chọn viền xanh). `bptn.js`: Hàng chờ (`queue`) · Hoàn thành (`done`, `CLOSED`) · Nghi trùng (`duplicate`) · Tổng (`all`) (plan 11 Q39). `?v=12` + `SHELL_CACHE` v12. API không đổi.
+### Measured
+- `node --check` 11 file; `test_mobile_static.py` 5 passed. Playwright bptn01 `:8001`, `GET /mo/tickets` giả 9 dòng: 4 ô = 4/2/2/9, bấm từng ô hiện đúng 4/2/2/9 thẻ + đúng ô sáng + đúng tiêu đề, tile An toàn B2 ⇒ không ô nào sáng, 0 lỗi JS — 7/7 PASS. Phép phá (Hoàn thành = mọi ticket) ⇒ P1/P-done ĐỎ. Phòng ban `vesinh01` vẫn PASS.
+
+## [v1.9.3] - 2026-10-10: App BQL xử lý an toàn Bậc 2 đã leo thang ngay trên điện thoại
+### Changed
+- `src/mobile/js/bql.js` `#/b/<id>`: bỏ nút "Xử lý trên web"; form `#bql-safety` 3 quyết định (Xác nhận an toàn · Yêu cầu cư dân bổ sung · Nâng lên Khẩn cấp Bậc 1) ⇒ `POST /mo/tickets/{id}/safety`; lý do trống ⇒ không gọi API (plan 11 Q38, thay vùng cấm SPEC-P03 §41). `?v=11` + `SHELL_CACHE` `mo-app-shell-v11`. API/engine không đổi.
+### Measured
+- `node --check` 11 file 0 lỗi; `test_mobile_static.py` 5 passed. Playwright bql01 trên backend memory `:8001` (3 ticket "tiếng nổ" Bậc 2, `run_jobs(+5 h)` ⇒ `escalated`): S0–S6 + JS 8/8 PASS — form 3 nút, lý do trống 0 request, CONFIRM_SAFE ⇒ hết vướng an toàn (chạy lại pipeline), REQUEST_INFO ⇒ `NEED_INFO`, ESCALATE ⇒ `EMERGENCY_PENDING_BQL` và màn chuyển sang khối khẩn cấp. Phép phá (nút Xác nhận gửi `REQUEST_INFO`) ⇒ S3 ĐỎ.
+### Not measured
+- Harness M1–M17; thao tác ghi trên Supabase `:8000` (chỉ đọc).
+
+## [v1.9.2] - 2026-10-10: App điện thoại Kho — Nhập vật tư + Cảnh báo tồn kho dưới ngưỡng
+### Changed
+- `src/mobile/js/kho.js` `#/k`: tile "Chờ vật tư" ⇒ "Nhập vật tư" (form `#kho-receive` + danh sách phản ánh chờ vật tư); "Tồn kho" chỉ còn danh sách; tile mới "Cảnh báo" (`#kho-low`): `qty < 30` tăng dần, đỏ `< 20`, vàng `20–29`, "Nhập thêm" điền sẵn `30 − qty`. Ô số liệu 1 = "Dưới ngưỡng" (plan 11 Q37, theo ảnh người dùng). Ngưỡng là hằng `LOW_STOCK`/`CRITICAL_STOCK`.
+- Harness plan 11 M16: bấm tile `receive` trước khi nhập kho. `?v=10` + `SHELL_CACHE` `mo-app-shell-v10`. API không đổi.
+### Measured
+- `node --check` 11 file 0 lỗi; `test_mobile_static.py` 5 passed; Playwright kho01 trên backend memory `:8001` mới: K1–K8 + JS 9/9 PASS (3 tile, cảnh báo = 4 dòng khớp `GET /mo/warehouse/stock` `< 30`, mức đỏ/vàng đúng, điền sẵn BAG-01 20 ⇒ 10, nhập xong 20 → 30 và rời cảnh báo, Tồn kho 5/5 dòng không form, 0 lỗi JS). Phép phá (lọc `< 20`) ⇒ K3/K5 ĐỎ.
+### Not measured
+- Harness đầy đủ M1–M17, server `:8000`, điện thoại thật.
+
+## [v1.9.1] - 2026-10-10: App điện thoại — Phòng ban và BQL chỉ lưu việc đã hoàn thành
+### Changed
+- `src/mobile/js/dept.js` `#/d`: tile 4 "Tất cả" (mọi ticket) ⇒ "Hoàn thành" (`status = CLOSED`), tiêu đề "Việc đã hoàn thành", theo ảnh người dùng (plan 11 Q35). Tile "Tất cả" của BPTN giữ.
+- `src/mobile/js/bql.js` + `app.css` `#/b`: bỏ hàng tile tròn (Cần tôi/Khẩn cấp/Tất cả); 4 ô số liệu thành bộ lọc (`#bql-tabs` `button.card.stat.pick[data-tab]`): Cần BQL · Khẩn cấp · Quá hạn · Hoàn thành (`CLOSED`, thay "Tổng") (plan 11 Q36). Chi tiết cũng không tile.
+- `?v=9` mọi import + `SHELL_CACHE` `mo-app-shell-v9`. API không đổi.
+### Measured
+- `node --check` 11 file 0 lỗi; `test_mobile_static.py` 5 passed; Playwright `:8001` (memory, `GET /mo/tickets` giả 9 trạng thái) vesinh01: badge 2, danh sách = 2 ticket `CLOSED`, Chờ nhận không đổi, 0 lỗi JS — 6/6 PASS; phép phá (lọc `() => true`) ⇒ T2/T3 ĐỎ.
+- Playwright `:8001` bql01, `GET /bql/tickets` giả 9 dòng: không tile, 4 ô = 2/1/1/2, mỗi ô lọc đúng, chi tiết có Quay lại và giữ lọc, 0 lỗi JS — 10/10 PASS; phép phá ("Hoàn thành" = mọi ticket) ⇒ B2/B5/B7 ĐỎ. Bộ chọn harness M11 `#bql-tabs [data-tab="emergency"]` giữ nguyên.
+### Not measured
+- Harness plan 11 M1–M17 (chỉ chạy 06:00–22:00), server `:8000`.
+
+## [v1.9.0] - 2026-10-10: Tài sản đèn theo khu vực (plan 14, MINOR)
+### Changed
+- Catalog: 4 tài sản active `SIM-ASSET-LIGHT-{HALLWAY,LIFT-LOBBY,STAIRS,WASTE-ROOM}` (mỗi khu vực một cái); 6 mã cũ `…-001…006` thành `RETIRED_SIMULATED` (ticket cũ vẫn giữ mã). `Asset` thêm `name`, `area`; validator ≤1 active mỗi khu vực.
+- Engine bước 6 so `rules.location_area(location)` với `asset.area` (trước: trọn chuỗi vị trí); `bptn_resolve` từ chối mã không active. Agent: `AssetCandidate{asset_id, area}`, prompt `agent-prompt/2` (REF plan 06 cùng chữ).
+- `/mo/catalog` `assets` = `[{asset_id, name, area}]` chỉ active; dropdown BPTN app (`?v=7`, `SHELL_CACHE` v7) và web (`app.js?v=4.2`) hiện tên.
+- Ticket mẫu: TEC-002 → hầm B1 (giữ kịch bản ASSET_UNCLEAR), TEC-006 → cầu thang bộ (giữ kịch bản tồn kho không rõ).
+### Measured
+- pytest 3382 passed (trước 3365; +17 `test_area_assets.py`) exit 0; ruff check/format 0; 12/12 ticket mẫu, 4/4 demo; phép phá m1–m4 4/4 RED; REF `--selftest` 0 lỗi; Playwright `:8001` dropdown app + web = 4 tên, ALL PASS.
+### Not measured
+- `pytest --pg`, eval Agent LLM thật (`REF --live`), server `:8000`.
+
+## [v1.8.4] - 2026-10-10: App điện thoại — BPTN thấy số phản ánh hoàn thành
+### Changed
+- `src/mobile/js/bptn.js` `#/p`: ô số liệu thứ 2 "An toàn B2" ⇒ "Hoàn thành" = số ticket `CLOSED` (trừ ticket mẫu), theo ảnh người dùng (plan 11 Q34). Tile "An toàn B2" giữ nguyên. `?v=6` mọi import + `SHELL_CACHE` `mo-app-shell-v6`. API không đổi.
+### Measured
+- `node --check` 11 file 0 lỗi; `test_mobile_static.py` 5 passed; Playwright `:8001` (memory), 3 ticket, BQL đóng 1 ⇒ bptn01 thấy `Hàng chờ 1 · Hoàn thành 1 · Nghi trùng 0 · Tổng 3`, khớp API (`CLOSED` = 1).
+
+## [v1.8.3] - 2026-10-10: App điện thoại — chọn vị trí trước khi mô tả
+### Changed
+- `src/mobile/js/resident.js` `#/r/new`: thẻ 1 = Vị trí sự cố, 2 = Mô tả vấn đề, 3 = Ảnh (trước: Mô tả trước). Placeholder/gợi ý đổi số bước. `?v=5` mọi import + `SHELL_CACHE` `mo-app-shell-v5`. API/chuỗi gửi không đổi (plan 11 Q33).
+### Measured
+- `node --check` 10 file 0 lỗi; `test_mobile_static.py` 5 passed; Playwright `:8001` (memory) cudan01 ⇒ thứ tự thẻ `1 Vị trí · 2 Mô tả · 3 Ảnh`.
+
+## [v1.8.2] - 2026-10-09: Sửa plan 12 sau thẩm định độc lập (R01)
+### Security
+- Ảnh: `Cache-Control: private, no-cache` + `ETag` (thay `max-age=31536000, immutable`). Trước: cùng trình duyệt, tài khoản khác mở được ảnh từ cache mà server không kiểm quyền (R01 #2, 🔴; lỗ 1 giờ có từ trước plan 12). Sau: B nhận 404, chủ ảnh nhận 304 không kèm bytes. URL dùng lại sau reset nhận bytes mới (#3).
+### Fixed
+- Upload ảnh kiểm quyền/tồn tại ticket trước khi xét file ⇒ mã lỗi như trước plan 12 (#7). +6 test (R1–R3, Z3, P5c), phép phá 8/8 đỏ.
+### Decisions
+- Người dùng chọn (c): ảnh xem lại giữ ~56 ms (1 câu SQL kiểm quyền), không cache quyền, không URL ký. G5 → "≤ median GET + 10 ms".
+
+## [v1.8.1] - 2026-10-09: Hotfix lý do bắt buộc ở form BPTN web (plan 13)
+### Fixed
+- `src/web/app.js` `bptnForm`: BPTN chọn/sửa giá trị (vị trí, thông tin, loại việc, phòng ban, tài sản, xác định tại hiện trường) mà để trống lý do ⇒ chặn ở client (trước: gửi đi, engine trả 409 GUARD_FAILED). Cùng luật `VALUE_KEYS` với app điện thoại.
+- Form An toàn Bậc 2: "Xác nhận an toàn" và "Yêu cầu cư dân bổ sung" bắt buộc lý do (engine vốn bắt buộc); "Nâng mức" vẫn không bắt buộc.
+### Measured
+- Harness Playwright `:8001` W1–W6 ALL PASS; 2/2 phép phá đỏ. API/engine không đổi.
+### Decisions
+- Ảnh xem lại 56 ms (plan 12 G5): đã ở 1 vòng DB (`repo.get`) như mọi GET ~50 ms; xuống 0 vòng phải cache dữ kiện kiểm quyền hoặc đổi URL ảnh ⇒ chạm bảo mật/API, chờ người dùng quyết (Idea Vault).
+
+## [v1.8.0] - 2026-10-09: Giảm độ trễ backend (plan 12)
+### Changed
+- Đọc DB qua engine `AUTOCOMMIT` riêng (`sql_read_engine`, `PostgresRepository._read`, thử lại 1 lần khi rớt kết nối); engine ghi giữ pre-ping. Tổng ≤5 kết nối.
+- Route ảnh: I/O đồng bộ chuyển vào threadpool; một lô ảnh = một transaction (`add_resident_photos`, `add_execution_photos`), tất cả hoặc không.
+- Cache bytes ảnh trong tiến trình (LRU 32 MB) + `Cache-Control: private, max-age=31536000, immutable`; gzip JSON > 1 KB; `run_jobs` bỏ một lần đọc dưới khoá.
+### Measured (`:8000`, Supabase)
+- GET 226–280 ms → 50–55 ms; danh sách 54–69 KB → ~4 KB trên dây; ảnh xem lại 527 → 56 ms; event loop không còn đứng ~1 s khi upload chờ Storage.
+### Decisions
+- Không làm: khoá theo ticket, bỏ audit khỏi doc (đổi schema), `/bql/tickets/{id}` (API mới), gỡ route mẫu `/api/v1/chat` (phải xoá test) ⇒ Idea Vault.
+
+## [v1.7.0] - 2026-10-09: App điện thoại (PWA) cho Cư dân và BQL (plan 11)
+### Added
+- `src/mobile/` (phục vụ ở `/app/`, một dòng mount trong `src/main.py`): Cư dân gửi phản ánh kèm ảnh chụp (nén ≤1600 px), theo dõi, bổ sung, thêm ảnh, đánh giá; BQL 3 tab Cần tôi/Khẩn cấp/Tất cả + nghiệm thu, trả làm lại, hủy, đóng/hạ mức khẩn cấp. Vai khác ⇒ màn "Dùng bản web".
+- `manifest.json` + `sw.js` + icon ⇒ cài lên màn hình chính khi chạy HTTPS. `docs/mobile.md`, `tests/test_maintenance/test_mobile_static.py` (5 test).
+### Decisions
+- PWA, KHÔNG React Native/Flutter (giao nhanh trước 19/10; bọc Capacitor sau nếu cần store). Client mỏng gọi API sẵn có, không endpoint mới ⇒ web và app cùng DB.
+- Đồng bộ = tải lại 30 s khi app đang hiện + ngay khi quay lại/có mạng; service worker KHÔNG cache `/api/`; không ghi offline. Realtime ⇒ Idea Vault.
+- Không Tailwind CDN/framework, không bước build; token lưu `localStorage['mo-app-token']` (app nhớ đăng nhập, session server vẫn TTL 8 h).
+- Ảnh cư dân gửi được ở mọi trạng thái chưa kết thúc (theo guard engine), bổ sung chữ chỉ khi `NEED_INFO` (theo `allowed_actions`).
+### Added (đợt 3, cùng ngày — SPEC-P05, Q26–Q31)
+- App cho mọi vai vận hành: Phòng ban (`js/dept.js` — nhận việc, chụp ảnh sau xử lý, checklist, vật tư, ghi chú, báo hoàn thành, vướng/sai phòng ban), BPTN (`js/bptn.js` — form theo mã vướng), Kho (`js/kho.js` — tồn kho, nhập kho); `js/staff.js` dùng chung. Chỉ QA còn "Dùng bản web". Không endpoint mới.
+- Bỏ hàng chip lọc ở màn Cư dân (4 ô tổng quan vẫn lọc).
+### Changed (đợt 2, cùng ngày — SPEC-P04, Q19–Q25)
+- Giao diện app chép từ `portal/`: header gradient + NavTiles (bỏ thanh tab đáy/FAB), form gửi 3 thẻ đánh số + Tóm tắt, ô tổng quan + 6 vạch tiến độ, stepper 6 bước, màn BQL kiểu Management; class `globals.css` chép nguyên, icon `icons.tsx` path-for-path. Backend vẫn FastAPI gốc `/api/v1` (Docker `:8000`), không chạm portal/DB portal.
+- Bước Vị trí ghép `Vị trí: Tòa … / Tầng … / <khu vực>` vào mô tả (API không đổi). Không làm phần portal mà API không có (khẩn cấp, tag đánh giá, cư dân nghiệm thu, Thông báo).
 ## [Unreleased] - 2026-10-10: Kiểm danh mục, không khớp trích dẫn (plan 06 Q35, SPEC-P10)
 ### Changed
 - `agent/schema.py` `AuditQuote`; `agent/validate.py` bỏ `grounded`/`_fold`, vị trí/job chỉ kiểm danh mục; `safety.merge_llm` không so quote; `agent/baseline.py` Mirror không bịa quote; `engine.py` ghi chú tách không in "None" (WP19, ✅ local: 3685 passed).

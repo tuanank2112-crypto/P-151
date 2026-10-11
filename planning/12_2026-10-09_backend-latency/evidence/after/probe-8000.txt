@@ -1,0 +1,12 @@
+working tree on e9960f0 + plan 12
+2026-10-09 19:00:23 +0700
+endpoint                         median     max      body   on wire (gzip asked)
+GET /resident/tickets              53ms    90ms    54.4KB       4.1KB enc=gzip
+GET /resident/tickets/{id}         55ms    61ms     1.0KB       1.0KB enc=-
+GET /bql/tickets                   54ms   124ms    69.0KB       3.7KB enc=gzip
+GET /mo/tickets (bptn)             53ms    82ms    24.6KB       2.4KB enc=gzip
+GET /mo/tickets (department)       53ms    57ms     6.7KB       1.0KB enc=gzip
+GET /mo/tickets/{id}               50ms    75ms     6.8KB       1.8KB enc=gzip
+GET /mo/warehouse/stock            50ms    61ms     0.5KB       0.5KB enc=-
+GET photo (2nd+ view)              56ms  1348ms    62.3KB      62.3KB enc=identity
+exit=0

@@ -156,4 +156,6 @@ export type BCatalog = {
   departments: Record<string, string>;
   status_labels: Record<string, string>;
   custom_materials_enabled?: boolean;
+  /** Only these codes may be saved as used by that department (backend material_policy) */
+  material_codes_by_department?: Record<string, string[]>;
 };

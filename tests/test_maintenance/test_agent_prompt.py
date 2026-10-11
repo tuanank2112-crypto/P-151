@@ -151,8 +151,13 @@ def test_p_07_no_locks_means_khong_and_locks_are_listed_when_present():
     )
 
 
-def test_p_08_prompt_version_is_the_fifth_one():
-    assert prompt.PROMPT_VERSION == "agent-prompt/5"
+def test_p_08_prompt_version_is_the_ninth_one():
+    assert prompt.PROMPT_VERSION == "agent-prompt/9"
+
+
+def test_p_08e_sub_building_codes_belong_to_their_building():
+    system = prompt.render_system_prompt(CATALOG, LEXICON)
+    assert "Mã tòa con dạng S2.05 hoặc S1.12 thuộc tòa mẹ S2 hoặc S1" in system
 
 
 def test_p_08d_to_bptn_always_carries_a_reason_and_an_emergency_alone_is_out_of_scope():
@@ -174,9 +179,9 @@ def test_p_08b_system_prompt_shows_the_shape_of_a_safety_signal():
 
 
 def test_p_09_assets_materials_and_empty_safety_text_render():
-    assets = [AssetCandidate(asset_id="SIM-ASSET-LIGHT-001", location="Tòa S1 / Tầng 3 / Hành lang")]
+    assets = [AssetCandidate(asset_id="SIM-ASSET-LIGHT-HALLWAY", area="Hành lang")]
     message = prompt.render_user_message(make_input(asset_candidates=assets, safety_text=""), CATALOG)
-    assert "- SIM-ASSET-LIGHT-001: Tòa S1 / Tầng 3 / Hành lang" in message
+    assert "- SIM-ASSET-LIGHT-HALLWAY: khu vực Hành lang" in message
     assert "(trống: đã được người xác nhận an toàn)" in message
     assert "(không có)" in message  # no duplicate candidates
     clean = next(ln for ln in message.splitlines() if ln.startswith("VE_SINH: "))

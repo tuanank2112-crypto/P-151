@@ -19,7 +19,7 @@ tickets:
       created_at: "2026-09-27T08:00:00+07:00"
       original_description: "Hành lang tầng 3 tòa S1 có nhiều rác và vết bẩn, cần vệ sinh."
     flow: DEMO-1
-    purpose: "Vệ sinh 08:00: chuyển Phòng Vệ sinh, nhận việc, báo hoàn thành; chênh lệch vật tư có lý do → READY kèm warning không chặn"
+    purpose: "Vệ sinh 08:00: chuyển Phòng Vệ sinh, nhận việc, báo hoàn thành; dùng túi rác 3 > định mức 2, không lý do → READY, không warning (plan 11 Q43)"
     materials:
       - {item_code: SIM-MAT-CLEAN-01, planned_qty: 2}
       - {item_code: SIM-MAT-BAG-01, planned_qty: 3}
@@ -27,7 +27,7 @@ tickets:
       checklist: [CLN-CHK-01, CLN-CHK-02, CLN-CHK-03]
       materials:
         - {item_code: SIM-MAT-CLEAN-01, issued_qty: 2, used_qty: 2}
-        - {item_code: SIM-MAT-BAG-01, issued_qty: 3, used_qty: 3, variance_reason: "Khối lượng rác mô phỏng lớn hơn định mức"}
+        - {item_code: SIM-MAT-BAG-01, issued_qty: 3, used_qty: 3}
       evidence:
         - {requirement_id: CLN-EVD-PROCESSING-NOTE, evidence_type: PROCESSING_NOTE, content_or_metadata: "Ghi chú xử lý mô phỏng: đã thu gom rác và lau sàn hành lang", readability_status: NOT_APPLICABLE}
         - {requirement_id: null, evidence_type: SIMULATED_IMAGE, content_or_metadata: "Ảnh mô phỏng: hành lang sau khi dọn", readability_status: READABLE}
@@ -45,7 +45,7 @@ tickets:
       asset_lookup_status: NOT_APPLICABLE
       material_stock_status: SUFFICIENT
       flags: []
-      warnings: [EXPLAINED_MATERIAL_VARIANCE]
+      warnings: []
       failing_items: []
 
   - raw:
@@ -173,7 +173,7 @@ tickets:
       draft_exists: true
       location: "Tòa S1 / Tầng 3 / Hành lang"
       asset_lookup_status: MATCHED
-      asset_id: SIM-ASSET-LIGHT-001
+      asset_id: SIM-ASSET-LIGHT-HALLWAY
       material_stock_status: SUFFICIENT
       warnings: []
       failing_items: []
@@ -181,7 +181,7 @@ tickets:
   - raw:
       ticket_id: SIM-TKT-TEC-002
       created_at: "2026-09-27T10:30:00+07:00"
-      original_description: "Đèn cầu thang bộ tầng 9 tòa S1 bị hỏng, không sáng."
+      original_description: "Đèn hầm B1 tòa S1 bị hỏng, không sáng."
     flow: DEMO-4
     purpose: "Kỹ thuật không tìm thấy asset → VERIFYING / ASSET_UNCLEAR, chờ BPTN; chưa giao phòng ban, chưa có draft"
     materials:
@@ -196,7 +196,7 @@ tickets:
       review_status: NOT_REQUIRED
       asset_resolution: null
       draft_exists: false
-      location: "Tòa S1 / Tầng 9 / Cầu thang bộ"
+      location: "Tòa S1 / Tầng B1 / Hầm xe"
       asset_lookup_status: NOT_FOUND
       asset_id: null
 
@@ -219,7 +219,7 @@ tickets:
       draft_exists: false
       location: "Tòa S2 / Tầng 2 / Hành lang"
       asset_lookup_status: MATCHED
-      asset_id: SIM-ASSET-LIGHT-004
+      asset_id: SIM-ASSET-LIGHT-HALLWAY
 
   - raw:
       ticket_id: SIM-TKT-TEC-004
@@ -240,7 +240,7 @@ tickets:
       asset_resolution: FOUND
       draft_exists: true
       asset_lookup_status: MATCHED
-      asset_id: SIM-ASSET-LIGHT-005
+      asset_id: SIM-ASSET-LIGHT-HALLWAY
       material_stock_status: SUFFICIENT
 
   - raw:
@@ -265,7 +265,7 @@ tickets:
   - raw:
       ticket_id: SIM-TKT-TEC-006
       created_at: "2026-09-27T09:30:00+07:00"
-      original_description: "Hệ thống chiếu sáng hầm B1 tòa S1 không hoạt động."
+      original_description: "Hệ thống chiếu sáng cầu thang bộ tầng 2 tòa S1 không hoạt động."
     flow: REGRESSION
     purpose: "Tồn kho không rõ: không chặn, gắn cờ STOCK_CHECK_ON_ACCEPT → ROUTED"
     materials:
@@ -281,6 +281,6 @@ tickets:
       asset_resolution: FOUND
       draft_exists: true
       asset_lookup_status: MATCHED
-      asset_id: SIM-ASSET-LIGHT-006
+      asset_id: SIM-ASSET-LIGHT-STAIRS
       material_stock_status: UNKNOWN
       flags: [STOCK_CHECK_ON_ACCEPT]

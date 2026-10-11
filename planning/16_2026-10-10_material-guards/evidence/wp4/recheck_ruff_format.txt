@@ -1,0 +1,4 @@
+captured_at=2026-10-10T18:11:35+07:00
+$ python -m ruff format --check src tests
+117 files already formatted
+exit=0

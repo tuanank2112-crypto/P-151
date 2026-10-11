@@ -6,7 +6,7 @@ from alembic.config import Config
 from sqlalchemy import text
 
 from src.maintenance.engine import MaintenanceEngine
-from src.maintenance.store.postgres import ALEMBIC_INI, PostgresRepository, sql_engine
+from src.maintenance.store.postgres import ALEMBIC_INI, PostgresRepository, sql_engine, sql_read_engine
 from tests.test_maintenance.helpers import MONDAY_9AM, Clock
 
 
@@ -61,6 +61,7 @@ def pg_repo(pg_url) -> PostgresRepository:
 
 
 def restart_pg(url: str) -> None:
-    """Pretend the process restarted: drop the pool, the next sql_engine(url) builds a new one."""
-    sql_engine(url).dispose()
-    sql_engine.cache_clear()
+    """Pretend the process restarted: drop both pools, the next sql_engine/sql_read_engine(url) builds new ones."""
+    for factory in (sql_engine, sql_read_engine):
+        factory(url).dispose()
+        factory.cache_clear()

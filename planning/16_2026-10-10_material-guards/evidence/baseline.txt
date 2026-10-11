@@ -1,0 +1,226 @@
+captured_at=2026-10-10T17:08:49.999713+07:00
+$ git rev-parse HEAD
+71315109d845fe69935050b09d4ab4c67efb024a
+
+
+exit=0
+$ git status --porcelain
+ M .dockerignore
+ M brain4agent/-known-gotchas.md
+ M brain4agent/changelog.md
+ M brain4agent/index.md
+ M brain4agent/memory-distill.txt
+ M brain4agent/memory/hot/state.json
+ M brain4agent/memory/hot/today.md
+ M brain4agent/roadmap.md
+ M docs/CR-BPTN-03.md
+ M docs/maintenance.md
+ M docs/mobile.md
+ M docs/web.md
+ M planning/11_2026-10-09_mobile-pwa-app/plan.md
+ M portal/package-lock.json
+ M portal/package.json
+ M seed/maintenance_cr03/tickets.yaml
+ M seed/maintenance_v1/tickets.yaml
+ M src/api/routers/maintenance.py
+ M src/maintenance/agent/client.py
+ M src/maintenance/engine.py
+ M src/mobile/index.html
+ M src/mobile/js/bptn.js
+ M src/mobile/js/bql.js
+ M src/mobile/js/dept.js
+ M src/mobile/js/kho.js
+ M src/mobile/js/main.js
+ M src/mobile/js/photo.js
+ M src/mobile/js/resident.js
+ M src/mobile/js/staff.js
+ M src/mobile/sw.js
+ M src/web/app.js
+ M src/web/index.html
+ M tests/test_maintenance/test_agent_unit.py
+ M tests/test_maintenance/test_api.py
+ M tests/test_maintenance/test_api_safety.py
+ M tests/test_maintenance/test_engine.py
+?? integration/
+?? planning/15_2026-10-10_material-no-variance/
+?? planning/16_2026-10-10_material-guards/
+
+
+exit=0
+$ git diff --stat
+ .dockerignore                                 | 22 ++++++
+ brain4agent/-known-gotchas.md                 | 15 +++++
+ brain4agent/changelog.md                      | 18 +++++
+ brain4agent/index.md                          |  3 +
+ brain4agent/memory-distill.txt                |  4 +-
+ brain4agent/memory/hot/state.json             | 82 +++++++++++++++++++++-
+ brain4agent/memory/hot/today.md               | 52 ++++++++++++++
+ brain4agent/roadmap.md                        |  4 ++
+ docs/CR-BPTN-03.md                            |  2 +-
+ docs/maintenance.md                           | 12 +++-
+ docs/mobile.md                                |  4 +-
+ docs/web.md                                   |  4 ++
+ planning/11_2026-10-09_mobile-pwa-app/plan.md |  1 +
+ portal/package-lock.json                      |  4 +-
+ portal/package.json                           |  2 +-
+ seed/maintenance_cr03/tickets.yaml            |  6 +-
+ seed/maintenance_v1/tickets.yaml              |  6 +-
+ src/api/routers/maintenance.py                |  2 +-
+ src/maintenance/agent/client.py               |  7 ++
+ src/maintenance/engine.py                     | 20 ++++--
+ src/mobile/index.html                         |  4 +-
+ src/mobile/js/bptn.js                         |  6 +-
+ src/mobile/js/bql.js                          |  6 +-
+ src/mobile/js/dept.js                         | 36 +++-------
+ src/mobile/js/kho.js                          |  6 +-
+ src/mobile/js/main.js                         | 14 ++--
+ src/mobile/js/photo.js                        |  4 +-
+ src/mobile/js/resident.js                     |  6 +-
+ src/mobile/js/staff.js                        |  4 +-
+ src/mobile/sw.js                              | 24 +++----
+ src/web/app.js                                | 43 +++++-------
+ src/web/index.html                            |  2 +-
+ tests/test_maintenance/test_agent_unit.py     | 14 ++++
+ tests/test_maintenance/test_api.py            | 18 ++++-
+ tests/test_maintenance/test_api_safety.py     |  3 +-
+ tests/test_maintenance/test_engine.py         | 97 +++++++++++++++++++++++++--
+ 36 files changed, 437 insertions(+), 120 deletions(-)
+
+warning: in the working copy of 'seed/maintenance_cr03/tickets.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'seed/maintenance_v1/tickets.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/api/routers/maintenance.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/maintenance/engine.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/index.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/bptn.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/bql.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/dept.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/kho.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/main.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/photo.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/resident.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/staff.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/sw.js', LF will be replaced by CRLF the next time Git touches it
+
+exit=0
+adeaa091c2b26239be73d83edc225f0713c3ff97e0c063593bddc9c5b936f081  src/maintenance/__init__.py
+4ddab232ea14909b88d6449e4db5cd6fda77e2a0a9cfa60a375ac9d98b41dab4  src/maintenance/agent/__init__.py
+7b33950fa37f795de29e856a77e95a042848b06c9cea3498eec9c69b55f24237  src/maintenance/agent/agent.py
+47e9a287327d8e4f7ecad29fb636c4eea724c653ae3a93fcef3829368f67c35b  src/maintenance/agent/baseline.py
+eb896772fee67ee02436abc2fd9c102b166a7733d46729fc28211f98b5b3fe74  src/maintenance/agent/client.py
+271da1c427ae3850b3d875156dee486b44649dcd295ecf4569edc83a9fa7b442  src/maintenance/agent/graph.py
+d5721fb12c4e8f12ebf99c25ff85f7e09375f529e3b615843eae28433b07ca74  src/maintenance/agent/inputs.py
+a7238b72bc1dbf478e6d061842531e8dd803414bc69d9b3a2bf935866d7ef626  src/maintenance/agent/prompt.py
+b29b2838f66b785bc595b49dec527d5e6fc53a484af680cf35094e4b0e5f0f51  src/maintenance/agent/reconcile.py
+9d66cdb73eee6857be59329c1fe944868a8a35aba741146f8c6dd5e4551840d5  src/maintenance/agent/schema.py
+e735547d9a2473fb9d65250390c722a0d96ec59ef88f3d89a62cbf9f44141ca1  src/maintenance/agent/validate.py
+8f583e474781633ac9d1480697b4d11b272493364e148696abbbbc38622f94c8  src/maintenance/ai_logger.py
+cf995353434f03f26a7b3d1bfe4fb0d839d4cc60bacd7b948cccaa4e18c07e71  src/maintenance/catalog.py
+39c0c31db23943c1a7c965bcb3ff3983c7c0730e328df364d9b7b3d0d54d5fcc  src/maintenance/common.py
+c95eff65fe2a328ef5d24ffa45ce5c0656ad2ca2bdf77d8c95cde49cfeb475c9  src/maintenance/coordination/__init__.py
+39c7dba77655792b51af47023bf3b6f6c178c0ba5f54713f8b7772ed14ed6a36  src/maintenance/coordination/department.py
+c4936c246a59b2da4c50783f0579bd20629032d6f12962ba4530a7f2acaa2049  src/maintenance/coordination/merge.py
+c7201b9f0a01b5c973fb988d25504897badff54a921dda95acedeb4e6d9f79d3  src/maintenance/coordination/neighbors.py
+39d782bbbf3682aafa9f1bdb8b491b177f54e06a43ce7da2a3b8c3eed8778a8e  src/maintenance/coordination/split.py
+729b3779c11abc0292f884c942b17855e9e78c532fff0c2a55b5ed05a0456e9a  src/maintenance/demo.py
+9c38fd87f101817da4eaab0d085d207487ef1a6bc3fbfb4f01f61f754fde46e0  src/maintenance/engine.py
+ef5eb3a52f1e64840ea73ddbdf983816986980421b722e7ead5686512f9d1142  src/maintenance/enums.py
+a421bad781221d1250db5d5e02810c1c436b9db8baa770155e37b90d75b8a904  src/maintenance/errors.py
+29e122308697d6ad738713faf44464e7eb1323ce6e90971a52a0967211366bef  src/maintenance/i18n/vi.yaml
+1fad11867f03feffb4a2db31857159cf3d3cd7d98277281f37d86f661a84e102  src/maintenance/messages.py
+21959f5ee8001cf3cbd9bfd43d4cf0d1295cb5e3b71b5745625ccd6d6c6fa5a5  src/maintenance/migration.py
+49a05fa7fef0c32d8457f5e0a49d4298a182400074cbe1eb67aaf9819718f7f5  src/maintenance/models.py
+594b24bc60e2721c5ea70736611e7a0e8458d796d4909ccb898812b49109f976  src/maintenance/priority.py
+d0f448f5e99802889999c959b8d9a4cf6fa79aa94f8163c0ccdcdc0b4ba03797  src/maintenance/proposer.py
+7ce6facf9ca0c6df6bc1780442ddc4dda65fbba6732bbbc12ff9062362cc2338  src/maintenance/rules.py
+a2039d58cd8e23821ab35e4762f2fa6445d3ee8dc5ab191eb46f07330ee327f9  src/maintenance/safety.py
+e68cfdfdc3176126b528ad39714a466961c6c0f391a49368a9dbb9ed52171ef1  src/maintenance/store/__init__.py
+82e6d20b2c70464efebd9b3d600fe147ab54ff9f44fe27d7973f29c891b761b0  src/maintenance/store/base.py
+439b689b7800d16b4c8fea1377dc4e645a0d7368a83a21e3841b7aa15249722b  src/maintenance/store/memory.py
+40e7dac3551052b00f3d773737c8de434271ca856bb32068b7f0f0138c7a3a49  src/maintenance/store/migrations/env.py
+83fa3850957890500ed3432ba8c257f98e86e702f65a158e8b83be36943deefa  src/maintenance/store/migrations/versions/0001_maintops_initial.py
+375b49f3a712ac99162abc8817597caa3109dc10597d57f566568f2f2c55031a  src/maintenance/store/migrations/versions/0002_p1_doc_shape.py
+b6ae67cb818adcfc876033c09b0a8fb4e60f1b4e2b2f18cb8db12fd913a41ff1  src/maintenance/store/photos.py
+47ec51fca0bfc1ece88a72d530458f6e71ab660a98b9edf129154da2a04cf3df  src/maintenance/store/postgres.py
+97c941d6b192a0d90215a2873a02a49aa60bd262f55be05cd09d7f6c94a4dd4f  src/maintenance/views.py
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  src/api/__init__.py
+b802065c58342b559a8fb7dac81e9ce1ef1ddce61fe1383096ed67310fbcab1b  src/api/auth.py
+81ece18133c837a661a1792faff12bf734f64e077a8a6d46e4ba1fbd83ee8d80  src/api/photos.py
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  src/api/routers/__init__.py
+339f50b720e6874391b44f88bef0bdc9110288c2b26d07bc7299cf5180f4a5dc  src/api/routers/maintenance.py
+b71a846889f4aee9be0e300038a022a67230eced0b2ac1fac62c9d31483d5614  src/api/routes.py
+2fb9b755f6cb5fc75dba3c06480c2eaec93bcf9dc21c59a9dd81b63a4b0769aa  src/web/app.js
+51d19f578181f667a1de71dc70585019cf8ddca20a4cf8dea6520f9da66d9ce9  src/web/index.html
+f0cad88ae9cabb330bb40f7b7b1635ca4389e4a2a4a03d4321fceb72b6952a45  src/web/js/components/agent_proposal.js
+6a24edc90b261ea44b76d292ebe1cfc5ab8b11c2e89859a93a64e175d40bebc7  src/web/js/components/ai_logs_view.js
+26db7c8ecf7e4266dbae00c97c528cee12b10c6b59e6e467ace90469751f274b  src/web/js/dark_mode.js
+2c01b9c1418fec55def7afb7e856d2688f2a6018b14f4d74ede9b773762e685b  src/web/theme.css
+a88ee66d118c967d24eaa63977f8a2b02fbd35b56e9c2748875a895c14773021  src/mobile/app.css
+0400e59bcfa4c6ab06ffff0d39ab60b2a7705fbf3f1500f574903c40b8a6621c  src/mobile/index.html
+a0ae54366d9b37b725562fa327bcc87f8b9cf7ee2c9e38659ed29396b7545bb3  src/mobile/js/api.js
+957e5f65535d64ee8351895ca628d8250c76388babbbfc152f3bab6c807a7977  src/mobile/js/bptn.js
+98449d8672d8729736a8eaf310e8470d327ecd80d06d083fb8b004bb01643dce  src/mobile/js/bql.js
+59ab4f6ae8553bc4b120644ffb32ab836cc54be8e89f5f3ed637fba37660d238  src/mobile/js/dept.js
+4900c9d4cd6bac230d79b09c8a17084c38178ac2b547f1b91a522929487be8f3  src/mobile/js/kho.js
+87701ac87e82a9485a105d9a482f198df3645e015116ed935eb06329f75917d8  src/mobile/js/main.js
+6094ab5990f716cd9904dd78579dc064c71915b35d7e61c2e3f75ba8d3d8f6bf  src/mobile/js/photo.js
+189bb3831b80b07d53fff0f483c3857fedb38c17fbe97600d0bbc87aef1433e4  src/mobile/js/resident.js
+52ef59fe8f812e64b28882386f4f5ac1d9d937003c84c9431dc2647c1d5f8608  src/mobile/js/staff.js
+bf4c27bd4642fc49837e4f4b61ebb76a768ffe55da3f7a6c05299160bc869fe7  src/mobile/js/ui.js
+22fd0edc88daabafa47553ce701ee84130b497e91331fe624f23e1affcf440f7  src/mobile/sw.js
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  tests/__init__.py
+fc2252fbb8b9a058cb80093543ac99263a28cd9e0cf737d11ff02ea8cf7812f0  tests/conftest.py
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  tests/test_agents/__init__.py
+55ca9a485deb0595265ce0095437d5c5b3f95770e080ae5c52d98f3405d6ef6d  tests/test_agents/test_graph.py
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  tests/test_api/__init__.py
+c49373c88750b68eb105edeef97d86efe0ea6b2e53b93afd577d7f0a214d0daf  tests/test_api/test_routes.py
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  tests/test_maintenance/__init__.py
+1d8e2f59ec42ed90e2405846d528cdbc8ec5dfaed8a1149664d9dac1d9a7d188  tests/test_maintenance/conftest.py
+a556536fea3ad0276708759f145ac352d5e575c7d0ea254e11cbdcb97ac281dd  tests/test_maintenance/data/safety_cases_p0.yaml
+54c0a22c4e843407fd77bd269d4f7dc1d0b921350431e1a361711c803d57a05c  tests/test_maintenance/data/safety_cases_p1.yaml
+8d554e592aa2acf0ed70fa4533addb4fcb9102707d9be85a5d43ca38e9996726  tests/test_maintenance/data/safety_stop_sets_p0.yaml
+757062f70635a9bd41333414f91ec9e8ea0e0885916a1ed01782d9b0b48836c6  tests/test_maintenance/helpers.py
+4bbe473f29d27ce9348cf768374d00b202e42440fbf7c043ac63952a4718b53c  tests/test_maintenance/test_acceptance.py
+eb073807bb9d7504108cb195069b41e8f561e13c41a301de52221ac097af0011  tests/test_maintenance/test_agent_coordination.py
+29ec5923fdaa19a7554a0ae87406e6130fd722f2c65e1fc59cde3da9833f0d9c  tests/test_maintenance/test_agent_engine.py
+1804a6af32ebdd475f884f4d83795cecb95060b03bc7317000e08039b4d3449e  tests/test_maintenance/test_agent_parity.py
+7f3e951c4e483d1b34dc26dab25b7c3fcdcd774be2a8733259bcc0d92fa5fe0a  tests/test_maintenance/test_agent_prompt.py
+c74bbce48d95f7d49ac4028e952a244fbf7734fcd8a0b08450ca31cad73c7163  tests/test_maintenance/test_agent_unit.py
+83e13e00fb775d2ca78536890c1d6dd2790ff6f39c9e1c8a3580eb824b61fd89  tests/test_maintenance/test_ai_logger.py
+bc7ad792542c3c9aec06f7df95f745d5ad399acf87deeffd526608b582e1e5e5  tests/test_maintenance/test_api.py
+2c452e7b7e5c650489d52aa134c9a3a064b08c37984167d6e2c5563cefde14ae  tests/test_maintenance/test_api_safety.py
+3353fc8caeda1a9bf8e867f249a40a882c82de561e9538bae618e2732a0d5bad  tests/test_maintenance/test_area_assets.py
+0597753996ac9ef03d658414316d9d57cfaedcb96f179f36f97ad85804cdcf8e  tests/test_maintenance/test_auth.py
+b0aedc914f2fb7e108c76960f68fab04137e47ca0b1b2758dd71c4e78d2534ab  tests/test_maintenance/test_backend_latency.py
+74947fd9e93201a82e56d3546e1e11b633dc5d8e5232529380c30cd2741c872e  tests/test_maintenance/test_classify_metamorphic.py
+1b0d9d53cdfad82a3c95233e39bc72e3f15cb52dffee10c8ff5aa45bcd24291a  tests/test_maintenance/test_cr03_store.py
+1d5f546d691568e21408b8fccaf6bbab8ccb33ad71b8e99cbb01dd2144233ca7  tests/test_maintenance/test_cr03_targets.py
+ae3826924fea2e6696fb5490adddd9cc4d1627e8777c8ba30351f8a41ff7e932  tests/test_maintenance/test_emergency.py
+fb8416b46cb7d5c6e157512dc1b31dd6255ce15d20407d0c9e7ce6b14a63e43c  tests/test_maintenance/test_engine.py
+1019cf29d66cc92cc40cf88b9467a363e0c2ff974073c3bf6fc51de519b9a76e  tests/test_maintenance/test_fixtures.py
+0df3a5396fd2fddc8115dd51bf09cf7ffd023ff511b42f93fae2a3f6e5ee2320  tests/test_maintenance/test_list_cache.py
+aee1ac70dfc7774c0703786788262a019cc54641efa3913c79a6f289937de37b  tests/test_maintenance/test_logic_review_fixes.py
+37c24484e0350e58060eae7e2a4dc6eaa2bb477408187e6f25856332683f5cdb  tests/test_maintenance/test_migration.py
+b39cafe0250bf0a3a16263b2ae263710f13730d07b045054e1e90287f5455dbe  tests/test_maintenance/test_mobile_static.py
+90989079e050ca21c95c71eff1fa21aa12c92f50696b6a33b31dc2f548519e93  tests/test_maintenance/test_p1_contracts.py
+759cc16b1c29443c1f8aa3a0546a86c340202ecca6e4ef029de01fd416600f14  tests/test_maintenance/test_p1_department.py
+0100e9f59bab680f12ef68d1dbf81d78274ed36ae03dc2b77a7a58d75c43c447  tests/test_maintenance/test_p1_follow_up.py
+cc24863f82288fb1b8a0d6a68866fbec8184c0b41ace8ba8f442431c8560171d  tests/test_maintenance/test_p1_infra.py
+a206a711b172a60eaf860e1cfe3255b7f611211267645cac6bcdd5399a1d9123  tests/test_maintenance/test_p1_merge.py
+de0d224d252d880b3f057eeb079e3bf44d1ccb20b937ea83ccb6b24098f63d24  tests/test_maintenance/test_p1_neighbors.py
+b261191938d179cbbd4669da5385f0871e47f0a21c7ba634364c11a57dbedd04  tests/test_maintenance/test_p1_split.py
+6db3a7fdc3f0521fae52f7d7e6cb04b40dcd254637a4bda152bdb83976b61f55  tests/test_maintenance/test_p1_store.py
+8938d2d397ecc758a1068374c5ffc1cba937070ce1bd142bd012fb9104f7bc76  tests/test_maintenance/test_persistence_api.py
+87c802bd4bacb170c4cd48f33d5acb30c481d61015a8a52212209d9df1d58648  tests/test_maintenance/test_persistence_guards.py
+1917ae31a6c65b9ae56c642c9817ed1427ea8b2ef518fc8cb459e1db5c174c39  tests/test_maintenance/test_photo_store.py
+e6834f2a461a39a14fb963f06425c43156e286a9e61c0f7ff88db1be0118817a  tests/test_maintenance/test_priority.py
+410dfe7341a3f5f66f7a6db65278920360117da81de61a5803dea1b1924422ba  tests/test_maintenance/test_proposer.py
+2a475443d0fa0a51b1434862cc1129d6b7ecbcf7796bbdfb1423fd411414aed4  tests/test_maintenance/test_read_engine.py
+8474a01523021a84d5214693365975659a5b2b5b6a97dafe7bdde7ed8e7e0266  tests/test_maintenance/test_rule_evidence.py
+af2815721a6af6c6803f37db336a39692a4021f7f997cb709ad046001ceb523b  tests/test_maintenance/test_rules_review_fixes.py
+4cb15a6f8e4f8857d7e90740096cd067a4fc7fd98917661c1ca7cd8eeab1b6a1  tests/test_maintenance/test_safety.py
+f08a07060993a213e4017ecf9e274df4fce1d031d718c136013c570a8226249c  tests/test_maintenance/test_safety_metamorphic.py
+0906d5ac13c95d1f445a6771722e4529d4b0696328b8dc6d62e119e702f7d10e  tests/test_maintenance/test_safety_p0.py
+eb422562384e418c5831577eb1a14fc74dc83104f31fc3adceba608050dfcee5  tests/test_maintenance/test_safety_p1.py
+50feacf56c820a6aff493d7ca9d97dd457839564d0d590797ddd6a08715b56a7  tests/test_maintenance/test_safety_review_fixes.py
+f0d519f5ed668741e1e3f8afe4356f243404c9b27aa68583e4469cc97263391e  tests/test_maintenance/test_store_memory.py
+55ac221d7a26c178a5ae0dfe6e09ca03cd54f3723e2f63154c9742f9fcd17ff8  tests/test_maintenance/test_store_postgres.py

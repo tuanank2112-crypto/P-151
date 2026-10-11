@@ -8,7 +8,10 @@ from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, Request
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import StreamingResponse
@@ -78,6 +81,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# Plan 12 SPEC-P03: JSON lists are 50-70 KB and ~4 KB gzipped (the phone app reloads them every 30 s). Added after CORS,
+# so it wraps everything; photos say "Content-Encoding: identity" and are left alone.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 
 def _store_error_handler(status_code: int):
@@ -89,6 +95,17 @@ def _store_error_handler(status_code: int):
     return handler
 
 
+async def _validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    """FastAPI's 422, except that a NaN/Infinity input (json.loads accepts it) is not echoed back: it is not JSON and
+    the default handler would crash with a 500 instead of answering 422 (plan 16 §C1)."""
+    try:
+        return await request_validation_exception_handler(request, exc)
+    except ValueError:
+        errors = [{k: v for k, v in error.items() if k not in ("input", "ctx")} for error in exc.errors()]
+        return JSONResponse(status_code=422, content={"detail": errors})
+
+
+app.add_exception_handler(RequestValidationError, _validation_error_handler)
 app.add_exception_handler(StoreUnavailableError, _store_error_handler(503))
 app.add_exception_handler(StorePermissionError, _store_error_handler(403))
 
@@ -101,6 +118,8 @@ app.include_router(maintenance.bql_router, prefix="/api/v1")
 
 # Static prototype UI (Tailwind via CDN, no build step); it only calls the API above
 app.mount("/ui", StaticFiles(directory=Path(__file__).parent / "web", html=True), name="ui")
+# Phone app (PWA) for residents and BQL, same origin as the API (planning/11_2026-10-09_mobile-pwa-app)
+app.mount("/app", StaticFiles(directory=Path(__file__).parent / "mobile", html=True), name="app")
 
 
 PORTAL_URL = os.getenv("PORTAL_URL")
@@ -121,10 +140,7 @@ async def _proxy_to_portal(request: Request, path: str):
         url += f"?{request.url.query}"
 
     excluded_req_headers = {"host", "content-length", "accept-encoding"}
-    req_headers = {
-        k: v for k, v in request.headers.items()
-        if k.lower() not in excluded_req_headers
-    }
+    req_headers = {k: v for k, v in request.headers.items() if k.lower() not in excluded_req_headers}
     req_headers["host"] = request.headers.get("host", "localhost:8000")
 
     body = await request.body()
@@ -174,9 +190,10 @@ async def health():
     return {"status": "ok", "env": settings.app_env}
 
 
-@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"], include_in_schema=False)
+@app.api_route(
+    "/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"], include_in_schema=False
+)
 async def portal_fallback(request: Request, path: str):
     if PORTAL_URL:
         return await _proxy_to_portal(request, path)
     return JSONResponse(status_code=404, content={"detail": "Not found"})
-

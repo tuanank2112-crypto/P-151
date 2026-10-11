@@ -45,7 +45,7 @@ TZ = timezone(timedelta(hours=7))
 NOW = datetime(2026, 10, 5, 9, tzinfo=TZ)
 REPORT = prompt.EXAMPLE_REPORT  # "Hành lang tầng 3 tòa S1 nhiều rác, đèn cũng không sáng"
 LOC = "Tòa S1 / Tầng 3 / Hành lang"
-ASSET = AssetCandidate(asset_id="SIM-ASSET-LIGHT-001", location=LOC)
+ASSET = AssetCandidate(asset_id="SIM-ASSET-LIGHT-HALLWAY", area="Hành lang")
 JOB_VS = copy.deepcopy(prompt.EXAMPLE["jobs"][0])
 JOB_KT = copy.deepcopy(prompt.EXAMPLE["jobs"][1])
 _ids = itertools.count(9000)
@@ -182,7 +182,7 @@ def test_a_01c_mirror_picks_duplicate_asset_and_materials_like_the_engine():
     )
     (only,) = mirrored.jobs
     assert only.duplicate_of == "SIM-TKT-0003"  # earliest (created_at, ticket_id) of the same category and place
-    assert only.asset_id == "SIM-ASSET-LIGHT-001"
+    assert only.asset_id == "SIM-ASSET-LIGHT-HALLWAY"
     assert [m.item_code for m in only.materials] == ["SIM-MAT-LAMP-01"]
     assert (only.priority, only.priority_rule_id) == ("HIGH", "PRI-H1")
     locked = mirror_decision(
@@ -404,13 +404,13 @@ def test_a_09b_location_parts_are_normalised_and_checked():
     assert other_quote.agent_location == LOC and other_quote.rejected == []  # the quote is for audit only
 
 
-def test_a_10_an_asset_at_another_place_or_one_of_several_is_rejected():
-    elsewhere = AssetCandidate(asset_id="SIM-ASSET-LIGHT-009", location="Tòa S1 / Tầng 5 / Sảnh thang máy")
-    record, _ = run(decision(**{"jobs.1.asset_id": "SIM-ASSET-LIGHT-009"}), new_input(assets=(ASSET, elsewhere)))
+def test_a_10_an_asset_of_another_area_or_one_of_several_is_rejected():
+    elsewhere = AssetCandidate(asset_id="SIM-ASSET-LIGHT-LIFT-LOBBY", area="Sảnh thang máy")
+    record, _ = run(decision(**{"jobs.1.asset_id": "SIM-ASSET-LIGHT-LIFT-LOBBY"}), new_input(assets=(ASSET, elsewhere)))
     assert "jobs[1].asset_id" in record.rejected and record.valid_job_indexes == [0, 1]
     assert "asset" in minor(record)
-    twin_a = AssetCandidate(asset_id="SIM-ASSET-LIGHT-010", location="Tòa S1 / Tầng 5 / Sảnh thang máy")
-    twin_b = AssetCandidate(asset_id="SIM-ASSET-LIGHT-011", location="Tòa S1 / Tầng 5 / Sảnh thang máy")
+    twin_a = AssetCandidate(asset_id="SIM-ASSET-LIGHT-010", area="Sảnh thang máy")
+    twin_b = AssetCandidate(asset_id="SIM-ASSET-LIGHT-011", area="Sảnh thang máy")
     report = "Sảnh thang máy tầng 5 tòa S1 đèn không sáng"
     reply = one_job_decision(
         job(JOB_KT, quote="đèn không sáng", asset_id="SIM-ASSET-LIGHT-010"),
@@ -430,7 +430,9 @@ def test_a_10_an_asset_at_another_place_or_one_of_several_is_rejected():
 
 
 def test_a_10b_an_asset_for_a_cleaning_job_or_not_in_the_candidates_is_rejected():
-    record, _ = run(decision(**{"jobs.0.asset_id": "SIM-ASSET-LIGHT-001", "jobs.1.asset_id": "SIM-ASSET-LIGHT-999"}))
+    record, _ = run(
+        decision(**{"jobs.0.asset_id": "SIM-ASSET-LIGHT-HALLWAY", "jobs.1.asset_id": "SIM-ASSET-LIGHT-999"})
+    )
     assert {"jobs[0].asset_id", "jobs[1].asset_id"} <= set(record.rejected)
 
 
@@ -777,6 +779,20 @@ def test_openai_json_client_sends_temperature_zero_json_mode_and_no_retries(fake
     }
     assert reply.text == '{"a": 1}' and reply.latency_ms >= 0
     assert reply.usage == {"prompt_tokens": 11, "completion_tokens": 7, "total_tokens": 18}
+
+
+def test_openai_json_client_luna_uses_supported_completion_parameters(fake_openai):
+    client = openai_json_client(
+        "gpt-6-luna", "test-key", None, timeout=25, max_output_tokens=2500, json_mode="json_object"
+    )
+    client("SYS", "USR", new_input())
+    call = fake_openai.instances[0].calls[0]
+    assert call["model"] == "gpt-6-luna"
+    assert call["max_completion_tokens"] == 2500
+    assert call["reasoning_effort"] == "none"
+    assert call["response_format"] == {"type": "json_object"}
+    assert "max_tokens" not in call
+    assert "temperature" not in call
 
 
 def test_openai_json_client_prompt_only_sends_no_response_format_and_strips_fences(fake_openai):

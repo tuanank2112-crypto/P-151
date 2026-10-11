@@ -1,0 +1,33 @@
+captured_at=2026-10-10T18:17:52+07:00
+$ git diff --check
+warning: in the working copy of 'brain4agent/-known-gotchas.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'brain4agent/changelog.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'brain4agent/index.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'brain4agent/memory-distill.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/CR-BPTN-03.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/maintenance.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/mobile.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/web.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/11_2026-10-09_mobile-pwa-app/evidence/harness/q41_dept_materials.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'planning/11_2026-10-09_mobile-pwa-app/evidence/harness/q42_no_agent_materials.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'portal/package-lock.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'portal/package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'seed/maintenance_cr03/tickets.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'seed/maintenance_v1/tickets.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/api/routers/maintenance.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/maintenance/engine.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/index.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/bptn.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/bql.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/dept.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/kho.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/main.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/photo.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/resident.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/staff.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/sw.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/web/app.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/web/index.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/test_maintenance/test_engine.py', LF will be replaced by CRLF the next time Git touches it
+exit=0

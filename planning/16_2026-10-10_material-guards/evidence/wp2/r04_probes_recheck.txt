@@ -1,0 +1,11 @@
+captured_at=2026-10-10T18:05:49+07:00
+# R04 F1/F2 re-measured with the auditor's own probes after the fix (auditor evidence in wp4 left untouched); PYTHONUTF8=1
+$ python planning/16_2026-10-10_material-guards/evidence/wp4/probe_backend.py memory
+SUMMARY mode=memory probes=92 held=92 broken=0
+exit=0
+$ python planning/16_2026-10-10_material-guards/evidence/wp4/probe_api.py
+SUMMARY probes=48 held=48 broken=0
+exit=0
+$ docker run … p151-backend python planning/16_2026-10-10_material-guards/evidence/wp4/probe_backend.py pg   (MO_TEST_DATABASE_URL=…@db:5432/p151_test)
+SUMMARY mode=pg probes=92 held=92 broken=0
+exit=0

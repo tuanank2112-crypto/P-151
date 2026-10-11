@@ -58,7 +58,7 @@ export function CleaningApp({ data }: { data: DeptData }) {
         {tab === "queue" && (
           <Board
             tickets={all}
-            card={(t) => <WorkCard key={t.id} t={t} kind="cleaning" pending={s.pending} actions={s.actions} />}
+            card={(t) => <WorkCard key={t.id} t={t} kind="cleaning" catalog={data.catalog} pending={s.pending} actions={s.actions} />}
           />
         )}
         {tab === "history" && <HistoryList tickets={all} onOpen={s.actions.open} />}

@@ -134,6 +134,7 @@ COMMON_AREA_PATTERNS = [
     r"\bsan (?:choi|thuong)\b",
     r"\bloi di\b",
     r"\bloi thoat hiem\b",
+    r"\b(?:trong|buong|cabin|long) thang may\b",  # the lift cabin (same words as AREA_PATTERNS)
 ]
 # Unaccented "den" is ambiguous ("đèn"/"đến"/"đen"): it needs an area right after and no arrival verb before it
 LIGHTING_PATTERNS = [
@@ -304,9 +305,31 @@ AREA_PATTERNS: list[tuple[str, str]] = [
     (r"\bsan choi\b", "Sân chơi"),
     (r"\bsan thuong\b", "Sân thượng"),
     (r"\bloi di\b", "Lối đi"),
+    (
+        r"\b(?:trong|buong|cabin|long) thang may\b",
+        "Thang máy",
+    ),  # inside the cabin only: "trước/cạnh thang máy" is a landmark
 ]
-# Areas that only exist on one floor: the resident does not have to name the floor
-IMPLIED_FLOOR = {"Sảnh chính": "1", "Sảnh cư dân": "1"}
+# Areas that only exist on one floor: the resident does not have to name the floor.
+# A lift cabin moves between floors, so its "floor" is the placeholder "—" (one cabin problem = one location per building)
+IMPLIED_FLOOR = {"Sảnh chính": "1", "Sảnh cư dân": "1", "Thang máy": "—"}
+
+
+def location_area(location: str | None) -> str | None:
+    """Area label (AREA_PATTERNS) of a `Tòa X / Tầng N / Khu vực` location, read from its last part; None if none.
+
+    Asset lookup matches on this alone (plan 14): one lighting asset per area, whatever the building and floor.
+    """
+    if not location:
+        return None
+    last = location.rsplit("/", 1)[-1].strip()
+    if last in AREA_LABELS:  # already the canonical label ("Thang máy" no longer matches its own text pattern)
+        return last
+    text = normalize(last)
+    return next((label for pattern, label in AREA_PATTERNS if re.search(pattern, text)), None)
+
+
+AREA_LABELS: frozenset[str] = frozenset(label for _, label in AREA_PATTERNS)
 
 
 def extract_location(description: str, buildings: Sequence[str]) -> str | None:

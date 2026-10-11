@@ -1,0 +1,11 @@
+H01_auth-data.md -> R01_auth-data.md: True
+H02_actions-bff.md -> R02_actions-bff.md: True
+H03_ui.md -> R03_ui.md: True
+H04_independent-review.md -> R04_independent-review.md: True
+H05_closure.md -> R05_closure.md: True
+Version synchronized: 1.11.0
+Kernel lines: 87
+Python/.env/CSS/shell unchanged
+Report metadata/verdict checked
+Missing references: []
+EXIT=0

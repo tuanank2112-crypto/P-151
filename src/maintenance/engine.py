@@ -95,6 +95,13 @@ from src.maintenance.errors import (
     InvalidTransitionError,
     StockShortError,
 )
+from src.maintenance.material_policy import (
+    MaterialUsageLine,
+    allowed_material_codes,
+    check_selection,
+    selection_problem,
+    whole_positive,
+)
 from src.maintenance.messages import field_label, public_message, safety_info_message
 from src.maintenance.models import (
     AgentClassificationProposal,
@@ -120,7 +127,7 @@ from src.maintenance.models import (
 )
 from src.maintenance.priority import propose_priority
 from src.maintenance.proposer import LLMClient, ProposalResult, propose
-from src.maintenance.rules import extract_location, mentions_playbook_subject, missing_location_parts
+from src.maintenance.rules import extract_location, location_area, mentions_playbook_subject, missing_location_parts
 from src.maintenance.safety import SafetyAssessment, SafetyLLMClient, assess, assess_with_llm
 from src.maintenance.store.base import (  # the error hierarchy lives with the store
     Assignment,
@@ -144,6 +151,7 @@ logger = logging.getLogger(__name__)
 MAX_RESIDENT_PHOTOS = 5
 MAX_EXECUTION_PHOTOS = 10
 EXECUTION_PHOTO = "execution_photo"  # failing_items entry when the department sent no photo
+MATERIAL_USAGE_FIELD = "material_usage"  # audit field_name of `save_material_usage` (clients read it as "saved")
 SOURCE_REVISION = "SRC-001"
 DENIED_TEXT_MAX = 500  # a denied request cannot grow the ticket's audit by more than this per field (plan 04 A1)
 ORPHAN_GRACE = timedelta(minutes=2)  # a RECEIVED ticket left without a pipeline run is picked up by the job after this
@@ -765,43 +773,54 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         )
 
     def add_resident_photo(self, ticket_id: str, actor_id: str, file_ref: str) -> Case:
-        """Optional photo the resident attaches to their own report. Kept as original evidence: never edited, never
-        read by the Agent, never a condition for anything."""
+        """One photo; see `add_resident_photos`."""
+        return self.add_resident_photos(ticket_id, actor_id, [file_ref])
+
+    def add_resident_photos(self, ticket_id: str, actor_id: str, file_refs: Sequence[str]) -> Case:
+        """Optional photos the resident attaches to their own report. Kept as original evidence: never edited, never
+        read by the Agent, never a condition for anything. All photos in one transaction (plan 12 SPEC-P02): one
+        EvidenceRecord and one audit row each, and either every photo is recorded or none."""
+        if not file_refs:
+            raise GuardError("Chưa có ảnh")
 
         def op(work: Case, now: datetime) -> None:
-            if work.ticket.status in TERMINAL_STATUSES:
-                raise GuardError("Ticket đã kết thúc; không nhận thêm ảnh")
-            if len(resident_photos(work)) >= MAX_RESIDENT_PHOTOS:
-                raise GuardError(f"Mỗi phản ánh tối đa {MAX_RESIDENT_PHOTOS} ảnh")
-            record = EvidenceRecord(
-                evidence_id=f"SIM-EVD-{_suffix(ticket_id)}-{len(work.evidence) + 1:02d}",
-                ticket_id=ticket_id,
-                work_order_draft_id=None,
-                requirement_id=None,
-                evidence_type=EvidenceType.RESIDENT_ORIGINAL,
-                content_or_metadata=file_ref,
-                source=EvidenceSource.RESIDENT_ORIGINAL,
-                submitted_by=actor_id,
-                submitted_at=now,
-                readability_status=ReadabilityStatus.READABLE,
-                immutable=True,
-            )
-            work.evidence.append(record)
-            self._audit(
-                work,
-                Action.ADD_RESIDENT_PHOTO,
-                "EvidenceRecord",
-                record.evidence_id,
-                actor_id,
-                Role.RESIDENT,
-                "evidence",
-                None,
-                {"evidence_type": record.evidence_type},
-                "Cư dân đính kèm ảnh",
-                now=now,
-            )
+            for file_ref in file_refs:
+                self._append_resident_photo(work, now, ticket_id, actor_id, file_ref)
 
         return self._mutate(ticket_id, actor_id, Action.ADD_RESIDENT_PHOTO, op)
+
+    def _append_resident_photo(self, work: Case, now: datetime, ticket_id: str, actor_id: str, file_ref: str) -> None:
+        if work.ticket.status in TERMINAL_STATUSES:
+            raise GuardError("Ticket đã kết thúc; không nhận thêm ảnh")
+        if len(resident_photos(work)) >= MAX_RESIDENT_PHOTOS:
+            raise GuardError(f"Mỗi phản ánh tối đa {MAX_RESIDENT_PHOTOS} ảnh")
+        record = EvidenceRecord(
+            evidence_id=f"SIM-EVD-{_suffix(ticket_id)}-{len(work.evidence) + 1:02d}",
+            ticket_id=ticket_id,
+            work_order_draft_id=None,
+            requirement_id=None,
+            evidence_type=EvidenceType.RESIDENT_ORIGINAL,
+            content_or_metadata=file_ref,
+            source=EvidenceSource.RESIDENT_ORIGINAL,
+            submitted_by=actor_id,
+            submitted_at=now,
+            readability_status=ReadabilityStatus.READABLE,
+            immutable=True,
+        )
+        work.evidence.append(record)
+        self._audit(
+            work,
+            Action.ADD_RESIDENT_PHOTO,
+            "EvidenceRecord",
+            record.evidence_id,
+            actor_id,
+            Role.RESIDENT,
+            "evidence",
+            None,
+            {"evidence_type": record.evidence_type},
+            "Cư dân đính kèm ảnh",
+            now=now,
+        )
 
     @staticmethod
     def check_rating(score: int, tags: Sequence[str], comment: str | None) -> tuple[tuple[str, ...], str]:
@@ -1036,8 +1055,8 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 raise GuardError("Category không thuộc playbook v1.1", {"category": category})
             if location is not None and _blank(location):
                 raise GuardError("location không được rỗng")
-            if asset_id is not None and not any(a.asset_id == asset_id for a in self.catalog.assets):
-                raise GuardError(f"Không có asset {asset_id} trong catalog")
+            if asset_id is not None and not any(a.asset_id == asset_id and a.active for a in self.catalog.assets):
+                raise GuardError(f"Không có asset {asset_id} đang dùng trong catalog")
             locks, category_changed = self._bptn_locks(work, category, department, location, asset_id)
             if (locks or asset_onsite or info is not None) and _blank(note):
                 raise GuardError("BPTN thay đổi giá trị hoặc chọn xác định tại hiện trường thì bắt buộc ghi lý do")
@@ -1638,11 +1657,15 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             line = next((m for m in work.material_lines if m.item_code == item_code), None)
             if line is None:
                 raise GuardError(f"Không có dòng vật tư {item_code} trong draft")
+            if not (whole_positive(issued_qty) and whole_positive(used_qty)):  # first: "1"/None must not reach `>`
+                raise GuardError("Số lượng vật tư phải là số nguyên dương", {"item_code": item_code})
             if used_qty > issued_qty:
                 raise GuardError(
                     "Số đã dùng không được lớn hơn số đã xuất kho",
                     {"item_code": item_code, "issued_qty": issued_qty, "used_qty": used_qty},
                 )
+            if item_code not in allowed_material_codes(self.catalog, work.ticket.department_id):
+                raise GuardError("Vật tư không thuộc phòng ban xử lý", {"item_codes": [item_code]})
             if line.issued_qty is not None and issued_qty > line.issued_qty and _material_approval_required():
                 raise GuardError(  # WP7 R3-E: past what the warehouse handed out needs a request + approval (Q15)
                     "Xuất thêm vượt số đã cấp: gửi yêu cầu vật tư để kho duyệt",
@@ -1675,28 +1698,26 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
 
         return self._mutate(ticket_id, actor_id, Action.UPDATE_MATERIAL, op)
 
-    def confirm_materials(self, ticket_id: str, actor_id: str, *, lines: list[PlannedMaterial], note: str) -> Case:
+    def confirm_materials(
+        self, ticket_id: str, actor_id: str, *, lines: list[PlannedMaterial], note: str | None = None
+    ) -> Case:
         """The department replaces the Agent's planned materials with what the site really needs (IN_PROGRESS).
 
         Step 7 can only guess from the playbook defaults (e.g. an asset checked on site). An empty list means no
         material is used (mode N_A). Issued/used quantities already entered are kept for an unchanged item_code.
-        Plan 11 SPEC-P04 §2 (Q15): a plan with at least one line is a material REQUEST. The ticket goes ON_HOLD /
-        WAITING_MATERIAL and stays there, enough stock or not, until the warehouse or BQL approves it with
-        `approve_materials`. An empty plan needs nothing and keeps the ticket IN_PROGRESS.
+        Stock is shown per line but never stops the work here: a shortage goes through `block` (WAITING_MATERIAL).
+        `note` is optional (plan 11 Q43): differing from the Agent's plan needs no reason.
         """
 
         def op(work: Case, now: datetime) -> None:
             self._require_in_progress(work)
-            if _blank(note):
-                raise GuardError("Xác nhận vật tư bắt buộc ghi lý do")
             codes = [line.item_code for line in lines]
             unknown = sorted({code for code in codes if self.material(code) is None})
             if unknown:
                 raise GuardError("Vật tư không có trong catalog", {"item_codes": unknown})
-            if len(set(codes)) != len(codes):
-                raise GuardError("Mỗi vật tư chỉ được một dòng")
-            if any(line.planned_qty <= 0 for line in lines):
-                raise GuardError("Số lượng vật tư phải lớn hơn 0; bỏ dòng nếu không dùng")
+            check_selection(
+                self.catalog, work.ticket.department_id, [(line.item_code, line.planned_qty) for line in lines]
+            )
             draft = work.draft
             suffix = _suffix(ticket_id)
             entered = {line.item_code: line for line in work.material_lines}
@@ -1737,12 +1758,74 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 "planned_materials",
                 old,
                 [{"item_code": m.item_code, "planned_qty": m.planned_qty} for m in new_lines],
-                note.strip(),
+                "Phòng ban chọn vật tư tại hiện trường" if _blank(note) else note.strip(),
                 now=now,
             )
-            if new_lines and _material_approval_required():  # off on postgres by default (WP7 P5, OPERATIONS §3)
-                hold = self._new_blocker(work, R.WAITING_MATERIAL, now, resume_step=6, note=note)
-                self._apply_transition(work, S.ON_HOLD, actor_id, Role.DEPARTMENT, now, blocker=hold, note=note)
+
+        return self._mutate(ticket_id, actor_id, Action.UPDATE_MATERIAL, op)
+
+    def save_material_usage(self, ticket_id: str, actor_id: str, *, lines: list[MaterialUsageLine]) -> Case:
+        """Plan 16 CONTRACTS §C2: the department's whole material selection in one transaction.
+
+        Replaces every line; each new line is `planned = issued = used` (no Agent prefill, the norm stays reference).
+        The warehouse moves only by `new issued - old issued` per item (dropped item: new = 0), in item-code order.
+        Any failure (guard, shortage, audit, save) rolls back the ticket, the stock and the audit together.
+        """
+
+        def op(work: Case, now: datetime) -> None:
+            self._require_in_progress(work)
+            chosen = [(line.item_code, line.used_qty) for line in lines]
+            check_selection(self.catalog, work.ticket.department_id, chosen)
+            draft = work.draft
+            suffix = _suffix(ticket_id)
+            old_issued = {m.item_code: m.issued_qty or 0 for m in work.material_lines}
+            new_issued = dict(chosen)
+            stock_after: dict[str, float | None] = {}
+            for code in sorted(old_issued.keys() | new_issued.keys()):
+                stock_after[code] = self._issue_stock(code, new_issued.get(code, 0) - old_issued.get(code, 0))
+            planned = [PlannedMaterial(item_code=code, planned_qty=qty) for code, qty in chosen]
+            new_lines = []
+            for index, plan in enumerate(planned, start=1):
+                line = self._material_line(draft.work_order_draft_id, suffix, index, plan)
+                line.issued_qty = line.used_qty = plan.planned_qty
+                line.simulated_stock_qty = stock_after[plan.item_code]
+                line.material_stock_status = (  # already taken out: enough by definition, unless never counted
+                    MaterialStockStatus.UNKNOWN if line.simulated_stock_qty is None else MaterialStockStatus.SUFFICIENT
+                )
+                new_lines.append(line)
+            old = [
+                {"item_code": m.item_code, "issued_qty": m.issued_qty, "used_qty": m.used_qty}
+                for m in work.material_lines
+            ]
+            work.planned_materials = planned
+            work.material_lines = new_lines
+            draft.material_line_ids = [m.material_line_id for m in new_lines]
+            draft.material_stock_status = _aggregate_stock(new_lines)
+            draft.material_requirement_mode = (
+                MaterialRequirementMode.TRACKED if new_lines else MaterialRequirementMode.N_A
+            )
+            draft.material_gate_status = MaterialGateStatus.NEEDS_CLARIFICATION if new_lines else MaterialGateStatus.NA
+            self._audit(
+                work,
+                Action.UPDATE_MATERIAL,
+                "WorkOrderDraft",
+                draft.work_order_draft_id,
+                actor_id,
+                Role.DEPARTMENT,
+                MATERIAL_USAGE_FIELD,
+                old,
+                [
+                    {
+                        "item_code": m.item_code,
+                        "issued_qty": m.issued_qty,
+                        "used_qty": m.used_qty,
+                        "stock_qty": m.simulated_stock_qty,
+                    }
+                    for m in new_lines
+                ],
+                "Phòng ban lưu vật tư đã dùng",
+                now=now,
+            )
 
         return self._mutate(ticket_id, actor_id, Action.UPDATE_MATERIAL, op)
 
@@ -1818,45 +1901,79 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         """Execution note. The content is stored as untrusted data and never interpreted (FR-SECURITY-001)."""
 
         def op(work: Case, now: datetime) -> None:
-            self._require_in_progress(work)
-            draft = work.draft
-            known = {r.requirement_id for r in draft.evidence_requirements}
-            if requirement_id is not None and requirement_id not in known:
-                raise GuardError(
-                    f"Requirement {requirement_id} không thuộc playbook của draft", {"known": sorted(known)}
-                )
-            if evidence_type == EvidenceType.RESIDENT_ORIGINAL:
-                raise GuardError("Execution evidence không được mang type RESIDENT_ORIGINAL")
-            if evidence_type == EvidenceType.SIMULATED_IMAGE and len(execution_photos(work)) >= MAX_EXECUTION_PHOTOS:
-                raise GuardError(f"Mỗi lần xử lý tối đa {MAX_EXECUTION_PHOTOS} ảnh")
-            record = EvidenceRecord(
-                evidence_id=f"SIM-EVD-{_suffix(ticket_id)}-{len(work.evidence) + 1:02d}",
-                ticket_id=ticket_id,
-                work_order_draft_id=draft.work_order_draft_id,
-                requirement_id=requirement_id,
-                evidence_type=evidence_type,
-                content_or_metadata=content_or_metadata,
-                source=EvidenceSource.DEPARTMENT_EXECUTION,
-                submitted_by=actor_id,
-                submitted_at=now,
-                readability_status=readability_status,
-            )
-            work.evidence.append(record)
-            self._audit(
-                work,
-                Action.ADD_EVIDENCE,
-                "EvidenceRecord",
-                record.evidence_id,
-                actor_id,
-                Role.DEPARTMENT,
-                "evidence",
-                None,
-                {"requirement_id": requirement_id, "evidence_type": evidence_type},
-                "Thêm ghi chú xử lý mô phỏng",
-                now=now,
+            self._append_execution_evidence(
+                work, now, ticket_id, actor_id, requirement_id, evidence_type, content_or_metadata, readability_status
             )
 
         return self._mutate(ticket_id, actor_id, Action.ADD_EVIDENCE, op)
+
+    def add_execution_photos(self, ticket_id: str, actor_id: str, file_refs: Sequence[str]) -> Case:
+        """The department's photos after the work, all in one transaction (plan 12 SPEC-P02): one EvidenceRecord and
+        one audit row each, written as `add_evidence` writes them, and either every photo is recorded or none."""
+        if not file_refs:
+            raise GuardError("Chưa có ảnh")
+
+        def op(work: Case, now: datetime) -> None:
+            for file_ref in file_refs:
+                self._append_execution_evidence(
+                    work,
+                    now,
+                    ticket_id,
+                    actor_id,
+                    None,
+                    EvidenceType.SIMULATED_IMAGE,
+                    file_ref,
+                    ReadabilityStatus.READABLE,
+                )
+
+        return self._mutate(ticket_id, actor_id, Action.ADD_EVIDENCE, op)
+
+    def _append_execution_evidence(
+        self,
+        work: Case,
+        now: datetime,
+        ticket_id: str,
+        actor_id: str,
+        requirement_id: str | None,
+        evidence_type: EvidenceType,
+        content_or_metadata: str,
+        readability_status: ReadabilityStatus,
+    ) -> None:
+        self._require_in_progress(work)
+        draft = work.draft
+        known = {r.requirement_id for r in draft.evidence_requirements}
+        if requirement_id is not None and requirement_id not in known:
+            raise GuardError(f"Requirement {requirement_id} không thuộc playbook của draft", {"known": sorted(known)})
+        if evidence_type == EvidenceType.RESIDENT_ORIGINAL:
+            raise GuardError("Execution evidence không được mang type RESIDENT_ORIGINAL")
+        if evidence_type == EvidenceType.SIMULATED_IMAGE and len(execution_photos(work)) >= MAX_EXECUTION_PHOTOS:
+            raise GuardError(f"Mỗi lần xử lý tối đa {MAX_EXECUTION_PHOTOS} ảnh")
+        record = EvidenceRecord(
+            evidence_id=f"SIM-EVD-{_suffix(ticket_id)}-{len(work.evidence) + 1:02d}",
+            ticket_id=ticket_id,
+            work_order_draft_id=draft.work_order_draft_id,
+            requirement_id=requirement_id,
+            evidence_type=evidence_type,
+            content_or_metadata=content_or_metadata,
+            source=EvidenceSource.DEPARTMENT_EXECUTION,
+            submitted_by=actor_id,
+            submitted_at=now,
+            readability_status=readability_status,
+        )
+        work.evidence.append(record)
+        self._audit(
+            work,
+            Action.ADD_EVIDENCE,
+            "EvidenceRecord",
+            record.evidence_id,
+            actor_id,
+            Role.DEPARTMENT,
+            "evidence",
+            None,
+            {"requirement_id": requirement_id, "evidence_type": evidence_type},
+            "Thêm ghi chú xử lý mô phỏng",
+            now=now,
+        )
 
     def report_complete(self, ticket_id: str, actor_id: str) -> Case:
         """'Báo hoàn thành' → step 10 reconciliation. Pass: READY_FOR_REVIEW. Fail: stays IN_PROGRESS, the
@@ -2036,11 +2153,13 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 try:
                     if not self._due(case.ticket, moment):
                         continue  # nothing for _tick to do: skip the deep copy
-                    self._mutate(ticket_id, SYSTEM_ID, Action.RUN_JOBS, lambda work, now: self._tick(work, now))
+                    updated = self._mutate(
+                        ticket_id, SYSTEM_ID, Action.RUN_JOBS, lambda work, now: self._tick(work, now)
+                    )
                 except Exception:  # noqa: BLE001 - one broken ticket (any error) must not stop the job for the others
                     logger.exception("run_jobs: ticket %s failed", ticket_id)
                     continue
-                if len(self.repo.get(ticket_id).events) != before:
+                if len(updated.events) != before:  # the committed copy `_mutate` returns: no extra read (plan 12)
                     changed.append(ticket_id)
         return changed
 
@@ -3235,9 +3354,9 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             for other, category, other_location, _ in found[: policy.max_duplicate_candidates]
         ]
         assets = [
-            AssetCandidate(asset_id=a.asset_id, location=a.location_normalized)
+            AssetCandidate(asset_id=a.asset_id, area=a.area)
             for a in self.catalog.assets
-            if a.asset_type == "LIGHTING"
+            if a.asset_type == "LIGHTING" and a.active
         ]
         return DecisionInput(
             ticket_id=ticket.ticket_id,
@@ -4119,13 +4238,12 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             status, asset_id, reason = AssetLookupStatus.LOCKED_BY_BPTN, ticket.locked_fields.asset_id, "BPTN chọn"
         elif TicketFlag.ASSET_CHECK_ONSITE in ticket.flags:
             status, asset_id, reason = AssetLookupStatus.CHECK_ONSITE, None, "BPTN: không xác định được, kiểm tại chỗ"
-        else:
-            matches = [
-                a for a in self.catalog.assets if a.asset_type == "LIGHTING" and a.location_normalized == location
-            ]
+        else:  # one asset per area (plan 14): only the area part of the location counts
+            area = location_area(location)
+            matches = [a for a in self.catalog.assets if a.asset_type == "LIGHTING" and a.active and a.area == area]
             if len(matches) == 1:
                 status, asset_id = AssetLookupStatus.MATCHED, matches[0].asset_id
-                reason = f"Một asset LIGHTING khớp vị trí ({matches[0].source_ref})"
+                reason = f"Một asset LIGHTING khớp khu vực {area} ({matches[0].source_ref})"
                 view = self._job_view(work)
                 job = view.job(ServiceCategory.KY_THUAT) if view is not None else None
                 if (  # the Agent's choice counts only while it is still THE one asset at the final location
@@ -4135,9 +4253,9 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 ):
                     reason = f"Agent: {job.asset_reason or 'asset duy nhất tại vị trí'} ({matches[0].source_ref})"
             elif matches:
-                status, asset_id, reason = AssetLookupStatus.AMBIGUOUS, None, f"{len(matches)} asset cùng vị trí"
+                status, asset_id, reason = AssetLookupStatus.AMBIGUOUS, None, f"{len(matches)} asset cùng khu vực"
             else:
-                status, asset_id, reason = AssetLookupStatus.NOT_FOUND, None, "Không có asset LIGHTING tại vị trí"
+                status, asset_id, reason = AssetLookupStatus.NOT_FOUND, None, "Không có asset LIGHTING cho khu vực này"
         proposal.asset_lookup_status, proposal.asset_id, proposal.asset_match_reason = status, asset_id, reason
         ticket.asset_resolution = {
             AssetLookupStatus.NOT_APPLICABLE: AssetResolution.NOT_APPLICABLE,
@@ -4360,6 +4478,11 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         for photo in photos:
             photo.evidence_validation_status = EvidenceValidationStatus.PRESENT
         incomplete, unexplained = self._compare_materials(work, now)
+        # plan 16 §C3: a technical ticket needs a saved material, and no stored line may break §C1 (no N_A bypass)
+        problem = selection_problem(self.catalog, ticket.department_id, work.material_lines)
+        if problem:
+            incomplete.append(problem)
+            work.draft.material_gate_status = MaterialGateStatus.NEEDS_CLARIFICATION
         # REWORK is the reason the department is working again, not something still to clear
         open_blocker = ticket.blocker is not None and ticket.blocker.code != R.REWORK
         evaluation = ReadinessEvaluation(
@@ -4384,7 +4507,10 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
 
     def _compare_materials(self, work: Case, now: datetime) -> tuple[list[str], list[str]]:
         """Three comparisons per line (VAL-MAT-CMP-001). Returns (lines missing qty, lines with unexplained variance).
-        An explained variance is a non-blocking warning."""
+
+        Plan 11 Q43: PLANNED_VS_NORM and ISSUED_VS_PLANNED are kept as reference data only — differing from the norm
+        or the Agent's plan never needs a reason and never blocks. Only used ≠ issued (stock taken out but not used)
+        still needs `variance_reason`; an explained one is a non-blocking warning."""
         incomplete, unexplained = [], []
         warnings: list[NonBlockingWarning] = []
         for line in work.material_lines:
@@ -4400,7 +4526,11 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 ),
                 _compare(ComparisonType.USED_VS_ISSUED, "used_qty", "issued_qty", line.used_qty, line.issued_qty),
             ]
-            variances = [c for c in comparisons if c.status == ComparisonStatus.VARIANCE]
+            variances = [
+                c
+                for c in comparisons
+                if c.status == ComparisonStatus.VARIANCE and c.comparison_type == ComparisonType.USED_VS_ISSUED
+            ]
             for c in variances:
                 c.reason_reference = "variance_reason" if line.variance_reason else None
             line.comparison_results = comparisons
@@ -4574,12 +4704,10 @@ def _still_to_issue(line: MaterialLine) -> float:
 
 
 def _material_approval_required() -> bool:
-    """Plan 11 Q15 (every department material request waits for warehouse/BQL approval) rides on MO_PORTAL_EXTRAS:
-    on for memory, off for postgres by default. The old backend on Render cannot read a ticket waiting for approval
-    (it would push it back to ROUTED, WP7 P5), so the shared database keeps the old flow until Render runs this code."""
-    from src.config import get_settings
-
-    return get_settings().portal_extras_enabled()
+    """Always off: the user's decision (plans 15-16) is that a department saves the quantities it actually used in one
+    click, with no request/approval step. develop's approval flow (plan 11 Q15) stays dormant behind this switch.
+    ponytail: constant False, delete the dormant approve_materials path in a follow-up if it is never revived."""
+    return False
 
 
 def build_engine(settings: "Settings | None" = None) -> MaintenanceEngine:

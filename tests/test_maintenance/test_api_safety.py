@@ -165,7 +165,8 @@ def test_emergency_downgrade_bql_200(fixture_api):
     assert r.status_code == 200, r.text
     ticket = r.json()["ticket"]
     assert ticket["risk_level"] == "NONE" and ticket["safety_cleared_by"] == BQL["X-Actor-Id"]
-    assert ticket["blocker"]["code"] != "EMERGENCY_PENDING_BQL"
+    # Area-based asset lookup may route the ticket with no remaining blocker.
+    assert ticket["blocker"] is None or ticket["blocker"]["code"] != "EMERGENCY_PENDING_BQL"
 
 
 @pytest.mark.parametrize("url", [CLOSE, DOWNGRADE])

@@ -258,6 +258,14 @@ def test_catalog_feeds_the_ui(api):
     assert catalog["departments"] == {"DEPT_CLEANING": "Phòng Vệ sinh", "DEPT_TECHNICAL": "Phòng Kỹ thuật"}
     assert catalog["status_labels"]["ROUTED"] == "Đã chuyển phòng ban"
     assert all(a["asset_id"].startswith("SIM-ASSET-") for a in catalog["assets"])
+    # plan 14: the BPTN picker gets one asset per area, retired per-location assets are left out
+    assert [(a["name"], a["area"]) for a in catalog["assets"]] == [
+        ("Đèn hành lang", "Hành lang"),
+        ("Đèn sảnh thang máy", "Sảnh thang máy"),
+        ("Đèn thang máy", "Thang máy"),
+        ("Đèn cầu thang bộ", "Cầu thang bộ"),
+        ("Đèn phòng rác", "Phòng rác"),
+    ]
 
 
 def test_ui_is_served(api):
@@ -269,7 +277,7 @@ def test_ui_is_served(api):
 
 def test_16_resident_sees_no_department_before_hand_over(api, engine):
     need_info = create(api, "Nhiều rác quá")
-    asset_unclear = create(api, "Đèn cầu thang bộ tầng 9 tòa S1 không sáng")
+    asset_unclear = create(api, "Đèn hầm B1 tòa S1 không sáng")
     engine.stock["SIM-MAT-CLEAN-01"] = 0
     waiting = create(api, "Hành lang tầng 7 tòa S2 nhiều rác")
     for tid in (need_info, asset_unclear, waiting):
@@ -297,13 +305,29 @@ def test_department_confirms_material_plan(api, engine):
     url = f"/api/v1/mo/tickets/{tid}/material-plan"
     body = {"lines": [{"item_code": "SIM-MAT-LAMP-02", "planned_qty": 2}], "note": "Đèn tuýp"}
     assert api.post(url, json=body, headers=BPTN).status_code == 403
-    assert api.post(url, json={**body, "note": " "}, headers=TEC).status_code == 409
     assert (
         api.post(url, json={"lines": [{"item_code": "LAMP", "planned_qty": 1}], "note": "x"}, headers=TEC).status_code
         == 422
     )
     case = api.post(url, json=body, headers=TEC).json()
     assert [(m["item_code"], m["planned_qty"]) for m in case["material_lines"]] == [("SIM-MAT-LAMP-02", 2)]
+
+
+def test_q43_four_lamps_over_a_norm_of_one_save_without_note_or_reason(api, engine):
+    """Plan 11 Q43 through the API the phone app uses: material-plan without note, then issued = used = 4."""
+    tid = "SIM-TKT-TEC-002"
+    engine.bptn_resolve(tid, "SIM-ACTOR-BPTN-01", asset_onsite=True, note="Không có trong sổ tài sản")
+    api.post(f"/api/v1/mo/tickets/{tid}/accept", headers=TEC)
+    start = engine.repo.stock_of("SIM-MAT-LAMP-01")
+    plan = {"lines": [{"item_code": "SIM-MAT-LAMP-01", "planned_qty": 4}]}
+    assert api.post(f"/api/v1/mo/tickets/{tid}/material-plan", json=plan, headers=TEC).status_code == 200
+    url = f"/api/v1/mo/tickets/{tid}/materials/SIM-MAT-LAMP-01"
+    for _ in range(2):  # a second save of the same quantity takes nothing more
+        reply = api.post(url, json={"issued_qty": 4, "used_qty": 4}, headers=TEC)
+        assert reply.status_code == 200 and reply.json()["material_lines"][0]["variance_reason"] is None
+        assert engine.repo.stock_of("SIM-MAT-LAMP-01") == start - 4
+    too_many = api.post(url, json={"issued_qty": start + 1, "used_qty": start + 1}, headers=TEC)
+    assert too_many.status_code == 409 and engine.repo.stock_of("SIM-MAT-LAMP-01") == start - 4
 
 
 def test_warehouse_reads_stock(api):

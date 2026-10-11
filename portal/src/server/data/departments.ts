@@ -15,10 +15,13 @@ export async function deptData(user: SessionUser): Promise<DeptData> {
     const c = byId.get(s.ticket_id);
     return c ? buildDeptTicket(c, catalog.status_labels, stock, now, s) : deptTicketFromSummary(s, now);
   });
+  const allowed = catalog.material_codes_by_department?.[user.role === "technical" ? "DEPT_TECHNICAL" : "DEPT_CLEANING"];
   return {
     user: brief(user),
     tickets,
-    catalog: stockRows.map((r) => ({ itemCode: r.item_code, itemName: r.item_name, unit: r.unit ?? "", stock: r.qty })),
+    catalog: stockRows
+      .filter((r) => allowed === undefined || allowed.includes(r.item_code))
+      .map((r) => ({ itemCode: r.item_code, itemName: r.item_name, unit: r.unit ?? "", stock: r.qty })),
     customMaterials: catalog.custom_materials_enabled === true,
   };
 }

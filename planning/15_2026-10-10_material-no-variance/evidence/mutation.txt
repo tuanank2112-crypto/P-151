@@ -1,0 +1,24 @@
+$ python -m pytest -q -p no:cacheprovider --ignore=integration
+FAILED tests/test_maintenance/test_fixtures.py::test_all_twelve_tickets_match_expected_outcome
+FAILED tests/test_maintenance/test_p1_neighbors.py::test_e08_the_fixtures_with_the_switch_off_still_pass_12_of_12
+12 failed, 3375 passed, 88 deselected, 1 warning in 133.02s (0:02:13)
+exit=1
+$ python -m ruff check src tests
+All checks passed!
+exit=0
+$ python -m ruff format --check src tests
+unformatted: File would be reformatted
+    --> src\maintenance\engine.py:3996:26
+     |
+3995 |             ]
+     -             variances = [
+     -                 c
+     -                 for c in comparisons
+     -                 if c.status == ComparisonStatus.VARIANCE
+     -             ]
+3996 +             variances = [c for c in comparisons if c.status == ComparisonStatus.VARIANCE]
+3997 |             for c in variances:
+     |
+
+1 file would be reformatted, 112 files already formatted
+exit=1

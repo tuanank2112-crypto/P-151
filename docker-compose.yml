@@ -53,13 +53,9 @@ services:
     expose:
       - "3000"
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-p151}:${POSTGRES_PASSWORD:-p151}@db:5432/portal
       BACKEND_URL: http://backend:8000
       SESSION_COOKIE_SECURE: "false"
       TZ: Asia/Ho_Chi_Minh
-    depends_on:
-      db:
-        condition: service_healthy
     restart: unless-stopped
 
 volumes:

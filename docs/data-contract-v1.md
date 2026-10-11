@@ -19,6 +19,7 @@
 | 1.1 | 2026-09-27 | Re-baseline hai playbook; thêm Asset, DutyAvailability, stock gate, team-only routing và route readiness | FINAL |
 | 1.1-freeze | 2026-09-28 | Đóng OD-09 và đưa Data Contract v1.1 vào frozen baseline MaintenanceOps MVP v0.3 | FROZEN |
 | 1.2-candidate | 2026-10-01 | Thay team/duty contract bằng department flow; thêm safety, priority, blocker, merge, resident addition, close/cancel/rating | DRAFT · CHỜ PHÊ DUYỆT CR-03 |
+| 1.2-p14 | 2026-10-10 | `Asset` theo KHU VỰC (plan 14): thêm `name`, `area`; `location_normalized` chỉ còn ở asset `RETIRED_SIMULATED`; lookup so khu vực của vị trí; mỗi khu vực ≤1 asset active. Xem §5.4, VAL-ASSET-001 | ÁP DỤNG (người dùng chốt 2026-10-10) |
 
 ---
 
@@ -125,7 +126,7 @@ Draft chỉ được tạo cùng T13 khi `can_route=true`. Không có active con
 
 ## G. Asset và vật tư
 
-`Asset` giữ các field `asset_id`, `asset_type`, `location_normalized`, `asset_status`, `linked_playbook_id`, `source_ref`, `synthetic=true`, `read_only=true`. Asset ID dùng `SIM-ASSET-*`.
+`Asset` giữ các field `asset_id`, `asset_type`, `name`, `area`, `location_normalized` (chỉ asset ngừng dùng), `asset_status`, `linked_playbook_id`, `source_ref`, `synthetic=true`, `read_only=true`. Asset ID dùng `SIM-ASSET-*`. Từ plan 14 (2026-10-10) mỗi khu vực một asset đèn — Hành lang, Sảnh thang máy, Cầu thang bộ, Phòng rác — không chia theo tòa-tầng.
 
 `MaterialLine` phải tách planned/norm/issued/actual và reconciliation. `stock_status=INSUFFICIENT` trước route tạo `WAITING_MATERIAL`; `UNKNOWN` đặt flag theo D-05 candidate; Agent không duyệt xuất kho hay điều chỉnh tồn.
 
@@ -416,10 +417,12 @@ Mỗi bảng dùng các cột: field; type; required/gate; enum/const; source/ow
 
 | Field | Type | Required | Enum/const | Source/owner | Validation rule | Liên kết | Ví dụ |
 |---|---|---|---|---|---|---|---|
-| `asset_id` | string | R | `SIM-ASSET-*` | Static fixture | Unique, immutable | Proposal/draft | `SIM-ASSET-LIGHT-001` |
+| `asset_id` | string | R | `SIM-ASSET-*` | Static fixture | Unique, immutable | Proposal/draft | `SIM-ASSET-LIGHT-HALLWAY` |
 | `asset_type` | enum | R | MVP ưu tiên `LIGHTING` | Static fixture | TEC lookup allowlist | Playbook | `LIGHTING` |
-| `location_normalized` | string/object | R | — | Static fixture | Exact normalized location key; immutable | Ticket admin | `Tòa SIM-A / hành lang` |
-| `asset_status` | enum/string | R | simulated catalog value | Static fixture | Non-empty; không suy diễn tình trạng thực | Lookup | `ACTIVE_SIMULATED` |
+| `name` | string | R | — | Static fixture | Non-empty; nhãn BPTN chọn (plan 14) | UI | `Đèn hành lang` |
+| `area` | string | R | nhãn `rules.AREA_PATTERNS` | Static fixture | Khu vực hợp lệ; ≤1 asset ACTIVE mỗi khu vực (plan 14) | Lookup | `Hành lang` |
+| `location_normalized` | string/null | O | — | Static fixture | Chỉ asset `RETIRED_SIMULATED` (lịch sử, trước plan 14) | Lịch sử | `Tòa S1 / Tầng 3 / Hành lang` |
+| `asset_status` | enum | R | `ACTIVE_SIMULATED` \| `RETIRED_SIMULATED` | Static fixture | RETIRED không lookup, không chọn, không trả UI | Lookup | `ACTIVE_SIMULATED` |
 | `linked_playbook_id` | enum | R | const `PB-TEC-01` | Static fixture | CLN link reject | Playbook | `PB-TEC-01` |
 | `source_ref` | string | R | — | Static fixture | Ref tồn tại | Audit/explainability | `fixture.asset.001` |
 | `synthetic` | boolean | R | true | Static fixture | False/missing reject | All output | `true` |
@@ -667,7 +670,7 @@ Hai cleaning signals `PRESENT+ABSENT` hoặc `ABSENT+PRESENT` không đủ tạo
 |---|---|---|---|
 | `VAL-CLN-EX-001` | CLN signals | Both PRESENT → exact exception | `EXCEPTION`; no standard draft |
 | `VAL-TEC-EX-001` | TEC signals | Any PRESENT → exact exception | `EXCEPTION`; no diagnosis/guidance |
-| `VAL-ASSET-001` | TEC proposal + Asset Catalog | Exact one LIGHTING/location match | Zero/multiple → `CHỜ XÁC MINH`, asset_id null, no route; CLN → NOT_APPLICABLE |
+| `VAL-ASSET-001` | TEC proposal + Asset Catalog | Exact one active LIGHTING asset whose `area` = khu vực của location (plan 14; trước: trùng trọn location) | Zero/multiple → `CHỜ XÁC MINH`, asset_id null, no route; CLN → NOT_APPLICABLE |
 | `VAL-DUTY-001` | Service + DutyAvailability | Team phù hợp, AVAILABLE và current < max | No team → `IN_PROGRESS`/`NO_AVAILABLE_TEAM`; unknown → `CHỜ XÁC MINH`/`DUTY_UNKNOWN`; capacity → `IN_PROGRESS` |
 | `VAL-ROUTE-001` | Asset/stock/duty + draft | All applicable gates pass; team-only constants; assignee null | `NOT_ROUTED`; draft retained; no READY |
 | `VAL-ASSIGNEE-001` | Draft/route payload | `assignee_id=null` | Non-null → `ACTION_DENIED`/schema reject; audit; state unchanged |

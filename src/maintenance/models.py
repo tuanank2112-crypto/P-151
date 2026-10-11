@@ -79,16 +79,28 @@ class Entity(BaseModel):
 
 
 class Asset(Entity):
+    """One lighting asset per AREA (plan 14): the lamp of a hallway is the same on every floor and building.
+
+    RETIRED_SIMULATED assets are the old per-location ones, kept only so ids on old tickets still resolve; the engine,
+    the Agent and the BPTN picker never offer them.
+    """
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     asset_id: Annotated[str, _sim_id("SIM-ASSET-")]
     asset_type: Literal["LIGHTING"]
-    location_normalized: str = Field(min_length=1)
-    asset_status: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    area: str = Field(min_length=1)  # a label of rules.AREA_PATTERNS, matched against the area part of a location
+    location_normalized: str | None = None  # retired per-location assets only (history)
+    asset_status: Literal["ACTIVE_SIMULATED", "RETIRED_SIMULATED"]
     linked_playbook_id: Literal[PlaybookId.TEC]
     source_ref: str = Field(min_length=1)
     synthetic: Synthetic
     read_only: Literal[True]
+
+    @property
+    def active(self) -> bool:
+        return self.asset_status == "ACTIVE_SIMULATED"
 
 
 class MaterialCatalogItem(Entity):

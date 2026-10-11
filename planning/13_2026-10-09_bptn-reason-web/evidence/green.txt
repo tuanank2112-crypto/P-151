@@ -1,0 +1,12 @@
+PASS SETUP-missing SIM-TKT-0001 blocker MISSING_INFO
+PASS SETUP-safety SIM-TKT-0002 blocker SAFETY_REVIEW_REQUIRED
+PASS SETUP-asset SIM-TKT-0003 blocker ASSET_UNCLEAR
+PASS W1 blank reason: toast=true POST=0 blocker=MISSING_INFO
+PASS W2 with reason: POST=1 blocker=null
+PASS W3 empty: invalid=true POST=0
+PASS W4 spaces only: toast=true POST=0
+PASS W5 with reason: POST=1 blocker=OUT_OF_SCOPE
+PASS W6 onsite without reason: toast=true POST=0
+PASS JS page errors=[]
+RESULT: ALL PASS
+exit=0

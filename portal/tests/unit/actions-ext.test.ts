@@ -6,7 +6,7 @@ vi.mock("@/server/backend", () => ({
   api: vi.fn(async (url: string, opts?: { method?: string; json?: unknown }) => {
     calls.push({ url, opts });
     const lines = (globalThis as { __materialLines?: unknown[] }).__materialLines ?? [];
-    return { ticket_id: "SIM-TKT-0099", item_code: "SIM-MAT-X-1", material_lines: lines };
+    return { ticket_id: "SIM-TKT-0099", item_code: "SIM-MAT-X-1", material_lines: lines, ticket: { status: "READY_FOR_REVIEW" } };
   }),
 }));
 vi.mock("@/server/session", () => ({
@@ -15,7 +15,7 @@ vi.mock("@/server/session", () => ({
 vi.mock("next/cache", () => ({ refresh: () => undefined }));
 vi.mock("next/navigation", () => ({ redirect: () => undefined }));
 
-import { requestMaterialsAction } from "@/app/actions/departments";
+import { finishTicketAction } from "@/app/actions/departments";
 import { rateTicketAction, submitTicketAction } from "@/app/actions/resident";
 import { approveMaterialsAction } from "@/app/actions/warehouse";
 
@@ -92,20 +92,38 @@ describe("approveMaterialsAction", () => {
   });
 });
 
-describe("requestMaterialsAction (WP7 P6)", () => {
-  it("keeps the lines the ticket already has and adds the new request to them", async () => {
-    (globalThis as { __materialLines?: unknown[] }).__materialLines = [
-      { item_code: "SIM-MAT-LAMP-02", planned_qty: 1 },
-      { item_code: "SIM-MAT-STARTER-01", planned_qty: 2 },
-    ];
-    const r = await requestMaterialsAction("SIM-TKT-0099", [{ itemCode: "SIM-MAT-LAMP-02", qty: 2 }, { itemCode: "SIM-MAT-LAMP-01", qty: 1 }], "thêm");
-    (globalThis as { __materialLines?: unknown[] }).__materialLines = undefined;
+describe("finishTicketAction materials", () => {
+  const withUsed = (...used: object[]) => {
+    const fd = new FormData();
+    used.forEach((u) => fd.append("used", JSON.stringify(u)));
+    return fd;
+  };
+
+  it("saves what was used in ONE material-usage call before complete", async () => {
+    const r = await finishTicketAction("SIM-TKT-0099", withUsed({ itemCode: "SIM-MAT-LAMP-01", qty: 2 }, { itemCode: "SIM-MAT-STARTER-01", qty: 1 }));
     expect(r.ok).toBe(true);
-    const plan = calls.find((c) => c.url.endsWith("/material-plan"))?.opts?.json as { lines: { item_code: string; planned_qty: number }[] };
-    expect(plan.lines).toEqual([
-      { item_code: "SIM-MAT-LAMP-02", planned_qty: 3 },
-      { item_code: "SIM-MAT-STARTER-01", planned_qty: 2 },
-      { item_code: "SIM-MAT-LAMP-01", planned_qty: 1 },
-    ]);
+    const urls = calls.map((c) => c.url);
+    expect(urls.filter((u) => u.endsWith("/material-usage"))).toHaveLength(1);
+    expect(urls.findIndex((u) => u.endsWith("/material-usage"))).toBeLessThan(urls.findIndex((u) => u.endsWith("/complete")));
+    expect(calls.find((c) => c.url.endsWith("/material-usage"))?.opts?.json).toEqual({
+      lines: [
+        { item_code: "SIM-MAT-LAMP-01", used_qty: 2 },
+        { item_code: "SIM-MAT-STARTER-01", used_qty: 1 },
+      ],
+    });
+  });
+
+  it("sends an empty list when nothing was used (cleaning)", async () => {
+    await finishTicketAction("SIM-TKT-0099", new FormData());
+    expect(calls.find((c) => c.url.endsWith("/material-usage"))?.opts?.json).toEqual({ lines: [] });
+  });
+
+  it("rejects a zero or fractional quantity without calling the backend", async () => {
+    for (const qty of [0, 1.5, -1]) {
+      calls.length = 0;
+      const r = await finishTicketAction("SIM-TKT-0099", withUsed({ itemCode: "SIM-MAT-LAMP-01", qty }));
+      expect(r.ok).toBe(false);
+      expect(calls).toHaveLength(0);
+    }
   });
 });

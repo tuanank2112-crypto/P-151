@@ -1,0 +1,6 @@
+mutant m5 (src/maintenance/store/postgres.py): pytest --pg tests/test_maintenance/test_read_engine.py -k t1 exit=1
+E       assert False is True
+E        +  where False = _read(<function test_t1_reads_go_through_the_autocommit_engine.<locals>.<lambda> at 0x00000280851E2DE0>)
+E        +    where _read = <src.maintenance.store.postgres.PostgresRepository object at 0x00000280829A5750>._read
+1 failed, 2 deselected in 0.50s
+restored src/maintenance/store/postgres.py byte for byte

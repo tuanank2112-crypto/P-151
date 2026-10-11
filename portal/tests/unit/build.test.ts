@@ -155,7 +155,8 @@ describe("detail, inbox, management, warehouse", () => {
       blocker: { code: "OUT_OF_SCOPE", owner_role: "BPTN", since: "2026-10-09T01:00:00Z", escalated: true, eta: null, public_message: "m", internal_note: null, related_ticket_id: null },
     } as BBqlRow;
     const t = buildMgmtTicket(row, undefined, now);
-    expect(t).toMatchObject({ bqlWork: true, dept: "bql", late: true, urgent: true, stage: 2, merged: false });
+    expect(t).toMatchObject({ bqlWork: true, dept: "bql", late: true, urgent: false, stage: 2, merged: false }); // HIGH priority alone is not "Khẩn cấp"
+    expect(buildMgmtTicket({ ...row, risk_level: "EMERGENCY" }, undefined, now)).toMatchObject({ urgent: true });
     expect(buildMgmtTicket({ ...row, status: "MERGED", blocker: null }, undefined, now)).toMatchObject({ merged: true, cancelled: true });
   });
 
