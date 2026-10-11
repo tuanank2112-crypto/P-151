@@ -13,7 +13,8 @@ Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên 
 - Việc của BQL = OUT_OF_SCOPE + `blocker.escalated`; BQL đóng bằng `EMERGENCY_HANDLED` (Q09). Mọi yêu cầu vật tư phòng ban chờ Kho/BQL duyệt; duyệt = xuất kho; mọi đường bỏ dòng trả `issued − used` (Q15, Q20–Q23). Dòng vật tư mặc định xuất vượt kế hoạch theo luật chênh lệch CR-03 (Q23).
 ### Evidence
 - Thẩm định cô lập 4 vòng (agent Opus khác), sửa mọi mục đỏ: pytest 3782 passed, ruff sạch; portal 125 unit, typecheck, lint; 4 bộ Playwright qua cổng 8000 đạt; `planning/11_2026-10-09_portal-backend-api/evidence/`.
-- Chưa: chạy trên Supabase (G6) — mật khẩu DB chưa đúng.
+- G6 đọc trên Supabase thật ✅ (2026-10-10): 67→70 ticket hiện đúng qua cổng 8000; 2 bảng mới chưa tạo, cờ tương ứng tắt.
+- Sau phát hành: ô "Agent gợi ý đúng" hiện số lần đúng/sai cạnh % (`0f4e316`).
 
 ## [v1.4.0] - 2026-10-08: Gate nghiệm thu BQL lấy từ dữ liệu thật
 ### Changed

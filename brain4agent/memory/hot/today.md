@@ -29,3 +29,4 @@
 - Đo (worktree tạm `feature/tri`, probe + 3 test sẵn có, 4 pass exit 0): nhập kho `POST /api/v1/mo/warehouse/stock/SIM-MAT-LAMP-02` ⇒ SIM-TKT-TEC-003 `ON_HOLD`→`ROUTED`, blocker=None, rời hàng chờ kho (chi tiết 200→404), BPTN thấy ROUTED. Dự phòng: job kiểm lại kho đầu mỗi ca (`next_shift_start`), ≤3 lần, 24h leo thang BQL. Khoảng trống duy nhất: AI GỌI API nhập kho — n8n (login `/api/v1/auth/login` → POST stock) làm được KHÔNG sửa backend.
 - G6 đọc ✅: cổng 8000 chạy trên Supabase thật (67 ticket, schema 0002), cờ 0003/0004 tắt. Mật khẩu DB đúng nằm trong `D:\P151\.env` (gitignored). Gotcha psycopg2 + pooler bỏ qua read-only.
 - Tab Hiệu suất Agent: số lần đúng/sai đặt cạnh % trong ô "Agent gợi ý đúng" (yêu cầu người dùng); trên Supabase hiện 1 ticket có quyết định Agent để chấm.
+- Đồng bộ não (nao-dong-bo): docs/portal.md, index, roadmap, changelog, state.json, kernel theo G6 Supabase + ô Agent đúng/sai + PR #20.

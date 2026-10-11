@@ -20,8 +20,9 @@ cd portal && npm ci && BACKEND_URL=http://127.0.0.1:8000 npx next build \
 Mở http://localhost:8000. Tài khoản (mật khẩu `123456`): `cudan`, `tiepnhan`, `quanly`, `vesinh`, `kythuat`, `kho`
 (tài khoản cũ `cudan01`…/`Demo@2026` vẫn dùng được).
 - `next dev` chỉ mở thẳng `http://localhost:3000`: qua cổng 8000 trang KHÔNG hydrate (WebSocket HMR không đi qua proxy).
-- Dữ liệu Supabase: chạy backend với `DATABASE_URL` Supabase (`?sslmode=require`), `MO_STORE=postgres`, `MO_JOBS_ENABLED=false`,
-  `MO_ALLOW_RESET=false`. Vật tư "+" và phân công/thẻ đánh giá cần bảng `0003`/`0004` trên Supabase rồi bật
+- Dữ liệu Supabase (đo 2026-10-10, đọc ✅): backend chạy từ worktree với `--env-file /d/P151/.env` (chứa `DATABASE_URL=postgresql+psycopg2://…?sslmode=require`,
+  `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`), shell đặt `MO_STORE=postgres MO_PHOTO_STORE=supabase MO_JOBS_ENABLED=false MO_ALLOW_RESET=false
+  MO_SEED_ON_EMPTY=false`. Scheme `postgresql://` trơn làm backend đòi driver `psycopg` (exit 3). Mọi thao tác bấm trên UI ghi thật vào DB nhóm. Vật tư "+" và phân công/thẻ đánh giá cần bảng `0003`/`0004` trên Supabase rồi bật
   `MO_CUSTOM_MATERIALS`/`MO_PORTAL_EXTRAS` — OPERATIONS §3 của hồ sơ 11 (mọi bước cần người dùng gật).
 
 ## 2. Lệnh
@@ -53,7 +54,7 @@ portal/src/
 | Route | Vai | Điểm chính |
 |---|---|---|
 | `/resident` | cư dân | Tiêu đề + nội dung góp ý + nơi + ảnh; bổ sung; đánh giá sao + thẻ + bình luận. Không khẩn cấp tự chọn, không xác nhận/hủy |
-| `/reception` | tiếp nhận | Chờ phân loại (nút theo blocker, khối Agent thật), Đã phân loại, Hiệu suất Agent (đúng/sai) |
+| `/reception` | tiếp nhận | Chờ phân loại (nút theo blocker, khối Agent thật), Đã phân loại, Hiệu suất Agent (ô "Agent gợi ý đúng": % + ✓ số đúng / ✗ số sai cạnh nhau) |
 | `/cleaning`, `/technical` | phòng ban | Phân công tổ/kỹ thuật viên, yêu cầu vật tư (+ ngoài danh mục, chờ duyệt cấp), form hoàn thành (vệ sinh: ảnh bắt buộc + vật tư đã dùng; kỹ thuật: checklist vật tư tích hết) |
 | `/management` | BQL | 5 ô tổng quan bấm được, phụ tải VS/KT bấm được, Tất cả ticket → modal, Việc của BQL (Đã tiếp nhận / Đã hoàn thành / Tất cả), Hiệu suất phòng ban, lối vào Kho |
 | `/warehouse` | kho, BQL | Tồn kho, nhập kho, thêm vật tư, Duyệt cấp yêu cầu |

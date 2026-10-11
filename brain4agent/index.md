@@ -178,7 +178,7 @@ Report: [daily/2026-10-05.md](../docs/submission/daily/2026-10-05.md). Fresh com
 Latest feature/truong merge: develop04491ad → 79f9444; [integration report](../planning/06_2026-10-04_readme-refresh/evidence/integration-latest-20261007/integration-report.md). Imported src/maintenance/agent/ runtime and portal/; portal docs/DB are independent. Shared revision0002 rollout not performed.
 
 
-Portal (hồ sơ 11): mở http://localhost:8000 (backend proxy → portal production 3000), tài khoản `cudan`…`kho`/`123456`; dữ liệu từ backend; [docs/portal.md](../docs/portal.md), [planning/11_2026-10-09_portal-backend-api/](../planning/11_2026-10-09_portal-backend-api/plan.md).
+Portal (hồ sơ 11): mở http://localhost:8000 (backend proxy → portal production 3000), tài khoản `cudan`…`kho`/`123456`; dữ liệu từ backend — chạy được trên Supabase thật (G6 đọc ✅ 2026-10-10, `--env-file /d/P151/.env`); [docs/portal.md](../docs/portal.md), [planning/11_2026-10-09_portal-backend-api/](../planning/11_2026-10-09_portal-backend-api/plan.md). PR #20 → develop.
 
 - Day05 completion router: `planning/09_2026-10-07_day05-labels/deliverables/completion-guide.md`; matrix and human-input forms live beside it.
 
