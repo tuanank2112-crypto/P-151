@@ -1,5 +1,5 @@
 {
-  "current_version": "1.12.2",
+  "current_version": "1.12.3",
   "brain_template_version": "1.7.1",
   "system_status": "active",
   "last_verification": {
@@ -45,7 +45,7 @@
     "assess_24kb_seconds": 0.28,
     "review_set_2026_10_04": "adversarial 107: HEAD 50 errors -> 7; SO holdout 18/18; live API corpus 34: only out-of-scope-asks-location left (spec)",
     "agent_audit_2026_10_05": "independent E2E audit scripts rerun: 77 sentences 16->7 errors, group D 9->2; rest P1/spec",
-    "portal": "typecheck+lint sạch, vitest 125 passed (2026-10-11); LLM thật S2.05 ROUTED",
+    "portal": "typecheck+lint sạch, vitest 132 passed (2026-10-12); UI tab Đã phân loại chưa kiểm bằng mắt",
     "spec_p09_v6_probes": "27/27 passed (B1 interval overlap, B2 3-part overrides & shared location, B3 next_step, B4 cardinality & quiesce)"
   },
   "last_sync": "2026-10-11T23:00:00+07:00",

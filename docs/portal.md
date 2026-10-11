@@ -78,3 +78,4 @@ Backend chamanh chốt vật tư là **số thực tế đã dùng, một lần 
 - Kỹ thuật: bỏ tab và nút "Yêu cầu vật tư" (`requestMaterialsAction` đã xoá).
 - Kho: chỉ còn tồn kho + "Nhập kho" cho mã sẵn có; bỏ "Thêm vật tư mới" và hàng đợi "Yêu cầu cấp phát". Ô ghi chú nhập hàng bỏ vì backend chưa nhận (BE-3).
 - Backend: `_material_approval_required()` luôn False; `custom_materials_enabled` luôn False. Action `approveMaterialsAction`/`addStockItemAction` còn trong code nhưng không có nút gọi.
+- Tiếp nhận, tab "Đã phân loại" (v1.12.3): chip lọc theo nơi ticket đang ở, tìm kiếm không dấu, "Xem thêm" 20 dòng; phân nhóm ở `src/lib/reception-done.ts` (stage ≤ 2 mà không có phòng ban = của BQL, không phải "chưa chuyển").

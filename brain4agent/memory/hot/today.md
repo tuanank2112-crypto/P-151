@@ -680,3 +680,4 @@ Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lậ
 - Đo: pytest 3584 passed (pg deselected), ruff sạch; portal typecheck/lint sạch, 125 test. Chưa commit, chưa chạy `--pg`, chưa kiểm revision migration 0003/0004 trên Supabase chung.
 - 2026-10-11 (tối) Sửa theo ảnh SIM-TKT-0001: tòa "S2.05" bị LLM đẩy sang BPTN ⇒ thêm câu vào prompt + REF (agent-prompt/7); bỏ nhãn Khẩn cấp cho HIGH ở portal. v1.12.1. Đo LLM thật ROUTED; chưa commit/push.
 - 2026-10-11 (khuya) Thang máy thành khu vực chung (phương án A): khu vực `Thang máy`, tài sản đèn cabin, prompt /9. Cơ khí ngoài phạm vi theo người dùng; quạt/nút bấm chưa có playbook ⇒ Idea Vault. v1.12.2; pytest 3596; chưa commit.
+- 2026-10-12 Gọn tab "Đã phân loại" của Tiếp nhận (v1.12.3): chip lọc + tìm kiếm + xem thêm, cột "Đang ở". vitest 132; chưa kiểm bằng mắt; chưa commit.

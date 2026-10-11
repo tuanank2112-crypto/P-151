@@ -2,6 +2,11 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.12.3] - 2026-10-12: gọn lại tab "Đã phân loại" của Tiếp nhận (PATCH)
+- Bỏ cột trạng thái lặp ý ("Đang xác minh · Thẩm định") và cột "Phòng ban" ghi "Chưa chuyển" cho ticket khẩn cấp đang ở BQL. Thay bằng cột "Đang ở" (phòng ban hoặc Ban quản lý) + cột Trạng thái; cột Vị trí ẩn khi không ticket nào có vị trí.
+- Thêm chip lọc theo nơi ticket đang ở (Đang ở phòng ban / Ở Ban quản lý / Chờ nghiệm thu / Hoàn tất / Hủy-gộp, kèm số đếm), tìm kiếm không phân biệt hoa-thường và dấu, "Xem thêm" 20 dòng mỗi lần. Logic thuần ở `portal/src/lib/reception-done.ts`.
+- Chỉ đổi UI, API không đổi. Đo: portal typecheck+lint sạch, vitest 132 passed (+7). CHƯA kiểm bằng mắt trên trình duyệt (Playwright tự động không đăng nhập được).
+
 ## [v1.12.2] - 2026-10-11: thang máy là khu vực chung (PATCH)
 - Quyết định (người dùng, 2026-10-11): "Trong thang máy" là khu vực hợp lệ. Đèn trần và đèn hiển thị tầng ⇒ Kỹ thuật; bẩn/rác ⇒ Vệ sinh; người ngất/kẹt ⇒ tầng an toàn (không đổi); hỏng cơ khí (cửa không đóng, chạy rung, dừng không xuống) ⇒ NGOÀI phạm vi. Quạt và nút bấm được người dùng xếp TRONG phạm vi nhưng CHƯA có playbook ⇒ hiện vẫn OUT_OF_SCOPE (Idea Vault).
 - `rules.py`: khu vực `Thang máy` chỉ khớp cách nói TRONG cabin (`trong|buồng|cabin|lòng thang máy`; "trước/cạnh thang máy" là mốc, không phải cabin); tầng ngầm định `—`; `location_area` nhận ngay nhãn chuẩn. `COMMON_AREA_PATTERNS` thêm cabin. Catalog: tài sản `SIM-ASSET-LIGHT-LIFT-CABIN` (5 tài sản đèn ACTIVE). Prompt `agent-prompt/9` (cabin không cần tầng; đèn trần/đèn hiển thị tầng là đèn) + REF plan 06.
