@@ -1,0 +1,25 @@
+$ grep -rn -E "quote[\"']?\s*[:=]\s*(data\.|self\.)?(report_text|location_text|safety_text|text|report|addition|CLEANING|LIGHTING)\b" src tests scripts --include=*.py
+EXIT=1
+
+$ grep -rn -E "quote[\"']?\s*[:=].*(report_text|location_text|safety_text)" src tests scripts --include=*.py
+src/maintenance/agent/validate.py:63:            source_quote=safety.first_sentence(safety_text),
+EXIT=0
+
+$ grep -rn "quote" src/maintenance/agent/client.py src/maintenance/agent/baseline.py
+src/maintenance/agent/baseline.py:128:        quote=None,
+src/maintenance/agent/baseline.py:183:        SchemaSignal(signal_id=s.signal_id, status=s.status.value, quote=s.source_quote)
+src/maintenance/agent/baseline.py:196:            building=building, floor=floor, area=area, quote=None, reason="Vị trí theo luật cố định"
+EXIT=0
+$ grep -rn -E "[\"']quote[\"']\s*:\s*[a-z_]+(\.|\[|\))" tests scripts --include=*.py
+tests/test_maintenance/test_p10_catalog_not_quote.py:101:        case = receive(T1, reply([VS], {**FULL, "quote": value}))
+tests/test_maintenance/test_p10_catalog_not_quote.py:133:        "signals": [{"signal_id": "S-10", "status": "PRESENT", "quote": quote}],
+tests/test_maintenance/test_p1_audit_fixes_safety.py:70:        signals = [{"signal_id": "S-00", "status": "PRESENT", "quote": self.danger}] if seen else []
+EXIT=0
+$ grep -rn -E "quote=[a-z_]+(\.|\[|\))" tests scripts --include=*.py
+tests/test_maintenance/test_agent_engine.py:399:    return job(JOB_KT, quote=quote, **{"asset_id": "SIM-ASSET-LIGHT-001", **changes})
+tests/test_maintenance/test_agent_engine.py:489:    client = ScriptedClient({text: reply(job(JOB_KT, quote=quote, asset_id=None, materials=[]))})
+tests/test_maintenance/test_agent_unit.py:660:    reply = one_job_decision(job(JOB_KT, quote=full, priority="MEDIUM", priority_rule_id="PRI-M1"), scope="IN_SCOPE")
+tests/test_maintenance/test_p10_catalog_not_quote.py:105:        job = {k: v for k, v in VS.items() if k != "quote"} if value is MISSING else dict(VS, quote=value)
+tests/test_maintenance/test_p1_audit_fixes_safety.py:139:    loc = LocationDecision(**parts, quote=quote, reason="test")
+tests/test_maintenance/test_safety.py:210:    return LLMSafetyAssessment(judgements=[SignalJudgement(signal_id=signal_id, status=status, quote=quote)])
+EXIT=0

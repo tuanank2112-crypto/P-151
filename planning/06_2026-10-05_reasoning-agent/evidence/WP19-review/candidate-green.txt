@@ -1,0 +1,5 @@
+# sandbox repo3 (working-tree copy) + candidate file evidence/WP19-review/test_zz_h19_candidate.py.txt, NO mutation
+$ pytest -q -p no:cacheprovider -rf tests/test_maintenance/test_zz_h19_candidate.py
+....                                                                     [100%]
+4 passed in 0.47s
+EXIT=0

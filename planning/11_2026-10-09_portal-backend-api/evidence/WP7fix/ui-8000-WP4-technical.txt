@@ -1,0 +1,9 @@
+$ tsx scripts/ui-check-WP4.mts technical --base=http://localhost:8000
+PASS technical: queue renders, no horizontal overflow, no warehouse tab tabs=Hàng việc 4|Yêu cầu vật tư|Lịch sử
+PASS technical: assign/accept first ROUTED ticket -> IN_PROGRESS code=SIM-TKT-TEC-006 viaAssign=true
+PASS technical: request-materials modal (multi-line, +/-, custom line, required note) customLine=true
+PASS technical: material tab lists request + status 
+PASS technical: queue shows waiting-material card 
+PASS technical: after approval, finish needs every 'Đã dùng <tên> — số lượng' ticked materialRows=3
+PASS technical: history tab renders 
+EXIT=0

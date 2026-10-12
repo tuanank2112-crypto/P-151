@@ -1,0 +1,7 @@
+# m2: job quote not in report_text drops the job
+$ python -m pytest -q tests/test_maintenance/test_agent_unit.py -k test_a_08   (file mutated: src/maintenance/agent/validate.py)
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_08_a_job_quote_not_in_the_text_is_kept_for_audit
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_08b_no_job_is_dropped_for_its_quote
+2 failed, 59 deselected in 0.67s
+restored: sha256 before == after: True; git diff --stat unchanged: True
+EXIT=1

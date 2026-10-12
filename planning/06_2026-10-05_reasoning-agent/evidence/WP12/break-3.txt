@@ -1,0 +1,9 @@
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/break3_lock_probe.py
+split children of SIM-TKT-0013 -> ['SIM-TKT-0014']
+L status ON_HOLD WAITING_MATERIAL
+  [run_agent(guard)] raised GuardError: Pipeline chỉ chạy khi ticket ở RECEIVED
+entry points exercised: {'receive': 14, 'bptn_resolve': 4, 'bptn_resolve(merge)': 1, 'undo_merge': 2, 'add_resident_info': 2, 'safety_confirm_safe': 1, 'safety_request_info': 1, 'safety_escalate': 1, 'emergency_downgrade': 1, 'bql_merge': 1, 'create_follow_up': 1, 'emergency_close': 1, 'cancel': 1, 'undo_split': 1, 'accept': 1, 'report_wrong_department': 2, 'bql_wrong_department': 2, 'return_wrong_department': 1, 'set_priority': 1, 'receive_stock': 1, 'resume': 1, 'run_agent(guard)!err': 1, 'run_jobs': 2, 'reset(with fixtures)': 1}
+model calls per entry point: {'receive': 11, 'add_resident_info': 2, 'bptn_resolve': 3, 'emergency_downgrade': 1, 'create_follow_up': 1, 'run_jobs': 5}
+orphans: ['SIM-TKT-0017', 'SIM-TKT-0018', 'SIM-TKT-0019', 'SIM-TKT-0020', 'SIM-TKT-0021', 'SIM-TKT-0022', 'SIM-TKT-0023'] -> run_jobs model calls (first round <= max_job_agent_calls=5): ['SIM-TKT-0017', 'SIM-TKT-0018', 'SIM-TKT-0019', 'SIM-TKT-0020', 'SIM-TKT-0021']
+RESULT model_calls=23 in_lock_or_tx=0 from_no_model_entries=0
+EXIT=0

@@ -1,0 +1,9 @@
+# P10 §3.4/§3.5: Mirror quotes and the two-jobs note under the simulation (display NOT fixed => '(None)').
+$ PYTHONPATH='.;C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18' LLM_MODE=mock MO_STORE=memory MO_PHOTO_STORE=local PYTHONUTF8=1 python 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/mirror_note.py'
+SIM_P10 ACTIVE: schema AuditQuote, merge_llm catalog-only, grounded gates off, mirror quotes None
+'Chỗ đi bộ trước thang máy tầng 3 tòa S1 có nhiều rác': job_quotes=[None] loc_quote=None signals=[] rule_signals=[]
+'Hành lang tầng 3 tòa S1 nhiều rác, cần vệ sinh.': job_quotes=[None] loc_quote=None signals=[] rule_signals=[]
+'Hình như có mùi khét ở hành lang tầng 3 tòa S1': job_quotes=[] loc_quote=None signals=[('S-01', 'Hình như có mùi khét')] rule_signals=[('S-01', 'Hình như có mùi khét')]
+two-jobs note (sim, display NOT fixed): 'Agent thấy hai việc: VE_SINH (None); KY_THUAT (None); không tách: điều kiện tách chưa đủ'
+EXIT=0
+

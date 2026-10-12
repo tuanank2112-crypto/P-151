@@ -1,0 +1,106 @@
+{
+  "at": "2026-10-07T06:13:38.906263+00:00",
+  "results": {
+    "pytest": {
+      "command": [
+        "C:\\P-151\\.python\\cpython-3.11.16-windows-x86_64-none\\python.exe",
+        "-m",
+        "pytest",
+        "planning\\09_2026-10-07_day05-labels\\deliverables\\tools\\tests",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "exit_code": 0,
+      "evidence": "planning\\09_2026-10-07_day05-labels\\evidence\\submission-review-20261007\\pytest.txt"
+    },
+    "ruff-check": {
+      "command": [
+        "C:\\P-151\\.python\\cpython-3.11.16-windows-x86_64-none\\python.exe",
+        "-m",
+        "ruff",
+        "check",
+        "planning\\09_2026-10-07_day05-labels\\deliverables\\tools"
+      ],
+      "exit_code": 0,
+      "evidence": "planning\\09_2026-10-07_day05-labels\\evidence\\submission-review-20261007\\ruff-check.txt"
+    },
+    "ruff-format": {
+      "command": [
+        "C:\\P-151\\.python\\cpython-3.11.16-windows-x86_64-none\\python.exe",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "planning\\09_2026-10-07_day05-labels\\deliverables\\tools"
+      ],
+      "exit_code": 0,
+      "evidence": "planning\\09_2026-10-07_day05-labels\\evidence\\submission-review-20261007\\ruff-format.txt"
+    },
+    "validate-backlog": {
+      "command": [
+        "C:\\P-151\\.python\\cpython-3.11.16-windows-x86_64-none\\python.exe",
+        "planning\\09_2026-10-07_day05-labels\\deliverables\\tools\\validate_day05.py",
+        "--backlog",
+        "planning\\09_2026-10-07_day05-labels\\deliverables\\backlog.json",
+        "--issues",
+        "planning/07_2026-10-04_online-acceptance/deliverables/issues.json"
+      ],
+      "exit_code": 0,
+      "evidence": "planning\\09_2026-10-07_day05-labels\\evidence\\submission-review-20261007\\validate-backlog.txt"
+    },
+    "validate-structure": {
+      "command": [
+        "C:\\P-151\\.python\\cpython-3.11.16-windows-x86_64-none\\python.exe",
+        "planning\\09_2026-10-07_day05-labels\\deliverables\\tools\\validate_day05.py",
+        "--data-dir",
+        "planning\\09_2026-10-07_day05-labels\\deliverables",
+        "--structure-only"
+      ],
+      "exit_code": 0,
+      "evidence": "planning\\09_2026-10-07_day05-labels\\evidence\\submission-review-20261007\\validate-structure.txt"
+    },
+    "validate-gates": {
+      "command": [
+        "C:\\P-151\\.python\\cpython-3.11.16-windows-x86_64-none\\python.exe",
+        "planning\\09_2026-10-07_day05-labels\\deliverables\\tools\\validate_day05.py",
+        "--data-dir",
+        "planning\\09_2026-10-07_day05-labels\\deliverables"
+      ],
+      "exit_code": 1,
+      "evidence": "planning\\09_2026-10-07_day05-labels\\evidence\\submission-review-20261007\\validate-gates.txt"
+    },
+    "baseline-develop": {
+      "command": [
+        "C:\\P-151\\.python\\cpython-3.11.16-windows-x86_64-none\\python.exe",
+        "planning\\09_2026-10-07_day05-labels\\deliverables\\tools\\run_day05_baseline.py",
+        "--data-dir",
+        "planning\\09_2026-10-07_day05-labels\\deliverables",
+        "--mode",
+        "rules",
+        "--split",
+        "develop",
+        "--output",
+        "planning\\09_2026-10-07_day05-labels\\evidence\\submission-review-20261007\\baseline-results.json"
+      ],
+      "exit_code": 2,
+      "evidence": "planning\\09_2026-10-07_day05-labels\\evidence\\submission-review-20261007\\baseline-develop.txt"
+    },
+    "baseline-heldout": {
+      "command": [
+        "C:\\P-151\\.python\\cpython-3.11.16-windows-x86_64-none\\python.exe",
+        "planning\\09_2026-10-07_day05-labels\\deliverables\\tools\\run_day05_baseline.py",
+        "--data-dir",
+        "planning\\09_2026-10-07_day05-labels\\deliverables",
+        "--mode",
+        "rules",
+        "--split",
+        "held-out",
+        "--output",
+        "planning\\09_2026-10-07_day05-labels\\evidence\\submission-review-20261007\\baseline-heldout-results.json"
+      ],
+      "exit_code": 2,
+      "evidence": "planning\\09_2026-10-07_day05-labels\\evidence\\submission-review-20261007\\baseline-heldout.txt"
+    }
+  }
+}

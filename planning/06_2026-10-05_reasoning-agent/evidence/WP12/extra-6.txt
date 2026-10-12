@@ -1,0 +1,39 @@
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/extra_undo_split.py
+=== rules
+R SIM-TKT-0001 VERIFYING priority MEDIUM dup_count 0 raise_at 3
+ round 1: split SIM-TKT-0002 -> child SIM-TKT-0003 VERIFYING/DUPLICATE -> SIM-TKT-0001; R.dup_count=1
+   after undo_split: child MERGED; R.dup_count=1 (real suspects pointing at R: 0); R.priority=MEDIUM reason='PRI-M1: đèn tại khu vực khác (Phòng rác)'
+ round 2: split SIM-TKT-0004 -> child SIM-TKT-0005 VERIFYING/DUPLICATE -> SIM-TKT-0001; R.dup_count=2
+   after undo_split: child MERGED; R.dup_count=2 (real suspects pointing at R: 0); R.priority=MEDIUM reason='PRI-M1: đèn tại khu vực khác (Phòng rác)'
+ round 3: split SIM-TKT-0006 -> child SIM-TKT-0007 VERIFYING/DUPLICATE -> SIM-TKT-0001; R.dup_count=3
+   after undo_split: child MERGED; R.dup_count=3 (real suspects pointing at R: 0); R.priority=HIGH reason='PRI-M1: đèn tại khu vực khác (Phòng rác); PRI-U1: 3 phản ánh trùng ≥ 3 (+1 mức)'
+FAIL [rules] (a) R.duplicate_count back to 0 after every child was taken back (got 3)
+FAIL [rules] (a) no PRI-U1 raise with zero duplicates
+ (b) child after undo_merge: ROUTED/None root.merged_children=['SIM-TKT-0009']
+ (b) second undo_split -> ValidationError: 1 validation error for Ticket
+FAIL [rules] (b) second undo_split is not a ValidationError
+ (c) SIM-TKT-0012 VERIFYING/DUPLICATE -> SIM-TKT-0011; child SIM-TKT-0011 count=1
+ (c) child SIM-TKT-0011 back to ROUTED: duplicate_count=1, suspects=0
+FAIL [rules] (c) count of a ticket re-opened by T09 matches its suspects (1 vs 0)
+ (d) SIM-TKT-0015 MERGED into SIM-TKT-0014; undo_split(SIM-TKT-0014) accepted: MERGED into SIM-TKT-0013
+FAIL [rules] (d) undo_split refuses a child that has open merged children
+=== mirror
+R SIM-TKT-0001 VERIFYING priority MEDIUM dup_count 0 raise_at 3
+ round 1: split SIM-TKT-0002 -> child SIM-TKT-0003 VERIFYING/DUPLICATE -> SIM-TKT-0001; R.dup_count=1
+   after undo_split: child MERGED; R.dup_count=1 (real suspects pointing at R: 0); R.priority=MEDIUM reason='Agent: PRI-M1: đèn tại khu vực khác (Phòng rác)'
+ round 2: split SIM-TKT-0004 -> child SIM-TKT-0005 VERIFYING/DUPLICATE -> SIM-TKT-0001; R.dup_count=2
+   after undo_split: child MERGED; R.dup_count=2 (real suspects pointing at R: 0); R.priority=MEDIUM reason='Agent: PRI-M1: đèn tại khu vực khác (Phòng rác)'
+ round 3: split SIM-TKT-0006 -> child SIM-TKT-0007 VERIFYING/DUPLICATE -> SIM-TKT-0001; R.dup_count=3
+   after undo_split: child MERGED; R.dup_count=3 (real suspects pointing at R: 0); R.priority=HIGH reason='Agent: PRI-M1: đèn tại khu vực khác (Phòng rác); PRI-U1: 3 phản ánh trùng ≥ 3 (+1 mức)'
+FAIL [mirror] (a) R.duplicate_count back to 0 after every child was taken back (got 3)
+FAIL [mirror] (a) no PRI-U1 raise with zero duplicates
+ (b) child after undo_merge: ROUTED/None root.merged_children=['SIM-TKT-0009']
+ (b) second undo_split -> ValidationError: 1 validation error for Ticket
+FAIL [mirror] (b) second undo_split is not a ValidationError
+ (c) SIM-TKT-0012 VERIFYING/DUPLICATE -> SIM-TKT-0011; child SIM-TKT-0011 count=1
+ (c) child SIM-TKT-0011 back to ROUTED: duplicate_count=1, suspects=0
+FAIL [mirror] (c) count of a ticket re-opened by T09 matches its suspects (1 vs 0)
+ (d) SIM-TKT-0015 MERGED into SIM-TKT-0014; undo_split(SIM-TKT-0014) accepted: MERGED into SIM-TKT-0013
+FAIL [mirror] (d) undo_split refuses a child that has open merged children
+RESULT problems=10
+EXIT=1

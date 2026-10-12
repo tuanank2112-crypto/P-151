@@ -1,0 +1,6 @@
+$ ruff check src tests
+All checks passed!
+EXIT=0
+$ ruff format --check (files changed after 091bc45)
+2 files already formatted
+EXIT=0

@@ -1,0 +1,884 @@
+.FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF                    [100%]
+================================== FAILURES ===================================
+_ test_s1_portal_account_logs_in_with_123456[cudan-SIM-ACTOR-RESIDENT-01-Nguy\u1ec5n Minh Anh-RESIDENT-None] _
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8ABA6D0>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8ABE980>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8ACF5D0>)
+username = 'cudan', actor_id = 'SIM-ACTOR-RESIDENT-01'
+display = 'Nguyễn Minh Anh', role = 'RESIDENT', department = None
+
+    @pytest.mark.parametrize(("username", "actor_id", "display", "role", "department"), PORTAL_ACCOUNTS)
+    def test_s1_portal_account_logs_in_with_123456(env, username, actor_id, display, role, department):
+        response = env.client.post("/api/v1/auth/login", json={"username": username, "password": PORTAL_PASSWORD})
+>       assert response.status_code == 200, response.text
+E       AssertionError: {"detail":"Tên đăng nhập hoặc mật khẩu không đúng"}
+E       assert 401 == 200
+E        +  where 401 = <Response [401 Unauthorized]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext.py:197: AssertionError
+_ test_s1_portal_account_logs_in_with_123456[tiepnhan-SIM-ACTOR-BPTN-01-Ph\u1ea1m Thu Trang-BPTN-None] _
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8B22A90>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8ABFEC0>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8A36390>)
+username = 'tiepnhan', actor_id = 'SIM-ACTOR-BPTN-01'
+display = 'Phạm Thu Trang', role = 'BPTN', department = None
+
+    @pytest.mark.parametrize(("username", "actor_id", "display", "role", "department"), PORTAL_ACCOUNTS)
+    def test_s1_portal_account_logs_in_with_123456(env, username, actor_id, display, role, department):
+        response = env.client.post("/api/v1/auth/login", json={"username": username, "password": PORTAL_PASSWORD})
+>       assert response.status_code == 200, response.text
+E       AssertionError: {"detail":"Tên đăng nhập hoặc mật khẩu không đúng"}
+E       assert 401 == 200
+E        +  where 401 = <Response [401 Unauthorized]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext.py:197: AssertionError
+_ test_s1_portal_account_logs_in_with_123456[quanly-SIM-ACTOR-BQL-01-V\u0169 Ho\xe0ng Long-BQL-None] _
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8B07A90>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8ABEC00>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8B070D0>)
+username = 'quanly', actor_id = 'SIM-ACTOR-BQL-01', display = 'Vũ Hoàng Long'
+role = 'BQL', department = None
+
+    @pytest.mark.parametrize(("username", "actor_id", "display", "role", "department"), PORTAL_ACCOUNTS)
+    def test_s1_portal_account_logs_in_with_123456(env, username, actor_id, display, role, department):
+        response = env.client.post("/api/v1/auth/login", json={"username": username, "password": PORTAL_PASSWORD})
+>       assert response.status_code == 200, response.text
+E       AssertionError: {"detail":"Tên đăng nhập hoặc mật khẩu không đúng"}
+E       assert 401 == 200
+E        +  where 401 = <Response [401 Unauthorized]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext.py:197: AssertionError
+_ test_s1_portal_account_logs_in_with_123456[vesinh-SIM-ACTOR-DEPT-CLN-01-Ng\xf4 Th\u1ecb Lan-DEPARTMENT-DEPT_CLEANING] _
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8B88690>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8D8AA20>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8B883D0>)
+username = 'vesinh', actor_id = 'SIM-ACTOR-DEPT-CLN-01', display = 'Ngô Thị Lan'
+role = 'DEPARTMENT', department = 'DEPT_CLEANING'
+
+    @pytest.mark.parametrize(("username", "actor_id", "display", "role", "department"), PORTAL_ACCOUNTS)
+    def test_s1_portal_account_logs_in_with_123456(env, username, actor_id, display, role, department):
+        response = env.client.post("/api/v1/auth/login", json={"username": username, "password": PORTAL_PASSWORD})
+>       assert response.status_code == 200, response.text
+E       AssertionError: {"detail":"Tên đăng nhập hoặc mật khẩu không đúng"}
+E       assert 401 == 200
+E        +  where 401 = <Response [401 Unauthorized]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext.py:197: AssertionError
+_ test_s1_portal_account_logs_in_with_123456[kythuat-SIM-ACTOR-DEPT-TEC-01-\u0110\u1eb7ng V\u0103n H\xf9ng-DEPARTMENT-DEPT_TECHNICAL] _
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8BA54D0>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8ABF240>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8BA4A50>)
+username = 'kythuat', actor_id = 'SIM-ACTOR-DEPT-TEC-01'
+display = 'Đặng Văn Hùng', role = 'DEPARTMENT', department = 'DEPT_TECHNICAL'
+
+    @pytest.mark.parametrize(("username", "actor_id", "display", "role", "department"), PORTAL_ACCOUNTS)
+    def test_s1_portal_account_logs_in_with_123456(env, username, actor_id, display, role, department):
+        response = env.client.post("/api/v1/auth/login", json={"username": username, "password": PORTAL_PASSWORD})
+>       assert response.status_code == 200, response.text
+E       AssertionError: {"detail":"Tên đăng nhập hoặc mật khẩu không đúng"}
+E       assert 401 == 200
+E        +  where 401 = <Response [401 Unauthorized]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext.py:197: AssertionError
+_ test_s1_portal_account_logs_in_with_123456[kho-SIM-ACTOR-WAREHOUSE-01-Tr\u1ea7n Minh Kho-WAREHOUSE-None] _
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8BA52D0>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8D8B240>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8BA59D0>)
+username = 'kho', actor_id = 'SIM-ACTOR-WAREHOUSE-01', display = 'Trần Minh Kho'
+role = 'WAREHOUSE', department = None
+
+    @pytest.mark.parametrize(("username", "actor_id", "display", "role", "department"), PORTAL_ACCOUNTS)
+    def test_s1_portal_account_logs_in_with_123456(env, username, actor_id, display, role, department):
+        response = env.client.post("/api/v1/auth/login", json={"username": username, "password": PORTAL_PASSWORD})
+>       assert response.status_code == 200, response.text
+E       AssertionError: {"detail":"Tên đăng nhập hoặc mật khẩu không đúng"}
+E       assert 401 == 200
+E        +  where 401 = <Response [401 Unauthorized]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext.py:197: AssertionError
+_______________________ test_s1_warehouse_account_role ________________________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8BF06D0>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8D8B920>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8BA6510>)
+
+    def test_s1_warehouse_account_role(env):
+        body = env.client.post("/api/v1/auth/login", json={"username": "kho", "password": PORTAL_PASSWORD}).json()
+>       assert body["user"]["role"] == "WAREHOUSE"
+               ^^^^^^^^^^^^
+E       KeyError: 'user'
+
+tests\test_maintenance\test_portal_backend_ext.py:207: KeyError
+__________________ test_s1_resident_profile_on_login_and_me ___________________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8B75010>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8D89D00>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8B748D0>)
+
+    def test_s1_resident_profile_on_login_and_me(env):
+        login = env.client.post("/api/v1/auth/login", json={"username": "cudan", "password": PORTAL_PASSWORD}).json()
+>       assert login["user"]["profile"] == {"tower": "S2.05", "floor": "12", "apartment": "1208"}
+               ^^^^^^^^^^^^^
+E       KeyError: 'user'
+
+tests\test_maintenance\test_portal_backend_ext.py:212: KeyError
+____________________ test_s1_legacy_accounts_are_untouched ____________________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8C25050>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8D8AC00>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8C24590>)
+
+    def test_s1_legacy_accounts_are_untouched(env):
+        accounts = {a.username: a for a in load_accounts().accounts}
+>       assert len(accounts) == 14
+E       AssertionError: assert 8 == 14
+E        +  where 8 = len({'cudan01': Account(username='cudan01', display_name='Cư dân Nguyễn Văn Hùng (S2.05-1402)', actor_id='SIM-ACTOR-RESIDE...sha256$200000$26fbf7fe4d93ce393a7d59ca1b021979$e9df60103e2baa704870f01bdc43f618fd83ff8249e07791efbb6023e8256376'), ...})
+
+tests\test_maintenance\test_portal_backend_ext.py:224: AssertionError
+_____________ test_s1_account_model_still_forbids_unknown_fields ______________
+
+    def test_s1_account_model_still_forbids_unknown_fields():
+        base = {"username": "abc", "display_name": "A", "actor_id": "SIM-ACTOR-BQL-01", "password_hash": "x"}
+>       assert Account.model_validate(base).profile is None
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext.py:236: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = Account(username='abc', display_name='A', actor_id='SIM-ACTOR-BQL-01', password_hash='x')
+item = 'profile'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'Account' object has no attribute 'profile'
+
+D:\P151\.venv\Lib\site-packages\pydantic\main.py:1042: AttributeError
+_____________ test_s1_demo_accounts_list_has_the_portal_accounts ______________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8C40510>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8D8BCE0>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8C40910>)
+
+    def test_s1_demo_accounts_list_has_the_portal_accounts(env):
+        body = env.client.get("/api/v1/auth/demo-accounts").json()
+>       assert {a["username"] for a in body["accounts"]} >= {name for name, *_ in PORTAL_ACCOUNTS}
+E       AssertionError: assert {'bptn01', 'b...thuat01', ...} >= {'cudan', 'kh...an', 'vesinh'}
+E         
+E         Extra items in the right set:
+E         'quanly'
+E         'tiepnhan'
+E         'kythuat'
+E         'vesinh'
+E         'cudan'
+E         'kho'
+
+tests\test_maintenance\test_portal_backend_ext.py:246: AssertionError
+_________ test_s2_to_bql_marks_the_blocker_escalated_and_notifies_bql _________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8CB8690>
+
+    def test_s2_to_bql_marks_the_blocker_escalated_and_notifies_bql(eng):
+        ticket_id = oos_ticket(eng)
+>       case = eng.send_to_bql(ticket_id, BPTN, note="Phí dịch vụ, BQL xử lý")
+               ^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'send_to_bql'
+
+tests\test_maintenance\test_portal_backend_ext.py:255: AttributeError
+____________ test_s2_full_path_to_bql_then_handled_closes_normally ____________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8D0C250>
+
+    def test_s2_full_path_to_bql_then_handled_closes_normally(eng):
+        ticket_id = oos_ticket(eng)
+>       eng.send_to_bql(ticket_id, BPTN, note="Chuyển BQL")
+        ^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'send_to_bql'
+
+tests\test_maintenance\test_portal_backend_ext.py:271: AttributeError
+_________________ test_s2_handled_works_before_escalation_too _________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8D41810>
+
+    def test_s2_handled_works_before_escalation_too(eng):
+        ticket_id = oos_ticket(eng)
+>       case = eng.bql_handle_out_of_scope(ticket_id, BQL, note="BQL xử lý ngay")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'bql_handle_out_of_scope'
+
+tests\test_maintenance\test_portal_backend_ext.py:288: AttributeError
+_______ test_s2_return_to_bptn_clears_escalation_and_recomputes_timers ________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D629E7D0>
+clock = <tests.test_maintenance.helpers.Clock object at 0x00000246D8A5B790>
+
+    def test_s2_return_to_bptn_clears_escalation_and_recomputes_timers(eng, clock):
+        ticket_id = oos_ticket(eng)
+>       eng.send_to_bql(ticket_id, BPTN, note="Chuyển BQL")
+        ^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'send_to_bql'
+
+tests\test_maintenance\test_portal_backend_ext.py:294: AttributeError
+_______________________ test_s2_to_bql_twice_is_invalid _______________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8A366D0>
+
+    def test_s2_to_bql_twice_is_invalid(eng):  # mutation m1 target
+        ticket_id = oos_ticket(eng)
+>       eng.send_to_bql(ticket_id, BPTN, note="Chuyển BQL")
+        ^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'send_to_bql'
+
+tests\test_maintenance\test_portal_backend_ext.py:313: AttributeError
+________________ test_s2_return_without_escalation_is_invalid _________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8ACE150>
+
+    def test_s2_return_without_escalation_is_invalid(eng):
+        ticket_id = oos_ticket(eng)
+        with pytest.raises(InvalidTransitionError):
+>           eng.bql_return_to_bptn(ticket_id, BQL, note="Chưa leo thang mà trả về")
+            ^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'MaintenanceEngine' object has no attribute 'bql_return_to_bptn'
+
+tests\test_maintenance\test_portal_backend_ext.py:325: AttributeError
+________________ test_s2_handled_needs_an_out_of_scope_blocker ________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8B8A650>
+
+    def test_s2_handled_needs_an_out_of_scope_blocker(eng):  # mutation m2 target
+        routed = routed_ticket(eng)
+        emergency = eng.receive(SMOKE_REPORT, resident_id=RESIDENT).ticket.ticket_id
+        assert eng.get(emergency).ticket.blocker.code == "EMERGENCY_PENDING_BQL"
+        for ticket_id in (routed, emergency):
+            before = eng.get(ticket_id)
+            with pytest.raises(InvalidTransitionError):
+>               eng.bql_handle_out_of_scope(ticket_id, BQL, note="Không phải ngoài phạm vi")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: 'MaintenanceEngine' object has no attribute 'bql_handle_out_of_scope'
+
+tests\test_maintenance\test_portal_backend_ext.py:336: AttributeError
+_________________ test_s2_wrong_roles_are_denied_and_audited __________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8C93290>
+
+    def test_s2_wrong_roles_are_denied_and_audited(eng):
+        ticket_id = oos_ticket(eng)
+>       eng.send_to_bql(ticket_id, BPTN, note="Chuyển BQL")
+        ^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'send_to_bql'
+
+tests\test_maintenance\test_portal_backend_ext.py:346: AttributeError
+____________________ test_s2_blank_note_is_a_guard_error[] ____________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8B89C10>
+note = ''
+
+    @pytest.mark.parametrize("note", ["", "   ", None])
+    def test_s2_blank_note_is_a_guard_error(eng, note):
+        ticket_id = oos_ticket(eng)
+        with pytest.raises(GuardError) as err:
+>           eng.send_to_bql(ticket_id, BPTN, note=note)
+            ^^^^^^^^^^^^^^^
+E           AttributeError: 'MaintenanceEngine' object has no attribute 'send_to_bql'
+
+tests\test_maintenance\test_portal_backend_ext.py:366: AttributeError
+__________________ test_s2_blank_note_is_a_guard_error[   ] ___________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8D43550>
+note = '   '
+
+    @pytest.mark.parametrize("note", ["", "   ", None])
+    def test_s2_blank_note_is_a_guard_error(eng, note):
+        ticket_id = oos_ticket(eng)
+        with pytest.raises(GuardError) as err:
+>           eng.send_to_bql(ticket_id, BPTN, note=note)
+            ^^^^^^^^^^^^^^^
+E           AttributeError: 'MaintenanceEngine' object has no attribute 'send_to_bql'
+
+tests\test_maintenance\test_portal_backend_ext.py:366: AttributeError
+__________________ test_s2_blank_note_is_a_guard_error[None] __________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8C78950>
+note = None
+
+    @pytest.mark.parametrize("note", ["", "   ", None])
+    def test_s2_blank_note_is_a_guard_error(eng, note):
+        ticket_id = oos_ticket(eng)
+        with pytest.raises(GuardError) as err:
+>           eng.send_to_bql(ticket_id, BPTN, note=note)
+            ^^^^^^^^^^^^^^^
+E           AttributeError: 'MaintenanceEngine' object has no attribute 'send_to_bql'
+
+tests\test_maintenance\test_portal_backend_ext.py:366: AttributeError
+_____________________ test_s2_unknown_ticket_is_not_found _____________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8BA77D0>
+
+    def test_s2_unknown_ticket_is_not_found(eng):
+        with pytest.raises(NotFoundError):
+>           eng.send_to_bql("SIM-TKT-9999", BPTN, note="x")
+            ^^^^^^^^^^^^^^^
+E           AttributeError: 'MaintenanceEngine' object has no attribute 'send_to_bql'
+
+tests\test_maintenance\test_portal_backend_ext.py:378: AttributeError
+______________ test_s2_escalated_oos_is_found_by_the_bql_filter _______________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8B88610>
+
+    def test_s2_escalated_oos_is_found_by_the_bql_filter(eng):
+        from src.maintenance.views import bql_rows
+    
+        ticket_id = oos_ticket(eng)
+        assert [r.ticket_id for r in bql_rows(eng, eng.clock(), blocker_code="OUT_OF_SCOPE", escalated=True)] == []
+>       eng.send_to_bql(ticket_id, BPTN, note="Chuyển BQL")
+        ^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'send_to_bql'
+
+tests\test_maintenance\test_portal_backend_ext.py:388: AttributeError
+____________________________ test_s2_api_full_path ____________________________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8BE7E50>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8E471A0>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8BE7D10>)
+
+    def test_s2_api_full_path(env):
+        ticket_id = oos_ticket(env.engine)
+        c, tok = env.client, env.tok
+        path = f"/api/v1/mo/tickets/{ticket_id}/to-bql"
+>       assert c.post(path, json={"note": "Chuyển BQL"}, headers=tok("quanly")).status_code == 403
+                                                                 ^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext.py:400: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+username = 'quanly', password = '123456'
+
+    def tok(username: str, password: str = PORTAL_PASSWORD) -> dict:
+        if username not in cache:
+            response = client.post("/api/v1/auth/login", json={"username": username, "password": password})
+>           assert response.status_code == 200, response.text
+E           AssertionError: {"detail":"Tên đăng nhập hoặc mật khẩu không đúng"}
+E           assert 401 == 200
+E            +  where 401 = <Response [401 Unauthorized]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext.py:135: AssertionError
+___________ test_s2_api_blank_and_missing_note_is_409_guard_failed ____________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8CADA50>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8E46DE0>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8CAF190>)
+
+    def test_s2_api_blank_and_missing_note_is_409_guard_failed(env):
+        ticket_id = oos_ticket(env.engine)
+        path = f"/api/v1/mo/tickets/{ticket_id}/to-bql"
+        for body in ({"note": ""}, {"note": "   "}, {}):
+>           response = env.client.post(path, json=body, headers=env.tok("tiepnhan"))
+                                                                ^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext.py:438: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+username = 'tiepnhan', password = '123456'
+
+    def tok(username: str, password: str = PORTAL_PASSWORD) -> dict:
+        if username not in cache:
+            response = client.post("/api/v1/auth/login", json={"username": username, "password": password})
+>           assert response.status_code == 200, response.text
+E           AssertionError: {"detail":"Tên đăng nhập hoặc mật khẩu không đúng"}
+E           assert 401 == 200
+E            +  where 401 = <Response [401 Unauthorized]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext.py:135: AssertionError
+_______________________ test_s2_api_unknown_ticket_404 ________________________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8CCB110>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8D8AA20>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8CC9750>)
+
+    def test_s2_api_unknown_ticket_404(env):
+>       response = env.client.post("/api/v1/mo/tickets/SIM-TKT-9999/to-bql", json={"note": "x"}, headers=env.tok("tiepnhan"))
+                                                                                                         ^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext.py:445: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+username = 'tiepnhan', password = '123456'
+
+    def tok(username: str, password: str = PORTAL_PASSWORD) -> dict:
+        if username not in cache:
+            response = client.post("/api/v1/auth/login", json={"username": username, "password": password})
+>           assert response.status_code == 200, response.text
+E           AssertionError: {"detail":"Tên đăng nhập hoặc mật khẩu không đúng"}
+E           assert 401 == 200
+E            +  where 401 = <Response [401 Unauthorized]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext.py:135: AssertionError
+_________________________ test_s2_api_requires_login __________________________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8CF9750>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8F7ED40>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8CF8410>)
+
+    def test_s2_api_requires_login(env):
+        ticket_id = oos_ticket(env.engine)
+>       assert env.client.post(f"/api/v1/mo/tickets/{ticket_id}/to-bql", json={"note": "x"}).status_code == 401
+E       AssertionError: assert 404 == 401
+E        +  where 404 = <Response [404 Not Found]>.status_code
+E        +    where <Response [404 Not Found]> = post('/api/v1/mo/tickets/SIM-TKT-0001/to-bql', json={'note': 'x'})
+E        +      where post = <starlette.testclient.TestClient object at 0x00000246D8CF9790>.post
+E        +        where <starlette.testclient.TestClient object at 0x00000246D8CF9790> = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8CF9750>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8F7ED40>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8CF8410>).client
+
+tests\test_maintenance\test_portal_backend_ext.py:451: AssertionError
+______________________ test_s3_create_item_by_warehouse _______________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8BB44D0>
+
+    def test_s3_create_item_by_warehouse(eng):
+>       item = eng.create_material_item(WAREHOUSE, f"  {PVC}  ", " cái ")
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:459: AttributeError
+______________ test_s3_department_may_create_other_roles_may_not ______________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8BDD110>
+
+    def test_s3_department_may_create_other_roles_may_not(eng):
+>       assert eng.create_material_item(TEC, "Keo dán ống", "tuýp").created_by == TEC
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:476: AttributeError
+___________ test_s3_invalid_name_or_unit_is_a_guard_error[a-c\xe1i] ___________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8B5B910>
+name = 'a', unit = 'cái'
+
+    @pytest.mark.parametrize(
+        ("name", "unit"),
+        [("a", "cái"), ("  b ", "cái"), ("x" * 81, "cái"), (PVC, ""), (PVC, "   "), (PVC, "u" * 21), ("Ống\x00nước", "cái")],
+    )
+    def test_s3_invalid_name_or_unit_is_a_guard_error(eng, name, unit):
+        with pytest.raises(GuardError):
+>           eng.create_material_item(WAREHOUSE, name, unit)
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:489: AttributeError
+_________ test_s3_invalid_name_or_unit_is_a_guard_error[  b -c\xe1i] __________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8C10C50>
+name = '  b ', unit = 'cái'
+
+    @pytest.mark.parametrize(
+        ("name", "unit"),
+        [("a", "cái"), ("  b ", "cái"), ("x" * 81, "cái"), (PVC, ""), (PVC, "   "), (PVC, "u" * 21), ("Ống\x00nước", "cái")],
+    )
+    def test_s3_invalid_name_or_unit_is_a_guard_error(eng, name, unit):
+        with pytest.raises(GuardError):
+>           eng.create_material_item(WAREHOUSE, name, unit)
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:489: AttributeError
+_ test_s3_invalid_name_or_unit_is_a_guard_error[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-c\xe1i] _
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8AC1FD0>
+name = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+unit = 'cái'
+
+    @pytest.mark.parametrize(
+        ("name", "unit"),
+        [("a", "cái"), ("  b ", "cái"), ("x" * 81, "cái"), (PVC, ""), (PVC, "   "), (PVC, "u" * 21), ("Ống\x00nước", "cái")],
+    )
+    def test_s3_invalid_name_or_unit_is_a_guard_error(eng, name, unit):
+        with pytest.raises(GuardError):
+>           eng.create_material_item(WAREHOUSE, name, unit)
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:489: AttributeError
+_ test_s3_invalid_name_or_unit_is_a_guard_error[\u1ed0ng n\u01b0\u1edbc PVC 21-] _
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8B2AE90>
+name = 'Ống nước PVC 21', unit = ''
+
+    @pytest.mark.parametrize(
+        ("name", "unit"),
+        [("a", "cái"), ("  b ", "cái"), ("x" * 81, "cái"), (PVC, ""), (PVC, "   "), (PVC, "u" * 21), ("Ống\x00nước", "cái")],
+    )
+    def test_s3_invalid_name_or_unit_is_a_guard_error(eng, name, unit):
+        with pytest.raises(GuardError):
+>           eng.create_material_item(WAREHOUSE, name, unit)
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:489: AttributeError
+_ test_s3_invalid_name_or_unit_is_a_guard_error[\u1ed0ng n\u01b0\u1edbc PVC 21-   ] _
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8D14110>
+name = 'Ống nước PVC 21', unit = '   '
+
+    @pytest.mark.parametrize(
+        ("name", "unit"),
+        [("a", "cái"), ("  b ", "cái"), ("x" * 81, "cái"), (PVC, ""), (PVC, "   "), (PVC, "u" * 21), ("Ống\x00nước", "cái")],
+    )
+    def test_s3_invalid_name_or_unit_is_a_guard_error(eng, name, unit):
+        with pytest.raises(GuardError):
+>           eng.create_material_item(WAREHOUSE, name, unit)
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:489: AttributeError
+_ test_s3_invalid_name_or_unit_is_a_guard_error[\u1ed0ng n\u01b0\u1edbc PVC 21-uuuuuuuuuuuuuuuuuuuuu] _
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8B68410>
+name = 'Ống nước PVC 21', unit = 'uuuuuuuuuuuuuuuuuuuuu'
+
+    @pytest.mark.parametrize(
+        ("name", "unit"),
+        [("a", "cái"), ("  b ", "cái"), ("x" * 81, "cái"), (PVC, ""), (PVC, "   "), (PVC, "u" * 21), ("Ống\x00nước", "cái")],
+    )
+    def test_s3_invalid_name_or_unit_is_a_guard_error(eng, name, unit):
+        with pytest.raises(GuardError):
+>           eng.create_material_item(WAREHOUSE, name, unit)
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:489: AttributeError
+_ test_s3_invalid_name_or_unit_is_a_guard_error[\u1ed0ng\x00n\u01b0\u1edbc-c\xe1i] _
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8CDF0D0>
+name = 'Ống\x00nước', unit = 'cái'
+
+    @pytest.mark.parametrize(
+        ("name", "unit"),
+        [("a", "cái"), ("  b ", "cái"), ("x" * 81, "cái"), (PVC, ""), (PVC, "   "), (PVC, "u" * 21), ("Ống\x00nước", "cái")],
+    )
+    def test_s3_invalid_name_or_unit_is_a_guard_error(eng, name, unit):
+        with pytest.raises(GuardError):
+>           eng.create_material_item(WAREHOUSE, name, unit)
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:489: AttributeError
+_________________ test_s3_name_and_unit_limits_are_inclusive __________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8C41250>
+
+    def test_s3_name_and_unit_limits_are_inclusive(eng):
+>       assert eng.create_material_item(WAREHOUSE, "ab", "u").item_name == "ab"
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:495: AttributeError
+____________________ test_s3_same_name_gives_the_same_code ____________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8BCEC90>
+
+    def test_s3_same_name_gives_the_same_code(eng):  # mutation m3 target
+>       first = eng.create_material_item(WAREHOUSE, PVC, "cái")
+                ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:500: AttributeError
+___________ test_s3_name_of_a_catalog_item_returns_the_catalog_code ___________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8B77910>
+
+    def test_s3_name_of_a_catalog_item_returns_the_catalog_code(eng):
+        catalog_item = eng.catalog.materials[0]
+>       got = eng.create_material_item(WAREHOUSE, f" {catalog_item.item_name.upper()} ", "cái")
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:510: AttributeError
+__________ test_s3_decomposed_unicode_name_matches_the_composed_one ___________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8C2E610>
+
+    def test_s3_decomposed_unicode_name_matches_the_composed_one(eng):
+        import unicodedata
+    
+>       first = eng.create_material_item(WAREHOUSE, unicodedata.normalize("NFC", PVC), "cái")
+                ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:518: AttributeError
+_________ test_s3_ticket_waits_for_the_new_item_then_runs_after_stock _________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8ACAE50>
+
+    def test_s3_ticket_waits_for_the_new_item_then_runs_after_stock(eng):
+>       item = eng.create_material_item(WAREHOUSE, PVC, "cái")
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:524: AttributeError
+______________ test_s3_department_can_plan_the_new_item_on_site _______________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8AC27D0>
+
+    def test_s3_department_can_plan_the_new_item_on_site(eng):
+>       item = eng.create_material_item(TEC, PVC, "cái")
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:544: AttributeError
+_________________ test_s3_receive_stock_accepts_the_new_item __________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8BB6E90>
+
+    def test_s3_receive_stock_accepts_the_new_item(eng):
+>       item = eng.create_material_item(WAREHOUSE, PVC, "cái")
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:560: AttributeError
+______________ test_s3_reset_forgets_new_items_with_their_stock _______________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8B16F50>
+
+    def test_s3_reset_forgets_new_items_with_their_stock(eng):
+>       item = eng.create_material_item(WAREHOUSE, PVC, "cái")
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'create_material_item'
+
+tests\test_maintenance\test_portal_backend_ext.py:568: AttributeError
+___________________ test_s3_memory_repository_item_contract ___________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000246D8BF0BD0>
+
+    def test_s3_memory_repository_item_contract(eng):
+        from datetime import datetime
+    
+>       from src.maintenance.store.base import MaterialItem
+E       ImportError: cannot import name 'MaterialItem' from 'src.maintenance.store.base' (D:\P151-portal-fe\src\maintenance\store\base.py)
+
+tests\test_maintenance\test_portal_backend_ext.py:580: ImportError
+___________________ test_s3_flag_defaults_follow_the_store ____________________
+
+    def test_s3_flag_defaults_follow_the_store():
+        memory = get_settings().model_copy(update={"mo_store": "memory", "mo_custom_materials": None})
+        postgres = get_settings().model_copy(update={"mo_store": "postgres", "mo_custom_materials": None})
+>       assert memory.custom_materials_enabled() is True
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext.py:592: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = Settings(app_name='AI20K Agent', app_env='development', app_port=8000, app_host='0.0.0.0', log_level='INFO', cors_orig...seconds=3600.0, database_url='postgresql+psycopg2://p151:p151@localhost:5432/p151', chroma_persist_dir='./data/chroma')
+item = 'custom_materials_enabled'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'Settings' object has no attribute 'custom_materials_enabled'
+
+D:\P151\.venv\Lib\site-packages\pydantic\main.py:1042: AttributeError
+__________________ test_s3_api_create_list_stock_and_receive __________________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8D96550>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8F48900>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8D94E50>)
+
+    def test_s3_api_create_list_stock_and_receive(env):
+        c, tok = env.client, env.tok
+>       catalog_before = c.get("/api/v1/mo/catalog", headers=tok("kho")).json()
+                                                             ^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext.py:600: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+username = 'kho', password = '123456'
+
+    def tok(username: str, password: str = PORTAL_PASSWORD) -> dict:
+        if username not in cache:
+            response = client.post("/api/v1/auth/login", json={"username": username, "password": password})
+>           assert response.status_code == 200, response.text
+E           AssertionError: {"detail":"Tên đăng nhập hoặc mật khẩu không đúng"}
+E           assert 401 == 200
+E            +  where 401 = <Response [401 Unauthorized]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext.py:135: AssertionError
+______________________ test_s3_api_roles_and_validation _______________________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8AC1410>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8F48D60>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8AC3510>)
+
+    def test_s3_api_roles_and_validation(env):
+        c, tok = env.client, env.tok
+        for who in ("tiepnhan", "quanly", "cudan"):
+>           response = c.post("/api/v1/mo/warehouse/items", json={"item_name": PVC, "unit": "cái"}, headers=tok(who))
+                                                                                                            ^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext.py:624: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+username = 'tiepnhan', password = '123456'
+
+    def tok(username: str, password: str = PORTAL_PASSWORD) -> dict:
+        if username not in cache:
+            response = client.post("/api/v1/auth/login", json={"username": username, "password": password})
+>           assert response.status_code == 200, response.text
+E           AssertionError: {"detail":"Tên đăng nhập hoặc mật khẩu không đúng"}
+E           assert 401 == 200
+E            +  where 401 = <Response [401 Unauthorized]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext.py:135: AssertionError
+___________ test_s3_flag_off_blocks_the_route_and_hides_the_button ____________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8ACAE50>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8F487C0>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8ACB050>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000246D8D33510>
+
+    def test_s3_flag_off_blocks_the_route_and_hides_the_button(env, monkeypatch):
+        set_flag(monkeypatch, False)
+        response = env.client.post(
+>           "/api/v1/mo/warehouse/items", json={"item_name": PVC, "unit": "cái"}, headers=env.tok("kho")
+                                                                                          ^^^^^^^^^^^^^^
+        )
+
+tests\test_maintenance\test_portal_backend_ext.py:641: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+username = 'kho', password = '123456'
+
+    def tok(username: str, password: str = PORTAL_PASSWORD) -> dict:
+        if username not in cache:
+            response = client.post("/api/v1/auth/login", json={"username": username, "password": password})
+>           assert response.status_code == 200, response.text
+E           AssertionError: {"detail":"Tên đăng nhập hoặc mật khẩu không đúng"}
+E           assert 401 == 200
+E            +  where 401 = <Response [401 Unauthorized]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext.py:135: AssertionError
+_________ test_s4_api_department_reports_wrong_department_after_start _________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8DC4910>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8F4B740>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8C43790>)
+
+    def test_s4_api_department_reports_wrong_department_after_start(env):
+        ticket_id = in_progress_ticket(env.engine)
+        c, tok = env.client, env.tok
+        path = f"/api/v1/mo/tickets/{ticket_id}/wrong-department"
+>       assert c.post(path, json={"note": "Không phải việc kỹ thuật"}, headers=tok("vesinh")).status_code == 403
+                                                                               ^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext.py:661: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+username = 'vesinh', password = '123456'
+
+    def tok(username: str, password: str = PORTAL_PASSWORD) -> dict:
+        if username not in cache:
+            response = client.post("/api/v1/auth/login", json={"username": username, "password": password})
+>           assert response.status_code == 200, response.text
+E           AssertionError: {"detail":"Tên đăng nhập hoặc mật khẩu không đúng"}
+E           assert 401 == 200
+E            +  where 401 = <Response [401 Unauthorized]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext.py:135: AssertionError
+_____________________ test_s4_api_bql_keeps_or_sends_back _____________________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000246D8B41F90>, client=<starlette.testclient...ion env.<locals>.tok at 0x00000246D8F49760>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000246D8B41390>)
+
+    def test_s4_api_bql_keeps_or_sends_back(env):
+        c, tok = env.client, env.tok
+        keep_id = in_progress_ticket(env.engine)
+>       c.post(f"/api/v1/mo/tickets/{keep_id}/wrong-department", json={"note": "Sai phòng"}, headers=tok("kythuat"))
+                                                                                                     ^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext.py:676: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+username = 'kythuat', password = '123456'
+
+    def tok(username: str, password: str = PORTAL_PASSWORD) -> dict:
+        if username not in cache:
+            response = client.post("/api/v1/auth/login", json={"username": username, "password": password})
+>           assert response.status_code == 200, response.text
+E           AssertionError: {"detail":"Tên đăng nhập hoặc mật khẩu không đúng"}
+E           assert 401 == 200
+E            +  where 401 = <Response [401 Unauthorized]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext.py:135: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s1_portal_account_logs_in_with_123456[cudan-SIM-ACTOR-RESIDENT-01-Nguy\u1ec5n Minh Anh-RESIDENT-None]
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s1_portal_account_logs_in_with_123456[tiepnhan-SIM-ACTOR-BPTN-01-Ph\u1ea1m Thu Trang-BPTN-None]
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s1_portal_account_logs_in_with_123456[quanly-SIM-ACTOR-BQL-01-V\u0169 Ho\xe0ng Long-BQL-None]
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s1_portal_account_logs_in_with_123456[vesinh-SIM-ACTOR-DEPT-CLN-01-Ng\xf4 Th\u1ecb Lan-DEPARTMENT-DEPT_CLEANING]
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s1_portal_account_logs_in_with_123456[kythuat-SIM-ACTOR-DEPT-TEC-01-\u0110\u1eb7ng V\u0103n H\xf9ng-DEPARTMENT-DEPT_TECHNICAL]
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s1_portal_account_logs_in_with_123456[kho-SIM-ACTOR-WAREHOUSE-01-Tr\u1ea7n Minh Kho-WAREHOUSE-None]
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s1_warehouse_account_role
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s1_resident_profile_on_login_and_me
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s1_legacy_accounts_are_untouched
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s1_account_model_still_forbids_unknown_fields
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s1_demo_accounts_list_has_the_portal_accounts
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_to_bql_marks_the_blocker_escalated_and_notifies_bql
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_full_path_to_bql_then_handled_closes_normally
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_handled_works_before_escalation_too
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_return_to_bptn_clears_escalation_and_recomputes_timers
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_to_bql_twice_is_invalid
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_return_without_escalation_is_invalid
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_handled_needs_an_out_of_scope_blocker
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_wrong_roles_are_denied_and_audited
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_blank_note_is_a_guard_error[]
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_blank_note_is_a_guard_error[   ]
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_blank_note_is_a_guard_error[None]
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_unknown_ticket_is_not_found
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_escalated_oos_is_found_by_the_bql_filter
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_api_full_path
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_api_blank_and_missing_note_is_409_guard_failed
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_api_unknown_ticket_404
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_api_requires_login
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_create_item_by_warehouse
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_department_may_create_other_roles_may_not
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_invalid_name_or_unit_is_a_guard_error[a-c\xe1i]
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_invalid_name_or_unit_is_a_guard_error[  b -c\xe1i]
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_invalid_name_or_unit_is_a_guard_error[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-c\xe1i]
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_invalid_name_or_unit_is_a_guard_error[\u1ed0ng n\u01b0\u1edbc PVC 21-]
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_invalid_name_or_unit_is_a_guard_error[\u1ed0ng n\u01b0\u1edbc PVC 21-   ]
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_invalid_name_or_unit_is_a_guard_error[\u1ed0ng n\u01b0\u1edbc PVC 21-uuuuuuuuuuuuuuuuuuuuu]
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_invalid_name_or_unit_is_a_guard_error[\u1ed0ng\x00n\u01b0\u1edbc-c\xe1i]
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_name_and_unit_limits_are_inclusive
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_same_name_gives_the_same_code
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_name_of_a_catalog_item_returns_the_catalog_code
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_decomposed_unicode_name_matches_the_composed_one
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_ticket_waits_for_the_new_item_then_runs_after_stock
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_department_can_plan_the_new_item_on_site
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_receive_stock_accepts_the_new_item
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_reset_forgets_new_items_with_their_stock
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_memory_repository_item_contract
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_flag_defaults_follow_the_store
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_api_create_list_stock_and_receive
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_api_roles_and_validation
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s3_flag_off_blocks_the_route_and_hides_the_button
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s4_api_department_reports_wrong_department_after_start
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s4_api_bql_keeps_or_sends_back
+52 failed, 1 passed in 5.32s
+EXIT=1

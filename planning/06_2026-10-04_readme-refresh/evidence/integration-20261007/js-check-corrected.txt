@@ -1,0 +1,8 @@
+node --check src/web/app.js
+EXIT_CODE=0
+node --check src/web/js/components/agent_proposal.js
+EXIT_CODE=0
+node --check src/web/js/components/ai_logs_view.js
+EXIT_CODE=0
+node --check src/web/js/dark_mode.js
+EXIT_CODE=0

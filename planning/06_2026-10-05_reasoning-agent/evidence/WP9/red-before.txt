@@ -1,0 +1,549 @@
+FFF.FFFFFFFFFFFF                                                         [100%]
+================================== FAILURES ===================================
+_______________ test_d01_first_return_counts_without_escalating _______________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A492AA90>
+
+    def test_d01_first_return_counts_without_escalating(fresh):
+        tid = report(fresh, SWEEP)
+        case = fresh.return_wrong_department(tid, CLN, note="Không phải việc của phòng vệ sinh")
+        assert case.ticket.status == "VERIFYING" and case.ticket.blocker.code == "WRONG_DEPT"
+        assert case.ticket.blocker.owner_role == "BPTN" and case.ticket.blocker.resume_step == 6
+>       assert case.ticket.wrong_department_return_count == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).wrong_department_return_count
+E        +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_department.py:54: AssertionError
+___________________ test_d02_second_return_escalates_to_bql ___________________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A4625910>
+
+    def test_d02_second_return_escalates_to_bql(fresh):
+        tid = report(fresh, SWEEP)
+        fresh.return_wrong_department(tid, CLN, note="Lần một")
+        fresh.bptn_resolve(tid, BPTN, department="DEPT_TECHNICAL", note="Giao phòng kỹ thuật")
+        case = fresh.return_wrong_department(tid, TEC, note="Lần hai")
+>       assert case.ticket.status == "VERIFYING" and case.ticket.wrong_department_return_count == 2
+E       AssertionError: assert (<TicketStatus...: 'VERIFYING'> == 'VERIFYING'
+E         
+E           VERIFYING and 0 == 2)
+E        +  where 0 = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).wrong_department_return_count
+E        +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_department.py:64: AssertionError
+__________________ test_d02b_threshold_comes_from_sla_config __________________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A4939B90>
+
+    def test_d02b_threshold_comes_from_sla_config(fresh):
+        sla = fresh.catalog.sla_config.model_copy(update={"wrong_dept_return": WrongDeptReturnSla(escalate_at_count=1)})
+        fresh.catalog = fresh.catalog.model_copy(update={"sla_config": sla})  # never hardcoded 2
+        tid = report(fresh, SWEEP)
+        case = fresh.return_wrong_department(tid, CLN, note="Lần một")
+>       assert case.ticket.blocker.escalated is True and len(escalations(case)) == 1
+E       AssertionError: assert (False is True)
+E        +  where False = Blocker(code=<ReasonCode.WRONG_DEPT: 'WRONG_DEPT'>, owner_role=<BlockerOwner.BPTN: 'BPTN'>, since=datetime.datetime(20...ác minh lại phòng ban phụ trách.', internal_note='Lần một', related_ticket_id=None, resolved_at=None, resolved_by=None).escalated
+E        +    where Blocker(code=<ReasonCode.WRONG_DEPT: 'WRONG_DEPT'>, owner_role=<BlockerOwner.BPTN: 'BPTN'>, since=datetime.datetime(20...ác minh lại phòng ban phụ trách.', internal_note='Lần một', related_ticket_id=None, resolved_at=None, resolved_by=None) = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).blocker
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_department.py:76: AssertionError
+________ test_d04_report_after_start_keeps_the_execution_data[memory] _________
+
+store_engine = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A4857F50>
+
+    def test_d04_report_after_start_keeps_the_execution_data(store_engine):
+        engine = store_engine
+        tid = started(engine)
+        before = engine.get(tid)
+>       case = engine.report_wrong_department(tid, CLN, note="Khu này thuộc phòng kỹ thuật")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_department.py:90: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\maintenance\coordination\department.py:47: in report_wrong_department
+    return self.transition(
+src\maintenance\engine.py:1693: in transition
+    return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1750: in _transition
+    return self._mutate(
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+src\maintenance\engine.py:1748: in op
+    self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
+src\maintenance\engine.py:2430: in _human_transition
+    self._t16_report_wrong_department(work, actor_id, role, now, note=note)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A4857F50>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+actor_id = 'SIM-ACTOR-DEPT-CLN-01', role = <ActorRole.DEPARTMENT: 'DEPARTMENT'>
+now = datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+note = 'Khu này thuộc phòng kỹ thuật'
+
+    def _t16_report_wrong_department(
+        self, work: Case, actor_id: str, role: ActorRole, now: datetime, *, note: str | None
+    ) -> None:
+>       raise NotImplementedError("plan 06 WP9: _t16_report_wrong_department")
+E       NotImplementedError: plan 06 WP9: _t16_report_wrong_department
+
+src\maintenance\coordination\department.py:36: NotImplementedError
+___________________________ test_d04b_report_guards ___________________________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A47FF610>
+
+    def test_d04b_report_guards(fresh):
+        tid = report(fresh, SWEEP)
+        with pytest.raises(InvalidTransitionError):  # ROUTED, not accepted: T15 is the way
+            fresh.report_wrong_department(tid, CLN, note="x")
+        fresh.accept(tid, CLN)
+        with pytest.raises(GuardError):
+>           fresh.report_wrong_department(tid, CLN, note=" ")
+
+tests\test_maintenance\test_p1_department.py:112: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\maintenance\coordination\department.py:47: in report_wrong_department
+    return self.transition(
+src\maintenance\engine.py:1693: in transition
+    return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1750: in _transition
+    return self._mutate(
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+src\maintenance\engine.py:1748: in op
+    self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
+src\maintenance\engine.py:2430: in _human_transition
+    self._t16_report_wrong_department(work, actor_id, role, now, note=note)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A47FF610>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+actor_id = 'SIM-ACTOR-DEPT-CLN-01', role = <ActorRole.DEPARTMENT: 'DEPARTMENT'>
+now = datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+note = ' '
+
+    def _t16_report_wrong_department(
+        self, work: Case, actor_id: str, role: ActorRole, now: datetime, *, note: str | None
+    ) -> None:
+>       raise NotImplementedError("plan 06 WP9: _t16_report_wrong_department")
+E       NotImplementedError: plan 06 WP9: _t16_report_wrong_department
+
+src\maintenance\coordination\department.py:36: NotImplementedError
+________________ test_d05_bptn_cannot_touch_a_ticket_bql_owns _________________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A45C2F50>
+
+    def test_d05_bptn_cannot_touch_a_ticket_bql_owns(fresh):
+>       tid = reported(fresh)
+              ^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_department.py:119: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_maintenance\test_p1_department.py:41: in reported
+    engine.report_wrong_department(tid, CLN, note="Khu này thuộc phòng kỹ thuật")
+src\maintenance\coordination\department.py:47: in report_wrong_department
+    return self.transition(
+src\maintenance\engine.py:1693: in transition
+    return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1750: in _transition
+    return self._mutate(
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+src\maintenance\engine.py:1748: in op
+    self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
+src\maintenance\engine.py:2430: in _human_transition
+    self._t16_report_wrong_department(work, actor_id, role, now, note=note)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A45C2F50>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+actor_id = 'SIM-ACTOR-DEPT-CLN-01', role = <ActorRole.DEPARTMENT: 'DEPARTMENT'>
+now = datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+note = 'Khu này thuộc phòng kỹ thuật'
+
+    def _t16_report_wrong_department(
+        self, work: Case, actor_id: str, role: ActorRole, now: datetime, *, note: str | None
+    ) -> None:
+>       raise NotImplementedError("plan 06 WP9: _t16_report_wrong_department")
+E       NotImplementedError: plan 06 WP9: _t16_report_wrong_department
+
+src\maintenance\coordination\department.py:36: NotImplementedError
+____________ test_d06_keep_returns_to_in_progress_with_data_intact ____________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A4768D10>
+
+    def test_d06_keep_returns_to_in_progress_with_data_intact(fresh):
+>       tid = reported(fresh)
+              ^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_department.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_maintenance\test_p1_department.py:41: in reported
+    engine.report_wrong_department(tid, CLN, note="Khu này thuộc phòng kỹ thuật")
+src\maintenance\coordination\department.py:47: in report_wrong_department
+    return self.transition(
+src\maintenance\engine.py:1693: in transition
+    return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1750: in _transition
+    return self._mutate(
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+src\maintenance\engine.py:1748: in op
+    self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
+src\maintenance\engine.py:2430: in _human_transition
+    self._t16_report_wrong_department(work, actor_id, role, now, note=note)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A4768D10>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+actor_id = 'SIM-ACTOR-DEPT-CLN-01', role = <ActorRole.DEPARTMENT: 'DEPARTMENT'>
+now = datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+note = 'Khu này thuộc phòng kỹ thuật'
+
+    def _t16_report_wrong_department(
+        self, work: Case, actor_id: str, role: ActorRole, now: datetime, *, note: str | None
+    ) -> None:
+>       raise NotImplementedError("plan 06 WP9: _t16_report_wrong_department")
+E       NotImplementedError: plan 06 WP9: _t16_report_wrong_department
+
+src\maintenance\coordination\department.py:36: NotImplementedError
+_____________________ test_d06b_keep_only_after_a_report ______________________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A4845610>
+
+    def test_d06b_keep_only_after_a_report(fresh):
+        tid = started(fresh, work=False)
+        with pytest.raises(InvalidTransitionError):  # IN_PROGRESS: not a VERIFYING ticket
+>           fresh.bql_wrong_department(tid, BQL, decision="KEEP", note="x")
+
+tests\test_maintenance\test_p1_department.py:149: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A4845610>
+ticket_id = 'SIM-TKT-0001', actor_id = 'SIM-ACTOR-BQL-01', decision = 'KEEP'
+note = 'x'
+
+    def bql_wrong_department(
+        self, ticket_id: str, actor_id: str, *, decision: Literal["KEEP", "TO_BPTN"], note: str
+    ) -> Case:
+>       raise NotImplementedError("plan 06 WP9: bql_wrong_department")
+E       NotImplementedError: plan 06 WP9: bql_wrong_department
+
+src\maintenance\coordination\department.py:54: NotImplementedError
+_________ test_d07_to_bptn_takes_a_snapshot_and_resets_the_execution __________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A48293D0>
+
+    def test_d07_to_bptn_takes_a_snapshot_and_resets_the_execution(fresh):
+>       tid = reported(fresh)
+              ^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_department.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_maintenance\test_p1_department.py:41: in reported
+    engine.report_wrong_department(tid, CLN, note="Khu này thuộc phòng kỹ thuật")
+src\maintenance\coordination\department.py:47: in report_wrong_department
+    return self.transition(
+src\maintenance\engine.py:1693: in transition
+    return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1750: in _transition
+    return self._mutate(
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+src\maintenance\engine.py:1748: in op
+    self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
+src\maintenance\engine.py:2430: in _human_transition
+    self._t16_report_wrong_department(work, actor_id, role, now, note=note)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A48293D0>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+actor_id = 'SIM-ACTOR-DEPT-CLN-01', role = <ActorRole.DEPARTMENT: 'DEPARTMENT'>
+now = datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+note = 'Khu này thuộc phòng kỹ thuật'
+
+    def _t16_report_wrong_department(
+        self, work: Case, actor_id: str, role: ActorRole, now: datetime, *, note: str | None
+    ) -> None:
+>       raise NotImplementedError("plan 06 WP9: _t16_report_wrong_department")
+E       NotImplementedError: plan 06 WP9: _t16_report_wrong_department
+
+src\maintenance\coordination\department.py:36: NotImplementedError
+__________________________ test_d07b_to_bptn_guards ___________________________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A45E0A50>
+
+    def test_d07b_to_bptn_guards(fresh):
+>       tid = reported(fresh)
+              ^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_department.py:181: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_maintenance\test_p1_department.py:41: in reported
+    engine.report_wrong_department(tid, CLN, note="Khu này thuộc phòng kỹ thuật")
+src\maintenance\coordination\department.py:47: in report_wrong_department
+    return self.transition(
+src\maintenance\engine.py:1693: in transition
+    return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1750: in _transition
+    return self._mutate(
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+src\maintenance\engine.py:1748: in op
+    self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
+src\maintenance\engine.py:2430: in _human_transition
+    self._t16_report_wrong_department(work, actor_id, role, now, note=note)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A45E0A50>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+actor_id = 'SIM-ACTOR-DEPT-CLN-01', role = <ActorRole.DEPARTMENT: 'DEPARTMENT'>
+now = datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+note = 'Khu này thuộc phòng kỹ thuật'
+
+    def _t16_report_wrong_department(
+        self, work: Case, actor_id: str, role: ActorRole, now: datetime, *, note: str | None
+    ) -> None:
+>       raise NotImplementedError("plan 06 WP9: _t16_report_wrong_department")
+E       NotImplementedError: plan 06 WP9: _t16_report_wrong_department
+
+src\maintenance\coordination\department.py:36: NotImplementedError
+___ test_d08_after_to_bptn_bptn_picks_another_category_and_a_new_department ___
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A46BFD90>
+
+    def test_d08_after_to_bptn_bptn_picks_another_category_and_a_new_department(fresh):
+>       tid = reported(fresh)
+              ^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_department.py:191: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_maintenance\test_p1_department.py:41: in reported
+    engine.report_wrong_department(tid, CLN, note="Khu này thuộc phòng kỹ thuật")
+src\maintenance\coordination\department.py:47: in report_wrong_department
+    return self.transition(
+src\maintenance\engine.py:1693: in transition
+    return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1750: in _transition
+    return self._mutate(
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+src\maintenance\engine.py:1748: in op
+    self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
+src\maintenance\engine.py:2430: in _human_transition
+    self._t16_report_wrong_department(work, actor_id, role, now, note=note)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A46BFD90>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+actor_id = 'SIM-ACTOR-DEPT-CLN-01', role = <ActorRole.DEPARTMENT: 'DEPARTMENT'>
+now = datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+note = 'Khu này thuộc phòng kỹ thuật'
+
+    def _t16_report_wrong_department(
+        self, work: Case, actor_id: str, role: ActorRole, now: datetime, *, note: str | None
+    ) -> None:
+>       raise NotImplementedError("plan 06 WP9: _t16_report_wrong_department")
+E       NotImplementedError: plan 06 WP9: _t16_report_wrong_department
+
+src\maintenance\coordination\department.py:36: NotImplementedError
+______________ test_d08b_same_item_code_carries_issued_and_used _______________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A490FBD0>
+
+    def test_d08b_same_item_code_carries_issued_and_used(fresh):
+>       tid = reported(fresh)
+              ^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_department.py:203: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_maintenance\test_p1_department.py:41: in reported
+    engine.report_wrong_department(tid, CLN, note="Khu này thuộc phòng kỹ thuật")
+src\maintenance\coordination\department.py:47: in report_wrong_department
+    return self.transition(
+src\maintenance\engine.py:1693: in transition
+    return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1750: in _transition
+    return self._mutate(
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+src\maintenance\engine.py:1748: in op
+    self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
+src\maintenance\engine.py:2430: in _human_transition
+    self._t16_report_wrong_department(work, actor_id, role, now, note=note)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A490FBD0>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+actor_id = 'SIM-ACTOR-DEPT-CLN-01', role = <ActorRole.DEPARTMENT: 'DEPARTMENT'>
+now = datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+note = 'Khu này thuộc phòng kỹ thuật'
+
+    def _t16_report_wrong_department(
+        self, work: Case, actor_id: str, role: ActorRole, now: datetime, *, note: str | None
+    ) -> None:
+>       raise NotImplementedError("plan 06 WP9: _t16_report_wrong_department")
+E       NotImplementedError: plan 06 WP9: _t16_report_wrong_department
+
+src\maintenance\coordination\department.py:36: NotImplementedError
+________ test_d08c_carry_over_skips_unknown_codes_and_untouched_lines _________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A468C8D0>
+
+    def test_d08c_carry_over_skips_unknown_codes_and_untouched_lines(fresh):
+>       tid = reported(fresh)
+              ^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_department.py:216: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_maintenance\test_p1_department.py:41: in reported
+    engine.report_wrong_department(tid, CLN, note="Khu này thuộc phòng kỹ thuật")
+src\maintenance\coordination\department.py:47: in report_wrong_department
+    return self.transition(
+src\maintenance\engine.py:1693: in transition
+    return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1750: in _transition
+    return self._mutate(
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+src\maintenance\engine.py:1748: in op
+    self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
+src\maintenance\engine.py:2430: in _human_transition
+    self._t16_report_wrong_department(work, actor_id, role, now, note=note)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A468C8D0>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+actor_id = 'SIM-ACTOR-DEPT-CLN-01', role = <ActorRole.DEPARTMENT: 'DEPARTMENT'>
+now = datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+note = 'Khu này thuộc phòng kỹ thuật'
+
+    def _t16_report_wrong_department(
+        self, work: Case, actor_id: str, role: ActorRole, now: datetime, *, note: str | None
+    ) -> None:
+>       raise NotImplementedError("plan 06 WP9: _t16_report_wrong_department")
+E       NotImplementedError: plan 06 WP9: _t16_report_wrong_department
+
+src\maintenance\coordination\department.py:36: NotImplementedError
+_________________ test_d09_unknown_decision_is_409_before_404 _________________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A47012D0>
+
+    def test_d09_unknown_decision_is_409_before_404(fresh):
+        with pytest.raises(GuardError):
+>           fresh.bql_wrong_department("SIM-TKT-9999", BQL, decision="X", note="x")
+
+tests\test_maintenance\test_p1_department.py:229: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A47012D0>
+ticket_id = 'SIM-TKT-9999', actor_id = 'SIM-ACTOR-BQL-01', decision = 'X'
+note = 'x'
+
+    def bql_wrong_department(
+        self, ticket_id: str, actor_id: str, *, decision: Literal["KEEP", "TO_BPTN"], note: str
+    ) -> Case:
+>       raise NotImplementedError("plan 06 WP9: bql_wrong_department")
+E       NotImplementedError: plan 06 WP9: bql_wrong_department
+
+src\maintenance\coordination\department.py:54: NotImplementedError
+___________ test_d10_report_on_a_rework_ticket_replaces_the_blocker ___________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A469FED0>
+
+    def test_d10_report_on_a_rework_ticket_replaces_the_blocker(fresh):
+        tid = report(fresh, SWEEP)
+        to_ready(fresh, tid)
+        case = fresh.rework(tid, BQL, note="Còn bẩn")
+        assert case.ticket.blocker.code == "REWORK" and case.ticket.rework_count == 1
+        round_start = case.evidence_round_start
+>       case = fresh.report_wrong_department(tid, CLN, note="Thực ra thuộc phòng kỹ thuật")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_department.py:242: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\maintenance\coordination\department.py:47: in report_wrong_department
+    return self.transition(
+src\maintenance\engine.py:1693: in transition
+    return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1750: in _transition
+    return self._mutate(
+src\maintenance\engine.py:1788: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:1824: in _mutate_locked
+    op(work, now)
+src\maintenance\engine.py:1748: in op
+    self._human_transition(work, to, actor_id, role, now, note=note, eta=eta, cancel_reason=cancel_reason)
+src\maintenance\engine.py:2430: in _human_transition
+    self._t16_report_wrong_department(work, actor_id, role, now, note=note)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x00000204A469FED0>
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...rsion='1.1', schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None)
+actor_id = 'SIM-ACTOR-DEPT-CLN-01', role = <ActorRole.DEPARTMENT: 'DEPARTMENT'>
+now = datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200)))
+note = 'Thực ra thuộc phòng kỹ thuật'
+
+    def _t16_report_wrong_department(
+        self, work: Case, actor_id: str, role: ActorRole, now: datetime, *, note: str | None
+    ) -> None:
+>       raise NotImplementedError("plan 06 WP9: _t16_report_wrong_department")
+E       NotImplementedError: plan 06 WP9: _t16_report_wrong_department
+
+src\maintenance\coordination\department.py:36: NotImplementedError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_department.py::test_d01_first_return_counts_without_escalating
+FAILED tests/test_maintenance/test_p1_department.py::test_d02_second_return_escalates_to_bql
+FAILED tests/test_maintenance/test_p1_department.py::test_d02b_threshold_comes_from_sla_config
+FAILED tests/test_maintenance/test_p1_department.py::test_d04_report_after_start_keeps_the_execution_data[memory]
+FAILED tests/test_maintenance/test_p1_department.py::test_d04b_report_guards
+FAILED tests/test_maintenance/test_p1_department.py::test_d05_bptn_cannot_touch_a_ticket_bql_owns
+FAILED tests/test_maintenance/test_p1_department.py::test_d06_keep_returns_to_in_progress_with_data_intact
+FAILED tests/test_maintenance/test_p1_department.py::test_d06b_keep_only_after_a_report
+FAILED tests/test_maintenance/test_p1_department.py::test_d07_to_bptn_takes_a_snapshot_and_resets_the_execution
+FAILED tests/test_maintenance/test_p1_department.py::test_d07b_to_bptn_guards
+FAILED tests/test_maintenance/test_p1_department.py::test_d08_after_to_bptn_bptn_picks_another_category_and_a_new_department
+FAILED tests/test_maintenance/test_p1_department.py::test_d08b_same_item_code_carries_issued_and_used
+FAILED tests/test_maintenance/test_p1_department.py::test_d08c_carry_over_skips_unknown_codes_and_untouched_lines
+FAILED tests/test_maintenance/test_p1_department.py::test_d09_unknown_decision_is_409_before_404
+FAILED tests/test_maintenance/test_p1_department.py::test_d10_report_on_a_rework_ticket_replaces_the_blocker
+15 failed, 1 passed, 1 deselected in 3.14s
+EXIT=1

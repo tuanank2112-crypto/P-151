@@ -1,0 +1,30 @@
+handoffs/H01_regression.md lines=34
+handoffs/H02_backend.md lines=34
+handoffs/H03_clients.md lines=34
+handoffs/H04_adversarial.md lines=34
+handoffs/H05_docs_release.md lines=34
+plan.md lines=75
+specs/00-ARCHITECTURE.md lines=39
+specs/01-CONTRACTS.md lines=73
+specs/OPERATIONS.md lines=34
+specs/SPEC-P01-backend.md lines=34
+specs/SPEC-P02-clients.md lines=35
+specs/TESTING-ACCEPTANCE.md lines=57
+git diff --check exit=0
+
+warning: in the working copy of 'seed/maintenance_cr03/tickets.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'seed/maintenance_v1/tickets.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/api/routers/maintenance.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/maintenance/engine.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/index.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/bptn.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/bql.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/dept.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/kho.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/main.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/photo.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/resident.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/js/staff.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/mobile/sw.js', LF will be replaced by CRLF the next time Git touches it
+
+planning validation PASS

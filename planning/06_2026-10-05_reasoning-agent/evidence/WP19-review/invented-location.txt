@@ -1,0 +1,13 @@
+# sandbox copy of working tree (repo2)
+$ PYTHONPATH=".;planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes" LLM_MODE=mock MO_STORE=memory PYTHONUTF8=1 python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/extra_invented_location.py
+SIM-TKT-0001 'Đèn hành lang không sáng' agent_location=Tòa S2 / Tầng 7 / Hành lang -> ROUTED/None dept=DEPT_TECHNICAL asset=SIM-ASSET-LIGHT-005 disagreements=[('location', 'MINOR'), ('priority', 'MINOR')]
+    rules-only engine: NEED_INFO/MISSING_INFO
+SIM-TKT-0002 'Đèn không sáng, tối quá' agent_location=Tòa S1 / Tầng 3 / Hành lang -> VERIFYING/PENDING_REVIEW dept=None asset=None disagreements=[('category', 'SERIOUS'), ('location', 'MINOR'), ('priority', 'MINOR')]
+    rules-only engine: NEED_INFO/MISSING_INFO
+SIM-TKT-0003 'Hành lang nhiều rác' agent_location=Tòa S2 / Tầng 2 / Hành lang -> ROUTED/None dept=DEPT_CLEANING asset=None disagreements=[('location', 'MINOR')]
+    rules-only engine: NEED_INFO/MISSING_INFO
+SIM-TKT-0004 'Nhiều rác, đèn cũng không sáng' agent_location=Tòa S1 / Tầng 3 / Hành lang -> ROUTED/None dept=DEPT_CLEANING asset=None disagreements=[('category', 'SERIOUS'), ('location', 'MINOR'), ('priority', 'MINOR')]
+SIM-TKT-0005 'Nhiều rác, đèn cũng không sáng' agent_location=Tòa S1 / Tầng 3 / Hành lang -> VERIFYING/PENDING_REVIEW dept=None asset=None disagreements=[('category', 'SERIOUS'), ('location', 'MINOR'), ('priority', 'MINOR')]
+    rules-only engine: NEED_INFO/MISSING_INFO
+RESULT reports=4 tickets_routed_to_invented_place=3
+EXIT=1

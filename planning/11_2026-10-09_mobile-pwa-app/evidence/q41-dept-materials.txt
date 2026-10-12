@@ -1,0 +1,17 @@
+setup tec=SIM-TKT-0001 SIM-MAT-LAMP-01:1/null/null clnNone=SIM-TKT-0003 SIM-MAT-CLEAN-01:2/null/null clnKeep=SIM-TKT-0004 SIM-MAT-CLEAN-01:2/null/null
+PASS T1-one-block không còn khối "Vật tư thực tế khác đề xuất"
+PASS T1-prefill dòng 1 = SIM-MAT-LAMP-01
+PASS T1-options SIM-MAT-LAMP-01,SIM-MAT-LAMP-02,SIM-MAT-STARTER-01
+PASS T1-no-none Kỹ thuật không có "Không sử dụng vật tư"
+PASS T1-reason-required POST khi chưa có lý do: không
+PASS T1-saved SIM-MAT-STARTER-01:2/2/2
+PASS T1b-out-of-stock toast="Kho chỉ còn 0 SIM-MAT-LAMP-02, không xuất thêm được 2" lines=SIM-MAT-LAMP-02:2/null/null
+PASS T2-options SIM-MAT-BAG-01,SIM-MAT-CLEAN-01
+PASS T2-rows-hidden ẩn dòng vật tư khi không dùng
+PASS T2-saved lines=0 mode=N_A
+PASS T2-precheck điều kiện vật tư xanh
+PASS T2-still-ticked tải lại vẫn tick
+PASS T3-saved SIM-MAT-CLEAN-01:2/2/2 plan=false
+PASS T4-complete READY_FOR_REVIEW failing=-
+ALL PASS
+exit=0

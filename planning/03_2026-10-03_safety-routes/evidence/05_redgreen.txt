@@ -1,0 +1,14 @@
+## MUTANT: CONFIRM_SAFE calls emergency_close
+tests\test_maintenance\test_api_safety.py:122: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_api_safety.py::test_safety_confirm_safe_200
+FAILED tests/test_maintenance/test_api_safety.py::test_safety_missing_note_409_and_nothing_cleared[None-CONFIRM_SAFE]
+FAILED tests/test_maintenance/test_api_safety.py::test_safety_missing_note_409_and_nothing_cleared[-CONFIRM_SAFE]
+FAILED tests/test_maintenance/test_api_safety.py::test_safety_missing_note_409_and_nothing_cleared[   -CONFIRM_SAFE]
+FAILED tests/test_maintenance/test_api_safety.py::test_safety_bql_before_escalation_403
+5 failed, 35 passed in 1.63s
+EXIT=1
+## RESTORED
+........................................                                 [100%]
+40 passed in 1.27s
+EXIT=0

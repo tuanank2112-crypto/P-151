@@ -1,0 +1,6 @@
+1462 passed in 13.17s
+EXIT=0
+All checks passed!
+EXIT=0
+52 files already formatted
+EXIT=0

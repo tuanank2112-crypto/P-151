@@ -1,0 +1,930 @@
+{
+  "schema_version": "day05-1",
+  "created_at": "2026-10-07T05:38:55Z",
+  "records": [
+    {
+      "case_id": "D5-C-0001",
+      "text": "có trẻ con bị kẹt ở sảnh chung cư tòa S5",
+      "synthetic": true,
+      "family_id": "F-D4-11",
+      "phenomena": [
+        "trapped_person",
+        "vulnerable_person",
+        "original_d4_11"
+      ],
+      "source": {
+        "kind": "USER_REPORTED_SYNTHETIC",
+        "ref": "planning/07_2026-10-04_online-acceptance/deliverables/issues.json#D4-11",
+        "original_id": "D4-11"
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": "Câu gốc D4-11 giữ nguyên văn chữ thường; ca lỗi đã biết, chỉ ở DEVELOP/regression. S5 ngoài thí điểm, nội dung khẩn cấp vẫn rõ."
+    },
+    {
+      "case_id": "D5-C-0002",
+      "text": "có em bé bị mắc kẹt ở sảnh chung cư tòa S1",
+      "synthetic": true,
+      "family_id": "F-D4-11",
+      "phenomena": [
+        "trapped_person",
+        "vulnerable_person",
+        "wording_matrix"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": "Biến thể ma trận D4-11: S1 x 'bị mắc kẹt' x em bé."
+    },
+    {
+      "case_id": "D5-C-0003",
+      "text": "trẻ nhỏ bị kẹt ở sảnh chung cư tòa S1",
+      "synthetic": true,
+      "family_id": "F-D4-11",
+      "phenomena": [
+        "trapped_person",
+        "vulnerable_person",
+        "wording_matrix"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": "Biến thể ma trận D4-11: S1 x 'bị kẹt' x trẻ nhỏ."
+    },
+    {
+      "case_id": "D5-C-0004",
+      "text": "có trẻ nhỏ bị mắc kẹt ở sảnh chung cư tòa S5",
+      "synthetic": true,
+      "family_id": "F-D4-11",
+      "phenomena": [
+        "trapped_person",
+        "vulnerable_person",
+        "wording_matrix"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": "Biến thể ma trận D4-11: S5 x 'bị mắc kẹt' x trẻ nhỏ. S5 ngoài thí điểm."
+    },
+    {
+      "case_id": "D5-C-0005",
+      "text": "không ai bị kẹt, chỉ là đèn sảnh tòa S5 tắt",
+      "synthetic": true,
+      "family_id": "F-D4-11",
+      "phenomena": [
+        "negated_hazard",
+        "lighting_out",
+        "trap_word_control"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": "Control D4-11: phủ định hazard, nội dung thật là đèn sảnh tắt. S5 ngoài thí điểm, loại việc không suy UNKNOWN vì tòa."
+    },
+    {
+      "case_id": "D5-C-0006",
+      "text": "kẹt xe ở cổng chung cư tòa S5, không ai bị thương, chỉ là xe chưa ra được",
+      "synthetic": true,
+      "family_id": "F-D4-11",
+      "phenomena": [
+        "traffic_jam_not_trapped",
+        "out_of_scope",
+        "trap_word_control"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": "Control D4-11: 'kẹt xe' là ùn tắc giao thông, không phải người bị kẹt. S5 ngoài thí điểm."
+    },
+    {
+      "case_id": "D5-C-0007",
+      "text": "cửa sảnh tòa S1 bị kẹt, không mở được nhưng không có ai bên trong",
+      "synthetic": true,
+      "family_id": "F-D4-11",
+      "phenomena": [
+        "stuck_door_no_person",
+        "out_of_scope",
+        "trap_word_control"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": "Control D4-11: cửa kẹt nhưng không có người bên trong."
+    },
+    {
+      "case_id": "D5-C-0008",
+      "text": "chẳng có ai mắc kẹt đâu, chỉ là rác bị đổ tràn ra sảnh tòa S5",
+      "synthetic": true,
+      "family_id": "F-D4-11",
+      "phenomena": [
+        "negated_hazard",
+        "garbage_overflow",
+        "trap_word_control"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": "Control D4-11: phủ định hazard, nội dung thật là rác đổ ở sảnh. S5 ngoài thí điểm, loại việc không suy UNKNOWN vì tòa."
+    },
+    {
+      "case_id": "D5-C-0009",
+      "text": "hộp điện ở hành lang tầng 4 tòa S2 có mùi khét lẹt",
+      "synthetic": true,
+      "family_id": "F-01",
+      "phenomena": [
+        "burning_smell",
+        "electrical_box"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0010",
+      "text": "hanh lang tang 9 toa S1 co mui khet tu hop dien",
+      "synthetic": true,
+      "family_id": "F-01",
+      "phenomena": [
+        "burning_smell",
+        "no_diacritics",
+        "location_variant"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": "Biến thể vị trí/không dấu của F-01."
+    },
+    {
+      "case_id": "D5-C-0011",
+      "text": "ổ cắm ở sảnh tòa S1 vừa tóe lửa lúc tôi đi ngang",
+      "synthetic": true,
+      "family_id": "F-02",
+      "phenomena": [
+        "spark",
+        "outlet"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0012",
+      "text": "o cam hanh lang tang 3 toa S2 xet dien, toe lua tung dot",
+      "synthetic": true,
+      "family_id": "F-02",
+      "phenomena": [
+        "spark",
+        "outlet",
+        "no_diacritics",
+        "location_variant"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": "Biến thể vị trí/không dấu của F-02."
+    },
+    {
+      "case_id": "D5-C-0013",
+      "text": "ở hầm xe B1 tòa S1 có đoạn dây điện đứt lòi ra ngoài",
+      "synthetic": true,
+      "family_id": "F-03",
+      "phenomena": [
+        "exposed_wire",
+        "basement"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0014",
+      "text": "tủ điện sau cầu thang tòa S2 đang bốc khói",
+      "synthetic": true,
+      "family_id": "F-04",
+      "phenomena": [
+        "smoke",
+        "electrical_cabinet"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0015",
+      "text": "tu dien o cau thang toa S1 boc khoi den",
+      "synthetic": true,
+      "family_id": "F-04",
+      "phenomena": [
+        "smoke",
+        "electrical_cabinet",
+        "no_diacritics",
+        "location_variant"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": "Biến thể vị trí/không dấu của F-04."
+    },
+    {
+      "case_id": "D5-C-0016",
+      "text": "hộp điện tầng hầm B1 tòa S2 đang cháy, lửa bốc lên",
+      "synthetic": true,
+      "family_id": "F-05",
+      "phenomena": [
+        "fire",
+        "electrical_box"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0017",
+      "text": "đang cháy hộp điện ở hầm B2 tòa S1, lửa đỏ cả một góc",
+      "synthetic": true,
+      "family_id": "F-05",
+      "phenomena": [
+        "fire",
+        "electrical_box",
+        "location_variant",
+        "paraphrase"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": "Biến thể vị trí/diễn đạt của F-05."
+    },
+    {
+      "case_id": "D5-C-0018",
+      "text": "sàn sảnh tòa S1 có chất lạ bốc hơi, ai đi qua cũng buồn nôn",
+      "synthetic": true,
+      "family_id": "F-06",
+      "phenomena": [
+        "unknown_substance",
+        "hazard_sign",
+        "cleaning_context"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0019",
+      "text": "có cụ già ngã đập đầu ở cầu thang bộ tòa S2, nằm im không dậy",
+      "synthetic": true,
+      "family_id": "F-07",
+      "phenomena": [
+        "injury",
+        "vulnerable_person"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0020",
+      "text": "hôm qua ổ cắm ở sảnh tòa S1 có tia lửa, giờ thì hết rồi",
+      "synthetic": true,
+      "family_id": "F-02",
+      "phenomena": [
+        "spark",
+        "past_resolved"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0021",
+      "text": "nghe người ta nói dây điện bị hở ở hầm xe B1 tòa S1, tôi chưa kiểm tra",
+      "synthetic": true,
+      "family_id": "F-03",
+      "phenomena": [
+        "exposed_wire",
+        "hearsay"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0022",
+      "text": "hanh lang tang 2 toa S2 co vet chat la tren san, chua biet la gi",
+      "synthetic": true,
+      "family_id": "F-06",
+      "phenomena": [
+        "unknown_substance",
+        "no_diacritics",
+        "single_sign"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0023",
+      "text": "ngửi như có mùi khét ở phòng máy bơm cạnh sảnh tòa S2, tôi không chắc",
+      "synthetic": true,
+      "family_id": "F-08",
+      "phenomena": [
+        "burning_smell",
+        "hedge"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0024",
+      "text": "sáng nay quạt thông gió ở hầm B2 tòa S1 có mùi khét nhưng giờ đã hết",
+      "synthetic": true,
+      "family_id": "F-09",
+      "phenomena": [
+        "burning_smell",
+        "past_resolved"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0025",
+      "text": "đêm qua đèn hành lang tầng 7 tòa S2 bốc khói một lúc rồi tắt, giờ bình thường",
+      "synthetic": true,
+      "family_id": "F-10",
+      "phenomena": [
+        "smoke",
+        "past_resolved"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0026",
+      "text": "ổ cắm ở cầu thang bộ tòa S2 bị chập, mong kỹ thuật xem giúp",
+      "synthetic": true,
+      "family_id": "F-11",
+      "phenomena": [
+        "polysemy",
+        "outlet"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0027",
+      "text": "o cam tang 5 toa S1 bi chap, nho ky thuat xem",
+      "synthetic": true,
+      "family_id": "F-11",
+      "phenomena": [
+        "polysemy",
+        "no_diacritics",
+        "location_variant"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": "Biến thể vị trí/không dấu của F-11."
+    },
+    {
+      "case_id": "D5-C-0028",
+      "text": "cầu dao ở sảnh tòa S2 bị cháy",
+      "synthetic": true,
+      "family_id": "F-12",
+      "phenomena": [
+        "polysemy"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": "Cần review: 'cầu dao bị cháy' có thể là hỏng cháy cầu chì hoặc cháy thật."
+    },
+    {
+      "case_id": "D5-C-0029",
+      "text": "mùi cơm khét bay ra hành lang tầng 6 tòa S2",
+      "synthetic": true,
+      "family_id": "F-13",
+      "phenomena": [
+        "polysemy",
+        "khet_non_electric"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": "Cần review: 'cơm khét' có thể là NONE nếu người duyệt coi là mùi nấu ăn."
+    },
+    {
+      "case_id": "D5-C-0030",
+      "text": "nghe tiếng xèo xèo trong hộp điện ở hành lang tầng 8 tòa S1",
+      "synthetic": true,
+      "family_id": "F-14",
+      "phenomena": [
+        "abnormal_sound",
+        "sizzling",
+        "electrical_box"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0031",
+      "text": "tủ điện ở hầm B2 tòa S2 phát ra tiếng ù lớn suốt đêm",
+      "synthetic": true,
+      "family_id": "F-15",
+      "phenomena": [
+        "abnormal_sound",
+        "humming",
+        "electrical_cabinet",
+        "overnight"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0032",
+      "text": "có tiếng nổ lốp bốp phía trên trần sảnh tòa S2 mấy lần",
+      "synthetic": true,
+      "family_id": "F-16",
+      "phenomena": [
+        "abnormal_sound",
+        "popping",
+        "ceiling_source_unknown"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0033",
+      "text": "ở phòng rác tầng 1 tòa S1 ai vào cũng thấy buồn nôn",
+      "synthetic": true,
+      "family_id": "F-17",
+      "phenomena": [
+        "hazard_sign_alone",
+        "garbage_room"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0034",
+      "text": "sàn sảnh tòa S2 có vũng chất lỏng không rõ là gì",
+      "synthetic": true,
+      "family_id": "F-06",
+      "phenomena": [
+        "unknown_substance",
+        "single_sign"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "SAFETY_STOP",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0035",
+      "text": "hành lang tầng 4 tòa S2 không có mùi khét gì hết, chỉ là bóng đèn chập chờn",
+      "synthetic": true,
+      "family_id": "F-01",
+      "phenomena": [
+        "negated_hazard",
+        "lighting_flicker",
+        "benign_lamp_B01"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": "Phủ định của sự việc F-01."
+    },
+    {
+      "case_id": "D5-C-0036",
+      "text": "dây điện ở hầm xe B1 tòa S1 vẫn bọc kín, không hở chỗ nào, chỉ là đèn hầm không sáng",
+      "synthetic": true,
+      "family_id": "F-03",
+      "phenomena": [
+        "negated_hazard",
+        "lamp_out",
+        "basement"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": "Phủ định của sự việc F-03."
+    },
+    {
+      "case_id": "D5-C-0037",
+      "text": "rác đổ tràn ra ngoài thùng ở sảnh tòa S2 từ sáng",
+      "synthetic": true,
+      "family_id": "F-19",
+      "phenomena": [
+        "garbage_overflow"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0038",
+      "text": "thung rac o sanh toa S2 day ap, rac do ra ngoai, co mui hoi kho chiu",
+      "synthetic": true,
+      "family_id": "F-19",
+      "phenomena": [
+        "garbage_overflow",
+        "no_diacritics",
+        "paraphrase"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": "Diễn đạt không dấu của F-19; 'mùi hôi' là mùi rác thông thường, không phải dấu hiệu nguy hại. Cố ý dùng 'day ap' thay vì 'day tran' vì không dấu 'đầy tràn' trùng 'dây trần' (S-03)."
+    },
+    {
+      "case_id": "D5-C-0039",
+      "text": "sàn hành lang tầng 5 tòa S1 bị ướt, đi lại hơi trơn",
+      "synthetic": true,
+      "family_id": "F-20",
+      "phenomena": [
+        "wet_floor"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0040",
+      "text": "cầu thang bộ tòa S1 có nhìu rác lắm, ai dọn giùm với",
+      "synthetic": true,
+      "family_id": "F-21",
+      "phenomena": [
+        "garbage",
+        "typo"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": "Chính tả sai 'nhìu', 'giùm' giữ nguyên."
+    },
+    {
+      "case_id": "D5-C-0041",
+      "text": "hành lang có vết bẩn lâu ngày trên tường, nhờ dọn giúp",
+      "synthetic": true,
+      "family_id": "F-22",
+      "phenomena": [
+        "dirty_wall",
+        "missing_location"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": "Thiếu tầng/tòa nhưng có khu vực chung 'hành lang'."
+    },
+    {
+      "case_id": "D5-C-0042",
+      "text": "phòng rác tầng hầm tòa S2 chưa ai dọn mấy hôm nay",
+      "synthetic": true,
+      "family_id": "F-23",
+      "phenomena": [
+        "garbage_room",
+        "not_cleaned"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0043",
+      "text": "vỏ ly trà sữa vứt đầy ở thang bộ tầng 4",
+      "synthetic": true,
+      "family_id": "F-24",
+      "phenomena": [
+        "litter",
+        "missing_building"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": "Thiếu tòa nhưng có khu vực chung."
+    },
+    {
+      "case_id": "D5-C-0044",
+      "text": "bóng đèn hành lang tầng 3 tòa S1 bị cháy, tối quá",
+      "synthetic": true,
+      "family_id": "F-25",
+      "phenomena": [
+        "lamp_burnt_out",
+        "benign_lamp_B01"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": "Bẫy tiếng Việt: 'bóng đèn bị cháy' là hỏng bóng (B-01/Q22), không phải cháy thật."
+    },
+    {
+      "case_id": "D5-C-0045",
+      "text": "den hanh lang tang 2 toa S2 khong sang tu hom qua",
+      "synthetic": true,
+      "family_id": "F-26",
+      "phenomena": [
+        "lamp_out",
+        "no_diacritics"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": ""
+    },
+    {
+      "case_id": "D5-C-0046",
+      "text": "đèn hành lang tầng 2 tòa S2 không sáng từ hôm qua đến giờ",
+      "synthetic": true,
+      "family_id": "F-26",
+      "phenomena": [
+        "lamp_out",
+        "paraphrase"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": "Diễn đạt có dấu của F-26."
+    },
+    {
+      "case_id": "D5-C-0047",
+      "text": "đèn ngoài hành lang tối om, nhờ bên quản lý thay giúp",
+      "synthetic": true,
+      "family_id": "F-27",
+      "phenomena": [
+        "lamp_out",
+        "missing_location"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": "Thiếu tầng/tòa nhưng có khu vực chung 'hành lang'."
+    },
+    {
+      "case_id": "D5-C-0048",
+      "text": "tuyp đèn ở cầu thang bộ tòa S1 chập chờn từ tối qua, nhìn mỏi mắt",
+      "synthetic": true,
+      "family_id": "F-28",
+      "phenomena": [
+        "lamp_flicker",
+        "typo",
+        "benign_lamp_B01"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": "'tuyp' viết thiếu dấu (tuýp)."
+    },
+    {
+      "case_id": "D5-C-0049",
+      "text": "đèn cầu thang bộ tòa S2 không sáng, mà bậc thang cũng đầy rác",
+      "synthetic": true,
+      "family_id": "F-29",
+      "phenomena": [
+        "mixed_category",
+        "lamp_out",
+        "garbage"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": "Hai việc trong một câu (đèn + rác)."
+    },
+    {
+      "case_id": "D5-C-0050",
+      "text": "cửa cuốn bãi xe tòa S1 đóng mở rất chậm, nhờ bảo trì",
+      "synthetic": true,
+      "family_id": "F-30",
+      "phenomena": [
+        "out_of_scope",
+        "garage_door"
+      ],
+      "source": {
+        "kind": "LLM_PROPOSAL",
+        "ref": "agent-drafted-day05-H04",
+        "original_id": null
+      },
+      "split": "DEVELOP",
+      "classification_eligibility": "ELIGIBLE",
+      "notes": ""
+    }
+  ]
+}

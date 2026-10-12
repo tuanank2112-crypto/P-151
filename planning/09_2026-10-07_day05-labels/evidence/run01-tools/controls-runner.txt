@@ -1,0 +1,126 @@
+### CONTROL runner run-nogold (develop)
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/run_day05_baseline.py --data-dir <fx>/run-nogold --mode rules --split develop --output <out>/run-nogold.json
+NO_VALID_GOLD: no case in DEVELOP has valid ACCEPTED gold (0 validator errors)
+EXIT=2
+
+OUTPUT_FILE=absent
+
+### CONTROL runner run-missing (develop)
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/run_day05_baseline.py --data-dir <fx>/run-missing --mode rules --split develop --output <out>/run-missing.json
+NO_VALID_GOLD: unusable input files ['safety-gold.json']
+EXIT=2
+
+OUTPUT_FILE=absent
+
+### CONTROL runner run-notfrozen (held-out)
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/run_day05_baseline.py --data-dir <fx>/run-notfrozen --mode rules --split held-out --output <out>/run-notfrozen.json
+HELDOUT_NOT_FROZEN: split-manifest needs frozen=true and a hash
+EXIT=2
+
+OUTPUT_FILE=absent
+
+### CONTROL runner luna
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/run_day05_baseline.py --data-dir <fx>/run-frozen --mode luna --split develop --output <out>/luna.json
+LUNA_NOT_AUTHORIZED: only --mode rules is allowed in this package
+EXIT=2
+
+OUTPUT_FILE=absent
+
+### GREEN runner held-out with frozen=true+hash
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/run_day05_baseline.py --data-dir <fx>/run-frozen --mode rules --split held-out --output <out>/frozen.json
+BASELINE split=HELD_OUT cases=2 families=1 written=C:/Users/caotr/AppData/Local/Temp/claude/c--P-151-truong/168221f8-d289-4923-9c33-100200559616/scratchpad/out/frozen.json
+SAFETY {"n": 2, "n_em_expected": 1, "n_em_predicted": 1, "FN_EM": 0, "FP_EM": 0, "error": 0, "signal_set_differs": 0}
+CLASSIFICATION {"eligible": 1, "correct": 1, "mismatch": 0, "error": 0, "accuracy": 1.0, "safety_stop_excluded": 1}
+EXIT=0
+
+### GREEN runner develop (5 DEVELOP cases, ACCEPTED gold)
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/run_day05_baseline.py --data-dir <fx>/mini-valid --mode rules --split develop --output <out>/develop.json
+BASELINE split=DEVELOP cases=5 families=3 written=C:/Users/caotr/AppData/Local/Temp/claude/c--P-151-truong/168221f8-d289-4923-9c33-100200559616/scratchpad/out/develop.json
+SAFETY {"n": 5, "n_em_expected": 1, "n_em_predicted": 1, "FN_EM": 0, "FP_EM": 0, "error": 0, "signal_set_differs": 0}
+CLASSIFICATION {"eligible": 3, "correct": 3, "mismatch": 0, "error": 0, "accuracy": 1.0, "safety_stop_excluded": 2}
+EXIT=0
+
+### develop.json summary and run_manifest
+$ python -c <print summary + run_manifest of develop.json>
+{
+ "safety": {
+  "n": 5,
+  "n_em_expected": 1,
+  "n_em_predicted": 1,
+  "FN_EM": 0,
+  "FP_EM": 0,
+  "error": 0,
+  "signal_set_differs": 0,
+  "confusion": {
+   "EMERGENCY": {
+    "EMERGENCY": 1
+   },
+   "UNCLEAR": {
+    "NONE": 1
+   },
+   "NONE": {
+    "NONE": 3
+   }
+  }
+ },
+ "classification": {
+  "eligible": 3,
+  "correct": 3,
+  "mismatch": 0,
+  "error": 0,
+  "accuracy": 1.0,
+  "safety_stop_excluded": 2
+ },
+ "split_cases": 5,
+ "total_cases": 5,
+ "family_count": 3,
+ "excluded_invalid_cases": []
+}
+{
+ "generated_utc": "2026-10-07T05:32:37.667507+00:00",
+ "git_head": "8dd6baa5e733fd9dd917b30522b131d520471e05",
+ "dirty": true,
+ "dirty_code_paths": [
+  "M src/maintenance/proposer.py"
+ ],
+ "mode": "rules",
+ "split": "DEVELOP",
+ "lexicon_version": "2026-10-05.p0g",
+ "dataset_version": "t1",
+ "frozen": false,
+ "manifest_hash": null,
+ "code_sha256": {
+  "src/maintenance/rules.py": "95c394409d2fb4ba6c3a5ddf8773f7e239a6600e154d6ac510f2bb0413cb42a2",
+  "src/maintenance/safety.py": "a2039d58cd8e23821ab35e4762f2fa6445d3ee8dc5ab191eb46f07330ee327f9",
+  "src/maintenance/proposer.py": "df2ab65df475fbd99d591a32c8e0c7d2db208b46ae5715b99e2ccf403409f935",
+  "seed/maintenance_v1/lexicon.yaml": "b66849f539caa6537554f65b4153b09c653f403c5a8a70d9e203fa4317b34f45"
+ },
+ "data_sha256": {
+  "cases.json": "363172051379384d5cec4f65dcaad9461e955c58a5d9ddf5dc3402b72467d848",
+  "classification-gold.json": "7a1474c0c2e7d21754d1b1db74ea75570905f09ae7ef69da8f63733351ccc42b",
+  "safety-gold.json": "7d159d2ba5dfc5af861b95dc836ec2d01b41c3b84e5a647f7933d5660336133c",
+  "disputes.json": "2b4bffb27b378a9bbc91bafbe96779628c89effdad1cf2c0c6908fb80d16cc63",
+  "split-manifest.json": "790998dd5fc3a377a693c9d80d1be2546c60484e46c91e79d387c5f50b1cd686"
+ }
+}
+EXIT=0
+
+### runner excludes case whose reviewer looks like a model
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/run_day05_baseline.py --data-dir <fx>/run-llm-reviewer --mode rules --split develop --output <out>/llm.json
+BASELINE split=DEVELOP cases=4 families=3 written=C:/Users/caotr/AppData/Local/Temp/claude/c--P-151-truong/168221f8-d289-4923-9c33-100200559616/scratchpad/out/llm.json
+SAFETY {"n": 4, "n_em_expected": 0, "n_em_predicted": 0, "FN_EM": 0, "FP_EM": 0, "error": 0, "signal_set_differs": 0}
+CLASSIFICATION {"eligible": 3, "correct": 3, "mismatch": 0, "error": 0, "accuracy": 1.0, "safety_stop_excluded": 1}
+EXIT=0
+
+### excluded list
+$ python -c <print excluded_invalid_cases of llm.json>
+['D5-C-0001'] ['D5-C-0002', 'D5-C-0003', 'D5-C-0003', 'D5-C-0004', 'D5-C-0004', 'D5-C-0005', 'D5-C-0005']
+EXIT=0
+
+### runner keeps gold on mismatch (gold EMERGENCY, rules say NONE)
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/run_day05_baseline.py --data-dir <fx>/run-mismatch --mode rules --split develop --output <out>/mismatch.json
+BASELINE split=DEVELOP cases=5 families=3 written=C:/Users/caotr/AppData/Local/Temp/claude/c--P-151-truong/168221f8-d289-4923-9c33-100200559616/scratchpad/out/mismatch.json
+SAFETY {"n": 5, "n_em_expected": 1, "n_em_predicted": 0, "FN_EM": 1, "FP_EM": 0, "error": 0, "signal_set_differs": 0}
+CLASSIFICATION {"eligible": 3, "correct": 3, "mismatch": 0, "error": 0, "accuracy": 1.0, "safety_stop_excluded": 2}
+EXIT=0
+

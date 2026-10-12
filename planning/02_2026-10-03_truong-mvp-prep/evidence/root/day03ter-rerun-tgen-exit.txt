@@ -1,0 +1,2 @@
+2026-10-03T12:45:04+07:00 python harness.py tgen exit=1
+checks_total=2 ok=1 mismatch=1

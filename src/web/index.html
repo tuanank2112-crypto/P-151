@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="vi" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MaintenanceOps — Quản lý Vận hành & Bảo trì Tòa nhà</title>
+  <meta name="description" content="MaintenanceOps — Hệ thống tiếp nhận, điều phối và xử lý phản ánh bảo trì tòa nhà thông minh.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="theme.css?v=1.1">
+  <script>
+    // Plan 07: the design has no dark mode; drop the class a previous version may have left behind
+    document.documentElement.classList.remove('dark');
+  </script>
+  <!-- Prototype only: the Play CDN compiles classes in the browser. Use the Tailwind CLI for production. -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script>
+    // Plan 07 (01-CONTRACTS §1): remap the palettes app.js uses to the portal design tokens
+    const neutral = {
+      50: '#F3F5F9', 100: '#EEF2F7', 200: '#E9EDF3', 300: '#DCE2EB', 400: '#9AA4B5', 500: '#5B6578',
+      600: '#475166', 700: '#2A3447', 800: '#17305A', 900: '#13203A', 950: '#0F1E36',
+    };
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Be Vietnam Pro"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+          },
+          colors: {
+            slate: neutral,
+            stone: neutral,
+            indigo: {
+              50: '#EEF4FF', 100: '#DCE8FF', 200: '#C9DAFF', 300: '#93B4F5', 400: '#5E9BFF', 500: '#2563EB',
+              600: '#1D4ED8', 700: '#1E3A8A', 800: '#1E3F7A', 900: '#17305A', 950: '#0F1E36',
+            },
+          },
+          borderRadius: { xl: '14px', '2xl': '22px', '3xl': '24px' },
+        },
+      },
+    };
+  </script>
+  <style>
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body class="h-full font-sans antialiased">
+  <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-indigo-600 focus:shadow-lg">
+    Bỏ qua tới nội dung chính
+  </a>
+
+  <div class="flex min-h-full flex-col">
+
+    <!-- Full-bleed login screen: header and main stay hidden until sign-in -->
+    <div id="login-view" class="hidden"></div>
+
+    <!-- Gradient header of every dashboard (portal/src/components/shell.tsx Header) -->
+    <header id="app-header" class="hero">
+      <div class="hero-in">
+        <div class="flex min-w-0 items-center gap-4">
+          <div id="hello-avatar" class="avatar" aria-hidden="true"></div>
+          <div class="flex min-w-0 flex-col">
+            <span class="hello">Xin chào,</span>
+            <span id="hello-name" class="hello-name truncate"></span>
+          </div>
+        </div>
+        <div id="user-menu" class="flex flex-wrap items-center gap-3"></div>
+      </div>
+    </header>
+
+    <main id="main" class="page-body flex-1" tabindex="-1">
+      <div id="app-view" class="hidden space-y-6">
+        <div class="card px-6 py-5">
+          <h1 id="view-title" class="text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]"></h1>
+          <p id="view-subtitle" class="mt-1 max-w-3xl text-sm text-slate-500 sm:text-[15px]"></p>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <section id="list-pane" class="space-y-6 lg:col-span-5" aria-label="Danh sách"></section>
+          <section id="detail-pane" class="lg:col-span-7" aria-label="Chi tiết" aria-live="polite"></section>
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Toasts: announced to screen readers -->
+  <div id="toasts" class="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex flex-col items-center gap-2 px-4" role="status" aria-live="polite"></div>
+
+  <!-- Confirmation for destructive actions -->
+  <dialog id="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-body" class="card w-full max-w-md p-0 shadow-2xl backdrop:bg-slate-900/50">
+    <form method="dialog" class="p-6">
+      <h2 id="confirm-title" class="text-lg font-bold text-slate-900"></h2>
+      <p id="confirm-body" class="mt-2 text-sm text-slate-500"></p>
+      <div class="mt-6 flex flex-wrap justify-end gap-3">
+        <button value="cancel" class="btn">Quay lại</button>
+        <button value="ok" class="btn danger-fill">Xác nhận</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js?v=4.4"></script>
+</body>
+</html>

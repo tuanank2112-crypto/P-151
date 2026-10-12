@@ -1,0 +1,45 @@
+R9 — broken file: src/maintenance/engine.py
+sha256 before: b6f2f9857d0520bea69fae97f8c1995793bc6eef5f49ff8c753fc5b4719ac215
+sha256 after restore: b6f2f9857d0520bea69fae97f8c1995793bc6eef5f49ff8c753fc5b4719ac215
+restored: True
+
+--- diff applied ---
+--- a/src/maintenance/engine.py
++++ b/src/maintenance/engine.py
+@@ -1044,7 +1044,7 @@
+         def op(work: Case, now: datetime) -> None:
+             locked = work.ticket.status  # the copy read under the row lock: another backend may have moved it
+             locked_rule = TRANSITIONS.get((locked, to))
+-            if (
++            if False and (
+                 locked_rule is None
+                 or locked_rule.pipeline_only
+                 or role not in locked_rule.actors
+
+--- command ---
+MO_TEST_DATABASE_URL=<local p151_test> python -m pytest -q -p no:cacheprovider tests/test_maintenance/test_persistence_api.py::test_t29_transition_is_checked_again_under_the_lock
+exit=1
+
+--- pytest output (last 60 lines) ---
+F                                                                        [100%]
+================================== FAILURES ===================================
+_____________ test_t29_transition_is_checked_again_under_the_lock _____________
+
+fresh = <src.maintenance.engine.MaintenanceEngine object at 0x0000018925BEF850>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000018925BEF7D0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000018925BFEB10>
+
+    def test_t29_transition_is_checked_again_under_the_lock(fresh, clock, monkeypatch):
+        tid = report(fresh, FRESH_CLEANING)
+        stale = fresh.get(tid).model_copy(deep=True)  # what another backend read before the change below
+        assert stale.ticket.status == "ROUTED"
+        fresh.accept(tid, CLN)
+        fresh.block_onsite(tid, CLN, note="Khu vực đang sơn", eta=clock.now + timedelta(hours=3))
+        monkeypatch.setattr(fresh, "get", lambda ticket_id: stale)
+>       with pytest.raises(InvalidTransitionError):
+E       Failed: DID NOT RAISE InvalidTransitionError
+
+tests\test_maintenance\test_persistence_api.py:127: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_persistence_api.py::test_t29_transition_is_checked_again_under_the_lock
+1 failed in 0.18s

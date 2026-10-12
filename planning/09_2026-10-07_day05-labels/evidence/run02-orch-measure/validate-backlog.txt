@@ -1,0 +1,3 @@
+COUNT backlog items=15
+RESULT: PASS
+EXIT=0

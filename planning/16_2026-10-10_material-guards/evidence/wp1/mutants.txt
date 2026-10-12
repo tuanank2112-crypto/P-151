@@ -1,0 +1,53 @@
+captured_at=2026-10-10T18:06:38+07:00
+working tree untouched: mutants run in <scratch>/snap2_<m> copies
+
+## m1-no-department
+$ python evidence/harness/snapshot.py . <scratch>/snap2_m1-no-department head m1-no-department && (cd <snap>) pytest <3 plan-16 files> -rf --tb=no
+9519f1dc99ef06e425362bcb098ec13eda552661facfa8ac7348ea6e0b42c64a  src/maintenance/material_policy.py  mutant=m1-no-department
+snapshot=C:\Users\caotr\AppData\Local\Temp\claude\c--P-151\69840dd8-c43b-4c13-b37f-a1889288227d\scratchpad\snap2_m1-no-department mode=head
+FAILED tests/test_maintenance/test_material_guards.py::test_foreign_material_is_refused_everywhere[\u0110\xe8n h\xe0nh lang t\u1ea7ng 3 t\xf2a S1 kh\xf4ng s\xe1ng.-SIM-ACTOR-DEPT-TEC-01-SIM-MAT-CLEAN-01]
+FAILED tests/test_maintenance/test_material_guards.py::test_foreign_material_is_refused_everywhere[\u0110\xe8n h\xe0nh lang t\u1ea7ng 3 t\xf2a S1 kh\xf4ng s\xe1ng.-SIM-ACTOR-DEPT-TEC-01-SIM-MAT-BAG-01]
+FAILED tests/test_maintenance/test_material_guards.py::test_foreign_material_is_refused_everywhere[H\xe0nh lang t\u1ea7ng 3 t\xf2a S1 nhi\u1ec1u r\xe1c, c\u1ea7n v\u1ec7 sinh.-SIM-ACTOR-DEPT-CLN-01-SIM-MAT-LAMP-01]
+FAILED tests/test_maintenance/test_material_guards.py::test_foreign_material_is_refused_everywhere[H\xe0nh lang t\u1ea7ng 3 t\xf2a S1 nhi\u1ec1u r\xe1c, c\u1ea7n v\u1ec7 sinh.-SIM-ACTOR-DEPT-CLN-01-SIM-MAT-STARTER-01]
+4 failed, 47 passed, 7 deselected, 1 warning in 1.34s
+exit=1
+
+## m2-no-integer
+$ python evidence/harness/snapshot.py . <scratch>/snap2_m2-no-integer head m2-no-integer && (cd <snap>) pytest <3 plan-16 files> -rf --tb=no
+207d6b245068e7f7f1f992932bf194a26858544135372a089721611e5b51258f  src/maintenance/material_policy.py  mutant=m2-no-integer
+snapshot=C:\Users\caotr\AppData\Local\Temp\claude\c--P-151\69840dd8-c43b-4c13-b37f-a1889288227d\scratchpad\snap2_m2-no-integer mode=head
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_api[0.5]
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_engine[0.5]
+FAILED tests/test_maintenance/test_material_guards.py::test_old_invalid_lines_cannot_complete[fraction]
+3 failed, 48 passed, 7 deselected, 1 warning in 1.37s
+exit=1
+
+## m3-no-technical-empty
+$ python evidence/harness/snapshot.py . <scratch>/snap2_m3-no-technical-empty head m3-no-technical-empty && (cd <snap>) pytest <3 plan-16 files> -rf --tb=no
+e37d80af0ec22514b756e1d7f155e2001dddb5ba792045669ef497750983f07c  src/maintenance/material_policy.py  mutant=m3-no-technical-empty
+snapshot=C:\Users\caotr\AppData\Local\Temp\claude\c--P-151\69840dd8-c43b-4c13-b37f-a1889288227d\scratchpad\snap2_m3-no-technical-empty mode=head
+FAILED tests/test_maintenance/test_material_guards.py::test_technical_must_choose_a_material
+1 failed, 50 passed, 7 deselected, 1 warning in 1.35s
+exit=1
+
+## m4-partial-commit
+$ python evidence/harness/snapshot.py . <scratch>/snap2_m4-partial-commit head m4-partial-commit && (cd <snap>) pytest <3 plan-16 files> -rf --tb=no
+03009e39bb1eb11006b5a679cf1b9e7614d2ab834630a7dadc77f626adb402f8  src/maintenance/engine.py  mutant=m4-partial-commit
+snapshot=C:\Users\caotr\AppData\Local\Temp\claude\c--P-151\69840dd8-c43b-4c13-b37f-a1889288227d\scratchpad\snap2_m4-partial-commit mode=head
+FAILED tests/test_maintenance/test_material_usage.py::test_swap_to_an_empty_item_rolls_everything_back
+FAILED tests/test_maintenance/test_material_usage.py::test_second_line_short_keeps_the_first_line_in_stock
+FAILED tests/test_maintenance/test_material_usage_store.py::test_second_stock_line_short_rolls_back_the_first[memory]
+FAILED tests/test_maintenance/test_material_usage_store.py::test_swap_to_an_empty_item_after_a_save_rolls_back[memory]
+FAILED tests/test_maintenance/test_material_usage_store.py::test_audit_failure_rolls_back_ticket_and_stock[memory]
+FAILED tests/test_maintenance/test_material_usage_store.py::test_second_stock_write_failure_rolls_back[memory]
+FAILED tests/test_maintenance/test_material_usage_store.py::test_save_failure_rolls_back_stock[memory]
+7 failed, 44 passed, 7 deselected, 1 warning in 1.40s
+exit=1
+
+## m5-norm-block
+$ python evidence/harness/snapshot.py . <scratch>/snap2_m5-norm-block head m5-norm-block && (cd <snap>) pytest <3 plan-16 files> -rf --tb=no
+4b20d333eaf7d1c7cfea5fe4cbb89f390cdb3393e2f4993bc2b976294e1fd73c  src/maintenance/engine.py  mutant=m5-norm-block
+snapshot=C:\Users\caotr\AppData\Local\Temp\claude\c--P-151\69840dd8-c43b-4c13-b37f-a1889288227d\scratchpad\snap2_m5-norm-block mode=head
+FAILED tests/test_maintenance/test_material_guards.py::test_norm_one_used_four_saves_and_completes_without_reason
+1 failed, 50 passed, 7 deselected, 1 warning in 1.33s
+exit=1

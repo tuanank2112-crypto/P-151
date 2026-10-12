@@ -1,0 +1,12 @@
+✔ no session ⇒ /login
+✔ wrong password ⇒ generic error
+✔ resident opening /management ⇒ back to /resident
+✔ resident submitted PA-0023 with a photo, Agent ⇒ Phòng vệ sinh
+✔ reception routed it (Agent đúng)
+✔ technical cannot fetch a cleaning ticket photo (404)
+✔ cleaning assigned Tổ B and reported done
+✔ resident accepted and rated 2 stars
+✔ management sees it under Cần chú ý
+✔ logout ⇒ /login
+E2E PASS
+e2e exit=0

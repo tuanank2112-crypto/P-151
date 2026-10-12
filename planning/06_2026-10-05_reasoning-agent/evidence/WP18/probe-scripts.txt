@@ -1,0 +1,855 @@
+# Sources of the scratch scripts used above (scratchpad, not product code), printed by cat.
+$ cat 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/sim_p10.py'
+"""SCRATCH simulation of SPEC-P10 (WP18 architect consistency check). Patches the runtime IN MEMORY only; no repo file
+is written. Use as a pytest plugin (`-p sim_p10`) or import it first in a probe. Not product code."""
+
+import sys
+import types
+from pathlib import Path
+
+ROOT = Path.cwd()
+_schema_path = ROOT / "src" / "maintenance" / "agent" / "schema.py"
+_src = _schema_path.read_text(encoding="utf-8")
+_old_import = "from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StringConstraints, model_validator"
+assert _src.count(_old_import) == 1
+_src = _src.replace(
+    _old_import,
+    "from pydantic import AwareDatetime, BaseModel, BeforeValidator, ConfigDict, Field, StringConstraints, model_validator",
+)
+_old_quote = "Quote = Annotated[str, StringConstraints(min_length=2, max_length=300)]\n"
+_new_quote = '''
+
+def _audit_quote(value: object) -> object:
+    if isinstance(value, str):
+        return value.strip()[:300] or None
+    return value
+
+
+AuditQuote = Annotated[Annotated[str, StringConstraints(max_length=300)] | None, BeforeValidator(_audit_quote)]
+'''
+assert _src.count(_old_quote) == 1
+_src = _src.replace(_old_quote, _new_quote)
+assert _src.count("    quote: Quote | None = None\n") == 2
+_src = _src.replace("    quote: Quote | None = None\n", "    quote: AuditQuote = None\n")
+assert _src.count("    quote: Quote\n") == 1
+_src = _src.replace("    quote: Quote\n", "    quote: AuditQuote = None\n")
+_mod = types.ModuleType("src.maintenance.agent.schema")
+_mod.__file__ = str(_schema_path)
+sys.modules["src.maintenance.agent.schema"] = _mod
+exec(compile(_src, str(_schema_path), "exec"), _mod.__dict__)
+
+import re  # noqa: E402
+
+from src.maintenance import safety  # noqa: E402
+from src.maintenance.agent import baseline, client, validate  # noqa: E402
+from src.maintenance.enums import DetectedBy, SignalStatus  # noqa: E402
+from src.maintenance.models import RiskSignal  # noqa: E402
+
+
+def first_sentence(text: str, limit: int = 120) -> str:
+    stripped = text.strip()
+    first = re.split(r"(?<=[.!?\n])\s+", stripped, maxsplit=1)[0].strip()
+    return (first or stripped)[:limit]
+
+
+def merge_llm(rule, llm_result, text, lexicon, *, model_label="llm"):
+    signals = list(rule.signals)
+    notes = list(rule.notes)
+    known = {s.signal_id for s in lexicon.signals if s.phase in lexicon.active_phases}
+    for judgement in llm_result.judgements:
+        sid = judgement.signal_id
+        if sid not in known:
+            notes.append(f"{sid}: LLM nêu tín hiệu ngoài từ vựng P0; bỏ qua")
+            continue
+        status = SignalStatus(judgement.status)
+        if status == SignalStatus.ABSENT:
+            notes.append(f"{sid}: LLM ABSENT không bao giờ hạ mức luật; bỏ qua")
+            continue
+        quote = (judgement.quote or "").strip()[:300]
+        if not quote:
+            notes.append(f"{sid}: LLM {status} không kèm trích dẫn; vẫn tính (trích dẫn chỉ để audit)")
+        best_rule = max((safety.SEVERITY[s.status] for s in signals if s.signal_id == sid), default=-1)
+        if safety.SEVERITY[status] > best_rule:
+            signals.append(
+                RiskSignal(
+                    signal_id=sid,
+                    status=status,
+                    source_quote=quote or first_sentence(text) or "(trống)",
+                    detected_by=DetectedBy.LLM,
+                    rule_id="LLM" if quote else "LLM-NOQUOTE",
+                )
+            )
+        else:
+            notes.append(f"{sid}: LLM {judgement.status} không cao hơn luật; giữ luật")
+    merged = safety._dedupe_signals(signals)
+    return safety.SafetyAssessment(
+        risk_level=safety.derive_risk_level(merged, lexicon),
+        signals=merged,
+        notes=tuple(notes),
+        proposer=f"rules+llm:{model_label}",
+    )
+
+
+safety.first_sentence = first_sentence
+safety.merge_llm = merge_llm
+validate.grounded = lambda quote, text: True  # simulates deleting both grounded gates (location + job)
+_orig_mirror = baseline.mirror_decision
+
+
+def mirror_decision(data, catalog, lexicon):
+    d = _orig_mirror(data, catalog, lexicon)
+    return d.model_copy(
+        update={
+            "jobs": [j.model_copy(update={"quote": None}) for j in d.jobs],
+            "location": d.location.model_copy(update={"quote": None}),
+        }
+    )
+
+
+baseline.mirror_decision = mirror_decision
+client.mirror_decision = mirror_decision
+print("SIM_P10 ACTIVE: schema AuditQuote, merge_llm catalog-only, grounded gates off, mirror quotes None", file=sys.stderr)
+EXIT=0
+
+$ cat 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/probe_cases.py'
+"""SPEC-P10 probe (WP18, read-only, fake clients, no network). `--sim` first loads the in-memory P10 simulation
+(sim_p10.py); without it the probe measures the code as it is. Prints one block per case."""
+
+import sys
+
+if "--sim" in sys.argv:
+    import sim_p10  # noqa: F401  (patches in memory only)
+
+import copy  # noqa: E402
+import json  # noqa: E402
+
+from src.maintenance.agent import prompt  # noqa: E402
+from src.maintenance.agent.baseline import mirror_decision  # noqa: E402
+from src.maintenance.agent.client import ClientReply  # noqa: E402
+from src.maintenance.agent.inputs import DecisionInput  # noqa: E402
+from src.maintenance.catalog import load_catalog, load_lexicon  # noqa: E402
+from src.maintenance.models import LockedFields  # noqa: E402
+from tests.test_maintenance.helpers import MONDAY_9AM, RESIDENT, Clock, agent_engine  # noqa: E402
+
+CAT, LEX = load_catalog(), load_lexicon()
+VS = copy.deepcopy(prompt.EXAMPLE["jobs"][0])
+
+
+def decision(jobs, location=None, safety=None) -> str:
+    doc = copy.deepcopy(prompt.EXAMPLE)
+    doc["jobs"] = jobs
+    doc["scope"] = "IN_SCOPE"
+    if location is not None:
+        doc["location"] = location
+    if safety is not None:
+        doc["safety"] = safety
+    return json.dumps(doc, ensure_ascii=False)
+
+
+def run(label, report, reply):
+    engine = agent_engine(Clock(MONDAY_9AM), lambda system, user, data: ClientReply(text=reply, latency_ms=0.0))
+    case = engine.receive(report, resident_id=RESIDENT)
+    rec, t = case.agent_decision, case.ticket
+    jobs = [j.quote for j in rec.decision.jobs] if rec.decision else None
+    print(f"[{label}] {report!r}")
+    print(f"   record: source={rec.source} fallback={rec.fallback_reason} rejected={rec.rejected} "
+          f"agent_location={rec.agent_location} missing={rec.agent_missing_parts} valid_jobs={rec.valid_job_indexes} "
+          f"agent_risk={rec.agent_risk_level.value} job_quotes={jobs} "
+          f"disagreements={[(d.field, d.severity) for d in rec.disagreements]}")
+    fields = list(t.blocker.fields) if t.blocker and getattr(t.blocker, "fields", None) else []
+    print(f"   ticket: {t.status.value}/{t.blocker.code.value if t.blocker else None} fields={fields} "
+          f"risk={t.risk_level.value} dept={t.department_id} "
+          f"signals={[(s.signal_id, s.status.value, s.rule_id, s.source_quote) for s in t.risk_signals]} "
+          f"flags={[f.value for f in t.flags]} emergency_notes={[n.type for n in case.notifications].count('emergency.created')}")
+
+
+FULL = {"building": "S1", "floor": "3", "area": "Hành lang"}
+R1 = "Chỗ đi bộ trước thang máy tầng 3 tòa S1 có nhiều rác"
+R3 = "Hành lang tầng 3 tòa S1 nhiều rác"
+R5 = "Hành lang tầng 3 tòa S1 nhiều rác, nghe tiếng xì xì từ bình gas"
+job_vs = {**VS, "quote": "nhiều rác"}
+
+run("T1 location paraphrase, in catalog", R1, decision([job_vs], {**FULL, "quote": "hành lang tầng 3 tòa S1"}))
+run("T2 building outside the catalog", R1, decision([job_vs], {**FULL, "building": "S9", "quote": "tầng 3 tòa S1"}))
+run("T3a location quote null", R1, decision([job_vs], {**FULL, "quote": None}))
+run("T3a2 location quote blank", R1, decision([job_vs], {**FULL, "quote": "   "}))
+run("T3b job quote empty string", R3, decision([{**VS, "quote": ""}]))
+no_key = {k: v for k, v in VS.items() if k != "quote"}
+run("T3b2 job quote key missing", R3, decision([no_key]))
+run("T3c job quote paraphrase", R3, decision([{**VS, "quote": "rác bừa bộn"}]))
+gas = {"risk_level": "EMERGENCY", "reason": "Tiếng xì từ bình gas: rò gas"}
+run("T5 raise, quote not in text", R5,
+    decision([job_vs], safety={**gas, "signals": [{"signal_id": "S-10", "status": "PRESENT", "quote": "bình gas bị xì"}]}))
+run("T5b raise, no quote", R5,
+    decision([job_vs], safety={**gas, "signals": [{"signal_id": "S-10", "status": "PRESENT", "quote": None}]}))
+run("T5c raise, verbatim quote (control)", R5,
+    decision([job_vs], safety={**gas, "signals": [{"signal_id": "S-10", "status": "PRESENT", "quote": "tiếng xì xì từ bình gas"}]}))
+run("T6 ABSENT cannot lower (control)", "Hành lang tầng 3 tòa S1 có khói bốc ra từ hộp điện",
+    decision([job_vs], safety={"risk_level": "NONE", "reason": "x", "signals": [{"signal_id": "S-04", "status": "ABSENT", "quote": "khói"}]}))
+
+data = DecisionInput(ticket_id="SIM-TKT-0001", created_at=MONDAY_9AM.isoformat(), report_text=R1, location_text=R1,
+                     safety_text=R1, locks=LockedFields(), pinned_category=None, follow_up_of=None,
+                     duplicate_candidates=[], asset_candidates=[], fingerprint="f", safety_fingerprint="s")
+m = mirror_decision(data, CAT, LEX)
+print(f"[T4 mirror quotes] jobs={[j.quote for j in m.jobs]} location.quote={m.location.quote!r} "
+      f"signals={[(s.signal_id, s.quote) for s in m.safety.signals]}")
+EXIT=0
+
+$ cat 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/probe_g2.py'
+"""SPEC-P10 probe (WP18): how G-2 (rules location vs Agent location) behaves once the Agent location is no longer
+voided by its quote. `--sim` loads the in-memory P10 simulation first."""
+import sys
+
+if "--sim" in sys.argv:
+    import sim_p10  # noqa: F401
+
+import copy  # noqa: E402
+import json  # noqa: E402
+
+from src.maintenance.agent import prompt  # noqa: E402
+from src.maintenance.agent.client import ClientReply  # noqa: E402
+from tests.test_maintenance.helpers import MONDAY_9AM, RESIDENT, Clock, agent_engine  # noqa: E402
+
+VS = dict(copy.deepcopy(prompt.EXAMPLE["jobs"][0]), quote="có rác")
+R = "Lối đi chung trước thang máy tầng 3 tòa S1 có rác"
+for label, area, quote in [
+    ("G2a Agent area differs, quote paraphrased", "Hành lang", "hành lang tầng 3 tòa S1"),
+    ("G2b Agent area same as rules, quote paraphrased", "Lối đi", "lối đi tầng 3 tòa S1"),
+    ("G2c Agent area differs, quote verbatim", "Hành lang", "Lối đi chung trước thang máy tầng 3 tòa S1"),
+]:
+    doc = copy.deepcopy(prompt.EXAMPLE)
+    doc.update(jobs=[VS], scope="IN_SCOPE", location={"building": "S1", "floor": "3", "area": area, "quote": quote})
+    text = json.dumps(doc, ensure_ascii=False)
+    engine = agent_engine(Clock(MONDAY_9AM), lambda s, u, d, text=text: ClientReply(text=text, latency_ms=0.0))
+    case = engine.receive(R, resident_id=RESIDENT)
+    rec, t = case.agent_decision, case.ticket
+    print(f"[{label}] rule_location={rec.rule_location} agent_location={rec.agent_location} rejected={rec.rejected} "
+          f"serious={[d.field for d in rec.disagreements if d.severity == 'SERIOUS']} -> {t.status.value}/"
+          f"{t.blocker.code.value if t.blocker else None} flags={[f.value for f in t.flags]}")
+EXIT=0
+
+$ cat 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/run_with_sim.py'
+"""Run a WP12 probe with the in-memory SPEC-P10 simulation loaded first (scratch, WP18)."""
+import runpy
+import sys
+from pathlib import Path
+
+import sim_p10  # noqa: F401
+
+probe = Path(sys.argv[1]).resolve()
+sys.path.insert(0, str(probe.parent))
+sys.argv = [str(probe)]
+runpy.run_path(str(probe), run_name="__main__")
+EXIT=0
+
+$ cat 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/proto_quote.py'
+"""Prototype (scratch): the audit-only quote type of SPEC-P10 §3.1 on the installed pydantic."""
+import json
+from typing import Annotated
+
+from pydantic import BaseModel, BeforeValidator, ConfigDict, StringConstraints, ValidationError
+
+
+def _audit_quote(value: object) -> object:
+    if isinstance(value, str):
+        return value.strip()[:300] or None
+    return value
+
+
+AuditQuote = Annotated[Annotated[str, StringConstraints(max_length=300)] | None, BeforeValidator(_audit_quote)]
+
+
+class M(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    quote: AuditQuote = None
+
+
+for raw in [None, "", "   ", "x", "..", "  nhiều rác  ", "a" * 301, 5, ["a"]]:
+    try:
+        got = M.model_validate({"quote": raw}).quote
+        print(f"{raw!r:>14.14} -> {got!r:.40}  len={len(got) if got else 0}")
+    except ValidationError as exc:
+        print(f"{raw!r:>14.14} -> ValidationError: {exc.errors()[0]['type']}")
+print("missing ->", M.model_validate({}).quote)
+print(json.dumps(M.model_json_schema()["properties"]["quote"], ensure_ascii=False))
+EXIT=0
+
+$ cat 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/schema_vs_ref.py'
+"""P10 §9.2 T-P10-07 check: runtime AgentDecision JSON schema == REF section A (`--sim` = with the P10 simulation)."""
+import importlib.util
+import sys
+
+if "--sim" in sys.argv:
+    import sim_p10  # noqa: F401
+
+spec = importlib.util.spec_from_file_location(
+    "ref_agent_contract", "planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py"
+)
+ref = importlib.util.module_from_spec(spec)
+sys.modules["ref_agent_contract"] = ref
+spec.loader.exec_module(ref)
+from src.maintenance.agent.schema import AgentDecision  # noqa: E402
+
+a, b = AgentDecision.model_json_schema(), ref.AgentDecision.model_json_schema()
+print("runtime schema == REF:", a == b)
+print("JobDecision.required runtime:", a["$defs"]["JobDecision"]["required"])
+print("JobDecision.required REF    :", b["$defs"]["JobDecision"]["required"])
+EXIT=0
+
+$ cat 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/fc_write.py'
+"""P10 §10: write a case produced under the P10 simulation (jobs[0].quote = null) to <scratch>/out/p10-case.json."""
+import sim_p10  # noqa: F401
+
+import copy  # noqa: E402
+import json  # noqa: E402
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+from src.maintenance.agent import prompt  # noqa: E402
+from src.maintenance.agent.client import ClientReply  # noqa: E402
+from tests.test_maintenance.helpers import MONDAY_9AM, RESIDENT, Clock, agent_engine  # noqa: E402
+
+doc = copy.deepcopy(prompt.EXAMPLE)
+doc["jobs"] = [dict(doc["jobs"][0], quote=None)]
+doc["scope"] = "IN_SCOPE"
+reply = json.dumps(doc, ensure_ascii=False)
+engine = agent_engine(Clock(MONDAY_9AM), lambda s, u, d: ClientReply(text=reply, latency_ms=0.0))
+case = engine.receive("Hành lang tầng 3 tòa S1 nhiều rác", resident_id=RESIDENT)
+Path(sys.argv[1], "out", "p10-case.json").write_text(case.model_dump_json(), encoding="utf-8")
+print("P10 (simulated) case written: jobs[0].quote =", case.agent_decision.decision.jobs[0].quote,
+      "status =", case.ticket.status.value)
+EXIT=0
+
+$ cat 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/fc_read.py'
+"""P10 §10: read <scratch>/out/p10-case.json with the Base model (code before P10)."""
+import sys
+from pathlib import Path
+
+from pydantic import ValidationError
+
+from src.maintenance.models import Case
+
+raw = Path(sys.argv[1], "out", "p10-case.json").read_text(encoding="utf-8")
+try:
+    Case.model_validate_json(raw)
+    print("Base Case.model_validate_json: OK")
+except ValidationError as exc:
+    first = exc.errors()[0]
+    print("Base Case.model_validate_json: ValidationError", exc.error_count(), "error(s); first:",
+          ".".join(map(str, first["loc"])), "-", first["type"])
+    raise SystemExit(1)
+EXIT=0
+
+$ cat 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/mirror_note.py'
+"""P10 §3.4/§3.5 under the simulation: Mirror quotes vs rule quotes, and the two-jobs note without the display fix."""
+import sim_p10  # noqa: F401
+
+from src.maintenance.agent.baseline import mirror_decision, rule_view  # noqa: E402
+from src.maintenance.agent.client import MirrorClient  # noqa: E402
+from src.maintenance.agent.inputs import DecisionInput  # noqa: E402
+from src.maintenance.catalog import load_catalog, load_lexicon  # noqa: E402
+from src.maintenance.enums import SignalStatus  # noqa: E402
+from src.maintenance.models import LockedFields  # noqa: E402
+from tests.test_maintenance.helpers import MONDAY_9AM, RESIDENT, Clock, agent_engine  # noqa: E402
+
+C, L = load_catalog(), load_lexicon()
+for text in ("Chỗ đi bộ trước thang máy tầng 3 tòa S1 có nhiều rác", "Hành lang tầng 3 tòa S1 nhiều rác, cần vệ sinh.",
+             "Hình như có mùi khét ở hành lang tầng 3 tòa S1"):
+    d = DecisionInput(ticket_id="SIM-TKT-0001", created_at=MONDAY_9AM.isoformat(), report_text=text, location_text=text,
+                      safety_text=text, locks=LockedFields(), pinned_category=None, follow_up_of=None,
+                      duplicate_candidates=[], asset_candidates=[], fingerprint="f", safety_fingerprint="s")
+    m = mirror_decision(d, C, L)
+    rv = rule_view(d, C, L)
+    rule_q = sorted((s.signal_id, s.source_quote) for s in rv.safety.signals
+                    if s.status in (SignalStatus.PRESENT, SignalStatus.UNCLEAR))
+    print(f"{text!r}: job_quotes={[j.quote for j in m.jobs]} loc_quote={m.location.quote!r} "
+          f"signals={sorted((s.signal_id, s.quote) for s in m.safety.signals)} rule_signals={rule_q}")
+engine = agent_engine(Clock(MONDAY_9AM), MirrorClient(C, L))
+engine._try_split = lambda work, now: False
+tid = engine.receive("Hành lang tầng 3 tòa S1 nhiều rác, đèn cũng không sáng", resident_id=RESIDENT).ticket.ticket_id
+print("two-jobs note (sim, display NOT fixed):", repr(engine.get(tid).ticket.blocker.internal_note))
+EXIT=0
+
+$ cat 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/proto_test_p10.py'
+"""SCRATCH prototype of SPEC-P10 §9.2 (WP18 architect check that the specified expectations are coherent).
+
+NOT the WP19 test file: WP19 writes its own `tests/test_maintenance/test_p10_catalog_not_quote.py`. Run from the repo
+root with PYTHONPATH=. (Base) or PYTHONPATH=.;<scratch> and `-p sim_p10` (in-memory P10 simulation).
+"""
+
+import copy
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+import pytest
+
+from src.maintenance import safety
+from src.maintenance.agent import prompt, validate
+from src.maintenance.agent.baseline import mirror_decision, rule_view
+from src.maintenance.agent.client import ClientReply, MirrorClient
+from src.maintenance.agent.inputs import DecisionInput
+from src.maintenance.agent.schema import AgentDecision
+from src.maintenance.catalog import load_catalog, load_lexicon
+from src.maintenance.enums import RiskLevel, SignalStatus
+from src.maintenance.models import LockedFields
+from tests.test_maintenance.helpers import CLEANING, MONDAY_9AM, RESIDENT, Clock, agent_engine
+
+CATALOG, LEXICON = load_catalog(), load_lexicon()
+T1 = "Chỗ đi bộ trước thang máy tầng 3 tòa S1 có nhiều rác"
+T3 = "Hành lang tầng 3 tòa S1 nhiều rác"
+T5 = "Hành lang tầng 3 tòa S1 nhiều rác, nghe tiếng xì xì từ bình gas"
+FULL = {"building": "S1", "floor": "3", "area": "Hành lang"}
+VS = dict(copy.deepcopy(prompt.EXAMPLE["jobs"][0]), quote="nhiều rác")
+MISSING = object()
+
+
+def reply(jobs, location=None, safety_part=None) -> str:
+    doc = copy.deepcopy(prompt.EXAMPLE)
+    doc.update(jobs=jobs, scope="IN_SCOPE")
+    if location is not None:
+        doc["location"] = location
+    if safety_part is not None:
+        doc["safety"] = safety_part
+    return json.dumps(doc, ensure_ascii=False)
+
+
+def receive(text, answer):
+    engine = agent_engine(Clock(MONDAY_9AM), lambda system, user, data: ClientReply(text=answer, latency_ms=0.0))
+    return engine.get(engine.receive(text, resident_id=RESIDENT).ticket.ticket_id)
+
+
+def data_for(text) -> DecisionInput:
+    return DecisionInput(ticket_id="SIM-TKT-0001", created_at=MONDAY_9AM.isoformat(), report_text=text,
+                         location_text=text, safety_text=text, locks=LockedFields(), pinned_category=None,
+                         follow_up_of=None, duplicate_candidates=[], asset_candidates=[], fingerprint="f",
+                         safety_fingerprint="s")
+
+
+def test_p10_01_location_worded_differently_but_in_the_catalog_is_kept():
+    case = receive(T1, reply([VS], {**FULL, "quote": "hành lang tầng 3 tòa S1"}))
+    rec, ticket = case.agent_decision, case.ticket
+    assert rec.rejected == [] and rec.agent_location == "Tòa S1 / Tầng 3 / Hành lang"
+    assert [(d.field, d.severity) for d in rec.disagreements] == [("location", "MINOR")]
+    assert "AGENT_FALLBACK" not in ticket.flags
+    assert (ticket.status, ticket.department_id) == ("ROUTED", "DEPT_CLEANING")
+
+
+@pytest.mark.parametrize(("part", "value", "path"), [("building", "S9", "location.building"),
+                                                     ("floor", "tầng cao", "location.floor"),
+                                                     ("area", "Ban công", "location.area")])
+def test_p10_02_a_value_outside_the_catalog_is_rejected_on_its_own_field(part, value, path):
+    case = receive(T1, reply([VS], {**FULL, part: value, "quote": "tầng 3 tòa S1"}))
+    rec = case.agent_decision
+    assert rec.rejected == [path] and rec.agent_missing_parts == [part]
+    if part == "building":
+        t = case.ticket
+        assert (t.status, t.blocker.code) == ("NEED_INFO", "MISSING_INFO")
+        assert t.blocker.internal_note == "Thiếu: location_building"
+
+
+@pytest.mark.parametrize(("where", "value"), [("location", None), ("location", ""), ("location", "   "),
+                                              ("job", None), ("job", ""), ("job", MISSING)])
+def test_p10_03_a_blank_or_missing_quote_is_still_accepted(where, value):
+    if where == "location":
+        case = receive(T1, reply([VS], {**FULL, "quote": value}))
+        assert case.agent_decision.rejected == []
+        assert case.agent_decision.agent_location == "Tòa S1 / Tầng 3 / Hành lang"
+    else:
+        job = {k: v for k, v in VS.items() if k != "quote"} if value is MISSING else dict(VS, quote=value)
+        case = receive(T3, reply([job]))
+        rec = case.agent_decision
+        assert rec.source == "AGENT" and rec.valid_job_indexes == [0] and rec.decision.jobs[0].quote is None
+        assert "AGENT_FALLBACK" not in case.ticket.flags
+    assert case.ticket.status == "ROUTED"
+
+
+@pytest.mark.parametrize("text", [T1, CLEANING, "Hình như có mùi khét ở hành lang tầng 3 tòa S1"])
+def test_p10_04_mirror_writes_no_quote_of_its_own(text):
+    data = data_for(text)
+    decision = mirror_decision(data, CATALOG, LEXICON)
+    assert all(j.quote is None for j in decision.jobs) and decision.location.quote is None
+    rule = rule_view(data, CATALOG, LEXICON).safety.signals
+    want = {(s.signal_id, s.source_quote.strip()[:300]) for s in rule
+            if s.status in (SignalStatus.PRESENT, SignalStatus.UNCLEAR)}
+    assert {(s.signal_id, s.quote) for s in decision.safety.signals} == want
+
+
+@pytest.mark.parametrize("quote", ["bình gas bị xì", None])
+def test_p10_05_an_agent_raise_is_kept_whatever_its_quote(quote):
+    assert rule_view(data_for(T5), CATALOG, LEXICON).safety.risk_level == RiskLevel.NONE  # the rules miss it
+    gas = {"risk_level": "EMERGENCY", "reason": "Tiếng xì từ bình gas",
+           "signals": [{"signal_id": "S-10", "status": "PRESENT", "quote": quote}]}
+    case = receive(T5, reply([VS], safety_part=gas))
+    t = case.ticket
+    assert (t.status, t.blocker.code, t.risk_level) == ("VERIFYING", "EMERGENCY_PENDING_BQL", "EMERGENCY")
+    assert [n.type for n in case.notifications].count("emergency.created") == 1
+    want = ("S-10", "PRESENT", "LLM", quote) if quote else ("S-10", "PRESENT", "LLM-NOQUOTE", T5)
+    assert want in {(s.signal_id, s.status.value, s.rule_id, s.source_quote) for s in t.risk_signals}
+
+
+def test_p10_06_no_text_matching_helper_is_left():
+    assert not hasattr(validate, "grounded") and not hasattr(validate, "_fold")
+    assert not hasattr(safety, "_grounded")
+
+
+def test_p10_07_runtime_schema_is_the_reference_schema():
+    path = Path("planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py").resolve()
+    spec = importlib.util.spec_from_file_location("ref_agent_contract", path)
+    ref = importlib.util.module_from_spec(spec)
+    sys.modules["ref_agent_contract"] = ref
+    spec.loader.exec_module(ref)
+    assert AgentDecision.model_json_schema() == ref.AgentDecision.model_json_schema()
+
+
+def test_p10_08_a_missing_job_quote_is_not_shown_as_none():
+    engine = agent_engine(Clock(MONDAY_9AM), MirrorClient(CATALOG, LEXICON))
+    engine._try_split = lambda work, now: False
+    note = engine.get(engine.receive(prompt.EXAMPLE_REPORT, resident_id=RESIDENT).ticket.ticket_id).ticket.blocker.internal_note
+    assert "Agent thấy hai việc: VE_SINH; KY_THUAT" in note and "None" not in note
+EXIT=0
+
+$ cat 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/make_inventory.sh'
+#!/usr/bin/env bash
+# WP18 inventory (H17 §3 "Kiểm kê"): grep commands + raw output (machine), then the architect's classification, then
+# counts computed from the classification lines. Run from the repo root.
+set -u
+SCR_DIR="$(cd "$(dirname "$0")" && pwd)"
+EV="planning/06_2026-10-05_reasoning-agent/evidence/WP18"
+f="$EV/inventory.txt"
+: > "$f"
+{
+  echo "# WP18 kiểm kê — chỗ trong src/maintenance/ mà kết quả khớp chuỗi/span của QUOTE hoặc của CÂU CƯ DÂN quyết định"
+  echo "# CHẤP NHẬN / LOẠI / HẠ / GIỮ LẠI đầu ra LLM. Base: $(git rev-parse HEAD) · $(date '+%Y-%m-%d %H:%M:%S %z')"
+  echo "# Phần A = lệnh + output máy. Phần B = phân loại của architect (một dòng mỗi chỗ). Phần C = đếm từ phần B (máy)."
+  echo
+  echo "## A. Lệnh và output"
+} >> "$f"
+
+run() {
+  echo "\$ $1" >> "$f"
+  bash -c "$1" >> "$f" 2>&1
+  echo "EXIT=$?" >> "$f"
+  echo >> "$f"
+}
+
+run "grep -rn 'grounded' src/maintenance --include=*.py"
+run "grep -rnw -e grounded -e _grounded src/maintenance --include=*.py | wc -l"
+run "grep -rn 'quote' src/maintenance/agent src/maintenance/engine.py src/maintenance/models.py --include=*.py"
+run "grep -n 'quote' src/maintenance/safety.py | awk -F: '\$1 >= 900'"
+run "grep -rn 'category_evidence\|electrical_hazard\|extract_location\|missing_location_parts\|location_mentions\|mentions_playbook_subject\|split_verdict\|rules.classify\|_location_parts' src/maintenance --include=*.py | grep -v '^src/maintenance/rules.py'"
+run "grep -rn 'merge_llm\|assess_with_llm\|safety_for\|merge_agent_safety\|_after_rules\|SKIPPED_RULE_EMERGENCY' src/maintenance --include=*.py"
+run "grep -n '# G-[1-9]' src/maintenance/agent/reconcile.py"
+run "grep -n 'rejected\|SERIOUS\|offered_jobs' src/maintenance/engine.py src/maintenance/agent/validate.py"
+run "grep -n 'rules_cls\|llm_playbook' src/maintenance/proposer.py"
+run "grep -n 'level = max(result.risk_level, old' src/maintenance/engine.py"
+run "grep -rn 'quote' src/web src/api"
+
+cat "$SCR_DIR/inventory_classification.txt" >> "$f"
+
+{
+  echo
+  echo "## C. Đếm (máy, từ phần B)"
+  echo "\$ grep -cE '^[CFA][0-9]+ · ' inventory.txt   # tổng chỗ"
+  grep -cE '^[CFA][0-9]+ · ' "$f"
+  echo "\$ grep -cE '^C[0-9]+ · .*· cổng chặn LLM' inventory.txt   # cổng chặn LLM"
+  grep -cE '^C[0-9]+ · .*· cổng chặn LLM' "$f"
+  echo "\$ grep -cE '^C[1-6] · ' inventory.txt   # trong đó khớp quote (P10 đổi)"
+  grep -cE '^C[1-6] · ' "$f"
+  echo "\$ grep -cE '^C[7-9] · ' inventory.txt   # trong đó từ khoá luật (ngoài Q35, giữ)"
+  grep -cE '^C[7-9] · ' "$f"
+  echo "\$ grep -cE '^F[0-9]+ · .*· lưới sàn luật hợp lệ' inventory.txt   # lưới sàn"
+  grep -cE '^F[0-9]+ · .*· lưới sàn luật hợp lệ' "$f"
+  echo "\$ grep -cE '^A[0-9]+ · .*· chỉ audit' inventory.txt   # chỉ audit"
+  grep -cE '^A[0-9]+ · .*· chỉ audit' "$f"
+} >> "$f"
+echo "inventory written"
+EXIT=0
+
+$ cat 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/inventory_classification.txt'
+## B. Phân loại (architect) — ID · file:line · trường · hành vi hiện tại · phân loại → xử lý trong SPEC-P10
+# Phạm vi lệnh: safety.py dòng < 900 là phần LUẬT (assess, trích đoạn do luật tìm) — không nhận đầu ra LLM nên không kiểm kê;
+# rules.py chỉ là bằng chứng luật, cổng nằm ở chỗ gọi (C7–C9, F2, F5, A4–A8). src/web, src/api: 0 dòng "quote" (lệnh cuối, EXIT=1 = không khớp).
+### B1. Cổng chặn LLM — khớp QUOTE (P10 đổi)
+C1 · src/maintenance/agent/validate.py:100-101 (qua grounded() :34-38) · location · quote None/rỗng, hoặc quote gấp (NFKC, bỏ dấu, dấu câu→khoảng trắng) không là chuỗi con của location_text ⇒ loại CẢ vị trí (None, 3 phần thiếu, rejected=["location"]) ⇒ luật vị trí hoặc hỏi lại cư dân (đo T1: NEED_INFO/MISSING_INFO + AGENT_FALLBACK) · cổng chặn LLM → P10 §3.2 bỏ
+C2 · src/maintenance/agent/validate.py:158-160 (qua grounded() :34-38) · jobs[i] · quote job gấp không là chuỗi con của report_text ⇒ loại cả job (rejected "jobs[i]") (đo T3c) · cổng chặn LLM → P10 §3.2 bỏ
+C3 · src/maintenance/agent/schema.py:19,40,53,65 · quote (signal/location/job) · kiểu Quote min_length=2 / max 300, quote job BẮT BUỘC ⇒ quote ""/thiếu khoá/1 ký tự/>300 ⇒ SCHEMA_INVALID ⇒ FALLBACK_RULE cả quyết định, mất cả lần nâng an toàn (đo T3b, T3b2) · cổng chặn LLM → P10 §3.1 AuditQuote
+C4 · src/maintenance/safety.py:956-958 (đường Agent: validate.py:72-74 và reconcile.safety_for; đường LLM an toàn plan 01: safety.py:998) · tín hiệu an toàn · LLM PRESENT/UNCLEAR không quote ⇒ bỏ hẳn, mất lần nâng (đo T5b: chỉ còn S-00 UNCLEAR) · cổng chặn LLM → P10 §3.3
+C5 · src/maintenance/safety.py:959-961 (qua _grounded() :928-931; cùng hai đường như C4) · tín hiệu an toàn · quote không là chuỗi con ⇒ PRESENT hạ UNCLEAR, mất Bậc 1 (đo T5: SAFETY_REVIEW_REQUIRED thay EMERGENCY_PENDING_BQL) · cổng chặn LLM → P10 §3.3
+C6 · src/maintenance/engine.py:3061-3067 (_job_view) · jobs · mọi job Agent đưa đều bị loại (đầu vào từ C2) ⇒ view None ⇒ luật quyết loại việc (I-20) · cổng chặn LLM (hệ quả C2) → P10 §3.7: sau P10 chỉ còn kích bởi khoá/ghim loại việc của người; code giữ
+### B2. Cổng chặn LLM — khớp TỪ KHOÁ LUẬT trên câu cư dân (không phải quote; ngoài Q35 — P10 giữ, cần người quyết)
+C7 · src/maintenance/agent/reconcile.py:62-76 (+ engine.py:3666-3681 bước 5) · loại việc · G-1 SERIOUS khi loại việc Agent ∉ rules.category_evidence(report_text) ⇒ PENDING_REVIEW · cổng chặn LLM (từ khoá luật) → P10 §7 giữ, Q-P10-1
+C8 · src/maintenance/agent/reconcile.py:78-89 (+ engine.py:3666-3681 bước 5) · location · G-2 SERIOUS khi rules.extract_location đủ và khác vị trí Agent ⇒ PENDING_REVIEW (đo g2-probe: sau P10 không còn phụ thuộc câu chữ quote) · cổng chặn LLM (từ khoá luật) → P10 §7 giữ, Q-P10-1
+C9 · src/maintenance/proposer.py:116-129 (gọi từ engine._classification; CHỈ khi MO_AGENT_ENABLED=false + LLM_MODE=openai) · loại việc · rules.classify khác/không thấy ⇒ CATEGORY_UNCLEAR, playbook LLM bị bỏ · cổng chặn LLM (từ khoá luật, đường rollback tắt Agent) → P10 §7 giữ
+### B3. Lưới sàn luật hợp lệ (chỉ NÂNG mức hoặc THÊM người xem; không loại/hạ đầu ra LLM)
+F1 · src/maintenance/agent/agent.py:95-96,104-107 · tín hiệu an toàn · luật (lexicon) ra EMERGENCY ⇒ không gọi mô hình (SKIPPED_RULE_EMERGENCY) · lưới sàn luật hợp lệ → P10 §4 giữ
+F2 · src/maintenance/agent/baseline.py:51-54 + src/maintenance/engine.py:3187 · mức an toàn · sàn safety.assess(lexicon) + mức cuối = max(kết quả, mức đang có) (I-17) · lưới sàn luật hợp lệ → P10 §4 giữ
+F3 · src/maintenance/safety.py:953-955 · tín hiệu an toàn · LLM ABSENT bị bỏ (không hạ) · lưới sàn luật hợp lệ → P10 §4 giữ
+F4 · src/maintenance/safety.py:962-968 · tín hiệu an toàn · LLM không cao hơn luật ⇒ giữ bản ghi luật · lưới sàn luật hợp lệ → P10 §4 giữ
+F5 · src/maintenance/agent/reconcile.py:91-103 · an toàn điện · G-3: rules.electrical_hazard + Agent có job + an toàn cuối NONE ⇒ PENDING_REVIEW (chỉ thêm người xem) · lưới sàn luật hợp lệ → P10 §4 giữ
+F6 · src/maintenance/agent/validate.py:77-88 · an toàn · Agent tự khai EMERGENCY mà không có tín hiệu hợp lệ ⇒ S-00 UNCLEAR LLM-UNGROUNDED (V-11, Q24(3)); hiện cũng bị C4/C5 kích hoạt · lưới sàn luật hợp lệ → P10 §4 giữ (sau P10 chỉ kích khi thiếu tín hiệu danh mục)
+### B4. Chỉ audit (ghi/hiển thị; không đổi luồng)
+A1 · src/maintenance/agent/baseline.py:128,149-151 · jobs (Mirror) · quote job = report_text[:300] — quote GIẢ để qua C2; điều kiện len(quote)>=2 vì C3 · chỉ audit → P10 §3.4 quote=None
+A2 · src/maintenance/agent/baseline.py:183-185,200 · location (Mirror) · quote = location_text[:300] — quote GIẢ để qua C1 · chỉ audit → P10 §3.4 quote=None
+A3 · src/maintenance/agent/baseline.py:186-190 · tín hiệu (Mirror) · quote = source_quote THẬT của luật; lọc len>=2 vì C3 · chỉ audit → P10 §3.4 giữ quote thật, bỏ lọc
+A4 · src/maintenance/agent/validate.py:199-202 · ask_fields · so với rv.missing_parts (regex) ⇒ "ask_fields" vào rejected; engine KHÔNG đọc ask_fields, chỉ sinh G-8 MINOR · chỉ audit → P10 §3.7 giữ
+A5 · src/maintenance/agent/reconcile.py:105-115 · loại việc · G-4 MINOR (loại Agent ⊂ loại luật thấy) · chỉ audit → giữ
+A6 · src/maintenance/agent/reconcile.py:117-127 · location · G-5 MINOR (luật không đọc được vị trí; dùng vị trí Agent) · chỉ audit → giữ
+A7 · src/maintenance/agent/reconcile.py:129-140 · an toàn · G-6 MINOR (Agent tự khai thấp hơn luật; mức vẫn theo F2) · chỉ audit → giữ
+A8 · src/maintenance/agent/reconcile.py:142-158 · ưu tiên · G-7 MINOR (propose_priority từ khoá; engine dùng ưu tiên Agent) · chỉ audit → giữ
+A9 · src/maintenance/agent/reconcile.py:160-170 · trường bị loại · G-8 MINOR · chỉ audit → giữ
+A10 · src/maintenance/agent/reconcile.py:172-183 · next_step · G-9 MINOR (engine theo vị trí thực) · chỉ audit → giữ
+A11 · src/maintenance/engine.py:2977-2988 · cờ ticket · AGENT_FALLBACK khi rejected có "location" hoặc mọi "jobs[i]" (đầu vào C1/C2); cờ chỉ cho nhân viên · chỉ audit → P10 §3.7 giữ (đọc record cũ)
+A12 · src/maintenance/engine.py:3017 · audit AGENT_DECISION · "quote": j.quote trong tóm tắt · chỉ audit → giữ (None hợp lệ)
+A13 · src/maintenance/engine.py:3420 · ghi chú blocker · "Agent thấy hai việc: <cat> (<quote>)" ⇒ sau P10 hiện "(None)" (đo mirror-note-sim.txt) · chỉ audit → P10 §3.5
+### Ngoài đếm — SPEC chưa thi công cùng loại (không có trong code)
+S1 · SPEC-P08 §6 F8 (WP15/H14 chưa phóng) · tách · rules.location_mentions > 1 nơi ⇒ _try_split False cho MỌI đường kể cả Agent · từ khoá luật chặn quyết định tách của LLM → P10 §7, Q-P10-3
+S2 · SPEC-P09 §4.1 + §8 CẤM 1 (PROPOSED, ngoài B1/B2) · loại việc · nhận phân loại Agent khi "job.quote grounded" · khớp quote → P10 §7, Q-P10-4
+S3 · SPEC-P09 §3 (B1), §4.2 + khối B2 trong §5.1 (PROPOSED, đình chỉ Q35) · location/tách · giao span, quote đủ 3 thành phần → P10 §11 thay
+### Ngoài đếm — kiểm danh mục/cấu trúc (KHÔNG khớp chữ), giữ nguyên
+K1 · src/maintenance/safety.py:948-950 · signal_id ngoài từ vựng đang bật ⇒ bỏ
+K2 · src/maintenance/agent/validate.py:103-136 · tòa/tầng/khu theo danh mục (catalog.site.buildings, dạng tầng, nhãn AREA_PATTERNS, IMPLIED_FLOOR)
+K3 · src/maintenance/agent/validate.py:156-157 · khoá/ghim loại việc của người
+K4 · src/maintenance/agent/validate.py:165-197 · phòng ban/ưu tiên/trùng/tài sản/vật tư theo bảng playbook, bảng PRI, ứng viên
+K5 · src/maintenance/agent/schema.py · Literal/enum, extra="forbid", ràng buộc chéo scope/jobs/next_step
+K6 · src/maintenance/engine.py:3510-3532 · trùng kiểm lại lúc áp (ứng viên, loại việc, vị trí cuối, cửa sổ)
+EXIT=0
+
+$ cat 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/check_links.py'
+"""WP18 package check: every Markdown link and every repo path in backticks of the given files must exist.
+
+Usage (repo root): python check_links.py <file.md> ...   Exit 0 iff nothing is missing. Prints one line per target.
+Markdown links resolve against the file's folder; backtick paths that start with a known top folder resolve against the
+repo root, and plan-relative ones (specs/, handoffs/, reports/, evidence/) against the plan folder.
+"""
+
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path.cwd()
+PLAN = ROOT / "planning" / "06_2026-10-05_reasoning-agent"
+LINK = re.compile(r"\]\(([^)\s]+)\)")
+TICK = re.compile(r"`([^`\s]+)`")
+TOP = ("src/", "tests/", "seed/", "docs/", "brain4agent/", "planning/", "scripts/", ".agents/")
+PLAN_REL = ("specs/", "handoffs/", "reports/", "evidence/")
+FUTURE = ("evidence/WP19", "reports/R18_thi-cong_WP19.md", "tests/test_maintenance/test_p10_catalog_not_quote.py")
+missing = 0
+for name in sys.argv[1:]:
+    path = Path(name)
+    text = path.read_text(encoding="utf-8")
+    targets = []
+    for raw in LINK.findall(text):
+        if raw.startswith(("http://", "https://", "#", "mailto:")):
+            continue
+        targets.append(("link", raw, (path.parent / raw.split("#", 1)[0]).resolve()))
+    for raw in TICK.findall(text):
+        clean = raw.rstrip(".,;:)").split("::", 1)[0]
+        clean = re.sub(r":\d+([-–,]\d+)*$", "", clean)  # file.py:100-101 -> file.py
+        if "*" in clean or "<" in clean or "{" in clean or "…" in clean:
+            continue
+        if clean.startswith(TOP):
+            base = ROOT
+        elif clean.startswith(PLAN_REL):
+            base = PLAN
+        else:
+            continue
+        targets.append(("path", raw, (base / clean).resolve()))
+    for kind, raw, target in targets:
+        rel = target.relative_to(ROOT) if target.is_relative_to(ROOT) else target
+        if target.exists():
+            state = "OK"
+        elif any(str(rel).replace("\\", "/").startswith(f"planning/06_2026-10-05_reasoning-agent/{f}") or
+                 str(rel).replace("\\", "/") == f for f in FUTURE):
+            state = "FUTURE (WP19 tạo)"
+        else:
+            state = "MISSING"
+            missing += 1
+        print(f"{state:18} {name} {kind} {raw}")
+print(f"MISSING={missing}")
+sys.exit(1 if missing else 0)
+EXIT=0
+
+$ cat 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/package_check.sh'
+#!/usr/bin/env bash
+# WP18 package check (H17 §3 "Đo"): every check = command + machine output + EXIT. Run from the repo root.
+set -u
+SCR="$(cd "$(dirname "$0")" && pwd)"
+PLAN="planning/06_2026-10-05_reasoning-agent"
+EV="$PLAN/evidence/WP18"
+f="$EV/package-check.txt"
+: > "$f"
+run() {
+  echo "\$ $1" >> "$f"
+  bash -c "$1" >> "$f" 2>&1
+  echo "EXIT=$?" >> "$f"
+  echo >> "$f"
+}
+P10="$PLAN/specs/SPEC-P10-catalog-not-quote.md"
+H17="$PLAN/handoffs/H17_thi-cong_WP18.md"
+H18="$PLAN/handoffs/H18_thi-cong_WP19.md"
+R17="$PLAN/reports/R17_thi-cong_WP18.md"
+P01="$PLAN/specs/SPEC-P01-reasoning-agent.md"
+P08="$PLAN/specs/SPEC-P08-audit-fixes.md"
+P09="$PLAN/specs/SPEC-P09-semantic-coordination.md"
+REF="$PLAN/specs/REF-agent-contract.py"
+
+{
+  echo "# WP18 package check — $(date '+%Y-%m-%d %H:%M:%S %z')"
+  echo "# Exit của 'git diff --no-index --check /dev/null <file mới>': 1 = chỉ có dòng thêm, KHÔNG lỗi khoảng trắng; 3 = có lỗi."
+  echo
+} >> "$f"
+echo "## 1. Trạng thái git" >> "$f"
+run "git rev-parse HEAD"
+run "git status --porcelain"
+run "git diff --stat"
+echo "## 2. Khoảng trắng" >> "$f"
+run "git diff --check"
+for x in "$P10" "$H18" "$R17"; do
+  run "test -f '$x' && git diff --no-index --check /dev/null '$x'"
+done
+printf 'dòng có khoảng trắng cuối \nok\n' > "$SCR/ws-bad.md"
+run "git diff --no-index --check /dev/null '$SCR/ws-bad.md'   # đối chứng hỏng: phải ra 3"
+echo "## 3. Link nội bộ + đường dẫn repo trong P10, H18 (FUTURE = file WP19 sẽ tạo)" >> "$f"
+run "PYTHONUTF8=1 python '$SCR/check_links.py' '$P10' '$H18' | grep -v '^OK ' ; PYTHONUTF8=1 python '$SCR/check_links.py' '$P10' '$H18' | awk '{print \$1}' | sort | uniq -c"
+run "PYTHONUTF8=1 python '$SCR/check_links.py' '$SCR/neg/specs/bad.md'   # đối chứng hỏng: phải MISSING=3, EXIT=1"
+echo "## 4. Độ dài handoff (≤ 80) + cấu trúc H18" >> "$f"
+run "wc -l '$H17' '$H18'"
+run "head -3 '$H18' | cut -c1-3"
+run "grep -c '^## ' '$H18'"
+run "grep -c 'CHỜ DUYỆT P10' '$H18'; grep -c 'reports/R18_thi-cong_WP19.md' '$H18'"
+echo "## 5. REF selftest (OPERATIONS §1)" >> "$f"
+run "PYTHONPATH=. PYTHONUTF8=1 python '$REF' --selftest"
+echo "## 6. Banner + 'chỉ thêm banner' ở P01/P08/P09" >> "$f"
+run "grep -c 'Bị thay thế bởi SPEC-P10' '$P01' '$P08' '$P09'"
+run "git diff --numstat -- '$P01' '$P08' '$P09'"
+run "git diff -U0 -- '$P01' '$P08' '$P09' | grep '^[+-]' | grep -v '^+++\|^---' | grep -v '^+> ⚠ Bị thay thế bởi SPEC-P10 §' | grep -cv '^+\r\?$'   # dòng khác banner/dòng trống: phải 0"
+run "git diff -U0 -- '$P01' '$P08' '$P09' | grep '^+> ⚠' | grep -cv '(Q35)'   # banner thiếu '(Q35)': phải 0"
+echo "## 7. Cấu trúc P10 (AGENTS §3.2.2)" >> "$f"
+run "grep -n '^## [0-9]*\.\|^### [0-9]' '$P10'"
+run "for k in 'BẮT BUỘC' 'CẤM' 'Vùng cấm' 'Phân loại lỗi' 'Rollback' 'NOT_RUN' 'Đột biến' 'Bảng mục bị thay thế'; do printf '%-22s %s\n' \"\$k\" \"\$(grep -c \"\$k\" '$P10')\"; done"
+echo "## 8. Kiểm kê" >> "$f"
+run "sed -n '/^## C\./,\$p' '$EV/inventory.txt'"
+echo "## 9. Evidence WP18 (tên không bắt đầu bằng 'test')" >> "$f"
+run "ls '$EV'"
+run "ls '$EV' | grep -c '^test'"
+echo "package-check written"
+
+# ---------------------------------------------------------------------------------------------- checklist H17 §3
+echo "## 10. Checklist H17 §3 (mỗi dòng: điều kiện máy kiểm → ĐẠT/THIẾU)" >> "$f"
+INV="$EV/inventory.txt"
+chk() {  # chk "<mục>" "<lệnh trả exit 0 khi đạt>"
+  if bash -c "$2" > /dev/null 2>&1; then s="ĐẠT"; else s="THIẾU"; fi
+  printf '%-6s %s  ⟵  %s\n' "$s" "$1" "$2" >> "$f"
+}
+chk "Kiểm kê: lệnh+output (phần A) và 28 dòng phân loại đủ 4 trường" "grep -q '^## A\. Lệnh và output' '$INV' && test \$(grep -E '^[CFA][0-9]+ · ' '$INV' | awk -F ' · ' 'NF >= 5 && (\$5 ~ /^cổng chặn LLM/ || \$5 ~ /^lưới sàn luật hợp lệ/ || \$5 ~ /^chỉ audit/)' | wc -l) -eq 28"
+chk "P10: hợp đồng từng cổng quote (schema/validate/merge_llm/Mirror/hiển thị)" "for k in '### 3.1' '### 3.2' '### 3.3' '### 3.4' '### 3.5' 'def _check_location(loc: LocationDecision, catalog: Catalog)' 'rule_id=\"LLM\" if quote else \"LLM-NOQUOTE\"' 'quote=None'; do grep -qF \"\$k\" '$P10' || exit 1; done"
+chk "P10: cổng từ khoá luật C7–C9 nêu rõ giữ + lý do + câu hỏi" "grep -q '^| C7 G-1' '$P10' && grep -q '^| C8 G-2' '$P10' && grep -q '^| C9 ' '$P10' && test \$(grep -c '^- \*\*Q-P10-[1-5]' '$P10') -eq 5"
+chk "P10: lưới sàn giữ + vì sao không phải cổng" "grep -q '^## 4\. Lưới sàn' '$P10' && grep -q 'Vì sao giữ' '$P10'"
+chk "P10: an toàn — khớp chữ không làm mất lần nâng (T5/T5b, BẮT BUỘC 2)" "grep -q 'bất kể quote' '$P10' && grep -q 'T-P10-05' '$P10'"
+chk "P10: chống bịa vị trí không bằng câu chữ + rủi ro còn lại + ai chịu" "grep -q '^## 5\. Chống bịa' '$P10' && grep -q 'Ai chịu: \*\*BPTN\*\*' '$P10' && grep -q 'NOT_RUN' '$P10'"
+chk "Bảng mục bị thay thế có P01 §3, P08 §2, P09 §3/§4.2, Q28, Q34" "for k in '| P01 §3.1' '| P08 §2' '§4.2 (B2)' 'Q28' 'Q34'; do grep -qF \"\$k\" '$P10' || exit 1; done"
+chk "Banner đặt ở P01/P08/P09 (6/2/9), diff chỉ là banner + dòng trống" "test \$(grep -c 'Bị thay thế bởi SPEC-P10' '$P01') -eq 6 && test \$(grep -c 'Bị thay thế bởi SPEC-P10' '$P08') -eq 2 && test \$(grep -c 'Bị thay thế bởi SPEC-P10' '$P09') -eq 9 && test \$(git diff -U0 -- '$P01' '$P08' '$P09' | grep '^[+-]' | grep -v '^+++\|^---' | grep -v '^+> ⚠ Bị thay thế bởi SPEC-P10 §' | grep -cv '^+\r\?\$') -eq 0"
+chk "Không còn hai luật trái nhau: mọi mục cũ đã có banner (ngoài P01/P08/P09 cũng vậy)" "! grep -q 'chưa (SO)' '$P10'"
+chk "Test: liệt kê test ghim cổng (§9.1) + 5 ca bắt buộc mới (T-P10-01…05) + live NOT_RUN" "test \$(grep -cE '^\| (★|☆) ' '$P10') -eq 13 && for k in T-P10-01 T-P10-02 T-P10-03 T-P10-04 T-P10-05 '### 9.5 Năng lực live — NOT_RUN'; do grep -qF \"\$k\" '$P10' || exit 1; done"
+chk "P10 đủ AGENTS §3.2.2: BẮT BUỘC/CẤM/vùng cấm, bảng lỗi, rollback, số đo" "for k in '**BẮT BUỘC**' '**CẤM**' '**Vùng cấm**' '## 8. Phân loại lỗi' '**Rollback:**' '### 9.4 Số đo nghiệm thu'; do grep -qF \"\$k\" '$P10' || exit 1; done"
+chk "H18: ≤ 80 dòng, 3 dòng đầu + 6 mục, CHỜ DUYỆT P10, report R18" "test \$(wc -l < '$H18') -le 80 && test \$(grep -c '^## ' '$H18') -eq 6 && test \"\$(head -3 '$H18' | cut -c1-2 | tr -d '\n\r')\" = '1.2.3.' && grep -q 'CHỜ DUYỆT P10' '$H18' && grep -q 'R18_thi-cong_WP19.md' '$H18'"
+chk "Đo: git diff --check exit 0" "git diff --check"
+chk "Đo: link nội bộ P10/H18 tồn tại (MISSING=0)" "PYTHONUTF8=1 python '$SCR/check_links.py' '$P10' '$H18'"
+chk "Đo: H17, H18 ≤ 80 dòng" "test \$(wc -l < '$H17') -le 80 && test \$(wc -l < '$H18') -le 80"
+chk "Đo: REF đổi ⇒ selftest exit 0" "PYTHONPATH=. PYTHONUTF8=1 python '$REF' --selftest"
+{
+  echo
+  echo "\$ grep -c '^ĐẠT ' package-check.txt ; grep -c '^THIẾU ' package-check.txt"
+  grep -c '^ĐẠT ' "$f"
+  grep -c '^THIẾU ' "$f"
+} >> "$f"
+EXIT=0
+
+$ cat 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/make_evidence.sh'
+#!/usr/bin/env bash
+# WP18 evidence generator (architect, scratch). Every file = commands + their machine output + EXIT. Run from repo root.
+set -u
+SCR="$1"
+EV="planning/06_2026-10-05_reasoning-agent/evidence/WP18"
+mkdir -p "$EV"
+ENVV="LLM_MODE=mock MO_STORE=memory MO_PHOTO_STORE=local PYTHONUTF8=1"
+run() {  # run <file> <command...>: append "$ cmd", output, EXIT
+  local f="$1"; shift
+  echo "\$ $*" >> "$f"
+  bash -c "$*" >> "$f" 2>&1
+  echo "EXIT=$?" >> "$f"
+  echo >> "$f"
+}
+
+f="$EV/baseline-pytest.txt"; : > "$f"
+echo "# Base 139399b, đo TRƯỚC khi WP18 ghi file (2026-10-10 ~09:05 +0700). Lệnh:" >> "$f"
+echo "\$ $ENVV python -m pytest -q -p no:cacheprovider" >> "$f"
+cat "$SCR/out/baseline-pytest.txt" >> "$f"
+
+f="$EV/baseline-ruff.txt"; : > "$f"
+run "$f" "python -m ruff check src tests"
+run "$f" "python -m ruff format --check src tests"
+run "$f" "git log --oneline -1 -- src/main.py"
+
+f="$EV/probe-before.txt"; : > "$f"
+echo "# P10 §1 cases on Base code (fake clients, no network). Script source: probe-scripts.txt" >> "$f"
+run "$f" "PYTHONPATH='.;$SCR' $ENVV python '$SCR/probe_cases.py'"
+
+f="$EV/probe-after-sim.txt"; : > "$f"
+echo "# Same cases with the IN-MEMORY P10 simulation (sim_p10.py patches nothing on disk). Script source: probe-scripts.txt" >> "$f"
+run "$f" "PYTHONPATH='.;$SCR' $ENVV python '$SCR/probe_cases.py' --sim"
+
+P="planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/extra_invented_location.py"
+f="$EV/invented-location.txt"; : > "$f"
+echo "# P10 §5 residual risk: WP12 probe (fake client that ALWAYS invents a place). Base, then in-memory P10 simulation." >> "$f"
+run "$f" "PYTHONPATH=. $ENVV python '$P'"
+run "$f" "PYTHONPATH='.;$SCR' $ENVV python '$SCR/run_with_sim.py' '$P'"
+
+f="$EV/g2-probe.txt"; : > "$f"
+echo "# P10 §7: G-2 (rules location vs Agent location) before/after the location quote gate is removed." >> "$f"
+run "$f" "PYTHONPATH='.;$SCR' $ENVV python '$SCR/probe_g2.py'"
+run "$f" "PYTHONPATH='.;$SCR' $ENVV python '$SCR/probe_g2.py' --sim"
+
+f="$EV/sim-pytest.txt"; : > "$f"
+echo "# P10 §9.1: full suite with the in-memory P10 simulation loaded as a pytest plugin (no repo file changed). Lệnh:" >> "$f"
+echo "\$ PYTHONPATH='.;$SCR' $ENVV python -m pytest -q -p no:cacheprovider -p sim_p10 -rf" >> "$f"
+cat "$SCR/out/sim-pytest.txt" >> "$f"
+
+f="$EV/ref-selftest.txt"; : > "$f"
+echo "# P10 §3.6: REF selftest (new), the same selftest on a copy whose section A keeps the pre-P10 quote types (must be red)," >> "$f"
+echo "# runtime schema vs REF (red until WP19), and the REF-dependent tests on the Base runtime." >> "$f"
+run "$f" "PYTHONPATH=. PYTHONUTF8=1 python planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py --selftest"
+run "$f" "PYTHONPATH=. PYTHONUTF8=1 python '$SCR/REF-broken-old-quote.py' --selftest"
+run "$f" "PYTHONPATH=. PYTHONUTF8=1 python '$SCR/schema_vs_ref.py'"
+run "$f" "PYTHONPATH='.;$SCR' PYTHONUTF8=1 python '$SCR/schema_vs_ref.py' --sim"
+run "$f" "$ENVV python -m pytest -q -p no:cacheprovider tests/test_maintenance/test_agent_prompt.py tests/test_maintenance/test_p1_contracts.py"
+
+f="$EV/proto-audit-quote.txt"; : > "$f"
+echo "# P10 §3.1: the AuditQuote type on the installed pydantic (scratch prototype, same definition as REF section A)." >> "$f"
+run "$f" "PYTHONUTF8=1 python -c 'import pydantic; print(pydantic.VERSION)'"
+run "$f" "PYTHONUTF8=1 python '$SCR/proto_quote.py'"
+
+f="$EV/forward-compat.txt"; : > "$f"
+echo "# P10 §10: a case written by P10 (simulated) with jobs[0].quote = null, then read by the Base model." >> "$f"
+run "$f" "PYTHONPATH='.;$SCR' $ENVV python '$SCR/fc_write.py' '$SCR'"
+run "$f" "PYTHONPATH=. PYTHONUTF8=1 python '$SCR/fc_read.py' '$SCR'"
+
+f="$EV/mirror-note-sim.txt"; : > "$f"
+echo "# P10 §3.4/§3.5: Mirror quotes and the two-jobs note under the simulation (display NOT fixed => '(None)')." >> "$f"
+run "$f" "PYTHONPATH='.;$SCR' $ENVV python '$SCR/mirror_note.py'"
+
+f="$EV/proto-tests.txt"; : > "$f"
+echo "# P10 §9.2: scratch prototype of the required new tests (NOT the WP19 file) on Base, then on the in-memory P10 simulation." >> "$f"
+run "$f" "$ENVV PYTHONPATH=. python -m pytest -q -p no:cacheprovider -rA '$SCR/proto_test_p10.py'"
+run "$f" "$ENVV PYTHONPATH='.;$SCR' python -m pytest -q -p no:cacheprovider -p sim_p10 -rA '$SCR/proto_test_p10.py'"
+
+f="$EV/probe-scripts.txt"; : > "$f"
+echo "# Sources of the scratch scripts used above (scratchpad, not product code), printed by cat." >> "$f"
+for s in sim_p10.py probe_cases.py probe_g2.py run_with_sim.py proto_quote.py schema_vs_ref.py fc_write.py fc_read.py mirror_note.py proto_test_p10.py make_inventory.sh inventory_classification.txt check_links.py package_check.sh make_evidence.sh; do
+  run "$f" "cat '$SCR/$s'"
+done
+echo done
+EXIT=0
+

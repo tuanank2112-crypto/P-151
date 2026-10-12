@@ -1,0 +1,19 @@
+captured_at=2026-10-10T17:56:31+07:00
+$ sh -c docker logs --since 5m p151-plan16-memory 2>&1 | grep -B6 'OverflowError: int too large' | head -16
+  File "/app/src/maintenance/material_policy.py", line 46, in _whole_qty
+    if not whole_positive(value):
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/app/src/maintenance/material_policy.py", line 39, in whole_positive
+    and math.isfinite(value)
+        ^^^^^^^^^^^^^^^^^^^^
+OverflowError: int too large to convert to float
+--
+  File "/app/src/api/routers/maintenance.py", line 568, in _whole_quantities
+    if isinstance(line, dict) and not whole_positive(line.get("planned_qty")):
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/src/maintenance/material_policy.py", line 39, in whole_positive
+    and math.isfinite(value)
+        ^^^^^^^^^^^^^^^^^^^^
+OverflowError: int too large to convert to float
+--
+exit=0

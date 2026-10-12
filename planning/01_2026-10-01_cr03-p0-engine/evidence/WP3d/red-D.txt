@@ -1,0 +1,4 @@
+E           AssertionError: Hành lang tầng 3 tòa SIM-A không có bình chữa cháy hay có khói bốc ra từ hộp điện
+FAILED tests/test_maintenance/test_safety.py::test_wp3d_fire_equipment_is_not_a_hazard_in_coordination
+1 failed, 1263 deselected in 0.53s
+EXIT=1

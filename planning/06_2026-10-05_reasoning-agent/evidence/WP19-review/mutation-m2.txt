@@ -1,0 +1,10 @@
+# mutation m2: SPEC m2: job quote not in report_text => job dropped
+# sandbox copy: C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\repo3
+sha256 before src\maintenance\agent\validate.py = 98a7be113a43b44c414f6ebf7eab70c62ace1d61432dc467f1f3f93355a272a2
+applied in src/maintenance/agent/validate.py: anchor x1
+$ (cwd=sandbox) -m pytest -q -p no:cacheprovider -rf tests/test_maintenance/test_p10_catalog_not_quote.py tests/test_maintenance/test_agent_unit.py tests/test_maintenance/test_p1_audit_fixes_safety.py tests/test_maintenance/test_safety.py tests/test_maintenance/test_agent_engine.py tests/test_maintenance/test_agent_parity.py tests/test_maintenance/test_p1_contracts.py tests/test_maintenance/test_agent_prompt.py
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_08_a_job_quote_not_in_the_text_is_kept_for_audit
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_08b_no_job_is_dropped_for_its_quote
+2 failed, 1644 passed in 84.83s (0:01:24)
+EXIT=1
+sha256 after  src\maintenance\agent\validate.py = 98a7be113a43b44c414f6ebf7eab70c62ace1d61432dc467f1f3f93355a272a2 restored=YES

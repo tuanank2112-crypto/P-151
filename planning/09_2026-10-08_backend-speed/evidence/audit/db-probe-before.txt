@@ -1,0 +1,6 @@
+select 1                               median=    44ms min=    41 max=    88
+select doc (all, = repo.list())        median=  2723ms min=  2334 max=  3581
+select ticket_id, xmin (all)           median=    43ms min=    42 max=    51
+select doc - audit - notifications     median=   951ms min=   680 max=  1022
+cases=65 json_text_total=725KB max_doc=24KB
+doc keys by size: audit=261KB, events=124KB, ticket=103KB, notifications=83KB, draft=38KB, checklist_items=29KB, proposal=28KB, material_lines=17KB, classification=12KB, evidence=6KB, agent_decision=3KB, additions=2KB, planned_materials=2KB, planned_for_playbook=0KB, not_duplicate_of=0KB, evidence_round_start=0KB, execution_snapshots=0KB

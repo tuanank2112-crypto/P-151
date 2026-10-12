@@ -1,0 +1,85 @@
+captured_at=2026-10-10T18:11:52+07:00
+$ docker run --rm --network p151_default -v C:/P-151:/app -w /app -e PYTHONDONTWRITEBYTECODE=1 -e PYTHONUTF8=1 -e MO_TEST_DATABASE_URL=postgresql+psycopg2://p151:p151@db:5432/p151_test p151-backend python planning/16_2026-10-10_material-guards/evidence/wp4/probe_backend.py pg /app
+mode=pg root=/app
+alembic -> host=db db=p151_test user=p151
+HELD   B1 save tech<-SIM-MAT-CLEAN-01 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B1 confirm tech<-SIM-MAT-CLEAN-01 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B1 save tech<-SIM-MAT-BAG-01 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B1 confirm tech<-SIM-MAT-BAG-01 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B1 save clean<-SIM-MAT-LAMP-01 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B1 save clean<-SIM-MAT-STARTER-01 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B1 record_material foreign code on agent line :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 save used_qty=0 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record issued=0 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record used=0 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 confirm planned=0 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 save used_qty=-1 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record issued=-1 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record used=-1 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 confirm planned=-1 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 save used_qty=0.5 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record issued=0.5 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record used=0.5 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 confirm planned=0.5 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 save used_qty=True :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record issued=True :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record used=True :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 confirm planned=True :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 save used_qty=False :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record issued=False :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record used=False :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 confirm planned=False :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 save used_qty='1' :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record issued='1' :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record used='1' :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 confirm planned='1' :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 save used_qty=nan :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record issued=nan :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record used=nan :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 confirm planned=nan :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 save used_qty=inf :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record issued=inf :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record used=inf :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 confirm planned=inf :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 save used_qty=-inf :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record issued=-inf :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record used=-inf :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 confirm planned=-inf :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 save used_qty=None :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record issued=None :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record used=None :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 confirm planned=None :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 save used_qty=10**400 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record issued=10**400 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 record used=10**400 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B2 confirm planned=10**400 :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B3 save tech [] :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B3 confirm tech [] :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B4 save duplicate code :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B4 save unknown code :: raised=GuardError want=GuardError state_unchanged=True
+HELD   B5 save accepts 1 :: lines=[('SIM-MAT-LAMP-01', 1.0, 1.0, 1.0)]
+HELD   B5 save accepts 1.0 :: lines=[('SIM-MAT-LAMP-01', 1.0, 1.0, 1.0)]
+HELD   B6 complete old-data tech N_A empty :: status=IN_PROGRESS failing=['material_required']
+HELD   B6 complete old-data tech foreign CLEAN 2/2 :: status=IN_PROGRESS failing=['material_invalid']
+HELD   B6 complete old-data tech LAMP 0.5/0.5 :: status=IN_PROGRESS failing=['material_invalid']
+HELD   B6 complete old-data tech LAMP 0/0 :: status=IN_PROGRESS failing=['material_invalid']
+HELD   B6 complete old-data clean foreign LAMP 1/1 :: status=IN_PROGRESS failing=['material_invalid']
+HELD   B7 transition IN_PROGRESS->READY by dept :: raised=ActionDeniedError
+HELD   C1 cleaning [] returns stock and completes :: stock_mid=8.0 stock_end=10.0 status=READY_FOR_REVIEW mode=N_A
+HELD   C2 tech norm1 used4 -> READY, no reason/warning :: status=READY_FOR_REVIEW warnings=0 lines=[('SIM-MAT-LAMP-01', 4.0, 4.0, 4.0)] stock=1.0
+Traceback (most recent call last):
+  File "/app/planning/16_2026-10-10_material-guards/evidence/wp4/probe_backend.py", line 279, in <module>
+    e.save_material_usage(t1, TEC, lines=[mul(c, q) for c, q in payload])
+  File "/app/src/maintenance/engine.py", line 1573, in save_material_usage
+    return self._mutate(ticket_id, actor_id, Action.UPDATE_MATERIAL, op)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/src/maintenance/engine.py", line 1936, in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/src/maintenance/engine.py", line 1954, in _mutate_locked
+    case = tx.get_for_update(ticket_id)  # row lock (I-3)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/src/maintenance/store/postgres.py", line 214, in get_for_update
+    raise NotFoundError(f"Không có ticket {ticket_id}")
+src.maintenance.store.base.NotFoundError: Không có ticket SIM-TKT-0001
+exit=1

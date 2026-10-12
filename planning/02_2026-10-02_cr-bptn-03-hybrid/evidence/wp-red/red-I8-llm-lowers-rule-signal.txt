@@ -1,0 +1,19 @@
+# guard broken in src/maintenance/safety.py
+# test: tests/test_maintenance/test_safety.py::test_ac05_the_model_can_raise_but_never_lower
+# pytest exit code: 1
+
+        text = "\u0110\xe8n s\u1ea3nh c\xf3 tia l\u1eeda"
+        rule = assess(text)
+        lowered = merge_llm(
+            rule, [RiskSignal(signal_id="S-02", status="ABSENT", source_quote="tia l\u1eeda", detected_by="LLM")], text
+        )
+>       assert lowered.risk_level == RiskLevel.EMERGENCY
+E       AssertionError: assert <RiskLevel.NONE: 'NONE'> == <RiskLevel.EM...: 'EMERGENCY'>
+E         
+E         - EMERGENCY
+E         + NONE
+
+tests\test_maintenance\test_safety.py:64: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_safety.py::test_ac05_the_model_can_raise_but_never_lower
+1 failed in 0.18s

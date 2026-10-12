@@ -1,0 +1,7 @@
+# m3: quote not in text downgrades to UNCLEAR
+$ python -m pytest -q tests/test_maintenance/test_p10_catalog_not_quote.py tests/test_maintenance/test_safety.py -k counts_whatever or p10_05   (file mutated: src/maintenance/safety.py)
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_05_an_agent_raise_is_kept_whatever_its_quote[b\xecnh gas b\u1ecb x\xec]
+FAILED tests/test_maintenance/test_safety.py::test_llm_present_counts_whatever_its_quote
+2 failed, 1 passed, 1489 deselected in 1.33s
+restored: sha256 before == after: True; git diff --stat unchanged: True
+EXIT=1

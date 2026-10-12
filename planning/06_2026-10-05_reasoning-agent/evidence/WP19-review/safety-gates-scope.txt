@@ -1,0 +1,22 @@
+# sandbox copy of working tree (repo2)
+$ pytest -q -p no:cacheprovider tests/test_maintenance/test_safety_metamorphic.py tests/test_maintenance/test_classify_metamorphic.py
+.......................................................                  [100%]
+991 passed in 41.59s
+EXIT=0
+$ pytest -q -p no:cacheprovider tests/test_maintenance/test_safety.py -k "stop_set or false_alarm_budget"
+...                                                                      [100%]
+1083 passed, 388 deselected in 4.64s
+EXIT=0
+$ git -C D:/P151 diff --quiet HEAD -- seed src/maintenance/rules.py src/maintenance/agent/prompt.py src/maintenance/agent/reconcile.py src/maintenance/agent/agent.py src/maintenance/models.py src/maintenance/coordination src/maintenance/store src/api src/web
+EXIT=0
+$ git -C D:/P151 diff HEAD -U0 -- src/maintenance/safety.py | grep -c "^@@"  (hunks)
+warning: in the working copy of 'src/maintenance/safety.py', LF will be replaced by CRLF the next time Git touches it
+@@ -918 +918,3 @@ class SignalJudgement(BaseModel):
+@@ -928,4 +930,4 @@ SafetyLLMClient = Callable[[str], LLMSafetyAssessment]
+@@ -942 +944,4 @@ def merge_llm(
+@@ -952 +956,0 @@ def merge_llm(
+@@ -955,0 +960 @@ def merge_llm(
+@@ -957,5 +962 @@ def merge_llm(
+@@ -965 +966,7 @@ def merge_llm(
+$ git -C D:/P151 diff HEAD -U0 -- src/maintenance/engine.py | grep "^@@"
+@@ -3420 +3420,3 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):

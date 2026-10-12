@@ -1,0 +1,14 @@
+
+> portal@1.2.0 test:db
+> vitest run --project db
+
+
+ RUN  v5.0.3 E:/vinuni/build_phase/P-151/portal
+
+
+ Test Files  2 passed (2)
+      Tests  18 passed (18)
+   Start at  12:11:52
+   Duration  6.20s (tests 77%, import 17%, transform 5%)
+
+npm run test:db exit=0

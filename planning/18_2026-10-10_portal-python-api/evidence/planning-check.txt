@@ -1,0 +1,11 @@
+planning\18_2026-10-10_portal-python-api\plan.md lines=51
+planning\18_2026-10-10_portal-python-api\specs\00-ARCHITECTURE.md lines=19
+planning\18_2026-10-10_portal-python-api\specs\01-CONTRACTS.md lines=23
+planning\18_2026-10-10_portal-python-api\specs\OPERATIONS.md lines=17
+planning\18_2026-10-10_portal-python-api\specs\SPEC-P01-auth-data.md lines=16
+planning\18_2026-10-10_portal-python-api\specs\SPEC-P02-actions-ui.md lines=31
+planning\18_2026-10-10_portal-python-api\specs\TESTING-ACCEPTANCE.md lines=26
+git diff --check exit=0
+
+
+planning validation PASS

@@ -14,3 +14,28 @@ eval/
 .dockerignore
 Dockerfile
 docker-compose.yml
+data/
+node_modules/
+tests/
+
+# Local worktrees and interpreter/package caches are not application source.
+integration/
+.worktrees/
+.python/
+.uv-cache/
+.ai-log/
+.agents/
+.claude/
+.codex/
+.cursor/
+.gemini/
+.deepeval/
+.vscode/
+
+# Also exclude caches nested inside modules (including the separate portal).
+**/node_modules/
+**/.next/
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.ruff_cache/

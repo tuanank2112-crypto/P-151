@@ -1,0 +1,11 @@
+RED  m6-immutable-again (R01 #2): exit=1 3 failed, 25 passed in 3.58s
+RED  m7-304-before-access-check (R01 #2): exit=1 1 failed, 27 passed in 3.55s
+RED  m8-etag-from-evidence-id (R01 #3): exit=1 2 failed, 26 passed in 3.46s
+RED  m9-department-route-reads-files-first (R01 #7): exit=1 1 failed, 27 passed in 3.36s
+RED  m10-resident-route-reads-files-first (R01 #7): exit=1 1 failed, 27 passed in 3.41s
+RED  d-gzip-may-touch-photos (R01 #14): exit=1 1 failed, 27 passed in 3.67s
+RED  f-resident-route-serves-any-photo (R01 #14): exit=1 1 failed, 27 passed in 3.45s
+RED  g-cache-without-byte-budget (R01 #14): exit=1 1 failed, 27 passed in 3.69s
+restored byte for byte: yes; green after restore: exit=0 28 passed in 3.28s
+RESULT: 8/8 mutants red
+exit=0

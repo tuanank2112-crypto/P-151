@@ -1,0 +1,20 @@
+# mutant: dept.js shows the Agent plan again (chose = true) + off-norm guard off; restored byte-for-byte (sha1sum -c OK)
+setup (Agent plan in engine) tec=SIM-TKT-0001 SIM-MAT-LAMP-01:1/null/null tecOff=SIM-TKT-0002 clnNone=SIM-TKT-0003 SIM-MAT-CLEAN-01:2/null/null clnPick=SIM-TKT-0004
+PASS T1-no-agent khối vật tư không nhắc Agent/đề xuất: "Vật tư sử dụngChưa lưuChọn vật tư đã dùng và số lượng.Chọn vật tư…Bóng đèn LED Tuýp T8 18W"
+FAIL T1-empty dòng = ["SIM-MAT-LAMP-01"] (engine có SIM-MAT-LAMP-01:1/null/null)
+PASS T1-options SIM-MAT-LAMP-01,SIM-MAT-LAMP-02,SIM-MAT-STARTER-01
+PASS T1-precheck-red chưa chọn ⇒ điều kiện vật tư đỏ
+FAIL T1-empty-refused POST: /api/v1/mo/tickets/SIM-TKT-0001/materials/SIM-MAT-LAMP-01
+FAIL T1-saved SIM-MAT-LAMP-01:1/1/1
+PASS T1-precheck-green đã chọn ⇒ xanh
+PASS T1-shows-choice tải lại hiện lựa chọn của phòng ban
+FAIL T1c-reason-asked toast=false lines=SIM-MAT-LAMP-01:3/3/3
+PASS T1c-saved SIM-MAT-LAMP-01 3/3 "Thay cả 3 bóng hỏng"
+PASS T2-options SIM-MAT-BAG-01,SIM-MAT-CLEAN-01
+FAIL T2-empty không điền sẵn CLEAN-01 của Agent
+PASS T2-saved lines=0 mode=N_A
+PASS T2-still-ticked tải lại vẫn tick
+PASS T3-saved SIM-MAT-BAG-01:2/2/2
+PASS T4-complete READY_FOR_REVIEW failing=-
+FAILURES 5
+exit=1

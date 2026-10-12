@@ -1,0 +1,867 @@
+FF.....F.FFFFFFFF.F.FF.FFFFFFFFFFFFFFFFFFFFFFFFF..F                      [100%]
+================================== FAILURES ===================================
+___________ test_s1_agent_out_of_scope_without_a_place_goes_to_bql ____________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x00000195213B1410>
+
+    def test_s1_agent_out_of_scope_without_a_place_goes_to_bql(clock):
+        engine = agent_engine(clock, ScriptedClient({"phí dịch vụ": oos_reply()}))
+        case = engine.receive(FEE_TEXT, resident_id=RESIDENT)
+        ticket, blocker = case.ticket, case.ticket.blocker
+        assert (ticket.status, blocker.code) == ("VERIFYING", "OUT_OF_SCOPE")
+        assert blocker.resume_step == 2  # the step-2 branch (no location, nothing to ask)
+>       assert blocker.escalated is True and blocker.next_retry_at is None
+E       AssertionError: assert (False is True)
+E        +  where False = Blocker(code=<ReasonCode.OUT_OF_SCOPE: 'OUT_OF_SCOPE'>, owner_role=<BlockerOwner.BPTN: 'BPTN'>, since=datetime.datetim...g phải việc kỹ thuật hay vệ sinh; thiếu vị trí, không hỏi', related_ticket_id=None, resolved_at=None, resolved_by=None).escalated
+
+tests\test_maintenance\test_portal_backend_ext2.py:167: AssertionError
+___________ test_s1_agent_out_of_scope_with_a_place_goes_to_bql_too ___________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001952143A410>
+
+    def test_s1_agent_out_of_scope_with_a_place_goes_to_bql_too(clock):
+        out = oos_reply(location=HALLWAY)
+        engine = agent_engine(clock, ScriptedClient({"Phí dịch vụ": out}))
+        case = engine.receive(FEE_WITH_PLACE, resident_id=RESIDENT)
+        blocker = case.ticket.blocker
+        assert (case.ticket.status, blocker.code, blocker.resume_step) == ("VERIFYING", "OUT_OF_SCOPE", 4)  # step 3
+>       assert blocker.escalated is True and blocker.next_retry_at is None
+E       AssertionError: assert (False is True)
+E        +  where False = Blocker(code=<ReasonCode.OUT_OF_SCOPE: 'OUT_OF_SCOPE'>, owner_role=<BlockerOwner.BPTN: 'BPTN'>, since=datetime.datetim... Hỏi về phí dịch vụ, không phải việc kỹ thuật hay vệ sinh', related_ticket_id=None, resolved_at=None, resolved_by=None).escalated
+
+tests\test_maintenance\test_portal_backend_ext2.py:187: AssertionError
+__________ test_s1_agent_out_of_scope_then_bql_closes_or_returns_it ___________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001952147A550>
+
+    def test_s1_agent_out_of_scope_then_bql_closes_or_returns_it(clock):
+        engine = agent_engine(clock, ScriptedClient({"phí dịch vụ": oos_reply()}))
+        ticket_id = engine.receive(FEE_TEXT, resident_id=RESIDENT).ticket.ticket_id
+>       returned = engine.bql_return_to_bptn(ticket_id, BQL, note="BPTN liên hệ cư dân")
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext2.py:212: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\maintenance\engine.py:1318: in bql_return_to_bptn
+    return self._mutate(
+src\maintenance\engine.py:2010: in _mutate
+    return self._mutate_locked(ticket_id, actor_id, action, op, roles, field_name, new_value, reason)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\maintenance\engine.py:2046: in _mutate_locked
+    op(work, now)
+src\maintenance\engine.py:1308: in op
+    self._require_out_of_scope(work, escalated=True, what="Trả về BPTN")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+work = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...cation=None, agent_missing_parts=['building', 'floor', 'area'], valid_job_indexes=[], prompt_version='agent-prompt/5'))
+escalated = True, what = 'Trả về BPTN'
+
+    @staticmethod
+    def _require_out_of_scope(work: Case, *, escalated: bool | None, what: str) -> None:
+        """VERIFYING + OUT_OF_SCOPE, and (when `escalated` is given) in that escalation state; else 409."""
+        ticket, blocker = work.ticket, work.ticket.blocker
+        if (
+            ticket.status != S.VERIFYING
+            or blocker is None
+            or blocker.code != R.OUT_OF_SCOPE
+            or (escalated is not None and blocker.escalated != escalated)
+        ):
+            where = f"{ticket.status} / {blocker.code if blocker else None}"
+            state = "" if escalated is None else (" đã leo thang" if escalated else " chưa leo thang")
+>           raise InvalidTransitionError(f"{what} chỉ áp dụng cho ticket ngoài phạm vi{state}, không phải {where}")
+E           src.maintenance.errors.InvalidTransitionError: Trả về BPTN chỉ áp dụng cho ticket ngoài phạm vi đã leo thang, không phải VERIFYING / OUT_OF_SCOPE
+
+src\maintenance\engine.py:1341: InvalidTransitionError
+____________ test_s1_api_agent_escalated_ticket_is_in_the_bql_list ____________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000019521314DD0>
+agent_cleanup = None
+
+    def test_s1_api_agent_escalated_ticket_is_in_the_bql_list(clock, agent_cleanup):
+        env = agent_env(clock, ScriptedClient({"phí dịch vụ": oos_reply()}))
+        c, tok = env.client, env.tok
+        created = c.post("/api/v1/resident/tickets", json={"original_description": FEE_TEXT}, headers=tok("cudan"))
+        assert created.status_code == 201, created.text
+        ticket_id = created.json()["ticket_id"]
+        rows = c.get("/api/v1/bql/tickets?blocker_code=OUT_OF_SCOPE&escalated=true", headers=tok("quanly")).json()
+>       assert [r["ticket_id"] for r in rows] == [ticket_id]
+E       AssertionError: assert [] == ['SIM-TKT-0001']
+E         
+E         Right contains one more item: 'SIM-TKT-0001'
+E         Use -v to get more diff
+
+tests\test_maintenance\test_portal_backend_ext2.py:234: AssertionError
+___________ test_s2_enough_stock_still_waits_for_approval_then_runs ___________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001951EB3BC90>
+
+    def test_s2_enough_stock_still_waits_for_approval_then_runs(eng):
+        ticket_id = in_progress_ticket(eng)
+        eng.receive_stock(WAREHOUSE, LAMP2, 5)
+        case = eng.confirm_materials(
+            ticket_id, TEC, lines=[PlannedMaterial(item_code=LAMP2, planned_qty=2)], note="Đèn tuýp"
+        )
+        ticket = case.ticket
+>       assert ticket.status == "ON_HOLD" and ticket.blocker.code == "WAITING_MATERIAL"
+E       AssertionError: assert (<TicketStatus...'IN_PROGRESS'> == 'ON_HOLD'
+E         
+E         - ON_HOLD
+E         + IN_PROGRESS)
+
+tests\test_maintenance\test_portal_backend_ext2.py:248: AssertionError
+_________________________ test_s2_bql_can_approve_too _________________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000195214B2510>
+
+    def test_s2_bql_can_approve_too(eng):
+>       ticket_id = waiting_ticket(eng)
+                    ^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext2.py:265: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x00000195214B2510>
+stock = 5
+
+    def waiting_ticket(engine: MaintenanceEngine, *, stock: float = 5) -> str:
+        """A technical ticket in progress whose department asked for 2 tube lamps; the warehouse holds `stock`."""
+        ticket_id = in_progress_ticket(engine)
+        if stock:
+            engine.receive_stock(WAREHOUSE, LAMP2, stock)
+        case = engine.confirm_materials(
+            ticket_id, TEC, lines=[PlannedMaterial(item_code=LAMP2, planned_qty=2)], note="Đèn tuýp"
+        )
+>       assert case.ticket.status == "ON_HOLD"
+E       AssertionError: assert <TicketStatus...'IN_PROGRESS'> == 'ON_HOLD'
+E         
+E         - ON_HOLD
+E         + IN_PROGRESS
+
+tests\test_maintenance\test_portal_backend_ext2.py:154: AssertionError
+_________ test_s2_short_stock_is_refused_until_the_warehouse_receives _________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x0000019521564C10>
+
+    def test_s2_short_stock_is_refused_until_the_warehouse_receives(eng):
+>       ticket_id = waiting_ticket(eng, stock=1)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext2.py:270: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x0000019521564C10>
+stock = 1
+
+    def waiting_ticket(engine: MaintenanceEngine, *, stock: float = 5) -> str:
+        """A technical ticket in progress whose department asked for 2 tube lamps; the warehouse holds `stock`."""
+        ticket_id = in_progress_ticket(engine)
+        if stock:
+            engine.receive_stock(WAREHOUSE, LAMP2, stock)
+        case = engine.confirm_materials(
+            ticket_id, TEC, lines=[PlannedMaterial(item_code=LAMP2, planned_qty=2)], note="Đèn tuýp"
+        )
+>       assert case.ticket.status == "ON_HOLD"
+E       AssertionError: assert <TicketStatus...'IN_PROGRESS'> == 'ON_HOLD'
+E         
+E         - ON_HOLD
+E         + IN_PROGRESS
+
+tests\test_maintenance\test_portal_backend_ext2.py:154: AssertionError
+______________ test_s2_receiving_stock_never_approves_by_itself _______________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000195215553D0>
+
+    def test_s2_receiving_stock_never_approves_by_itself(eng):  # mutation m4 target
+>       ticket_id = waiting_ticket(eng, stock=5)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext2.py:283: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x00000195215553D0>
+stock = 5
+
+    def waiting_ticket(engine: MaintenanceEngine, *, stock: float = 5) -> str:
+        """A technical ticket in progress whose department asked for 2 tube lamps; the warehouse holds `stock`."""
+        ticket_id = in_progress_ticket(engine)
+        if stock:
+            engine.receive_stock(WAREHOUSE, LAMP2, stock)
+        case = engine.confirm_materials(
+            ticket_id, TEC, lines=[PlannedMaterial(item_code=LAMP2, planned_qty=2)], note="Đèn tuýp"
+        )
+>       assert case.ticket.status == "ON_HOLD"
+E       AssertionError: assert <TicketStatus...'IN_PROGRESS'> == 'ON_HOLD'
+E         
+E         - ON_HOLD
+E         + IN_PROGRESS
+
+tests\test_maintenance\test_portal_backend_ext2.py:154: AssertionError
+___________________ test_s2_the_job_does_not_approve_either ___________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001952140F310>
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001952140C590>
+
+    def test_s2_the_job_does_not_approve_either(eng, clock):  # mutation m4 target
+>       ticket_id = waiting_ticket(eng, stock=5)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext2.py:291: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001952140F310>
+stock = 5
+
+    def waiting_ticket(engine: MaintenanceEngine, *, stock: float = 5) -> str:
+        """A technical ticket in progress whose department asked for 2 tube lamps; the warehouse holds `stock`."""
+        ticket_id = in_progress_ticket(engine)
+        if stock:
+            engine.receive_stock(WAREHOUSE, LAMP2, stock)
+        case = engine.confirm_materials(
+            ticket_id, TEC, lines=[PlannedMaterial(item_code=LAMP2, planned_qty=2)], note="Đèn tuýp"
+        )
+>       assert case.ticket.status == "ON_HOLD"
+E       AssertionError: assert <TicketStatus...'IN_PROGRESS'> == 'ON_HOLD'
+E         
+E         - ON_HOLD
+E         + IN_PROGRESS
+
+tests\test_maintenance\test_portal_backend_ext2.py:154: AssertionError
+_________________ test_s2_wrong_roles_are_denied_and_audited __________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001952140D790>
+
+    def test_s2_wrong_roles_are_denied_and_audited(eng):
+>       ticket_id = waiting_ticket(eng)
+                    ^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext2.py:298: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001952140D790>
+stock = 5
+
+    def waiting_ticket(engine: MaintenanceEngine, *, stock: float = 5) -> str:
+        """A technical ticket in progress whose department asked for 2 tube lamps; the warehouse holds `stock`."""
+        ticket_id = in_progress_ticket(engine)
+        if stock:
+            engine.receive_stock(WAREHOUSE, LAMP2, stock)
+        case = engine.confirm_materials(
+            ticket_id, TEC, lines=[PlannedMaterial(item_code=LAMP2, planned_qty=2)], note="Đèn tuýp"
+        )
+>       assert case.ticket.status == "ON_HOLD"
+E       AssertionError: assert <TicketStatus...'IN_PROGRESS'> == 'ON_HOLD'
+E         
+E         - ON_HOLD
+E         + IN_PROGRESS
+
+tests\test_maintenance\test_portal_backend_ext2.py:154: AssertionError
+_________ test_s2_approving_twice_or_a_ticket_not_waiting_is_invalid __________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000195212D7DD0>
+
+    def test_s2_approving_twice_or_a_ticket_not_waiting_is_invalid(eng):
+>       ticket_id = waiting_ticket(eng)
+                    ^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext2.py:308: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x00000195212D7DD0>
+stock = 5
+
+    def waiting_ticket(engine: MaintenanceEngine, *, stock: float = 5) -> str:
+        """A technical ticket in progress whose department asked for 2 tube lamps; the warehouse holds `stock`."""
+        ticket_id = in_progress_ticket(engine)
+        if stock:
+            engine.receive_stock(WAREHOUSE, LAMP2, stock)
+        case = engine.confirm_materials(
+            ticket_id, TEC, lines=[PlannedMaterial(item_code=LAMP2, planned_qty=2)], note="Đèn tuýp"
+        )
+>       assert case.ticket.status == "ON_HOLD"
+E       AssertionError: assert <TicketStatus...'IN_PROGRESS'> == 'ON_HOLD'
+E         
+E         - ON_HOLD
+E         + IN_PROGRESS
+
+tests\test_maintenance\test_portal_backend_ext2.py:154: AssertionError
+_______ test_s2_department_cannot_resume_a_ticket_waiting_for_approval ________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000195214D5650>
+
+    def test_s2_department_cannot_resume_a_ticket_waiting_for_approval(eng):
+>       ticket_id = waiting_ticket(eng)
+                    ^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext2.py:327: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x00000195214D5650>
+stock = 5
+
+    def waiting_ticket(engine: MaintenanceEngine, *, stock: float = 5) -> str:
+        """A technical ticket in progress whose department asked for 2 tube lamps; the warehouse holds `stock`."""
+        ticket_id = in_progress_ticket(engine)
+        if stock:
+            engine.receive_stock(WAREHOUSE, LAMP2, stock)
+        case = engine.confirm_materials(
+            ticket_id, TEC, lines=[PlannedMaterial(item_code=LAMP2, planned_qty=2)], note="Đèn tuýp"
+        )
+>       assert case.ticket.status == "ON_HOLD"
+E       AssertionError: assert <TicketStatus...'IN_PROGRESS'> == 'ON_HOLD'
+E         
+E         - ON_HOLD
+E         + IN_PROGRESS
+
+tests\test_maintenance\test_portal_backend_ext2.py:154: AssertionError
+_____________________ test_s2_work_goes_on_after_approval _____________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000195215F9550>
+
+    def test_s2_work_goes_on_after_approval(eng):
+>       ticket_id = waiting_ticket(eng, stock=5)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext2.py:348: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x00000195215F9550>
+stock = 5
+
+    def waiting_ticket(engine: MaintenanceEngine, *, stock: float = 5) -> str:
+        """A technical ticket in progress whose department asked for 2 tube lamps; the warehouse holds `stock`."""
+        ticket_id = in_progress_ticket(engine)
+        if stock:
+            engine.receive_stock(WAREHOUSE, LAMP2, stock)
+        case = engine.confirm_materials(
+            ticket_id, TEC, lines=[PlannedMaterial(item_code=LAMP2, planned_qty=2)], note="Đèn tuýp"
+        )
+>       assert case.ticket.status == "ON_HOLD"
+E       AssertionError: assert <TicketStatus...'IN_PROGRESS'> == 'ON_HOLD'
+E         
+E         - ON_HOLD
+E         + IN_PROGRESS
+
+tests\test_maintenance\test_portal_backend_ext2.py:154: AssertionError
+______________________________ test_s2_api_flow _______________________________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000195213AF750>, client=<starlette.testclient...ake_env.<locals>.tok at 0x000001952193F6A0>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000195213ADC50>)
+
+    def test_s2_api_flow(env):
+        c, tok = env.client, env.tok
+        ticket_id = in_progress_ticket(env.engine)
+        plan = {"lines": [{"item_code": LAMP2, "planned_qty": 2}], "note": "Đèn tuýp"}
+        sent = c.post(f"/api/v1/mo/tickets/{ticket_id}/material-plan", json=plan, headers=tok("kythuat"))
+>       assert sent.status_code == 200 and sent.json()["ticket"]["status"] == "ON_HOLD"
+E       AssertionError: assert (200 == 200 and 'IN_PROGRESS' == 'ON_HOLD'
+E        +  where 200 = <Response [200 OK]>.status_code
+E         
+E         - ON_HOLD
+E         + IN_PROGRESS)
+
+tests\test_maintenance\test_portal_backend_ext2.py:361: AssertionError
+______________ test_s3_assigning_a_routed_ticket_also_accepts_it ______________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000195213EB010>
+
+    def test_s3_assigning_a_routed_ticket_also_accepts_it(eng):
+        ticket_id = cleaning_routed(eng)
+>       case = eng.assign_staff(ticket_id, CLN, "SIM-STAFF-CLN-B")
+               ^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'assign_staff'
+
+tests\test_maintenance\test_portal_backend_ext2.py:419: AttributeError
+______________ test_s3_reassigning_in_progress_replaces_the_row _______________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x0000019521390B10>
+
+    def test_s3_reassigning_in_progress_replaces_the_row(eng):
+        ticket_id = cleaning_routed(eng)
+>       eng.assign_staff(ticket_id, CLN, "SIM-STAFF-CLN-B")
+        ^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'assign_staff'
+
+tests\test_maintenance\test_portal_backend_ext2.py:435: AttributeError
+_______________ test_s3_staff_of_another_department_is_refused ________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x0000019521618E10>
+
+    def test_s3_staff_of_another_department_is_refused(eng):  # mutation m6 target
+        ticket_id = cleaning_routed(eng)
+        before = eng.get(ticket_id)
+        with pytest.raises(GuardError) as err:
+>           eng.assign_staff(ticket_id, CLN, "SIM-STAFF-TEC-1")
+            ^^^^^^^^^^^^^^^^
+E           AttributeError: 'MaintenanceEngine' object has no attribute 'assign_staff'
+
+tests\test_maintenance\test_portal_backend_ext2.py:447: AttributeError
+____________ test_s3_wrong_roles_and_other_departments_are_denied _____________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001951F59FAD0>
+
+    def test_s3_wrong_roles_and_other_departments_are_denied(eng):
+        ticket_id = cleaning_routed(eng)
+        for actor in (BPTN, BQL, WAREHOUSE, RESIDENT):
+            with pytest.raises(ActionDeniedError):
+>               eng.assign_staff(ticket_id, actor, "SIM-STAFF-CLN-A")
+                ^^^^^^^^^^^^^^^^
+E               AttributeError: 'MaintenanceEngine' object has no attribute 'assign_staff'
+
+tests\test_maintenance\test_portal_backend_ext2.py:458: AttributeError
+_________ test_s3_only_routed_or_in_progress_tickets_can_be_assigned __________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000195214FEF10>
+
+    def test_s3_only_routed_or_in_progress_tickets_can_be_assigned(eng):
+>       ticket_id = waiting_ticket(eng)  # ON_HOLD
+                    ^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext2.py:467: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x00000195214FEF10>
+stock = 5
+
+    def waiting_ticket(engine: MaintenanceEngine, *, stock: float = 5) -> str:
+        """A technical ticket in progress whose department asked for 2 tube lamps; the warehouse holds `stock`."""
+        ticket_id = in_progress_ticket(engine)
+        if stock:
+            engine.receive_stock(WAREHOUSE, LAMP2, stock)
+        case = engine.confirm_materials(
+            ticket_id, TEC, lines=[PlannedMaterial(item_code=LAMP2, planned_qty=2)], note="Đèn tuýp"
+        )
+>       assert case.ticket.status == "ON_HOLD"
+E       AssertionError: assert <TicketStatus...'IN_PROGRESS'> == 'ON_HOLD'
+E         
+E         - ON_HOLD
+E         + IN_PROGRESS
+
+tests\test_maintenance\test_portal_backend_ext2.py:154: AssertionError
+______________ test_s3_staff_list_scopes_and_counts_open_tickets ______________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000195216171D0>
+
+    def test_s3_staff_list_scopes_and_counts_open_tickets(eng):
+        first, second = cleaning_routed(eng), eng.receive(CLEANING, resident_id=RESIDENT).ticket.ticket_id
+>       eng.assign_staff(first, CLN, "SIM-STAFF-CLN-A")
+        ^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'assign_staff'
+
+tests\test_maintenance\test_portal_backend_ext2.py:478: AttributeError
+_______________ test_s3_a_closed_ticket_is_no_longer_open_work ________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x0000019521430090>
+
+    def test_s3_a_closed_ticket_is_no_longer_open_work(eng):
+        ticket_id = cleaning_routed(eng)
+>       eng.assign_staff(ticket_id, CLN, "SIM-STAFF-CLN-A")
+        ^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'assign_staff'
+
+tests\test_maintenance\test_portal_backend_ext2.py:495: AttributeError
+_____________________ test_s3_api_assign_and_staff_fields _____________________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000195214A7210>, client=<starlette.testclient...ake_env.<locals>.tok at 0x00000195218D3D80>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000195214A6E50>)
+
+    def test_s3_api_assign_and_staff_fields(env):
+        c, tok = env.client, env.tok
+        ticket_id = cleaning_routed(env.engine)
+>       assert c.get("/api/v1/mo/staff", headers=tok("cudan")).status_code == 403
+E       AssertionError: assert 404 == 403
+E        +  where 404 = <Response [404 Not Found]>.status_code
+E        +    where <Response [404 Not Found]> = get('/api/v1/mo/staff', headers={'Authorization': 'Bearer vBVVApZ4g5Wmz7JKHrZ8sKzA5tL4LN5wGAxes_xTX_Q'})
+E        +      where get = <starlette.testclient.TestClient object at 0x00000195214A6610>.get
+E        +      and   {'Authorization': 'Bearer vBVVApZ4g5Wmz7JKHrZ8sKzA5tL4LN5wGAxes_xTX_Q'} = <function make_env.<locals>.tok at 0x00000195218D3D80>('cudan')
+
+tests\test_maintenance\test_portal_backend_ext2.py:507: AssertionError
+___________________ test_s3_api_flag_off_refuses_assignment ___________________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x000001952146FF50>, client=<starlette.testclient...ake_env.<locals>.tok at 0x000001952170BC40>, clock=<tests.test_maintenance.helpers.Clock object at 0x000001952146D450>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001952146C6D0>
+
+    def test_s3_api_flag_off_refuses_assignment(env, monkeypatch):
+        set_flag(monkeypatch, False)
+        ticket_id = cleaning_routed(env.engine)
+        response = env.client.post(
+            f"/api/v1/mo/tickets/{ticket_id}/assign", json={"staff_id": "SIM-STAFF-CLN-B"}, headers=env.tok("vesinh")
+        )
+>       assert response.status_code == 403 and response.json()["detail"]["code"] == "FEATURE_DISABLED"
+E       assert (404 == 403)
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext2.py:540: AssertionError
+____________________ test_s4_rating_keeps_tags_and_comment ____________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000195212E9C50>
+
+    def test_s4_rating_keeps_tags_and_comment(eng):
+        ticket_id = closed_cleaning(eng)
+>       case = eng.rate(ticket_id, RESIDENT, 5, tags=["Xử lý nhanh", "Thái độ tốt"], comment="  Rất hài lòng  ")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: MaintenanceEngine.rate() got an unexpected keyword argument 'tags'
+
+tests\test_maintenance\test_portal_backend_ext2.py:558: TypeError
+__________________ test_s4_rating_without_tags_is_still_fine __________________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x0000019521565DD0>
+
+    def test_s4_rating_without_tags_is_still_fine(eng):
+        ticket_id = closed_cleaning(eng)
+        assert eng.rate(ticket_id, RESIDENT, 3).ticket.rating == 3
+>       detail = eng.repo.rating_details()[ticket_id]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'SIM-TKT-0001'
+
+tests\test_maintenance\test_portal_backend_ext2.py:573: KeyError
+_ test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written[5-tags0-] _
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x0000019521393910>
+score = 5, tags = ['Chậm trễ'], comment = ''
+
+    @pytest.mark.parametrize(
+        ("score", "tags", "comment"),
+        [
+            (5, ["Chậm trễ"], ""),  # a bad tag with a good score
+            (4, ["Chưa triệt để"], ""),
+            (3, ["Xử lý nhanh"], ""),  # a good tag with a middling score
+            (1, ["Thái độ tốt"], ""),
+            (5, ["Không có thẻ này"], ""),
+            (5, ["Xử lý nhanh", "Xử lý nhanh"], ""),  # twice the same tag
+            (5, [], "x" * 501),
+        ],
+    )
+    def test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written(eng, score, tags, comment):
+        ticket_id = closed_cleaning(eng)
+        with pytest.raises(InvalidRatingError):
+>           eng.rate(ticket_id, RESIDENT, score, tags=tags, comment=comment)
+E           TypeError: MaintenanceEngine.rate() got an unexpected keyword argument 'tags'
+
+tests\test_maintenance\test_portal_backend_ext2.py:592: TypeError
+_ test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written[4-tags1-] _
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x0000019521554290>
+score = 4, tags = ['Chưa triệt để'], comment = ''
+
+    @pytest.mark.parametrize(
+        ("score", "tags", "comment"),
+        [
+            (5, ["Chậm trễ"], ""),  # a bad tag with a good score
+            (4, ["Chưa triệt để"], ""),
+            (3, ["Xử lý nhanh"], ""),  # a good tag with a middling score
+            (1, ["Thái độ tốt"], ""),
+            (5, ["Không có thẻ này"], ""),
+            (5, ["Xử lý nhanh", "Xử lý nhanh"], ""),  # twice the same tag
+            (5, [], "x" * 501),
+        ],
+    )
+    def test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written(eng, score, tags, comment):
+        ticket_id = closed_cleaning(eng)
+        with pytest.raises(InvalidRatingError):
+>           eng.rate(ticket_id, RESIDENT, score, tags=tags, comment=comment)
+E           TypeError: MaintenanceEngine.rate() got an unexpected keyword argument 'tags'
+
+tests\test_maintenance\test_portal_backend_ext2.py:592: TypeError
+_ test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written[3-tags2-] _
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x0000019521538CD0>
+score = 3, tags = ['Xử lý nhanh'], comment = ''
+
+    @pytest.mark.parametrize(
+        ("score", "tags", "comment"),
+        [
+            (5, ["Chậm trễ"], ""),  # a bad tag with a good score
+            (4, ["Chưa triệt để"], ""),
+            (3, ["Xử lý nhanh"], ""),  # a good tag with a middling score
+            (1, ["Thái độ tốt"], ""),
+            (5, ["Không có thẻ này"], ""),
+            (5, ["Xử lý nhanh", "Xử lý nhanh"], ""),  # twice the same tag
+            (5, [], "x" * 501),
+        ],
+    )
+    def test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written(eng, score, tags, comment):
+        ticket_id = closed_cleaning(eng)
+        with pytest.raises(InvalidRatingError):
+>           eng.rate(ticket_id, RESIDENT, score, tags=tags, comment=comment)
+E           TypeError: MaintenanceEngine.rate() got an unexpected keyword argument 'tags'
+
+tests\test_maintenance\test_portal_backend_ext2.py:592: TypeError
+_ test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written[1-tags3-] _
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001952153A190>
+score = 1, tags = ['Thái độ tốt'], comment = ''
+
+    @pytest.mark.parametrize(
+        ("score", "tags", "comment"),
+        [
+            (5, ["Chậm trễ"], ""),  # a bad tag with a good score
+            (4, ["Chưa triệt để"], ""),
+            (3, ["Xử lý nhanh"], ""),  # a good tag with a middling score
+            (1, ["Thái độ tốt"], ""),
+            (5, ["Không có thẻ này"], ""),
+            (5, ["Xử lý nhanh", "Xử lý nhanh"], ""),  # twice the same tag
+            (5, [], "x" * 501),
+        ],
+    )
+    def test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written(eng, score, tags, comment):
+        ticket_id = closed_cleaning(eng)
+        with pytest.raises(InvalidRatingError):
+>           eng.rate(ticket_id, RESIDENT, score, tags=tags, comment=comment)
+E           TypeError: MaintenanceEngine.rate() got an unexpected keyword argument 'tags'
+
+tests\test_maintenance\test_portal_backend_ext2.py:592: TypeError
+_ test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written[5-tags4-] _
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x0000019521541690>
+score = 5, tags = ['Không có thẻ này'], comment = ''
+
+    @pytest.mark.parametrize(
+        ("score", "tags", "comment"),
+        [
+            (5, ["Chậm trễ"], ""),  # a bad tag with a good score
+            (4, ["Chưa triệt để"], ""),
+            (3, ["Xử lý nhanh"], ""),  # a good tag with a middling score
+            (1, ["Thái độ tốt"], ""),
+            (5, ["Không có thẻ này"], ""),
+            (5, ["Xử lý nhanh", "Xử lý nhanh"], ""),  # twice the same tag
+            (5, [], "x" * 501),
+        ],
+    )
+    def test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written(eng, score, tags, comment):
+        ticket_id = closed_cleaning(eng)
+        with pytest.raises(InvalidRatingError):
+>           eng.rate(ticket_id, RESIDENT, score, tags=tags, comment=comment)
+E           TypeError: MaintenanceEngine.rate() got an unexpected keyword argument 'tags'
+
+tests\test_maintenance\test_portal_backend_ext2.py:592: TypeError
+_ test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written[5-tags5-] _
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000195214D6B50>
+score = 5, tags = ['Xử lý nhanh', 'Xử lý nhanh'], comment = ''
+
+    @pytest.mark.parametrize(
+        ("score", "tags", "comment"),
+        [
+            (5, ["Chậm trễ"], ""),  # a bad tag with a good score
+            (4, ["Chưa triệt để"], ""),
+            (3, ["Xử lý nhanh"], ""),  # a good tag with a middling score
+            (1, ["Thái độ tốt"], ""),
+            (5, ["Không có thẻ này"], ""),
+            (5, ["Xử lý nhanh", "Xử lý nhanh"], ""),  # twice the same tag
+            (5, [], "x" * 501),
+        ],
+    )
+    def test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written(eng, score, tags, comment):
+        ticket_id = closed_cleaning(eng)
+        with pytest.raises(InvalidRatingError):
+>           eng.rate(ticket_id, RESIDENT, score, tags=tags, comment=comment)
+E           TypeError: MaintenanceEngine.rate() got an unexpected keyword argument 'tags'
+
+tests\test_maintenance\test_portal_backend_ext2.py:592: TypeError
+_ test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written[5-tags6-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx] _
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x00000195215CF390>
+score = 5, tags = []
+comment = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+
+    @pytest.mark.parametrize(
+        ("score", "tags", "comment"),
+        [
+            (5, ["Chậm trễ"], ""),  # a bad tag with a good score
+            (4, ["Chưa triệt để"], ""),
+            (3, ["Xử lý nhanh"], ""),  # a good tag with a middling score
+            (1, ["Thái độ tốt"], ""),
+            (5, ["Không có thẻ này"], ""),
+            (5, ["Xử lý nhanh", "Xử lý nhanh"], ""),  # twice the same tag
+            (5, [], "x" * 501),
+        ],
+    )
+    def test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written(eng, score, tags, comment):
+        ticket_id = closed_cleaning(eng)
+        with pytest.raises(InvalidRatingError):
+>           eng.rate(ticket_id, RESIDENT, score, tags=tags, comment=comment)
+E           TypeError: MaintenanceEngine.rate() got an unexpected keyword argument 'tags'
+
+tests\test_maintenance\test_portal_backend_ext2.py:592: TypeError
+_______________ test_s4_a_failing_detail_table_leaves_no_rating _______________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001952160DD90>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000195214D4190>
+
+    def test_s4_a_failing_detail_table_leaves_no_rating(eng, monkeypatch):
+        from src.maintenance.store.memory import _MemoryTx
+    
+        def boom(self, detail):
+            raise RuntimeError("table unavailable")
+    
+        ticket_id = closed_cleaning(eng)
+        monkeypatch.setattr(_MemoryTx, "put_rating_detail", boom)
+        with pytest.raises(RuntimeError):
+>           eng.rate(ticket_id, RESIDENT, 5, tags=["Xử lý nhanh"])
+E           TypeError: MaintenanceEngine.rate() got an unexpected keyword argument 'tags'
+
+tests\test_maintenance\test_portal_backend_ext2.py:605: TypeError
+_____________________ test_s4_api_rating_and_who_sees_it ______________________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x00000195220B0D90>, client=<starlette.testclient...ake_env.<locals>.tok at 0x0000019521765B20>, clock=<tests.test_maintenance.helpers.Clock object at 0x00000195220B0A50>)
+
+    def test_s4_api_rating_and_who_sees_it(env):
+        c, tok = env.client, env.tok
+        ticket_id = closed_cleaning(env.engine)
+        path = f"/api/v1/resident/tickets/{ticket_id}/rating"
+        for body in (
+            {"score": 5, "tags": ["Chậm trễ"]},
+            {"score": 2, "tags": ["Xử lý nhanh"]},
+            {"score": 5, "tags": ["Lạ"]},
+            {"score": 5, "comment": "x" * 501},
+            {"score": 6},
+        ):
+>           assert c.post(path, json=body, headers=tok("cudan")).status_code == 422, body
+E           AssertionError: {'score': 5, 'tags': ['Chậm trễ']}
+E           assert 200 == 422
+E            +  where 200 = <Response [200 OK]>.status_code
+E            +    where <Response [200 OK]> = post('/api/v1/resident/tickets/SIM-TKT-0001/rating', json={'score': 5, 'tags': ['Chậm trễ']}, headers={'Authorization': 'Bearer kLefGEQ_qDkVUxMX9dz083sdOpJU6B8OyKZh1cFcJeQ'})
+E            +      where post = <starlette.testclient.TestClient object at 0x00000195220B1B10>.post
+E            +      and   {'Authorization': 'Bearer kLefGEQ_qDkVUxMX9dz083sdOpJU6B8OyKZh1cFcJeQ'} = <function make_env.<locals>.tok at 0x0000019521765B20>('cudan')
+
+tests\test_maintenance\test_portal_backend_ext2.py:620: AssertionError
+__________________ test_s4_api_unrated_ticket_has_empty_tags __________________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x0000019521507790>, client=<starlette.testclient...ake_env.<locals>.tok at 0x0000019521764360>, clock=<tests.test_maintenance.helpers.Clock object at 0x0000019521507810>)
+
+    def test_s4_api_unrated_ticket_has_empty_tags(env):
+        ticket_id = closed_cleaning(env.engine)
+        body = env.client.get(f"/api/v1/resident/tickets/{ticket_id}", headers=env.tok("cudan")).json()
+>       assert (body["rating"], body["rating_tags"], body["rating_comment"]) == (None, [], "")
+                                ^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'rating_tags'
+
+tests\test_maintenance\test_portal_backend_ext2.py:641: KeyError
+____________ test_s4_api_flag_off_keeps_the_stars_and_refuses_tags ____________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x000001952147C5D0>, client=<starlette.testclient...ake_env.<locals>.tok at 0x0000019521767380>, clock=<tests.test_maintenance.helpers.Clock object at 0x000001952147FE90>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000019521504810>
+
+    def test_s4_api_flag_off_keeps_the_stars_and_refuses_tags(env, monkeypatch):
+        set_flag(monkeypatch, False)
+        c, tok = env.client, env.tok
+        ticket_id = closed_cleaning(env.engine)
+        path = f"/api/v1/resident/tickets/{ticket_id}/rating"
+        refused = c.post(path, json={"score": 5, "tags": ["Xử lý nhanh"]}, headers=tok("cudan"))
+>       assert refused.status_code == 403 and refused.json()["detail"]["code"] == "FEATURE_DISABLED"
+E       assert (200 == 403)
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext2.py:652: AssertionError
+___________________ test_s5_agent_fields_on_the_ticket_rows ___________________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001952147ED90>
+agent_cleanup = None
+
+    def test_s5_agent_fields_on_the_ticket_rows(clock, agent_cleanup):
+        client = ScriptedClient({"không sáng": light_reply(), "phí dịch vụ": oos_reply()})
+        env = agent_env(clock, client)
+        c, tok = env.client, env.tok
+        routed = c.post("/api/v1/resident/tickets", json={"original_description": LIGHT}, headers=tok("cudan")).json()
+        fee = c.post("/api/v1/resident/tickets", json={"original_description": FEE_TEXT}, headers=tok("cudan")).json()
+        summary = {r["ticket_id"]: r for r in c.get("/api/v1/mo/tickets", headers=tok("quanly")).json()}
+        rows = {r["ticket_id"]: r for r in c.get("/api/v1/bql/tickets", headers=tok("quanly")).json()}
+        for table in (summary, rows):
+            light = table[routed["ticket_id"]]
+>           assert (light["agent_source"], light["agent_department"], light["agent_scope"]) == (
+                    ^^^^^^^^^^^^^^^^^^^^^
+                "AGENT",
+                "DEPT_TECHNICAL",
+                "IN_SCOPE",
+            )
+E           KeyError: 'agent_source'
+
+tests\test_maintenance\test_portal_backend_ext2.py:670: KeyError
+__________ test_s5_agent_fields_are_empty_without_an_agent_decision ___________
+
+clock = <tests.test_maintenance.helpers.Clock object at 0x00000195215ABF90>
+agent_cleanup = None
+
+    def test_s5_agent_fields_are_empty_without_an_agent_decision(clock, agent_cleanup):
+        env = agent_env(clock, FailingClient("timeout"))
+        c, tok = env.client, env.tok
+        created = c.post("/api/v1/resident/tickets", json={"original_description": LIGHT}, headers=tok("cudan")).json()
+        row = {r["ticket_id"]: r for r in c.get("/api/v1/bql/tickets", headers=tok("quanly")).json()}[created["ticket_id"]]
+>       assert (row["agent_source"], row["agent_department"], row["agent_scope"]) == ("FALLBACK_RULE", None, None)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'agent_department'
+
+tests\test_maintenance\test_portal_backend_ext2.py:686: KeyError
+______________________ test_s5_no_agent_means_no_fields _______________________
+
+env = namespace(engine=<src.maintenance.engine.MaintenanceEngine object at 0x0000019521507C10>, client=<starlette.testclient...ake_env.<locals>.tok at 0x0000019521765800>, clock=<tests.test_maintenance.helpers.Clock object at 0x0000019521504810>)
+
+    def test_s5_no_agent_means_no_fields(env):
+        env.engine.receive(LIGHTING, resident_id=RESIDENT)
+        rows = env.client.get("/api/v1/mo/tickets", headers=env.tok("quanly")).json()
+>       assert [(r["agent_source"], r["agent_department"], r["agent_scope"]) for r in rows] == [(None, None, None)]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_portal_backend_ext2.py:692: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+.0 = <list_iterator object at 0x000001952173A770>
+
+>   assert [(r["agent_source"], r["agent_department"], r["agent_scope"]) for r in rows] == [(None, None, None)]
+             ^^^^^^^^^^^^^^^^^
+E   KeyError: 'agent_source'
+
+tests\test_maintenance\test_portal_backend_ext2.py:692: KeyError
+___________ test_the_document_shape_is_unchanged_by_the_whole_batch ___________
+
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001952147DAD0>
+
+    def test_the_document_shape_is_unchanged_by_the_whole_batch(eng):
+        """The one assertion that matters for the shared database: assignment, approval and rating add no field."""
+        ticket_id = cleaning_routed(eng)
+>       eng.assign_staff(ticket_id, CLN, "SIM-STAFF-CLN-A")
+        ^^^^^^^^^^^^^^^^
+E       AttributeError: 'MaintenanceEngine' object has no attribute 'assign_staff'
+
+tests\test_maintenance\test_portal_backend_ext2.py:731: AttributeError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s1_agent_out_of_scope_without_a_place_goes_to_bql
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s1_agent_out_of_scope_with_a_place_goes_to_bql_too
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s1_agent_out_of_scope_then_bql_closes_or_returns_it
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s1_api_agent_escalated_ticket_is_in_the_bql_list
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s2_enough_stock_still_waits_for_approval_then_runs
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s2_bql_can_approve_too
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s2_short_stock_is_refused_until_the_warehouse_receives
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s2_receiving_stock_never_approves_by_itself
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s2_the_job_does_not_approve_either
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s2_wrong_roles_are_denied_and_audited
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s2_approving_twice_or_a_ticket_not_waiting_is_invalid
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s2_department_cannot_resume_a_ticket_waiting_for_approval
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s2_work_goes_on_after_approval
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s2_api_flow
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s3_assigning_a_routed_ticket_also_accepts_it
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s3_reassigning_in_progress_replaces_the_row
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s3_staff_of_another_department_is_refused
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s3_wrong_roles_and_other_departments_are_denied
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s3_only_routed_or_in_progress_tickets_can_be_assigned
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s3_staff_list_scopes_and_counts_open_tickets
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s3_a_closed_ticket_is_no_longer_open_work
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s3_api_assign_and_staff_fields
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s3_api_flag_off_refuses_assignment
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s4_rating_keeps_tags_and_comment
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s4_rating_without_tags_is_still_fine
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written[5-tags0-]
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written[4-tags1-]
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written[3-tags2-]
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written[1-tags3-]
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written[5-tags4-]
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written[5-tags5-]
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s4_wrong_tags_or_long_comment_are_refused_and_nothing_is_written[5-tags6-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx]
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s4_a_failing_detail_table_leaves_no_rating
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s4_api_rating_and_who_sees_it
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s4_api_unrated_ticket_has_empty_tags
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s4_api_flag_off_keeps_the_stars_and_refuses_tags
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s5_agent_fields_on_the_ticket_rows
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s5_agent_fields_are_empty_without_an_agent_decision
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s5_no_agent_means_no_fields
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_the_document_shape_is_unchanged_by_the_whole_batch
+40 failed, 11 passed, 5 deselected in 7.58s
+EXIT=1

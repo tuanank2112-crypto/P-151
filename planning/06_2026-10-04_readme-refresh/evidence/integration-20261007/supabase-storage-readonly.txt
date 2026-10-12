@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-10-07T03:53:49.717439+00:00",
+  "probe": "GET bucket metadata",
+  "http_status": 200,
+  "key_configured": true,
+  "headers": "apikey only; value redacted",
+  "tls_verification": true,
+  "writes": "none",
+  "bucket_id": "maintenance-photos",
+  "bucket_public": false,
+  "file_size_limit": 5242880,
+  "allowed_mime_types": [
+    "image/jpeg",
+    "image/png",
+    "image/webp"
+  ]
+}
+EXIT_CODE=0

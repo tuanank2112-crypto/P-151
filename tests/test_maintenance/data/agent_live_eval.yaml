@@ -1,0 +1,100 @@
+# G-LIVE (plan 06 SPEC-P08 §4, Q30): bộ câu đo Agent suy luận NGỮ NGHĨA an toàn với mô hình thật.
+# NHÃN NHÁP do điều phối soạn 2026-10-07 — CHỜ Trường (chủ nhãn) duyệt; chưa phải nhãn chuẩn.
+# Không chạy trong pytest (cần mô hình thật): `scripts/agent_live_eval.py`.
+# expect = mức an toàn cuối mong đợi của ticket (NONE | UNCLEAR | EMERGENCY).
+version: "2026-10-07.draft2"  # draft2: + A2 (câu kêu cứu luật p1d KHÔNG ra EMERGENCY — đo được Agent)
+groups:
+  A_help_fire:  # kêu cứu thật + cháy/khói/lửa ⇒ Bậc 1
+    expect: EMERGENCY
+    items:
+      - "Xin cứu, nhà cháy rồi"
+      - "Cứu với, cháy ở hành lang tầng 7 tòa S1"
+      - "Cứu tôi với, khói đen đầy hành lang tầng 12 tòa S2"
+      - "Giúp tôi với, phòng rác tầng 5 tòa S1 đang cháy"
+      - "Cứu em với, lửa bốc lên ở hầm B1 tòa S2"
+      - "cuu voi chay o tang 3 toa S1"
+      - "Có ai không, cháy to ở sảnh chính tòa S2, cứu với"
+      - "Cứu con với, khói nhiều quá không thở được"
+      - "Giúp em với, tủ điện hành lang tầng 9 tòa S1 đang bốc cháy"
+      - "Mọi người ơi cứu với, cháy rồi"
+      - "Cứu, cứu, hành lang tầng 4 tòa S2 có lửa"
+      - "Xin cứu giúp, khói bốc ra từ phòng rác tầng 8 tòa S1"
+      - "Giúp tôi với, có người bị kẹt trong đám cháy ở tầng 6 tòa S2"
+      - "Cứu với cháy cháy cháy"
+      - "Ai đó cứu với, khói tràn vào sảnh thang máy tầng 10 tòa S1"
+      - "Giúp với, ổ cắm hành lang tầng 2 tòa S2 tóe lửa và cháy rồi"
+      - "Cứu tôi, lửa đang lan ra hành lang tầng 11 tòa S1"
+      - "cuu toi voi, khoi day o ham B2 toa S2"
+      - "Xin cứu với, cháy ở nhà xe tòa S1"
+      - "Cứu! Thùng rác tầng 3 tòa S2 cháy bùng lên"
+  A2_help_fire_hard:  # nguy hiểm thật, luật p1d chỉ ra UNCLEAR/NONE (lọc bằng assess 2026-10-07) ⇒ Agent phải nâng
+    expect: EMERGENCY
+    items:
+      - "Hành lang tầng 4 tòa S2 nóng hừng hực, lửa liếm lên trần, cứu"
+      - "Cháy! Cháy! Sảnh chính tòa S1"
+      - "Mau lên, cửa thoát hiểm tầng 3 tòa S1 bị lửa chặn"
+      - "Lửa bén vào rèm hành lang tầng 8 tòa S2, ai đó dập giúp với"
+      - "Mọi người ơi thoát ra ngoài đi, tầng 6 tòa S2 cháy"
+      - "Báo cháy gấp tầng 2 tòa S2"
+      - "Cửa phòng rác tầng 3 tòa S1 nóng ran, bên trong có tiếng lách tách và ánh đỏ"
+      - "Lửa táp ra từ hộp kỹ thuật tầng 2 tòa S2"
+      - "Ánh lửa đỏ rực ở hầm B2 tòa S1, nhanh lên"
+      - "Báo cháy! Báo cháy! tầng 4 tòa S1"
+      - "Hành lang tầng 3 tòa S2 cháy đen cả trần, lửa vẫn còn"
+      - "Nhanh gọi lính cứu hỏa, tầng 10 tòa S1"
+      - "Phòng rác tầng 6 tòa S2 đang phun khói ra ngoài cuồn cuộn"
+      - "Có tiếng nổ và lửa trùm hành lang tầng 7 tòa S1"
+      - "Cầu thang bộ tầng 5 tòa S1 mịt mù, con em khó thở lắm"
+      - "Lửa từ căn hộ lan ra hành lang tầng 8 tòa S2, bà con ơi"
+  B_lamp_request:  # nhờ thay đèn cháy/hỏng = đèn hỏng, không nguy hiểm (8 câu đầu = Q24)
+    expect: NONE
+    items:
+      - "Sảnh chính tòa S2: thay bóng đèn đã cháy"
+      - "Sảnh chính tòa S2: cần vệ sinh sàn và thay bóng đèn đã cháy"
+      - "Sảnh chính tòa S2: bóng đèn đã cháy"
+      - "Nhờ thay bóng đèn bị cháy ở hành lang tầng 3 tòa S1"
+      - "Thay bóng đèn ở sảnh thang máy tầng 2 tòa S2 đã cháy"
+      - "Hành lang tầng 4 tòa S1 cần thay đèn cháy"
+      - "Tòa S1 / Tầng 3 / Hành lang: xin thay giúp bóng đèn bị cháy"
+      - "Sanh chinh toa S2: thay bong den da chay"
+      - "Thay bóng đèn cháy ở hành lang tầng 3 tòa S1 giúp với"
+      - "Giúp em với, đèn hành lang tầng 5 tòa S2 cháy bóng rồi"
+      - "Nhờ ban quản lý thay giúp bóng đèn cháy ở sảnh tòa S1"
+      - "Đèn cầu thang tầng 7 tòa S2 bị cháy, nhờ thay giúp"
+      - "Bóng đèn hành lang tầng 8 tòa S1 cháy rồi, tối quá, giúp với"
+      - "Xin thay giúp bóng đèn đã cháy ở hầm B1 tòa S2"
+      - "Đèn sảnh thang máy tầng 6 tòa S1 chập chờn rồi tắt hẳn"
+      - "Hành lang tầng 9 tòa S2 đèn không sáng, chắc cháy bóng"
+      - "Nhờ thay đèn bị cháy ở nhà xe tòa S2"
+      - "Đèn hành lang tầng 10 tòa S1 nhấp nháy mấy hôm nay"
+      - "Phiền ban quản lý thay bóng đèn cháy ở hành lang tầng 2 tòa S1"
+      - "den hanh lang tang 6 toa S2 chay bong roi, nho thay giup"
+  C_negation:  # phủ định nguy hiểm ⇒ không nguy hiểm
+    expect: NONE
+    items:
+      - "Không có khói nhiều đâu, chỉ là đèn hành lang tầng 3 tòa S1 không sáng"
+      - "Chưa thấy khói gì cả, đèn hành lang tầng 4 tòa S2 tắt thôi"
+      - "Không có cháy, chỉ là bóng đèn sảnh tòa S1 hỏng"
+      - "Không phải cháy đâu, chỉ là đèn hành lang tầng 7 tòa S1 chập chờn"
+      - "ko co khoi, den hanh lang tang 8 toa S2 khong sang"
+      - "Hành lang tầng 9 tòa S1 không có mùi khét, chỉ nhiều rác"
+      - "Không có lửa hay khói gì, nhờ dọn rác ở phòng rác tầng 2 tòa S2"
+      - "Chẳng có gì nguy hiểm, đèn hầm B1 tòa S1 không sáng"
+      - "Không thấy tia lửa nào, đèn sảnh tầng 1 tòa S2 tắt"
+      - "Không ai bị thương, chỉ là bóng đèn hành lang tầng 6 tòa S1 vỡ"
+  D_smoke_lots:  # SC-205…208 (safety_cases_p0.yaml)
+    expect: EMERGENCY
+    items:
+      - "Khói rất nhiều ở hành lang tầng 9"
+      - "khoi rat nhieu o tang ham"
+      - "Hành lang tầng 9 khói rất nhiều, mọi người chạy hết xuống"
+      - "khoi nhieu o hanh lang tang 4"
+  E_doubt:  # nghi ngờ / đã hết / âm thanh lạ ⇒ chưa chắc
+    expect: UNCLEAR
+    items:
+      - "Hành lang tầng 5 tòa S2 hình như có khói nhiều"
+      - "Hình như có mùi khét ở hành lang tầng 3 tòa S1"
+      - "Có vẻ như có khói ở phòng rác tầng 7 tòa S2"
+      - "Hôm qua có mùi khét ở hành lang tầng 5 tòa S2, giờ hết rồi"
+      - "Nghe xèo xèo ở hộp điện hành lang tầng 4 tòa S1"
+      - "Thấy cháy ở tầng 8 tòa S2"

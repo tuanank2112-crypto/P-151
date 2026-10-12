@@ -1,0 +1,36 @@
+PASS BPTN-Cần xử lý-count ô=1 danh sách=1
+PASS BPTN-An toàn B2-count ô=1 danh sách=1
+PASS BPTN-Nghi trùng-count ô=1 danh sách=1
+PASS BPTN-Đang xử lý-count ô=4 danh sách=4
+PASS BPTN-Hoàn thành-count ô=1 danh sách=1
+PASS BPTN-disjoint 5 ô, 8 dòng, 8 ticket khác nhau
+PASS BPTN-cover ticket phải có ô: 8, thiếu 0 
+PASS BQL-mine-count ô=1 danh sách=1
+PASS BQL-emergency-count ô=1 danh sách=1
+PASS BQL-overdue-count ô=0 danh sách=0
+PASS BQL-done-count ô=1 danh sách=1
+PASS BQL-disjoint 4 ô, 3 dòng, 3 ticket khác nhau
+PASS DEPT-vesinh01-todo-count ô=2 danh sách=2
+PASS DEPT-vesinh01-doing-count ô=0 danh sách=0
+PASS DEPT-vesinh01-review-count ô=1 danh sách=1
+PASS DEPT-vesinh01-done-count ô=1 danh sách=1
+PASS DEPT-vesinh01-disjoint 4 ô, 4 dòng, 4 ticket khác nhau
+PASS DEPT-kythuat01-todo-count ô=0 danh sách=0
+PASS DEPT-kythuat01-doing-count ô=0 danh sách=0
+PASS DEPT-kythuat01-review-count ô=0 danh sách=0
+PASS DEPT-kythuat01-done-count ô=0 danh sách=0
+PASS DEPT-kythuat01-disjoint 4 ô, 0 dòng, 0 ticket khác nhau
+PASS RES-cudan01-Đang xử lý-count ô=15 danh sách=15
+PASS RES-cudan01-Chờ nghiệm thu-count ô=1 danh sách=1
+PASS RES-cudan01-Cần bạn-count ô=3 danh sách=3
+PASS RES-cudan01-Đã xong-count ô=1 danh sách=1
+PASS RES-cudan01-disjoint 4 ô, 20 dòng, 20 ticket khác nhau
+PASS RES-cudan01-cover ticket phải có ô: 20, thiếu 0 
+PASS RES-cudan02-Đang xử lý-count ô=1 danh sách=1
+PASS RES-cudan02-Chờ nghiệm thu-count ô=0 danh sách=0
+PASS RES-cudan02-Cần bạn-count ô=0 danh sách=0
+PASS RES-cudan02-Đã xong-count ô=0 danh sách=0
+PASS RES-cudan02-disjoint 4 ô, 1 dòng, 1 ticket khác nhau
+PASS RES-cudan02-cover ticket phải có ô: 1, thiếu 0 
+ALL PASS
+exit=0

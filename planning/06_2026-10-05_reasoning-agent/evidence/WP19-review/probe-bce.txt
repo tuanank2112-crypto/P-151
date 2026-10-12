@@ -1,0 +1,36 @@
+# sandbox repo3 = copy of working tree (sha256 equal to sha256-before.txt); script: evidence/WP19-review/probe_bce.py
+$ PYTHONPATH=. LLM_MODE=mock MO_STORE=memory MO_PHOTO_STORE=local PYTHONUTF8=1 python probe_bce.py
+PROBE b0 rules alone on T5 -> NONE => OK
+PROBE b1 S-10 PRESENT quote=verbatim -> (<TicketStatus.VERIFYING: 'VERIFYING'>, <ReasonCode.EMERGENCY_PENDING_BQL: 'EMERGENCY_PENDING_BQL'>, <RiskLevel.EMERGENCY: 'EMERGENCY'>, 1) llm=[('S-10', 'PRESENT', 'LLM')] => OK
+PROBE b1 S-10 PRESENT quote=reworded -> (<TicketStatus.VERIFYING: 'VERIFYING'>, <ReasonCode.EMERGENCY_PENDING_BQL: 'EMERGENCY_PENDING_BQL'>, <RiskLevel.EMERGENCY: 'EMERGENCY'>, 1) llm=[('S-10', 'PRESENT', 'LLM')] => OK
+PROBE b1 S-10 PRESENT quote=unrelated -> (<TicketStatus.VERIFYING: 'VERIFYING'>, <ReasonCode.EMERGENCY_PENDING_BQL: 'EMERGENCY_PENDING_BQL'>, <RiskLevel.EMERGENCY: 'EMERGENCY'>, 1) llm=[('S-10', 'PRESENT', 'LLM')] => OK
+PROBE b1 S-10 PRESENT quote=punct -> (<TicketStatus.VERIFYING: 'VERIFYING'>, <ReasonCode.EMERGENCY_PENDING_BQL: 'EMERGENCY_PENDING_BQL'>, <RiskLevel.EMERGENCY: 'EMERGENCY'>, 1) llm=[('S-10', 'PRESENT', 'LLM')] => OK
+PROBE b1 S-10 PRESENT quote=one-char -> (<TicketStatus.VERIFYING: 'VERIFYING'>, <ReasonCode.EMERGENCY_PENDING_BQL: 'EMERGENCY_PENDING_BQL'>, <RiskLevel.EMERGENCY: 'EMERGENCY'>, 1) llm=[('S-10', 'PRESENT', 'LLM')] => OK
+PROBE b1 S-10 PRESENT quote=blank -> (<TicketStatus.VERIFYING: 'VERIFYING'>, <ReasonCode.EMERGENCY_PENDING_BQL: 'EMERGENCY_PENDING_BQL'>, <RiskLevel.EMERGENCY: 'EMERGENCY'>, 1) llm=[('S-10', 'PRESENT', 'LLM-NOQUOTE')] => OK
+PROBE b1 S-10 PRESENT quote=empty -> (<TicketStatus.VERIFYING: 'VERIFYING'>, <ReasonCode.EMERGENCY_PENDING_BQL: 'EMERGENCY_PENDING_BQL'>, <RiskLevel.EMERGENCY: 'EMERGENCY'>, 1) llm=[('S-10', 'PRESENT', 'LLM-NOQUOTE')] => OK
+PROBE b1 S-10 PRESENT quote=null -> (<TicketStatus.VERIFYING: 'VERIFYING'>, <ReasonCode.EMERGENCY_PENDING_BQL: 'EMERGENCY_PENDING_BQL'>, <RiskLevel.EMERGENCY: 'EMERGENCY'>, 1) llm=[('S-10', 'PRESENT', 'LLM-NOQUOTE')] => OK
+PROBE b1 S-10 PRESENT quote=400-chars -> (<TicketStatus.VERIFYING: 'VERIFYING'>, <ReasonCode.EMERGENCY_PENDING_BQL: 'EMERGENCY_PENDING_BQL'>, <RiskLevel.EMERGENCY: 'EMERGENCY'>, 1) llm=[('S-10', 'PRESENT', 'LLM')] => OK
+PROBE b2 S-10 UNCLEAR unrelated quote -> (<TicketStatus.VERIFYING: 'VERIFYING'>, <ReasonCode.SAFETY_REVIEW_REQUIRED: 'SAFETY_REVIEW_REQUIRED'>, <RiskLevel.UNCLEAR: 'UNCLEAR'>) => OK
+PROBE b3 addition path quote=reworded -> (<TicketStatus.NEED_INFO: 'NEED_INFO'>, <TicketStatus.VERIFYING: 'VERIFYING'>, <ReasonCode.EMERGENCY_PENDING_BQL: 'EMERGENCY_PENDING_BQL'>, <RiskLevel.EMERGENCY: 'EMERGENCY'>, 1) => OK
+PROBE b3 addition path quote=null -> (<TicketStatus.NEED_INFO: 'NEED_INFO'>, <TicketStatus.VERIFYING: 'VERIFYING'>, <ReasonCode.EMERGENCY_PENDING_BQL: 'EMERGENCY_PENDING_BQL'>, <RiskLevel.EMERGENCY: 'EMERGENCY'>, 1) => OK
+PROBE b3 addition path quote=punct -> (<TicketStatus.NEED_INFO: 'NEED_INFO'>, <TicketStatus.VERIFYING: 'VERIFYING'>, <ReasonCode.EMERGENCY_PENDING_BQL: 'EMERGENCY_PENDING_BQL'>, <RiskLevel.EMERGENCY: 'EMERGENCY'>, 1) => OK
+PROBE c1 rule=UNCLEAR sigs=[('S-01', 'UNCLEAR', 'T2-01')]; Agent ABSENT+UNCLEAR long quote -> (<RiskLevel.UNCLEAR: 'UNCLEAR'>, <ReasonCode.SAFETY_REVIEW_REQUIRED: 'SAFETY_REVIEW_REQUIRED'>, [('S-01', 'UNCLEAR', 'T2-01')]) => OK
+PROBE c2 rules UNCLEAR, Agent NONE no signals -> (<RiskLevel.UNCLEAR: 'UNCLEAR'>, <ReasonCode.SAFETY_REVIEW_REQUIRED: 'SAFETY_REVIEW_REQUIRED'>) => OK
+PROBE c3 rule S-04 EMERGENCY; LLM UNCLEAR long quote -> ('EMERGENCY', 1) => OK
+PROBE c3 rule S-04 EMERGENCY; LLM ABSENT long quote -> ('EMERGENCY', 1) => OK
+PROBE c3 rule S-04 EMERGENCY; LLM PRESENT long quote -> ('EMERGENCY', 1) => OK
+PROBE c4 rules EMERGENCY + Agent NONE -> (<RiskLevel.EMERGENCY: 'EMERGENCY'>, <ReasonCode.EMERGENCY_PENDING_BQL: 'EMERGENCY_PENDING_BQL'>, 0) => OK
+PROBE e1 lowercase/prefixed -> ([], 'Tòa S1 / Tầng 3 / Hành lang', <TicketStatus.ROUTED: 'ROUTED'>, <Department.DEPT_CLEANING: 'DEPT_CLEANING'>, False) => OK
+PROBE e1 quote from another building -> ([], 'Tòa S1 / Tầng 3 / Hành lang', <TicketStatus.ROUTED: 'ROUTED'>, <Department.DEPT_CLEANING: 'DEPT_CLEANING'>, False) => OK
+PROBE e1 quote 400 chars -> ([], 'Tòa S1 / Tầng 3 / Hành lang', <TicketStatus.ROUTED: 'ROUTED'>, <Department.DEPT_CLEANING: 'DEPT_CLEANING'>, False) => OK
+PROBE e1 quote missing key -> ([], 'Tòa S1 / Tầng 3 / Hành lang', <TicketStatus.ROUTED: 'ROUTED'>, <Department.DEPT_CLEANING: 'DEPT_CLEANING'>, False) => OK
+PROBE e2 building S9 -> (['location.building'], ['building'], <TicketStatus.NEED_INFO: 'NEED_INFO'>, <ReasonCode.MISSING_INFO: 'MISSING_INFO'>, 'Thiếu: location_building') => OK
+PROBE e2 floor 'tầng cao' -> (['location.floor'], ['floor'], <TicketStatus.NEED_INFO: 'NEED_INFO'>, <ReasonCode.MISSING_INFO: 'MISSING_INFO'>, 'Thiếu: location_floor') => OK
+PROBE e2 area 'Ban công' -> (['location.area'], ['area'], <TicketStatus.NEED_INFO: 'NEED_INFO'>, <ReasonCode.MISSING_INFO: 'MISSING_INFO'>, 'Thiếu: location_area') => OK
+PROBE e2 area 'Ban công' + building S9 -> (['location.building', 'location.area'], ['building', 'area'], <TicketStatus.NEED_INFO: 'NEED_INFO'>, <ReasonCode.MISSING_INFO: 'MISSING_INFO'>, 'Thiếu: location_building, location_area') => OK
+OBSERVE e3 building 'Toà S1' (accent on a) -> rejected=['location.building'] location=None
+MEASURE x1 test_p10_an_invented_place...: rejected=['jobs[1].asset_id'] agent_location=Tòa S2 / Tầng 7 / Hành lang
+MEASURE x1 asset candidates=n/a job1.asset_id=SIM-ASSET-LIGHT-001
+MEASURE x2 test_engine_with_safety_llm_never_lowers: risk=EMERGENCY blocker=EMERGENCY_PENDING_BQL notes=[] signals=[('S-01', 'PRESENT', 'LLM')]
+BREAKS=0
+EXIT=0

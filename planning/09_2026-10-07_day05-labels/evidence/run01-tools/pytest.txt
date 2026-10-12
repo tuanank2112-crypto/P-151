@@ -1,0 +1,5 @@
+$ PYTHONUTF8=1 .venv/Scripts/python.exe -m pytest planning/09_2026-10-07_day05-labels/deliverables/tools/tests -q -p no:cacheprovider
+........................................................................ [ 75%]
+.......................                                                  [100%]
+95 passed in 3.31s
+EXIT=0

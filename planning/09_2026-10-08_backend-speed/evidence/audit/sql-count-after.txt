@@ -1,0 +1,20 @@
+
+=== resident_list: total 466ms, SQL 1 queries / 294ms
+      1x select c.ticket_id, c.xmin::text as v, case when k.v is distinct from 
+
+
+=== list_tickets bptn: total 205ms, SQL 1 queries / 114ms
+      1x select c.ticket_id, c.xmin::text as v, case when k.v is distinct from 
+
+
+=== bql_list: total 207ms, SQL 1 queries / 83ms
+      1x select c.ticket_id, c.xmin::text as v, case when k.v is distinct from 
+
+
+=== read_events (1 ticket): total 168ms, SQL 1 queries / 84ms
+      1x select doc from maintops.cases where ticket_id = %(id)s
+
+
+=== warehouse stock_levels: total 170ms, SQL 1 queries / 84ms
+      1x select item_code, qty from maintops.stock order by item_code
+

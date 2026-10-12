@@ -1,0 +1,6 @@
+captured_at=2026-10-10T18:11:33+07:00
+$ sh planning/16_2026-10-10_material-guards/evidence/wp4/live_bigint.sh http://127.0.0.1:8017
+POST material-usage used/planned/issued=10**400 -> HTTP 422 body={"detail":[{"type":"value_error","loc":["body","lines",0,"used_qty"],"msg":"Value error, Số lượng phải là số n
+POST material-plan used/planned/issued=10**400 -> HTTP 422 body={"detail":[{"type":"value_error","loc":["body","lines"],"msg":"Value error, Số lượng phải là số nguyên dươn
+POST materials/SIM-MAT-LAMP-01 used/planned/issued=10**400 -> HTTP 422 body={"detail":[{"type":"value_error","loc":["body","issued_qty"],"msg":"Value error, Số lượng phải là số nguyên d
+exit=0

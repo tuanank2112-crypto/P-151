@@ -1,0 +1,23 @@
+# mutation m1: send_to_bql no longer checks that the blocker is not yet escalated
+$ git diff -U0 (engine.py vs backup)
+1241c1241
+<             self._require_out_of_scope(work, escalated=False, what="Chuyển BQL")
+---
+>             self._require_out_of_scope(work, escalated=None, what="Chuyển BQL")
+$ pytest tests/test_maintenance/test_portal_backend_ext.py -q
+        assert c.post(path, json={"note": "Chuyển BQL"}, headers=tok("quanly")).status_code == 403
+        assert c.post(path, json={"note": "Chuyển BQL"}, headers=tok("cudan")).status_code == 403
+        ok = c.post(path, json={"note": "Chuyển BQL"}, headers=tok("tiepnhan"))
+        assert ok.status_code == 200, ok.text
+        assert ok.json()["ticket"]["blocker"]["escalated"] is True
+        again = c.post(path, json={"note": "Lần hai"}, headers=tok("tiepnhan"))
+>       assert again.status_code == 409 and again.json()["detail"]["code"] == "INVALID_TRANSITION"
+E       assert (200 == 409)
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests\test_maintenance\test_portal_backend_ext.py:409: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_to_bql_twice_is_invalid
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_api_full_path
+2 failed, 51 passed, 5 deselected in 13.16s
+EXIT=1

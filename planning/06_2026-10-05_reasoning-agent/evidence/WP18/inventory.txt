@@ -1,0 +1,255 @@
+# WP18 kiểm kê — chỗ trong src/maintenance/ mà kết quả khớp chuỗi/span của QUOTE hoặc của CÂU CƯ DÂN quyết định
+# CHẤP NHẬN / LOẠI / HẠ / GIỮ LẠI đầu ra LLM. Base: 139399ba8fd15c29c33c662e546dbc0e649651cc · 2026-10-10 09:38:42 +0700
+# Phần A = lệnh + output máy. Phần B = phân loại của architect (một dòng mỗi chỗ). Phần C = đếm từ phần B (máy).
+
+## A. Lệnh và output
+$ grep -rn 'grounded' src/maintenance --include=*.py
+src/maintenance/agent/validate.py:34:def grounded(quote: str | None, text: str) -> bool:
+src/maintenance/agent/validate.py:36:    folded text. A quote that folds to nothing ("..", "--") never does: stricter than `safety._grounded` (P08 §2)."""
+src/maintenance/agent/validate.py:79:        ungrounded = RiskSignal(
+src/maintenance/agent/validate.py:87:        merged = replace(merged, signals=(*merged.signals, ungrounded), risk_level=level)
+src/maintenance/agent/validate.py:100:    if (has_parts or loc.quote) and not grounded(loc.quote, location_text):
+src/maintenance/agent/validate.py:158:        if not grounded(job.quote, data.report_text):
+src/maintenance/safety.py:928:def _grounded(quote: str | None, text: str) -> bool:
+src/maintenance/safety.py:959:        if not _grounded(quote, text):
+EXIT=0
+
+$ grep -rnw -e grounded -e _grounded src/maintenance --include=*.py | wc -l
+6
+EXIT=0
+
+$ grep -rn 'quote' src/maintenance/agent src/maintenance/engine.py src/maintenance/models.py --include=*.py
+src/maintenance/agent/baseline.py:106:    category: ServiceCategory, quote: str, data: DecisionInput, rv: RuleView, catalog: Catalog, lexicon: Lexicon
+src/maintenance/agent/baseline.py:128:        quote=quote,
+src/maintenance/agent/baseline.py:149:    quote = data.report_text.strip()[:300]
+src/maintenance/agent/baseline.py:150:    categories = _mirror_categories(data, rv, catalog) if len(quote) >= 2 else []
+src/maintenance/agent/baseline.py:151:    jobs = [_mirror_job(category, quote, data, rv, catalog, lexicon) for category in categories]
+src/maintenance/agent/baseline.py:183:    # SPEC-P08 §2: a location with no quote is rejected; the rules read it from the location text, so quote that
+src/maintenance/agent/baseline.py:184:    location_quote = data.location_text.strip()[:300] if building or floor or area else ""
+src/maintenance/agent/baseline.py:185:    location_quote = location_quote if len(location_quote) >= 2 else None  # a locked place may have no text
+src/maintenance/agent/baseline.py:187:        SchemaSignal(signal_id=s.signal_id, status=s.status.value, quote=s.source_quote[:300])
+src/maintenance/agent/baseline.py:189:        if s.status in (SignalStatus.PRESENT, SignalStatus.UNCLEAR) and len(s.source_quote) >= 2
+src/maintenance/agent/baseline.py:200:            building=building, floor=floor, area=area, quote=location_quote, reason="Vị trí theo luật cố định"
+src/maintenance/agent/prompt.py:48:- Không bịa thông tin. Mọi "quote" phải là đoạn chép nguyên văn từ phản ánh. Không chẩn đoán kỹ thuật, không hướng dẫn xử lý.
+src/maintenance/agent/prompt.py:59:   Mỗi phần tử của safety.signals là MỘT đối tượng có đúng ba khóa: signal_id (mã trong bảng trên, ví dụ "S-05"; S-00 cho nguy hiểm thật khác), status (chỉ PRESENT, UNCLEAR hoặc ABSENT) và quote (đoạn chép nguyên văn từ <an_toan_can_xet>). KHÔNG ghi tín hiệu dạng chuỗi. Không có tín hiệu ⇒ signals [].
+src/maintenance/agent/prompt.py:112:    "location": {"building": "S1", "floor": "3", "area": "Hành lang", "quote": "hành lang tầng 3 tòa S1"},
+src/maintenance/agent/prompt.py:117:            "quote": "nhiều rác",
+src/maintenance/agent/prompt.py:131:            "quote": "đèn cũng không sáng",
+src/maintenance/agent/schema.py:40:    quote: Quote | None = None
+src/maintenance/agent/schema.py:53:    quote: Quote | None = None
+src/maintenance/agent/schema.py:65:    quote: Quote
+src/maintenance/agent/validate.py:34:def grounded(quote: str | None, text: str) -> bool:
+src/maintenance/agent/validate.py:35:    """A quote counts when its folded form (NFKC, lowercase, no accents, punctuation as one space) is inside the
+src/maintenance/agent/validate.py:36:    folded text. A quote that folds to nothing ("..", "--") never does: stricter than `safety._grounded` (P08 §2)."""
+src/maintenance/agent/validate.py:37:    folded = _fold(quote or "")
+src/maintenance/agent/validate.py:38:    return bool(folded) and folded in _fold(text)  # ".." folds to "": as empty as no quote
+src/maintenance/agent/validate.py:63:    """Rules + the Agent's signals through `safety.merge_llm` (only raises the level, a bad quote is UNCLEAR).
+src/maintenance/agent/validate.py:70:        safety.SignalJudgement(signal_id=s.signal_id, status=s.status, quote=s.quote) for s in decision.safety.signals
+src/maintenance/agent/validate.py:82:            source_quote=_first_sentence(safety_text),
+src/maintenance/agent/validate.py:100:    if (has_parts or loc.quote) and not grounded(loc.quote, location_text):
+src/maintenance/agent/validate.py:101:        return None, ("building", "floor", "area"), ["location"]  # no quote or an invented one voids it (P08 §2)
+src/maintenance/agent/validate.py:158:        if not grounded(job.quote, data.report_text):
+src/maintenance/engine.py:3017:                    "quote": j.quote,
+src/maintenance/engine.py:3420:        reason = "Agent thấy hai việc: " + "; ".join(f"{j.category} ({j.quote})" for j in jobs)
+src/maintenance/models.py:238:    source_quote: str = Field(min_length=1)  # verbatim, accents kept; S-14 joins two spans with " | "
+EXIT=0
+
+$ grep -n 'quote' src/maintenance/safety.py | awk -F: '$1 >= 900'
+918:    quote: str | None = Field(default=None, description="Verbatim excerpt of the report; required for PRESENT/UNCLEAR")
+928:def _grounded(quote: str | None, text: str) -> bool:
+929:    if not quote or not quote.strip():
+931:    return normalize_with_map(quote)[0] in normalize_with_map(text)[0]
+952:        quote = (judgement.quote or "").strip()
+956:        if not quote:
+959:        if not _grounded(quote, text):
+965:                RiskSignal(signal_id=sid, status=status, source_quote=quote, detected_by=DetectedBy.LLM, rule_id="LLM")
+982:        if key not in best or len(signal.source_quote) > len(best[key].source_quote):
+EXIT=0
+
+$ grep -rn 'category_evidence\|electrical_hazard\|extract_location\|missing_location_parts\|location_mentions\|mentions_playbook_subject\|split_verdict\|rules.classify\|_location_parts' src/maintenance --include=*.py | grep -v '^src/maintenance/rules.py'
+src/maintenance/agent/baseline.py:40:    classification: rules.Classification  # rules.classify(data.report_text)
+src/maintenance/agent/baseline.py:41:    categories: frozenset[ServiceCategory]  # rules.category_evidence(data.report_text): the set R
+src/maintenance/agent/baseline.py:42:    electrical_hazard: bool  # rules.electrical_hazard(data.report_text)
+src/maintenance/agent/baseline.py:43:    location: str | None  # data.locks.location, else rules.extract_location(data.location_text, buildings)
+src/maintenance/agent/baseline.py:44:    missing_parts: tuple[str, ...]  # rules.missing_location_parts(...) while the location is None
+src/maintenance/agent/baseline.py:45:    mentions_subject: bool  # rules.mentions_playbook_subject(data.report_text)
+src/maintenance/agent/baseline.py:46:    split: rules.SplitVerdict  # rules.split_verdict(data.report_text, buildings)
+src/maintenance/agent/baseline.py:55:    location = data.locks.location or rules.extract_location(data.location_text, buildings)
+src/maintenance/agent/baseline.py:56:    missing = () if location else tuple(rules.missing_location_parts(data.location_text, buildings))
+src/maintenance/agent/baseline.py:59:        classification=rules.classify(data.report_text),
+src/maintenance/agent/baseline.py:60:        categories=rules.category_evidence(data.report_text),
+src/maintenance/agent/baseline.py:61:        electrical_hazard=rules.electrical_hazard(data.report_text),
+src/maintenance/agent/baseline.py:64:        mentions_subject=rules.mentions_playbook_subject(data.report_text),
+src/maintenance/agent/baseline.py:65:        split=rules.split_verdict(data.report_text, buildings),
+src/maintenance/agent/baseline.py:182:        building, floor, area = rules._location_parts(data.location_text, catalog.site.buildings)
+src/maintenance/agent/reconcile.py:92:    if rv.electrical_hazard and jobs and validated.safety.risk_level == RiskLevel.NONE:
+src/maintenance/agent/reconcile.py:95:                field="electrical_hazard",
+src/maintenance/agent/reconcile.py:97:                rule_value="electrical_hazard",
+src/maintenance/agent/schema.py:126:        "electrical_hazard",
+src/maintenance/coordination/split.py:26:from src.maintenance.rules import split_verdict
+src/maintenance/coordination/split.py:65:        return split_verdict(self._content(work), self.catalog.site.buildings).categories == SPLIT_PAIR
+src/maintenance/engine.py:106:from src.maintenance.rules import extract_location, mentions_playbook_subject, missing_location_parts
+src/maintenance/engine.py:901:            locks["location"] = extract_location(location, self.catalog.site.buildings) or location.strip()
+src/maintenance/engine.py:3100:            return locked or extract_location(self._location_text(work), self.catalog.site.buildings)
+src/maintenance/engine.py:3108:        return extract_location(self._location_text(work), self.catalog.site.buildings)
+src/maintenance/engine.py:3136:            parts = missing_location_parts(self._location_text(work), self.catalog.site.buildings)
+src/maintenance/engine.py:3294:            and not mentions_playbook_subject(self._content(work))  # "Đèn tầng 3 hỏng": ask the resident
+EXIT=0
+
+$ grep -rn 'merge_llm\|assess_with_llm\|safety_for\|merge_agent_safety\|_after_rules\|SKIPPED_RULE_EMERGENCY' src/maintenance --include=*.py
+src/maintenance/agent/agent.py:68:                after_rules=self._after_rules,
+src/maintenance/agent/agent.py:104:    def _after_rules(state: AgentState) -> str:
+src/maintenance/agent/agent.py:199:                state["data"], state["rules"], source="SKIPPED_RULE_EMERGENCY", reason=None, clock=self._clock
+src/maintenance/agent/reconcile.py:19:from .validate import Validated, merge_agent_safety
+src/maintenance/agent/reconcile.py:234:    """A record with no Agent decision: FALLBACK_RULE (with a reason) or SKIPPED_RULE_EMERGENCY. The `rule_*`
+src/maintenance/agent/reconcile.py:254:def safety_for(record: AgentDecisionRecord, safety_text: str, lexicon: Lexicon, model: str) -> safety.SafetyAssessment:
+src/maintenance/agent/reconcile.py:260:    merged, _ = merge_agent_safety(rule, record.decision, safety_text, lexicon, model)
+src/maintenance/agent/schema.py:145:    source: Literal["AGENT", "FALLBACK_RULE", "SKIPPED_RULE_EMERGENCY"]
+src/maintenance/agent/validate.py:60:def merge_agent_safety(
+src/maintenance/agent/validate.py:63:    """Rules + the Agent's signals through `safety.merge_llm` (only raises the level, a bad quote is UNCLEAR).
+src/maintenance/agent/validate.py:72:    merged = safety.merge_llm(
+src/maintenance/agent/validate.py:204:    merged, agent_level = merge_agent_safety(rv.safety, decision, data.safety_text, lexicon, model)
+src/maintenance/engine.py:29:from src.maintenance.agent.reconcile import safety_for
+src/maintenance/engine.py:107:from src.maintenance.safety import SafetyAssessment, SafetyLLMClient, assess, assess_with_llm
+src/maintenance/engine.py:346:    carries no decision (FALLBACK_RULE, SKIPPED_RULE_EMERGENCY), where a step runs the plain rule code (P02 §4.5)."""
+src/maintenance/engine.py:3174:            return safety_for(view.record, text, self.lexicon, view.record.model)
+src/maintenance/engine.py:3175:        return assess_with_llm(text, self.lexicon.safety, self.safety_llm, self.llm_label)
+src/maintenance/safety.py:3:Pure functions: no IO, no clock, no LLM except `assess_with_llm`. Ticket text is DATA: it is only matched against
+src/maintenance/safety.py:934:def merge_llm(
+src/maintenance/safety.py:987:def assess_with_llm(
+src/maintenance/safety.py:998:    return merge_llm(rule, result, text, lexicon, model_label=model_label)
+EXIT=0
+
+$ grep -n '# G-[1-9]' src/maintenance/agent/reconcile.py
+62:    # G-1: a valid job whose category the rules see no sign of (and nobody chose it)
+78:    # G-2: both locations complete and different, no BPTN location lock
+91:    # G-3: electrical hazard seen by the rules, Agent has a job and the final safety is NONE
+105:    # G-4: Agent dropped a category the rules see (not when a person or a split already fixed the category)
+117:    # G-5: only the Agent has a complete location
+129:    # G-6: the Agent's own safety level is lower than the rules'
+142:    # G-7: priority differs from the rules for the same category (a rejected priority is G-8 instead)
+160:    # G-8: fields the validation dropped (the engine uses the rule value)
+172:    # G-9: next_step that does not match whether the place is known
+EXIT=0
+
+$ grep -n 'rejected\|SERIOUS\|offered_jobs' src/maintenance/engine.py src/maintenance/agent/validate.py
+src/maintenance/engine.py:345:    `record.decision`: it already leaves out what the engine rejected (P01 §3.2) and it is None for a record that
+src/maintenance/engine.py:361:    def offered_jobs(self) -> int:
+src/maintenance/engine.py:376:        return path not in self.record.rejected
+src/maintenance/engine.py:379:        """The SERIOUS disagreements that stop the ticket of this job: the ones about the job's own category and
+src/maintenance/engine.py:384:            if d.severity == "SERIOUS" and (d.field != "category" or d.agent_value == category.value)
+src/maintenance/engine.py:2980:                "location" in record.rejected
+src/maintenance/engine.py:2981:                or (decision.jobs and all(f"jobs[{i}]" in record.rejected for i in range(len(decision.jobs))))
+src/maintenance/engine.py:2987:        if any(d.severity == "SERIOUS" for d in record.disagreements):
+src/maintenance/engine.py:3028:            "rejected": list(record.rejected),
+src/maintenance/engine.py:3062:        """`_view` for the steps that read the jobs: None also when the model offered jobs and the engine rejected
+src/maintenance/engine.py:3065:        if view is not None and view.offered_jobs() and not view.jobs():
+src/maintenance/agent/validate.py:4:field is NOT an error: its path goes into `rejected` and the engine uses the rule value for it. Pure functions.
+src/maintenance/agent/validate.py:46:    rejected: tuple[str, ...]  # paths the engine must ignore: "location", "jobs[1]", "jobs[0].asset_id", ...
+src/maintenance/agent/validate.py:98:    """(complete location or None, missing parts, rejected paths)."""
+src/maintenance/agent/validate.py:102:    rejected: list[str] = []
+src/maintenance/agent/validate.py:111:            rejected.append("location.building")
+src/maintenance/agent/validate.py:119:            rejected.append("location.floor")
+src/maintenance/agent/validate.py:128:            rejected.append("location.area")
+src/maintenance/agent/validate.py:136:    return complete, missing, rejected
+src/maintenance/agent/validate.py:145:    rejected: list[str] = []
+src/maintenance/agent/validate.py:147:    agent_location, missing, location_rejected = _check_location(decision.location, data.location_text, catalog)
+src/maintenance/agent/validate.py:148:    rejected += location_rejected
+src/maintenance/agent/validate.py:159:            rejected.append(f"jobs[{index}]")
+src/maintenance/agent/validate.py:167:            rejected.append(f"{prefix}.department_id")
+src/maintenance/agent/validate.py:170:            rejected.append(f"{prefix}.priority")
+src/maintenance/agent/validate.py:175:                rejected.append(f"{prefix}.duplicate_of")
+src/maintenance/agent/validate.py:187:                rejected.append(f"{prefix}.asset_id")
+src/maintenance/agent/validate.py:197:                rejected.append(f"{prefix}.materials")
+src/maintenance/agent/validate.py:202:            rejected.append("ask_fields")
+src/maintenance/agent/validate.py:209:        rejected=tuple(rejected),
+EXIT=0
+
+$ grep -n 'rules_cls\|llm_playbook' src/maintenance/proposer.py
+75:    rules_cls = classify(description)
+77:        return ProposalResult(rules_cls, "rules")
+108:        return ProposalResult(rules_cls, "rules", notes=[f"LLM lỗi ({type(exc).__name__}); dùng luật cố định"])
+111:    llm_playbook = PLAYBOOK_PAIRS.get(pair)
+112:    if llm_playbook is None and pair != (ServiceCategory.UNKNOWN, TicketType.UNKNOWN):
+116:    if rules_cls.playbook_id and llm_playbook and rules_cls.playbook_id != llm_playbook:
+117:        classification = _unclear(f"Luật ({rules_cls.playbook_id}) và LLM ({llm_playbook}) không thống nhất")
+118:    elif rules_cls.playbook_id and llm_playbook is None:
+121:            f"Luật khớp {rules_cls.playbook_id} nhưng LLM không xác định được một playbook duy nhất"
+123:    elif rules_cls.playbook_id:
+124:        classification = rules_cls  # both agree
+125:    elif rules_cls.reason_code == ReasonCode.CATEGORY_UNCLEAR:
+127:        if llm_playbook:
+128:            notes.append(f"Luật thấy cả hai playbook; LLM chọn {llm_playbook} — BPTN quyết")
+129:        classification = rules_cls
+130:    elif llm_playbook:
+133:            llm_playbook, service, ticket_type, TRIGGER_RULES[llm_playbook], f"Đề xuất từ LLM: {reason}"
+137:        classification = rules_cls
+EXIT=0
+
+$ grep -n 'level = max(result.risk_level, old' src/maintenance/engine.py
+3187:        level = max(result.risk_level, old, key=_LEVEL_ORDER.__getitem__)
+EXIT=0
+
+$ grep -rn 'quote' src/web src/api
+EXIT=1
+
+## B. Phân loại (architect) — ID · file:line · trường · hành vi hiện tại · phân loại → xử lý trong SPEC-P10
+# Phạm vi lệnh: safety.py dòng < 900 là phần LUẬT (assess, trích đoạn do luật tìm) — không nhận đầu ra LLM nên không kiểm kê;
+# rules.py chỉ là bằng chứng luật, cổng nằm ở chỗ gọi (C7–C9, F2, F5, A4–A8). src/web, src/api: 0 dòng "quote" (lệnh cuối, EXIT=1 = không khớp).
+### B1. Cổng chặn LLM — khớp QUOTE (P10 đổi)
+C1 · src/maintenance/agent/validate.py:100-101 (qua grounded() :34-38) · location · quote None/rỗng, hoặc quote gấp (NFKC, bỏ dấu, dấu câu→khoảng trắng) không là chuỗi con của location_text ⇒ loại CẢ vị trí (None, 3 phần thiếu, rejected=["location"]) ⇒ luật vị trí hoặc hỏi lại cư dân (đo T1: NEED_INFO/MISSING_INFO + AGENT_FALLBACK) · cổng chặn LLM → P10 §3.2 bỏ
+C2 · src/maintenance/agent/validate.py:158-160 (qua grounded() :34-38) · jobs[i] · quote job gấp không là chuỗi con của report_text ⇒ loại cả job (rejected "jobs[i]") (đo T3c) · cổng chặn LLM → P10 §3.2 bỏ
+C3 · src/maintenance/agent/schema.py:19,40,53,65 · quote (signal/location/job) · kiểu Quote min_length=2 / max 300, quote job BẮT BUỘC ⇒ quote ""/thiếu khoá/1 ký tự/>300 ⇒ SCHEMA_INVALID ⇒ FALLBACK_RULE cả quyết định, mất cả lần nâng an toàn (đo T3b, T3b2) · cổng chặn LLM → P10 §3.1 AuditQuote
+C4 · src/maintenance/safety.py:956-958 (đường Agent: validate.py:72-74 và reconcile.safety_for; đường LLM an toàn plan 01: safety.py:998) · tín hiệu an toàn · LLM PRESENT/UNCLEAR không quote ⇒ bỏ hẳn, mất lần nâng (đo T5b: chỉ còn S-00 UNCLEAR) · cổng chặn LLM → P10 §3.3
+C5 · src/maintenance/safety.py:959-961 (qua _grounded() :928-931; cùng hai đường như C4) · tín hiệu an toàn · quote không là chuỗi con ⇒ PRESENT hạ UNCLEAR, mất Bậc 1 (đo T5: SAFETY_REVIEW_REQUIRED thay EMERGENCY_PENDING_BQL) · cổng chặn LLM → P10 §3.3
+C6 · src/maintenance/engine.py:3061-3067 (_job_view) · jobs · mọi job Agent đưa đều bị loại (đầu vào từ C2) ⇒ view None ⇒ luật quyết loại việc (I-20) · cổng chặn LLM (hệ quả C2) → P10 §3.7: sau P10 chỉ còn kích bởi khoá/ghim loại việc của người; code giữ
+### B2. Cổng chặn LLM — khớp TỪ KHOÁ LUẬT trên câu cư dân (không phải quote; ngoài Q35 — P10 giữ, cần người quyết)
+C7 · src/maintenance/agent/reconcile.py:62-76 (+ engine.py:3666-3681 bước 5) · loại việc · G-1 SERIOUS khi loại việc Agent ∉ rules.category_evidence(report_text) ⇒ PENDING_REVIEW · cổng chặn LLM (từ khoá luật) → P10 §7 giữ, Q-P10-1
+C8 · src/maintenance/agent/reconcile.py:78-89 (+ engine.py:3666-3681 bước 5) · location · G-2 SERIOUS khi rules.extract_location đủ và khác vị trí Agent ⇒ PENDING_REVIEW (đo g2-probe: sau P10 không còn phụ thuộc câu chữ quote) · cổng chặn LLM (từ khoá luật) → P10 §7 giữ, Q-P10-1
+C9 · src/maintenance/proposer.py:116-129 (gọi từ engine._classification; CHỈ khi MO_AGENT_ENABLED=false + LLM_MODE=openai) · loại việc · rules.classify khác/không thấy ⇒ CATEGORY_UNCLEAR, playbook LLM bị bỏ · cổng chặn LLM (từ khoá luật, đường rollback tắt Agent) → P10 §7 giữ
+### B3. Lưới sàn luật hợp lệ (chỉ NÂNG mức hoặc THÊM người xem; không loại/hạ đầu ra LLM)
+F1 · src/maintenance/agent/agent.py:95-96,104-107 · tín hiệu an toàn · luật (lexicon) ra EMERGENCY ⇒ không gọi mô hình (SKIPPED_RULE_EMERGENCY) · lưới sàn luật hợp lệ → P10 §4 giữ
+F2 · src/maintenance/agent/baseline.py:51-54 + src/maintenance/engine.py:3187 · mức an toàn · sàn safety.assess(lexicon) + mức cuối = max(kết quả, mức đang có) (I-17) · lưới sàn luật hợp lệ → P10 §4 giữ
+F3 · src/maintenance/safety.py:953-955 · tín hiệu an toàn · LLM ABSENT bị bỏ (không hạ) · lưới sàn luật hợp lệ → P10 §4 giữ
+F4 · src/maintenance/safety.py:962-968 · tín hiệu an toàn · LLM không cao hơn luật ⇒ giữ bản ghi luật · lưới sàn luật hợp lệ → P10 §4 giữ
+F5 · src/maintenance/agent/reconcile.py:91-103 · an toàn điện · G-3: rules.electrical_hazard + Agent có job + an toàn cuối NONE ⇒ PENDING_REVIEW (chỉ thêm người xem) · lưới sàn luật hợp lệ → P10 §4 giữ
+F6 · src/maintenance/agent/validate.py:77-88 · an toàn · Agent tự khai EMERGENCY mà không có tín hiệu hợp lệ ⇒ S-00 UNCLEAR LLM-UNGROUNDED (V-11, Q24(3)); hiện cũng bị C4/C5 kích hoạt · lưới sàn luật hợp lệ → P10 §4 giữ (sau P10 chỉ kích khi thiếu tín hiệu danh mục)
+### B4. Chỉ audit (ghi/hiển thị; không đổi luồng)
+A1 · src/maintenance/agent/baseline.py:128,149-151 · jobs (Mirror) · quote job = report_text[:300] — quote GIẢ để qua C2; điều kiện len(quote)>=2 vì C3 · chỉ audit → P10 §3.4 quote=None
+A2 · src/maintenance/agent/baseline.py:183-185,200 · location (Mirror) · quote = location_text[:300] — quote GIẢ để qua C1 · chỉ audit → P10 §3.4 quote=None
+A3 · src/maintenance/agent/baseline.py:186-190 · tín hiệu (Mirror) · quote = source_quote THẬT của luật; lọc len>=2 vì C3 · chỉ audit → P10 §3.4 giữ quote thật, bỏ lọc
+A4 · src/maintenance/agent/validate.py:199-202 · ask_fields · so với rv.missing_parts (regex) ⇒ "ask_fields" vào rejected; engine KHÔNG đọc ask_fields, chỉ sinh G-8 MINOR · chỉ audit → P10 §3.7 giữ
+A5 · src/maintenance/agent/reconcile.py:105-115 · loại việc · G-4 MINOR (loại Agent ⊂ loại luật thấy) · chỉ audit → giữ
+A6 · src/maintenance/agent/reconcile.py:117-127 · location · G-5 MINOR (luật không đọc được vị trí; dùng vị trí Agent) · chỉ audit → giữ
+A7 · src/maintenance/agent/reconcile.py:129-140 · an toàn · G-6 MINOR (Agent tự khai thấp hơn luật; mức vẫn theo F2) · chỉ audit → giữ
+A8 · src/maintenance/agent/reconcile.py:142-158 · ưu tiên · G-7 MINOR (propose_priority từ khoá; engine dùng ưu tiên Agent) · chỉ audit → giữ
+A9 · src/maintenance/agent/reconcile.py:160-170 · trường bị loại · G-8 MINOR · chỉ audit → giữ
+A10 · src/maintenance/agent/reconcile.py:172-183 · next_step · G-9 MINOR (engine theo vị trí thực) · chỉ audit → giữ
+A11 · src/maintenance/engine.py:2977-2988 · cờ ticket · AGENT_FALLBACK khi rejected có "location" hoặc mọi "jobs[i]" (đầu vào C1/C2); cờ chỉ cho nhân viên · chỉ audit → P10 §3.7 giữ (đọc record cũ)
+A12 · src/maintenance/engine.py:3017 · audit AGENT_DECISION · "quote": j.quote trong tóm tắt · chỉ audit → giữ (None hợp lệ)
+A13 · src/maintenance/engine.py:3420 · ghi chú blocker · "Agent thấy hai việc: <cat> (<quote>)" ⇒ sau P10 hiện "(None)" (đo mirror-note-sim.txt) · chỉ audit → P10 §3.5
+### Ngoài đếm — SPEC chưa thi công cùng loại (không có trong code)
+S1 · SPEC-P08 §6 F8 (WP15/H14 chưa phóng) · tách · rules.location_mentions > 1 nơi ⇒ _try_split False cho MỌI đường kể cả Agent · từ khoá luật chặn quyết định tách của LLM → P10 §7, Q-P10-3
+S2 · SPEC-P09 §4.1 + §8 CẤM 1 (PROPOSED, ngoài B1/B2) · loại việc · nhận phân loại Agent khi "job.quote grounded" · khớp quote → P10 §7, Q-P10-4
+S3 · SPEC-P09 §3 (B1), §4.2 + khối B2 trong §5.1 (PROPOSED, đình chỉ Q35) · location/tách · giao span, quote đủ 3 thành phần → P10 §11 thay
+### Ngoài đếm — kiểm danh mục/cấu trúc (KHÔNG khớp chữ), giữ nguyên
+K1 · src/maintenance/safety.py:948-950 · signal_id ngoài từ vựng đang bật ⇒ bỏ
+K2 · src/maintenance/agent/validate.py:103-136 · tòa/tầng/khu theo danh mục (catalog.site.buildings, dạng tầng, nhãn AREA_PATTERNS, IMPLIED_FLOOR)
+K3 · src/maintenance/agent/validate.py:156-157 · khoá/ghim loại việc của người
+K4 · src/maintenance/agent/validate.py:165-197 · phòng ban/ưu tiên/trùng/tài sản/vật tư theo bảng playbook, bảng PRI, ứng viên
+K5 · src/maintenance/agent/schema.py · Literal/enum, extra="forbid", ràng buộc chéo scope/jobs/next_step
+K6 · src/maintenance/engine.py:3510-3532 · trùng kiểm lại lúc áp (ứng viên, loại việc, vị trí cuối, cửa sổ)
+
+## C. Đếm (máy, từ phần B)
+$ grep -cE '^[CFA][0-9]+ · ' inventory.txt   # tổng chỗ
+28
+$ grep -cE '^C[0-9]+ · .*· cổng chặn LLM' inventory.txt   # cổng chặn LLM
+9
+$ grep -cE '^C[1-6] · ' inventory.txt   # trong đó khớp quote (P10 đổi)
+6
+$ grep -cE '^C[7-9] · ' inventory.txt   # trong đó từ khoá luật (ngoài Q35, giữ)
+3
+$ grep -cE '^F[0-9]+ · .*· lưới sàn luật hợp lệ' inventory.txt   # lưới sàn
+6
+$ grep -cE '^A[0-9]+ · .*· chỉ audit' inventory.txt   # chỉ audit
+13

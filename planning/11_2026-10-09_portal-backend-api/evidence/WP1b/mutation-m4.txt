@@ -1,0 +1,20 @@
+mutation m4: drop the resolved_at condition in _cleared
+3040c3040
+<             if work.ticket.department_id is not None and blocker.resolved_at is None:
+---
+>             if False:
+        detail = short.json()["detail"]
+        assert detail["code"] == "STOCK_SHORT" and "Kho chưa đủ" in detail["message"]
+        assert c.post(f"/api/v1/mo/warehouse/stock/{LAMP2}", json={"qty": 2}, headers=tok("kho")).status_code == 200
+>       assert c.get(f"/api/v1/mo/tickets/{ticket_id}", headers=tok("kho")).json()["ticket"]["status"] == "ON_HOLD"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'ticket'
+
+tests\test_maintenance\test_portal_backend_ext2.py:375: KeyError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s2_short_stock_is_refused_until_the_warehouse_receives
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s2_receiving_stock_never_approves_by_itself
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s2_the_job_does_not_approve_either
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s2_api_flow
+4 failed, 47 passed, 5 deselected in 6.15s
+EXIT=1

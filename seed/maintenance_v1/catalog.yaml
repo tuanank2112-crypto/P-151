@@ -1,0 +1,132 @@
+# MaintenanceOps Agent — static read-only catalog (Data Contract v1.1 §5.4–5.6, §6; CR-BPTN-02)
+# SIMULATED: không phải dữ liệu, lịch trực, định mức, tồn kho hoặc quy trình vận hành thật của Vinhomes.
+dataset_version: maintenanceops-sim-v1.1
+synthetic: true
+
+# Phạm vi thử nghiệm: chỉ nhận phản ánh ở các tòa liệt kê dưới đây (mở rộng sau bằng cách thêm mã tòa).
+# Tòa không có trong danh sách = coi như thiếu tòa (cư dân được hỏi lại). Sửa danh sách thì sửa cả
+# field_labels.location_building trong src/maintenance/i18n/vi.yaml.
+site:
+  name: Ocean Park
+  buildings: [S1, S2]
+
+# Mỗi khu vực MỘT tài sản đèn (plan 14): đèn hành lang tầng 1 giống tầng 6, không chia theo tòa-tầng.
+# Engine khớp theo phần khu vực của vị trí; khu vực không có ở đây (Hầm xe, Sảnh chính…) ⇒ ASSET_UNCLEAR, BPTN chọn.
+# `area` phải là nhãn trong src/maintenance/rules.py AREA_PATTERNS; mỗi khu vực tối đa một tài sản ACTIVE.
+assets:
+  - {asset_id: SIM-ASSET-LIGHT-HALLWAY, asset_type: LIGHTING, name: "Đèn hành lang", area: "Hành lang", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.area.hallway, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-LIFT-LOBBY, asset_type: LIGHTING, name: "Đèn sảnh thang máy", area: "Sảnh thang máy", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.area.lift-lobby, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-LIFT-CABIN, asset_type: LIGHTING, name: "Đèn thang máy", area: "Thang máy", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.area.lift-cabin, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-STAIRS, asset_type: LIGHTING, name: "Đèn cầu thang bộ", area: "Cầu thang bộ", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.area.stairs, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-WASTE-ROOM, asset_type: LIGHTING, name: "Đèn phòng rác", area: "Phòng rác", asset_status: ACTIVE_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.area.waste-room, synthetic: true, read_only: true}
+  # Ngừng dùng (trước plan 14, một tài sản mỗi tòa-tầng): giữ để mã trên ticket cũ vẫn tra được. KHÔNG được chọn.
+  - {asset_id: SIM-ASSET-LIGHT-001, asset_type: LIGHTING, name: "Đèn hành lang (cũ)", area: "Hành lang", location_normalized: "Tòa S1 / Tầng 3 / Hành lang", asset_status: RETIRED_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.001, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-002, asset_type: LIGHTING, name: "Đèn sảnh thang máy (cũ)", area: "Sảnh thang máy", location_normalized: "Tòa S1 / Tầng 5 / Sảnh thang máy", asset_status: RETIRED_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.002, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-003, asset_type: LIGHTING, name: "Đèn sảnh thang máy (cũ)", area: "Sảnh thang máy", location_normalized: "Tòa S1 / Tầng 5 / Sảnh thang máy", asset_status: RETIRED_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.003, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-004, asset_type: LIGHTING, name: "Đèn hành lang (cũ)", area: "Hành lang", location_normalized: "Tòa S2 / Tầng 2 / Hành lang", asset_status: RETIRED_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.004, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-005, asset_type: LIGHTING, name: "Đèn hành lang (cũ)", area: "Hành lang", location_normalized: "Tòa S2 / Tầng 7 / Hành lang", asset_status: RETIRED_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.005, synthetic: true, read_only: true}
+  - {asset_id: SIM-ASSET-LIGHT-006, asset_type: LIGHTING, name: "Đèn hầm xe (cũ)", area: "Hầm xe", location_normalized: "Tòa S1 / Tầng B1 / Hầm xe", asset_status: RETIRED_SIMULATED, linked_playbook_id: PB-TEC-01, source_ref: fixture.asset.006, synthetic: true, read_only: true}
+
+# Định mức (norm) và tồn kho mô phỏng. simulated_stock_qty=null nghĩa là tồn kho không rõ.
+materials:
+  - {item_code: SIM-MAT-CLEAN-01, item_name: "Dung dịch vệ sinh mô phỏng", unit: Chai, norm_qty: 2, norm_label: SYNTHETIC, simulated_stock_qty: 24, min_qty: 10, synthetic: true}
+  - {item_code: SIM-MAT-BAG-01, item_name: "Túi rác mô phỏng", unit: Cuộn, norm_qty: 2, norm_label: SYNTHETIC, simulated_stock_qty: 40, min_qty: 15, synthetic: true}
+  - {item_code: SIM-MAT-LAMP-01, item_name: "Bóng đèn LED mô phỏng", unit: Cái, norm_qty: 1, norm_label: SYNTHETIC, simulated_stock_qty: 4, min_qty: 5, synthetic: true}
+  - {item_code: SIM-MAT-LAMP-02, item_name: "Bóng đèn tuýp mô phỏng", unit: Cái, norm_qty: 2, norm_label: SYNTHETIC, simulated_stock_qty: 0, min_qty: 5, synthetic: true}
+  - {item_code: SIM-MAT-STARTER-01, item_name: "Tắc te mô phỏng", unit: Cái, norm_qty: null, norm_label: N_A, simulated_stock_qty: null, min_qty: 5, synthetic: true}
+
+# Vật tư dự kiến Agent tự đề xuất theo playbook khi ticket không có kế hoạch vật tư riêng (PRD §7 bước 7)
+default_materials:
+  PB-CLN-01:
+    - {item_code: SIM-MAT-CLEAN-01, planned_qty: 2}  # = norm_qty, nên happy path không cần variance_reason
+  PB-TEC-01:
+    - {item_code: SIM-MAT-LAMP-01, planned_qty: 1}
+
+checklist_templates:
+  - checklist_template_id: PB-CLN-01-CHK-V1
+    playbook_id: PB-CLN-01
+    playbook_version: "1.1"
+    template_version: "1.1"
+    not_real_sop_label: true
+    synthetic: true
+    items:
+      - {template_item_id: CLN-CHK-01, label: "Khu vực trong execution update khớp location_normalized"}
+      - {template_item_id: CLN-CHK-02, label: "Execution update đã được ghi nhận theo scope_summary"}
+      - {template_item_id: CLN-CHK-03, label: "Các hạng mục trong phạm vi draft đã được đánh dấu hoàn tất"}
+  - checklist_template_id: PB-TEC-01-CHK-V1
+    playbook_id: PB-TEC-01
+    playbook_version: "1.1"
+    template_version: "1.1"
+    not_real_sop_label: true
+    synthetic: true
+    items:
+      - {template_item_id: TEC-CHK-01, label: "Execution update nhận diện đúng location và đối tượng lighting"}
+      - {template_item_id: TEC-CHK-02, label: "Việc hoàn tất checklist an toàn mô phỏng đã được ghi nhận"}
+      - {template_item_id: TEC-CHK-03, label: "Kết quả xử lý mô phỏng đã được cập nhật"}
+
+evidence_requirements:
+  - {requirement_id: CLN-EVD-PROCESSING-NOTE, playbook_id: PB-CLN-01, allowed_evidence_types: [PROCESSING_NOTE]}
+  - {requirement_id: TEC-EVD-RESULT-NOTE, playbook_id: PB-TEC-01, allowed_evidence_types: [RESULT_NOTE]}
+
+actors:
+  - {actor_id: SIM-ACTOR-RESIDENT-01, actor_role: RESIDENT}
+  - {actor_id: SIM-ACTOR-RESIDENT-02, actor_role: RESIDENT}
+  - {actor_id: SIM-ACTOR-BPTN-01, actor_role: BPTN}
+  - {actor_id: SIM-ACTOR-DEPT-CLN-01, actor_role: DEPARTMENT, department_id: DEPT_CLEANING}
+  - {actor_id: SIM-ACTOR-DEPT-TEC-01, actor_role: DEPARTMENT, department_id: DEPT_TECHNICAL}
+  - {actor_id: SIM-ACTOR-WAREHOUSE-01, actor_role: WAREHOUSE}
+  - {actor_id: SIM-ACTOR-BQL-01, actor_role: BQL}
+  - {actor_id: SIM-ACTOR-AGENT, actor_role: AGENT}
+  - {actor_id: SIM-ACTOR-SYSTEM, actor_role: SYSTEM}
+  - {actor_id: SIM-ACTOR-QA-01, actor_role: QA_INTERNAL}  # công cụ demo: nạp lại dữ liệu, chạy job
+
+# ---------------------------------------------------------------------------
+# CR-BPTN-02: phòng ban, lịch làm việc và SLA. Mọi giá trị là MẶC ĐỊNH TẠM, chờ chốt (CR-BPTN-02 §8).
+# ---------------------------------------------------------------------------
+
+# Bảng playbook → phòng ban. Thêm phòng ban mới bằng cách thêm dòng ở đây và trong `departments`.
+playbook_departments:
+  PB-CLN-01: DEPT_CLEANING
+  PB-TEC-01: DEPT_TECHNICAL
+
+# Ca làm việc của từng phòng ban (giờ địa phương +07:00). Ngoài các ca này ticket giữ ROUTED + OUT_OF_HOURS.
+departments:
+  - department_id: DEPT_CLEANING
+    name: "Phòng Vệ sinh"
+    shifts: [{start: "06:00", end: "14:00"}, {start: "14:00", end: "22:00"}]
+  - department_id: DEPT_TECHNICAL
+    name: "Phòng Kỹ thuật"
+    shifts: [{start: "06:00", end: "14:00"}, {start: "14:00", end: "22:00"}]
+
+# Giờ hành chính của BPTN (dùng cho mốc leo thang "4h giờ hành chính"). weekdays: 0 = thứ Hai.
+business_hours: {start: "08:00", end: "17:00", weekdays: [0, 1, 2, 3, 4]}
+
+sla_config:
+  max_auto_retries: 3
+  job_interval_minutes: 5
+  duplicate_window_hours: 48
+  # Cửa sổ mở lại ticket: BỎ (CR-BPTN-03 §4.3 — không reopen)
+  # Mọi blocker BPTN gỡ, kể cả MISSING_INFO (BPTN liên hệ cư dân để bổ sung) — theo `bptn` bên dưới.
+  # Riêng NEED_INFO do tầng an toàn (safety_context, T06): không nhắc tự động, leo thang BQL sau 12 giờ lịch.
+  missing_info:
+    safety_context: {escalate_after_hours: 12}  # CR-03 §6.4 / D-02: NEED_INFO khi nghi nguy hiểm
+  safety_review: {escalate_after_hours: 4}  # CR-03 §6.4 / D-02: GIỜ LỊCH, không tính giờ hành chính
+  bptn: {retry_every_business_hours: 1, escalate_after_business_hours: 4}
+  waiting_material: {escalate_after_hours: 24}  # kiểm lại tồn kho ở đầu mỗi ca
+  not_accepted: {start_after_hours: 2, retry_every_hours: 2}
+  rework: {escalate_at_count: 3}
+  wrong_dept_return: {escalate_at_count: 2}  # CR-03 §9.2 / §12.2 (đã chốt): lần trả sai phòng ban thứ 2 leo thang BQL
+  priority: {duplicate_raise_at_count: 3}  # CR-03 §7 PRI-U1 / D-03 — plan 06 Q19: người dùng chốt 3
+
+# Plan 06 (01-CONTRACTS §4.2): vật tư Agent được chọn theo playbook; default_materials phải nằm trong đây.
+playbook_materials:
+  PB-CLN-01: [SIM-MAT-CLEAN-01, SIM-MAT-BAG-01]
+  PB-TEC-01: [SIM-MAT-LAMP-01, SIM-MAT-LAMP-02, SIM-MAT-STARTER-01]
+
+# Plan 06: công tắc hành vi và giới hạn của Agent (I-29) — tắt được không sửa code.
+agent_policy:
+  auto_split_mixed_reports: true  # Q03 người dùng chốt: Agent tự tách phản ánh hai việc
+  hold_near_open_emergency: false  # Q18 CHỜ DUYỆT: mặc định chỉ liên kết, không giữ ticket thường
+  max_material_qty: 10
+  max_duplicate_candidates: 8
+  max_job_agent_calls: 5  # số lần gọi mô hình tối đa mỗi vòng job (chỉ ticket mồ côi)

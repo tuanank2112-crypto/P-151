@@ -1,0 +1,41 @@
+
+ ❯ tests/unit/portal-ext.test.ts:522:15
+    520|     }
+    521|     const t = buildMgmtTicket(old, summary, now);
+    522|     expect(t).toMatchObject({ agentDept: null, doneHours: null, rating…
+       |               ^
+    523|   });
+    524|   it("BQL work shows its source from the case notifications, else from…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[58/59]⎯
+
+ FAIL  |unit| tests/unit/portal-ext.test.ts > management ticket > BQL work shows its source from the case notifications, else from the Agent hint
+AssertionError: expected { id: 'SIM-TKT-0042', …(18) } to match object { bqlWork: true, …(2) }
+(18 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "agentDept": "bql",
+-   "bqlSource": "Agent chuyển",
+    "bqlWork": true,
+  }
+
+ ❯ tests/unit/portal-ext.test.ts:528:21
+    526|     const base = row({ status: "VERIFYING", department_id: null, block…
+    527|     const byAgent = buildMgmtTicket(base, summary, now, aCase({}, { no…
+    528|     expect(byAgent).toMatchObject({ bqlWork: true, bqlSource: "Agent c…
+       |                     ^
+    529|     const byBptn = buildMgmtTicket(base, summary, now, aCase({}, { not…
+    530|     expect(byBptn.bqlSource).toBe("Tiếp nhận chuyển");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[59/59]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  59 failed | 2 passed (61)
+   Start at  14:32:57
+   Duration  1.45s (transform 69%, import 19%, tests 11%, worker 1%)
+
+EXIT=1

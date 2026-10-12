@@ -1,0 +1,37 @@
+
+ RUN  v5.0.3 D:/P151-portal-fe/portal
+
+ ❯ |unit| tests/unit/session.test.ts (0 test)
+ ❯ |unit| tests/unit/backend-map.test.ts (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| tests/unit/backend-map.test.ts [ tests/unit/backend-map.test.ts ]
+Error: Cannot find package '@/lib/backend-map' imported from D:/P151-portal-fe/portal/tests/unit/backend-map.test.ts
+ ❯ tests/unit/backend-map.test.ts:2:1
+      1| import { describe, expect, it } from "vitest";
+      2| import {
+       | ^
+      3|   REASON_CODES,
+      4|   blockerLabel,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |unit| tests/unit/session.test.ts [ tests/unit/session.test.ts ]
+Error: Cannot find package '@/server/session-token' imported from D:/P151-portal-fe/portal/tests/unit/session.test.ts
+ ❯ tests/unit/session.test.ts:2:1
+      1| import { describe, expect, it } from "vitest";
+      2| import { signSession, verifySession, type SessionPayload } from "@/ser…
+       | ^
+      3|
+      4| const secret = "unit-test-secret";
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  no tests
+   Start at  10:51:27
+   Duration  257ms (worker 95%, environment 5%)
+
+EXIT=1

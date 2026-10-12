@@ -1,0 +1,1 @@
+json-validate exit=0

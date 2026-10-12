@@ -1,0 +1,16 @@
+# done_when.command chạy qua `bash -c` từ root repo (cmd Git Bash); retest-* cần evidence mới nên chưa chạy
+D5-B-001 refs_exist= True exit= 0 | OK
+D5-B-002 refs_exist= True | không chạy: chờ evidence retest mới
+D5-B-003 refs_exist= True | không chạy: chờ evidence retest mới
+D5-B-004 refs_exist= True | không chạy: chờ evidence retest mới
+D5-B-005 refs_exist= True | không chạy: chờ evidence retest mới
+D5-B-006 refs_exist= True | không chạy: chờ evidence retest mới
+D5-B-007 refs_exist= True | không chạy: chờ evidence retest mới
+D5-B-008 refs_exist= True | không chạy: chờ evidence retest mới
+D5-B-009 refs_exist= True | không chạy: chờ evidence retest mới
+D5-B-010 refs_exist= True | không chạy: chờ evidence retest mới
+D5-B-011 refs_exist= True exit= 1 | AssertionError: POS_FAIL
+D5-B-012 refs_exist= True exit= 0 | True
+D5-B-013 refs_exist= True exit= 0 | True
+D5-B-014 refs_exist= True exit= 0 | ['P0']
+D5-B-015 refs_exist= True exit= 2 | C:\Users\caotr\AppData\Local\Programs\Python\Python311\python.exe: can't open file 'C:\\P-151-truong

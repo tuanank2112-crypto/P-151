@@ -1,0 +1,2 @@
+2026-10-04T11:57:50+07:00 python harness.py t2dl exit=0
+checks_total=5 ok=5 mismatch=0

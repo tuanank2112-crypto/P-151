@@ -1,0 +1,14 @@
+PASS cleaning: queue renders cards, no horizontal overflow cards=4
+PASS cleaning: code opens TicketDetailModal, Esc closes 
+PASS cleaning: ROUTED has assign-or-accept + 'Không phải việc phòng mình' (note required) 
+PASS cleaning: assign/accept first ROUTED ticket -> IN_PROGRESS code=SIM-TKT-CLN-001 viaAssign=false
+PASS cleaning: IN_PROGRESS buttons (hoàn thành, báo sai phòng ban) 
+PASS cleaning: finish refuses without photo (inline error), then succeeds with photo 
+PASS cleaning: history tab renders 
+PASS technical: queue renders, no horizontal overflow, no warehouse tab tabs=Hàng việc 4|Yêu cầu vật tư|Lịch sử
+PASS technical: assign/accept first ROUTED ticket -> IN_PROGRESS code=SIM-TKT-TEC-006 viaAssign=false
+PASS technical: request-materials modal (multi-line, +/-, custom line, required note) customLine=true
+PASS technical: material tab lists request + status 
+PASS technical: queue shows waiting-material card 
+PASS technical: after approval, finish needs every 'Đã dùng <tên> — số lượng' ticked materialRows=3
+PASS technical: history tab renders 

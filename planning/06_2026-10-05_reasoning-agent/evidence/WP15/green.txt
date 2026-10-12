@@ -1,0 +1,4 @@
+--- pytest new file after ruff fix
+...................                                                      [100%]
+19 passed in 0.65s
+EXIT=0

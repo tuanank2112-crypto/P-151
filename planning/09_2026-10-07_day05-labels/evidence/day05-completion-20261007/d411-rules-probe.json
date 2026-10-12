@@ -1,0 +1,88 @@
+{
+  "recorded_at": "2026-10-07T16:45:48.266171+00:00",
+  "head": "79f9444596f61c41bd08dbbc9b70fb0ed8e68cdc",
+  "lexicon_sha256": "920e6b3f3e78b915635c72c74e84130ab0f7848a398da67964a5a74c2d13fb99",
+  "scope": "Rules-only comparison to unreviewed proposals; not Day05 gold baseline",
+  "records": [
+    {
+      "test_id": "D411-T01",
+      "expected_proposal": "EMERGENCY",
+      "actual_safety_rules": "NONE",
+      "comparison_to_proposal": "MISMATCH",
+      "gold_reviewed": false,
+      "api_tested": false
+    },
+    {
+      "test_id": "D411-T02",
+      "expected_proposal": "EMERGENCY",
+      "actual_safety_rules": "NONE",
+      "comparison_to_proposal": "MISMATCH",
+      "gold_reviewed": false,
+      "api_tested": false
+    },
+    {
+      "test_id": "D411-T03",
+      "expected_proposal": "EMERGENCY",
+      "actual_safety_rules": "EMERGENCY",
+      "comparison_to_proposal": "MATCH",
+      "gold_reviewed": false,
+      "api_tested": false
+    },
+    {
+      "test_id": "D411-T04",
+      "expected_proposal": "EMERGENCY",
+      "actual_safety_rules": "EMERGENCY",
+      "comparison_to_proposal": "MATCH",
+      "gold_reviewed": false,
+      "api_tested": false
+    },
+    {
+      "test_id": "D411-T05",
+      "expected_proposal": "NONE",
+      "actual_safety_rules": "EMERGENCY",
+      "comparison_to_proposal": "MISMATCH",
+      "gold_reviewed": false,
+      "api_tested": false
+    },
+    {
+      "test_id": "D411-T06",
+      "expected_proposal": "NONE",
+      "actual_safety_rules": "NONE",
+      "comparison_to_proposal": "MATCH",
+      "gold_reviewed": false,
+      "api_tested": false
+    },
+    {
+      "test_id": "D411-T07",
+      "expected_proposal": "NONE",
+      "actual_safety_rules": "NONE",
+      "comparison_to_proposal": "MATCH",
+      "gold_reviewed": false,
+      "api_tested": false
+    },
+    {
+      "test_id": "D411-T08",
+      "expected_proposal": "NONE",
+      "actual_safety_rules": "NONE",
+      "comparison_to_proposal": "MATCH",
+      "gold_reviewed": false,
+      "api_tested": false
+    },
+    {
+      "test_id": "D411-T09",
+      "expected_proposal": "EMERGENCY",
+      "actual_safety_rules": "NONE",
+      "comparison_to_proposal": "MISMATCH",
+      "gold_reviewed": false,
+      "api_tested": false
+    },
+    {
+      "test_id": "D411-T10",
+      "expected_proposal": "EMERGENCY",
+      "actual_safety_rules": "EMERGENCY",
+      "comparison_to_proposal": "MATCH",
+      "gold_reviewed": false,
+      "api_tested": false
+    }
+  ]
+}

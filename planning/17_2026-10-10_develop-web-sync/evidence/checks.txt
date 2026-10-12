@@ -1,0 +1,32 @@
+$ git rev-parse HEAD origin/develop
+71315109d845fe69935050b09d4ab4c67efb024a
+b6590ce5f01c26b4013f9313c9dcf4bffd97c56e
+
+
+exit=0
+$ git diff --name-only --diff-filter=U
+
+warning: in the working copy of 'portal/drizzle/meta/_journal.json', LF will be replaced by CRLF the next time Git touches it
+
+exit=0
+$ git diff HEAD --check -- src tests portal docs/portal.md docs/maintenance.md docs/web.md brain4agent
+
+warning: in the working copy of 'portal/drizzle/meta/_journal.json', LF will be replaced by CRLF the next time Git touches it
+
+exit=0
+$ .uv-cache\archive-v0\BXEzUP3XJacXNbwB\Scripts\python.exe -m pytest tests/test_maintenance/test_portal_proxy.py -q -p no:cacheprovider
+...                                                                      [100%]
+3 passed in 0.40s
+
+
+exit=0
+$ .uv-cache\archive-v0\BXEzUP3XJacXNbwB\Scripts\python.exe -m ruff check src tests
+All checks passed!
+
+
+exit=0
+$ .uv-cache\archive-v0\BXEzUP3XJacXNbwB\Scripts\python.exe -m ruff format --check src tests
+118 files already formatted
+
+
+exit=0

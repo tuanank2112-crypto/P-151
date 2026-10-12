@@ -1,0 +1,95 @@
+{
+  "at": "2026-10-07T06:14:25.551100+00:00",
+  "backlog_count": 15,
+  "backlog_acceptance": {
+    "PROPOSED": 15
+  },
+  "backlog_status": {
+    "OPEN": 14,
+    "FIXED_PENDING_RETEST": 1
+  },
+  "backlog_priority": {
+    "P2": 7,
+    "P1": 6,
+    "P0": 2
+  },
+  "backlog_decision": {
+    "NO_ACTION": 1,
+    "NEXT": 7,
+    "NOW": 3,
+    "DEFER": 4
+  },
+  "issues_total": 11,
+  "issues_uncovered": [],
+  "cases_count": 50,
+  "families": 30,
+  "split_counts": {
+    "DEVELOP": 50
+  },
+  "source_counts": {
+    "USER_REPORTED_SYNTHETIC": 1,
+    "LLM_PROPOSAL": 49
+  },
+  "proposal_tasks": {
+    "SAFETY": 50,
+    "CLASSIFICATION": 20
+  },
+  "safety_proposals": {
+    "EMERGENCY": 15,
+    "NONE": 20,
+    "UNCLEAR": 15
+  },
+  "classification_proposals": {
+    "KY_THUAT": 8,
+    "UNKNOWN": 4,
+    "VE_SINH": 8
+  },
+  "gold_counts": {
+    "safety-gold.json": 0,
+    "classification-gold.json": 0,
+    "disputes.json": 0
+  },
+  "blind_review_count": 50,
+  "blind_map_errors": [],
+  "blind_reviews_filled": [],
+  "blind_contains_source_ids": false,
+  "manifest_hashes_checked": 95,
+  "manifest_hash_mismatches": [],
+  "d411_probes": [
+    {
+      "text": "có trẻ con bị kẹt ở sảnh chung cư tòa S5",
+      "actual": "NONE"
+    },
+    {
+      "text": "có trẻ con bị kẹt ở sảnh chung cư tòa S1",
+      "actual": "NONE"
+    },
+    {
+      "text": "có trẻ con bị mắc kẹt ở sảnh chung cư tòa S5",
+      "actual": "EMERGENCY"
+    }
+  ],
+  "handoff_report_pairs": [
+    {
+      "handoff": "H01_backlog.md",
+      "report_exists": true
+    },
+    {
+      "handoff": "H02_labels.md",
+      "report_exists": true
+    },
+    {
+      "handoff": "H03_tools.md",
+      "report_exists": true
+    },
+    {
+      "handoff": "H04_labels-fix.md",
+      "report_exists": true
+    },
+    {
+      "handoff": "H05_tools-harden.md",
+      "report_exists": true
+    }
+  ],
+  "baseline_files_written": []
+}

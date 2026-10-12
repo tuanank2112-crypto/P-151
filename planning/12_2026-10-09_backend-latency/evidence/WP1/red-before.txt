@@ -1,0 +1,23 @@
+E       AssertionError: event loop paused 1.01s during the upload (blocking I/O in an async route)
+E       assert 1.0144862000015564 < 0.3
+E       AssertionError: event loop paused 1.00s during the upload (blocking I/O in an async route)
+E       assert 1.002717900002608 < 0.3
+E       AssertionError: assert 3 == 1
+E        +  where 3 = <built-in method count of list object at 0x000001D7237D8280>(<Action.ADD_RESIDENT_PHOTO: 'ADD_RESIDENT_PHOTO'>)
+E        +    where <built-in method count of list object at 0x000001D7237D8280> = [<Action.ADD_RESIDENT_PHOTO: 'ADD_RESIDENT_PHOTO'>, <Action.ADD_RESIDENT_PHOTO: 'ADD_RESIDENT_PHOTO'>, <Action.ADD_RESIDENT_PHOTO: 'ADD_RESIDENT_PHOTO'>].count
+E        +    and   <Action.ADD_RESIDENT_PHOTO: 'ADD_RESIDENT_PHOTO'> = Action.ADD_RESIDENT_PHOTO
+E       assert (1 == 2)
+E        +  where 1 = <tests.test_maintenance.test_backend_latency.CountingStore object at 0x000001D723818290>.puts
+E       assert 2 == 1
+E        +  where 2 = <tests.test_maintenance.test_backend_latency.CountingStore object at 0x000001D723883290>.gets
+E       AssertionError: assert None == 'gzip'
+E        +  where None = get('content-encoding')
+E        +    where get = Headers({'content-length': '13424', 'content-type': 'application/json', 'vary': 'Origin'}).get
+E        +      where Headers({'content-length': '13424', 'content-type': 'application/json', 'vary': 'Origin'}) = <Response [200 OK]>.headers
+FAILED tests/test_maintenance/test_backend_latency.py::test_p1_upload_waiting_on_storage_does_not_freeze_the_server[resident]
+FAILED tests/test_maintenance/test_backend_latency.py::test_p1_upload_waiting_on_storage_does_not_freeze_the_server[department]
+FAILED tests/test_maintenance/test_backend_latency.py::test_p2_three_photos_are_one_mutate
+FAILED tests/test_maintenance/test_backend_latency.py::test_p4_engine_refusal_discards_every_saved_photo
+FAILED tests/test_maintenance/test_backend_latency.py::test_p5_second_view_of_a_photo_skips_the_store
+FAILED tests/test_maintenance/test_backend_latency.py::test_z1_large_json_is_gzipped
+6 failed, 4 passed in 2.91s

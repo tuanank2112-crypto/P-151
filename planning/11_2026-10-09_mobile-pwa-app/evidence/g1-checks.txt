@@ -1,0 +1,46 @@
+## 2026-10-09 11:28:51 +0700 node --check
+src/mobile/sw.js exit=0
+src/mobile/js/api.js exit=0
+src/mobile/js/bql.js exit=0
+src/mobile/js/main.js exit=0
+src/mobile/js/photo.js exit=0
+src/mobile/js/resident.js exit=0
+src/mobile/js/ui.js exit=0
+## pytest
+.....................................                                    [100%]
+3349 passed, 85 deselected in 168.52s (0:02:48)
+pytest exit=0
+## ruff check
+All checks passed!
+ruff check exit=0
+## ruff format --check
+110 files already formatted
+ruff format exit=0
+## git diff --stat (tracked) + untracked
+warning: in the working copy of 'portal/package-lock.json', LF will be replaced by CRLF the next time Git touches it
+ brain4agent/-data-architecture.md |  3 +++
+ brain4agent/-known-gotchas.md     |  6 ++++++
+ brain4agent/changelog.md          | 10 ++++++++++
+ brain4agent/index.md              |  2 ++
+ brain4agent/memory-distill.txt    |  1 +
+ brain4agent/project-intro.md      |  1 +
+ brain4agent/roadmap.md            |  2 ++
+ portal/package-lock.json          |  4 ++--
+ portal/package.json               |  2 +-
+ src/main.py                       |  2 ++
+ 10 files changed, 30 insertions(+), 3 deletions(-)
+ M brain4agent/-data-architecture.md
+ M brain4agent/-known-gotchas.md
+ M brain4agent/changelog.md
+ M brain4agent/index.md
+ M brain4agent/memory-distill.txt
+ M brain4agent/project-intro.md
+ M brain4agent/roadmap.md
+ M portal/package-lock.json
+ M portal/package.json
+ M src/main.py
+?? docs/mobile.md
+?? planning/08_2026-10-08_web-portal-shell/
+?? planning/11_2026-10-09_mobile-pwa-app/
+?? src/mobile/
+?? tests/test_maintenance/test_mobile_static.py

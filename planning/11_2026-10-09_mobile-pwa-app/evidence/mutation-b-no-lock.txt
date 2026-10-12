@@ -1,0 +1,42 @@
+mutant b-no-lock: harness exit=1
+PASS M1 hash=#/r h1="Phản ánh của tôi"
+PASS TEXT m1-resident-list placeholder text on screen=[]
+PASS TEXT m2-new-ticket placeholder text on screen=[]
+PASS M2 id=SIM-TKT-0009 channel=app photos=[{"w":1600,"h":1200,"bytes":72858,"type":"image/jpeg"},{"w":1200,"h":1600,"bytes":69484,"type":"image/jpeg"}]
+PASS TEXT m2-detail placeholder text on screen=[]
+FAIL M3 tickets with that text=3
+PASS TEXT m4-need-info placeholder text on screen=[]
+PASS M4 additions 0→1, shown without reload
+PASS M5 badge "Đã chuyển phòng ban" → "Đang xử lý" after 30.2s, no reload (sw controls page: true)
+PASS TEXT m5-synced placeholder text on screen=[]
+PASS M6 API calls while hidden 35s=0, within 2s of visible=1
+PASS TEXT m7-offline placeholder text on screen=[]
+PASS M7 write buttons disabled offline=true writes=0 re-enabled=true banner hidden=true list reload after online=1
+PASS M8 rating form gone after send, second rating via API → 409
+PASS TEXT m8-rated placeholder text on screen=[]
+PASS TEXT m17-resident-done-filter placeholder text on screen=[]
+PASS M17 chip rows=0, "Đã xong" shows 1/1 terminal tickets, all terminal=true
+PASS M13 server session dropped → hash #/login, token in storage=null
+PASS JS resident page errors=[]
+PASS M9 tab Cần tôi: 3 rows, has review tickets=true, seed rows=0
+PASS TEXT m9-bql-list placeholder text on screen=[]
+PASS TEXT m10-bql-review placeholder text on screen=[]
+PASS M10 close → CLOSED, rework → IN_PROGRESS, rework sent without reason=0
+PASS TEXT m11-bql-emergency placeholder text on screen=[]
+PASS M11 in tab Khẩn cấp=true, after downgrade status=VERIFYING blocker=OUT_OF_SCOPE
+PASS JS BQL page errors=[]
+PASS TEXT m14-dept-work placeholder text on screen=[]
+PASS TEXT m14-dept-ready placeholder text on screen=[]
+PASS TEXT m14-dept-done placeholder text on screen=[]
+PASS M14 in list=true status=READY_FOR_REVIEW department photos=1 [{"bytes":72858,"jpeg":true}]
+PASS JS department page errors=[]
+PASS TEXT m15-bptn-missing placeholder text on screen=[]
+PASS M15 before=NEED_INFO/MISSING_INFO after=VERIFYING/DUPLICATE
+PASS JS BPTN page errors=[]
+PASS TEXT m16-kho-stock placeholder text on screen=[]
+PASS M16 stock rows 5/5, SIM-MAT-CLEAN-01 2 → 3
+PASS JS warehouse page errors=[]
+PASS M12 hash=#/web data requests=0
+PASS TEXT m12-web-only placeholder text on screen=[]
+RESULT: 1 FAIL
+restored src/mobile/js/ui.js byte for byte

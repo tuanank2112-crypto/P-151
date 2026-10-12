@@ -1,0 +1,18 @@
+{
+  "command": [
+    "C:\\P-151\\.python\\cpython-3.11.16-windows-x86_64-none\\python.exe",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\tools\\validate_day05.py",
+    "--backlog",
+    "planning\\09_2026-10-07_day05-labels\\deliverables\\backlog.json",
+    "--issues",
+    "planning/07_2026-10-04_online-acceptance/deliverables/issues.json"
+  ],
+  "exit_code": 0,
+  "scope_confirmed": [
+    "D5-B-003",
+    "D5-B-005",
+    "D5-B-007"
+  ],
+  "runtime_tested": false,
+  "items_closed": 0
+}

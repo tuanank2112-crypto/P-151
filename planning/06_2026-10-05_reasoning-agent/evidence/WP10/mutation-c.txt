@@ -1,0 +1,56 @@
+﻿F.F......F......                                                         [100%]
+================================== FAILURES ===================================
+_________ test_e00_the_catalog_switch_is_off_and_the_hook_follows_it __________
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000002E6AF1CEDD0>
+clock = <tests.test_maintenance.helpers.Clock object at 0x000002E6AF1CEF10>
+
+    def test_e00_the_catalog_switch_is_off_and_the_hook_follows_it(engine, clock):
+        assert engine.catalog.agent_policy.hold_near_open_emergency is False  # Q18: not turned on in the YAML
+        smoke, lamp = emergency_then_lamp(engine, clock)
+        case = engine.get(lamp)
+        assert engine._open_emergencies_at("Tòa S1 / Tầng 3 / Hành lang", exclude=set()) == [smoke]
+        assert engine._open_emergencies_at("Tòa S1 / Tầng 3 / Hành lang", exclude={smoke}) == []
+        assert engine._open_emergencies_at(None, exclude=set()) == []
+>       assert case.ticket.status == TicketStatus.ROUTED
+E       AssertionError: assert <TicketStatus...LD: 'ON_HOLD'> == <TicketStatus...TED: 'ROUTED'>
+E         
+E         - ROUTED
+E         + ON_HOLD
+
+tests\test_maintenance\test_p1_neighbors.py:58: AssertionError
+____ test_e02_with_the_switch_off_an_ordinary_ticket_is_routed_and_linked _____
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000002E6AF280350>
+clock = <tests.test_maintenance.helpers.Clock object at 0x000002E6AF281C10>
+
+    def test_e02_with_the_switch_off_an_ordinary_ticket_is_routed_and_linked(engine, clock):
+        smoke, lamp = emergency_then_lamp(engine, clock)
+        ticket = engine.get(lamp).ticket
+>       assert ticket.status == TicketStatus.ROUTED and ticket.blocker is None
+E       AssertionError: assert (<TicketStatus...LD: 'ON_HOLD'> == <TicketStatus...TED: 'ROUTED'>
+E         
+E         - ROUTED
+E         + ON_HOLD)
+
+tests\test_maintenance\test_p1_neighbors.py:87: AssertionError
+________ test_e08_the_fixtures_with_the_switch_off_still_pass_12_of_12 ________
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000002E6AF2AB210>
+
+    def test_e08_the_fixtures_with_the_switch_off_still_pass_12_of_12(engine):
+        report_ = evaluate(engine)
+        failed = {r.ticket_id: r.mismatches for r in report_.results if not r.passed}
+>       assert (report_.total, report_.passed, failed) == (12, 12, {})
+E       AssertionError: assert (12, 11, {'SI...False}, ...}}) == (12, 12, {})
+E         
+E         At index 1 diff: 11 != 12
+E         Use -v to get more diff
+
+tests\test_maintenance\test_p1_neighbors.py:174: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_neighbors.py::test_e00_the_catalog_switch_is_off_and_the_hook_follows_it
+FAILED tests/test_maintenance/test_p1_neighbors.py::test_e02_with_the_switch_off_an_ordinary_ticket_is_routed_and_linked
+FAILED tests/test_maintenance/test_p1_neighbors.py::test_e08_the_fixtures_with_the_switch_off_still_pass_12_of_12
+3 failed, 13 passed, 5 deselected in 1.12s
+EXIT=1

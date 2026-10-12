@@ -1,0 +1,7 @@
+mutant m3 (src/main.py): pytest tests/test_maintenance/test_backend_latency.py -k z1 exit=1
+E       AssertionError: assert None == 'gzip'
+E        +  where None = get('content-encoding')
+E        +    where get = Headers({'content-length': '13424', 'content-type': 'application/json', 'vary': 'Origin'}).get
+E        +      where Headers({'content-length': '13424', 'content-type': 'application/json', 'vary': 'Origin'}) = <Response [200 OK]>.headers
+1 failed, 9 deselected in 0.41s
+restored src/main.py byte for byte

@@ -1,0 +1,16 @@
+# MUTATION b (SPEC-P03 §10b) on lexicon 2026-10-05.p1d, base 3e3a3f8: "gà" removed from homographs.ga, restored afterwards (git diff vs index empty)
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. C:/Users/lenku/AppData/Local/Temp/claude/d--P151/640e8089-3b43-4a75-9055-cbb167391b76/scratchpad/venv311/Scripts/python.exe -m pytest -q -p no:cacheprovider --tb=line tests/test_maintenance/test_safety_p1.py -k FP-07
+ seed/maintenance_v1/lexicon.yaml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+F                                                                        [100%]
+================================== FAILURES ===================================
+E   AssertionError: (<RiskLevel.EMERGENCY: 'EMERGENCY'>, [('S-10', <SignalStatus.PRESENT: 'PRESENT'>)])
+    assert <RiskLevel.EMERGENCY: 'EMERGENCY'> in ['NONE']
+     +  where <RiskLevel.EMERGENCY: 'EMERGENCY'> = SafetyAssessment(risk_level=<RiskLevel.EMERGENCY: 'EMERGENCY'>, signals=(RiskSignal(signal_id='S-10', status=<SignalSt...PRESENT'>, source_quote='Mùi gà', detected_by=<DetectedBy.RULE: 'RULE'>, rule_id='S-10'),), notes=(), proposer='rules').risk_level
+     +  and   ['NONE'] = accepted({'id': 'P1-FP-07', 'text': 'Mùi gà rán từ căn hộ bay ra hành lang tầng 4 tòa S1', 'expect': 'NONE'})
+D:\P151\.claude\worktrees\agent-a3198662536f091e1\tests\test_maintenance\test_safety_p1.py:85: AssertionError: (<RiskLevel.EMERGENCY: 'EMERGENCY'>, [('S-10', <SignalStatus.PRESENT: 'PRESENT'>)])
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_safety_p1.py::test_p1_must_not_raise[P1-FP-07]
+1 failed, 116 deselected in 0.28s
+EXIT=1
+RESTORED: git checkout -- lexicon.yaml from index; git diff (worktree vs index) empty

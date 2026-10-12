@@ -1,0 +1,21 @@
+MUST_SPLIT=32 MUST_NOT_SPLIT=18 FAILURES=0
+  OK  36/36 (want 36) | Vừa có rác vừa có đèn không sáng
+  OK  36/36 (want 36) | Đèn chập chờn, sàn thì đầy rác
+  OK  36/36 (want 36) | Bẩn quá mà đèn cũng tắt
+  OK  36/36 (want 36) | Thùng rác đầy tràn, đèn thì hỏng
+  OK  36/36 (want 36) | Có bãi nôn và bóng đèn bị cháy
+  OK  36/36 (want 36) | Đèn nhấp nháy, nước đọng khắp sàn
+  OK  36/36 (want 36) | Mạng nhện bám đầy, đèn cũng không sáng
+  OK   0/36 (want 0) | Sàn trơn vì nước đọng, đèn lại tối om
+  OK  36/36 (want 36) | Mùi hôi nồng nặc, bóng đèn hỏng
+  OK  36/36 (want 36) | Rác vương vãi và đèn hư
+  OK  36/36 (want 36) | Lá cây rụng đầy, đèn tắt hết
+  OK  36/36 (want 36) | Cần vệ sinh và thay bóng đèn đã cháy
+  OK  36/36 (want 36) | Có phân chó, đèn không sáng
+  OK  18/36 (want 18) | Dầu mỡ đổ ra sàn, đèn thì chập chờn
+  OK  36/36 (want 36) | Đèn rớt xuống vỡ, bụi bặm khắp nơi
+  OK  36/36 (want 36) | Đèn mờ quá, kính cửa thì bẩn
+  OK  36/36 (want 36) | Bóng tuýp chết, rác thì chất đống
+SINGLE_JOB_VARIANTS_SPLIT=0
+VARIANT_FAILURES=0
+EXIT=0

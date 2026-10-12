@@ -1,0 +1,23 @@
+BASELINE (fake human reviewer, structure-only): exit 0
+COUNT safety ALL EMERGENCY=15 UNCLEAR=15 NONE=20
+COUNT cls ALL VE_SINH=8 KY_THUAT=8 UNKNOWN=4
+COUNT safety DEVELOP EMERGENCY=15 UNCLEAR=15 NONE=20
+COUNT cls DEVELOP VE_SINH=8 KY_THUAT=8 UNKNOWN=4
+COUNT safety HELD_OUT EMERGENCY=0 UNCLEAR=0 NONE=0
+COUNT cls HELD_OUT VE_SINH=0 KY_THUAT=0 UNKNOWN=0
+COUNT cases=50 families_accepted=30 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+RESULT: PASS
+reviewer=Claude Opus: exit=1 | ['ERR REVIEWER_NOT_HUMAN safety-gold:D5-C-0001 reviewer looks like a model/agent', 'RESULT: FAIL']
+reviewer==proposer: exit=1 | ['ERR REVIEWER_SAME safety-gold:D5-C-0001 reviewer == proposer', 'ERR REVIEWER_NOT_HUMAN safety-gold:D5-C-0001 reviewer looks like a model/agent', 'RESULT: FAIL']
+quote shifted: exit=1 | ['ERR BAD_QUOTE D5-C-0001: S-09 [1:2] != quote', 'RESULT: FAIL']
+EM w/o tier1 PRESENT: exit=1 | ['ERR EM_NO_TIER1 D5-C-0001: EMERGENCY without a PRESENT tier-1 signal (S-01..S-14)', 'RESULT: FAIL']
+bad pair: exit=1 | ['ERR BAD_PAIR D5-C-0005: VE_SINH/COMMON_AREA_LIGHTING/PB-TEC-01/None', 'RESULT: FAIL']
+UNKNOWN w/o reason_code: exit=1 | ['ERR BAD_PAIR D5-C-0006: UNKNOWN/UNKNOWN/None/None', 'RESULT: FAIL']
+cls gold on SAFETY_STOP case: exit=1 | ['ERR CLS_NOT_ELIGIBLE D5-C-0001: case is SAFETY_STOP', 'ERR CLS_NOT_ELIGIBLE D5-C-0001: safety risk is EMERGENCY', 'RESULT: FAIL']
+family in held-out: exit=1 | ["ERR SPLIT_MISMATCH D5-C-0001: case=DEVELOP manifest=['HELD_OUT']", 'RESULT: FAIL']
+dup case id: exit=1 | ['ERR DUP_ID cases:D5-C-0001', 'ERR MISSING_REF safety-gold:D5-C-0002', 'ERR MISSING_REF label-proposals -> D5-C-0002']
+secret in text: exit=1 | ['ERR SECRET cases[0].text', 'RESULT: FAIL']
+mutations rejected: 10 / 10
+EXIT=0

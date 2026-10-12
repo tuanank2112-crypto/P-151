@@ -1,0 +1,56 @@
+R4 — broken file: src/maintenance/store/postgres.py
+sha256 before: 013f2eab8fba657ee5380a689b3e58044fde40104ce55c576c64a8d1073b2bb2
+sha256 after restore: 013f2eab8fba657ee5380a689b3e58044fde40104ce55c576c64a8d1073b2bb2
+restored: True
+
+--- diff applied ---
+--- a/src/maintenance/store/postgres.py
++++ b/src/maintenance/store/postgres.py
+@@ -440,7 +440,7 @@
+                 conn.close()
+ 
+     def job_lease(self):
+-        return self._lease(KEY_JOBS)
++        return __import__("contextlib").nullcontext(True)
+ 
+     def seed_lease(self):
+         return self._lease(KEY_SEED)
+
+--- command ---
+MO_TEST_DATABASE_URL=<local p151_test> python -m pytest -q -p no:cacheprovider --pg tests/test_maintenance/test_store_postgres.py::test_t11_only_the_lease_holder_runs_the_job
+exit=1
+
+--- pytest output (last 60 lines) ---
+F                                                                        [100%]
+================================== FAILURES ===================================
+_________________ test_t11_only_the_lease_holder_runs_the_job _________________
+
+pg_repo = <src.maintenance.store.postgres.PostgresRepository object at 0x000001C1B22087D0>
+pg_url = 'postgresql+psycopg2://p151:p151@localhost:5432/p151_test'
+clock = <tests.test_maintenance.helpers.Clock object at 0x000001C1B22976D0>
+
+    def test_t11_only_the_lease_holder_runs_the_job(pg_repo, pg_url, clock):
+        engine_a = MaintenanceEngine(clock=clock, repo=pg_repo)
+        engine_a.reset()
+        repo_b = PostgresRepository(pg_url)
+        engine_b = MaintenanceEngine(clock=clock, repo=repo_b)
+        far_future = clock.now + timedelta(days=30)
+    
+        def versions() -> int:
+            return sum(repo_b.version_of(case.ticket.ticket_id) for case in repo_b.list())
+    
+        before = versions()
+        with pg_repo.job_lease() as leader:
+            assert leader is True
+>           assert engine_b.run_jobs(far_future) == []
+E           AssertionError: assert ['SIM-TKT-CLN...CLN-006', ...] == []
+E             
+E             Left contains 12 more items, first extra item: 'SIM-TKT-CLN-001'
+E             Use -v to get more diff
+
+tests\test_maintenance\test_store_postgres.py:218: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+alembic -> host=localhost db=p151_test user=p151
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_store_postgres.py::test_t11_only_the_lease_holder_runs_the_job
+1 failed in 0.64s

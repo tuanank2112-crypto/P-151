@@ -1,0 +1,288 @@
+{
+  "current_version": "1.13.0",
+  "brain_template_version": "1.7.1",
+  "system_status": "active",
+  "last_verification": {
+    "timestamp": "2026-10-10T21:39:55+07:00",
+    "grade": "Plan18 local implementation verified; Python3441 passed/95pg deselected; portal71; browsers46+9+5+4; 5 source mutants RED/restored GREEN; independent R04 approved round3. Boot/Docker/phone/server not satisfied. Supplemental actions6/6; independent final delta11/11+6/6."
+  },
+  "active_plans_completed": 4,
+  "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",
+  "engine_version": "1.13.1",
+  "lang": {
+    "rules": "vi",
+    "reply": {
+      "ngon_ngu": "",
+      "xung_ho": {
+        "goi_user": "",
+        "tu_xung": ""
+      }
+    }
+  },
+  "hub": {
+    "path": ""
+  },
+  "roles": {
+    "family": "",
+    "profiles": {}
+  },
+  "owner": {
+    "name": "",
+    "license": ""
+  },
+  "active_spec": "docs/CR-BPTN-03.md",
+  "working_branch": "feature/chamanh",
+  "code_baseline": "2ced2656c66ceb6cdc44790a91f676ab1b8d710d + plan18 working tree",
+  "last_benchmark": {
+    "pytest": "3599 passed, 100 PostgreSQL deselected, 0 skipped, memory, 2026-10-12 (plan 19 wave 1)",
+    "safety_stop_sets": "1065 green",
+    "false_alarm_budget": {
+      "b_fp": "EM 0 / UNCLEAR 4",
+      "jx_negfp": "EM 0",
+      "b_fp2": "EM 3"
+    },
+    "holdout_none": "2/39",
+    "assess_24kb_seconds": 0.28,
+    "review_set_2026_10_04": "adversarial 107: HEAD 50 errors -> 7; SO holdout 18/18; live API corpus 34: only out-of-scope-asks-location left (spec)",
+    "agent_audit_2026_10_05": "independent E2E audit scripts rerun: 77 sentences 16->7 errors, group D 9->2; rest P1/spec",
+    "portal": "typecheck+lint sạch, vitest 143 passed, next build ok, 9 ảnh evidence/wave1 (2026-10-12)",
+    "spec_p09_v6_probes": "27/27 passed (B1 interval overlap, B2 3-part overrides & shared location, B3 next_step, B4 cardinality & quiesce)"
+  },
+  "last_sync": "2026-10-12T03:00:00+07:00",
+  "next_step": "Người dùng thử tay đợt 1 hồ sơ 19 và gật commit; báo nhóm vá rò phiên proxy (develop cũng bị); chi tiết hoá SPEC-P04 đợt 2.",
+  "active_plan": {
+    "id": "18_2026-10-10_portal-python-api",
+    "status": "implementation_verified_rollout_pending",
+    "scope_confirmed_by_user": true,
+    "runtime_changes_allowed": true,
+    "target_version": "1.11.0",
+    "local_verified_at": "2026-10-10T21:39:55+07:00",
+    "version": "1.11.0",
+    "python_backend_shared": true,
+    "docker": "not run: CLI absent",
+    "boot": "exit1: hub missing",
+    "phone": "not run",
+    "server": "not deployed",
+    "commit": "approved; snapshot prepared for commit",
+    "evidence": "planning/18_2026-10-10_portal-python-api/evidence",
+    "verification": {
+      "pytest_memory": 3441,
+      "pytest_pg_deselected": 95,
+      "portal_unit": 71,
+      "main_browser": 46,
+      "cross_app": 9,
+      "restarts": 5,
+      "cleaning": 4,
+      "source_mutants_red": 5,
+      "lint_errors": 0,
+      "lint_warnings": 1,
+      "extra_actions": 6
+    },
+    "push": "authorized to origin/feature/chamanh; verify using Git remote"
+  },
+  "last_session": {
+    "date": "2026-10-03",
+    "timestamp": "2026-10-03T09:50:39+07:00",
+    "boot_exit": 1,
+    "agents_requested": 5,
+    "baseline_tests": {
+      "passed": 185,
+      "deselected": 20,
+      "exit": 0
+    },
+    "baseline_format": "2 pre-existing files need formatting",
+    "local_verification": {
+      "pytest": {
+        "passed": 266,
+        "deselected": 20,
+        "exit": 0
+      },
+      "safety_tests": 72,
+      "target_tests": 9,
+      "package_checks": {
+        "passed": 57,
+        "failed": 0,
+        "skip": 0,
+        "exit": 0
+      },
+      "lint_exit": 0,
+      "new_files_format_exit": 0,
+      "full_format_exit": 1,
+      "full_format_preexisting_files": [
+        "src/api/routers/maintenance.py",
+        "src/maintenance/ai_logger.py"
+      ],
+      "syntax": "passed",
+      "typechecker": "not configured",
+      "postgres": "not run this session"
+    },
+    "local_work_packages_completed": 5
+  },
+  "local_branch_update": {
+    "timestamp": "2026-10-10T15:20:21+07:00",
+    "branch": "feature/chamanh",
+    "before": "4663b7f",
+    "head": "7131510",
+    "upstream_version": "1.9.7",
+    "local_version": "1.9.8",
+    "ahead": 0,
+    "behind": 0,
+    "stash_backup": "local-fixes-before-chamanh-7131510-20261010",
+    "preserved_local": [
+      "Docker exclusions",
+      "GPT-6 Luna client and test",
+      "nullable blocker test",
+      ".env untouched"
+    ],
+    "conflicts_resolved": 3,
+    "verification": {
+      "focused_pytest_passed": 97,
+      "exit": 0,
+      "seconds": 7.11,
+      "ruff_check_exit": 0,
+      "ruff_format_exit": 0,
+      "js_syntax_files": 12,
+      "js_syntax_exit": 0,
+      "previous_full_suite": "3383 passed on 4663b7f; backend unchanged in new commit",
+      "ui_harness": "not rerun: Playwright absent"
+    },
+    "docker_runtime": "pending user rebuild"
+  },
+  "openai_luna_check": {
+    "model": "gpt-6-luna",
+    "key": "present; never recorded",
+    "old_request": "HTTP 400 unsupported_parameter max_tokens",
+    "fixed_client": "PASS JSON ok=true, 33 total tokens",
+    "agent_unit_tests": 52,
+    "docker_runtime": "pending user rebuild",
+    "full_suite": {
+      "passed": 3366,
+      "deselected": 88,
+      "skip": 0,
+      "seconds": 110.46,
+      "exit": 0
+    },
+    "ruff": "check and format PASS"
+  },
+  "live_ticket_check_0062": {
+    "health_http": 200,
+    "ticket_http": 200,
+    "status": "VERIFYING",
+    "risk_level": "EMERGENCY",
+    "blocker": "EMERGENCY_PENDING_BQL",
+    "owner": "BQL",
+    "in_bql_list": true,
+    "bql_list_http": 200,
+    "agent_decision": null,
+    "conclusion": "Correct emergency routing; neutral resident label by design; no ticket mutation"
+  },
+  "material_q43_independent_check": {
+    "timestamp": "2026-10-10T16:48:55+07:00",
+    "pytest": {
+      "passed": 3387,
+      "deselected": 88,
+      "seconds": 172.61,
+      "exit": 0
+    },
+    "ruff_check_exit": 0,
+    "ruff_format_exit": 0,
+    "js_syntax_files": 12,
+    "ui_browser": "not run: Playwright absent",
+    "isolated_probes": {
+      "wrong_department_material": "accepted",
+      "fractional_quantity_0_5": "accepted and recorded",
+      "technical_empty_materials": "READY_FOR_REVIEW, all_pass=True",
+      "save_after_switch_to_out_of_stock_item": "record rejected, previous plan and stock already changed"
+    },
+    "web": "still prefilled Agent plan and separate confirm/save steps",
+    "verdict": "changes requested: original required guards and consistent web workflow not complete",
+    "runtime_code_changed_by_reviewer": false
+  },
+  "previous_active_plan": {
+    "id": "17_2026-10-10_develop-web-sync",
+    "status": "local_committed_rollout_pending"
+  },
+  "develop_ui_sync": {
+    "source": "b6590ce",
+    "branch": "feature/chamanh",
+    "status": "merge_committed_and_pushed",
+    "backup_stash": "backup-before-develop-ui-b6590ce-20261010",
+    "backend_preserved": true,
+    "main_proxy_added": true,
+    "db_migration_applied": false,
+    "portal_workflow_shared_with_python": false,
+    "verification": {
+      "pytest_memory_passed": 3438,
+      "pytest_pg_deselected": 95,
+      "focused_proxy_material_passed": 47,
+      "proxy_tests_passed": 3,
+      "portal_unit_passed": 17,
+      "portal_typecheck_exit": 0,
+      "portal_build_exit": 0,
+      "portal_lint_errors": 0,
+      "portal_lint_warnings": 5,
+      "browser_login_widths": [
+        1440,
+        390
+      ],
+      "browser_login_js_errors": 0,
+      "db_workflow": "not run",
+      "docker": "not run"
+    },
+    "merge_commit": "106a37aa1aa06e347643e529e82bcafcd816eed2"
+  },
+  "preserved_prior_plan_context": {
+    "id": "06_2026-10-05_reasoning-agent",
+    "status": "in_progress_spec_review",
+    "team_plan_url": "https://storm-jade-f74.notion.site/K-ho-ch-MaintenanceOps-MVP-3e43b68a924d80d7a81fe0579e1eddb9",
+    "deadlines": {
+      "mvp_online": "2026-10-04T23:59:00+07:00",
+      "feature_freeze": "2026-10-12T21:00:00+07:00",
+      "final_handoff": "2026-10-19T23:59:00+07:00"
+    },
+    "group_approval": "approved",
+    "runtime_integration": "pending",
+    "online_acceptance": "pending",
+    "local_outputs": "verified",
+    "approval": {
+      "decision": "approved",
+      "approver": "Lê Thị Châm Anh",
+      "role": "leader",
+      "approved_date": "2026-10-02",
+      "approved_at": null,
+      "date_precision": "day",
+      "recorded_date": "2026-10-03",
+      "recorded_at": "2026-10-03T10:25:01+07:00",
+      "source": "user report in this session",
+      "reference_commit": "a5e2705cf2ad1f57a896f5d3baf2f020ca96d45d",
+      "reference_pr": 6,
+      "scope": "MVP 04/10 and D-01-D-07",
+      "external_minutes_url": null,
+      "chronology_note": "Reference commit created after the reported approval date; reference mapping confirmed by user on 2026-10-03."
+    },
+    "day03": {
+      "status": "closed_local_d01_out_of_mvp",
+      "recorded_at": "2026-10-03",
+      "sha": "f46a53c607a0ac9a0038346980abf26419206d57",
+      "results": {
+        "total": 23,
+        "pass": 17,
+        "fail": 1,
+        "blocked": 5,
+        "not_run": 0
+      },
+      "task_ids": [
+        "D3-01",
+        "D3-02",
+        "D3-03",
+        "D3-04",
+        "D3-05",
+        "D3-06",
+        "D3-07"
+      ],
+      "completed": 7,
+      "runtime_changes_allowed": false,
+      "spec": "planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md"
+    }
+  }
+}

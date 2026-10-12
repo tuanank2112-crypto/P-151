@@ -1,0 +1,5 @@
+m1-match-exact-location: RED exit=1 5 failed, 13 passed in 0.60s
+m2-guard-accepts-retired: RED exit=1 1 failed, 17 passed in 0.60s
+m3-api-lists-retired: RED exit=1 1 failed, 17 passed in 0.56s
+m4-no-one-per-area-check: RED exit=1 1 failed, 17 passed in 0.47s
+mutants red: 4/4

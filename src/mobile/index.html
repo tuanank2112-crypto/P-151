@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1d4ed8">
+  <meta name="description" content="MaintenanceOps — gửi và theo dõi phản ánh bảo trì tòa nhà (dữ liệu mô phỏng).">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="MaintenanceOps">
+  <title>MaintenanceOps</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css?v=17">
+</head>
+<body>
+  <div id="offline" class="offline" role="status" hidden>Mất kết nối — dữ liệu có thể chưa mới, chưa gửi được thao tác</div>
+  <header id="topbar" class="hero" hidden></header>
+  <nav id="tabbar" class="tabbar" aria-label="Chức năng" hidden></nav>
+  <main id="screen" class="screen" aria-live="polite"></main>
+  <div id="toast" class="toast" role="alert" hidden></div>
+  <div id="sheet" class="sheet-backdrop" hidden></div>
+  <script type="module" src="js/main.js?v=17"></script>
+</body>
+</html>

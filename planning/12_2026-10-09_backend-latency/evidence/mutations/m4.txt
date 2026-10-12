@@ -1,0 +1,14 @@
+mutant m4 (src/maintenance/store/postgres.py): pytest --pg tests/test_maintenance/test_read_engine.py -k t2 exit=1
+E       psycopg2.OperationalError: server closed the connection unexpectedly
+E       	This probably means the server terminated abnormally
+E       	before or while processing the request.
+E       sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) server closed the connection unexpectedly
+E       	This probably means the server terminated abnormally
+E       	before or while processing the request.
+E       
+E       [SQL: select doc from maintops.cases where ticket_id = %(id)s]
+E       [parameters: {'id': 'SIM-TKT-0001'}]
+E       (Background on this error at: https://sqlalche.me/e/20/e3q8)
+E           src.maintenance.store.base.StoreUnavailableError: Không kết nối được cơ sở dữ liệu; thử lại sau
+1 failed, 2 deselected in 0.80s
+restored src/maintenance/store/postgres.py byte for byte
