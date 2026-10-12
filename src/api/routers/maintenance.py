@@ -14,7 +14,7 @@ import threading
 from datetime import datetime
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response
 from pydantic import BaseModel, Field, ValidationError, field_validator
@@ -754,6 +754,20 @@ class StockRow(BaseModel):
 def read_stock(actor: ActorDep, engine: EngineDep) -> list[StockRow]:
     """Tồn kho mô phỏng hiện tại của mọi vật tư (chỉ nhân viên)."""
     return _call(engine.stock_levels, actor)
+
+
+class MaterialUseRow(BaseModel):
+    item_code: str
+    item_name: str
+    unit: str | None = None
+    used_qty: float
+    tickets: int
+
+
+@router.get("/warehouse/usage", response_model=list[MaterialUseRow])
+def read_material_usage(actor: ActorDep, engine: EngineDep, days: int = Query(7, ge=1, le=31)) -> list[MaterialUseRow]:
+    """Vật tư phòng ban đã dùng trong `days` ngày qua (ticket hoàn thành), nhiều nhất trước. Chỉ kho và BQL."""
+    return _call(engine.material_usage, actor, days)
 
 
 class NewMaterialRequest(BaseModel):

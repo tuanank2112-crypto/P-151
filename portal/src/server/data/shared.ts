@@ -27,6 +27,8 @@ export async function mapLimit<T, R>(items: T[], fn: (item: T) => Promise<R>): P
 export const listTickets = () => api<BSummary[]>("/mo/tickets");
 export const readCase = (id: string) => api<BCase>(`/mo/tickets/${encodeURIComponent(id)}`);
 export const readStock = () => api<BStockRow[]>("/mo/warehouse/stock");
+/** Materials used in the last 7 days, most used first (the warehouse cannot open finished tickets, so the backend sums them) */
+export const readUsage = () => api<{ item_code: string; item_name: string; unit: string | null; used_qty: number; tickets: number }[]>("/mo/warehouse/usage");
 export const readCatalog = () => api<BCatalog>("/mo/catalog");
 
 /** Detail of at most MAX_DETAIL_CALLS tickets, in list order, 6 at a time. A ticket that vanished meanwhile (404) is skipped; any other error propagates. */

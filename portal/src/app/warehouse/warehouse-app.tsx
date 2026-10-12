@@ -9,7 +9,7 @@ import { useAction } from "@/components/use-action";
 import { ROLE_LABEL } from "@/lib/constants";
 import type { WarehouseData, WarehouseItem } from "@/lib/dto";
 import { matchesDoneSearch } from "@/lib/reception-done";
-import { STOCK_BADGE, stockLevel } from "@/lib/stock";
+import { STOCK_BADGE, byUrgency, restockTone, stockLevel, type RestockTone } from "@/lib/stock";
 
 type Tab = "inventory";
 type View = "all" | "restock" | "unknown";
@@ -31,6 +31,13 @@ const levelOf = (i: WarehouseItem) => stockLevel(i.stock, i.min);
 /** "Cần nhập thêm" = out of stock or at/under its own threshold (01-CONTRACTS §5) */
 const needsRestock = (i: WarehouseItem) => ["out", "low"].includes(levelOf(i));
 
+/** Colours of the "Cần nhập thêm" card by the worst item (D11): green none · amber only low · red at least one out */
+const TONE: Record<RestockTone, { card: string; num: string; label: string }> = {
+  ok: { card: "border-l-4 border-l-emerald-500 bg-emerald-50", num: "text-emerald-700", label: "text-emerald-800" },
+  low: { card: "border-l-4 border-l-amber-500 bg-amber-50", num: "text-amber-700", label: "text-amber-800" },
+  out: { card: "border-l-4 border-l-rose-500 bg-rose-50", num: "text-rose-600", label: "text-rose-700" },
+};
+
 export function WarehouseApp({ data }: { data: WarehouseData }) {
   const { pending, error, setError, run } = useAction();
   const [view, setView] = useState<View>("all");
@@ -40,10 +47,12 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
   const [importQty, setImportQty] = useState(10);
 
   const restock = data.inventory.filter(needsRestock);
-  const outCount = data.inventory.filter((i) => levelOf(i) === "out").length;
+  const tone = TONE[restockTone(data.inventory.map(levelOf))];
+  const topQty = Math.max(1, ...data.weeklyUsage.map((u) => u.qty));
   const unknownCount = data.inventory.filter((i) => levelOf(i) === "unknown").length;
   const inView = (i: WarehouseItem) => view === "all" || (view === "restock" ? needsRestock(i) : levelOf(i) === "unknown");
-  const rows = data.inventory.filter(
+  // out of stock first, then low, then the rest (D11)
+  const rows = byUrgency(data.inventory).filter(
     (i) => inView(i) && matchesDoneSearch({ code: i.code, title: i.name, content: "", location: "" }, search),
   );
 
@@ -64,12 +73,6 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
     setImportQty(10);
     setModalOpen(true);
   };
-
-  const kpis: { label: string; n: number; tone: string; go?: View }[] = [
-    { label: "Tổng danh mục vật tư", n: data.inventory.length, tone: "text-slate-800" },
-    { label: "Cần nhập thêm", n: restock.length, tone: restock.length > 0 ? "text-rose-600" : "text-emerald-600", go: "restock" },
-    { label: "Hết hàng", n: outCount, tone: outCount > 0 ? "text-rose-600" : "text-slate-800", go: "restock" },
-  ];
 
   return (
     <div className="scr-warehouse min-h-screen bg-page">
@@ -97,33 +100,44 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
         <PageHead {...HEAD.inventory} />
 
         <div className="flex flex-col gap-5">
-          <div className="flex flex-wrap gap-4">
-            {kpis.map((k) => {
-              const body = (
-                <>
-                  <span className="text-sm text-muted">{k.label}</span>
-                  <span className={`text-[30px] font-bold ${k.tone}`}>{k.n}</span>
-                </>
-              );
-              return k.go ? (
-                <button
-                  key={k.label}
-                  type="button"
-                  aria-pressed={view === k.go}
-                  onClick={() => setView(view === k.go ? "all" : (k.go as View))}
-                  className={`card flex flex-col items-start gap-1 px-6 py-5 text-left transition-all hover:shadow-md ${FOCUS} ${
-                    k.n > 0 && k.go === "restock" ? "border-l-4 border-l-rose-500" : ""
-                  }`}
-                  style={{ flex: "1 1 200px" }}
-                >
-                  {body}
-                </button>
-              ) : (
-                <div key={k.label} className="card flex flex-col gap-1 px-6 py-5" style={{ flex: "1 1 200px" }}>
-                  {body}
-                </div>
-              );
-            })}
+          <div className="flex flex-wrap items-stretch gap-4">
+            <div className="card flex flex-col gap-1 px-6 py-5" style={{ flex: "1 1 180px" }}>
+              <span className="text-sm text-muted">Tổng danh mục vật tư</span>
+              <span className="text-[30px] font-bold text-slate-800">{data.inventory.length}</span>
+            </div>
+            <button
+              type="button"
+              data-testid="tile-restock"
+              aria-pressed={view === "restock"}
+              onClick={() => setView(view === "restock" ? "all" : "restock")}
+              className={`card flex flex-col items-start gap-1 px-6 py-5 text-left transition-all hover:shadow-md ${FOCUS} ${tone.card}`}
+              style={{ flex: "1 1 180px" }}
+            >
+              <span className={`text-sm font-medium ${tone.label}`}>Cần nhập thêm</span>
+              <span className={`text-[30px] font-bold ${tone.num}`}>{restock.length}</span>
+            </button>
+            <section className="card flex flex-col gap-3 px-6 py-5" style={{ flex: "2 1 340px" }} data-testid="weekly-usage" aria-label="Vật tư dùng nhiều trong tuần">
+              <h2 className="m-0 text-sm font-semibold text-body">Vật tư dùng nhiều trong tuần</h2>
+              {data.weeklyUsage.length === 0 && <p className="m-0 text-sm text-muted">Chưa có vật tư nào được dùng trong 7 ngày qua.</p>}
+              <ol className="m-0 flex list-none flex-col gap-2 p-0">
+                {data.weeklyUsage.map((u, n) => (
+                  <li key={u.code} className="grid grid-cols-[1.25rem_1fr_auto] items-center gap-x-2 gap-y-1 text-sm">
+                    <span className="text-xs font-bold text-muted">{n + 1}</span>
+                    <span className="truncate font-medium" title={u.name}>
+                      {u.name}
+                    </span>
+                    <span className="font-bold tabular-nums">
+                      {u.qty} <span className="text-xs font-normal text-muted">{u.unit}</span>
+                    </span>
+                    <span />
+                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100" aria-hidden>
+                      <div className="h-full rounded-full bg-sky-500" style={{ width: `${(u.qty / topQty) * 100}%` }} />
+                    </div>
+                    <span className="text-[11px] text-muted">{u.tickets} ticket</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
           </div>
 
           <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
