@@ -11,8 +11,9 @@ import { PhotoStrip } from "@/components/photo-strip";
 import { Feedback } from "@/components/rating-summary";
 import { useAction } from "@/components/use-action";
 import { MAX_PHOTOS } from "@/lib/constants";
-import { buildingOf, type Building } from "@/lib/building";
+import { buildingOf } from "@/lib/building";
 import { hasLocation } from "@/lib/reception-done";
+import { HISTORY_BUILDINGS, HISTORY_STATUSES, filterHistory, historyStatus, toggle, type HistoryBuilding, type HistoryStatus } from "@/lib/history-filter";
 import type { CatalogItem, DeptTicket, TicketDetail } from "@/lib/dto";
 import type { ActionResult, ErrorCode } from "@/lib/result";
 
@@ -406,45 +407,98 @@ export function WorkCard(props: {
 }
 
 // ---------- lists ----------
-type HistoryBox = Building | "other";
-const HISTORY_BOXES: { key: HistoryBox; label: string }[] = [
-  { key: "S1", label: "Hoàn thành S1" },
-  { key: "S2", label: "Hoàn thành S2" },
-  { key: "other", label: "Chưa rõ tòa" },
-];
+const HISTORY_PAGE = 10;
+// chips share the bar equally (grid columns = chip count) and are tall enough to tap
+const HCHIP = `flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-2 text-[13px] font-semibold sm:gap-2 sm:px-3 sm:text-sm transition-colors ${FOCUS}`;
+const hchipCls = (on: boolean) => `${HCHIP} ${on ? "bg-[#1D4ED8] text-white" : "bg-[#EEF2F7] text-[#2A3447] hover:bg-[#DCE8FF]"}`;
+const hcount = (on: boolean) => `min-w-6 rounded-full px-1.5 py-0.5 text-center text-xs font-bold ${on ? "bg-white/25 text-white" : "bg-white text-[#475166]"}`;
+const hgrid = (n: number) => ({ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` });
 
-/** Plan 19 SPEC-P01 §3: completed tickets per building, one box at a time; "Chưa rõ tòa" only when needed */
+/**
+ * Plan 19 D10 / SPEC-P01 §3: one history list; building and status chips narrow it (several may be on, none = all),
+ * plus a search box. A badge on each card names its building, so a mixed list stays readable.
+ */
 export function HistoryList({ tickets, onOpen }: { tickets: DeptTicket[]; onOpen: (id: string) => void }) {
   const all = tickets.filter((t) => t.stage >= 5);
-  const boxOf = (t: DeptTicket): HistoryBox => buildingOf(t.location, t.title, t.text) ?? "other";
-  const count = (k: HistoryBox) => all.filter((t) => boxOf(t) === k).length;
-  const boxes = HISTORY_BOXES.filter((b) => b.key !== "other" || count("other") > 0);
-  const [picked, setPicked] = useState<HistoryBox | null>(null);
-  const box = picked ?? boxes.find((b) => count(b.key) > 0)?.key ?? "S1";
-  const done = all.filter((t) => boxOf(t) === box);
+  const boxOf = (t: DeptTicket): HistoryBuilding => buildingOf(t.location, t.title, t.text) ?? "other";
+  const [buildings, setBuildings] = useState<HistoryBuilding[]>([]);
+  const [statuses, setStatuses] = useState<HistoryStatus[]>([]);
+  const [query, setQuery] = useState("");
+  const [limit, setLimit] = useState(HISTORY_PAGE);
+  const narrow = (fn: () => void) => {
+    fn();
+    setLimit(HISTORY_PAGE);
+  };
+  // chip counts ignore the chips themselves (they say what a chip would show), but follow the search box
+  const searched = filterHistory(all, { buildings: [], statuses: [], query }, boxOf);
+  const countB = (k: HistoryBuilding) => searched.filter((t) => boxOf(t) === k).length;
+  const countS = (k: HistoryStatus) => searched.filter((t) => historyStatus(t) === k).length;
+  const bChips = HISTORY_BUILDINGS.filter((b) => b.key !== "other" || all.some((t) => boxOf(t) === "other"));
+  const shown = filterHistory(all, { buildings, statuses, query }, boxOf);
+  const done = shown.slice(0, limit);
+  const filtering = buildings.length > 0 || statuses.length > 0 || query.trim() !== "";
   return (
     <section className="flex max-w-[900px] flex-col gap-3.5">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" role="group" aria-label="Lịch sử hoàn thành theo tòa">
-        {boxes.map((b) => (
-          <button
-            key={b.key}
-            type="button"
-            aria-pressed={box === b.key}
-            onClick={() => setPicked(b.key)}
-            className={`card flex flex-col items-start gap-1 px-5 py-4 text-left transition-colors ${FOCUS} ${
-              box === b.key ? "ring-2 ring-[#1D4ED8] bg-[#EEF4FF]" : "hover:bg-slate-50"
-            }`}
-          >
-            <span className="text-sm font-semibold text-body">{b.label}</span>
-            <span className="text-2xl font-bold">{count(b.key)}</span>
-          </button>
-        ))}
+      <div className="card flex flex-col gap-3 p-4">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted">Tòa</span>
+          <div className="grid gap-2" style={hgrid(bChips.length)} role="group" aria-label="Lọc theo tòa">
+            {bChips.map((b) => (
+              <button key={b.key} type="button" aria-pressed={buildings.includes(b.key)} className={hchipCls(buildings.includes(b.key))} onClick={() => narrow(() => setBuildings(toggle(buildings, b.key)))}>
+                {b.label} <span className={hcount(buildings.includes(b.key))}>{countB(b.key)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted">Trạng thái</span>
+          <div className="grid gap-2" style={hgrid(HISTORY_STATUSES.length)} role="group" aria-label="Lọc theo trạng thái">
+            {HISTORY_STATUSES.map((st) => (
+              <button key={st.key} type="button" aria-pressed={statuses.includes(st.key)} className={hchipCls(statuses.includes(st.key))} onClick={() => narrow(() => setStatuses(toggle(statuses, st.key)))}>
+                {st.label} <span className={hcount(statuses.includes(st.key))}>{countS(st.key)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 border-t border-line-soft pt-3 text-[13px]">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => narrow(() => setQuery(e.target.value))}
+            placeholder="Tìm mã, nội dung, vị trí…"
+            aria-label="Tìm ticket"
+            className={`field min-h-10 w-full basis-full rounded-xl px-3 py-2 text-sm sm:flex-1 sm:basis-0 ${FOCUS}`}
+          />
+          <span className="ml-auto text-xs text-muted" data-testid="history-count">
+            {filtering ? `Đang xem ${shown.length}/${all.length}` : `${all.length} ticket`}
+          </span>
+          {filtering && (
+            <button
+              type="button"
+              className={`btn text-xs ${FOCUS}`}
+              onClick={() =>
+                narrow(() => {
+                  setBuildings([]);
+                  setStatuses([]);
+                  setQuery("");
+                })
+              }
+            >
+              Xoá lọc
+            </button>
+          )}
+        </div>
       </div>
-      {done.length === 0 && <div className="card p-10 text-center text-muted">Chưa có ticket hoàn thành.</div>}
+      {shown.length === 0 && (
+        <div className="card p-10 text-center text-muted">{all.length === 0 ? "Chưa có ticket hoàn thành." : "Không có ticket nào khớp bộ lọc."}</div>
+      )}
       {done.map((t) => (
         <article key={t.id} className="card flex flex-col gap-2 px-6 py-[22px]">
           <div className="flex flex-wrap items-center gap-2.5">
             <CodeButton t={t} onOpen={onOpen} />
+            <span className="pill cat-none" data-testid="history-building">
+              {boxOf(t) === "other" ? "Chưa rõ tòa" : boxOf(t)}
+            </span>
             <span className={`pill ml-auto ${t.stage === 5 ? "cat-none" : "bg-[#D8EFE3] text-[#13553A]"}`}>{t.statusLabel}</span>
           </div>
           <span className="text-[15px] font-semibold leading-normal">{t.title || t.text}</span>
@@ -469,6 +523,16 @@ export function HistoryList({ tickets, onOpen }: { tickets: DeptTicket[]; onOpen
           )}
         </article>
       ))}
+      {shown.length > done.length && (
+        <div className="flex items-center justify-between text-xs text-muted">
+          <span>
+            Đang hiện {done.length} / {shown.length} ticket
+          </span>
+          <button type="button" className={`btn text-xs ${FOCUS}`} onClick={() => setLimit(limit + HISTORY_PAGE)}>
+            Xem thêm
+          </button>
+        </div>
+      )}
     </section>
   );
 }

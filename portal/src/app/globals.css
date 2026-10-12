@@ -125,6 +125,8 @@ a:hover { color: #1e3a8a; }
 .scr-management .fchip:hover{background:#DCE8FF}
 .scr-management .fchip.on{background:#1D4ED8;color:#FFFFFF}
 .scr-management table{border-collapse:collapse;width:100%;min-width:860px}
+/* A1: under sm the ticket list drops its side columns, so it must not force a sideways scroll */
+@media (max-width:639px){.scr-management table.tbl-stack{min-width:0}}
 .scr-warehouse table{border-collapse:collapse;width:100%;min-width:760px}
 
 /* Tables of Reception and Management share th/td */

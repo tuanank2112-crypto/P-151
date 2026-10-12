@@ -22,6 +22,8 @@ export function Header(props: {
   bellCount: number;
   onBell?: () => void;
   notices?: ShellNotice[];
+  /** When set, a notice is a button: the modal closes and the caller shows that item */
+  onNotice?: (id: ShellNotice["id"]) => void;
 }) {
   const [openModal, setOpenModal] = useState(false);
 
@@ -91,7 +93,22 @@ export function Header(props: {
               {props.notices?.map((n) => (
                 <div
                   key={n.id}
-                  className="flex flex-col gap-1 rounded-xl border border-line bg-soft/40 p-3 hover:bg-soft transition-colors"
+                  {...(props.onNotice && {
+                    role: "button",
+                    tabIndex: 0,
+                    onClick: () => {
+                      setOpenModal(false);
+                      props.onNotice?.(n.id);
+                    },
+                    onKeyDown: (e: React.KeyboardEvent) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setOpenModal(false);
+                        props.onNotice?.(n.id);
+                      }
+                    },
+                  })}
+                  className={`flex flex-col gap-1 rounded-xl border border-line bg-soft/40 p-3 hover:bg-soft transition-colors ${props.onNotice ? "cursor-pointer focus-visible:outline-2 focus-visible:outline-sky-600" : ""}`}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-bold text-brand uppercase tracking-wider">
@@ -100,7 +117,7 @@ export function Header(props: {
                     <span className="text-[11px] text-muted">{n.time}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {n.urgent && <span className="pill urgent text-[11px] py-0.5 px-2">Khẩn cấp</span>}
+                    {n.urgent && n.tag !== "Khẩn cấp" && <span className="pill urgent text-[11px] py-0.5 px-2">Khẩn cấp</span>}
                     <h4 className="m-0 text-[14px] font-bold text-body">{n.title}</h4>
                   </div>
                   {n.body && <p className="m-0 text-xs text-muted leading-relaxed">{n.body}</p>}

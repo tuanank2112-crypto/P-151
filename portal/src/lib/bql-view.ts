@@ -50,7 +50,15 @@ export const LIST_GROUPS: { key: ListGroup; label: string }[] = [
   { key: "cancelled", label: "Hủy / gộp" },
 ];
 
-export type DeptLoad = { waitingAccept: number; inProgress: number; late: number; open: number };
+/** Department cell of a ticket nobody holds yet (A2: replaces the bare "--") */
+export const NO_DEPT = "Chưa giao phòng";
+
+/** One readable line for a ticket: title, else raw text, else the first content line; a blank report says so (A3) */
+export function headline(t: Pick<MgmtTicket, "title" | "text" | "content">): string {
+  return t.title.trim() || t.text.trim() || (t.content.split("\n")[0] ?? "").trim() || "Chưa có nội dung, chờ cư dân bổ sung";
+}
+
+export type DeptLoad ={ waitingAccept: number; inProgress: number; late: number; open: number };
 
 export function deptLoad(rows: Pick<MgmtTicket, "dept" | "cancelled" | "stage" | "late">[], dept: "ve_sinh" | "ky_thuat"): DeptLoad {
   const mine = rows.filter((t) => t.dept === dept && !t.cancelled && (t.stage === 3 || t.stage === 4));

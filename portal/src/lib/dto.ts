@@ -283,6 +283,8 @@ export type WarehouseRequest = {
 export type WarehouseData = {
   user: UserBrief;
   inventory: WarehouseItem[];
+  /** Plan 19 D11: materials the departments used in the last 7 days (finished tickets), most used first */
+  weeklyUsage: { code: string; name: string; unit: string; qty: number; tickets: number }[];
   requests: WarehouseRequest[];
   customMaterials: boolean;
 };
