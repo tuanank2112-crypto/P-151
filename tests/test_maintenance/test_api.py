@@ -349,5 +349,4 @@ def test_stock_rows_carry_unit_and_min_qty(api):
         "SIM-MAT-BAG-01": ("Cuộn", 15),
         "SIM-MAT-LAMP-01": ("Cái", 5),
         "SIM-MAT-LAMP-02": ("Cái", 5),
-        "SIM-MAT-STARTER-01": ("Cái", 5),
     }

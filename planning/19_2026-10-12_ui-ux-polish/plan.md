@@ -1,7 +1,7 @@
 # 19 — Làm gọn UI/UX theo danh sách của người dùng
 
 ## Metadata
-- Trạng thái: ĐỢT 1 XONG LOCAL (chờ người dùng thử tay + gật commit) · đợt 2 PROPOSED (chưa thi công).
+- Trạng thái: ĐỢT 1 XONG, ĐÃ COMMIT + PUSH (`e2ab6e4`, `489abe9`; chờ người dùng thử tay G5) · đợt 2 PROPOSED (chưa thi công).
 - Nguồn yêu cầu: Google Doc của người dùng (2026-10-12, `19hhYbCikdDPjnhm985F1w4_YFaEOlqgsAAoiDUiv9tM`) + 3 ảnh chụp (Tổng quan BQL, Danh sách ticket, Kho vật tư).
 - Nhánh: `feature/chamanh`. Base: `b7ae85b` (v1.12.3). Phiên bản đích đợt 1: **1.13.0** (MINOR).
 - Không deploy, không ghi Supabase chung. Push chỉ khi người dùng bảo.
@@ -15,7 +15,19 @@
 - 2026-10-12 D07 (agent, sau ảnh chụp): thêm nhóm "Chưa giao phòng" (01 §1), `hasLocation` (01 §7), nút phòng ban xếp dọc thay vì 2 cột (chữ dài xuống dòng trong thẻ hẹp).
 - 2026-10-12 D05 (agent): biểu đồ bằng CSS/SVG, không thêm thư viện; không thêm nút chưa có backend (Xuất hàng, Lịch sử, tab Kho mới) vào đợt 1.
 
+- 2026-10-12 D08 (người dùng): xoá vật tư `SIM-MAT-STARTER-01` "Tắc te mô phỏng" khỏi danh mục, playbook `PB-TEC-01`, app, ticket mẫu `SIM-TKT-TEC-006` (đổi sang `SIM-MAT-LAMP-01`, kỳ vọng `SUFFICIENT`, không cờ). Test "tồn kho không rõ" tự đặt tồn `null` (`set_stock`). DB local: xoá dòng `maintops.stock`; lịch sử ticket cũ giữ. v1.14.1 (PATCH).
+
+- 2026-10-12 D09 (người dùng duyệt A1–A5 sau khi agent rà UI vai BQL): A1 Danh sách ticket trên điện thoại gộp phòng ban + giờ dưới tiêu đề, không cuộn ngang; A2 "Chưa giao phòng" thay `--`, ẩn cột Phòng ban khi không dòng nào có phòng; A3 ticket không tiêu đề hiện "Chưa có nội dung, chờ cư dân bổ sung" (`headline`), chuông BQL một nhãn (Khẩn cấp ưu tiên), bấm thông báo ⇒ mở ticket / ô "Cần BQL quyết"; A4 ô lý do bắt buộc có dòng gợi ý khi nút còn khoá; A5 tên hiển thị seed `bql01` = "Ban quản lý Tòa nhà", ô điều hướng "Việc của Ban quản lý". Chưa làm (chờ duyệt): B1 thanh phụ tải có mẫu số, B2 rút gọn modal chi tiết, B3 ô Hoàn tất, C1 = SPEC-P04 §2. Ảnh: `evidence/a1-a5/`.
+
+- 2026-10-12 D10 (người dùng chọn phương án B): Lịch sử hoàn thành của Kỹ thuật/Vệ sinh đổi từ ô chọn một tòa sang chip lọc chọn nhiều (không chọn = tất cả) + chip trạng thái Chờ nghiệm thu/Hoàn tất + tìm kiếm + nhãn tòa trên thẻ + "Xem thêm". Ảnh: `evidence/history-chips/`. Chưa đổi app điện thoại (`dept.js`).
+
+- 2026-10-12 D11 (người dùng): Kho — bỏ thẻ "Hết hàng"; thẻ "Cần nhập thêm" đổi màu theo mức nặng nhất (xanh/vàng/đỏ); bảng xếp hết hàng lên đầu; thêm thẻ "Vật tư dùng nhiều trong tuần". Agent: thêm endpoint đọc `GET /mo/warehouse/usage` (kho + BQL) vì thủ kho không đọc được ticket đã hoàn thành; test `tests/test_maintenance/test_material_weekly_usage.py` (đỏ khi bỏ lọc quyền/cửa sổ 7 ngày). Phiên bản/não chưa tăng.
+
 ### Quyết định bị thay thế
+- SPEC-P03 §1 "đỏ khi > 0, thẻ Hết hàng" → bởi D11.
+- SPEC-P01 §3 "danh sách chỉ hiện ticket của ô tòa đang chọn" → bởi D10.
+- SPEC-P02 §2/§4 "Phòng ban `--` khi chưa có" → "Chưa giao phòng" bởi D09 (A2).
+- 01-CONTRACTS §5 dòng `SIM-MAT-STARTER-01` (tồn null, "Chưa kiểm kê") → bỏ bởi D08.
 - Q5 "ngưỡng mặc định 30 cho mọi vật tư" → thay bởi D02 (ngưỡng riêng). Lý do: tồn mô phỏng 10/20/5/0 khiến gần như mọi dòng "Sắp hết".
 - Tab "Đã phân loại" v1.12.3 có chip "Đang ở phòng ban" → tách thành "Phòng kỹ thuật" và "Phòng vệ sinh" (SPEC-P01 §1).
 
@@ -35,6 +47,8 @@
 - [x] WP3 (P03 §1–§4)
 - [x] Gate đợt 1 G1–G4 ✅ local (TESTING-ACCEPTANCE §2)
 - [x] Đồng bộ não + 1.13.0
+- [x] BQL A1–A5 (D09) ✅ local: typecheck/lint sạch, vitest 136 unit pass, ảnh 1440/390 không tràn ngang
+- [x] Lịch sử hoàn thành dạng chip lọc (D10) ✅ local: vitest 140 pass, tsc/eslint sạch, trình duyệt 1440/390 cho Kỹ thuật + Vệ sinh không tràn ngang, 0 lỗi JS
 - [ ] Người dùng thử tay và duyệt đợt 1
 - [ ] Đợt 2: chi tiết hoá SPEC-P04 rồi xin duyệt
 

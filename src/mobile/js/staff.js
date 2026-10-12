@@ -65,7 +65,6 @@ const REALISTIC_MATERIAL_NAMES = {
   'SIM-MAT-BAG-01': 'Túi rác công nghiệp PE 120L (Cuộn)',
   'SIM-MAT-LAMP-01': 'Bóng đèn LED Tuýp T8 18W Duhal/Rạng Đông',
   'SIM-MAT-LAMP-02': 'Bóng đèn Huỳnh quang T8 36W 1.2m Philips',
-  'SIM-MAT-STARTER-01': 'Tắc te điện tử / Chấn lưu Philips S10',
 };
 const plain = (text) => String(text || '').replace(/\s*\(mô phỏng\)/gi, '').replace(/mô phỏng:?\s*/gi, '').trim();
 export const checklistLabel = (item) => CHECKLIST_HUMAN_LABELS[item.template_item_id] || plain(item.label_snapshot);
@@ -75,7 +74,6 @@ export function materialUnit(code, unit) {
   if (code && code.includes('CLEAN')) return 'can 5L';
   if (code && code.includes('BAG')) return 'cuộn';
   if (code && code.includes('LAMP')) return 'bóng';
-  if (code && code.includes('STARTER')) return 'bộ';
   return 'đơn vị';
 }
 

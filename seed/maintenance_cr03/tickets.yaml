@@ -249,9 +249,9 @@ tickets:
       created_at: "2026-09-27T09:30:00+07:00"
       original_description: "Hệ thống chiếu sáng cầu thang bộ tầng 2 tòa S1 không hoạt động."
     flow: REGRESSION
-    purpose: "Tồn kho không rõ: không chặn, gắn cờ STOCK_CHECK_ON_ACCEPT → ROUTED"
+    purpose: "Đèn cầu thang bộ, vật tư đủ tồn → ROUTED (tồn kho không rõ do test tự đặt; plan 19 D08 bỏ tắc te)"
     materials:
-      - {item_code: SIM-MAT-STARTER-01, planned_qty: 1}
+      - {item_code: SIM-MAT-LAMP-01, planned_qty: 1}
     expected:
       status: ROUTED
       reason_code: null
@@ -263,5 +263,5 @@ tickets:
       draft_exists: true
       asset_lookup_status: MATCHED
       asset_id: SIM-ASSET-LIGHT-STAIRS
-      material_stock_status: UNKNOWN
-      flags: [STOCK_CHECK_ON_ACCEPT]
+      material_stock_status: SUFFICIENT
+      flags: []

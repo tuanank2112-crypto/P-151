@@ -9,7 +9,7 @@ Repo P-151 (AI20K Build Phase) xây **MaintenanceOps Agent** cho BQL một cụm
 - Hướng ResidentGPT (hỏi-đáp nội quy, `Problem_Card.md` trên `main`) là hướng cũ, không còn dùng.
 
 ## 2. Công nghệ cốt lõi (Tech Stack)
-- **Frontend / Web:** UI tĩnh `src/web/` (index.html, app.js, theme.css), FastAPI phục vụ chung; đăng nhập tài khoản mô phỏng theo vai trò. Từ v1.3.0 (plan 07) mang cùng design với `portal/` (Be Vietnam Pro, header gradient xanh, card/pill).
+- **Frontend / Web:** portal Next.js `portal/` (mở qua cổng 8000, backend proxy tới cổng 3000); đăng nhập tài khoản mô phỏng theo vai trò. UI tĩnh `src/web/` cũ đã xoá ở hồ sơ 20 (v1.14.0).
 - **App điện thoại (v1.7.0, plan 11):** PWA `src/mobile/` ở `/app/` cho Cư dân, BQL, Phòng ban, BPTN, Kho — plain JS ES module, CSS chép từ thiết kế `portal/` (SPEC-P04), manifest + service worker (chỉ cache vỏ app), không bước build. Client mỏng của cùng API ⇒ cùng DB với web. `docs/mobile.md`.
 - **Backend / Engine:** Python 3.11, FastAPI, Pydantic. Lõi `src/maintenance/`: `engine.py` (state machine + pipeline), luật `rules.py` + LLM `proposer.py` (LangChain/OpenAI; `LLM_MODE=mock` cho test). LangGraph ở `src/agents/` vẫn là mẫu; kế hoạch đưa lên đường chạy thật trước 19/10.
 - **Data Persistence:** `MO_STORE=memory` (mặc định) | `postgres` (schema `maintops`, Alembic, Supabase); ảnh `MO_PHOTO_STORE=local|supabase`. Seed `seed/maintenance_v1/` chỉ nạp khi DB rỗng. Fixture đích CR-03: `seed/maintenance_cr03/`.
@@ -24,10 +24,10 @@ AI Logs, Phoenix).
 
 ## 3. Cổng web Next.js dùng Python (plan18, v1.11.0 local)
 - UI mới từ develop được giữ qua CSS/shell/icon/card/modal; 6 vai gồm cư dân, BPTN, BQL, vệ sinh, kỹ thuật, kho.
-- Next.js presentation/BFF gọi Python `/api/v1` bằng token Python HttpOnly; không DB/workflow/classify riêng trong runtime. Cùng ticket/Agent/kho với `/app/` và `/ui/`.
-- Drizzle/pg/workflow/legacy-queries và DB portal giữ để rollback/test lịch sử; không migrate/seed khi khởi động. Không tự chuyển tài khoản/dữ liệu cũ.
+- Next.js presentation/BFF gọi Python `/api/v1` bằng token Python HttpOnly; không DB/workflow/classify riêng trong runtime. Cùng ticket/Agent/kho với `/app/`.
+- Drizzle/pg và DB riêng của portal đã XOÁ khỏi mã ở hồ sơ 20 (database `portal` trong Postgres local còn, không dùng). Không tự chuyển tài khoản/dữ liệu cũ.
 - Tech: Next16.4, React19, TypeScript, Tailwind4, Vitest, Playwright; Python contract/engine giữ nguyên. Hồ sơ plan18, docs/portal.md. Docker/boot/phone còn gate mở.
 
 
 Current feature/truong imported develop04491ad (07/10): src/maintenance/agent/ reasoning runtime/P1 coordination now present; portal legacy was independent; plan18 supersedes that runtime architecture. Integration tests3341 pass; portal and live model/shared rollout not measured here.
-Từ hồ sơ 11 (2026-10-09, v1.7.0) `portal/` GỌI backend Python `/api/v1` (engine CR-03, Agent LLM, tầng an toàn), không còn DB riêng; là UI mới, mở qua cổng 8000. UI tĩnh `src/web/` không dùng để demo.
+Từ hồ sơ 11 (2026-10-09, v1.7.0) `portal/` GỌI backend Python `/api/v1` (engine CR-03, Agent LLM, tầng an toàn), không còn DB riêng; là UI mới, mở qua cổng 8000. UI tĩnh `src/web/` đã xoá (hồ sơ 20).
