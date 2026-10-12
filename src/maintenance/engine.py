@@ -2072,6 +2072,42 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             for m in self.all_materials()
         ]
 
+    def material_usage(self, actor_id: str, days: int = 7) -> list[dict[str, Any]]:
+        """Materials the departments used in the last `days` days, most used first (plan 19 D11, warehouse card).
+
+        A ticket counts once, at its latest move into READY_FOR_REVIEW (a rework loops back: the last pass wins),
+        with the `used_qty` its lines hold now. Read-only; the warehouse cannot open those tickets one by one, so the
+        sum is made here. Warehouse and BQL only.
+        """
+        role = self.catalog.actor_role(actor_id)
+        if role not in (Role.WAREHOUSE, Role.BQL):
+            raise ActionDeniedError(
+                "Chỉ kho hoặc BQL xem vật tư đã dùng", {"code": "ACTION_DENIED", "actor_id": actor_id}
+            )
+        since = self.clock() - timedelta(days=days)
+        names = {m.item_code: m for m in self.all_materials()}
+        totals: dict[str, dict[str, Any]] = {}
+        for case in self.repo.list():
+            moves = [e.created_at for e in case.events if e.to_status == S.READY_FOR_REVIEW]
+            if not moves or max(moves) < since:
+                continue
+            for line in case.material_lines:
+                if not line.used_qty:
+                    continue
+                item = totals.setdefault(
+                    line.item_code,
+                    {
+                        "item_code": line.item_code,
+                        "item_name": names[line.item_code].item_name if line.item_code in names else line.item_name,
+                        "unit": (names[line.item_code].unit if line.item_code in names else line.unit),
+                        "used_qty": 0.0,
+                        "tickets": 0,
+                    },
+                )
+                item["used_qty"] += line.used_qty
+                item["tickets"] += 1
+        return sorted(totals.values(), key=lambda r: (-r["used_qty"], -r["tickets"], r["item_name"]))
+
     # ------------------------------------------------------------------ materials outside the catalog (plan 11)
 
     def material(self, item_code: str) -> MaterialCatalogItem | None:

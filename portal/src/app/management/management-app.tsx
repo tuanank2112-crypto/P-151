@@ -20,7 +20,7 @@ import { useAction } from "@/components/use-action";
 import { DEPT_LABEL, ROLE_LABEL } from "@/lib/constants";
 import type { ManagementData, MgmtTicket, TicketDetail } from "@/lib/dto";
 import { deptPerformance, overviewCount, overviewFilter, type OverviewKind } from "@/lib/backend-map";
-import { BQL_BOXES, LIST_GROUPS, bqlBox, decideRank, deptLoad, listGroup, type BqlBox, type ListGroup } from "@/lib/bql-view";
+import { BQL_BOXES, LIST_GROUPS, NO_DEPT, bqlBox, decideRank, deptLoad, headline, listGroup, type BqlBox, type ListGroup } from "@/lib/bql-view";
 import { SITE_CHECKS } from "@/lib/inspection";
 import { hasLocation, matchesDoneSearch } from "@/lib/reception-done";
 
@@ -59,14 +59,24 @@ const agentLabel = (t: MgmtTicket): string => {
   return t.agentSource && t.agentSource !== "AGENT" ? "Luật cố định (Agent không quyết)" : "Chưa có";
 };
 
-/** Who holds the ticket now: the department, the BQL, or nobody yet ("--") */
+/** Who holds the ticket now: the department, the BQL, or nobody yet */
 const holder = (t: MgmtTicket): { label: string; cls: string } => {
   if (t.dept === "bql" || listGroup(t) === "bql") return { label: DEPT_LABEL.bql, cls: "pill cat-bql" };
   if (t.dept) return { label: DEPT_LABEL[t.dept], cls: `pill cat-${t.dept}` };
-  return { label: "--", cls: "text-muted" };
+  return { label: NO_DEPT, cls: "text-xs text-muted" };
 };
 
 const isEmergency = overviewFilter("emergency");
+
+function DeptCell({ h }: { h: { label: string; cls: string } }) {
+  if (h.label === NO_DEPT) return <span className={h.cls}>{h.label}</span>;
+  return (
+    <span className={h.cls}>
+      <span className="dot" />
+      {h.label}
+    </span>
+  );
+}
 
 function Badges({ t }: { t: MgmtTicket }) {
   return (
@@ -105,6 +115,8 @@ export function ManagementApp({ data }: { data: ManagementData }) {
 
   const all = data.tickets;
   const attention = all.filter((t) => isEmergency(t) || overviewFilter("late")(t));
+  // an emergency the BQL must decide opens its action card, any other ticket its detail
+  const focusTicket = (t: MgmtTicket) => (isEmergency(t) && bqlBox(t) === "decide" ? goBox("decide") : openDetail(t.id));
 
   // ---- Danh sách ticket
   const secondary = (t: MgmtTicket) =>
@@ -117,6 +129,8 @@ export function ManagementApp({ data }: { data: ManagementData }) {
   const activeGroup = group ?? LIST_GROUPS.find((g) => groupCount(g.key) > 0)?.key ?? "waiting";
   const rows = filtered.filter((t) => listGroup(t) === activeGroup);
   const showAgentCol = rows.some((t) => agentLabel(t) !== "Chưa có");
+  const showDeptCol = rows.some((t) => holder(t).label !== NO_DEPT);
+  const colCount = 2 + Number(showDeptCol) + Number(showAgentCol);
   const goList = (o: { group?: ListGroup | null; dept?: DeptSel; urgent?: boolean; late?: boolean } = {}) => {
     setGroup(o.group ?? null);
     setDeptSel(o.dept ?? "all");
@@ -164,21 +178,33 @@ export function ManagementApp({ data }: { data: ManagementData }) {
   const loads = WORKLOAD_DEPTS.map((d) => ({ d, ...deptLoad(all, d) }));
   const maxOpen = Math.max(1, ...loads.map((l) => l.open));
 
-  const noteInput = (t: MgmtTicket, placeholder: string) => (
-    <input
-      type="text"
-      className="w-full text-xs p-2 rounded-lg border border-line bg-white"
-      placeholder={placeholder}
-      aria-label={placeholder}
-      value={note(t.id)}
-      onChange={(e) => setNote(t.id, e.target.value)}
-    />
-  );
+  /** `required`: the action buttons stay off until a reason is typed, and the hint under the box says so (A4) */
+  const noteInput = (t: MgmtTicket, placeholder: string, required = false) => {
+    const missing = required && !note(t.id).trim();
+    return (
+      <div className="flex flex-col gap-1">
+        <input
+          type="text"
+          className={`w-full text-xs p-2 rounded-lg border bg-white ${missing ? "border-amber-300" : "border-line"}`}
+          placeholder={placeholder}
+          aria-label={placeholder}
+          aria-describedby={missing ? `hint-${t.id}` : undefined}
+          value={note(t.id)}
+          onChange={(e) => setNote(t.id, e.target.value)}
+        />
+        {missing && (
+          <span id={`hint-${t.id}`} className="text-[11px] text-amber-700">
+            Nhập lý do để mở các nút bên dưới.
+          </span>
+        )}
+      </div>
+    );
+  };
 
   /** Title + content, as the resident wrote them */
   const reportText = (t: MgmtTicket) => (
     <div className="flex flex-col gap-1">
-      <span className="text-[15px] font-bold text-slate-800">{t.title || t.text}</span>
+      <span className="text-[15px] font-bold text-slate-800">{headline(t)}</span>
       {t.content && <span className="whitespace-pre-wrap text-[14px] leading-[1.5] text-slate-700">{t.content}</span>}
     </div>
   );
@@ -206,11 +232,14 @@ export function ManagementApp({ data }: { data: ManagementData }) {
         bellCount={attention.length}
         notices={attention.map((t) => ({
           id: t.id,
-          title: `${t.code}: ${t.title || t.text}`,
-          urgent: t.urgent,
-          tag: t.late ? "Quá hạn" : "Khẩn cấp",
-          body: `Trạng thái: ${t.statusLabel}${hasLocation(t.location) ? ` · Vị trí: ${t.location}` : ""}`,
+          title: `${t.code}: ${headline(t)}`,
+          tag: isEmergency(t) ? "Khẩn cấp" : "Quá hạn",
+          body: `${holder(t).label} · ${t.statusLabel}${hasLocation(t.location) ? ` · ${t.location}` : ""}`,
         }))}
+        onNotice={(id) => {
+          const t = all.find((x) => x.id === id);
+          if (t) focusTicket(t);
+        }}
       />
       <Body>
         <NavTiles<Tab>
@@ -220,7 +249,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
           items={[
             { key: "overview", label: "Tổng quan", icon: <IconGrid /> },
             { key: "all", label: "Danh sách ticket", icon: <IconTable />, count: all.filter(overviewFilter("total")).length },
-            { key: "mine", label: "Việc của BQL", icon: <IconBriefcase />, count: totalBqlPending },
+            { key: "mine", label: "Việc của Ban quản lý", icon: <IconBriefcase />, count: totalBqlPending },
             { key: "teams", label: "Hiệu suất phòng ban", icon: <IconBars /> },
           ]}
         />
@@ -308,12 +337,12 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                         role="button"
                         tabIndex={0}
                         className={`grid grid-cols-[auto_auto_1fr_auto] items-center gap-2 border-t border-line-soft px-2 py-2.5 cursor-pointer hover:bg-soft/40 rounded-lg ${FOCUS}`}
-                        onClick={() => (isEmergency(t) && bqlBox(t) === "decide" ? goBox("decide") : openDetail(t.id))}
-                        onKeyDown={activate(() => (isEmergency(t) && bqlBox(t) === "decide" ? goBox("decide") : openDetail(t.id)))}
+                        onClick={() => focusTicket(t)}
+                        onKeyDown={activate(() => focusTicket(t))}
                       >
                         <span className="font-mono text-[13px] font-bold text-sky-700">{t.code}</span>
                         {isEmergency(t) ? <span className="pill urgent">Khẩn cấp</span> : <span className="pill late">Quá hạn</span>}
-                        <span className="truncate text-sm">{t.title || t.text}</span>
+                        <span className="truncate text-sm">{headline(t)}</span>
                         <span className={`${h.cls} text-xs`}>{h.label}</span>
                       </li>
                     );
@@ -367,13 +396,13 @@ export function ManagementApp({ data }: { data: ManagementData }) {
               </span>
             </div>
             <div className="overflow-x-auto">
-              <table>
+              <table className="tbl-stack">
                 <thead>
                   <tr>
                     <th>Ticket</th>
-                    <th>Phòng ban</th>
-                    {showAgentCol && <th>Agent gợi ý</th>}
-                    <th>Thời gian</th>
+                    {showDeptCol && <th className="hidden sm:table-cell">Phòng ban</th>}
+                    {showAgentCol && <th className="hidden sm:table-cell">Agent gợi ý</th>}
+                    <th className="hidden sm:table-cell">Thời gian</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -395,30 +424,30 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                             </button>
                             <Badges t={t} />
                           </div>
-                          <div className="line-clamp-1 font-semibold">{t.title || t.text}</div>
+                          <div className="line-clamp-1 font-semibold">{headline(t)}</div>
                           <div className="text-xs text-muted">
                             {t.statusLabel}
                             {hasLocation(t.location) ? ` · ${t.location}` : ""}
                           </div>
+                          {/* A1: phones have no side columns, so the holder and the time go under the title */}
+                          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted sm:hidden" data-testid="row-meta">
+                            <DeptCell h={h} />
+                            <span className="whitespace-nowrap">{t.createdAt}</span>
+                          </div>
                         </td>
-                        <td>
-                          {h.label === "--" ? (
-                            <span className="text-muted">--</span>
-                          ) : (
-                            <span className={h.cls}>
-                              <span className="dot" />
-                              {h.label}
-                            </span>
-                          )}
-                        </td>
-                        {showAgentCol && <td className="text-xs">{agentLabel(t)}</td>}
-                        <td className="whitespace-nowrap text-muted">{t.createdAt}</td>
+                        {showDeptCol && (
+                          <td className="hidden sm:table-cell">
+                            <DeptCell h={h} />
+                          </td>
+                        )}
+                        {showAgentCol && <td className="hidden text-xs sm:table-cell">{agentLabel(t)}</td>}
+                        <td className="hidden whitespace-nowrap text-muted sm:table-cell">{t.createdAt}</td>
                       </tr>
                     );
                   })}
                   {rows.length === 0 && (
                     <tr>
-                      <td colSpan={showAgentCol ? 4 : 3} className="text-center text-muted py-8">
+                      <td colSpan={colCount} className="text-center text-muted py-8">
                         Không có ticket nào khớp bộ lọc.
                       </td>
                     </tr>
@@ -465,7 +494,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                         <span className="pill cat-none ml-auto">Ngoài phạm vi{t.bqlSource ? ` · ${t.bqlSource}` : ""}</span>
                       </div>
                       {reportText(t)}
-                      {noteInput(t, "Ghi chú xử lý / lý do chuyển lại")}
+                      {noteInput(t, "Ghi chú xử lý / lý do chuyển lại", true)}
                       <div className="grid grid-cols-2 gap-2">
                         <button type="button" className="btn primary w-full justify-center" disabled={pending || !note(t.id).trim()} onClick={() => run(() => finishBqlTicketAction(t.id, note(t.id)))}>
                           Đã xử lý xong
@@ -488,7 +517,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                         </span>
                       </div>
                       {reportText(t)}
-                      {noteInput(t, t.blockerCode === "EMERGENCY_PENDING_BQL" ? "Lý do (bắt buộc)" : "Ghi chú")}
+                      {t.blockerCode === "EMERGENCY_PENDING_BQL" ? noteInput(t, "Lý do (bắt buộc)", true) : noteInput(t, "Ghi chú")}
                       <div className="grid grid-cols-2 gap-2 pt-2 border-t border-line-soft">
                         {t.blockerCode === "EMERGENCY_PENDING_BQL" ? (
                           <>
@@ -587,7 +616,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                       </div>
                       {rejectId === t.id && (
                         <div className="mt-2 p-3 bg-rose-50/70 border border-rose-200 rounded-xl space-y-2">
-                          {noteInput(t, "Lý do trả làm lại")}
+                          {noteInput(t, "Lý do trả làm lại", true)}
                           <div className="flex justify-end gap-2">
                             <button type="button" className="btn text-xs" onClick={() => setRejectId(null)}>
                               Hủy
@@ -619,7 +648,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                       {meta(t)}
                       <span className="pill st-hoan_thanh ml-auto">Hoàn tất</span>
                     </div>
-                    <span className="text-[15px] font-semibold text-slate-800">{t.title || t.text}</span>
+                    <span className="text-[15px] font-semibold text-slate-800">{headline(t)}</span>
                     <div className="text-xs text-muted">
                       {t.dept && t.dept !== "bql" ? DEPT_LABEL[t.dept] : DEPT_LABEL.bql}
                       {t.ratingStars !== null && ` · ${t.ratingStars}/5 ⭐`}

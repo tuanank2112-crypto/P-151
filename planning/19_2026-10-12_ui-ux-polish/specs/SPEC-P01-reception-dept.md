@@ -11,7 +11,7 @@ File được sửa: `portal/src/app/reception/reception-app.tsx`, `portal/src/l
 
 ## §3 Phòng ban — lịch sử hoàn thành
 - Tab "Lịch sử" ⇒ **Lịch sử hoàn thành**.
-- Đầu tab: ô **Hoàn thành S1 (n)** · **Hoàn thành S2 (n)** (+ "Chưa rõ tòa" khi > 0) theo 01 §2, dùng `buildingOf(t.location, t.title, t.text)`. Danh sách chỉ hiện ticket của ô đang chọn.
+- (D10 thay quy tắc "mỗi lần một ô tòa") Một danh sách duy nhất, lọc bằng chip chọn nhiều: hàng tòa **S1 (n)** · **S2 (n)** (+ "Chưa rõ tòa" khi > 0) theo 01 §2 (`buildingOf(t.location, t.title, t.text)`), hàng trạng thái **Chờ nghiệm thu (n)** · **Hoàn tất (n)**, ô tìm kiếm (`matchesDoneSearch`). KHÔNG chọn chip nào = hiện tất cả (không ẩn ticket chưa rõ tòa); các nhóm kết hợp bằng VÀ, trong một nhóm bằng HOẶC. Số trên chip tính theo ô tìm kiếm, không theo chip. Mỗi thẻ có nhãn tòa; dòng "Đang xem n/tổng" + nút "Xoá lọc" khi đang lọc; "Xem thêm" mỗi 10 thẻ. Logic thuần: `portal/src/lib/history-filter.ts`.
 
 ## Lỗi và hành vi
 | Tình huống | Hành vi bắt buộc |

@@ -31,7 +31,7 @@ accounts:
     actor_id: SIM-ACTOR-WAREHOUSE-01
     password_hash: "pbkdf2_sha256$200000$c74de0317a8a3d08f07d4e4d51f996e0$daf8cd446598d6b39a4d207bf59874d6f679dad9b2e3ac98dee46fe16b339c86"
   - username: bql01
-    display_name: "Ban Quản lý Tòa nhà (Vận hành BQL)"
+    display_name: "Ban quản lý Tòa nhà"
     actor_id: SIM-ACTOR-BQL-01
     password_hash: "pbkdf2_sha256$200000$3088e3bb8431ddbcb5afc08f5b989773$a2558addc843bc60d874aaf3d96c10c61f86759958903e24ad312d41bb7972fc"
   - username: qa01
