@@ -268,11 +268,11 @@ def test_catalog_feeds_the_ui(api):
     ]
 
 
-def test_ui_is_served(api):
-    assert api.get("/", follow_redirects=False).headers["location"] == "/ui/"
-    page = api.get("/ui/")
-    assert page.status_code == 200 and "app.js" in page.text
-    assert api.get("/ui/app.js").status_code == 200
+def test_root_opens_phone_app_and_old_ui_is_gone(api):
+    """Plan 20 01 §1: without a portal, / goes to the phone app; the old /ui prototype is not served any more."""
+    assert api.get("/", follow_redirects=False).headers["location"] == "/app/"
+    assert api.get("/ui/").status_code == 404
+    assert api.get("/ui/app.js").status_code == 404
 
 
 def test_16_resident_sees_no_department_before_hand_over(api, engine):
