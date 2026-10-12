@@ -84,3 +84,16 @@ Backend chamanh chốt vật tư là **số thực tế đã dùng, một lần 
 - Hợp đồng và lý do: `planning/19_2026-10-12_ui-ux-polish/specs/01-CONTRACTS.md`. Mọi phân nhóm "một ticket một ô" nằm ở `src/lib/reception-done.ts` (Tiếp nhận), `src/lib/bql-view.ts` (BQL: `bqlBox`, `listGroup`, `deptLoad`), `src/lib/building.ts` (S1/S2), `src/lib/stock.ts` (Hết hàng/Sắp hết/An toàn/Chưa kiểm kê theo `min_qty`). UI không tự viết lại điều kiện.
 - BQL không còn ô Kho; "Danh sách ticket" không có chip "Tất cả" (người dùng chốt).
 - Vị trí trống (`"—"`) không hiển thị: dùng `hasLocation()`.
+
+## 8. Deploy demo trên Vercel (2026-10-12)
+- Hai project Vercel, tài khoản `lenq2112-4310`, deploy bằng CLI **từ thư mục code trên máy** (repo private của org tắt fork, Vercel chưa nối GitHub ⇒ push KHÔNG tự deploy):
+  - `p151-portal` — https://p151-portal.vercel.app — thư mục `portal/`. Env Production: `BACKEND_URL=https://p151-backend.vercel.app` (đọc cả lúc build cho rewrites `next.config.ts`), `SESSION_SECRET`.
+  - `p151-backend` — https://p151-backend.vercel.app — root repo, FastAPI serverless (Vercel tự nhận `src/main.py`). Env Production: `APP_ENV=production` (tắt `/api/v1/auth/demo-accounts`), `MO_STORE=postgres`, `MO_PHOTO_STORE=supabase`, `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `MO_SEED_ON_EMPTY=false`, `MO_ALLOW_RESET=false`, `MO_JOBS_ENABLED=false`, `MO_UPLOAD_DIR=/tmp/uploads`. LLM để `mock` (`agy_cli` không chạy trên Vercel).
+- Deploy lại (đặt `VERCEL_TOKEN`; KHÔNG dùng phiên CLI đăng nhập sẵn trên máy):
+  ```bash
+  cd portal && npx vercel@63.1.2 deploy --prod --yes   # portal
+  npx vercel@63.1.2 deploy --prod --yes                # backend, từ root có .vercelignore
+  ```
+  Backend cần `.vercelignore` loại `portal planning docs tests brain4agent .claude .agents .venv data *.png *.svg *.drawio .env .env.*` (không commit; giữ upload nhỏ). Lần `link` đầu CLI sinh `.env.local`/sửa `.gitignore` — xoá trước khi deploy.
+- Đặt env bằng Bash `printf '%s' "<giá trị>" | npx vercel env add NAME production`. Pipe từ PowerShell chèn BOM ⇒ giá trị hỏng (xem `-known-gotchas.md`).
+- Giới hạn đã chấp nhận (bản demo): phiên đăng nhập và bộ đếm khoá sai mật khẩu nằm trong RAM từng instance serverless ⇒ có thể bị đăng xuất khi instance đổi; 14 tài khoản dùng chung mật khẩu test. Mọi thao tác trên portal production ghi thật vào Supabase nhóm.

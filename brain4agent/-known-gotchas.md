@@ -205,3 +205,9 @@ Stash push -u may save successfully but exit1 without cleaning tracked files whe
 - **Proxy cổng 8000 (`src/main.py`) dùng chung MỘT httpx client:** client này KHÔNG được giữ cookie (đã chặn bằng `DefaultCookiePolicy(allowed_domains=[])` trên `client.cookies.jar`). `httpx.AsyncClient(cookies=…)` SAO CHÉP cookie sang kho mới nên chính sách truyền qua tham số bị mất — phải `set_policy` trên kho của client. Dấu hiệu lỗi: trình duyệt mới vào thẳng màn của người đăng nhập trước.
 - Portal: `parseDescription` trả `"—"` khi không có vị trí; UI mới dùng `hasLocation()` để không hiện dấu gạch lẻ. CSS bảng chỉ khai theo màn (`.scr-reception/.scr-management/.scr-warehouse`): màn mới dùng `<table>` phải thêm selector.
 - `scripts/ui-check-WP5.mts` (develop) dò `tile-all`, `bql-work article` theo bố cục cũ ⇒ cần cập nhật theo hồ sơ 19 trước khi dùng lại.
+
+## Merge develop → main và deploy Vercel (2026-10-12)
+- `main` mang commit revert PR #11 (`58b3935`) mà đầu PR #11 (`2144e79`) là tổ tiên của develop ⇒ merge thẳng develop→main GIỮ hiệu lực revert, lặng lẽ xoá ~58k dòng. Cách đã làm (PR #25): `merge -s ours` + `read-tree -u --reset origin/develop` + giữ 3 file gate 1 chỉ có trên main. Lần sau develop đã là tổ tiên của main ⇒ merge thường được.
+- `$s | npx vercel env add …` trong PowerShell 5.1 chèn BOM vào đầu giá trị ⇒ `BACKEND_URL` không còn bắt đầu bằng `https://` ⇒ build Next.js lỗi "Invalid rewrites". Dùng Bash `printf '%s'`.
+- Env Vercel chỉ áp khi deploy: xoá biến trên dashboard KHÔNG ảnh hưởng bản đang chạy cho tới lần deploy kế ⇒ thêm lại trước khi redeploy.
+- CI GitHub Actions của org đỏ sau 2–4 s từ ~2026-10-11 do lỗi billing (job không khởi động), không phải do code ⇒ chạy `ruff check src/ tests/` + `pytest tests/` cục bộ thay CI.

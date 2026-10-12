@@ -1,5 +1,10 @@
 # 📅 Nhật Ký Làm Việc Ngày 2026-09-30 (Session Memory Log)
 
+## Phiên 2026-10-12 — Merge develop→main (PR #25) và deploy demo Vercel
+- PR #25 `release/develop-to-main` merge vào main (7f9dc5b): cây = develop + 3 file gate 1; tránh bẫy revert PR #11. Kiểm cục bộ: ruff sạch, pytest 3603 passed/100 deselected, portal typecheck/lint 0, vitest 150/150. CI org không chạy (billing).
+- Deploy CLI từ local lên Vercel `lenq2112-4310`: p151-portal + p151-backend (FastAPI serverless), nối Supabase nhóm, APP_ENV=production. Smoke Playwright: cudan01 đăng nhập → /resident, 44 phản ánh thật. Không tạo ticket.
+- Bị chặn quyền (người dùng tự làm): ghi secret Supabase lên Vercel, sao repo sang tài khoản cá nhân, đọc Supabase qua Management API. Người dùng chốt: bản demo, không làm hardening bảo mật.
+
 ## Phiên 2026-10-10 — Plan18 portal dùng Python
 - Người dùng xác nhận giữ UI mới và dùng backend Python; rà portal auth/queries/actions/workflow với API hiện có.
 - Dựng plan18 +6SPEC, PROPOSED theo AGENTS §3.4; chưa đổi runtime/version/API/DB. Đích1.11.0, không thi công P09/G-1 trong đợt nối UI.
