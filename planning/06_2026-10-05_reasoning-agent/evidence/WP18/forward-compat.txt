@@ -1,0 +1,10 @@
+# P10 §10: a case written by P10 (simulated) with jobs[0].quote = null, then read by the Base model.
+$ PYTHONPATH='.;C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18' LLM_MODE=mock MO_STORE=memory MO_PHOTO_STORE=local PYTHONUTF8=1 python 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/fc_write.py' 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18'
+SIM_P10 ACTIVE: schema AuditQuote, merge_llm catalog-only, grounded gates off, mirror quotes None
+P10 (simulated) case written: jobs[0].quote = None status = ROUTED
+EXIT=0
+
+$ PYTHONPATH=. PYTHONUTF8=1 python 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/fc_read.py' 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18'
+Base Case.model_validate_json: ValidationError 1 error(s); first: agent_decision.decision.jobs.0.quote - string_type
+EXIT=1
+

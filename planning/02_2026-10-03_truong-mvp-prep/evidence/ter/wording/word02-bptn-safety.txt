@@ -1,0 +1,47 @@
+WORD-02 BPTN Safety Routes - Day03-ter
+Observed: 2026-10-03T12:38:41+07:00
+Worktree: ter (detached 92649a6152737154cca606f3ce94d3f0ec0e0273, branch feature/nhuy-safety-routes PR #10)
+
+== ROUTE ENDPOINT ==
+File: src/api/routers/maintenance.py:443
+@router.post("/tickets/{ticket_id}/safety", response_model=Case)
+def safety_decide(ticket_id: str, body: SafetyRequest, actor: ActorDep, engine: EngineDep) -> Case:
+
+Schema (line 439-441):
+class SafetyRequest(NoteBody):
+    decision: Literal["CONFIRM_SAFE", "REQUEST_INFO", "ESCALATE"]
+
+== BPTN 3 CHOICES UI WORDING ==
+File: src/web/app.js
+
+Line 913: Intro message:
+"Phản ánh có dấu hiệu an toàn nghi ngờ. BPTN có đúng 3 lựa chọn nghiệp vụ:"
+
+Line 916-917: Choice 1 (CONFIRM_SAFE)
+"1. Xác nhận an toàn (Bác nguy cơ)"
+Help: "Bắt buộc ghi rõ lý do hiện trường an toàn; ticket chuyển về luồng phân loại thường."
+API call: POST /mo/tickets/{id}/safety { decision: 'CONFIRM_SAFE', note: ... }
+
+Line 919-920: Choice 2 (REQUEST_INFO)
+"2. Yêu cầu cư dân bổ sung"
+Help: "Gửi yêu cầu làm rõ hiện trường tới cư dân (chuyển sang Chờ bổ sung thông tin)."
+API call: POST /mo/tickets/{id}/safety { decision: 'REQUEST_INFO', note: ... }
+
+Line 922-923: Choice 3 (ESCALATE)
+"3. Nâng mức Khẩn cấp (Bậc 1)"
+Help: "Phát hiện nguy cơ nghiêm trọng, nâng lên BQL xử lý khẩn cấp ngay."
+API call: POST /mo/tickets/{id}/safety { decision: 'ESCALATE', note: ... }
+
+== LOCALIZATION ==
+File: src/maintenance/i18n/vi.yaml
+- SAFETY_REVIEW_REQUIRED: "Phản ánh đang được kiểm tra."
+- NEED_INFO (T06 safety): "Chờ bổ sung thông tin"
+- safety_status_label: "Đang được kiểm tra"
+
+== VALIDATION ==
+✓ 3 choices match CR-03 §6.4 exactly
+✓ No overpromise of missing features (route exists, schema correct)
+✓ Wording Vietnamese complete, not exposing risk_level to resident
+✓ Routes wire engine methods correctly (safety_confirm_safe, safety_request_info, safety_escalate)
+
+RESULT: PASS

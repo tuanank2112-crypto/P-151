@@ -1,0 +1,57 @@
+captured_at=2026-10-10T18:06:27+07:00
+$ python evidence/harness/snapshot.py . <scratch>/snap_red2 base   # then src/main.py from HEAD (unmodified in baseline)
+9c38fd87f101817da4eaab0d085d207487ef1a6bc3fbfb4f01f61f754fde46e0  src/maintenance/engine.py  baseline=OK
+339f50b720e6874391b44f88bef0bdc9110288c2b26d07bc7299cf5180f4a5dc  src/api/routers/maintenance.py  baseline=OK
+snapshot=C:\Users\caotr\AppData\Local\Temp\claude\c--P-151\69840dd8-c43b-4c13-b37f-a1889288227d\scratchpad\snap_red2 mode=base
+src/main.py <- HEAD 62a134e8605a3b43c760427b64f96a102357c4ae06265be6922c6391751d80ef
+$ (cd <snap_red2>) python -m pytest <3 plan-16 files> -q -p no:cacheprovider -rf --tb=no
+FAILED tests/test_maintenance/test_material_guards.py::test_catalog_endpoint_lists_codes_by_department
+FAILED tests/test_maintenance/test_material_guards.py::test_foreign_material_is_refused_everywhere[\u0110\xe8n h\xe0nh lang t\u1ea7ng 3 t\xf2a S1 kh\xf4ng s\xe1ng.-SIM-ACTOR-DEPT-TEC-01-SIM-MAT-CLEAN-01]
+FAILED tests/test_maintenance/test_material_guards.py::test_foreign_material_is_refused_everywhere[\u0110\xe8n h\xe0nh lang t\u1ea7ng 3 t\xf2a S1 kh\xf4ng s\xe1ng.-SIM-ACTOR-DEPT-TEC-01-SIM-MAT-BAG-01]
+FAILED tests/test_maintenance/test_material_guards.py::test_foreign_material_is_refused_everywhere[H\xe0nh lang t\u1ea7ng 3 t\xf2a S1 nhi\u1ec1u r\xe1c, c\u1ea7n v\u1ec7 sinh.-SIM-ACTOR-DEPT-CLN-01-SIM-MAT-LAMP-01]
+FAILED tests/test_maintenance/test_material_guards.py::test_foreign_material_is_refused_everywhere[H\xe0nh lang t\u1ea7ng 3 t\xf2a S1 nhi\u1ec1u r\xe1c, c\u1ea7n v\u1ec7 sinh.-SIM-ACTOR-DEPT-CLN-01-SIM-MAT-STARTER-01]
+FAILED tests/test_maintenance/test_material_guards.py::test_legacy_record_refuses_a_foreign_line_already_in_the_draft
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_api[0]
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_api[-1]
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_api[0.5]
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_api[True]
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_api['1']
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_api[None]
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_api[nan]
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_api[inf]
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_api[100000000000]
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_engine[0]
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_engine[-1]
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_engine[0.5]
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_engine[True]
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_engine['1']
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_engine[None]
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_engine[nan]
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_engine[inf]
+FAILED tests/test_maintenance/test_material_guards.py::test_bad_quantities_are_refused_by_the_engine[100000000000]
+FAILED tests/test_maintenance/test_material_guards.py::test_whole_quantities_are_accepted_and_stored_as_numbers[1]
+FAILED tests/test_maintenance/test_material_guards.py::test_whole_quantities_are_accepted_and_stored_as_numbers[1.0]
+FAILED tests/test_maintenance/test_material_guards.py::test_new_request_forbids_extra_fields
+FAILED tests/test_maintenance/test_material_guards.py::test_technical_must_choose_a_material
+FAILED tests/test_maintenance/test_material_guards.py::test_technical_cannot_complete_with_no_material_through_n_a
+FAILED tests/test_maintenance/test_material_guards.py::test_old_invalid_lines_cannot_complete[foreign]
+FAILED tests/test_maintenance/test_material_guards.py::test_old_invalid_lines_cannot_complete[fraction]
+FAILED tests/test_maintenance/test_material_guards.py::test_cleaning_may_use_no_material_and_gets_its_stock_back
+FAILED tests/test_maintenance/test_material_guards.py::test_norm_one_used_four_saves_and_completes_without_reason
+FAILED tests/test_maintenance/test_material_guards.py::test_wrong_actor_and_wrong_state_change_nothing
+FAILED tests/test_maintenance/test_material_usage.py::test_one_save_issues_equal_used_and_writes_one_audit
+FAILED tests/test_maintenance/test_material_usage.py::test_saving_the_same_selection_again_moves_no_stock
+FAILED tests/test_maintenance/test_material_usage.py::test_up_and_down_moves_only_the_difference
+FAILED tests/test_maintenance/test_material_usage.py::test_dropping_or_replacing_a_line_gives_its_stock_back
+FAILED tests/test_maintenance/test_material_usage.py::test_swap_to_an_empty_item_rolls_everything_back
+FAILED tests/test_maintenance/test_material_usage.py::test_second_line_short_keeps_the_first_line_in_stock
+FAILED tests/test_maintenance/test_material_usage.py::test_duplicate_codes_are_refused
+FAILED tests/test_maintenance/test_material_usage_store.py::test_second_stock_line_short_rolls_back_the_first[memory]
+FAILED tests/test_maintenance/test_material_usage_store.py::test_swap_to_an_empty_item_after_a_save_rolls_back[memory]
+FAILED tests/test_maintenance/test_material_usage_store.py::test_repeat_and_delta_on_the_real_store[memory]
+FAILED tests/test_maintenance/test_material_usage_store.py::test_audit_failure_rolls_back_ticket_and_stock[memory]
+FAILED tests/test_maintenance/test_material_usage_store.py::test_second_stock_write_failure_rolls_back[memory]
+FAILED tests/test_maintenance/test_material_usage_store.py::test_save_failure_rolls_back_stock[memory]
+FAILED tests/test_maintenance/test_material_usage_store.py::test_two_tickets_racing_for_the_last_units[memory]
+48 failed, 3 passed, 7 deselected, 1 warning in 1.02s
+exit=1

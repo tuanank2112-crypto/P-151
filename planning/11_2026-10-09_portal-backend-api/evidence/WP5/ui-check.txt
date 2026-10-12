@@ -1,0 +1,78 @@
+PASS  5.2 tile all @1440: tile=17 rows=17
+PASS  5.2 tile waiting @1440: tile=6 rows=6
+PASS  5.2 tile processing @1440: tile=9 rows=9
+PASS  5.2 tile emergency @1440: tile=2 rows=2
+PASS  5.2 tile late @1440: tile=3 rows=3
+PASS  5.2 tile Enter opens list @1440
+PASS  5.2 tile Space opens list @1440
+PASS  5.2 tile role=button tabindex @1440
+PASS  5.2 tile cursor pointer @1440  -> pointer
+PASS  5.2 tile focus ring @1440  -> solid 3px
+PASS  5.1 load rows = 2 (no BQL) @1440  -> 2
+PASS  5.1 load ve_sinh @1440: 3 vs rows 3
+PASS  5.1 chip "Gồm đã xong/hủy" present for ve_sinh @1440
+PASS  5.1 showAll >= filtered for ve_sinh @1440: 4 >= 3
+PASS  5.1 load ky_thuat @1440: 6 vs rows 6
+PASS  5.1 chip "Gồm đã xong/hủy" present for ky_thuat @1440
+PASS  5.1 showAll >= filtered for ky_thuat @1440: 6 >= 6
+PASS  5.1 no "Ban quản lý" chip in tab Tất cả @1440
+PASS  5.3 column "Agent gợi ý" @1440  -> mã|nội dung|phòng ban|agent gợi ý|trạng thái|thời gian
+PASS  5.3 no % in Agent column @1440  -> Chưa có | Chưa có | Chưa có | Chưa có
+PASS  5.3 click any row opens modal @1440
+PASS  7 modal has Phân tích Agent @1440
+PASS  7 modal empty-state "Chưa có quyết định của Agent" (backend chưa có agent_decision) @1440  -> không ticket nào có agent_decision trong dữ liệu hiện tại
+PASS  5.4 three filters exist @1440
+PASS  5.4 three blocks @1440
+PASS  5.4 inspection empty state @1440  -> không có ticket chờ nghiệm thu trong dữ liệu
+PASS  5.4 BQL row: source label + title @1440  -> 🏢 ¦ Việc của Ban quản lý (1) ¦ Ticket ngoài phạm vi vệ sinh/kỹ thuật do Agent hoặc Ban tiếp nhận chuyển sang. Có thể chuyển lại Tiếp nhận nếu không thuộc thẩm 
+PASS  5.5 perf columns @1440  -> phòng ban|đang xử lý|quá hạn|đã đóng|sao trung bình|giờ hoàn thành tb
+PASS  5.6 management enters /warehouse @1440
+PASS  6 inventory columns Mã/Tên/Đơn vị/Tồn @1440  -> mã vt|tên vật tư|đơn vị|tồn kho|thao tác
+PASS  6 add item shows in inventory or backend message @1440  -> added
+PASS  6 receive stock closes dialog @1440
+PASS  6 requests tab renders (0 request) @1440
+PASS  5.2 tile all @390: tile=17 rows=17
+PASS  5.2 tile waiting @390: tile=6 rows=6
+PASS  5.2 tile processing @390: tile=8 rows=8
+PASS  5.2 tile emergency @390: tile=2 rows=2
+PASS  5.2 tile late @390: tile=3 rows=3
+PASS  5.2 tile Enter opens list @390
+PASS  5.2 tile Space opens list @390
+PASS  5.2 tile role=button tabindex @390
+PASS  5.2 tile cursor pointer @390  -> pointer
+PASS  5.2 tile focus ring @390  -> solid 3px
+PASS  5.1 load rows = 2 (no BQL) @390  -> 2
+PASS  5.1 load ve_sinh @390: 2 vs rows 2
+PASS  5.1 chip "Gồm đã xong/hủy" present for ve_sinh @390
+PASS  5.1 showAll >= filtered for ve_sinh @390: 4 >= 2
+PASS  5.1 load ky_thuat @390: 6 vs rows 6
+PASS  5.1 chip "Gồm đã xong/hủy" present for ky_thuat @390
+PASS  5.1 showAll >= filtered for ky_thuat @390: 6 >= 6
+PASS  5.1 no "Ban quản lý" chip in tab Tất cả @390
+PASS  5.3 column "Agent gợi ý" @390  -> mã|nội dung|phòng ban|agent gợi ý|trạng thái|thời gian
+PASS  5.3 no % in Agent column @390  -> Chưa có | Chưa có | Chưa có | Chưa có
+PASS  5.3 click any row opens modal @390
+PASS  7 modal has Phân tích Agent @390
+PASS  7 modal empty-state "Chưa có quyết định của Agent" (backend chưa có agent_decision) @390  -> không ticket nào có agent_decision trong dữ liệu hiện tại
+PASS  5.4 three filters exist @390
+PASS  5.4 three blocks @390
+PASS  5.4 inspection shows photos/checklist/materials @390
+PASS  5.4 approve locked until 2 site checks @390
+PASS  5.4 still locked after 1 check @390
+PASS  5.4 unlocked after 2 checks @390
+PASS  5.4 BQL row: source label + title @390  -> 🏢 ¦ Việc của Ban quản lý (1) ¦ Ticket ngoài phạm vi vệ sinh/kỹ thuật do Agent hoặc Ban tiếp nhận chuyển sang. Có thể chuyển lại Tiếp nhận nếu không thuộc thẩm 
+PASS  5.5 perf columns @390  -> phòng ban|đang xử lý|quá hạn|đã đóng|sao trung bình|giờ hoàn thành tb
+PASS  5.6 management enters /warehouse @390
+PASS  6 inventory columns Mã/Tên/Đơn vị/Tồn @390  -> mã vt|tên vật tư|đơn vị|tồn kho|thao tác
+PASS  6 add item shows in inventory or backend message @390  -> added
+PASS  6 receive stock closes dialog @390
+PASS  6 requests tab renders (1 request) @390
+PASS  6 approve locked + hint when short @390  -> short=1
+PASS  6 approve clicked @390
+PASS  5.4 approve inspection moves ticket to Đã hoàn thành: Đã hoàn thành (1) -> Đã hoàn thành (2)
+PASS  5.4 BQL row shows source label
+PASS  5.4 BQL handled -> Đã hoàn thành count Đã hoàn thành (3)
+PASS  no horizontal overflow on any screenshot (scrollWidth <= viewport)
+
+TOTAL 75 PASS 75 FAIL 0
+EXIT=0

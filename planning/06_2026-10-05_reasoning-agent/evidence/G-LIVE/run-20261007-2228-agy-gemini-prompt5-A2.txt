@@ -1,0 +1,22 @@
+G-LIVE dataset=2026-10-07.draft2 sentences=16 llm_mode=agy_cli model=gemini-3.8-flash-low effort=low workers=3
+[OK   ] A2_help_fire_hard expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=UNCLEAR   src=AGENT                   23.5s | Hành lang tầng 4 tòa S2 nóng hừng hực, lửa liếm lên trần, cứu | Có lửa cháy thực tế và cư dân kêu cứu
+[OK   ] A2_help_fire_hard expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=UNCLEAR   src=AGENT                   12.1s | Cháy! Cháy! Sảnh chính tòa S1 | Báo cháy khẩn cấp tại khu vực sảnh chính
+[OK   ] A2_help_fire_hard expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=UNCLEAR   src=AGENT                   13.6s | Mau lên, cửa thoát hiểm tầng 3 tòa S1 bị lửa chặn | Có lửa chặn cửa thoát hiểm, nguy hiểm đến tính mạng
+[OK   ] A2_help_fire_hard expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=UNCLEAR   src=AGENT                   12.5s | Lửa bén vào rèm hành lang tầng 8 tòa S2, ai đó dập giúp với | Có lửa đang cháy bén vào rèm tại hành lang, đe dọa an toàn nghiêm trọng.
+[OK   ] A2_help_fire_hard expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=UNCLEAR   src=AGENT                   23.9s | Mọi người ơi thoát ra ngoài đi, tầng 6 tòa S2 cháy | Có tín hiệu cháy và giục thoát hiểm khẩn cấp
+[OK   ] A2_help_fire_hard expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=UNCLEAR   src=AGENT                   17.5s | Báo cháy gấp tầng 2 tòa S2 | Cư dân báo cháy khẩn cấp
+[OK   ] A2_help_fire_hard expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=UNCLEAR   src=AGENT                   17.4s | Cửa phòng rác tầng 3 tòa S1 nóng ran, bên trong có tiếng lách tách và ánh đỏ | Phòng rác có ánh đỏ, tiếng lách tách và cửa nóng ran báo hiệu nguy cơ cháy thật
+[OK   ] A2_help_fire_hard expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=UNCLEAR   src=AGENT                   19.9s | Lửa táp ra từ hộp kỹ thuật tầng 2 tòa S2 | Phát hiện có lửa bốc cháy từ hộp kỹ thuật
+[OK   ] A2_help_fire_hard expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=UNCLEAR   src=AGENT                   11.0s | Ánh lửa đỏ rực ở hầm B2 tòa S1, nhanh lên | Phát hiện ánh lửa tại khu vực hầm B2
+[OK   ] A2_help_fire_hard expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=UNCLEAR   src=AGENT                   11.4s | Báo cháy! Báo cháy! tầng 4 tòa S1 | Cư dân báo cháy khẩn cấp, nguy cơ hỏa hoạn đang xảy ra
+[OK   ] A2_help_fire_hard expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=UNCLEAR   src=AGENT                   19.1s | Hành lang tầng 3 tòa S2 cháy đen cả trần, lửa vẫn còn | Phát hiện lửa cháy thật ở hành lang khu vực chung
+[OK   ] A2_help_fire_hard expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=NONE      src=AGENT                   17.1s | Nhanh gọi lính cứu hỏa, tầng 10 tòa S1 | Cư dân giục gọi lính cứu hỏa khẩn cấp
+[OK   ] A2_help_fire_hard expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=UNCLEAR   src=AGENT                   11.9s | Phòng rác tầng 6 tòa S2 đang phun khói ra ngoài cuồn cuộn | Có khói bốc ra cuồn cuộn từ phòng rác.
+[OK   ] A2_help_fire_hard expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=UNCLEAR   src=AGENT                   16.6s | Có tiếng nổ và lửa trùm hành lang tầng 7 tòa S1 | Phát hiện lửa cháy tại hành lang khu vực chung
+[OK   ] A2_help_fire_hard expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=UNCLEAR   src=AGENT                   12.0s | Cầu thang bộ tầng 5 tòa S1 mịt mù, con em khó thở lắm | Không gian mịt mù khiến người bị khó thở, có nguy cơ ngạt khói hoặc khí độc
+[OK   ] A2_help_fire_hard expect=EMERGENCY final=EMERGENCY agent=EMERGENCY rule=UNCLEAR   src=AGENT                   17.9s | Lửa từ căn hộ lan ra hành lang tầng 8 tòa S2, bà con ơi | Có lửa thật đang lan ra hành lang
+
+SUMMARY
+A2_help_fire_hard n=16 correct=16 under= 0 over= 0 agent_used=16 fallback= 0 rule_correct= 0 p50=16.8s p90=23.5s
+TOTAL n=16 correct=16 under=0 over=0 agent_used=16 rule_correct=0
+EXIT=0

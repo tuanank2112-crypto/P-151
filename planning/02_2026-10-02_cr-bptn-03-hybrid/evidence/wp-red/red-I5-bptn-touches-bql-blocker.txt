@@ -1,0 +1,19 @@
+# guard broken in src/maintenance/engine.py
+# test: tests/test_maintenance/test_cr03.py::test_ac06b_bptn_escalates_and_cannot_take_it_back
+# pytest exit code: 1
+
+        elif key == (S.MERGED, S.RECEIVED):  # T09
+            self._unmerge(work, actor_id, role, now, need_note("Ho\xe0n t\xe1c g\u1ed9p ph\u1ea3i c\xf3 ghi ch\xfa"))
+        elif key == (S.VERIFYING, S.RECEIVED):  # T05 by a person: tier 2 judged safe, or an emergency downgraded
+            if code == R.SAFETY_REVIEW_REQUIRED and role in (Role.BPTN, Role.BQL):
+                action = Action.SAFETY_CONFIRM_SAFE
+            elif code == R.EMERGENCY_PENDING_BQL and role == Role.BQL:
+                action = Action.EMERGENCY_DOWNGRADE
+            else:
+>               raise InvalidTransitionError("Ch\u1ec9 x\xe1c nh\u1eadn an to\xe0n (B\u1eadc 2) ho\u1eb7c h\u1ea1 kh\u1ea9n c\u1ea5p (BQL) m\u1edbi v\u1ec1 RECEIVED")
+E               src.maintenance.engine.InvalidTransitionError: Ch\u1ec9 x\xe1c nh\u1eadn an to\xe0n (B\u1eadc 2) ho\u1eb7c h\u1ea1 kh\u1ea9n c\u1ea5p (BQL) m\u1edbi v\u1ec1 RECEIVED
+
+src\maintenance\engine.py:1950: InvalidTransitionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_cr03.py::test_ac06b_bptn_escalates_and_cannot_take_it_back
+1 failed in 0.32s

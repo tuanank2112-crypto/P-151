@@ -1,0 +1,70 @@
+PASS resident: no 'Thong bao' tab
+PASS no horizontal overflow resident-compose-empty @1440 | scrollWidth=1440
+PASS no horizontal overflow resident-compose-empty @390 | scrollWidth=390
+PASS resident: empty title blocked
+PASS resident: title < 5 blocked
+PASS resident: content < 10 blocked
+PASS resident: no urgent button / keyword prediction
+PASS no horizontal overflow resident-compose-filled @1440 | scrollWidth=1440
+PASS no horizontal overflow resident-compose-filled @390 | scrollWidth=390
+PASS resident: submit shows ticket code | Đã gửi SIM-TKT-0004Ban tiếp nhận sẽ tiếp nhận và chuyển đúng
+PASS no horizontal overflow resident-submitted @1440 | scrollWidth=1440
+PASS no horizontal overflow resident-submitted @390 | scrollWidth=390
+PASS resident: list has tickets | count=16
+PASS resident: new ticket title in list
+PASS resident: detail shows title | Kiem tra WP3 den hanh lang 112155
+PASS resident: detail shows content
+PASS resident: detail shows location line
+PASS resident: detail shows stepper
+PASS resident: detail shows history
+PASS resident: no confirm/cancel buttons
+PASS no horizontal overflow resident-mine-new @1440 | scrollWidth=1440
+PASS no horizontal overflow resident-mine-new @390 | scrollWidth=390
+PASS no horizontal overflow resident-mine-list @1440 | scrollWidth=1440
+PASS no horizontal overflow resident-mine-list @390 | scrollWidth=390
+SKIP resident needInfo flow: no NEED_INFO ticket in data
+SKIP resident rating flow: no ticket with canRate in data
+PASS reception: exactly 3 tabs (Chờ phân loại / Đã phân loại / Hiệu suất Agent) | Chờ phân loại5 | Đã phân loại11 | Hiệu suất Agent
+PASS no horizontal overflow reception-inbox @1440 | scrollWidth=1440
+PASS no horizontal overflow reception-inbox @390 | scrollWidth=390
+reception inbox cards=5
+PASS reception: new resident ticket visible with title
+PASS reception: card shows content
+PASS reception: card shows location
+PASS reception: card shows blocker label
+PASS reception: card has Agent block
+  card text: SIM-TKT-000422:35 hôm nayKhẩn cấpNghi trùngMức an toàn: NONEKiem tra WP3 den hanh lang 112155Den hanh lang chap chon khong sang, can xu ly som (112155).Vị trí: Tòa S2.05 · Sảnh cư dân tầng 1Cùng vị trí và loại với SIM-TKT-0001 trong 2 days, 0:00:00Chưa có quyế
+PASS no horizontal overflow reception-detail-modal @1440 | scrollWidth=1440
+PASS no horizontal overflow reception-detail-modal @390 | scrollWidth=390
+  card 0: [Chưa rõ tài sản] buttons: Kiểm tra tại chỗ
+  card 1: [Chưa rõ tài sản] buttons: Kiểm tra tại chỗ
+  card 2: [Nghi trùng] buttons: Gộp | Không trùng
+  card 3: [Nghi trùng] buttons: Gộp | Không trùng
+  card 4: [Thiếu thông tin] buttons: 
+PASS reception: Đã phân loại has rows | rows=11
+PASS no horizontal overflow reception-done @1440 | scrollWidth=1440
+PASS no horizontal overflow reception-done @390 | scrollWidth=390
+PASS reception: row opens detail modal
+PASS no horizontal overflow reception-done-modal @1440 | scrollWidth=1440
+PASS no horizontal overflow reception-done-modal @390 | scrollWidth=390
+PASS reception: click on row cell opens modal
+PASS reception perf: tile 'Ticket đã chuyển'
+PASS reception perf: tile 'Agent gợi ý đúng'
+PASS reception perf: tile 'Số lần nhân viên sửa'
+PASS reception perf: tile 'Chờ cư dân bổ sung'
+PASS reception perf: tile 'Agent đúng'
+PASS reception perf: tile 'Agent sai'
+PASS no horizontal overflow reception-perf @1440 | scrollWidth=1440
+PASS no horizontal overflow reception-perf @390 | scrollWidth=390
+  step 0: [Nghi trùng] buttons: Gộp | Không trùng
+PASS no horizontal overflow reception-step0 @1440 | scrollWidth=1440
+PASS no horizontal overflow reception-step0 @390 | scrollWidth=390
+  step 1: [Chưa rõ tài sản] buttons: Kiểm tra tại chỗ
+PASS no horizontal overflow reception-step1 @1440 | scrollWidth=1440
+PASS no horizontal overflow reception-step1 @390 | scrollWidth=390
+PASS reception: ticket left inbox after the offered actions
+PASS reception: that ticket now appears in Đã phân loại | rows=1 routedByButton=false
+PASS no horizontal overflow reception-after-route @1440 | scrollWidth=1440
+PASS no horizontal overflow reception-after-route @390 | scrollWidth=390
+ALL PASS
+EXIT=0

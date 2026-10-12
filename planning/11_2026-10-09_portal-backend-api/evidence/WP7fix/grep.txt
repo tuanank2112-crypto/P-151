@@ -1,0 +1,4 @@
+$ grep -rnE "@/db|server/workflow|server/queries|lib/agent|lib/duplicates" src --include=*.ts --include=*.tsx | grep -v "^src/db/"
+MATCHES=0
+(excluded, history per P02 §6): src/db/seed.ts:8:import { classify, type KeywordRules } from "@/lib/agent";
+EXIT=0

@@ -1,0 +1,46 @@
+..FF                                                                     [100%]
+================================== FAILURES ===================================
+__________ test_j03_head_revision_is_the_marker_and_the_alembic_head __________
+
+    def test_j03_head_revision_is_the_marker_and_the_alembic_head():
+>       assert HEAD_REVISION == MARKER
+E       AssertionError: assert '0001_maintops_initial' == '0002_p1_doc_shape'
+E         
+E         - 0002_p1_doc_shape
+E         + 0001_maintops_initial
+
+tests\test_maintenance\test_p1_store.py:98: AssertionError
+_______________ test_j05_marker_migration_has_no_sql_only_pass ________________
+
+    def test_j05_marker_migration_has_no_sql_only_pass():
+>       module = ast.parse(MIGRATION.read_text(encoding="utf-8"))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_store.py:113: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\lenku\AppData\Local\Programs\Python\Python311\Lib\pathlib.py:1058: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('D:/P151/.claude/worktrees/agent-a316ebd4bc3288a2d/src/maintenance/store/migrations/versions/0002_p1_doc_shape.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'D:\\P151\\.claude\\worktrees\\agent-a316ebd4bc3288a2d\\src\\maintenance\\store\\migrations\\versions\\0002_p1_doc_shape.py'
+
+C:\Users\lenku\AppData\Local\Programs\Python\Python311\Lib\pathlib.py:1044: FileNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_store.py::test_j03_head_revision_is_the_marker_and_the_alembic_head
+FAILED tests/test_maintenance/test_p1_store.py::test_j05_marker_migration_has_no_sql_only_pass
+2 failed, 2 passed, 2 deselected in 0.64s
+EXIT=1

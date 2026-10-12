@@ -1,0 +1,19 @@
+# P10 §3.1: the AuditQuote type on the installed pydantic (scratch prototype, same definition as REF section A).
+$ PYTHONUTF8=1 python -c 'import pydantic; print(pydantic.VERSION)'
+2.13.5
+EXIT=0
+
+$ PYTHONUTF8=1 python 'C:/Users/lenku/AppData/Local/Temp/claude/d--P151/f10e92a7-fd49-4221-9973-e2c8b88de32f/scratchpad/wp18/proto_quote.py'
+          None -> None  len=0
+            '' -> None  len=0
+         '   ' -> None  len=0
+           'x' -> 'x'  len=1
+          '..' -> '..'  len=2
+'  nhiều rác   -> 'nhiều rác'  len=9
+'aaaaaaaaaaaaa -> 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  len=300
+             5 -> ValidationError: string_type
+         ['a'] -> ValidationError: string_type
+missing -> None
+{"anyOf": [{"maxLength": 300, "type": "string"}, {"type": "null"}], "default": null, "title": "Quote"}
+EXIT=0
+

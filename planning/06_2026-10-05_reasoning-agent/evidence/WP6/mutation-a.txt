@@ -1,0 +1,36 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_ test_a20_the_model_is_never_called_while_the_engine_lock_or_a_transaction_is_held _
+
+    def test_a20_the_model_is_never_called_while_the_engine_lock_or_a_transaction_is_held():
+        seen = {}
+    
+        # receive, add_resident_info, bptn_resolve(location=...)
+        engine, _, probe = _probed(mirror())
+        ticket_id = report(engine, "Đèn không sáng")
+        seen["receive"] = len(probe.observations)
+        engine.add_resident_info(ticket_id, RESIDENT, "à mà nó còn nhấp nháy nữa")
+        seen["add_resident_info"] = len(probe.observations)
+        engine.bptn_resolve(
+            ticket_id,
+            BPTN,
+            location="hành lang tầng 3 tòa S1",
+            info="Đèn ở hành lang tầng 3 tòa S1",
+            note="Cư dân báo qua điện thoại",
+        )
+        seen["bptn_resolve"] = len(probe.observations)
+        assert engine.get(ticket_id).ticket.status == "ROUTED"
+        assert seen["receive"] >= 1 and seen["add_resident_info"] > seen["receive"]
+        assert seen["bptn_resolve"] > seen["add_resident_info"]
+>       assert set(probe.observations) == {(False, 0)}
+E       assert {(False, 0), (True, 0)} == {(False, 0)}
+E         
+E         Extra items in the left set:
+E         (True, 0)
+E         Use -v to get more diff
+
+tests\test_maintenance\test_agent_engine.py:186: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_agent_engine.py::test_a20_the_model_is_never_called_while_the_engine_lock_or_a_transaction_is_held
+1 failed, 18 deselected in 0.68s
+EXIT=1

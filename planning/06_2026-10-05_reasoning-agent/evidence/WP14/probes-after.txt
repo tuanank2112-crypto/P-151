@@ -1,0 +1,48 @@
+Running extra_addition_not_assessed.py
+SIM-TKT-0001 [NEED_INFO/MISSING_INFO] + 'C├│ m├╣i gas nß╗ông nß║╖c, sß╗ú qu├í' -> VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY note='Bß║¡c 1: S-10 ┬╖ Thiß║┐u: location_building, location_floor'
+SIM-TKT-0002 [NEED_INFO/MISSING_INFO] + 'C├│ kh├│i bß╗æc ra tß╗½ hß╗Öp ─æiß╗çn' -> VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY note='Bß║¡c 1: S-04 ┬╖ Thiß║┐u: location_building, location_floor'
+SIM-TKT-0003 [NEED_INFO/MISSING_INFO] + 'Hß╗Öp ─æ├¿n ─æang ch├íy, c├│ lß╗¡a!' -> VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY note='Bß║¡c 1: S-05 ┬╖ Thiß║┐u: location_building, location_floor'
+SIM-TKT-0004 [NEED_INFO/MISSING_INFO] + 'C├│ ng╞░ß╗¥i bß╗ï ─æiß╗çn giß║¡t ngß║Ñt ß╗ƒ ─æ├óy' -> VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY note='Bß║¡c 1: S-06, S-09 ┬╖ Thiß║┐u: location_building, location_floor'
+SIM-TKT-0005 [NEED_INFO/MISSING_INFO] + 'ß╗₧ tß║ºng 3, c├│ m├╣i kh├⌐t v├á tia lß╗¡a' -> VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY note='Bß║¡c 1: S-01, S-02 ┬╖ Thiß║┐u: location_building'
+SIM-TKT-0006 [NEED_INFO/MISSING_INFO] + 'C├│ kim ti├¬m vß╗⌐t bß╗½a ß╗ƒ ─æ├│' -> VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY note='Bß║¡c 1: S-13 ┬╖ Thiß║┐u: location_building, location_floor'
+SIM-TKT-0007 [VERIFYING/SAFETY_REVIEW_REQUIRED risk=UNCLEAR] T06 -> + 'Giß╗¥ c├│ lß╗¡a bß╗æc l├¬n rß╗ôi!' -> VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY
+RESULT root=. cases=7 tier1_addition_left_unassessed=0 t06_answer_not_emergency=0
+EXIT=0
+Running extra_invented_location.py
+SIM-TKT-0001 '─É├¿n h├ánh lang kh├┤ng s├íng' agent_location=None -> NEED_INFO/MISSING_INFO dept=None asset=None disagreements=[('location', 'MINOR'), ('next_step', 'MINOR')]
+    rules-only engine: NEED_INFO/MISSING_INFO
+SIM-TKT-0002 '─É├¿n kh├┤ng s├íng, tß╗æi qu├í' agent_location=None -> NEED_INFO/MISSING_INFO dept=None asset=None disagreements=[('category', 'SERIOUS'), ('location', 'MINOR'), ('next_step', 'MINOR')]
+    rules-only engine: NEED_INFO/MISSING_INFO
+SIM-TKT-0003 'H├ánh lang nhiß╗üu r├íc' agent_location=T├▓a S2 / Tß║ºng 2 / H├ánh lang -> ROUTED/None dept=DEPT_CLEANING asset=None disagreements=[('location', 'MINOR')]
+    rules-only engine: NEED_INFO/MISSING_INFO
+SIM-TKT-0004 'Nhiß╗üu r├íc, ─æ├¿n c┼⌐ng kh├┤ng s├íng' agent_location=None -> NEED_INFO/MISSING_INFO dept=None asset=None disagreements=[('category', 'SERIOUS'), ('location', 'MINOR'), ('next_step', 'MINOR')]
+    rules-only engine: NEED_INFO/MISSING_INFO
+RESULT reports=4 tickets_routed_to_invented_place=1
+EXIT=1
+Running extra_permissions.py
+bql_merge                       allowed=['BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=403 TEC=403 WAREHOUSE=403 BQL=OK* AGENT=403 SYSTEM=403 UNKNOWN=403
+undo_merge(ordinary)            allowed=['BPTN', 'BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=OK* CLN=403 TEC=403 WAREHOUSE=403 BQL=OK* AGENT=403 SYSTEM=InvalidTransitionError UNKNOWN=403
+undo_merge(emergency)           allowed=['BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=403 TEC=403 WAREHOUSE=403 BQL=OK* AGENT=403 SYSTEM=InvalidTransitionError UNKNOWN=403
+undo_split                      allowed=['BPTN', 'BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=OK* CLN=403 TEC=403 WAREHOUSE=403 BQL=OK* AGENT=403 SYSTEM=403 UNKNOWN=403
+report_wrong_department         allowed=['CLN']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=OK* TEC=403 WAREHOUSE=403 BQL=403 AGENT=403 SYSTEM=403 UNKNOWN=403
+bql_wrong_department(KEEP)      allowed=['BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=403 TEC=403 WAREHOUSE=403 BQL=OK* AGENT=403 SYSTEM=403 UNKNOWN=403
+bql_wrong_department(TO_BPTN)   allowed=['BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=403 TEC=403 WAREHOUSE=403 BQL=OK* AGENT=403 SYSTEM=403 UNKNOWN=403
+create_follow_up                allowed=['BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=403 TEC=403 WAREHOUSE=403 BQL=OK AGENT=403 SYSTEM=403 UNKNOWN=403
+return_wrong_department         allowed=['CLN']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=OK* TEC=403 WAREHOUSE=403 BQL=403 AGENT=403 SYSTEM=403 UNKNOWN=403
+refused although allowed: []
+  REFUSED-NOT-403 (case, actor, outcome, ACTION_DENIED rows added) ('undo_merge(ordinary)', 'SYSTEM', 'InvalidTransitionError', 0)
+  REFUSED-NOT-403 (case, actor, outcome, ACTION_DENIED rows added) ('undo_merge(emergency)', 'SYSTEM', 'InvalidTransitionError', 0)
+RESULT cases=9 actors=10 accepted_forbidden=0 refused_allowed=0 refused_not_403=2
+EXIT=0
+Running extra_context_lowers.py
+RESULT root=. pairs=32 combined_lower_than_addition_alone=0
+EXIT=0

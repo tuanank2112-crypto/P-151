@@ -1,0 +1,86 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: D:\P151
+plugins: anyio-4.15.1, langsmith-0.14.4, asyncio-1.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py F                   [100%]
+
+================================== FAILURES ===================================
+_______________________ test_f10_wrong_role_raises_403 ________________________
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001E147281990>
+
+    def test_f10_wrong_role_raises_403(engine: MaintenanceEngine):
+        resident_id = DEFAULT_RESIDENT_ID
+        case = engine.receive("Test ticket", resident_id=resident_id)
+        t_id = case.ticket.ticket_id
+    
+        with engine.repo.transaction() as tx:
+            tx.expected[t_id] = engine.repo._versions[t_id]
+            case = engine.get(t_id)
+            case.ticket = case.ticket.model_copy(update={"status": TicketStatus.ROUTED, "blocker": None, "department_id": "DEPT_TECHNICAL", "category": ServiceCategory.KY_THUAT})
+            tx.save(case)
+    
+        with pytest.raises(ActionDeniedError) as exc:
+>           engine.transition(t_id, TicketStatus.VERIFYING, "SIM-ACTOR-BQL-01", expected_from=TicketStatus.ROUTED)
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\maintenance\engine.py:1703: in transition
+    return self._transition(ticket_id, to, actor_id, note, eta, cancel_reason, expected_from)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.maintenance.engine.MaintenanceEngine object at 0x000001E147281990>
+ticket_id = 'SIM-TKT-0001', to = <TicketStatus.VERIFYING: 'VERIFYING'>
+actor_id = 'SIM-ACTOR-BQL-01', note = None, eta = None, cancel_reason = None
+expected_from = <TicketStatus.ROUTED: 'ROUTED'>
+
+    def _transition(
+        self,
+        ticket_id: str,
+        to: TicketStatus,
+        actor_id: str,
+        note: str | None,
+        eta: datetime | None,
+        cancel_reason: str | None,
+        expected_from: TicketStatus | None,
+    ) -> Case:
+        case = self.get(ticket_id)
+        now = self.clock()
+        role = self._role(actor_id)
+        scope_error = self._scope_error(case, actor_id, role)
+        if scope_error:  # plan 04 A1: before the 409 below, which names the current status
+            self._deny(case, actor_id, role, Action.TRANSITION, "status", to, note, now, message=scope_error)
+        current = case.ticket.status
+        reachable = {
+            actor
+            for (_, target), rule in TRANSITIONS.items()
+            if target == to and not rule.pipeline_only
+            for actor in rule.actors
+        }
+        if role is None or role not in reachable:
+            self._deny(
+                case,
+                actor_id,
+                role,
+                Action.TRANSITION,
+                "status",
+                to,
+                note,
+                now,
+                message=f"{role or 'actor kh├┤ng x├íc ─æß╗ïnh'} kh├┤ng ─æ╞░ß╗úc chuyß╗ân sang {to}",
+            )
+        rule = TRANSITIONS.get((current, to))
+        if rule is None or rule.pipeline_only or role not in rule.actors or expected_from not in (None, current):
+>           raise InvalidTransitionError(
+                f"Kh├┤ng chuyß╗ân ─æ╞░ß╗úc {current} ΓåÆ {to}", {"from": current, "to": to, "actor_role": role}
+            )
+E           src.maintenance.errors.InvalidTransitionError: Kh├┤ng chuyß╗ân ─æ╞░ß╗úc ROUTED ΓåÆ VERIFYING
+
+src\maintenance\engine.py:1742: InvalidTransitionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f10_wrong_role_raises_403
+============================== 1 failed in 0.61s ==============================

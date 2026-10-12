@@ -1,0 +1,74 @@
+R3 — broken file: src/maintenance/engine.py
+sha256 before: b6f2f9857d0520bea69fae97f8c1995793bc6eef5f49ff8c753fc5b4719ac215
+sha256 after restore: b6f2f9857d0520bea69fae97f8c1995793bc6eef5f49ff8c753fc5b4719ac215
+restored: True
+
+--- diff applied ---
+--- a/src/maintenance/engine.py
++++ b/src/maintenance/engine.py
+@@ -370,9 +370,6 @@
+         """Ingest the fixture tickets, each at its own created_at, and run the Agent on each."""
+         with self.lock:
+             present = self.repo.stock()
+-            for item_code, qty in initial_stock(self.catalog).items():
+-                if item_code not in present:  # a new database starts with an empty stock table; never overwrite
+-                    self.repo.set_stock(item_code, qty)
+             for fixture in self.dataset.tickets:
+                 planned = list(fixture.materials) if fixture.materials is not None else None
+                 with self.at(_created_at(fixture.raw) or self.clock()):
+
+--- command ---
+MO_TEST_DATABASE_URL=<local p151_test> python -m pytest -q -p no:cacheprovider --pg tests/test_maintenance/test_store_memory.py::test_t09_seed_only_when_empty_and_tops_up_stock
+exit=1
+
+--- pytest output (last 60 lines) ---
+FF                                                                       [100%]
+================================== FAILURES ===================================
+___________ test_t09_seed_only_when_empty_and_tops_up_stock[memory] ___________
+
+empty_repo = <src.maintenance.store.memory.InMemoryRepository object at 0x000001BD6E8E9890>
+
+    def test_t09_seed_only_when_empty_and_tops_up_stock(empty_repo):
+        catalog = load_catalog()
+        engine = MaintenanceEngine(repo=empty_repo)
+        assert seed_if_empty(engine) is True
+        assert empty_repo.count() == 12
+>       assert empty_repo.stock() == initial_stock(catalog)
+E       AssertionError: assert {} == {'SIM-MAT-CLE...02': 0.0, ...}
+E         
+E         Right contains 5 more items:
+E         {'SIM-MAT-BAG-01': 20.0,
+E          'SIM-MAT-CLEAN-01': 10.0,
+E          'SIM-MAT-LAMP-01': 5.0,
+E          'SIM-MAT-LAMP-02': 0.0,
+E          'SIM-MAT-STARTER-01': None}
+E         Use -v to get more diff
+
+tests\test_maintenance\test_store_memory.py:181: AssertionError
+__________ test_t09_seed_only_when_empty_and_tops_up_stock[postgres] __________
+
+empty_repo = <src.maintenance.store.postgres.PostgresRepository object at 0x000001BD6E912B50>
+
+    def test_t09_seed_only_when_empty_and_tops_up_stock(empty_repo):
+        catalog = load_catalog()
+        engine = MaintenanceEngine(repo=empty_repo)
+        assert seed_if_empty(engine) is True
+        assert empty_repo.count() == 12
+>       assert empty_repo.stock() == initial_stock(catalog)
+E       AssertionError: assert {} == {'SIM-MAT-CLE...02': 0.0, ...}
+E         
+E         Right contains 5 more items:
+E         {'SIM-MAT-BAG-01': 20.0,
+E          'SIM-MAT-CLEAN-01': 10.0,
+E          'SIM-MAT-LAMP-01': 5.0,
+E          'SIM-MAT-LAMP-02': 0.0,
+E          'SIM-MAT-STARTER-01': None}
+E         Use -v to get more diff
+
+tests\test_maintenance\test_store_memory.py:181: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+alembic -> host=localhost db=p151_test user=p151
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_store_memory.py::test_t09_seed_only_when_empty_and_tops_up_stock[memory]
+FAILED tests/test_maintenance/test_store_memory.py::test_t09_seed_only_when_empty_and_tops_up_stock[postgres]
+2 failed in 0.52s

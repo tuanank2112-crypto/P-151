@@ -1,0 +1,46 @@
+$ python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/extra_addition_not_assessed.py
+SIM-TKT-0001 [NEED_INFO/MISSING_INFO] + 'Có mùi gas nồng nặc, sợ quá' -> VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY note='Bậc 1: S-10 · Thiếu: location_building, location_floor'
+SIM-TKT-0002 [NEED_INFO/MISSING_INFO] + 'Có khói bốc ra từ hộp điện' -> VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY note='Bậc 1: S-04 · Thiếu: location_building, location_floor'
+SIM-TKT-0003 [NEED_INFO/MISSING_INFO] + 'Hộp đèn đang cháy, có lửa!' -> VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY note='Bậc 1: S-05 · Thiếu: location_building, location_floor'
+SIM-TKT-0004 [NEED_INFO/MISSING_INFO] + 'Có người bị điện giật ngất ở đây' -> VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY note='Bậc 1: S-06, S-09 · Thiếu: location_building, location_floor'
+SIM-TKT-0005 [NEED_INFO/MISSING_INFO] + 'Ở tầng 3, có mùi khét và tia lửa' -> VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY note='Bậc 1: S-01, S-02 · Thiếu: location_building'
+SIM-TKT-0006 [NEED_INFO/MISSING_INFO] + 'Có kim tiêm vứt bừa ở đó' -> VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY note='Bậc 1: S-13 · Thiếu: location_building, location_floor'
+SIM-TKT-0007 [VERIFYING/SAFETY_REVIEW_REQUIRED risk=UNCLEAR] T06 -> + 'Giờ có lửa bốc lên rồi!' -> VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY
+RESULT root=. cases=7 tier1_addition_left_unassessed=0 t06_answer_not_emergency=0
+EXIT=0
+$ python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/extra_invented_location.py
+SIM-TKT-0001 'Đèn hành lang không sáng' agent_location=None -> NEED_INFO/MISSING_INFO dept=None asset=None disagreements=[('location', 'MINOR'), ('next_step', 'MINOR')]
+    rules-only engine: NEED_INFO/MISSING_INFO
+SIM-TKT-0002 'Đèn không sáng, tối quá' agent_location=None -> NEED_INFO/MISSING_INFO dept=None asset=None disagreements=[('category', 'SERIOUS'), ('location', 'MINOR'), ('next_step', 'MINOR')]
+    rules-only engine: NEED_INFO/MISSING_INFO
+SIM-TKT-0003 'Hành lang nhiều rác' agent_location=Tòa S2 / Tầng 2 / Hành lang -> ROUTED/None dept=DEPT_CLEANING asset=None disagreements=[('location', 'MINOR')]
+    rules-only engine: NEED_INFO/MISSING_INFO
+SIM-TKT-0004 'Nhiều rác, đèn cũng không sáng' agent_location=None -> NEED_INFO/MISSING_INFO dept=None asset=None disagreements=[('category', 'SERIOUS'), ('location', 'MINOR'), ('next_step', 'MINOR')]
+    rules-only engine: NEED_INFO/MISSING_INFO
+RESULT reports=4 tickets_routed_to_invented_place=1
+EXIT=1
+$ python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/extra_permissions.py
+report_wrong_department         allowed=['CLN']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=OK* TEC=403 WAREHOUSE=403 BQL=403 AGENT=403 SYSTEM=403 UNKNOWN=403
+bql_wrong_department(KEEP)      allowed=['BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=403 TEC=403 WAREHOUSE=403 BQL=OK* AGENT=403 SYSTEM=403 UNKNOWN=403
+bql_wrong_department(TO_BPTN)   allowed=['BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=403 TEC=403 WAREHOUSE=403 BQL=OK* AGENT=403 SYSTEM=403 UNKNOWN=403
+create_follow_up                allowed=['BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=403 TEC=403 WAREHOUSE=403 BQL=OK AGENT=403 SYSTEM=403 UNKNOWN=403
+return_wrong_department         allowed=['CLN']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=OK* TEC=403 WAREHOUSE=403 BQL=403 AGENT=403 SYSTEM=403 UNKNOWN=403
+refused although allowed: []
+RESULT cases=9 actors=10 accepted_forbidden=0 refused_allowed=0 refused_not_403=0
+EXIT=0
+$ python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/extra_context_lowers.py
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang không sáng' + 'Khói rất nhiều ở hành lang tầng 9' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang tầng 3 tòa S1 không sáng' + 'Khói rất nhiều ở hành lang tầng 9' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang không sáng' + 'khoi rat nhieu o tang ham' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang tầng 3 tòa S1 không sáng' + 'khoi rat nhieu o tang ham' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang không sáng' + 'Hành lang tầng 9 khói rất nhiều, mọi người chạy hết xuống' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang tầng 3 tòa S1 không sáng' + 'Hành lang tầng 9 khói rất nhiều, mọi người chạy hết xuống' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang không sáng' + 'khoi nhieu o hanh lang tang 4' :: [('T2-03', 'PRESENT', 'B-03')]
+LOWER: alone=EMERGENCY combined=UNCLEAR :: 'Đèn hành lang tầng 3 tòa S1 không sáng' + 'khoi nhieu o hanh lang tang 4' :: [('T2-03', 'PRESENT', 'B-03')]
+RESULT root=. pairs=32 combined_lower_than_addition_alone=8
+EXIT=1

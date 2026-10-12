@@ -1,0 +1,2 @@
+2026-10-04T11:57:23+07:00 python harness.py t2escalate exit=0
+checks_total=10 ok=10 mismatch=0

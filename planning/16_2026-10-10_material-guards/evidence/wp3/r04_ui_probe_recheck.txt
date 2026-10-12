@@ -1,0 +1,33 @@
+captured_at=2026-10-10T18:07:24+07:00
+# R04 F3/F4 re-measured with the auditor's own UI probe on the rebuilt image (fresh memory container)
+$ node evidence/wp4/ui_probe.mjs http://127.0.0.1:8017 C:/P-151/portal <scratch>/ui_probe_recheck
+HELD   web U1 no Agent prefill :: agent_lines=SIM-MAT-LAMP-01:1/null/null form_rows=[":1"] forbidden_words=[]
+HELD   web U8 technical empty blocked client-side :: posts=0
+HELD   web U11 qty 0.5 blocked client-side :: posts=0 rows=["SIM-MAT-LAMP-01:0.5"]
+HELD   web U12 tampered foreign option refused by server :: posts=1 body={"lines":[{"item_code":"SIM-MAT-CLEAN-01","used_qty":1}]} lines=SIM-MAT-LAMP-01:1/null/null
+HELD   web U3 shortage 409 keeps input :: posts=2 rows=["SIM-MAT-LAMP-02:1"] lines=SIM-MAT-LAMP-01:1/null/null
+HELD   web U3b input still kept 32 s after the error :: rows_after_32s=["SIM-MAT-LAMP-02:1"]
+HELD   web U5 network failure: no saved, no retry :: posts=3 rows=["SIM-MAT-LAMP-01:4"] stock=8
+       web U4 posts while the first was in flight=1
+HELD   web U4 dblclick+click+Enter during slow save = 1 POST :: posts_after=1 bodies=["{\"lines\":[{\"item_code\":\"SIM-MAT-LAMP-01\",\"used_qty\":4}]}"] saved_before_200=false stock=8->4 lines=SIM-MAT-LAMP-01:4/4/4
+HELD   web U10 reopen shows saved rows; re-save = 1 POST, stock same :: rows=["SIM-MAT-LAMP-01:4"] posts=5 stock=4->4
+HELD   web U6 offline: 0 POST :: posts_added=0
+HELD   web U13 no JS error, no horizontal overflow :: pageerrors=[] overflow_px=0
+HELD   web U9 cleaning none = 1 POST lines [] :: posts=[{"path":"/material-usage","body":"{\"lines\":[]}"}] mode=N_A
+HELD   web U7 no mapping from server: save disabled, 0 POST, no options :: disabled=true posts=0 options=[]
+HELD   app U1 no Agent prefill :: agent_lines=SIM-MAT-LAMP-01:1/null/null form_rows=[":1"] forbidden_words=[]
+HELD   app U8 technical empty blocked client-side :: posts=0
+HELD   app U11 qty 0.5 blocked client-side :: posts=0 rows=["SIM-MAT-LAMP-01:0.5"]
+HELD   app U12 tampered foreign option refused by server :: posts=1 body={"lines":[{"item_code":"SIM-MAT-CLEAN-01","used_qty":1}]} lines=SIM-MAT-LAMP-01:1/null/null
+HELD   app U3 shortage 409 keeps input :: posts=2 rows=["SIM-MAT-LAMP-02:1"] lines=SIM-MAT-LAMP-01:1/null/null
+HELD   app U3b input still kept 32 s after the error :: rows_after_32s=["SIM-MAT-LAMP-02:1"]
+HELD   app U5 network failure: no saved, no retry :: posts=3 rows=["SIM-MAT-LAMP-01:4"] stock=8
+       app U4 posts while the first was in flight=1
+HELD   app U4 dblclick+click+Enter during slow save = 1 POST :: posts_after=1 bodies=["{\"lines\":[{\"item_code\":\"SIM-MAT-LAMP-01\",\"used_qty\":4}]}"] saved_before_200=false stock=8->4 lines=SIM-MAT-LAMP-01:4/4/4
+HELD   app U10 reopen shows saved rows; re-save = 1 POST, stock same :: rows=["SIM-MAT-LAMP-01:4"] posts=5 stock=4->4
+HELD   app U6 offline: 0 POST :: posts_added=0
+HELD   app U13 no JS error, no horizontal overflow :: pageerrors=[] overflow_px=0
+HELD   app U9 cleaning none = 1 POST lines [] :: posts=[{"path":"/material-usage","body":"{\"lines\":[]}"}] mode=N_A
+HELD   app U7 no mapping from server: save disabled, 0 POST, no options :: disabled=true posts=0 options=[]
+SUMMARY run=wp4-aib89 broken=0
+exit=0

@@ -1,0 +1,27 @@
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/extra_permissions.py
+bql_merge                       allowed=['BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=403 TEC=403 WAREHOUSE=403 BQL=OK* AGENT=403 SYSTEM=403 UNKNOWN=403
+undo_merge(ordinary)            allowed=['BPTN', 'BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=OK* CLN=403 TEC=403 WAREHOUSE=403 BQL=OK* AGENT=403 SYSTEM=InvalidTransitionError UNKNOWN=403
+undo_merge(emergency)           allowed=['BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=403 TEC=403 WAREHOUSE=403 BQL=OK* AGENT=403 SYSTEM=InvalidTransitionError UNKNOWN=403
+undo_split                      allowed=['BPTN', 'BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=OK* CLN=403 TEC=403 WAREHOUSE=403 BQL=OK* AGENT=403 SYSTEM=403 UNKNOWN=403
+report_wrong_department         allowed=['CLN']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=OK* TEC=403 WAREHOUSE=403 BQL=InvalidTransitionError AGENT=403 SYSTEM=403 UNKNOWN=403
+bql_wrong_department(KEEP)      allowed=['BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=InvalidTransitionError TEC=403 WAREHOUSE=403 BQL=OK* AGENT=403 SYSTEM=403 UNKNOWN=403
+bql_wrong_department(TO_BPTN)   allowed=['BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=403 TEC=403 WAREHOUSE=403 BQL=OK* AGENT=403 SYSTEM=403 UNKNOWN=403
+create_follow_up                allowed=['BQL']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=403 TEC=403 WAREHOUSE=403 BQL=OK AGENT=403 SYSTEM=403 UNKNOWN=403
+return_wrong_department         allowed=['CLN']
+     RESIDENT=403 OTHER_RESIDENT=403 BPTN=403 CLN=OK* TEC=403 WAREHOUSE=403 BQL=InvalidTransitionError AGENT=403 SYSTEM=403 UNKNOWN=403
+refused although allowed: []
+  REFUSED-NOT-403 (case, actor, outcome, ACTION_DENIED rows added) ('undo_merge(ordinary)', 'SYSTEM', 'InvalidTransitionError', 0)
+  REFUSED-NOT-403 (case, actor, outcome, ACTION_DENIED rows added) ('undo_merge(emergency)', 'SYSTEM', 'InvalidTransitionError', 0)
+  REFUSED-NOT-403 (case, actor, outcome, ACTION_DENIED rows added) ('report_wrong_department', 'BQL', 'InvalidTransitionError', 0)
+  REFUSED-NOT-403 (case, actor, outcome, ACTION_DENIED rows added) ('bql_wrong_department(KEEP)', 'CLN', 'InvalidTransitionError', 0)
+  REFUSED-NOT-403 (case, actor, outcome, ACTION_DENIED rows added) ('return_wrong_department', 'BQL', 'InvalidTransitionError', 0)
+RESULT cases=9 actors=10 accepted_forbidden=0 refused_allowed=0 refused_not_403=5
+EXIT=0

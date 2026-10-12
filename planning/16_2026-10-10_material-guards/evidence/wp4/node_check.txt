@@ -1,0 +1,4 @@
+captured_at=2026-10-10T17:56:39+07:00
+$ sh -c n=0; for f in src/mobile/js/bptn.js src/mobile/js/bql.js src/mobile/js/dept.js src/mobile/js/kho.js src/mobile/js/main.js src/mobile/js/photo.js src/mobile/js/resident.js src/mobile/js/staff.js src/mobile/sw.js src/web/app.js; do node --check $f || exit 1; n=$((n+1)); done; echo checked=$n
+checked=10
+exit=0

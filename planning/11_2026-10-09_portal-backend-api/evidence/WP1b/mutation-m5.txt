@@ -1,0 +1,20 @@
+mutation m5: Agent fallback and rules also escalate to BQL
+3640c3640
+<         if by_agent:
+---
+>         if True:
+>       assert case.ticket.blocker.escalated is False
+E       AssertionError: assert True is False
+E        +  where True = Blocker(code=<ReasonCode.OUT_OF_SCOPE: 'OUT_OF_SCOPE'>, owner_role=<BlockerOwner.BPTN: 'BPTN'>, since=datetime.datetim...ông khớp playbook nào trong v1.1; thiếu vị trí, không hỏi', related_ticket_id=None, resolved_at=None, resolved_by=None).escalated
+E        +    where Blocker(code=<ReasonCode.OUT_OF_SCOPE: 'OUT_OF_SCOPE'>, owner_role=<BlockerOwner.BPTN: 'BPTN'>, since=datetime.datetim...ông khớp playbook nào trong v1.1; thiếu vị trí, không hỏi', related_ticket_id=None, resolved_at=None, resolved_by=None) = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).blocker
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_portal_backend_ext2.py:210: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s1_agent_fallback_keeps_the_ticket_with_bptn[timeout]
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s1_agent_fallback_keeps_the_ticket_with_bptn[http]
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s1_agent_fallback_keeps_the_ticket_with_bptn[garbage]
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s1_agent_fallback_keeps_the_ticket_with_bptn[schema]
+FAILED tests/test_maintenance/test_portal_backend_ext2.py::test_s1_fixed_rules_keep_the_ticket_with_bptn
+5 failed, 46 passed, 5 deselected in 6.42s
+EXIT=1

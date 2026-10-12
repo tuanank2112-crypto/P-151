@@ -1,0 +1,22 @@
+$ python live_restart.py  (uvicorn x3, MO_STORE=postgres -> local docker p151_test, MO_PHOTO_STORE=local)
+db cleaned: p151_test (local docker)
+check=process1_started result=PASS detail=
+check=seeded_on_empty result=PASS detail=tickets=12
+check=ticket_created result=PASS detail=SIM-TKT-0001
+check=photo_uploaded result=PASS detail=SIM-EVD-0001-01
+check=reset_gated result=PASS detail=403
+check=evaluate_gated result=PASS detail=403
+check=process2_started result=PASS detail=
+check=no_reset_on_restart result=PASS detail=tickets=13
+check=photo_same_after_restart result=PASS detail=status=200
+check=run_number_untouched result=PASS detail=run_number=0
+check=ledger_has_rows result=PASS detail=audit_log rows for SIM-TKT-0001=9
+check=bad_revision_exit3 result=PASS detail=exit=3
+check=bad_revision_message result=PASS detail=
+check=no_password_in_logs result=PASS detail=
+--- process 3 log (last 3 lines) ---
+
+ERROR:    Application startup failed. Exiting.
+Starting AI20K Agent in development mode (LLM_MODE=mock, MO_STORE=postgres, MO_PHOTO_STORE=local)
+live_restart=PASS
+exit=0

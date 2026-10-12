@@ -1,0 +1,66 @@
+$ grep -rn -E "\.quote\b|quote\)" src --include=*.py
+src/maintenance/agent/baseline.py:183:        SchemaSignal(signal_id=s.signal_id, status=s.status.value, quote=s.source_quote)
+src/maintenance/agent/schema.py:29:AuditQuote = Annotated[Annotated[str, StringConstraints(max_length=300)] | None, BeforeValidator(_audit_quote)]
+src/maintenance/agent/validate.py:51:        safety.SignalJudgement(signal_id=s.signal_id, status=s.status, quote=s.quote) for s in decision.safety.signals
+src/maintenance/agent/validate.py:77:    """(complete location or None, missing parts, rejected paths). Catalog only (plan 06 Q35): `loc.quote` is not read."""
+src/maintenance/engine.py:3017:                    "quote": j.quote,
+src/maintenance/engine.py:3421:            f"{j.category} ({j.quote})" if j.quote else j.category for j in jobs
+src/maintenance/safety.py:197:    cue_start: int  # position in norm of the first letter of the cue (start of the quote)
+src/maintenance/safety.py:886:        if key not in best or len(hit.quote) > len(best[key].quote):
+src/maintenance/safety.py:892:            source_quote=h.quote,
+src/maintenance/safety.py:960:        quote = (judgement.quote or "").strip()[:300]
+src/maintenance/safety.py:989:        if key not in best or len(signal.source_quote) > len(best[key].source_quote):
+EXIT=0
+
+$ grep -rnw -e grounded -e _grounded -e _fold -e verbatim_in -e verbatim src --include=*.py
+src/maintenance/agent/schema.py:3:Section A of planning/06_2026-10-05_reasoning-agent/specs/REF-agent-contract.py is copied verbatim below (plan 06
+src/maintenance/catalog.py:170:def _fold(text: str) -> str:
+src/maintenance/catalog.py:191:        if form != unicodedata.normalize("NFC", form).lower() or _fold(form) != key:
+src/maintenance/models.py:238:    source_quote: str = Field(min_length=1)  # verbatim, accents kept; S-14 joins two spans with " | "
+src/maintenance/safety.py:57:def _fold(char: str) -> str:
+src/maintenance/safety.py:85:        for c in _fold(char):
+src/maintenance/safety.py:142:    """The verbatim (accented) text that produced norm[start:end]."""
+EXIT=0
+
+$ grep -rn -E "difflib|SequenceMatcher|rapidfuzz|fuzz|levenshtein|jaccard|similarity|embedding" -i src --include=*.py
+EXIT=1
+$ grep -rn -i "quote" src/maintenance/agent/reconcile.py src/maintenance/agent/agent.py src/maintenance/agent/graph.py src/maintenance/agent/inputs.py src/maintenance/agent/client.py src/maintenance/coordination src/maintenance/engine.py src/api src/web --include=*.py
+src/maintenance/engine.py:3017:                    "quote": j.quote,
+src/maintenance/engine.py:3421:            f"{j.category} ({j.quote})" if j.quote else j.category for j in jobs
+EXIT=0
+
+$ sed -n 165,195p src/maintenance/catalog.py
+
+
+PHRASE = re.compile(r"[a-z0-9]+(?: [a-z0-9]+)*")  # a plain phrase: unaccented lower case, single spaces (WP3c, 01 §5.0)
+
+
+def _fold(text: str) -> str:
+    """NFKC, lower case, d-stroke to d, accents stripped: how the safety layer normalises (SPEC-P01 §3.1)."""
+    low = unicodedata.normalize("NFKC", text).lower().replace("đ", "d")
+    return "".join(c for c in unicodedata.normalize("NFD", low) if unicodedata.category(c) != "Mn")
+
+
+def _check_phrases(name: str, values: tuple[str, ...], *, token: bool = False) -> None:
+    for value in values:
+        if not PHRASE.fullmatch(value):
+            raise ValueError(
+                f"{name}: {value!r} phải là cụm thường không dấu (chữ thường, một khoảng trắng, không 're:')"
+            )
+        if token and " " in value:
+            raise ValueError(f"{name}: {value!r} phải là một token (không khoảng trắng)")
+
+
+def _check_accented(name: str, key: str, forms: tuple[str, ...]) -> None:
+    """Every accented form is NFC lower case and folds back to `key` (01 §5.0)."""
+    if not forms:
+        raise ValueError(f"{name}[{key!r}]: danh sách dạng có dấu rỗng")
+    for form in forms:
+        if form != unicodedata.normalize("NFC", form).lower() or _fold(form) != key:
+            raise ValueError(f"{name}[{key!r}]: {form!r} không phải dạng có dấu (NFC, chữ thường) của {key!r}")
+
+
+class SignalDef(Frozen):
+
+$ git diff --quiet b6a1a41 -- src/maintenance/catalog.py src/maintenance/agent/reconcile.py src/maintenance/agent/agent.py src/maintenance/agent/prompt.py src/maintenance/rules.py src/maintenance/models.py seed; echo
+EXIT=0

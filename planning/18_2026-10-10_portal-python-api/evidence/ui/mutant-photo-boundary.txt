@@ -1,0 +1,36 @@
+
+ RUN  v5.0.3 C:/P-151/portal
+
+ ❯ |unit| tests/unit/backend-photo-route.test.ts (5 tests | 1 failed) 39ms
+   ❯ authenticated Python photo BFF (5)
+     × denies resident access to internal scope without proxying 6ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  21:23:07
+   Duration  1.02s (transform 45%, tests 33%, import 18%, worker 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| tests/unit/backend-photo-route.test.ts > authenticated Python photo BFF > denies resident access to internal scope without proxying
+AssertionError: expected 304 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 304
+
+ ❯ tests/unit/backend-photo-route.test.ts:22:82
+     20|   it("denies resident access to internal scope without proxying", asyn…
+     21|     mocks.user.mockResolvedValue({ role: "resident" });
+     22|     expect((await GET(new Request("http://localhost/photo"), context()…
+       |                                                                                  ^
+     23|     expect(mocks.response).not.toHaveBeenCalled();
+     24|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+EXIT=1

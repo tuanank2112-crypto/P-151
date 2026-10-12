@@ -1,0 +1,14 @@
+# Plan 11 SPEC-P04 §3-§4: demo staff a department can assign a ticket to, and the tags a resident can attach to a
+# rating. Copied from portal/src/db/seed.ts (STAFF) and portal/src/lib/constants.ts (GOOD_TAGS, BAD_TAGS).
+# Static data: nothing here is stored in a ticket document.
+staff:
+  - {staff_id: SIM-STAFF-CLN-A, department_id: DEPT_CLEANING, name: "Tổ A", skill: null, area: "Tòa S1.01 – S1.03", capacity: 4}
+  - {staff_id: SIM-STAFF-CLN-B, department_id: DEPT_CLEANING, name: "Tổ B", skill: null, area: "Tòa S2.01 – S2.05", capacity: 4}
+  - {staff_id: SIM-STAFF-CLN-C, department_id: DEPT_CLEANING, name: "Tổ C", skill: null, area: "Sảnh, hầm, cảnh quan", capacity: 3}
+  - {staff_id: SIM-STAFF-TEC-1, department_id: DEPT_TECHNICAL, name: "Kỹ thuật viên 1", skill: "Điện", area: null, capacity: null}
+  - {staff_id: SIM-STAFF-TEC-2, department_id: DEPT_TECHNICAL, name: "Kỹ thuật viên 2", skill: "Cấp thoát nước", area: null, capacity: null}
+  - {staff_id: SIM-STAFF-TEC-3, department_id: DEPT_TECHNICAL, name: "Kỹ thuật viên 3", skill: "Thang máy", area: null, capacity: null}
+  - {staff_id: SIM-STAFF-TEC-4, department_id: DEPT_TECHNICAL, name: "Kỹ thuật viên 4", skill: "Điện", area: null, capacity: null}
+rating_tags:
+  good: ["Xử lý nhanh", "Sạch sẽ, gọn gàng", "Thái độ tốt", "Giải quyết triệt để"]
+  bad: ["Chậm trễ", "Chưa triệt để", "Thái độ chưa tốt", "Không báo trước"]

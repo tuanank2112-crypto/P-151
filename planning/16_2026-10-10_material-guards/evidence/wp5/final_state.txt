@@ -1,0 +1,66 @@
+captured_at=2026-10-10T18:19:47+07:00
+$ git rev-parse HEAD; git diff HEAD | sha256sum
+71315109d845fe69935050b09d4ab4c67efb024a
+24860406a40115ca6a212268e2a5eca43c1cf9264c927909cafb7d1a3bb804e1 *-
+$ git diff --check
+exit=0
+$ handoff/report pairs
+H01_regression -> R01_regression.md exists=yes last=✅ DUYỆT l2=Handoff: H01_regression.md
+H02_backend -> R02_backend.md exists=yes last=✅ DUYỆT l2=Handoff: H02_backend.md
+H03_clients -> R03_clients.md exists=yes last=✅ DUYỆT l2=Handoff: H03_clients.md
+H04_adversarial -> R04_adversarial.md exists=yes last=✅ DUYỆT l2=Handoff: H04_adversarial.md
+H05_docs_release -> R05_docs_release.md exists=yes last=✅ DUYỆT l2=Handoff: H05_docs_release.md
+$ wc -l brain4agent/memory-distill.txt
+77
+$ python -c json.load state.json
+1.10.0 done_local_docker_server_pending
+exit=0
+$ grep version portal/package.json
+  "version": "1.10.0",
+$ git status --porcelain -- . ':!planning/16_2026-10-10_material-guards'
+ M .dockerignore
+ M brain4agent/-known-gotchas.md
+ M brain4agent/changelog.md
+ M brain4agent/index.md
+ M brain4agent/memory-distill.txt
+ M brain4agent/memory/hot/state.json
+ M brain4agent/memory/hot/today.md
+ M brain4agent/roadmap.md
+ M docs/CR-BPTN-03.md
+ M docs/maintenance.md
+ M docs/mobile.md
+ M docs/web.md
+ M planning/11_2026-10-09_mobile-pwa-app/evidence/harness/q41_dept_materials.mjs
+ M planning/11_2026-10-09_mobile-pwa-app/evidence/harness/q42_no_agent_materials.mjs
+ M planning/11_2026-10-09_mobile-pwa-app/plan.md
+ M portal/package-lock.json
+ M portal/package.json
+ M seed/maintenance_cr03/tickets.yaml
+ M seed/maintenance_v1/tickets.yaml
+ M src/api/routers/maintenance.py
+ M src/main.py
+ M src/maintenance/agent/client.py
+ M src/maintenance/engine.py
+ M src/mobile/index.html
+ M src/mobile/js/bptn.js
+ M src/mobile/js/bql.js
+ M src/mobile/js/dept.js
+ M src/mobile/js/kho.js
+ M src/mobile/js/main.js
+ M src/mobile/js/photo.js
+ M src/mobile/js/resident.js
+ M src/mobile/js/staff.js
+ M src/mobile/sw.js
+ M src/web/app.js
+ M src/web/index.html
+ M tests/test_maintenance/test_agent_unit.py
+ M tests/test_maintenance/test_api.py
+ M tests/test_maintenance/test_api_safety.py
+ M tests/test_maintenance/test_engine.py
+?? integration/
+?? planning/15_2026-10-10_material-no-variance/
+?? planning/16_2026-10-10_material-guards/
+?? src/maintenance/material_policy.py
+?? tests/test_maintenance/test_material_guards.py
+?? tests/test_maintenance/test_material_usage.py
+?? tests/test_maintenance/test_material_usage_store.py

@@ -1,0 +1,9 @@
+Static documentation validation
+Links inspected: 34
+Failures: 0
+Negative broken-link control: detected
+Kernel lines: 62
+Exit: 0
+Runtime: BLOCKED (Python/Docker unavailable)
+Visual render: BLOCKED (browser file protocol policy)
+XML parsing: 5/5 PASS (PowerShell XML parser)

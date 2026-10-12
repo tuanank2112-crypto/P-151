@@ -1,0 +1,4 @@
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. C:/Users/lenku/AppData/Local/Temp/claude/d--P151/640e8089-3b43-4a75-9055-cbb167391b76/scratchpad/venv311/Scripts/python.exe -m pytest -q -p no:cacheprovider tests/test_maintenance/test_safety_metamorphic.py   # lexicon 2026-10-05.p1d, base 3e3a3f8
+.................................................................        [100%]
+65 passed in 29.02s
+EXIT=0

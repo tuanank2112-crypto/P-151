@@ -1,0 +1,39 @@
+# red evidence: test_t02_audit_sink_failure_changes_nothing
+# broken file: src/maintenance/store/memory.py
+# injected change:
+- '        yield tx  # an exception propagates from here: the pending changes are dropped (rollback)\n        self._apply(tx)\n'
++ '        try:  # RED: apply even when the block raised\n            yield tx\n        finally:\n            self._apply(tx)\n'
+# command: python -m pytest -q tests/test_maintenance/test_store_memory.py::test_t02_audit_sink_failure_changes_nothing
+# exit code: 1
+
+F                                                                        [100%]
+================================== FAILURES ===================================
+_____________ test_t02_audit_sink_failure_changes_nothing[memory] _____________
+
+repo = <src.maintenance.store.memory.InMemoryRepository object at 0x0000024DB03AD490>
+clock = <tests.test_maintenance.helpers.Clock object at 0x0000024DB0373210>
+
+    def test_t02_audit_sink_failure_changes_nothing(repo, clock):
+        fail = {"on": False}
+    
+        def sink(rows):
+            if fail["on"]:
+                raise RuntimeError("audit store down")
+    
+        engine = MaintenanceEngine(clock=clock, audit_sink=sink, repo=repo)
+        engine.reset(with_fixtures=False)
+        tid = report(engine, CLEANING)
+        before = _snapshot(repo, tid)
+        fail["on"] = True
+        with pytest.raises(AuditWriteError):
+            engine.accept(tid, CLN)
+>       assert _snapshot(repo, tid) == before
+E       AssertionError: assert (3, {'ticket'...}, ...}, 9, 3) == (2, {'ticket'...}, ...}, 8, 3)
+E         
+E         At index 0 diff: 3 != 2
+E         Use -v to get more diff
+
+tests\test_maintenance\test_store_memory.py:61: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_store_memory.py::test_t02_audit_sink_failure_changes_nothing[memory]
+1 failed in 0.16s

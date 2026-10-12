@@ -1,0 +1,11 @@
+# mutation X4: location quote gate moved to another file (agent.py _validate_node, casefold substring)
+# sandbox copy: C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\repo
+sha256 before src\maintenance\agent\agent.py = 5df7ac6ed49d3fed21095babb975d979f8a69966efa148b49cade7dfd17dddb4
+applied in src/maintenance/agent/agent.py: anchor x1
+$ (cwd=sandbox) -m pytest -q -p no:cacheprovider -rf tests/test_maintenance/test_p10_catalog_not_quote.py tests/test_maintenance/test_agent_unit.py tests/test_maintenance/test_p1_audit_fixes_safety.py tests/test_maintenance/test_safety.py tests/test_maintenance/test_agent_engine.py tests/test_maintenance/test_agent_parity.py tests/test_maintenance/test_p1_contracts.py tests/test_maintenance/test_agent_prompt.py
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_01_location_worded_differently_but_in_the_catalog_is_kept
+FAILED tests/test_maintenance/test_agent_unit.py::test_a_09b_location_parts_are_normalised_and_checked
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_p10_an_invented_place_in_the_catalog_is_kept_and_audited
+3 failed, 1643 passed in 74.75s (0:01:14)
+EXIT=1
+sha256 after  src\maintenance\agent\agent.py = 5df7ac6ed49d3fed21095babb975d979f8a69966efa148b49cade7dfd17dddb4 restored=YES

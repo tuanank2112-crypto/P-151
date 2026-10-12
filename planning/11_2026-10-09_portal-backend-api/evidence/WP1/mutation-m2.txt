@@ -1,0 +1,23 @@
+# mutation m2: bql_handle_out_of_scope no longer requires an OUT_OF_SCOPE blocker
+$ git diff -U0 (engine.py vs backup)
+1273c1273
+<             self._require_out_of_scope(work, escalated=None, what="BQL đóng việc ngoài phạm vi")
+---
+>             pass
+$ pytest tests/test_maintenance/test_portal_backend_ext.py -q
+eng = <src.maintenance.engine.MaintenanceEngine object at 0x000001965C7D7F50>
+
+    def test_s2_handled_needs_an_out_of_scope_blocker(eng):  # mutation m2 target
+        routed = routed_ticket(eng)
+        emergency = eng.receive(SMOKE_REPORT, resident_id=RESIDENT).ticket.ticket_id
+        assert eng.get(emergency).ticket.blocker.code == "EMERGENCY_PENDING_BQL"
+        for ticket_id in (routed, emergency):
+            before = eng.get(ticket_id)
+>           with pytest.raises(InvalidTransitionError):
+E           Failed: DID NOT RAISE InvalidTransitionError
+
+tests\test_maintenance\test_portal_backend_ext.py:338: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_portal_backend_ext.py::test_s2_handled_needs_an_out_of_scope_blocker
+1 failed, 52 passed, 5 deselected in 12.76s
+EXIT=1

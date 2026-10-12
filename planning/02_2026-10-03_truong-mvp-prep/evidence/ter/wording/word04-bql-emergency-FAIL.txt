@@ -1,0 +1,64 @@
+WORD-04 BQL Emergency Routes - FAIL - Day03-ter
+Observed: 2026-10-03T12:38:41+07:00
+Worktree: ter (detached 92649a6152737154cca606f3ce94d3f0ec0e0273, branch feature/nhuy-safety-routes PR #10)
+
+== ISSUE ==
+Nút BQL 'Đã xử lý, đóng khẩn cấp' (app.js:1236) hứa đóng ticket khẩn cấp nhưng UI fallback logic sai.
+
+== BQL CLOSE ACTION - FALLBACK CHAIN LỖI ==
+File: src/web/app.js:1236-1241
+
+Nút label: "Đã xử lý, đóng khẩn cấp"
+Help text: "Xác nhận lực lượng chức năng đã dập tắt nguy cơ và xử lý an toàn."
+Fallback chain (line 1239-1241):
+  1. Thử POST /bql/tickets/${id}/emergency/close
+  2. Fail → thử POST /bql/tickets/${id}/emergency-close
+  3. Fail → fallback POST /bql/tickets/${id}/close ← GENERIC ENDPOINT
+
+== GENERIC /CLOSE ENDPOINT - KHÔNG SUPPORT EMERGENCY ==
+File: src/api/routers/maintenance.py:694-696
+
+@bql_router.post("/tickets/{ticket_id}/close", response_model=Case)
+def bql_close(ticket_id: str, body: NoteBody, actor: ActorDep, engine: EngineDep) -> Case:
+    """Nghiệm thu: READY_FOR_REVIEW → CLOSED. Chỉ BQL."""
+    return _call(engine.close, ticket_id, actor, note=body.note)
+
+Docstring rõ: "READY_FOR_REVIEW → CLOSED" ONLY
+Engine method: engine.close() (không phải emergency_close)
+Không set: closure_kind=EMERGENCY_HANDLED
+
+== DEDICATED /EMERGENCY/CLOSE - CÓ SUPPORT ==
+File: src/api/routers/maintenance.py:737-740
+
+@bql_router.post("/tickets/{ticket_id}/emergency/close", response_model=Case)
+def bql_emergency_close(ticket_id: str, body: EmergencyNoteBody, actor: ActorDep, engine: EngineDep) -> Case:
+    """Bậc 1 đã xử lý ngoài hệ thống: VERIFYING + EMERGENCY_PENDING_BQL → CLOSED (EMERGENCY_HANDLED)."""
+    return _call(engine.emergency_close, ticket_id, actor, note=body.note)
+
+Docstring rõ: "EMERGENCY_PENDING_BQL → CLOSED (EMERGENCY_HANDLED)"
+Engine method: engine.emergency_close() (set closure_kind=EMERGENCY_HANDLED)
+
+== DOWNGRADE ACTION - OK ==
+File: src/web/app.js:1246-1252
+
+Nút label: "Báo nhầm, hạ xuống BPTN"
+Fallback chain (line 1250-1252):
+  1. Thử POST /bql/tickets/${id}/emergency/downgrade
+  2. Fail → thử POST /bql/tickets/${id}/emergency-downgrade
+  3. Fail → fallback POST /mo/tickets/${id}/bptn-resolve
+
+Downgrade action OK vì fallback sang bptn-resolve có hợp lý (hạ về BPTN).
+Close action FAIL vì fallback sang generic close không support emergency.
+
+== KẾT LUẬN ==
+WORD-04 close action: FAIL
+- Hứa: "Đã xử lý, đóng khẩn cấp" + "Xác nhận lực lượng chức năng đã dập tắt nguy cơ"
+- Thực: fallback sẽ gọi generic close, không set EMERGENCY_HANDLED
+- Lỗi: Nút UI hứa logic mà code fallback đi hướng khác
+
+WORD-04 downgrade action: PASS
+- Hứa: "Báo nhầm, hạ xuống"
+- Thực: /emergency/downgrade → fallback bptn-resolve (hợp lý)
+
+Issue owner: Trí (UI fallback logic)
+Cần fix: Bỏ fallback sang generic close, hoặc thêm guard để fail fast với thông báo.

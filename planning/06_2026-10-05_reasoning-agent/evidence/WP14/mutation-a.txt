@@ -1,0 +1,37 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: D:\P151
+plugins: anyio-4.15.1, langsmith-0.14.4, asyncio-1.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py F                   [100%]
+
+================================== FAILURES ===================================
+_____________ test_f1_resident_addition_safety_when_missing_info ______________
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001C677B55290>
+
+    def test_f1_resident_addition_safety_when_missing_info(engine: MaintenanceEngine):
+        resident_id = DEFAULT_RESIDENT_ID
+        case = engine.receive("─É├¿n h├ánh lang kh├┤ng s├íng", resident_id=resident_id)
+        t_id = case.ticket.ticket_id
+    
+        assert case.ticket.status == TicketStatus.NEED_INFO
+        assert case.ticket.blocker.code == ReasonCode.MISSING_INFO
+    
+        engine.add_resident_info(t_id, resident_id, "C├│ m├╣i gas nß╗ông nß║╖c")
+    
+        # Tick so the engine tries to process the new info
+        engine.run_jobs(engine.clock())
+        case = engine.get(t_id)
+>       assert case.ticket.risk_level == RiskLevel.EMERGENCY
+E       AssertionError: assert <RiskLevel.NONE: 'NONE'> == <RiskLevel.EM...: 'EMERGENCY'>
+E         
+E         - EMERGENCY
+E         + NONE
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py:25: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f1_resident_addition_safety_when_missing_info
+============================== 1 failed in 0.53s ==============================

@@ -1,0 +1,714 @@
+FFFFFFFF..FFFF.......FFFFFFFFFFFFFF                                      [100%]
+================================== FAILURES ===================================
+__________ test_s01_every_split_sentence_becomes_two_tickets[mirror] __________
+
+mode = 'mirror'
+
+    @pytest.mark.parametrize("mode", MODES)
+    def test_s01_every_split_sentence_becomes_two_tickets(mode):
+        assert len(REF.MUST_SPLIT) >= 30
+        for text in REF.MUST_SPLIT:
+            engine = build(mode)
+            root_id = report(engine, text)
+>           assert_split_family(engine, root_id, text)
+
+tests\test_maintenance\test_p1_split.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_maintenance\test_p1_split.py:80: in assert_split_family
+    root, child = pair(engine, root_id)
+                  ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E1D7310>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...tion='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[0, 1], prompt_version='agent-prompt/1')).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+__________ test_s01_every_split_sentence_becomes_two_tickets[rules] ___________
+
+mode = 'rules'
+
+    @pytest.mark.parametrize("mode", MODES)
+    def test_s01_every_split_sentence_becomes_two_tickets(mode):
+        assert len(REF.MUST_SPLIT) >= 30
+        for text in REF.MUST_SPLIT:
+            engine = build(mode)
+            root_id = report(engine, text)
+>           assert_split_family(engine, root_id, text)
+
+tests\test_maintenance\test_p1_split.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_maintenance\test_p1_split.py:80: in assert_split_family
+    root, child = pair(engine, root_id)
+                  ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E1FA510>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+_ test_s01_the_root_keeps_cleaning_and_the_child_gets_the_lamp_with_its_own_pipeline[mirror] _
+
+mode = 'mirror'
+
+    @pytest.mark.parametrize("mode", MODES)
+    def test_s01_the_root_keeps_cleaning_and_the_child_gets_the_lamp_with_its_own_pipeline(mode):
+        engine = build(mode)
+>       root, child = pair(engine, (rid := report(engine, MIXED)))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E238290>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...tion='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[0, 1], prompt_version='agent-prompt/1')).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+_ test_s01_the_root_keeps_cleaning_and_the_child_gets_the_lamp_with_its_own_pipeline[rules] _
+
+mode = 'rules'
+
+    @pytest.mark.parametrize("mode", MODES)
+    def test_s01_the_root_keeps_cleaning_and_the_child_gets_the_lamp_with_its_own_pipeline(mode):
+        engine = build(mode)
+>       root, child = pair(engine, (rid := report(engine, MIXED)))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E268D10>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+__ test_s01_the_proposals_say_the_split_chose_the_category_not_bptn[mirror] ___
+
+mode = 'mirror'
+
+    @pytest.mark.parametrize("mode", MODES)
+    def test_s01_the_proposals_say_the_split_chose_the_category_not_bptn(mode):
+        """Q23 (3): the wording of the proposal of a split ticket (not "Category do BPTN chọn")."""
+        engine = build(mode)
+>       root, child = pair(engine, report(engine, MIXED))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:125: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E27C250>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...tion='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[0, 1], prompt_version='agent-prompt/1')).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+___ test_s01_the_proposals_say_the_split_chose_the_category_not_bptn[rules] ___
+
+mode = 'rules'
+
+    @pytest.mark.parametrize("mode", MODES)
+    def test_s01_the_proposals_say_the_split_chose_the_category_not_bptn(mode):
+        """Q23 (3): the wording of the proposal of a split ticket (not "Category do BPTN chọn")."""
+        engine = build(mode)
+>       root, child = pair(engine, report(engine, MIXED))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:125: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E2A5190>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+______ test_s01_the_agent_asks_the_model_once_and_the_child_asks_nothing ______
+
+    def test_s01_the_agent_asks_the_model_once_and_the_child_asks_nothing():
+        client = CountingClient(MirrorClient(CATALOG, LEXICON))
+        engine = build("mirror", client=client)
+>       root, child = pair(engine, report(engine, MIXED))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:139: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E2181D0>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...tion='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[0, 1], prompt_version='agent-prompt/1')).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+_________________ test_s01_the_rules_write_no_agent_decision __________________
+
+    def test_s01_the_rules_write_no_agent_decision():
+        engine = build("rules")
+>       root, child = pair(engine, report(engine, MIXED))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:153: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E25F010>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+_ test_s03_a_mixed_report_with_a_tier2_signal_is_not_split_even_after_bptn_cleared_it[mirror] _
+
+mode = 'mirror'
+
+    @pytest.mark.parametrize("mode", MODES)
+    def test_s03_a_mixed_report_with_a_tier2_signal_is_not_split_even_after_bptn_cleared_it(mode):
+        engine = build(mode)
+        root_id = report(engine, TIER2_MIXED)
+        ticket = engine.get(root_id).ticket
+        assert (ticket.status, ticket.blocker.code, ticket.risk_level) == ("VERIFYING", "SAFETY_REVIEW_REQUIRED", "UNCLEAR")
+        engine.safety_confirm_safe(root_id, BPTN, note="Đã gọi cư dân, tiếng xèo xèo là máy lạnh")
+        case = engine.get(root_id)
+>       assert case.ticket.safety_cleared_at is not None and case.ticket.risk_level != RiskLevel.NONE
+E       AssertionError: assert (datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200))) is not None and <RiskLevel.NONE: 'NONE'> != <RiskLevel.NONE: 'NONE'>)
+E        +  where datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200))) = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).safety_cleared_at
+E        +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...location='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[], prompt_version='agent-prompt/1')).ticket
+E        +  and   <RiskLevel.NONE: 'NONE'> = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).risk_level
+E        +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...location='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[], prompt_version='agent-prompt/1')).ticket
+E        +  and   <RiskLevel.NONE: 'NONE'> = RiskLevel.NONE
+
+tests\test_maintenance\test_p1_split.py:185: AssertionError
+_ test_s03_a_mixed_report_with_a_tier2_signal_is_not_split_even_after_bptn_cleared_it[rules] _
+
+mode = 'rules'
+
+    @pytest.mark.parametrize("mode", MODES)
+    def test_s03_a_mixed_report_with_a_tier2_signal_is_not_split_even_after_bptn_cleared_it(mode):
+        engine = build(mode)
+        root_id = report(engine, TIER2_MIXED)
+        ticket = engine.get(root_id).ticket
+        assert (ticket.status, ticket.blocker.code, ticket.risk_level) == ("VERIFYING", "SAFETY_REVIEW_REQUIRED", "UNCLEAR")
+        engine.safety_confirm_safe(root_id, BPTN, note="Đã gọi cư dân, tiếng xèo xèo là máy lạnh")
+        case = engine.get(root_id)
+>       assert case.ticket.safety_cleared_at is not None and case.ticket.risk_level != RiskLevel.NONE
+E       AssertionError: assert (datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200))) is not None and <RiskLevel.NONE: 'NONE'> != <RiskLevel.NONE: 'NONE'>)
+E        +  where datetime.datetime(2026, 9, 28, 9, 0, tzinfo=datetime.timezone(datetime.timedelta(seconds=25200))) = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).safety_cleared_at
+E        +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+E        +  and   <RiskLevel.NONE: 'NONE'> = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).risk_level
+E        +    where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+E        +  and   <RiskLevel.NONE: 'NONE'> = RiskLevel.NONE
+
+tests\test_maintenance\test_p1_split.py:185: AssertionError
+_ test_s04_without_a_full_location_nothing_is_split_and_the_answer_then_splits_with_copies[mirror] _
+
+mode = 'mirror'
+
+    @pytest.mark.parametrize("mode", MODES)
+    def test_s04_without_a_full_location_nothing_is_split_and_the_answer_then_splits_with_copies(mode):
+        engine = build(mode)
+        root_id = report(engine, "Nhiều rác và đèn cũng không sáng")
+        ticket = engine.get(root_id).ticket
+        assert (ticket.status, ticket.blocker.code) == ("NEED_INFO", "MISSING_INFO")
+        assert ticket.split_children == [] and len(engine.repo.list()) == 1
+        engine.add_resident_info(root_id, RESIDENT, "Ở hành lang tầng 3 tòa S1")
+>       root, child = pair(engine, root_id)
+                      ^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:202: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E239210>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...tion='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[0, 1], prompt_version='agent-prompt/1')).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+_ test_s04_without_a_full_location_nothing_is_split_and_the_answer_then_splits_with_copies[rules] _
+
+mode = 'rules'
+
+    @pytest.mark.parametrize("mode", MODES)
+    def test_s04_without_a_full_location_nothing_is_split_and_the_answer_then_splits_with_copies(mode):
+        engine = build(mode)
+        root_id = report(engine, "Nhiều rác và đèn cũng không sáng")
+        ticket = engine.get(root_id).ticket
+        assert (ticket.status, ticket.blocker.code) == ("NEED_INFO", "MISSING_INFO")
+        assert ticket.split_children == [] and len(engine.repo.list()) == 1
+        engine.add_resident_info(root_id, RESIDENT, "Ở hành lang tầng 3 tòa S1")
+>       root, child = pair(engine, root_id)
+                      ^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:202: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E222A10>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+_ test_s07_the_child_checks_duplicates_on_its_own_and_the_root_goes_on[mirror] _
+
+mode = 'mirror'
+
+    @pytest.mark.parametrize("mode", MODES)
+    def test_s07_the_child_checks_duplicates_on_its_own_and_the_root_goes_on(mode):
+        engine = build(mode)
+        first = report(engine, LIGHT)
+        assert engine.get(first).ticket.status == "ROUTED"
+>       root, child = pair(engine, report(engine, MIXED))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:268: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E222D50>
+root_id = 'SIM-TKT-0002'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:00:00+0...tion='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[0, 1], prompt_version='agent-prompt/1')).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+_ test_s07_the_child_checks_duplicates_on_its_own_and_the_root_goes_on[rules] _
+
+mode = 'rules'
+
+    @pytest.mark.parametrize("mode", MODES)
+    def test_s07_the_child_checks_duplicates_on_its_own_and_the_root_goes_on(mode):
+        engine = build(mode)
+        first = report(engine, LIGHT)
+        assert engine.get(first).ticket.status == "ROUTED"
+>       root, child = pair(engine, report(engine, MIXED))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:268: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E165E10>
+root_id = 'SIM-TKT-0002'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0002', raw=RawTicket(ticket_id='SIM-TKT-0002', created_at='2026-09-28T09:00:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+____________ test_s08_a_ticket_already_split_is_never_split_again _____________
+
+    def test_s08_a_ticket_already_split_is_never_split_again():
+        engine = build("rules")
+>       root, child = pair(engine, report(engine, MIXED))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:280: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533C460310>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+_________ test_s08_an_addition_on_a_split_ticket_adds_no_second_split _________
+
+    def test_s08_an_addition_on_a_split_ticket_adds_no_second_split():
+        engine = build("rules")
+        root_id = report(engine, "Nhiều rác và đèn cũng không sáng")
+        engine.add_resident_info(root_id, RESIDENT, "Ở hành lang tầng 3 tòa S1")
+>       root, child = pair(engine, root_id)
+                      ^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:295: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E271F50>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+_ test_s09_undo_split_merges_the_child_into_the_root_without_counting_a_duplicate _
+
+    def test_s09_undo_split_merges_the_child_into_the_root_without_counting_a_duplicate():
+>       engine, root_id, child_id = _split()
+                                    ^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:310: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_maintenance\test_p1_split.py:305: in _split
+    root, child = pair(engine, report(engine, MIXED))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E26B8D0>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...tion='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[0, 1], prompt_version='agent-prompt/1')).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+____ test_s09_undo_split_refuses_what_is_not_a_split_child_or_has_started _____
+
+    def test_s09_undo_split_refuses_what_is_not_a_split_child_or_has_started():
+>       engine, root_id, child_id = _split()
+                                    ^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:325: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_maintenance\test_p1_split.py:305: in _split
+    root, child = pair(engine, report(engine, MIXED))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E14E650>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...tion='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[0, 1], prompt_version='agent-prompt/1')).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+__________ test_s09_undo_split_needs_a_live_root_and_the_right_role ___________
+
+    def test_s09_undo_split_needs_a_live_root_and_the_right_role():
+>       engine, root_id, child_id = _split()
+                                    ^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:338: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_maintenance\test_p1_split.py:305: in _split
+    root, child = pair(engine, report(engine, MIXED))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E334390>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...tion='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[0, 1], prompt_version='agent-prompt/1')).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+_______ test_s09_bptn_is_denied_on_a_child_whose_blocker_belongs_to_bql _______
+
+    def test_s09_bptn_is_denied_on_a_child_whose_blocker_belongs_to_bql():
+>       engine, _, child_id = _split()
+                              ^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:348: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_maintenance\test_p1_split.py:305: in _split
+    root, child = pair(engine, report(engine, MIXED))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E270F50>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...tion='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[0, 1], prompt_version='agent-prompt/1')).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+_______ test_s09_a_merged_split_child_can_be_brought_back_by_undo_merge _______
+
+    def test_s09_a_merged_split_child_can_be_brought_back_by_undo_merge():
+>       engine, root_id, child_id = _split("rules")
+                                    ^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:364: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_maintenance\test_p1_split.py:305: in _split
+    root, child = pair(engine, report(engine, MIXED))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E222CD0>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+_ test_s10_the_agent_splits_where_the_rules_see_one_job_and_the_child_waits_for_a_person _
+
+    def test_s10_the_agent_splits_where_the_rules_see_one_job_and_the_child_waits_for_a_person():
+        text = "Hành lang tầng 3 tòa S1 nhiều rác, tối om không thấy đường"
+        reply = decision(
+            **{"jobs.1.quote": "tối om không thấy đường", "jobs.1.asset_id": None, "jobs.1.materials": [], "jobs.1.priority": "HIGH"}
+        )
+        engine = build("mirror", client=ScriptedClient({"tối om": reply}))
+>       root, child = pair(engine, report(engine, text))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:379: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E2B5150>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...tion='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[0, 1], prompt_version='agent-prompt/1')).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+_ test_s11_a_failure_inserting_the_child_changes_no_ticket_and_leaves_a_gap[memory] _
+
+repo = <src.maintenance.store.memory.InMemoryRepository object at 0x000001533E17C990>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001533E17FB90>
+
+    def test_s11_a_failure_inserting_the_child_changes_no_ticket_and_leaves_a_gap(repo, monkeypatch):
+        engine = MaintenanceEngine(clock=Clock(MONDAY_9AM), repo=repo)
+        engine.reset(with_fixtures=False)
+        number = repo.next_ticket_number()
+        raw = RawTicket(ticket_id=f"SIM-TKT-{number:04d}", created_at=MONDAY_9AM.isoformat(timespec="seconds"), original_description=MIXED)
+        engine.ingest(raw)
+        stored = engine.get(raw.ticket_id)
+        monkeypatch.setattr(repo, "transaction", _failing_inserts(repo, raw.ticket_id))
+>       with pytest.raises(RuntimeError, match="boom"):
+E       Failed: DID NOT RAISE RuntimeError
+
+tests\test_maintenance\test_p1_split.py:433: Failed
+______ test_s11_a_split_survives_a_new_engine_on_the_same_store[memory] _______
+
+repo = <src.maintenance.store.memory.InMemoryRepository object at 0x000001533E15F9D0>
+
+    def test_s11_a_split_survives_a_new_engine_on_the_same_store(repo):
+        engine = MaintenanceEngine(clock=Clock(MONDAY_9AM), repo=repo)
+        engine.reset(with_fixtures=False)
+        root_id = report(engine, MIXED)
+        fresh = MaintenanceEngine(clock=engine.clock, repo=repo)
+>       root, child = pair(fresh, root_id)
+                      ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:451: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E1CB5D0>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+________ test_s12_the_resident_sees_both_tickets_and_the_link[mirror] _________
+
+mode = 'mirror'
+
+    @pytest.mark.parametrize("mode", MODES)
+    def test_s12_the_resident_sees_both_tickets_and_the_link(mode):
+        from src.maintenance.views import resident_view
+    
+        engine = build(mode)
+>       root, child = pair(engine, report(engine, MIXED))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:467: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E1FB750>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...tion='Tòa S1 / Tầng 3 / Hành lang', agent_missing_parts=[], valid_job_indexes=[0, 1], prompt_version='agent-prompt/1')).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+_________ test_s12_the_resident_sees_both_tickets_and_the_link[rules] _________
+
+mode = 'rules'
+
+    @pytest.mark.parametrize("mode", MODES)
+    def test_s12_the_resident_sees_both_tickets_and_the_link(mode):
+        from src.maintenance.views import resident_view
+    
+        engine = build(mode)
+>       root, child = pair(engine, report(engine, MIXED))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_maintenance\test_p1_split.py:467: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = <src.maintenance.engine.MaintenanceEngine object at 0x000001533E38A650>
+root_id = 'SIM-TKT-0001'
+
+    def pair(engine: MaintenanceEngine, root_id: str) -> tuple[Case, Case]:
+        root = engine.get(root_id)
+>       assert len(root.ticket.split_children) == 1, root.ticket.split_children
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+E        +    where [] = Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True).split_children
+E        +      where Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+07:00', origi..._department_return_count=0, follow_up_of=None, split_from=None, split_children=[], split_category=None, synthetic=True) = Case(ticket=Ticket(ticket_id='SIM-TKT-0001', raw=RawTicket(ticket_id='SIM-TKT-0001', created_at='2026-09-28T09:00:00+0...ersion=None, schema_version='1.2', run_id='SIM-RUN-001', synthetic=True)], execution_snapshots=[], agent_decision=None).ticket
+
+tests\test_maintenance\test_p1_split.py:71: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_split.py::test_s01_every_split_sentence_becomes_two_tickets[mirror]
+FAILED tests/test_maintenance/test_p1_split.py::test_s01_every_split_sentence_becomes_two_tickets[rules]
+FAILED tests/test_maintenance/test_p1_split.py::test_s01_the_root_keeps_cleaning_and_the_child_gets_the_lamp_with_its_own_pipeline[mirror]
+FAILED tests/test_maintenance/test_p1_split.py::test_s01_the_root_keeps_cleaning_and_the_child_gets_the_lamp_with_its_own_pipeline[rules]
+FAILED tests/test_maintenance/test_p1_split.py::test_s01_the_proposals_say_the_split_chose_the_category_not_bptn[mirror]
+FAILED tests/test_maintenance/test_p1_split.py::test_s01_the_proposals_say_the_split_chose_the_category_not_bptn[rules]
+FAILED tests/test_maintenance/test_p1_split.py::test_s01_the_agent_asks_the_model_once_and_the_child_asks_nothing
+FAILED tests/test_maintenance/test_p1_split.py::test_s01_the_rules_write_no_agent_decision
+FAILED tests/test_maintenance/test_p1_split.py::test_s03_a_mixed_report_with_a_tier2_signal_is_not_split_even_after_bptn_cleared_it[mirror]
+FAILED tests/test_maintenance/test_p1_split.py::test_s03_a_mixed_report_with_a_tier2_signal_is_not_split_even_after_bptn_cleared_it[rules]
+FAILED tests/test_maintenance/test_p1_split.py::test_s04_without_a_full_location_nothing_is_split_and_the_answer_then_splits_with_copies[mirror]
+FAILED tests/test_maintenance/test_p1_split.py::test_s04_without_a_full_location_nothing_is_split_and_the_answer_then_splits_with_copies[rules]
+FAILED tests/test_maintenance/test_p1_split.py::test_s07_the_child_checks_duplicates_on_its_own_and_the_root_goes_on[mirror]
+FAILED tests/test_maintenance/test_p1_split.py::test_s07_the_child_checks_duplicates_on_its_own_and_the_root_goes_on[rules]
+FAILED tests/test_maintenance/test_p1_split.py::test_s08_a_ticket_already_split_is_never_split_again
+FAILED tests/test_maintenance/test_p1_split.py::test_s08_an_addition_on_a_split_ticket_adds_no_second_split
+FAILED tests/test_maintenance/test_p1_split.py::test_s09_undo_split_merges_the_child_into_the_root_without_counting_a_duplicate
+FAILED tests/test_maintenance/test_p1_split.py::test_s09_undo_split_refuses_what_is_not_a_split_child_or_has_started
+FAILED tests/test_maintenance/test_p1_split.py::test_s09_undo_split_needs_a_live_root_and_the_right_role
+FAILED tests/test_maintenance/test_p1_split.py::test_s09_bptn_is_denied_on_a_child_whose_blocker_belongs_to_bql
+FAILED tests/test_maintenance/test_p1_split.py::test_s09_a_merged_split_child_can_be_brought_back_by_undo_merge
+FAILED tests/test_maintenance/test_p1_split.py::test_s10_the_agent_splits_where_the_rules_see_one_job_and_the_child_waits_for_a_person
+FAILED tests/test_maintenance/test_p1_split.py::test_s11_a_failure_inserting_the_child_changes_no_ticket_and_leaves_a_gap[memory]
+FAILED tests/test_maintenance/test_p1_split.py::test_s11_a_split_survives_a_new_engine_on_the_same_store[memory]
+FAILED tests/test_maintenance/test_p1_split.py::test_s12_the_resident_sees_both_tickets_and_the_link[mirror]
+FAILED tests/test_maintenance/test_p1_split.py::test_s12_the_resident_sees_both_tickets_and_the_link[rules]
+26 failed, 9 passed, 2 deselected in 2.37s
+EXIT=1

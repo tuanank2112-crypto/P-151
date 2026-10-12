@@ -1,0 +1,19 @@
+A3a HELD_OUT shares family w/ DEVELOP                      1 ["ERR FAMILY_LEAK f-d0 spans ['DEVELOP', 'HELD_OUT']"]
+A3b family id differs only case/space                      1 ["ERR FAMILY_LEAK f-d0 spans ['DEVELOP', 'HELD_OUT']"]
+A3c HELD_OUT text identical to DEVELOP text                1 ['ERR BAD_QUOTE D5-C-0006: S-09 [26:45] != quote', 'ERR TEXT_LEAK D5-C-0006 HELD_OUT text ~ DEVELOP D5-C-0001']
+A3d HELD_OUT text = DEVELOP upper-cased                    1 ['ERR BAD_QUOTE D5-C-0006: S-09 [26:45] != quote', 'ERR TEXT_LEAK D5-C-0006 HELD_OUT text ~ DEVELOP D5-C-0001']
+A3e HELD_OUT family F-D4-11-x                              1 ['ERR D4_11_HELD_OUT f-d4-11-x must stay DEVELOP']
+A3f HELD_OUT family f-d4-11 lowercase                      1 ['ERR D4_11_HELD_OUT f-d4-11 must stay DEVELOP']
+A3g HELD_OUT = original D4-11 sentence                     1 ['ERR BAD_QUOTE D5-C-0006: S-09 [26:45] != quote']
+A3h held-out kind lowercase authored                       1 ['ERR BAD_SCHEMA D5-C-0006: source', 'ERR HELDOUT_NOT_AUTHORED D5-C-0006: source.kind=authored']
+A3i held-out AUTHORED w/ model-generated ref               1 ['ERR HELDOUT_NOT_AUTHORED D5-C-0006: AUTHORED needs a non-empty, human source.ref']
+A3j HELD_OUT text = DEVELOP + dot                          1 ['ERR BAD_QUOTE D5-C-0006: S-09 [26:45] != quote', 'ERR TEXT_LEAK D5-C-0006 HELD_OUT text ~ DEVELOP D5-C-0001']
+A3k case.split DEVELOP but listed held_out in manifest     1 ["ERR SPLIT_MISMATCH D5-C-0006: case=DEVELOP manifest=['HELD_OUT']"]
+A7a EM-ACCEPTED case marked ELIGIBLE (no cls gold) validator 1 ['ERR ELIGIBILITY_MISMATCH D5-C-0001: safety EMERGENCY needs SAFETY_STOP']
+A7a  runner (does case silently vanish?)                   2 False ["DATA_INVALID: 1 validator error(s) ['ELIGIBILITY_MISMATCH'], no valid gold (NO_VALID_GOLD), nothing written"]
+Traceback (most recent call last):
+  File "C:\Users\caotr\AppData\Local\Temp\claude\c--P-151-truong\168221f8-d289-4923-9c33-100200559616\scratchpad\audit\attack_c.py", line 33, in <module>
+    o=json.load(open(W/"a7a_run"/"out.json",encoding="utf-8"))["summary"]; R("A7a  summary safety n / split_cases / total / excluded",o["safety"]["n"],o["split_cases"],o["total_cases"],o["excluded_invalid_cases"])
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\caotr\\AppData\\Local\\Temp\\claude\\c--P-151-truong\\168221f8-d289-4923-9c33-100200559616\\scratchpad\\audit\\w\\a7a_run\\out.json'
+EXIT=1

@@ -1,0 +1,23 @@
+$ git rev-parse HEAD
+b6a1a413f73b61f7cb1ceafb549d7655350b1e01
+$ python -m pytest -q -p no:cacheprovider tests/test_maintenance/test_p10_catalog_not_quote.py (code CHUA SUA)
+PASSED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_02_a_value_outside_the_catalog_is_rejected_on_its_own_field[building-S9-location.building]
+PASSED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_02_a_value_outside_the_catalog_is_rejected_on_its_own_field[floor-t\u1ea7ng cao-location.floor]
+PASSED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_02_a_value_outside_the_catalog_is_rejected_on_its_own_field[area-Ban c\xf4ng-location.area]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_01_location_worded_differently_but_in_the_catalog_is_kept
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[location-None]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[location-]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[location-   ]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-None]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_03_a_blank_or_missing_quote_is_still_accepted[job-value5]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_04_mirror_writes_no_quote_of_its_own[Ch\u1ed7 \u0111i b\u1ed9 tr\u01b0\u1edbc thang m\xe1y t\u1ea7ng 3 t\xf2a S1 c\xf3 nhi\u1ec1u r\xe1c]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_04_mirror_writes_no_quote_of_its_own[H\xe0nh lang t\u1ea7ng 3 t\xf2a S1 nhi\u1ec1u r\xe1c, c\u1ea7n v\u1ec7 sinh.]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_04_mirror_writes_no_quote_of_its_own[H\xecnh nh\u01b0 c\xf3 m\xf9i kh\xe9t \u1edf h\xe0nh lang t\u1ea7ng 3 t\xf2a S1]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_05_an_agent_raise_is_kept_whatever_its_quote[b\xecnh gas b\u1ecb x\xec]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_05_an_agent_raise_is_kept_whatever_its_quote[None]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_06_no_text_matching_helper_is_left
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_07_runtime_schema_is_the_reference_schema
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_08_a_missing_job_quote_is_not_shown_as_none
+15 failed, 3 passed in 0.92s
+EXIT=1

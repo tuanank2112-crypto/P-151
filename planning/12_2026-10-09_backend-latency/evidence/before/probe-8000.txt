@@ -1,0 +1,12 @@
+e9960f0
+2026-10-09 18:46:15 +0700
+endpoint                         median     max      body   on wire (gzip asked)
+GET /resident/tickets             231ms   280ms    54.4KB      54.4KB enc=-
+GET /resident/tickets/{id}        280ms   304ms     1.0KB       1.0KB enc=-
+GET /bql/tickets                  235ms   301ms    69.0KB      69.0KB enc=-
+GET /mo/tickets (bptn)            236ms   249ms    24.6KB      24.6KB enc=-
+GET /mo/tickets (department)      228ms   253ms     6.7KB       6.7KB enc=-
+GET /mo/tickets/{id}              226ms   246ms     6.8KB       6.8KB enc=-
+GET /mo/warehouse/stock           231ms   271ms     0.5KB       0.5KB enc=-
+GET photo (2nd+ view)             527ms  1386ms    62.3KB      62.3KB enc=-
+exit=0

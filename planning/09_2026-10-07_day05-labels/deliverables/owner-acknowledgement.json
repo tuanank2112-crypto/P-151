@@ -1,0 +1,12 @@
+{
+  "schema_version": "day05-owner-acknowledgement-1",
+  "recorded_at": "2026-10-08T10:10:44.796289+00:00",
+  "reported_by": "Cao Văn Trường",
+  "source": "User states Như Ý and Châm Anh have agreed to and approved the work they must perform, and requests push/PR to develop",
+  "confirmed_members": [
+    "Như Ý",
+    "Châm Anh"
+  ],
+  "scope": "Acceptance of assigned responsibilities and review work; no completed labels, test results or final Day05 sign-off inferred",
+  "other_members": "Trí/leader acknowledgement not inferred"
+}

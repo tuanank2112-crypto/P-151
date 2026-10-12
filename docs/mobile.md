@@ -1,0 +1,64 @@
+# `src/mobile/` — App điện thoại (PWA) cho mọi vai vận hành
+
+FastAPI phục vụ thư mục này ở `/app/` (`src/main.py`), cùng origin với API `/api/v1` và UI web `/ui/`.
+Plain JS (ES module) + CSS, KHÔNG Tailwind, KHÔNG bước build. Hồ sơ: [`planning/11_2026-10-09_mobile-pwa-app/`](../planning/11_2026-10-09_mobile-pwa-app/plan.md).
+**Giao diện = thiết kế `portal/`** (đợt 2, [`specs/SPEC-P04-PORTAL-UI.md`](../planning/11_2026-10-09_mobile-pwa-app/specs/SPEC-P04-PORTAL-UI.md)): class chép nguyên từ
+`portal/src/app/globals.css`, icon từ `portal/src/components/icons.tsx`, bố cục từ `shell.tsx`/`resident-app.tsx`/`management-app.tsx`.
+Backend vẫn là FastAPI gốc (Docker `:8000`); app gọi API Python trực tiếp. Từ plan18 v1.11.0 local, web portal cũng gọi cùng API Python qua BFF nên cùng ticket/kho/Agent; không có DB portal runtime.
+
+## 1. Nguyên tắc (đọc trước khi sửa)
+- App là **client mỏng**: chỉ gọi endpoint có sẵn (`/auth/*`, `/resident/*`, `/bql/*`, `/mo/*` của phòng ban/BPTN/kho, ảnh) — bảng ở
+  [`specs/SPEC-P05-ALL-ROLES.md`](../planning/11_2026-10-09_mobile-pwa-app/specs/SPEC-P05-ALL-ROLES.md) §2–§4.
+  Mọi luật nghiệp vụ nằm trong engine; web và app cùng API ⇒ cùng DB ⇒ đồng bộ, không có cơ chế đồng bộ riêng.
+- **Service worker không bao giờ trả `/api/` từ cache** (`sw.js`: `if (url.pathname.startsWith('/api/')) return;` đứng trước mọi `respondWith`).
+  Test `test_sw_never_caches_api` khoá điều này.
+- Nút ghi dùng `writeButton()`/`lockWhile()` (`js/ui.js`): khoá ngay lần chạm đầu (chống gửi đôi ⇒ ticket trùng), khoá khi offline.
+- Chuỗi từ API chỉ chèn qua `el()` (text node). Icon SVG tĩnh là chỗ duy nhất dùng `innerHTML`.
+- Thay nội dung một khối bằng `fill(node, …)`, KHÔNG `node.replaceChildren(…)` khi có thể có con `null` (DOM in thành chữ "null").
+- Không ghi khi offline, không hàng đợi offline, không realtime (vùng cấm, `specs/00-ARCHITECTURE.md` §6).
+- Đổi màu/kiểu: sửa Part A của `app.css` CHỈ khi portal đổi (giữ giá trị y hệt); bố cục điện thoại ở Part B.
+  Không làm phần portal mà API không có (nút khẩn cấp, tag đánh giá, cư dân nghiệm thu, Thông báo) — SPEC-P04 §8.
+
+## 2. File
+| File | Vai trò |
+|---|---|
+| `index.html` | Vỏ: viewport/safe-area, manifest, apple-touch-icon, `#offline`, `#topbar` (Header gradient), `#tabbar` (NavTiles, PHẢI đứng trước `#screen`), `#screen`, `#toast`, `#sheet` |
+| `app.css` | Part A = class portal chép nguyên (`.tile .card .pill .btn`, `.scr-login`, `.scr-resident`, `.scr-management`); Part B = bố cục điện thoại; Part C = offline/toast/sheet |
+| `manifest.json` | `start_url`/`scope` = `/app/`, `display: standalone`, icon 192/512/maskable |
+| `sw.js` | Cache vỏ app (`SHELL_CACHE = 'mo-app-shell-vN'`), điều hướng network-first, file vỏ cache-first |
+| `icons/` | PNG dựng bằng `planning/11_…/evidence/harness/make_icons.mjs` (Playwright trong `portal/`) |
+| `js/main.js` | Boot, router hash (gắn lớp `scr-*` cho `#screen`), Header + NavTiles (`ctx.chrome`, `ctx.counts`), đăng nhập/xuất, vòng tải lại `REFRESH_MS = 30000`, banner offline, đăng ký SW, bảng lỗi |
+| `js/api.js` | `api()`, `apiForm()`, `apiImage()`, `ApiError.kind`, token `localStorage['mo-app-token']` |
+| `js/ui.js` | `el`, `fill`, `icon` (path portal), `person`, `pageHead`, `stepHead`, `infoGrid`, `notice`, `history`, `pill`, `toast`, `confirmSheet`, `writeButton`, `lockWhile`, `refreshButton`, `pagedList` (20 + "Xem thêm"), `boxOf` (mỗi ticket một ô, Q40) |
+| `js/photo.js` | `compressImage` (cạnh dài ≤1600 px, JPEG 0.82), `photoPicker` (Chụp ảnh / Chọn ảnh, tối đa 5) |
+| `js/resident.js` | `#/r` 4 ô tổng quan rời nhau (ưu tiên Cần bạn ⇒ Chờ nghiệm thu ⇒ Đang xử lý ⇒ Đã xong, Q40) + thẻ có 6 vạch tiến độ · `#/r/new` 3 thẻ đánh số (Vị trí tòa-tầng-khu vực / Mô tả / Ảnh — vị trí trước, Q33) + Tóm tắt · `#/r/<id>` stepper 6 bước, bổ sung, thêm ảnh, đánh giá sao, lịch sử. Ánh xạ trạng thái → bước: SPEC-P04 §4 |
+| `js/bql.js` | `#/b` không tile; 4 ô số liệu là bộ lọc Cần BQL / Khẩn cấp / Quá hạn / Hoàn thành (`CLOSED`) (Q36), rời nhau theo ưu tiên Khẩn cấp ⇒ Cần BQL ⇒ Hoàn thành ⇒ Quá hạn; chuông = Khẩn cấp + Cần BQL (Q40) · `#/b/<id>` nghiệm thu, trả làm lại, hủy, đóng/hạ mức khẩn cấp, an toàn Bậc 2 đã leo thang `#bql-safety` (xác nhận an toàn / yêu cầu bổ sung / nâng Bậc 1, Q38) |
+| `js/staff.js` | Dùng chung cho vai nội bộ: nhãn (lý do, ưu tiên, loại việc, checklist, vật tư — chép từ `src/web/app.js`), pill, ảnh nội bộ, `queueScreen` (danh sách + tile `#staff-tabs` + ô `#staff-stats`, một bộ ô rời nhau qua `boxOf`, thứ tự tile theo `priority`), `caseScreen` (khung chi tiết), `writer` (ghi → toast → tải lại) |
+| `js/dept.js` | Phòng ban `#/d`: 4 tile Chờ nhận / Đang làm / Chờ nghiệm thu / Hoàn thành (`CLOSED`, Q35), không ô số liệu (Q32) · `#/d/<id>`: nhận việc, **ảnh sau xử lý (đầu tiên)**, checklist, **một khối vật tư** `#dept-materials` (chọn vật tư + số lượng đã dùng, KHÔNG hiện/điền sẵn đề xuất Agent, không ô lý do (plan 15); Vệ sinh có "Không sử dụng vật tư"; Q41/Q42), ghi chú, tự kiểm, báo hoàn thành, vướng / sai phòng ban |
+| `js/bptn.js` | BPTN `#/p`: tile Cần xử lý / An toàn B2 / Nghi trùng + ô Đang xử lý / Hoàn thành (`CLOSED`) bấm được `#staff-stats` — mỗi ticket đúng một ô, hủy/gộp không ô nào (Q40); form tài sản chọn 1 trong 4 tài sản khu vực theo `name` (plan 14) · `#/p/<id>`: form theo mã vướng (an toàn Bậc 2, thiếu thông tin, trùng, loại việc, tài sản, sai phòng ban) |
+| `js/kho.js` | Kho `#/k`: 3 tile Nhập vật tư (form nhập kho + phản ánh chờ vật tư) / Tồn kho (chỉ danh sách) / Cảnh báo (`qty < LOW_STOCK=30`, đỏ `< CRITICAL_STOCK=20`, "Nhập thêm" điền sẵn `30 − qty`) (Q37) · `#/k/<id>`: vật tư thiếu + nhập kho điền sẵn |
+
+Chỉ `qa01` (QA_INTERNAL) đăng nhập ⇒ `#/web` (nút sang `/ui/`), không gọi API dữ liệu.
+
+## 3. Quy tắc khi sửa
+- Đổi bất kỳ file vỏ nào ⇒ tăng `?v=N` ở **mọi** chỗ cùng lúc (`index.html`, mọi `import` trong `js/*.js`, danh sách `SHELL` trong `sw.js`)
+  và tăng `SHELL_CACHE`. Specifier import phải giống hệt nhau giữa các file, nếu không trình duyệt nạp HAI bản `api.js` (mất token chung).
+- Hành động nghiệp vụ: điều kiện hiện nút theo `specs/SPEC-P02` §4 / `SPEC-P03` §3; server là trọng tài (403/409 ⇒ toast + tải lại).
+  Ảnh cư dân: hiện khi ticket chưa kết thúc (guard `engine.add_resident_photo`), KHÔNG theo `ADD_INFO` (chỉ có ở `NEED_INFO`).
+- Trên điện thoại, khối thao tác nằm trong thẻ chi tiết ngay sau lưới thông tin (trước nội dung/ảnh/lịch sử).
+- Vật tư Phòng ban (Q41/Q42): vật tư Agent dự kiến (bước 7) KHÔNG hiện trên app; khối chỉ hiện lựa chọn của phòng ban (`deptChoseMaterials`). Lưu (plan 16, v1.10.0) = đúng 1 `POST material-usage` `{lines:[{item_code, used_qty}]}` (đã xuất = đã dùng, một giao dịch; lỗi giữ input, không reload). Plan 15 (v1.9.9): KHÔNG ô lý do, KHÔNG so định mức/đề xuất Agent — một lần bấm lưu khi kho đủ; lưu lại cùng số không trừ kho thêm (engine trừ phần chênh). Danh sách chọn lọc theo `catalog.material_codes_by_department` (server tính từ `playbook_departments` + `playbook_materials`; `MATERIAL_GROUP` đã bỏ); thiếu field ⇒ khoá Lưu. Cache bust `?v=17`/`mo-app-shell-v17`. Kho là trọng tài tồn kho (hết hàng ⇒ 409, toast).
+- BPTN chọn/sửa giá trị (vị trí, thông tin, loại việc, phòng ban, tài sản) ⇒ engine BẮT BUỘC lý do (`409 GUARD_FAILED`); app chặn trước khi gửi.
+- Cư dân: KHÔNG có hàng chip lọc (Q30); 4 ô tổng quan lọc, dòng `#resident-filter` có "Bỏ lọc".
+- Bước "Vị trí" chỉ ghép dòng `Vị trí: Tòa S1 / Tầng 3 / Hành lang` vào `original_description` (không trường API mới); tòa lấy từ `catalog.yaml site.buildings`.
+- Giữ các id/selector harness dùng (SPEC-P04 §7); Header dựng bằng `fill(bar, …)` (mốc phép phá `d-null-text`).
+- **Mỗi ticket chỉ ở MỘT ô (Q40):** số đếm, badge tile, chuông và danh sách của một ô PHẢI đọc qua `boxOf` (ô đầu tiên khớp theo thứ tự ưu tiên), CẤM lọc thẳng bằng phép thử thô của ô — phép phá `evidence/q40-mutant-raw-filters.txt`. Thêm ô mới ⇒ đặt nó đúng chỗ trong thứ tự ưu tiên, không thêm ô "Tất cả"/"Tổng".
+- Vòng tải lại bỏ qua khi màn đang có chữ/ảnh chưa gửi (`screenIsDirty()`; `photoPicker` đặt `data-dirty="1"`).
+
+## 4. Chạy và đo
+- Local, không đụng DB chung: `MO_STORE=memory MO_PHOTO_STORE=local LLM_MODE=mock DATABASE_URL= python -m uvicorn src.main:app --host 0.0.0.0 --port 8001`
+  ⇒ http://127.0.0.1:8001/app/ (tài khoản `cudan01`, `bql01`, `vesinh01`, `kythuat01`, `bptn01`, `kho01`, mật khẩu `Demo@2026`). Thử trên điện thoại khi chưa deploy: `specs/OPERATIONS.md` §2.
+- Kiểm: `python -m pytest tests/test_maintenance/test_mobile_static.py -q -p no:cacheprovider`;
+  `bash planning/11_2026-10-09_mobile-pwa-app/evidence/harness/run_all.sh <python> <scratch>` (M1–M17 + 5 phép phá, ~20 phút, chạy 06:00–22:00).
+- Docker (backend thật, DB Supabase CHUNG — chỉ đọc khi thử): `docker compose up -d --build backend` ⇒ http://localhost:8000/app/.
+  Image phải dựng từ nhánh có ghim `sqlalchemy<2.1` (xem `brain4agent/-known-gotchas.md`).
+- Cài lên màn hình chính + service worker cần HTTPS (hoặc `localhost` qua USB forward); qua `http://<LAN-IP>` app vẫn chạy đủ chức năng, chỉ không cài được.

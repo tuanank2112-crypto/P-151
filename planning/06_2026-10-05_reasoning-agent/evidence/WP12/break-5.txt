@@ -1,0 +1,29 @@
+$ docker exec p151-pgtest psql -U p151 -d postgres -c 'create database p151_wp12_test'  (only if missing)
+CREATE DATABASE
+$ old worktree HEAD
+82f01f002d729c276ecd0b8bf5ad78fa377c79e9
+$ [NEW code HEAD] python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/break5_new_side.py
+alembic -> host=127.0.0.1 db=p151_wp12_test user=p151
+alembic_version after upgrade: 0002_p1_doc_shape | code HEAD_REVISION: 0002_p1_doc_shape
+new code check(): OK
+SIM-TKT-0001 status ROUTED | agent_decision: AGENT | P1 ticket keys: ['duplicate_count', 'follow_up_of', 'merged_children', 'split_category', 'split_children', 'split_from', 'wrong_department_return_count'] | split_children ['SIM-TKT-0002'] | follow_up_of None
+SIM-TKT-0002 status ROUTED | agent_decision: AGENT | P1 ticket keys: ['duplicate_count', 'follow_up_of', 'merged_children', 'split_category', 'split_children', 'split_from', 'wrong_department_return_count'] | split_children [] | follow_up_of None
+SIM-TKT-0003 status VERIFYING | agent_decision: SKIPPED_RULE_EMERGENCY | P1 ticket keys: ['duplicate_count', 'follow_up_of', 'merged_children', 'split_category', 'split_children', 'split_from', 'wrong_department_return_count'] | split_children [] | follow_up_of None
+SIM-TKT-0004 status ROUTED | agent_decision: AGENT | P1 ticket keys: ['duplicate_count', 'follow_up_of', 'merged_children', 'split_category', 'split_children', 'split_from', 'wrong_department_return_count'] | split_children [] | follow_up_of SIM-TKT-0003
+RESULT cases=4 revision=0002_p1_doc_shape
+EXIT=0
+$ [OLD code 82f01f0] python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/break5_old_side.py <scratchpad>/old82
+old code HEAD_REVISION: 0001_maintops_initial
+(a) old code check(): RuntimeError: schema maintops ở revision 0002_p1_doc_shape, code cần 0001_maintops_initial; chạy: python -m alembic -c src/maintenance/store/alembic.ini upgrade head
+(b) old code list() without the check: ValidationError: 13 validation errors for Case
+RESULT old_code_refused_at_check=True
+EXIT=0
+$ [OLD code 82f01f0] python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/break5_uvicorn_old.py <scratchpad>/old82
+$ (cwd=<scratchpad>/old82) MO_STORE=postgres DATABASE_URL=<p151_wp12_test> LLM_MODE=mock -m uvicorn src.main:app --host 127.0.0.1 --port 8799
+    Starting AI20K Agent in development mode (LLM_MODE=mock, MO_STORE=postgres, MO_PHOTO_STORE=local)
+    ERROR:    Traceback (most recent call last):
+        raise RuntimeError(
+    RuntimeError: schema maintops ở revision 0002_p1_doc_shape, code cần 0001_maintops_initial; chạy: python -m alembic -c src/maintenance/store/alembic.ini upgrade head
+    ERROR:    Application startup failed. Exiting.
+RESULT uvicorn_exit=3
+EXIT=0

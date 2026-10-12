@@ -1,0 +1,12 @@
+resident @1440: 3 tabs
+reception @1440: 3 tabs
+management @1440: 4 tabs
+cleaning @1440: 3 tabs
+technical @1440: 3 tabs
+resident @390: 3 tabs
+reception @390: 3 tabs
+management @390: 4 tabs
+cleaning @390: 3 tabs
+technical @390: 3 tabs
+no horizontal page overflow
+screens exit=0

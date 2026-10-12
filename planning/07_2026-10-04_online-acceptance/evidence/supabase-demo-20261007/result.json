@@ -1,0 +1,1811 @@
+{
+  "steps": [
+    {
+      "role": "resident",
+      "method": "POST",
+      "path": "/resident/tickets",
+      "http_status": 422
+    },
+    {
+      "role": "qa",
+      "method": "GET",
+      "path": "/mo/tickets/SIM-TKT-0042",
+      "http_status": 200,
+      "ticket_status": "ROUTED"
+    },
+    {
+      "role": "resident",
+      "method": "POST",
+      "path": "/resident/tickets/SIM-TKT-0042/photos",
+      "http_status": 200,
+      "ticket_status": "ROUTED"
+    },
+    {
+      "role": "department",
+      "method": "POST",
+      "path": "/mo/tickets/SIM-TKT-0042/accept",
+      "http_status": 200,
+      "ticket_status": "IN_PROGRESS"
+    },
+    {
+      "role": "department",
+      "method": "POST",
+      "path": "/mo/tickets/SIM-TKT-0042/checklist/CLN-CHK-01",
+      "http_status": 200,
+      "ticket_status": "IN_PROGRESS"
+    },
+    {
+      "role": "department",
+      "method": "POST",
+      "path": "/mo/tickets/SIM-TKT-0042/checklist/CLN-CHK-02",
+      "http_status": 200,
+      "ticket_status": "IN_PROGRESS"
+    },
+    {
+      "role": "department",
+      "method": "POST",
+      "path": "/mo/tickets/SIM-TKT-0042/checklist/CLN-CHK-03",
+      "http_status": 200,
+      "ticket_status": "IN_PROGRESS"
+    },
+    {
+      "role": "department",
+      "method": "POST",
+      "path": "/mo/tickets/SIM-TKT-0042/materials/SIM-MAT-CLEAN-01",
+      "http_status": 200,
+      "ticket_status": "IN_PROGRESS"
+    },
+    {
+      "role": "department",
+      "method": "POST",
+      "path": "/mo/tickets/SIM-TKT-0042/evidence",
+      "http_status": 200,
+      "ticket_status": "IN_PROGRESS"
+    },
+    {
+      "role": "department",
+      "method": "POST",
+      "path": "/mo/tickets/SIM-TKT-0042/complete",
+      "http_status": 200,
+      "ticket_status": "IN_PROGRESS"
+    },
+    {
+      "role": "department",
+      "method": "POST",
+      "path": "/mo/tickets/SIM-TKT-0042/photos",
+      "http_status": 200,
+      "ticket_status": "IN_PROGRESS"
+    },
+    {
+      "role": "department",
+      "method": "POST",
+      "path": "/mo/tickets/SIM-TKT-0042/complete",
+      "http_status": 200,
+      "ticket_status": "READY_FOR_REVIEW"
+    },
+    {
+      "role": "bql",
+      "method": "POST",
+      "path": "/bql/tickets/SIM-TKT-0042/close",
+      "http_status": 200,
+      "ticket_status": "CLOSED"
+    },
+    {
+      "role": "qa",
+      "method": "GET",
+      "path": "/mo/ai-logs",
+      "http_status": 200,
+      "ticket_status": null
+    },
+    {
+      "role": "qa",
+      "method": "GET",
+      "path": "/mo/tickets/SIM-TKT-0042",
+      "http_status": 200,
+      "ticket_status": "CLOSED"
+    }
+  ],
+  "started_at": "2026-10-07T04:03:16.604289+00:00",
+  "configuration": {
+    "store": "postgres",
+    "photos": "supabase",
+    "model": "gpt-6-luna",
+    "jobs_enabled": false,
+    "seed_on_empty": false,
+    "allow_reset": false
+  },
+  "before": {
+    "case_count": 53,
+    "case_hashes": {
+      "SIM-TKT-CLN-001": "9a952d0d066e571757c5f95ff1013f99",
+      "SIM-TKT-0004": "67dda847f68815715a5e3d5674b2df4e",
+      "SIM-TKT-0006": "839bb59d839585057db5a028e26bbbe3",
+      "SIM-TKT-CLN-003": "e0ea1cf762f56365b2f9668a5640e31b",
+      "SIM-TKT-0003": "4d6739fb4de524bd9c0fc8d8d0701d85",
+      "SIM-TKT-CLN-002": "e03facd0f0f0c2967f22ca7439b4a103",
+      "SIM-TKT-0014": "78c5fb4ba83cb2b5b311b3c9403bb798",
+      "SIM-TKT-0027": "3951c21aaa9bd443e1bfe1874f544ddf",
+      "SIM-TKT-0015": "b615eac803e9766f1384817fecf193a6",
+      "SIM-TKT-0040": "7a504f590de65e14c11e73d8a5132631",
+      "SIM-TKT-CLN-004": "21599ad92b527e2c32a35b04575e0d92",
+      "SIM-TKT-CLN-005": "f4f7bc83df702ea8fbf882f748a83232",
+      "SIM-TKT-CLN-006": "5d59667e23fb8a78857571ec3e3c1298",
+      "SIM-TKT-0012": "c502f2c89f291629c55b32b878fcefe1",
+      "SIM-TKT-0005": "c88991497e60c7370bc1077eb505daba",
+      "SIM-TKT-TEC-001": "24304ea15bcc7c23608179ea363ba5d5",
+      "SIM-TKT-0011": "a5519e865dd7dc87b82e0605298f4e3b",
+      "SIM-TKT-0041": "57772dfb67f98a70ed036cae014cf72a",
+      "SIM-TKT-0016": "b8f6aa0a003ba0b102beec678f4ae741",
+      "SIM-TKT-0026": "2bab60c87964fb1df9b88f0a2b0825b6",
+      "SIM-TKT-0025": "6a361747ec6a71e1db2fbee88eba4807",
+      "SIM-TKT-0007": "3d69b3563db1e55acde76c2223d0b253",
+      "SIM-TKT-TEC-004": "5a6f25df6cb1c2a83c91ccd2cfc7d68e",
+      "SIM-TKT-TEC-002": "328811660a0c269b99e3897bc3d3d187",
+      "SIM-TKT-TEC-005": "e08b249a982ae8febaf4b47fcdc020b6",
+      "SIM-TKT-0009": "15c261b04f587f9624f6d8ac309c4718",
+      "SIM-TKT-0008": "8e0ea6136fbe29185aa904f25d7420bb",
+      "SIM-TKT-0017": "cfac72ca186e37b11e302eafaee64721",
+      "SIM-TKT-0018": "336e5044508167be0a349532ddedcbbf",
+      "SIM-TKT-0019": "b82974c565598632b418d817182949d4",
+      "SIM-TKT-TEC-003": "c2319642c62122b929f50d4195f837ff",
+      "SIM-TKT-0013": "efaa73ad7f958f1d0fc342e0a834eeba",
+      "SIM-TKT-TEC-006": "6bf36b427ce0dd40937f1ee7dc331af4",
+      "SIM-TKT-0010": "85ba0a3013a6cca4566a7f94d4b57fbb",
+      "SIM-TKT-0028": "e8894927b9efce080a223a3fb8befad6",
+      "SIM-TKT-0001": "1f2e2a61d73e464a84bad81d2535a646",
+      "SIM-TKT-0002": "33f974de5516fb567856621106515d58",
+      "SIM-TKT-0020": "197b95e57829daf5f3ee94322aedda83",
+      "SIM-TKT-0029": "1ae0613ea8b882f5990d345c931f4824",
+      "SIM-TKT-0021": "2db64f30700925bc260b3a17b2269183",
+      "SIM-TKT-0024": "0ae3ba2512fabc97e7381a0809b7f045",
+      "SIM-TKT-0022": "0bf6b1efbc01fd68f1c9e02c35115b74",
+      "SIM-TKT-0023": "d5cbb8203f99656e1b34ff741121f563",
+      "SIM-TKT-0030": "4621c138f8ac93827b358e5b3b02d1a8",
+      "SIM-TKT-0031": "453646b0406c676d664ec497ac58d170",
+      "SIM-TKT-0033": "91ca1458c44666456f60c7af550d8f58",
+      "SIM-TKT-0035": "0cbe8b29964df2446fd6458b2d4d6a5a",
+      "SIM-TKT-0037": "978e06de23bc5375ccb096292636cb99",
+      "SIM-TKT-0039": "906f96612fdae8176115a5c1e8fe8649",
+      "SIM-TKT-0032": "34fec5aa106d58cf8595f1d422f738b3",
+      "SIM-TKT-0034": "3d091e6541c3a99857cec4cd1e97a72f",
+      "SIM-TKT-0036": "fbc6d2c27a4adbdfad7deb9bb7bd931c",
+      "SIM-TKT-0038": "0239cef390034c95310cf2eaa34abb82"
+    },
+    "stock": {
+      "SIM-MAT-CLEAN-01": 10.0,
+      "SIM-MAT-BAG-01": 20.0,
+      "SIM-MAT-STARTER-01": null,
+      "SIM-MAT-LAMP-02": 2.0,
+      "SIM-MAT-LAMP-01": 0.0
+    }
+  },
+  "demo_label": "DEMO-TRUONG-20261007T040318Z",
+  "ticket_id": "SIM-TKT-0042",
+  "initial_case": {
+    "ticket": {
+      "ticket_id": "SIM-TKT-0042",
+      "raw": {
+        "ticket_id": "SIM-TKT-0042",
+        "created_at": "2026-10-07T11:03:18+07:00",
+        "original_description": "Hành lang tầng 37 tòa S1 có rác giấy, cần dọn vệ sinh. DEMO-TRUONG-20261007T040318Z. Dữ liệu demo mô phỏng.",
+        "original_evidence_refs": [],
+        "channel": "form"
+      },
+      "raw_integrity_marker": "sha256:b9ed47b32eb927d5834baaa168c3381bfbd446ca473b4cd61f7f587256740e6e",
+      "resident_id": "SIM-ACTOR-RESIDENT-01",
+      "source_revision": "SRC-001",
+      "dataset_version": "maintenanceops-sim-v1.3",
+      "status": "RECEIVED",
+      "proposed_department_id": null,
+      "department_id": null,
+      "assignee_id": null,
+      "blocker": null,
+      "locked_fields": {
+        "category": null,
+        "location": null,
+        "asset_id": null,
+        "department": null
+      },
+      "review_status": null,
+      "asset_resolution": null,
+      "merged_into": null,
+      "flags": [],
+      "rework_count": 0,
+      "dispatched_at": null,
+      "accepted_at": null,
+      "closed_by": null,
+      "closed_at": null,
+      "closure_kind": null,
+      "cancel_reason": null,
+      "rating": null,
+      "risk_level": "NONE",
+      "risk_signals": [],
+      "safety_cleared_by": null,
+      "safety_cleared_at": null,
+      "safety_clear_reason": null,
+      "safety_context": false,
+      "related_ticket_ids": [],
+      "priority": null,
+      "priority_source": null,
+      "priority_rule_id": null,
+      "priority_reason": null,
+      "synthetic": true
+    },
+    "planned_materials": null,
+    "planned_for_playbook": null,
+    "classification": null,
+    "not_duplicate_of": [],
+    "proposal": null,
+    "draft": null,
+    "checklist_items": [],
+    "material_lines": [],
+    "evidence": [],
+    "evidence_round_start": 0,
+    "additions": [],
+    "events": [
+      {
+        "id": "SIM-EVT-0042-0001",
+        "ticket_id": "SIM-TKT-0042",
+        "from_status": null,
+        "to_status": "RECEIVED",
+        "reason_code": null,
+        "actor_role": "SYSTEM",
+        "actor_id": "SIM-ACTOR-SYSTEM",
+        "public_message": "Phản ánh của bạn đã được tiếp nhận.",
+        "internal_note": null,
+        "public": true,
+        "created_at": "2026-10-07T11:03:18.497385+07:00"
+      }
+    ],
+    "notifications": [
+      {
+        "notification_id": "SIM-NTF-0042-0001",
+        "ticket_id": "SIM-TKT-0042",
+        "type": "ticket.status_changed",
+        "audience": "RESIDENT",
+        "payload": {
+          "to": "RECEIVED"
+        },
+        "created_at": "2026-10-07T11:03:18.497385+07:00"
+      }
+    ],
+    "audit": [
+      {
+        "event_id": "SIM-AUD-0042-0001",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "Ticket",
+        "entity_id": "SIM-TKT-0042",
+        "action": "INGEST",
+        "actor_id": "SIM-ACTOR-SYSTEM",
+        "actor_role": "SYSTEM",
+        "timestamp": "2026-10-07T11:03:18.497385+07:00",
+        "field_name": "ticket",
+        "old_value": null,
+        "new_value": {
+          "raw_integrity_marker": "sha256:b9ed47b32eb927d5834baaa168c3381bfbd446ca473b4cd61f7f587256740e6e"
+        },
+        "reason": "Ingest raw ticket mô phỏng",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": null,
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      }
+    ]
+  },
+  "recovered_case": {
+    "ticket": {
+      "ticket_id": "SIM-TKT-0042",
+      "raw": {
+        "ticket_id": "SIM-TKT-0042",
+        "created_at": "2026-10-07T11:03:18+07:00",
+        "original_description": "Hành lang tầng 37 tòa S1 có rác giấy, cần dọn vệ sinh. DEMO-TRUONG-20261007T040318Z. Dữ liệu demo mô phỏng.",
+        "original_evidence_refs": [],
+        "channel": "form"
+      },
+      "raw_integrity_marker": "sha256:b9ed47b32eb927d5834baaa168c3381bfbd446ca473b4cd61f7f587256740e6e",
+      "resident_id": "SIM-ACTOR-RESIDENT-01",
+      "source_revision": "SRC-001",
+      "dataset_version": "maintenanceops-sim-v1.3",
+      "status": "ROUTED",
+      "proposed_department_id": "DEPT_CLEANING",
+      "department_id": "DEPT_CLEANING",
+      "assignee_id": null,
+      "blocker": null,
+      "locked_fields": {
+        "category": null,
+        "location": null,
+        "asset_id": null,
+        "department": null
+      },
+      "review_status": "NOT_REQUIRED",
+      "asset_resolution": "NOT_APPLICABLE",
+      "merged_into": null,
+      "merged_children": [],
+      "flags": [],
+      "rework_count": 0,
+      "dispatched_at": "2026-10-07T11:07:52.170823+07:00",
+      "accepted_at": null,
+      "closed_by": null,
+      "closed_at": null,
+      "closure_kind": null,
+      "cancel_reason": null,
+      "rating": null,
+      "risk_level": "NONE",
+      "risk_signals": [],
+      "safety_cleared_by": null,
+      "safety_cleared_at": null,
+      "safety_clear_reason": null,
+      "safety_context": false,
+      "related_ticket_ids": [],
+      "priority": "LOW",
+      "priority_source": "AGENT_RULE",
+      "priority_rule_id": "PRI-L1",
+      "priority_reason": "PRI-L1: chưa ảnh hưởng trực tiếp",
+      "synthetic": true
+    },
+    "planned_materials": [
+      {
+        "item_code": "SIM-MAT-CLEAN-01",
+        "planned_qty": 2.0
+      }
+    ],
+    "planned_for_playbook": "PB-CLN-01",
+    "classification": {
+      "playbook_id": "PB-CLN-01",
+      "service_category": "VE_SINH",
+      "ticket_type": "COMMON_AREA_CLEANING",
+      "rule_id": "PB-CLN-R-TRG-01",
+      "reason": "Nội dung khớp phản ánh vệ sinh khu vực chung",
+      "reason_code": null,
+      "needs_review": false,
+      "proposer": "rules+llm:gpt-6-luna",
+      "notes": []
+    },
+    "not_duplicate_of": [],
+    "proposal": {
+      "proposal_id": "SIM-ACP-0042",
+      "ticket_id": "SIM-TKT-0042",
+      "proposal_revision": 1,
+      "service_category_proposed": "VE_SINH",
+      "ticket_type_proposed": "COMMON_AREA_CLEANING",
+      "playbook_id": "PB-CLN-01",
+      "playbook_version": "1.1",
+      "category_source": "AGENT",
+      "asset_type": null,
+      "reported_symptom": null,
+      "location_proposed": "Tòa S1 / Tầng 37 / Hành lang",
+      "asset_id": null,
+      "asset_lookup_status": "NOT_APPLICABLE",
+      "asset_match_reason": "Vệ sinh không tra tài sản",
+      "matched_rule_ids": [
+        "PB-CLN-R-TRG-01"
+      ],
+      "classification_reason": "Nội dung khớp phản ánh vệ sinh khu vực chung",
+      "source_references": [
+        "ticket.original_description",
+        "ticket_resident_additions"
+      ],
+      "created_at": "2026-10-07T11:07:52.170823+07:00",
+      "synthetic": true
+    },
+    "draft": {
+      "work_order_draft_id": "SIM-WOD-0042",
+      "ticket_id": "SIM-TKT-0042",
+      "proposal_id": "SIM-ACP-0042",
+      "playbook_id": "PB-CLN-01",
+      "playbook_version": "1.1",
+      "source_revision": "SRC-001",
+      "draft_revision": 1,
+      "draft_status": "DRAFT",
+      "scope_summary": "Ghi nhận vệ sinh khu vực chung tại Tòa S1 / Tầng 37 / Hành lang theo phản ánh mô phỏng. Bản nháp, không phải lệnh công việc thật.",
+      "matched_rule_ids": [
+        "PB-CLN-R-TRG-01",
+        "PB-COM-R-WO-01"
+      ],
+      "source_references": [
+        "ticket.original_description",
+        "locked_fields",
+        "ticket_resident_additions"
+      ],
+      "location": "Tòa S1 / Tầng 37 / Hành lang",
+      "asset_id": null,
+      "department_id": "DEPT_CLEANING",
+      "flags": [],
+      "assignee_id": null,
+      "material_stock_status": "SUFFICIENT",
+      "checklist_template_id": "PB-CLN-01-CHK-V1",
+      "checklist_item_ids": [
+        "SIM-CHK-0042-01",
+        "SIM-CHK-0042-02",
+        "SIM-CHK-0042-03"
+      ],
+      "material_requirement_mode": "TRACKED",
+      "material_gate_status": "NEEDS_CLARIFICATION",
+      "material_line_ids": [
+        "SIM-MAT-LINE-0042-01"
+      ],
+      "evidence_requirements": [
+        {
+          "requirement_id": "CLN-EVD-PROCESSING-NOTE",
+          "playbook_id": "PB-CLN-01",
+          "allowed_evidence_types": [
+            "PROCESSING_NOTE"
+          ],
+          "image_required": false,
+          "validation_status": "MISSING",
+          "satisfied_by": []
+        }
+      ],
+      "readiness_evaluation": null,
+      "non_blocking_warnings": [],
+      "created_at": "2026-10-07T11:07:52.170823+07:00",
+      "synthetic": true
+    },
+    "checklist_items": [
+      {
+        "checklist_item_id": "SIM-CHK-0042-01",
+        "work_order_draft_id": "SIM-WOD-0042",
+        "checklist_template_id": "PB-CLN-01-CHK-V1",
+        "template_item_id": "CLN-CHK-01",
+        "label_snapshot": "Khu vực trong execution update khớp location_normalized",
+        "required": true,
+        "status": "PENDING",
+        "updated_by": null,
+        "updated_at": null,
+        "note": null,
+        "synthetic": true
+      },
+      {
+        "checklist_item_id": "SIM-CHK-0042-02",
+        "work_order_draft_id": "SIM-WOD-0042",
+        "checklist_template_id": "PB-CLN-01-CHK-V1",
+        "template_item_id": "CLN-CHK-02",
+        "label_snapshot": "Execution update đã được ghi nhận theo scope_summary",
+        "required": true,
+        "status": "PENDING",
+        "updated_by": null,
+        "updated_at": null,
+        "note": null,
+        "synthetic": true
+      },
+      {
+        "checklist_item_id": "SIM-CHK-0042-03",
+        "work_order_draft_id": "SIM-WOD-0042",
+        "checklist_template_id": "PB-CLN-01-CHK-V1",
+        "template_item_id": "CLN-CHK-03",
+        "label_snapshot": "Các hạng mục trong phạm vi draft đã được đánh dấu hoàn tất",
+        "required": true,
+        "status": "PENDING",
+        "updated_by": null,
+        "updated_at": null,
+        "note": null,
+        "synthetic": true
+      }
+    ],
+    "material_lines": [
+      {
+        "material_line_id": "SIM-MAT-LINE-0042-01",
+        "work_order_draft_id": "SIM-WOD-0042",
+        "item_code": "SIM-MAT-CLEAN-01",
+        "item_name": "Dung dịch vệ sinh mô phỏng",
+        "unit": "unit-sim",
+        "planned_qty": 2.0,
+        "norm_qty": 2.0,
+        "norm_label": "SYNTHETIC",
+        "simulated_stock_qty": 10.0,
+        "material_stock_status": "SUFFICIENT",
+        "issued_qty": null,
+        "used_qty": null,
+        "variance_reason": null,
+        "comparison_results": [],
+        "reconciliation_status": "NEEDS_CLARIFICATION",
+        "synthetic": true
+      }
+    ],
+    "evidence": [],
+    "evidence_round_start": 0,
+    "additions": [],
+    "events": [
+      {
+        "id": "SIM-EVT-0042-0001",
+        "ticket_id": "SIM-TKT-0042",
+        "from_status": null,
+        "to_status": "RECEIVED",
+        "reason_code": null,
+        "actor_role": "SYSTEM",
+        "actor_id": "SIM-ACTOR-SYSTEM",
+        "public_message": "Phản ánh của bạn đã được tiếp nhận.",
+        "internal_note": null,
+        "public": true,
+        "created_at": "2026-10-07T11:03:18.497385+07:00"
+      },
+      {
+        "id": "SIM-EVT-0042-0002",
+        "ticket_id": "SIM-TKT-0042",
+        "from_status": "RECEIVED",
+        "to_status": "ROUTED",
+        "reason_code": null,
+        "actor_role": "SYSTEM",
+        "actor_id": "SIM-ACTOR-SYSTEM",
+        "public_message": "Phản ánh đã được chuyển tới Phòng Vệ sinh.",
+        "internal_note": null,
+        "public": true,
+        "created_at": "2026-10-07T11:07:52.170823+07:00"
+      }
+    ],
+    "notifications": [
+      {
+        "notification_id": "SIM-NTF-0042-0001",
+        "ticket_id": "SIM-TKT-0042",
+        "type": "ticket.status_changed",
+        "audience": "RESIDENT",
+        "payload": {
+          "to": "RECEIVED"
+        },
+        "created_at": "2026-10-07T11:03:18.497385+07:00"
+      },
+      {
+        "notification_id": "SIM-NTF-0042-0002",
+        "ticket_id": "SIM-TKT-0042",
+        "type": "ticket.status_changed",
+        "audience": "RESIDENT",
+        "payload": {
+          "from": "RECEIVED",
+          "to": "ROUTED",
+          "reason_code": null
+        },
+        "created_at": "2026-10-07T11:07:52.170823+07:00"
+      },
+      {
+        "notification_id": "SIM-NTF-0042-0003",
+        "ticket_id": "SIM-TKT-0042",
+        "type": "department.dispatch",
+        "audience": "DEPARTMENT",
+        "payload": {
+          "department_id": "DEPT_CLEANING"
+        },
+        "created_at": "2026-10-07T11:07:52.170823+07:00"
+      }
+    ],
+    "audit": [
+      {
+        "event_id": "SIM-AUD-0042-0001",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "Ticket",
+        "entity_id": "SIM-TKT-0042",
+        "action": "INGEST",
+        "actor_id": "SIM-ACTOR-SYSTEM",
+        "actor_role": "SYSTEM",
+        "timestamp": "2026-10-07T11:03:18.497385+07:00",
+        "field_name": "ticket",
+        "old_value": null,
+        "new_value": {
+          "raw_integrity_marker": "sha256:b9ed47b32eb927d5834baaa168c3381bfbd446ca473b4cd61f7f587256740e6e"
+        },
+        "reason": "Ingest raw ticket mô phỏng",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": null,
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0002",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "Ticket",
+        "entity_id": "SIM-TKT-0042",
+        "action": "ASSESS_SAFETY",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "actor_role": "AGENT",
+        "timestamp": "2026-10-07T11:07:52.170823+07:00",
+        "field_name": "risk_level",
+        "old_value": "NONE",
+        "new_value": {
+          "risk_level": "NONE",
+          "signals": [],
+          "notes": [],
+          "proposer": "rules",
+          "scope": "full"
+        },
+        "reason": "Tầng an toàn bước 2b (luật cố định; LLM chỉ nâng mức)",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": null,
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0003",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "Ticket",
+        "entity_id": "SIM-TKT-0042",
+        "action": "CREATE_PROPOSAL",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "actor_role": "AGENT",
+        "timestamp": "2026-10-07T11:07:52.170823+07:00",
+        "field_name": "classification",
+        "old_value": null,
+        "new_value": {
+          "playbook_id": "PB-CLN-01",
+          "service_category": "VE_SINH",
+          "ticket_type": "COMMON_AREA_CLEANING",
+          "rule_id": "PB-CLN-R-TRG-01",
+          "reason": "Nội dung khớp phản ánh vệ sinh khu vực chung",
+          "reason_code": null,
+          "needs_review": false,
+          "proposer": "rules+llm:gpt-6-luna",
+          "notes": []
+        },
+        "reason": "Nội dung khớp phản ánh vệ sinh khu vực chung",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": "PB-CLN-R-TRG-01",
+        "playbook_version": null,
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0004",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "Ticket",
+        "entity_id": "SIM-TKT-0042",
+        "action": "CREATE_PROPOSAL",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "actor_role": "AGENT",
+        "timestamp": "2026-10-07T11:07:52.170823+07:00",
+        "field_name": "proposed_department_id",
+        "old_value": null,
+        "new_value": "DEPT_CLEANING",
+        "reason": "Playbook → DEPT_CLEANING",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0005",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "Ticket",
+        "entity_id": "SIM-TKT-0042",
+        "action": "CREATE_PROPOSAL",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "actor_role": "AGENT",
+        "timestamp": "2026-10-07T11:07:52.170823+07:00",
+        "field_name": "priority",
+        "old_value": null,
+        "new_value": "LOW",
+        "reason": "PRI-L1: chưa ảnh hưởng trực tiếp",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": "PRI-L1",
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0006",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "AgentClassificationProposal",
+        "entity_id": "SIM-ACP-0042",
+        "action": "LOOKUP_ASSET",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "actor_role": "AGENT",
+        "timestamp": "2026-10-07T11:07:52.170823+07:00",
+        "field_name": "asset_lookup_status",
+        "old_value": null,
+        "new_value": {
+          "status": "NOT_APPLICABLE",
+          "asset_id": null
+        },
+        "reason": "Vệ sinh không tra tài sản",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0007",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "Ticket",
+        "entity_id": "SIM-TKT-0042",
+        "action": "CHECK_MATERIAL_STOCK",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "actor_role": "AGENT",
+        "timestamp": "2026-10-07T11:07:52.170823+07:00",
+        "field_name": "material_stock_status",
+        "old_value": null,
+        "new_value": "SUFFICIENT",
+        "reason": "So vật tư dự kiến (vật tư mặc định của PB-CLN-01) với định mức và tồn kho mô phỏng",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0008",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "WorkOrderDraft",
+        "entity_id": "SIM-WOD-0042",
+        "action": "CREATE_DRAFT",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "actor_role": "AGENT",
+        "timestamp": "2026-10-07T11:07:52.170823+07:00",
+        "field_name": "draft_revision",
+        "old_value": null,
+        "new_value": 1,
+        "reason": "Giao DEPT_CLEANING; assignee_id để trống cho phòng ban tự phân công",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": "PB-COM-R-WO-01",
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      }
+    ]
+  },
+  "recovery_ai_logs": [
+    {
+      "log_id": "ailog_2cd2337dd2d6",
+      "timestamp": "2026-10-07T04:07:54.368103Z",
+      "ticket_id": "SIM-TKT-0042",
+      "model_name": "gpt-6-luna",
+      "latency_ms": 2000.82,
+      "status": "SUCCESS",
+      "structured_output": {
+        "service_category": "VE_SINH",
+        "ticket_type": "COMMON_AREA_CLEANING",
+        "reason": "Hành lang tầng 37 có rác giấy cần dọn vệ sinh."
+      }
+    }
+  ],
+  "missing_photo_guard": {
+    "department_accepted": true,
+    "checklist_complete": true,
+    "processing_note_present": true,
+    "photo_present": false,
+    "materials_entered": true,
+    "variance_explained": true,
+    "no_open_blocker": true,
+    "evaluated_at": "2026-10-07T11:08:33.716937+07:00",
+    "failing_items": [
+      "execution_photo"
+    ]
+  },
+  "photo_checks": {
+    "resident": {
+      "evidence_id": "SIM-EVD-0042-01",
+      "object_ref": "bf1c203e10a241c6bce67e99f4ffdc59.png",
+      "bytes": 686,
+      "sha256": "adce3702b8912bc71aa2b890360f0926b391844694fd20c19cb6921bc5051e79",
+      "api_match": true,
+      "storage_match": true
+    },
+    "execution": {
+      "evidence_id": "SIM-EVD-0042-03",
+      "object_ref": "76bf986e34774c1392017cd3f828b035.png",
+      "bytes": 686,
+      "sha256": "66319477376af2279dd6c9a6ee1c38d1a8ec82243664faeddcb07d15aa3ab84a",
+      "api_match": true,
+      "storage_match": true
+    }
+  },
+  "ready_evaluation": {
+    "department_accepted": true,
+    "checklist_complete": true,
+    "processing_note_present": true,
+    "photo_present": true,
+    "materials_entered": true,
+    "variance_explained": true,
+    "no_open_blocker": true,
+    "evaluated_at": "2026-10-07T11:08:37.561971+07:00",
+    "failing_items": []
+  },
+  "ai_logs": [],
+  "final_case": {
+    "ticket": {
+      "ticket_id": "SIM-TKT-0042",
+      "raw": {
+        "ticket_id": "SIM-TKT-0042",
+        "created_at": "2026-10-07T11:03:18+07:00",
+        "original_description": "Hành lang tầng 37 tòa S1 có rác giấy, cần dọn vệ sinh. DEMO-TRUONG-20261007T040318Z. Dữ liệu demo mô phỏng.",
+        "original_evidence_refs": [],
+        "channel": "form"
+      },
+      "raw_integrity_marker": "sha256:b9ed47b32eb927d5834baaa168c3381bfbd446ca473b4cd61f7f587256740e6e",
+      "resident_id": "SIM-ACTOR-RESIDENT-01",
+      "source_revision": "SRC-001",
+      "dataset_version": "maintenanceops-sim-v1.3",
+      "status": "CLOSED",
+      "proposed_department_id": "DEPT_CLEANING",
+      "department_id": "DEPT_CLEANING",
+      "assignee_id": null,
+      "blocker": null,
+      "locked_fields": {
+        "category": null,
+        "location": null,
+        "asset_id": null,
+        "department": null
+      },
+      "review_status": "NOT_REQUIRED",
+      "asset_resolution": "NOT_APPLICABLE",
+      "merged_into": null,
+      "merged_children": [],
+      "flags": [],
+      "rework_count": 0,
+      "dispatched_at": "2026-10-07T11:07:52.170823+07:00",
+      "accepted_at": "2026-10-07T11:08:32.019957+07:00",
+      "closed_by": "SIM-ACTOR-BQL-01",
+      "closed_at": "2026-10-07T11:08:38.145893+07:00",
+      "closure_kind": "NORMAL",
+      "cancel_reason": null,
+      "rating": null,
+      "risk_level": "NONE",
+      "risk_signals": [],
+      "safety_cleared_by": null,
+      "safety_cleared_at": null,
+      "safety_clear_reason": null,
+      "safety_context": false,
+      "related_ticket_ids": [],
+      "priority": "LOW",
+      "priority_source": "AGENT_RULE",
+      "priority_rule_id": "PRI-L1",
+      "priority_reason": "PRI-L1: chưa ảnh hưởng trực tiếp",
+      "synthetic": true
+    },
+    "planned_materials": [
+      {
+        "item_code": "SIM-MAT-CLEAN-01",
+        "planned_qty": 2.0
+      }
+    ],
+    "planned_for_playbook": "PB-CLN-01",
+    "classification": {
+      "playbook_id": "PB-CLN-01",
+      "service_category": "VE_SINH",
+      "ticket_type": "COMMON_AREA_CLEANING",
+      "rule_id": "PB-CLN-R-TRG-01",
+      "reason": "Nội dung khớp phản ánh vệ sinh khu vực chung",
+      "reason_code": null,
+      "needs_review": false,
+      "proposer": "rules+llm:gpt-6-luna",
+      "notes": []
+    },
+    "not_duplicate_of": [],
+    "proposal": {
+      "proposal_id": "SIM-ACP-0042",
+      "ticket_id": "SIM-TKT-0042",
+      "proposal_revision": 1,
+      "service_category_proposed": "VE_SINH",
+      "ticket_type_proposed": "COMMON_AREA_CLEANING",
+      "playbook_id": "PB-CLN-01",
+      "playbook_version": "1.1",
+      "category_source": "AGENT",
+      "asset_type": null,
+      "reported_symptom": null,
+      "location_proposed": "Tòa S1 / Tầng 37 / Hành lang",
+      "asset_id": null,
+      "asset_lookup_status": "NOT_APPLICABLE",
+      "asset_match_reason": "Vệ sinh không tra tài sản",
+      "matched_rule_ids": [
+        "PB-CLN-R-TRG-01"
+      ],
+      "classification_reason": "Nội dung khớp phản ánh vệ sinh khu vực chung",
+      "source_references": [
+        "ticket.original_description",
+        "ticket_resident_additions"
+      ],
+      "created_at": "2026-10-07T11:07:52.170823+07:00",
+      "synthetic": true
+    },
+    "draft": {
+      "work_order_draft_id": "SIM-WOD-0042",
+      "ticket_id": "SIM-TKT-0042",
+      "proposal_id": "SIM-ACP-0042",
+      "playbook_id": "PB-CLN-01",
+      "playbook_version": "1.1",
+      "source_revision": "SRC-001",
+      "draft_revision": 1,
+      "draft_status": "DRAFT",
+      "scope_summary": "Ghi nhận vệ sinh khu vực chung tại Tòa S1 / Tầng 37 / Hành lang theo phản ánh mô phỏng. Bản nháp, không phải lệnh công việc thật.",
+      "matched_rule_ids": [
+        "PB-CLN-R-TRG-01",
+        "PB-COM-R-WO-01"
+      ],
+      "source_references": [
+        "ticket.original_description",
+        "locked_fields",
+        "ticket_resident_additions"
+      ],
+      "location": "Tòa S1 / Tầng 37 / Hành lang",
+      "asset_id": null,
+      "department_id": "DEPT_CLEANING",
+      "flags": [],
+      "assignee_id": null,
+      "material_stock_status": "SUFFICIENT",
+      "checklist_template_id": "PB-CLN-01-CHK-V1",
+      "checklist_item_ids": [
+        "SIM-CHK-0042-01",
+        "SIM-CHK-0042-02",
+        "SIM-CHK-0042-03"
+      ],
+      "material_requirement_mode": "TRACKED",
+      "material_gate_status": "RECONCILED",
+      "material_line_ids": [
+        "SIM-MAT-LINE-0042-01"
+      ],
+      "evidence_requirements": [
+        {
+          "requirement_id": "CLN-EVD-PROCESSING-NOTE",
+          "playbook_id": "PB-CLN-01",
+          "allowed_evidence_types": [
+            "PROCESSING_NOTE"
+          ],
+          "image_required": false,
+          "validation_status": "PRESENT",
+          "satisfied_by": [
+            "SIM-EVD-0042-02"
+          ]
+        }
+      ],
+      "readiness_evaluation": {
+        "department_accepted": true,
+        "checklist_complete": true,
+        "processing_note_present": true,
+        "photo_present": true,
+        "materials_entered": true,
+        "variance_explained": true,
+        "no_open_blocker": true,
+        "evaluated_at": "2026-10-07T11:08:37.561971+07:00",
+        "failing_items": []
+      },
+      "non_blocking_warnings": [],
+      "created_at": "2026-10-07T11:07:52.170823+07:00",
+      "synthetic": true
+    },
+    "checklist_items": [
+      {
+        "checklist_item_id": "SIM-CHK-0042-01",
+        "work_order_draft_id": "SIM-WOD-0042",
+        "checklist_template_id": "PB-CLN-01-CHK-V1",
+        "template_item_id": "CLN-CHK-01",
+        "label_snapshot": "Khu vực trong execution update khớp location_normalized",
+        "required": true,
+        "status": "COMPLETED",
+        "updated_by": "SIM-ACTOR-DEPT-CLN-01",
+        "updated_at": "2026-10-07T11:08:32.334804+07:00",
+        "note": "DEMO: checklist mô phỏng, không phải xác nhận xử lý thực tế.",
+        "synthetic": true
+      },
+      {
+        "checklist_item_id": "SIM-CHK-0042-02",
+        "work_order_draft_id": "SIM-WOD-0042",
+        "checklist_template_id": "PB-CLN-01-CHK-V1",
+        "template_item_id": "CLN-CHK-02",
+        "label_snapshot": "Execution update đã được ghi nhận theo scope_summary",
+        "required": true,
+        "status": "COMPLETED",
+        "updated_by": "SIM-ACTOR-DEPT-CLN-01",
+        "updated_at": "2026-10-07T11:08:32.601237+07:00",
+        "note": "DEMO: checklist mô phỏng, không phải xác nhận xử lý thực tế.",
+        "synthetic": true
+      },
+      {
+        "checklist_item_id": "SIM-CHK-0042-03",
+        "work_order_draft_id": "SIM-WOD-0042",
+        "checklist_template_id": "PB-CLN-01-CHK-V1",
+        "template_item_id": "CLN-CHK-03",
+        "label_snapshot": "Các hạng mục trong phạm vi draft đã được đánh dấu hoàn tất",
+        "required": true,
+        "status": "COMPLETED",
+        "updated_by": "SIM-ACTOR-DEPT-CLN-01",
+        "updated_at": "2026-10-07T11:08:32.867543+07:00",
+        "note": "DEMO: checklist mô phỏng, không phải xác nhận xử lý thực tế.",
+        "synthetic": true
+      }
+    ],
+    "material_lines": [
+      {
+        "material_line_id": "SIM-MAT-LINE-0042-01",
+        "work_order_draft_id": "SIM-WOD-0042",
+        "item_code": "SIM-MAT-CLEAN-01",
+        "item_name": "Dung dịch vệ sinh mô phỏng",
+        "unit": "unit-sim",
+        "planned_qty": 2.0,
+        "norm_qty": 2.0,
+        "norm_label": "SYNTHETIC",
+        "simulated_stock_qty": 10.0,
+        "material_stock_status": "SUFFICIENT",
+        "issued_qty": 2.0,
+        "used_qty": 2.0,
+        "variance_reason": null,
+        "comparison_results": [
+          {
+            "comparison_type": "PLANNED_VS_NORM",
+            "left_field": "planned_qty",
+            "right_field": "norm_qty",
+            "left_value": 2.0,
+            "right_value": 2.0,
+            "status": "MATCH",
+            "reason_reference": null
+          },
+          {
+            "comparison_type": "ISSUED_VS_PLANNED",
+            "left_field": "issued_qty",
+            "right_field": "planned_qty",
+            "left_value": 2.0,
+            "right_value": 2.0,
+            "status": "MATCH",
+            "reason_reference": null
+          },
+          {
+            "comparison_type": "USED_VS_ISSUED",
+            "left_field": "used_qty",
+            "right_field": "issued_qty",
+            "left_value": 2.0,
+            "right_value": 2.0,
+            "status": "MATCH",
+            "reason_reference": null
+          }
+        ],
+        "reconciliation_status": "RECONCILED",
+        "synthetic": true
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "SIM-EVD-0042-01",
+        "ticket_id": "SIM-TKT-0042",
+        "work_order_draft_id": null,
+        "requirement_id": null,
+        "evidence_type": "RESIDENT_ORIGINAL",
+        "content_or_metadata": "bf1c203e10a241c6bce67e99f4ffdc59.png",
+        "source": "RESIDENT_ORIGINAL",
+        "submitted_by": "SIM-ACTOR-RESIDENT-01",
+        "submitted_at": "2026-10-07T11:08:31.291270+07:00",
+        "readability_status": "READABLE",
+        "evidence_validation_status": "MISSING",
+        "immutable": true,
+        "synthetic": true
+      },
+      {
+        "evidence_id": "SIM-EVD-0042-02",
+        "ticket_id": "SIM-TKT-0042",
+        "work_order_draft_id": "SIM-WOD-0042",
+        "requirement_id": "CLN-EVD-PROCESSING-NOTE",
+        "evidence_type": "PROCESSING_NOTE",
+        "content_or_metadata": "DEMO: mô phỏng thu gom rác giấy tại hành lang tầng 37, không phải công việc thực tế.",
+        "source": "DEPARTMENT_EXECUTION",
+        "submitted_by": "SIM-ACTOR-DEPT-CLN-01",
+        "submitted_at": "2026-10-07T11:08:33.444729+07:00",
+        "readability_status": "NOT_APPLICABLE",
+        "evidence_validation_status": "PRESENT",
+        "immutable": false,
+        "synthetic": true
+      },
+      {
+        "evidence_id": "SIM-EVD-0042-03",
+        "ticket_id": "SIM-TKT-0042",
+        "work_order_draft_id": "SIM-WOD-0042",
+        "requirement_id": null,
+        "evidence_type": "SIMULATED_IMAGE",
+        "content_or_metadata": "76bf986e34774c1392017cd3f828b035.png",
+        "source": "DEPARTMENT_EXECUTION",
+        "submitted_by": "SIM-ACTOR-DEPT-CLN-01",
+        "submitted_at": "2026-10-07T11:08:34.651014+07:00",
+        "readability_status": "READABLE",
+        "evidence_validation_status": "PRESENT",
+        "immutable": false,
+        "synthetic": true
+      }
+    ],
+    "evidence_round_start": 0,
+    "additions": [],
+    "events": [
+      {
+        "id": "SIM-EVT-0042-0001",
+        "ticket_id": "SIM-TKT-0042",
+        "from_status": null,
+        "to_status": "RECEIVED",
+        "reason_code": null,
+        "actor_role": "SYSTEM",
+        "actor_id": "SIM-ACTOR-SYSTEM",
+        "public_message": "Phản ánh của bạn đã được tiếp nhận.",
+        "internal_note": null,
+        "public": true,
+        "created_at": "2026-10-07T11:03:18.497385+07:00"
+      },
+      {
+        "id": "SIM-EVT-0042-0002",
+        "ticket_id": "SIM-TKT-0042",
+        "from_status": "RECEIVED",
+        "to_status": "ROUTED",
+        "reason_code": null,
+        "actor_role": "SYSTEM",
+        "actor_id": "SIM-ACTOR-SYSTEM",
+        "public_message": "Phản ánh đã được chuyển tới Phòng Vệ sinh.",
+        "internal_note": null,
+        "public": true,
+        "created_at": "2026-10-07T11:07:52.170823+07:00"
+      },
+      {
+        "id": "SIM-EVT-0042-0003",
+        "ticket_id": "SIM-TKT-0042",
+        "from_status": "ROUTED",
+        "to_status": "IN_PROGRESS",
+        "reason_code": null,
+        "actor_role": "DEPARTMENT",
+        "actor_id": "SIM-ACTOR-DEPT-CLN-01",
+        "public_message": "Phòng Vệ sinh đang xử lý phản ánh.",
+        "internal_note": null,
+        "public": true,
+        "created_at": "2026-10-07T11:08:32.019957+07:00"
+      },
+      {
+        "id": "SIM-EVT-0042-0004",
+        "ticket_id": "SIM-TKT-0042",
+        "from_status": "IN_PROGRESS",
+        "to_status": "READY_FOR_REVIEW",
+        "reason_code": null,
+        "actor_role": "AGENT",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "public_message": "Đã xử lý xong, đang chờ Ban quản lý nghiệm thu.",
+        "internal_note": "Đối soát đạt",
+        "public": true,
+        "created_at": "2026-10-07T11:08:37.561971+07:00"
+      },
+      {
+        "id": "SIM-EVT-0042-0005",
+        "ticket_id": "SIM-TKT-0042",
+        "from_status": "READY_FOR_REVIEW",
+        "to_status": "CLOSED",
+        "reason_code": null,
+        "actor_role": "BQL",
+        "actor_id": "SIM-ACTOR-BQL-01",
+        "public_message": "Phản ánh đã hoàn thành.",
+        "internal_note": "DEMO-ONLY: nghiệm thu luồng phần mềm với ảnh và checklist mô phỏng; không nghiệm thu hiện trường.",
+        "public": true,
+        "created_at": "2026-10-07T11:08:38.145893+07:00"
+      }
+    ],
+    "notifications": [
+      {
+        "notification_id": "SIM-NTF-0042-0001",
+        "ticket_id": "SIM-TKT-0042",
+        "type": "ticket.status_changed",
+        "audience": "RESIDENT",
+        "payload": {
+          "to": "RECEIVED"
+        },
+        "created_at": "2026-10-07T11:03:18.497385+07:00"
+      },
+      {
+        "notification_id": "SIM-NTF-0042-0002",
+        "ticket_id": "SIM-TKT-0042",
+        "type": "ticket.status_changed",
+        "audience": "RESIDENT",
+        "payload": {
+          "to": "ROUTED",
+          "from": "RECEIVED",
+          "reason_code": null
+        },
+        "created_at": "2026-10-07T11:07:52.170823+07:00"
+      },
+      {
+        "notification_id": "SIM-NTF-0042-0003",
+        "ticket_id": "SIM-TKT-0042",
+        "type": "department.dispatch",
+        "audience": "DEPARTMENT",
+        "payload": {
+          "department_id": "DEPT_CLEANING"
+        },
+        "created_at": "2026-10-07T11:07:52.170823+07:00"
+      },
+      {
+        "notification_id": "SIM-NTF-0042-0004",
+        "ticket_id": "SIM-TKT-0042",
+        "type": "ticket.status_changed",
+        "audience": "RESIDENT",
+        "payload": {
+          "to": "IN_PROGRESS",
+          "from": "ROUTED",
+          "reason_code": null
+        },
+        "created_at": "2026-10-07T11:08:32.019957+07:00"
+      },
+      {
+        "notification_id": "SIM-NTF-0042-0005",
+        "ticket_id": "SIM-TKT-0042",
+        "type": "department.reconcile_failed",
+        "audience": "DEPARTMENT",
+        "payload": {
+          "failing_items": [
+            "execution_photo"
+          ]
+        },
+        "created_at": "2026-10-07T11:08:33.716937+07:00"
+      },
+      {
+        "notification_id": "SIM-NTF-0042-0006",
+        "ticket_id": "SIM-TKT-0042",
+        "type": "ticket.status_changed",
+        "audience": "RESIDENT",
+        "payload": {
+          "to": "READY_FOR_REVIEW",
+          "from": "IN_PROGRESS",
+          "reason_code": null
+        },
+        "created_at": "2026-10-07T11:08:37.561971+07:00"
+      },
+      {
+        "notification_id": "SIM-NTF-0042-0007",
+        "ticket_id": "SIM-TKT-0042",
+        "type": "ticket.status_changed",
+        "audience": "RESIDENT",
+        "payload": {
+          "from": "READY_FOR_REVIEW",
+          "to": "CLOSED",
+          "reason_code": null
+        },
+        "created_at": "2026-10-07T11:08:38.145893+07:00"
+      }
+    ],
+    "audit": [
+      {
+        "event_id": "SIM-AUD-0042-0001",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "Ticket",
+        "entity_id": "SIM-TKT-0042",
+        "action": "INGEST",
+        "actor_id": "SIM-ACTOR-SYSTEM",
+        "actor_role": "SYSTEM",
+        "timestamp": "2026-10-07T11:03:18.497385+07:00",
+        "field_name": "ticket",
+        "old_value": null,
+        "new_value": {
+          "raw_integrity_marker": "sha256:b9ed47b32eb927d5834baaa168c3381bfbd446ca473b4cd61f7f587256740e6e"
+        },
+        "reason": "Ingest raw ticket mô phỏng",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": null,
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0002",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "Ticket",
+        "entity_id": "SIM-TKT-0042",
+        "action": "ASSESS_SAFETY",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "actor_role": "AGENT",
+        "timestamp": "2026-10-07T11:07:52.170823+07:00",
+        "field_name": "risk_level",
+        "old_value": "NONE",
+        "new_value": {
+          "notes": [],
+          "scope": "full",
+          "signals": [],
+          "proposer": "rules",
+          "risk_level": "NONE"
+        },
+        "reason": "Tầng an toàn bước 2b (luật cố định; LLM chỉ nâng mức)",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": null,
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0003",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "Ticket",
+        "entity_id": "SIM-TKT-0042",
+        "action": "CREATE_PROPOSAL",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "actor_role": "AGENT",
+        "timestamp": "2026-10-07T11:07:52.170823+07:00",
+        "field_name": "classification",
+        "old_value": null,
+        "new_value": {
+          "notes": [],
+          "reason": "Nội dung khớp phản ánh vệ sinh khu vực chung",
+          "rule_id": "PB-CLN-R-TRG-01",
+          "proposer": "rules+llm:gpt-6-luna",
+          "playbook_id": "PB-CLN-01",
+          "reason_code": null,
+          "ticket_type": "COMMON_AREA_CLEANING",
+          "needs_review": false,
+          "service_category": "VE_SINH"
+        },
+        "reason": "Nội dung khớp phản ánh vệ sinh khu vực chung",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": "PB-CLN-R-TRG-01",
+        "playbook_version": null,
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0004",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "Ticket",
+        "entity_id": "SIM-TKT-0042",
+        "action": "CREATE_PROPOSAL",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "actor_role": "AGENT",
+        "timestamp": "2026-10-07T11:07:52.170823+07:00",
+        "field_name": "proposed_department_id",
+        "old_value": null,
+        "new_value": "DEPT_CLEANING",
+        "reason": "Playbook → DEPT_CLEANING",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0005",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "Ticket",
+        "entity_id": "SIM-TKT-0042",
+        "action": "CREATE_PROPOSAL",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "actor_role": "AGENT",
+        "timestamp": "2026-10-07T11:07:52.170823+07:00",
+        "field_name": "priority",
+        "old_value": null,
+        "new_value": "LOW",
+        "reason": "PRI-L1: chưa ảnh hưởng trực tiếp",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": "PRI-L1",
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0006",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "AgentClassificationProposal",
+        "entity_id": "SIM-ACP-0042",
+        "action": "LOOKUP_ASSET",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "actor_role": "AGENT",
+        "timestamp": "2026-10-07T11:07:52.170823+07:00",
+        "field_name": "asset_lookup_status",
+        "old_value": null,
+        "new_value": {
+          "status": "NOT_APPLICABLE",
+          "asset_id": null
+        },
+        "reason": "Vệ sinh không tra tài sản",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0007",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "Ticket",
+        "entity_id": "SIM-TKT-0042",
+        "action": "CHECK_MATERIAL_STOCK",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "actor_role": "AGENT",
+        "timestamp": "2026-10-07T11:07:52.170823+07:00",
+        "field_name": "material_stock_status",
+        "old_value": null,
+        "new_value": "SUFFICIENT",
+        "reason": "So vật tư dự kiến (vật tư mặc định của PB-CLN-01) với định mức và tồn kho mô phỏng",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0008",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "WorkOrderDraft",
+        "entity_id": "SIM-WOD-0042",
+        "action": "CREATE_DRAFT",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "actor_role": "AGENT",
+        "timestamp": "2026-10-07T11:07:52.170823+07:00",
+        "field_name": "draft_revision",
+        "old_value": null,
+        "new_value": 1,
+        "reason": "Giao DEPT_CLEANING; assignee_id để trống cho phòng ban tự phân công",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": "PB-COM-R-WO-01",
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0009",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "EvidenceRecord",
+        "entity_id": "SIM-EVD-0042-01",
+        "action": "ADD_RESIDENT_PHOTO",
+        "actor_id": "SIM-ACTOR-RESIDENT-01",
+        "actor_role": "RESIDENT",
+        "timestamp": "2026-10-07T11:08:31.291270+07:00",
+        "field_name": "evidence",
+        "old_value": null,
+        "new_value": {
+          "evidence_type": "RESIDENT_ORIGINAL"
+        },
+        "reason": "Cư dân đính kèm ảnh",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0010",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "ChecklistItem",
+        "entity_id": "SIM-CHK-0042-01",
+        "action": "UPDATE_CHECKLIST",
+        "actor_id": "SIM-ACTOR-DEPT-CLN-01",
+        "actor_role": "DEPARTMENT",
+        "timestamp": "2026-10-07T11:08:32.334804+07:00",
+        "field_name": "status",
+        "old_value": "PENDING",
+        "new_value": "COMPLETED",
+        "reason": "DEMO: checklist mô phỏng, không phải xác nhận xử lý thực tế.",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0011",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "ChecklistItem",
+        "entity_id": "SIM-CHK-0042-02",
+        "action": "UPDATE_CHECKLIST",
+        "actor_id": "SIM-ACTOR-DEPT-CLN-01",
+        "actor_role": "DEPARTMENT",
+        "timestamp": "2026-10-07T11:08:32.601237+07:00",
+        "field_name": "status",
+        "old_value": "PENDING",
+        "new_value": "COMPLETED",
+        "reason": "DEMO: checklist mô phỏng, không phải xác nhận xử lý thực tế.",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0012",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "ChecklistItem",
+        "entity_id": "SIM-CHK-0042-03",
+        "action": "UPDATE_CHECKLIST",
+        "actor_id": "SIM-ACTOR-DEPT-CLN-01",
+        "actor_role": "DEPARTMENT",
+        "timestamp": "2026-10-07T11:08:32.867543+07:00",
+        "field_name": "status",
+        "old_value": "PENDING",
+        "new_value": "COMPLETED",
+        "reason": "DEMO: checklist mô phỏng, không phải xác nhận xử lý thực tế.",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0013",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "MaterialLine",
+        "entity_id": "SIM-MAT-LINE-0042-01",
+        "action": "UPDATE_MATERIAL",
+        "actor_id": "SIM-ACTOR-DEPT-CLN-01",
+        "actor_role": "DEPARTMENT",
+        "timestamp": "2026-10-07T11:08:33.161355+07:00",
+        "field_name": "issued_qty,used_qty,variance_reason",
+        "old_value": {
+          "used_qty": null,
+          "issued_qty": null,
+          "variance_reason": null
+        },
+        "new_value": {
+          "used_qty": 2.0,
+          "issued_qty": 2.0,
+          "variance_reason": null
+        },
+        "reason": "Nhập vật tư xuất và dùng mô phỏng",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0014",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "EvidenceRecord",
+        "entity_id": "SIM-EVD-0042-02",
+        "action": "ADD_EVIDENCE",
+        "actor_id": "SIM-ACTOR-DEPT-CLN-01",
+        "actor_role": "DEPARTMENT",
+        "timestamp": "2026-10-07T11:08:33.444729+07:00",
+        "field_name": "evidence",
+        "old_value": null,
+        "new_value": {
+          "evidence_type": "PROCESSING_NOTE",
+          "requirement_id": "CLN-EVD-PROCESSING-NOTE"
+        },
+        "reason": "Thêm ghi chú xử lý mô phỏng",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0015",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "Ticket",
+        "entity_id": "SIM-TKT-0042",
+        "action": "REPORT_COMPLETE",
+        "actor_id": "SIM-ACTOR-DEPT-CLN-01",
+        "actor_role": "DEPARTMENT",
+        "timestamp": "2026-10-07T11:08:33.716937+07:00",
+        "field_name": "status",
+        "old_value": null,
+        "new_value": "REPORTED_COMPLETE",
+        "reason": "Phòng ban báo hoàn thành",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0016",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "WorkOrderDraft",
+        "entity_id": "SIM-WOD-0042",
+        "action": "RECONCILE",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "actor_role": "AGENT",
+        "timestamp": "2026-10-07T11:08:33.716937+07:00",
+        "field_name": "readiness_evaluation",
+        "old_value": null,
+        "new_value": {
+          "all_pass": false,
+          "failing_items": [
+            "execution_photo"
+          ]
+        },
+        "reason": "Đối soát bước 10",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0017",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "EvidenceRecord",
+        "entity_id": "SIM-EVD-0042-03",
+        "action": "ADD_EVIDENCE",
+        "actor_id": "SIM-ACTOR-DEPT-CLN-01",
+        "actor_role": "DEPARTMENT",
+        "timestamp": "2026-10-07T11:08:34.651014+07:00",
+        "field_name": "evidence",
+        "old_value": null,
+        "new_value": {
+          "evidence_type": "SIMULATED_IMAGE",
+          "requirement_id": null
+        },
+        "reason": "Thêm ghi chú xử lý mô phỏng",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0018",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "Ticket",
+        "entity_id": "SIM-TKT-0042",
+        "action": "REPORT_COMPLETE",
+        "actor_id": "SIM-ACTOR-DEPT-CLN-01",
+        "actor_role": "DEPARTMENT",
+        "timestamp": "2026-10-07T11:08:37.561971+07:00",
+        "field_name": "status",
+        "old_value": null,
+        "new_value": "REPORTED_COMPLETE",
+        "reason": "Phòng ban báo hoàn thành",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      },
+      {
+        "event_id": "SIM-AUD-0042-0019",
+        "ticket_id": "SIM-TKT-0042",
+        "entity_type": "WorkOrderDraft",
+        "entity_id": "SIM-WOD-0042",
+        "action": "RECONCILE",
+        "actor_id": "SIM-ACTOR-AGENT",
+        "actor_role": "AGENT",
+        "timestamp": "2026-10-07T11:08:37.561971+07:00",
+        "field_name": "readiness_evaluation",
+        "old_value": null,
+        "new_value": {
+          "all_pass": true,
+          "failing_items": []
+        },
+        "reason": "Đối soát bước 10",
+        "action_result": "ALLOWED",
+        "error_code": null,
+        "rule_id": null,
+        "playbook_version": "1.1",
+        "schema_version": "1.2",
+        "run_id": "SIM-RUN-000",
+        "synthetic": true
+      }
+    ]
+  },
+  "finished_at": "2026-10-07T04:08:38.539536+00:00",
+  "restart_verification": {
+    "ticket_status": "CLOSED",
+    "photos_count": 2,
+    "counts": {
+      "audit_log": 24,
+      "notifications": 7
+    }
+  },
+  "after": {
+    "case_count": 54,
+    "case_hashes": {
+      "SIM-TKT-CLN-001": "9a952d0d066e571757c5f95ff1013f99",
+      "SIM-TKT-0004": "67dda847f68815715a5e3d5674b2df4e",
+      "SIM-TKT-0006": "839bb59d839585057db5a028e26bbbe3",
+      "SIM-TKT-CLN-003": "e0ea1cf762f56365b2f9668a5640e31b",
+      "SIM-TKT-0003": "4d6739fb4de524bd9c0fc8d8d0701d85",
+      "SIM-TKT-CLN-002": "e03facd0f0f0c2967f22ca7439b4a103",
+      "SIM-TKT-0014": "78c5fb4ba83cb2b5b311b3c9403bb798",
+      "SIM-TKT-0027": "3951c21aaa9bd443e1bfe1874f544ddf",
+      "SIM-TKT-0015": "b615eac803e9766f1384817fecf193a6",
+      "SIM-TKT-0040": "7a504f590de65e14c11e73d8a5132631",
+      "SIM-TKT-CLN-004": "21599ad92b527e2c32a35b04575e0d92",
+      "SIM-TKT-CLN-005": "f4f7bc83df702ea8fbf882f748a83232",
+      "SIM-TKT-CLN-006": "5d59667e23fb8a78857571ec3e3c1298",
+      "SIM-TKT-0012": "c502f2c89f291629c55b32b878fcefe1",
+      "SIM-TKT-0005": "c88991497e60c7370bc1077eb505daba",
+      "SIM-TKT-TEC-001": "24304ea15bcc7c23608179ea363ba5d5",
+      "SIM-TKT-0011": "a5519e865dd7dc87b82e0605298f4e3b",
+      "SIM-TKT-0041": "57772dfb67f98a70ed036cae014cf72a",
+      "SIM-TKT-0016": "b8f6aa0a003ba0b102beec678f4ae741",
+      "SIM-TKT-0026": "2bab60c87964fb1df9b88f0a2b0825b6",
+      "SIM-TKT-0025": "6a361747ec6a71e1db2fbee88eba4807",
+      "SIM-TKT-0007": "3d69b3563db1e55acde76c2223d0b253",
+      "SIM-TKT-TEC-004": "5a6f25df6cb1c2a83c91ccd2cfc7d68e",
+      "SIM-TKT-TEC-002": "328811660a0c269b99e3897bc3d3d187",
+      "SIM-TKT-TEC-005": "e08b249a982ae8febaf4b47fcdc020b6",
+      "SIM-TKT-0042": "1cd64af36a1a20b0a3485a2a4d94bb9b",
+      "SIM-TKT-0009": "15c261b04f587f9624f6d8ac309c4718",
+      "SIM-TKT-0008": "8e0ea6136fbe29185aa904f25d7420bb",
+      "SIM-TKT-0017": "cfac72ca186e37b11e302eafaee64721",
+      "SIM-TKT-0018": "336e5044508167be0a349532ddedcbbf",
+      "SIM-TKT-0019": "b82974c565598632b418d817182949d4",
+      "SIM-TKT-TEC-003": "c2319642c62122b929f50d4195f837ff",
+      "SIM-TKT-0013": "efaa73ad7f958f1d0fc342e0a834eeba",
+      "SIM-TKT-TEC-006": "6bf36b427ce0dd40937f1ee7dc331af4",
+      "SIM-TKT-0010": "85ba0a3013a6cca4566a7f94d4b57fbb",
+      "SIM-TKT-0028": "e8894927b9efce080a223a3fb8befad6",
+      "SIM-TKT-0001": "1f2e2a61d73e464a84bad81d2535a646",
+      "SIM-TKT-0002": "33f974de5516fb567856621106515d58",
+      "SIM-TKT-0020": "197b95e57829daf5f3ee94322aedda83",
+      "SIM-TKT-0029": "1ae0613ea8b882f5990d345c931f4824",
+      "SIM-TKT-0021": "2db64f30700925bc260b3a17b2269183",
+      "SIM-TKT-0024": "0ae3ba2512fabc97e7381a0809b7f045",
+      "SIM-TKT-0022": "0bf6b1efbc01fd68f1c9e02c35115b74",
+      "SIM-TKT-0023": "d5cbb8203f99656e1b34ff741121f563",
+      "SIM-TKT-0030": "4621c138f8ac93827b358e5b3b02d1a8",
+      "SIM-TKT-0031": "453646b0406c676d664ec497ac58d170",
+      "SIM-TKT-0033": "91ca1458c44666456f60c7af550d8f58",
+      "SIM-TKT-0035": "0cbe8b29964df2446fd6458b2d4d6a5a",
+      "SIM-TKT-0037": "978e06de23bc5375ccb096292636cb99",
+      "SIM-TKT-0039": "906f96612fdae8176115a5c1e8fe8649",
+      "SIM-TKT-0032": "34fec5aa106d58cf8595f1d422f738b3",
+      "SIM-TKT-0034": "3d091e6541c3a99857cec4cd1e97a72f",
+      "SIM-TKT-0036": "fbc6d2c27a4adbdfad7deb9bb7bd931c",
+      "SIM-TKT-0038": "0239cef390034c95310cf2eaa34abb82"
+    },
+    "stock": {
+      "SIM-MAT-CLEAN-01": 10.0,
+      "SIM-MAT-BAG-01": 20.0,
+      "SIM-MAT-STARTER-01": null,
+      "SIM-MAT-LAMP-02": 2.0,
+      "SIM-MAT-LAMP-01": 0.0
+    }
+  },
+  "scope_checks": {
+    "preexisting_cases_changed": [],
+    "stock_unchanged": true,
+    "new_ticket_ids": [
+      "SIM-TKT-0042"
+    ]
+  },
+  "final_http_checks": {
+    "/health": 200,
+    "/ui/": 200,
+    "/api/v1/mo/tickets": 200,
+    "queue_count": 54,
+    "/api/v1/resident/tickets/SIM-TKT-0042": 200,
+    "resident_status": "CLOSED",
+    "resident_allowed_actions": [
+      "RATE"
+    ]
+  }
+}

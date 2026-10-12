@@ -1,0 +1,12 @@
+All checks passed!
+EXIT=0
+9 files already formatted
+EXIT=0
+warning: in the working copy of 'src/maintenance/agent/schema.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/maintenance/safety.py', LF will be replaced by CRLF the next time Git touches it
+ src/maintenance/agent/baseline.py | 18 +++++++-----------
+ src/maintenance/agent/schema.py   | 20 +++++++++++++++-----
+ src/maintenance/agent/validate.py | 37 +++++--------------------------------
+ src/maintenance/engine.py         |  4 +++-
+ src/maintenance/safety.py         | 33 ++++++++++++++++++++-------------
+ 5 files changed, 50 insertions(+), 62 deletions(-)

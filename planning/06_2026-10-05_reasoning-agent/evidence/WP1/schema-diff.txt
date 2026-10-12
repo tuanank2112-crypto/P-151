@@ -1,0 +1,4 @@
+REF section A lines=97 schema section A lines=97
+IDENTICAL
+DIFF_LINES=0
+EXIT=0

@@ -1,0 +1,14 @@
+MUTANT f-punct-quote-grounded: src/maintenance/agent/validate.py
+$ pytest tests/test_maintenance/test_p1_audit_fixes_safety.py tests/test_maintenance/test_agent_unit.py -q
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[..-parts0]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[..-parts1]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[..-parts2]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[---parts0]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[---parts1]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[---parts2]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[! -parts0]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[! -parts1]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_location_without_quote_is_rejected[! -parts2]
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_punctuation_quote_does_not_ground_an_invented_place
+10 failed, 87 passed in 3.52s
+EXIT=1

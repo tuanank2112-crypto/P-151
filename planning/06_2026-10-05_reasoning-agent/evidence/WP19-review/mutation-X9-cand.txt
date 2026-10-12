@@ -1,0 +1,11 @@
+# mutation X9: an invented location quote rejects the first job instead of the location (non-location path)
+# sandbox copy: C:\Users\lenku\AppData\Local\Temp\claude\d--P151\f10e92a7-fd49-4221-9973-e2c8b88de32f\scratchpad\repo3
+sha256 before src\maintenance\agent\validate.py = 98a7be113a43b44c414f6ebf7eab70c62ace1d61432dc467f1f3f93355a272a2
+applied in src/maintenance/agent/validate.py: anchor x1
+$ (cwd=sandbox) -m pytest -q -p no:cacheprovider -rf tests/test_maintenance/test_zz_h19_candidate.py tests/test_maintenance/test_zz_h19_exact.py
+FAILED tests/test_maintenance/test_zz_h19_candidate.py::test_location_quote_sharing_no_word_is_kept
+FAILED tests/test_maintenance/test_zz_h19_candidate.py::test_invented_place_exact_rejected
+FAILED tests/test_maintenance/test_zz_h19_exact.py::test_exact_rejected_variant
+3 failed, 2 passed in 0.86s
+EXIT=1
+sha256 after  src\maintenance\agent\validate.py = 98a7be113a43b44c414f6ebf7eab70c62ace1d61432dc467f1f3f93355a272a2 restored=YES

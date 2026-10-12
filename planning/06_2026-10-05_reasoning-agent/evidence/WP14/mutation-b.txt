@@ -1,0 +1,25 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: D:\P151
+plugins: anyio-4.15.1, langsmith-0.14.4, asyncio-1.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py F                   [100%]
+
+================================== FAILURES ===================================
+___________________ test_f3_invented_location_without_quote ___________________
+
+    def test_f3_invented_location_without_quote():
+        catalog = load_catalog()
+        from src.maintenance.agent.validate import _check_location
+        loc = LocationDecision(building="T├▓a S1", floor="Tß║ºng 1", area="H├ánh lang", quote=None, reason="test")
+        text = "─É├¿n h├ánh lang kh├┤ng s├íng"
+        res = _check_location(loc, text, catalog)
+>       assert res[0] is None
+E       AssertionError: assert 'T├▓a S1 / Tß║ºng 1 / H├ánh lang' is None
+
+tests\test_maintenance\test_p1_audit_fixes_safety.py:50: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_p1_audit_fixes_safety.py::test_f3_invented_location_without_quote
+============================== 1 failed in 0.30s ==============================

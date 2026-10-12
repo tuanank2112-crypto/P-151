@@ -1,0 +1,671 @@
+### GREEN-REFERENCE mini-valid (no mutation)
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mini-valid --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+RESULT: PASS
+EXIT=0
+
+### CONTROL mut-accepted_linked_to_open_dispute
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-accepted_linked_to_open_dispute --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=1
+GATE G2: OPEN
+GATE G3: OPEN
+ERR ACCEPTED_OPEN_DISPUTE safety-gold:D5-C-0001 has an OPEN dispute
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-accepted_with_unlinked_open_dispute
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-accepted_with_unlinked_open_dispute --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=1
+GATE G2: OPEN
+GATE G3: OPEN
+ERR ACCEPTED_OPEN_DISPUTE classification-gold:D5-C-0003 has an OPEN dispute
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-accepted_without_rationale
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-accepted_without_rationale --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR ACCEPTED_INCOMPLETE safety-gold:D5-C-0001 missing rationale
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-accepted_without_reviewed_at
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-accepted_without_reviewed_at --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR ACCEPTED_INCOMPLETE classification-gold:D5-C-0003 missing reviewed_at
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-accepted_without_reviewer
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-accepted_without_reviewer --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR ACCEPTED_INCOMPLETE safety-gold:D5-C-0001 missing reviewed_by
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-accepted_without_spec_refs
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-accepted_without_spec_refs --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR ACCEPTED_INCOMPLETE safety-gold:D5-C-0001 missing spec_refs
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-bad_case_id_format
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-bad_case_id_format --structure-only
+COUNT safety ALL EMERGENCY=1 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=0 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_ID X-1
+ERR MISSING_REF safety-gold:D5-C-0001
+ERR MISSING_REF split-manifest -> D5-C-0001
+ERR SPLIT_MISMATCH X-1: case=DEVELOP manifest=[]
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-bad_offsets
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-bad_offsets --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_QUOTE D5-C-0001: S-09 [12:36] != quote
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-bad_pair
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-bad_pair --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_PAIR D5-C-0003: VE_SINH/COMMON_AREA_LIGHTING/PB-CLN-01/None
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-bad_quote
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-bad_quote --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_QUOTE D5-C-0001: S-09 [12:35] != quote
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-bad_risk_enum
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-bad_risk_enum --structure-only
+COUNT safety ALL EMERGENCY=1 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=0 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_SCHEMA safety-gold[0] missing=[] bad_enum=['risk_level']
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-bad_signal_id
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-bad_signal_id --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_SIGNAL_ID D5-C-0001: 'T2-09'
+ERR EM_NO_TIER1 D5-C-0001: EMERGENCY without a PRESENT tier-1 signal (S-01..S-14)
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-case_missing_from_manifest
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-case_missing_from_manifest --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR SPLIT_MISMATCH D5-C-0005: case=DEVELOP manifest=[]
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-case_missing_key
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-case_missing_key --structure-only
+COUNT safety ALL EMERGENCY=1 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=0 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=6 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_SCHEMA cases[0] missing=['family_id'] bad_enum=[]
+ERR MISSING_REF safety-gold:D5-C-0001
+ERR MISSING_REF split-manifest -> D5-C-0001
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-case_not_synthetic
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-case_not_synthetic --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_SCHEMA D5-C-0001: synthetic must be true
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-case_split_differs_from_manifest
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-case_split_differs_from_manifest --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=0 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=2 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR SPLIT_MISMATCH D5-C-0001: case=HELD_OUT manifest=['DEVELOP']
+ERR FAMILY_LEAK F-D0 spans ['DEVELOP', 'HELD_OUT']
+ERR HELDOUT_NOT_AUTHORED D5-C-0001: source.kind=EXISTING_FIXTURE
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-classification_gold_for_safety_stop
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-classification_gold_for_safety_stop --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=3 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR CLS_NOT_ELIGIBLE D5-C-0001: case is SAFETY_STOP
+ERR CLS_NOT_ELIGIBLE D5-C-0001: safety risk is EMERGENCY
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-classification_gold_with_risk
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-classification_gold_with_risk --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=2 NONE=3
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=2 NONE=2
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR CLS_NOT_ELIGIBLE D5-C-0003: safety risk is UNCLEAR
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-cleaning_with_reason_code
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-cleaning_with_reason_code --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_PAIR D5-C-0003: VE_SINH/COMMON_AREA_CLEANING/PB-CLN-01/OUT_OF_SCOPE
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-d4_11_in_held_out
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-d4_11_in_held_out --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=5 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR D4_11_HELD_OUT F-D4-11 must stay DEVELOP
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-dispute_id_not_a_string
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-dispute_id_not_a_string --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_SCHEMA safety-gold:D5-C-0001.review.dispute_id must be a string or null
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-dup_case_id
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-dup_case_id --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=0 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=0 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=6 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR DUP_ID cases:D5-C-0001
+ERR MISSING_REF safety-gold:D5-C-0002
+ERR MISSING_REF split-manifest -> D5-C-0002
+ERR BAD_QUOTE D5-C-0001: S-09 [12:35] != quote
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-dup_gold_id
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-dup_gold_id --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR DUP_ID safety-gold:D5-C-0001
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-emergency_tier1_absent
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-emergency_tier1_absent --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR EM_NO_TIER1 D5-C-0001: EMERGENCY without a PRESENT tier-1 signal (S-01..S-14)
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-emergency_with_tier2_only
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-emergency_with_tier2_only --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR EM_NO_TIER1 D5-C-0001: EMERGENCY without a PRESENT tier-1 signal (S-01..S-14)
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-exception_on_held_out_family
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-exception_on_held_out_family --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_EXCEPTION F-H0: exception family must be DEVELOP only
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-exception_without_reason
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-exception_without_reason --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=3 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_EXCEPTION F-D0: exception without reason
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-exceptions_not_a_list
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-exceptions_not_a_list --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_EXCEPTION family_exceptions must be a list of {family_id, reason} or an object
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-family_id_not_a_string
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-family_id_not_a_string --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_SCHEMA D5-C-0001: text/family_id
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-family_in_both_splits
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-family_in_both_splits --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR FAMILY_LEAK F-H0 spans ['DEVELOP', 'HELD_OUT']
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-family_over_three
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-family_over_three --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=3 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR FAMILY_TOO_BIG F-D0 has 4 cases (>3, no exception)
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-gold_ref_missing
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-gold_ref_missing --structure-only
+COUNT safety ALL EMERGENCY=1 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=0 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR MISSING_REF safety-gold:D5-C-9999
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-held_out_not_authored
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-held_out_not_authored --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR HELDOUT_NOT_AUTHORED D5-C-0006: source.kind=LLM_PROPOSAL
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-manifest_ref_missing
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-manifest_ref_missing --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR MISSING_REF split-manifest -> D5-C-9999
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-reviewer_is_claude
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-reviewer_is_claude --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR REVIEWER_NOT_HUMAN classification-gold:D5-C-0003 reviewer looks like a model/agent
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-reviewer_is_gpt
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-reviewer_is_gpt --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR REVIEWER_NOT_HUMAN safety-gold:D5-C-0001 reviewer looks like a model/agent
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-reviewer_is_proposer
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-reviewer_is_proposer --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR REVIEWER_SAME safety-gold:D5-C-0001 reviewer == proposer
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-secret_in_manifest
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-secret_in_manifest --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR SECRET split-manifest.dataset_version
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-secret_jwt
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-secret_jwt --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR SECRET cases[0].notes
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-secret_openai_key
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-secret_openai_key --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR SECRET cases[0].notes
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-secret_postgres_url
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-secret_postgres_url --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR SECRET disputes[0].question
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-secret_supabase_env
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-secret_supabase_env --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR SECRET safety-gold[0].risk_reason
+RESULT: FAIL
+EXIT=1
+
+### CONTROL mut-unknown_without_reason_code
+$ python planning/09_2026-10-07_day05-labels/deliverables/tools/validate_day05.py --data-dir <fx>/mut-unknown_without_reason_code --structure-only
+COUNT safety ALL EMERGENCY=2 UNCLEAR=1 NONE=4
+COUNT cls ALL VE_SINH=2 KY_THUAT=1 UNKNOWN=1
+COUNT safety DEVELOP EMERGENCY=1 UNCLEAR=1 NONE=3
+COUNT cls DEVELOP VE_SINH=1 KY_THUAT=1 UNKNOWN=1
+COUNT safety HELD_OUT EMERGENCY=1 UNCLEAR=0 NONE=1
+COUNT cls HELD_OUT VE_SINH=1 KY_THUAT=0 UNKNOWN=0
+COUNT cases=7 families_accepted=4 open_disputes=0
+GATE G2: OPEN
+GATE G3: OPEN
+ERR BAD_PAIR D5-C-0005: UNKNOWN/UNKNOWN/None/None
+RESULT: FAIL
+EXIT=1
+

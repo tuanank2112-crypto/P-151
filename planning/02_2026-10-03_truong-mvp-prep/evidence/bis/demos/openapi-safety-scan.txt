@@ -1,0 +1,8 @@
+paths: 45
+safety/emergency/hazard paths: []
+Action ['SAFETY_CONFIRM_SAFE', 'SAFETY_ESCALATE', 'EMERGENCY_CLOSE', 'EMERGENCY_DOWNGRADE']
+BqlTicketRow ['safety_cleared_by']
+ReasonCode ['SAFETY_REVIEW_REQUIRED', 'EMERGENCY_PENDING_BQL']
+Ticket ['safety_cleared_by']
+post /api/v1/mo/tickets/{ticket_id}/transition {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/TransitionRequest"}}}}
+post /api/v1/mo/tickets/{ticket_id}/bptn-resolve {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/BptnResolveRequest"}}}}

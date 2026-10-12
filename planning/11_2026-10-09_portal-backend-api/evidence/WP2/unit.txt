@@ -1,0 +1,16 @@
+# measured on a verification copy of portal/ without the files the plan removes (see report: deletion was denied by the sandbox)
+$ npm run test
+
+> portal@1.6.0 test
+> vitest run --project unit
+
+
+ RUN  v5.0.3 C:/Users/lenku/AppData/Local/Temp/claude/d--P151/989520be-923e-4012-89c9-eff75a2f4710/scratchpad/mirror/portal
+
+
+ Test Files  6 passed (6)
+      Tests  57 passed (57)
+   Start at  11:09:07
+   Duration  1.90s (import 44%, transform 36%, tests 18%, worker 2%)
+
+EXIT=0

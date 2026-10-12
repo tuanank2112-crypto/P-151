@@ -1,0 +1,8 @@
+# observed_at=2026-10-03T11:06:18+07:00
+$ node ../brain4agent.release/.agents/skills/.xay-dung-nao-bo/scripts/init_brain.js --check
+node:internal/modules/cjs/loader:1520
+  throw err;
+  ^
+
+Error: Cannot find module 'C:\brain4agent.release\.agents\skills\.xay-dung-nao-bo\scripts\init_brain.js'
+exit=1

@@ -1,0 +1,2 @@
+NOT_RUN (Docker tắt)
+EXIT=0

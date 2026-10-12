@@ -1,0 +1,3 @@
+# cmd: .venv/Scripts/python.exe planning/09_2026-10-07_day05-labels/deliverables/tools/run_day05_baseline.py --data-dir planning/09_2026-10-07_day05-labels/deliverables --mode rules --split held-out --output planning/09_2026-10-07_day05-labels/evidence/run03-orch-gates/should-not-exist.json
+HELDOUT_NOT_FROZEN: split-manifest needs frozen=true and a hash
+EXIT=2

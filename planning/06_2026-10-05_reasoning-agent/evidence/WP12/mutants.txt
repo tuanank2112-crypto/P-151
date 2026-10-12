@@ -1,0 +1,15 @@
+$ LLM_MODE=mock PYTHONUTF8=1 PYTHONPATH=. python planning/06_2026-10-05_reasoning-agent/evidence/WP12/probes/mutants.py 
+break1_agent_lowers.py: mutant = the Agent's safety replaces the rules' (reconcile.safety_for returns NONE)
+    exit=1 -> RED (probe catches it) | RESULT checked=654 receive_below_label=15 agent_lower_than_rules=37 routed=36 | other paths: below_label_after_2b=53 (rule floor, see extra-2) not_assessed=138 (pipeline never re-ran, see extra-1)
+break2_injection.py: mutant = the apply-time re-check accepts any duplicate the Agent names
+    exit=1 -> RED (probe catches it) | RESULT victims=6 model_calls=9 problems=2
+break3_lock_probe.py: mutant = receive asks the model while holding engine.lock
+    exit=1 -> RED (probe catches it) | RESULT model_calls=23 in_lock_or_tx=11 from_no_model_entries=0
+break4_race_threads.py: mutant = a prepared decision is applied even when the content moved on
+    exit=1 -> RED (probe catches it) | AssertionError: A never reached the model
+break6_wrong_split.py: mutant = the rule split verdict always says SPLIT (no cause/hedge/two-places check)
+    exit=1 -> RED (probe catches it) | RESULT sentences=28 splits_rules=22 splits_mirror=22 splits_reckless=25 violations=44
+extra_permissions.py: mutant = PERMISSIONS lets the reporting resident merge emergencies
+    exit=1 -> RED (probe catches it) | RESULT cases=9 actors=10 accepted_forbidden=1 refused_allowed=0 refused_not_403=5
+RESULT mutants=6 caught=6 blind=[]
+EXIT=0

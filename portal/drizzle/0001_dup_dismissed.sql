@@ -1,0 +1,1 @@
+ALTER TABLE "tickets" ADD COLUMN "dup_dismissed" integer[] DEFAULT '{}'::integer[] NOT NULL;

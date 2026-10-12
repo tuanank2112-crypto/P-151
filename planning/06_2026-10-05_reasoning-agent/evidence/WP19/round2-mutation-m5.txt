@@ -1,0 +1,7 @@
+# m5: Mirror writes report_text as the job quote
+$ python -m pytest -q tests/test_maintenance/test_p10_catalog_not_quote.py -k test_p10_04   (file mutated: src/maintenance/agent/baseline.py)
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_04_mirror_writes_no_quote_of_its_own[Ch\u1ed7 \u0111i b\u1ed9 tr\u01b0\u1edbc thang m\xe1y t\u1ea7ng 3 t\xf2a S1 c\xf3 nhi\u1ec1u r\xe1c]
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_04_mirror_writes_no_quote_of_its_own[H\xe0nh lang t\u1ea7ng 3 t\xf2a S1 nhi\u1ec1u r\xe1c, c\u1ea7n v\u1ec7 sinh.]
+2 failed, 1 passed, 18 deselected in 0.69s
+restored: sha256 before == after: True; git diff --stat unchanged: True
+EXIT=1

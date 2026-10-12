@@ -1,0 +1,148 @@
+# Nen develop deab467 (worktree tam, LLM_MODE=mock PYTHONUTF8=1, venv311)
+$ python -m pytest -q -p no:cacheprovider -rs
+........................................................................ [ 38%]
+........................................................................ [ 77%]
+.........................................                                [100%]
+185 passed, 20 deselected in 14.91s
+pytest EXIT=0
+
+$ python -m ruff check src tests / ruff format --check src tests
+All checks passed!
+ruff check EXIT=0
+unformatted: File would be reformatted
+   --> src\api\routers\maintenance.py:253:1
+    |
+252 |     return {"message": "Đã reset dữ liệu AI logs"}
+253 +
+254 +
+255 | # ------------------------------------------------------------------ tickets (internal, full detail)
+    |
+
+unformatted: File would be reformatted
+  --> src\maintenance\ai_logger.py:19:1
+   |
+18 |     """Execution status of an LLM call."""
+   -     SUCCESS = "SUCCESS"                      # Model responded successfully with valid schema
+   -     FALLBACK_RULE = "FALLBACK_RULE"          # Model error/timeout -> Graceful fallback to deterministic rule
+   -     SCHEMA_ERROR = "SCHEMA_ERROR"            # Model response failed schema validation
+   -     RATE_LIMIT = "RATE_LIMIT"                # HTTP 429 quota exhausted
+   -     TIMEOUT = "TIMEOUT"                      # Request exceeded maximum allowable timeout
+19 |
+20 +     SUCCESS = "SUCCESS"  # Model responded successfully with valid schema
+21 +     FALLBACK_RULE = "FALLBACK_RULE"  # Model error/timeout -> Graceful fallback to deterministic rule
+22 +     SCHEMA_ERROR = "SCHEMA_ERROR"  # Model response failed schema validation
+23 +     RATE_LIMIT = "RATE_LIMIT"  # HTTP 429 quota exhausted
+24 +     TIMEOUT = "TIMEOUT"  # Request exceeded maximum allowable timeout
+25 +
+26 |
+--------------------------------------------------------------------------------
+30 |     log_id: str = Field(
+   -         default_factory=lambda: f"ailog_{uuid.uuid4().hex[:12]}",
+   -         description="Unique identifier for the log entry"
+31 +         default_factory=lambda: f"ailog_{uuid.uuid4().hex[:12]}", description="Unique identifier for the log entry"
+32 |     )
+33 |     timestamp: datetime = Field(
+   -         default_factory=lambda: datetime.now(UTC),
+   -         description="UTC timestamp when the request was initiated"
+34 +         default_factory=lambda: datetime.now(UTC), description="UTC timestamp when the request was initiated"
+35 |     )
+36 |     ticket_id: str = Field(
+   -         default="PENDING",
+   -         description="Associated ticket identifier (e.g. TK-20260930-001 or PENDING during ingest)"
+37 +         default="PENDING", description="Associated ticket identifier (e.g. TK-20260930-001 or PENDING during ingest)"
+38 |     )
+39 |     prompt_sent: dict[str, str] = Field(
+   -         ...,
+   -         description="Payload sent to the model, containing system prompt and user input"
+40 +         ..., description="Payload sent to the model, containing system prompt and user input"
+41 |     )
+42 |     raw_output: str | None = Field(
+   -         default=None,
+   -         description="Raw completion text/JSON received from the model prior to parsing"
+43 +         default=None, description="Raw completion text/JSON received from the model prior to parsing"
+44 |     )
+45 |     structured_output: dict[str, Any] | None = Field(
+   -         default=None,
+   -         description="Validated structured dictionary adhering to LLMAssessment schema"
+46 +         default=None, description="Validated structured dictionary adhering to LLMAssessment schema"
+47 |     )
+48 |     model_name: str = Field(
+   -         default="unknown",
+   -         description="Identifier of the model used (e.g. gpt-4o-mini, gemini-1.5-flash)"
+   -     )
+   -     latency_ms: float = Field(
+   -         default=0.0,
+   -         ge=0.0,
+   -         description="Round-trip latency in milliseconds"
+   -     )
+   -     status: AILogStatus = Field(
+   -         default=AILogStatus.SUCCESS,
+   -         description="Execution status of the invocation"
+49 +         default="unknown", description="Identifier of the model used (e.g. gpt-4o-mini, gemini-1.5-flash)"
+50 |     )
+   -     error_message: str | None = Field(
+   -         default=None,
+   -         description="Error details or exception message if the call failed"
+   -     )
+51 +     latency_ms: float = Field(default=0.0, ge=0.0, description="Round-trip latency in milliseconds")
+52 +     status: AILogStatus = Field(default=AILogStatus.SUCCESS, description="Execution status of the invocation")
+53 +     error_message: str | None = Field(default=None, description="Error details or exception message if the call failed")
+54 |     token_usage: dict[str, int] | None = Field(
+   -         default=None,
+   -         description="Token consumption metrics: prompt_tokens, completion_tokens, total_tokens"
+55 +         default=None, description="Token consumption metrics: prompt_tokens, completion_tokens, total_tokens"
+56 |     )
+   |
+
+2 files would be reformatted, 59 files already formatted
+ruff format EXIT=1
+
+# collect-only: develop=185 ids, HEAD 853ed6f=1462 ids, develop-only=47
+# develop-only ids:
+tests/test_maintenance/test_acceptance.py::test_02_missing_location_goes_to_bptn_and_the_resident_can_still_add_it
+tests/test_maintenance/test_acceptance.py::test_02b_bptn_enters_the_missing_location_after_calling_the_resident
+tests/test_maintenance/test_acceptance.py::test_02c_bptn_records_what_the_resident_said_and_must_cover_every_missing_part
+tests/test_maintenance/test_acceptance.py::test_02d_info_is_only_for_missing_info
+tests/test_maintenance/test_acceptance.py::test_09_reopen_window
+tests/test_maintenance/test_ai_logger.py::test_api_get_ai_logs_filtering
+tests/test_maintenance/test_ai_logger.py::test_api_get_ai_logs_permissions
+tests/test_maintenance/test_ai_logger.py::test_api_reset_ai_logs
+tests/test_maintenance/test_ai_logger.py::test_in_memory_logger_record_and_get
+tests/test_maintenance/test_ai_logger.py::test_in_memory_logger_sliding_window
+tests/test_maintenance/test_ai_logger.py::test_in_memory_logger_stats_and_export
+tests/test_maintenance/test_ai_logger.py::test_in_memory_logger_thread_safety
+tests/test_maintenance/test_ai_logger.py::test_propose_logs_fallback_on_exception
+tests/test_maintenance/test_ai_logger.py::test_propose_logs_success_invocation
+tests/test_maintenance/test_api.py::test_bptn_fills_missing_location_over_http
+tests/test_maintenance/test_engine.py::test_invariant_2_agent_never_writes_assignee
+tests/test_maintenance/test_engine.py::test_missing_info_reminds_bptn_hourly_and_escalates_after_four_business_hours
+tests/test_maintenance/test_persistence_api.py::test_t10_reset_and_evaluate_are_gated_on_a_shared_database
+tests/test_maintenance/test_persistence_api.py::test_t25_store_errors_map_to_the_right_http_status
+tests/test_maintenance/test_persistence_api.py::test_t26_concurrent_update_is_409
+tests/test_maintenance/test_persistence_api.py::test_t29_transition_is_checked_again_under_the_lock
+tests/test_maintenance/test_persistence_guards.py::test_t12b_head_revision_matches_alembic_head
+tests/test_maintenance/test_persistence_guards.py::test_t14_pg_tests_refuse_anything_but_a_local_test_database[postgresql+psycopg2://u:p@aws-0-ap-southeast-1.pooler.supabase.invalid:5432/postgres_test]
+tests/test_maintenance/test_persistence_guards.py::test_t14_pg_tests_refuse_anything_but_a_local_test_database[postgresql+psycopg2://u:p@localhost:5432/p151]
+tests/test_maintenance/test_persistence_guards.py::test_t14b_test_environment_is_forced_to_memory
+tests/test_maintenance/test_persistence_guards.py::test_t27_database_url_checks_never_leak_the_password
+tests/test_maintenance/test_photo_store.py::test_failed_upload_records_no_evidence
+tests/test_maintenance/test_photo_store.py::test_supabase_store_needs_url_and_key
+tests/test_maintenance/test_photo_store.py::test_t15a_put_posts_the_object_without_upsert
+tests/test_maintenance/test_photo_store.py::test_t15b_get_returns_bytes_and_maps_not_found
+tests/test_maintenance/test_photo_store.py::test_t15c_auth_headers_depend_on_the_key_kind
+tests/test_maintenance/test_photo_store.py::test_t15d_retries_5xx_twice_then_gives_up
+tests/test_maintenance/test_photo_store.py::test_t15e_4xx_is_not_retried
+tests/test_maintenance/test_photo_store.py::test_t15f_the_key_never_shows_in_errors_or_repr
+tests/test_maintenance/test_photo_store.py::test_t15g_duplicate_on_a_retry_means_the_first_try_landed
+tests/test_maintenance/test_photo_store.py::test_t15h_delete_sends_prefixes_and_is_idempotent
+tests/test_maintenance/test_photo_store.py::test_t16_refused_evidence_deletes_its_photo
+tests/test_maintenance/test_photo_store.py::test_t17_photo_api_is_unchanged
+tests/test_maintenance/test_store_memory.py::test_engine_cases_is_read_only[memory]
+tests/test_maintenance/test_store_memory.py::test_next_ticket_number_never_hands_out_a_number_twice[memory]
+tests/test_maintenance/test_store_memory.py::test_seed_never_overwrites_existing_stock[memory]
+tests/test_maintenance/test_store_memory.py::test_t01_case_round_trip_after_reset[memory]
+tests/test_maintenance/test_store_memory.py::test_t02_audit_sink_failure_changes_nothing[memory]
+tests/test_maintenance/test_store_memory.py::test_t03_guard_error_in_op_changes_nothing[memory]
+tests/test_maintenance/test_store_memory.py::test_t05_stale_save_raises_concurrency_error[memory]
+tests/test_maintenance/test_store_memory.py::test_t09_seed_only_when_empty_and_tops_up_stock[memory]
+tests/test_maintenance/test_store_memory.py::test_t23_ledger_matches_every_doc[memory]

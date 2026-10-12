@@ -1,0 +1,26 @@
+captured_at=2026-10-10T18:06:33+07:00
+## BASELINE snapshot (hash-checked, see red_baseline.txt)
+$ (cd <snap_red2>) python evidence/harness/legacy_probe.py
+ACCEPTED P1-api-plan-foreign status=200
+ACCEPTED P2-api-record-foreign status=200
+ACCEPTED P3-engine-plan-foreign no error
+ACCEPTED P4-api-plan-0.5 status=200
+ACCEPTED P5-api-record-0.5 status=200 stock=4.5
+ACCEPTED P6-api-record-true status=200
+ACCEPTED P7-api-plan-technical-empty status=200
+ACCEPTED P8-technical-empty-completes status=READY_FOR_REVIEW
+RESULT accepted=8 refused=0
+exit=0
+
+## HEAD working tree
+$ python evidence/harness/legacy_probe.py
+REFUSED  P1-api-plan-foreign status=409
+REFUSED  P2-api-record-foreign status=409
+REFUSED  P3-engine-plan-foreign GuardError
+REFUSED  P4-api-plan-0.5 status=422
+REFUSED  P5-api-record-0.5 status=422 stock=5.0
+REFUSED  P6-api-record-true status=422
+REFUSED  P7-api-plan-technical-empty status=409
+REFUSED  P8-technical-empty-completes status=IN_PROGRESS
+RESULT accepted=0 refused=8
+exit=0

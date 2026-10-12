@@ -1,0 +1,3 @@
+$ grep -rnw -e grounded -e _grounded src/maintenance --include=*.py | wc -l
+0
+EXIT=0

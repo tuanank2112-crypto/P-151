@@ -1,0 +1,10 @@
+$ tsx scripts/ui-check-WP5.mts  --base=http://localhost:8000
+PASS  6 inventory columns Mã/Tên/Đơn vị/Tồn @390  -> mã vt|tên vật tư|đơn vị|tồn kho|thao tác
+PASS  6 add item shows in inventory or backend message @390  -> added
+PASS  6 receive stock closes dialog @390
+PASS  6 requests tab renders (0 request) @390
+PASS  5.4 approve inspection moves ticket to Đã hoàn thành: Đã hoàn thành (0) -> Đã hoàn thành (1)
+PASS  no horizontal overflow on any screenshot (scrollWidth <= viewport)
+
+TOTAL 72 PASS 72 FAIL 0
+EXIT=0

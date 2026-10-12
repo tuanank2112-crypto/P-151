@@ -1,0 +1,53 @@
+
+ RUN  v5.0.3 C:/P-151/portal
+
+ ❯ |unit| tests/unit/backend-server-actions.test.ts (8 tests | 1 failed) 68ms
+   ❯ Python server action results (8)
+     × treats complete HTTP200 with failing gates as business failure 18ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+   Start at  21:23:04
+   Duration  1.19s (transform 44%, tests 38%, import 14%, worker 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| tests/unit/backend-server-actions.test.ts > Python server action results > treats complete HTTP200 with failing gates as business failure
+AssertionError: expected { ok: true, data: { …(8) } } to match object { ok: false, …(4) }
+
+- Expected
++ Received
+
+@@ -1,7 +1,6 @@
+  {
+-   "code": "READINESS_FAILED",
+    "data": {
+      "draft": {
+        "readiness_evaluation": {
+          "failing_items": [
+            "material_required",
+@@ -10,9 +9,7 @@
+      },
+      "ticket": {
+        "status": "IN_PROGRESS",
+      },
+    },
+-   "message": StringContaining "material_required",
+-   "ok": false,
+-   "status": 409,
++   "ok": true,
+  }
+
+ ❯ tests/unit/backend-server-actions.test.ts:13:63
+     11|     const data = { ticket: { status: "IN_PROGRESS" }, draft: { readine…
+     12|     mocks.fetch.mockResolvedValue(data);
+     13|     expect(await runTicketAction("SIM-TKT-0062", "complete")).toMatchO…
+       |                                                               ^
+     14|     expect(mocks.fetch).toHaveBeenCalledTimes(1);
+     15|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+EXIT=1

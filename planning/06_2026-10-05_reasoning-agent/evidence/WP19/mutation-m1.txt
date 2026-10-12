@@ -1,0 +1,6 @@
+# m1: location quote not in location_text voids the location
+$ python -m pytest -q tests/test_maintenance/test_p10_catalog_not_quote.py -k test_p10_01   (file mutated: src/maintenance/agent/validate.py)
+FAILED tests/test_maintenance/test_p10_catalog_not_quote.py::test_p10_01_location_worded_differently_but_in_the_catalog_is_kept
+1 failed, 17 deselected in 0.64s
+restored: sha256 before == after: True; git diff --stat unchanged: True
+EXIT=1

@@ -1,0 +1,4 @@
+$ pytest -q -p no:cacheprovider
+.....................................                                    [100%]
+3781 passed, 95 deselected in 180.93s (0:03:00)
+EXIT=0

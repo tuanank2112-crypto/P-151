@@ -1,0 +1,27 @@
+captured_at=2026-10-10T17:50:29+07:00
+$ node planning/16_2026-10-10_material-guards/evidence/wp4/ui_probe.mjs http://127.0.0.1:8017 C:/P-151/portal planning/16_2026-10-10_material-guards/evidence/wp4/screens
+HELD   web U1 no Agent prefill :: agent_lines=SIM-MAT-LAMP-01:1/null/null form_rows=[":1"] forbidden_words=[]
+HELD   web U8 technical empty blocked client-side :: posts=0
+HELD   web U11 qty 0.5 blocked client-side :: posts=0 rows=["SIM-MAT-LAMP-01:0.5"]
+HELD   web U12 tampered foreign option refused by server :: posts=1 body={"lines":[{"item_code":"SIM-MAT-CLEAN-01","used_qty":1}]} lines=SIM-MAT-LAMP-01:1/null/null
+HELD   web U3 shortage 409 keeps input :: posts=2 rows=["SIM-MAT-LAMP-02:1"] lines=SIM-MAT-LAMP-01:1/null/null
+HELD   web U3b input still kept 32 s after the error :: rows_after_32s=["SIM-MAT-LAMP-02:1"]
+HELD   web U5 network failure: no saved, no retry :: posts=3 rows=["SIM-MAT-LAMP-01:4"] stock=8
+BROKEN web U4 dblclick+click+Enter during slow save = 1 POST :: posts_after=2 bodies=["{\"lines\":[{\"item_code\":\"SIM-MAT-LAMP-01\",\"used_qty\":4}]}","{\"lines\":[{\"item_code\":\"SIM-MAT-LAMP-01\",\"used_qty\":4}]}"] saved_before_200=true stock=8->4 lines=SIM-MAT-LAMP-01:4/4/4
+BROKEN web U10 reopen shows saved rows; re-save = 1 POST, stock same :: rows=["SIM-MAT-LAMP-01:4"] posts=6 stock=4->4
+BROKEN web U6 offline: 0 POST :: posts=6
+HELD   web U13 no JS error, no horizontal overflow :: pageerrors=[] overflow_px=0
+HELD   web U9 cleaning none = 1 POST lines [] :: posts=[{"path":"/material-usage","body":"{\"lines\":[]}"}] mode=N_A
+HELD   web U7 no mapping from server: save disabled, 0 POST, no options :: disabled=true posts=0 options=[]
+file:///C:/P-151/planning/16_2026-10-10_material-guards/evidence/wp4/ui_probe.mjs:31
+  if (r.status >= 300) throw new Error(`${method} ${p} -> ${r.status} ${JSON.stringify(data).slice(0, 200)}`);
+                             ^
+
+Error: POST /mo/tickets/SIM-TKT-0008/accept -> 403 {"detail":{"message":"Ticket không thuộc phòng ban của SIM-ACTOR-DEPT-TEC-01","decision":"DENY","code":"ACTION_DENIED","requested_action":"TRANSITION","actor_id":"SIM-ACTOR-DEPT-TEC-01","actor_role":"
+    at call (file:///C:/P-151/planning/16_2026-10-10_material-guards/evidence/wp4/ui_probe.mjs:31:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async started (file:///C:/P-151/planning/16_2026-10-10_material-guards/evidence/wp4/ui_probe.mjs:36:3)
+    at async file:///C:/P-151/planning/16_2026-10-10_material-guards/evidence/wp4/ui_probe.mjs:112:15
+
+Node.js v24.19.0
+exit=1

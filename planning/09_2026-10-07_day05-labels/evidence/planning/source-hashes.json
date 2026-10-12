@@ -1,0 +1,12 @@
+{
+  "docs/maintenance.md": "cbec2f9b4a63c771a4e906b113c94b995650139626c826adb1635532d932dec6",
+  "docs/CR-BPTN-03.md": "1fbfef4d4ba71fb181f281a7c1c62914f08881872967d8bfffab54330c60abf8",
+  "seed/maintenance_cr03/safety_cases.json": "080e62925d3ef9bfe2d031f6692a7961e368d4b7bcbf39363c1b3b7f72dc7db4",
+  "tests/test_maintenance/test_safety_p0.py": "5790db6c7dd90d1d8e5bb059f34898b9885ebe21bc776f373fac4fb207af522b",
+  "tests/test_maintenance/test_classify_metamorphic.py": "74947fd9e93201a82e56d3546e1e11b633dc5d8e5232529380c30cd2741c872e",
+  "src/maintenance/rules.py": "95c394409d2fb4ba6c3a5ddf8773f7e239a6600e154d6ac510f2bb0413cb42a2",
+  "src/maintenance/safety.py": "a2039d58cd8e23821ab35e4762f2fa6445d3ee8dc5ab191eb46f07330ee327f9",
+  "src/maintenance/proposer.py": "df2ab65df475fbd99d591a32c8e0c7d2db208b46ae5715b99e2ccf403409f935",
+  "planning/07_2026-10-04_online-acceptance/deliverables/issues.json": "db693095a29b3cc4692d3139c645bf06141df5cca38778c21c66ba6800e86456",
+  "planning/07_2026-10-04_online-acceptance/evidence/normalization-20261007/safety-child-trapped.json": "c9c137fa09b00a3f697e02a556b64af08e2c4f7c1d0959fdd67446052c761060"
+}
