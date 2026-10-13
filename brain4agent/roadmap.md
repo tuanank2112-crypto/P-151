@@ -36,6 +36,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 ## 💡 Kho Ý Tưởng & Backlog (Idea Vault)
 
+- [ ] **(2026-10-14) Hồ sơ 20 mở rộng:** đo thời lượng hết hàng (cần mốc về 0 trên `stock`) để báo "sau N giờ"; ngưỡng `min_qty` (sắp hết); kênh push/Zalo/email; cảnh báo ở `src/mobile/`; Vệ sinh cũng nhận cảnh báo.
 - [ ] **(2026-10-12) Hồ sơ 19 đợt 2 (SPEC-P04):** việc ngoài phạm vi chỉ ở Tiếp nhận (đổi Q14 develop), dashboard hiệu suất phòng ban có bộ lọc thời gian + endpoint, Kho lịch sử nhập/xuất + xuất hao hụt, dashboard Agent, app điện thoại dùng `min_qty` thay `qty < 30`.
 
 - [ ] **(2026-10-11) Playbook Kỹ thuật cho quạt và nút bấm trong thang máy:** người dùng xếp trong phạm vi nhưng Kỹ thuật hiện chỉ có `PB-TEC-01` (đèn). Cần SPEC (playbook, checklist, bằng chứng, vật tư, từ vựng, prompt), kế hoạch MINOR. Tới lúc đó các ca này đi OUT_OF_SCOPE.
@@ -77,6 +78,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 ## Đã hoàn thành (Done)
 
+- [x] **v1.15.0 (2026-10-14) — hồ sơ 20: cảnh báo Phòng Kỹ thuật khi kho nhập lại vật tư đã hết** (`stock_alerts`, 2 endpoint, chuông portal). Local ✅, server ⬜ (áp 0005 + bật `MO_STOCK_ALERTS` cần người gật). `planning/20_2026-10-13_stock-restock-alert/`.
 - [x] **v1.14.1 (2026-10-12) — xoá vật tư Tắc te** `SIM-MAT-STARTER-01` (hồ sơ 19 D08).
 - [x] **v1.14.0 (2026-10-12) — hồ sơ 20: bỏ UI cũ** (`src/web/`, DB Drizzle của portal), UI mới chạy trên Postgres local. `planning/20_2026-10-12_drop-legacy-ui/`. Còn: Supabase (cần người gật), xoá database `portal` local (dữ liệu, chưa duyệt).
 - [x] **v1.13.0 (2026-10-12) — hồ sơ 19 đợt 1 UI/UX** + vá rò phiên proxy 8000. `planning/19_2026-10-12_ui-ux-polish/`. Đợt 2 (SPEC-P04) chờ chi tiết hoá + duyệt.

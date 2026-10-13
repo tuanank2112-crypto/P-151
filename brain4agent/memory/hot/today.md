@@ -716,3 +716,7 @@ Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lậ
 
 ## Phiên 2026-10-12 — hồ sơ 19 đợt 1
 - Người dùng duyệt Q1–Q7 + ngưỡng tồn riêng từng vật tư. Commit v1.12.3 (`b7ae85b`). Bộ SPEC `planning/19_…`. Làm WP1–WP3; ảnh chụp tự động phát hiện rò phiên ở proxy 8000 ⇒ vá + test đỏ/xanh. Sửa thêm từ ảnh: TEC-003 bị tính vào vệ sinh, nút xuống dòng, dấu "—" lẻ. pytest 3599, vitest 143, 9 ảnh. Chưa commit đợt 1.
+
+## Phiên 2026-10-14 — hồ sơ 20 (thông báo nhập lại vật tư)
+- Yêu cầu "kênh thông báo cho phòng kỹ thuật khi vật tư họ cần được nhập kho sau khi hết" trùng hồ sơ 20 đã có SPEC (chưa duyệt); coi yêu cầu là duyệt, thi công WP1–WP4, bump v1.15.0. Lệch SPEC: thêm `item_name`/`unit` vào bảng; không thêm `Action` vào `PERMISSIONS`.
+- Lỗi gặp: engine + Postgres repo cờ tắt ⇒ GuardError (đã sửa bằng `supports_stock_alerts`). Đo: pytest 3894 + 102 pg = 3996 passed, ruff sạch, vitest 144, typecheck/lint sạch, 3 phép phá đỏ rồi xanh. Chưa commit; chưa áp 0005 lên Supabase.

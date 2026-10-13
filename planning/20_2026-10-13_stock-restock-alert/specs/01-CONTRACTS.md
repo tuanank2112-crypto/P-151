@@ -21,7 +21,8 @@ class StockAlert(Entity):  # extra="forbid", frozen=True
 ## 2. DDL — `0005_stock_alerts.py` (down_revision `0004_portal_extras`)
 ```sql
 create table maintops.stock_alerts (
-  alert_id text primary key, item_code text not null, department_id text not null,
+  alert_id text primary key, item_code text not null, item_name text not null, unit text,
+  department_id text not null,
   qty_added double precision not null check (qty_added > 0),
   qty_before double precision not null, qty_after double precision not null,
   received_by text not null, created_at timestamptz not null,
@@ -49,7 +50,7 @@ def receive_stock(self, actor_id, item_code, qty) -> list[Case]      # chữ ký
 def list_stock_alerts(self, actor_id: str, *, unread_only: bool = False) -> list[StockAlert]
 def acknowledge_stock_alert(self, actor_id: str, alert_id: str) -> StockAlert
 ```
-Thêm `Action.READ_STOCK_ALERTS`, `Action.ACK_STOCK_ALERT` vào `PERMISSIONS`.
+~~Thêm `Action.READ_STOCK_ALERTS`, `Action.ACK_STOCK_ALERT` vào `PERMISSIONS`~~ — thay bởi plan D08(b): kiểm vai trong engine, `PERMISSIONS` không đổi.
 
 ## 5. API (`/api/v1/mo`, `src/api/routers/maintenance.py`)
 | Method | Path | Vai | Trả |

@@ -92,3 +92,7 @@ Backend chamanh chốt vật tư là **số thực tế đã dùng, một lần 
 - Xoá `src/web/` (trang `/ui`) và DB riêng cũ của portal. Backend: không `PORTAL_URL` ⇒ `/` chuyển `/app/`; portal không kết nối được ⇒ mọi đường (cả `/`) trả 503.
 - Portal Docker chỉ `next start` (bỏ `db:migrate && db:seed`). Dữ liệu = backend Python, `MO_STORE=postgres`.
 - Hồ sơ: [`planning/20_2026-10-12_drop-legacy-ui/`](../planning/20_2026-10-12_drop-legacy-ui/plan.md).
+
+## 9. Hồ sơ 20 — chuông "Kho nhập lại vật tư" (v1.15.0)
+- Màn Kỹ thuật: `deptData` đọc `GET /mo/stock-alerts?unread=true` (`readStockAlerts`, lỗi/cờ tắt ⇒ `[]`, không làm hỏng trang). Cảnh báo chưa đọc nằm đầu danh sách chuông và cộng vào số trên chuông; bấm một cảnh báo ⇒ `ackStockAlertAction` (`POST …/ack`) rồi trang làm mới. Bấm thông báo ticket ⇒ mở chi tiết ticket.
+- Hàm thuần `src/lib/stock-alerts.ts` (`toStockAlert`, `unreadCount`, `formatAlert`), test `tests/unit/stock-alerts.test.ts`. Không polling riêng. Chỉ vai Kỹ thuật thấy.

@@ -122,6 +122,7 @@ from src.maintenance.models import (
     ReadinessEvaluation,
     ResidentAddition,
     StatusEvent,
+    StockAlert,
     Ticket,
     WorkOrderDraft,
 )
@@ -489,9 +490,13 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         safety_llm: SafetyLLMClient | None = None,
         repo: CaseRepository | None = None,
         agent: "ReasoningAgent | None" = None,
+        stock_alerts: bool = True,
     ):
         if agent is not None and llm is not None:
             raise ValueError("Chỉ một trong agent hoặc llm")
+        # plan 20: false ⇒ receive_stock behaves as before, no alert row. A store without the table (postgres at 0004,
+        # flag off) can never take an alert, whatever the caller asked for.
+        self.stock_alerts_enabled = stock_alerts and getattr(repo, "supports_stock_alerts", True)
         self.agent = agent  # None = the fixed rules decide every step (plan 06: Agent off, or no model configured)
         self.catalog = catalog or load_catalog()
         self.dataset = dataset or load_dataset()
@@ -2044,8 +2049,10 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         if qty <= 0:
             raise GuardError("Số lượng nhập phải > 0")
         with self.lock:
+            tracked = self.repo.stock_of(item_code) is not None  # null = not tracked ⇒ never an alert (plan 20 D02)
             with self.repo.transaction() as tx:
-                tx.add_stock(item_code, qty)
+                after = tx.add_stock(item_code, qty)
+                self._raise_stock_alerts(tx, actor_id, item_code, qty, after, tracked=tracked)
             waiting = [
                 case.ticket.ticket_id
                 for case in self.repo.list()
@@ -2054,6 +2061,66 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 and any(line.item_code == item_code for line in case.material_lines)
             ]
             return [self.resume(ticket_id) for ticket_id in waiting]
+
+    def _raise_stock_alerts(
+        self, tx: Tx, actor_id: str, item_code: str, added: float, after: float, *, tracked: bool
+    ) -> None:
+        """Plan 20 SPEC-P01 §1: in the SAME transaction as `add_stock`, alert the Technical department when the stock
+        was empty (≤ 0) before this receipt and Technical uses the item. `before` comes from the value `add_stock`
+        returned, so two receipts can never both see "empty"."""
+        before = after - added
+        if not (self.stock_alerts_enabled and tracked and before <= 0):
+            return
+        if item_code not in allowed_material_codes(self.catalog, Department.DEPT_TECHNICAL):
+            return
+        material = self.material(item_code)
+        if material is None:
+            return
+        now = self.clock()
+        tx.put_stock_alert(
+            StockAlert(
+                alert_id=f"SIM-SAL-{item_code.removeprefix('SIM-')}-{now:%Y%m%d%H%M%S%f}",
+                item_code=item_code,
+                item_name=material.item_name,
+                unit=material.unit,
+                department_id=Department.DEPT_TECHNICAL,
+                qty_added=added,
+                qty_before=before,
+                qty_after=after,
+                received_by=actor_id,
+                created_at=now,
+            )
+        )
+
+    def _alert_department(self, actor_id: str, *, may_ack: bool) -> Department:
+        """The department whose alerts `actor_id` may see: Technical staff, BQL, and (read only) the warehouse."""
+        actor = self.catalog.actor(actor_id)
+        role = actor.actor_role if actor else None
+        allowed = (
+            role == Role.BQL
+            or (role == Role.DEPARTMENT and actor is not None and actor.department_id == Department.DEPT_TECHNICAL)
+            or (role == Role.WAREHOUSE and not may_ack)
+        )
+        if not allowed:
+            raise ActionDeniedError(
+                "Chỉ Phòng Kỹ thuật, BQL (và kho khi xem) được dùng cảnh báo nhập lại vật tư",
+                {"code": "ACTION_DENIED", "actor_id": actor_id},
+            )
+        return Department.DEPT_TECHNICAL
+
+    def list_stock_alerts(self, actor_id: str, *, unread_only: bool = False) -> list[StockAlert]:
+        """Restock alerts for the Technical department, newest first (plan 20 SPEC-P01 §2)."""
+        department = self._alert_department(actor_id, may_ack=False)
+        if not self.stock_alerts_enabled:
+            return []
+        return self.repo.stock_alerts(department, unread_only=unread_only)
+
+    def acknowledge_stock_alert(self, actor_id: str, alert_id: str) -> StockAlert:
+        """Mark one alert read. A second call returns the stored alert unchanged (idempotent)."""
+        self._alert_department(actor_id, may_ack=True)
+        if not self.stock_alerts_enabled:
+            raise NotFoundError("Cảnh báo nhập lại vật tư đang tắt (MO_STOCK_ALERTS=false)")
+        return self.repo.acknowledge_stock_alert(alert_id, actor_id, self.clock())
 
     def stock_levels(self, actor_id: str) -> list[dict[str, Any]]:
         """Current simulated stock of every catalog item (staff only; residents never see materials, CR-03 §2)."""
@@ -4780,6 +4847,7 @@ def build_engine(settings: "Settings | None" = None) -> MaintenanceEngine:
             settings.database_url,
             custom_materials=settings.custom_materials_enabled(),
             portal_extras=settings.portal_extras_enabled(),
+            stock_alerts=settings.stock_alerts_enabled(),
         )
         repo.check()
     if settings.llm_mode in ("claude_cli", "agy_cli") and settings.mo_agent_enabled:  # local demo through a CLI
@@ -4787,20 +4855,25 @@ def build_engine(settings: "Settings | None" = None) -> MaintenanceEngine:
 
         catalog, lexicon = load_catalog(), load_lexicon()
         agent = build_agent(settings, catalog, lexicon, lambda: datetime.now(LOCAL_TZ))
-        return MaintenanceEngine(repo=repo, catalog=catalog, lexicon=lexicon, agent=agent)
+        return MaintenanceEngine(
+            repo=repo, catalog=catalog, lexicon=lexicon, agent=agent, stock_alerts=settings.stock_alerts_enabled()
+        )
     if settings.llm_mode == "openai" and settings.openai_api_key:
         if settings.mo_agent_enabled:  # plan 06: the reasoning Agent decides each step, the rules are floor + fallback
             from src.maintenance.agent.agent import build_agent
 
             catalog, lexicon = load_catalog(), load_lexicon()  # built once, shared by the Agent and the engine
             agent = build_agent(settings, catalog, lexicon, lambda: datetime.now(LOCAL_TZ))
-            return MaintenanceEngine(repo=repo, catalog=catalog, lexicon=lexicon, agent=agent)
+            return MaintenanceEngine(
+                repo=repo, catalog=catalog, lexicon=lexicon, agent=agent, stock_alerts=settings.stock_alerts_enabled()
+            )
         return MaintenanceEngine(
             repo=repo,
             llm=openai_client(settings.model_name, settings.openai_api_key, settings.openai_base_url),
             llm_label=settings.model_name,
+            stock_alerts=settings.stock_alerts_enabled(),
         )
-    return MaintenanceEngine(repo=repo)
+    return MaintenanceEngine(repo=repo, stock_alerts=settings.stock_alerts_enabled())
 
 
 def seed_if_empty(engine: MaintenanceEngine) -> bool:

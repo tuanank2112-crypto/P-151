@@ -2,6 +2,12 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.15.0] - 2026-10-14: hồ sơ 20 (thông báo nhập lại vật tư) — cảnh báo cho Phòng Kỹ thuật (MINOR)
+- Kho/BQL nhập vật tư mà tồn TRƯỚC đó `≤ 0` và Kỹ thuật dùng mã đó (`allowed_material_codes(DEPT_TECHNICAL)`, cùng nguồn guard plan 16) ⇒ `receive_stock` ghi MỘT `StockAlert` cùng transaction với `add_stock` (rollback chung). Tồn `null` không báo. Bảng mới `maintops.stock_alerts` (Alembic `0005_stock_alerts`, thêm `item_name`/`unit` so với DDL SPEC), KHÔNG dùng `Notification` (cần ticket) và không đổi hình doc ticket.
+- API: `GET /mo/stock-alerts?unread=` (Kỹ thuật, BQL, Kho), `POST /mo/stock-alerts/{id}/ack` (Kỹ thuật, BQL; lần hai không đổi). Cờ `MO_STOCK_ALERTS` (bật ở memory, tắt ở postgres tới khi áp 0005); engine chỉ ghi khi cờ bật VÀ repo hỗ trợ (`supports_stock_alerts`). Quyết định lệch SPEC: KHÔNG thêm `Action.*` vào `PERMISSIONS` (test ghim đúng 23 mục) — kiểm vai trong engine như `stock_levels`.
+- Portal: chuông màn Kỹ thuật hiện cảnh báo chưa đọc (`lib/stock-alerts.ts`), bấm = "đã biết". `src/mobile/` chưa có (Idea Vault).
+- Đo: pytest 3894 passed + 102 `--pg` = 3996, ruff sạch; vitest 144, typecheck/lint sạch; 3 phép phá (bỏ `qty_before ≤ 0`, bỏ kiểm mã Kỹ thuật, ghi alert ngoài transaction) làm đỏ A02/A03/A06 rồi khôi phục. Chưa áp 0005 lên Supabase.
+
 ## [v1.14.1] - 2026-10-12: xoá vật tư Tắc te (PATCH)
 - Bỏ `SIM-MAT-STARTER-01` "Tắc te mô phỏng" khỏi `catalog.yaml` (danh mục + `PB-TEC-01`), nhãn app `staff.js`, ticket mẫu `SIM-TKT-TEC-006` (v1 + cr03: nay `SIM-MAT-LAMP-01`, kỳ vọng `SUFFICIENT`, không cờ `STOCK_CHECK_ON_ACCEPT`). Test tồn kho không rõ tự đặt `set_stock(..., None)`. Postgres local: xoá dòng `maintops.stock`. Hồ sơ 19 D08.
 

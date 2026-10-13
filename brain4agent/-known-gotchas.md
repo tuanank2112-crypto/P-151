@@ -207,3 +207,5 @@ Stash push -u may save successfully but exit1 without cleaning tracked files whe
 - `scripts/ui-check-WP5.mts` (develop) dò `tile-all`, `bql-work article` theo bố cục cũ ⇒ cần cập nhật theo hồ sơ 19 trước khi dùng lại.
 
 - **(2026-10-12, hồ sơ 20) Alembic/backend lấy `DATABASE_URL` từ `.env` (Supabase chung) nếu tiến trình không đặt biến.** Biến môi trường thắng `.env` (pydantic-settings), nên khi làm với Postgres local PHẢI đặt `DATABASE_URL=postgresql+psycopg2://p151:p151@localhost:5432/p151` trong lệnh và in `make_url(get_settings().database_url).host` trước khi `alembic upgrade`. KHÔNG sửa `.env`.
+
+- **(2026-10-14, hồ sơ 20) Engine mặc định `stock_alerts=True` nhưng repo Postgres mặc định tắt bảng 0005.** Engine dựng thẳng với `PostgresRepository` (test, script) mà không đi `build_engine` từng ném `GuardError` ở `put_stock_alert` trong `receive_stock` (đỏ `test_t07_restart_keeps_everything`). Sửa: engine chỉ ghi khi `stock_alerts and repo.supports_stock_alerts`. Đổi cờ phải đổi CẢ hai phía; test pin `HEAD_REVISION` (`test_p1_store`, `test_portal_backend_ext`) phải theo head mới.

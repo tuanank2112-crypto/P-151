@@ -13,6 +13,7 @@
 </agent_startup_protocol>
 
 <project_foundation>
+- **v1.15.0 (2026-10-14, hồ sơ 20):** kho nhập lại vật tư đã hết (tồn trước ≤ 0) mà Kỹ thuật dùng ⇒ `StockAlert` (bảng `maintops.stock_alerts`, Alembic 0005, cờ `MO_STOCK_ALERTS` tắt ở postgres) cùng transaction với `add_stock`; `GET /mo/stock-alerts`, `POST …/ack`; chuông portal Kỹ thuật. Server ⬜ (chưa áp 0005 lên Supabase).
 - **v1.14.1:** vật tư Tắc te `SIM-MAT-STARTER-01` đã xoá; danh mục còn 4 (CLEAN/BAG/LAMP-01/LAMP-02), không mục nào tồn `null`.
 - **v1.14.0 (2026-10-12, hồ sơ 20):** CHỈ còn 2 UI: portal Next.js (qua 8000) + app `/app/`; `src/web/` (`/ui`) và DB Drizzle riêng của portal ĐÃ XOÁ. Không `PORTAL_URL` ⇒ `/`→`/app/`; portal tắt ⇒ 503. Chạy DB thật trên Postgres local `p151` (docker `db`), KHÔNG Supabase.
 - **v1.13.0 (2026-10-12, hồ sơ 19 đợt 1):** UI gọn theo danh sách người dùng (hàm thuần `portal/src/lib/{reception-done,bql-view,building,stock}.ts`, "một ticket một ô"); `min_qty` danh mục vật tư. **Proxy 8000 KHÔNG được giữ cookie** (đã vá rò phiên). Đợt 2 = SPEC-P04 PROPOSED.

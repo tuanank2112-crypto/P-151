@@ -25,7 +25,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.engine import Connection, make_url
 from sqlalchemy.exc import DBAPIError, InterfaceError, OperationalError
 
-from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent
+from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent, StockAlert
 from src.maintenance.store.base import (
     Assignment,
     ConcurrencyError,
@@ -43,12 +43,17 @@ logger = logging.getLogger(__name__)
 
 SCHEMA = "maintops"
 SUPABASE_HOST_SUFFIXES = (".supabase.com", ".supabase.co")
-HEAD_REVISION = "0004_portal_extras"
-# Plan 11: 0003 and 0004 only add tables that older code never reads, so a database one step behind is accepted while
-# the feature that needs the table is off (MO_CUSTOM_MATERIALS / MO_PORTAL_EXTRAS = false, the default on postgres).
-PREVIOUS_REVISIONS = {"0004_portal_extras": "0003_material_items", "0003_material_items": "0002_p1_doc_shape"}
+HEAD_REVISION = "0005_stock_alerts"
+# Plan 11/20: 0003, 0004 and 0005 only add tables that older code never reads, so a database one step behind is accepted while
+# the feature that needs the table is off (MO_CUSTOM_MATERIALS / MO_PORTAL_EXTRAS / MO_STOCK_ALERTS = false, the default on postgres).
+PREVIOUS_REVISIONS = {
+    "0005_stock_alerts": "0004_portal_extras",
+    "0004_portal_extras": "0003_material_items",
+    "0003_material_items": "0002_p1_doc_shape",
+}
 MATERIALS_REVISION = "0003_material_items"
 EXTRAS_REVISION = "0004_portal_extras"
+ALERTS_REVISION = "0005_stock_alerts"
 ALEMBIC_INI = Path(__file__).with_name("alembic.ini")
 UPGRADE_COMMAND = "python -m alembic -c src/maintenance/store/alembic.ini upgrade head"
 KEY_JOBS = 151001  # advisory lock keys (transaction-scoped)
@@ -77,6 +82,12 @@ notifications_table = sa.Table(
     sa.Column("audience", sa.Text),
     sa.Column("payload", JSONB),
     sa.Column("created_at", sa.DateTime(timezone=True)),
+)
+
+
+_ALERT_SELECT = (
+    "select alert_id, item_code, item_name, unit, department_id, qty_added, qty_before, qty_after, received_by, "
+    "created_at, acknowledged_by, acknowledged_at from maintops.stock_alerts"
 )
 
 
@@ -208,8 +219,9 @@ LIST_LOG_EVERY = 100  # one INFO line with the cache counters every N listings
 class _PgTx:
     """One open DB transaction. `conn` is public for white-box tests."""
 
-    def __init__(self, conn: Connection, *, portal_extras: bool = True):
+    def __init__(self, conn: Connection, *, portal_extras: bool = True, stock_alerts: bool = True):
         self.conn = conn
+        self._stock_alerts = stock_alerts  # false ⇒ revision 0005 may be missing: its table is never touched
         self._portal_extras = portal_extras  # false ⇒ revision 0004 may be missing: its tables are never touched
         self.versions: dict[str, int] = {}
         self.inserted: dict[str, Case] = {}
@@ -374,6 +386,30 @@ class _PgTx:
                 {"t": detail.ticket_id, "g": list(detail.tags), "c": detail.comment, "a": detail.created_at},
             )
 
+    def put_stock_alert(self, alert: StockAlert) -> None:
+        if not self._stock_alerts:
+            raise GuardError("Cảnh báo nhập lại vật tư chưa bật (MO_STOCK_ALERTS=false)")
+        with _db_errors():
+            self.conn.execute(
+                text(
+                    "insert into maintops.stock_alerts (alert_id, item_code, item_name, unit, department_id, qty_added, "
+                    "qty_before, qty_after, received_by, created_at) "
+                    "values (:id, :c, :n, :u, :d, :qa, :qb, :qf, :r, :at)"
+                ),
+                {
+                    "id": alert.alert_id,
+                    "c": alert.item_code,
+                    "n": alert.item_name,
+                    "u": alert.unit,
+                    "d": str(alert.department_id),
+                    "qa": alert.qty_added,
+                    "qb": alert.qty_before,
+                    "qf": alert.qty_after,
+                    "r": alert.received_by,
+                    "at": alert.created_at,
+                },
+            )
+
     def _require_extras(self) -> None:
         if not self._portal_extras:
             raise GuardError("Phân công và thẻ đánh giá chưa bật (MO_PORTAL_EXTRAS=false)")
@@ -405,17 +441,24 @@ _T = TypeVar("_T")
 
 
 class PostgresRepository:
-    def __init__(self, url: str, *, custom_materials: bool = False, portal_extras: bool = False):
+    def __init__(
+        self, url: str, *, custom_materials: bool = False, portal_extras: bool = False, stock_alerts: bool = False
+    ):
         self._engine = sql_engine(url)
         self._read_engine = sql_read_engine(url)
         self._custom_materials = custom_materials  # needs revision 0003; off ⇒ the table is never touched
         self._portal_extras = portal_extras  # needs revision 0004 (assignments, rating_details); off ⇒ never touched
+        self._stock_alerts = stock_alerts  # needs revision 0005 (stock_alerts); off ⇒ never touched
         self._url_host = make_url(url).host
         self._local = threading.local()
         # list() cache (plan 09): ticket_id -> (xmin, validated Case); the Cases are shared and read-only
         self._list_cache: dict[str, tuple[str, Case]] = {}
         self._list_lock = threading.Lock()
         self._list_stats = {"hits": 0, "misses": 0, "calls": 0}
+
+    @property
+    def supports_stock_alerts(self) -> bool:
+        return self._stock_alerts
 
     # ------------------------------------------------------------------ transaction
 
@@ -426,7 +469,7 @@ class PostgresRepository:
         self._local.in_tx = True
         try:
             with _db_errors(), self._engine.begin() as conn:
-                yield _PgTx(conn, portal_extras=self._portal_extras)
+                yield _PgTx(conn, portal_extras=self._portal_extras, stock_alerts=self._stock_alerts)
         finally:
             self._local.in_tx = False
 
@@ -531,6 +574,34 @@ class PostgresRepository:
             rows = conn.execute(text("select ticket_id, tags, comment, created_at from maintops.rating_details")).all()
         return {row.ticket_id: RatingDetail.model_validate(row._asdict()) for row in rows}
 
+    def stock_alerts(self, department_id: str, *, unread_only: bool) -> list[StockAlert]:
+        if not self._stock_alerts:
+            return []
+        where = " and acknowledged_at is null" if unread_only else ""
+        rows = self._read(
+            lambda conn: conn.execute(
+                text(f"{_ALERT_SELECT} where department_id = :d{where} order by created_at desc, alert_id desc"),
+                {"d": department_id},
+            ).all()
+        )
+        return [StockAlert.model_validate(row._asdict()) for row in rows]
+
+    def acknowledge_stock_alert(self, alert_id: str, actor_id: str, at: datetime) -> StockAlert:
+        if not self._stock_alerts:
+            raise NotFoundError(f"Không có cảnh báo {alert_id}")
+        with _db_errors(), self._engine.begin() as conn:
+            conn.execute(
+                text(
+                    "update maintops.stock_alerts set acknowledged_by = :a, acknowledged_at = :at "
+                    "where alert_id = :id and acknowledged_at is null"
+                ),
+                {"a": actor_id, "at": at, "id": alert_id},
+            )
+            row = conn.execute(text(f"{_ALERT_SELECT} where alert_id = :id"), {"id": alert_id}).first()
+        if row is None:
+            raise NotFoundError(f"Không có cảnh báo {alert_id}")
+        return StockAlert.model_validate(row._asdict())
+
     def stock(self) -> dict[str, float | None]:
         rows = self._read(
             lambda conn: conn.execute(text("select item_code, qty from maintops.stock order by item_code")).all()
@@ -620,6 +691,8 @@ class PostgresRepository:
             if self._portal_extras:
                 conn.execute(text("delete from maintops.assignments"))
                 conn.execute(text("delete from maintops.rating_details"))
+            if self._stock_alerts:
+                conn.execute(text("delete from maintops.stock_alerts"))
             conn.execute(text("delete from maintops.stock"))
             if stock:
                 conn.execute(
@@ -684,7 +757,11 @@ class PostgresRepository:
 
     def _accepted_revisions(self) -> set[str]:
         """The head, plus each earlier revision whose only change is a table for a feature that is switched off."""
-        needs = {MATERIALS_REVISION: self._custom_materials, EXTRAS_REVISION: self._portal_extras}
+        needs = {
+            MATERIALS_REVISION: self._custom_materials,
+            EXTRAS_REVISION: self._portal_extras,
+            ALERTS_REVISION: self._stock_alerts,
+        }
         accepted, current = {HEAD_REVISION}, HEAD_REVISION
         while current in PREVIOUS_REVISIONS and not needs.get(current, True):
             current = PREVIOUS_REVISIONS[current]

@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     # Plan 11: staff assignments and rating tags/comments (tables maintops.assignments and rating_details, revision
     # 0004). None = on for the memory store, off for postgres (a shared database needs the migration first).
     mo_portal_extras: bool | None = None
+    # Plan 20: department alert when the warehouse restocks a material that ran out (table maintops.stock_alerts,
+    # revision 0005). None = on for the memory store, off for postgres (a shared database needs the migration first).
+    mo_stock_alerts: bool | None = None
 
     # MaintenanceOps reasoning agent (plan 06). It runs only with LLM_MODE=openai and a key; otherwise the rules decide.
     # The agent always calls the model with temperature=0 (llm_temperature does not apply to it).
@@ -76,6 +79,11 @@ class Settings(BaseSettings):
     def portal_extras_enabled(self) -> bool:
         if self.mo_portal_extras is not None:
             return self.mo_portal_extras
+        return self.mo_store == "memory"
+
+    def stock_alerts_enabled(self) -> bool:
+        if self.mo_stock_alerts is not None:
+            return self.mo_stock_alerts
         return self.mo_store == "memory"
 
 

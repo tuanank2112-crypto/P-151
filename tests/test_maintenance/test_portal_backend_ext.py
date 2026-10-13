@@ -781,7 +781,7 @@ def test_pg_migration_0003_creates_and_drops_only_its_table(pg_url):
         command.upgrade(cfg, "head")
     with sql_engine(pg_url).connect() as conn:
         assert conn.execute(exists).scalar() is True
-        assert conn.execute(text("select version_num from maintops.alembic_version")).scalar() == "0004_portal_extras"
+        assert conn.execute(text("select version_num from maintops.alembic_version")).scalar() == "0005_stock_alerts"
 
 
 # ======================================================================= §3b BQL manages the warehouse (Q08)

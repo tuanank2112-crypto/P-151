@@ -54,7 +54,7 @@ from src.maintenance.enums import (
 )
 from src.maintenance.material_policy import MaterialUsageLine, WholeQty, allowed_material_codes, whole_positive
 from src.maintenance.messages import status_label
-from src.maintenance.models import AuditEvent, Case, Notification, PlannedMaterial, StatusEvent
+from src.maintenance.models import AuditEvent, Case, Notification, PlannedMaterial, StatusEvent, StockAlert
 from src.maintenance.store.base import ConcurrencyError, StorePermissionError, StoreUnavailableError
 from src.maintenance.views import (
     BqlTicketRow,
@@ -804,6 +804,18 @@ def receive_stock(item_code: str, body: StockRequest, actor: ActorDep, engine: E
     """Kho nhập vật tư (sự kiện `stock_received`): ticket chờ vật tư đó tự chạy lại từ bước 6 (chưa nhận việc)
     hoặc quay lại IN_PROGRESS (đã nhận việc)."""
     return _call(engine.receive_stock, actor, item_code, body.qty)
+
+
+@router.get("/stock-alerts", response_model=list[StockAlert])
+def read_stock_alerts(actor: ActorDep, engine: EngineDep, unread: bool = False) -> list[StockAlert]:
+    """Cảnh báo kho vừa nhập lại vật tư Phòng Kỹ thuật dùng sau khi hết hàng (plan 20). Tắt (MO_STOCK_ALERTS=false) ⇒ []."""
+    return _call(engine.list_stock_alerts, actor, unread_only=unread)
+
+
+@router.post("/stock-alerts/{alert_id}/ack", response_model=StockAlert)
+def ack_stock_alert(alert_id: str, actor: ActorDep, engine: EngineDep) -> StockAlert:
+    """Đánh dấu đã đọc; gọi lần hai trả bản đã đọc, không đổi `acknowledged_*`. Tắt ⇒ 404."""
+    return _call(engine.acknowledge_stock_alert, actor, alert_id)
 
 
 # ------------------------------------------------------------------ denial path

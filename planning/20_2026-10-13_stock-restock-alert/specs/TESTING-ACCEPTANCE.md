@@ -18,8 +18,8 @@
 ## Exit Gates
 | Gate | local | server |
 |---|---|---|
-| pytest + ruff (số test không giảm, 0 skip mới) | ⬜ | — |
-| `--pg` A10 | ⬜ | — |
-| portal typecheck/lint/test | ⬜ | — |
-| 3 phép phá đỏ | ⬜ | — |
+| pytest + ruff (số test không giảm, 0 skip mới) | ✅ 2026-10-14 | — |
+| `--pg` A10 | ✅ 2026-10-14 | — |
+| portal typecheck/lint/test | ✅ 2026-10-14 | — |
+| 3 phép phá đỏ | ✅ 2026-10-14 | — |
 | Migration 0005 trên Supabase + bật cờ | — | ⬜ (cần người) |
