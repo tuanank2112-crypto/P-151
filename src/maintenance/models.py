@@ -436,6 +436,7 @@ class StockAlert(Entity):
     qty_after: float = Field(gt=0)
     received_by: str
     created_at: AwareDatetime
+    ticket_ids: tuple[str, ...] = ()  # tickets waiting for this item when it arrived: the engine re-runs them
     acknowledged_by: str | None = None
     acknowledged_at: AwareDatetime | None = None
 

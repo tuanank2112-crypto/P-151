@@ -43,10 +43,11 @@ logger = logging.getLogger(__name__)
 
 SCHEMA = "maintops"
 SUPABASE_HOST_SUFFIXES = (".supabase.com", ".supabase.co")
-HEAD_REVISION = "0005_stock_alerts"
+HEAD_REVISION = "0006_stock_alert_tickets"
 # Plan 11/20: 0003, 0004 and 0005 only add tables that older code never reads, so a database one step behind is accepted while
 # the feature that needs the table is off (MO_CUSTOM_MATERIALS / MO_PORTAL_EXTRAS / MO_STOCK_ALERTS = false, the default on postgres).
 PREVIOUS_REVISIONS = {
+    "0006_stock_alert_tickets": "0005_stock_alerts",
     "0005_stock_alerts": "0004_portal_extras",
     "0004_portal_extras": "0003_material_items",
     "0003_material_items": "0002_p1_doc_shape",
@@ -54,6 +55,7 @@ PREVIOUS_REVISIONS = {
 MATERIALS_REVISION = "0003_material_items"
 EXTRAS_REVISION = "0004_portal_extras"
 ALERTS_REVISION = "0005_stock_alerts"
+ALERT_TICKETS_REVISION = "0006_stock_alert_tickets"
 ALEMBIC_INI = Path(__file__).with_name("alembic.ini")
 UPGRADE_COMMAND = "python -m alembic -c src/maintenance/store/alembic.ini upgrade head"
 KEY_JOBS = 151001  # advisory lock keys (transaction-scoped)
@@ -87,7 +89,7 @@ notifications_table = sa.Table(
 
 _ALERT_SELECT = (
     "select alert_id, item_code, item_name, unit, department_id, qty_added, qty_before, qty_after, received_by, "
-    "created_at, acknowledged_by, acknowledged_at from maintops.stock_alerts"
+    "created_at, ticket_ids, acknowledged_by, acknowledged_at from maintops.stock_alerts"
 )
 
 
@@ -393,8 +395,8 @@ class _PgTx:
             self.conn.execute(
                 text(
                     "insert into maintops.stock_alerts (alert_id, item_code, item_name, unit, department_id, qty_added, "
-                    "qty_before, qty_after, received_by, created_at) "
-                    "values (:id, :c, :n, :u, :d, :qa, :qb, :qf, :r, :at)"
+                    "qty_before, qty_after, received_by, created_at, ticket_ids) "
+                    "values (:id, :c, :n, :u, :d, :qa, :qb, :qf, :r, :at, :t)"
                 ),
                 {
                     "id": alert.alert_id,
@@ -407,6 +409,7 @@ class _PgTx:
                     "qf": alert.qty_after,
                     "r": alert.received_by,
                     "at": alert.created_at,
+                    "t": list(alert.ticket_ids),
                 },
             )
 
@@ -760,6 +763,7 @@ class PostgresRepository:
         needs = {
             MATERIALS_REVISION: self._custom_materials,
             EXTRAS_REVISION: self._portal_extras,
+            ALERT_TICKETS_REVISION: self._stock_alerts,
             ALERTS_REVISION: self._stock_alerts,
         }
         accepted, current = {HEAD_REVISION}, HEAD_REVISION

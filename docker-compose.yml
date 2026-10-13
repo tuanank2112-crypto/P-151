@@ -55,6 +55,7 @@ services:
     environment:
       BACKEND_URL: http://backend:8000
       SESSION_COOKIE_SECURE: "false"
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET must be set in .env}
       TZ: Asia/Ho_Chi_Minh
     restart: unless-stopped
 

@@ -2050,9 +2050,6 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             raise GuardError("Số lượng nhập phải > 0")
         with self.lock:
             tracked = self.repo.stock_of(item_code) is not None  # null = not tracked ⇒ never an alert (plan 20 D02)
-            with self.repo.transaction() as tx:
-                after = tx.add_stock(item_code, qty)
-                self._raise_stock_alerts(tx, actor_id, item_code, qty, after, tracked=tracked)
             waiting = [
                 case.ticket.ticket_id
                 for case in self.repo.list()
@@ -2060,10 +2057,13 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 and case.ticket.blocker.code == R.WAITING_MATERIAL
                 and any(line.item_code == item_code for line in case.material_lines)
             ]
+            with self.repo.transaction() as tx:
+                after = tx.add_stock(item_code, qty)
+                self._raise_stock_alerts(tx, actor_id, item_code, qty, after, tracked=tracked, waiting=waiting)
             return [self.resume(ticket_id) for ticket_id in waiting]
 
     def _raise_stock_alerts(
-        self, tx: Tx, actor_id: str, item_code: str, added: float, after: float, *, tracked: bool
+        self, tx: Tx, actor_id: str, item_code: str, added: float, after: float, *, tracked: bool, waiting: list[str]
     ) -> None:
         """Plan 20 SPEC-P01 §1: in the SAME transaction as `add_stock`, alert the Technical department when the stock
         was empty (≤ 0) before this receipt and Technical uses the item. `before` comes from the value `add_stock`
@@ -2089,6 +2089,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 qty_after=after,
                 received_by=actor_id,
                 created_at=now,
+                ticket_ids=tuple(waiting),
             )
         )
 

@@ -132,7 +132,8 @@ def test_a09_waiting_ticket_still_resumes_and_alert_is_raised():
     assert engine.get(tid).ticket.blocker.code == "WAITING_MATERIAL"
     [case] = engine.receive_stock(WAREHOUSE, LAMP2, 2)
     assert case.ticket.status == "ROUTED" and case.ticket.blocker is None
-    assert len(engine.list_stock_alerts(TEC)) == 1
+    [alert] = engine.list_stock_alerts(TEC)
+    assert alert.ticket_ids == (tid,)  # the alert names the ticket the restock lets continue
 
 
 def test_alerts_are_newest_first(eng, clock):

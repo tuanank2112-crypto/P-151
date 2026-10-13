@@ -2,6 +2,9 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.15.1] - 2026-10-14: cảnh báo nhập kho nêu ticket tiếp tục xử lý (PATCH)
+- `StockAlert.ticket_ids` + migration `0006_stock_alert_tickets` (cột `ticket_ids text[]` mặc định rỗng; đã áp lên Supabase). Portal chuông Kỹ thuật: "Kho đã nhập lại <loại đèn> … Tiếp tục xử lý ticket: <id>". Đo: pytest 3996 (gồm `--pg`), vitest 144.
+
 ## [v1.15.0] - 2026-10-14: hồ sơ 20 (thông báo nhập lại vật tư) — cảnh báo cho Phòng Kỹ thuật (MINOR)
 - Kho/BQL nhập vật tư mà tồn TRƯỚC đó `≤ 0` và Kỹ thuật dùng mã đó (`allowed_material_codes(DEPT_TECHNICAL)`, cùng nguồn guard plan 16) ⇒ `receive_stock` ghi MỘT `StockAlert` cùng transaction với `add_stock` (rollback chung). Tồn `null` không báo. Bảng mới `maintops.stock_alerts` (Alembic `0005_stock_alerts`, thêm `item_name`/`unit` so với DDL SPEC), KHÔNG dùng `Notification` (cần ticket) và không đổi hình doc ticket.
 - API: `GET /mo/stock-alerts?unread=` (Kỹ thuật, BQL, Kho), `POST /mo/stock-alerts/{id}/ack` (Kỹ thuật, BQL; lần hai không đổi). Cờ `MO_STOCK_ALERTS` (bật ở memory, tắt ở postgres tới khi áp 0005); engine chỉ ghi khi cờ bật VÀ repo hỗ trợ (`supports_stock_alerts`). Quyết định lệch SPEC: KHÔNG thêm `Action.*` vào `PERMISSIONS` (test ghim đúng 23 mục) — kiểm vai trong engine như `stock_levels`.

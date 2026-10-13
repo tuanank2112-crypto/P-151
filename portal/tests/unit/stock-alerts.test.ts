@@ -8,6 +8,7 @@ const row = (o: Partial<BStockAlert> = {}): BStockAlert => ({
   qty_added: 20,
   qty_after: 20,
   created_at: "2026-10-14T02:00:00Z",
+  ticket_ids: ["SIM-TKT-0071"],
   acknowledged_at: null,
   ...o,
 });
@@ -25,6 +26,9 @@ describe("stock alerts (plan 20 SPEC-P02)", () => {
     const f = formatAlert(toStockAlert(row(), String));
     expect(f.title).toBe("Kho đã nhập lại Bóng đèn tuýp mô phỏng");
     expect(f.body).toContain("+20 Cái, tồn 20 Cái");
-    expect(formatAlert(toStockAlert(row({ unit: null, qty_added: 2.5 }), String)).body).toContain("+2.5, tồn 20.");
+    expect(f.body).toContain("Tiếp tục xử lý ticket: SIM-TKT-0071");
+    const bare = formatAlert(toStockAlert(row({ unit: null, qty_added: 2.5, ticket_ids: undefined }), String)).body;
+    expect(bare).toContain("+2.5, tồn 20.");
+    expect(bare).not.toContain("Tiếp tục");
   });
 });
