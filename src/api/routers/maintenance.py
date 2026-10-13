@@ -392,6 +392,7 @@ class CatalogView(BaseModel):
     status_labels: dict[str, str]
     materials: list[dict[str, str]]
     material_codes_by_department: dict[str, list[str]]  # plan 16 §U2: the only source the clients filter by
+    material_by_area: dict[str, str] = {}  # plan 21: area label -> the one lighting item_code stocked for it
     custom_materials_enabled: bool = False  # decision: no materials outside the warehouse catalog
     portal_extras_enabled: bool = True  # plan 11 SPEC-P04: false => no rating tags or comment
 
@@ -410,6 +411,7 @@ def read_catalog(actor: ActorDep, engine: EngineDep) -> CatalogView:
         material_codes_by_department={
             d.department_id.value: sorted(allowed_material_codes(catalog, d.department_id)) for d in catalog.departments
         },
+        material_by_area=dict(catalog.area_materials),
         custom_materials_enabled=False,
         portal_extras_enabled=get_settings().portal_extras_enabled(),
     )

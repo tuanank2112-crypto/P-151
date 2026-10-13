@@ -175,21 +175,24 @@ tickets:
       created_at: "2026-09-27T10:30:00+07:00"
       original_description: "Đèn hầm B1 tòa S1 bị hỏng, không sáng."
     flow: DEMO-4
-    purpose: "Kỹ thuật không tìm thấy asset → VERIFYING / ASSET_UNCLEAR, chờ BPTN; chưa giao phòng ban, chưa có draft"
+    purpose: "Kỹ thuật: đèn hầm xe khớp đúng 1 asset (plan 21: BPTN không phải chọn tài sản) → giao thẳng Phòng Kỹ thuật, ROUTED"
     materials:
       - {item_code: SIM-MAT-LAMP-01, planned_qty: 1}
     expected:
-      status: VERIFYING
-      reason_code: ASSET_UNCLEAR
+      status: ROUTED
+      reason_code: null
       playbook_id: PB-TEC-01
       proposed_department_id: DEPT_TECHNICAL
-      department_id: null
+      department_id: DEPT_TECHNICAL
       review_status: NOT_REQUIRED
-      asset_resolution: null
-      draft_exists: false
+      asset_resolution: FOUND
+      draft_exists: true
       location: "Tòa S1 / Tầng B1 / Hầm xe"
-      asset_lookup_status: NOT_FOUND
-      asset_id: null
+      asset_lookup_status: MATCHED
+      asset_id: SIM-ASSET-LIGHT-BASEMENT
+      material_stock_status: SUFFICIENT
+      warnings: []
+      failing_items: []
 
   - raw:
       ticket_id: SIM-TKT-TEC-003

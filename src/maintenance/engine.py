@@ -4375,6 +4375,9 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                     PlannedMaterial(item_code=m.item_code, planned_qty=m.planned_qty) for m in job.materials
                 ]
                 source = "vật tư do Agent chọn"
+            elif (area_item := self._area_material(work, playbook_id)) is not None:
+                work.planned_materials = [area_item]
+                source = f"vật tư gắn với khu vực {location_area(self.effective_location(work))}"
             else:
                 work.planned_materials = list(self.catalog.default_materials.get(playbook_id, ()))
                 source = f"vật tư mặc định của {playbook_id}"
@@ -4382,6 +4385,16 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             source = "kế hoạch vật tư của ticket"
         work.planned_for_playbook = playbook_id
         return source
+
+    def _area_material(self, work: Case, playbook_id: PlaybookId) -> PlannedMaterial | None:
+        """Plan 21: the lighting material bound to the ticket's area (technical playbook only), at its norm qty."""
+        if playbook_id != PlaybookId.TEC:
+            return None
+        code = self.catalog.material_for_area(location_area(self.effective_location(work)))
+        item = self.catalog.material(code) if code else None
+        if item is None:
+            return None
+        return PlannedMaterial(item_code=item.item_code, planned_qty=item.norm_qty or 1)
 
     def _check_material_lines_against_stock(self, work: Case) -> MaterialStockStatus:
         suffix = _suffix(work.ticket.ticket_id)

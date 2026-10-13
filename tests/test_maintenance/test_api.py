@@ -8,6 +8,7 @@ from src.api.auth import actor_header_allowed
 from src.api.routers.maintenance import get_engine
 from src.main import app
 from src.maintenance.engine import MaintenanceEngine
+from tests.test_maintenance.helpers import asset_unclear_ticket
 
 RESIDENT = {"X-Actor-Id": "SIM-ACTOR-RESIDENT-01"}
 OTHER_RESIDENT = {"X-Actor-Id": "SIM-ACTOR-RESIDENT-02"}
@@ -186,12 +187,17 @@ def test_invalid_transition_is_409(api):
 
 def test_bql_filters(api):
     rows = api.get("/api/v1/bql/tickets", params={"status": "VERIFYING"}, headers=BQL).json()
-    assert {r["ticket_id"] for r in rows} == {"SIM-TKT-TEC-002", "SIM-TKT-TEC-005", "SIM-TKT-CLN-004"}
+    assert {r["ticket_id"] for r in rows} == {"SIM-TKT-TEC-005", "SIM-TKT-CLN-004"}
     rows = api.get("/api/v1/bql/tickets", params={"blocker_code": "OUT_OF_HOURS"}, headers=BQL).json()
     assert [r["ticket_id"] for r in rows] == ["SIM-TKT-CLN-002"]
     rows = api.get("/api/v1/bql/tickets", params={"department_id": "DEPT_TECHNICAL"}, headers=BQL).json()
     # Only tickets actually handed over at step 8; the other three are still a proposal
-    assert {r["ticket_id"] for r in rows} == {"SIM-TKT-TEC-001", "SIM-TKT-TEC-004", "SIM-TKT-TEC-006"}
+    assert {r["ticket_id"] for r in rows} == {
+        "SIM-TKT-TEC-001",
+        "SIM-TKT-TEC-002",
+        "SIM-TKT-TEC-004",
+        "SIM-TKT-TEC-006",
+    }
     proposed = api.get("/api/v1/bql/tickets", params={"status": "ON_HOLD"}, headers=BQL).json()
     assert proposed[0]["department_id"] is None and proposed[0]["proposed_department_id"] == "DEPT_TECHNICAL"
     # Fixture tickets are from 27/09, so by the real clock their escalation times have passed
@@ -206,9 +212,10 @@ def test_jobs_endpoint_escalates_and_bql_sees_it(api):
     assert tid in {r["ticket_id"] for r in rows}
 
 
-def test_bptn_resolve_and_stock_over_http(api):
+def test_bptn_resolve_and_stock_over_http(api, engine):
+    tid = asset_unclear_ticket(engine)
     case = api.post(
-        "/api/v1/mo/tickets/SIM-TKT-TEC-002/bptn-resolve",
+        f"/api/v1/mo/tickets/{tid}/bptn-resolve",
         json={"asset_onsite": True, "note": "Không có trong sổ tài sản"},
         headers=BPTN,
     ).json()
@@ -265,6 +272,14 @@ def test_catalog_feeds_the_ui(api):
         ("Đèn thang máy", "Thang máy"),
         ("Đèn cầu thang bộ", "Cầu thang bộ"),
         ("Đèn phòng rác", "Phòng rác"),
+        ("Đèn sảnh chính", "Sảnh chính"),
+        ("Đèn sảnh cư dân", "Sảnh cư dân"),
+        ("Đèn lối thoát hiểm", "Lối thoát hiểm"),
+        ("Đèn hầm xe", "Hầm xe"),
+        ("Đèn bãi đỗ xe", "Bãi đỗ xe"),
+        ("Đèn sân chơi", "Sân chơi"),
+        ("Đèn sân thượng", "Sân thượng"),
+        ("Đèn lối đi", "Lối đi"),
     ]
 
 
@@ -277,7 +292,7 @@ def test_ui_is_served(api):
 
 def test_16_resident_sees_no_department_before_hand_over(api, engine):
     need_info = create(api, "Nhiều rác quá")
-    asset_unclear = create(api, "Đèn hầm B1 tòa S1 không sáng")
+    asset_unclear = asset_unclear_ticket(engine)
     engine.stock["SIM-MAT-CLEAN-01"] = 0
     waiting = create(api, "Hành lang tầng 7 tòa S2 nhiều rác")
     for tid in (need_info, asset_unclear, waiting):
@@ -299,7 +314,7 @@ def test_resident_cannot_backdate_in_production(api, monkeypatch):
 
 
 def test_department_confirms_material_plan(api, engine):
-    tid = "SIM-TKT-TEC-002"
+    tid = asset_unclear_ticket(engine)
     engine.bptn_resolve(tid, "SIM-ACTOR-BPTN-01", asset_onsite=True, note="Không có trong sổ tài sản")
     api.post(f"/api/v1/mo/tickets/{tid}/accept", headers=TEC)
     url = f"/api/v1/mo/tickets/{tid}/material-plan"
@@ -315,7 +330,7 @@ def test_department_confirms_material_plan(api, engine):
 
 def test_q43_four_lamps_over_a_norm_of_one_save_without_note_or_reason(api, engine):
     """Plan 11 Q43 through the API the phone app uses: material-plan without note, then issued = used = 4."""
-    tid = "SIM-TKT-TEC-002"
+    tid = asset_unclear_ticket(engine)
     engine.bptn_resolve(tid, "SIM-ACTOR-BPTN-01", asset_onsite=True, note="Không có trong sổ tài sản")
     api.post(f"/api/v1/mo/tickets/{tid}/accept", headers=TEC)
     start = engine.repo.stock_of("SIM-MAT-LAMP-01")
@@ -349,5 +364,10 @@ def test_stock_rows_carry_unit_and_min_qty(api):
         "SIM-MAT-BAG-01": ("Cuộn", 15),
         "SIM-MAT-LAMP-01": ("Cái", 5),
         "SIM-MAT-LAMP-02": ("Cái", 5),
+        "SIM-MAT-LAMP-03": ("Cái", 5),
+        "SIM-MAT-LAMP-04": ("Cái", 4),
+        "SIM-MAT-LAMP-05": ("Cái", 3),
+        "SIM-MAT-LAMP-06": ("Cái", 2),
+        "SIM-MAT-LAMP-07": ("Cái", 6),
         "SIM-MAT-STARTER-01": ("Cái", 5),
     }

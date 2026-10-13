@@ -46,10 +46,12 @@ from tests.test_maintenance.helpers import (
     TZ,
     WAREHOUSE,
     Clock,
+    asset_unclear_ticket,
     do_work,
     finish,
     report,
     to_ready,
+    without_asset,
 )
 
 # ---------------------------------------------------------------- invariants (CR §3)
@@ -96,7 +98,7 @@ def test_invariant_2_nobody_writes_assignee(fresh):
 
 
 def test_invariant_3_locked_fields_survive_a_rerun(fresh):
-    tid = report(fresh, "Đèn sảnh chính tòa S1 không sáng")  # no asset for that area
+    tid = asset_unclear_ticket(fresh)
     assert fresh.get(tid).ticket.blocker.code == "ASSET_UNCLEAR"
     fresh.bptn_resolve(
         tid,
@@ -223,7 +225,8 @@ def test_safety_stop_tells_bptn_the_missing_location_and_request_info_asks_for_i
 
 def test_step2_blank_report_is_classified_from_the_addition(fresh):
     tid = report(fresh, "   ")
-    case = fresh.add_resident_info(tid, RESIDENT, "Đèn sảnh chính tòa S2 không sáng")
+    with without_asset(fresh, "Hầm xe"):
+        case = fresh.add_resident_info(tid, RESIDENT, "Đèn hầm B1 tòa S2 không sáng")
     assert case.ticket.status == "VERIFYING" and case.ticket.blocker.code == "ASSET_UNCLEAR"
     assert case.ticket.proposed_department_id == "DEPT_TECHNICAL" and case.ticket.department_id is None
     assert case.ticket.raw.original_description == "   "
@@ -252,7 +255,7 @@ def test_step5_llm_only_proposal_waits_for_bptn(clock):
 
 
 def test_step6_bptn_chooses_onsite_check_with_a_reason(engine):
-    tid = "SIM-TKT-TEC-002"
+    tid = asset_unclear_ticket(engine)
     with pytest.raises(GuardError):
         engine.bptn_resolve(tid, BPTN, asset_onsite=True)  # "xác định tại hiện trường" needs a reason
     case = engine.bptn_resolve(tid, BPTN, asset_onsite=True, note="Không có trong sổ tài sản")
@@ -262,7 +265,7 @@ def test_step6_bptn_chooses_onsite_check_with_a_reason(engine):
 
 
 def _onsite_in_progress(engine):
-    tid = "SIM-TKT-TEC-002"
+    tid = asset_unclear_ticket(engine)
     engine.bptn_resolve(tid, BPTN, asset_onsite=True, note="Không có trong sổ tài sản")
     engine.accept(tid, TEC)
     return tid
