@@ -117,8 +117,6 @@ app.include_router(maintenance.router, prefix="/api/v1")
 app.include_router(maintenance.resident_router, prefix="/api/v1")
 app.include_router(maintenance.bql_router, prefix="/api/v1")
 
-# Static prototype UI (Tailwind via CDN, no build step); it only calls the API above
-app.mount("/ui", StaticFiles(directory=Path(__file__).parent / "web", html=True), name="ui")
 # Phone app (PWA) for residents and BQL, same origin as the API (planning/11_2026-10-09_mobile-pwa-app)
 app.mount("/app", StaticFiles(directory=Path(__file__).parent / "mobile", html=True), name="app")
 
@@ -158,8 +156,6 @@ async def _proxy_to_portal(request: Request, path: str):
         )
         res = await client.send(req, stream=True)
     except (httpx.ConnectError, httpx.ConnectTimeout):
-        if not path or path == "/":
-            return RedirectResponse(url="/ui/")
         return JSONResponse(status_code=503, content={"detail": "Portal service is unavailable"})
 
     response_headers = []
@@ -187,7 +183,7 @@ async def _proxy_to_portal(request: Request, path: str):
 async def root(request: Request):
     if PORTAL_URL:
         return await _proxy_to_portal(request, "")
-    return RedirectResponse(url="/ui/")
+    return RedirectResponse(url="/app/")  # without the portal, the phone app is the only UI served here
 
 
 @app.get("/health")

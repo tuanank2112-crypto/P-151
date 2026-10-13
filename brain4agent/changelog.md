@@ -2,6 +2,15 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.14.1] - 2026-10-12: xoá vật tư Tắc te (PATCH)
+- Bỏ `SIM-MAT-STARTER-01` "Tắc te mô phỏng" khỏi `catalog.yaml` (danh mục + `PB-TEC-01`), nhãn app `staff.js`, ticket mẫu `SIM-TKT-TEC-006` (v1 + cr03: nay `SIM-MAT-LAMP-01`, kỳ vọng `SUFFICIENT`, không cờ `STOCK_CHECK_ON_ACCEPT`). Test tồn kho không rõ tự đặt `set_stock(..., None)`. Postgres local: xoá dòng `maintops.stock`. Hồ sơ 19 D08.
+
+## [v1.14.0] - 2026-10-12: hồ sơ 20 — bỏ UI cũ, UI mới chạy trên PostgreSQL local (MINOR)
+- Xoá `src/web/` (trang nguyên mẫu `/ui`) + `docs/web.md`; xoá DB riêng cũ của portal (`src/db/`, `drizzle/`, `drizzle.config.ts`, script migrate/seed/e2e, deps `drizzle-orm`/`pg`/`drizzle-kit`, `lib/agent.ts` + test). Portal Docker chỉ `next start`.
+- Backend: không `PORTAL_URL` ⇒ `/` 307 `/app/`; portal không kết nối được ⇒ mọi đường (cả `/`) 503 (trước: `/`→`/ui/`). API `/api/v1` không đổi ⇒ MINOR.
+- App điện thoại: bỏ nút "Mở bản web", cache `v18`. QA (`qa01`) chỉ còn màn hướng dẫn.
+- Postgres local: `p151` nâng `0004_portal_extras`; `pytest --pg` 100 passed. Không chạm Supabase.
+
 ## [Unreleased] - 2026-10-13: vật tư gắn với khu vực (nền cho hồ sơ 20, chưa bump version)
 - Catalog `area_materials`: nhãn khu vực (13 nhãn `rules.AREA_PATTERNS`) → MỘT mã bóng đèn; một mã dùng được nhiều khu vực. Validator chặn nhãn lạ và mã ngoài `playbook_materials[PB-TEC-01]`. Bước 7 (`_area_material`) tra kho theo khu vực của vị trí khi ticket không có kế hoạch riêng/Agent không chọn; khu vực không liệt kê ⇒ `default_materials`.
 - Seed: thêm `SIM-MAT-LAMP-03` (đèn thang máy/phòng rác); Hành lang, Sảnh thang máy, Cầu thang bộ → LAMP-01; Thang máy, Phòng rác → LAMP-03. `GET /catalog` thêm `material_by_area`. Đủ 13/13 khu vực có vật tư (thêm LAMP-04…07: sảnh, exit, ngoài trời, tuýp hầm xe); LAMP-02 (tồn 0) chưa gắn khu vực nào.

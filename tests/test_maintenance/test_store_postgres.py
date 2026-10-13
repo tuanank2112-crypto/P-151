@@ -114,7 +114,7 @@ def test_t05_pg_stale_save_raises_concurrency_error(pg_repo, clock):
 def test_two_processes_cannot_both_issue_the_last_stock(pg_repo, pg_url):
     """`take_stock` is one conditional UPDATE: of two takes of the last 3 units, exactly one lands."""
     pg_repo.set_stock("SIM-MAT-LAMP-01", 3)
-    pg_repo.set_stock("SIM-MAT-STARTER-01", None)
+    pg_repo.set_stock("SIM-MAT-LAMP-02", None)
     other = PostgresRepository(pg_url)
 
     def take(repo):
@@ -126,9 +126,9 @@ def test_two_processes_cannot_both_issue_the_last_stock(pg_repo, pg_url):
     assert [type(e) for e in errors] == [GuardError]
     assert pg_repo.stock_of("SIM-MAT-LAMP-01") == 0
     with pg_repo.transaction() as tx:
-        assert tx.take_stock("SIM-MAT-STARTER-01", 5) is None  # unknown stock stays unknown (D-05)
+        assert tx.take_stock("SIM-MAT-LAMP-02", 5) is None  # unknown stock stays unknown (D-05)
         assert tx.take_stock("SIM-MAT-LAMP-01", -2) == 2  # a return puts it back
-    assert pg_repo.stock_of("SIM-MAT-STARTER-01") is None
+    assert pg_repo.stock_of("SIM-MAT-LAMP-02") is None
 
 
 def test_nested_transaction_on_one_thread_is_refused(pg_repo):
