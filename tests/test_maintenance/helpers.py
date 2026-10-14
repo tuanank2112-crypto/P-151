@@ -1,5 +1,6 @@
 """Shared actors, texts and step helpers for the MaintenanceOps tests."""
 
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 
 from src.maintenance.engine import MaintenanceEngine
@@ -127,3 +128,20 @@ def decision(**overrides) -> str:
         else:
             node[last] = value
     return json.dumps(doc, ensure_ascii=False)
+
+
+@contextmanager
+def without_asset(engine: MaintenanceEngine, area: str):
+    """Plan 21: every area has a lamp asset now, so a test that needs "asset not found" removes one for a moment."""
+    original = engine.catalog
+    engine.catalog = original.model_copy(update={"assets": tuple(a for a in original.assets if a.area != area)})
+    try:
+        yield
+    finally:
+        engine.catalog = original
+
+
+def asset_unclear_ticket(engine: MaintenanceEngine, text: str = LIGHTING, area: str = "Hành lang") -> str:
+    """A technical ticket that stops at VERIFYING / ASSET_UNCLEAR (that area's asset is hidden while it is created)."""
+    with without_asset(engine, area):
+        return report(engine, text)

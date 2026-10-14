@@ -48,7 +48,8 @@ Dữ liệu mô phỏng (`seed/maintenance_v1/catalog.yaml`):
 | SIM-MAT-BAG-01 | Cuộn | 40 | 15 | An toàn |
 | SIM-MAT-LAMP-01 | Cái | 4 | 5 | Sắp hết |
 | SIM-MAT-LAMP-02 | Cái | 0 | 5 | Hết hàng |
-| SIM-MAT-STARTER-01 | Cái | null | 5 | Chưa kiểm kê |
+
+`SIM-MAT-STARTER-01` (Tắc te) đã BỎ khỏi danh mục và playbook `PB-TEC-01` (plan D08). Không vật tư nào trong danh mục còn tồn `null`; nhãn "Chưa kiểm kê" vẫn giữ cho vật tư chưa kiểm kê.
 
 Portal (`lib/stock.ts`):
 ```ts

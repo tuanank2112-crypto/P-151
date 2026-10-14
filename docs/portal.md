@@ -8,8 +8,11 @@ tầng an toàn). Backend trỏ Supabase ⇒ portal hiện dữ liệu thật. Y
 [`planning/06_2026-10-07_resident-portal-next/`](../planning/06_2026-10-07_resident-portal-next/plan.md).
 
 ## 1. Chạy — UI mới mở ở cổng 8000
-Backend cổng 8000 có `PORTAL_URL` ⇒ mọi đường ngoài `/api/v1`, `/ui`, `/health`, `/docs` chuyển tiếp sang portal (cổng 3000).
+Backend cổng 8000 có `PORTAL_URL` ⇒ mọi đường ngoài `/api/v1`, `/app`, `/health`, `/docs` chuyển tiếp sang portal (cổng 3000).
 ```bash
+# backend trên Postgres LOCAL (hồ sơ 20): `docker compose up -d db`, nâng schema một lần:
+#   DATABASE_URL=postgresql+psycopg2://p151:p151@localhost:5432/p151 python -m alembic -c src/maintenance/store/alembic.ini upgrade head
+#   rồi thay `MO_STORE=memory … DATABASE_URL=` dưới đây bằng `MO_STORE=postgres DATABASE_URL=<URL local trên>`.
 # backend (store memory, LLM mock) — từ root repo
 MO_STORE=memory MO_PHOTO_STORE=local LLM_MODE=mock DATABASE_URL= MO_CUSTOM_MATERIALS=true MO_PORTAL_EXTRAS=true \
   PORTAL_URL=http://127.0.0.1:3000 PYTHONUTF8=1 PYTHONPATH=. .venv/Scripts/python.exe -m uvicorn src.main:app --port 8000
@@ -34,7 +37,7 @@ Mở http://localhost:8000. Tài khoản (mật khẩu `123456`): `cudan`, `tiep
 | `npx tsx scripts/ui-check-WP3.mts --base=URL` | Kiểm Cư dân + Tiếp nhận trên trình duyệt (Playwright), ảnh 1440/390 |
 | `npx tsx scripts/ui-check-WP4.mts cleaning\|technical --base=URL` | Kiểm Vệ sinh / Kỹ thuật |
 | `npx tsx scripts/ui-check-WP5.mts --base=URL` | Kiểm Quản lý + Kho + modal |
-`db:*`, `test:db`, `e2e`, `screenshots` là công cụ của bản DB riêng cũ — không dùng cho luồng hiện tại.
+Hồ sơ 20 (v1.14.0) đã XOÁ `db:*`, `test:db`, `e2e` cùng Drizzle/`pg`; `screenshots` còn nhưng là công cụ cũ.
 
 ## 3. Cấu trúc
 ```text
@@ -47,7 +50,7 @@ portal/src/
 ├── app/api/       # photos/[ticketId]/[evidenceId] (proxy ảnh kèm Bearer), session/expired
 └── components/    # shell, board, ticket-detail-modal (khối Agent THẬT), ticket-evidence, photo-strip, use-action…
 ```
-`src/db/**`, `drizzle/**`: lịch sử bản DB riêng, KHÔNG import ở luồng chạy (grep nghiệm thu = 0).
+Portal KHÔNG có database: `src/db/**`, `drizzle/**`, `lib/agent.ts` (bộ phân loại từ khoá của seed cũ) đã xoá ở hồ sơ 20.
 `.gitignore` có `!portal/src/server/data/` (dòng `data/` từng nuốt thư mục này).
 
 ## 4. Màn hình (SPEC-P03 hồ sơ 11)
@@ -84,3 +87,12 @@ Backend chamanh chốt vật tư là **số thực tế đã dùng, một lần 
 - Hợp đồng và lý do: `planning/19_2026-10-12_ui-ux-polish/specs/01-CONTRACTS.md`. Mọi phân nhóm "một ticket một ô" nằm ở `src/lib/reception-done.ts` (Tiếp nhận), `src/lib/bql-view.ts` (BQL: `bqlBox`, `listGroup`, `deptLoad`), `src/lib/building.ts` (S1/S2), `src/lib/stock.ts` (Hết hàng/Sắp hết/An toàn/Chưa kiểm kê theo `min_qty`). UI không tự viết lại điều kiện.
 - BQL không còn ô Kho; "Danh sách ticket" không có chip "Tất cả" (người dùng chốt).
 - Vị trí trống (`"—"`) không hiển thị: dùng `hasLocation()`.
+
+## 8. Hồ sơ 20 — bỏ UI cũ (v1.14.0)
+- Xoá `src/web/` (trang `/ui`) và DB riêng cũ của portal. Backend: không `PORTAL_URL` ⇒ `/` chuyển `/app/`; portal không kết nối được ⇒ mọi đường (cả `/`) trả 503.
+- Portal Docker chỉ `next start` (bỏ `db:migrate && db:seed`). Dữ liệu = backend Python, `MO_STORE=postgres`.
+- Hồ sơ: [`planning/20_2026-10-12_drop-legacy-ui/`](../planning/20_2026-10-12_drop-legacy-ui/plan.md).
+
+## 9. Hồ sơ 20 — chuông "Kho nhập lại vật tư" (v1.15.0)
+- Màn Kỹ thuật: `deptData` đọc `GET /mo/stock-alerts?unread=true` (`readStockAlerts`, lỗi/cờ tắt ⇒ `[]`, không làm hỏng trang). Cảnh báo chưa đọc nằm đầu danh sách chuông và cộng vào số trên chuông; bấm một cảnh báo ⇒ `ackStockAlertAction` (`POST …/ack`) rồi trang làm mới. Bấm thông báo ticket ⇒ mở chi tiết ticket.
+- Hàm thuần `src/lib/stock-alerts.ts` (`toStockAlert`, `unreadCount`, `formatAlert`), test `tests/unit/stock-alerts.test.ts`. Không polling riêng. Chỉ vai Kỹ thuật thấy.

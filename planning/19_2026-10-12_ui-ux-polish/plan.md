@@ -15,6 +15,7 @@
 - 2026-10-12 D07 (agent, sau ảnh chụp): thêm nhóm "Chưa giao phòng" (01 §1), `hasLocation` (01 §7), nút phòng ban xếp dọc thay vì 2 cột (chữ dài xuống dòng trong thẻ hẹp).
 - 2026-10-12 D05 (agent): biểu đồ bằng CSS/SVG, không thêm thư viện; không thêm nút chưa có backend (Xuất hàng, Lịch sử, tab Kho mới) vào đợt 1.
 
+- 2026-10-12 D08 (người dùng): xoá vật tư `SIM-MAT-STARTER-01` "Tắc te mô phỏng" khỏi danh mục, playbook `PB-TEC-01`, app, ticket mẫu `SIM-TKT-TEC-006` (đổi sang `SIM-MAT-LAMP-01`, kỳ vọng `SUFFICIENT`, không cờ). Test "tồn kho không rõ" tự đặt tồn `null` (`set_stock`). DB local: xoá dòng `maintops.stock`; lịch sử ticket cũ giữ. v1.14.1 (PATCH).
 
 - 2026-10-12 D09 (người dùng duyệt A1–A5 sau khi agent rà UI vai BQL): A1 Danh sách ticket trên điện thoại gộp phòng ban + giờ dưới tiêu đề, không cuộn ngang; A2 "Chưa giao phòng" thay `--`, ẩn cột Phòng ban khi không dòng nào có phòng; A3 ticket không tiêu đề hiện "Chưa có nội dung, chờ cư dân bổ sung" (`headline`), chuông BQL một nhãn (Khẩn cấp ưu tiên), bấm thông báo ⇒ mở ticket / ô "Cần BQL quyết"; A4 ô lý do bắt buộc có dòng gợi ý khi nút còn khoá; A5 tên hiển thị seed `bql01` = "Ban quản lý Tòa nhà", ô điều hướng "Việc của Ban quản lý". Chưa làm (chờ duyệt): B1 thanh phụ tải có mẫu số, B2 rút gọn modal chi tiết, B3 ô Hoàn tất, C1 = SPEC-P04 §2. Ảnh: `evidence/a1-a5/`.
 
@@ -26,6 +27,7 @@
 - SPEC-P03 §1 "đỏ khi > 0, thẻ Hết hàng" → bởi D11.
 - SPEC-P01 §3 "danh sách chỉ hiện ticket của ô tòa đang chọn" → bởi D10.
 - SPEC-P02 §2/§4 "Phòng ban `--` khi chưa có" → "Chưa giao phòng" bởi D09 (A2).
+- 01-CONTRACTS §5 dòng `SIM-MAT-STARTER-01` (tồn null, "Chưa kiểm kê") → bỏ bởi D08.
 - Q5 "ngưỡng mặc định 30 cho mọi vật tư" → thay bởi D02 (ngưỡng riêng). Lý do: tồn mô phỏng 10/20/5/0 khiến gần như mọi dòng "Sắp hết".
 - Tab "Đã phân loại" v1.12.3 có chip "Đang ở phòng ban" → tách thành "Phòng kỹ thuật" và "Phòng vệ sinh" (SPEC-P01 §1).
 

@@ -84,7 +84,7 @@ export type BCase = {
   evidence_round_start: number;
   additions: { content: string }[];
   events: BEvent[];
-  draft: { readiness_evaluation: { failing_items: string[] } | null } | null;
+  draft: { location?: string | null; readiness_evaluation: { failing_items: string[] } | null } | null;
   agent_decision?: BAgentRecord | null;
   notifications?: BNotification[];
 };

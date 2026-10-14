@@ -14,6 +14,13 @@ const post = async (url: string, json?: unknown) => {
   return null;
 };
 
+/** Technical marks a restock alert as read (`POST /mo/stock-alerts/{id}/ack`, idempotent) */
+export async function ackStockAlertAction(alertId: string) {
+  const aid = id(alertId);
+  if (!aid) return fail("INVALID_INPUT");
+  return act(() => post(`/mo/stock-alerts/${aid}/ack`));
+}
+
 export async function acceptAction(ticketId: string) {
   const tid = id(ticketId);
   if (!tid) return fail("INVALID_INPUT");

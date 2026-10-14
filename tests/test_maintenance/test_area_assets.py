@@ -6,20 +6,28 @@ from pydantic import ValidationError
 from src.maintenance.catalog import load_catalog
 from src.maintenance.engine import GuardError
 from src.maintenance.rules import location_area
-from tests.test_maintenance.helpers import BPTN, report
+from tests.test_maintenance.helpers import BPTN, report, without_asset
 
 CATALOG = load_catalog()
 ACTIVE = {a.area: a.asset_id for a in CATALOG.assets if a.active}
 
 
-def test_catalog_has_exactly_the_five_area_assets_active():
+def test_catalog_has_an_active_lamp_asset_for_every_area():
     assert ACTIVE == {
         "Hành lang": "SIM-ASSET-LIGHT-HALLWAY",
         "Sảnh thang máy": "SIM-ASSET-LIGHT-LIFT-LOBBY",
         "Thang máy": "SIM-ASSET-LIGHT-LIFT-CABIN",
         "Cầu thang bộ": "SIM-ASSET-LIGHT-STAIRS",
         "Phòng rác": "SIM-ASSET-LIGHT-WASTE-ROOM",
-    }
+        "Sảnh chính": "SIM-ASSET-LIGHT-MAIN-LOBBY",
+        "Sảnh cư dân": "SIM-ASSET-LIGHT-RESIDENT-LOBBY",
+        "Lối thoát hiểm": "SIM-ASSET-LIGHT-EXIT",
+        "Bãi đỗ xe": "SIM-ASSET-LIGHT-PARKING",
+        "Sân chơi": "SIM-ASSET-LIGHT-PLAYGROUND",
+        "Sân thượng": "SIM-ASSET-LIGHT-ROOFTOP",
+        "Lối đi": "SIM-ASSET-LIGHT-PATH",
+        "Hầm xe": "SIM-ASSET-LIGHT-BASEMENT",
+    }  # plan 21: all 13 areas; the receptionist (BPTN) is not asked to pick a lamp asset
     retired = {a.asset_id for a in CATALOG.assets if not a.active}
     assert retired == {f"SIM-ASSET-LIGHT-00{n}" for n in range(1, 7)}  # kept so old ticket ids still resolve
 
@@ -56,15 +64,17 @@ def test_same_area_on_any_floor_or_building_matches_the_same_asset(fresh, text, 
     assert case.ticket.asset_resolution == "FOUND" and case.ticket.department_id == "DEPT_TECHNICAL"
 
 
-@pytest.mark.parametrize("text", ["Đèn hầm B1 tòa S1 không sáng", "Đèn sảnh chính tòa S2 không sáng"])
+@pytest.mark.parametrize("text", ["Đèn hầm B1 tòa S1 không sáng", "Đèn tầng hầm B1 tòa S2 không sáng"])
 def test_an_area_without_an_asset_waits_for_bptn(fresh, text):
-    case = fresh.get(report(fresh, text))
+    with without_asset(fresh, "Hầm xe"):
+        case = fresh.get(report(fresh, text))
     assert case.proposal.asset_lookup_status == "NOT_FOUND"
     assert (case.ticket.status, case.ticket.blocker.code) == ("VERIFYING", "ASSET_UNCLEAR")
 
 
 def test_bptn_may_pick_only_an_active_area_asset(fresh):
-    tid = report(fresh, "Đèn hầm B1 tòa S1 không sáng")
+    with without_asset(fresh, "Hầm xe"):
+        tid = report(fresh, "Đèn hầm B1 tòa S1 không sáng")
     for retired in ("SIM-ASSET-LIGHT-001", "SIM-ASSET-LIGHT-006"):
         with pytest.raises(GuardError, match="đang dùng"):
             fresh.bptn_resolve(tid, BPTN, asset_id=retired, note="Chọn mã cũ")

@@ -11,7 +11,7 @@ Chi tiết hợp đồng: `planning/01_2026-10-02_supabase-persistence/specs/01-
   `maintenance-photos`, REST bằng `httpx`, backend proxy bytes — không signed URL).
 - **Tĩnh** (catalog, accounts, fixture) vẫn là YAML trong `seed/maintenance_v1/`. Phiên đăng nhập còn trong RAM (WP4b sẽ lưu `maintops.sessions`).
 - **Hai pool kết nối (plan 12, v1.8.0):** đọc ngoài transaction qua `sql_read_engine` (AUTOCOMMIT, không pre-ping, thử lại 1 lần khi rớt kết nối); transaction/khoá dòng/lease qua `sql_engine`. ≤5 kết nối/tiến trình. Ảnh đã xem được giữ trong RAM (LRU 32 MB, tên uuid bất biến).
-- **Client (plan 11, v1.7.0):** web `/ui/` và app điện thoại `/app/` (PWA) cùng gọi `/api/v1` của MỘT backend ⇒ cùng store, không có bản sao dữ liệu phía client.
+- **Client:** portal Next.js (qua 8000) và app điện thoại `/app/` (PWA); `/ui/` đã bỏ ở hồ sơ 20 — cùng gọi `/api/v1` của MỘT backend ⇒ cùng store, không có bản sao dữ liệu phía client.
   App: token ở `localStorage['mo-app-token']`; service worker chỉ cache vỏ app, KHÔNG cache `/api/`; đồng bộ bằng tải lại 30 s khi app hiện + khi quay lại/có mạng (chưa realtime).
   `portal/` (Next.js, plan18) gọi cùng API Python qua BFF, không DB runtime riêng.
 
@@ -48,8 +48,9 @@ Chi tiết hợp đồng: `planning/01_2026-10-02_supabase-persistence/specs/01-
 ## Cổng phản ánh cư dân `portal/` — từ hồ sơ 11 (2026-10-09) KHÔNG còn kho riêng
 - Luồng chạy: trình duyệt → portal (Next.js server) → backend `/api/v1` (Bearer) → `maintops.*` (memory hoặc Supabase). Phiên = cookie httpOnly ký HMAC chứa token backend (8 giờ, RAM backend). Ảnh qua proxy `/api/photos/{ticket}/{evidence}`.
 - Bảng MỚI ở schema `maintops` (chỉ CREATE TABLE, code cũ không đọc): `material_items` (Alembic `0003`, vật tư ngoài danh mục), `assignments` + `rating_details` (`0004`, phân công + thẻ/bình luận đánh giá). Doc ticket JSONB KHÔNG thêm trường/enum. Supabase cần chạy 0003/0004 trước khi bật `MO_CUSTOM_MATERIALS`/`MO_PORTAL_EXTRAS`.
+- Plan 20 (`0005_stock_alerts`): bảng `maintops.stock_alerts` append-only (chỉ `acknowledged_by/at` được set, một lần), ghi cùng transaction với `stock`; `StockAlert` KHÔNG vào doc ticket và KHÔNG qua `notifications` (bảng đó buộc `ticket_id`). Cờ `MO_STOCK_ALERTS`; chạy 0005 và 0006 (`ticket_ids`) trước khi bật.
 
-### Lịch sử: kho riêng của hồ sơ 06 (2026-10-07, không còn dùng ở luồng chạy)
+### Lịch sử: kho riêng của hồ sơ 06 (2026-10-07; MÃ ĐÃ XOÁ ở hồ sơ 20, database `portal` local còn nhưng không ai đọc)
 - PostgreSQL DB `portal` (dev) / `portal_test` (test) trong container `p151-db-1` — KHÔNG phải schema `maintops`, không Supabase. Biến `DATABASE_URL` / `TEST_DATABASE_URL` ở `portal/.env.local` (riêng, không dùng `.env` gốc).
 - 10 bảng (Drizzle `portal/src/db/schema.ts`, migration SQL `portal/drizzle/`): `users`, `sessions` (SHA-256 token), `staff`, `tickets` (stage 1..6 + cờ `need_info/paused/cancelled`, `merged_into/merged_from`, `extras[]`, snapshot Agent `ai_*`), `photos` (bytea, đã kiểm magic bytes), `history`, `ratings` (1/ticket), `keywords` (dept, word), `materials`, `notices`.
 - Flow legacy (đã thay): Server Action → `act()` đọc lại session → `workflow.ts` (transaction: kiểm quyền → `FOR UPDATE` → phạm vi/stage → `UPDATE … WHERE stage=<cũ>` → 1 dòng `history`) → `refresh()`. Flow đọc: page (trong `<Suspense>`) → `requireUser(role)` → `queries.ts` trả DTO đã định dạng theo vai.

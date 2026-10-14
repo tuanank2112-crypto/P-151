@@ -1,13 +1,13 @@
 // BQL screens on the phone (plan 11, SPEC-P03 rules, SPEC-P04 §5 layout from portal/src/app/management/management-app.tsx).
 // Buttons follow the BqlTicketRow; the server stays the referee (403/409 go through the error table).
-import { api, apiImage } from './api.js?v=17';
+import { api, apiImage } from './api.js?v=18';
 import {
-  TERMINAL, boxOf, confirmSheet, el, emptyState, field, fill, formatTime, history, icon, infoGrid, notice, pageHead, pagedList,
+  TERMINAL, boxOf, confirmSheet, el, emptyState, field, fill, formatTime, history, infoGrid, notice, pageHead, pagedList,
   refreshButton, toast, writeButton,
-} from './ui.js?v=17';
+} from './ui.js?v=18';
 import {
   PRIORITY_LABEL, REASON_LABEL, deptName, deptPill as deptPillOf, flags, imagesOf, isEmergency, isSeedTicket, loadCatalog, statusPill,
-} from './staff.js?v=17';
+} from './staff.js?v=18';
 
 export { isEmergency, isSeedTicket };
 const deptPill = (cat, r) => deptPillOf(cat, r.department_id);
@@ -128,8 +128,7 @@ export async function detail(ctx) {
       photoStrip('Ảnh phòng ban (lượt hiện tại)', imagesOf(c, 'DEPARTMENT_EXECUTION', (e) => e.work_order_draft_id === draftId)),
       history('Diễn biến gần đây', c.events.slice(-20).reverse().map((e) => ({
         label: (cat && cat.status_labels[e.to_status]) || e.to_status, note: e.public_message, time: formatTime(e.created_at),
-      }))),
-      el('a', { class: 'btn block', href: '/ui/', target: '_blank', rel: 'noopener' }, icon('web'), 'Mở bản web đầy đủ')));
+      })))));
     drawActions(row);
     ctx.updatedNow();
   };

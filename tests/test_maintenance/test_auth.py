@@ -114,7 +114,7 @@ def test_department_sees_only_tickets_handed_to_it(client):
     assert rows and all(r["department_id"] == "DEPT_CLEANING" for r in rows)
     # A technical ticket, and a technical ticket not handed over yet, are both invisible
     assert client.get("/api/v1/mo/tickets/SIM-TKT-TEC-001", headers=cleaning).status_code == 404
-    assert client.get("/api/v1/mo/tickets/SIM-TKT-TEC-002", headers=login(client, "kythuat01")).status_code == 404
+    assert client.get("/api/v1/mo/tickets/SIM-TKT-TEC-003", headers=login(client, "kythuat01")).status_code == 404
     assert client.post("/api/v1/mo/tickets/SIM-TKT-TEC-004/accept", headers=cleaning).status_code == 403
 
 

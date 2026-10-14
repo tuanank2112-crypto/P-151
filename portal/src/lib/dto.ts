@@ -3,6 +3,7 @@
  * Contract: planning/11_2026-10-09_portal-backend-api/specs/01-CONTRACTS.md §5. Ids are the backend `ticket_id`.
  */
 import type { Dept, Place } from "./constants";
+import type { StockAlertDto } from "./stock-alerts";
 
 export type PhotoRef = { id: string; name: string; url: string };
 
@@ -221,6 +222,8 @@ export type DeptData = {
   catalog: CatalogItem[];
   /** Backend flag `custom_materials_enabled` (SPEC-P01 §3); the "+" button is hidden when false */
   customMaterials: boolean;
+  /** Plan 20: unread restock alerts (technical only; empty for cleaning or when the backend flag is off) */
+  stockAlerts: StockAlertDto[];
 };
 
 // ---------- 5.4 Management ----------

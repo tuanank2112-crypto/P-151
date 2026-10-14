@@ -46,10 +46,12 @@ from tests.test_maintenance.helpers import (
     TZ,
     WAREHOUSE,
     Clock,
+    asset_unclear_ticket,
     do_work,
     finish,
     report,
     to_ready,
+    without_asset,
 )
 
 # ---------------------------------------------------------------- invariants (CR §3)
@@ -96,7 +98,7 @@ def test_invariant_2_nobody_writes_assignee(fresh):
 
 
 def test_invariant_3_locked_fields_survive_a_rerun(fresh):
-    tid = report(fresh, "Đèn sảnh chính tòa S1 không sáng")  # no asset for that area
+    tid = asset_unclear_ticket(fresh)
     assert fresh.get(tid).ticket.blocker.code == "ASSET_UNCLEAR"
     fresh.bptn_resolve(
         tid,
@@ -223,7 +225,8 @@ def test_safety_stop_tells_bptn_the_missing_location_and_request_info_asks_for_i
 
 def test_step2_blank_report_is_classified_from_the_addition(fresh):
     tid = report(fresh, "   ")
-    case = fresh.add_resident_info(tid, RESIDENT, "Đèn sảnh chính tòa S2 không sáng")
+    with without_asset(fresh, "Hầm xe"):
+        case = fresh.add_resident_info(tid, RESIDENT, "Đèn hầm B1 tòa S2 không sáng")
     assert case.ticket.status == "VERIFYING" and case.ticket.blocker.code == "ASSET_UNCLEAR"
     assert case.ticket.proposed_department_id == "DEPT_TECHNICAL" and case.ticket.department_id is None
     assert case.ticket.raw.original_description == "   "
@@ -252,7 +255,7 @@ def test_step5_llm_only_proposal_waits_for_bptn(clock):
 
 
 def test_step6_bptn_chooses_onsite_check_with_a_reason(engine):
-    tid = "SIM-TKT-TEC-002"
+    tid = asset_unclear_ticket(engine)
     with pytest.raises(GuardError):
         engine.bptn_resolve(tid, BPTN, asset_onsite=True)  # "xác định tại hiện trường" needs a reason
     case = engine.bptn_resolve(tid, BPTN, asset_onsite=True, note="Không có trong sổ tài sản")
@@ -262,7 +265,7 @@ def test_step6_bptn_chooses_onsite_check_with_a_reason(engine):
 
 
 def _onsite_in_progress(engine):
-    tid = "SIM-TKT-TEC-002"
+    tid = asset_unclear_ticket(engine)
     engine.bptn_resolve(tid, BPTN, asset_onsite=True, note="Không có trong sổ tài sản")
     engine.accept(tid, TEC)
     return tid
@@ -274,13 +277,13 @@ def test_department_confirms_onsite_materials_and_can_finish(engine):
     assert [m.item_code for m in engine.get(tid).material_lines] == ["SIM-MAT-LAMP-01"]
     lines = [
         PlannedMaterial(item_code="SIM-MAT-LAMP-02", planned_qty=2),
-        PlannedMaterial(item_code="SIM-MAT-STARTER-01", planned_qty=1),
+        PlannedMaterial(item_code="SIM-MAT-LAMP-01", planned_qty=1),
     ]
     case = engine.confirm_materials(tid, TEC, lines=lines, note="Kiểm tại chỗ: đèn tuýp")
     assert case.ticket.status == "IN_PROGRESS"  # no request/approval step: the department saves what it used
     assert [(m.item_code, m.planned_qty) for m in case.material_lines] == [
         ("SIM-MAT-LAMP-02", 2),
-        ("SIM-MAT-STARTER-01", 1),
+        ("SIM-MAT-LAMP-01", 1),
     ]
     assert case.planned_materials == lines
     assert case.draft.material_line_ids == [m.material_line_id for m in case.material_lines]
@@ -288,7 +291,6 @@ def test_department_confirms_onsite_materials_and_can_finish(engine):
     assert (audit.field_name, audit.actor_id, audit.reason) == ("planned_materials", TEC, "Kiểm tại chỗ: đèn tuýp")
     assert audit.old_value == [{"item_code": "SIM-MAT-LAMP-01", "planned_qty": 1}]
     engine.receive_stock(WAREHOUSE, "SIM-MAT-LAMP-02", 2)
-    engine.receive_stock(WAREHOUSE, "SIM-MAT-STARTER-01", 1)
     assert finish(engine, tid).ticket.status == "READY_FOR_REVIEW"
     assert engine.repo.stock_of("SIM-MAT-LAMP-02") == 0
 
@@ -298,7 +300,7 @@ def test_confirm_materials_keeps_entered_quantities_and_guards(engine):
     engine.record_material(tid, TEC, "SIM-MAT-LAMP-01", issued_qty=1, used_qty=1)
     lamp = PlannedMaterial(item_code="SIM-MAT-LAMP-01", planned_qty=1)
     case = engine.confirm_materials(
-        tid, TEC, lines=[lamp, PlannedMaterial(item_code="SIM-MAT-STARTER-01", planned_qty=1)], note="Thêm tắc te"
+        tid, TEC, lines=[lamp, PlannedMaterial(item_code="SIM-MAT-LAMP-02", planned_qty=1)], note="Thêm đèn tuýp"
     )
     assert [(m.issued_qty, m.used_qty) for m in case.material_lines] == [(1, 1), (None, None)]
     for bad, note in [
@@ -324,8 +326,9 @@ def test_confirm_no_materials_is_refused_for_technical(engine):
     assert engine.get(tid) == before and before.draft.material_requirement_mode == "TRACKED"
 
 
-def test_step7_unknown_stock_does_not_block(engine):
-    case = engine.get("SIM-TKT-TEC-006")
+def test_step7_unknown_stock_does_not_block(fresh):
+    fresh.repo.set_stock("SIM-MAT-LAMP-01", None)  # no item starts uncounted since plan 19 D08
+    case = fresh.get(report(fresh, LIGHTING))
     assert case.ticket.status == "ROUTED" and case.ticket.flags == ["STOCK_CHECK_ON_ACCEPT"]
 
 
@@ -712,7 +715,7 @@ def test_partial_delivery_updates_the_stock_the_waiting_ticket_shows(engine):
 
 def test_stock_levels_for_staff_only(engine):
     rows = {r["item_code"]: r["qty"] for r in engine.stock_levels(WAREHOUSE)}
-    assert rows["SIM-MAT-LAMP-02"] == 0 and rows["SIM-MAT-STARTER-01"] is None
+    assert rows["SIM-MAT-LAMP-02"] == 0 and "SIM-MAT-STARTER-01" not in rows
     assert len(rows) == len(engine.catalog.materials)
     with pytest.raises(ActionDeniedError):
         engine.stock_levels(RESIDENT)

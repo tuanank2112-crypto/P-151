@@ -95,10 +95,12 @@ def test_j02_old_docs_are_readable_by_get_list_and_get_for_update(repo):
 
 
 def test_j03_head_revision_is_the_alembic_head_and_the_marker_is_still_accepted():
-    # plan 11 added 0003_material_items and 0004_portal_extras (new tables only): the marker stays a revision the
-    # code accepts while those two features are off
-    assert HEAD_REVISION == "0004_portal_extras"
-    assert postgres.PREVIOUS_REVISIONS[HEAD_REVISION] == "0003_material_items"
+    # plans 11 and 20 added 0003_material_items, 0004_portal_extras and 0005_stock_alerts (new tables only): the marker
+    # stays a revision the code accepts while those three features are off
+    assert HEAD_REVISION == "0006_stock_alert_tickets"
+    assert postgres.PREVIOUS_REVISIONS[HEAD_REVISION] == "0005_stock_alerts"
+    assert postgres.PREVIOUS_REVISIONS["0005_stock_alerts"] == "0004_portal_extras"
+    assert postgres.PREVIOUS_REVISIONS["0004_portal_extras"] == "0003_material_items"
     assert postgres.PREVIOUS_REVISIONS["0003_material_items"] == MARKER
     assert ScriptDirectory.from_config(Config(str(ALEMBIC_INI))).get_current_head() == HEAD_REVISION
 

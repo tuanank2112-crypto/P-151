@@ -277,7 +277,7 @@ def test_pairs_outside_table_are_invalid(engine, fresh):
     with pytest.raises(InvalidTransitionError):
         engine.transition("SIM-TKT-CLN-001", "CLOSED", BQL, note="x")  # ROUTED → CLOSED
     with pytest.raises(InvalidTransitionError):
-        engine.transition("SIM-TKT-TEC-002", "CLOSED", BQL, note="x")  # VERIFYING / ASSET_UNCLEAR → CLOSED
+        engine.transition("SIM-TKT-TEC-002", "CLOSED", BQL, note="x")  # ROUTED → CLOSED
     plain = report(fresh, "Nhiều rác quá, cần dọn")  # NEED_INFO / MISSING_INFO without safety_context
     with pytest.raises(InvalidTransitionError):
         fresh.transition(plain, "VERIFYING", BQL)
@@ -329,7 +329,7 @@ def test_bql_rows_expose_risk_owner_and_filters(engine):
     }
     mine = bql_rows(engine, engine.clock(), blocker_owner_role=BlockerOwner.BQL)
     assert {r.ticket_id for r in mine} == {"SIM-TKT-CLN-004", TEC005}
-    assert "SIM-TKT-TEC-002" in {
+    assert "SIM-TKT-CLN-003" in {
         r.ticket_id for r in bql_rows(engine, engine.clock(), blocker_owner_role=BlockerOwner.BPTN)
     }
 

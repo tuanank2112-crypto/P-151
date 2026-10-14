@@ -1,5 +1,37 @@
 # 📅 Nhật Ký Làm Việc Ngày 2026-09-30 (Session Memory Log)
 
+## Phiên 2026-10-12 (tiếp 2) — xoá vật tư Tắc te (v1.14.1)
+- Người dùng yêu cầu xoá `SIM-MAT-STARTER-01`. Bỏ khỏi catalog + `PB-TEC-01` + app + ticket mẫu TEC-006 (→ LAMP-01, kỳ vọng SUFFICIENT); test tồn không rõ tự đặt null. DB local xoá dòng stock; TEC-006 cũ vẫn mở 200. Hồ sơ 19 D08. Chưa commit.
+
+## 🏁 Phiên 2026-10-12 (tiếp) — Hồ sơ 20: bỏ UI cũ, UI mới chạy trên PostgreSQL local (v1.14.0)
+- Người dùng chốt: DB = Postgres local Docker (KHÔNG Supabase); xoá `src/web/` (`/ui`) + DB Drizzle riêng của portal; bỏ nút "Mở bản web" ở app; sửa backend chuyển về `/ui`. Đã xác nhận xoá.
+- Làm: `src/main.py` (`/`→`/app/` khi không PORTAL_URL, portal tắt ⇒ 503); app cache v18; portal bỏ `src/db`, `drizzle`, deps `pg`/`drizzle-*`, `lib/agent.ts`, script migrate/seed/e2e, Dockerfile chỉ `next start`; xoá `docs/web.md`; docs/README cập nhật.
+- Đo: pytest 3599 + `--pg` 100 passed; ruff sạch; 2 phép phá đỏ; portal typecheck/lint, vitest 135, build ok; G4 tạo ticket qua UI ⇒ `maintops.cases` 12→13 (`SIM-TKT-0001` ROUTED Kỹ thuật).
+- Chạy lại: `docker compose up -d db` + lệnh ở `planning/20_…/specs/OPERATIONS.md` (backend đang chạy `LLM_MODE=mock`, đổi `openai` khi demo).
+- Còn: G5 người dùng thử tay; commit (chưa); database `portal` cũ vẫn nằm trong Postgres local (dữ liệu, chưa duyệt xoá); `qa01` không còn UI web; Supabase chưa chuyển.
+
+## 🏁 Phiên 2026-10-11 → 2026-10-12 — BÀN GIAO (đọc mục này trước)
+> Cập nhật lúc: `2026-10-12T10:05:00+07:00` | Phiên bản: `v1.13.0` | Nhánh `feature/chamanh` @ `489abe9`, đã push, 0 commit chưa push.
+
+**Đã làm (theo thứ tự):**
+1. Gộp `develop` (b8d1b81) vào `feature/chamanh`. Quyết định người dùng: portal của develop làm nền; ẩn nút backend không hỗ trợ (chọn nhân viên, yêu cầu vật tư riêng, nhập vật tư ngoài kho); vật tư = phòng ban lưu **số lượng đã dùng** một lần bấm (`POST material-usage`), không duyệt, không gợi ý Agent, không lý do.
+2. Bật LLM thật (gpt-6-luna) cho demo. Sửa phân luồng: mã tòa con "S2.05" (prompt), cabin thang máy là khu vực chung (đèn trần/đèn tầng ⇒ Kỹ thuật; bẩn/rác ⇒ Vệ sinh; ngất ⇒ khẩn cấp; hỏng cơ khí cửa/rung/dừng ⇒ ngoài phạm vi). Prompt `agent-prompt/9`, khớp nguyên văn `planning/06_…/specs/REF-agent-contract.py`.
+3. Nhãn "Khẩn cấp" chỉ khi `risk_level === "EMERGENCY"` (`portal/src/lib/backend-map.ts`).
+4. Hồ sơ `planning/19_2026-10-12_ui-ux-polish/` (yêu cầu từ Google Doc của người dùng, Q1–Q7 đã duyệt) — **đợt 1 xong**: Tiếp nhận "Đã phân loại" (chip theo phòng, "Chưa giao phòng", tìm kiếm); BQL (Danh sách ticket chip theo trạng thái không có "Tất cả", Việc của BQL 3 ô, Tổng quan KPI + tải phòng); phòng ban (tab "Danh sách công việc"/"Lịch sử hoàn thành" chia S1/S2, nút xếp dọc); Kho (`min_qty` riêng từng vật tư, nhãn tồn, thẻ "Cần nhập thêm"). Logic thuần ở `portal/src/lib/{reception-done,bql-view,building,stock}.ts`, contract ở `specs/01-CONTRACTS.md`.
+5. **Vá bảo mật** `src/main.py`: client httpx proxy dùng chung lưu cookie ⇒ khách ẩn danh nhận phiên người đăng nhập trước. Commit riêng `e2ab6e4`, test `tests/test_portal_proxy_cookies.py`. **develop (256da96) vẫn còn lỗi này** — người dùng cần báo nhóm.
+6. Commit `e2ab6e4` (fix) + `489abe9` (feat đợt 1), push `feature/chamanh`. PR #22 người dùng mở NHẦM base `main` (128 commit, xung đột) ⇒ đã hướng dẫn đổi base sang `develop` (3 commit, merge-tree 0 xung đột). Chưa xác nhận đã đổi.
+
+**Đo:** pytest 3599 passed (100 pg deselected), ruff sạch; portal typecheck/lint sạch, vitest 143, `next build` OK; 9 ảnh `planning/19_…/evidence/wave1/`.
+
+**Phiên sau — người dùng muốn TỐI ƯU UI TIẾP:**
+- Bắt đầu bằng: hỏi người dùng kết quả thử tay đợt 1 (gate G5) + kiểm PR #22 đã đổi base `develop` chưa.
+- Việc UI còn lại = `specs/SPEC-P04-wave2.md` (PROPOSED, phải chi tiết hoá contract và xin duyệt trước khi code): §1 ngoài phạm vi chỉ ở Tiếp nhận (backend Q3, gỡ D04), §2 dashboard hiệu suất phòng ban có lọc thời gian, §3 Kho lịch sử nhập/xuất + xuất hao hụt, §4 dashboard Agent; app điện thoại còn ngưỡng `qty < 30` cần đổi sang `min_qty`.
+- Cách xem UI: backend :8000 (proxy tới portal :3000, `PORTAL_URL`), memory mode; ảnh chụp bằng Playwright rồi tự xem ảnh.
+
+**Gotchas phiên này:** pytest chạy từ root đụng `integration/` ⇒ dùng `python -m pytest tests`; `.next` cũ làm typecheck lỗi ⇒ xoá `.next`; `httpx.AsyncClient(cookies=…)` chép jar nên policy mất ⇒ `client.cookies.jar.set_policy(...)`; tìm kiếm tiếng Việt: lowercase TRƯỚC rồi bỏ dấu (Đ). Máy không có `gh` ⇒ PR tạo tay trên web.
+
+**Chưa làm / treo:** 3 ảnh PNG ở root (vi phạm Root Clean, chờ người dùng quyết xoá hay chuyển vào `planning/19_…/evidence/`); `integration/` chưa track; `portal/scripts/ui-check-WP5.mts` lỗi thời; chưa chạy `--pg`/kiểm Supabase; playbook quạt/nút thang máy (Idea Vault); hub engine não `../brain4agent.release` không có trên máy ⇒ Bước 0 và xoay ký ức không chạy được.
+
 ## Phiên 2026-10-10 — Plan18 portal dùng Python
 - Người dùng xác nhận giữ UI mới và dùng backend Python; rà portal auth/queries/actions/workflow với API hiện có.
 - Dựng plan18 +6SPEC, PROPOSED theo AGENTS §3.4; chưa đổi runtime/version/API/DB. Đích1.11.0, không thi công P09/G-1 trong đợt nối UI.
@@ -684,3 +716,7 @@ Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lậ
 
 ## Phiên 2026-10-12 — hồ sơ 19 đợt 1
 - Người dùng duyệt Q1–Q7 + ngưỡng tồn riêng từng vật tư. Commit v1.12.3 (`b7ae85b`). Bộ SPEC `planning/19_…`. Làm WP1–WP3; ảnh chụp tự động phát hiện rò phiên ở proxy 8000 ⇒ vá + test đỏ/xanh. Sửa thêm từ ảnh: TEC-003 bị tính vào vệ sinh, nút xuống dòng, dấu "—" lẻ. pytest 3599, vitest 143, 9 ảnh. Chưa commit đợt 1.
+
+## Phiên 2026-10-14 — hồ sơ 20 (thông báo nhập lại vật tư)
+- Yêu cầu "kênh thông báo cho phòng kỹ thuật khi vật tư họ cần được nhập kho sau khi hết" trùng hồ sơ 20 đã có SPEC (chưa duyệt); coi yêu cầu là duyệt, thi công WP1–WP4, bump v1.15.0. Lệch SPEC: thêm `item_name`/`unit` vào bảng; không thêm `Action` vào `PERMISSIONS`.
+- Lỗi gặp: engine + Postgres repo cờ tắt ⇒ GuardError (đã sửa bằng `supports_stock_alerts`). Đo: pytest 3894 + 102 pg = 3996 passed, ruff sạch, vitest 144, typecheck/lint sạch, 3 phép phá đỏ rồi xanh. Chưa commit; chưa áp 0005 lên Supabase.
