@@ -4732,6 +4732,11 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 record.evidence_validation_status = EvidenceValidationStatus.MISSING
         return missing
 
+    def get_performance_report(self):
+        """Tạo bảng báo cáo hiệu suất từ cơ sở dữ liệu (Plan UI BQL Overview)."""
+        from src.maintenance.reports import generate_performance_report_from_db
+        return generate_performance_report_from_db(list(self.cases.values()))
+
 
 def _compare(kind: ComparisonType, left: str, right: str, left_value: float, right_value: float | None):
     if right_value is None:

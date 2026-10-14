@@ -24,6 +24,7 @@ from src.api.auth import get_actor, load_accounts
 from src.config import get_settings
 from src.maintenance.ai_logger import AILogEntry, AILogStatus, ai_logger
 from src.maintenance.demo import EvaluationReport, evaluate, run_fixture
+from src.maintenance.reports import PerformanceReportResponse
 from src.maintenance.engine import (
     MAX_EXECUTION_PHOTOS,
     MAX_RESIDENT_PHOTOS,
@@ -1037,3 +1038,18 @@ def bql_emergency_close(ticket_id: str, body: EmergencyNoteBody, actor: ActorDep
 def bql_emergency_downgrade(ticket_id: str, body: EmergencyNoteBody, actor: ActorDep, engine: EngineDep) -> Case:
     """Báo động giả: hạ Bậc 1, luồng thường chạy lại. Chỉ BQL, bắt buộc `note`."""
     return _call(engine.emergency_downgrade, ticket_id, actor, note=body.note)
+
+
+@bql_router.get("/reports/performance", response_model=PerformanceReportResponse)
+def bql_performance_report(actor: ActorDep, engine: EngineDep) -> PerformanceReportResponse:
+    """Bảng báo cáo và thống kê hiệu suất phòng ban từ cơ sở dữ liệu (BQL)."""
+    _require_role(engine, actor, ActorRole.BQL)
+    return engine.get_performance_report()
+
+
+@router.get("/reports/performance", response_model=PerformanceReportResponse)
+def mo_performance_report(actor: ActorDep, engine: EngineDep) -> PerformanceReportResponse:
+    """Bảng báo cáo và thống kê hiệu suất phòng ban từ cơ sở dữ liệu (Nội bộ)."""
+    _require_role(engine, actor, *STAFF)
+    return engine.get_performance_report()
+
