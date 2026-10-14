@@ -3,6 +3,7 @@
  * Contract: planning/11_2026-10-09_portal-backend-api/specs/01-CONTRACTS.md §5. Ids are the backend `ticket_id`.
  */
 import type { Dept, Place } from "./constants";
+import type { MaterialRequestDto } from "./material-requests";
 import type { StockAlertDto } from "./stock-alerts";
 
 export type PhotoRef = { id: string; name: string; url: string };
@@ -222,7 +223,7 @@ export type DeptData = {
   catalog: CatalogItem[];
   /** Backend flag `custom_materials_enabled` (SPEC-P01 §3); the "+" button is hidden when false */
   customMaterials: boolean;
-  /** Plan 20: unread restock alerts (technical only; empty for cleaning or when the backend flag is off) */
+  /** Plan 24: unread restock alerts of the caller's department (empty when the backend flag is off) */
   stockAlerts: StockAlertDto[];
 };
 
@@ -260,6 +261,10 @@ export type MgmtTicket = {
   doneHours: number | null;
   /** MERGED into another ticket: counted out of the totals */
   merged: boolean;
+  /** Plan 23: emergency waiting for BQL that may duplicate this open emergency (blocker.related_ticket_id) */
+  suspectOf?: string | null;
+  /** Other reports counted on this ticket (suspects + merged in) */
+  duplicateCount?: number;
 };
 
 export type MonthReportItem = {
@@ -313,6 +318,7 @@ export type WarehouseData = {
   inventory: WarehouseItem[];
   /** Plan 19 D11: materials the departments used in the last 7 days (finished tickets), most used first */
   weeklyUsage: { code: string; name: string; unit: string; qty: number; tickets: number }[];
-  requests: WarehouseRequest[];
+  /** Plan 24: open material requests (PVT-…) from `GET /mo/warehouse/requests`, oldest first */
+  requests: MaterialRequestDto[];
   customMaterials: boolean;
 };

@@ -101,7 +101,7 @@ export const BLOCKER_LABELS = {
   SAFETY_REVIEW_REQUIRED: "Cần xác minh an toàn",
   EMERGENCY_PENDING_BQL: "Khẩn cấp — chờ BQL",
   WRONG_DEPT_AFTER_START: "Báo sai phòng sau khi nhận",
-  WAITING_EMERGENCY: "Chờ xử lý khẩn cấp liền kề",
+  WAITING_EMERGENCY: "Chờ xử lý khẩn cấp cùng vị trí",
 } as const;
 
 export type ReasonCode = keyof typeof BLOCKER_LABELS;

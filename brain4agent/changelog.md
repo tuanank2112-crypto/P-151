@@ -2,6 +2,20 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.17.0] - 2026-10-15: hồ sơ 24 — phiếu vật tư tự sinh + thông báo khi kho nhập (MINOR)
+- Phiếu vật tư `PVT-<ticket>` = khung nhìn dẫn xuất từ ticket `ON_HOLD/WAITING_MATERIAL` (không bảng mới, không migration): `GET /mo/warehouse/requests`; bước 7 thiếu tồn ⇒ notification `material.shortage` cho kho.
+- Phòng ban đang làm báo thiếu: `POST /mo/tickets/{id}/material-shortage` (kho đủ ⇒ 409 `GUARD_FAILED`), ticket về `IN_PROGRESS` khi kho nhập đủ. Không bước duyệt (giữ plan 15/16).
+- Kho nhập ⇒ `StockAlert` cho MỌI phòng có ticket chờ mã đó (thay plan 20 "chỉ Kỹ thuật, tồn trước ≤ 0"); `tickets[].waiting` tính lúc đọc. Phòng ban đọc/ack alert phòng mình.
+- Portal: Kho "Phiếu vật tư cần nhập" + "Nhập đủ"; Kỹ thuật/Vệ sinh "Báo thiếu vật tư" + chuông "Thông báo kho". App: `dept.js`/`kho.js`, `?v=19`.
+- Đo: pytest + p24 15 test, 5 phép phá đỏ; portal typecheck 0, vitest 159; Playwright chạy thật 15/15 (`planning/24_…/evidence/M2/`).
+
+## [v1.16.0] - 2026-10-15: hồ sơ 23 — khẩn cấp gặp trùng, hai việc, ticket cùng chỗ; Agent đọc mọi ca khẩn cấp (MINOR)
+- Khẩn cấp nghi trùng: ca sau vẫn ở BQL, `blocker.related_ticket_id` = ca khẩn cấp mở cũ nhất cùng vị trí, gốc `duplicate_count +1`; BQL gộp `POST /bql/tickets/{id}/emergency/merge`; gốc rời khẩn cấp ⇒ trỏ lại (`_repoint_suspects`).
+- Tách hai việc sau khi người gỡ an toàn; con thừa hưởng `safety_cleared_*` và `follow_up_of`.
+- Ticket thường cùng chỗ bị giữ `WAITING_EMERGENCY` chỉ khi Agent/người đọc ca khẩn cấp ra cùng loại việc; KHÔNG đoán bằng từ khoá (người dùng 2026-10-15, R01 F1).
+- **Agent đọc cả ca khẩn cấp do luật bắt** (`read_emergency`, chạy nền sau khi BQL đã được báo; không đổi mức).
+- Đo: test p23 35, 11 phép phá đỏ; thẩm định cô lập R01 🔁 ⇒ sửa F2–F12; chạy thật agy/gemini 14/14.
+
 ## [v1.13.0] - 2026-10-12: hồ sơ 19 đợt 1 — làm gọn UI/UX + vá rò phiên ở proxy cổng 8000 (MINOR)
 - **Bảo mật (vá):** proxy `src/main.py` dùng MỘT `httpx.AsyncClient` cho mọi người và client lưu cookie phiên từ phản hồi đăng nhập ⇒ yêu cầu KHÔNG cookie qua cổng 8000 nhận phiên của người đăng nhập gần nhất (đo: `/management` ẩn danh trả trang BQL "Vũ Hoàng Long"). Sửa: kho cookie của client chặn mọi cookie (`DefaultCookiePolicy(allowed_domains=[])`). Test `tests/test_portal_proxy_cookies.py` (đỏ khi bỏ vá, kèm đối chứng). Lỗi có từ develop `256da96` ⇒ develop cũng bị.
 - Tiếp nhận: "Đã phân loại" tách Phòng kỹ thuật/Phòng vệ sinh, thêm nhóm "Chưa giao phòng" (ticket tạm hoãn không phòng từng bị tính là vệ sinh).

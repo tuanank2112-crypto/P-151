@@ -129,6 +129,8 @@ export type BBqlRow = BExt & {
   closure_kind: string | null;
   accepted_at?: string | null;
   closed_at?: string | null;
+  /** Reports counted on this ticket: suspects waiting + merged in (plan 23: also emergency suspects) */
+  duplicate_count?: number;
 };
 
 export type BResidentView = {

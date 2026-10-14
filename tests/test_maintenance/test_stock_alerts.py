@@ -40,7 +40,7 @@ def test_a01_restock_from_zero_raises_one_alert(eng, clock):
     assert alert.department_id == Department.DEPT_TECHNICAL
     assert alert.received_by == WAREHOUSE and alert.created_at == clock.now
     assert alert.item_name and alert.unit and alert.acknowledged_at is None
-    assert alert.alert_id.startswith("SIM-SAL-MAT-LAMP-02-")
+    assert alert.alert_id.startswith("SIM-SAL-MAT-LAMP-02-TEC-")  # plan 24: the id carries the department
 
 
 def test_a02_restock_when_stock_is_positive_adds_nothing(eng):
@@ -97,13 +97,15 @@ def test_a06_failure_after_the_alert_rolls_back_stock_and_alert(eng, monkeypatch
     assert eng.list_stock_alerts(TEC) == []
 
 
-def test_a07_only_technical_bql_and_warehouse_read_and_only_technical_bql_ack(eng):
+def test_a07_only_departments_bql_and_warehouse_read_and_only_departments_bql_ack(eng):
+    # plan 24 M01.2 replaced "only Technical": any department reads its own alerts (planning/24 SPEC-P02 §3)
     eng.receive_stock(WAREHOUSE, LAMP2, 20)
-    for actor in (CLN, BPTN, RESIDENT):
+    for actor in (BPTN, RESIDENT):
         with pytest.raises(ActionDeniedError):
             eng.list_stock_alerts(actor)
         with pytest.raises(ActionDeniedError):
             eng.acknowledge_stock_alert(actor, "SIM-SAL-X")
+    assert eng.list_stock_alerts(CLN) == []  # Cleaning does not use the lamp: it has no alert of its own
     assert len(eng.list_stock_alerts(BQL)) == 1 and len(eng.list_stock_alerts(WAREHOUSE)) == 1
     [alert] = eng.list_stock_alerts(TEC)
     with pytest.raises(ActionDeniedError):
@@ -173,7 +175,7 @@ def test_api_receive_then_read_then_ack(api):
 
 
 def test_api_denials_and_unknown_alert(api):
-    assert api.get("/api/v1/mo/stock-alerts", headers=_as(CLN)).status_code == 403
+    assert api.get("/api/v1/mo/stock-alerts", headers=_as(BPTN)).status_code == 403
     assert api.post("/api/v1/mo/stock-alerts/SIM-SAL-X/ack", headers=_as(RESIDENT)).status_code == 403
     assert api.post("/api/v1/mo/stock-alerts/SIM-SAL-NOPE/ack", headers=_as(TEC)).status_code == 404
 

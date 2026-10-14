@@ -1,0 +1,14 @@
+m1 no mark in 2b: exit=1 9 failed, 44 passed in 2.36s
+m2 always counted: exit=1 3 failed, 50 passed in 2.17s
+m3 no release on downgrade: exit=1 1 failed, 52 passed in 2.23s
+m4 child not cleared: exit=1 4 failed, 49 passed in 2.27s
+m5 agent never reads an emergency: exit=1 6 failed, 47 passed in 2.21s
+m11 unread emergency holds: exit=1 2 failed, 51 passed in 2.29s
+m6 no repoint after merge: exit=1 2 failed, 51 passed in 2.21s
+m7 follow-up not copied to split child: exit=1 1 failed, 52 passed in 2.14s
+m8 merged kinds ignored: exit=1 1 failed, 52 passed in 2.39s
+m9 pinned kind ignored: exit=1 1 failed, 52 passed in 2.29s
+m10 no repoint on downgrade: exit=1 1 failed, 52 passed in 2.17s
+m12 root may be a suspect: exit=1 1 failed, 52 passed in 2.22s
+m13 shortage on any line: exit=1 1 failed, 52 passed in 2.32s
+EXIT=0

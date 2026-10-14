@@ -1,10 +1,10 @@
 {
-  "current_version": "1.13.0",
+  "current_version": "1.17.0",
   "brain_template_version": "1.7.1",
   "system_status": "active",
   "last_verification": {
-    "timestamp": "2026-10-10T21:39:55+07:00",
-    "grade": "Plan18 local implementation verified; Python3441 passed/95pg deselected; portal71; browsers46+9+5+4; 5 source mutants RED/restored GREEN; independent R04 approved round3. Boot/Docker/phone/server not satisfied. Supplemental actions6/6; independent final delta11/11+6/6."
+    "timestamp": "2026-10-15T00:00:00+07:00",
+    "grade": "Hồ sơ 23+24 local: pytest toàn bộ xanh, test p23 35/p24 15, phép phá p23 11/11 + p24 5/5 + portal 4/4 đỏ; portal typecheck 0, vitest 159; chạy thật agy 14/14; Playwright portal 15/15. Chưa --pg, chưa server."
   },
   "active_plans_completed": 4,
   "engine_sha": "0c1ac09f2181206e841c2dd5bfc23c78a13cabfd",

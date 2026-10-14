@@ -13,6 +13,7 @@
 </agent_startup_protocol>
 
 <project_foundation>
+- **v1.17.0 (2026-10-15, hồ sơ 23+24):** Agent đọc CẢ ca khẩn cấp do luật bắt (`read_emergency`, nền, không hạ mức); ca khẩn cấp nghi trùng = trỏ ca khẩn cấp mở cũ nhất cùng chỗ + đếm, BQL gộp; tách hai việc sau khi người gỡ an toàn; giữ ticket cùng chỗ CHỈ khi Agent/người đọc ra cùng loại (cấm đoán từ khoá). Vật tư: phiếu `PVT-` = khung nhìn ticket chờ vật tư, phòng ban báo thiếu, alert kho cho mọi phòng, không duyệt.
 - **v1.13.0 (2026-10-12, hồ sơ 19 đợt 1):** UI gọn theo danh sách người dùng (hàm thuần `portal/src/lib/{reception-done,bql-view,building,stock}.ts`, "một ticket một ô"); `min_qty` danh mục vật tư. **Proxy 8000 KHÔNG được giữ cookie** (đã vá rò phiên). Đợt 2 = SPEC-P04 PROPOSED.
 - **v1.12.2 (2026-10-11, PATCH):** khu vực `Thang máy` (đèn/bẩn/rác vào phòng ban; cơ khí ngoài phạm vi; quạt/nút bấm CHƯA có playbook), prompt `/9`, 5 tài sản đèn.
 - **v1.12.1 (2026-10-11, PATCH):** prompt `agent-prompt/7` dặn mã tòa con S2.05 thuộc tòa mẹ; portal "Khẩn cấp" chỉ khi EMERGENCY.

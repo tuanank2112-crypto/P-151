@@ -27,7 +27,14 @@ from src.maintenance.enums import (
     TicketStatus,
 )
 from src.maintenance.messages import _templates, overdue_eta_message, status_label
-from src.maintenance.models import Blocker, Case, Ticket
+from src.maintenance.models import (  # noqa: F401 - MaterialRequest*: defined in models (the engine returns them)
+    Blocker,
+    Case,
+    MaterialRequestLine,
+    MaterialRequestView,
+    StockAlert,
+    Ticket,
+)
 from src.maintenance.store.base import Assignment, NotFoundError, RatingDetail
 
 ResidentAction = Literal["ADD_INFO", "RATE"]
@@ -383,3 +390,40 @@ def bql_rows(
             continue
         rows.append(row)
     return rows
+
+
+class StockAlertTicket(BaseModel):
+    ticket_id: str
+    waiting: bool  # the ticket is still ON_HOLD for WAITING_MATERIAL right now (read time, never stored)
+
+
+class StockAlertView(StockAlert):
+    """Plan 24 SPEC-P02 §2: the stored alert plus, per ticket it names, whether it still waits for material."""
+
+    tickets: list[StockAlertTicket] = []
+
+
+def stock_alert_views(engine: MaintenanceEngine, alerts: Iterable[StockAlert]) -> list[StockAlertView]:
+    """A ticket that no longer exists is left out of `tickets`."""
+    cache: dict[str, StockAlertTicket | None] = {}
+
+    def state(ticket_id: str) -> StockAlertTicket | None:
+        if ticket_id not in cache:
+            try:
+                ticket = engine.get(ticket_id).ticket
+            except NotFoundError:
+                cache[ticket_id] = None
+            else:
+                waiting = (
+                    ticket.status == TicketStatus.ON_HOLD
+                    and ticket.blocker is not None
+                    and ticket.blocker.code == ReasonCode.WAITING_MATERIAL
+                )
+                cache[ticket_id] = StockAlertTicket(ticket_id=ticket_id, waiting=waiting)
+        return cache[ticket_id]
+
+    views = []
+    for alert in alerts:
+        tickets = [s for tid in alert.ticket_ids if (s := state(tid)) is not None]
+        views.append(StockAlertView(**alert.model_dump(), tickets=tickets))
+    return views
