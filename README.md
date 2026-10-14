@@ -23,9 +23,8 @@ Cư dân gửi phản ánh vệ sinh hoặc đèn khu vực chung. Agent kiểm 
 
 | Lớp | Công nghệ |
 |---|---|
-| Agent | Luật cố định + LLM đề xuất (LangChain, `gpt-6-Luna` qua OpenAI/OpenRouter); mặc định `LLM_MODE=openai`|
-| Backend | FastAPI + Python 3.11 |
-| Giao diện | Portal Next.js `portal/` (qua cổng 8000) + app điện thoại `src/mobile/` (`/app/`) — cả hai chỉ gọi `/api/v1` |
+| Agent | Luật cố định + LLM đề xuất (LangChain, `gpt-4o-mini` qua OpenAI/OpenRouter); mặc định `LLM_MODE=mock` chỉ chạy luật |
+| Backend | FastAPI + Python 3.11; UI tĩnh `src/web/` (Tailwind CDN, JS thuần) |
 | Dữ liệu | **Mặc định in-memory** từ fixture YAML, reset được; tuỳ chọn PostgreSQL trên Supabase (`MO_STORE=postgres`, Alembic) + Supabase Storage cho ảnh |
 | DevOps | Docker Compose + GitHub Actions |
 
@@ -163,7 +162,7 @@ Kiểm tra:
 
 - Health: <http://localhost:8000/health> → `{"status":"ok",...}`
 - Swagger UI: <http://localhost:8000/docs>
-- Giao diện: <http://localhost:8000/> (portal, cần `PORTAL_URL`; không có portal thì chuyển tới app `/app/`)
+- Giao diện: <http://localhost:8000/ui/>
 - `docker compose ps` — `backend` phải `healthy`.
 
 Dữ liệu in-memory: tắt/bật lại backend là về 12 ticket mẫu ban đầu.
@@ -309,7 +308,8 @@ Cần đăng nhập `qa01` (`/mo/*` demo là của QA nội bộ):
 
 ### Giao diện
 
-Chạy xong mở <http://localhost:8000/> và đăng nhập bằng tài khoản trên. Cư dân có thể đính kèm ảnh (không bắt buộc); phòng ban phải gửi ít nhất một ảnh sau xử lý mới báo hoàn thành được. Ảnh lưu ở `data/uploads/maintenance`.
+Chạy xong mở <http://localhost:8000/ui/> và đăng nhập bằng tài khoản trên. Cư dân có thể đính kèm ảnh (không bắt buộc); phòng ban phải gửi ít nhất một ảnh sau xử lý mới báo hoàn thành được. Ảnh lưu ở `data/uploads/maintenance`.
+Tailwind Play CDN chỉ dùng cho prototype.
 
 ---
 

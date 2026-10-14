@@ -1,8 +1,0 @@
-# G4 2026-10-12T10:38:29+07:00 backend MO_STORE=postgres DATABASE_URL=localhost:5432/p151 (local docker), portal next start
-alembic_version: 0004_portal_extras
-cases: 13 (before UI flow: 12)
-newest: SIM-TKT-0001|ROUTED|DEPT_TECHNICAL|2026-10-12 10:38:02+07
-GET / -> 200
-GET /ui -> 404
-GET /app/ -> 200
-GET /health -> 200

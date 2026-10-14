@@ -1,6 +1,6 @@
 # `src/mobile/` — App điện thoại (PWA) cho mọi vai vận hành
 
-FastAPI phục vụ thư mục này ở `/app/` (`src/main.py`), cùng origin với API `/api/v1`; UI web là portal Next.js (`/`). `/ui/` đã bỏ ở hồ sơ 20.
+FastAPI phục vụ thư mục này ở `/app/` (`src/main.py`), cùng origin với API `/api/v1` và UI web `/ui/`.
 Plain JS (ES module) + CSS, KHÔNG Tailwind, KHÔNG bước build. Hồ sơ: [`planning/11_2026-10-09_mobile-pwa-app/`](../planning/11_2026-10-09_mobile-pwa-app/plan.md).
 **Giao diện = thiết kế `portal/`** (đợt 2, [`specs/SPEC-P04-PORTAL-UI.md`](../planning/11_2026-10-09_mobile-pwa-app/specs/SPEC-P04-PORTAL-UI.md)): class chép nguyên từ
 `portal/src/app/globals.css`, icon từ `portal/src/components/icons.tsx`, bố cục từ `shell.tsx`/`resident-app.tsx`/`management-app.tsx`.
@@ -33,12 +33,12 @@ Backend vẫn là FastAPI gốc (Docker `:8000`); app gọi API Python trực ti
 | `js/photo.js` | `compressImage` (cạnh dài ≤1600 px, JPEG 0.82), `photoPicker` (Chụp ảnh / Chọn ảnh, tối đa 5) |
 | `js/resident.js` | `#/r` 4 ô tổng quan rời nhau (ưu tiên Cần bạn ⇒ Chờ nghiệm thu ⇒ Đang xử lý ⇒ Đã xong, Q40) + thẻ có 6 vạch tiến độ · `#/r/new` 3 thẻ đánh số (Vị trí tòa-tầng-khu vực / Mô tả / Ảnh — vị trí trước, Q33) + Tóm tắt · `#/r/<id>` stepper 6 bước, bổ sung, thêm ảnh, đánh giá sao, lịch sử. Ánh xạ trạng thái → bước: SPEC-P04 §4 |
 | `js/bql.js` | `#/b` không tile; 4 ô số liệu là bộ lọc Cần BQL / Khẩn cấp / Quá hạn / Hoàn thành (`CLOSED`) (Q36), rời nhau theo ưu tiên Khẩn cấp ⇒ Cần BQL ⇒ Hoàn thành ⇒ Quá hạn; chuông = Khẩn cấp + Cần BQL (Q40) · `#/b/<id>` nghiệm thu, trả làm lại, hủy, đóng/hạ mức khẩn cấp, an toàn Bậc 2 đã leo thang `#bql-safety` (xác nhận an toàn / yêu cầu bổ sung / nâng Bậc 1, Q38) |
-| `js/staff.js` | Dùng chung cho vai nội bộ: nhãn (lý do, ưu tiên, loại việc, checklist, vật tư — chép từ `src/web/app.js` cũ, đã xoá ở hồ sơ 20), pill, ảnh nội bộ, `queueScreen` (danh sách + tile `#staff-tabs` + ô `#staff-stats`, một bộ ô rời nhau qua `boxOf`, thứ tự tile theo `priority`), `caseScreen` (khung chi tiết), `writer` (ghi → toast → tải lại) |
+| `js/staff.js` | Dùng chung cho vai nội bộ: nhãn (lý do, ưu tiên, loại việc, checklist, vật tư — chép từ `src/web/app.js`), pill, ảnh nội bộ, `queueScreen` (danh sách + tile `#staff-tabs` + ô `#staff-stats`, một bộ ô rời nhau qua `boxOf`, thứ tự tile theo `priority`), `caseScreen` (khung chi tiết), `writer` (ghi → toast → tải lại) |
 | `js/dept.js` | Phòng ban `#/d`: 4 tile Chờ nhận / Đang làm / Chờ nghiệm thu / Hoàn thành (`CLOSED`, Q35), không ô số liệu (Q32) · `#/d/<id>`: nhận việc, **ảnh sau xử lý (đầu tiên)**, checklist, **một khối vật tư** `#dept-materials` (chọn vật tư + số lượng đã dùng, KHÔNG hiện/điền sẵn đề xuất Agent, không ô lý do (plan 15); Vệ sinh có "Không sử dụng vật tư"; Q41/Q42), ghi chú, tự kiểm, báo hoàn thành, vướng / sai phòng ban |
 | `js/bptn.js` | BPTN `#/p`: tile Cần xử lý / An toàn B2 / Nghi trùng + ô Đang xử lý / Hoàn thành (`CLOSED`) bấm được `#staff-stats` — mỗi ticket đúng một ô, hủy/gộp không ô nào (Q40); form tài sản chọn 1 trong 4 tài sản khu vực theo `name` (plan 14) · `#/p/<id>`: form theo mã vướng (an toàn Bậc 2, thiếu thông tin, trùng, loại việc, tài sản, sai phòng ban) |
-| `js/kho.js` | Kho `#/k`: 3 tile Nhập vật tư (form nhập kho + phản ánh chờ vật tư) / Tồn kho (chỉ danh sách) / Cảnh báo (hết hàng `qty ≤ 0` đỏ; sắp hết `qty ≤ min_qty` riêng từng vật tư, không có ngưỡng thì không cảnh báo; "Nhập thêm" điền sẵn `min_qty + 1 − qty`) (plan 19, khớp portal) · `#/k/<id>`: vật tư thiếu + nhập kho điền sẵn |
+| `js/kho.js` | Kho `#/k`: 3 tile Nhập vật tư (form nhập kho + phản ánh chờ vật tư) / Tồn kho (chỉ danh sách) / Cảnh báo (`qty < LOW_STOCK=30`, đỏ `< CRITICAL_STOCK=20`, "Nhập thêm" điền sẵn `30 − qty`) (Q37) · `#/k/<id>`: vật tư thiếu + nhập kho điền sẵn |
 
-Chỉ `qa01` (QA_INTERNAL) đăng nhập ⇒ `#/web` (chỉ chữ hướng dẫn + Đăng xuất; nút sang `/ui/` bỏ ở hồ sơ 20, cache `v18`), không gọi API dữ liệu.
+Chỉ `qa01` (QA_INTERNAL) đăng nhập ⇒ `#/web` (nút sang `/ui/`), không gọi API dữ liệu.
 
 ## 3. Quy tắc khi sửa
 - Đổi bất kỳ file vỏ nào ⇒ tăng `?v=N` ở **mọi** chỗ cùng lúc (`index.html`, mọi `import` trong `js/*.js`, danh sách `SHELL` trong `sw.js`)

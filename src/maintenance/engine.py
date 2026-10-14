@@ -3482,6 +3482,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             created_at=ticket.raw.created_at,
             report_text=self._content(work),
             location_text=self._location_text(work),
+            home_building=self._default_building(work),
             safety_text=self._safety_scope_text(work),
             locks=ticket.locked_fields,
             pinned_category=ticket.split_category,
@@ -3747,11 +3748,18 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             work.ticket.raw.original_description,
         ]
         text = "\n".join(p for p in parts if p and p.strip())
-        # The resident's own words win: the profile building is added only when no catalog building is named anywhere
+        home = self._default_building(work)
+        return f"{text}\nTòa {home}" if home else text
+
+    def _default_building(self, work: Case) -> str | None:
+        """The resident's own words win: the profile building applies only when no catalog building is named anywhere.
+        The Agent gets the same building (`DecisionInput.home_building`), so it does not ask for what the system knows."""
         home = self.home_building(work.ticket.resident_id) if self.home_building else None
-        if home and not names_building(text, self.catalog.site.buildings):
-            text = f"{text}\nTòa {home}"
-        return text
+        if not home:
+            return None
+        parts = [*(a.content for a in work.additions if a.merged_from is None), work.ticket.raw.original_description]
+        text = "\n".join(p for p in parts if p and p.strip())
+        return None if names_building(text, self.catalog.site.buildings) else home
 
     def _category(self, work: Case) -> ServiceCategory | None:
         locked = work.ticket.locked_fields.category or work.ticket.split_category  # a split pins the category (P05)

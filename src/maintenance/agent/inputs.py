@@ -35,6 +35,7 @@ class DecisionInput(BaseModel):
     created_at: str
     report_text: str  # engine._content(work): original + additions that are NOT merged_from
     location_text: str  # engine._location_text(work)
+    home_building: str | None = None  # engine._default_building(work): profile building when the report names none
     safety_text: str  # engine._safety_scope_text(work)
     locks: LockedFields
     pinned_category: ServiceCategory | None  # split_category (split child / split original)

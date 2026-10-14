@@ -1,5 +1,5 @@
 {
-  "current_version": "1.15.1",
+  "current_version": "1.13.0",
   "brain_template_version": "1.7.1",
   "system_status": "active",
   "last_verification": {
@@ -32,7 +32,7 @@
   },
   "active_spec": "docs/CR-BPTN-03.md",
   "working_branch": "feature/chamanh",
-  "code_baseline": "489abe9 (feature/chamanh, pushed)",
+  "code_baseline": "2ced2656c66ceb6cdc44790a91f676ab1b8d710d + plan18 working tree",
   "last_benchmark": {
     "pytest": "3599 passed, 100 PostgreSQL deselected, 0 skipped, memory, 2026-10-12 (plan 19 wave 1)",
     "safety_stop_sets": "1065 green",
@@ -45,11 +45,11 @@
     "assess_24kb_seconds": 0.28,
     "review_set_2026_10_04": "adversarial 107: HEAD 50 errors -> 7; SO holdout 18/18; live API corpus 34: only out-of-scope-asks-location left (spec)",
     "agent_audit_2026_10_05": "independent E2E audit scripts rerun: 77 sentences 16->7 errors, group D 9->2; rest P1/spec",
-    "portal": "typecheck+lint sạch, vitest 135, next build ok (2026-10-12, hồ sơ 20)",
+    "portal": "typecheck+lint sạch, vitest 143 passed, next build ok, 9 ảnh evidence/wave1 (2026-10-12)",
     "spec_p09_v6_probes": "27/27 passed (B1 interval overlap, B2 3-part overrides & shared location, B3 next_step, B4 cardinality & quiesce)"
   },
-  "last_sync": "2026-10-12T11:00:00+07:00",
-  "next_step": "Người dùng thử tay UI mới trên Postgres local (hồ sơ 20 G5) rồi gật commit; sau đó tối ưu UI tiếp (SPEC-P04 hồ sơ 19). PR #22 cần base develop.",
+  "last_sync": "2026-10-12T03:00:00+07:00",
+  "next_step": "Người dùng thử tay đợt 1 hồ sơ 19 và gật commit; báo nhóm vá rò phiên proxy (develop cũng bị); chi tiết hoá SPEC-P04 đợt 2.",
   "active_plan": {
     "id": "18_2026-10-10_portal-python-api",
     "status": "implementation_verified_rollout_pending",
@@ -284,22 +284,5 @@
       "runtime_changes_allowed": false,
       "spec": "planning/02_2026-10-03_truong-mvp-prep/specs/SPEC-P06-DAY03.md"
     }
-  },
-  "plan_19": {
-    "id": "19_2026-10-12_ui-ux-polish",
-    "version": "1.13.0",
-    "wave1": "done local, committed 489abe9 + fix e2ab6e4, pushed",
-    "wave2": "PROPOSED (specs/SPEC-P04-wave2.md)",
-    "gate_G5_user_manual_test": "pending",
-    "pr": "#22 opened with wrong base main; user told to change base to develop"
-  },
-  "plan_20": {
-    "id": "20_2026-10-12_drop-legacy-ui",
-    "version": "1.14.0",
-    "status": "local verified G1-G4, uncommitted",
-    "db": "local docker p151 @ 0004_portal_extras; Supabase untouched",
-    "pytest": 3599,
-    "pytest_pg": 100,
-    "portal_vitest": 135
   }
 }

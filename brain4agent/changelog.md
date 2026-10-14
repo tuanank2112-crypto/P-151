@@ -2,33 +2,6 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
-## [Unreleased] - 2026-10-14: tòa mặc định theo hồ sơ cư dân (chưa bump version)
-- Báo cáo không nêu tòa nào ⇒ `MaintenanceEngine._location_text` thêm dòng `Tòa <profile.tower>` (hook `home_building(resident_id)`, API nối từ `accounts.yaml` ở `get_engine`). Chữ của cư dân luôn thắng: chỉ thêm khi `rules.names_building` thấy KHÔNG có tòa catalog nào trong text (kể cả mệnh đề "em ở tòa …"). CẤM lấy tầng/khu vực từ hồ sơ (tầng nhà ở không phải chỗ hỏng). Nguyên nhân: ticket 0073 "tầng 7 + cầu thang bộ" kẹt NEED_INFO vì thiếu tòa. Test `test_home_building_default.py` (5), pytest 3629 passed.
-
-## [v1.15.1] - 2026-10-14: cảnh báo nhập kho nêu ticket tiếp tục xử lý (PATCH)
-- `StockAlert.ticket_ids` + migration `0006_stock_alert_tickets` (cột `ticket_ids text[]` mặc định rỗng; đã áp lên Supabase). Portal chuông Kỹ thuật: "Kho đã nhập lại <loại đèn> … Tiếp tục xử lý ticket: <id>". Đo: pytest 3996 (gồm `--pg`), vitest 144.
-
-## [v1.15.0] - 2026-10-14: hồ sơ 20 (thông báo nhập lại vật tư) — cảnh báo cho Phòng Kỹ thuật (MINOR)
-- Kho/BQL nhập vật tư mà tồn TRƯỚC đó `≤ 0` và Kỹ thuật dùng mã đó (`allowed_material_codes(DEPT_TECHNICAL)`, cùng nguồn guard plan 16) ⇒ `receive_stock` ghi MỘT `StockAlert` cùng transaction với `add_stock` (rollback chung). Tồn `null` không báo. Bảng mới `maintops.stock_alerts` (Alembic `0005_stock_alerts`, thêm `item_name`/`unit` so với DDL SPEC), KHÔNG dùng `Notification` (cần ticket) và không đổi hình doc ticket.
-- API: `GET /mo/stock-alerts?unread=` (Kỹ thuật, BQL, Kho), `POST /mo/stock-alerts/{id}/ack` (Kỹ thuật, BQL; lần hai không đổi). Cờ `MO_STOCK_ALERTS` (bật ở memory, tắt ở postgres tới khi áp 0005); engine chỉ ghi khi cờ bật VÀ repo hỗ trợ (`supports_stock_alerts`). Quyết định lệch SPEC: KHÔNG thêm `Action.*` vào `PERMISSIONS` (test ghim đúng 23 mục) — kiểm vai trong engine như `stock_levels`.
-- Portal: chuông màn Kỹ thuật hiện cảnh báo chưa đọc (`lib/stock-alerts.ts`), bấm = "đã biết". `src/mobile/` chưa có (Idea Vault).
-- Đo: pytest 3894 passed + 102 `--pg` = 3996, ruff sạch; vitest 144, typecheck/lint sạch; 3 phép phá (bỏ `qty_before ≤ 0`, bỏ kiểm mã Kỹ thuật, ghi alert ngoài transaction) làm đỏ A02/A03/A06 rồi khôi phục. Chưa áp 0005 lên Supabase.
-
-## [v1.14.1] - 2026-10-12: xoá vật tư Tắc te (PATCH)
-- Bỏ `SIM-MAT-STARTER-01` "Tắc te mô phỏng" khỏi `catalog.yaml` (danh mục + `PB-TEC-01`), nhãn app `staff.js`, ticket mẫu `SIM-TKT-TEC-006` (v1 + cr03: nay `SIM-MAT-LAMP-01`, kỳ vọng `SUFFICIENT`, không cờ `STOCK_CHECK_ON_ACCEPT`). Test tồn kho không rõ tự đặt `set_stock(..., None)`. Postgres local: xoá dòng `maintops.stock`. Hồ sơ 19 D08.
-
-## [v1.14.0] - 2026-10-12: hồ sơ 20 — bỏ UI cũ, UI mới chạy trên PostgreSQL local (MINOR)
-- Xoá `src/web/` (trang nguyên mẫu `/ui`) + `docs/web.md`; xoá DB riêng cũ của portal (`src/db/`, `drizzle/`, `drizzle.config.ts`, script migrate/seed/e2e, deps `drizzle-orm`/`pg`/`drizzle-kit`, `lib/agent.ts` + test). Portal Docker chỉ `next start`.
-- Backend: không `PORTAL_URL` ⇒ `/` 307 `/app/`; portal không kết nối được ⇒ mọi đường (cả `/`) 503 (trước: `/`→`/ui/`). API `/api/v1` không đổi ⇒ MINOR.
-- App điện thoại: bỏ nút "Mở bản web", cache `v18`. QA (`qa01`) chỉ còn màn hướng dẫn.
-- Postgres local: `p151` nâng `0004_portal_extras`; `pytest --pg` 100 passed. Không chạm Supabase.
-
-## [Unreleased] - 2026-10-13: vật tư gắn với khu vực (nền cho hồ sơ 20, chưa bump version)
-- Catalog `area_materials`: nhãn khu vực (13 nhãn `rules.AREA_PATTERNS`) → MỘT mã bóng đèn; một mã dùng được nhiều khu vực. Validator chặn nhãn lạ và mã ngoài `playbook_materials[PB-TEC-01]`. Bước 7 (`_area_material`) tra kho theo khu vực của vị trí khi ticket không có kế hoạch riêng/Agent không chọn; khu vực không liệt kê ⇒ `default_materials`.
-- Seed: thêm `SIM-MAT-LAMP-03` (đèn thang máy/phòng rác); Hành lang, Sảnh thang máy, Cầu thang bộ → LAMP-01; Thang máy, Phòng rác → LAMP-03. `GET /catalog` thêm `material_by_area`. Đủ 13/13 khu vực có vật tư (thêm LAMP-04…07: sảnh, exit, ngoài trời, tuýp hầm xe); LAMP-02 (tồn 0) chưa gắn khu vực nào.
-- **Tài sản đèn đủ 13 khu vực** (thêm 8: sảnh chính, sảnh cư dân, lối thoát hiểm, hầm xe, bãi đỗ xe, sân chơi, sân thượng, lối đi) vì BPTN không có chuyên môn điện để chọn tài sản. Fixture `SIM-TKT-TEC-002` (hầm xe) đổi từ ASSET_UNCLEAR sang ROUTED/MATCHED ở cả `seed/maintenance_v1` và `seed/maintenance_cr03`; DEMO-4 không còn là ca "chờ BPTN chọn tài sản". Test cần trạng thái đó dùng `helpers.asset_unclear_ticket` / `without_asset` (ẩn tài sản của một khu vực trong test).
-- Đo: pytest 3881 passed, ruff sạch; phép phá (tắt nhánh khu vực) làm đỏ `test_area_materials.py`.
-
 ## [v1.13.0] - 2026-10-12: hồ sơ 19 đợt 1 — làm gọn UI/UX + vá rò phiên ở proxy cổng 8000 (MINOR)
 - **Bảo mật (vá):** proxy `src/main.py` dùng MỘT `httpx.AsyncClient` cho mọi người và client lưu cookie phiên từ phản hồi đăng nhập ⇒ yêu cầu KHÔNG cookie qua cổng 8000 nhận phiên của người đăng nhập gần nhất (đo: `/management` ẩn danh trả trang BQL "Vũ Hoàng Long"). Sửa: kho cookie của client chặn mọi cookie (`DefaultCookiePolicy(allowed_domains=[])`). Test `tests/test_portal_proxy_cookies.py` (đỏ khi bỏ vá, kèm đối chứng). Lỗi có từ develop `256da96` ⇒ develop cũng bị.
 - Tiếp nhận: "Đã phân loại" tách Phòng kỹ thuật/Phòng vệ sinh, thêm nhóm "Chưa giao phòng" (ticket tạm hoãn không phòng từng bị tính là vệ sinh).
