@@ -231,11 +231,13 @@ def _materials_text(catalog: Catalog) -> str:
 
 
 def render_user_message(data: DecisionInput, catalog: Catalog) -> str:
-    """One resident report as data inside tags. Every resident-written text goes through `_data()`."""
+    """One resident report as data inside tags. Every resident-written text goes through `_data()`.
+    The profile building is appended as the last line of the report, the same way the rules read it (`_location_text`)."""
+    report = f"{data.report_text}\nTòa {data.home_building}" if data.home_building else data.report_text
     return USER_TEMPLATE.format(
         ticket_id=data.ticket_id,
         created_at=data.created_at,
-        report_text=_data(data.report_text),
+        report_text=_data(report),
         safety_text=_data(data.safety_text) if data.safety_text.strip() else "(trống: đã được người xác nhận an toàn)",
         locks=_locks_text(data),
         candidates=_candidates_text(data),

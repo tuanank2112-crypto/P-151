@@ -203,3 +203,9 @@ def test_p_10_compact_output_keeps_reasons_that_are_read_and_drops_the_rest():
     assert [s.step for s in decision.reasoning] == ["AN_TOAN", "LOAI_VIEC", "VI_TRI", "TAI_SAN", "KET_LUAN"]
     system = prompt.render_system_prompt(CATALOG, LEXICON)
     assert "VIẾT GỌN: mỗi reason là MỘT câu ngắn" in system and "conclusion = MỘT câu ngắn" in system
+
+
+def test_p_11_profile_building_is_the_last_line_of_the_report_the_agent_reads():
+    message = prompt.render_user_message(make_input("Đèn thang bộ tầng 8 hỏng\nVị trí: Khu vực chung", home_building="S2.05"), CATALOG)
+    assert "Vị trí: Khu vực chung\nTòa S2.05\n</phan_anh>" in message
+    assert "Tòa S2.05" not in prompt.render_user_message(make_input("Đèn thang bộ tầng 8 hỏng"), CATALOG)
