@@ -696,3 +696,4 @@ Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lậ
 - Vật tư (người dùng "ok đó"): phiếu `PVT-` dẫn xuất, phòng ban báo thiếu, alert kho mọi phòng, không duyệt. Worker Sonnet M1 (engine) + M2 (portal/app).
 - Đo: chạy thật agy/gemini 14/14; portal vitest 159; lint còn 1 lỗi có sẵn ở `management-overview-chart.tsx` (code Trí). Video (hồ sơ 22) để sau. Chưa commit.
 
+- Commit `01b7145` (hồ sơ 23+24, v1.17.0) + commit tài liệu hồ sơ 22 (video, PROPOSED). Push `feature/nhuy-reasoning-agent` + PR vào develop theo lời người dùng "commit và push để redeploy"; deploy Vercel chờ VERCEL_TOKEN của lenq2112-4310.
