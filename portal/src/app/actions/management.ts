@@ -70,3 +70,8 @@ export async function cancelTicketAction(ticketId: string, reason: string) {
   if (!tid || !text) return fail("INVALID_INPUT", "Vui lòng nhập lý do hủy.");
   return act(() => post(path(tid, "cancel"), { cancel_reason: text }));
 }
+
+export async function getPerformanceReportAction() {
+  return act(async () => api<import("@/lib/dto").PerformanceReportData>("/bql/reports/performance"));
+}
+

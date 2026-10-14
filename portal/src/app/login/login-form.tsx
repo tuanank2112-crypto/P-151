@@ -22,7 +22,6 @@ export function LoginForm() {
       <div className="flex flex-col gap-1.5">
         <span className="text-base text-muted">Xin chào,</span>
         <h1 className="m-0 text-[30px] font-bold tracking-[-0.01em]">Đăng nhập</h1>
-        <span className="text-sm text-muted">Hệ thống tự đưa bạn đến dashboard theo vai trò của tài khoản.</span>
       </div>
       <div className="flex flex-col gap-2">
         <label htmlFor="user" className="text-sm font-semibold">

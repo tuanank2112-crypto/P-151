@@ -262,9 +262,34 @@ export type MgmtTicket = {
   merged: boolean;
 };
 
+export type MonthReportItem = {
+  month: string;
+  nhan: number;
+  da_xu_ly: number;
+  ton_cuoi_thang: number;
+};
+
+export type DeptSummaryReport = {
+  key: "bql" | "tiep_nhan" | "ve_sinh" | "ky_thuat";
+  name: string;
+  dot_color: string;
+  ton_dau_ky: number;
+  nhan: number;
+  da_xu_ly: number;
+  ton_hien_tai: number;
+  thay_doi_ton: number;
+  monthly: MonthReportItem[];
+};
+
+export type PerformanceReportData = {
+  departments: DeptSummaryReport[];
+  all_monthly: MonthReportItem[];
+};
+
 export type ManagementData = {
   user: UserBrief;
   tickets: MgmtTicket[];
+  report?: PerformanceReportData;
 };
 
 // ---------- 5.5 Warehouse ----------
