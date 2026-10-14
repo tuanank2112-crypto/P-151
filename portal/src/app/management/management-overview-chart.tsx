@@ -310,19 +310,13 @@ export function ManagementOverviewChart({
   return (
     <div className="card flex flex-col gap-6 p-6 sm:p-8 bg-white rounded-3xl shadow-sm border border-slate-100">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
-            Hiệu suất xử lý
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500">
-            Số ticket nhận và số đã xử lý mỗi tháng (cột), số còn tồn cuối tháng (đường cam).
-          </p>
-        </div>
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-xs text-emerald-700 font-medium self-start sm:self-auto shadow-xs">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Dữ liệu Database (Cập nhật thời gian thực)</span>
-        </div>
+      <div className="flex flex-col gap-1">
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
+          Hiệu suất xử lý
+        </h2>
+        <p className="text-xs sm:text-sm text-slate-500">
+          Số ticket nhận và số đã xử lý mỗi tháng (cột), số còn tồn cuối tháng (đường cam).
+        </p>
       </div>
 
       {/* Filter Tabs / Chips */}
