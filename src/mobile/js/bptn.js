@@ -1,10 +1,10 @@
 // BPTN screens (Bộ phận tiếp nhận) — plan 11 SPEC-P05 §3. Same queue filter and bodies as renderBptn / bptnForm in src/web/app.js.
-import { api } from './api.js?v=17';
-import { TERMINAL, confirmSheet, el, field, fill, notice, writeButton } from './ui.js?v=17';
+import { api } from './api.js?v=18';
+import { TERMINAL, confirmSheet, el, field, fill, notice, writeButton } from './ui.js?v=18';
 import {
   CATEGORY_LABEL, caseHead, caseScreen, codeOf, compact, eventsHistory, imagesOf, photoBox, queueScreen, reportBox, select,
-  webButton, writer,
-} from './staff.js?v=17';
+  writer,
+} from './staff.js?v=18';
 
 const QUEUE = new Set(['SAFETY_REVIEW_REQUIRED', 'MISSING_INFO', 'DUPLICATE', 'CATEGORY_UNCLEAR', 'OUT_OF_SCOPE', 'PENDING_REVIEW', 'ASSET_UNCLEAR', 'WRONG_DEPT']);
 const needsBptn = (t) => t.status === 'NEED_INFO' || QUEUE.has(codeOf(t));
@@ -158,8 +158,7 @@ export async function detail(ctx) {
         el('div', { id: 'bptn-actions', class: 'actions-col' }, form(c, cat)),
         reportBox(c),
         photoBox(ctx, c, 'Ảnh cư dân gửi', imagesOf(c, 'RESIDENT_ORIGINAL'), photoCache),
-        eventsHistory(c, cat),
-        webButton()));
+        eventsHistory(c, cat)));
     },
   });
 }

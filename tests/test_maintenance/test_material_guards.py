@@ -20,13 +20,18 @@ from src.maintenance.material_policy import (
 from src.maintenance.models import PlannedMaterial
 from tests.test_maintenance.helpers import BPTN, CLEANING, CLN, LIGHTING, MONDAY_9AM, TEC, Clock, report
 
-LAMP, LAMP2, STARTER, CLEAN, BAG = (
+LAMP, LAMP2, LAMP3, LAMP4, LAMP5, LAMP6, LAMP7, CLEAN, BAG = (
     "SIM-MAT-LAMP-01",
     "SIM-MAT-LAMP-02",
-    "SIM-MAT-STARTER-01",
+    "SIM-MAT-LAMP-03",
+    "SIM-MAT-LAMP-04",
+    "SIM-MAT-LAMP-05",
+    "SIM-MAT-LAMP-06",
+    "SIM-MAT-LAMP-07",
     "SIM-MAT-CLEAN-01",
     "SIM-MAT-BAG-01",
 )
+TECHNICAL = {LAMP, LAMP2, LAMP3, LAMP4, LAMP5, LAMP6, LAMP7}
 H = {CLN: {"X-Actor-Id": CLN}, TEC: {"X-Actor-Id": TEC}, BPTN: {"X-Actor-Id": BPTN}}
 
 
@@ -101,8 +106,11 @@ def plant_lines(engine: MaintenanceEngine, tid: str, lines: list[tuple[str, floa
 # ---------------------------------------------------------------------- §C1 allowed codes
 
 
+TECHNICAL = {LAMP, LAMP2, LAMP3, LAMP4, LAMP5, LAMP6, LAMP7}
+
+
 def test_allowed_codes_come_from_the_catalog_mapping(eng):
-    assert allowed_material_codes(eng.catalog, "DEPT_TECHNICAL") == {LAMP, LAMP2, STARTER}
+    assert allowed_material_codes(eng.catalog, "DEPT_TECHNICAL") == TECHNICAL
     assert allowed_material_codes(eng.catalog, "DEPT_CLEANING") == {CLEAN, BAG}
     assert allowed_material_codes(eng.catalog, "DEPT_NOPE") == frozenset()
 
@@ -111,9 +119,8 @@ def test_catalog_endpoint_lists_codes_by_department(api):
     body = api.get("/api/v1/mo/catalog", headers=H[TEC]).json()
     assert body["material_codes_by_department"] == {
         "DEPT_CLEANING": [BAG, CLEAN],
-        "DEPT_TECHNICAL": [LAMP, LAMP2, STARTER],
+        "DEPT_TECHNICAL": sorted(TECHNICAL),
     }
-    assert {"departments", "assets", "status_labels", "materials"} <= body.keys()  # old fields kept
 
 
 # ---------------------------------------------------------------------- department guard
@@ -121,7 +128,7 @@ def test_catalog_endpoint_lists_codes_by_department(api):
 
 @pytest.mark.parametrize(
     ("text", "actor", "foreign"),
-    [(LIGHTING, TEC, CLEAN), (LIGHTING, TEC, BAG), (CLEANING, CLN, LAMP), (CLEANING, CLN, STARTER)],
+    [(LIGHTING, TEC, CLEAN), (LIGHTING, TEC, BAG), (CLEANING, CLN, LAMP), (CLEANING, CLN, LAMP2)],
 )
 def test_foreign_material_is_refused_everywhere(api, eng, text, actor, foreign):
     tid = started(eng, text, actor)

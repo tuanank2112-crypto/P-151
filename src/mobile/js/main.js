@@ -1,12 +1,12 @@
 // Phone app boot: hash router, sign-in, periodic refresh, offline banner, service worker (plan 11, SPEC-P01).
 // Chrome = portal Header + NavTiles (portal/src/components/shell.tsx, SPEC-P04 §3).
-import { api, clearToken, getToken, onUnauthorized, setToken } from './api.js?v=17';
-import { clock, el, fill, icon, person, toast } from './ui.js?v=17';
-import * as resident from './resident.js?v=17';
-import * as bql from './bql.js?v=17';
-import * as dept from './dept.js?v=17';
-import * as bptn from './bptn.js?v=17';
-import * as kho from './kho.js?v=17';
+import { api, clearToken, getToken, onUnauthorized, setToken } from './api.js?v=18';
+import { clock, el, fill, icon, person, toast } from './ui.js?v=18';
+import * as resident from './resident.js?v=18';
+import * as bql from './bql.js?v=18';
+import * as dept from './dept.js?v=18';
+import * as bptn from './bptn.js?v=18';
+import * as kho from './kho.js?v=18';
 
 export const REFRESH_MS = 30000;
 const ME_KEY = 'mo-app-me';
@@ -238,8 +238,7 @@ function renderWeb(ctx) {
   tiles(null);
   ctx.screen.append(el('div', { class: 'card pad stack', id: 'web-only' },
     el('h2', {}, 'Vai trò này dùng bản web'),
-    el('p', { class: 'muted' }, `${person(state.me).name} là tài khoản nội bộ: dùng giao diện web đầy đủ. App điện thoại dành cho Cư dân, BPTN, Phòng ban, Kho và Ban quản lý.`),
-    el('a', { class: 'btn primary block', href: '/ui/' }, icon('web'), 'Mở bản web'),
+    el('p', { class: 'muted' }, `${person(state.me).name} là tài khoản nội bộ: mở cổng web của hệ thống trên máy tính. App điện thoại dành cho Cư dân, BPTN, Phòng ban, Kho và Ban quản lý.`),
     el('button', { type: 'button', class: 'btn block', onclick: signOut }, 'Đăng xuất')));
 }
 

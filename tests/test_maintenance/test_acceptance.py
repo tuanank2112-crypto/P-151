@@ -18,9 +18,11 @@ from tests.test_maintenance.helpers import (
     TEC,
     TZ,
     WAREHOUSE,
+    asset_unclear_ticket,
     finish,
     report,
     to_ready,
+    without_asset,
 )
 
 
@@ -355,7 +357,7 @@ def test_13b_the_guard_itself_refuses_routing_without_review(clock):
 
 
 def test_14_asset_unclear_waits_for_bptn(fresh, clock):
-    tid = report(fresh, "Đèn hầm B1 tòa S1 không sáng")  # no asset for the car park (plan 14: one per area)
+    tid = asset_unclear_ticket(fresh)
     for days in (1, 2, 3):
         fresh.run_jobs(clock.now + timedelta(days=days))
         fresh.resume(tid)
@@ -372,11 +374,12 @@ def test_14_asset_unclear_waits_for_bptn(fresh, clock):
 
 
 def test_15_wrong_department_to_lighting_goes_through_asset_lookup(fresh):
-    tid = report(fresh, "Sảnh chính tòa S1 nhiều rác")
-    fresh.return_wrong_department(tid, CLN, note="Không có rác, đèn sảnh chính hỏng")
+    tid = report(fresh, "Tầng hầm B1 tòa S1 nhiều rác")
+    fresh.return_wrong_department(tid, CLN, note="Không có rác, đèn hầm xe hỏng")
     assert fresh.get(tid).ticket.department_id is None
 
-    case = fresh.bptn_resolve(tid, BPTN, category="KY_THUAT", note="Cư dân xác nhận đèn hỏng")
+    with without_asset(fresh, "Hầm xe"):
+        case = fresh.bptn_resolve(tid, BPTN, category="KY_THUAT", note="Cư dân xác nhận đèn hỏng")
     assert "LOOKUP_ASSET" in actions_after(case, "BPTN_RESOLVE")
     # No lighting asset for that area: the ticket stops at step 6 instead of reaching DEPT_TECHNICAL
     assert case.ticket.status == "VERIFYING" and case.ticket.blocker.code == "ASSET_UNCLEAR"

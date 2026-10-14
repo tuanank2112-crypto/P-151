@@ -415,6 +415,8 @@ class Catalog(Frozen):
     sla_config: SlaConfig
     playbook_materials: dict[PlaybookId, tuple[str, ...]]  # plan 06: materials the Agent may choose per playbook
     agent_policy: AgentPolicy
+    # Plan 21: the one lighting material each area uses (an item may serve several areas). Stock is checked by location.
+    area_materials: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def _assets_one_per_area(self):
@@ -441,7 +443,18 @@ class Catalog(Frozen):
             missing = {line.item_code for line in lines} - allowed
             if missing:
                 raise ValueError(f"default_materials[{playbook}] phải nằm trong playbook_materials: {sorted(missing)}")
+        from src.maintenance.rules import AREA_LABELS
+
+        if unknown_areas := sorted(set(self.area_materials) - AREA_LABELS):
+            raise ValueError(f"area_materials: khu vực không có trong rules.AREA_PATTERNS: {unknown_areas}")
+        technical = set(self.playbook_materials.get(PlaybookId.TEC, ()))
+        if outside := sorted(set(self.area_materials.values()) - technical):
+            raise ValueError(f"area_materials: mã phải nằm trong playbook_materials của PB-TEC-01: {outside}")
         return self
+
+    def material_for_area(self, area: str | None) -> str | None:
+        """Item code bound to the area label, or None when the area has no bound material."""
+        return self.area_materials.get(area) if area else None
 
     def material(self, item_code: str) -> MaterialCatalogItem | None:
         return next((m for m in self.materials if m.item_code == item_code), None)

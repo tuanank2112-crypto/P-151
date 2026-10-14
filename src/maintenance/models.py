@@ -418,6 +418,29 @@ class Notification(Entity):
     created_at: AwareDatetime
 
 
+class StockAlert(Entity):
+    """Department-level alert (plan 20): the warehouse restocked a material a department uses after it ran out.
+
+    Own table `maintops.stock_alerts`, never a `Notification` (that one needs a ticket) and never in a ticket doc.
+    Append-only: only the two `acknowledged_*` fields are set, once."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    alert_id: Annotated[str, _sim_id("SIM-SAL-")]
+    item_code: str
+    item_name: str
+    unit: str | None = None
+    department_id: Department
+    qty_added: float = Field(gt=0)
+    qty_before: float = Field(le=0)
+    qty_after: float = Field(gt=0)
+    received_by: str
+    created_at: AwareDatetime
+    ticket_ids: tuple[str, ...] = ()  # tickets waiting for this item when it arrived: the engine re-runs them
+    acknowledged_by: str | None = None
+    acknowledged_at: AwareDatetime | None = None
+
+
 # ---------------------------------------------------------------------------
 # Agent proposal
 # ---------------------------------------------------------------------------
