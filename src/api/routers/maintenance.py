@@ -20,7 +20,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from src.api import photos
-from src.api.auth import get_actor
+from src.api.auth import get_actor, load_accounts
 from src.config import get_settings
 from src.maintenance.ai_logger import AILogEntry, AILogStatus, ai_logger
 from src.maintenance.demo import EvaluationReport, evaluate, run_fixture
@@ -74,6 +74,14 @@ _engine: MaintenanceEngine | None = None
 _engine_lock = threading.Lock()
 
 
+def _home_building(actor_id: str) -> str | None:
+    """Building in the resident's profile (accounts fixture); None for an actor without one."""
+    for account in load_accounts().accounts:
+        if account.actor_id == actor_id and account.profile is not None:
+            return account.profile.tower
+    return None
+
+
 def get_engine() -> MaintenanceEngine:
     global _engine
     if _engine is None:
@@ -81,6 +89,7 @@ def get_engine() -> MaintenanceEngine:
             if _engine is None:
                 settings = get_settings()
                 engine = build_engine(settings)
+                engine.home_building = _home_building
                 if settings.mo_seed_on_empty:
                     seed_if_empty(engine)  # never wipes: a persistent store keeps its tickets across restarts
                 _engine = engine

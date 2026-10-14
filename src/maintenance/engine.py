@@ -128,7 +128,13 @@ from src.maintenance.models import (
 )
 from src.maintenance.priority import propose_priority
 from src.maintenance.proposer import LLMClient, ProposalResult, propose
-from src.maintenance.rules import extract_location, location_area, mentions_playbook_subject, missing_location_parts
+from src.maintenance.rules import (
+    extract_location,
+    location_area,
+    mentions_playbook_subject,
+    missing_location_parts,
+    names_building,
+)
 from src.maintenance.safety import SafetyAssessment, SafetyLLMClient, assess, assess_with_llm
 from src.maintenance.store.base import (  # the error hierarchy lives with the store
     Assignment,
@@ -491,12 +497,15 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         repo: CaseRepository | None = None,
         agent: "ReasoningAgent | None" = None,
         stock_alerts: bool = True,
+        home_building: Callable[[str], str | None] | None = None,
     ):
         if agent is not None and llm is not None:
             raise ValueError("Chỉ một trong agent hoặc llm")
         # plan 20: false ⇒ receive_stock behaves as before, no alert row. A store without the table (postgres at 0004,
         # flag off) can never take an alert, whatever the caller asked for.
         self.stock_alerts_enabled = stock_alerts and getattr(repo, "supports_stock_alerts", True)
+        # resident_id -> the building in their profile; the fallback when the report names no building at all
+        self.home_building = home_building
         self.agent = agent  # None = the fixed rules decide every step (plan 06: Agent off, or no model configured)
         self.catalog = catalog or load_catalog()
         self.dataset = dataset or load_dataset()
@@ -3737,7 +3746,12 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             *(a.content for a in reversed(work.additions) if a.merged_from is None),
             work.ticket.raw.original_description,
         ]
-        return "\n".join(p for p in parts if p and p.strip())
+        text = "\n".join(p for p in parts if p and p.strip())
+        # The resident's own words win: the profile building is added only when no catalog building is named anywhere
+        home = self.home_building(work.ticket.resident_id) if self.home_building else None
+        if home and not names_building(text, self.catalog.site.buildings):
+            text = f"{text}\nTòa {home}"
+        return text
 
     def _category(self, work: Case) -> ServiceCategory | None:
         locked = work.ticket.locked_fields.category or work.ticket.split_category  # a split pins the category (P05)

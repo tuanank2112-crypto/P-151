@@ -2,6 +2,9 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Unreleased] - 2026-10-14: tòa mặc định theo hồ sơ cư dân (chưa bump version)
+- Báo cáo không nêu tòa nào ⇒ `MaintenanceEngine._location_text` thêm dòng `Tòa <profile.tower>` (hook `home_building(resident_id)`, API nối từ `accounts.yaml` ở `get_engine`). Chữ của cư dân luôn thắng: chỉ thêm khi `rules.names_building` thấy KHÔNG có tòa catalog nào trong text (kể cả mệnh đề "em ở tòa …"). CẤM lấy tầng/khu vực từ hồ sơ (tầng nhà ở không phải chỗ hỏng). Nguyên nhân: ticket 0073 "tầng 7 + cầu thang bộ" kẹt NEED_INFO vì thiếu tòa. Test `test_home_building_default.py` (5), pytest 3629 passed.
+
 ## [v1.15.1] - 2026-10-14: cảnh báo nhập kho nêu ticket tiếp tục xử lý (PATCH)
 - `StockAlert.ticket_ids` + migration `0006_stock_alert_tickets` (cột `ticket_ids text[]` mặc định rỗng; đã áp lên Supabase). Portal chuông Kỹ thuật: "Kho đã nhập lại <loại đèn> … Tiếp tục xử lý ticket: <id>". Đo: pytest 3996 (gồm `--pg`), vitest 144.
 
