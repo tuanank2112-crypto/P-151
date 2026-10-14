@@ -512,32 +512,43 @@ export function ManagementOverviewChart({
             })}
           </svg>
 
-          {/* Hover Tooltip */}
+          {/* Hover Tooltip - Cố định kích thước bằng nhau cho tất cả các tháng, không bị co ép chữ */}
           {hoverIndex !== null && activeMonthly[hoverIndex] && (
             <div
-              className="absolute pointer-events-none z-10 bg-slate-900/95 text-white px-3 py-2 rounded-xl text-xs shadow-xl backdrop-blur-sm"
+              className="absolute pointer-events-none z-10 w-[140px] whitespace-nowrap bg-slate-900/95 text-white px-3.5 py-2.5 rounded-xl text-xs shadow-xl backdrop-blur-sm border border-slate-700/50"
               style={{
                 left: `${((padLeft + hoverIndex * slotW + slotW / 2) / svgWidth) * 100}%`,
                 top: "10px",
-                transform: "translateX(-50%)",
+                transform:
+                  hoverIndex === activeMonthly.length - 1
+                    ? "translateX(-88%)"
+                    : hoverIndex === 0
+                    ? "translateX(-12%)"
+                    : "translateX(-50%)",
               }}
             >
-              <div className="font-bold text-slate-200 border-b border-slate-700/60 pb-1 mb-1.5 text-center">
+              <div className="font-bold text-slate-100 border-b border-slate-700/60 pb-1 mb-2 text-center text-[12px] tracking-wide">
                 Tháng {activeMonthly[hoverIndex].month}
               </div>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                <span className="text-slate-400">Nhận:</span>
-                <span className="font-semibold text-right text-sky-200">
-                  {activeMonthly[hoverIndex].nhan}
-                </span>
-                <span className="text-slate-400">Đã xử lý:</span>
-                <span className="font-semibold text-right text-sky-400">
-                  {activeMonthly[hoverIndex].daXuLy}
-                </span>
-                <span className="text-slate-400">Tồn cuối:</span>
-                <span className="font-semibold text-right text-orange-400">
-                  {activeMonthly[hoverIndex].tonCuoiThang}
-                </span>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Nhận:</span>
+                  <span className="font-semibold font-mono text-sky-200">
+                    {activeMonthly[hoverIndex].nhan}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Đã xử lý:</span>
+                  <span className="font-semibold font-mono text-sky-400">
+                    {activeMonthly[hoverIndex].daXuLy}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Tồn cuối:</span>
+                  <span className="font-semibold font-mono text-orange-400">
+                    {activeMonthly[hoverIndex].tonCuoiThang}
+                  </span>
+                </div>
               </div>
             </div>
           )}
