@@ -34,6 +34,10 @@ Mở http://localhost:8000. Tài khoản (mật khẩu `123456`): `cudan`, `tiep
 | `npx tsx scripts/ui-check-WP3.mts --base=URL` | Kiểm Cư dân + Tiếp nhận trên trình duyệt (Playwright), ảnh 1440/390 |
 | `npx tsx scripts/ui-check-WP4.mts cleaning\|technical --base=URL` | Kiểm Vệ sinh / Kỹ thuật |
 | `npx tsx scripts/ui-check-WP5.mts --base=URL` | Kiểm Quản lý + Kho + modal |
+**Phân tích Agent (v1.17.4):** KHÔNG còn hiện ở modal chi tiết ticket và thẻ Tiếp nhận (người dùng bỏ hẳn; sẽ có một nơi hiển thị riêng, chưa chốt). `TicketDetail.agent` / `ReceptionInboxItem.agent` (`buildAgentInfo`) vẫn được dựng — đừng xoá khi dọn code.
+
+**Thời gian chờ backend (hồ sơ 27, v1.17.3):** `server/backend.ts` — đọc (GET) `READ_TIMEOUT_MS` 15 s, ghi (POST, kể cả form ảnh) `WRITE_TIMEOUT_MS` 60 s, vì gửi phản ánh chờ Agent 16–20 s trước khi backend trả lời. Quá giờ ⇒ "Không kết nối được máy chủ" dù backend có thể đã ghi xong.
+
 `db:*`, `test:db`, `e2e`, `screenshots` là công cụ của bản DB riêng cũ — không dùng cho luồng hiện tại.
 
 ## 3. Cấu trúc

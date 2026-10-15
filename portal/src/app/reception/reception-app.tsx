@@ -17,7 +17,7 @@ import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
 import { DEPT_LABEL, ROLE_LABEL, type Dept } from "@/lib/constants";
 import { DONE_SEGMENTS, doneSegment, hasLocation, matchesDoneSearch, type DoneSegment } from "@/lib/reception-done";
-import type { AgentInfo, AgentPerf, ReceptionAllItem, ReceptionData, ReceptionInboxItem, TicketDetail } from "@/lib/dto";
+import type { AgentPerf, ReceptionAllItem, ReceptionData, ReceptionInboxItem, TicketDetail } from "@/lib/dto";
 
 type Tab = "inbox" | "done" | "perf";
 
@@ -287,27 +287,6 @@ function PerfPanel({ perf, onOpen }: { perf: AgentPerf; onOpen: (id: string) => 
   );
 }
 
-function AgentBlock({ agent }: { agent: AgentInfo | null }) {
-  if (!agent) {
-    return <div className="rounded-2xl bg-soft p-4 text-[13px] text-muted">Chưa có quyết định của Agent.</div>;
-  }
-  return (
-    <div className="flex flex-col gap-1.5 rounded-2xl border border-line bg-soft p-4" aria-label="Quyết định của Agent">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-bold tracking-[.06em] text-muted">AGENT</span>
-        <span className="pill wait">{agent.sourceLabel}</span>
-        {agent.proposedDept && !agent.failed && (
-          <span className={deptPill(agent.proposedDept)}>
-            <span className="dot" />
-            Đề xuất: {DEPT_LABEL[agent.proposedDept]}
-          </span>
-        )}
-      </div>
-      <span className="text-sm leading-normal text-body">{agent.reason}</span>
-    </div>
-  );
-}
-
 function InboxCard(props: {
   t: ReceptionInboxItem;
   pending: boolean;
@@ -347,8 +326,6 @@ function InboxCard(props: {
       <span className="text-[13px] text-muted">Vị trí: {t.location}</span>
       {t.photos.length > 0 && <PhotoStrip photos={t.photos} />}
       {t.note && <span className="rounded-2xl bg-soft p-4 text-[13px] text-body">{t.note}</span>}
-
-      <AgentBlock agent={t.agent} />
 
       {code === "DUPLICATE" && (
         <div className="flex flex-col gap-3 rounded-2xl p-4" style={{ background: "#FFF7E0", border: "1px solid #F3D27A" }}>

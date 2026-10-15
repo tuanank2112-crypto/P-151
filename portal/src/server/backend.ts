@@ -4,7 +4,10 @@ import { BackendError, BackendUnavailable, errorFrom } from "./backend-error";
 
 export { BackendError, BackendUnavailable, errorFrom };
 
-const TIMEOUT_MS = 15_000;
+/** Reads fail fast so a page never hangs on a dead backend. */
+export const READ_TIMEOUT_MS = 15_000;
+/** Writes may wait for the reasoning agent (16-20 s measured 2026-10-15, its own limit is 25 s). */
+export const WRITE_TIMEOUT_MS = 60_000;
 
 export type ApiInit = {
   method?: "GET" | "POST";
@@ -33,13 +36,14 @@ async function send(path: string, init: ApiInit): Promise<Response> {
     headers["Content-Type"] = "application/json";
     body = JSON.stringify(init.json);
   }
+  const method = init.method ?? (body ? "POST" : "GET");
   try {
     return await fetch(urlFor(path, init.query), {
-      method: init.method ?? (body ? "POST" : "GET"),
+      method,
       headers,
       body,
       cache: "no-store",
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(method === "POST" ? WRITE_TIMEOUT_MS : READ_TIMEOUT_MS),
     });
   } catch (e) {
     if (e instanceof BackendUnavailable) throw e;

@@ -2,84 +2,10 @@
 
 import { useEffect } from "react";
 import { DEPT_LABEL } from "@/lib/constants";
-import type { AgentInfo, TicketDetail } from "@/lib/dto";
+import type { TicketDetail } from "@/lib/dto";
 import { TicketEvidence } from "./ticket-evidence";
 
 const STAGE_NAMES = ["Tiếp nhận", "Thẩm định", "Phân công", "Đang xử lý", "Nghiệm thu", "Hoàn tất"] as const;
-
-const RISK_LABEL: Record<string, string> = { NONE: "Không có dấu hiệu nguy hiểm", UNCLEAR: "Chưa rõ", EMERGENCY: "Khẩn cấp" };
-
-/** "Phân tích Agent" block: only what the backend recorded (SPEC-P04 §5) */
-function AgentAnalysis({ agent }: { agent: AgentInfo | null }) {
-  return (
-    <div data-testid="agent-analysis">
-      <h4 className="mb-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Phân tích Agent</h4>
-      {!agent ? (
-        <p className="m-0 rounded-xl border border-dashed border-slate-300 p-3 text-xs italic text-slate-500">
-          Chưa có quyết định của Agent
-        </p>
-      ) : (
-        <div className="flex flex-col gap-2.5 rounded-xl border border-violet-200 bg-violet-50/50 p-3.5 text-xs">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <span className="block text-slate-500">Nguồn quyết định</span>
-              <span className="font-semibold text-slate-800">{agent.sourceLabel}</span>
-            </div>
-            <div>
-              <span className="block text-slate-500">Model</span>
-              <span className="font-semibold text-slate-800 break-all">{agent.model || "Không có"}</span>
-            </div>
-            <div>
-              <span className="block text-slate-500">Phòng đề xuất</span>
-              <span className="font-semibold text-slate-800">
-                {agent.proposedDept ? DEPT_LABEL[agent.proposedDept] : "Không đề xuất"}
-              </span>
-            </div>
-            <div>
-              <span className="block text-slate-500">Mức an toàn (Agent)</span>
-              <span className={`font-semibold ${agent.riskLevel === "EMERGENCY" ? "text-rose-600" : "text-slate-800"}`}>
-                {RISK_LABEL[agent.riskLevel] ?? agent.riskLevel}
-              </span>
-            </div>
-          </div>
-          {agent.reason && <p className="m-0 text-slate-700">{agent.reason}</p>}
-          {agent.signals.length > 0 && (
-            <div>
-              <span className="mb-1 block font-semibold text-slate-600">Dấu hiệu an toàn (trích dẫn)</span>
-              <ul className="m-0 flex list-none flex-col gap-1 p-0">
-                {agent.signals.map((x, i) => (
-                  <li key={`${x.id}-${i}`} className="rounded-lg bg-white px-2.5 py-1.5 text-slate-700">
-                    <span className="font-mono text-[11px] text-slate-500">{x.id}</span> — “{x.quote}”
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {agent.steps.length > 0 && (
-            <div>
-              <span className="mb-1 block font-semibold text-slate-600">Các bước suy luận</span>
-              <ol className="m-0 flex list-decimal flex-col gap-1 pl-5 text-slate-700">
-                {agent.steps.map((x, i) => (
-                  <li key={i}>{x}</li>
-                ))}
-              </ol>
-            </div>
-          )}
-          {agent.disagreements.length > 0 && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-amber-900">
-              <span className="mb-1 block font-semibold">Bất đồng với luật cố định</span>
-              <ul className="m-0 list-disc pl-5">
-                {agent.disagreements.map((x, i) => (
-                  <li key={i}>{x}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export function TicketDetailModal({
   ticket,
@@ -343,8 +269,6 @@ export function TicketDetailModal({
               <p className="text-xs text-slate-400 italic">Chưa có đánh giá.</p>
             )}
           </div>
-
-          <AgentAnalysis agent={ticket.agent} />
 
           {/* Audit Timeline / History */}
           <div>

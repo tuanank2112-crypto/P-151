@@ -2,6 +2,15 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.17.4] - 2026-10-15: portal bỏ khung "Phân tích Agent" (PATCH)
+- Góp ý nhóm (Google Doc, bình luận [a]): bỏ hẳn khung phân tích Agent ở Tiếp nhận và Quản lý — cửa sổ chi tiết ticket (`components/ticket-detail-modal.tsx`, khối `AgentAnalysis`) và thẻ hộp thư Tiếp nhận (`reception-app.tsx`, khối `AgentBlock`). Người dùng: phân tích Agent sẽ hiện ở MỘT nơi riêng, chỗ nào báo sau.
+- GIỮ: dữ liệu `agent` trong DTO (`buildAgentInfo`) cho nơi hiển thị mới; thống kê "Agent đề xuất / Phòng cuối" và gợi ý phòng (`sugDept`) không đổi.
+- Đo: tsc 0; eslint 2 file sửa 0 (toàn portal còn 4 lỗi có sẵn ở `scripts/product-video/` + `management-overview-chart.tsx`, không thuộc đợt này); vitest 162 pass.
+
+## [v1.17.3] - 2026-10-15: hồ sơ 27 — portal chờ đủ lâu khi gửi phản ánh có Agent (PATCH)
+- Portal chờ backend 15 s cho mọi lời gọi, trong khi gửi phản ánh chạy Agent 16–20 s ⇒ ticket đã tạo nhưng cư dân thấy "Không kết nối được máy chủ" (phát hiện khi diễn tập video hồ sơ 22). Nay đọc (GET) giữ 15 s, ghi (POST) 60 s (`portal/src/server/backend.ts`).
+- Đo: test mới đỏ 3/3 trước khi sửa; vitest 162 pass/6 skip, tsc 0, eslint 0; chạy thật local (LLM agy gemini-3.8-flash-low, `next start`): portal hiện "Đã gửi" sau 22 s, diễn tập R1–R8 27/27 khớp. Production chưa deploy. `planning/27_2026-10-15_portal-write-timeout/`.
+
 ## [v1.17.2] - 2026-10-15: hồ sơ 26 — token đăng nhập có chữ ký (PATCH)
 - Production không vào được BQL: phiên trong RAM, mỗi instance serverless Vercel không chung bộ nhớ ⇒ 200/401 xen kẽ ngay sau đăng nhập. Token nay ký HMAC (`AUTH_TOKEN_SECRET`), instance nào cũng kiểm được. Đăng xuất thu hồi theo instance.
 - Đo: 5 test mới (API luân phiên hai instance 6/6 = 200), phép phá khoá riêng ⇒ 2 đỏ; pytest 3689.
