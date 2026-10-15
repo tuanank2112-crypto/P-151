@@ -203,3 +203,8 @@ a:hover { color: #1e3a8a; }
   gap: 16px;
   animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* Plan 25: a long list scrolls inside its own box, so the page itself never grows without end (desktop and phone:
+   on a phone a 50-ticket board was 9 771 px tall). Table headers stay on top while the rows scroll. */
+.scroll-list{max-height:min(70vh,760px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:4px}
+.scroll-list thead th{position:sticky;top:0;z-index:1;background:#FFFFFF}

@@ -577,37 +577,39 @@ export function HistoryList({ tickets, onOpen }: { tickets: DeptTicket[]; onOpen
       {shown.length === 0 && (
         <div className="card p-10 text-center text-muted">{all.length === 0 ? "Chưa có ticket hoàn thành." : "Không có ticket nào khớp bộ lọc."}</div>
       )}
-      {done.map((t) => (
-        <article key={t.id} className="card flex flex-col gap-2 px-6 py-[22px]">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <CodeButton t={t} onOpen={onOpen} />
-            <span className="pill cat-none" data-testid="history-building">
-              {boxOf(t) === "other" ? "Chưa rõ tòa" : boxOf(t)}
-            </span>
-            <span className={`pill ml-auto ${t.stage === 5 ? "cat-none" : "bg-[#D8EFE3] text-[#13553A]"}`}>{t.statusLabel}</span>
-          </div>
-          <span className="text-[15px] font-semibold leading-normal">{t.title || t.text}</span>
-          {t.content && <span className="text-sm text-body">{t.content}</span>}
-          {hasLocation(t.location) && <span className="text-[13px] text-muted">{t.location}</span>}
-          {t.rating ? (
-            <div className="flex flex-col gap-1.5 border-t border-line-soft pt-2">
-              <Stars n={t.rating.stars} />
-              {t.rating.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {t.rating.tags.map((g) => (
-                    <span key={g} className="pill cat-none">
-                      {g}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {t.rating.comment && <p className="m-0 text-sm text-body">“{t.rating.comment}”</p>}
+      <div className="scroll-list flex flex-col gap-3" data-testid="history-list">
+        {done.map((t) => (
+          <article key={t.id} className="card flex flex-col gap-2 px-6 py-[22px]">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <CodeButton t={t} onOpen={onOpen} />
+              <span className="pill cat-none" data-testid="history-building">
+                {boxOf(t) === "other" ? "Chưa rõ tòa" : boxOf(t)}
+              </span>
+              <span className={`pill ml-auto ${t.stage === 5 ? "cat-none" : "bg-[#D8EFE3] text-[#13553A]"}`}>{t.statusLabel}</span>
             </div>
-          ) : (
-            <span className="text-[13px] text-muted">{t.stage === 5 ? "Chờ Ban quản lý nghiệm thu." : "Chưa có đánh giá của cư dân."}</span>
-          )}
-        </article>
-      ))}
+            <span className="text-[15px] font-semibold leading-normal">{t.title || t.text}</span>
+            {t.content && <span className="text-sm text-body">{t.content}</span>}
+            {hasLocation(t.location) && <span className="text-[13px] text-muted">{t.location}</span>}
+            {t.rating ? (
+              <div className="flex flex-col gap-1.5 border-t border-line-soft pt-2">
+                <Stars n={t.rating.stars} />
+                {t.rating.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {t.rating.tags.map((g) => (
+                      <span key={g} className="pill cat-none">
+                        {g}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {t.rating.comment && <p className="m-0 text-sm text-body">“{t.rating.comment}”</p>}
+              </div>
+            ) : (
+              <span className="text-[13px] text-muted">{t.stage === 5 ? "Chờ Ban quản lý nghiệm thu." : "Chưa có đánh giá của cư dân."}</span>
+            )}
+          </article>
+        ))}
+      </div>
       {shown.length > done.length && (
         <div className="flex items-center justify-between text-xs text-muted">
           <span>

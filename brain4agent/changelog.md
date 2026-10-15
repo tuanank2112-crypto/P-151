@@ -2,6 +2,10 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.17.1] - 2026-10-15: hồ sơ 25 — danh sách dài cuộn trong khung (PATCH)
+- Lớp `.scroll-list` (`portal/src/app/globals.css`): khung tối đa `min(70vh, 760px)`, cuộn bên trong, tiêu đề bảng dính trên; áp cho Kỹ thuật/Vệ sinh (cột bảng việc, lịch sử), Tiếp nhận, BQL (danh sách + 3 ô), Cư dân, Kho. Cả máy tính lẫn điện thoại.
+- Đo: 62 ticket, Playwright 24/24 (trang ≤ 1 635 px; trước đó 9 771 px trên điện thoại); đối chứng tắt khung 23/24 FAIL. `planning/25_2026-10-15_scroll-lists/`.
+
 ## [v1.17.0] - 2026-10-15: hồ sơ 24 — phiếu vật tư tự sinh + thông báo khi kho nhập (MINOR)
 - Phiếu vật tư `PVT-<ticket>` = khung nhìn dẫn xuất từ ticket `ON_HOLD/WAITING_MATERIAL` (không bảng mới, không migration): `GET /mo/warehouse/requests`; bước 7 thiếu tồn ⇒ notification `material.shortage` cho kho.
 - Phòng ban đang làm báo thiếu: `POST /mo/tickets/{id}/material-shortage` (kho đủ ⇒ 409 `GUARD_FAILED`), ticket về `IN_PROGRESS` khi kho nhập đủ. Không bước duyệt (giữ plan 15/16).

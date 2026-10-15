@@ -3,7 +3,7 @@
 File này chứa danh sách các tính năng, mục tiêu sắp tới và tình trạng công việc hiện tại.
 
 ## Mục tiêu hiện tại (Active)
-- [ ] **Hồ sơ 23 + 24 (v1.16.0, v1.17.0, 2026-10-15):** code + test + chạy thật xong local; chờ thẩm định cuối, commit/push theo người dùng. `planning/23_2026-10-14_emergency-dup-split/`, `planning/24_2026-10-14_material-requests/`.
+- [ ] **Hồ sơ 23 + 24 + 25 (v1.16.0–v1.17.1, 2026-10-15):** xong local, thẩm định R01/R02, push + PR #28 vào develop; còn deploy Vercel (chờ token lenq2112-4310). `planning/23_2026-10-14_emergency-dup-split/`, `planning/24_2026-10-14_material-requests/`.
 - [ ] **Plan 22 — video thuyết minh sản phẩm (2026-10-14):** [`planning/22_2026-10-14_product-video/`](../planning/22_2026-10-14_product-video/plan.md) PROPOSED, chờ duyệt D-V01..05; hạn 19/10.
 - [ ] **Plan18 — UI portal mới dùng backend Python:** người dùng đã duyệt SPEC, đã triển khai runtime local; đã đo implementation local, chưa đóng gate môi trường. Auth/token, ID string, data/actions/ảnh/vật tư/Kho qua Python, không DB workflow riêng. Không gồm nâng cấp semantic P09. Local1.11.0; boot/Docker/điện thoại chưa đạt, chưa commit/deploy.
 - [ ] **Plan 17, local 1.10.1:** UI develop b6590ce đã nhập; giữ backend Châm Anh, proxy và migration Kho. Build/typecheck/unit đạt; pytest memory 3438 + proxy/material focus47. Đã commit/push2ced265. Còn rollout Docker/điện thoại; plan18 đã thay workflow portal riêng bằng API Python.

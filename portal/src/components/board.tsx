@@ -26,7 +26,7 @@ export function Board({ tickets, card }: { tickets: DeptTicket[]; card: (t: Dept
                 Trống
               </div>
             )}
-            {items.map(card)}
+            <div className="scroll-list flex flex-col gap-3">{items.map(card)}</div>
           </section>
         );
       })}
