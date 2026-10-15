@@ -1,26 +1,25 @@
 // Warehouse screens (Kho vật tư) — plan 11 SPEC-P05 §4. Same endpoints as renderWarehouse in src/web/app.js.
-import { api } from './api.js?v=17';
-import { el, emptyState, field, fill, pageHead, pagedList, pill, refreshButton, toast, writeButton } from './ui.js?v=17';
+import { api } from './api.js?v=18';
+import { el, emptyState, field, fill, pageHead, pagedList, pill, refreshButton, toast, writeButton } from './ui.js?v=18';
 import {
   caseHead, caseScreen, codeOf, eventsHistory, isSeedTicket, loadCatalog, materialName, materialUnit, reportBox, select,
-  summaryCard, webButton,
-} from './staff.js?v=17';
+  summaryCard,
+} from './staff.js?v=18';
 
 // Q37: "Nhập vật tư" replaces "Chờ vật tư" (receipt form + the tickets it unblocks); "Cảnh báo" = stock under the threshold
 const TILES = [['receive', 'Nhập vật tư', 'box'], ['stock', 'Tồn kho', 'grid'], ['low', 'Cảnh báo', 'warning']];
-/** Warning bands (Q37, same unit for every item): qty < LOW_STOCK ⇒ "Sắp hết", qty < CRITICAL_STOCK ⇒ "Rất thấp". Unknown qty is not warned. */
-export const LOW_STOCK = 30;
-export const CRITICAL_STOCK = 20;
 let tab = 'receive';
 /** Item + qty the "Nhập vật tư" form starts with after "Nhập thêm" on a warning row. */
 let prefill = null;
 /** The header bell opens "Nhập vật tư" (the tickets waiting for material are listed there). */
 export function focusQueue() { tab = 'receive'; }
 
-/** Stock rows under LOW_STOCK, lowest first. */
+/** Plan 19 (same rule as portal/src/lib/stock.ts): out when qty <= 0, low when qty <= the item's own min_qty; unknown qty or no threshold is not warned. */
 export function lowStock(stock) {
-  return stock.filter((s) => s.qty != null && s.qty < LOW_STOCK).sort((a, b) => a.qty - b.qty);
+  return stock.filter((s) => s.qty != null && (s.qty <= 0 || (s.min_qty != null && s.qty <= s.min_qty))).sort((a, b) => a.qty - b.qty);
 }
+/** Quantity that brings the item back above its threshold (at least 1). */
+const restockQty = (s) => Math.max(1, (s.min_qty ?? 0) + 1 - s.qty);
 
 /** Form "Nhập kho": item + qty > 0 ⇒ POST /mo/warehouse/stock/{item_code}; `after()` reloads the screen. */
 function receiveForm(ctx, stock, { item = '', qty = 1, after }) {
@@ -51,16 +50,16 @@ function stockList(stock) {
 }
 
 function lowList(low, onReceive) {
-  if (!low.length) return emptyState(`Không có vật tư nào dưới ${LOW_STOCK}.`);
-  return el('div', { class: 'card pad', id: 'kho-low' }, el('h2', {}, `Vật tư dưới ngưỡng ${CRITICAL_STOCK}–${LOW_STOCK}`),
+  if (!low.length) return emptyState('Không có vật tư nào cần nhập thêm.');
+  return el('div', { class: 'card pad', id: 'kho-low' }, el('h2', {}, 'Vật tư cần nhập thêm'),
     el('ul', { class: 'stock-list' }, low.map((s) => {
       const unit = materialUnit(s.item_code, s.unit);
-      const critical = s.qty < CRITICAL_STOCK;
+      const critical = s.qty <= 0;
       return el('li', { dataset: { item: s.item_code, level: critical ? 'critical' : 'low' } },
         el('div', {}, el('b', {}, materialName(s.item_code, s.item_name)),
-          el('small', {}, `tồn ${s.qty} ${unit} · cần thêm ${LOW_STOCK - s.qty} để đạt ${LOW_STOCK}`)),
+          el('small', {}, `tồn ${s.qty} ${unit}${s.min_qty != null ? ` · ngưỡng ${s.min_qty}` : ''}`)),
         el('div', { class: 'low-act' },
-          pill(critical ? 'late' : 'st-moi', s.qty === 0 ? 'Hết hàng' : critical ? `Dưới ${CRITICAL_STOCK}` : `Dưới ${LOW_STOCK}`, { dot: false }),
+          pill(critical ? 'late' : 'st-moi', critical ? 'Hết hàng' : 'Sắp hết', { dot: false }),
           el('button', { type: 'button', class: 'btn', onclick: () => onReceive(s) }, 'Nhập thêm')));
     })));
 }
@@ -77,7 +76,7 @@ export async function list(ctx) {
     const low = lowStock(stock);
     ctx.chrome({ navId: 'staff-tabs', active: tab, items: TILES.map(([key, label, iconName]) => ({ key, label, icon: iconName, onclick: () => { tab = key; draw(false); } })) });
     ctx.counts({ receive: rows.length, stock: 0, low: low.length, bell: rows.length });
-    fill(statsBox, [['Dưới ngưỡng', low.length], ['Mã vật tư', stock.length], ['Hết hàng', stock.filter((s) => s.qty === 0).length],
+    fill(statsBox, [['Cần nhập thêm', low.length], ['Mã vật tư', stock.length], ['Hết hàng', stock.filter((s) => s.qty === 0).length],
       ['Chưa rõ tồn', stock.filter((s) => s.qty == null).length]].map(([label, value]) => el('div', { class: 'card stat' }, el('span', {}, label), el('b', {}, String(value)))));
     if (tab === 'stock') {
       fill(body, pageHead('Tồn kho', 'Số lượng hiện có của từng vật tư.', { right: refreshButton(load, ctx) }),
@@ -85,8 +84,8 @@ export async function list(ctx) {
       return;
     }
     if (tab === 'low') {
-      const onReceive = (s) => { prefill = { item: s.item_code, qty: LOW_STOCK - s.qty }; tab = 'receive'; draw(false); };
-      fill(body, pageHead('Cảnh báo tồn kho', `Đỏ: dưới ${CRITICAL_STOCK} · Vàng: dưới ${LOW_STOCK}. "Nhập thêm" điền sẵn số lượng để đạt ${LOW_STOCK}.`, { right: refreshButton(load, ctx) }),
+      const onReceive = (s) => { prefill = { item: s.item_code, qty: restockQty(s) }; tab = 'receive'; draw(false); };
+      fill(body, pageHead('Cảnh báo tồn kho', 'Đỏ: hết hàng · Vàng: tồn bằng hoặc dưới ngưỡng riêng của vật tư. "Nhập thêm" điền sẵn số lượng để vượt ngưỡng.', { right: refreshButton(load, ctx) }),
         el('div', { class: 'updated', dataset: { updated: '' } }), lowList(low, onReceive));
       return;
     }
@@ -145,8 +144,7 @@ export async function detail(ctx) {
           })) : emptyState('Không có vật tư dự kiến.')),
         receiveForm(ctx, stock, { item: first ? first.line.item_code : '', qty: first ? first.missing : 1, after: afterReceive }),
         reportBox(c),
-        eventsHistory(c, cat),
-        webButton()));
+        eventsHistory(c, cat)));
     },
   });
 }

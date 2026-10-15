@@ -11,10 +11,9 @@ from src.maintenance.engine import MaintenanceEngine
 from tests.test_maintenance.helpers import CLEANING, CLN, LIGHTING, MONDAY_9AM, TEC, WAREHOUSE, Clock, report
 
 MATERIAL_USAGE_FIELD = "material_usage"  # the audit field web/app read as "saved" (SPEC-P02 §U1): a contract
-LAMP, LAMP2, STARTER, CLEAN, BAG = (
+LAMP, LAMP2, CLEAN, BAG = (
     "SIM-MAT-LAMP-01",
     "SIM-MAT-LAMP-02",
-    "SIM-MAT-STARTER-01",
     "SIM-MAT-CLEAN-01",
     "SIM-MAT-BAG-01",
 )
@@ -62,13 +61,14 @@ def test_one_save_issues_equal_used_and_writes_one_audit(api, eng):
     tid = started(eng, LIGHTING, TEC)
     start = eng.repo.stock_of(LAMP)
     audit_before = len(eng.get(tid).audit)
-    reply = save(api, tid, TEC, {LAMP: 4, STARTER: 1})
+    eng.repo.set_stock(LAMP2, None)  # an uncounted item
+    reply = save(api, tid, TEC, {LAMP: 4, LAMP2: 1})
     assert reply.status_code == 200, reply.text
     case = reply.json()
     lines = [(m["item_code"], m["planned_qty"], m["issued_qty"], m["used_qty"]) for m in case["material_lines"]]
-    assert lines == [(LAMP, 4, 4, 4), (STARTER, 1, 1, 1)]
-    assert [m["norm_qty"] for m in case["material_lines"]] == [1, None]  # the norm stays a reference
-    assert eng.repo.stock_of(LAMP) == start - 4 and eng.repo.stock_of(STARTER) is None  # unknown stays unknown
+    assert lines == [(LAMP, 4, 4, 4), (LAMP2, 1, 1, 1)]
+    assert [m["norm_qty"] for m in case["material_lines"]] == [1, 2]  # the norm stays a reference
+    assert eng.repo.stock_of(LAMP) == start - 4 and eng.repo.stock_of(LAMP2) is None  # unknown stays unknown
     new_audit = case["audit"][audit_before:]
     assert [a["field_name"] for a in new_audit] == [MATERIAL_USAGE_FIELD]
     assert new_audit[0]["new_value"][0] == {"item_code": LAMP, "issued_qty": 4, "used_qty": 4, "stock_qty": start - 4}

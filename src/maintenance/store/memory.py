@@ -14,8 +14,9 @@ import re
 import threading
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
+from datetime import datetime
 
-from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent
+from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent, StockAlert
 from src.maintenance.store.base import (
     Assignment,
     ConcurrencyError,
@@ -47,6 +48,7 @@ class _MemoryTx:
         self.stock: dict[str, float | None] = {}
         self.assignments: dict[str, Assignment] = {}
         self.rating_details: dict[str, RatingDetail] = {}
+        self.stock_alerts: list[StockAlert] = []
 
     def get_for_update(self, ticket_id: str) -> Case:
         if ticket_id in self.cases:
@@ -104,6 +106,9 @@ class _MemoryTx:
     def put_rating_detail(self, detail: RatingDetail) -> None:
         self.rating_details[detail.ticket_id] = detail
 
+    def put_stock_alert(self, alert: StockAlert) -> None:
+        self.stock_alerts.append(alert)
+
     def take_stock(self, item_code: str, qty: float) -> float | None:
         current = self.stock[item_code] if item_code in self.stock else self._repo.stock_of(item_code)
         if current is None:
@@ -125,6 +130,7 @@ class InMemoryRepository:
         self._material_items: dict[str, MaterialItem] = {}
         self._assignments: dict[str, Assignment] = {}
         self._rating_details: dict[str, RatingDetail] = {}
+        self._stock_alerts: dict[str, StockAlert] = {}
         self._ticket_number = 0
         self._run_number = 0
 
@@ -155,6 +161,8 @@ class InMemoryRepository:
             self._stock.update(tx.stock)
             self._assignments.update(tx.assignments)
             self._rating_details.update(tx.rating_details)
+            for alert in tx.stock_alerts:
+                self._stock_alerts[alert.alert_id] = alert
 
     # ------------------------------------------------------------------ reads
 
@@ -192,6 +200,25 @@ class InMemoryRepository:
     def rating_details(self) -> dict[str, RatingDetail]:
         with self._lock:
             return dict(self._rating_details)
+
+    def stock_alerts(self, department_id: str, *, unread_only: bool) -> list[StockAlert]:
+        with self._lock:
+            rows = [
+                a
+                for a in self._stock_alerts.values()
+                if a.department_id == department_id and not (unread_only and a.acknowledged_at is not None)
+            ]
+        return sorted(rows, key=lambda a: (a.created_at, a.alert_id), reverse=True)
+
+    def acknowledge_stock_alert(self, alert_id: str, actor_id: str, at: datetime) -> StockAlert:
+        with self._lock:
+            alert = self._stock_alerts.get(alert_id)
+            if alert is None:
+                raise NotFoundError(f"Không có cảnh báo {alert_id}")
+            if alert.acknowledged_at is None:
+                alert = alert.model_copy(update={"acknowledged_by": actor_id, "acknowledged_at": at})
+                self._stock_alerts[alert_id] = alert
+            return alert
 
     def version_of(self, ticket_id: str) -> int:
         """Memory-only inspection for tests: the committed version of a ticket."""
@@ -234,6 +261,7 @@ class InMemoryRepository:
             self._material_items = {}
             self._assignments = {}
             self._rating_details = {}
+            self._stock_alerts = {}
             self._cases = {}
             self._versions = {}
             self._log = []

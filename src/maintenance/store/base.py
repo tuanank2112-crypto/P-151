@@ -8,11 +8,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from contextlib import AbstractContextManager
+from datetime import datetime
 from typing import Any, Protocol
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict
 
-from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent
+from src.maintenance.models import AuditEvent, Case, Notification, StatusEvent, StockAlert
 
 
 class EngineError(Exception):
@@ -129,6 +130,10 @@ class Tx(Protocol):
         """Insert the tags and comment of a rating, committed or rolled back with the rating itself (plan 11)."""
         ...
 
+    def put_stock_alert(self, alert: StockAlert) -> None:
+        """Insert a restock alert, committed or rolled back with the stock it reports (plan 20 B1)."""
+        ...
+
 
 class CaseRepository(Protocol):
     """Source of truth for cases, stock, audit, outbox and the run number (invariant I-1)."""
@@ -163,6 +168,14 @@ class CaseRepository(Protocol):
 
     def rating_details(self) -> dict[str, RatingDetail]:
         """Every rating detail by ticket_id (empty when the feature is off)."""
+        ...
+
+    def stock_alerts(self, department_id: str, *, unread_only: bool) -> list[StockAlert]:
+        """Alerts of a department, newest first (empty when the feature is off)."""
+        ...
+
+    def acknowledge_stock_alert(self, alert_id: str, actor_id: str, at: datetime) -> StockAlert:
+        """Mark an alert read once; an already read alert is returned unchanged. Unknown id ⇒ `NotFoundError`."""
         ...
 
     def run_number(self) -> int: ...

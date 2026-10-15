@@ -37,10 +37,6 @@ const nextConfig: NextConfig = {
         source: "/health",
         destination: `${backendUrl}/health`,
       },
-      {
-        source: "/ui/:path*",
-        destination: `${backendUrl}/ui/:path*`,
-      },
     ];
   },
 };

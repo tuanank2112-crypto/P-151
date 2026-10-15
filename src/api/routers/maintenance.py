@@ -20,7 +20,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from src.api import photos
-from src.api.auth import get_actor
+from src.api.auth import get_actor, load_accounts
 from src.config import get_settings
 from src.maintenance.ai_logger import AILogEntry, AILogStatus, ai_logger
 from src.maintenance.demo import EvaluationReport, evaluate, run_fixture
@@ -54,7 +54,7 @@ from src.maintenance.enums import (
 )
 from src.maintenance.material_policy import MaterialUsageLine, WholeQty, allowed_material_codes, whole_positive
 from src.maintenance.messages import status_label
-from src.maintenance.models import AuditEvent, Case, Notification, PlannedMaterial, StatusEvent
+from src.maintenance.models import AuditEvent, Case, Notification, PlannedMaterial, StatusEvent, StockAlert
 from src.maintenance.store.base import ConcurrencyError, StorePermissionError, StoreUnavailableError
 from src.maintenance.views import (
     BqlTicketRow,
@@ -74,6 +74,14 @@ _engine: MaintenanceEngine | None = None
 _engine_lock = threading.Lock()
 
 
+def _home_building(actor_id: str) -> str | None:
+    """Building in the resident's profile (accounts fixture); None for an actor without one."""
+    for account in load_accounts().accounts:
+        if account.actor_id == actor_id and account.profile is not None:
+            return account.profile.tower
+    return None
+
+
 def get_engine() -> MaintenanceEngine:
     global _engine
     if _engine is None:
@@ -81,6 +89,7 @@ def get_engine() -> MaintenanceEngine:
             if _engine is None:
                 settings = get_settings()
                 engine = build_engine(settings)
+                engine.home_building = _home_building
                 if settings.mo_seed_on_empty:
                     seed_if_empty(engine)  # never wipes: a persistent store keeps its tickets across restarts
                 _engine = engine
@@ -392,6 +401,7 @@ class CatalogView(BaseModel):
     status_labels: dict[str, str]
     materials: list[dict[str, str]]
     material_codes_by_department: dict[str, list[str]]  # plan 16 §U2: the only source the clients filter by
+    material_by_area: dict[str, str] = {}  # plan 21: area label -> the one lighting item_code stocked for it
     custom_materials_enabled: bool = False  # decision: no materials outside the warehouse catalog
     portal_extras_enabled: bool = True  # plan 11 SPEC-P04: false => no rating tags or comment
 
@@ -410,6 +420,7 @@ def read_catalog(actor: ActorDep, engine: EngineDep) -> CatalogView:
         material_codes_by_department={
             d.department_id.value: sorted(allowed_material_codes(catalog, d.department_id)) for d in catalog.departments
         },
+        material_by_area=dict(catalog.area_materials),
         custom_materials_enabled=False,
         portal_extras_enabled=get_settings().portal_extras_enabled(),
     )
@@ -802,6 +813,18 @@ def receive_stock(item_code: str, body: StockRequest, actor: ActorDep, engine: E
     """Kho nhập vật tư (sự kiện `stock_received`): ticket chờ vật tư đó tự chạy lại từ bước 6 (chưa nhận việc)
     hoặc quay lại IN_PROGRESS (đã nhận việc)."""
     return _call(engine.receive_stock, actor, item_code, body.qty)
+
+
+@router.get("/stock-alerts", response_model=list[StockAlert])
+def read_stock_alerts(actor: ActorDep, engine: EngineDep, unread: bool = False) -> list[StockAlert]:
+    """Cảnh báo kho vừa nhập lại vật tư Phòng Kỹ thuật dùng sau khi hết hàng (plan 20). Tắt (MO_STOCK_ALERTS=false) ⇒ []."""
+    return _call(engine.list_stock_alerts, actor, unread_only=unread)
+
+
+@router.post("/stock-alerts/{alert_id}/ack", response_model=StockAlert)
+def ack_stock_alert(alert_id: str, actor: ActorDep, engine: EngineDep) -> StockAlert:
+    """Đánh dấu đã đọc; gọi lần hai trả bản đã đọc, không đổi `acknowledged_*`. Tắt ⇒ 404."""
+    return _call(engine.acknowledge_stock_alert, actor, alert_id)
 
 
 # ------------------------------------------------------------------ denial path

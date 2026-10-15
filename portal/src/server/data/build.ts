@@ -182,6 +182,13 @@ function hoursLeft(c: BCase, now: Date): number | null {
   return eta ? Math.ceil((new Date(eta).getTime() - now.getTime()) / HOUR) : null;
 }
 
+/** The place the engine resolved from the text (draft.location) beats the form's "Vị trí:" line, which only echoes
+ * the picker (e.g. the resident's own floor) and can disagree with what the resident wrote. */
+function shownLocation(c: BCase, formLocation: string): string {
+  const resolved = c.draft?.location?.trim();
+  return resolved ? resolved.replace(/ \/ /g, " · ") : formLocation;
+}
+
 // ---------- department ----------
 export function buildDeptTicket(
   c: BCase,
@@ -192,7 +199,8 @@ export function buildDeptTicket(
 ): DeptTicket {
   const t = c.ticket;
   const { description } = parseDescription(t.raw.original_description);
-  const { title, content, location } = splitReport(t.raw.original_description);
+  const { title, content, location: formLocation } = splitReport(t.raw.original_description);
+  const location = shownLocation(c, formLocation);
   const info = mapStatus(t.status);
   return {
     id: t.ticket_id,
@@ -261,7 +269,8 @@ export function buildDetail(
 ): TicketDetail {
   const t = c.ticket;
   const { description } = parseDescription(t.raw.original_description);
-  const { title, content, location } = splitReport(t.raw.original_description);
+  const { title, content, location: formLocation } = splitReport(t.raw.original_description);
+  const location = shownLocation(c, formLocation);
   const info = mapStatus(t.status);
   const bql = isBqlWork(t.blocker);
   return {
@@ -306,7 +315,8 @@ export function buildInboxItem(c: BCase, byId: Map<string, BSummary>, now: Date)
   const t = c.ticket;
   const b = t.blocker;
   const { description } = parseDescription(t.raw.original_description);
-  const { title, content, location } = splitReport(t.raw.original_description);
+  const { title, content, location: formLocation } = splitReport(t.raw.original_description);
+  const location = shownLocation(c, formLocation);
   const related = b?.related_ticket_id ?? null;
   const other = related ? byId.get(related) : undefined;
   const duplicate: DuplicateRef | undefined = other

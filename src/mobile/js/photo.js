@@ -1,6 +1,6 @@
 // Photo compression and picker (plan 11, SPEC-P01 §8). The API takes JPG/PNG/WEBP up to 5 MB, at most 5 per ticket.
-import { ApiError } from './api.js?v=17';
-import { el, icon, toast } from './ui.js?v=17';
+import { ApiError } from './api.js?v=18';
+import { el, icon, toast } from './ui.js?v=18';
 
 export const PHOTO_MAX_EDGE = 1600;
 export const PHOTO_QUALITY = 0.82;

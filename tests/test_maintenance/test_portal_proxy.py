@@ -42,17 +42,16 @@ def test_portal_proxy_preserves_query_body_cookies_and_redirect(proxy):
 def test_python_routes_take_priority_over_portal(proxy):
     client, seen = proxy
     assert client.get("/health").status_code == 200
-    assert client.get("/ui/").status_code == 200
     assert client.get("/app/").status_code == 200
     assert not seen
 
 
-def test_portal_unavailable_keeps_python_ui_fallback(monkeypatch):
+def test_portal_unavailable_answers_503_everywhere(monkeypatch):
     def offline(request):
         raise httpx.ConnectError("offline", request=request)
 
     monkeypatch.setattr(main, "PORTAL_URL", "http://portal:3000")
     monkeypatch.setattr(main, "_portal_client", httpx.AsyncClient(transport=httpx.MockTransport(offline)))
     client = TestClient(main.app)
-    assert client.get("/", follow_redirects=False).headers["location"] == "/ui/"
+    assert client.get("/", follow_redirects=False).status_code == 503
     assert client.get("/technical").status_code == 503

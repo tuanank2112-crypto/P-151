@@ -67,7 +67,6 @@ def test_sw_never_caches_api():
 
 
 def test_existing_routes_unchanged(client):
-    assert client.get("/ui/").status_code == 200
     assert client.get("/health").status_code == 200
     login = client.post("/api/v1/auth/login", json={"username": "cudan01", "password": "Demo@2026"})
     assert login.status_code == 200

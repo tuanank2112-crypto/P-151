@@ -345,6 +345,78 @@ Dùng khi muốn dữ liệu và ảnh lưu bền, dùng chung cả nhóm. Xin c
 
 ---
 
+## Hướng dẫn chạy và rollback
+
+Dành cho người triển khai bản mới (Docker Compose, thêm Supabase nếu dùng DB chung). Thứ tự bắt buộc: **ghi lại mốc quay lui → migrate DB → build → kiểm tra**.
+
+### 1. Chạy
+
+1. Chuẩn bị `.env` (`cp .env.example .env`). Compose có thêm service `portal` (Next.js) nên **bắt buộc** `SESSION_SECRET` (chuỗi ngẫu nhiên, khoá ký cookie); thiếu thì `docker compose` dừng với lỗi `SESSION_SECRET must be set in .env`. `.env.example` chưa có dòng này, tự thêm:
+   ```bash
+   echo "SESSION_SECRET=$(python -c 'import secrets;print(secrets.token_hex(32))')" >> .env
+   ```
+2. Dùng DB chung (`MO_STORE=postgres`): chủ DB chạy migration **trước** khi bật code mới (startup không tự tạo schema):
+   ```bash
+   python -m alembic -c src/maintenance/store/alembic.ini current   # xem revision hiện tại
+   python -m alembic -c src/maintenance/store/alembic.ini upgrade head
+   ```
+3. Build và khởi động:
+   ```bash
+   docker compose up -d --build        # hoặc: make up
+   ```
+4. Kiểm tra (đủ cả ba mới coi là xong):
+   - `docker compose ps` → `backend` là `healthy`, `portal` là `running`.
+   - `curl -s http://localhost:8000/health` → `{"status":"ok",...}`.
+   - Mở <http://localhost:8000/ui/>, đăng nhập `cudan01` / `Demo@2026` (nếu `APP_ENV=production` thì dùng tài khoản thật).
+
+### 2. Ghi mốc quay lui TRƯỚC khi nâng cấp
+
+```bash
+git rev-parse --short HEAD                       # SHA đang chạy ổn, ghi lại, vd 6435746
+python -m alembic -c src/maintenance/store/alembic.ini current   # revision DB, vd 0006_stock_alert_tickets
+tar czf data-backup-$(date +%Y%m%d).tgz data/    # ảnh upload (PowerShell: Compress-Archive data -DestinationPath data-backup.zip)
+```
+
+Với DB Supabase: chụp backup từ Dashboard (Database → Backups) hoặc `pg_dump` trước khi `upgrade`. Downgrade chỉ đưa schema về cũ, **không** khôi phục dữ liệu đã bị xoá cột.
+
+### 3. Rollback
+
+Chọn mức nhẹ nhất đủ dùng.
+
+| Tình huống | Rollback |
+|---|---|
+| Chỉ lỗi cấu hình/biến môi trường | Sửa `.env` rồi `docker compose up -d` (không cần build) |
+| Tính năng mới gây lỗi, DB chưa đổi hoặc DB vẫn tương thích | Chỉ quay lui code (mục 3a) |
+| Migration mới gây lỗi | Quay lui code **và** `alembic downgrade` (mục 3b) |
+| Dữ liệu hỏng | Khôi phục backup (mục 3c) — chủ DB, cần xác nhận trước |
+
+**3a. Quay lui code** (không xoá lịch sử, an toàn với nhánh chung):
+
+```bash
+git revert --no-edit <sha-commit-hoac-merge>     # merge commit: thêm -m 1
+docker compose up -d --build
+```
+
+Chỉ dùng `git checkout <SHA-đã-ghi>` để chạy thử tạm trên máy cá nhân; **CẤM** `git reset --hard` / `push --force` lên nhánh chung.
+
+**3b. Quay lui schema** (chỉ khi code cũ không chạy được với schema mới; làm **sau khi dừng backend** để không ghi dở):
+
+```bash
+docker compose stop backend portal
+python -m alembic -c src/maintenance/store/alembic.ini downgrade -1                  # lùi một revision
+# hoặc về đúng mốc đã ghi: ... downgrade 0005_stock_alerts
+python -m alembic -c src/maintenance/store/alembic.ini current                       # xác nhận
+git revert ... && docker compose up -d --build                                       # code khớp schema
+```
+
+Chuỗi revision: `0001_maintops_initial → 0002_p1_doc_shape → 0003_material_items → 0004_portal_extras → 0005_stock_alerts → 0006_stock_alert_tickets`. Mỗi revision có `downgrade()` (vd 0006 bỏ cột `stock_alerts.ticket_ids`). Revision `0005` thiết kế để code cũ chạy được với DB đã lên 0005: với bản chỉ đổi cờ tính năng, tắt `MO_STOCK_ALERTS=false` thay vì downgrade.
+
+**3c. Khôi phục dữ liệu**: ảnh — giải nén `data-backup-*.tgz` đè vào `data/`; DB Supabase — restore từ backup đã chụp. Chế độ `MO_STORE=memory` không có gì để khôi phục: khởi động lại là về 12 ticket mẫu.
+
+Sau mọi rollback chạy lại bước kiểm tra ở mục 1.4 và ghi sự cố vào [`brain4agent/-known-gotchas.md`](brain4agent/-known-gotchas.md).
+
+---
+
 ## Xử lý sự cố thường gặp
 
 | Triệu chứng | Cách xử lý |
@@ -352,6 +424,7 @@ Dùng khi muốn dữ liệu và ảnh lưu bền, dùng chung cả nhóm. Xin c
 | `failed to connect to the docker API` / `Cannot connect to the Docker daemon` | Docker Desktop chưa chạy — mở và đợi báo "Engine running" |
 | `port is already allocated` (8000 hoặc 5432) | Đổi `APP_PORT` / `POSTGRES_PORT` trong `.env`, hoặc tắt chương trình đang dùng cổng |
 | `env file .env not found` | Chưa tạo `.env` — `cp .env.example .env` |
+| `SESSION_SECRET must be set in .env` | Thêm `SESSION_SECRET` vào `.env` — xem "Hướng dẫn chạy và rollback" mục 1 |
 | Sửa code nhưng không thấy thay đổi | Chạy `make up` để build lại image |
 | Thêm thư viện vào `requirements.txt` | `make up` để build lại; người khác cũng cần `make up` sau khi pull |
 | `There was an error parsing the body` khi gửi tiếng Việt bằng `curl -d` trên Windows | Truyền body qua file (`--data-binary @body.json`) hoặc dùng PowerShell / Swagger như mục trên |

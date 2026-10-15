@@ -1,7 +1,7 @@
 // Shared pieces of the staff screens (BQL, Phòng ban, BPTN, Kho) — plan 11 SPEC-P05 Q31.
 // Labels copied from src/web/app.js so web and app name things the same way.
-import { api, apiImage } from './api.js?v=17';
-import { boxOf, el, emptyState, fill, formatTime, history, notice, pageHead, pagedList, pill, refreshButton, toast } from './ui.js?v=17';
+import { api, apiImage } from './api.js?v=18';
+import { boxOf, el, emptyState, fill, formatTime, history, notice, pageHead, pagedList, pill, refreshButton, toast } from './ui.js?v=18';
 
 export const REASON_LABEL = {
   MISSING_INFO: 'Thiếu thông tin', DUPLICATE: 'Nghi trùng', CATEGORY_UNCLEAR: 'Loại việc chưa rõ', OUT_OF_SCOPE: 'Ngoài phạm vi',
@@ -65,7 +65,6 @@ const REALISTIC_MATERIAL_NAMES = {
   'SIM-MAT-BAG-01': 'Túi rác công nghiệp PE 120L (Cuộn)',
   'SIM-MAT-LAMP-01': 'Bóng đèn LED Tuýp T8 18W Duhal/Rạng Đông',
   'SIM-MAT-LAMP-02': 'Bóng đèn Huỳnh quang T8 36W 1.2m Philips',
-  'SIM-MAT-STARTER-01': 'Tắc te điện tử / Chấn lưu Philips S10',
 };
 const plain = (text) => String(text || '').replace(/\s*\(mô phỏng\)/gi, '').replace(/mô phỏng:?\s*/gi, '').trim();
 export const checklistLabel = (item) => CHECKLIST_HUMAN_LABELS[item.template_item_id] || plain(item.label_snapshot);
@@ -75,7 +74,6 @@ export function materialUnit(code, unit) {
   if (code && code.includes('CLEAN')) return 'can 5L';
   if (code && code.includes('BAG')) return 'cuộn';
   if (code && code.includes('LAMP')) return 'bóng';
-  if (code && code.includes('STARTER')) return 'bộ';
   return 'đơn vị';
 }
 
@@ -137,8 +135,6 @@ export function eventsHistory(c, cat) {
     label: (cat && cat.status_labels[e.to_status]) || e.to_status, note: e.public_message, time: formatTime(e.created_at),
   })));
 }
-
-export const webButton = () => el('a', { class: 'btn block', href: '/ui/', target: '_blank', rel: 'noopener' }, 'Mở bản web đầy đủ');
 
 /** <select class="field"> with a placeholder option. options = [[value, label], …] */
 export function select(options, { placeholder = 'Chọn…', value = '', id = null } = {}) {

@@ -344,6 +344,11 @@ def extract_location(description: str, buildings: Sequence[str]) -> str | None:
     return f"Tòa {building} / Tầng {floor} / {area}"
 
 
+def names_building(description: str, buildings: Sequence[str]) -> bool:
+    """Whether the text names any catalog building, wherever it stands (residence clause included)."""
+    return re.search(_building_pattern(buildings), normalize(description.replace("\n", ". "))) is not None
+
+
 def missing_location_parts(description: str, buildings: Sequence[str]) -> list[str]:
     """Which of building / floor / area the resident still has to give, so the request can name just those."""
     parts = _location_parts(description, buildings)

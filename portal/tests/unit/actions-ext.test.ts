@@ -100,7 +100,7 @@ describe("finishTicketAction materials", () => {
   };
 
   it("saves what was used in ONE material-usage call before complete", async () => {
-    const r = await finishTicketAction("SIM-TKT-0099", withUsed({ itemCode: "SIM-MAT-LAMP-01", qty: 2 }, { itemCode: "SIM-MAT-STARTER-01", qty: 1 }));
+    const r = await finishTicketAction("SIM-TKT-0099", withUsed({ itemCode: "SIM-MAT-LAMP-01", qty: 2 }, { itemCode: "SIM-MAT-LAMP-02", qty: 1 }));
     expect(r.ok).toBe(true);
     const urls = calls.map((c) => c.url);
     expect(urls.filter((u) => u.endsWith("/material-usage"))).toHaveLength(1);
@@ -108,7 +108,7 @@ describe("finishTicketAction materials", () => {
     expect(calls.find((c) => c.url.endsWith("/material-usage"))?.opts?.json).toEqual({
       lines: [
         { item_code: "SIM-MAT-LAMP-01", used_qty: 2 },
-        { item_code: "SIM-MAT-STARTER-01", used_qty: 1 },
+        { item_code: "SIM-MAT-LAMP-02", used_qty: 1 },
       ],
     });
   });
