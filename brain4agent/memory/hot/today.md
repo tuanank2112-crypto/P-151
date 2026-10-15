@@ -700,3 +700,4 @@ Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lậ
 - Hồ sơ 25 (v1.17.1): người dùng "không muốn cuộn vô hạn" ⇒ `.scroll-list` cho mọi danh sách portal, cả điện thoại (đo 9 771 px ⇒ ≤ 1 635 px). Playwright 24/24, đối chứng 23/24 đỏ. Gotcha: `next dev` không nạp lại CSS sửa bằng `sed -i` ⇒ phép phá CSS dùng `addStyleTag` trong trang.
 - Deploy 2026-10-15: backend + portal production từ bản sao không `.git` (lần đầu bị Blocked vì tác giả commit). Thêm env `MO_STOCK_ALERTS=true` cho p151-backend. Route mới trên production: `/mo/warehouse/requests`, `/material-shortage`, `/emergency/merge` (401 khi chưa đăng nhập).
 - Hồ sơ 26 (v1.17.2): BQL không đăng nhập được trên production = phiên trong RAM × nhiều instance Vercel (log 200/401 xen kẽ). Người dùng duyệt token ký HMAC. 5 test, phép phá 2 đỏ, pytest 3689.
+- Production lần 1 sau token ký: 6/12 — hết 401, còn 500 `EMAXCONNSESSION` (Supabase session pooler 15 client). Thêm `MO_DB_POOL=none`.

@@ -82,3 +82,23 @@ def test_api_requests_spread_over_instances_stay_logged_in(two_instances):
     ]
     assert codes == [200] * 6
     assert client.get("/api/v1/auth/me", headers=headers).json()["username"] == "quanly"
+
+
+def test_serverless_mode_keeps_no_database_connection(monkeypatch):
+    """Plan 26: MO_DB_POOL=none ⇒ NullPool for both engines (idle Vercel instances hold no Supabase client slot)."""
+    import sqlalchemy as sa
+
+    from src.config import get_settings
+    from src.maintenance.store import postgres
+
+    url = "postgresql+psycopg2://u:p@localhost:5432/db"
+    for mode, expected in (("none", sa.pool.NullPool), ("pool", sa.pool.QueuePool)):
+        monkeypatch.setenv("MO_DB_POOL", mode)
+        get_settings.cache_clear()
+        postgres.sql_engine.cache_clear()
+        postgres.sql_read_engine.cache_clear()
+        assert isinstance(postgres.sql_engine(url).pool, expected)
+        assert isinstance(postgres.sql_read_engine(url).pool, expected)
+    get_settings.cache_clear()
+    postgres.sql_engine.cache_clear()
+    postgres.sql_read_engine.cache_clear()

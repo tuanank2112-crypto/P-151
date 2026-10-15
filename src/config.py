@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     mo_jobs_enabled: bool = True
     # Accept X-Actor-Id instead of a login token (tests/scripts only; never enable in production)
     mo_allow_actor_header: bool = False
+    # Database connections (plan 26): "pool" keeps a few open per process (a long-running server); "none" opens one
+    # per use and closes it, for serverless (Vercel) where idle instances must not hold the Supabase session pooler's
+    # few client slots (EMAXCONNSESSION: max 15 measured 2026-10-15).
+    mo_db_pool: Literal["pool", "none"] = "pool"
     # Key that signs login tokens, so every serverless instance can check a token another one issued (plan 26).
     # Unset = a random key per process: fine for one local server, logs everyone out on Vercel.
     auth_token_secret: str | None = None

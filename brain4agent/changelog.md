@@ -4,7 +4,8 @@ Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên 
 
 ## [v1.17.2] - 2026-10-15: hồ sơ 26 — token đăng nhập có chữ ký (PATCH)
 - Production không vào được BQL: phiên trong RAM, mỗi instance serverless Vercel không chung bộ nhớ ⇒ 200/401 xen kẽ ngay sau đăng nhập. Token nay ký HMAC (`AUTH_TOKEN_SECRET`), instance nào cũng kiểm được. Đăng xuất thu hồi theo instance.
-- Đo: 5 test mới (API luân phiên hai instance 6/6 = 200), phép phá khoá riêng ⇒ 2 đỏ; pytest 3689. `planning/26_2026-10-15_signed-login-tokens/`.
+- Đo: 5 test mới (API luân phiên hai instance 6/6 = 200), phép phá khoá riêng ⇒ 2 đỏ; pytest 3689.
+- 503/500 khi đăng nhập = Supabase Session pooler hết 15 client (`EMAXCONNSESSION`) vì mỗi instance giữ pool khi rảnh ⇒ `MO_DB_POOL=none` (NullPool) cho serverless; pytest 3690. `planning/26_2026-10-15_signed-login-tokens/`.
 
 ## [v1.17.1] - 2026-10-15: hồ sơ 25 — danh sách dài cuộn trong khung (PATCH)
 - Lớp `.scroll-list` (`portal/src/app/globals.css`): khung tối đa `min(70vh, 760px)`, cuộn bên trong, tiêu đề bảng dính trên; áp cho Kỹ thuật/Vệ sinh (cột bảng việc, lịch sử), Tiếp nhận, BQL (danh sách + 3 ô), Cư dân, Kho. Cả máy tính lẫn điện thoại.
