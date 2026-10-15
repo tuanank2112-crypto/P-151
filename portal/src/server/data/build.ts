@@ -350,6 +350,7 @@ export function buildInboxItem(c: BCase, byId: Map<string, BSummary>, now: Date)
     photos: photos(t.ticket_id, c.evidence.filter(isBefore)),
     duplicateOf: related,
     ...(duplicate ? { duplicate } : {}),
+    safetyContext: t.safety_context === true,
     agent: buildAgentInfo(c.agent_decision),
   };
 }

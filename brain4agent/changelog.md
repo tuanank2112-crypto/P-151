@@ -2,6 +2,11 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.17.7] - 2026-10-16: portal — Tiếp nhận bổ sung thông tin thiếu rồi chuyển phòng (PATCH)
+- Người dùng: thẻ "Thiếu thông tin" ở Tiếp nhận không có nút chuyển phòng ban. Backend đã có `bptn_resolve` MISSING_INFO (vị trí/thông tin + lý do, được kèm `category`); portal chỉ ghi "Đang chờ cư dân bổ sung". Nay thẻ có form: Vị trí · Thông tin thêm · Lý do (bắt buộc) + "Phòng vệ sinh" / "Phòng kỹ thuật" (khoá loại việc) / "Lưu, để Agent phân loại" (`fillMissingInfoAction`).
+- BẤT BIẾN giữ: không chuyển khi còn thiếu vị trí (backend trả "Vẫn thiếu: …", đặc tả plan 02 "cấm tự route"); ca an toàn (`safety_context`, T06) KHÔNG có form — chỉ cư dân/BQL gỡ.
+- Đo: vitest 170 pass (+4: action 3, inbox `safetyContext` 1); tsc 0; eslint còn 1 lỗi có sẵn (`management-overview-chart.tsx`). Engine memory: "t3 nhiều rác quá" ⇒ NEED_INFO; chỉ chọn phòng ⇒ GuardError; vị trí "Tòa S1 · Tầng 3 · Hành lang" + Vệ sinh ⇒ ROUTED `DEPT_CLEANING`. Chưa xem trình duyệt.
+
 ## [v1.17.6] - 2026-10-15: portal — "Báo thiếu vật tư" đổi chữ thành "Yêu cầu vật tư" (PATCH)
 - Góp ý nhóm [e], người dùng chốt CHỈ ĐỔI CHỮ: nút, tiêu đề hộp thoại, câu hướng dẫn và nút "Gửi yêu cầu" ở `app/cleaning/dept-parts.tsx` (Vệ sinh + Kỹ thuật). Luồng giữ nguyên: `POST material-shortage`, phiếu `PVT-`, kho không duyệt.
 - Đo: tsc 0; eslint file sửa 0; vitest 166 pass.

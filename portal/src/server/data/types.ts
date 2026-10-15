@@ -50,6 +50,8 @@ export type BTicket = {
   raw: { created_at: string; original_description: string };
   closure_kind: string | null;
   merged_into: string | null;
+  /** NEED_INFO opened by the safety flow (T06): only the resident or the BQL answers it, never reception */
+  safety_context?: boolean;
 };
 
 export type BChecklistItem = { template_item_id: string; label_snapshot: string; required: boolean; status: string };

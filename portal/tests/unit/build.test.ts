@@ -251,3 +251,12 @@ describe("merged ticket in the staff detail", () => {
     expect(buildDetail(aCase({ status: "CANCELLED" }), {}, {}, now).merged).toBe(false);
   });
 });
+
+describe("inbox item for a MISSING_INFO ticket", () => {
+  const blocker = { code: "MISSING_INFO", owner_role: "BPTN", since: "2026-10-09T01:00:00Z", escalated: false, eta: null, public_message: "Vui lòng bổ sung", internal_note: null, related_ticket_id: null };
+  it("marks a safety NEED_INFO so reception gets no fill-in form", () => {
+    const item = buildInboxItem(aCase({ status: "NEED_INFO", blocker, safety_context: true }), new Map(), now);
+    expect(item.safetyContext).toBe(true);
+    expect(buildInboxItem(aCase({ status: "NEED_INFO", blocker }), new Map(), now).safetyContext).toBe(false);
+  });
+});

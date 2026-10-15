@@ -83,6 +83,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 ## Đã hoàn thành (Done)
 
+- [x] **v1.17.7 (2026-10-16) — portal: Tiếp nhận bổ sung vị trí/thông tin cho ticket MISSING_INFO rồi chuyển phòng** (ca an toàn không có form).
 - [x] **v1.17.6 (2026-10-15) — portal: "Báo thiếu vật tư" ⇒ "Yêu cầu vật tư" (chỉ đổi chữ, góp ý [e]).** Còn góp ý dòng chính: ticket BQL xử lý xong rời "Cần BQL quyết" ⇒ "Hoàn tất".
 - [x] **v1.17.5 (2026-10-15) — portal: ticket gộp hiện "Đã gộp" và theo ticket gốc ([c]); link danh sách Tiếp nhận mở "Chờ phân loại" ([d]).** Còn: [e] "Yêu cầu vật tư" chờ người dùng chốt, dòng chính (ticket xong rời "Cần BQL quyết").
 - [x] **v1.17.4 (2026-10-15) — portal bỏ khung "Phân tích Agent"** ở modal chi tiết + thẻ Tiếp nhận (góp ý nhóm [a]); dữ liệu `agent` giữ trong DTO, chờ người dùng báo nơi hiển thị riêng. Còn góp ý [c] gộp ≠ hủy, [d] link "Xem danh sách ticket phòng này" sai phòng, [e] "Yêu cầu vật tư", dòng chính ticket xong rời "Cần BQL quyết".

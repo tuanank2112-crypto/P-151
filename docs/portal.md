@@ -34,6 +34,8 @@ Mở http://localhost:8000. Tài khoản (mật khẩu `123456`): `cudan`, `tiep
 | `npx tsx scripts/ui-check-WP3.mts --base=URL` | Kiểm Cư dân + Tiếp nhận trên trình duyệt (Playwright), ảnh 1440/390 |
 | `npx tsx scripts/ui-check-WP4.mts cleaning\|technical --base=URL` | Kiểm Vệ sinh / Kỹ thuật |
 | `npx tsx scripts/ui-check-WP5.mts --base=URL` | Kiểm Quản lý + Kho + modal |
+**Thiếu thông tin ở Tiếp nhận (v1.17.7):** thẻ `MISSING_INFO` (không phải ca an toàn) có form Vị trí · Thông tin thêm · Lý do + Phòng vệ sinh / Phòng kỹ thuật / "Lưu, để Agent phân loại" ⇒ `fillMissingInfoAction` ⇒ `bptn-resolve {location?, info?, category?, note}`. Backend chặn khi còn thiếu ("Vẫn thiếu: …"). `safetyContext` (T06) ⇒ chỉ chữ "Đang chờ cư dân bổ sung".
+
 **Ticket gộp (v1.17.5):** `MERGED` hiện "Đã gộp", KHÔNG "Đã hủy". `buildResidentTicket` lấy bước/phòng ban/thông báo/trạng thái từ `merged_into` (ticket gốc) ⇒ `cancelled` chỉ khi ticket gốc huỷ; `merged` là cờ riêng (cả `TicketDetail`). Tổng quan → "tiếp nhận" → danh sách mở nhóm `waiting` (Chờ phân loại).
 
 **Phân tích Agent (v1.17.4):** KHÔNG còn hiện ở modal chi tiết ticket và thẻ Tiếp nhận (người dùng bỏ hẳn; sẽ có một nơi hiển thị riêng, chưa chốt). `TicketDetail.agent` / `ReceptionInboxItem.agent` (`buildAgentInfo`) vẫn được dựng — đừng xoá khi dọn code.

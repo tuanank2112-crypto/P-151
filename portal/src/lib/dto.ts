@@ -116,6 +116,8 @@ export type ReceptionInboxItem = {
   photos: PhotoRef[];
   duplicateOf: string | null;
   duplicate?: DuplicateRef;
+  /** MISSING_INFO from the safety flow: reception cannot fill it in, only the resident or the BQL */
+  safetyContext: boolean;
   /** Real Agent decision (SPEC-P03 §3.1); null when the ticket has none */
   agent: AgentInfo | null;
 };
