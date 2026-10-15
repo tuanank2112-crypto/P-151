@@ -2,6 +2,10 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.17.8] - 2026-10-16: prompt Agent `agent-prompt/10` — tầng hiểu theo nghĩa (PATCH)
+- Production gpt-6-luna không đọc "t3 nhiều rác quá" là tầng 3 (SIM-TKT-0087: bước VI_TRI chỉ nhìn tòa hồ sơ, hỏi lại tầng). Người dùng duyệt hướng prompt (không regex, không đổi `reasoning_effort`). Bước VI_TRI thêm câu: cư dân viết tắt/nói tự nhiên ("t3", "lầu 3", "tầng ba" đều là tầng 3) ⇒ hiểu tầng theo NGHĨA trong toàn bộ lời cư dân, kể cả khi tòa lấy từ hồ sơ. Sửa REF `planning/06_.../specs/REF-agent-contract.py` trước, code chép nguyên văn; `PROMPT_VERSION` /10.
+- Đo (agy gemini-3.8-flash-low): t3 / lầu 3 / T5 / tầng ba ⇒ 4/4 tầng đúng; G-LIVE `--limit 3` 18/18 (under 0, over 0); pytest 3961 pass; ruff 2 file sửa sạch (toàn repo còn 5 lỗi check + 5 file format có sẵn, đo cả trước khi sửa). CHƯA đo gpt-6-luna (key local hết tiền) — kiểm trên production sau deploy.
+
 ## [v1.17.7] - 2026-10-16: portal — Tiếp nhận bổ sung thông tin thiếu rồi chuyển phòng (PATCH)
 - Người dùng: thẻ "Thiếu thông tin" ở Tiếp nhận không có nút chuyển phòng ban. Backend đã có `bptn_resolve` MISSING_INFO (vị trí/thông tin + lý do, được kèm `category`); portal chỉ ghi "Đang chờ cư dân bổ sung". Nay thẻ có form: Vị trí · Thông tin thêm · Lý do (bắt buộc) + "Phòng vệ sinh" / "Phòng kỹ thuật" (khoá loại việc) / "Lưu, để Agent phân loại" (`fillMissingInfoAction`).
 - BẤT BIẾN giữ: không chuyển khi còn thiếu vị trí (backend trả "Vẫn thiếu: …", đặc tả plan 02 "cấm tự route"); ca an toàn (`safety_context`, T06) KHÔNG có form — chỉ cư dân/BQL gỡ.

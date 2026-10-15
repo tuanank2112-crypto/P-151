@@ -283,6 +283,8 @@ Hồ sơ: [`planning/12_2026-10-09_backend-latency/`](../planning/12_2026-10-09_
 - CLI client: chạy trong thư mục tạm trống (không nạp CLAUDE.md repo), không tool/MCP; `agy` không có cờ thay system prompt nên ghép vào đầu prompt + `--sandbox`; ép schema bằng `--json-schema` (`AgentDecision.model_json_schema()`, không ép được ràng buộc chéo trường — đó là lý do prompt /5).
 - **G-LIVE:** `PYTHONUTF8=1 PYTHONPATH=. python scripts/agent_live_eval.py [--group …] [--workers 3]` chạy từng câu qua engine thật + Agent, chấm đúng / bỏ sót (UNDER) / báo nhầm (OVER) theo nhóm; bộ câu `tests/test_maintenance/data/agent_live_eval.yaml` (NHÃN NHÁP chờ Trường). Kết quả 2026-10-07 (agy gemini-3.8-flash-low): khẩn cấp khó mà luật bỏ sót 16/16 (prompt /5), phủ định 10/10, nhờ thay đèn Agent 19/19; 3 câu nhờ thay đèn vẫn sang BPTN vì luật UNCLEAR và Agent không được hạ (Q33). Mỗi lượt ~17–20 s. Evidence `planning/06_.../evidence/G-LIVE/`.
 
+- **Prompt `agent-prompt/10` (v1.17.8, 2026-10-16):** bước VI_TRI thêm "tầng hiểu theo NGHĨA trong toàn bộ lời cư dân, kể cả viết tắt/nói tự nhiên (\"t3\", \"lầu 3\", \"tầng ba\"), kể cả khi tòa đã lấy từ hồ sơ" — gpt-6-luna bỏ qua "t3" (SIM-TKT-0087). CẤM thay bằng regex `t\d`. Đo agy: 4/4 cách viết tầng, G-LIVE mẫu 18/18; CHƯA đo luna.
+
 ## 16. Phục vụ portal Next.js (hồ sơ 11, v1.7.0, 2026-10-09)
 Hồ sơ: [`planning/11_2026-10-09_portal-backend-api/`](../planning/11_2026-10-09_portal-backend-api/plan.md) (SPEC-P01, SPEC-P04). Nguyên tắc:
 KHÔNG thêm trường/giá trị enum vào doc ticket JSONB (bản Render cũ đọc chung Supabase) — dữ liệu mới ở BẢNG MỚI, trường mới chỉ ở model response.
