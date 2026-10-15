@@ -698,3 +698,4 @@ Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lậ
 
 - Commit `01b7145` (hồ sơ 23+24, v1.17.0) + commit tài liệu hồ sơ 22 (video, PROPOSED). Push `feature/nhuy-reasoning-agent` + PR vào develop theo lời người dùng "commit và push để redeploy"; deploy Vercel chờ VERCEL_TOKEN của lenq2112-4310.
 - Hồ sơ 25 (v1.17.1): người dùng "không muốn cuộn vô hạn" ⇒ `.scroll-list` cho mọi danh sách portal, cả điện thoại (đo 9 771 px ⇒ ≤ 1 635 px). Playwright 24/24, đối chứng 23/24 đỏ. Gotcha: `next dev` không nạp lại CSS sửa bằng `sed -i` ⇒ phép phá CSS dùng `addStyleTag` trong trang.
+- Deploy 2026-10-15: backend + portal production từ bản sao không `.git` (lần đầu bị Blocked vì tác giả commit). Thêm env `MO_STOCK_ALERTS=true` cho p151-backend. Route mới trên production: `/mo/warehouse/requests`, `/material-shortage`, `/emergency/merge` (401 khi chưa đăng nhập).

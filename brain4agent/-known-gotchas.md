@@ -205,3 +205,8 @@ Stash push -u may save successfully but exit1 without cleaning tracked files whe
 - **Proxy cổng 8000 (`src/main.py`) dùng chung MỘT httpx client:** client này KHÔNG được giữ cookie (đã chặn bằng `DefaultCookiePolicy(allowed_domains=[])` trên `client.cookies.jar`). `httpx.AsyncClient(cookies=…)` SAO CHÉP cookie sang kho mới nên chính sách truyền qua tham số bị mất — phải `set_policy` trên kho của client. Dấu hiệu lỗi: trình duyệt mới vào thẳng màn của người đăng nhập trước.
 - Portal: `parseDescription` trả `"—"` khi không có vị trí; UI mới dùng `hasLocation()` để không hiện dấu gạch lẻ. CSS bảng chỉ khai theo màn (`.scr-reception/.scr-management/.scr-warehouse`): màn mới dùng `<table>` phải thêm selector.
 - `scripts/ui-check-WP5.mts` (develop) dò `tile-all`, `bql-work article` theo bố cục cũ ⇒ cần cập nhật theo hồ sơ 19 trước khi dùng lại.
+
+## Vercel chặn deploy CLI vì tác giả commit (2026-10-15)
+- `vercel deploy` từ thư mục có `.git` gửi kèm metadata git; tác giả commit (`tuanank2112@…`, LeNhuY) không thuộc tài khoản Hobby `lenq2112-4310` ⇒ bản deploy `● Blocked` ("commit author doesn't have permission"), lệnh CLI treo không báo lỗi.
+- Cách làm: `git archive HEAD | tar -x -C <thư mục tạm>` (backend: bỏ portal/planning/docs/tests/brain4agent; portal: `git archive HEAD:portal`), `vercel link --yes --project <tên>` trong thư mục tạm, rồi `vercel deploy --prod --yes`. Luôn `VERCEL_TOKEN` + `--global-config <scratch>`.
+- `vercel link` ở root repo sinh `.vercel/`, `.env.local` (chứa `VERCEL_OIDC_TOKEN`) và sửa `.gitignore` ⇒ xoá/khôi phục ngay. Backend production có `MO_STOCK_ALERTS=true` từ 2026-10-15 (Supabase đã ở revision 0006).
