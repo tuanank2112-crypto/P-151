@@ -703,3 +703,4 @@ Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lậ
 - Production lần 1 sau token ký: 6/12 — hết 401, còn 500 `EMAXCONNSESSION` (Supabase session pooler 15 client). Thêm `MO_DB_POOL=none`.
 - Production lần 2 (token ký + MO_DB_POOL=none): đăng nhập 6 vai × 2 = 12/12, log 211×200, 0×401/5xx. Trang tải 4–13 s (mỗi lời gọi mở kết nối mới tới Supabase).
 - Vercel backend + portal chuyển iad1 ⇒ sin1 (người dùng duyệt): API median 2,42 s ⇒ 0,67 s; đăng nhập 12/12.
+- Bật Agent LangGraph trên production: env Vercel LLM_MODE=openai + gpt-6-luna (key người dùng đưa, không lưu). Local luna 13/14; đăng nhập production 12/12. Chưa tạo ticket thử trên Supabase chung.

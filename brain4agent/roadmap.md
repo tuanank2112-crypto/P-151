@@ -37,6 +37,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [ ] Nếu deploy sau reverse proxy (Render): lấy IP client từ header tin cậy, nếu không khóa đăng nhập sẽ dồn về IP của proxy.
 
 ## 💡 Kho Ý Tưởng & Backlog (Idea Vault)
+- (2026-10-15) Prompt Agent: ca khẩn cấp vẫn liệt kê việc đèn/vệ sinh mà phản ánh nêu (gpt-6-luna trả jobs [] cho "hộp đèn tóe lửa" ⇒ P03 không giữ ticket đèn cùng chỗ; gemini trả KY_THUAT). Luồng nền `read_emergency` trên Vercel fluid có thể bị đóng băng sau khi trả response — cần đo.
 - (2026-10-15, hồ sơ 23) Job đọc bù ca khẩn cấp chưa được Agent đọc (server tắt giữa lúc đọc nền); giữ ticket đã giao trong cửa sổ vài giây Agent đang đọc; nút gộp khẩn cấp trên app điện thoại BQL.
 - (2026-10-15, hồ sơ 24) Đo `--pg` cho alert nới ràng buộc; dọn `buildWarehouseRequest` cũ ở portal; job nhắc/leo thang cho ticket phòng ban chờ vật tư.
 

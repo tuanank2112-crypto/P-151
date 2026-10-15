@@ -19,6 +19,8 @@
 
 - 2026-10-15 T05 (người dùng "ok chuyển đi"): vùng chạy function của `p151-backend` và `p151-portal` iad1 (Washington) ⇒ **sin1** (Singapore, cùng vùng Supabase `ap-southeast-1`) qua API Vercel `serverlessFunctionRegion`, rồi deploy lại cả hai. Không thêm `vercel.json` vào repo.
 
+- 2026-10-15 T06 (người dùng đưa key OpenAI, "đừng để lộ"): bật Agent LangGraph trên production — env Vercel `LLM_MODE=openai`, `OPENAI_BASE_URL=https://api.openai.com/v1`, `MODEL_NAME=gpt-6-luna`, `MO_AGENT_TIMEOUT_SECONDS=30`, `OPENAI_API_KEY` (KHÔNG ghi vào repo/.env/bộ nhớ). Function timeout mặc định 300 s (fluid). Key vyceai trong `.env` local bị OpenAI trả 401 — không dùng.
+
 ### Vùng cấm
 - Không lưu phiên vào Supabase dùng chung (thêm ghi DB mỗi lần đăng nhập, cần migration/quyền) — token ký đủ cho bản demo.
 - Không đổi nơi chạy backend (người dùng: bản demo, không hardening).
@@ -32,3 +34,4 @@
 - [x] `MO_DB_POOL=none` + test (NullPool/QueuePool); pytest 3690 passed
 - [x] Production lần 2: env `MO_DB_POOL=none` + `AUTH_TOKEN_SECRET`, deploy ⇒ 12/12 PASS (`evidence/prod-login-check-2.log`); log backend 6 phút: 211 × 200, 0 × 401/5xx (`evidence/prod-status-after.txt`)
 - [x] Vùng sin1: `x-vercel-id: sin1::…` cả hai; API BQL median 2,42 s ⇒ 0,67 s, đăng nhập 1,07 s ⇒ 0,43 s (`evidence/api-latency.txt`); 6 vai × 2 = 12/12, mỗi lượt ~4,6–5,6 s gồm 4 s chờ cố định (`evidence/prod-login-check-sin1.log`)
+- [x] Agent production: chạy thử local `gpt-6-luna` 13/14 (`evidence/live-openai-luna.txt`, 7–11 s/lượt; 1 FAIL = luna đọc "hộp đèn tóe lửa" không có job ⇒ không giữ ticket đèn — quyết định của mô hình); log production `LLM_MODE=openai`; đăng nhập 12/12 (`evidence/prod-login-check-openai.log`). Chưa tạo ticket thử trên production (ghi Supabase chung — chờ người dùng).
