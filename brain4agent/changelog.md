@@ -2,6 +2,16 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.17.2] - 2026-10-15: hồ sơ 26 — token đăng nhập có chữ ký (PATCH)
+- Production không vào được BQL: phiên trong RAM, mỗi instance serverless Vercel không chung bộ nhớ ⇒ 200/401 xen kẽ ngay sau đăng nhập. Token nay ký HMAC (`AUTH_TOKEN_SECRET`), instance nào cũng kiểm được. Đăng xuất thu hồi theo instance.
+- Đo: 5 test mới (API luân phiên hai instance 6/6 = 200), phép phá khoá riêng ⇒ 2 đỏ; pytest 3689.
+- Vercel chạy ở sin1 (Singapore) thay iad1: API median 2,42 s ⇒ 0,67 s.
+- 503/500 khi đăng nhập = Supabase Session pooler hết 15 client (`EMAXCONNSESSION`) vì mỗi instance giữ pool khi rảnh ⇒ `MO_DB_POOL=none` (NullPool) cho serverless; pytest 3690. `planning/26_2026-10-15_signed-login-tokens/`.
+
+## [v1.17.1] - 2026-10-15: hồ sơ 25 — danh sách dài cuộn trong khung (PATCH)
+- Lớp `.scroll-list` (`portal/src/app/globals.css`): khung tối đa `min(70vh, 760px)`, cuộn bên trong, tiêu đề bảng dính trên; áp cho Kỹ thuật/Vệ sinh (cột bảng việc, lịch sử), Tiếp nhận, BQL (danh sách + 3 ô), Cư dân, Kho. Cả máy tính lẫn điện thoại.
+- Đo: 62 ticket, Playwright 24/24 (trang ≤ 1 635 px; trước đó 9 771 px trên điện thoại); đối chứng tắt khung 23/24 FAIL. `planning/25_2026-10-15_scroll-lists/`.
+
 ## [v1.17.0] - 2026-10-15: hồ sơ 24 — phiếu vật tư tự sinh + thông báo khi kho nhập (MINOR)
 - Phiếu vật tư `PVT-<ticket>` = khung nhìn dẫn xuất từ ticket `ON_HOLD/WAITING_MATERIAL` (không bảng mới, không migration): `GET /mo/warehouse/requests`; bước 7 thiếu tồn ⇒ notification `material.shortage` cho kho.
 - Phòng ban đang làm báo thiếu: `POST /mo/tickets/{id}/material-shortage` (kho đủ ⇒ 409 `GUARD_FAILED`), ticket về `IN_PROGRESS` khi kho nhập đủ. Không bước duyệt (giữ plan 15/16).

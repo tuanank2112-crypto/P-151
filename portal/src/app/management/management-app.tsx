@@ -287,7 +287,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                 {rows.length} ticket
               </span>
             </div>
-            <div className="overflow-x-auto">
+            <div className="scroll-list overflow-x-auto">
               <table className="tbl-stack">
                 <thead>
                   <tr>
@@ -375,7 +375,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
             </div>
 
             {activeBox === "decide" && (
-              <div className="flex flex-col gap-3" data-testid="bql-decide">
+              <div className="scroll-list flex flex-col gap-3" data-testid="bql-decide">
                 {decideList.length === 0 && <div className="card p-6 text-center text-muted text-sm">Không có ticket nào cần BQL quyết.</div>}
                 {decideList.map((t) =>
                   decideRank(t) === 2 ? (
@@ -473,7 +473,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
             )}
 
             {activeBox === "review" && (
-              <div className="flex flex-col gap-3" data-testid="bql-inspection">
+              <div className="scroll-list flex flex-col gap-3" data-testid="bql-inspection">
                 {inspectionTickets.length === 0 && <div className="card p-6 text-center text-muted text-sm">Hiện không có ticket nào đang chờ nghiệm thu.</div>}
                 {inspectionTickets.map((t) => {
                   const checked = siteChecked[t.id] ?? [];
@@ -546,7 +546,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
             )}
 
             {activeBox === "done" && (
-              <div className="flex flex-col gap-3" data-testid="bql-done">
+              <div className="scroll-list flex flex-col gap-3" data-testid="bql-done">
                 {doneList.length === 0 && <div className="card p-6 text-center text-muted text-sm">Chưa có ticket nào hoàn tất.</div>}
                 {doneList.map((t) => (
                   <article key={t.id} className="card flex flex-col gap-2 p-5 border-l-4 border-l-emerald-500 shadow-sm">

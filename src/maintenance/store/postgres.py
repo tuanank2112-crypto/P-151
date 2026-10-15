@@ -119,10 +119,19 @@ def connect_args_for(url: str) -> dict[str, Any]:
     return {"connect_timeout": 10}
 
 
+def _no_pool() -> bool:
+    """Plan 26: `MO_DB_POOL=none` (serverless) — no connection is kept between uses."""
+    from src.config import get_settings  # the store never needs the settings otherwise
+
+    return get_settings().mo_db_pool == "none"
+
+
 @functools.lru_cache(maxsize=4)
 def sql_engine(url: str) -> sa.Engine:
     """The WRITE engine: transactions, row locks, leases. With `sql_read_engine` at most 5 connections per process
-    (plan 12 Q05): `engine.lock` allows one write transaction, plus one lease."""
+    (plan 12 Q05): `engine.lock` allows one write transaction, plus one lease. `MO_DB_POOL=none`: none kept."""
+    if _no_pool():
+        return sa.create_engine(url, poolclass=sa.pool.NullPool, connect_args=connect_args_for(url))
     return sa.create_engine(
         url,
         pool_size=2,
@@ -138,7 +147,11 @@ def sql_engine(url: str) -> sa.Engine:
 def sql_read_engine(url: str) -> sa.Engine:
     """The READ engine (plan 12 SPEC-P01): AUTOCOMMIT, so a one-statement read is one round trip instead of four
     (pre-ping, BEGIN, query, ROLLBACK — 230 ms vs 52 ms measured on Supabase). No pre-ping: `_read` retries once
-    when the server dropped the pooled connection."""
+    when the server dropped the pooled connection. `MO_DB_POOL=none`: none kept."""
+    if _no_pool():
+        return sa.create_engine(
+            url, poolclass=sa.pool.NullPool, isolation_level="AUTOCOMMIT", connect_args=connect_args_for(url)
+        )
     return sa.create_engine(
         url,
         pool_size=2,

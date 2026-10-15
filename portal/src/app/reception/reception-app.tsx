@@ -75,7 +75,7 @@ export function ReceptionApp({ data }: { data: ReceptionData }) {
         <PageHead {...HEAD[tab]} />
 
         {tab === "inbox" && (
-          <section className="flex flex-col gap-4">
+          <section className="scroll-list flex flex-col gap-4">
             {inbox.length === 0 && <div className="card p-10 text-center text-muted">Không còn ticket nào chờ phân loại.</div>}
             {inbox.map((t) => (
               <InboxCard
@@ -162,7 +162,7 @@ function DoneTable({ rows, onOpen }: { rows: ReceptionAllItem[]; onOpen: (id: st
         />
       </div>
 
-      <section className="card overflow-x-auto p-2">
+      <section className="card scroll-list overflow-x-auto p-2">
         <table>
           <thead>
             <tr>
