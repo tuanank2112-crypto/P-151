@@ -496,7 +496,7 @@ export function ResidentApp({ data }: { data: ResidentData }) {
               ))}
             </div>
             <div className="flex flex-wrap items-start gap-5">
-              <section className="flex min-w-0 flex-col gap-3" style={{ flex: "1 1 340px" }}>
+              <section className="scroll-list flex min-w-0 flex-col gap-3" style={{ flex: "1 1 340px" }}>
                 {list.length === 0 && (
                   <div className="card flex flex-col items-center justify-center gap-3 p-10 text-center">
                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-soft text-brand">

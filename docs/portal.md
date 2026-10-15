@@ -90,4 +90,4 @@ Backend chamanh chốt vật tư là **số thực tế đã dùng, một lần 
 - Kho (`warehouse-app.tsx`): khối "Phiếu vật tư cần nhập" từ `GET /mo/warehouse/requests` (`lib/material-requests.ts`), nút "Nhập đủ" điền sẵn form nhập kho. Không nút duyệt.
 - Kỹ thuật/Vệ sinh: "Báo thiếu vật tư" (`POST material-shortage`, lỗi hiện nguyên văn), nhãn "Chờ kho nhập vật tư"; chuông "Thông báo kho" cho CẢ HAI phòng (`lib/stock-alerts.ts`, "Đã chạy tiếp"/"Vẫn thiếu").
 - Hồ sơ: `planning/23_2026-10-14_emergency-dup-split/`, `planning/24_2026-10-14_material-requests/` (ảnh chạy thật `evidence/M2/`).
-
+- **Danh sách dài (hồ sơ 25, v1.17.1):** mọi danh sách ticket/vật tư nằm trong khung `.scroll-list` (cuộn bên trong, tối đa `min(70vh, 760px)`); trang không dài vô hạn. Danh sách mới thì bọc khung bằng lớp này.
