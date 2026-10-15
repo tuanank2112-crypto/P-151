@@ -17,6 +17,8 @@
 
 - 2026-10-15 T04 (agent, sau đo production lần 1: 6/12 lượt đăng nhập treo 60 s ⇒ 500): log Supabase `FATAL (EMAXCONNSESSION) max clients reached in session mode - max clients are limited to pool_size: 15`. Mỗi instance giữ pool (2 + 2/+1) kể cả khi rảnh ⇒ vài instance + máy local của nhóm là hết 15. Thêm `MO_DB_POOL=none` ⇒ `NullPool` cho cả hai engine (mở khi dùng, đóng ngay); Vercel đặt `none`, local giữ `pool`. GIỮ Session pooler 5432 (code cấm 6543 có chủ đích từ hồ sơ lưu trữ — không đổi quyết định đó).
 
+- 2026-10-15 T05 (người dùng "ok chuyển đi"): vùng chạy function của `p151-backend` và `p151-portal` iad1 (Washington) ⇒ **sin1** (Singapore, cùng vùng Supabase `ap-southeast-1`) qua API Vercel `serverlessFunctionRegion`, rồi deploy lại cả hai. Không thêm `vercel.json` vào repo.
+
 ### Vùng cấm
 - Không lưu phiên vào Supabase dùng chung (thêm ghi DB mỗi lần đăng nhập, cần migration/quyền) — token ký đủ cho bản demo.
 - Không đổi nơi chạy backend (người dùng: bản demo, không hardening).
@@ -29,3 +31,4 @@
 - [x] Production lần 1 (chỉ token ký): `evidence/prod-login-check.log` 6/12 — không còn 401, còn 500 do hết kết nối Supabase (T04)
 - [x] `MO_DB_POOL=none` + test (NullPool/QueuePool); pytest 3690 passed
 - [x] Production lần 2: env `MO_DB_POOL=none` + `AUTH_TOKEN_SECRET`, deploy ⇒ 12/12 PASS (`evidence/prod-login-check-2.log`); log backend 6 phút: 211 × 200, 0 × 401/5xx (`evidence/prod-status-after.txt`)
+- [x] Vùng sin1: `x-vercel-id: sin1::…` cả hai; API BQL median 2,42 s ⇒ 0,67 s, đăng nhập 1,07 s ⇒ 0,43 s (`evidence/api-latency.txt`); 6 vai × 2 = 12/12, mỗi lượt ~4,6–5,6 s gồm 4 s chờ cố định (`evidence/prod-login-check-sin1.log`)

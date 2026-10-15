@@ -1,0 +1,2 @@
+before (iad1): login 1.07s · 15 GET median 2.42s p90 2.63s max 2.84s · non-200: none
+after (sin1): login 0.43s · 15 GET median 0.67s p90 0.98s max 1.93s · non-200: none

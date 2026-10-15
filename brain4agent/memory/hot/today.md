@@ -702,3 +702,4 @@ Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lậ
 - Hồ sơ 26 (v1.17.2): BQL không đăng nhập được trên production = phiên trong RAM × nhiều instance Vercel (log 200/401 xen kẽ). Người dùng duyệt token ký HMAC. 5 test, phép phá 2 đỏ, pytest 3689.
 - Production lần 1 sau token ký: 6/12 — hết 401, còn 500 `EMAXCONNSESSION` (Supabase session pooler 15 client). Thêm `MO_DB_POOL=none`.
 - Production lần 2 (token ký + MO_DB_POOL=none): đăng nhập 6 vai × 2 = 12/12, log 211×200, 0×401/5xx. Trang tải 4–13 s (mỗi lời gọi mở kết nối mới tới Supabase).
+- Vercel backend + portal chuyển iad1 ⇒ sin1 (người dùng duyệt): API median 2,42 s ⇒ 0,67 s; đăng nhập 12/12.
