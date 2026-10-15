@@ -1,7 +1,7 @@
 # 26 — Token đăng nhập có chữ ký (sửa đăng nhập trên Vercel) (PATCH)
 
 ## Metadata
-- Trạng thái: ✅ XONG LOCAL 2026-10-15; production: xem Checklist.
+- Trạng thái: ✅ XONG 2026-10-15 — local + production (12/12 đăng nhập).
 - Người yêu cầu: Như Ý ("không thể đăng nhập giao diện bql? … lỗi 503?"), duyệt hướng sửa: "ok".
 - Nhánh: `feature/nhuy-reasoning-agent`. Phiên bản: **1.17.2** (PATCH, ≤ 1 ngày ⇒ chỉ `plan.md`, AGENTS §3.2.5).
 
@@ -28,4 +28,4 @@
 - [x] pytest toàn bộ 3689 passed / 0 fail
 - [x] Production lần 1 (chỉ token ký): `evidence/prod-login-check.log` 6/12 — không còn 401, còn 500 do hết kết nối Supabase (T04)
 - [x] `MO_DB_POOL=none` + test (NullPool/QueuePool); pytest 3690 passed
-- [ ] Production lần 2: env `MO_DB_POOL=none`, deploy, đăng nhập 6 vai × 2
+- [x] Production lần 2: env `MO_DB_POOL=none` + `AUTH_TOKEN_SECRET`, deploy ⇒ 12/12 PASS (`evidence/prod-login-check-2.log`); log backend 6 phút: 211 × 200, 0 × 401/5xx (`evidence/prod-status-after.txt`)
