@@ -495,8 +495,12 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                 </button>
               ))}
             </div>
-            <div className="flex flex-wrap items-start gap-5">
-              <section className="scroll-list flex min-w-0 flex-col gap-3" style={{ flex: "1 1 340px" }}>
+            <div className={cur ? "grid grid-cols-1 lg:grid-cols-[360px_1fr] items-stretch gap-5" : "flex flex-col gap-5"}>
+              <div className={cur ? "relative min-w-0 w-full h-full" : "min-w-0 w-full"}>
+                <section
+                  className={`scroll-list flex min-w-0 flex-col gap-3 ${cur ? "lg:absolute lg:inset-0" : ""} overflow-y-auto pr-1`}
+                  style={{ maxHeight: cur ? "100%" : undefined }}
+                >
                 {list.length === 0 && (
                   <div className="card flex flex-col items-center justify-center gap-3 p-10 text-center">
                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-soft text-brand">
@@ -563,6 +567,7 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                   );
                 })}
               </section>
+            </div>
 
               {cur && (
                 <TicketDetail
@@ -636,7 +641,7 @@ function TicketDetail(props: {
   ];
 
   return (
-    <section className="card flex min-w-0 flex-col gap-5 p-7" style={{ flex: "999 1 560px" }}>
+    <section className="card flex min-w-0 flex-col gap-5 p-7">
       <div className="flex flex-wrap items-center gap-2.5">
         <span className="idb">#{t.code}</span>
         <span className="text-[13px] text-muted">Thời gian gửi: {t.sentAt}</span>
