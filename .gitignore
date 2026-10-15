@@ -32,6 +32,8 @@ Thumbs.db
 data/
 # portal data loaders are source code, not data (plan 11)
 !portal/src/server/data/
+# test fixtures named data/ are source too
+!tests/**/data/
 *.db
 *.sqlite3
 
