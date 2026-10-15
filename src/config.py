@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     mo_jobs_enabled: bool = True
     # Accept X-Actor-Id instead of a login token (tests/scripts only; never enable in production)
     mo_allow_actor_header: bool = False
+    # Key that signs login tokens, so every serverless instance can check a token another one issued (plan 26).
+    # Unset = a random key per process: fine for one local server, logs everyone out on Vercel.
+    auth_token_secret: str | None = None
     # Resident and department photos (the folder is mounted as a volume in docker-compose)
     mo_upload_dir: str = "./data/uploads/maintenance"
 
