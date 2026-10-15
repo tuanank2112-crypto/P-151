@@ -1,0 +1,29 @@
+P23-LIVE llm_mode=agy_cli model=gemini-3.8-flash-low agent=True store=memory
+L1 hai cư dân báo cùng một vụ khẩn cấp (cách nói khác nhau)
+  SIM-TKT-0001 VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY loc='Tòa S2 / Tầng 7 / Hành lang' dept=None suspect_of=None dup=0 split=None src=SKIPPED_RULE_EMERGENCY jobs=None   0.0s | Hành lang tầng 7 tòa S2 có khói bốc ra từ hộp đèn, mùi khét lắm
+  SIM-TKT-0002 VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY loc='Tòa S2 / Tầng 7 / Hành lang' dept=None suspect_of=SIM-TKT-0001 dup=0 split=None src=SKIPPED_RULE_EMERGENCY jobs=None   0.0s | Tầng 7 tòa S2 ngoài hành lang đang bốc khói đen, mọi người cẩn thận
+  [PASS] ca 1 khẩn cấp chờ BQL
+  [PASS] ca 2 vẫn chờ BQL (không bị ẩn)
+  [PASS] ca 2 nghi trùng ca 1
+  [PASS] ca 1 đếm 1 người cùng báo
+  SIM-TKT-0002 MERGED/- risk=EMERGENCY loc='Tòa S2 / Tầng 7 / Hành lang' dept=None suspect_of=None dup=0 split=None src=SKIPPED_RULE_EMERGENCY jobs=None (sau khi BQL gộp)
+  [PASS] BQL gộp xong, ca 1 vẫn đếm 1
+L2 phản ánh hai việc có dấu hiệu khẩn cấp, BQL hạ mức
+  SIM-TKT-0001 VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY loc='Tòa S2 / Tầng 9 / Hành lang' dept=None suspect_of=None dup=0 split=None src=SKIPPED_RULE_EMERGENCY jobs=None   0.0s | Hành lang tầng 9 tòa S2 đèn chập tóe lửa có khói, rác thì đầy cả lối đi chưa ai dọn
+  [PASS] ban đầu là khẩn cấp chờ BQL
+  SIM-TKT-0001 ROUTED/OUT_OF_HOURS risk=NONE loc='Tòa S2 / Tầng 9 / Hành lang' dept=DEPT_CLEANING suspect_of=None dup=0 split=['SIM-TKT-0002'] src=AGENT jobs=['KY_THUAT', 'VE_SINH']  49.4s (sau khi BQL hạ mức)
+  SIM-TKT-0002 ROUTED/OUT_OF_HOURS risk=NONE loc='Tòa S2 / Tầng 9 / Hành lang' dept=DEPT_TECHNICAL suspect_of=None dup=0 split=SIM-TKT-0001 src=AGENT jobs=['KY_THUAT', 'VE_SINH'] (ticket con)
+  [PASS] đã tách thành 2 ticket
+  [PASS] hai phòng ban khác nhau
+  [PASS] ticket con không bật lại khẩn cấp
+L3 ticket thường tới sau, cùng chỗ với khẩn cấp đèn đang mở
+  SIM-TKT-0001 VERIFYING/EMERGENCY_PENDING_BQL risk=EMERGENCY loc='Tòa S2 / Tầng 11 / Hành lang' dept=None suspect_of=None dup=0 split=None src=SKIPPED_RULE_EMERGENCY jobs=None   0.0s | Hộp đèn hành lang tầng 11 tòa S2 đang tóe lửa, có khói
+  SIM-TKT-0002 ON_HOLD/WAITING_EMERGENCY risk=NONE loc='Tòa S2 / Tầng 11 / Hành lang' dept=None suspect_of=None dup=0 split=None src=AGENT jobs=['KY_THUAT']   8.9s | Đèn hành lang tầng 11 tòa S2 không sáng
+  SIM-TKT-0003 ON_HOLD/WAITING_EMERGENCY risk=NONE loc='Tòa S2 / Tầng 11 / Hành lang' dept=None suspect_of=None dup=0 split=None src=AGENT jobs=['VE_SINH']  16.0s | Hành lang tầng 11 tòa S2 nhiều rác quá, nhờ dọn giúp
+  [PASS] ca đèn tóe lửa là khẩn cấp
+  [PASS] ticket đèn cùng chỗ bị giữ chờ BQL
+  [FAIL] ticket rác (khác loại) vẫn được giao
+  SIM-TKT-0002 ROUTED/OUT_OF_HOURS risk=NONE loc='Tòa S2 / Tầng 11 / Hành lang' dept=DEPT_TECHNICAL suspect_of=None dup=0 split=None src=AGENT jobs=['KY_THUAT'] (sau khi BQL đóng khẩn cấp)
+  [PASS] ticket đèn chạy tiếp sau khi BQL xử lý
+SUMMARY passed=12/13
+EXIT=1

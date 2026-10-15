@@ -1,8 +1,10 @@
 """Ordinary tickets next to an open emergency, and the follow-up ticket (SPEC-P07).
 
 P1-E: an emergency and the tickets at the same place link both ways, always. An ordinary ticket reaching step 8 next to
-an open emergency waits (`ON_HOLD / WAITING_EMERGENCY`) only when `agent_policy.hold_near_open_emergency` is on (Q18:
-off by default). The wait ends on BQL's event (T05, T10, T23, `bql_merge`), never on a timer.
+an open emergency waits (`ON_HOLD / WAITING_EMERGENCY`) when `agent_policy.hold_near_open_emergency` is on (Q18: off by
+default), and, with the switch off, when a person or the Agent read the emergency as the same kind of work (plan 23
+P03; a rule emergency is read by the Agent right after it stops, `read_emergency`).
+The wait ends on BQL's event (T05, T10, T23, `bql_merge`), never on a timer.
 P1-F: BQL opens a follow-up repair ticket from an emergency ticket; the model is asked outside the lock (I-16).
 """
 
@@ -15,6 +17,7 @@ from src.maintenance.enums import (
     ActorRole,
     ReasonCode,
     RiskLevel,
+    ServiceCategory,
     TicketStatus,
 )
 from src.maintenance.errors import GuardError, InvalidTransitionError
@@ -79,7 +82,8 @@ class NeighborMixin:
                 ActorRole.AGENT,
                 why="Khẩn cấp đang mở cùng vị trí",
             )
-        if not self.catalog.agent_policy.hold_near_open_emergency:
+        blocking = self._blocking_emergency(work, ids)
+        if blocking is None:
             return False
         return self._stop(
             work,
@@ -87,12 +91,57 @@ class NeighborMixin:
             ReasonCode.WAITING_EMERGENCY,
             now,
             resume_step=8,
-            note=f"Chờ BQL xử lý khẩn cấp {ids[0]} cùng vị trí",
+            note=f"Chờ BQL xử lý khẩn cấp {blocking} cùng vị trí",
         )
+
+    def _blocking_emergency(self, work: Case, emergency_ids: list[str]) -> str | None:
+        """The open emergency (oldest first) `work` must wait for, or None. Switch on: any of them (Q18). Switch off
+        (plan 23 P03 §1): one that a person or the Agent read as the same kind of work as `work`. Nobody read it
+        yet (a rule emergency before the Agent's read, or no Agent at all) ⇒ link only, as before plan 23."""
+        if not emergency_ids:
+            return None
+        if self.catalog.agent_policy.hold_near_open_emergency:
+            return emergency_ids[0]
+        mine = self._category(work)
+        if mine is None:
+            return None
+        for emergency_id in emergency_ids:
+            kinds = self._merged_kinds(self._case_view(emergency_id))
+            if kinds is not None and mine in kinds:
+                return emergency_id
+        return None
+
+    def _merged_kinds(self, emergency: Case) -> frozenset[ServiceCategory] | None:
+        """The kinds of an emergency together with every emergency BQL merged into it (their words are not in its
+        `_content`, plan 23 P03 §2). An unread part adds nothing; nothing read at all ⇒ None."""
+        kinds = self._emergency_kinds(emergency)
+        for child_id in emergency.ticket.merged_children:
+            child = self._case_view(child_id)
+            if child.ticket.status != TicketStatus.MERGED or child.ticket.merged_into != emergency.ticket.ticket_id:
+                continue
+            more = self._emergency_kinds(child)
+            if more is not None:
+                kinds = more if kinds is None else kinds | more
+        return kinds
+
+    def _emergency_kinds(self, emergency: Case) -> frozenset[ServiceCategory] | None:
+        """Plan 23 P03 §2: the kinds of work of an emergency, as a person pinned them, else as the Agent read them (its
+        valid jobs, `read_emergency` for a rule emergency). Never guessed from the words by the rules (Q30, R01 F1):
+        None = nobody read it, which holds nothing."""
+        ticket = emergency.ticket
+        pinned = ticket.locked_fields.category or ticket.split_category
+        if pinned:
+            return frozenset({ServiceCategory(pinned)})
+        record = emergency.agent_decision
+        if record is None or record.decision is None:
+            return None
+        jobs = record.decision.jobs
+        kinds = frozenset(ServiceCategory(jobs[i].category) for i in record.valid_job_indexes if i < len(jobs))
+        return kinds or None
 
     def _release_waiting_for(self, emergency: Case, now: datetime) -> None:
         """BQL handled `emergency` (downgraded, closed, cancelled, merged): the tickets waiting for it go on from
-        step 8, unless another emergency is still open at their place."""
+        step 8 (which links them to the other emergencies there), unless another one still holds them (P03 §1.6)."""
         emergency_id = emergency.ticket.ticket_id
         for ticket_id in list(emergency.ticket.related_ticket_ids):
             view = self._case_view(ticket_id)
@@ -103,15 +152,18 @@ class NeighborMixin:
                 continue
             still_open = self._open_emergencies_at(self.effective_location(view), exclude={emergency_id, ticket_id})
             waiting = self._related_case(ticket_id)
-            if still_open:
+            blocking = self._blocking_emergency(view, still_open)  # P03 §1.6: waits on only for one that holds it
+            if blocking is not None:
                 self._link_pair(
                     waiting,
-                    self._related_case(still_open[0]),
+                    self._related_case(blocking),
                     now,
                     AGENT_ID,
                     ActorRole.AGENT,
                     why="Khẩn cấp đang mở cùng vị trí",
                 )
+                note = f"Chờ BQL xử lý khẩn cấp {blocking} cùng vị trí"  # the note names the one it waits for now
+                self._set_ticket(waiting, blocker=waiting.ticket.blocker.model_copy(update={"internal_note": note}))
                 continue
             self._apply_transition(
                 waiting,

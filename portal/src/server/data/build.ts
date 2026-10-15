@@ -423,6 +423,8 @@ export function buildMgmtTicket(row: BBqlRow, summary: BSummary | undefined, now
     staffName: row.staff_name ?? null,
     doneHours: hoursBetween(row.accepted_at, row.closed_at),
     merged: row.status === "MERGED",
+    suspectOf: row.blocker?.code === "EMERGENCY_PENDING_BQL" ? (row.blocker.related_ticket_id ?? null) : null,
+    duplicateCount: row.duplicate_count ?? 0,
   };
 }
 

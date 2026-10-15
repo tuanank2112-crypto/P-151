@@ -1,17 +1,16 @@
 // Warehouse screens (Kho vật tư) — plan 11 SPEC-P05 §4. Same endpoints as renderWarehouse in src/web/app.js.
-import { api } from './api.js?v=18';
-import { el, emptyState, field, fill, pageHead, pagedList, pill, refreshButton, toast, writeButton } from './ui.js?v=18';
+import { api, listMaterialRequests } from './api.js?v=19';
+import { el, emptyState, field, fill, formatTime, pageHead, pagedList, pill, refreshButton, toast, writeButton } from './ui.js?v=19';
 import {
-  caseHead, caseScreen, codeOf, eventsHistory, isSeedTicket, loadCatalog, materialName, materialUnit, reportBox, select,
-  summaryCard,
-} from './staff.js?v=18';
+  caseHead, caseScreen, codeOf, deptName, eventsHistory, isSeedTicket, loadCatalog, materialName, materialUnit, reportBox, select,
+} from './staff.js?v=19';
 
-// Q37: "Nhập vật tư" replaces "Chờ vật tư" (receipt form + the tickets it unblocks); "Cảnh báo" = stock under the threshold
+// Q37: "Nhập vật tư" replaces "Chờ vật tư" (receipt form + the open material requests PVT-…, plan 24); "Cảnh báo" = stock under the threshold
 const TILES = [['receive', 'Nhập vật tư', 'box'], ['stock', 'Tồn kho', 'grid'], ['low', 'Cảnh báo', 'warning']];
 let tab = 'receive';
 /** Item + qty the "Nhập vật tư" form starts with after "Nhập thêm" on a warning row. */
 let prefill = null;
-/** The header bell opens "Nhập vật tư" (the tickets waiting for material are listed there). */
+/** The header bell opens "Nhập vật tư" (the open material requests are listed there). */
 export function focusQueue() { tab = 'receive'; }
 
 /** Plan 19 (same rule as portal/src/lib/stock.ts): out when qty <= 0, low when qty <= the item's own min_qty; unknown qty or no threshold is not warned. */
@@ -42,6 +41,22 @@ function receiveForm(ctx, stock, { item = '', qty = 1, after }) {
     field('Vật tư', itemBox), field('Số lượng nhập thêm', qtyBox, 'Cộng dồn vào tồn kho hiện có.'), button);
 }
 
+/** Plan 24 SPEC-P03 §2: one card per open request (GET /mo/warehouse/requests); "Nhập đủ" on a line fills the receipt form above. */
+export function requestCard(cat, onFill) {
+  return (r) => el('article', { class: 'card bitem', dataset: { request: r.request_id } },
+    el('span', { class: 'trow' }, el('b', {}, r.request_id), pill(r.source === 'AGENT' ? 'st-moi' : 'cat-none', r.source === 'AGENT' ? 'Agent' : deptName(cat, r.department_id) || 'Phòng ban', { dot: false })),
+    el('span', { class: 'tmeta' }, el('a', { href: `#/k/${encodeURIComponent(r.ticket_id)}` }, r.ticket_id),
+      ` · ${[deptName(cat, r.department_id), r.location, `chờ từ ${formatTime(r.since)}`].filter(Boolean).join(' · ')}`),
+    r.note ? el('span', { class: 'ttitle' }, `Ghi chú: ${r.note}`) : null,
+    el('ul', { class: 'stock-list' }, r.lines.map((line) => {
+      const unit = materialUnit(line.item_code, line.unit);
+      return el('li', { dataset: { item: line.item_code } },
+        el('div', {}, el('b', {}, materialName(line.item_code, line.item_name)),
+          el('small', {}, `cần ${line.needed_qty} ${unit} · tồn ${line.stock_qty != null ? `${line.stock_qty} ${unit}` : 'không rõ'} · thiếu ${line.shortage_qty} ${unit}`)),
+        el('button', { type: 'button', class: 'btn', onclick: () => onFill({ item: line.item_code, qty: Math.max(1, Math.ceil(line.shortage_qty)) }) }, 'Nhập đủ'));
+    })));
+}
+
 function stockList(stock) {
   return el('div', { class: 'card pad', id: 'kho-stock' }, el('h2', {}, 'Tồn kho hiện tại'),
     el('ul', { class: 'stock-list' }, stock.map((s) => el('li', { dataset: { item: s.item_code } },
@@ -69,13 +84,13 @@ function lowList(low, onReceive) {
 export async function list(ctx) {
   const statsBox = el('div', { class: 'stats' });
   const body = el('div', { id: 'staff-list' });
-  let rows = [];
+  let requests = [];
   let stock = [];
   let cat = null;
   const draw = (keep) => {
     const low = lowStock(stock);
     ctx.chrome({ navId: 'staff-tabs', active: tab, items: TILES.map(([key, label, iconName]) => ({ key, label, icon: iconName, onclick: () => { tab = key; draw(false); } })) });
-    ctx.counts({ receive: rows.length, stock: 0, low: low.length, bell: rows.length });
+    ctx.counts({ receive: requests.length, stock: 0, low: low.length, bell: requests.length });
     fill(statsBox, [['Cần nhập thêm', low.length], ['Mã vật tư', stock.length], ['Hết hàng', stock.filter((s) => s.qty === 0).length],
       ['Chưa rõ tồn', stock.filter((s) => s.qty == null).length]].map(([label, value]) => el('div', { class: 'card stat' }, el('span', {}, label), el('b', {}, String(value)))));
     if (tab === 'stock') {
@@ -91,16 +106,17 @@ export async function list(ctx) {
     }
     const previous = keep && body.lastElementChild && body.lastElementChild.dataset.shown ? body.lastElementChild : null;
     const start = prefill || {};
-    fill(body, pageHead('Nhập vật tư', 'Nhập kho: phản ánh đang chờ vật tư đó tự chạy tiếp.', { right: refreshButton(load, ctx) }),
+    const onFill = (line) => { prefill = line; draw(false); const form = document.getElementById('kho-receive'); if (form) form.scrollIntoView({ block: 'start' }); };
+    fill(body, pageHead('Nhập vật tư', 'Nhập kho: phản ánh đang chờ vật tư đó tự chạy tiếp, phòng ban được báo.', { right: refreshButton(load, ctx) }),
       el('div', { class: 'updated', dataset: { updated: '' } }),
       receiveForm(ctx, stock, { item: start.item, qty: start.qty, after: () => { prefill = null; return load(); } }),
-      el('h2', { class: 'kho-sec' }, `Phản ánh chờ vật tư (${rows.length})`),
-      pagedList(rows, summaryCard(cat, '#/k'), { empty: 'Không có phản ánh nào chờ vật tư.', keep: previous }));
+      el('h2', { class: 'kho-sec', id: 'kho-requests' }, `Phiếu vật tư cần nhập (${requests.length})`),
+      pagedList(requests, requestCard(cat, onFill), { empty: 'Không có phiếu vật tư nào đang chờ nhập.', keep: previous }));
   };
   const load = async () => {
-    const [all, stockRows, catalogView] = await Promise.all([api('/mo/tickets'), api('/mo/warehouse/stock'), loadCatalog().catch(() => null)]);
+    const [all, stockRows, catalogView] = await Promise.all([listMaterialRequests(), api('/mo/warehouse/stock'), loadCatalog().catch(() => null)]);
     if (!ctx.alive()) return;
-    rows = all.filter((r) => !isSeedTicket(r.ticket_id));
+    requests = all.filter((r) => !isSeedTicket(r.ticket_id));
     stock = stockRows;
     cat = catalogView;
     draw(true);

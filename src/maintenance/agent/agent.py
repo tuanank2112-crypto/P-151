@@ -73,8 +73,10 @@ class ReasoningAgent:
 
     # -------------------------------------------------------------------------------------------- public API
 
-    def decide(self, data: DecisionInput) -> AgentDecisionRecord:
-        return self._graph.invoke({"data": data})["record"]
+    def decide(self, data: DecisionInput, *, read_emergency: bool = False) -> AgentDecisionRecord:
+        """`read_emergency` (plan 23 P04): ask the model even when the rules already found an emergency, so it reads
+        what the report is about. The rules' level still stands: the model can only raise it (the engine's 2b)."""
+        return self._graph.invoke({"data": data, "read_emergency": read_emergency})["record"]
 
     def fallback(self, data: DecisionInput, reason: str) -> AgentDecisionRecord:
         """A FALLBACK_RULE record with the rule evidence filled in. Pure: no model call, no log."""
@@ -92,8 +94,8 @@ class ReasoningAgent:
         data = state["data"]
         view = rule_view(data, self.catalog, self.lexicon)
         update: dict[str, Any] = {"rules": view}
-        if view.safety.risk_level == RiskLevel.EMERGENCY:
-            return update  # the rules already stop it; the model is not asked (SPEC-P01 9)
+        if view.safety.risk_level == RiskLevel.EMERGENCY and not state.get("read_emergency"):
+            return update  # the rules already stop it; the model is asked afterwards (plan 23 P04, was SPEC-P01 9)
         if len(data.report_text) > MAX_REPORT_CHARS:
             update["error"] = {"reason": "INPUT_TOO_LARGE", "latency_ms": 0.0, "log_id": None}
         elif self._client is None:
@@ -102,7 +104,7 @@ class ReasoningAgent:
 
     @staticmethod
     def _after_rules(state: AgentState) -> str:
-        if state["rules"].safety.risk_level == RiskLevel.EMERGENCY:
+        if state["rules"].safety.risk_level == RiskLevel.EMERGENCY and not state.get("read_emergency"):
             return "skip"
         return "fallback" if state.get("error") else "llm"
 

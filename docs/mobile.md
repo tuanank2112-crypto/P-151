@@ -62,3 +62,9 @@ Chỉ `qa01` (QA_INTERNAL) đăng nhập ⇒ `#/web` (nút sang `/ui/`), không 
 - Docker (backend thật, DB Supabase CHUNG — chỉ đọc khi thử): `docker compose up -d --build backend` ⇒ http://localhost:8000/app/.
   Image phải dựng từ nhánh có ghim `sqlalchemy<2.1` (xem `brain4agent/-known-gotchas.md`).
 - Cài lên màn hình chính + service worker cần HTTPS (hoặc `localhost` qua USB forward); qua `http://<LAN-IP>` app vẫn chạy đủ chức năng, chỉ không cài được.
+
+## 5. Hồ sơ 24 (v1.17.0, `?v=19`)
+- `js/dept.js`: ticket đang làm có "Báo thiếu vật tư"; chuông đầu màn đếm thông báo kho chưa xem của phòng (không còn đếm "Chờ nhận"), bấm ⇒ khối "Thông báo kho" + "Đã xem".
+- `js/kho.js`: tab "Nhập vật tư" lấy phiếu `PVT-…` từ `GET /mo/warehouse/requests`; bấm dòng ⇒ điền sẵn form nhập.
+- `js/api.js`: hàm gọi `material-shortage`, `warehouse/requests`, `stock-alerts`, ack. Chưa chạy trên trình duyệt thật (chỉ `node --check` + test tĩnh).
+

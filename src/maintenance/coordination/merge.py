@@ -24,6 +24,8 @@ from src.maintenance.priority import apply_duplicate_raise
 from src.maintenance.store.base import NotFoundError
 
 _ROOT_CANCELLED = "Ticket gốc bị hủy"
+# blockers whose related_ticket_id is counted on that ticket (plan 23 P01: also an emergency suspect)
+_SUSPECT_CODES = frozenset({ReasonCode.DUPLICATE, ReasonCode.EMERGENCY_PENDING_BQL})
 
 
 class MergeMixin:
@@ -107,7 +109,7 @@ class MergeMixin:
 
     def _recount_duplicates(self, work: Case, actor_id: str, role: ActorRole, now: datetime) -> None:
         """Set `work.duplicate_count` to the P04 §2.1 definition: open tickets waiting as its suspected duplicate
-        (VERIFYING/DUPLICATE pointing at it) + tickets merged into it that are counted (not its own split children).
+        (VERIFYING/DUPLICATE or VERIFYING/EMERGENCY_PENDING_BQL pointing at it, plan 23 P01) + tickets merged into it that are counted (not its own split children).
         A ticket re-opened by T09 carries the number frozen while it was MERGED; this brings it back."""
         ticket_id = work.ticket.ticket_id
         wanted = 0
@@ -117,7 +119,7 @@ class MergeMixin:
                 continue
             if other.status == TicketStatus.VERIFYING:
                 blocker = other.blocker
-                if blocker is not None and blocker.code == ReasonCode.DUPLICATE:
+                if blocker is not None and blocker.code in _SUSPECT_CODES:
                     wanted += blocker.related_ticket_id == ticket_id
             elif other.status == TicketStatus.MERGED and other.merged_into == ticket_id:
                 wanted += other.split_from != ticket_id
@@ -155,6 +157,73 @@ class MergeMixin:
         self._count_duplicate(
             root, +1, work.ticket.ticket_id, AGENT_ID, ActorRole.AGENT, now, why="Phản ánh nghi trùng"
         )
+
+    def _mark_emergency_duplicate(self, work: Case, now: datetime) -> str | None:
+        """Plan 23 P01 §1: `work` just became EMERGENCY_PENDING_BQL. When an older open emergency waits at the same
+        place, `work` points at the oldest one that is a root itself (no pointer: after a merge into a newer ticket
+        the oldest may be a suspect, R02 F-A) and is counted on it. A pointer is never followed. Nothing else
+        changes: the ticket stays with BQL, who alone merges (I-1, I-2)."""
+        ticket = work.ticket
+        location = self.effective_location(work)
+        if location is None or ticket.blocker is None or ticket.blocker.code != ReasonCode.EMERGENCY_PENDING_BQL:
+            return None
+        mine = (_created_at(ticket.raw), ticket.ticket_id)
+        if mine[0] is None:
+            return None
+        older = [
+            other
+            for other_id in self._open_emergencies_at(location, exclude={ticket.ticket_id, *work.not_duplicate_of})
+            if (created := _created_at((other := self._case_view(other_id).ticket).raw)) is not None
+            and (created, other_id) < mine
+        ]  # oldest first
+        roots = [other for other in older if other.blocker.related_ticket_id is None]
+        root_id = (roots or older)[0].ticket_id if older else None
+        if root_id is None:
+            return None
+        self._point_suspect(work, root_id, now, why=f"Nghi trùng khẩn cấp {root_id} cùng vị trí")
+        return root_id
+
+    def _point_suspect(self, work: Case, root_id: str | None, now: datetime, *, why: str) -> None:
+        """Set `work`'s suspect pointer to `root_id` (None clears it), counted on the new root (I-3)."""
+        old = work.ticket.blocker.related_ticket_id
+        if old == root_id:
+            return
+        self._audit(
+            work, Action.LINK_TICKETS, "Ticket", work.ticket.ticket_id, AGENT_ID, ActorRole.AGENT,
+            "blocker.related_ticket_id", old, root_id, why, now=now,
+        )  # fmt: skip
+        self._set_ticket(work, blocker=work.ticket.blocker.model_copy(update={"related_ticket_id": root_id}))
+        if root_id is not None:
+            self._count_duplicate(
+                self._related_case(root_id), +1, work.ticket.ticket_id, AGENT_ID, ActorRole.AGENT, now,
+                why="Phản ánh khẩn cấp nghi trùng",
+            )  # fmt: skip
+
+    def _repoint_suspects(self, root: Case, now: datetime) -> None:
+        """Plan 23 P01 §3: `root` stopped being an open emergency (downgraded, closed, cancelled, merged). Its open
+        suspects get a root that still is one: the ticket it was merged into, else the oldest suspect, which itself
+        stops being a suspect. `root` keeps no count for them while it is still open (it is no longer their root)."""
+        root_id = root.ticket.ticket_id
+        suspects = []
+        for case in self._cases_snapshot():
+            blocker = case.ticket.blocker
+            if (
+                case.ticket.status == TicketStatus.VERIFYING
+                and blocker is not None
+                and blocker.code == ReasonCode.EMERGENCY_PENDING_BQL
+                and blocker.related_ticket_id == root_id
+            ):
+                suspects.append(((_created_at(case.ticket.raw), case.ticket.ticket_id), case.ticket.ticket_id))
+        if not suspects:
+            return
+        ordered = [ticket_id for _, ticket_id in sorted(suspects)]
+        merged_into = root.ticket.merged_into if root.ticket.status == TicketStatus.MERGED else None
+        new_root = merged_into or ordered[0]
+        for ticket_id in ordered:
+            suspect = self._related_case(ticket_id)
+            self._count_duplicate(root, -1, ticket_id, AGENT_ID, ActorRole.AGENT, now, why="Ca gốc không còn khẩn cấp")
+            target = None if ticket_id == new_root or new_root in suspect.not_duplicate_of else new_root
+            self._point_suspect(suspect, target, now, why=f"Ca gốc {root_id} không còn khẩn cấp mở")
 
     # ------------------------------------------------------------------ T08 (P04 §3)
 
@@ -210,6 +279,8 @@ class MergeMixin:
     def bql_merge(self, ticket_id: str, actor_id: str, *, into: str, note: str) -> Case:
         """T08 by BQL: an emergency ticket waiting for BQL is merged into another open emergency ticket."""
 
+        into = into.strip()
+
         def op(work: Case, now: datetime) -> None:
             blocker = work.ticket.blocker
             if (
@@ -251,7 +322,12 @@ class MergeMixin:
                 note.strip(),
                 now=now,
             )
-            self._merge_into(work, into, actor_id, ActorRole.BQL, now, note=note.strip(), counted=True)
+            suspect_of = blocker.related_ticket_id
+            if suspect_of is not None and suspect_of != into:  # plan 23 P01 §2: counted on another root until now
+                self._count_if_open(suspect_of, -1, ticket_id, actor_id, ActorRole.BQL, now, why="Gộp vào ca khác")
+            counted = suspect_of != into  # already counted on `into` when it was marked
+            self._merge_into(work, into, actor_id, ActorRole.BQL, now, note=note.strip(), counted=counted)
+            self._repoint_suspects(work, now)  # plan 23 P01 §3: its own suspects now point at `into`
             self._release_waiting_for(work, now)  # P1-E: tickets waiting for this emergency may go on
 
         return self._mutate(ticket_id, actor_id, Action.BQL_MERGE, op)
@@ -310,8 +386,9 @@ class MergeMixin:
     # ------------------------------------------------------------------ cancel (P04 §6)
 
     def _release_duplicate_count(self, work: Case, previous_blocker: Blocker | None, now: datetime) -> None:
-        """A suspected duplicate was cancelled: its root no longer counts it (when the root is still open)."""
-        if previous_blocker is None or previous_blocker.code != ReasonCode.DUPLICATE:
+        """A suspect left its suspect state without being merged into its root (cancelled; for an emergency also
+        downgraded or closed by BQL, plan 23 P01 §2): the root no longer counts it (when the root is still open)."""
+        if previous_blocker is None or previous_blocker.code not in _SUSPECT_CODES:
             return
         if previous_blocker.related_ticket_id:
             self._count_if_open(
@@ -321,7 +398,7 @@ class MergeMixin:
                 SYSTEM_ID,
                 ActorRole.SYSTEM,
                 now,
-                why="Ticket nghi trùng bị hủy",
+                why="Ticket nghi trùng không còn chờ gộp",
             )
 
     def _unmerge_children_of(self, root: Case, now: datetime) -> None:

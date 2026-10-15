@@ -84,3 +84,10 @@ Backend chamanh chốt vật tư là **số thực tế đã dùng, một lần 
 - Hợp đồng và lý do: `planning/19_2026-10-12_ui-ux-polish/specs/01-CONTRACTS.md`. Mọi phân nhóm "một ticket một ô" nằm ở `src/lib/reception-done.ts` (Tiếp nhận), `src/lib/bql-view.ts` (BQL: `bqlBox`, `listGroup`, `deptLoad`), `src/lib/building.ts` (S1/S2), `src/lib/stock.ts` (Hết hàng/Sắp hết/An toàn/Chưa kiểm kê theo `min_qty`). UI không tự viết lại điều kiện.
 - BQL không còn ô Kho; "Danh sách ticket" không có chip "Tất cả" (người dùng chốt).
 - Vị trí trống (`"—"`) không hiển thị: dùng `hasLocation()`.
+
+## 8. Hồ sơ 23 + 24 (v1.16.0–v1.17.0, 2026-10-15)
+- BQL (`management-app.tsx`): thẻ khẩn cấp hiện "Nghi trùng với ca khẩn cấp …" (`MgmtTicket.suspectOf` từ `blocker.related_ticket_id`) và nút **Gộp vào …** ⇒ `emergencyMergeAction` ⇒ `POST /bql/tickets/{id}/emergency/merge`. Nhãn `WAITING_EMERGENCY` = "Chờ xử lý khẩn cấp cùng vị trí".
+- Kho (`warehouse-app.tsx`): khối "Phiếu vật tư cần nhập" từ `GET /mo/warehouse/requests` (`lib/material-requests.ts`), nút "Nhập đủ" điền sẵn form nhập kho. Không nút duyệt.
+- Kỹ thuật/Vệ sinh: "Báo thiếu vật tư" (`POST material-shortage`, lỗi hiện nguyên văn), nhãn "Chờ kho nhập vật tư"; chuông "Thông báo kho" cho CẢ HAI phòng (`lib/stock-alerts.ts`, "Đã chạy tiếp"/"Vẫn thiếu").
+- Hồ sơ: `planning/23_2026-10-14_emergency-dup-split/`, `planning/24_2026-10-14_material-requests/` (ảnh chạy thật `evidence/M2/`).
+

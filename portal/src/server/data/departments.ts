@@ -10,7 +10,7 @@ export async function deptData(user: SessionUser): Promise<DeptData> {
     listTickets(),
     readStock(),
     readCatalog(),
-    user.role === "technical" ? readStockAlerts() : Promise.resolve([]),
+    readStockAlerts(),
   ]);
   const now = new Date();
   const stock = stockMap(stockRows);

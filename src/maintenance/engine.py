@@ -115,6 +115,8 @@ from src.maintenance.models import (
     MaterialCatalogItem,
     MaterialComparisonResult,
     MaterialLine,
+    MaterialRequestLine,
+    MaterialRequestView,
     NonBlockingWarning,
     Notification,
     PlannedMaterial,
@@ -153,6 +155,10 @@ if TYPE_CHECKING:
     from src.maintenance.agent.agent import ReasoningAgent
 
 logger = logging.getLogger(__name__)
+
+
+class _ReadDropped(Exception):
+    """Plan 23 P04: the Agent's reading of an emergency came too late (BQL acted, or the content changed)."""
 
 # Photos: optional for the resident, required from the department before step 10 passes
 MAX_RESIDENT_PHOTOS = 5
@@ -1240,12 +1246,18 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                     now=now,
                 )
                 self._set_blocker(work, emergency, actor_id, role, now, note=note, risk_level=RiskLevel.EMERGENCY)
+                suspect_of = self._mark_emergency_duplicate(work, now)  # plan 23 P01
                 self._notify(
                     work,
                     "emergency.created",
                     BlockerOwner.BQL,
                     now,
-                    {"risk_level": RiskLevel.EMERGENCY, "escalated_by": actor_id, "from": R.SAFETY_REVIEW_REQUIRED},
+                    {
+                        "risk_level": RiskLevel.EMERGENCY,
+                        "escalated_by": actor_id,
+                        "from": R.SAFETY_REVIEW_REQUIRED,
+                        "suspected_duplicate_of": suspect_of,
+                    },
                 )
 
             return self._mutate(ticket_id, actor_id, Action.SAFETY_ESCALATE, op)
@@ -1312,6 +1324,46 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 note_required=True,
             )
             return self.transition(ticket_id, S.CLOSED, actor_id, note=note, expected_from=S.VERIFYING)
+
+    @staticmethod
+    def needs_emergency_read(case: Case) -> bool:
+        """Plan 23 P04: an emergency the rules stopped before the Agent ever read it."""
+        blocker, record = case.ticket.blocker, case.agent_decision
+        return (
+            case.ticket.status == S.VERIFYING
+            and blocker is not None
+            and blocker.code == R.EMERGENCY_PENDING_BQL
+            and (record is None or record.source == "SKIPPED_RULE_EMERGENCY")
+        )
+
+    def read_emergency(self, ticket_id: str) -> Case | None:
+        """Plan 23 P04: the Agent reads a rule emergency after it was stopped and BQL alerted, so what the report is
+        about (its jobs, hence the kind of work for P03) comes from the model, never from keywords. The model is asked
+        outside the lock; the record is kept only for the same content and while the ticket still waits for BQL.
+        Changes nothing else: no status, no level (the rules' EMERGENCY stands). None = nothing kept."""
+        if self.agent is None or not self.needs_emergency_read(self._case_view(ticket_id)):
+            return None
+        record = self.agent.decide(self._decision_input(self._case_view(ticket_id), self.clock()), read_emergency=True)
+        if record.source != "AGENT":
+            return None  # the model failed: the emergency stays unread (no hold), BQL already has it
+
+        def op(work: Case, now: datetime) -> None:
+            if not self.needs_emergency_read(work) or record.fingerprint != self._content_fingerprint(work):
+                raise _ReadDropped  # BQL acted or the resident added something meanwhile: nothing is written
+            with self._prepared({ticket_id: record}, retry_on_stale=False), self._activated(work, now):
+                pass  # `_activated` keeps the record with one audit row and leaves nothing active on this thread
+
+        try:
+            return self._mutate(ticket_id, AGENT_ID, Action.AGENT_DECISION, op, roles=frozenset({Role.AGENT}))
+        except _ReadDropped:
+            return None
+
+    def read_emergency_quietly(self, ticket_id: str) -> None:
+        """`read_emergency` for a background thread: a failure is logged and leaves the emergency unread."""
+        try:
+            self.read_emergency(ticket_id)
+        except Exception:  # noqa: BLE001 - background work: BQL already has the emergency, nothing to undo
+            logger.exception("read_emergency %s failed", ticket_id)
 
     # ------------------------------------------------------------------ "Việc của BQL" (plan 11 SPEC-P01 §2)
     #
@@ -1778,6 +1830,138 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
 
         return self._mutate(ticket_id, actor_id, Action.UPDATE_MATERIAL, op)
 
+    def report_material_shortage(
+        self, ticket_id: str, actor_id: str, *, lines: list[PlannedMaterial], note: str | None = None
+    ) -> Case:
+        """Plan 24 P01 §2: the department at work reports it needs more material than the warehouse holds.
+
+        Each `planned_qty` is what it needs ON TOP of what it already took. Only a real shortage stops the work
+        (I-3): when the warehouse can cover every line the whole call is refused and nothing changes.
+        IN_PROGRESS → ON_HOLD (WAITING_MATERIAL, owner warehouse); the warehouse restock resumes it.
+        """
+
+        def op(work: Case, now: datetime) -> None:
+            if work.ticket.status != S.IN_PROGRESS or work.draft is None:
+                raise InvalidTransitionError(
+                    "Chỉ báo thiếu vật tư khi đang xử lý (IN_PROGRESS)", {"from": work.ticket.status, "to": S.ON_HOLD}
+                )
+            if not lines:
+                raise GuardError("Chưa chọn vật tư thiếu")
+            unknown = sorted({line.item_code for line in lines if self.material(line.item_code) is None})
+            if unknown:
+                raise GuardError("Vật tư không có trong catalog", {"item_codes": unknown})
+            check_selection(
+                self.catalog, work.ticket.department_id, [(line.item_code, line.planned_qty) for line in lines]
+            )
+            draft = work.draft
+            suffix = _suffix(ticket_id)
+            old = [{"item_code": m.item_code, "planned_qty": m.planned_qty} for m in work.material_lines]
+            entered = {m.item_code: m for m in work.material_lines}
+            for planned in lines:
+                kept = entered.get(planned.item_code)
+                if kept is None:
+                    index = len(work.material_lines) + 1
+                    work.material_lines.append(self._material_line(draft.work_order_draft_id, suffix, index, planned))
+                else:  # the need is on top of what it already took out
+                    kept.planned_qty = max(kept.planned_qty, (kept.issued_qty or 0) + planned.planned_qty)
+            work.planned_materials = [
+                PlannedMaterial(item_code=m.item_code, planned_qty=m.planned_qty) for m in work.material_lines
+            ]
+            draft.material_line_ids = [m.material_line_id for m in work.material_lines]
+            draft.material_requirement_mode = MaterialRequirementMode.TRACKED
+            draft.material_gate_status = MaterialGateStatus.NEEDS_CLARIFICATION
+            self._audit(
+                work,
+                Action.UPDATE_MATERIAL,
+                "WorkOrderDraft",
+                draft.work_order_draft_id,
+                actor_id,
+                Role.DEPARTMENT,
+                "planned_materials",
+                old,
+                [{"item_code": m.item_code, "planned_qty": m.planned_qty} for m in work.material_lines],
+                "Phòng ban báo thiếu vật tư" if _blank(note) else note.strip(),
+                now=now,
+            )
+            self._refresh_line_stock(work)
+            reported = {line.item_code for line in lines}  # an older short line does not make this report true
+            if not any(
+                m.item_code in reported and m.material_stock_status == MaterialStockStatus.INSUFFICIENT
+                for m in work.material_lines
+            ):
+                raise GuardError("Kho đủ vật tư, không cần báo thiếu")
+            blocker = self._new_blocker(work, R.WAITING_MATERIAL, now, resume_step=6, note=note)
+            self._apply_transition(
+                work, S.ON_HOLD, actor_id, Role.DEPARTMENT, now, blocker=blocker, note=blocker.internal_note
+            )
+            self._notify_material_shortage(work, now, "DEPARTMENT")
+
+        return self._mutate(ticket_id, actor_id, Action.UPDATE_MATERIAL, op)
+
+    def material_requests(self, actor_id: str) -> list[MaterialRequestView]:
+        """Plan 24 P01 §3: the open material requests, oldest first. A request is not stored: it is a ticket that is
+        ON_HOLD for WAITING_MATERIAL with at least one line still short at the CURRENT stock (read only)."""
+        role = self.catalog.actor_role(actor_id)
+        if role not in (Role.WAREHOUSE, Role.BQL, Role.DEPARTMENT):
+            raise ActionDeniedError(
+                "Chỉ kho, BQL hoặc phòng ban được xem phiếu vật tư", {"code": "ACTION_DENIED", "actor_id": actor_id}
+            )
+        own: Department | None = None
+        if role == Role.DEPARTMENT:
+            own = self.catalog.actor(actor_id).department_id
+            if own is None:
+                return []
+        views = [view for case in self.repo.list() if (view := self._material_request(case)) is not None]
+        return sorted((v for v in views if own is None or v.department_id == own), key=lambda v: (v.since, v.ticket_id))
+
+    def _material_request(self, case: Case) -> MaterialRequestView | None:
+        ticket, blocker = case.ticket, case.ticket.blocker
+        if (
+            ticket.status != S.ON_HOLD
+            or blocker is None
+            or blocker.code != R.WAITING_MATERIAL
+            or blocker.resolved_at is not None
+        ):
+            return None
+        lines = []
+        for line in case.material_lines:
+            needed = _still_to_issue(line)
+            if self._line_stock(line.item_code, needed) != MaterialStockStatus.INSUFFICIENT:
+                continue
+            stock = self.repo.stock_of(line.item_code)
+            lines.append(
+                MaterialRequestLine(
+                    item_code=line.item_code,
+                    item_name=line.item_name,
+                    unit=line.unit,
+                    needed_qty=needed,
+                    stock_qty=stock,
+                    shortage_qty=max(0, needed - (stock or 0)),
+                )
+            )
+        if not lines:
+            return None  # the stock is already enough: the next receipt or job lets the ticket go
+        raised = next(  # the transition into the wait, not a later reminder that only touches the blocker
+            (
+                e
+                for e in reversed(case.events)
+                if e.to_status == S.ON_HOLD and e.reason_code == R.WAITING_MATERIAL and e.from_status != S.ON_HOLD
+            ),
+            None,
+        )
+        by_department = raised is not None and raised.actor_role == Role.DEPARTMENT
+        return MaterialRequestView(
+            request_id=f"PVT-{ticket.ticket_id}",
+            ticket_id=ticket.ticket_id,
+            department_id=ticket.department_id or ticket.proposed_department_id,
+            location=self.effective_location(case),
+            source="DEPARTMENT" if by_department else "AGENT",
+            reported_by=(raised.actor_id if raised is not None and raised.actor_id else AGENT_ID),
+            since=blocker.since,
+            note=blocker.internal_note,
+            lines=lines,
+        )
+
     def save_material_usage(self, ticket_id: str, actor_id: str, *, lines: list[MaterialUsageLine]) -> Case:
         """Plan 16 CONTRACTS §C2: the department's whole material selection in one transaction.
 
@@ -2059,77 +2243,105 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             raise GuardError("Số lượng nhập phải > 0")
         with self.lock:
             tracked = self.repo.stock_of(item_code) is not None  # null = not tracked ⇒ never an alert (plan 20 D02)
-            waiting = [
-                case.ticket.ticket_id
+            waiting_cases = [
+                case
                 for case in self.repo.list()
                 if case.ticket.blocker is not None
                 and case.ticket.blocker.code == R.WAITING_MATERIAL
                 and any(line.item_code == item_code for line in case.material_lines)
             ]
+            waiting = [case.ticket.ticket_id for case in waiting_cases]
+            owners = {
+                c.ticket.ticket_id: c.ticket.department_id or c.ticket.proposed_department_id for c in waiting_cases
+            }
             with self.repo.transaction() as tx:
                 after = tx.add_stock(item_code, qty)
-                self._raise_stock_alerts(tx, actor_id, item_code, qty, after, tracked=tracked, waiting=waiting)
+                self._raise_stock_alerts(
+                    tx, actor_id, item_code, qty, after, tracked=tracked, waiting=waiting, owners=owners
+                )
             return [self.resume(ticket_id) for ticket_id in waiting]
 
     def _raise_stock_alerts(
-        self, tx: Tx, actor_id: str, item_code: str, added: float, after: float, *, tracked: bool, waiting: list[str]
+        self,
+        tx: Tx,
+        actor_id: str,
+        item_code: str,
+        added: float,
+        after: float,
+        *,
+        tracked: bool,
+        waiting: list[str],
+        owners: Mapping[str, Department | None],
     ) -> None:
-        """Plan 20 SPEC-P01 §1: in the SAME transaction as `add_stock`, alert the Technical department when the stock
-        was empty (≤ 0) before this receipt and Technical uses the item. `before` comes from the value `add_stock`
-        returned, so two receipts can never both see "empty"."""
-        before = after - added
-        if not (self.stock_alerts_enabled and tracked and before <= 0):
-            return
-        if item_code not in allowed_material_codes(self.catalog, Department.DEPT_TECHNICAL):
-            return
+        """Plan 24 SPEC-P02 §1 (replaces plan 20 SPEC-P01 §1): in the SAME transaction as `add_stock`, at most one
+        alert per department. A department is told when a ticket of its own waits for this item, or (plan 20) when
+        the stock was empty (≤ 0) before this receipt and the department uses the item. `before` comes from the
+        value `add_stock` returned, so two receipts can never both see "empty"."""
         material = self.material(item_code)
-        if material is None:
+        if not self.stock_alerts_enabled or material is None:
             return
+        before = after - added
         now = self.clock()
-        tx.put_stock_alert(
-            StockAlert(
-                alert_id=f"SIM-SAL-{item_code.removeprefix('SIM-')}-{now:%Y%m%d%H%M%S%f}",
-                item_code=item_code,
-                item_name=material.item_name,
-                unit=material.unit,
-                department_id=Department.DEPT_TECHNICAL,
-                qty_added=added,
-                qty_before=before,
-                qty_after=after,
-                received_by=actor_id,
-                created_at=now,
-                ticket_ids=tuple(waiting),
+        for department, suffix in ALERT_DEPARTMENTS.items():
+            tickets = tuple(tid for tid in waiting if owners.get(tid) == department)
+            from_empty = tracked and before <= 0 and item_code in allowed_material_codes(self.catalog, department)
+            if not tickets and not from_empty:
+                continue
+            tx.put_stock_alert(
+                StockAlert(
+                    alert_id=f"SIM-SAL-{item_code.removeprefix('SIM-')}-{suffix}-{now:%Y%m%d%H%M%S%f}",
+                    item_code=item_code,
+                    item_name=material.item_name,
+                    unit=material.unit,
+                    department_id=department,
+                    qty_added=added,
+                    qty_before=before,
+                    qty_after=after,
+                    received_by=actor_id,
+                    created_at=now,
+                    ticket_ids=tickets,
+                )
             )
-        )
 
-    def _alert_department(self, actor_id: str, *, may_ack: bool) -> Department:
-        """The department whose alerts `actor_id` may see: Technical staff, BQL, and (read only) the warehouse."""
+    def _alert_departments(
+        self, actor_id: str, *, may_ack: bool, requested: Department | None = None
+    ) -> tuple[Department, ...]:
+        """Plan 24 SPEC-P02 §3: the departments whose alerts `actor_id` may see. A department sees only its own
+        (`requested` ignored); BQL sees any; the warehouse sees any but never acknowledges."""
         actor = self.catalog.actor(actor_id)
         role = actor.actor_role if actor else None
-        allowed = (
-            role == Role.BQL
-            or (role == Role.DEPARTMENT and actor is not None and actor.department_id == Department.DEPT_TECHNICAL)
-            or (role == Role.WAREHOUSE and not may_ack)
+        if role == Role.DEPARTMENT and actor.department_id is not None:
+            return (actor.department_id,)
+        if role == Role.BQL or (role == Role.WAREHOUSE and not may_ack):
+            return tuple(ALERT_DEPARTMENTS) if requested is None else (requested,)
+        raise ActionDeniedError(
+            "Chỉ phòng ban, BQL (và kho khi xem) được dùng thông báo nhập lại vật tư",
+            {"code": "ACTION_DENIED", "actor_id": actor_id},
         )
-        if not allowed:
-            raise ActionDeniedError(
-                "Chỉ Phòng Kỹ thuật, BQL (và kho khi xem) được dùng cảnh báo nhập lại vật tư",
-                {"code": "ACTION_DENIED", "actor_id": actor_id},
-            )
-        return Department.DEPT_TECHNICAL
 
-    def list_stock_alerts(self, actor_id: str, *, unread_only: bool = False) -> list[StockAlert]:
-        """Restock alerts for the Technical department, newest first (plan 20 SPEC-P01 §2)."""
-        department = self._alert_department(actor_id, may_ack=False)
+    def list_stock_alerts(
+        self, actor_id: str, *, unread_only: bool = False, department_id: Department | None = None
+    ) -> list[StockAlert]:
+        """Restock alerts the actor may see, newest first (plan 24 SPEC-P02 §3)."""
+        departments = self._alert_departments(actor_id, may_ack=False, requested=department_id)
         if not self.stock_alerts_enabled:
             return []
-        return self.repo.stock_alerts(department, unread_only=unread_only)
+        rows = [a for d in departments for a in self.repo.stock_alerts(d, unread_only=unread_only)]
+        return sorted(rows, key=lambda a: (a.created_at, a.alert_id), reverse=True)
 
     def acknowledge_stock_alert(self, actor_id: str, alert_id: str) -> StockAlert:
         """Mark one alert read. A second call returns the stored alert unchanged (idempotent)."""
-        self._alert_department(actor_id, may_ack=True)
+        departments = self._alert_departments(actor_id, may_ack=True)
         if not self.stock_alerts_enabled:
             raise NotFoundError("Cảnh báo nhập lại vật tư đang tắt (MO_STOCK_ALERTS=false)")
+        if len(departments) < len(ALERT_DEPARTMENTS):  # a department acknowledges only its own alert
+            every = (a for d in ALERT_DEPARTMENTS for a in self.repo.stock_alerts(d, unread_only=False))
+            found = next((a for a in every if a.alert_id == alert_id), None)
+            if found is not None and found.department_id not in departments:
+                raise ActionDeniedError(
+                    "Chỉ phòng ban nhận thông báo (hoặc BQL) được xác nhận đã đọc",
+                    {"code": "ACTION_DENIED", "actor_id": actor_id},
+                )
         return self.repo.acknowledge_stock_alert(alert_id, actor_id, self.clock())
 
     def stock_levels(self, actor_id: str) -> list[dict[str, Any]]:
@@ -3166,6 +3378,9 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 safety_clear_reason=note.strip(),
                 risk_level=RiskLevel.NONE,
             )
+            self._release_duplicate_count(work, blocker, now)  # plan 23 P01 §2: a downgraded suspect is not counted
+            if blocker.code == R.EMERGENCY_PENDING_BQL:
+                self._repoint_suspects(work, now)  # plan 23 P01 §3, before step 4 may count it as an ordinary root
             self._run_pipeline(work, 2, now)  # 2b skips itself (cleared); step 2 checks the location; then 3...
             if blocker.code == R.EMERGENCY_PENDING_BQL:  # P1-E (WP10): tickets waiting for this emergency may go on
                 self._release_waiting_for(work, now)
@@ -3213,12 +3428,18 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 safety_context=False,
             )
             self._link_emergency_both_ways(work, list(work.ticket.related_ticket_ids), now)  # P1-E (WP10)
+            suspect_of = self._mark_emergency_duplicate(work, now)  # plan 23 P01
             self._notify(
                 work,
                 "emergency.created",
                 BlockerOwner.BQL,
                 now,
-                {"risk_level": RiskLevel.EMERGENCY, "escalated_by": actor_id, "from": R.MISSING_INFO},
+                {
+                    "risk_level": RiskLevel.EMERGENCY,
+                    "escalated_by": actor_id,
+                    "from": R.MISSING_INFO,
+                    "suspected_duplicate_of": suspect_of,
+                },
             )
         elif key == (S.VERIFYING, S.NEED_INFO):  # T06: ask the resident for more detail
             if blocker is None or blocker.code != R.SAFETY_REVIEW_REQUIRED:
@@ -3261,6 +3482,8 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 closed_at=now,
                 closure_kind=ClosureKind.EMERGENCY_HANDLED,
             )
+            self._release_duplicate_count(work, blocker, now)  # plan 23 P01 §2
+            self._repoint_suspects(work, now)  # plan 23 P01 §3
             self._release_waiting_for(work, now)  # P1-E (WP10)
         elif key == (S.VERIFYING, S.MERGED):  # T08: only BPTN confirming a duplicate; BQL has bql_merge (P04)
             if role != Role.BPTN:
@@ -3283,6 +3506,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         for line in work.material_lines:  # handed out but not used goes back to the warehouse (WP7 review NEW-3)
             self._give_back_unused(line)
         if previous_blocker is not None and previous_blocker.code == R.EMERGENCY_PENDING_BQL:
+            self._repoint_suspects(work, now)  # plan 23 P01 §3
             self._release_waiting_for(work, now)
 
     # ------------------------------------------------------------------ resume and scheduled checks
@@ -3327,7 +3551,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             return True
         if code == R.WAITING_MATERIAL and work.ticket.department_id is not None:
             # approved request of a department that already works on the ticket: back to work, no pipeline rerun
-            self._apply_transition(work, S.IN_PROGRESS, SYSTEM_ID, Role.SYSTEM, now, note="Đã duyệt cấp vật tư")
+            self._apply_transition(work, S.IN_PROGRESS, SYSTEM_ID, Role.SYSTEM, now, note="Kho đã nhập đủ vật tư")
             return True
         resume_step = {R.MISSING_INFO: 2, R.WAITING_MATERIAL: 6}.get(code, blocker.resume_step)
         self._apply_transition(work, S.RECEIVED, SYSTEM_ID, Role.SYSTEM, now, note=f"Gỡ {code}", safety_context=False)
@@ -3869,6 +4093,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                 note=with_agent(self._with_missing(work, f"Bậc 1: {', '.join(present)}")),
             )
             self._link_emergency_both_ways(work, list(work.ticket.related_ticket_ids), now)  # P1-E (WP10)
+            suspect_of = self._mark_emergency_duplicate(work, now)  # plan 23 P01: flag + count, never merge
             self._notify(
                 work,
                 "emergency.created",
@@ -3878,6 +4103,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                     "risk_level": RiskLevel.EMERGENCY,
                     "signal_ids": present,
                     "related_ticket_ids": work.ticket.related_ticket_ids,
+                    "suspected_duplicate_of": suspect_of,
                 },
             )
             return True
@@ -4447,10 +4673,22 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
             flags.append(TicketFlag.STOCK_CHECK_ON_ACCEPT)  # not a stop: the department checks on acceptance
         work.ticket.flags = flags
         if status == MaterialStockStatus.INSUFFICIENT:
-            return self._stop(
+            stopped = self._stop(
                 work, S.ON_HOLD, R.WAITING_MATERIAL, now, resume_step=6, note="Tồn kho mô phỏng không đủ vật tư dự kiến"
             )
+            self._notify_material_shortage(work, now, "AGENT")  # plan 24 P01 §1: the warehouse sees it at once
+            return stopped
         return False
+
+    def _notify_material_shortage(self, work: Case, now: datetime, source: str) -> None:
+        """Plan 24 P01 §1/§2: tell the warehouse that a ticket now waits for material (`source` = who found it)."""
+        short = [
+            line.item_code
+            for line in work.material_lines
+            if line.material_stock_status == MaterialStockStatus.INSUFFICIENT
+        ]
+        payload = {"request_id": f"PVT-{work.ticket.ticket_id}", "item_codes": short, "source": source}
+        self._notify(work, "material.shortage", BlockerOwner.WAREHOUSE, now, payload)
 
     def _plan_materials_for_playbook(self, work: Case) -> str:
         """Keep the ticket's own plan, or take the playbook defaults. Returns where the plan came from."""
@@ -4846,6 +5084,10 @@ def _plain(value: Any) -> Any:
     if isinstance(value, datetime):
         return value.isoformat()
     return str(value) if hasattr(value, "value") else value
+
+
+# plan 24 SPEC-P02 §1: the departments a restock can notify, with the suffix their alert ids carry
+ALERT_DEPARTMENTS: dict[Department, str] = {Department.DEPT_CLEANING: "CLN", Department.DEPT_TECHNICAL: "TEC"}
 
 
 def _still_to_issue(line: MaterialLine) -> float:

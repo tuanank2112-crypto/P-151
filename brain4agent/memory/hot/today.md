@@ -684,3 +684,16 @@ Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lậ
 
 ## Phiên 2026-10-12 — hồ sơ 19 đợt 1
 - Người dùng duyệt Q1–Q7 + ngưỡng tồn riêng từng vật tư. Commit v1.12.3 (`b7ae85b`). Bộ SPEC `planning/19_…`. Làm WP1–WP3; ảnh chụp tự động phát hiện rò phiên ở proxy 8000 ⇒ vá + test đỏ/xanh. Sửa thêm từ ảnh: TEC-003 bị tính vào vệ sinh, nút xuống dòng, dấu "—" lẻ. pytest 3599, vitest 143, 9 ảnh. Chưa commit đợt 1.
+
+## Phiên 2026-10-14 — kéo develop, lỗi khẩn cấp trùng/hai việc, kế hoạch video
+- Bước 0 exit 0. `feature/nhuy-reasoning-agent` fast-forward lên `origin/develop` `fc434d6` (PR #27 Trí, chamanh `30425d1`); `develop` local cùng SHA. Chưa chạy lại pytest sau khi kéo (người dùng dừng).
+- Tái hiện (engine memory, đường luật, script ở scratchpad): (A) hai cư dân báo cùng một khẩn cấp ⇒ hai ticket `EMERGENCY_PENDING_BQL` rời, chỉ liên kết, không đếm trùng; (C) phản ánh hai việc có khẩn cấp, BQL hạ mức ⇒ kẹt `CATEGORY_UNCLEAR`, không tách (SPEC-P05 §3 điều kiện 4 cấm khi `safety_cleared_at`); (E/F) đèn thường + khẩn cấp đèn cùng chỗ ⇒ hai việc song song (`hold_near_open_emergency=false`). Đụng Q11 (plan 01) + SPEC-P05 ⇒ chờ người dùng chốt hướng, CHƯA sửa code.
+- Plan 22 video thuyết minh: `planning/22_2026-10-14_product-video/` PROPOSED (kịch bản SPEC-P01 + đề xuất SPEC-P02), chờ duyệt D-V01..05. Người dùng: chỉ kịch bản + đề xuất, chưa sản xuất.
+
+## Phiên 2026-10-15 — hồ sơ 23 (khẩn cấp) + 24 (vật tư)
+- Người dùng: khẩn cấp "bị trùng hoặc 2 phòng ban" ⇒ duyệt 3 đề xuất (nghi trùng + BQL gộp; tách sau khi gỡ; giữ ticket cùng chỗ cùng loại). Thẩm định cô lập R01 🔁: F1 đoán loại bằng từ khoá (E02 của agent) ⇒ người dùng bác: "cho agent toàn bộ quyền suy nghĩ" ⇒ Agent đọc cả ca khẩn cấp do luật bắt (`read_emergency`), chưa đọc ⇒ không giữ. F2–F12 đã sửa.
+- Bài học: đừng đưa phương án có từ khoá cho người dùng chọn — bất biến Q30 đã chốt; chỗ Agent bị bỏ qua (`SKIPPED_RULE_EMERGENCY`) phải gỡ chứ không vá bằng luật.
+- Vật tư (người dùng "ok đó"): phiếu `PVT-` dẫn xuất, phòng ban báo thiếu, alert kho mọi phòng, không duyệt. Worker Sonnet M1 (engine) + M2 (portal/app).
+- Đo: chạy thật agy/gemini 14/14; portal vitest 159; lint còn 1 lỗi có sẵn ở `management-overview-chart.tsx` (code Trí). Video (hồ sơ 22) để sau. Chưa commit.
+
+- Commit `01b7145` (hồ sơ 23+24, v1.17.0) + commit tài liệu hồ sơ 22 (video, PROPOSED). Push `feature/nhuy-reasoning-agent` + PR vào develop theo lời người dùng "commit và push để redeploy"; deploy Vercel chờ VERCEL_TOKEN của lenq2112-4310.

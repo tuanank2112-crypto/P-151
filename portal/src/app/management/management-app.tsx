@@ -7,6 +7,7 @@ import {
   bqlDecideWrongDeptAction,
   emergencyCloseAction,
   emergencyDowngradeAction,
+  emergencyMergeAction,
   finishBqlTicketAction,
   rejectInspectionAction,
   returnBqlTicketAction,
@@ -408,6 +409,11 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                         </span>
                       </div>
                       {reportText(t)}
+                      {t.blockerCode === "EMERGENCY_PENDING_BQL" && (t.suspectOf || (t.duplicateCount ?? 0) > 0) && (
+                        <p className="text-sm text-rose-700" data-testid="emergency-duplicate">
+                          {t.suspectOf ? `Nghi trùng với ca khẩn cấp ${t.suspectOf} cùng vị trí` : `${(t.duplicateCount ?? 0) + 1} người cùng báo`}
+                        </p>
+                      )}
                       {t.blockerCode === "EMERGENCY_PENDING_BQL" ? noteInput(t, "Lý do (bắt buộc)", true) : noteInput(t, "Ghi chú")}
                       <div className="grid grid-cols-2 gap-2 pt-2 border-t border-line-soft">
                         {t.blockerCode === "EMERGENCY_PENDING_BQL" ? (
@@ -428,6 +434,16 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                             >
                               Hạ mức (báo động giả)
                             </button>
+                            {t.suspectOf && (
+                              <button
+                                type="button"
+                                className="btn col-span-2 w-full justify-center"
+                                disabled={pending || !note(t.id).trim()}
+                                onClick={() => run(() => emergencyMergeAction(t.id, t.suspectOf as string, note(t.id)))}
+                              >
+                                Gộp vào {t.suspectOf}
+                              </button>
+                            )}
                           </>
                         ) : (
                           <>

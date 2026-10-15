@@ -3,6 +3,8 @@
 File này chứa danh sách các tính năng, mục tiêu sắp tới và tình trạng công việc hiện tại.
 
 ## Mục tiêu hiện tại (Active)
+- [ ] **Hồ sơ 23 + 24 (v1.16.0, v1.17.0, 2026-10-15):** code + test + chạy thật xong local; chờ thẩm định cuối, commit/push theo người dùng. `planning/23_2026-10-14_emergency-dup-split/`, `planning/24_2026-10-14_material-requests/`.
+- [ ] **Plan 22 — video thuyết minh sản phẩm (2026-10-14):** [`planning/22_2026-10-14_product-video/`](../planning/22_2026-10-14_product-video/plan.md) PROPOSED, chờ duyệt D-V01..05; hạn 19/10.
 - [ ] **Plan18 — UI portal mới dùng backend Python:** người dùng đã duyệt SPEC, đã triển khai runtime local; đã đo implementation local, chưa đóng gate môi trường. Auth/token, ID string, data/actions/ảnh/vật tư/Kho qua Python, không DB workflow riêng. Không gồm nâng cấp semantic P09. Local1.11.0; boot/Docker/điện thoại chưa đạt, chưa commit/deploy.
 - [ ] **Plan 17, local 1.10.1:** UI develop b6590ce đã nhập; giữ backend Châm Anh, proxy và migration Kho. Build/typecheck/unit đạt; pytest memory 3438 + proxy/material focus47. Đã commit/push2ced265. Còn rollout Docker/điện thoại; plan18 đã thay workflow portal riêng bằng API Python.
 - [ ] **Plan 16 rollout:** deploy server (G4 server ⬜), recreate `p151-backend-1` `:8000` bằng image mới (nối Supabase chung — người dùng quyết), thử trên điện thoại thật, cấp hub để boot G0.
@@ -35,6 +37,8 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [ ] Nếu deploy sau reverse proxy (Render): lấy IP client từ header tin cậy, nếu không khóa đăng nhập sẽ dồn về IP của proxy.
 
 ## 💡 Kho Ý Tưởng & Backlog (Idea Vault)
+- (2026-10-15, hồ sơ 23) Job đọc bù ca khẩn cấp chưa được Agent đọc (server tắt giữa lúc đọc nền); giữ ticket đã giao trong cửa sổ vài giây Agent đang đọc; nút gộp khẩn cấp trên app điện thoại BQL.
+- (2026-10-15, hồ sơ 24) Đo `--pg` cho alert nới ràng buộc; dọn `buildWarehouseRequest` cũ ở portal; job nhắc/leo thang cho ticket phòng ban chờ vật tư.
 
 - [ ] **(2026-10-12) Hồ sơ 19 đợt 2 (SPEC-P04):** việc ngoài phạm vi chỉ ở Tiếp nhận (đổi Q14 develop), dashboard hiệu suất phòng ban có bộ lọc thời gian + endpoint, Kho lịch sử nhập/xuất + xuất hao hụt, dashboard Agent, app điện thoại dùng `min_qty` thay `qty < 30`.
 

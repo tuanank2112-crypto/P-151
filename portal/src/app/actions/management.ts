@@ -64,6 +64,15 @@ export async function emergencyDowngradeAction(ticketId: string, note: string) {
   return act(() => post(path(tid, "emergency/downgrade"), { note: text }));
 }
 
+/** Plan 23: merge an emergency waiting for BQL into the open emergency it duplicates */
+export async function emergencyMergeAction(ticketId: string, into: string, note: string) {
+  const tid = id(ticketId);
+  const root = id(into);
+  const text = str(note);
+  if (!tid || !root || !text) return fail("INVALID_INPUT", "Vui lòng nhập lý do gộp.");
+  return act(() => post(path(tid, "emergency/merge"), { into: root, note: text }));
+}
+
 export async function cancelTicketAction(ticketId: string, reason: string) {
   const tid = id(ticketId);
   const text = str(reason);

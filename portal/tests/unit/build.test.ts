@@ -160,6 +160,19 @@ describe("detail, inbox, management, warehouse", () => {
     expect(buildMgmtTicket({ ...row, status: "MERGED", blocker: null }, undefined, now)).toMatchObject({ merged: true, cancelled: true });
   });
 
+  it("plan 23: an emergency suspect shows the open emergency it may duplicate; a DUPLICATE blocker does not", () => {
+    const emergency = {
+      ticket_id: "SIM-TKT-0002", status: "VERIFYING", status_label: "Đang xác minh", department_id: null, escalated: false, overdue: false,
+      created_at: "2026-10-09T01:05:00Z", risk_level: "EMERGENCY", priority: null, closure_kind: null, duplicate_count: 0,
+      blocker: { code: "EMERGENCY_PENDING_BQL", owner_role: "BQL", since: "2026-10-09T01:05:00Z", escalated: false, eta: null, public_message: "m", internal_note: null, related_ticket_id: "SIM-TKT-0001" },
+    } as BBqlRow;
+    expect(buildMgmtTicket(emergency, undefined, now)).toMatchObject({ suspectOf: "SIM-TKT-0001", duplicateCount: 0 });
+    const root = { ...emergency, ticket_id: "SIM-TKT-0001", duplicate_count: 2, blocker: { ...emergency.blocker!, related_ticket_id: null } };
+    expect(buildMgmtTicket(root, undefined, now)).toMatchObject({ suspectOf: null, duplicateCount: 2 });
+    const ordinary = { ...emergency, risk_level: "NONE", blocker: { ...emergency.blocker!, code: "DUPLICATE", owner_role: "BPTN" } };
+    expect(buildMgmtTicket(ordinary, undefined, now).suspectOf).toBeNull();
+  });
+
   it("warehouse request lists every line, flags the short ones (Q15: all plans need approval)", () => {
     const c = aCase({ status: "ON_HOLD" });
     const stock = stockMap([{ item_code: "SIM-MAT-1", item_name: "Bóng LED", unit: "cái", qty: 0 }]);

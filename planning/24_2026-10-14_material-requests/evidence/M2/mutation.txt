@@ -1,0 +1,27 @@
+== BASE
+      Tests  16 passed (16)
+exit=0
+== MUT: alert ticket states swapped
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  |unit| tests/unit/stock-alerts.test.ts > stock alerts (plan 24 SPEC-P02/P03) > says 'Kho đã nhập <tên> +<số>' and tells each ticket resumed or still short
+      Tests  1 failed | 15 passed (16)
+exit=1
+== MUT: shortage qty 0 accepted
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  |unit| tests/unit/material-requests.test.ts > buildShortagePayload (CONTRACTS §3 body) > refuses quantity "0"
+ FAIL  |unit| tests/unit/material-requests.test.ts > buildShortagePayload (CONTRACTS §3 body) > refuses quantity ""
+      Tests  2 failed | 14 passed (16)
+exit=1
+== MUT: source label ignores AGENT
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  |unit| tests/unit/material-requests.test.ts > toMaterialRequest > Agent source reads 'Agent'; missing location, note, unit and untracked stock stay safe
+      Tests  1 failed | 15 passed (16)
+exit=1
+== MUT: waiting label dropped
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  |unit| tests/unit/material-requests.test.ts > deptStatusLabel > WAITING_MATERIAL says the warehouse is the one to act
+      Tests  1 failed | 15 passed (16)
+exit=1
+== RESTORED
+      Tests  16 passed (16)
+exit=0

@@ -36,14 +36,14 @@ class SplitMixin:
         """Step 3: split a mixed report in two tickets (P05 §3). False = no split, the pipeline goes on as before.
 
         All five conditions must hold: the switch is on, there are exactly two jobs (the Agent's, or, with neither an
-        Agent decision nor the old LLM path, the rules'), the ticket is not part of a split already, the safety layer
-        found nothing (and nobody cleared anything), and the location is complete."""
+        Agent decision nor the old LLM path, the rules'), the ticket is not part of a split already, the ticket has no
+        safety level (a person may have cleared one: plan 23 P02, the child inherits it), and the location is complete."""
         ticket = work.ticket
         if not self.catalog.agent_policy.auto_split_mixed_reports:  # 1
             return False
         if ticket.split_from is not None or ticket.split_children:  # 3
             return False
-        if ticket.risk_level != RiskLevel.NONE or ticket.safety_cleared_at is not None:  # 4
+        if ticket.risk_level != RiskLevel.NONE:  # 4 (plan 23 P02: a cleared ticket may split)
             return False
         if _FULL_LOCATION.fullmatch(self.effective_location(work) or "") is None:  # 5
             return False
@@ -95,6 +95,16 @@ class SplitMixin:
         if work.classification is not None:
             child.classification = work.classification.model_copy(deep=True)
         self._set_ticket(child, split_from=root_id, split_category=SPLIT_PAIR[1])
+        if work.ticket.follow_up_of is not None:  # plan 23 P02 §2: a split follow-up never waits for its own source
+            self._set_ticket(child, follow_up_of=work.ticket.follow_up_of)
+        # plan 23 P02 §2: what a person cleared stays cleared in the child
+        if work.ticket.safety_cleared_at is not None:
+            self._set_ticket(
+                child,
+                safety_cleared_by=work.ticket.safety_cleared_by,
+                safety_cleared_at=work.ticket.safety_cleared_at,
+                safety_clear_reason=work.ticket.safety_clear_reason,
+            )
         self._set_ticket(work, split_children=[*work.ticket.split_children, child_id], split_category=SPLIT_PAIR[0])
         why = f"Phản ánh có hai việc: giữ vệ sinh ở {root_id}, tách đèn sang {child_id}"
         self._agent(

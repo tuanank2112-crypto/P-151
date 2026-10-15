@@ -68,10 +68,18 @@ Route API (prefix `/api/v1`; router chỉ bọc method trên, không kiểm vai/
 | `POST /mo/tickets/{id}/safety` | `{decision: CONFIRM_SAFE \| REQUEST_INFO \| ESCALATE, note}` | `safety_confirm_safe` \| `safety_request_info` \| `safety_escalate` |
 | `POST /bql/tickets/{id}/emergency/close` | `{note}` | `emergency_close` |
 | `POST /bql/tickets/{id}/emergency/downgrade` | `{note}` | `emergency_downgrade` |
+| `POST /bql/tickets/{id}/emergency/merge` | `{into, note}` | `bql_merge` (hồ sơ 23) |
 Ghi chú nội bộ của blocker an toàn kèm phần dữ liệu tối thiểu còn thiếu (`Bậc 2: T2-04 · Thiếu: location_area`, `_with_missing`): Q08 xét an toàn TRƯỚC bước 2 nên cư dân chưa được hỏi; UI BPTN hiện cảnh báo + điền sẵn câu hỏi, `REQUEST_INFO` tự hỏi kèm phần vị trí còn thiếu, `CONFIRM_SAFE` ⇒ bước 2 hỏi tiếp.
 Bất biến: `resume()`/job KHÔNG BAO GIỜ gỡ blocker an toàn (`_cleared` False); Bậc 2 leo thang đúng một lần sau 4 giờ LỊCH (`escalated=True`, outbox `safety.review_escalated`); NEED_INFO an toàn leo thang sau 12 h (outbox `escalation`).
 Chặn khác: `reopen()` luôn `InvalidTransitionError`; `set_assignee()` luôn `ActionDeniedError` có audit; `rate()` một lần (`GuardError` lần hai).
 Cư dân chỉ thấy nhãn "Đang được kiểm tra" và lời trong `i18n/vi.yaml` (không `risk_*`, `reason_code`, `priority`).
+
+### Khẩn cấp gặp trùng, hai việc, ticket cùng chỗ (hồ sơ 23, v1.16.0, 2026-10-14)
+Hồ sơ [`planning/23_2026-10-14_emergency-dup-split/`](../planning/23_2026-10-14_emergency-dup-split/plan.md).
+- **Nghi trùng (P01):** ca vừa thành `EMERGENCY_PENDING_BQL` (2b, E01, T07) mà cùng vị trí đã có ca khẩn cấp mở tạo trước ⇒ `_mark_emergency_duplicate` ghi `blocker.related_ticket_id` = ca cũ nhất (không trỏ dây chuyền) và `duplicate_count +1` trên ca đó. Ca vẫn ở BQL, KHÔNG tự gộp. Trả số khi ca nghi trùng bị hạ mức (T05), đóng (T10), hủy, hoặc gộp vào ca khác; gộp vào đúng gốc ⇒ `counted=False`. Thiếu vị trí ⇒ không nghi trùng. Payload `emergency.created` có `suspected_duplicate_of`.
+- **Tách sau khi gỡ (P02):** `_try_split` đk 4 chỉ còn `risk_level == NONE`; ticket con chép `safety_cleared_*` của gốc nên 2b của con không đọc lại phần đã được người gỡ.
+- **Giữ cùng chỗ (P03):** cờ `hold_near_open_emergency` tắt vẫn giữ ticket (`ON_HOLD/WAITING_EMERGENCY`) khi ca khẩn cấp cùng vị trí được người ghim hoặc **Agent đọc** ra cùng loại việc (gồm cả ca đã gộp vào nó). Chưa ai đọc ⇒ không giữ, chỉ liên kết. KHÔNG đoán loại bằng từ khoá. Cờ bật ⇒ giữ mọi ticket cùng chỗ như cũ.
+- **Agent đọc ca khẩn cấp do luật bắt (P04):** `receive` vẫn tạo ca + báo BQL ngay không chờ mô hình; API chạy nền `read_emergency_quietly` ⇒ `ReasoningAgent.decide(..., read_emergency=True)` ⇒ lưu record AGENT (không đổi status/mức). Mô hình lỗi ⇒ ca chưa đọc.
 
 ## 5. Priority — `priority.py`, `views.py`
 `propose_priority(category, location, text, lexicon.priority)` chạy ở bước 3 (`_bind_category`): KY_THUAT + khu vực lối đi ⇒ HIGH (PRI-H1); cản trở lối đi ⇒ HIGH (H2); ảnh hưởng sử dụng ⇒ MEDIUM (M2); còn lại VE_SINH ⇒ LOW (L1); thiếu vị trí/loại ⇒ MEDIUM (D0). Phủ định đi qua `safety.scope_before`.
