@@ -312,7 +312,7 @@ export function FinishModal(props: {
 }
 
 /**
- * "Báo thiếu vật tư" (plan 24 SPEC-P03): pick the materials the department still needs and how many MORE, plus an optional
+ * "Yêu cầu vật tư" (plan 24 SPEC-P03; label renamed from "Báo thiếu vật tư" in v1.17.6, flow unchanged): pick the materials the department still needs and how many MORE, plus an optional
  * note. The backend refuses (409) when the warehouse already has enough: its words are shown inside the form, input kept.
  */
 export function ShortageModal(props: {
@@ -339,7 +339,7 @@ export function ShortageModal(props: {
     props.onSubmit(payload.lines, payload.note, props.onClose, (m) => (setErr(m), true));
   }
   return (
-    <Modal title={`Báo thiếu vật tư ${t.code}`} sub="Chọn vật tư còn thiếu và số lượng cần THÊM. Kho sẽ thấy phiếu vật tư ngay." onClose={props.onClose} wide>
+    <Modal title={`Yêu cầu vật tư ${t.code}`} sub="Chọn vật tư cần dùng thêm và số lượng cần THÊM. Kho sẽ thấy phiếu vật tư ngay." onClose={props.onClose} wide>
       <form onSubmit={submit} className="space-y-4 text-sm" data-testid="shortage-form">
         <fieldset className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
           <legend className="px-1 text-xs font-bold text-slate-800">Vật tư cần thêm</legend>
@@ -379,7 +379,7 @@ export function ShortageModal(props: {
             Hủy
           </button>
           <button type="submit" className={PRIMARY} disabled={props.pending}>
-            Gửi báo thiếu
+            Gửi yêu cầu
           </button>
         </div>
       </form>
@@ -449,7 +449,7 @@ export function WorkCard(props: {
             Đánh dấu hoàn thành
           </button>
           <button type="button" className={`${BTN} w-full justify-center`} disabled={props.pending} onClick={() => setDialog("shortage")}>
-            Báo thiếu vật tư
+            Yêu cầu vật tư
           </button>
           <button type="button" className={`${BTN} w-full justify-center`} disabled={props.pending} onClick={() => setDialog("wrong")}>
             Báo sai phòng ban

@@ -91,6 +91,40 @@ describe("resident ticket", () => {
   it("a closed ticket that can no longer be rated is marked rated", () => {
     expect(buildResidentTicket({ ...view, allowed_actions: [] }, now).rated).toBe(true);
   });
+  // góp ý nhóm [c]: a merged report is "Đã gộp", not "Đã hủy", and follows the ticket it was merged into
+  const merged = (status: BResidentView["status"], label: string): BResidentView => ({
+    ...view,
+    status: "MERGED",
+    status_label: "Đã gộp",
+    department_name: null,
+    public_message: "Phản ánh đã được gộp vào phản ánh SIM-TKT-0026.",
+    timeline: [
+      { status: "RECEIVED", status_label: "Đã tiếp nhận", public_message: "a", created_at: "2026-10-09T01:00:00Z" },
+      { status: "MERGED", status_label: "Đã gộp", public_message: "gộp", created_at: "2026-10-09T01:10:00Z" },
+    ],
+    allowed_actions: [],
+    merged_into: { ticket_id: "SIM-TKT-0026", status, status_label: label, department_name: "Phòng kỹ thuật", public_message: "Đang sửa" },
+  });
+  it("a merged report follows its root ticket and is not cancelled", () => {
+    const t = buildResidentTicket(merged("IN_PROGRESS", "Đang xử lý"), now);
+    expect(t).toMatchObject({
+      merged: true,
+      cancelled: false,
+      mergedInto: "SIM-TKT-0026",
+      stage: 4,
+      deptName: "Phòng kỹ thuật",
+      statusLabel: "Đã gộp · Đang xử lý",
+      publicMessage: "Đang sửa",
+    });
+  });
+  it("a merged report reaches stage 6 with its root and can then be rated", () => {
+    const t = buildResidentTicket({ ...merged("CLOSED", "Hoàn thành"), allowed_actions: ["RATE"] }, now);
+    expect(t).toMatchObject({ merged: true, cancelled: false, stage: 6, canRate: true });
+  });
+  it("a merged report whose root was cancelled is cancelled too", () => {
+    const t = buildResidentTicket(merged("CANCELLED", "Đã hủy"), now);
+    expect(t).toMatchObject({ merged: true, cancelled: true, stage: 1 });
+  });
 });
 
 describe("department ticket", () => {
@@ -207,5 +241,13 @@ describe("material shortage (WP7 NEW-1b)", () => {
     });
     const t = buildDeptTicket(c, labels, new Map(), now);
     expect(t.materials.map((m) => m.shortage)).toEqual([0, 1]);
+  });
+});
+
+describe("merged ticket in the staff detail", () => {
+  it("is flagged merged so the modal says 'Đã gộp', not 'Đã hủy'", () => {
+    const d = buildDetail(aCase({ status: "MERGED", merged_into: "SIM-TKT-0026" }), { MERGED: "Đã gộp" }, {}, now);
+    expect(d).toMatchObject({ merged: true, cancelled: true, statusLabel: "Đã gộp" });
+    expect(buildDetail(aCase({ status: "CANCELLED" }), {}, {}, now).merged).toBe(false);
   });
 });

@@ -2,6 +2,15 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.17.6] - 2026-10-15: portal — "Báo thiếu vật tư" đổi chữ thành "Yêu cầu vật tư" (PATCH)
+- Góp ý nhóm [e], người dùng chốt CHỈ ĐỔI CHỮ: nút, tiêu đề hộp thoại, câu hướng dẫn và nút "Gửi yêu cầu" ở `app/cleaning/dept-parts.tsx` (Vệ sinh + Kỹ thuật). Luồng giữ nguyên: `POST material-shortage`, phiếu `PVT-`, kho không duyệt.
+- Đo: tsc 0; eslint file sửa 0; vitest 166 pass.
+
+## [v1.17.5] - 2026-10-15: portal — ticket gộp theo ticket gốc, link danh sách Tiếp nhận (PATCH)
+- Góp ý nhóm [c]: ticket MERGED hiện "Đã gộp" (không phải "Đã hủy") ở trang cư dân + modal nhân viên. Trang cư dân: ticket gộp ĐI THEO ticket gốc — bước tiến độ, phòng ban, thông báo, trạng thái `Đã gộp · <trạng thái gốc>` lấy từ `merged_into` (backend `views.py MergedInto` đã trả sẵn, không đổi API); chỉ coi là huỷ khi ticket gốc bị huỷ. Kèm sửa: ticket gộp vào ticket đã đóng nay đánh giá được (trước bị `!cancelled` khoá dù backend cho `RATE`). Bảng "Tất cả" của Tiếp nhận dùng nhãn backend.
+- Góp ý nhóm [d]: Tổng quan → "tiếp nhận" → "Xem danh sách ticket phòng này" mở nhóm "Chờ phân loại" (trước: không chọn nhóm ⇒ tự rơi vào nhóm có số đầu tiên, thường "Cần BQL quyết").
+- Đo: 4 test mới đỏ 4/4 trên code cũ, xanh sau sửa; vitest 166 pass; tsc 0; eslint src+tests còn 1 lỗi có sẵn (`management-overview-chart.tsx`, không thuộc đợt này). Chưa xem trên trình duyệt.
+
 ## [v1.17.4] - 2026-10-15: portal bỏ khung "Phân tích Agent" (PATCH)
 - Góp ý nhóm (Google Doc, bình luận [a]): bỏ hẳn khung phân tích Agent ở Tiếp nhận và Quản lý — cửa sổ chi tiết ticket (`components/ticket-detail-modal.tsx`, khối `AgentAnalysis`) và thẻ hộp thư Tiếp nhận (`reception-app.tsx`, khối `AgentBlock`). Người dùng: phân tích Agent sẽ hiện ở MỘT nơi riêng, chỗ nào báo sau.
 - GIỮ: dữ liệu `agent` trong DTO (`buildAgentInfo`) cho nơi hiển thị mới; thống kê "Agent đề xuất / Phòng cuối" và gợi ý phòng (`sugDept`) không đổi.

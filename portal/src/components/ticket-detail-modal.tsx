@@ -49,7 +49,11 @@ export function TicketDetailModal({
           <div>
             <div className="flex items-center gap-2">
               <span className="font-mono text-xl font-bold text-slate-800">#{ticket.code}</span>
-              {isCancelled ? (
+              {ticket.merged ? (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-200 text-slate-700">
+                  Đã gộp
+                </span>
+              ) : isCancelled ? (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-700">
                   Đã hủy
                 </span>

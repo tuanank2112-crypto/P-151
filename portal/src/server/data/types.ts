@@ -146,7 +146,14 @@ export type BResidentView = {
   eta: string | null;
   timeline: { status: string; status_label: string; public_message: string; created_at: string }[];
   allowed_actions: ("ADD_INFO" | "RATE")[];
-  merged_into: { ticket_id: string } | null;
+  /** The ticket this one was merged into: its live state, so a merged report follows it (views.py MergedInto) */
+  merged_into: {
+    ticket_id: string;
+    status: BStatus;
+    status_label: string;
+    department_name: string | null;
+    public_message: string;
+  } | null;
   rating?: number | null;
   rating_tags?: string[];
   rating_comment?: string;

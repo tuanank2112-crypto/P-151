@@ -34,6 +34,8 @@ Mở http://localhost:8000. Tài khoản (mật khẩu `123456`): `cudan`, `tiep
 | `npx tsx scripts/ui-check-WP3.mts --base=URL` | Kiểm Cư dân + Tiếp nhận trên trình duyệt (Playwright), ảnh 1440/390 |
 | `npx tsx scripts/ui-check-WP4.mts cleaning\|technical --base=URL` | Kiểm Vệ sinh / Kỹ thuật |
 | `npx tsx scripts/ui-check-WP5.mts --base=URL` | Kiểm Quản lý + Kho + modal |
+**Ticket gộp (v1.17.5):** `MERGED` hiện "Đã gộp", KHÔNG "Đã hủy". `buildResidentTicket` lấy bước/phòng ban/thông báo/trạng thái từ `merged_into` (ticket gốc) ⇒ `cancelled` chỉ khi ticket gốc huỷ; `merged` là cờ riêng (cả `TicketDetail`). Tổng quan → "tiếp nhận" → danh sách mở nhóm `waiting` (Chờ phân loại).
+
 **Phân tích Agent (v1.17.4):** KHÔNG còn hiện ở modal chi tiết ticket và thẻ Tiếp nhận (người dùng bỏ hẳn; sẽ có một nơi hiển thị riêng, chưa chốt). `TicketDetail.agent` / `ReceptionInboxItem.agent` (`buildAgentInfo`) vẫn được dựng — đừng xoá khi dọn code.
 
 **Thời gian chờ backend (hồ sơ 27, v1.17.3):** `server/backend.ts` — đọc (GET) `READ_TIMEOUT_MS` 15 s, ghi (POST, kể cả form ảnh) `WRITE_TIMEOUT_MS` 60 s, vì gửi phản ánh chờ Agent 16–20 s trước khi backend trả lời. Quá giờ ⇒ "Không kết nối được máy chủ" dù backend có thể đã ghi xong.
@@ -92,6 +94,6 @@ Backend chamanh chốt vật tư là **số thực tế đã dùng, một lần 
 ## 8. Hồ sơ 23 + 24 (v1.16.0–v1.17.0, 2026-10-15)
 - BQL (`management-app.tsx`): thẻ khẩn cấp hiện "Nghi trùng với ca khẩn cấp …" (`MgmtTicket.suspectOf` từ `blocker.related_ticket_id`) và nút **Gộp vào …** ⇒ `emergencyMergeAction` ⇒ `POST /bql/tickets/{id}/emergency/merge`. Nhãn `WAITING_EMERGENCY` = "Chờ xử lý khẩn cấp cùng vị trí".
 - Kho (`warehouse-app.tsx`): khối "Phiếu vật tư cần nhập" từ `GET /mo/warehouse/requests` (`lib/material-requests.ts`), nút "Nhập đủ" điền sẵn form nhập kho. Không nút duyệt.
-- Kỹ thuật/Vệ sinh: "Báo thiếu vật tư" (`POST material-shortage`, lỗi hiện nguyên văn), nhãn "Chờ kho nhập vật tư"; chuông "Thông báo kho" cho CẢ HAI phòng (`lib/stock-alerts.ts`, "Đã chạy tiếp"/"Vẫn thiếu").
+- Kỹ thuật/Vệ sinh: "Yêu cầu vật tư" (tên cũ "Báo thiếu vật tư", đổi chữ v1.17.6, luồng không đổi; `POST material-shortage`, lỗi hiện nguyên văn), nhãn "Chờ kho nhập vật tư"; chuông "Thông báo kho" cho CẢ HAI phòng (`lib/stock-alerts.ts`, "Đã chạy tiếp"/"Vẫn thiếu").
 - Hồ sơ: `planning/23_2026-10-14_emergency-dup-split/`, `planning/24_2026-10-14_material-requests/` (ảnh chạy thật `evidence/M2/`).
 - **Danh sách dài (hồ sơ 25, v1.17.1):** mọi danh sách ticket/vật tư nằm trong khung `.scroll-list` (cuộn bên trong, tối đa `min(70vh, 760px)`); trang không dài vô hạn. Danh sách mới thì bọc khung bằng lớp này.

@@ -202,7 +202,7 @@ function DoneTable({ rows, onOpen }: { rows: ReceptionAllItem[]; onOpen: (id: st
                       {where.label}
                     </span>
                   </td>
-                  <td className="text-[13px] text-body">{t.cancelled ? "Đã hủy" : t.statusLabel}</td>
+                  <td className="text-[13px] text-body">{t.statusLabel}</td>
                 </tr>
               );
             })}

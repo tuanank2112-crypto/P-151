@@ -83,6 +83,8 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 ## Đã hoàn thành (Done)
 
+- [x] **v1.17.6 (2026-10-15) — portal: "Báo thiếu vật tư" ⇒ "Yêu cầu vật tư" (chỉ đổi chữ, góp ý [e]).** Còn góp ý dòng chính: ticket BQL xử lý xong rời "Cần BQL quyết" ⇒ "Hoàn tất".
+- [x] **v1.17.5 (2026-10-15) — portal: ticket gộp hiện "Đã gộp" và theo ticket gốc ([c]); link danh sách Tiếp nhận mở "Chờ phân loại" ([d]).** Còn: [e] "Yêu cầu vật tư" chờ người dùng chốt, dòng chính (ticket xong rời "Cần BQL quyết").
 - [x] **v1.17.4 (2026-10-15) — portal bỏ khung "Phân tích Agent"** ở modal chi tiết + thẻ Tiếp nhận (góp ý nhóm [a]); dữ liệu `agent` giữ trong DTO, chờ người dùng báo nơi hiển thị riêng. Còn góp ý [c] gộp ≠ hủy, [d] link "Xem danh sách ticket phòng này" sai phòng, [e] "Yêu cầu vật tư", dòng chính ticket xong rời "Cần BQL quyết".
 - [x] **v1.13.0 (2026-10-12) — hồ sơ 19 đợt 1 UI/UX** + vá rò phiên proxy 8000. `planning/19_2026-10-12_ui-ux-polish/`. Đợt 2 (SPEC-P04) chờ chi tiết hoá + duyệt.
 - [x] **v1.10.0 (2026-10-10 18:18:44, Châm Anh) — guard vật tư backend + lưu nguyên tử** (plan 16): `POST material-usage` một giao dịch; guard phòng ban/số nguyên dương/Kỹ thuật ≥1 ở API cũ + mới + engine + hoàn thành; web/app một form một POST. Local + Docker ✅, thẩm định độc lập ✅ (lần 2). Còn: server, điện thoại thật, boot hub, commit.
