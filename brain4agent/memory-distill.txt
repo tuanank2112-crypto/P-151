@@ -13,6 +13,7 @@
 </agent_startup_protocol>
 
 <project_foundation>
+- **v1.13.1 (2026-10-16, hồ sơ 20):** một vị trí hai việc (rác + đèn) luôn tách ticket con Vệ sinh/Kỹ thuật; `split_verdict` không còn chặn bởi từ nhân quả/do dự/`?`, vẫn chặn hazard điện, một việc, hai vị trí, an toàn.
 - **v1.13.0 (2026-10-12, hồ sơ 19 đợt 1):** UI gọn theo danh sách người dùng (hàm thuần `portal/src/lib/{reception-done,bql-view,building,stock}.ts`, "một ticket một ô"); `min_qty` danh mục vật tư. **Proxy 8000 KHÔNG được giữ cookie** (đã vá rò phiên). Đợt 2 = SPEC-P04 PROPOSED.
 - **v1.12.2 (2026-10-11, PATCH):** khu vực `Thang máy` (đèn/bẩn/rác vào phòng ban; cơ khí ngoài phạm vi; quạt/nút bấm CHƯA có playbook), prompt `/9`, 5 tài sản đèn.
 - **v1.12.1 (2026-10-11, PATCH):** prompt `agent-prompt/7` dặn mã tòa con S2.05 thuộc tòa mẹ; portal "Khẩn cấp" chỉ khi EMERGENCY.

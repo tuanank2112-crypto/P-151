@@ -290,3 +290,9 @@ KHÔNG thêm trường/giá trị enum vào doc ticket JSONB (bản Render cũ �
 - **Route sai phòng ban:** `POST /mo/tickets/{id}/wrong-department` (T16), `POST /bql/tickets/{id}/wrong-department {KEEP|TO_BPTN}`.
 - **Response mới:** `TicketSummary`/`BqlTicketRow` có `staff_*`, `rating*`, `agent_source`, `agent_department`, `agent_scope`; `CatalogView.custom_materials_enabled`, `portal_extras_enabled`.
 - Test: `tests/test_maintenance/test_portal_backend_ext.py`, `test_portal_backend_ext2.py`.
+
+## 15. Tách phản ánh hai việc cùng một vị trí (plan 20, v1.13.1, 2026-10-16)
+- `rules.split_verdict(description, buildings)` trả `SPLIT_PAIR` khi cả vệ sinh và đèn cùng khớp tại MỘT vị trí. Lý do chặn còn lại (`reason`): `electrical-hazard` · `not-both` · `two-places`. Đã BỎ `marker:<cụm>` (nên/vì/do/hình như/hoặc…) và `question` (`?`) của SPEC-P05 R-S3/R-S4.
+- Điều kiện engine (`coordination/split.py` `_try_split`) giữ nguyên: cờ `auto_split_mixed_reports`, chưa tách, `risk_level == NONE` và chưa `safety_cleared_at`, vị trí đủ "Tòa / Tầng / Khu vực". Ca có tín hiệu an toàn vẫn dừng `SAFETY_REVIEW_REQUIRED`.
+- Kết quả: ticket gốc giữ Vệ sinh (`DEPT_CLEANING`), ticket con là Kỹ thuật (`DEPT_TECHNICAL`). Tách nhầm thì BPTN/BQL dùng `undo_split`.
+- Hai vị trí khác nhau vẫn về `CATEGORY_UNCLEAR` cho BPTN chọn. Test: `test_p1_split.py::test_s02b_*`, `test_rule_evidence.py` (re_02, re_03, re_07, re_08).

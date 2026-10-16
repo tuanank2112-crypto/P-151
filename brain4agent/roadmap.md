@@ -77,6 +77,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 ## Đã hoàn thành (Done)
 
+- [x] **v1.13.1 (2026-10-16) — hồ sơ 20: một vị trí hai việc luôn tách** Vệ sinh + Kỹ thuật (bỏ R-S3/R-S4). `planning/20_2026-10-16_split-same-place/`. Còn: `--pg`, thử bằng ticket thật. Ý tưởng chưa làm: tách khi hai vị trí (cần vị trí riêng từng ticket con).
 - [x] **v1.13.0 (2026-10-12) — hồ sơ 19 đợt 1 UI/UX** + vá rò phiên proxy 8000. `planning/19_2026-10-12_ui-ux-polish/`. Đợt 2 (SPEC-P04) chờ chi tiết hoá + duyệt.
 - [x] **v1.10.0 (2026-10-10 18:18:44, Châm Anh) — guard vật tư backend + lưu nguyên tử** (plan 16): `POST material-usage` một giao dịch; guard phòng ban/số nguyên dương/Kỹ thuật ≥1 ở API cũ + mới + engine + hoàn thành; web/app một form một POST. Local + Docker ✅, thẩm định độc lập ✅ (lần 2). Còn: server, điện thoại thật, boot hub, commit.
 - [x] **v1.9.9 (2026-10-10, Châm Anh) — vật tư: bỏ đối chiếu định mức / đề xuất Agent** (plan 15): engine chỉ chặn đã dùng ≠ đã xuất; `material-plan` không bắt note; app/web bỏ ô lý do, một lần bấm lưu. Còn: harness UI Playwright (q41/q42 còn luật cũ), Docker `:8000`, commit.

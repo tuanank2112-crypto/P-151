@@ -684,3 +684,7 @@ Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lậ
 
 ## Phiên 2026-10-12 — hồ sơ 19 đợt 1
 - Người dùng duyệt Q1–Q7 + ngưỡng tồn riêng từng vật tư. Commit v1.12.3 (`b7ae85b`). Bộ SPEC `planning/19_…`. Làm WP1–WP3; ảnh chụp tự động phát hiện rò phiên ở proxy 8000 ⇒ vá + test đỏ/xanh. Sửa thêm từ ảnh: TEC-003 bị tính vào vệ sinh, nút xuống dòng, dấu "—" lẻ. pytest 3599, vitest 143, 9 ảnh. Chưa commit đợt 1.
+
+## Phiên 2026-10-16 — hồ sơ 20 (một vị trí hai việc luôn tách)
+- Người dùng: "ticket có một vị trí nhưng có hai vấn đề thì phải chia để chuyển cho hai phòng ban". Đo: tách đã có; 6/10 câu một vị trí bị chặn bởi R-S3 (nhân quả/do dự) và R-S4 (`?`). Bỏ hai chốt trong `rules.split_verdict`; giữ hazard điện, một việc, hai vị trí, guard an toàn. PATCH v1.13.1.
+- Đo: pytest 3768 passed/0 fail, ruff sạch. Sửa 13 test khóa hành vi cũ + thêm S-02b. Chưa `--pg`, chưa thử ticket thật, chưa commit. Bước 0 (`init_brain.js --check`) chưa chạy trong phiên.

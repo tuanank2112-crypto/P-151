@@ -2,6 +2,11 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.13.1] - 2026-10-16: hồ sơ 20 — một vị trí hai việc luôn tách Vệ sinh + Kỹ thuật (PATCH)
+- **Hành vi:** `rules.split_verdict` bỏ chốt R-S3 (từ nhân quả/do dự) và R-S4 (dấu `?`) của SPEC-P05; ticket một vị trí có đèn hỏng + rác nay thành hai ticket con (Vệ sinh + Kỹ thuật) dù câu có "nên/vì/do/hình như/hoặc/?". Giữ nguyên chốt hazard điện, một việc, hai vị trí, và guard an toàn của engine. `undo_split` là đường lui.
+- **Quyết định bị thay thế:** SPEC-P05 §2.2 R-S3, R-S4. Chi tiết `planning/20_2026-10-16_split-same-place/plan.md`.
+- Đo: pytest 3768 passed/102 pg deselected/34 xfailed/0 fail, ruff sạch; probe 10 câu hai chế độ: 9 tách, 1 dừng an toàn (đúng).
+
 ## [v1.13.0] - 2026-10-12: hồ sơ 19 đợt 1 — làm gọn UI/UX + vá rò phiên ở proxy cổng 8000 (MINOR)
 - **Bảo mật (vá):** proxy `src/main.py` dùng MỘT `httpx.AsyncClient` cho mọi người và client lưu cookie phiên từ phản hồi đăng nhập ⇒ yêu cầu KHÔNG cookie qua cổng 8000 nhận phiên của người đăng nhập gần nhất (đo: `/management` ẩn danh trả trang BQL "Vũ Hoàng Long"). Sửa: kho cookie của client chặn mọi cookie (`DefaultCookiePolicy(allowed_domains=[])`). Test `tests/test_portal_proxy_cookies.py` (đỏ khi bỏ vá, kèm đối chứng). Lỗi có từ develop `256da96` ⇒ develop cũng bị.
 - Tiếp nhận: "Đã phân loại" tách Phòng kỹ thuật/Phòng vệ sinh, thêm nhóm "Chưa giao phòng" (ticket tạm hoãn không phòng từng bị tính là vệ sinh).
