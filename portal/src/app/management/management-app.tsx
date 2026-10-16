@@ -104,6 +104,13 @@ export function ManagementApp({ data }: { data: ManagementData }) {
     });
   const note = (id: string) => notes[id] ?? "";
   const setNote = (id: string, v: string) => setNotes((n) => ({ ...n, [id]: v }));
+  const clearNote = (id: string) =>
+    setNotes((n) => {
+      if (!(id in n)) return n;
+      const copy = { ...n };
+      delete copy[id];
+      return copy;
+    });
   const openDetail = (id: string) => run(() => ticketDetailAction(id), setSelectedTicket);
 
   const all = data.tickets;
@@ -391,10 +398,10 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                       {reportText(t)}
                       {noteInput(t, "Ghi chú xử lý / lý do chuyển lại", true)}
                       <div className="grid grid-cols-2 gap-2">
-                        <button type="button" className="btn primary w-full justify-center" disabled={pending || !note(t.id).trim()} onClick={() => run(() => finishBqlTicketAction(t.id, note(t.id)))}>
+                        <button type="button" className="btn primary w-full justify-center" disabled={pending || !note(t.id).trim()} onClick={() => run(() => finishBqlTicketAction(t.id, note(t.id)), () => clearNote(t.id))}>
                           Đã xử lý xong
                         </button>
-                        <button type="button" className="btn w-full justify-center" disabled={pending || !note(t.id).trim()} onClick={() => run(() => returnBqlTicketAction(t.id, note(t.id)))}>
+                        <button type="button" className="btn w-full justify-center" disabled={pending || !note(t.id).trim()} onClick={() => run(() => returnBqlTicketAction(t.id, note(t.id)), () => clearNote(t.id))}>
                           Chuyển lại Tiếp nhận
                         </button>
                       </div>
@@ -425,7 +432,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                               type="button"
                               className="btn primary w-full justify-center bg-rose-600 text-white"
                               disabled={pending || !note(t.id).trim()}
-                              onClick={() => run(() => emergencyCloseAction(t.id, note(t.id)))}
+                              onClick={() => run(() => emergencyCloseAction(t.id, note(t.id)), () => clearNote(t.id))}
                             >
                               Đóng khẩn cấp (đã xử lý)
                             </button>
@@ -433,7 +440,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                               type="button"
                               className="btn w-full justify-center"
                               disabled={pending || !note(t.id).trim()}
-                              onClick={() => run(() => emergencyDowngradeAction(t.id, note(t.id)))}
+                              onClick={() => run(() => emergencyDowngradeAction(t.id, note(t.id)), () => clearNote(t.id))}
                             >
                               Hạ mức (báo động giả)
                             </button>
@@ -442,7 +449,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                                 type="button"
                                 className="btn col-span-2 w-full justify-center"
                                 disabled={pending || !note(t.id).trim()}
-                                onClick={() => run(() => emergencyMergeAction(t.id, t.suspectOf as string, note(t.id)))}
+                                onClick={() => run(() => emergencyMergeAction(t.id, t.suspectOf as string, note(t.id)), () => clearNote(t.id))}
                               >
                                 Gộp vào {t.suspectOf}
                               </button>

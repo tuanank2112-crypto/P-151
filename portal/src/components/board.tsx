@@ -16,13 +16,13 @@ export function Board({ tickets, card }: { tickets: DeptTicket[]; card: (t: Dept
       {COLUMNS.map((c) => {
         const items = tickets.filter(c.match).sort(urgentFirst);
         return (
-          <section key={c.label} className="flex min-w-0 flex-col gap-3 rounded-[22px] bg-line p-3.5" style={{ flex: "1 1 300px" }}>
-            <div className="flex items-center justify-between px-2 py-1.5">
+          <section key={c.label} className="flex min-w-0 flex-col gap-3" style={{ flex: "1 1 300px" }}>
+            <div className="flex items-center justify-between px-1 py-1.5">
               <h2 className="m-0 text-[15px] font-bold">{c.label}</h2>
               <span className="badge">{items.length}</span>
             </div>
             {items.length === 0 && (
-              <div className="rounded-2xl p-6 text-center text-[13px] text-muted" style={{ border: "1px dashed #C5CEDB" }}>
+              <div className="card rounded-2xl p-6 text-center text-[13px] text-muted" style={{ border: "1px dashed #C5CEDB" }}>
                 Trống
               </div>
             )}
