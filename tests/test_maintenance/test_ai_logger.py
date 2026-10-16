@@ -221,11 +221,18 @@ def test_latency_log_appends_one_json_line_without_prompt(tmp_path, monkeypatch)
     path = tmp_path / "logs" / "latency.jsonl"
     monkeypatch.setenv("MO_LATENCY_LOG", str(path))
     logger = InMemoryAILogger()
-    logger.log(ticket_id="TK-1", prompt_sent={"system": "secret"}, model_name="m", latency_ms=12.345)
+    logger.log(
+        ticket_id="TK-1",
+        prompt_sent={"system": "secret"},
+        model_name="m",
+        latency_ms=12.345,
+        token_usage={"prompt_tokens": 100, "completion_tokens": 7, "total_tokens": 107},
+    )
     lines = path.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 1
     row = json.loads(lines[0])
     assert row["ticket_id"] == "TK-1" and row["latency_ms"] == 12.35 and row["status"] == "SUCCESS"
+    assert (row["prompt_tokens"], row["completion_tokens"], row["total_tokens"]) == (100, 7, 107)
     assert "secret" not in lines[0]
 
 

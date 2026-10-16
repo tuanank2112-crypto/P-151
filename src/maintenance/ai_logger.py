@@ -90,6 +90,7 @@ class InMemoryAILogger:
         path = _latency_log_path()
         if path is None:
             return
+        usage = entry.token_usage or {}
         line = {
             "ts": entry.timestamp.isoformat(),
             "log_id": entry.log_id,
@@ -97,7 +98,9 @@ class InMemoryAILogger:
             "model": entry.model_name,
             "status": entry.status.value,
             "latency_ms": entry.latency_ms,
-            "tokens": (entry.token_usage or {}).get("total_tokens"),
+            "prompt_tokens": usage.get("prompt_tokens"),
+            "completion_tokens": usage.get("completion_tokens"),
+            "total_tokens": usage.get("total_tokens"),
         }
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
