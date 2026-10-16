@@ -72,7 +72,10 @@ export type ResidentTicket = {
   canRate: boolean;
   /** CLOSED and no longer ratable: the resident already rated (the backend does not return the score) */
   rated: boolean;
+  /** Cancelled by the resident, or merged into a ticket that was itself cancelled */
   cancelled: boolean;
+  /** Merged into another report: stage, department and status follow that ticket */
+  merged: boolean;
   mergedInto: string | null;
   deptName: string | null;
   eta: string | null;
@@ -113,6 +116,8 @@ export type ReceptionInboxItem = {
   photos: PhotoRef[];
   duplicateOf: string | null;
   duplicate?: DuplicateRef;
+  /** MISSING_INFO from the safety flow: reception cannot fill it in, only the resident or the BQL */
+  safetyContext: boolean;
   /** Real Agent decision (SPEC-P03 §3.1); null when the ticket has none */
   agent: AgentInfo | null;
 };
@@ -167,6 +172,8 @@ export type TicketDetail = {
   dept: Dept | null;
   deptName: string | null;
   cancelled: boolean;
+  /** MERGED into another ticket: shown as "Đã gộp", never as "Đã hủy" */
+  merged: boolean;
   urgent: boolean;
   riskLevel: string;
   priority: string | null;

@@ -19,12 +19,14 @@
 | B4 | Agent hiện đúng vai: **đề xuất/đọc hiểu**, con người (BPTN/BQL) quyết; **CẤM** nói "Agent tự xử lý/tự đóng/tự gỡ khẩn cấp" | Đúng thiết kế CR-03: Agent không bao giờ tự đóng hay gỡ khẩn cấp |
 | B5 | Lời thoại, cảnh, thời lượng nằm trong file dữ liệu (`scenes.json`); sửa lời ⇒ chạy lại lệnh, không sửa tay trong phần mềm dựng | Dựng lại được (mục tiêu 3) |
 | B6 | Phần trích dẫn của Agent chỉ hiện như "căn cứ để người kiểm tra", không trình bày như cơ chế quyết định | Plan 06 Q35: trích dẫn chỉ để audit |
+| B7 | Mọi kết quả Agent trên hình (thẻ Agent, nghi trùng, tách đôi, phòng nhận) là kết quả LLM thật của lần quay, có bản ghi ở `evidence/V4/` | Người dùng chốt V04 "LLM thật" |
+| B8 | Cảnh vẽ (không phải màn hình thật) luôn có nhãn "Minh hoạ" | Người xem phân biệt được đâu là sản phẩm thật |
 
 ## 4. Vùng cấm (đã cân nhắc, KHÔNG làm)
 - **Không quay tay bằng OBS/Camtasia** — UI còn đổi tới 19/10, quay tay phải quay lại từ đầu.
 - **Không dùng avatar AI nói (HeyGen/Synthesia)** — tiếng Việt khẩu hình kém, tạo cảm giác quảng cáo, tốn phí; giọng + UI đủ.
 - **Không nhồi hết tính năng** (kho, định mức, đánh giá sao chi tiết…) — video thuyết minh chọn 3 điểm mạnh; chi tiết để video demo cũ.
-- **Không dùng nhạc có bản quyền thương mại** — chỉ nguồn miễn phí bản quyền ghi rõ ở SPEC-P03 §5.
+- **Không dùng nhạc có bản quyền thương mại** — chỉ nguồn miễn phí bản quyền ghi rõ ở [SPEC-P03](SPEC-P03-RENDER.md) §5.
 
 ## 5. Thứ tự đọc
-`SPEC-P01` (kịch bản) → `SPEC-P02` (đề xuất giọng/hình/animation) → `01-CONTRACTS` → `OPERATIONS` + `TESTING-ACCEPTANCE` (viết sau khi duyệt).
+`SPEC-P01` (kịch bản) → `SPEC-P02` (giọng/hình/animation, đã chốt) → `SPEC-P03` (dựng từng khung) → `01-CONTRACTS` → `OPERATIONS` → `TESTING-ACCEPTANCE`.

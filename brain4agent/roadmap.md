@@ -3,8 +3,9 @@
 File này chứa danh sách các tính năng, mục tiêu sắp tới và tình trạng công việc hiện tại.
 
 ## Mục tiêu hiện tại (Active)
+- [ ] **Hồ sơ 27 — portal chờ đủ lâu khi gửi phản ánh có Agent (v1.17.3, 2026-10-15):** [`planning/27_2026-10-15_portal-write-timeout/`](../planning/27_2026-10-15_portal-write-timeout/plan.md) xong local (GET 15 s / POST 60 s); chờ deploy p151-portal + thử trên production.
 - [ ] **Hồ sơ 23 + 24 + 25 (v1.16.0–v1.17.1, 2026-10-15):** xong local, thẩm định R01/R02, push + PR #28 vào develop; còn deploy Vercel (chờ token lenq2112-4310). `planning/23_2026-10-14_emergency-dup-split/`, `planning/24_2026-10-14_material-requests/`.
-- [ ] **Plan 22 — video thuyết minh sản phẩm (2026-10-14):** [`planning/22_2026-10-14_product-video/`](../planning/22_2026-10-14_product-video/plan.md) PROPOSED, chờ duyệt D-V01..05; hạn 19/10.
+- [ ] **Plan 22 — video thuyết minh sản phẩm (2026-10-14):** [`planning/22_2026-10-14_product-video/`](../planning/22_2026-10-14_product-video/plan.md) ĐANG THI CÔNG: người dùng chốt D-V01..05 ngày 2026-10-15 (HoaiMy, dựng từng khung 30 fps, LLM thật, cảnh khẩn cấp ba góc). V2 xong (giọng 162,7 s); diễn tập LLM thật 27/27 khớp (lần còn dùng app cũ ⇒ chạy lại qua portal mới, luật C7). Còn V3–V7; hạn 19/10.
 - [ ] **Plan18 — UI portal mới dùng backend Python:** người dùng đã duyệt SPEC, đã triển khai runtime local; đã đo implementation local, chưa đóng gate môi trường. Auth/token, ID string, data/actions/ảnh/vật tư/Kho qua Python, không DB workflow riêng. Không gồm nâng cấp semantic P09. Local1.11.0; boot/Docker/điện thoại chưa đạt, chưa commit/deploy.
 - [ ] **Plan 17, local 1.10.1:** UI develop b6590ce đã nhập; giữ backend Châm Anh, proxy và migration Kho. Build/typecheck/unit đạt; pytest memory 3438 + proxy/material focus47. Đã commit/push2ced265. Còn rollout Docker/điện thoại; plan18 đã thay workflow portal riêng bằng API Python.
 - [ ] **Plan 16 rollout:** deploy server (G4 server ⬜), recreate `p151-backend-1` `:8000` bằng image mới (nối Supabase chung — người dùng quyết), thử trên điện thoại thật, cấp hub để boot G0.
@@ -37,6 +38,7 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 - [ ] Nếu deploy sau reverse proxy (Render): lấy IP client từ header tin cậy, nếu không khóa đăng nhập sẽ dồn về IP của proxy.
 
 ## 💡 Kho Ý Tưởng & Backlog (Idea Vault)
+- (2026-10-15) Prompt Agent: ca khẩn cấp vẫn liệt kê việc đèn/vệ sinh mà phản ánh nêu (gpt-6-luna trả jobs [] cho "hộp đèn tóe lửa" ⇒ P03 không giữ ticket đèn cùng chỗ; gemini trả KY_THUAT). Luồng nền `read_emergency` trên Vercel fluid có thể bị đóng băng sau khi trả response — cần đo.
 - (2026-10-15, hồ sơ 23) Job đọc bù ca khẩn cấp chưa được Agent đọc (server tắt giữa lúc đọc nền); giữ ticket đã giao trong cửa sổ vài giây Agent đang đọc; nút gộp khẩn cấp trên app điện thoại BQL.
 - (2026-10-15, hồ sơ 24) Đo `--pg` cho alert nới ràng buộc; dọn `buildWarehouseRequest` cũ ở portal; job nhắc/leo thang cho ticket phòng ban chờ vật tư.
 
@@ -81,6 +83,11 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 ## Đã hoàn thành (Done)
 
+- [x] **v1.17.8 (2026-10-16) — prompt `agent-prompt/10`: tầng hiểu theo nghĩa ("t3", "lầu 3").** Còn: đo lại trên production luna sau deploy (gửi "t3 nhiều rác quá").
+- [x] **v1.17.7 (2026-10-16) — portal: Tiếp nhận bổ sung vị trí/thông tin cho ticket MISSING_INFO rồi chuyển phòng** (ca an toàn không có form).
+- [x] **v1.17.6 (2026-10-15) — portal: "Báo thiếu vật tư" ⇒ "Yêu cầu vật tư" (chỉ đổi chữ, góp ý [e]).** Còn góp ý dòng chính: ticket BQL xử lý xong rời "Cần BQL quyết" ⇒ "Hoàn tất".
+- [x] **v1.17.5 (2026-10-15) — portal: ticket gộp hiện "Đã gộp" và theo ticket gốc ([c]); link danh sách Tiếp nhận mở "Chờ phân loại" ([d]).** Còn: [e] "Yêu cầu vật tư" chờ người dùng chốt, dòng chính (ticket xong rời "Cần BQL quyết").
+- [x] **v1.17.4 (2026-10-15) — portal bỏ khung "Phân tích Agent"** ở modal chi tiết + thẻ Tiếp nhận (góp ý nhóm [a]); dữ liệu `agent` giữ trong DTO, chờ người dùng báo nơi hiển thị riêng. Còn góp ý [c] gộp ≠ hủy, [d] link "Xem danh sách ticket phòng này" sai phòng, [e] "Yêu cầu vật tư", dòng chính ticket xong rời "Cần BQL quyết".
 - [x] **v1.13.0 (2026-10-12) — hồ sơ 19 đợt 1 UI/UX** + vá rò phiên proxy 8000. `planning/19_2026-10-12_ui-ux-polish/`. Đợt 2 (SPEC-P04) chờ chi tiết hoá + duyệt.
 - [x] **v1.10.0 (2026-10-10 18:18:44, Châm Anh) — guard vật tư backend + lưu nguyên tử** (plan 16): `POST material-usage` một giao dịch; guard phòng ban/số nguyên dương/Kỹ thuật ≥1 ở API cũ + mới + engine + hoàn thành; web/app một form một POST. Local + Docker ✅, thẩm định độc lập ✅ (lần 2). Còn: server, điện thoại thật, boot hub, commit.
 - [x] **v1.9.9 (2026-10-10, Châm Anh) — vật tư: bỏ đối chiếu định mức / đề xuất Agent** (plan 15): engine chỉ chặn đã dùng ≠ đã xuất; `material-plan` không bắt note; app/web bỏ ô lý do, một lần bấm lưu. Còn: harness UI Playwright (q41/q42 còn luật cũ), Docker `:8000`, commit.

@@ -2,6 +2,33 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.17.8] - 2026-10-16: prompt Agent `agent-prompt/10` — tầng hiểu theo nghĩa (PATCH)
+- Production gpt-6-luna không đọc "t3 nhiều rác quá" là tầng 3 (SIM-TKT-0087: bước VI_TRI chỉ nhìn tòa hồ sơ, hỏi lại tầng). Người dùng duyệt hướng prompt (không regex, không đổi `reasoning_effort`). Bước VI_TRI thêm câu: cư dân viết tắt/nói tự nhiên ("t3", "lầu 3", "tầng ba" đều là tầng 3) ⇒ hiểu tầng theo NGHĨA trong toàn bộ lời cư dân, kể cả khi tòa lấy từ hồ sơ. Sửa REF `planning/06_.../specs/REF-agent-contract.py` trước, code chép nguyên văn; `PROMPT_VERSION` /10.
+- Đo (agy gemini-3.8-flash-low): t3 / lầu 3 / T5 / tầng ba ⇒ 4/4 tầng đúng; G-LIVE `--limit 3` 18/18 (under 0, over 0); pytest 3961 pass; ruff 2 file sửa sạch (toàn repo còn 5 lỗi check + 5 file format có sẵn, đo cả trước khi sửa). CHƯA đo gpt-6-luna (key local hết tiền) — kiểm trên production sau deploy.
+
+## [v1.17.7] - 2026-10-16: portal — Tiếp nhận bổ sung thông tin thiếu rồi chuyển phòng (PATCH)
+- Người dùng: thẻ "Thiếu thông tin" ở Tiếp nhận không có nút chuyển phòng ban. Backend đã có `bptn_resolve` MISSING_INFO (vị trí/thông tin + lý do, được kèm `category`); portal chỉ ghi "Đang chờ cư dân bổ sung". Nay thẻ có form: Vị trí · Thông tin thêm · Lý do (bắt buộc) + "Phòng vệ sinh" / "Phòng kỹ thuật" (khoá loại việc) / "Lưu, để Agent phân loại" (`fillMissingInfoAction`).
+- BẤT BIẾN giữ: không chuyển khi còn thiếu vị trí (backend trả "Vẫn thiếu: …", đặc tả plan 02 "cấm tự route"); ca an toàn (`safety_context`, T06) KHÔNG có form — chỉ cư dân/BQL gỡ.
+- Đo: vitest 170 pass (+4: action 3, inbox `safetyContext` 1); tsc 0; eslint còn 1 lỗi có sẵn (`management-overview-chart.tsx`). Engine memory: "t3 nhiều rác quá" ⇒ NEED_INFO; chỉ chọn phòng ⇒ GuardError; vị trí "Tòa S1 · Tầng 3 · Hành lang" + Vệ sinh ⇒ ROUTED `DEPT_CLEANING`. Chưa xem trình duyệt.
+
+## [v1.17.6] - 2026-10-15: portal — "Báo thiếu vật tư" đổi chữ thành "Yêu cầu vật tư" (PATCH)
+- Góp ý nhóm [e], người dùng chốt CHỈ ĐỔI CHỮ: nút, tiêu đề hộp thoại, câu hướng dẫn và nút "Gửi yêu cầu" ở `app/cleaning/dept-parts.tsx` (Vệ sinh + Kỹ thuật). Luồng giữ nguyên: `POST material-shortage`, phiếu `PVT-`, kho không duyệt.
+- Đo: tsc 0; eslint file sửa 0; vitest 166 pass.
+
+## [v1.17.5] - 2026-10-15: portal — ticket gộp theo ticket gốc, link danh sách Tiếp nhận (PATCH)
+- Góp ý nhóm [c]: ticket MERGED hiện "Đã gộp" (không phải "Đã hủy") ở trang cư dân + modal nhân viên. Trang cư dân: ticket gộp ĐI THEO ticket gốc — bước tiến độ, phòng ban, thông báo, trạng thái `Đã gộp · <trạng thái gốc>` lấy từ `merged_into` (backend `views.py MergedInto` đã trả sẵn, không đổi API); chỉ coi là huỷ khi ticket gốc bị huỷ. Kèm sửa: ticket gộp vào ticket đã đóng nay đánh giá được (trước bị `!cancelled` khoá dù backend cho `RATE`). Bảng "Tất cả" của Tiếp nhận dùng nhãn backend.
+- Góp ý nhóm [d]: Tổng quan → "tiếp nhận" → "Xem danh sách ticket phòng này" mở nhóm "Chờ phân loại" (trước: không chọn nhóm ⇒ tự rơi vào nhóm có số đầu tiên, thường "Cần BQL quyết").
+- Đo: 4 test mới đỏ 4/4 trên code cũ, xanh sau sửa; vitest 166 pass; tsc 0; eslint src+tests còn 1 lỗi có sẵn (`management-overview-chart.tsx`, không thuộc đợt này). Chưa xem trên trình duyệt.
+
+## [v1.17.4] - 2026-10-15: portal bỏ khung "Phân tích Agent" (PATCH)
+- Góp ý nhóm (Google Doc, bình luận [a]): bỏ hẳn khung phân tích Agent ở Tiếp nhận và Quản lý — cửa sổ chi tiết ticket (`components/ticket-detail-modal.tsx`, khối `AgentAnalysis`) và thẻ hộp thư Tiếp nhận (`reception-app.tsx`, khối `AgentBlock`). Người dùng: phân tích Agent sẽ hiện ở MỘT nơi riêng, chỗ nào báo sau.
+- GIỮ: dữ liệu `agent` trong DTO (`buildAgentInfo`) cho nơi hiển thị mới; thống kê "Agent đề xuất / Phòng cuối" và gợi ý phòng (`sugDept`) không đổi.
+- Đo: tsc 0; eslint 2 file sửa 0 (toàn portal còn 4 lỗi có sẵn ở `scripts/product-video/` + `management-overview-chart.tsx`, không thuộc đợt này); vitest 162 pass.
+
+## [v1.17.3] - 2026-10-15: hồ sơ 27 — portal chờ đủ lâu khi gửi phản ánh có Agent (PATCH)
+- Portal chờ backend 15 s cho mọi lời gọi, trong khi gửi phản ánh chạy Agent 16–20 s ⇒ ticket đã tạo nhưng cư dân thấy "Không kết nối được máy chủ" (phát hiện khi diễn tập video hồ sơ 22). Nay đọc (GET) giữ 15 s, ghi (POST) 60 s (`portal/src/server/backend.ts`).
+- Đo: test mới đỏ 3/3 trước khi sửa; vitest 162 pass/6 skip, tsc 0, eslint 0; chạy thật local (LLM agy gemini-3.8-flash-low, `next start`): portal hiện "Đã gửi" sau 22 s, diễn tập R1–R8 27/27 khớp. Production chưa deploy. `planning/27_2026-10-15_portal-write-timeout/`.
+
 ## [v1.17.2] - 2026-10-15: hồ sơ 26 — token đăng nhập có chữ ký (PATCH)
 - Production không vào được BQL: phiên trong RAM, mỗi instance serverless Vercel không chung bộ nhớ ⇒ 200/401 xen kẽ ngay sau đăng nhập. Token nay ký HMAC (`AUTH_TOKEN_SECRET`), instance nào cũng kiểm được. Đăng xuất thu hồi theo instance.
 - Đo: 5 test mới (API luân phiên hai instance 6/6 = 200), phép phá khoá riêng ⇒ 2 đỏ; pytest 3689.

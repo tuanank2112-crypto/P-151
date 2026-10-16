@@ -51,7 +51,9 @@ const isAfter = (e: BEvidence) => e.evidence_type === "SIMULATED_IMAGE";
 export function buildResidentTicket(v: BResidentView, now: Date): ResidentTicket {
   const { description, location } = parseDescription(v.description);
   const report = splitReport(v.description);
-  const info = mapStatus(v.status);
+  const root = v.status === "MERGED" ? v.merged_into : null;
+  // a merged report follows the ticket it was merged into; it is cancelled only if that ticket is
+  const info = mapStatus(root ? root.status : v.status);
   const canRate = v.allowed_actions.includes("RATE");
   const stage = info.cancelled ? lastKnownStage(v.timeline.map((t) => t.status)) : info.stage;
   return {
@@ -63,14 +65,15 @@ export function buildResidentTicket(v: BResidentView, now: Date): ResidentTicket
     location,
     sentAt: fmtDateTime(new Date(v.created_at)),
     stage,
-    statusLabel: v.status_label,
-    publicMessage: v.public_message,
+    statusLabel: root ? `${v.status_label} · ${root.status_label}` : v.status_label,
+    publicMessage: root ? root.public_message : v.public_message,
     needInfo: v.allowed_actions.includes("ADD_INFO"),
     canRate,
     rated: v.status === "CLOSED" && !canRate,
     cancelled: info.cancelled,
+    merged: v.status === "MERGED",
     mergedInto: v.merged_into?.ticket_id ?? null,
-    deptName: v.department_name,
+    deptName: root ? root.department_name : v.department_name,
     eta: v.eta ? fmtDateTime(new Date(v.eta)) : null,
     rating: v.rating ?? null,
     ratingTags: v.rating_tags ?? [],
@@ -286,6 +289,7 @@ export function buildDetail(
     dept: deptKey(t.department_id, bql),
     deptName: t.department_id ? (departments[t.department_id] ?? null) : null,
     cancelled: info.cancelled,
+    merged: t.status === "MERGED",
     urgent: isUrgent(t),
     riskLevel: t.risk_level,
     priority: t.priority,
@@ -346,6 +350,7 @@ export function buildInboxItem(c: BCase, byId: Map<string, BSummary>, now: Date)
     photos: photos(t.ticket_id, c.evidence.filter(isBefore)),
     duplicateOf: related,
     ...(duplicate ? { duplicate } : {}),
+    safetyContext: t.safety_context === true,
     agent: buildAgentInfo(c.agent_decision),
   };
 }

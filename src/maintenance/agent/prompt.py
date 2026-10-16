@@ -17,7 +17,7 @@ from src.maintenance.rules import AREA_PATTERNS
 
 from .inputs import DecisionInput
 
-PROMPT_VERSION = "agent-prompt/9"  # /2 signal shape; /3 compact; /4 negation ABSENT, help cry PRESENT; /5 TO_BPTN needs bptn_reason; /6 one asset per area (plan 14); /7 sub-building codes like S2.05 belong to S2; /8 lift cabin needs no floor; /9 cabin ceiling and floor-indicator lamps are lamps
+PROMPT_VERSION = "agent-prompt/10"  # /2 signal shape; /3 compact; /4 negation ABSENT, help cry PRESENT; /5 TO_BPTN needs bptn_reason; /6 one asset per area (plan 14); /7 sub-building codes like S2.05 belong to S2; /8 lift cabin needs no floor; /9 cabin ceiling and floor-indicator lamps are lamps; /10 floor read by meaning ("t3", "lầu 3")
 
 # CR-BPTN-03 §6.2 in plain Vietnamese, keyed by signal_id; S-00 is the agent-only catch-all (SPEC-P01 §3.3)
 SIGNAL_TEXT = {
@@ -61,7 +61,7 @@ CÁC BƯỚC SUY LUẬN (suy luận đủ 10 bước; chỉ GHI vào "reasoning"
    Ngoài phạm vi (OUT_OF_SCOPE): thang máy, nước/điện/đèn trong căn hộ, phí, an ninh, côn trùng, xin lắp mới, đèn đường ngoài cổng, hỏi đáp.
    HAI việc (2 jobs) chỉ khi hai việc ĐỘC LẬP ở CÙNG một vị trí ("hành lang nhiều rác, đèn cũng hỏng"). Nếu việc này là nguyên nhân hoặc hệ quả của việc kia ("đèn hỏng nên không thấy rác", "bóng đèn vỡ, mảnh vỡ vương vãi") thì là MỘT việc. Hai việc ở hai vị trí khác nhau ⇒ scope UNCLEAR, TO_BPTN.
    Không xác định được ⇒ scope UNCLEAR, TO_BPTN với CATEGORY_UNCLEAR.
-4. VI_TRI: nơi XẢY RA SỰ CỐ, không phải nơi cư dân ở ("em ở căn 1203 tầng 12" không phải vị trí sự cố). Tòa chỉ thuộc: {buildings}. Tầng là số, "B1"/"B2" (hầm) hoặc "Trệt". Khu vực chỉ thuộc: {areas}. Sảnh chính và Sảnh cư dân là tầng 1 nếu không nêu. Thang máy (trong cabin) không cần tầng: để floor null. Tòa ngoài danh sách = thiếu tòa. Mã tòa con dạng S2.05 hoặc S1.12 thuộc tòa mẹ S2 hoặc S1: ghi building đúng như phản ánh nêu, KHÔNG coi là ngoài danh sách. Thiếu phần nào để null.
+4. VI_TRI: nơi XẢY RA SỰ CỐ, không phải nơi cư dân ở ("em ở căn 1203 tầng 12" không phải vị trí sự cố). Tòa chỉ thuộc: {buildings}. Tầng là số, "B1"/"B2" (hầm) hoặc "Trệt". Cư dân hay viết tắt hoặc nói tự nhiên ("t3", "lầu 3", "tầng ba" đều là tầng 3): hiểu tầng theo NGHĨA trong toàn bộ lời cư dân, kể cả khi tòa đã lấy từ hồ sơ. Khu vực chỉ thuộc: {areas}. Sảnh chính và Sảnh cư dân là tầng 1 nếu không nêu. Thang máy (trong cabin) không cần tầng: để floor null. Tòa ngoài danh sách = thiếu tòa. Mã tòa con dạng S2.05 hoặc S1.12 thuộc tòa mẹ S2 hoặc S1: ghi building đúng như phản ánh nêu, KHÔNG coi là ngoài danh sách. Thiếu phần nào để null.
 5. THIEU_THONG_TIN: thiếu tòa/tầng/khu vực ⇒ next_step ASK_RESIDENT với đúng các trường thiếu (location, location_building, location_floor, location_area). Phản ánh rõ ràng ngoài phạm vi và không nhắc khu vực chung nào ⇒ TO_BPTN với OUT_OF_SCOPE (không hỏi vị trí). Đủ thông tin và thuộc phạm vi ⇒ PROCEED.
    next_step TO_BPTN LUÔN kèm bptn_reason (OUT_OF_SCOPE hoặc CATEGORY_UNCLEAR); thiếu bptn_reason thì CẢ quyết định bị loại, kể cả phần an toàn. Ca nguy hiểm thật (risk_level EMERGENCY) mà không có việc vệ sinh/đèn ⇒ scope OUT_OF_SCOPE, jobs [], next_step TO_BPTN, bptn_reason OUT_OF_SCOPE (BQL nhận ca khẩn cấp riêng).
 6. TRUNG: chỉ chọn trong <ung_vien_trung>; trùng khi cùng loại việc, cùng tòa/tầng/khu vực VÀ cùng một sự việc. Không chắc ⇒ duplicate_of null.

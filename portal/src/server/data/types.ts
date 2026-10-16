@@ -50,6 +50,8 @@ export type BTicket = {
   raw: { created_at: string; original_description: string };
   closure_kind: string | null;
   merged_into: string | null;
+  /** NEED_INFO opened by the safety flow (T06): only the resident or the BQL answers it, never reception */
+  safety_context?: boolean;
 };
 
 export type BChecklistItem = { template_item_id: string; label_snapshot: string; required: boolean; status: string };
@@ -146,7 +148,14 @@ export type BResidentView = {
   eta: string | null;
   timeline: { status: string; status_label: string; public_message: string; created_at: string }[];
   allowed_actions: ("ADD_INFO" | "RATE")[];
-  merged_into: { ticket_id: string } | null;
+  /** The ticket this one was merged into: its live state, so a merged report follows it (views.py MergedInto) */
+  merged_into: {
+    ticket_id: string;
+    status: BStatus;
+    status_label: string;
+    department_name: string | null;
+    public_message: string;
+  } | null;
   rating?: number | null;
   rating_tags?: string[];
   rating_comment?: string;

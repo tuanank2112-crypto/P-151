@@ -151,8 +151,14 @@ def test_p_07_no_locks_means_khong_and_locks_are_listed_when_present():
     )
 
 
-def test_p_08_prompt_version_is_the_ninth_one():
-    assert prompt.PROMPT_VERSION == "agent-prompt/9"
+def test_p_08_prompt_version_is_the_tenth_one():
+    assert prompt.PROMPT_VERSION == "agent-prompt/10"
+
+
+def test_p_08f_floor_is_read_by_meaning_not_by_the_word_tang():
+    """2026-10-16: gpt-6-luna missed "t3 nhiều rác quá" (SIM-TKT-0087); the floor is the LLM's reading, not a regex."""
+    system = prompt.render_system_prompt(CATALOG, LEXICON)
+    assert '"t3", "lầu 3", "tầng ba" đều là tầng 3' in system
 
 
 def test_p_08e_sub_building_codes_belong_to_their_building():

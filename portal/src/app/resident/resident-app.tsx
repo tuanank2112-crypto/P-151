@@ -53,6 +53,8 @@ const OVERVIEW: [Exclude<Filter, "all">, string, string, string][] = [
 ];
 
 function status(t: ResidentTicket): [string, string] {
+  if (t.merged && t.cancelled) return ["pill s-cancel", "Đã gộp"];
+  if (t.merged) return [t.stage === 6 ? "pill s-done" : t.stage === 5 ? "pill s-wait" : "pill s-run", "Đã gộp"];
   if (t.cancelled) return ["pill s-cancel", "Đã hủy"];
   if (t.stage === 5) return ["pill s-wait", "Chờ nghiệm thu"];
   if (t.stage === 6) return ["pill s-done", "Hoàn tất"];
@@ -663,10 +665,10 @@ function TicketDetail(props: {
           Ban tiếp nhận cần thêm thông tin để phân loại. Vui lòng bổ sung chi tiết ở mục bên dưới.
         </div>
       )}
-      {t.cancelled && (
+      {(t.cancelled || t.merged) && (
         <div role="status" className="rounded-2xl px-[18px] py-4 text-[15px]" style={{ background: "#E9EDF3", color: "#2A3447" }}>
-          {t.mergedInto
-            ? `Phản ánh này trùng với ${t.mergedInto} nên đã được gộp và xử lý chung.`
+          {t.merged
+            ? `Phản ánh này trùng với ${t.mergedInto ?? "phản ánh khác"} nên đã được gộp và xử lý chung. Tiến độ bên dưới là tiến độ của ${t.mergedInto ?? "phản ánh đó"}.`
             : "Bạn đã hủy phản ánh này."}
         </div>
       )}

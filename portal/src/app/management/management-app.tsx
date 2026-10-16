@@ -241,7 +241,10 @@ export function ManagementApp({ data }: { data: ManagementData }) {
           <ManagementOverviewChart
             tickets={all}
             initialReport={data.report}
-            onGoList={(d) => goList({ dept: d === "bql" || d === "ve_sinh" || d === "ky_thuat" ? d : "all" })}
+            onGoList={(d) =>
+              // reception has no department filter: its tickets are the "Chờ phân loại" group, never BQL work
+              d === "tiep_nhan" ? goList({ group: "waiting" }) : goList({ dept: d })
+            }
           />
         )}
 
