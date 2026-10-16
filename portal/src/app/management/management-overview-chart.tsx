@@ -61,10 +61,12 @@ export function ManagementOverviewChart({
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [report, setReport] = useState<PerformanceReportData | undefined>(initialReport);
 
-  // Đồng bộ initialReport khi server revalidate
-  useEffect(() => {
+  // Đồng bộ initialReport khi server revalidate mà không gây cascading render trong effect
+  const [prevInitialReport, setPrevInitialReport] = useState(initialReport);
+  if (initialReport !== prevInitialReport) {
+    setPrevInitialReport(initialReport);
     if (initialReport) setReport(initialReport);
-  }, [initialReport]);
+  }
 
   // Tự động polling dữ liệu mới nhất từ database (mỗi 8s)
   useEffect(() => {
