@@ -2,6 +2,10 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.17.9] - 2026-10-16: log latency từng lần gọi model ra file (PATCH)
+- Người dùng: thêm file log latency, không cần hiện cho user. `InMemoryAILogger.record` (`src/maintenance/ai_logger.py`) nay ghi thêm MỘT dòng JSON/lần gọi vào `data/logs/latency.jsonl` (`ts`, `log_id`, `ticket_id`, `model`, `status`, `latency_ms`, `tokens`; KHÔNG ghi prompt/output). Phủ cả Agent lẫn `proposer` vì cùng đi qua `ai_logger`. Lỗi ghi file chỉ cảnh báo, không làm hỏng ticket. Env `MO_LATENCY_LOG` đổi đường dẫn, `off` tắt; `tests/conftest.py` đặt `off`. Không có API/portal đọc file; `data/` đã trong `.gitignore`.
+- Đo: `test_ai_logger.py` 11/11 (+2); ruff 3 file sạch; pytest toàn bộ 3830 pass, 1 fail có sẵn (`test_serverless_mode_keeps_no_database_connection`, thiếu `psycopg2` — đo lại khi stash vẫn fail). Chưa chạy server thật.
+
 ## [v1.17.8] - 2026-10-16: prompt Agent `agent-prompt/10` — tầng hiểu theo nghĩa (PATCH)
 - Production gpt-6-luna không đọc "t3 nhiều rác quá" là tầng 3 (SIM-TKT-0087: bước VI_TRI chỉ nhìn tòa hồ sơ, hỏi lại tầng). Người dùng duyệt hướng prompt (không regex, không đổi `reasoning_effort`). Bước VI_TRI thêm câu: cư dân viết tắt/nói tự nhiên ("t3", "lầu 3", "tầng ba" đều là tầng 3) ⇒ hiểu tầng theo NGHĨA trong toàn bộ lời cư dân, kể cả khi tòa lấy từ hồ sơ. Sửa REF `planning/06_.../specs/REF-agent-contract.py` trước, code chép nguyên văn; `PROMPT_VERSION` /10.
 - Đo (agy gemini-3.8-flash-low): t3 / lầu 3 / T5 / tầng ba ⇒ 4/4 tầng đúng; G-LIVE `--limit 3` 18/18 (under 0, over 0); pytest 3961 pass; ruff 2 file sửa sạch (toàn repo còn 5 lỗi check + 5 file format có sẵn, đo cả trước khi sửa). CHƯA đo gpt-6-luna (key local hết tiền) — kiểm trên production sau deploy.

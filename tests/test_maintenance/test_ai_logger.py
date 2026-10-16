@@ -1,5 +1,6 @@
 """Unit tests for the in-memory AI Logger, proposer integration, and endpoints."""
 
+import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 
@@ -214,3 +215,25 @@ def test_api_reset_ai_logs(client):
     assert resp.status_code == 200
     assert resp.json()["message"] == "Đã reset dữ liệu AI logs"
     assert len(ai_logger.get_logs()) == 0
+
+
+def test_latency_log_appends_one_json_line_without_prompt(tmp_path, monkeypatch):
+    path = tmp_path / "logs" / "latency.jsonl"
+    monkeypatch.setenv("MO_LATENCY_LOG", str(path))
+    logger = InMemoryAILogger()
+    logger.log(ticket_id="TK-1", prompt_sent={"system": "secret"}, model_name="m", latency_ms=12.345)
+    lines = path.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 1
+    row = json.loads(lines[0])
+    assert row["ticket_id"] == "TK-1" and row["latency_ms"] == 12.35 and row["status"] == "SUCCESS"
+    assert "secret" not in lines[0]
+
+
+def test_latency_log_off_and_unwritable_never_raise(tmp_path, monkeypatch):
+    monkeypatch.setenv("MO_LATENCY_LOG", "off")
+    InMemoryAILogger().log(prompt_sent={"system": "x"})
+    assert not list(tmp_path.iterdir())
+    blocker = tmp_path / "file"
+    blocker.write_text("x")
+    monkeypatch.setenv("MO_LATENCY_LOG", str(blocker / "latency.jsonl"))
+    InMemoryAILogger().log(prompt_sent={"system": "x"})  # parent is a file -> OSError swallowed
