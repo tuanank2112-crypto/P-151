@@ -4,6 +4,24 @@
 > Spec đích duy nhất: [CR-BPTN-03](docs/CR-BPTN-03.md) (v0.6 candidate, `PROPOSED`). Mục API bên dưới mô tả **code đang chạy**;
 > chỗ nào lệch CR-BPTN-03 thì theo CR-BPTN-03.
 
+## Deliverables nộp bài
+
+- **Live URL:** <https://p151-portal.vercel.app/login>
+- **Video demo:** thư mục Google Drive <https://drive.google.com/drive/folders/1_c2ZhS3hxWx7OUdAvLgjqlY_PkdI5ble?usp=sharing>
+
+| # | Deliverable | Vị trí |
+|---|---|---|
+| 1 | Source code | [`src/`](src/), [`tests/`](tests/) |
+| 2 | README | file này |
+| 3 | Architecture diagram | [`docs/architecture_diagram.md`](docs/architecture_diagram.md), [`docs/diagrams/`](docs/diagrams/) |
+| 4 | AI logs | `.ai-log/session.jsonl`, màn hình log AI (`/mo/ai-logs`) |
+| 5 | Live URL | <https://p151-portal.vercel.app/login> |
+| 6 | Video demo | [Google Drive](https://drive.google.com/drive/folders/1_c2ZhS3hxWx7OUdAvLgjqlY_PkdI5ble?usp=sharing) |
+| 7 | Pitch deck | Trường phụ trách (chưa có trong repo) |
+| 8 | Journal | [`JOURNAL.md`](JOURNAL.md) |
+| 9 | Worklog | [`WORKLOG.md`](WORKLOG.md) |
+| 10 | Evaluation evidence | [`evaluation.md`](evaluation.md), [`docs/eval/runs/`](docs/eval/runs/) |
+
 ## Vấn đề
 
 BQL cần tạo và kiểm tra hồ sơ bảo trì một cách nhất quán, truy vết được và không vượt quyền, để mỗi case
@@ -34,7 +52,7 @@ Cư dân gửi phản ánh vệ sinh hoặc đèn khu vực chung. Agent kiểm 
 
 Sơ đồ kiến trúc thành phần mục tiêu (Target Architecture v0.6) theo chuẩn [CR-BPTN-03](docs/CR-BPTN-03.md), thiết kế theo chuẩn C4 Component / Enterprise 3-Tier phục vụ Demo Day AI20K:
 
-![MaintenanceOps target architecture](docs/diagrams/maintenanceops-target-20261019/architecture-components.svg)
+![MaintenanceOps target architecture](docs/diagrams/Diagrams%20Components.svg)
 
 <details>
 <summary><b>Nhấn để xem mã nguồn sơ đồ Mermaid</b></summary>
@@ -139,7 +157,7 @@ flowchart TB
 
 </details>
 
-- **Chi tiết kiến trúc, bảng màu & file nguồn draw.io:** [`docs/diagrams/maintenanceops-target-20261019/README.md`](docs/diagrams/maintenanceops-target-20261019/README.md)
+- **Chi tiết kiến trúc, bảng màu & file nguồn draw.io:** [`docs/diagrams/Diagrams Components.drawio`](docs/diagrams/Diagrams%20Components.drawio)
 - **Đặc tả thiết kế chi tiết (SPEC):** [`docs/CR-BPTN-03.md`](docs/CR-BPTN-03.md)
 
 ---

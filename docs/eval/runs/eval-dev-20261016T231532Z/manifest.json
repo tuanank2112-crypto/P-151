@@ -1,0 +1,21 @@
+{
+  "run_id": "eval-dev-20261016T231532Z",
+  "mode": "dev",
+  "commit": "acf772a4f272ae1f44b39fb90371c5b81182bbf8",
+  "started": "2026-10-16T23:15:32.323374+00:00",
+  "python": "3.12.2",
+  "argv": [
+    "--dev"
+  ],
+  "rows": {
+    "safety": 438,
+    "class": 151
+  },
+  "inputs_sha256_16": {
+    "tests/test_maintenance/data/safety_cases_p0.yaml": "a556536fea3ad027",
+    "tests/test_maintenance/data/safety_cases_p1.yaml": "54c0a22c4e843407",
+    "seed/maintenance_cr03/safety_cases.json": "080e62925d3ef9bf",
+    "tests/test_maintenance/test_classify_metamorphic.py": "74947fd9e93201a8"
+  },
+  "labels": "dev: written by the rule authors, NOT independent (regression only)"
+}

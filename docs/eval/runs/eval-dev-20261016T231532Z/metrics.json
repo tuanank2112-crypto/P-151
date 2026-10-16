@@ -1,0 +1,209 @@
+{
+  "Frame 1 — safety (Bậc 1 EMERGENCY / Bậc 2 UNCLEAR / NONE)": {
+    "Bậc 1 recall (EMERGENCY gold → EMERGENCY)": {
+      "value": 1.0,
+      "n": 219,
+      "target": 1.0,
+      "pass": true,
+      "gate": true
+    },
+    "Bậc 1 misses (count)": {
+      "value": 0,
+      "n": 219,
+      "target": 0,
+      "pass": true,
+      "gate": true
+    },
+    "False alarm → Bậc 1 (NONE gold → EMERGENCY)": {
+      "value": 0.0,
+      "n": 152,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "False alarm → any alert (NONE gold → Bậc 1 or 2)": {
+      "value": 0.0,
+      "n": 152,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "Bậc 2 recall (UNCLEAR gold → Bậc 1 or 2)": {
+      "value": 1.0,
+      "n": 33,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "Exact level match (single-label rows)": {
+      "value": 0.9925742574257426,
+      "n": 404,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "Accept-set rows inside their set": {
+      "value": 1.0,
+      "n": 34,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "Labeller agreement (raw)": {
+      "value": 1.0,
+      "n": 438,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "Labeller agreement (Cohen kappa)": {
+      "value": 1.0,
+      "n": 438,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "Match (exact or in accept-set), group cr03_json": {
+      "value": 0.9117647058823529,
+      "n": 34,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "Match (exact or in accept-set), group p0": {
+      "value": 1.0,
+      "n": 265,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "Match (exact or in accept-set), group p1_catch": {
+      "value": 1.0,
+      "n": 74,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "Match (exact or in accept-set), group p1_not_raise": {
+      "value": 1.0,
+      "n": 31,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "Match (exact or in accept-set), group regression": {
+      "value": 1.0,
+      "n": 34,
+      "target": null,
+      "pass": null,
+      "gate": false
+    }
+  },
+  "Frame 2 — classification (CLN / TEC / OUT / UNCLEAR)": {
+    "Accuracy": {
+      "value": 1.0,
+      "n": 151,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "CLN: precision": {
+      "value": 1.0,
+      "n": 43,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "CLN: recall": {
+      "value": 1.0,
+      "n": 43,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "CLN: F1": {
+      "value": 1.0,
+      "n": 43,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "TEC: precision": {
+      "value": 1.0,
+      "n": 51,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "TEC: recall": {
+      "value": 1.0,
+      "n": 51,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "TEC: F1": {
+      "value": 1.0,
+      "n": 51,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "OUT: precision": {
+      "value": 1.0,
+      "n": 40,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "OUT: recall": {
+      "value": 1.0,
+      "n": 40,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "OUT: F1": {
+      "value": 1.0,
+      "n": 40,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "UNCLEAR: precision": {
+      "value": 1.0,
+      "n": 17,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "UNCLEAR: recall": {
+      "value": 1.0,
+      "n": 17,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "UNCLEAR: F1": {
+      "value": 1.0,
+      "n": 17,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "Labeller agreement (raw)": {
+      "value": 1.0,
+      "n": 151,
+      "target": null,
+      "pass": null,
+      "gate": false
+    },
+    "Labeller agreement (Cohen kappa)": {
+      "value": 1.0,
+      "n": 151,
+      "target": null,
+      "pass": null,
+      "gate": false
+    }
+  }
+}
