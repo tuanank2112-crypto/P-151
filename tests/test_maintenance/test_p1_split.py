@@ -170,15 +170,34 @@ def test_s01_the_rules_write_no_agent_decision():
 
 
 @pytest.mark.parametrize("mode", MODES)
-def test_s02_single_job_and_cause_effect_sentences_are_not_split(mode):
+def test_s02_single_job_and_two_place_sentences_are_not_split(mode):
     assert len(REF.MUST_NOT_SPLIT) >= 15
     for text in REF.MUST_NOT_SPLIT:
+        if REF.split_verdict(text)[1].startswith(("marker:", "question")):
+            continue  # plan 20: cause / hedge / question words no longer keep two jobs at one place in one ticket
         engine = build(mode)
         case = engine.receive(text, resident_id=RESIDENT)
         ticket = case.ticket
         assert ticket.split_children == [] and ticket.split_from is None and ticket.split_category is None, text
         assert not audits(case, Action.SPLIT_TICKET), text
         assert len(engine.repo.list()) == 1, text
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_s02b_two_jobs_at_one_place_split_even_with_cause_hedge_or_question_words(mode):
+    texts = [
+        "Hành lang tầng 3 tòa S1 đèn không sáng nên rác không ai dọn",
+        "Hành lang tầng 3 tòa S1 có rác, đèn hình như hỏng",
+        "Hành lang tầng 3 tòa S1 đèn không sáng, có rác ở đó, ai xử lý giúp với?",
+        "Hành lang tầng 3 tòa S1 đèn hỏng và có rác, cần xử lý gấp vì sắp có khách",
+        "Sảnh chính tòa S1 có rác hoặc đèn không sáng?",
+    ]
+    for text in texts:
+        engine = build(mode)
+        root_id = report(engine, text)
+        root, child = pair(engine, root_id)
+        assert (root.ticket.split_category, child.ticket.split_category) == (VE, KT), text
+        assert (root.ticket.department_id, child.ticket.department_id) == ("DEPT_CLEANING", "DEPT_TECHNICAL"), text
 
 
 # ---------------------------------------------------------------------------------------------------- S-03

@@ -451,51 +451,7 @@ def electrical_hazard(description: str) -> bool:
 @dataclass(frozen=True)
 class SplitVerdict:
     categories: tuple[ServiceCategory, ...]  # SPLIT_PAIR when the report holds two independent jobs, else ()
-    reason: str  # "split" or the rule that blocked: "electrical-hazard" | "not-both" | "marker:<phrase>" | ...
-
-
-# R-S3: words that make one job the cause or effect of the other, or the report unsure. Accented forms are compared on
-# NFC lowercase text, unaccented forms on `normalize`d text, so a missing accent never invents a marker.
-CAUSAL_ACCENTED = (
-    "nên",
-    "vì",
-    "bởi",
-    "do",
-    "khiến",
-    "làm cho",
-    "dẫn đến",
-    "gây ra",
-    "không thấy",
-    "mảnh vỡ",
-    "mảnh kính",
-)
-HEDGE_ACCENTED = ("hình như", "có vẻ", "không biết", "không rõ", "chắc là", "có lẽ", "nghi là", "hay là", "hoặc")
-CAUSAL_FOLDED = (
-    "nen",
-    "vi",
-    "boi",
-    "do",
-    "khien",
-    "lam cho",
-    "dan den",
-    "gay ra",
-    "khong thay",
-    "manh vo",
-    "manh kinh",
-)
-HEDGE_FOLDED = ("hinh nhu", "co ve", "khong biet", "khong ro", "chac la", "co le", "nghi la", "hay la", "hoac")
-
-
-def _has_phrase(text: str, phrases: tuple[str, ...]) -> str | None:
-    for phrase in phrases:
-        if re.search(r"(?<!\w)" + re.escape(phrase) + r"(?!\w)", text):
-            return phrase
-    return None
-
-
-def _has_no_accent(text: str) -> bool:
-    folded = unicodedata.normalize("NFD", text.replace("đ", "d").replace("Đ", "D"))
-    return all(unicodedata.category(c) != "Mn" for c in folded)
+    reason: str  # "split" or the rule that blocked: "electrical-hazard" | "not-both" | "two-places"
 
 
 def location_mentions(
@@ -530,27 +486,15 @@ def location_mentions(
 
 
 def split_verdict(description: str, buildings: Sequence[str]) -> SplitVerdict:
-    """Whether the report holds TWO independent jobs (cleaning + lighting) at ONE place. Conservative: the first
-    blocking rule wins (R-S1..R-S5, SPEC-P05 section 2.2); a wrong split is worse than none."""
+    """Whether the report holds TWO jobs (cleaning + lighting) at ONE place. The first blocking rule wins: an electrical
+    hazard, only one job, or two places. Plan 20 dropped the cause/hedge/question blocks (R-S3, R-S4): two jobs at one
+    place always go to both departments, and `undo_split` is the way back from a wrong split."""
     text = _classification_text(description)
     if _any(ELECTRICAL_HAZARD_PATTERNS, text):
         return SplitVerdict((), "electrical-hazard")
     cleaning, lighting = _matches_both(text)
     if not (cleaning and lighting):
         return SplitVerdict((), "not-both")
-    raw = unicodedata.normalize("NFC", description).lower()
-    folded = normalize(description)
-    building_pattern = _building_pattern(buildings)
-    for pattern in [p for p, _ in AREA_PATTERNS] + [FLOOR_PATTERN, building_pattern]:
-        folded = re.sub(pattern, " ", folded)  # "bai do xe" is a place, not the cause word "do"
-    if _has_no_accent(description):
-        hit = _has_phrase(folded, CAUSAL_FOLDED) or _has_phrase(folded, HEDGE_FOLDED)
-    else:
-        hit = _has_phrase(raw, CAUSAL_ACCENTED) or _has_phrase(raw, HEDGE_ACCENTED)
-    if hit:
-        return SplitVerdict((), f"marker:{hit}")
-    if "?" in description:
-        return SplitVerdict((), "question")
     labels, floors, found_buildings = location_mentions(description, buildings)
     if len(labels) > 1 or len(floors) > 1 or len(found_buildings) > 1:
         return SplitVerdict((), "two-places")

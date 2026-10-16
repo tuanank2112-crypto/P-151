@@ -149,7 +149,7 @@ def test_a_01b_mirror_follows_the_rules_for_one_job_two_jobs_and_no_job():
         assert two.next_step == "PROCEED"
     assert split_count == 32
     unclear = mirror_decision(
-        new_input("Hành lang tầng 3 tòa S1 nhiều rác vì bóng đèn hành lang không sáng"), CATALOG, LEXICON
+        new_input("Rác ở hành lang tầng 3 tòa S1, còn đèn sảnh thang máy tầng 5 tòa S1 không sáng"), CATALOG, LEXICON
     )
     assert (unclear.scope, unclear.next_step, unclear.bptn_reason) == ("UNCLEAR", "TO_BPTN", "CATEGORY_UNCLEAR")
     ask = mirror_decision(new_input("Đèn hành lang không sáng"), CATALOG, LEXICON)
