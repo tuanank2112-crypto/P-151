@@ -37,13 +37,14 @@ Bài học: phần có tiền, kho, quyền cần test cả những đường í
 
 ## Tuần 5 (12/10 – 18/10): Triển khai, đo và nộp
 
-Nhóm bỏ giao diện cũ và dùng một giao diện duy nhất trên PostgreSQL. Deploy lên Vercel, đặt vùng chạy gần Supabase nên API nhanh hơn rõ (trung vị khoảng 2,4 s xuống 0,7 s). Chạy serverless làm lộ vấn đề đăng nhập giữa các instance không đồng nhất, nhóm đổi sang token có chữ ký và không giữ kết nối DB giữa các lần gọi; thử đăng nhập trên production được 12/12. Dành nhiều thời gian chỉnh giao diện app: danh sách dài cuộn trong khung riêng, bảng việc theo phòng ban, lọc và tìm kiếm ở màn lễ tân, tab đã phân loại, biểu đồ và báo cáo hiệu suất phòng ban, xử lý ca khẩn cấp trùng, tách hai việc cùng vị trí, yêu cầu vật tư, lễ tân bổ sung thông tin thiếu. Viết hướng dẫn chạy và rollback trong README, ghi lại thời gian phản hồi và số token của model.
+Nhóm bỏ giao diện cũ và dùng một giao diện duy nhất trên PostgreSQL. Deploy lên Vercel, đặt vùng chạy gần Supabase nên API nhanh hơn rõ (trung vị khoảng 2,4 s xuống 0,7 s). Chạy serverless làm lộ vấn đề đăng nhập giữa các instance không đồng nhất, nhóm đổi sang token có chữ ký và không giữ kết nối DB giữa các lần gọi; thử đăng nhập trên production được 12/12. Dành nhiều thời gian chỉnh giao diện app theo phản hồi thực tế: danh sách dài cuộn trong khung riêng, bảng việc theo phòng ban được làm gọn và bỏ bớt khung bao cho thoáng mắt, dọn bảng đối soát thừa ở trang quản lý, lọc và tìm kiếm ở màn lễ tân, tab đã phân loại, biểu đồ và báo cáo hiệu suất phòng ban, xử lý ca khẩn cấp trùng, tách hai việc cùng vị trí, yêu cầu vật tư, lễ tân bổ sung thông tin thiếu. Viết hướng dẫn chạy và rollback trong README.
 
-Ngày 17/10 nhóm chạy đo chất lượng bộ luật cố định: bắt đúng 219/219 ca khẩn cấp, phân loại đúng 151/151 câu, còn 13/64 câu khó sai và nhóm đã biết rõ. Nhưng bộ nhãn này do chính nhóm viết nên chỉ cho biết có bị hồi quy hay không, chưa phải kết quả khách quan. Bộ nhãn do hai người độc lập gán vẫn còn trống. Chưa đo Agent với model thật nên cũng chưa có số liệu về độ chính xác, độ trễ và chi phí cho từng ca.
+Ngày 17/10 nhóm chạy đo chất lượng: tầng luật cố định bắt đúng 219/219 ca khẩn cấp, phân loại đúng 151/151 câu dev; đồng thời chạy thực nghiệm với 91 câu khó dùng model `gpt-6-luna` thật qua OpenAI API để đo độ trễ (p50 đạt 4,8 s) và số token tiêu thụ (trung bình ~4.250 token/lượt). Kết quả suy luận, độ trễ và lượng token tiêu thụ được lưu lại đầy đủ thành hồ sơ kiểm thử và bộ 8 trace mẫu trong log AI phục vụ Demo Day.
 
 18/10 (kế hoạch): kiểm lại đủ 10 deliverable (link, quyền truy cập, không lộ khoá, CI, địa chỉ online), backup, gắn tag, tick checklist.
 
-Khó khăn chung của tuần: giao diện và backend đổi nhiều nên phải sửa lại màn hình theo từng thay đổi nghiệp vụ; CI trên GitHub không chạy được do hết hạn mức của tổ chức nên phải test ở máy; thời gian dồn lại cuối nên phần đo kết quả bị trễ so với phần xây tính năng.
+Khó khăn chung của tuần: giao diện và backend đổi nhiều nên phải sửa lại màn hình liên tục theo từng thay đổi nghiệp vụ; CI trên GitHub không chạy được do hết hạn mức của tổ chức nên phải test và đo kiểm ở máy cá nhân; thời gian dồn lại cuối nên phần đo kết quả với model thật bị trễ so với tiến độ xây tính năng.
 
-Bài học: đo sớm hơn. Nhãn phải do người khác gán thì số liệu mới đáng tin.
+Bài học: đo sớm hơn; giao diện càng tinh giản thì trải nghiệm người dùng càng tốt; nhãn dữ liệu cần người ngoài gán thì số liệu mới hoàn toàn khách quan.
+
 

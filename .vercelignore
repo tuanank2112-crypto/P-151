@@ -1,0 +1,23 @@
+# p151-backend deploys from the repo root (Vercel GitHub integration); this keeps the
+# Python function small. The portal project uses Root Directory `portal/` and has its own build.
+# Paths are anchored to the root: src/mobile/icons/*.png and seed/ must stay.
+/portal
+/planning
+/docs
+/tests
+/brain4agent
+/scripts
+/scratch
+/.claude
+/.agents
+/.codex
+/.cursor
+/.gemini
+/.ai-log
+/.github
+/.venv
+/data
+/*.svg
+/*.md
+.env
+.env.*
