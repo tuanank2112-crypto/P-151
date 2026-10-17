@@ -135,3 +135,42 @@ jobs:
           esac
           gh api "repos/$ORG_REPO/statuses/$SHA" -f state="$state" -f context="$CONTEXT" \
             -f description="$desc" -f target_url="$RUN_URL"
+
+  # CD: Vercel deploys this repo's `main`. Push the org's main here only once its
+  # ci/public-mirror status is green, so a red commit never reaches production.
+  publish-main:
+    needs: [plan, test]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decide whether the org main is green and not yet published
+        id: decide
+        env:
+          GH_TOKEN: ${{ secrets.ORG_TOKEN }}
+        run: |
+          set -euo pipefail
+          org=$(gh api "repos/$ORG_REPO/commits/main" --jq .sha)
+          pub=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha 2>/dev/null || echo none)
+          state=$(gh api "repos/$ORG_REPO/commits/$org/status" \
+            --jq "[.statuses[] | select(.context == \"$CONTEXT\") | .state] | first // \"none\"")
+          echo "org main ${org:0:7} · public main ${pub:0:7} · $CONTEXT: $state"
+          if [ "$org" != "$pub" ] && [ "$state" = success ]; then
+            echo "sha=$org" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.decide.outputs.sha != ''
+        with:
+          repository: ${{ env.ORG_REPO }}
+          ref: ${{ steps.decide.outputs.sha }}
+          token: ${{ secrets.ORG_TOKEN }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Push it to this repo's main (Vercel deploys it)
+        if: steps.decide.outputs.sha != ''
+        env:
+          ORG_TOKEN: ${{ secrets.ORG_TOKEN }}
+          SHA: ${{ steps.decide.outputs.sha }}
+        # no --force: the org main only moves forward; a rejected push means the mirror diverged
+        run: git push "https://x-access-token:${ORG_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$SHA:refs/heads/main"
