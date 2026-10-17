@@ -3,7 +3,7 @@
 # Lives on the default branch `ci-sync` so mirroring main/develop never overwrites it.
 # Secret ORG_TOKEN: token with read access to the org repo's code and pull requests
 # and write access to its commit statuses.
-# The test steps copy .github/workflows/ci.yml of the org repo; keep them in sync.
+# The test job runs the `run:` steps of each commit's own .github/workflows/ci.yml.
 name: Org CI (public mirror)
 
 on:
@@ -84,30 +84,43 @@ jobs:
           token: ${{ secrets.ORG_TOKEN }}
           persist-credentials: false
 
+      - name: Read the Python version from the commit's ci.yml
+        id: py
+        run: |
+          v=$(yq -r '[.jobs[].steps[] | select((.uses // "") | test("setup-python")) | .with."python-version"][0] // "3.11"' .github/workflows/ci.yml)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ steps.py.outputs.version }}
           cache: pip
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Lint with ruff
-        run: ruff check src/ tests/
-
-      - name: Run tests
-        # the two 24 KB linear-time tests assert elapsed < 1 s; coverage tracing slows them, so they run in the next step
-        run: >-
-          pytest tests/ -v --tb=short --cov=src --cov-report=term --cov-fail-under=60
-          --deselect tests/test_maintenance/test_safety.py::test_assess_is_linear_on_a_24kb_text
-          --deselect tests/test_maintenance/test_safety.py::test_assess_is_linear_on_adversarial_24kb_texts
-        env:
-          APP_ENV: test
-          OPENAI_API_KEY: test-key
-
-      - name: Timing tests without coverage
-        run: pytest tests/test_maintenance/test_safety.py -k linear -v --tb=short
+      # Runs every `run:` step of the commit's own .github/workflows/ci.yml in order, with its env,
+      # so an old branch is tested with the commands it was written for
+      - name: Run the commit's ci.yml steps
+        shell: bash
+        run: |
+          pip install --quiet pyyaml
+          python - <<'EOF'
+          import os, subprocess, sys, yaml
+          wf = yaml.safe_load(open(".github/workflows/ci.yml", encoding="utf-8"))
+          job = next(iter(wf["jobs"].values()))
+          base = {**os.environ, **{k: str(v) for k, v in (wf.get("env") or {}).items()},
+                  **{k: str(v) for k, v in (job.get("env") or {}).items()}}
+          for step in job["steps"]:
+              if "run" not in step:
+                  continue
+              name = step.get("name") or step["run"].splitlines()[0]
+              print(f"::group::{name}", flush=True)
+              env = {**base, **{k: str(v) for k, v in (step.get("env") or {}).items()}}
+              code = subprocess.run(["bash", "-eo", "pipefail", "-c", step["run"]], env=env).returncode
+              print("::endgroup::", flush=True)
+              if code:
+                  print(f"::error::{name} failed (exit {code})", flush=True)
+                  sys.exit(code)
+              print(f"ok: {name}", flush=True)
+          EOF
 
       - name: Report the result to the org commit
         if: always()
