@@ -157,8 +157,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class _ReadDropped(Exception):
+class _ReadDroppedError(Exception):
     """Plan 23 P04: the Agent's reading of an emergency came too late (BQL acted, or the content changed)."""
+
 
 # Photos: optional for the resident, required from the department before step 10 passes
 MAX_RESIDENT_PHOTOS = 5
@@ -1349,13 +1350,13 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
 
         def op(work: Case, now: datetime) -> None:
             if not self.needs_emergency_read(work) or record.fingerprint != self._content_fingerprint(work):
-                raise _ReadDropped  # BQL acted or the resident added something meanwhile: nothing is written
+                raise _ReadDroppedError  # BQL acted or the resident added something meanwhile: nothing is written
             with self._prepared({ticket_id: record}, retry_on_stale=False), self._activated(work, now):
                 pass  # `_activated` keeps the record with one audit row and leaves nothing active on this thread
 
         try:
             return self._mutate(ticket_id, AGENT_ID, Action.AGENT_DECISION, op, roles=frozenset({Role.AGENT}))
-        except _ReadDropped:
+        except _ReadDroppedError:
             return None
 
     def read_emergency_quietly(self, ticket_id: str) -> None:
@@ -4981,6 +4982,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
     def get_performance_report(self):
         """Tạo bảng báo cáo hiệu suất từ cơ sở dữ liệu (Plan UI BQL Overview)."""
         from src.maintenance.reports import generate_performance_report_from_db
+
         return generate_performance_report_from_db(list(self.cases.values()))
 
 

@@ -24,7 +24,6 @@ from src.api.auth import get_actor, load_accounts
 from src.config import get_settings
 from src.maintenance.ai_logger import AILogEntry, AILogStatus, ai_logger
 from src.maintenance.demo import EvaluationReport, evaluate, run_fixture
-from src.maintenance.reports import PerformanceReportResponse
 from src.maintenance.engine import (
     MAX_EXECUTION_PHOTOS,
     MAX_RESIDENT_PHOTOS,
@@ -64,6 +63,7 @@ from src.maintenance.models import (
     StatusEvent,
     StockAlert,
 )
+from src.maintenance.reports import PerformanceReportResponse
 from src.maintenance.store.base import ConcurrencyError, StorePermissionError, StoreUnavailableError
 from src.maintenance.views import (
     BqlTicketRow,
@@ -1099,4 +1099,3 @@ def mo_performance_report(actor: ActorDep, engine: EngineDep) -> PerformanceRepo
     """Bảng báo cáo và thống kê hiệu suất phòng ban từ cơ sở dữ liệu (Nội bộ)."""
     _require_role(engine, actor, *STAFF)
     return engine.get_performance_report()
-
