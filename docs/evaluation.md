@@ -4,6 +4,8 @@
 
 Ký hiệu: ✅ đạt (trên dữ liệu dev) · ❌ trượt · ⚠️ chỉ có quan sát thủ công hoặc đạt một phần, chưa thành tỷ lệ · ⬜ chưa đo.
 
+Kiểm thử thủ công qua giao diện ngày 2026-10-04 (5 ca, localhost, `LLM_MODE=mock`, người chạy: Cao Văn Trường): [eval/manual-2026-10-04.md](eval/manual-2026-10-04.md).
+
 ## Bảng tóm tắt: yêu cầu, mục tiêu, hiện tại
 
 **Mục tiêu là đề xuất, cần BQL chốt.** Chỉ các chỉ số an toàn mới đặt ngưỡng sát 100%; còn lại đặt theo mức vận hành chấp nhận được. Cột "Hiện tại" ghi hai lớp: **luật cố định** (engine không gọi model) và **Agent LLM + luật sàn** (hệ thống thật, 1 lần chạy 90 câu khó, §7.1). Cả hai đều đo trên bộ câu do nhóm viết, chưa độc lập.
