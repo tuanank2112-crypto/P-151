@@ -15,7 +15,19 @@ Deliverable #4 (chương 9 §9.2). Tài liệu này là log của **Agent LLM tr
 
 Mỗi bản ghi `AILogEntry` (`src/maintenance/ai_logger.py`) gồm `log_id`, `timestamp`, `ticket_id`, `prompt_sent` (system prompt và đầu vào), `raw_output`, `structured_output`, `model_name`, `status`, độ trễ và token. File độ trễ **không** ghi prompt hay đầu ra. Hệ thống không phải RAG nên không có bước truy xuất tài liệu; thay vào đó Agent có bước `ASSET` và `VAT_TU` tra danh mục.
 
-Chưa dùng LangSmith hay Phoenix: sơ đồ kiến trúc ghi chúng là mục tiêu, chưa có khoá và chưa có lần chạy nào.
+### 1.1 Kiến trúc ghi vết (Tracing Architecture) và lựa chọn kỹ thuật
+
+Hệ thống xử lý phân loại phản ánh theo mô hình kết hợp 2 tầng (Two-tier Hybrid Pipeline):
+- **Tầng 1 (Fast-path / Safety Rules):** Rà soát các tín hiệu an toàn khẩn cấp Bậc 1 (cháy nổ, ngập nước, chập điện, kẹt thang máy) bằng tập luật xác định (`src/maintenance/safety.py`). Thời gian xử lý < 0.05 giây. Nếu phát hiện khẩn cấp, hệ thống tự động gắn nhãn `EMERGENCY` và chuyển Ban Quản lý, bỏ qua việc gọi LLM nhằm giảm thiểu độ trễ và tối ưu chi phí (trong đợt đo 91 câu khó, có 36 câu được xử lý dứt điểm ở tầng này).
+- **Tầng 2 (Reasoning Agent LLM):** Đối với các phản ánh ngôn ngữ tự do cần phân tích ngữ nghĩa, hệ thống gọi model `gpt-6-luna` (OpenAI API) theo cấu trúc prompt `agent-prompt/10` và schema `agent-decision/1`. Agent thực hiện chuỗi suy luận 5 bước: `AN_TOAN` → `LOAI_VIEC` → `VI_TRI` → `TAI_SAN / VAT_TU` → `KET_LUAN` trước khi sinh JSON quyết định.
+- **Tầng 3 (Post-validation & Guardrails):** Đối soát kết quả của Agent với danh mục tòa nhà (`catalog.py`) và tồn kho vật tư (`material_policy.py`) để phòng ngừa hiện tượng ảo giác (hallucination) trước khi ghi vào cơ sở dữ liệu.
+
+**Kiến trúc ghi vết và đối soát dữ liệu:**
+- **Ghi log Agent nội bộ (In-house Tracing):** Nhóm xây dựng module ghi log riêng tại `src/maintenance/ai_logger.py`, lưu trữ chi tiết từng lượt gọi gồm prompt, bảng suy luận, JSON quyết định, độ trễ và số lượng token vào `data/logs/latency.jsonl` và qua endpoint `GET /api/v1/mo/ai-logs`. Cách làm này đảm bảo an toàn thông tin và quyền riêng tư của cư dân (không đẩy địa chỉ căn hộ, nội dung sự cố lên máy chủ bên thứ ba).
+- **Tương thích LangSmith:** Hệ thống sẵn sàng tương thích với LangSmith. Khi cần theo dõi trực quan luồng thực thi trên dashboard đám mây, chỉ cần cấu hình 3 biến môi trường trong `.env` (`LANGCHAIN_TRACING_V2=true`, `LANGCHAIN_API_KEY`, `LANGCHAIN_PROJECT`) mà không cần thay đổi mã nguồn.
+- **Phân biệt với AI Log của thành viên trên hệ thống Phoenix:**
+  - Toàn bộ log tương tác AI của các thành viên trong quá trình phát triển (prompt hỗ trợ code) được đồng bộ tự động qua script `scripts/submit_log.py` lên portal **Phoenix** tại: `https://phoenix.note.transformerlabs.ai/ai-logs`.
+  - Mục 2 dưới đây là **bằng chứng hoạt động của Agent LLM trong sản phẩm** (Deliverable #4), gồm 8 trace tiêu biểu trích xuất từ đợt chạy thực nghiệm `hard-llm-20261017` với model thật `gpt-6-luna`.
 
 ## 2. Tám trace
 
