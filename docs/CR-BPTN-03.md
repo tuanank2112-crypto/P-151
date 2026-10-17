@@ -1,6 +1,6 @@
 # CR-BPTN-03 — Flow lai: giao phòng ban + đường an toàn/khẩn cấp + ưu tiên + gộp ticket an toàn
 
-> **Status:** PROPOSED — chưa được duyệt. Chưa có Product approver ghi tên (xem §17).
+> **Status:** APPROVED cho phạm vi MVP 04/10 và D-01–D-07 (D-08, xem §17); đã cài đặt, code v1.17.9. KHÔNG suy rộng thành duyệt toàn bộ gate Day05/Day06. Lịch sử: bản 2026-10-01 ghi PROPOSED.
 > **Baseline bị tác động:** code MaintenanceOps tại commit `a305fc0`. CR-BPTN-01 và CR-BPTN-02 **đã bỏ** (xoá khỏi repo 2026-10-01): tài liệu này là **spec duy nhất**; mọi nhãn `[GIỮ]`/`[ĐỔI]`/`[BỎ]` so với code ở `a305fc0`. Bản cũ chỉ còn để tra lịch sử: `git show a305fc0:docs/CR-BPTN-02.md`.
 > **Target candidate:** MaintenanceOps MVP v0.6 (flow lai: lõi giao phòng ban của code `a305fc0`, bù bằng điểm mạnh của v0.3/v0.4).
 > **Phạm vi nhánh:** `feature/chamanh` (code nền: commit `a305fc0`; **đồng bộ flow với code 2026-10-01**, xem §19). CR-03 P0 cài trên `feature/nhuy-cr03-p0` (hồ sơ `planning/01_2026-10-01_cr03-p0-engine/`), hợp với `develop` ở hồ sơ `planning/02_2026-10-02_merge-develop/` (§19.1).

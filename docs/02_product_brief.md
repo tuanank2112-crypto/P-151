@@ -8,6 +8,16 @@
 > **Owner:** TV1 — Product / BA / Process  
 > **Phạm vi:** Prototype một tuần, chỉ dùng dữ liệu mô phỏng
 
+## Hiện trạng thực tế (audit 2026-10-17, đối chiếu code v1.17.9)
+
+> Các câu "CR-03 `PROPOSED` / chưa có người duyệt / NOT READY" trong phần còn lại của file là **lịch sử tại 2026-10-01**. Hiện trạng:
+> - **Duyệt:** CR-BPTN-03 được duyệt cho phạm vi MVP 04/10 và D-01–D-07 (D-08: leader Lê Thị Châm Anh, ngày duyệt báo 2026-10-02, ghi nhận 2026-10-03). Chưa phải sign-off toàn bộ gate Day05/Day06.
+> - **Code:** engine CR-03 đã cài (xem [`maintenance.md`](maintenance.md)); phiên bản dự án 1.17.9. Dữ liệu chạy trên PostgreSQL/Supabase; production ở Vercel (xem [README](../README.md)).
+> - **UI:** UI hiện hành là [`portal/`](portal.md) (Next.js, gọi backend `/api/v1`) và PWA [`src/mobile/`](mobile.md). UI tĩnh `src/web/` đã xoá (2026-10-12); [`web.md`](web.md) chỉ còn là lịch sử.
+> - **Vai trò thật trên UI:** cư dân, Tiếp nhận (BPTN), Vệ sinh, Kỹ thuật, Quản lý (BQL), Kho. **Kho có màn hình** (tồn kho, duyệt cấp vật tư), khác câu "Kho không có màn hình" ở bản 0.6.
+> - **Agent:** LangGraph + LLM (`gpt-6-luna` trên production); ngữ nghĩa do LLM suy luận, tầng an toàn chỉ là lưới sàn hẹp (luật + từ vựng).
+> - **Khi lệch:** theo thứ tự code → `CR-BPTN-03.md` → file này.
+
 ## Changelog
 
 | Version | Ngày | Thay đổi | Trạng thái |

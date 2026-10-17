@@ -1,8 +1,8 @@
-# `src/maintenance/` — Tài liệu module MaintenanceOps (engine CR-BPTN-03 P0)
+# `src/maintenance/` — Tài liệu module MaintenanceOps (engine CR-BPTN-03)
 
 > Dữ liệu MÔ PHỎNG (`SIM-*`). Spec duy nhất: [`CR-BPTN-03.md`](CR-BPTN-03.md); khi tài liệu này lệch CR-03 thì CR-03 thắng.
 > Hồ sơ cài đặt: [`planning/01_2026-10-01_cr03-p0-engine/`](../planning/01_2026-10-01_cr03-p0-engine/) (plan + specs + reports + evidence).
-> Trạng thái: P0 xong trên nhánh `feature/nhuy-cr03-p0` (1462 test). Router/UI chưa nối các hành động mới (xem §9).
+> Trạng thái (audit 2026-10-17): engine CR-03 P0 + P1 đã chạy trong sản phẩm v1.17.9 (1462 test là số của đợt P0 ban đầu; số đo mới nhất ghi ở `brain4agent/changelog.md`, vd 3830–3961 pass). Router `/api/v1` và UI `portal/` + `src/mobile/` đã nối các hành động; `src/web/` đã xoá. Phần nào dưới đây còn ghi "chưa nối/không làm ở P0" là lịch sử.
 
 ## 1. Mục đích và ranh giới
 Tích hợp develop b6590ce (local 1.10.1): engine/API/app/test local được giữ so backup trước merge; main.py thêm proxy portal, giữ handler validation plan16. Routes Python đăng ký trước fallback proxy nên `/health`, `/api/v1`, `/ui/`, `/app/` giữ backend hiện có. Portal không gọi engine Python cho workflow của nó; chưa hợp nhất dữ liệu hai hệ.
