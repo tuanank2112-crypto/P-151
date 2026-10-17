@@ -716,3 +716,4 @@ Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lậ
 
 - 2026-10-17: audit 9 tài liệu docs/ theo chapter-09; thêm khối hiện trạng + sửa header (xem changelog [Unreleased]). Chưa viết lại Active PRD/UI theo portal.
 - 2026-10-17 (đợt 2): viết lại Active PRD/UI/data-contract/playbook theo code; chuyển journal/worklog vào docs/, thêm docs/video-demo.md. Còn: Active của 01/02/05, evaluation.md vẫn ở root.
+- 2026-10-17 v1.17.10 (plan 28): làm WP1–4, 6–9, 12, 14. Đo lại pytest --cov: 3850 pass, 2 fail thời gian (pass khi không cov), 92.0%. Còn WP5 (ui-check portal), WP10, WP11, WP13 cần người/chi phí.

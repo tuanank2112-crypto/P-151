@@ -96,7 +96,10 @@ print("injection", sum(all(x[0] for x in res[r["id"]].values()) for r in inj), "
 # Agent-only safety (agent field) for the agent-called rows
 called = [r for r in ok if r["agent"]["source"] == "AGENT"]
 secs = [r["agent"]["latency_ms"] / 1000 for r in called if r["agent"]["latency_ms"] is not None]
-print("agent calls", len(called), "lat s mean %.2f p50 %.2f p95 %.2f p99 %.2f max %.2f" % (statistics.mean(secs), pct(secs, .5), pct(secs, .95), pct(secs, .99), max(secs)))
+if secs:
+    print("agent calls", len(called), "lat s mean %.2f p50 %.2f p95 %.2f p99 %.2f max %.2f" % (statistics.mean(secs), pct(secs, .5), pct(secs, .95), pct(secs, .99), max(secs)))
+else:
+    print("agent calls", len(called), "no latency recorded (every call fell back to the rules)")
 allsecs = [r["seconds"] for r in ok]
 print("end-to-end s mean %.2f p50 %.2f p95 %.2f p99 %.2f" % (statistics.mean(allsecs), pct(allsecs, .5), pct(allsecs, .95), pct(allsecs, .99)))
 emsecs = [r["seconds"] for r in ok if r["ticket"]["risk"] == "EMERGENCY"]
@@ -110,7 +113,11 @@ lat = [json.loads(l) for l in open(S + "/latency.jsonl", encoding="utf-8")]
 pt = [l["prompt_tokens"] for l in lat if l.get("prompt_tokens") is not None]
 ct = [l["completion_tokens"] for l in lat if l.get("completion_tokens") is not None]
 print("log lines", len(lat), "status", Counter(l["status"] for l in lat))
-print("tokens/call prompt mean %.0f completion mean %.0f total sum %d" % (statistics.mean(pt), statistics.mean(ct), sum(pt) + sum(ct)), "prompt sum", sum(pt), "completion sum", sum(ct))
+if pt and ct:
+    print("tokens/call prompt mean %.0f completion mean %.0f total sum %d" % (statistics.mean(pt), statistics.mean(ct), sum(pt) + sum(ct)), "prompt sum", sum(pt), "completion sum", sum(ct))
+    print("tokens/ticket mean %.0f (total %d over %d tickets; tickets skipped by the rule floor make no model call)" % ((sum(pt) + sum(ct)) / len(ok), sum(pt) + sum(ct), len(ok)))
+else:
+    print("tokens: the log has no token counts (every call failed before the model answered)")
 ls = [l["latency_ms"] / 1000 for l in lat]
 print("log latency p50 %.2f p95 %.2f p99 %.2f" % (pct(ls, .5), pct(ls, .95), pct(ls, .99)))
 

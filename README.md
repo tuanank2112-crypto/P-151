@@ -1,5 +1,7 @@
 # P-151 — MaintenanceOps Agent
 
+![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen) <sub>đo 2026-10-17 bằng `pytest --cov=src`; chi tiết [docs/evaluation.md](docs/evaluation.md) §7.3</sub>
+
 > Prototype **mô phỏng**. Toàn bộ dữ liệu (tiền tố `SIM-`), quy trình, định mức và kết quả là mô phỏng, không phải vận hành thật.
 > Spec đích duy nhất: [CR-BPTN-03](docs/CR-BPTN-03.md) (duyệt cho phạm vi MVP 04/10, D-08; code v1.17.9). Mục API bên dưới mô tả **code đang chạy**;
 > chỗ nào lệch CR-BPTN-03 thì theo CR-BPTN-03.
@@ -20,7 +22,7 @@
 | 7 | Pitch deck | ⬜ chưa có file trong repo; hồ sơ chuẩn bị: [`planning/04_2026-10-03_user-test-pitch/`](planning/04_2026-10-03_user-test-pitch/) |
 | 8 | Journal | [`docs/journal.md`](docs/journal.md) |
 | 9 | Worklog | [`docs/worklog.md`](docs/worklog.md) |
-| 10 | Evaluation evidence | [`evaluation.md`](evaluation.md), [`docs/eval/runs/`](docs/eval/runs/) |
+| 10 | Evaluation evidence | [`docs/evaluation.md`](docs/evaluation.md), [`docs/eval/runs/`](docs/eval/runs/) |
 
 ## Vấn đề
 

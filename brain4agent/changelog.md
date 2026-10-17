@@ -2,6 +2,13 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.17.10] - 2026-10-17: hoàn thiện Evaluation Evidence theo chương 9 (PATCH, plan 28)
+- `evaluation.md` chuyển vào `docs/evaluation.md`; dọn mâu thuẫn (§1, §4, §7), thống nhất cổng recall khẩn cấp 100%, rút bảng "thời gian tiết kiệm" không nguồn (thành giả thuyết cần kiểm chứng), tách chi phí mỗi lượt gọi (≈ 4.250 token) và mỗi ticket (≈ 2.551 token), gắn nhãn bằng chứng từ UI cũ `src/web/`, thêm bảng truy vết AC-01…AC-20 → test → mã (§7.4). Output máy lưu ở `docs/eval/runs/outputs-20261017/`.
+- CI: thêm `--cov=src --cov-fail-under=60`; hai test thời gian `test_assess_is_linear_*` bị chậm khi bật coverage nên tách sang bước riêng không coverage (`--deselect` + `-k linear`). README có badge coverage 92%.
+- Lint: `ruff check src tests` và `ruff format --check src tests` về exit 0 (định dạng import, đổi tên `_ReadDropped` → `_ReadDroppedError`; không đổi hành vi). `scripts/eval_hard_llm_report.py`: thêm `tokens/ticket`, không sập khi model lỗi.
+- Đo: pytest đầy đủ có `--cov`: 3.850 pass, 2 fail (hai test thời gian nói trên, pass khi chạy không coverage), 40 xfail, 102 deselected, coverage 92.0% (7.623/8.283). Chưa đo: held-out, phản hồi người dùng, `agent_live_eval.py` đầy đủ, ảnh chụp terminal.
+- Phát hiện chưa sửa: `src/maintenance/reports.py` so `department_id` với `"ve_sinh"`/`"ky_thuat"`/`"PB-CLN-01"`, trong khi giá trị thật là `DEPT_CLEANING`/`DEPT_TECHNICAL` ⇒ báo cáo hiệu suất phòng ban có thể đếm sai (cần kiểm trước khi sửa). `src/main.py` vẫn `version="0.5.0-candidate"`.
+
 ## [Unreleased] - 2026-10-17: audit tài liệu theo chapter-09 (docs only, không tăng version)
 - Thêm khối "Hiện trạng thực tế (audit 2026-10-17)" vào `docs/01`–`05`, `playbook-v1`, `data-contract-v1`: CR-03 đã duyệt phạm vi MVP (D-08), UI hiện hành = `portal/` + `src/mobile/`, Kho có màn hình, `src/web/` đã xoá. Sửa header `CR-BPTN-03.md`, `maintenance.md`, `README.md` (tech stack, bỏ lịch trực/capacity, pitch deck), `docs/submission/README.md` (Live URL, journal, worklog).
 - Đợt 2 (cùng ngày): viết lại phần Active của `docs/03`, `04`, `data-contract-v1`, `playbook-v1` theo code (portal, `DEPT_*`, 13 khu vực/asset, vật tư theo yêu cầu/nhập kho, tách/gộp khẩn cấp, 6 điều kiện readiness). Chuyển `JOURNAL.md`→`docs/journal.md`, `WORKLOG.md`→`docs/worklog.md` (worklog sinh từ git log, 242 commit/26 ngày), thêm `docs/video-demo.md`; sửa tham chiếu README/checklist.
