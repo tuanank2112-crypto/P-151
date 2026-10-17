@@ -7,11 +7,12 @@ import {
   bqlDecideWrongDeptAction,
   emergencyCloseAction,
   emergencyDowngradeAction,
+  emergencyMergeAction,
   finishBqlTicketAction,
   rejectInspectionAction,
   returnBqlTicketAction,
 } from "@/app/actions/management";
-import { IconBars, IconBriefcase, IconGrid, IconTable } from "@/components/icons";
+import { IconBriefcase, IconGrid, IconTable } from "@/components/icons";
 import { Body, Header, NavTiles, PageHead } from "@/components/shell";
 import { TicketDetailModal } from "@/components/ticket-detail-modal";
 import { TicketEvidence } from "@/components/ticket-evidence";
@@ -19,23 +20,20 @@ import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
 import { DEPT_LABEL, ROLE_LABEL } from "@/lib/constants";
 import type { ManagementData, MgmtTicket, TicketDetail } from "@/lib/dto";
-import { deptPerformance, overviewCount, overviewFilter, type OverviewKind } from "@/lib/backend-map";
-import { BQL_BOXES, LIST_GROUPS, NO_DEPT, bqlBox, decideRank, deptLoad, headline, listGroup, type BqlBox, type ListGroup } from "@/lib/bql-view";
+import { overviewFilter } from "@/lib/backend-map";
+import { BQL_BOXES, LIST_GROUPS, NO_DEPT, bqlBox, decideRank, headline, listGroup, type BqlBox, type ListGroup } from "@/lib/bql-view";
 import { SITE_CHECKS } from "@/lib/inspection";
 import { hasLocation, matchesDoneSearch } from "@/lib/reception-done";
+import { ManagementOverviewChart } from "./management-overview-chart";
 
-type Tab = "overview" | "all" | "mine" | "teams";
+type Tab = "overview" | "all" | "mine";
 type DeptSel = "all" | "ve_sinh" | "ky_thuat" | "bql";
 
 const HEAD: Record<Tab, { title: string; sub: string }> = {
   overview: { title: "Tổng quan", sub: "Tình hình ticket toàn khu đô thị." },
   all: { title: "Danh sách ticket", sub: "Toàn bộ ticket của mọi phòng ban, mỗi ticket nằm ở đúng một trạng thái." },
   mine: { title: "Việc của Ban quản lý", sub: "Ticket cần BQL quyết, chờ nghiệm thu và đã hoàn tất." },
-  teams: { title: "Hiệu suất phòng ban", sub: "Khối lượng, ticket quá hạn, đánh giá và thời gian hoàn thành của từng phòng ban." },
 };
-
-const WORKLOAD_DEPTS = ["ve_sinh", "ky_thuat"] as const;
-const SHORT_DEPT: Record<string, string> = { ve_sinh: "Phòng VS", ky_thuat: "Phòng KT" };
 const DEPT_OPTIONS: [DeptSel, string][] = [
   ["all", "Tất cả phòng"],
   ["ve_sinh", DEPT_LABEL.ve_sinh],
@@ -43,12 +41,7 @@ const DEPT_OPTIONS: [DeptSel, string][] = [
   ["bql", DEPT_LABEL.bql],
 ];
 
-const activate = (fn: () => void) => (e: React.KeyboardEvent) => {
-  if (e.key === "Enter" || e.key === " ") {
-    e.preventDefault();
-    fn();
-  }
-};
+
 const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600";
 const CHIP = `min-h-9 cursor-pointer rounded-full px-4 text-[13px] font-semibold transition-colors ${FOCUS}`;
 const chipCls = (on: boolean) => `${CHIP} ${on ? "bg-[#1D4ED8] text-white" : "bg-[#EEF2F7] text-[#2A3447] hover:bg-[#DCE8FF]"}`;
@@ -111,6 +104,13 @@ export function ManagementApp({ data }: { data: ManagementData }) {
     });
   const note = (id: string) => notes[id] ?? "";
   const setNote = (id: string, v: string) => setNotes((n) => ({ ...n, [id]: v }));
+  const clearNote = (id: string) =>
+    setNotes((n) => {
+      if (!(id in n)) return n;
+      const copy = { ...n };
+      delete copy[id];
+      return copy;
+    });
   const openDetail = (id: string) => run(() => ticketDetailAction(id), setSelectedTicket);
 
   const all = data.tickets;
@@ -167,16 +167,6 @@ export function ManagementApp({ data }: { data: ManagementData }) {
     };
   }, [inspectionKey]);
 
-  // ---- Tổng quan (SPEC-P02 §4): neutral tiles, then warning tiles
-  const cards: { label: string; kind: OverviewKind; alert: boolean; go: () => void }[] = [
-    { label: "Tổng ticket", kind: "total", alert: false, go: () => goList() },
-    { label: "Chờ phân loại", kind: "waiting", alert: false, go: () => goList({ group: "waiting" }) },
-    { label: "Đang xử lý", kind: "processing", alert: false, go: () => goList({ group: "processing" }) },
-    { label: "Khẩn cấp", kind: "emergency", alert: true, go: () => goBox("decide") },
-    { label: "Quá hạn", kind: "late", alert: true, go: () => goList({ late: true }) },
-  ];
-  const loads = WORKLOAD_DEPTS.map((d) => ({ d, ...deptLoad(all, d) }));
-  const maxOpen = Math.max(1, ...loads.map((l) => l.open));
 
   /** `required`: the action buttons stay off until a reason is typed, and the hint under the box says so (A4) */
   const noteInput = (t: MgmtTicket, placeholder: string, required = false) => {
@@ -250,107 +240,19 @@ export function ManagementApp({ data }: { data: ManagementData }) {
             { key: "overview", label: "Tổng quan", icon: <IconGrid /> },
             { key: "all", label: "Danh sách ticket", icon: <IconTable />, count: all.filter(overviewFilter("total")).length },
             { key: "mine", label: "Việc của Ban quản lý", icon: <IconBriefcase />, count: totalBqlPending },
-            { key: "teams", label: "Hiệu suất phòng ban", icon: <IconBars /> },
           ]}
         />
         <PageHead {...HEAD[tab]} />
 
         {tab === "overview" && (
-          <div className="flex flex-col gap-5">
-            <div className="flex flex-wrap gap-4">
-              {cards.map((card) => {
-                const n = overviewCount(all, card.kind);
-                const hot = card.alert && n > 0;
-                const tone = !hot
-                  ? "border-l-4 border-l-transparent"
-                  : card.kind === "emergency"
-                    ? "border-l-4 border-l-rose-500 bg-rose-50"
-                    : "border-l-4 border-l-amber-500 bg-amber-50";
-                const num = !hot ? "text-slate-800" : card.kind === "emergency" ? "text-rose-600" : "text-amber-600";
-                return (
-                  <div
-                    key={card.label}
-                    role="button"
-                    tabIndex={0}
-                    data-testid={`tile-${card.kind}`}
-                    className={`card flex flex-col gap-1 px-6 py-5 cursor-pointer hover:shadow-md transition-all select-none ${tone} ${FOCUS}`}
-                    style={{ flex: "1 1 170px" }}
-                    onClick={card.go}
-                    onKeyDown={activate(card.go)}
-                  >
-                    <span className={`text-sm font-medium ${hot ? num : "text-muted"}`}>{card.label}</span>
-                    <span className={`text-[30px] font-bold tracking-[-0.02em] ${num}`}>{n}</span>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="flex flex-wrap items-start gap-4">
-              <section className="card flex min-w-0 flex-col gap-4 p-6" style={{ flex: "1 1 420px" }}>
-                <h2 className="m-0 text-lg font-bold text-body">Điều phối và phụ tải phòng ban</h2>
-                <div className="flex flex-col gap-4">
-                  {loads.map((l) => (
-                    <div
-                      key={l.d}
-                      role="button"
-                      tabIndex={0}
-                      data-testid={`load-${l.d}`}
-                      className={`flex flex-col gap-2 rounded-xl p-2 cursor-pointer hover:bg-soft/70 transition-colors ${FOCUS}`}
-                      onClick={() => goList({ group: "processing", dept: l.d })}
-                      onKeyDown={activate(() => goList({ group: "processing", dept: l.d }))}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-semibold text-body">{DEPT_LABEL[l.d]}</span>
-                        <span className="flex items-center gap-2 text-sm">
-                          {l.late > 0 && <span className="pill late">{l.late} quá hạn</span>}
-                          <span className="font-bold text-body">{l.open} đang mở</span>
-                        </span>
-                      </div>
-                      <div className="flex h-3 w-full overflow-hidden rounded-full bg-slate-100" aria-hidden>
-                        <div className="h-full bg-sky-300" style={{ width: `${(l.waitingAccept / maxOpen) * 100}%` }} />
-                        <div className="h-full bg-sky-600" style={{ width: `${(l.inProgress / maxOpen) * 100}%` }} />
-                      </div>
-                      <div className="flex gap-4 text-xs text-muted">
-                        <span>
-                          <span className="mr-1 inline-block h-2 w-2 rounded-full bg-sky-300" />
-                          Chờ nhận việc {l.waitingAccept}
-                        </span>
-                        <span>
-                          <span className="mr-1 inline-block h-2 w-2 rounded-full bg-sky-600" />
-                          Đang làm {l.inProgress}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <section className="card flex min-w-0 flex-col gap-2 p-6" style={{ flex: "1 1 420px" }}>
-                <h2 className="mt-0 mb-1 text-lg font-bold">Cần chú ý</h2>
-                {attention.length === 0 && <span className="text-sm text-muted">Không có ticket khẩn cấp hoặc quá hạn.</span>}
-                <ul className="m-0 flex list-none flex-col p-0">
-                  {attention.map((t) => {
-                    const h = holder(t);
-                    return (
-                      <li
-                        key={t.id}
-                        role="button"
-                        tabIndex={0}
-                        className={`grid grid-cols-[auto_auto_1fr_auto] items-center gap-2 border-t border-line-soft px-2 py-2.5 cursor-pointer hover:bg-soft/40 rounded-lg ${FOCUS}`}
-                        onClick={() => focusTicket(t)}
-                        onKeyDown={activate(() => focusTicket(t))}
-                      >
-                        <span className="font-mono text-[13px] font-bold text-sky-700">{t.code}</span>
-                        {isEmergency(t) ? <span className="pill urgent">Khẩn cấp</span> : <span className="pill late">Quá hạn</span>}
-                        <span className="truncate text-sm">{headline(t)}</span>
-                        <span className={`${h.cls} text-xs`}>{h.label}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            </div>
-          </div>
+          <ManagementOverviewChart
+            tickets={all}
+            initialReport={data.report}
+            onGoList={(d) =>
+              // reception has no department filter: its tickets are the "Chờ phân loại" group, never BQL work
+              d === "tiep_nhan" ? goList({ group: "waiting" }) : goList({ dept: d })
+            }
+          />
         )}
 
         {tab === "all" && (
@@ -395,7 +297,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                 {rows.length} ticket
               </span>
             </div>
-            <div className="overflow-x-auto">
+            <div className="scroll-list overflow-x-auto">
               <table className="tbl-stack">
                 <thead>
                   <tr>
@@ -483,7 +385,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
             </div>
 
             {activeBox === "decide" && (
-              <div className="flex flex-col gap-3" data-testid="bql-decide">
+              <div className="scroll-list flex flex-col gap-3" data-testid="bql-decide">
                 {decideList.length === 0 && <div className="card p-6 text-center text-muted text-sm">Không có ticket nào cần BQL quyết.</div>}
                 {decideList.map((t) =>
                   decideRank(t) === 2 ? (
@@ -496,10 +398,10 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                       {reportText(t)}
                       {noteInput(t, "Ghi chú xử lý / lý do chuyển lại", true)}
                       <div className="grid grid-cols-2 gap-2">
-                        <button type="button" className="btn primary w-full justify-center" disabled={pending || !note(t.id).trim()} onClick={() => run(() => finishBqlTicketAction(t.id, note(t.id)))}>
+                        <button type="button" className="btn primary w-full justify-center" disabled={pending || !note(t.id).trim()} onClick={() => run(() => finishBqlTicketAction(t.id, note(t.id)), () => clearNote(t.id))}>
                           Đã xử lý xong
                         </button>
-                        <button type="button" className="btn w-full justify-center" disabled={pending || !note(t.id).trim()} onClick={() => run(() => returnBqlTicketAction(t.id, note(t.id)))}>
+                        <button type="button" className="btn w-full justify-center" disabled={pending || !note(t.id).trim()} onClick={() => run(() => returnBqlTicketAction(t.id, note(t.id)), () => clearNote(t.id))}>
                           Chuyển lại Tiếp nhận
                         </button>
                       </div>
@@ -517,6 +419,11 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                         </span>
                       </div>
                       {reportText(t)}
+                      {t.blockerCode === "EMERGENCY_PENDING_BQL" && (t.suspectOf || (t.duplicateCount ?? 0) > 0) && (
+                        <p className="text-sm text-rose-700" data-testid="emergency-duplicate">
+                          {t.suspectOf ? `Nghi trùng với ca khẩn cấp ${t.suspectOf} cùng vị trí` : `${(t.duplicateCount ?? 0) + 1} người cùng báo`}
+                        </p>
+                      )}
                       {t.blockerCode === "EMERGENCY_PENDING_BQL" ? noteInput(t, "Lý do (bắt buộc)", true) : noteInput(t, "Ghi chú")}
                       <div className="grid grid-cols-2 gap-2 pt-2 border-t border-line-soft">
                         {t.blockerCode === "EMERGENCY_PENDING_BQL" ? (
@@ -525,7 +432,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                               type="button"
                               className="btn primary w-full justify-center bg-rose-600 text-white"
                               disabled={pending || !note(t.id).trim()}
-                              onClick={() => run(() => emergencyCloseAction(t.id, note(t.id)))}
+                              onClick={() => run(() => emergencyCloseAction(t.id, note(t.id)), () => clearNote(t.id))}
                             >
                               Đóng khẩn cấp (đã xử lý)
                             </button>
@@ -533,10 +440,20 @@ export function ManagementApp({ data }: { data: ManagementData }) {
                               type="button"
                               className="btn w-full justify-center"
                               disabled={pending || !note(t.id).trim()}
-                              onClick={() => run(() => emergencyDowngradeAction(t.id, note(t.id)))}
+                              onClick={() => run(() => emergencyDowngradeAction(t.id, note(t.id)), () => clearNote(t.id))}
                             >
                               Hạ mức (báo động giả)
                             </button>
+                            {t.suspectOf && (
+                              <button
+                                type="button"
+                                className="btn col-span-2 w-full justify-center"
+                                disabled={pending || !note(t.id).trim()}
+                                onClick={() => run(() => emergencyMergeAction(t.id, t.suspectOf as string, note(t.id)), () => clearNote(t.id))}
+                              >
+                                Gộp vào {t.suspectOf}
+                              </button>
+                            )}
                           </>
                         ) : (
                           <>
@@ -566,7 +483,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
             )}
 
             {activeBox === "review" && (
-              <div className="flex flex-col gap-3" data-testid="bql-inspection">
+              <div className="scroll-list flex flex-col gap-3" data-testid="bql-inspection">
                 {inspectionTickets.length === 0 && <div className="card p-6 text-center text-muted text-sm">Hiện không có ticket nào đang chờ nghiệm thu.</div>}
                 {inspectionTickets.map((t) => {
                   const checked = siteChecked[t.id] ?? [];
@@ -639,7 +556,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
             )}
 
             {activeBox === "done" && (
-              <div className="flex flex-col gap-3" data-testid="bql-done">
+              <div className="scroll-list flex flex-col gap-3" data-testid="bql-done">
                 {doneList.length === 0 && <div className="card p-6 text-center text-muted text-sm">Chưa có ticket nào hoàn tất.</div>}
                 {doneList.map((t) => (
                   <article key={t.id} className="card flex flex-col gap-2 p-5 border-l-4 border-l-emerald-500 shadow-sm">
@@ -660,50 +577,7 @@ export function ManagementApp({ data }: { data: ManagementData }) {
           </section>
         )}
 
-        {tab === "teams" && (
-          <section className="card overflow-x-auto p-2">
-            <table data-testid="dept-perf">
-              <thead>
-                <tr>
-                  <th>Phòng ban</th>
-                  <th>Đang xử lý</th>
-                  <th>Quá hạn</th>
-                  <th>Đã đóng</th>
-                  <th>Sao trung bình</th>
-                  <th>Giờ hoàn thành TB</th>
-                </tr>
-              </thead>
-              <tbody>
-                {WORKLOAD_DEPTS.map((d) => {
-                  const p = deptPerformance(all, d);
-                  return (
-                    <tr key={d} className="cursor-pointer hover:bg-slate-50/70" onClick={() => goList({ group: "processing", dept: d })}>
-                      <td>
-                        <span className={`pill cat-${d}`}>
-                          <span className="dot" />
-                          {SHORT_DEPT[d]}
-                        </span>
-                      </td>
-                      <td className="font-bold">{p.processing}</td>
-                      <td>
-                        <span className={p.late ? "pill late" : "pill st-hoan_thanh"}>{p.late}</span>
-                      </td>
-                      <td>{p.closed}</td>
-                      <td>
-                        {p.avgStars === null ? (
-                          <span className="pill bg-slate-100 text-slate-600">Chưa có đánh giá</span>
-                        ) : (
-                          `${p.avgStars}/5 ⭐ (${p.rated})`
-                        )}
-                      </td>
-                      <td>{p.avgHours === null || p.avgHours === 0 ? "--" : `${p.avgHours} giờ`}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </section>
-        )}
+
       </Body>
 
       <TicketDetailModal ticket={selectedTicket} onClose={() => setSelectedTicket(null)} />

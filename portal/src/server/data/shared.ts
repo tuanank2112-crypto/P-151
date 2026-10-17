@@ -1,6 +1,7 @@
 import "server-only";
 import type { UserBrief } from "@/lib/dto";
-import { fmtDateTime, initials } from "@/lib/format";
+import { fmtDateTime, fmtRelative, initials } from "@/lib/format";
+import { toMaterialRequest, type BMaterialRequest, type MaterialRequestDto } from "@/lib/material-requests";
 import { toStockAlert, type BStockAlert, type StockAlertDto } from "@/lib/stock-alerts";
 import { api, BackendError } from "../backend";
 import type { SessionUser } from "../session";
@@ -31,6 +32,11 @@ export const readStock = () => api<BStockRow[]>("/mo/warehouse/stock");
 /** Materials used in the last 7 days, most used first (the warehouse cannot open finished tickets, so the backend sums them) */
 export const readUsage = () => api<{ item_code: string; item_name: string; unit: string | null; used_qty: number; tickets: number }[]>("/mo/warehouse/usage");
 export const readCatalog = () => api<BCatalog>("/mo/catalog");
+/** Plan 24: open material requests (PVT-…); the backend scopes them to the caller's role */
+export async function readMaterialRequests(departments: Record<string, string>): Promise<MaterialRequestDto[]> {
+  const rows = await api<BMaterialRequest[]>("/mo/warehouse/requests");
+  return rows.map((r) => toMaterialRequest(r, departments, (iso) => fmtRelative(new Date(iso), new Date())));
+}
 /** Plan 20: a failing alert feed (flag off, old backend) never breaks the Technical page */
 export async function readStockAlerts(): Promise<StockAlertDto[]> {
   try {

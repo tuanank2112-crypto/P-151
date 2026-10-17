@@ -4,14 +4,27 @@ Maintains a sliding window of the most recent 100 AI log entries.
 Designed for low-overhead logging, auditing, and real-time dashboard inspection.
 """
 
+import json
+import logging
+import os
 import threading
 import uuid
 from collections import deque
 from datetime import UTC, datetime
 from enum import StrEnum
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
+
+_LOGGER = logging.getLogger(__name__)
+_DEFAULT_LATENCY_LOG = "data/logs/latency.jsonl"
+
+
+def _latency_log_path() -> Path | None:
+    """Where the latency file goes. `MO_LATENCY_LOG` overrides it; `off` disables it. Read per call so tests can flip it."""
+    raw = os.environ.get("MO_LATENCY_LOG", _DEFAULT_LATENCY_LOG).strip()
+    return None if raw.lower() in ("", "off", "0", "false") else Path(raw)
 
 
 class AILogStatus(StrEnum):
@@ -68,7 +81,33 @@ class InMemoryAILogger:
         """Add an AILogEntry in a thread-safe manner."""
         with self._lock:
             self._logs.appendleft(entry)  # Most recent first
+            self._append_latency_line(entry)
         return entry
+
+    @staticmethod
+    def _append_latency_line(entry: AILogEntry) -> None:
+        """Persist one JSON line per model call (no prompt, no output). Never raises: logging must not break a ticket."""
+        path = _latency_log_path()
+        if path is None:
+            return
+        usage = entry.token_usage or {}
+        line = {
+            "ts": entry.timestamp.isoformat(),
+            "log_id": entry.log_id,
+            "ticket_id": entry.ticket_id,
+            "model": entry.model_name,
+            "status": entry.status.value,
+            "latency_ms": entry.latency_ms,
+            "prompt_tokens": usage.get("prompt_tokens"),
+            "completion_tokens": usage.get("completion_tokens"),
+            "total_tokens": usage.get("total_tokens"),
+        }
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps(line, ensure_ascii=False) + "\n")
+        except OSError as exc:
+            _LOGGER.warning("latency log write failed: %s", exc)
 
     def log(
         self,

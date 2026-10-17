@@ -8,7 +8,8 @@ import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
 import { ROLE_LABEL } from "@/lib/constants";
 import type { WarehouseData, WarehouseItem } from "@/lib/dto";
-import { matchesDoneSearch } from "@/lib/reception-done";
+import { requestSummary } from "@/lib/material-requests";
+import { hasLocation, matchesDoneSearch } from "@/lib/reception-done";
 import { STOCK_BADGE, byUrgency, restockTone, stockLevel, type RestockTone } from "@/lib/stock";
 
 type Tab = "inventory";
@@ -68,9 +69,9 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
     );
   };
 
-  const openImport = (code?: string) => {
+  const openImport = (code?: string, qty = 10) => {
     if (code) setSelectedCode(code);
-    setImportQty(10);
+    setImportQty(qty);
     setModalOpen(true);
   };
 
@@ -80,15 +81,24 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
         avatar={data.user.avatar}
         name={data.user.name}
         rolePill={ROLE_LABEL.warehouse}
-        bellLabel="Vật tư cần nhập thêm"
-        bellCount={restock.length}
-        notices={restock.map((i) => ({
-          id: `low-${i.code}`,
-          title: `${STOCK_BADGE[levelOf(i)].label}: ${i.name}`,
-          urgent: levelOf(i) === "out",
-          tag: "Tồn kho",
-          body: `Còn ${i.stock ?? "--"} ${i.unit}${i.min !== null ? ` · tối thiểu ${i.min}` : ""}`,
-        }))}
+        bellLabel="Phiếu vật tư và vật tư cần nhập thêm"
+        bellCount={data.requests.length + restock.length}
+        notices={[
+          ...data.requests.map((r) => ({
+            id: `pvt-${r.requestId}`,
+            title: `${r.requestId}: cần nhập vật tư`,
+            urgent: true,
+            tag: "Phiếu vật tư",
+            body: `${requestSummary(r)} · ${r.sourceLabel}`,
+          })),
+          ...restock.map((i) => ({
+            id: `low-${i.code}`,
+            title: `${STOCK_BADGE[levelOf(i)].label}: ${i.name}`,
+            urgent: levelOf(i) === "out",
+            tag: "Tồn kho",
+            body: `Còn ${i.stock ?? "--"} ${i.unit}${i.min !== null ? ` · tối thiểu ${i.min}` : ""}`,
+          })),
+        ]}
       />
       <Body>
         <NavTiles<Tab>
@@ -100,6 +110,59 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
         <PageHead {...HEAD.inventory} />
 
         <div className="flex flex-col gap-5">
+          <section className="card flex flex-col gap-3 px-6 py-5" data-testid="material-requests" aria-label="Phiếu vật tư cần nhập">
+            <h2 className="m-0 flex items-center gap-2 text-base font-bold text-body">
+              Phiếu vật tư cần nhập
+              <span className="pill urgent text-[11px]" data-testid="material-requests-count">
+                {data.requests.length}
+              </span>
+            </h2>
+            {data.requests.length === 0 && <p className="m-0 text-sm text-muted">Không có phiếu vật tư nào đang chờ nhập.</p>}
+            <div className="scroll-list flex flex-col gap-3">
+              {data.requests.map((r) => (
+                <article key={r.requestId} className="flex flex-col gap-2 rounded-xl border border-line bg-soft/30 p-3.5" data-testid="material-request" data-request={r.requestId}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-[13px] font-bold text-slate-800">{r.requestId}</span>
+                    <span className="text-sm font-semibold text-brand">{r.ticketId}</span>
+                    <span className="pill cat-none">{r.sourceLabel}</span>
+                    {r.departmentName && <span className="text-xs text-muted">{r.departmentName}</span>}
+                    <span className="ml-auto text-xs text-muted">Chờ {r.since}</span>
+                  </div>
+                  {hasLocation(r.location) && <span className="text-[13px] text-muted">{r.location}</span>}
+                  {r.note && <p className="m-0 text-sm text-body">Ghi chú: {r.note}</p>}
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Mã VT</th>
+                        <th>Tên vật tư</th>
+                        <th className="text-right">Cần</th>
+                        <th className="text-right">Tồn</th>
+                        <th className="text-right">Thiếu</th>
+                        <th>Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {r.lines.map((l) => (
+                        <tr key={l.itemCode}>
+                          <td className="whitespace-nowrap font-mono text-[13px] font-bold">{l.itemCode}</td>
+                          <td className="font-medium">{l.itemName}</td>
+                          <td className="text-right tabular-nums">{l.needed}</td>
+                          <td className="text-right tabular-nums">{l.stock === null ? "--" : l.stock}</td>
+                          <td className="text-right font-bold tabular-nums text-rose-600">{l.shortage}</td>
+                          <td>
+                            <button type="button" className={`btn primary text-xs whitespace-nowrap ${FOCUS}`} onClick={() => openImport(l.itemCode, Math.max(1, Math.ceil(l.shortage)))}>
+                              Nhập đủ
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </article>
+              ))}
+            </div>
+          </section>
+
           <div className="flex flex-wrap items-stretch gap-4">
             <div className="card flex flex-col gap-1 px-6 py-5" style={{ flex: "1 1 180px" }}>
               <span className="text-sm text-muted">Tổng danh mục vật tư</span>
@@ -169,7 +232,7 @@ export function WarehouseApp({ data }: { data: WarehouseData }) {
             </div>
           </div>
 
-          <section className="card overflow-x-auto p-2">
+          <section className="card scroll-list overflow-x-auto p-2">
             <table>
               <thead>
                 <tr>

@@ -1,12 +1,22 @@
 # MaintenanceOps Agent — UI Flow & Low-fidelity Wireframe
 
-> **Document status:** DRAFT · CHANGE CONTROL
-> **Version:** 0.6-candidate
-> **Ngày cập nhật:** 2026-10-01
+> **Document status:** IMPLEMENTED (phần Active, v1.17.9) · phần Historical giữ để truy vết
+> **Version:** 1.0-implemented (phần Active) · 0.6-candidate (lịch sử)
+> **Ngày cập nhật:** 2026-10-17 (phần Active)
 > **MVP baseline:** v0.3 đã freeze; v0.6 candidate theo `CR-BPTN-03`
 > **Freeze history:** v0.3 — 28/09/2026; v0.6 chưa freeze
 > **Owner:** TV1 — Product / BA / Process; UX reviewer: TV3 — UX / UI / Prototype  
 > **Boundary:** Prototype với dữ liệu mô phỏng; BQL có CTA đóng/hủy mô phỏng, nhưng không nghiệm thu hay tích hợp vận hành thật
+
+## Hiện trạng thực tế (audit 2026-10-17, đối chiếu code v1.17.9)
+
+> Các câu "CR-03 `PROPOSED` / chưa có người duyệt / NOT READY" trong phần còn lại của file là **lịch sử tại 2026-10-01**. Hiện trạng:
+> - **Duyệt:** CR-BPTN-03 được duyệt cho phạm vi MVP 04/10 và D-01–D-07 (D-08: leader Lê Thị Châm Anh, ngày duyệt báo 2026-10-02, ghi nhận 2026-10-03). Chưa phải sign-off toàn bộ gate Day05/Day06.
+> - **Code:** engine CR-03 đã cài (xem [`maintenance.md`](maintenance.md)); phiên bản dự án 1.17.9. Dữ liệu chạy trên PostgreSQL/Supabase; production ở Vercel (xem [README](../README.md)).
+> - **UI:** UI hiện hành là [`portal/`](portal.md) (Next.js, gọi backend `/api/v1`) và PWA [`src/mobile/`](mobile.md). UI tĩnh `src/web/` đã xoá (2026-10-12); [`web.md`](web.md) chỉ còn là lịch sử.
+> - **Vai trò thật trên UI:** cư dân, Tiếp nhận (BPTN), Vệ sinh, Kỹ thuật, Quản lý (BQL), Kho. **Kho có màn hình** (tồn kho, duyệt cấp vật tư), khác câu "Kho không có màn hình" ở bản 0.6.
+> - **Agent:** LangGraph + LLM (`gpt-6-luna` trên production); ngữ nghĩa do LLM suy luận, tầng an toàn chỉ là lưới sàn hẹp (luật + từ vựng).
+> - **Khi lệch:** theo thứ tự code → `CR-BPTN-03.md` → file này.
 
 ## Changelog
 
@@ -17,94 +27,91 @@
 | 0.3 | 2026-09-27 | Khóa 4 demo flow cho vệ sinh/kỹ thuật; thêm asset/duty/stock/route status và loại bỏ UI ngoài active scope | DRAFT · Chờ sign-off |
 | 0.3-freeze | 2026-09-28 | Đóng OD-09 và freeze UI scope/flow trong MaintenanceOps MVP v0.3 | FROZEN |
 | 0.6-candidate | 2026-10-01 | Thiết kế lại UI cho Cư dân/BPTN/Phòng ban/BQL, safety, priority, merge, hold, close/cancel và rating | DRAFT · CHỜ PHÊ DUYỆT CR-03 |
+| 1.0-implemented | 2026-10-17 | Viết lại Active theo portal Next.js + PWA, 6 vai, Kho có màn hình | HIỆN HÀNH |
 
 ---
 
-# Active UI specification — MVP v0.6 candidate
+# Active UI specification — hiện hành: portal Next.js + PWA điện thoại (khớp code v1.17.9, audit 2026-10-17)
+
+> Thay cho thiết kế `UI-01…UI-08` của bản 0.3/0.6 (hàng đợi chung BPTN/BQL, Kho không có màn hình). Chi tiết kỹ thuật: [`portal.md`](portal.md) (desktop/mobile web), [`mobile.md`](mobile.md) (PWA `/app/`). Ảnh chụp mọi màn hình theo vai: [`screenshots/README.md`](screenshots/README.md). `src/web/` đã xoá.
 
 ## 1. Information architecture
 
-- **Resident:** Tạo ticket; Ticket của tôi; Bổ sung thông tin; Chi tiết/lịch sử; Rating sau đóng.
-- **BPTN/BQL shared shell:** cùng bố cục hàng đợi và chi tiết, nhưng backend và UI ẩn/khóa action theo role.
-- **Department:** Ticket đã giao; chi tiết; nhận ticket; checklist/kết quả/vật tư/ảnh; trả sai phòng ban hoặc báo BQL xem.
-- **Warehouse:** không có màn hình; chỉ action mô phỏng `RECEIVE_STOCK` từ fixture/admin control.
-- Không có màn hình team, duty, capacity, lịch trực, gán nhân viên, quản lý asset hoặc quản lý kho riêng.
+Một portal, mỗi vai một route; sau đăng nhập backend quyết vai, portal chuyển về route của vai.
+
+| Route | Vai (tài khoản demo) | Màn hình |
+|---|---|---|
+| `/login` | tất cả | Đăng nhập; **không** hiện danh sách tài khoản hay mật khẩu |
+| `/resident` | Cư dân (`cudan`) | Gửi phản ánh; Phản ánh của tôi (danh sách + chi tiết + bổ sung + đánh giá) |
+| `/reception` | Tiếp nhận / BPTN (`tiepnhan`) | Chờ phân loại; Đã phân loại; Hiệu suất Agent |
+| `/cleaning`, `/technical` | Phòng Vệ sinh (`vesinh`), Phòng Kỹ thuật (`kythuat`) | Hàng việc; chi tiết; Yêu cầu vật tư; hoàn thành; lịch sử hoàn thành; thông báo kho |
+| `/management` | BQL (`quanly`) | Tổng quan; Tất cả ticket; Việc của BQL; Hiệu suất phòng ban; lối vào Kho |
+| `/warehouse` | Kho (`kho`), BQL | Tồn kho; Nhập kho; Phiếu vật tư cần nhập |
+
+PWA `src/mobile/` (`/app/`) dùng cùng API và cùng thiết kế cho các vai vận hành; không ghi offline, service worker không cache `/api/`.
+Không có màn hình team, duty, capacity, lịch trực, gán nhân viên, quản lý asset.
 
 ## 2. Global display rules
 
-- Mọi màn hình có nhãn “Dữ liệu mô phỏng”.
-- Hiển thị state bằng nhãn dễ hiểu; nội bộ vẫn lưu canonical code.
-- `HIGH` có badge nổi bật và xếp đầu; không tự gửi thông báo ngay khi tạo.
-- Cư dân không thấy `reason_code`, `risk_*`, blocker owner, vật tư, ghi chú nội bộ, retry hay assignee.
-- BPTN/BQL thấy playbook, department đề xuất, priority/rule, safety signals, duplicate, asset, material/stock, blocker/owner và audit.
-- Không hiển thị nút gán người. `assignee_id` không xuất hiện trên form.
+- Có nhãn dữ liệu mô phỏng; trạng thái hiển thị bằng nhãn dễ hiểu, mã canonical chỉ lưu nội bộ. Stepper cư dân 6 bước: Tiếp nhận (RECEIVED/NEED_INFO) → Kiểm tra (VERIFYING) → Đã giao (ROUTED) → Đang xử lý (IN_PROGRESS/ON_HOLD) → Chờ nghiệm thu (READY_FOR_REVIEW) → Hoàn tất (CLOSED).
+- Cư dân **không** thấy `reason_code`, `risk_*`, blocker/owner, vật tư, ghi chú nội bộ, assignee. Cư dân không có nút khẩn cấp tự chọn, xác nhận hay hủy.
+- Phòng ban không thấy danh tính cư dân (sao/thẻ/bình luận vẫn thấy) và không thấy ticket chưa giao cho mình.
+- Ticket `MERGED` hiện "Đã gộp" (không phải "Đã hủy") và đi theo trạng thái ticket gốc.
+- Danh sách dài cuộn **bên trong** khung `.scroll-list` (tối đa `min(70vh, 760px)`); vị trí trống không hiển thị.
+- Phản ánh có Agent chạy 16–20 giây: portal chờ ghi tới 60 giây (đọc 15 giây); nút ghi khoá ngay lần bấm đầu để không tạo ticket trùng.
+- Mọi hành động nhạy cảm bắt buộc lý do, kiểm ở server và audit, không chỉ ở UI.
+- Khối "Phân tích Agent" **không** hiện ở modal chi tiết và thẻ Tiếp nhận (người dùng bỏ ở v1.17.4); dữ liệu `agent` vẫn có trong DTO cho nơi hiển thị riêng sau này.
 
 ## 3. Main flows
 
-### Flow A — Ticket thường đủ điều kiện
+### Flow A — Ticket thường
+`cudan` gửi (tiêu đề, nội dung, nơi, ảnh) → `RECEIVED` → Agent phân loại/asset/vật tư → `ROUTED` (đã giao phòng ban) → phòng ban **Nhận việc** → `IN_PROGRESS` → **Hoàn thành** (checklist, ảnh bắt buộc, vật tư đã dùng) → `READY_FOR_REVIEW` → BQL tích đủ tiêu chí nghiệm thu → `CLOSED` → cư dân đánh giá một lần.
 
-```text
-Cư dân tạo → RECEIVED → Agent đề xuất → asset/material hợp lệ
-→ ROUTED → Phòng ban nhận → IN_PROGRESS
-→ nộp đủ hồ sơ → READY_FOR_REVIEW
-→ BQL duyệt → CLOSED → cư dân rating một lần
-```
+### Flow B — Rủi ro chưa rõ (Bậc 2)
+Cư dân thấy "Đang được kiểm tra". Tiếp nhận có đúng ba nút: Xác nhận an toàn (lý do), Nâng khẩn cấp, Yêu cầu bổ sung.
 
-### Flow B — Rủi ro chưa rõ
+### Flow C — Khẩn cấp (Bậc 1)
+Thẻ nổi bật trong Việc của BQL; không có nút route/draft/nhận phòng ban. BQL: hạ báo nhầm (lý do), gộp với ca gốc, hủy, hoặc ghi kết quả xử lý rồi đóng. Ticket nghi trùng một ca khẩn cấp đang mở hiện "Nghi trùng với ca khẩn cấp …" và nút **Gộp vào …**; nhãn `WAITING_EMERGENCY` = "Chờ xử lý khẩn cấp cùng vị trí".
 
-Ticket hiển thị `VERIFYING` cho cư dân dưới nhãn chung “Đang được kiểm tra”. BPTN thấy ba nút và chỉ ba nút: “Xác nhận an toàn”, “Nâng khẩn cấp”, “Yêu cầu bổ sung”. Action đầu bắt buộc lý do; action hai chuyển owner sang BQL; action ba đưa ticket sang `NEED_INFO`.
+### Flow D — Thiếu thông tin ở Tiếp nhận
+Thẻ `MISSING_INFO` (không phải ca an toàn) có form Vị trí · Thông tin thêm · Lý do (bắt buộc) và ba nút: Phòng vệ sinh / Phòng kỹ thuật / "Lưu, để Agent phân loại". Còn thiếu vị trí thì backend từ chối ("Vẫn thiếu: …"). Ca an toàn (`safety_context`) **không** có form này.
 
-### Flow C — Khẩn cấp
+### Flow E — Vật tư
+Phòng ban bấm **Yêu cầu vật tư** → ticket hiện "Chờ kho nhập vật tư" → Kho thấy "Phiếu vật tư cần nhập", bấm **Nhập đủ** (điền sẵn form nhập kho) → hệ thống chạy lại, ticket đi tiếp; chuông "Thông báo kho" của cả hai phòng báo "Đã chạy tiếp" hoặc "Vẫn thiếu". Kho không có nút duyệt cấp.
 
-`VERIFYING + EMERGENCY_PENDING_BQL`; card nổi bật trong hộp việc BQL; không có nút route/draft/nhận phòng ban. BQL có thể hạ cảnh báo với lý do để quay lại pipeline, gộp với sự cố gốc, hủy, hoặc ghi kết quả xử lý bắt buộc và đóng.
+### Flow F — Sai phòng ban
+Trước khi nhận: phòng ban chọn "Không phải việc phòng mình" / "Trả về Tiếp nhận", lý do bắt buộc. Sau khi đã làm: báo BQL, dữ liệu được giữ.
 
-### Flow D — Chờ vật tư
-
-Biết chắc thiếu → `ON_HOLD`, owner Kho, chưa hiện trong queue phòng ban. Sau `RECEIVE_STOCK`, UI nhận state mới từ lần chạy lại pipeline; không cần BQL bấm tiếp tục. Tồn kho không rõ hiển thị cờ `STOCK_CHECK_ON_ACCEPT` theo D-05 candidate.
-
-### Flow E — Sai phòng ban
-
-- Trước khi nhận/làm: phòng ban chọn “Trả sai phòng ban”, nhập lý do; ticket về BPTN ở `VERIFYING`.
-- Sau khi bắt đầu: chọn “Báo BQL xem sai phòng ban”; dữ liệu đã nhập được giữ; BQL chuyển về BPTN hoặc bác báo cáo.
-
-### Flow F — Review/rework/cancel
-
-Phòng ban chỉ có thể nộp khi checklist, result note, material/N-A và ít nhất một ảnh hợp lệ. BQL duyệt để đóng hoặc trả làm lại với lý do. Cancel chỉ hiển thị cho BQL ở các state được phép và luôn cần lý do.
-
-### Flow G — Merge và bổ sung
-
-BPTN xem cặp ticket trùng, so sánh raw read-only và xác nhận/bác. Merge hiển thị liên kết hai chiều và có hoàn tác. Trong `NEED_INFO`, cư dân chỉ thêm text/ảnh mới; không có chức năng sửa nội dung/ảnh gốc.
+### Flow G — Nghiệm thu, làm lại, hủy
+BQL chỉ được đóng sau khi tích đủ tiêu chí nghiệm thu (`portal/src/lib/inspection.ts`, không tick cứng). Trả làm lại về chính phòng ban, lý do bắt buộc. Hủy chỉ BQL, lý do bắt buộc.
 
 ## 4. Required screens and controls
 
-### UI-01 Resident create/detail
+### Cư dân (`/resident`)
+Form gửi + Phản ánh của tôi (ticket vừa gửi lên đầu, danh sách đầy đủ). Chi tiết có timeline đã lọc, form bổ sung chỉ khi cần thông tin, đánh giá sao + thẻ + bình luận chỉ khi `CLOSED` và chưa đánh giá. Không có nút reopen.
 
-Form phản ánh và vị trí; sau submit hiển thị mã ticket. Detail dùng public status label, timeline đã lọc, form bổ sung chỉ khi `NEED_INFO`, rating chỉ khi `CLOSED` và chưa rating. Không có nút reopen.
+### Tiếp nhận (`/reception`)
+- **Chờ phân loại:** nhóm theo blocker, nút theo quyền; link từ Tổng quan BQL "Xem danh sách ticket phòng này" mở đúng nhóm.
+- **Đã phân loại:** chip lọc theo nơi ticket đang ở, tìm kiếm không dấu, "Xem thêm" 20 dòng; phân nhóm ở `portal/src/lib/reception-done.ts`.
+- **Hiệu suất Agent:** ô "Agent gợi ý đúng" = % kèm ✓ số đúng / ✗ số sai.
 
-### UI-02 BPTN/BQL queue
+### Phòng ban (`/cleaning`, `/technical`)
+CTA: Nhận việc; Không phải việc phòng mình (lý do); Tạm dừng/Báo vướng; Yêu cầu vật tư; Hoàn thành. Form hoàn thành: Vệ sinh — ảnh bắt buộc + vật tư đã dùng (được để rỗng); Kỹ thuật — tích đủ vật tư đã dùng (≥ 1). Có tab Lịch sử hoàn thành. Không có chọn nhân viên.
 
-Filter: state, blocker, owner, risk, priority, escalated. Sort: priority giảm dần rồi thời gian tăng dần. “Cần tôi xử lý” lọc blocker theo role. BPTN không thấy action của BQL; BQL có thể xử lý ticket leo thang.
+### BQL (`/management`)
+5 ô tổng quan bấm được (gom "một ticket một ô", `portal/src/lib/bql-view.ts`), phụ tải VS/KT bấm được, Tất cả ticket (không chip "Tất cả"), Việc của BQL (Đã tiếp nhận / Đã hoàn thành / Tất cả), Hiệu suất phòng ban (báo cáo từ DB), biểu đồ tổng quan. "BQL đã xử lý" = `CLOSED + EMERGENCY_HANDLED` với mức an toàn đã hạ, không tính khẩn cấp thật.
 
-### UI-03 Internal ticket detail
-
-Các vùng: raw immutable; additions; safety/priority; duplicate; playbook/department; asset; material/stock; blocker/owner; work order; evidence/readiness; audit. CTA được render từ permission matrix, không chỉ ẩn bằng CSS.
-
-### UI-04 Department queue/detail
-
-Chỉ hiển thị ticket có `department_id` của phòng ban và state `ROUTED|IN_PROGRESS|ON_HOLD|READY_FOR_REVIEW` phù hợp. CTA: Nhận ticket; Trả sai phòng ban trước khi làm; Cập nhật hồ sơ; Báo vướng; Báo BQL xem sai phòng ban sau khi làm; Nộp kiểm duyệt. Không có chọn nhân viên.
-
-### UI-05 BQL review
-
-Hiển thị sáu gate readiness, ảnh, material reconciliation và audit. CTA: Duyệt & đóng; Trả làm lại; Hủy. Reason modal bắt buộc cho rework/cancel; emergency close bắt buộc result note.
+### Kho (`/warehouse`)
+Tồn kho với trạng thái Hết hàng / Sắp hết / An toàn / Chưa kiểm kê (theo `min_qty`), Nhập kho cho mã sẵn có, Phiếu vật tư cần nhập, xếp hạng dùng vật tư N ngày. Không có nút thêm mã vật tư mới và không có nút duyệt cấp (backend vẫn có `POST /mo/warehouse/items` sau cờ `MO_CUSTOM_MATERIALS`, UI không gọi).
 
 ## 5. UI acceptance
 
-- BPTN không thể tác động `EMERGENCY_PENDING_BQL`; cư dân không thấy dữ liệu nội bộ.
-- Không CTA nào tạo route nếu `can_route=false`.
-- Department không thấy ticket chưa route và không thể set assignee.
-- Thiếu ảnh/ghi chú/checklist/material response thì nút nộp bị chặn và hiện danh sách thiếu.
-- Rating chỉ gửi một lần; không có reopen.
-- Mọi action nhạy cảm yêu cầu lý do được validate ở server và audit, không chỉ ở UI.
+- Tiếp nhận không thể tác động `EMERGENCY_PENDING_BQL`; cư dân không thấy dữ liệu nội bộ.
+- Không CTA nào route nếu `can_route=false`; phòng ban không set được assignee.
+- Thiếu ảnh/checklist/vật tư thì không hoàn thành được và hiện danh sách thiếu (`readinessMessages`).
+- Đánh giá chỉ gửi một lần; không có reopen.
+- Danh sách dài không kéo dài trang; ghi chậm không hiện "Không kết nối được máy chủ" sai.
+- Kiểm tự động: `npm test` (vitest), `ui-check-WP3/WP4/WP5` (Playwright) trong `portal/`; ảnh chụp ở [`screenshots/`](screenshots/README.md).
 
 ---
 

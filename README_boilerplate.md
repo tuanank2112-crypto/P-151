@@ -89,8 +89,8 @@ uvicorn src.main:app --reload
 - [ ] Live URL / Deploy
 - [ ] Video Demo
 - [ ] Pitch Deck (`presentation/`)
-- [x] Weekly Journal (`JOURNAL.md`)
-- [x] Worklog (`WORKLOG.md`)
+- [x] Weekly Journal (`docs/journal.md`)
+- [x] Worklog (`docs/worklog.md`)
 - [ ] Evaluation Evidence (`eval/results/`)
 
 ## Team

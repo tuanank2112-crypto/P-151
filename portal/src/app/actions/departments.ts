@@ -1,6 +1,7 @@
 "use server";
 
 import { readinessMessages } from "@/lib/backend-map";
+import { buildShortagePayload } from "@/lib/material-requests";
 import { fail } from "@/lib/result";
 import { act, id, num, str } from "@/server/act";
 import { api } from "@/server/backend";
@@ -14,11 +15,34 @@ const post = async (url: string, json?: unknown) => {
   return null;
 };
 
-/** Technical marks a restock alert as read (`POST /mo/stock-alerts/{id}/ack`, idempotent) */
+/** The department's own restock alert as read (`POST /mo/stock-alerts/{id}/ack`, idempotent) */
 export async function ackStockAlertAction(alertId: string) {
   const aid = id(alertId);
   if (!aid) return fail("INVALID_INPUT");
   return act(() => post(`/mo/stock-alerts/${aid}/ack`));
+}
+
+/**
+ * IN_PROGRESS department reports it lacks material (`POST material-shortage`, CONTRACTS §3). `lines` = what it needs ON TOP
+ * of what it already took. The backend answers 409 GUARD_FAILED when the warehouse has enough: the message is shown as is.
+ */
+export async function reportMaterialShortageAction(ticketId: string, input: { lines: { itemCode: string; qty: number }[]; note?: string }) {
+  const tid = id(ticketId);
+  if (!tid || !Array.isArray(input?.lines)) return fail("INVALID_INPUT");
+  const picked: Record<string, string> = {};
+  for (const l of input.lines) {
+    const code = id(l?.itemCode);
+    if (!code) return fail("INVALID_INPUT", "Mã vật tư không hợp lệ.");
+    picked[code] = String(num(l.qty));
+  }
+  const payload = buildShortagePayload({ picked, note: str(input.note) });
+  if (!payload.ok) return fail("INVALID_INPUT", payload.message);
+  return act(() =>
+    post(path(tid, "material-shortage"), {
+      lines: payload.lines.map((l) => ({ item_code: l.itemCode, planned_qty: l.qty })),
+      ...(payload.note ? { note: payload.note } : {}),
+    }),
+  );
 }
 
 export async function acceptAction(ticketId: string) {

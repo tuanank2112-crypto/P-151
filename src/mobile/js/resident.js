@@ -1,11 +1,11 @@
 // Resident screens (plan 11, SPEC-P02 rules, SPEC-P04 §4 layout from portal/src/app/resident/resident-app.tsx).
 // Only /resident/* endpoints; data = ResidentTicketView.
-import { api, apiForm, apiImage } from './api.js?v=18';
+import { api, apiForm, apiImage } from './api.js?v=19';
 import {
   TERMINAL, boxOf, el, emptyState, fill, formatTime, history, icon, infoGrid, notice, pageHead, pagedList, pill,
   refreshButton, stepHead, toast, writeButton,
-} from './ui.js?v=18';
-import { MAX_PHOTOS, photoFormData, photoPicker } from './photo.js?v=18';
+} from './ui.js?v=19';
+import { MAX_PHOTOS, photoFormData, photoPicker } from './photo.js?v=19';
 
 const MIN_DESCRIPTION = 10;
 const RECOVER_WINDOW_MS = 3 * 60 * 1000;

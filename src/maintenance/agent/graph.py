@@ -33,6 +33,7 @@ class AgentState(TypedDict, total=False):
     log_id: str  # id of the ai_logger entry written for the model call
     validated: Validated
     record: AgentDecisionRecord
+    read_emergency: bool  # plan 23 P04: the model reads a report the rules already stopped as an emergency
 
 
 Node = Callable[[AgentState], dict[str, Any]]

@@ -1,0 +1,38 @@
+BASELINE (no mutation) exit=0
+15 passed in 0.81s
+
+M-1 remove the "stock is enough => refuse" check (expect R-03)
+  exit=1
+  FAILED tests/test_maintenance/test_p24_material_requests.py::test_r03_stock_is_enough_so_nothing_changes
+  FAILED tests/test_maintenance/test_p24_material_requests.py::test_r11b_api_guard_and_validation
+  2 failed, 13 passed in 0.96s
+
+M-2 alert carries every waiting ticket / goes to every department (expect R-07)
+  exit=1
+  FAILED tests/test_maintenance/test_p24_material_requests.py::test_r07_two_departments_waiting_for_one_item_get_one_alert_each
+  FAILED tests/test_maintenance/test_p24_material_requests.py::test_r10_alert_permissions
+  FAILED tests/test_maintenance/test_p24_material_requests.py::test_r11_api_report_read_restock_notice_ack
+  3 failed, 12 passed in 0.99s
+
+M-3 material_requests not filtered by department (expect R-12)
+  exit=1
+  FAILED tests/test_maintenance/test_p24_material_requests.py::test_r12_a_department_sees_only_its_own_requests
+  FAILED tests/test_maintenance/test_p24_material_requests.py::test_r11_api_report_read_restock_notice_ack
+  2 failed, 13 passed in 0.93s
+
+M-4 drop the material.shortage notification (expect R-01)
+  exit=1
+  FAILED tests/test_maintenance/test_p24_material_requests.py::test_r01_step_7_shortage_raises_a_request_and_tells_the_warehouse
+  FAILED tests/test_maintenance/test_p24_material_requests.py::test_r02_department_at_work_reports_a_shortage
+  2 failed, 13 passed in 1.03s
+
+M-5 tickets[].waiting always True (expect R-05)
+  exit=1
+  FAILED tests/test_maintenance/test_p24_material_requests.py::test_r05_full_restock_resumes_the_ticket_and_tells_its_department
+  FAILED tests/test_maintenance/test_p24_material_requests.py::test_r11_api_report_read_restock_notice_ack
+  2 failed, 13 passed in 0.89s
+
+RESTORED (no mutation) exit=0
+15 passed in 0.63s
+
+MUTATION EXIT CODES: [1, 1, 1, 1, 1] -> 5/5 red

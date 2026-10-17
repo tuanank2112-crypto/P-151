@@ -1,18 +1,15 @@
 import "server-only";
 import type { WarehouseData } from "@/lib/dto";
 import type { SessionUser } from "../session";
-import { buildWarehouseRequest, stockMap } from "./build";
-import { brief, listTickets, readCases, readCatalog, readStock, readUsage } from "./shared";
+import { brief, readCatalog, readMaterialRequests, readStock, readUsage } from "./shared";
 
 /** Items created through `POST /mo/warehouse/items` get codes `SIM-MAT-X-<hex>` (SPEC-P01 §3) */
 const isCustom = (code: string) => code.startsWith("SIM-MAT-X-");
 
 export async function warehouseData(user: SessionUser): Promise<WarehouseData> {
-  const [list, stockRows, catalog, usage] = await Promise.all([listTickets(), readStock(), readCatalog(), readUsage()]);
-  const now = new Date();
-  const stock = stockMap(stockRows);
-  const waiting = list.filter((s) => s.status === "ON_HOLD" && s.reason_code === "WAITING_MATERIAL");
-  const cases = await readCases(waiting.map((s) => s.ticket_id));
+  const [stockRows, catalog, usage] = await Promise.all([readStock(), readCatalog(), readUsage()]);
+  // plan 24: the open requests come from the backend (`GET /mo/warehouse/requests`), not from the ticket list
+  const requests = await readMaterialRequests(catalog.departments);
   return {
     user: brief(user),
     inventory: stockRows.map((r) => ({
@@ -24,9 +21,7 @@ export async function warehouseData(user: SessionUser): Promise<WarehouseData> {
       custom: isCustom(r.item_code),
     })),
     weeklyUsage: usage.slice(0, 5).map((u) => ({ code: u.item_code, name: u.item_name, unit: u.unit ?? "", qty: u.used_qty, tickets: u.tickets })),
-    requests: cases
-      .map((c) => buildWarehouseRequest(c, stock, catalog.departments, now))
-      .filter((r): r is NonNullable<typeof r> => r !== null),
+    requests,
     customMaterials: catalog.custom_materials_enabled === true,
   };
 }

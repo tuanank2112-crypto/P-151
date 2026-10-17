@@ -34,6 +34,14 @@ Mở http://localhost:8000. Tài khoản (mật khẩu `123456`): `cudan`, `tiep
 | `npx tsx scripts/ui-check-WP3.mts --base=URL` | Kiểm Cư dân + Tiếp nhận trên trình duyệt (Playwright), ảnh 1440/390 |
 | `npx tsx scripts/ui-check-WP4.mts cleaning\|technical --base=URL` | Kiểm Vệ sinh / Kỹ thuật |
 | `npx tsx scripts/ui-check-WP5.mts --base=URL` | Kiểm Quản lý + Kho + modal |
+**Thiếu thông tin ở Tiếp nhận (v1.17.7):** thẻ `MISSING_INFO` (không phải ca an toàn) có form Vị trí · Thông tin thêm · Lý do + Phòng vệ sinh / Phòng kỹ thuật / "Lưu, để Agent phân loại" ⇒ `fillMissingInfoAction` ⇒ `bptn-resolve {location?, info?, category?, note}`. Backend chặn khi còn thiếu ("Vẫn thiếu: …"). `safetyContext` (T06) ⇒ chỉ chữ "Đang chờ cư dân bổ sung".
+
+**Ticket gộp (v1.17.5):** `MERGED` hiện "Đã gộp", KHÔNG "Đã hủy". `buildResidentTicket` lấy bước/phòng ban/thông báo/trạng thái từ `merged_into` (ticket gốc) ⇒ `cancelled` chỉ khi ticket gốc huỷ; `merged` là cờ riêng (cả `TicketDetail`). Tổng quan → "tiếp nhận" → danh sách mở nhóm `waiting` (Chờ phân loại).
+
+**Phân tích Agent (v1.17.4):** KHÔNG còn hiện ở modal chi tiết ticket và thẻ Tiếp nhận (người dùng bỏ hẳn; sẽ có một nơi hiển thị riêng, chưa chốt). `TicketDetail.agent` / `ReceptionInboxItem.agent` (`buildAgentInfo`) vẫn được dựng — đừng xoá khi dọn code.
+
+**Thời gian chờ backend (hồ sơ 27, v1.17.3):** `server/backend.ts` — đọc (GET) `READ_TIMEOUT_MS` 15 s, ghi (POST, kể cả form ảnh) `WRITE_TIMEOUT_MS` 60 s, vì gửi phản ánh chờ Agent 16–20 s trước khi backend trả lời. Quá giờ ⇒ "Không kết nối được máy chủ" dù backend có thể đã ghi xong.
+
 `db:*`, `test:db`, `e2e`, `screenshots` là công cụ của bản DB riêng cũ — không dùng cho luồng hiện tại.
 
 ## 3. Cấu trúc
@@ -73,9 +81,10 @@ CLOSED=6; CANCELLED/MERGED ⇒ `cancelled`. Mã ticket = `ticket_id` backend. "B
 - Ảnh luôn qua proxy có phiên, `Cache-Control: private, no-store`.
 
 ## 6. Khác với bản develop gốc (v1.12.0, nhánh `feature/chamanh`)
+> **Đã bị §8 thay một phần (audit 2026-10-17):** nút "Yêu cầu vật tư" của Kỹ thuật và hàng "Phiếu vật tư cần nhập" của Kho ĐÃ CÓ LẠI từ v1.17.0/v1.17.6 (`POST material-shortage`, dùng chung `dept-parts.tsx` cho cả hai phòng). Vẫn đúng: không có bước duyệt cấp (`_material_approval_required()` luôn `False`), không có nút "Thêm vật tư mới" ở UI Kho; `approveMaterialsAction`/`addStockItemAction` chỉ là mã ngủ, không nút nào gọi.
 Backend chamanh chốt vật tư là **số thực tế đã dùng, một lần lưu** (plan 15-16), nên portal đổi như sau:
 - Vệ sinh / Kỹ thuật: form hoàn thành chọn vật tư theo `material_codes_by_department` + số nguyên ≥ 1, một `POST /mo/tickets/{id}/material-usage` trước `complete`. Vệ sinh được để rỗng, Kỹ thuật ≥ 1. Không đề xuất Agent, không lý do chênh lệch định mức.
-- Kỹ thuật: bỏ tab và nút "Yêu cầu vật tư" (`requestMaterialsAction` đã xoá).
+- Kỹ thuật: (v1.12.0) bỏ tab và nút "Yêu cầu vật tư" — **đã có lại ở v1.17.x, xem §8**.
 - Kho: chỉ còn tồn kho + "Nhập kho" cho mã sẵn có; bỏ "Thêm vật tư mới" và hàng đợi "Yêu cầu cấp phát". Ô ghi chú nhập hàng bỏ vì backend chưa nhận (BE-3).
 - Backend: `_material_approval_required()` luôn False; `custom_materials_enabled` luôn False. Action `approveMaterialsAction`/`addStockItemAction` còn trong code nhưng không có nút gọi.
 - Tiếp nhận, tab "Đã phân loại" (v1.12.3): chip lọc theo nơi ticket đang ở, tìm kiếm không dấu, "Xem thêm" 20 dòng; phân nhóm ở `src/lib/reception-done.ts` (stage ≤ 2 mà không có phòng ban = của BQL, không phải "chưa chuyển").
@@ -84,3 +93,10 @@ Backend chamanh chốt vật tư là **số thực tế đã dùng, một lần 
 - Hợp đồng và lý do: `planning/19_2026-10-12_ui-ux-polish/specs/01-CONTRACTS.md`. Mọi phân nhóm "một ticket một ô" nằm ở `src/lib/reception-done.ts` (Tiếp nhận), `src/lib/bql-view.ts` (BQL: `bqlBox`, `listGroup`, `deptLoad`), `src/lib/building.ts` (S1/S2), `src/lib/stock.ts` (Hết hàng/Sắp hết/An toàn/Chưa kiểm kê theo `min_qty`). UI không tự viết lại điều kiện.
 - BQL không còn ô Kho; "Danh sách ticket" không có chip "Tất cả" (người dùng chốt).
 - Vị trí trống (`"—"`) không hiển thị: dùng `hasLocation()`.
+
+## 8. Hồ sơ 23 + 24 (v1.16.0–v1.17.0, 2026-10-15)
+- BQL (`management-app.tsx`): thẻ khẩn cấp hiện "Nghi trùng với ca khẩn cấp …" (`MgmtTicket.suspectOf` từ `blocker.related_ticket_id`) và nút **Gộp vào …** ⇒ `emergencyMergeAction` ⇒ `POST /bql/tickets/{id}/emergency/merge`. Nhãn `WAITING_EMERGENCY` = "Chờ xử lý khẩn cấp cùng vị trí".
+- Kho (`warehouse-app.tsx`): khối "Phiếu vật tư cần nhập" từ `GET /mo/warehouse/requests` (`lib/material-requests.ts`), nút "Nhập đủ" điền sẵn form nhập kho. Không nút duyệt.
+- Kỹ thuật/Vệ sinh: "Yêu cầu vật tư" (tên cũ "Báo thiếu vật tư", đổi chữ v1.17.6, luồng không đổi; `POST material-shortage`, lỗi hiện nguyên văn), nhãn "Chờ kho nhập vật tư"; chuông "Thông báo kho" cho CẢ HAI phòng (`lib/stock-alerts.ts`, "Đã chạy tiếp"/"Vẫn thiếu").
+- Hồ sơ: `planning/23_2026-10-14_emergency-dup-split/`, `planning/24_2026-10-14_material-requests/` (ảnh chạy thật `evidence/M2/`).
+- **Danh sách dài (hồ sơ 25, v1.17.1):** mọi danh sách ticket/vật tư nằm trong khung `.scroll-list` (cuộn bên trong, tối đa `min(70vh, 760px)`); trang không dài vô hạn. Danh sách mới thì bọc khung bằng lớp này.

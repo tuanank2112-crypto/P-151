@@ -24,6 +24,7 @@ from src.api.auth import get_actor, load_accounts
 from src.config import get_settings
 from src.maintenance.ai_logger import AILogEntry, AILogStatus, ai_logger
 from src.maintenance.demo import EvaluationReport, evaluate, run_fixture
+from src.maintenance.reports import PerformanceReportResponse
 from src.maintenance.engine import (
     MAX_EXECUTION_PHOTOS,
     MAX_RESIDENT_PHOTOS,
@@ -54,16 +55,26 @@ from src.maintenance.enums import (
 )
 from src.maintenance.material_policy import MaterialUsageLine, WholeQty, allowed_material_codes, whole_positive
 from src.maintenance.messages import status_label
-from src.maintenance.models import AuditEvent, Case, Notification, PlannedMaterial, StatusEvent, StockAlert
+from src.maintenance.models import (
+    AuditEvent,
+    Case,
+    MaterialRequestView,
+    Notification,
+    PlannedMaterial,
+    StatusEvent,
+    StockAlert,
+)
 from src.maintenance.store.base import ConcurrencyError, StorePermissionError, StoreUnavailableError
 from src.maintenance.views import (
     BqlTicketRow,
     ResidentTicketView,
+    StockAlertView,
     agent_fields,
     bql_rows,
     rating_detail_of,
     resident_view,
     staff_name,
+    stock_alert_views,
 )
 
 router = APIRouter(prefix="/mo", tags=["maintenance-ops (nội bộ)"])
@@ -305,13 +316,16 @@ class IngestRequest(BaseModel):
 def _ingest(engine: MaintenanceEngine, body: IngestRequest, resident_id: str) -> Case:
     if body.simulated_received_at is not None and body.simulated_received_at.tzinfo is None:
         raise HTTPException(status_code=422, detail="simulated_received_at phải có timezone, ví dụ +07:00")
-    return _call(
+    case = _call(
         engine.receive,
         body.original_description,
         resident_id=resident_id,
         channel=body.channel,
         received_at=body.simulated_received_at,
     )
+    if engine.agent is not None and engine.needs_emergency_read(case):  # plan 23 P04: BQL is alerted already
+        threading.Thread(target=engine.read_emergency_quietly, args=(case.ticket.ticket_id,), daemon=True).start()
+    return case
 
 
 @router.post("/tickets", response_model=Case, status_code=201)
@@ -689,6 +703,17 @@ def confirm_materials(ticket_id: str, body: MaterialPlanRequest, actor: ActorDep
     return _call(engine.confirm_materials, ticket_id, actor, lines=body.lines, note=body.note)
 
 
+class MaterialShortageRequest(MaterialPlanRequest):
+    """Plan 24 CONTRACTS §3: what the department needs ON TOP of what it already took (whole numbers, like §C1)."""
+
+
+@router.post("/tickets/{ticket_id}/material-shortage", response_model=Case)
+def report_material_shortage(ticket_id: str, body: MaterialShortageRequest, actor: ActorDep, engine: EngineDep) -> Case:
+    """Phòng ban đang xử lý báo thiếu vật tư: IN_PROGRESS → ON_HOLD (WAITING_MATERIAL), kho thấy phiếu `PVT-<id>`.
+    Kho đủ cho mọi dòng ⇒ 409 GUARD, không đổi gì."""
+    return _call(engine.report_material_shortage, ticket_id, actor, lines=body.lines, note=body.note)
+
+
 class MaterialUsageRequest(BaseModel):
     model_config = {"extra": "forbid"}
 
@@ -815,10 +840,21 @@ def receive_stock(item_code: str, body: StockRequest, actor: ActorDep, engine: E
     return _call(engine.receive_stock, actor, item_code, body.qty)
 
 
-@router.get("/stock-alerts", response_model=list[StockAlert])
-def read_stock_alerts(actor: ActorDep, engine: EngineDep, unread: bool = False) -> list[StockAlert]:
-    """Cảnh báo kho vừa nhập lại vật tư Phòng Kỹ thuật dùng sau khi hết hàng (plan 20). Tắt (MO_STOCK_ALERTS=false) ⇒ []."""
-    return _call(engine.list_stock_alerts, actor, unread_only=unread)
+@router.get("/warehouse/requests", response_model=list[MaterialRequestView])
+def read_material_requests(actor: ActorDep, engine: EngineDep) -> list[MaterialRequestView]:
+    """Phiếu vật tư đang mở (ticket chờ vật tư còn thiếu theo tồn hiện tại), cũ nhất trước. Kho, BQL; phòng ban chỉ
+    thấy phiếu phòng mình (plan 24)."""
+    return _call(engine.material_requests, actor)
+
+
+@router.get("/stock-alerts", response_model=list[StockAlertView])
+def read_stock_alerts(
+    actor: ActorDep, engine: EngineDep, unread: bool = False, department: Department | None = None
+) -> list[StockAlertView]:
+    """Thông báo kho nhập vật tư cho phòng ban (plan 24, thay plan 20): phòng ban chỉ thấy phòng mình (bỏ qua
+    `department`), BQL và kho chọn được phòng. `tickets[].waiting` tính lúc đọc. Tắt (MO_STOCK_ALERTS=false) ⇒ []."""
+    alerts = _call(engine.list_stock_alerts, actor, unread_only=unread, department_id=department)
+    return stock_alert_views(engine, alerts)
 
 
 @router.post("/stock-alerts/{alert_id}/ack", response_model=StockAlert)
@@ -1037,3 +1073,30 @@ def bql_emergency_close(ticket_id: str, body: EmergencyNoteBody, actor: ActorDep
 def bql_emergency_downgrade(ticket_id: str, body: EmergencyNoteBody, actor: ActorDep, engine: EngineDep) -> Case:
     """Báo động giả: hạ Bậc 1, luồng thường chạy lại. Chỉ BQL, bắt buộc `note`."""
     return _call(engine.emergency_downgrade, ticket_id, actor, note=body.note)
+
+
+class EmergencyMergeBody(NoteBody):
+    into: str = Field(
+        min_length=1, pattern=r"\S", description="Ca khẩn cấp đang mở để gộp vào (thường là blocker.related_ticket_id)"
+    )
+
+
+@bql_router.post("/tickets/{ticket_id}/emergency/merge", response_model=Case)
+def bql_emergency_merge(ticket_id: str, body: EmergencyMergeBody, actor: ActorDep, engine: EngineDep) -> Case:
+    """Gộp ca khẩn cấp nghi trùng vào ca khẩn cấp đang mở khác (T08 của BQL). Chỉ BQL, bắt buộc `note`."""
+    return _call(engine.bql_merge, ticket_id, actor, into=body.into, note=body.note)
+
+
+@bql_router.get("/reports/performance", response_model=PerformanceReportResponse)
+def bql_performance_report(actor: ActorDep, engine: EngineDep) -> PerformanceReportResponse:
+    """Bảng báo cáo và thống kê hiệu suất phòng ban từ cơ sở dữ liệu (BQL)."""
+    _require_role(engine, actor, ActorRole.BQL)
+    return engine.get_performance_report()
+
+
+@router.get("/reports/performance", response_model=PerformanceReportResponse)
+def mo_performance_report(actor: ActorDep, engine: EngineDep) -> PerformanceReportResponse:
+    """Bảng báo cáo và thống kê hiệu suất phòng ban từ cơ sở dữ liệu (Nội bộ)."""
+    _require_role(engine, actor, *STAFF)
+    return engine.get_performance_report()
+

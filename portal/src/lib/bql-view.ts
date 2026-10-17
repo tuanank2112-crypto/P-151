@@ -10,9 +10,9 @@ export type BqlBox = "decide" | "review" | "done";
 /** "Việc của BQL": each ticket in at most one box, the one that needs the BQL first */
 export function bqlBox(t: Row): BqlBox | null {
   if (t.cancelled) return null;
-  if ((BQL_DECIDE_BLOCKERS as readonly string[]).includes(t.blockerCode ?? "") || (t.bqlWork && t.stage <= 2)) return "decide";
+  if (t.stage >= 6) return "done";
   if (t.stage === 5) return "review";
-  if (t.stage === 6) return "done";
+  if ((BQL_DECIDE_BLOCKERS as readonly string[]).includes(t.blockerCode ?? "") || (t.bqlWork && t.stage <= 2)) return "decide";
   return null;
 }
 

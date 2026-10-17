@@ -32,6 +32,9 @@ describe("bqlBox and listGroup (01 §3)", () => {
   it("stage 5 is review, stage 6 is done, cancelled is in no BQL box", () => {
     expect(bqlBox(row({ stage: 5 }))).toBe("review");
     expect(bqlBox(row({ stage: 6 }))).toBe("done");
+    expect(bqlBox(row({ stage: 6, blockerCode: "EMERGENCY_PENDING_BQL" }))).toBe("done");
+    expect(bqlBox(row({ stage: 6, bqlWork: true }))).toBe("done");
+    expect(bqlBox(row({ stage: 6, blockerCode: "WRONG_DEPT_AFTER_START" }))).toBe("done");
     expect(bqlBox(row({ stage: 6, cancelled: true }))).toBeNull();
     expect(bqlBox(row({ stage: 3 }))).toBeNull();
   });

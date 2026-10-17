@@ -1,12 +1,12 @@
 // Department screens (Phòng ban Vệ sinh / Kỹ thuật) — plan 11 SPEC-P05 §2. Same endpoints and rules as
 // renderDepartment / workSections in src/web/app.js; photos first because the field team works from the phone (Q28).
-import { api, apiForm } from './api.js?v=18';
-import { MAX_PHOTOS, photoFormData, photoPicker } from './photo.js?v=18';
-import { confirmSheet, el, field, fill, icon, notice, pill, toast, writeButton } from './ui.js?v=18';
+import { ackStockAlert, api, apiForm, listStockAlerts, reportMaterialShortage } from './api.js?v=19';
+import { MAX_PHOTOS, photoFormData, photoPicker } from './photo.js?v=19';
+import { confirmSheet, el, field, fill, icon, notice, pill, toast, writeButton } from './ui.js?v=19';
 import {
   REASON_LABEL, caseHead, caseScreen, checklistLabel, codeOf, eventsHistory, executionPhotoIds, imagesOf, materialName,
   materialUnit, photoBox, photoStrip, queueScreen, reportBox, select, writer,
-} from './staff.js?v=18';
+} from './staff.js?v=19';
 
 const MAX_EXECUTION_PHOTOS = 10; // src/maintenance/engine.py
 const TILES = [
@@ -22,13 +22,73 @@ const HEADS = {
   done: ['Việc đã hoàn thành', 'Phản ánh đã được Ban quản lý nghiệm thu và đóng.'],
 };
 let tab = 'todo';
-/** The header bell opens "Chờ nhận". */
-export function focusQueue() { tab = 'todo'; }
+/** The header bell opens the list and scrolls to "Thông báo kho" (plan 24 SPEC-P03 §2). */
+let showAlerts = false;
+export function focusQueue() { tab = 'todo'; showAlerts = true; }
 const tabState = { get: () => tab, set: (key) => { tab = key; } };
 
-export const list = (ctx) => queueScreen(ctx, {
-  tiles: TILES, tab: tabState, heads: HEADS, base: '#/d', empty: 'Không có việc nào ở mục này.',
-});
+// ---------------------------------------------------------------- warehouse alerts (plan 24)
+
+/** Text of one restock alert: "Kho đã nhập <tên> +<số>" and, per ticket it names, "Đã chạy tiếp" / "Vẫn thiếu". */
+export function alertText(alert) {
+  const unit = materialUnit(alert.item_code, alert.unit);
+  return {
+    title: `Kho đã nhập ${materialName(alert.item_code, alert.item_name)} +${alert.qty_added} ${unit}`,
+    stock: `Tồn hiện có ${alert.qty_after} ${unit}`,
+    tickets: (alert.tickets || []).map((t) => ({ id: t.ticket_id, state: t.waiting ? 'Vẫn thiếu' : 'Đã chạy tiếp', waiting: t.waiting })),
+  };
+}
+
+function alertsPanel(alerts, onAck) {
+  return [
+    el('h2', {}, `Thông báo kho (${alerts.length})`),
+    el('ul', { class: 'stock-list' }, alerts.map((alert) => {
+      const text = alertText(alert);
+      const ack = writeButton('Đã xem', () => onAck(alert), { variant: '', block: false, busyLabel: 'Đang gửi…' });
+      ack.dataset.ack = alert.alert_id;
+      return el('li', { dataset: { alert: alert.alert_id } },
+        el('div', {}, el('b', {}, text.title), el('small', {}, text.stock),
+          text.tickets.map((t) => el('small', {}, el('a', { href: `#/d/${encodeURIComponent(t.id)}` }, t.id), ` · ${t.state}`))),
+        ack);
+    })),
+  ];
+}
+
+export async function list(ctx) {
+  let unread = 0;
+  const panel = el('section', { class: 'card pad', id: 'dept-alerts', hidden: true });
+  const refreshAlerts = async () => {
+    let alerts = [];
+    try {
+      alerts = await listStockAlerts({ unread: true });
+    } catch (err) {
+      if (err.kind === 'auth') return; // a failing alert feed never breaks the work list
+    }
+    if (!ctx.alive()) return;
+    unread = alerts.length;
+    panel.hidden = !alerts.length;
+    fill(panel, alertsPanel(alerts, async (alert) => {
+      try { await ackStockAlert(alert.alert_id); } catch (err) { ctx.fail(err); }
+      await refreshAlerts();
+    }));
+    ctx.counts({ bell: unread });
+    const bell = document.querySelector('#topbar .bell');
+    if (bell) bell.setAttribute('aria-label', 'Thông báo kho');
+  };
+  // the work list sets the bell to its own count: the bell of a department counts unread warehouse alerts instead
+  const view = {
+    ...ctx,
+    counts: (counts) => ctx.counts({ ...counts, bell: unread }),
+    setLoader: (loader) => ctx.setLoader(async () => { await Promise.all([loader(), refreshAlerts()]); }),
+  };
+  ctx.screen.append(panel);
+  await queueScreen(view, { tiles: TILES, tab: tabState, heads: HEADS, base: '#/d', empty: 'Không có việc nào ở mục này.' });
+  await refreshAlerts();
+  if (showAlerts) {
+    showAlerts = false;
+    if (!panel.hidden) panel.scrollIntoView({ block: 'start' });
+  }
+}
 
 // ---------------------------------------------------------------- readiness (src/web/app.js failingLabel / computeReadinessPrecheck)
 
@@ -182,6 +242,57 @@ export async function detail(ctx) {
     return box;
   };
 
+  // Plan 24 SPEC-P03 §2: ONE tap to tell the warehouse what is still missing (POST material-shortage). Rows = materials of
+  // this department + whole quantity ON TOP of what it took. A refusal (409 GUARD_FAILED, e.g. the warehouse has enough)
+  // is shown as the server wrote it and the typed rows stay; success reloads the case (it now waits for material).
+  const shortageBlock = (c, cat) => {
+    const id = c.ticket.ticket_id;
+    const byDept = cat && cat.material_codes_by_department;
+    const allowed = new Set((byDept && byDept[c.ticket.department_id]) || []);
+    const options = ((cat && cat.materials) || []).filter((m) => allowed.has(m.item_code)).map((m) => [m.item_code, materialName(m.item_code, m.item_name)]);
+    const rows = el('div', { class: 'plan-rows', id: 'dept-shortage-rows' });
+    const addRow = () => {
+      const qtyBox = el('input', { class: 'field qty', type: 'number', inputmode: 'numeric', min: '1', step: '1', value: '1', 'aria-label': 'Số lượng cần thêm' });
+      const row = el('div', { class: 'plan-row' }, select(options, { placeholder: 'Chọn vật tư…' }), qtyBox,
+        el('button', { type: 'button', class: 'btn', onclick: () => row.remove() }, 'Bỏ'));
+      rows.append(row);
+    };
+    addRow();
+    const add = el('button', { type: 'button', class: 'btn block', id: 'dept-shortage-add', onclick: () => addRow() }, '+ Thêm vật tư');
+    const note = el('textarea', { class: 'field', id: 'dept-shortage-note', rows: 2, maxlength: '500', placeholder: 'Ghi chú (tuỳ chọn)' });
+    const invalid = (message) => ctx.fail({ kind: 'invalid', message });
+    const send = writeButton('Gửi báo thiếu', async () => {
+      const chosen = [...rows.children].map((row, i) => ({ row: i + 1, item_code: row.querySelector('select').value, planned_qty: Number(row.querySelector('input').value) }));
+      if (!chosen.length || chosen.every((l) => !l.item_code)) { invalid('Chọn ít nhất một vật tư còn thiếu'); return; }
+      const empty = chosen.find((l) => !l.item_code);
+      if (empty) { invalid(`Dòng ${empty.row}: chọn vật tư hoặc bấm "Bỏ"`); return; }
+      const bad = chosen.find((l) => !(Number.isInteger(l.planned_qty) && l.planned_qty > 0));
+      if (bad) { invalid(`Dòng ${bad.row}: số lượng phải là số nguyên lớn hơn 0`); return; }
+      const twice = chosen.find((l, i) => chosen.findIndex((o) => o.item_code === l.item_code) !== i);
+      if (twice) { invalid(`Dòng ${twice.row}: mỗi vật tư chỉ chọn một dòng`); return; }
+      try {
+        await reportMaterialShortage(id, chosen.map(({ item_code, planned_qty }) => ({ item_code, planned_qty })), note.value.trim());
+      } catch (err) {
+        ctx.fail(err, { back: '#/d' }); // the server's words, input kept
+        if (err.kind === 'conflict' && err.code === 'INVALID_TRANSITION') await reload().catch((e) => ctx.fail(e, { back: '#/d' }));
+        return;
+      }
+      toast('Đã báo kho — phiếu vật tư đã tạo');
+      await reload().catch((err) => ctx.fail(err, { back: '#/d' }));
+    }, { variant: 'danger', busyLabel: 'Đang gửi…' });
+    send.id = 'dept-shortage-send';
+    if (!byDept) { delete send.dataset.write; send.disabled = true; } // an older server has no per-department list
+    const box = el('details', { class: 'more', id: 'dept-shortage' }, el('summary', {}, 'Báo thiếu vật tư'),
+      el('div', { class: 'more-body' },
+        el('span', { class: 'muted small' }, 'Chọn vật tư còn thiếu và số lượng cần THÊM. Kho sẽ thấy phiếu vật tư ngay.'),
+        rows, add, note, send));
+    const dirty = () => { box.dataset.dirty = '1'; };
+    box.addEventListener('input', dirty);
+    box.addEventListener('change', dirty);
+    add.addEventListener('click', dirty);
+    return box;
+  };
+
   const noteBlock = (c) => {
     const requirement = c.draft && c.draft.evidence_requirements[0];
     if (!requirement) return null;
@@ -248,8 +359,11 @@ export async function detail(ctx) {
       return [
         readiness && readiness.failing_items && readiness.failing_items.length
           ? notice(`Lần báo hoàn thành trước còn thiếu: ${readiness.failing_items.map((item) => failingLabel(c, item)).join('; ')}.`, 'danger') : null,
-        photoBlock(c), checklistBlock(c), materialsBlock(c, cat), noteBlock(c), completeBlock(c), troubleBlock(c),
+        photoBlock(c), checklistBlock(c), materialsBlock(c, cat), shortageBlock(c, cat), noteBlock(c), completeBlock(c), troubleBlock(c),
       ];
+    }
+    if (t.status === 'ON_HOLD' && codeOf(t) === 'WAITING_MATERIAL') {
+      return [notice('Chờ kho nhập vật tư. Kho nhập đủ thì ticket tự chạy tiếp và bạn nhận thông báo ở đầu màn Việc đang làm.', 'pause', { id: 'dept-waiting-material' })];
     }
     if (t.status === 'ON_HOLD' && codeOf(t) === 'BLOCKED_ONSITE') {
       return [writeButton('Tiếp tục xử lý', () => run(post(id, '/resume-work'), 'Đã tiếp tục xử lý'))];

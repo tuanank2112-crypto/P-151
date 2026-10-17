@@ -16,6 +16,7 @@ vi.mock("next/cache", () => ({ refresh: () => undefined }));
 vi.mock("next/navigation", () => ({ redirect: () => undefined }));
 
 import { finishTicketAction } from "@/app/actions/departments";
+import { fillMissingInfoAction } from "@/app/actions/reception";
 import { rateTicketAction, submitTicketAction } from "@/app/actions/resident";
 import { approveMaterialsAction } from "@/app/actions/warehouse";
 
@@ -125,5 +126,34 @@ describe("finishTicketAction materials", () => {
       expect(r.ok).toBe(false);
       expect(calls).toHaveLength(0);
     }
+  });
+});
+
+describe("fillMissingInfoAction (reception fills a MISSING_INFO ticket)", () => {
+  it("sends location, info, the chosen category and the reason to bptn-resolve", async () => {
+    const r = await fillMissingInfoAction("SIM-TKT-0087", {
+      location: " Tòa S1 · Tầng 3 · Hành lang ",
+      info: "Rác ở hành lang cạnh thang máy",
+      dept: "ve_sinh",
+      note: "Đã gọi cư dân",
+    });
+    expect(r.ok).toBe(true);
+    expect(calls[0].url).toBe("/mo/tickets/SIM-TKT-0087/bptn-resolve");
+    expect(calls[0].opts?.json).toEqual({
+      location: "Tòa S1 · Tầng 3 · Hành lang",
+      info: "Rác ở hành lang cạnh thang máy",
+      category: "VE_SINH",
+      note: "Đã gọi cư dân",
+    });
+  });
+  it("without a department it sends no category, so the Agent classifies again", async () => {
+    await fillMissingInfoAction("SIM-TKT-0087", { location: "Tòa S1 · Tầng 3 · Hành lang", note: "Đã gọi cư dân" });
+    expect(calls[0].opts?.json).toEqual({ location: "Tòa S1 · Tầng 3 · Hành lang", note: "Đã gọi cư dân" });
+  });
+  it("refuses without a reason, without location and info, or with another department, before calling the backend", async () => {
+    expect((await fillMissingInfoAction("SIM-TKT-0087", { location: "Tòa S1 · Tầng 3", note: " " })).ok).toBe(false);
+    expect((await fillMissingInfoAction("SIM-TKT-0087", { note: "Đã gọi" })).ok).toBe(false);
+    expect((await fillMissingInfoAction("SIM-TKT-0087", { location: "Tòa S1 · Tầng 3", dept: "bql", note: "Đã gọi" })).ok).toBe(false);
+    expect(calls).toHaveLength(0);
   });
 });

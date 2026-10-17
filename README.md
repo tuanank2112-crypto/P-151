@@ -1,8 +1,26 @@
 # P-151 — MaintenanceOps Agent
 
 > Prototype **mô phỏng**. Toàn bộ dữ liệu (tiền tố `SIM-`), quy trình, định mức và kết quả là mô phỏng, không phải vận hành thật.
-> Spec đích duy nhất: [CR-BPTN-03](docs/CR-BPTN-03.md) (v0.6 candidate, `PROPOSED`). Mục API bên dưới mô tả **code đang chạy**;
+> Spec đích duy nhất: [CR-BPTN-03](docs/CR-BPTN-03.md) (duyệt cho phạm vi MVP 04/10, D-08; code v1.17.9). Mục API bên dưới mô tả **code đang chạy**;
 > chỗ nào lệch CR-BPTN-03 thì theo CR-BPTN-03.
+
+## Deliverables nộp bài
+
+- **Live URL:** <https://p151-portal.vercel.app/login>
+- **Video demo:** thư mục Google Drive <https://drive.google.com/drive/folders/1_c2ZhS3hxWx7OUdAvLgjqlY_PkdI5ble?usp=sharing>
+
+| # | Deliverable | Vị trí |
+|---|---|---|
+| 1 | Source code | [`src/`](src/), [`tests/`](tests/) |
+| 2 | README | file này |
+| 3 | Architecture diagram | [`docs/architecture_diagram.md`](docs/architecture_diagram.md), [`docs/diagrams/`](docs/diagrams/) |
+| 4 | AI logs | `.ai-log/session.jsonl`, màn hình log AI (`/mo/ai-logs`) |
+| 5 | Live URL | <https://p151-portal.vercel.app/login> |
+| 6 | Video demo | [`docs/video-demo.md`](docs/video-demo.md) · [Google Drive](https://drive.google.com/drive/folders/1_c2ZhS3hxWx7OUdAvLgjqlY_PkdI5ble?usp=sharing) |
+| 7 | Pitch deck | ⬜ chưa có file trong repo; hồ sơ chuẩn bị: [`planning/04_2026-10-03_user-test-pitch/`](planning/04_2026-10-03_user-test-pitch/) |
+| 8 | Journal | [`docs/journal.md`](docs/journal.md) |
+| 9 | Worklog | [`docs/worklog.md`](docs/worklog.md) |
+| 10 | Evaluation evidence | [`evaluation.md`](evaluation.md), [`docs/eval/runs/`](docs/eval/runs/) |
 
 ## Vấn đề
 
@@ -16,15 +34,15 @@ Cư dân gửi phản ánh vệ sinh hoặc đèn khu vực chung. Agent kiểm 
 - **Tầng an toàn (bước 2b, chạy trước phân loại)**: luật cố định + từ vựng dữ liệu. Tín hiệu nguy hiểm (chất lạ, mùi khét, tia lửa, dây hở) →
   Bậc 1 `EMERGENCY_PENDING_BQL` (chủ BQL) hoặc Bậc 2 `SAFETY_REVIEW_REQUIRED` (chủ BPTN).
 - **Phân loại**: playbook vệ sinh `PB-CLN-01` hoặc đèn khu vực chung `PB-TEC-01` bằng luật cố định, có thể kèm LLM đề xuất.
-- **Đề xuất team**: tra asset, tồn kho, lịch trực, capacity (fixture tĩnh) → `ROUTED` là đề xuất tuyến, không phải đã giao việc; Agent không gán người.
+- **Đề xuất team**: tra asset, tồn kho/vật tư → giao **phòng ban** (`ROUTED`); không còn lịch trực/capacity/team. Agent không gán người (`assignee_id=null`).
 - **Kiểm tra hồ sơ**: checklist, vật tư (3 phép đối soát), evidence tối thiểu → `READY_FOR_REVIEW`; mọi thao tác có audit.
 
 ## Tech Stack
 
 | Lớp | Công nghệ |
 |---|---|
-| Agent | Luật cố định + LLM đề xuất (LangChain, `gpt-4o-mini` qua OpenAI/OpenRouter); mặc định `LLM_MODE=mock` chỉ chạy luật |
-| Backend | FastAPI + Python 3.11; UI tĩnh `src/web/` (Tailwind CDN, JS thuần) |
+| Agent | Luật cố định + LLM đề xuất (LangChain, mặc định model `gpt-4o-mini`, production dùng `gpt-6-luna`); mặc định `LLM_MODE=mock` chỉ chạy luật |
+| Backend | FastAPI + Python 3.11; UI `portal/` (Next.js, gọi `/api/v1`) + PWA điện thoại `src/mobile/` (UI tĩnh `src/web/` đã xoá 2026-10-12) |
 | Dữ liệu | **Mặc định in-memory** từ fixture YAML, reset được; tuỳ chọn PostgreSQL trên Supabase (`MO_STORE=postgres`, Alembic) + Supabase Storage cho ảnh |
 | DevOps | Docker Compose + GitHub Actions |
 
@@ -34,7 +52,7 @@ Cư dân gửi phản ánh vệ sinh hoặc đèn khu vực chung. Agent kiểm 
 
 Sơ đồ kiến trúc thành phần mục tiêu (Target Architecture v0.6) theo chuẩn [CR-BPTN-03](docs/CR-BPTN-03.md), thiết kế theo chuẩn C4 Component / Enterprise 3-Tier phục vụ Demo Day AI20K:
 
-![MaintenanceOps target architecture](docs/diagrams/maintenanceops-target-20261019/architecture-components.svg)
+![MaintenanceOps target architecture](docs/diagrams/Diagrams%20Components.svg)
 
 <details>
 <summary><b>Nhấn để xem mã nguồn sơ đồ Mermaid</b></summary>
@@ -139,7 +157,7 @@ flowchart TB
 
 </details>
 
-- **Chi tiết kiến trúc, bảng màu & file nguồn draw.io:** [`docs/diagrams/maintenanceops-target-20261019/README.md`](docs/diagrams/maintenanceops-target-20261019/README.md)
+- **Chi tiết kiến trúc, bảng màu & file nguồn draw.io:** [`docs/diagrams/Diagrams Components.drawio`](docs/diagrams/Diagrams%20Components.drawio)
 - **Đặc tả thiết kế chi tiết (SPEC):** [`docs/CR-BPTN-03.md`](docs/CR-BPTN-03.md)
 
 ---
@@ -345,78 +363,6 @@ Dùng khi muốn dữ liệu và ảnh lưu bền, dùng chung cả nhóm. Xin c
 
 ---
 
-## Hướng dẫn chạy và rollback
-
-Dành cho người triển khai bản mới (Docker Compose, thêm Supabase nếu dùng DB chung). Thứ tự bắt buộc: **ghi lại mốc quay lui → migrate DB → build → kiểm tra**.
-
-### 1. Chạy
-
-1. Chuẩn bị `.env` (`cp .env.example .env`). Compose có thêm service `portal` (Next.js) nên **bắt buộc** `SESSION_SECRET` (chuỗi ngẫu nhiên, khoá ký cookie); thiếu thì `docker compose` dừng với lỗi `SESSION_SECRET must be set in .env`. `.env.example` chưa có dòng này, tự thêm:
-   ```bash
-   echo "SESSION_SECRET=$(python -c 'import secrets;print(secrets.token_hex(32))')" >> .env
-   ```
-2. Dùng DB chung (`MO_STORE=postgres`): chủ DB chạy migration **trước** khi bật code mới (startup không tự tạo schema):
-   ```bash
-   python -m alembic -c src/maintenance/store/alembic.ini current   # xem revision hiện tại
-   python -m alembic -c src/maintenance/store/alembic.ini upgrade head
-   ```
-3. Build và khởi động:
-   ```bash
-   docker compose up -d --build        # hoặc: make up
-   ```
-4. Kiểm tra (đủ cả ba mới coi là xong):
-   - `docker compose ps` → `backend` là `healthy`, `portal` là `running`.
-   - `curl -s http://localhost:8000/health` → `{"status":"ok",...}`.
-   - Mở <http://localhost:8000/ui/>, đăng nhập `cudan01` / `Demo@2026` (nếu `APP_ENV=production` thì dùng tài khoản thật).
-
-### 2. Ghi mốc quay lui TRƯỚC khi nâng cấp
-
-```bash
-git rev-parse --short HEAD                       # SHA đang chạy ổn, ghi lại, vd 6435746
-python -m alembic -c src/maintenance/store/alembic.ini current   # revision DB, vd 0006_stock_alert_tickets
-tar czf data-backup-$(date +%Y%m%d).tgz data/    # ảnh upload (PowerShell: Compress-Archive data -DestinationPath data-backup.zip)
-```
-
-Với DB Supabase: chụp backup từ Dashboard (Database → Backups) hoặc `pg_dump` trước khi `upgrade`. Downgrade chỉ đưa schema về cũ, **không** khôi phục dữ liệu đã bị xoá cột.
-
-### 3. Rollback
-
-Chọn mức nhẹ nhất đủ dùng.
-
-| Tình huống | Rollback |
-|---|---|
-| Chỉ lỗi cấu hình/biến môi trường | Sửa `.env` rồi `docker compose up -d` (không cần build) |
-| Tính năng mới gây lỗi, DB chưa đổi hoặc DB vẫn tương thích | Chỉ quay lui code (mục 3a) |
-| Migration mới gây lỗi | Quay lui code **và** `alembic downgrade` (mục 3b) |
-| Dữ liệu hỏng | Khôi phục backup (mục 3c) — chủ DB, cần xác nhận trước |
-
-**3a. Quay lui code** (không xoá lịch sử, an toàn với nhánh chung):
-
-```bash
-git revert --no-edit <sha-commit-hoac-merge>     # merge commit: thêm -m 1
-docker compose up -d --build
-```
-
-Chỉ dùng `git checkout <SHA-đã-ghi>` để chạy thử tạm trên máy cá nhân; **CẤM** `git reset --hard` / `push --force` lên nhánh chung.
-
-**3b. Quay lui schema** (chỉ khi code cũ không chạy được với schema mới; làm **sau khi dừng backend** để không ghi dở):
-
-```bash
-docker compose stop backend portal
-python -m alembic -c src/maintenance/store/alembic.ini downgrade -1                  # lùi một revision
-# hoặc về đúng mốc đã ghi: ... downgrade 0005_stock_alerts
-python -m alembic -c src/maintenance/store/alembic.ini current                       # xác nhận
-git revert ... && docker compose up -d --build                                       # code khớp schema
-```
-
-Chuỗi revision: `0001_maintops_initial → 0002_p1_doc_shape → 0003_material_items → 0004_portal_extras → 0005_stock_alerts → 0006_stock_alert_tickets`. Mỗi revision có `downgrade()` (vd 0006 bỏ cột `stock_alerts.ticket_ids`). Revision `0005` thiết kế để code cũ chạy được với DB đã lên 0005: với bản chỉ đổi cờ tính năng, tắt `MO_STOCK_ALERTS=false` thay vì downgrade.
-
-**3c. Khôi phục dữ liệu**: ảnh — giải nén `data-backup-*.tgz` đè vào `data/`; DB Supabase — restore từ backup đã chụp. Chế độ `MO_STORE=memory` không có gì để khôi phục: khởi động lại là về 12 ticket mẫu.
-
-Sau mọi rollback chạy lại bước kiểm tra ở mục 1.4 và ghi sự cố vào [`brain4agent/-known-gotchas.md`](brain4agent/-known-gotchas.md).
-
----
-
 ## Xử lý sự cố thường gặp
 
 | Triệu chứng | Cách xử lý |
@@ -424,7 +370,6 @@ Sau mọi rollback chạy lại bước kiểm tra ở mục 1.4 và ghi sự c�
 | `failed to connect to the docker API` / `Cannot connect to the Docker daemon` | Docker Desktop chưa chạy — mở và đợi báo "Engine running" |
 | `port is already allocated` (8000 hoặc 5432) | Đổi `APP_PORT` / `POSTGRES_PORT` trong `.env`, hoặc tắt chương trình đang dùng cổng |
 | `env file .env not found` | Chưa tạo `.env` — `cp .env.example .env` |
-| `SESSION_SECRET must be set in .env` | Thêm `SESSION_SECRET` vào `.env` — xem "Hướng dẫn chạy và rollback" mục 1 |
 | Sửa code nhưng không thấy thay đổi | Chạy `make up` để build lại image |
 | Thêm thư viện vào `requirements.txt` | `make up` để build lại; người khác cũng cần `make up` sau khi pull |
 | `There was an error parsing the body` khi gửi tiếng Việt bằng `curl -d` trên Windows | Truyền body qua file (`--data-binary @body.json`) hoặc dùng PowerShell / Swagger như mục trên |

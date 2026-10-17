@@ -5,13 +5,14 @@
  * modals and history lists. No per-staff assignment: the department takes the ticket as a whole. SPEC-P03 §4. Real data from the DTO only, no invented text or numbers.
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { acceptAction, finishTicketAction, reportWrongDeptAction, returnAction } from "@/app/actions/departments";
+import { acceptAction, finishTicketAction, reportMaterialShortageAction, reportWrongDeptAction, returnAction } from "@/app/actions/departments";
 import { ticketDetailAction } from "@/app/actions/detail";
 import { PhotoStrip } from "@/components/photo-strip";
 import { Feedback } from "@/components/rating-summary";
 import { useAction } from "@/components/use-action";
 import { MAX_PHOTOS } from "@/lib/constants";
 import { buildingOf } from "@/lib/building";
+import { buildShortagePayload, deptStatusLabel } from "@/lib/material-requests";
 import { hasLocation } from "@/lib/reception-done";
 import { HISTORY_BUILDINGS, HISTORY_STATUSES, filterHistory, historyStatus, toggle, type HistoryBuilding, type HistoryStatus } from "@/lib/history-filter";
 import type { CatalogItem, DeptTicket, TicketDetail } from "@/lib/dto";
@@ -29,6 +30,7 @@ export type CardActions = {
   returnBack: (id: string, note: string, done: () => void, fail: (msg: string) => boolean) => void;
   wrongDept: (id: string, note: string, done: () => void, fail: (msg: string) => boolean) => void;
   finish: (id: string, fd: FormData, done: () => void, fail: (msg: string) => boolean) => void;
+  shortage: (id: string, lines: { itemCode: string; qty: number }[], note: string, done: () => void, fail: (msg: string) => boolean) => void;
 };
 
 type Failure = { ok: false; code: ErrorCode; message: string };
@@ -47,6 +49,7 @@ export function useDeptScreen() {
     returnBack: (id, note, done, fail) => send(() => returnAction(id, note), done, fail),
     wrongDept: (id, note, done, fail) => send(() => reportWrongDeptAction(id, note), done, fail),
     finish: (id, fd, done, fail) => send(() => finishTicketAction(id, fd), done, fail),
+    shortage: (id, lines, note, done, fail) => send(() => reportMaterialShortageAction(id, { lines, note }), done, fail),
   };
   return { pending, error, setError, run, send, actions, selected, setSelected };
 }
@@ -308,8 +311,84 @@ export function FinishModal(props: {
   );
 }
 
+/**
+ * "Yêu cầu vật tư" (plan 24 SPEC-P03; label renamed from "Báo thiếu vật tư" in v1.17.6, flow unchanged): pick the materials the department still needs and how many MORE, plus an optional
+ * note. The backend refuses (409) when the warehouse already has enough: its words are shown inside the form, input kept.
+ */
+export function ShortageModal(props: {
+  t: DeptTicket;
+  catalog: CatalogItem[];
+  pending: boolean;
+  onClose: () => void;
+  onSubmit: (lines: { itemCode: string; qty: number }[], note: string, done: () => void, fail: (msg: string) => boolean) => void;
+}) {
+  const { t, catalog } = props;
+  /** itemCode -> typed quantity; a code is "short" while it is a key */
+  const [picked, setPicked] = useState<Record<string, string>>({});
+  const [note, setNote] = useState("");
+  const [err, setErr] = useState("");
+  const toggleItem = (code: string) => {
+    const { [code]: gone, ...rest } = picked;
+    setPicked(gone === undefined ? { ...picked, [code]: "1" } : rest);
+  };
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const payload = buildShortagePayload({ picked, note });
+    if (!payload.ok) return setErr(payload.message);
+    setErr("");
+    props.onSubmit(payload.lines, payload.note, props.onClose, (m) => (setErr(m), true));
+  }
+  return (
+    <Modal title={`Yêu cầu vật tư ${t.code}`} sub="Chọn vật tư cần dùng thêm và số lượng cần THÊM. Kho sẽ thấy phiếu vật tư ngay." onClose={props.onClose} wide>
+      <form onSubmit={submit} className="space-y-4 text-sm" data-testid="shortage-form">
+        <fieldset className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+          <legend className="px-1 text-xs font-bold text-slate-800">Vật tư cần thêm</legend>
+          {catalog.length === 0 && <p className="m-0 text-xs text-muted">Kho chưa có vật tư nào cho phòng này.</p>}
+          {catalog.map((m) => (
+            <div key={m.itemCode} className="flex flex-wrap items-center gap-2 text-slate-700">
+              <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+                <input type="checkbox" className={`h-4 w-4 ${FOCUS}`} checked={picked[m.itemCode] !== undefined} onChange={() => toggleItem(m.itemCode)} />
+                <span className="truncate">
+                  {m.itemName} ({m.unit}) · tồn {m.stock ?? "--"}
+                </span>
+              </label>
+              {picked[m.itemCode] !== undefined && (
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  inputMode="numeric"
+                  className={`${FIELD} w-24 text-xs`}
+                  aria-label={`Số ${m.itemName} cần thêm`}
+                  value={picked[m.itemCode]}
+                  onChange={(e) => setPicked({ ...picked, [m.itemCode]: e.target.value })}
+                />
+              )}
+            </div>
+          ))}
+        </fieldset>
+        <div>
+          <label htmlFor={`short-note-${t.id}`} className="mb-1 block text-xs font-semibold text-slate-700">
+            Ghi chú (tuỳ chọn)
+          </label>
+          <textarea id={`short-note-${t.id}`} className={FIELD} rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
+        </div>
+        <ErrorBox msg={err} />
+        <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
+          <button type="button" className={BTN} onClick={props.onClose}>
+            Hủy
+          </button>
+          <button type="submit" className={PRIMARY} disabled={props.pending}>
+            Gửi yêu cầu
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
 // ---------- ticket card ----------
-export type Dialog = null | "finish" | "return" | "wrong";
+export type Dialog = null | "finish" | "return" | "wrong" | "shortage";
 
 export function WorkCard(props: {
   t: DeptTicket;
@@ -331,7 +410,7 @@ export function WorkCard(props: {
         <CodeButton t={t} onOpen={actions.open} />
         <span className="text-xs text-muted">{t.createdAt}</span>
         {t.urgent && <span className="pill urgent">Khẩn cấp</span>}
-        <span className="pill cat-none">{t.statusLabel}</span>
+        <span className="pill cat-none">{deptStatusLabel(t)}</span>
         {t.stage < 5 && left !== null && (
           <span className={`pill ${left < 0 ? "bg-[#FDE2DF] text-[#8A1C12]" : "bg-[#D8EFE3] text-[#13553A]"}`}>
             {left < 0 ? `Quá hạn ${-left}h` : `Còn ${left}h`}
@@ -369,6 +448,9 @@ export function WorkCard(props: {
           <button type="button" className={`${PRIMARY} w-full justify-center`} disabled={props.pending} onClick={() => setDialog("finish")}>
             Đánh dấu hoàn thành
           </button>
+          <button type="button" className={`${BTN} w-full justify-center`} disabled={props.pending} onClick={() => setDialog("shortage")}>
+            Yêu cầu vật tư
+          </button>
           <button type="button" className={`${BTN} w-full justify-center`} disabled={props.pending} onClick={() => setDialog("wrong")}>
             Báo sai phòng ban
           </button>
@@ -379,6 +461,9 @@ export function WorkCard(props: {
 
       {dialog === "finish" && (
         <FinishModal t={t} kind={props.kind} catalog={props.catalog} pending={props.pending} onClose={close} onSubmit={(fd, done, fail) => actions.finish(t.id, fd, done, fail)} />
+      )}
+      {dialog === "shortage" && (
+        <ShortageModal t={t} catalog={props.catalog} pending={props.pending} onClose={close} onSubmit={(lines, note, done, fail) => actions.shortage(t.id, lines, note, done, fail)} />
       )}
       {dialog === "return" && (
         <ReasonModal
@@ -492,37 +577,39 @@ export function HistoryList({ tickets, onOpen }: { tickets: DeptTicket[]; onOpen
       {shown.length === 0 && (
         <div className="card p-10 text-center text-muted">{all.length === 0 ? "Chưa có ticket hoàn thành." : "Không có ticket nào khớp bộ lọc."}</div>
       )}
-      {done.map((t) => (
-        <article key={t.id} className="card flex flex-col gap-2 px-6 py-[22px]">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <CodeButton t={t} onOpen={onOpen} />
-            <span className="pill cat-none" data-testid="history-building">
-              {boxOf(t) === "other" ? "Chưa rõ tòa" : boxOf(t)}
-            </span>
-            <span className={`pill ml-auto ${t.stage === 5 ? "cat-none" : "bg-[#D8EFE3] text-[#13553A]"}`}>{t.statusLabel}</span>
-          </div>
-          <span className="text-[15px] font-semibold leading-normal">{t.title || t.text}</span>
-          {t.content && <span className="text-sm text-body">{t.content}</span>}
-          {hasLocation(t.location) && <span className="text-[13px] text-muted">{t.location}</span>}
-          {t.rating ? (
-            <div className="flex flex-col gap-1.5 border-t border-line-soft pt-2">
-              <Stars n={t.rating.stars} />
-              {t.rating.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {t.rating.tags.map((g) => (
-                    <span key={g} className="pill cat-none">
-                      {g}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {t.rating.comment && <p className="m-0 text-sm text-body">“{t.rating.comment}”</p>}
+      <div className="scroll-list flex flex-col gap-3" data-testid="history-list">
+        {done.map((t) => (
+          <article key={t.id} className="card flex flex-col gap-2 px-6 py-[22px]">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <CodeButton t={t} onOpen={onOpen} />
+              <span className="pill cat-none" data-testid="history-building">
+                {boxOf(t) === "other" ? "Chưa rõ tòa" : boxOf(t)}
+              </span>
+              <span className={`pill ml-auto ${t.stage === 5 ? "cat-none" : "bg-[#D8EFE3] text-[#13553A]"}`}>{t.statusLabel}</span>
             </div>
-          ) : (
-            <span className="text-[13px] text-muted">{t.stage === 5 ? "Chờ Ban quản lý nghiệm thu." : "Chưa có đánh giá của cư dân."}</span>
-          )}
-        </article>
-      ))}
+            <span className="text-[15px] font-semibold leading-normal">{t.title || t.text}</span>
+            {t.content && <span className="text-sm text-body">{t.content}</span>}
+            {hasLocation(t.location) && <span className="text-[13px] text-muted">{t.location}</span>}
+            {t.rating ? (
+              <div className="flex flex-col gap-1.5 border-t border-line-soft pt-2">
+                <Stars n={t.rating.stars} />
+                {t.rating.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {t.rating.tags.map((g) => (
+                      <span key={g} className="pill cat-none">
+                        {g}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {t.rating.comment && <p className="m-0 text-sm text-body">“{t.rating.comment}”</p>}
+              </div>
+            ) : (
+              <span className="text-[13px] text-muted">{t.stage === 5 ? "Chờ Ban quản lý nghiệm thu." : "Chưa có đánh giá của cư dân."}</span>
+            )}
+          </article>
+        ))}
+      </div>
       {shown.length > done.length && (
         <div className="flex items-center justify-between text-xs text-muted">
           <span>

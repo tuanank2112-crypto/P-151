@@ -1,8 +1,8 @@
-# `src/maintenance/` — Tài liệu module MaintenanceOps (engine CR-BPTN-03 P0)
+# `src/maintenance/` — Tài liệu module MaintenanceOps (engine CR-BPTN-03)
 
 > Dữ liệu MÔ PHỎNG (`SIM-*`). Spec duy nhất: [`CR-BPTN-03.md`](CR-BPTN-03.md); khi tài liệu này lệch CR-03 thì CR-03 thắng.
 > Hồ sơ cài đặt: [`planning/01_2026-10-01_cr03-p0-engine/`](../planning/01_2026-10-01_cr03-p0-engine/) (plan + specs + reports + evidence).
-> Trạng thái: P0 xong trên nhánh `feature/nhuy-cr03-p0` (1462 test). Router/UI chưa nối các hành động mới (xem §9).
+> Trạng thái (audit 2026-10-17): engine CR-03 P0 + P1 đã chạy trong sản phẩm v1.17.9 (1462 test là số của đợt P0 ban đầu; số đo mới nhất ghi ở `brain4agent/changelog.md`, vd 3830–3961 pass). Router `/api/v1` và UI `portal/` + `src/mobile/` đã nối các hành động; `src/web/` đã xoá. Phần nào dưới đây còn ghi "chưa nối/không làm ở P0" là lịch sử.
 
 ## 1. Mục đích và ranh giới
 Tích hợp develop b6590ce (local 1.10.1): engine/API/app/test local được giữ so backup trước merge; main.py thêm proxy portal, giữ handler validation plan16. Routes Python đăng ký trước fallback proxy nên `/health`, `/api/v1`, `/ui/`, `/app/` giữ backend hiện có. Portal không gọi engine Python cho workflow của nó; chưa hợp nhất dữ liệu hai hệ.
@@ -68,10 +68,18 @@ Route API (prefix `/api/v1`; router chỉ bọc method trên, không kiểm vai/
 | `POST /mo/tickets/{id}/safety` | `{decision: CONFIRM_SAFE \| REQUEST_INFO \| ESCALATE, note}` | `safety_confirm_safe` \| `safety_request_info` \| `safety_escalate` |
 | `POST /bql/tickets/{id}/emergency/close` | `{note}` | `emergency_close` |
 | `POST /bql/tickets/{id}/emergency/downgrade` | `{note}` | `emergency_downgrade` |
+| `POST /bql/tickets/{id}/emergency/merge` | `{into, note}` | `bql_merge` (hồ sơ 23) |
 Ghi chú nội bộ của blocker an toàn kèm phần dữ liệu tối thiểu còn thiếu (`Bậc 2: T2-04 · Thiếu: location_area`, `_with_missing`): Q08 xét an toàn TRƯỚC bước 2 nên cư dân chưa được hỏi; UI BPTN hiện cảnh báo + điền sẵn câu hỏi, `REQUEST_INFO` tự hỏi kèm phần vị trí còn thiếu, `CONFIRM_SAFE` ⇒ bước 2 hỏi tiếp.
 Bất biến: `resume()`/job KHÔNG BAO GIỜ gỡ blocker an toàn (`_cleared` False); Bậc 2 leo thang đúng một lần sau 4 giờ LỊCH (`escalated=True`, outbox `safety.review_escalated`); NEED_INFO an toàn leo thang sau 12 h (outbox `escalation`).
 Chặn khác: `reopen()` luôn `InvalidTransitionError`; `set_assignee()` luôn `ActionDeniedError` có audit; `rate()` một lần (`GuardError` lần hai).
 Cư dân chỉ thấy nhãn "Đang được kiểm tra" và lời trong `i18n/vi.yaml` (không `risk_*`, `reason_code`, `priority`).
+
+### Khẩn cấp gặp trùng, hai việc, ticket cùng chỗ (hồ sơ 23, v1.16.0, 2026-10-14)
+Hồ sơ [`planning/23_2026-10-14_emergency-dup-split/`](../planning/23_2026-10-14_emergency-dup-split/plan.md).
+- **Nghi trùng (P01):** ca vừa thành `EMERGENCY_PENDING_BQL` (2b, E01, T07) mà cùng vị trí đã có ca khẩn cấp mở tạo trước ⇒ `_mark_emergency_duplicate` ghi `blocker.related_ticket_id` = ca cũ nhất (không trỏ dây chuyền) và `duplicate_count +1` trên ca đó. Ca vẫn ở BQL, KHÔNG tự gộp. Trả số khi ca nghi trùng bị hạ mức (T05), đóng (T10), hủy, hoặc gộp vào ca khác; gộp vào đúng gốc ⇒ `counted=False`. Thiếu vị trí ⇒ không nghi trùng. Payload `emergency.created` có `suspected_duplicate_of`.
+- **Tách sau khi gỡ (P02):** `_try_split` đk 4 chỉ còn `risk_level == NONE`; ticket con chép `safety_cleared_*` của gốc nên 2b của con không đọc lại phần đã được người gỡ.
+- **Giữ cùng chỗ (P03):** cờ `hold_near_open_emergency` tắt vẫn giữ ticket (`ON_HOLD/WAITING_EMERGENCY`) khi ca khẩn cấp cùng vị trí được người ghim hoặc **Agent đọc** ra cùng loại việc (gồm cả ca đã gộp vào nó). Chưa ai đọc ⇒ không giữ, chỉ liên kết. KHÔNG đoán loại bằng từ khoá. Cờ bật ⇒ giữ mọi ticket cùng chỗ như cũ.
+- **Agent đọc ca khẩn cấp do luật bắt (P04):** `receive` vẫn tạo ca + báo BQL ngay không chờ mô hình; API chạy nền `read_emergency_quietly` ⇒ `ReasoningAgent.decide(..., read_emergency=True)` ⇒ lưu record AGENT (không đổi status/mức). Mô hình lỗi ⇒ ca chưa đọc.
 
 ## 5. Priority — `priority.py`, `views.py`
 `propose_priority(category, location, text, lexicon.priority)` chạy ở bước 3 (`_bind_category`): KY_THUAT + khu vực lối đi ⇒ HIGH (PRI-H1); cản trở lối đi ⇒ HIGH (H2); ảnh hưởng sử dụng ⇒ MEDIUM (M2); còn lại VE_SINH ⇒ LOW (L1); thiếu vị trí/loại ⇒ MEDIUM (D0). Phủ định đi qua `safety.scope_before`.
@@ -274,6 +282,9 @@ Hồ sơ: [`planning/12_2026-10-09_backend-latency/`](../planning/12_2026-10-09_
 
 - CLI client: chạy trong thư mục tạm trống (không nạp CLAUDE.md repo), không tool/MCP; `agy` không có cờ thay system prompt nên ghép vào đầu prompt + `--sandbox`; ép schema bằng `--json-schema` (`AgentDecision.model_json_schema()`, không ép được ràng buộc chéo trường — đó là lý do prompt /5).
 - **G-LIVE:** `PYTHONUTF8=1 PYTHONPATH=. python scripts/agent_live_eval.py [--group …] [--workers 3]` chạy từng câu qua engine thật + Agent, chấm đúng / bỏ sót (UNDER) / báo nhầm (OVER) theo nhóm; bộ câu `tests/test_maintenance/data/agent_live_eval.yaml` (NHÃN NHÁP chờ Trường). Kết quả 2026-10-07 (agy gemini-3.8-flash-low): khẩn cấp khó mà luật bỏ sót 16/16 (prompt /5), phủ định 10/10, nhờ thay đèn Agent 19/19; 3 câu nhờ thay đèn vẫn sang BPTN vì luật UNCLEAR và Agent không được hạ (Q33). Mỗi lượt ~17–20 s. Evidence `planning/06_.../evidence/G-LIVE/`.
+
+- **Log latency (v1.17.9, 2026-10-16):** `InMemoryAILogger.record` thêm 1 dòng JSONL/lần gọi model vào `data/logs/latency.jsonl` (`ts, log_id, ticket_id, model, status, latency_ms, prompt_tokens, completion_tokens, total_tokens`; không prompt/output; lỗi ghi chỉ cảnh báo). `MO_LATENCY_LOG` đổi đường dẫn, `off` tắt (tests đặt `off`). Không có endpoint đọc; file không tự xoay vòng.
+- **Prompt `agent-prompt/10` (v1.17.8, 2026-10-16):** bước VI_TRI thêm "tầng hiểu theo NGHĨA trong toàn bộ lời cư dân, kể cả viết tắt/nói tự nhiên (\"t3\", \"lầu 3\", \"tầng ba\"), kể cả khi tòa đã lấy từ hồ sơ" — gpt-6-luna bỏ qua "t3" (SIM-TKT-0087). CẤM thay bằng regex `t\d`. Đo agy: 4/4 cách viết tầng, G-LIVE mẫu 18/18; CHƯA đo luna.
 
 ## 16. Phục vụ portal Next.js (hồ sơ 11, v1.7.0, 2026-10-09)
 Hồ sơ: [`planning/11_2026-10-09_portal-backend-api/`](../planning/11_2026-10-09_portal-backend-api/plan.md) (SPEC-P01, SPEC-P04). Nguyên tắc:

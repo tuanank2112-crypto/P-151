@@ -103,3 +103,24 @@ export async function apiImage(path) {
   if (!response.ok) throw new ApiError(`Lỗi ${response.status}`, { status: response.status, kind: kindOf(response.status) });
   return URL.createObjectURL(await response.blob());
 }
+
+// ---- Plan 24 (material requests, SPEC-P03 §2): the four routes of 01-CONTRACTS §3 ----
+
+/** Department reports it lacks material: `lines` = [{ item_code, planned_qty }] needed ON TOP of what it took. 409 GUARD_FAILED when the warehouse has enough. */
+export function reportMaterialShortage(ticketId, lines, note) {
+  const body = { lines };
+  if (note) body.note = note;
+  return api(`/mo/tickets/${encodeURIComponent(ticketId)}/material-shortage`, { method: 'POST', body });
+}
+/** Open material requests (PVT-…), oldest first. Warehouse and BQL see all, a department only its own. */
+export function listMaterialRequests() { return api('/mo/warehouse/requests'); }
+/** Restock alerts of the caller's department (BQL/warehouse may pass `department`); each has tickets: [{ ticket_id, waiting }]. */
+export function listStockAlerts({ unread = false, department = null } = {}) {
+  const query = new URLSearchParams();
+  if (unread) query.set('unread', 'true');
+  if (department) query.set('department', department);
+  const text = query.toString();
+  return api(`/mo/stock-alerts${text ? `?${text}` : ''}`);
+}
+/** Mark an alert as read (idempotent). */
+export function ackStockAlert(alertId) { return api(`/mo/stock-alerts/${encodeURIComponent(alertId)}/ack`, { method: 'POST' }); }

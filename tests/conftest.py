@@ -5,6 +5,7 @@ os.environ["LLM_MODE"] = "mock"
 os.environ["MO_STORE"] = "memory"  # .env on the owner's machine says MO_STORE=postgres (Supabase): tests never read it
 os.environ["MO_PHOTO_STORE"] = "local"
 os.environ["MO_ALLOW_RESET"] = "false"
+os.environ["MO_LATENCY_LOG"] = "off"  # tests must not write the real data/logs/latency.jsonl
 
 from unittest.mock import AsyncMock  # noqa: E402
 from urllib.parse import urlsplit  # noqa: E402

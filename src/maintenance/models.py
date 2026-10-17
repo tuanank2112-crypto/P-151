@@ -412,6 +412,7 @@ class Notification(Entity):
         "escalation",
         "emergency.created",  # CR-BPTN-03 §6.5/§13: BQL, as soon as EMERGENCY_PENDING_BQL is set
         "safety.review_escalated",  # CR-BPTN-03 §13: BQL, when SAFETY_REVIEW_REQUIRED passes 4 calendar hours
+        "material.shortage",  # plan 24: the warehouse, when a ticket starts waiting for material
     ]
     audience: BlockerOwner
     payload: dict[str, Any] = Field(default_factory=dict)
@@ -432,8 +433,8 @@ class StockAlert(Entity):
     unit: str | None = None
     department_id: Department
     qty_added: float = Field(gt=0)
-    qty_before: float = Field(le=0)
-    qty_after: float = Field(gt=0)
+    qty_before: float  # plan 24: a restock can also notify departments whose ticket waited on a still-positive stock
+    qty_after: float
     received_by: str
     created_at: AwareDatetime
     ticket_ids: tuple[str, ...] = ()  # tickets waiting for this item when it arrived: the engine re-runs them
@@ -671,6 +672,33 @@ class AuditEvent(Entity):
     schema_version: Literal["1.2"] = SCHEMA_VERSION
     run_id: Annotated[str, _sim_id("SIM-RUN-")]
     synthetic: Synthetic = True
+
+
+class MaterialRequestLine(BaseModel):
+    """One still-short item of a material request (plan 24 CONTRACTS §2). Read model, never stored."""
+
+    item_code: str
+    item_name: str
+    unit: str | None = None
+    needed_qty: float  # what the warehouse still has to hand out for the line
+    stock_qty: float | None = None  # current stock; None = not tracked
+    shortage_qty: float  # max(0, needed_qty - (stock_qty or 0))
+
+
+class MaterialRequestView(BaseModel):
+    """Material request `PVT-<ticket_id>`: a view derived from a ticket ON_HOLD / WAITING_MATERIAL (plan 24 I-1).
+    Defined here (not in views.py) because the engine returns it and views.py imports the engine."""
+
+    request_id: str
+    ticket_id: str
+    department_id: Department | None = None
+    location: str | None = None
+    source: Literal["AGENT", "DEPARTMENT"]
+    reported_by: str
+    since: AwareDatetime
+    note: str | None = None
+    lines: list[MaterialRequestLine]
+    status: Literal["OPEN"] = "OPEN"
 
 
 class PlannedMaterial(Entity):

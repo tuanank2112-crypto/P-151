@@ -6,8 +6,11 @@ import { IconClock, IconKanban } from "@/components/icons";
 import { Body, Header, NavTiles, PageHead } from "@/components/shell";
 import { TicketDetailModal } from "@/components/ticket-detail-modal";
 import { Toast } from "@/components/toast";
+import { ackStockAlertAction } from "@/app/actions/departments";
 import { ROLE_LABEL } from "@/lib/constants";
 import type { DeptData } from "@/lib/dto";
+import { ALERT_PREFIX, alertNotice, unreadCount } from "@/lib/stock-alerts";
+import { deptStatusLabel } from "@/lib/material-requests";
 import { HistoryList, WorkCard, useDeptScreen } from "./dept-parts";
 
 type Tab = "queue" | "history";
@@ -30,18 +33,26 @@ export function CleaningApp({ data }: { data: DeptData }) {
         avatar={data.user.avatar}
         name={data.user.name}
         rolePill={ROLE_LABEL.cleaning}
-        bellLabel="Ticket chờ nhận việc"
-        bellCount={newCount}
-        notices={all
-          .filter((t) => t.stage < 5)
-          .map((t) => ({
-            id: t.id,
-            title: `${t.code}: ${t.title || t.text}`,
-            urgent: t.urgent,
-            tag: t.stage === 3 ? "Chờ nhận việc" : t.statusLabel,
-            time: t.createdAt,
-            body: `Vị trí: ${t.location}`,
-          }))}
+        bellLabel="Thông báo kho và ticket chờ nhận việc"
+        bellCount={newCount + unreadCount(data.stockAlerts)}
+        notices={[
+          ...data.stockAlerts.filter((a) => !a.read).map(alertNotice),
+          ...all
+            .filter((t) => t.stage < 5)
+            .map((t) => ({
+              id: `t-${t.id}`,
+              title: `${t.code}: ${t.title || t.text}`,
+              urgent: t.urgent,
+              tag: t.stage === 3 ? "Chờ nhận việc" : deptStatusLabel(t),
+              time: t.createdAt,
+              body: `Vị trí: ${t.location}`,
+            })),
+        ]}
+        onNotice={(nid) => {
+          const key = String(nid);
+          if (key.startsWith(ALERT_PREFIX)) void ackStockAlertAction(key.slice(ALERT_PREFIX.length));
+          else s.actions.open(key.replace(/^t-/, ""));
+        }}
       />
       <Body>
         <NavTiles<Tab>

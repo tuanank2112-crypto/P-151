@@ -48,12 +48,27 @@ def test_re_01_split_sentences_split_and_stay_unclear_for_classify():
         assert classify(text).reason_code == "CATEGORY_UNCLEAR", text
 
 
+# Plan 20: the reference prototype blocked a split on cause / hedge / question words (R-S3, R-S4). Two jobs at one place
+# now always split, so those reasons are no longer a reason to keep one ticket.
+_DROPPED_BLOCKS = ("marker:", "question")
+
+
+def _was_blocked_by_dropped_rule(reason: str) -> bool:
+    return reason.startswith(_DROPPED_BLOCKS)
+
+
 def test_re_02_non_split_sentences_do_not_split():
     assert len(REF.MUST_NOT_SPLIT) == 18
+    kept = dropped = 0
     for text in REF.MUST_NOT_SPLIT:
         verdict = split_verdict(text, BUILDINGS)
-        assert verdict.categories == (), (verdict.reason, text)
-        assert verdict.reason != "split"
+        if _was_blocked_by_dropped_rule(REF.split_verdict(text)[1]):
+            dropped += 1
+            assert verdict.categories == SPLIT_PAIR and verdict.reason == "split", text
+        else:  # one job, a job away from the place, or two places: still not split
+            kept += 1
+            assert verdict.categories == () and verdict.reason != "split", (verdict.reason, text)
+    assert (kept, dropped) == (6, 12)
 
 
 def test_re_03_mixed_corpus_variants_match_the_expected_split_counts():
@@ -62,8 +77,7 @@ def test_re_03_mixed_corpus_variants_match_the_expected_split_counts():
         variants = cm.variants(sentence)
         assert len(variants) == 36
         splits = sum(bool(split_verdict(text, BUILDINGS).categories) for text, _ in variants)
-        want = REF.EXPECTED_VARIANT_SPLITS.get(sentence, len(variants))
-        assert splits == want, (splits, want, sentence)
+        assert splits == len(variants), (splits, sentence)  # plan 20: no variant is held back by "vì" / "do"
 
 
 def test_re_04_single_job_corpus_is_never_split_with_any_location_variant():
@@ -111,7 +125,11 @@ def test_re_07_split_verdict_equals_the_reference_prototype_everywhere():
     for text in sentences:
         mine = split_verdict(text, BUILDINGS)
         categories, reason = REF.split_verdict(text)
-        assert (mine.categories, mine.reason) == (categories, reason), text
+        if _was_blocked_by_dropped_rule(reason):  # plan 20: only the place rule can still stop it
+            assert mine.reason in ("split", "two-places"), text
+            assert (mine.categories == SPLIT_PAIR) is (mine.reason == "split"), text
+        else:
+            assert (mine.categories, mine.reason) == (categories, reason), text
 
 
 @pytest.mark.parametrize(
@@ -119,11 +137,11 @@ def test_re_07_split_verdict_equals_the_reference_prototype_everywhere():
     [
         ("Hành lang tầng 3 tòa S1 nước tràn vào ổ cắm, rác đầy, đèn hỏng", "electrical-hazard"),
         ("Hành lang tầng 3 tòa S1 đèn không sáng", "not-both"),
-        ("Hành lang tầng 3 tòa S1 nhiều rác vì bóng đèn hành lang không sáng", "marker:vì"),
-        ("Hành lang tầng 3 tòa S1 hình như có rác, đèn không sáng", "marker:hình như"),
-        ("hanh lang tang 3 toa S1 nuoc ngot do ra san, den hong", "marker:do"),
-        ("Sảnh chính tòa S1 có rác hoặc đèn không sáng?", "marker:hoặc"),
-        ("Sảnh chính tòa S1 có rác, đèn không sáng không?", "question"),
+        ("Hành lang tầng 3 tòa S1 nhiều rác vì bóng đèn hành lang không sáng", "split"),
+        ("Hành lang tầng 3 tòa S1 hình như có rác, đèn không sáng", "split"),
+        ("hanh lang tang 3 toa S1 nuoc ngot do ra san, den hong", "split"),
+        ("Sảnh chính tòa S1 có rác hoặc đèn không sáng?", "split"),
+        ("Sảnh chính tòa S1 có rác, đèn không sáng không?", "split"),
         ("Rác ở hành lang tầng 3 tòa S1, còn đèn sảnh thang máy tầng 5 tòa S1 không sáng", "two-places"),
         ("Hành lang tầng 3 tòa S1 nhiều rác, đèn cũng không sáng", "split"),
     ],

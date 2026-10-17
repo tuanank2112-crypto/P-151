@@ -3,6 +3,7 @@
  * Contract: planning/11_2026-10-09_portal-backend-api/specs/01-CONTRACTS.md §5. Ids are the backend `ticket_id`.
  */
 import type { Dept, Place } from "./constants";
+import type { MaterialRequestDto } from "./material-requests";
 import type { StockAlertDto } from "./stock-alerts";
 
 export type PhotoRef = { id: string; name: string; url: string };
@@ -71,7 +72,10 @@ export type ResidentTicket = {
   canRate: boolean;
   /** CLOSED and no longer ratable: the resident already rated (the backend does not return the score) */
   rated: boolean;
+  /** Cancelled by the resident, or merged into a ticket that was itself cancelled */
   cancelled: boolean;
+  /** Merged into another report: stage, department and status follow that ticket */
+  merged: boolean;
   mergedInto: string | null;
   deptName: string | null;
   eta: string | null;
@@ -112,6 +116,8 @@ export type ReceptionInboxItem = {
   photos: PhotoRef[];
   duplicateOf: string | null;
   duplicate?: DuplicateRef;
+  /** MISSING_INFO from the safety flow: reception cannot fill it in, only the resident or the BQL */
+  safetyContext: boolean;
   /** Real Agent decision (SPEC-P03 §3.1); null when the ticket has none */
   agent: AgentInfo | null;
 };
@@ -166,6 +172,8 @@ export type TicketDetail = {
   dept: Dept | null;
   deptName: string | null;
   cancelled: boolean;
+  /** MERGED into another ticket: shown as "Đã gộp", never as "Đã hủy" */
+  merged: boolean;
   urgent: boolean;
   riskLevel: string;
   priority: string | null;
@@ -222,7 +230,7 @@ export type DeptData = {
   catalog: CatalogItem[];
   /** Backend flag `custom_materials_enabled` (SPEC-P01 §3); the "+" button is hidden when false */
   customMaterials: boolean;
-  /** Plan 20: unread restock alerts (technical only; empty for cleaning or when the backend flag is off) */
+  /** Plan 24: unread restock alerts of the caller's department (empty when the backend flag is off) */
   stockAlerts: StockAlertDto[];
 };
 
@@ -260,11 +268,40 @@ export type MgmtTicket = {
   doneHours: number | null;
   /** MERGED into another ticket: counted out of the totals */
   merged: boolean;
+  /** Plan 23: emergency waiting for BQL that may duplicate this open emergency (blocker.related_ticket_id) */
+  suspectOf?: string | null;
+  /** Other reports counted on this ticket (suspects + merged in) */
+  duplicateCount?: number;
+};
+
+export type MonthReportItem = {
+  month: string;
+  nhan: number;
+  da_xu_ly: number;
+  ton_cuoi_thang: number;
+};
+
+export type DeptSummaryReport = {
+  key: "bql" | "tiep_nhan" | "ve_sinh" | "ky_thuat";
+  name: string;
+  dot_color: string;
+  ton_dau_ky: number;
+  nhan: number;
+  da_xu_ly: number;
+  ton_hien_tai: number;
+  thay_doi_ton: number;
+  monthly: MonthReportItem[];
+};
+
+export type PerformanceReportData = {
+  departments: DeptSummaryReport[];
+  all_monthly: MonthReportItem[];
 };
 
 export type ManagementData = {
   user: UserBrief;
   tickets: MgmtTicket[];
+  report?: PerformanceReportData;
 };
 
 // ---------- 5.5 Warehouse ----------
@@ -288,6 +325,7 @@ export type WarehouseData = {
   inventory: WarehouseItem[];
   /** Plan 19 D11: materials the departments used in the last 7 days (finished tickets), most used first */
   weeklyUsage: { code: string; name: string; unit: string; qty: number; tickets: number }[];
-  requests: WarehouseRequest[];
+  /** Plan 24: open material requests (PVT-…) from `GET /mo/warehouse/requests`, oldest first */
+  requests: MaterialRequestDto[];
   customMaterials: boolean;
 };

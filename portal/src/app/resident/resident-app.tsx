@@ -53,6 +53,8 @@ const OVERVIEW: [Exclude<Filter, "all">, string, string, string][] = [
 ];
 
 function status(t: ResidentTicket): [string, string] {
+  if (t.merged && t.cancelled) return ["pill s-cancel", "Đã gộp"];
+  if (t.merged) return [t.stage === 6 ? "pill s-done" : t.stage === 5 ? "pill s-wait" : "pill s-run", "Đã gộp"];
   if (t.cancelled) return ["pill s-cancel", "Đã hủy"];
   if (t.stage === 5) return ["pill s-wait", "Chờ nghiệm thu"];
   if (t.stage === 6) return ["pill s-done", "Hoàn tất"];
@@ -495,8 +497,12 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                 </button>
               ))}
             </div>
-            <div className="flex flex-wrap items-start gap-5">
-              <section className="flex min-w-0 flex-col gap-3" style={{ flex: "1 1 340px" }}>
+            <div className={cur ? "grid grid-cols-1 lg:grid-cols-[360px_1fr] items-stretch gap-5" : "flex flex-col gap-5"}>
+              <div className={cur ? "relative min-w-0 w-full h-full" : "min-w-0 w-full"}>
+                <section
+                  className={`scroll-list flex min-w-0 flex-col gap-3 ${cur ? "lg:absolute lg:inset-0" : ""} overflow-y-auto pr-1`}
+                  style={{ maxHeight: cur ? "100%" : undefined }}
+                >
                 {list.length === 0 && (
                   <div className="card flex flex-col items-center justify-center gap-3 p-10 text-center">
                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-soft text-brand">
@@ -563,6 +569,7 @@ export function ResidentApp({ data }: { data: ResidentData }) {
                   );
                 })}
               </section>
+            </div>
 
               {cur && (
                 <TicketDetail
@@ -636,7 +643,7 @@ function TicketDetail(props: {
   ];
 
   return (
-    <section className="card flex min-w-0 flex-col gap-5 p-7" style={{ flex: "999 1 560px" }}>
+    <section className="card flex min-w-0 flex-col gap-5 p-7">
       <div className="flex flex-wrap items-center gap-2.5">
         <span className="idb">#{t.code}</span>
         <span className="text-[13px] text-muted">Thời gian gửi: {t.sentAt}</span>
@@ -658,10 +665,10 @@ function TicketDetail(props: {
           Ban tiếp nhận cần thêm thông tin để phân loại. Vui lòng bổ sung chi tiết ở mục bên dưới.
         </div>
       )}
-      {t.cancelled && (
+      {(t.cancelled || t.merged) && (
         <div role="status" className="rounded-2xl px-[18px] py-4 text-[15px]" style={{ background: "#E9EDF3", color: "#2A3447" }}>
-          {t.mergedInto
-            ? `Phản ánh này trùng với ${t.mergedInto} nên đã được gộp và xử lý chung.`
+          {t.merged
+            ? `Phản ánh này trùng với ${t.mergedInto ?? "phản ánh khác"} nên đã được gộp và xử lý chung. Tiến độ bên dưới là tiến độ của ${t.mergedInto ?? "phản ánh đó"}.`
             : "Bạn đã hủy phản ánh này."}
         </div>
       )}

@@ -5,6 +5,7 @@ import { ticketDetailAction } from "@/app/actions/detail";
 import {
   confirmReviewAction,
   duplicateAction,
+  fillMissingInfoAction,
   resolveAssetAction,
   routeTicketAction,
   safetyAction,
@@ -17,7 +18,7 @@ import { Toast } from "@/components/toast";
 import { useAction } from "@/components/use-action";
 import { DEPT_LABEL, ROLE_LABEL, type Dept } from "@/lib/constants";
 import { DONE_SEGMENTS, doneSegment, hasLocation, matchesDoneSearch, type DoneSegment } from "@/lib/reception-done";
-import type { AgentInfo, AgentPerf, ReceptionAllItem, ReceptionData, ReceptionInboxItem, TicketDetail } from "@/lib/dto";
+import type { AgentPerf, ReceptionAllItem, ReceptionData, ReceptionInboxItem, TicketDetail } from "@/lib/dto";
 
 type Tab = "inbox" | "done" | "perf";
 
@@ -75,7 +76,7 @@ export function ReceptionApp({ data }: { data: ReceptionData }) {
         <PageHead {...HEAD[tab]} />
 
         {tab === "inbox" && (
-          <section className="flex flex-col gap-4">
+          <section className="scroll-list flex flex-col gap-4">
             {inbox.length === 0 && <div className="card p-10 text-center text-muted">Không còn ticket nào chờ phân loại.</div>}
             {inbox.map((t) => (
               <InboxCard
@@ -84,6 +85,7 @@ export function ReceptionApp({ data }: { data: ReceptionData }) {
                 pending={pending}
                 onOpen={() => open(t.id)}
                 onRoute={(d) => run(() => routeTicketAction(t.id, d))}
+                onFillMissing={(input) => run(() => fillMissingInfoAction(t.id, input))}
                 onAsset={() => run(() => resolveAssetAction(t.id, true))}
                 onConfirm={() => run(() => confirmReviewAction(t.id))}
                 onDuplicate={(merge) => run(() => duplicateAction(t.id, merge))}
@@ -162,7 +164,7 @@ function DoneTable({ rows, onOpen }: { rows: ReceptionAllItem[]; onOpen: (id: st
         />
       </div>
 
-      <section className="card overflow-x-auto p-2">
+      <section className="card scroll-list overflow-x-auto p-2">
         <table>
           <thead>
             <tr>
@@ -202,7 +204,7 @@ function DoneTable({ rows, onOpen }: { rows: ReceptionAllItem[]; onOpen: (id: st
                       {where.label}
                     </span>
                   </td>
-                  <td className="text-[13px] text-body">{t.cancelled ? "Đã hủy" : t.statusLabel}</td>
+                  <td className="text-[13px] text-body">{t.statusLabel}</td>
                 </tr>
               );
             })}
@@ -287,32 +289,12 @@ function PerfPanel({ perf, onOpen }: { perf: AgentPerf; onOpen: (id: string) => 
   );
 }
 
-function AgentBlock({ agent }: { agent: AgentInfo | null }) {
-  if (!agent) {
-    return <div className="rounded-2xl bg-soft p-4 text-[13px] text-muted">Chưa có quyết định của Agent.</div>;
-  }
-  return (
-    <div className="flex flex-col gap-1.5 rounded-2xl border border-line bg-soft p-4" aria-label="Quyết định của Agent">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-bold tracking-[.06em] text-muted">AGENT</span>
-        <span className="pill wait">{agent.sourceLabel}</span>
-        {agent.proposedDept && !agent.failed && (
-          <span className={deptPill(agent.proposedDept)}>
-            <span className="dot" />
-            Đề xuất: {DEPT_LABEL[agent.proposedDept]}
-          </span>
-        )}
-      </div>
-      <span className="text-sm leading-normal text-body">{agent.reason}</span>
-    </div>
-  );
-}
-
 function InboxCard(props: {
   t: ReceptionInboxItem;
   pending: boolean;
   onOpen: () => void;
   onRoute: (d: "ve_sinh" | "ky_thuat" | "bql") => void;
+  onFillMissing: (input: { location?: string; info?: string; dept?: "ve_sinh" | "ky_thuat"; note: string }) => void;
   onAsset: () => void;
   onConfirm: () => void;
   onDuplicate: (merge: boolean) => void;
@@ -347,8 +329,6 @@ function InboxCard(props: {
       <span className="text-[13px] text-muted">Vị trí: {t.location}</span>
       {t.photos.length > 0 && <PhotoStrip photos={t.photos} />}
       {t.note && <span className="rounded-2xl bg-soft p-4 text-[13px] text-body">{t.note}</span>}
-
-      <AgentBlock agent={t.agent} />
 
       {code === "DUPLICATE" && (
         <div className="flex flex-col gap-3 rounded-2xl p-4" style={{ background: "#FFF7E0", border: "1px solid #F3D27A" }}>
@@ -455,7 +435,70 @@ function InboxCard(props: {
         </div>
       )}
 
-      {code === "MISSING_INFO" && <span className="text-[13px] text-muted">Đang chờ cư dân bổ sung</span>}
+      {code === "MISSING_INFO" &&
+        (t.safetyContext ? (
+          <span className="text-[13px] text-muted">Đang chờ cư dân bổ sung (ca an toàn: chỉ cư dân hoặc Ban quản lý gỡ)</span>
+        ) : (
+          <MissingInfoForm id={t.id} sugDept={sugDept} pending={pending} onSubmit={props.onFillMissing} />
+        ))}
     </article>
+  );
+}
+
+/**
+ * MISSING_INFO, not a safety case: reception called the resident and fills in what is missing, then sends the ticket
+ * to a department or lets the Agent classify again. The backend still checks that nothing is missing.
+ */
+function MissingInfoForm(props: {
+  id: string;
+  sugDept: Dept | null;
+  pending: boolean;
+  onSubmit: (input: { location?: string; info?: string; dept?: "ve_sinh" | "ky_thuat"; note: string }) => void;
+}) {
+  const [location, setLocation] = useState("");
+  const [info, setInfo] = useState("");
+  const [note, setNote] = useState("");
+  const ready = !props.pending && note.trim() !== "" && (location.trim() !== "" || info.trim() !== "");
+  const send = (dept?: "ve_sinh" | "ky_thuat") =>
+    props.onSubmit({ location: location.trim() || undefined, info: info.trim() || undefined, dept, note: note.trim() });
+  const field = "min-h-11 w-full rounded-xl border border-line bg-field px-4 text-sm focus-visible:outline-2 focus-visible:outline-[#2563EB]";
+  return (
+    <div className="flex flex-col gap-2.5 rounded-2xl border border-line p-4" data-testid="missing-info-form">
+      <span className="text-[13px] font-semibold text-muted">Đang chờ cư dân bổ sung · hoặc Tiếp nhận bổ sung sau khi liên hệ cư dân:</span>
+      <input
+        aria-label="Vị trí"
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        placeholder="Vị trí, VD: Tòa S1 · Tầng 3 · Hành lang"
+        className={field}
+      />
+      <input
+        aria-label="Thông tin thêm từ cư dân"
+        value={info}
+        onChange={(e) => setInfo(e.target.value)}
+        placeholder="Thông tin thêm từ cư dân (không bắt buộc nếu đã nhập vị trí)"
+        className={field}
+      />
+      <input
+        id={`missing-note-${props.id}`}
+        aria-label="Lý do"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="Lý do (bắt buộc), VD: Đã gọi cư dân xác nhận"
+        className={field}
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[13px] font-semibold text-muted">Chuyển đến:</span>
+        <button type="button" className={props.sugDept === "ve_sinh" ? "btn sug" : "btn"} disabled={!ready} onClick={() => send("ve_sinh")}>
+          Phòng vệ sinh
+        </button>
+        <button type="button" className={props.sugDept === "ky_thuat" ? "btn sug" : "btn"} disabled={!ready} onClick={() => send("ky_thuat")}>
+          Phòng kỹ thuật
+        </button>
+        <button type="button" className="btn" disabled={!ready} onClick={() => send()}>
+          Lưu, để Agent phân loại
+        </button>
+      </div>
+    </div>
   );
 }

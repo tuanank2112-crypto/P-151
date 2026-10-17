@@ -170,9 +170,11 @@ def test_s01_the_rules_write_no_agent_decision():
 
 
 @pytest.mark.parametrize("mode", MODES)
-def test_s02_single_job_and_cause_effect_sentences_are_not_split(mode):
+def test_s02_single_job_and_two_place_sentences_are_not_split(mode):
     assert len(REF.MUST_NOT_SPLIT) >= 15
     for text in REF.MUST_NOT_SPLIT:
+        if REF.split_verdict(text)[1].startswith(("marker:", "question")):
+            continue  # plan 20: cause / hedge / question words no longer keep two jobs at one place in one ticket
         engine = build(mode)
         case = engine.receive(text, resident_id=RESIDENT)
         ticket = case.ticket
@@ -181,21 +183,48 @@ def test_s02_single_job_and_cause_effect_sentences_are_not_split(mode):
         assert len(engine.repo.list()) == 1, text
 
 
+@pytest.mark.parametrize("mode", MODES)
+def test_s02b_two_jobs_at_one_place_split_even_with_cause_hedge_or_question_words(mode):
+    texts = [
+        "Hành lang tầng 3 tòa S1 đèn không sáng nên rác không ai dọn",
+        "Hành lang tầng 3 tòa S1 có rác, đèn hình như hỏng",
+        "Hành lang tầng 3 tòa S1 đèn không sáng, có rác ở đó, ai xử lý giúp với?",
+        "Hành lang tầng 3 tòa S1 đèn hỏng và có rác, cần xử lý gấp vì sắp có khách",
+        "Sảnh chính tòa S1 có rác hoặc đèn không sáng?",
+    ]
+    for text in texts:
+        engine = build(mode)
+        root_id = report(engine, text)
+        root, child = pair(engine, root_id)
+        assert (root.ticket.split_category, child.ticket.split_category) == (VE, KT), text
+        assert (root.ticket.department_id, child.ticket.department_id) == ("DEPT_CLEANING", "DEPT_TECHNICAL"), text
+
+
 # ---------------------------------------------------------------------------------------------------- S-03
 
 
 @pytest.mark.parametrize("mode", MODES)
-def test_s03_a_mixed_report_with_a_tier2_signal_is_not_split_even_after_bptn_cleared_it(mode):
+def test_s03_a_mixed_report_cleared_by_bptn_splits_and_the_child_keeps_the_clearance(mode):
+    """Plan 23 P02 (replaces "cleared ⇒ never split"): after a person clears the safety level the report splits like any
+    other, and the child inherits the clearance so the cleared words do not stop it again. The mirror fake offers no
+    job for this sentence (its rules see a hazard), so with it the Agent's answer, not condition 4, keeps it whole."""
     engine = build(mode)
     root_id = report(engine, TIER2_MIXED)
     ticket = engine.get(root_id).ticket
     assert (ticket.status, ticket.blocker.code, ticket.risk_level) == ("VERIFYING", "SAFETY_REVIEW_REQUIRED", "UNCLEAR")
     engine.safety_confirm_safe(root_id, BPTN, note="Đã gọi cư dân, tiếng xèo xèo là máy lạnh")
     case = engine.get(root_id)
-    assert case.ticket.safety_cleared_at is not None  # condition 4: a cleared safety state is not "nothing found"
-    assert case.ticket.split_children == [] and case.ticket.split_category is None
-    assert (case.ticket.status, case.ticket.blocker.code) == ("VERIFYING", "CATEGORY_UNCLEAR")  # BPTN picks, as before
-    assert len(engine.repo.list()) == 1
+    assert case.ticket.safety_cleared_at is not None
+    if mode == "mirror":
+        assert case.ticket.split_children == [] and len(engine.repo.list()) == 1
+        assert (case.ticket.status, case.ticket.blocker.code) == ("VERIFYING", "CATEGORY_UNCLEAR")  # BPTN picks
+        return
+    root, child = pair(engine, root_id)
+    assert (root.ticket.split_category, child.ticket.split_category) == (VE, KT)
+    assert child.ticket.safety_cleared_at == root.ticket.safety_cleared_at
+    assert child.ticket.safety_cleared_by == BPTN and child.ticket.risk_level == RiskLevel.NONE
+    assert all(c.ticket.blocker is None or c.ticket.blocker.code not in {"SAFETY_REVIEW_REQUIRED",
+               "EMERGENCY_PENDING_BQL"} for c in (root, child))  # fmt: skip
 
 
 # ---------------------------------------------------------------------------------------------------- S-04
