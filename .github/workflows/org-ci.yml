@@ -1,0 +1,124 @@
+# Runs the org repo's CI on this public repo (org Actions is blocked by billing)
+# and reports the result back to the org commit as the status "ci/public-mirror".
+# Lives on the default branch `ci-sync` so mirroring main/develop never overwrites it.
+# Secret ORG_TOKEN: token with read access to the org repo's code and pull requests
+# and write access to its commit statuses.
+# The test steps copy .github/workflows/ci.yml of the org repo; keep them in sync.
+name: Org CI (public mirror)
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Re-test commits that already have a status"
+        type: boolean
+        default: false
+
+concurrency:
+  group: org-ci
+  cancel-in-progress: false
+
+env:
+  ORG_REPO: AI20K-Build-Phase-Cohort-4/P-151
+  CONTEXT: ci/public-mirror
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.pick.outputs.targets }}
+    steps:
+      - name: Pick org commits without a status
+        id: pick
+        env:
+          GH_TOKEN: ${{ secrets.ORG_TOKEN }}
+          FORCE: ${{ inputs.force || 'false' }}
+        run: |
+          set -euo pipefail
+          shas=$( {
+            for b in main develop; do gh api "repos/$ORG_REPO/commits/$b" --jq .sha; done
+            gh api "repos/$ORG_REPO/pulls?state=open&per_page=50" \
+              --jq ".[] | select(.head.repo.full_name == \"$ORG_REPO\") | .head.sha"
+          } | sort -u )
+          todo=()
+          for sha in $shas; do
+            if [ "$FORCE" != "true" ] && gh api "repos/$ORG_REPO/commits/$sha/statuses" \
+                 --jq ".[] | select(.context == \"$CONTEXT\") | .state" | grep -q .; then
+              continue
+            fi
+            todo+=("$sha")
+          done
+          targets=$(printf '%s\n' "${todo[@]}" | jq -Rnc '[inputs | select(length > 0)]')
+          echo "targets=$targets" >> "$GITHUB_OUTPUT"
+          echo "To test: $targets"
+
+  test:
+    needs: plan
+    if: needs.plan.outputs.targets != '[]'
+    name: test ${{ matrix.sha }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        sha: ${{ fromJson(needs.plan.outputs.targets) }}
+    env:
+      SHA: ${{ matrix.sha }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+    steps:
+      # GH_TOKEN is set only on the status steps, never where the org code runs
+      - name: Mark the org commit pending
+        env:
+          GH_TOKEN: ${{ secrets.ORG_TOKEN }}
+        run: >-
+          gh api "repos/$ORG_REPO/statuses/$SHA" -f state=pending -f context="$CONTEXT"
+          -f description="Running ruff + pytest" -f target_url="$RUN_URL"
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.ORG_REPO }}
+          ref: ${{ matrix.sha }}
+          token: ${{ secrets.ORG_TOKEN }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint with ruff
+        run: ruff check src/ tests/
+
+      - name: Run tests
+        # the two 24 KB linear-time tests assert elapsed < 1 s; coverage tracing slows them, so they run in the next step
+        run: >-
+          pytest tests/ -v --tb=short --cov=src --cov-report=term --cov-fail-under=60
+          --deselect tests/test_maintenance/test_safety.py::test_assess_is_linear_on_a_24kb_text
+          --deselect tests/test_maintenance/test_safety.py::test_assess_is_linear_on_adversarial_24kb_texts
+        env:
+          APP_ENV: test
+          OPENAI_API_KEY: test-key
+
+      - name: Timing tests without coverage
+        run: pytest tests/test_maintenance/test_safety.py -k linear -v --tb=short
+
+      - name: Report the result to the org commit
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.ORG_TOKEN }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          case "$JOB_STATUS" in
+            success) state=success; desc="ruff + pytest passed" ;;
+            failure) state=failure; desc="ruff or pytest failed" ;;
+            *)       state=error;   desc="Run $JOB_STATUS" ;;
+          esac
+          gh api "repos/$ORG_REPO/statuses/$SHA" -f state="$state" -f context="$CONTEXT" \
+            -f description="$desc" -f target_url="$RUN_URL"
