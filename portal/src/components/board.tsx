@@ -18,7 +18,7 @@ export function Board({ tickets, card }: { tickets: DeptTicket[]; card: (t: Dept
         return (
           <section
             key={c.label}
-            className="flex min-w-0 flex-col gap-3 rounded-2xl border border-slate-200/60 bg-slate-100/50 p-3.5"
+            className="flex min-w-0 flex-col gap-3"
             style={{ flex: "1 1 300px" }}
           >
             <div className="flex items-center gap-2 px-1 py-1">
