@@ -100,3 +100,12 @@ Backend chamanh chốt vật tư là **số thực tế đã dùng, một lần 
 - Kỹ thuật/Vệ sinh: "Yêu cầu vật tư" (tên cũ "Báo thiếu vật tư", đổi chữ v1.17.6, luồng không đổi; `POST material-shortage`, lỗi hiện nguyên văn), nhãn "Chờ kho nhập vật tư"; chuông "Thông báo kho" cho CẢ HAI phòng (`lib/stock-alerts.ts`, "Đã chạy tiếp"/"Vẫn thiếu").
 - Hồ sơ: `planning/23_2026-10-14_emergency-dup-split/`, `planning/24_2026-10-14_material-requests/` (ảnh chạy thật `evidence/M2/`).
 - **Danh sách dài (hồ sơ 25, v1.17.1):** mọi danh sách ticket/vật tư nằm trong khung `.scroll-list` (cuộn bên trong, tối đa `min(70vh, 760px)`); trang không dài vô hạn. Danh sách mới thì bọc khung bằng lớp này.
+
+## 9. Deploy Vercel qua GitHub (2026-10-18)
+- Vercel (tài khoản `lenq2112-4310`, gói Hobby) nối với repo public **`tuanank2112-crypto/P-151`**, KHÔNG nối repo org: Hobby không deploy repo private của organization và chặn commit của tác giả khác tài khoản (`-known-gotchas.md`). Production Branch = `main`.
+  - `p151-backend`: Root Directory = root repo; [`.vercelignore`](../.vercelignore) loại `portal/ planning/ docs/ tests/ brain4agent/ scripts/ …` (giữ `src/`, `seed/`, icon PWA `src/mobile/icons/*.png`).
+  - `p151-portal`: Root Directory = `portal`.
+- Luồng: merge vào `main` repo org ⇒ workflow `org-ci.yml` (nhánh mặc định `ci-sync` của repo public, bản sao ở `D:\p151-ci-sync`) chạy `ci.yml` của commit, gửi tick `ci/public-mirror` về repo org ⇒ CHỈ khi xanh mới đẩy commit đó sang `main` repo public ⇒ Vercel tự deploy production. Lịch 15 phút; chạy tay: `gh workflow run org-ci.yml -R tuanank2112-crypto/P-151 --ref ci-sync`.
+- Env cố định (Vercel → Settings → Environment Variables, Production) thay cho `-e` lúc deploy CLI: `MO_UPLOAD_DIR=/tmp/uploads`, `MO_LATENCY_LOG=/tmp/latency.jsonl`; các env khác giữ nguyên (`APP_ENV`, `MO_STORE=postgres`, `DATABASE_URL`, `AUTH_TOKEN_SECRET`, `LLM_MODE`, …).
+- Secret `ORG_TOKEN` (repo public): classic token của `tuanank2112-crypto`, chỉ quyền `repo`. Hết hạn ⇒ tick ngừng cập nhật và không deploy.
+- Rollback: Vercel → Deployments → bản trước → **Promote to Production**. Deploy CLI cũ (bản sao không `.git`) vẫn dùng được khi GitHub lỗi.
