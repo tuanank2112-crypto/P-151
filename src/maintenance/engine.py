@@ -338,9 +338,11 @@ class CasesView(Mapping[str, Case]):
         return self._repo.count()
 
     def values(self) -> list[Case]:  # type: ignore[override] - one list() instead of one get() per key
+        """All cases in the repository, read in one query instead of one get() per key."""
         return self._repo.list()
 
     def items(self) -> list[tuple[str, Case]]:  # type: ignore[override]
+        """(ticket_id, case) pairs for every case in the repository."""
         return [(case.ticket.ticket_id, case) for case in self._repo.list()]
 
 
@@ -388,6 +390,7 @@ def route_blockers(ticket: Ticket) -> list[str]:
 
 
 def can_route(ticket: Ticket) -> bool:
+    """True when no routing blocker remains for the ticket (CR-03 §5.3)."""
     return not route_blockers(ticket)
 
 
@@ -410,12 +413,15 @@ class DecisionView:
         self._decision = record.decision
 
     def location(self) -> str | None:
+        """The location text the Agent read, as stored on the record."""
         return self.record.agent_location
 
     def missing_parts(self) -> tuple[str, ...]:
+        """Location parts the Agent says are still missing."""
         return tuple(self.record.agent_missing_parts)
 
     def jobs(self) -> list[JobDecision]:
+        """The Agent's jobs that passed validation."""
         return [self._decision.jobs[i] for i in self.record.valid_job_indexes]
 
     def offered_jobs(self) -> int:
@@ -424,15 +430,18 @@ class DecisionView:
         return len(self._decision.jobs)
 
     def job_index(self, category: ServiceCategory) -> int | None:
+        """Index of the valid job for a category, or None."""
         return next(
             (i for i in self.record.valid_job_indexes if self._decision.jobs[i].category == category.value), None
         )
 
     def job(self, category: ServiceCategory) -> JobDecision | None:
+        """The valid job for a category, or None."""
         index = self.job_index(category)
         return None if index is None else self._decision.jobs[index]
 
     def field_ok(self, path: str) -> bool:
+        """False when the rule layer rejected the Agent's value at this path."""
         return path not in self.record.rejected
 
     def serious(self, category: ServiceCategory) -> list[Disagreement]:
@@ -445,6 +454,7 @@ class DecisionView:
         ]
 
     def minor(self, field: str) -> list[Disagreement]:
+        """Minor Agent-versus-rules disagreements on one field."""
         return [d for d in self.record.disagreements if d.severity == "MINOR" and d.field == field]
 
     def lower_safety_reason(self) -> str | None:
@@ -453,14 +463,17 @@ class DecisionView:
 
     @property
     def next_step(self) -> str:
+        """The Agent's chosen next step (for example PROCEED or TO_BPTN)."""
         return self._decision.next_step
 
     @property
     def bptn_reason(self) -> str | None:
+        """Why the Agent handed the ticket to BPTN, or None."""
         return self._decision.bptn_reason
 
     @property
     def scope(self) -> str:
+        """The Agent's scope verdict: IN_SCOPE, OUT_OF_SCOPE or UNCLEAR."""
         return self._decision.scope
 
     def note(self) -> str:
@@ -589,6 +602,7 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
                     self.run_agent(fixture.raw.ticket_id)
 
     def get(self, ticket_id: str) -> Case:
+        """Return the case for a ticket id."""
         return self.repo.get(ticket_id)
 
     # ------------------------------------------------------------------ resident
@@ -1591,9 +1605,11 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         return self.transition(ticket_id, S.IN_PROGRESS, actor_id, expected_from=S.ROUTED)
 
     def return_wrong_department(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
+        """Department returns a ROUTED ticket to BPTN (ROUTED → VERIFYING); `note` is the reason."""
         return self.transition(ticket_id, S.VERIFYING, actor_id, note=note, expected_from=S.ROUTED)
 
     def block_onsite(self, ticket_id: str, actor_id: str, *, note: str, eta: datetime) -> Case:
+        """Department puts a ticket on hold because it is blocked on site (→ ON_HOLD), with a note and an ETA."""
         return self.transition(ticket_id, S.ON_HOLD, actor_id, note=note, eta=eta)
 
     def resume_work(self, ticket_id: str, actor_id: str) -> Case:
@@ -1684,6 +1700,8 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
     def update_checklist(
         self, ticket_id: str, actor_id: str, template_item_id: str, *, status: ChecklistStatus, note: str | None = None
     ) -> Case:
+        """Department sets one checklist item's status (and note) while the ticket is IN_PROGRESS."""
+
         def op(work: Case, now: datetime) -> None:
             self._require_in_progress(work)
             item = next((i for i in work.checklist_items if i.template_item_id == template_item_id), None)
@@ -1719,6 +1737,8 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         used_qty: float,
         variance_reason: str | None = None,
     ) -> Case:
+        """Department records issued and used quantities (whole numbers, used ≤ issued) for one material line while IN_PROGRESS."""
+
         def op(work: Case, now: datetime) -> None:
             self._require_in_progress(work)
             line = next((m for m in work.material_lines if m.item_code == item_code), None)
@@ -2225,9 +2245,11 @@ class MaintenanceEngine(MergeMixin, SplitMixin, DepartmentMixin, NeighborMixin):
         return self.transition(ticket_id, S.CLOSED, actor_id, note=note, expected_from=S.READY_FOR_REVIEW)
 
     def rework(self, ticket_id: str, actor_id: str, *, note: str) -> Case:
+        """BQL sends a READY_FOR_REVIEW ticket back to the same department (→ IN_PROGRESS); `note` is the reason."""
         return self.transition(ticket_id, S.IN_PROGRESS, actor_id, note=note, expected_from=S.READY_FOR_REVIEW)
 
     def cancel(self, ticket_id: str, actor_id: str, *, cancel_reason: str) -> Case:
+        """BQL cancels a ticket; `cancel_reason` is mandatory (→ CANCELLED)."""
         return self.transition(ticket_id, S.CANCELLED, actor_id, cancel_reason=cancel_reason)
 
     # ------------------------------------------------------------------ warehouse

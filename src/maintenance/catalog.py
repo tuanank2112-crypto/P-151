@@ -36,6 +36,7 @@ class ShiftWindow(Frozen):
     end: str
 
     def contains(self, moment: time) -> bool:
+        """True when `moment` falls inside the shift (a shift may cross midnight)."""
         start, end = time.fromisoformat(self.start), time.fromisoformat(self.end)
         if start <= end:
             return start <= moment < end
@@ -48,6 +49,7 @@ class DepartmentConfig(Frozen):
     shifts: tuple[ShiftWindow, ...] = Field(min_length=1)
 
     def on_shift(self, moment: datetime) -> bool:
+        """True when `moment` falls inside any shift of the department."""
         clock = moment.timetz().replace(tzinfo=None)
         return any(s.contains(clock) for s in self.shifts)
 
@@ -457,25 +459,32 @@ class Catalog(Frozen):
         return self.area_materials.get(area) if area else None
 
     def material(self, item_code: str) -> MaterialCatalogItem | None:
+        """Catalog item for a material code, or None."""
         return next((m for m in self.materials if m.item_code == item_code), None)
 
     def template_for(self, playbook_id: PlaybookId) -> ChecklistTemplate:
+        """Checklist template of a playbook."""
         return next(t for t in self.checklist_templates if t.playbook_id == playbook_id)
 
     def requirements_for(self, playbook_id: PlaybookId) -> list[EvidenceRequirement]:
+        """Copies of the evidence requirements of a playbook."""
         return [r.model_copy() for r in self.evidence_requirements if r.playbook_id == playbook_id]
 
     def actor(self, actor_id: str) -> Actor | None:
+        """Actor for an id, or None."""
         return next((a for a in self.actors if a.actor_id == actor_id), None)
 
     def actor_role(self, actor_id: str) -> ActorRole | None:
+        """Role of an actor id, or None."""
         actor = self.actor(actor_id)
         return actor.actor_role if actor else None
 
     def department_for(self, playbook_id: PlaybookId) -> Department:
+        """Department a playbook is routed to."""
         return self.playbook_departments[playbook_id]
 
     def department(self, department_id: Department) -> DepartmentConfig:
+        """Configuration of one department."""
         return next(d for d in self.departments if d.department_id == department_id)
 
 
@@ -536,6 +545,7 @@ class TicketFixture(Frozen):
 
     @property
     def is_demo(self) -> bool:
+        """True for the demo flows (`flow` starts with DEMO)."""
         return self.flow.startswith("DEMO")
 
 
@@ -545,6 +555,7 @@ class TicketDataset(Frozen):
     tickets: tuple[TicketFixture, ...]
 
     def get(self, ticket_id: str) -> TicketFixture | None:
+        """Ticket fixture for an id, or None."""
         return next((t for t in self.tickets if t.raw.ticket_id == ticket_id), None)
 
 
@@ -554,6 +565,7 @@ def _read(path: Path) -> dict:
 
 @lru_cache
 def load_catalog(directory: Path = FIXTURE_DIR) -> Catalog:
+    """Read and validate `catalog.yaml` from a seed directory."""
     return Catalog.model_validate(_read(directory / "catalog.yaml"))
 
 
@@ -585,19 +597,23 @@ class StaffDirectory(Frozen):
         return self
 
     def member(self, staff_id: str) -> StaffMember | None:
+        """Staff member for an id, or None."""
         return next((m for m in self.staff if m.staff_id == staff_id), None)
 
 
 @lru_cache
 def load_staff(directory: Path = FIXTURE_DIR) -> StaffDirectory:
+    """Read and validate `staff.yaml` from a seed directory."""
     return StaffDirectory.model_validate(_read(directory / "staff.yaml"))
 
 
 @lru_cache
 def load_lexicon(directory: Path = FIXTURE_DIR) -> Lexicon:
+    """Read and validate `lexicon.yaml` from a seed directory."""
     return Lexicon.model_validate(_read(directory / "lexicon.yaml"))
 
 
 @lru_cache
 def load_dataset(directory: Path = FIXTURE_DIR) -> TicketDataset:
+    """Read and validate `tickets.yaml` from a seed directory."""
     return TicketDataset.model_validate(_read(directory / "tickets.yaml"))

@@ -94,6 +94,7 @@ def _home_building(actor_id: str) -> str | None:
 
 
 def get_engine() -> MaintenanceEngine:
+    """Trả engine dùng chung của process, tạo ở lần gọi đầu."""
     global _engine
     if _engine is None:
         with _engine_lock:  # two first requests must not build two engines
@@ -483,6 +484,7 @@ def assign_staff(ticket_id: str, body: AssignRequest, actor: ActorDep, engine: E
 
 @router.get("/tickets/{ticket_id}", response_model=Case)
 def read_ticket(ticket_id: str, actor: ActorDep, engine: EngineDep) -> Case:
+    """Đọc case đầy đủ của một ticket (vai nội bộ)."""
     return _staff_case(engine, actor, ticket_id)
 
 
@@ -494,11 +496,13 @@ def read_events(ticket_id: str, actor: ActorDep, engine: EngineDep) -> list[Stat
 
 @router.get("/tickets/{ticket_id}/audit", response_model=list[AuditEvent])
 def read_audit(ticket_id: str, actor: ActorDep, engine: EngineDep) -> list[AuditEvent]:
+    """Đọc sổ audit của ticket."""
     return _staff_case(engine, actor, ticket_id).audit
 
 
 @router.get("/tickets/{ticket_id}/notifications", response_model=list[Notification])
 def read_notifications(ticket_id: str, actor: ActorDep, engine: EngineDep) -> list[Notification]:
+    """Đọc các thông báo (outbox) của ticket."""
     return _staff_case(engine, actor, ticket_id).notifications
 
 
@@ -655,6 +659,7 @@ class ChecklistRequest(BaseModel):
 def update_checklist(
     ticket_id: str, template_item_id: str, body: ChecklistRequest, actor: ActorDep, engine: EngineDep
 ) -> Case:
+    """Phòng ban cập nhật trạng thái một mục checklist, có thể kèm ghi chú."""
     return _call(engine.update_checklist, ticket_id, actor, template_item_id, status=body.status, note=body.note)
 
 
@@ -680,6 +685,7 @@ class MaterialRequest(BaseModel):
 
 @router.post("/tickets/{ticket_id}/materials/{item_code}", response_model=Case)
 def record_material(ticket_id: str, item_code: str, body: MaterialRequest, actor: ActorDep, engine: EngineDep) -> Case:
+    """Ghi số lượng vật tư của một mã vào hồ sơ ticket."""
     return _call(engine.record_material, ticket_id, actor, item_code, **body.model_dump())
 
 
@@ -735,6 +741,7 @@ class EvidenceRequest(BaseModel):
 
 @router.post("/tickets/{ticket_id}/evidence", response_model=Case)
 def add_evidence(ticket_id: str, body: EvidenceRequest, actor: ActorDep, engine: EngineDep) -> Case:
+    """Thêm một bằng chứng (ghi chú) vào hồ sơ ticket."""
     return _call(engine.add_evidence, ticket_id, actor, **body.model_dump())
 
 
@@ -975,6 +982,7 @@ class RatingRequest(BaseModel):
 
 @resident_router.post("/tickets/{ticket_id}/rating", response_model=ResidentTicketView)
 def resident_rate(ticket_id: str, body: RatingRequest, actor: ActorDep, engine: EngineDep) -> ResidentTicketView:
+    """Cư dân đánh giá sao một lần sau khi ticket đóng; thẻ và bình luận là tuỳ chọn."""
     _own_case(engine, ticket_id, actor)
     if body.tags or (body.comment or "").strip():
         _require_extras()  # the tags and comment need their table; the stars alone never do
