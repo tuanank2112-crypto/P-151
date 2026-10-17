@@ -1,12 +1,12 @@
 # MaintenanceOps Agent — Problem Statement
 
-> **Phân loại tài liệu:** DRAFT · CHANGE CONTROL · Dữ liệu và quy trình mô phỏng
-> **Version:** 0.6-candidate
-> **Ngày cập nhật:** 2026-10-01
-> **MVP baseline:** MaintenanceOps MVP v0.3 đã freeze; v0.6 candidate đang đề xuất theo `CR-BPTN-03`
-> **Freeze history:** v0.3 — 28/09/2026; v0.6 chưa freeze
+> **Phân loại tài liệu:** IMPLEMENTED (phần Active) · CHANGE CONTROL · Dữ liệu và quy trình mô phỏng
+> **Version:** 1.0-implemented (phần Active) · 0.6-candidate (lịch sử)
+> **Ngày cập nhật:** 2026-10-17 (phần Active)
+> **MVP baseline:** v0.3 đã freeze (28/09/2026); hiện hành là `CR-BPTN-03` đã duyệt cho phạm vi MVP 04/10 (D-08) và đã cài đặt
+> **Freeze history:** v0.3 — 28/09/2026; CR-03 — duyệt phạm vi MVP, chưa có sign-off toàn bộ gate
 > **Owner:** TV1 — Product / BA / Process  
-> **Source of truth đang đề xuất:** `CR-BPTN-03.md`; khi chưa có phê duyệt, đây là candidate chứ không phải frozen baseline mới
+> **Source of truth:** code → `CR-BPTN-03.md` → tài liệu này
 > **Lưu ý:** Tài liệu này không mô tả quy trình, SLA, định mức, tồn kho hay hiệu quả vận hành thực tế của Vinhomes.
 
 ## Hiện trạng thực tế (audit 2026-10-17, đối chiếu code v1.17.9)
@@ -28,79 +28,81 @@
 | 0.3 | 2026-09-27 | Re-baseline MVP còn hai nhóm dịch vụ; bổ sung asset, duty, stock gate, team-only routing, dataset 12 ticket và 4 demo flow | DRAFT · Chờ tên/sign-off approver |
 | 0.3-freeze | 2026-09-28 | Đóng OD-09 và freeze phạm vi MaintenanceOps MVP v0.3 | FROZEN |
 | 0.6-candidate | 2026-10-01 | Re-baseline theo CR-BPTN-03: giao phòng ban, tầng an toàn, priority, merge, material hold, close/cancel/rating | DRAFT · CHỜ PHÊ DUYỆT CR-03 |
+| 1.0-implemented | 2026-10-17 | Viết lại Active theo code v1.17.x: portal 6 vai, Agent LLM, vật tư theo yêu cầu/nhập, số đo hiện có, governance D-08 | HIỆN HÀNH |
 
 ---
 
-# Active baseline candidate — MaintenanceOps MVP v0.6
+# Active baseline — MaintenanceOps hiện hành (khớp code v1.17.x, audit 2026-10-17)
+
+> Thứ tự khi lệch: code → [`CR-BPTN-03.md`](CR-BPTN-03.md) → file này. Dữ liệu mô phỏng (`SIM-`); không phải quy trình, SLA, định mức hay hiệu quả vận hành thật của Vinhomes.
 
 ## A. Vấn đề cần giải quyết
 
-Prototype cần chứng minh một luồng ticket bảo trì mô phỏng có thể đi từ phản ánh của cư dân đến phòng ban và BQL một cách có kiểm soát. Agent giúp đọc, đề xuất và kiểm tra điều kiện; con người giữ các quyết định có ảnh hưởng vận hành hoặc an toàn.
+Prototype chứng minh một luồng ticket bảo trì mô phỏng đi từ phản ánh của cư dân đến phòng ban và BQL một cách có kiểm soát. Agent đọc, đề xuất và kiểm tra điều kiện; con người giữ các quyết định có ảnh hưởng vận hành hoặc an toàn.
 
-Các vấn đề chính:
+Các vấn đề chính (giả thuyết, chưa đo trên dữ liệu thật):
 
-- Ticket có thể thiếu hoặc mơ hồ về loại việc, vị trí, thiết bị và mức nguy hiểm.
+- Phản ánh có thể thiếu hoặc mơ hồ về loại việc, vị trí, thiết bị và mức nguy hiểm; một phản ánh có thể chứa **hai việc** (vệ sinh và kỹ thuật).
 - Phản ánh nguy hiểm không được đi vào luồng bảo trì thông thường trước khi con người xử lý.
-- Ticket trùng cần được gộp có kiểm soát, không làm mất nội dung gốc.
-- Ticket chỉ được giao đúng phòng ban khi đã vượt qua các điều kiện an toàn, phân loại, asset và vật tư.
-- Hồ sơ hoàn thành phải đủ checklist, ghi chú, vật tư và ảnh trước khi BQL kiểm duyệt.
+- Ticket trùng cần gộp có kiểm soát, không làm mất nội dung gốc; ca nghi trùng với một ca khẩn cấp đang mở cần BQL quyết.
+- Ticket chỉ được giao đúng phòng ban khi đã qua điều kiện an toàn, phân loại, tài sản và vật tư; thiếu vật tư phải dừng rõ ràng và tự chạy tiếp khi kho nhập.
+- Hồ sơ hoàn thành phải đủ checklist, ảnh và vật tư thực dùng trước khi BQL nghiệm thu.
 - Không actor nào được gán nhân viên cụ thể trong hệ thống.
 
-## B. Phạm vi candidate
+## B. Phạm vi
 
-- Hai playbook: `PB-CLN-01` và `PB-TEC-01`.
-- Actor: Cư dân, Agent, BPTN, Phòng ban Vệ sinh/Kỹ thuật, Kho mô phỏng và BQL.
-- Dữ liệu, asset, vật tư, phòng ban và ticket đều là dữ liệu mô phỏng; ID nội bộ dùng tiền tố `SIM-`.
-- Giao việc ở cấp **phòng ban**. Phòng ban tự chia người bên ngoài hệ thống; `assignee_id` luôn `null`.
+- Hai playbook: `PB-CLN-01` (vệ sinh khu vực chung) và `PB-TEC-01` (đèn chiếu sáng khu vực chung), tòa S1/S2 Ocean Park mô phỏng.
+- Actor: Cư dân, Agent, Tiếp nhận (BPTN), Phòng Vệ sinh, Phòng Kỹ thuật, Kho, BQL. Mỗi vai có tài khoản và màn hình trên portal; Kho có màn hình riêng.
+- Giao việc ở cấp **phòng ban** (`DEPT_CLEANING`, `DEPT_TECHNICAL`). Phòng ban tự chia người bên ngoài hệ thống; `assignee_id` luôn `null`.
 - Mười trạng thái: `RECEIVED`, `VERIFYING`, `NEED_INFO`, `ON_HOLD`, `ROUTED`, `IN_PROGRESS`, `READY_FOR_REVIEW`, `MERGED`, `CLOSED`, `CANCELLED`.
-- Ba mức ưu tiên: `HIGH`, `MEDIUM`, `LOW`.
-- Ba mức an toàn: `NONE`, `UNCLEAR`, `EMERGENCY`; không tạo trạng thái `EMERGENCY`.
+- Ba mức ưu tiên `HIGH`, `MEDIUM`, `LOW`; ba mức an toàn `NONE`, `UNCLEAR`, `EMERGENCY` (không có trạng thái `EMERGENCY`).
 
 ## C. Luồng mục tiêu
 
 ```text
-Cư dân tạo ticket
-→ hệ thống kiểm tra dữ liệu tối thiểu
-→ Agent chạy luật an toàn cho mọi ticket
-→ Agent kiểm tra trùng, đề xuất playbook, phòng ban và priority
-→ BPTN chỉ can thiệp khi có blocker thuộc quyền BPTN
-→ kỹ thuật tra asset; cả hai playbook kiểm tra vật tư/tồn kho mô phỏng
-→ đủ điều kiện thì tạo WorkOrderDraft và giao phòng ban
-→ phòng ban bấm nhận, thực hiện và nộp hồ sơ
-→ Agent kiểm tra độ đầy đủ
-→ BQL duyệt để CLOSED, trả làm lại hoặc hủy
-→ cư dân xem lịch sử và rating một lần sau CLOSED
+Cư dân gửi phản ánh (tiêu đề, nội dung, nơi, ảnh)
+→ Agent chạy tầng an toàn cho mọi ticket (2b), rồi kiểm tra dữ liệu tối thiểu
+→ Agent phân loại, đề xuất phòng ban và priority; tách phản ánh hai việc; kiểm tra trùng
+→ Tiếp nhận (BPTN) chỉ can thiệp khi có blocker thuộc quyền BPTN
+→ kỹ thuật tra tài sản theo khu vực; cả hai playbook tra vật tư/tồn kho
+→ đủ điều kiện thì tạo WorkOrderDraft và giao phòng ban (ROUTED)
+→ phòng ban nhận cả phòng, thực hiện, ghi vật tư thực dùng, ảnh và nộp hồ sơ
+→ Agent đối soát 6 điều kiện (READY_FOR_REVIEW)
+→ BQL duyệt để CLOSED, trả làm lại về chính phòng ban đó, hoặc hủy
+→ cư dân xem lịch sử và đánh giá sao một lần sau CLOSED
 ```
 
 ## D. Luật an toàn và quyền quyết định
 
-- Bậc 1: `VERIFYING + EMERGENCY_PENDING_BQL`; không tạo draft, không giao phòng ban. Chỉ BQL được hạ cảnh báo, gộp, hủy hoặc đóng với ghi chú kết quả bắt buộc.
-- Bậc 2: `VERIFYING + SAFETY_REVIEW_REQUIRED`; BPTN có đúng ba lựa chọn: xác nhận an toàn với lý do, nâng thành khẩn cấp, hoặc yêu cầu cư dân bổ sung.
-- Khi cư dân bổ sung text/ảnh, dữ liệu mới được append-only và pipeline chạy lại từ tầng an toàn.
-- Agent/LLM chỉ được nâng mức rủi ro, không được tự hạ tín hiệu do luật xác định.
-- Chỉ BQL được đóng hoặc hủy. BPTN là tài khoản riêng và chỉ thấy thao tác theo quyền.
+- Bậc 1: `VERIFYING + EMERGENCY_PENDING_BQL`; không draft, không giao phòng ban. Chỉ BQL hạ cảnh báo, gộp, hủy hoặc đóng (kèm ghi chú kết quả bắt buộc).
+- Bậc 2: `VERIFYING + SAFETY_REVIEW_REQUIRED`; BPTN có đúng ba lựa chọn: xác nhận an toàn (lý do), nâng khẩn cấp, yêu cầu bổ sung; quá 4 giờ lịch leo thang BQL.
+- Bổ sung của cư dân được quét safety lại, nội dung gốc bất biến.
+- **Bất biến của người dùng:** ngữ nghĩa (phủ định, "hình như", nhờ việc hay báo nguy) do Agent LLM suy luận; luật cố định và từ vựng chỉ là lưới sàn. Agent/LLM chỉ được nâng mức, không được hạ tín hiệu do luật xác định.
+- Chỉ BQL đóng hoặc hủy. BPTN là tài khoản riêng và chỉ thấy thao tác theo quyền.
 
-## E. Routing, asset và vật tư
+## E. Routing, tài sản và vật tư
 
-- Không dùng duty/capacity theo team và không route đến `SIM-TEAM-*` trong candidate này.
-- Kỹ thuật cần một asset hợp lệ; BPTN có thể xác nhận tại hiện trường theo đường `ONSITE_BY_BPTN`, phải có lý do và audit.
-- Tồn kho biết chắc là thiếu: `ON_HOLD + WAITING_MATERIAL`, chưa giao phòng ban.
-- Kho mô phỏng nhập đủ: hệ thống tự chạy lại toàn bộ điều kiện giao.
-- Tồn kho không rõ: candidate dùng cờ `STOCK_CHECK_ON_ACCEPT` và cho đi tiếp; quyết định này vẫn cần được phê duyệt trong CR-03.
-- WorkOrderDraft chỉ được tạo khi `can_route=true`, không còn quy tắc “draft tồn tại dù route không hợp lệ” của v0.3.
+- Không dùng duty/capacity theo team, không route đến `SIM-TEAM-*`. Ngoài ca làm việc của phòng ban giữ `ROUTED + OUT_OF_HOURS`.
+- Kỹ thuật cần một tài sản đèn hợp lệ **theo khu vực** (13 khu vực) hoặc `ONSITE_BY_BPTN` (lý do + audit); mỗi khu vực một loại bóng.
+- Tồn kho biết chắc thiếu: `ON_HOLD + WAITING_MATERIAL`, chưa giao. Phòng ban có thể bấm "Yêu cầu vật tư"; Kho "Nhập đủ" thì hệ thống chạy lại các điều kiện và thông báo kho cho cả hai phòng. **Kho không duyệt xuất.**
+- Tồn kho không rõ: cờ `STOCK_CHECK_ON_ACCEPT`, cho đi tiếp (D-05).
+- Khi hoàn thành, phòng ban ghi **số vật tư thực dùng** một lần (Kỹ thuật ≥ 1, Vệ sinh được để rỗng).
+- `WorkOrderDraft` chỉ tạo khi `can_route=true`.
 
 ## F. Kết quả và giới hạn
 
-Kết quả thành công là ticket được xử lý đúng nhánh, có audit và không vượt quyền. `READY_FOR_REVIEW` không phải nghiệm thu; BQL quyết định `CLOSED` hoặc trả làm lại. Ảnh bằng chứng là bắt buộc trong v0.6 candidate. Rating 1–5 sao chỉ gửi một lần sau `CLOSED`; không reopen, cư dân chưa hài lòng tạo ticket mới.
+Kết quả thành công là ticket đi đúng nhánh, có audit và không vượt quyền. `READY_FOR_REVIEW` không phải nghiệm thu; BQL quyết `CLOSED` hoặc trả làm lại. Ảnh bằng chứng bắt buộc. Rating 1–5 sao chỉ một lần sau `CLOSED`; không reopen, cư dân chưa hài lòng tạo ticket mới (`follow_up_of`).
 
-Ngoài phạm vi: gán nhân viên, lịch trực/capacity theo team, tích hợp hệ thống thật, kho thật, phân tích ảnh bằng AI, chatbot, thanh toán, hóa đơn, báo giá và tối ưu nhân sự.
+Số đo hiện có (không phải KPI vận hành thật): xem [`evaluation.md`](evaluation.md). Tóm tắt: recall khẩn cấp luật cố định 219/219 trên nhãn dev; trên 91 câu khó Agent LLM đúng 82/90 (91,1%) và sót 1 ca khẩn cấp (h03); độ trễ p95 một lượt gọi Agent 6,15 giây; held-out độc lập chưa có.
+
+Ngoài phạm vi: gán nhân viên, lịch trực/capacity theo team, tích hợp hệ thống thật, kho thật, phân tích ảnh bằng AI, chatbot, thanh toán, hóa đơn, báo giá, tối ưu nhân sự, loại việc ngoài hai playbook (vd lỗi cơ khí thang máy).
 
 ## G. Governance
 
 - Freeze v0.3 và OD-09 ngày 28/09/2026 vẫn là hồ sơ lịch sử hợp lệ.
-- `CR-BPTN-03` đang `PROPOSED`; chưa có người phê duyệt được ghi tên.
-- Không được gắn nhãn v0.6 là `FROZEN` hoặc `READY FOR BUILD` trước khi chốt D-02, D-03, D-05, D-09, người duyệt CR và bằng chứng sign-off.
-- Chi tiết rule, transition và acceptance test lấy từ `CR-BPTN-03`; nếu code khác spec phải ghi drift.
+- `CR-BPTN-03` được duyệt cho phạm vi MVP 04/10 và D-01–D-07 (D-08: leader Lê Thị Châm Anh, ngày duyệt báo 2026-10-02, ghi nhận 2026-10-03). Không suy rộng thành duyệt toàn bộ gate Day05/Day06.
+- Chưa có held-out độc lập, user test 3–5 người và đo độ trễ trên bản online; các mục đó ghi ở [`evaluation.md`](evaluation.md) §8.
+- Chi tiết rule, transition và acceptance lấy từ `CR-BPTN-03`; nếu code khác spec phải ghi drift.
 
 ---
 

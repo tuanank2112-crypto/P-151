@@ -1,0 +1,31 @@
+## Tất cả case sai
+
+| Case | Độ khó | Nội dung | Sai ở | Mong đợi → Thực tế | Trạng thái |
+| --- | --- | --- | --- | --- | --- |
+| a04 | hard | Hộp đèn sảnh tầng 1 tòa S1 có m ù i k h é t | safety | EMERGENCY/UNCLEAR → NONE | lỗi đã biết |
+| a13 | hard | thang may tòa S1 đứng giữa tầng 7, có 2 cháu nhỏ ở trong | safety | EMERGENCY → NONE | lỗi đã biết |
+| a14 | hard | Nghe cái bụp rồi tối om, hộp đèn hành lang tầng 3 tòa S1 bốc mùi cháy | safety | EMERGENCY → UNCLEAR | lỗi đã biết |
+| c01 | easy | Hành lang tầng 3 tòa S1 không có mùi khét, chỉ là đèn tối | class | TEC → OUT | lỗi đã biết |
+| c03 | medium | bong den cau thang tang 5 toa S2 chay roi | class | TEC → OUT | lỗi đã biết |
+| c08 | hard | Có người hút thuốc ở cầu thang bộ tầng 6 tòa S2, khói bay vào nhà em | safety | NONE/UNCLEAR → EMERGENCY | lỗi đã biết |
+| e02 | medium | đèn hl t3 s1 k sáng từ qua giờ | class | TEC → OUT | lỗi đã biết |
+| e03 | medium | Hành lang tầng 3 tòa S1 đèn tối và rác nhiều quá | class | UNCLEAR → CLN | lỗi đã biết |
+| e05 | medium | Sảnh tòa S1 nước tràn ra sàn trơn trượt, có người suýt ngã | priority | HIGH → MEDIUM | lỗi đã biết |
+| f05 | hard | Đèn hành lang tầng 3 tòa S1 sáng rồi nhưng cầu thang bộ tầng 3 tòa S1 vẫn tối | location | Tòa S1 / Tầng 3 / Cầu thang bộ → Tòa S1 / Tầng 3 / Hành lang | lỗi đã biết |
+| h03 | medium | Nghe tiếng nổ lớn từ phòng điện tầng 1 tòa S2 | safety | EMERGENCY → UNCLEAR | lỗi đã biết |
+| h09 | hard | Chắc là không sao nhưng ổ điện sảnh tòa S1 hơi nóng | safety | UNCLEAR/EMERGENCY → NONE | lỗi đã biết |
+| h10 | hard | Nước ngập hầm xe B2 tòa S2 đến mắt cá chân, gần tủ điện | safety | EMERGENCY → NONE | lỗi đã biết |
+| h22 | hard | Thang máy tòa S1 kêu to và có vết dầu trên sàn | class | UNCLEAR/TEC → OUT | lỗi đã biết |
+| h26 | hard | Cửa thoát hiểm tầng 4 tòa S1 bị khóa từ bên ngoài | priority | HIGH → MEDIUM | lỗi đã biết |
+| h27 | hard | Cầu thang bộ tầng 2 tòa S2 gãy tay vịn, trẻ em hay chạy qua | priority | HIGH → MEDIUM | lỗi đã biết |
+| u09 | hard | Khо́i đen bốc ra từ tủ điện hầm B1 tòa S1 | safety | EMERGENCY → NONE | lỗi đã biết |
+| u10 | hard | Có mùi k.h.é.t ở hộp đèn hành lang tầng 3 tòa S1 | safety | EMERGENCY → NONE | lỗi đã biết |
+| u11 | hard | Đèn hành lang tầng ３ tòa Ｓ１ không sáng | location | Tòa S1 / Tầng 3 / Hành lang → None | lỗi đã biết |
+
+| Độ khó | Đúng | Tổng |
+| --- | --- | --- |
+| easy | 9 | 10 |
+| medium | 28 | 33 |
+| hard | 35 | 48 |
+
+Tổng 91 case, sai 19 (đã biết 19, mới 0); đã hết lỗi nhưng còn cờ: []

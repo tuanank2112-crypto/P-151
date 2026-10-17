@@ -133,7 +133,7 @@ Bộ dừng an toàn: `tests/test_maintenance/data/safety_stop_sets_p0.yaml` (v�
 - Công cụ ghi file có thể giải mã `\uXXXX`/`\\` thành ký tự thật: dùng mã điểm (`chr`, `ord`) trong mã nguồn, kiểm `grep -cP '[\x08\x0b\x0c]'`.
 - Priority và `risk_level` là hai trục độc lập; Bậc 1 không có priority.
 
-## 9. Chưa làm (bàn giao)
+## 9. Chưa làm (bàn giao) — lịch sử, đã lỗi thời
 Endpoint router cho 5 method + `set_priority` (gợi ý ở `specs/00-ARCHITECTURE.md` §4.1), UI, persistence/deploy, `develop` merge, Q22 (bộ phân loại cho "bóng đèn bị cháy" ⇒ `OUT_OF_SCOPE`, chủ rules/playbook), P1 (T16/T17/E02, gộp ticket, PRI-U1/U2, LLM an toàn).
 
 ## 10. Bộ nhãn CR-03 của Trường (PR #6, merge lần 2 — plan 02 Q09, 2026-10-03)
@@ -185,54 +185,6 @@ Hồ sơ: [`planning/05_2026-10-04_agent-hardening/`](../planning/05_2026-10-04_
 - **Bản vá 05b (Q11):** "đèn cháy / đèn chập = đèn hỏng": `benign_phrases`/`benign_with_lamp_noun` thêm "chập (điện/mạch)" sau danh từ đèn; `safety._proven_lamp` nhận "den"/"bong" không dấu khi chính triệu chứng ("bi chay", "bi chap") cũng gõ không dấu — xét từng chữ, vị trí có dấu xung quanh không ảnh hưởng; chữ có dấu khác ("đen", "bông") vẫn không phải đèn; `rules.py` thêm "chập", "bị/đã cháy" vào triệu chứng đèn hỏng. Có khói/tóe lửa/khét kèm thì vẫn khẩn cấp.
 - Để P1: tín hiệu an toàn P1 (gas, kim tiêm, nước vào tủ điện, đèn nóng), luồng trùng đầy đủ (CR §8), tách ticket khi một phản ánh có hai việc, đếm trả sai phòng ban.
 
-## Local GPT-6 Luna configuration — 2026-10-07
-- Set `LLM_MODE=openai`, `MODEL_NAME=gpt-6-luna`, and a valid `OPENAI_API_KEY` in ignored `.env`. Model defaults and test mode remain unchanged.
-- `openai_client()` sets `reasoning_effort=none` for Luna (including vendor-prefixed name) to support the existing Chat Completions path; temperature stays 0. Safety still uses fixed rules.
-- Source: https://developers.openai.com/api/docs/models/gpt-6-luna and https://developers.openai.com/api/docs/guides/latest-model .
-- Verify real use through AI Logs `SUCCESS` and classification proposer `rules+llm:gpt-6-luna`; `FALLBACK_RULE` means the model failed and rules were used. Logs are in-memory and reset on restart.
-- Local GPT-6 Luna activation requested: .env now LLM_MODE=openai, MODEL_NAME=gpt-6-luna; proposer sets reasoning_effort=none for Luna Chat Completions. Real smoke call failed with OpenAIAuthenticationError (placeholder key), logged FALLBACK_RULE; successful real LLM usage is NOT verified. Replace OPENAI_API_KEY locally, then restart and verify AI Logs SUCCESS + rules+llm:gpt-6-luna. Targeted regression: 30 pass, ruff check/format exit0. No server running on localhost8000/8001/8080 at inspection; no push.
-
-
-### Supabase connection diagnosis — 2026-10-07
-- Supabase read-only verification: truong authenticated, member of maintops_dev; schema USAGE and cases SELECT/INSERT/UPDATE privileges true (writes not exercised); revision0001_maintops_initial, cases53, transaction_read_only=on; client TLSv1.3 with verify-full. System DNS initially failed for pooler; DoH hostaddr override and official Supabase CA+certifi temporary bundle allowed verification. DNS/.env/system trust unchanged; no DB/Storage writes. Evidence: planning/06_2026-10-04_readme-refresh/evidence/integration-20261007/supabase-readonly.txt
-- Next normal-startup gate: resolve Session pooler hostname reliably and configure official CA bundle with sslmode=verify-full/sslrootcert; preserve MO_ALLOW_RESET=false. Temporary hostaddr probe is not application activation.
-- Official SSL guidance: https://supabase.com/docs/guides/platform/ssl-enforcement .
-
-
-### Local Supabase configuration verified — 2026-10-07
-- User supplied Supabase secret key in local .env; GET bucket metadata returned200, private maintenance-photos, 5MiB, JPEG/PNG/WebP. Normal Session pooler hostname now connects as truong with official CA+certifi bundle/TLS verify-full. Local .env updated to postgres/supabase, reset=false, seed_on_empty=false; backup and CA under ignored data/. Application factories verified PostgresRepository/SupabasePhotoStore and cases53 with database read-only override. Server/jobs/uploads/LLM calls not run. Evidence: planning/06_2026-10-04_readme-refresh/evidence/integration-20261007/supabase-app-config.txt and supabase-storage-readonly.txt in same directory.
-- .env DATABASE_URL uses normal hostname, sslmode=verify-full, sslrootcert=data/certs/supabase-ca-bundle.pem (absolute local path in URL). Keep CA and local config backup out of Git. No fixed pooler IP is persisted.
-- Startup/demo against shared DB can run jobs and write records; pending a separate authorized runtime run. GPT-6 Luna client construction does not establish a successful model response.
-
-### Shared Supabase demo — 2026-10-07
-- Shared Supabase demo SIM-TKT-0042 CLOSED; 2 simulated PNG photos byte/hash verified through API and Storage after restart; cases53->54, preexisting53 unchanged, stock unchanged; GPT-6 Luna SUCCESS / rules+llm:gpt-6-luna (2000.82ms); missing execution photo blocked completion; pytest2973 passed,29 pg deselected, ruff clean. Server127.0.0.1:8001 (jobs/seed/reset false).
-- Evidence: planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json; run_demo.py; pytest.txt; ruff-check.txt. Real AI response preserved in recovery_ai_logs; in-memory API AI Logs are empty after restart. No rating submitted. API flow exercised; no manual browser walkthrough/public deployment/physical maintenance acceptance. Day05/06 remain open.
-- Fixed Ticket.merged_children missing from the local model although CR-BPTN-03 §8/§13 defines it. Before fix, reading shared cases failed extra_forbidden and create returned422 after ingest. Typed list with empty default preserves stored links; unknown fields still forbidden. No migration, filtering, or rewriting of existing shared tickets. Recovered existing demo through engine.run_agent; no second ticket created. Two repository regression tests added. No merge/unmerge behavior newly implemented.
-- Prior placeholder-key/no-server/no-write entries above are historical and superseded for current runtime by this verification. MO_JOBS_ENABLED=false is set on this demo process (not changed in .env); use the same environment override on restart. UI: http://127.0.0.1:8001/ui/. Auth uses seeded demo accounts; no header bypass. Synthetic photos are solid-color fixtures explicitly labeled in PNG metadata and ticket notes; they do not show site work.
-
-## Day04 normalized acceptance scope — 2026-10-07T04:32:59.390139+00:00
-- User removed six unused cases from personal acceptance scope; active9=H01,H02,I01,A01,M01,U01,S04,G03,R01. day04-3 manifest/results/issues normalized from valid references, separated legacy8PASS/1BLOCKED and Supabase1PASS/1FAIL (create422 recovered but pending clean201 retest). No cross-build9/9 claim. All references/counts/source time provenance checked;3 corruption controls rejected. No app execution/shared writes/commit/push.
-- Records: planning/07_2026-10-04_online-acceptance/deliverables/manifest.json, results.json, issues.json, day04-summary.md; validation: evidence/normalization-20261007/validation.txt in that plan.
-
-## Child trapped safety false negative — 2026-10-07T04:38:20.572561+00:00
-- CRITICAL D4-11 OPEN: exact text có trẻ con bị kẹt ở sảnh chung cư tòa S5 -> local memory/mock NONE/OUT_OF_SCOPE/BPTN; S1 also fails, adding mắc gives EMERGENCY_PENDING_BQL/BQL. Root cause missing person+trapped wording in S-09 lexicon, primary owner Như Ý (engine/safety), Châm Anh integration/API retest. Screenshot TK-0046 live backend not queried/modified; no shared writes/LLM calls. Do not mark fixed; no source patch made.
-- Evidence: planning/07_2026-10-04_online-acceptance/evidence/normalization-20261007/safety-child-trapped.json; issue D4-11 in deliverables/issues.json. Safety runs before location/category and must catch this even when S5 is outside supported buildings.
-
-## Day05 labeling preparation — 2026-10-07T05:07:58.261170+00:00
-
-[Proposed data/backlog contracts](../planning/09_2026-10-07_day05-labels/specs/01-CONTRACTS.md) separate service classification from safety risk. Existing classify/assess behavior is unchanged; safety stop is evaluated before classification. Planned validators/runners are not implemented. Targets80 safety and40 classification require independent human acceptance and family-based held-out. D4-11 stays OPEN and owned by engine/safety; this plan does not claim a runtime fix.
-
-## Day05 tools and submission recheck — 2026-10-07T06:16:13.491588+00:00
-
-The earlier planned-tools note is superseded: offline tools now exist under planning/09_2026-10-07_day05-labels/deliverables/tools/. Fresh270 tests pass;ruff check/format pass. Backlog/structure validate; full dataset fails counts without gold, and baseline refuses to score.95 manifest hashes match; D4-11 still returns NONE for trapped-child wording at S1/S5. See [Day05 daily report](submission/daily/2026-10-05.md) and evidence/submission-review-20261007/ under that plan. This is documentation verification; no runtime changes or app version bump.
-
-
-Day05 submission entry point: [main report](submission/day05-report.md), with verified local preparation and pending human/data/baseline gates; no runtime change.
-
-
-## Latest develop integration — 2026-10-07T13:30:26.152115+00:00
-Imported reasoning Agent/P1 from develop04491ad; local proposer Luna option preserved.3341 Python tests and270 Day05 tools pass,ruff clean. New JSON reasoning client has not been live-tested with Luna. Postgres requires revision0002_p1_doc_shape; shared DB rollout must follow reasoning-agent OPERATIONS §5 (coordinate stopping old backends). No migration/restart/shared writes performed. [Integration evidence](../planning/06_2026-10-04_readme-refresh/evidence/integration-latest-20261007/integration-report.md).
-
 ## 14. Tốc độ đọc danh sách — cache `list()` theo `xmin` (plan 09, v1.5.0, 2026-10-08)
 Hồ sơ: [`planning/09_2026-10-08_backend-speed/`](../planning/09_2026-10-08_backend-speed/plan.md). Audit: `PostgresRepository.list()` kéo toàn bộ doc
 (725 KB với 65 ticket) mỗi request ⇒ danh sách cư dân 2.7 s, BPTN 1.5 s trên Supabase.
@@ -264,7 +216,7 @@ Hồ sơ: [`planning/12_2026-10-09_backend-latency/`](../planning/12_2026-10-09_
 - `openai_json_client(model, api_key, base_url, *, timeout, max_output_tokens, json_mode)` giữ nguyên chữ ký. Riêng `gpt-6-luna`: gửi `max_completion_tokens=max_output_tokens`, `reasoning_effort=none`, không gửi `temperature` hay `max_tokens`. Model khác giữ request cũ.
 - CẤM dùng `max_tokens` cho Luna: API thật trả 400 `unsupported_parameter`; caller giữ `FALLBACK_RULE` khi model lỗi, không coi kết quả luật là LLM thành công. 401: kiểm key; 403/404: kiểm quyền model; 429: kiểm quota/rate limit; timeout: kiểm mạng và timeout. Không log key.
 - Request tối thiểu qua chính client app đã thành công: JSON `{"ok":true}`, 33 token tổng. Chưa đo quyết định nghiệp vụ thật trong Docker. Sau đổi code: `docker compose up -d --build --force-recreate backend`; web `/ui/` và app `/app/` dùng cùng backend. Container chạy bằng `compose run -e LLM_MODE=mock` vẫn ghi đè cấu hình `.env`.
-## 15. Agent chạy LLM thật: streaming, cache, CLI, G-LIVE (plan 06 Q30–Q33, 2026-10-07)
+## 17. Agent chạy LLM thật: streaming, cache, CLI, G-LIVE (plan 06 Q30–Q33, 2026-10-07)
 - **Ngữ nghĩa an toàn do Agent suy luận, không vá regex (Q30):** kêu cứu, phủ định, "hình như", nhờ thay đèn cháy… viết thành hướng dẫn bằng lời trong `agent/prompt.py`; luật (`safety.py` + `lexicon.yaml` `p1d`) chỉ là sàn hẹp. Luật ra EMERGENCY ⇒ Agent bị bỏ qua, nên regex bắt quá tay = loại LLM.
 - **Prompt `agent-prompt/5`** (REF trong `planning/06_.../specs/REF-agent-contract.py` sửa trước, code chép theo): /2 hình dạng object tín hiệu `{signal_id, status, quote}`; /3 đầu ra gọn (chỉ bước suy luận cần thiết, bỏ lý do cho trường trống — schema NỚI tùy chọn); /4 phủ định = ABSENT, kêu cứu/báo cháy/giục sơ tán = PRESENT; /5 `TO_BPTN` luôn kèm `bptn_reason`, khẩn cấp không có việc ⇒ `OUT_OF_SCOPE`.
 - ~~Trích dẫn vị trí bắt buộc (SPEC-P08 §2, F3)~~ — **bị thay bởi SPEC-P10 (plan 06 Q35, 2026-10-10).**
@@ -286,7 +238,7 @@ Hồ sơ: [`planning/12_2026-10-09_backend-latency/`](../planning/12_2026-10-09_
 - **Log latency (v1.17.9, 2026-10-16):** `InMemoryAILogger.record` thêm 1 dòng JSONL/lần gọi model vào `data/logs/latency.jsonl` (`ts, log_id, ticket_id, model, status, latency_ms, prompt_tokens, completion_tokens, total_tokens`; không prompt/output; lỗi ghi chỉ cảnh báo). `MO_LATENCY_LOG` đổi đường dẫn, `off` tắt (tests đặt `off`). Không có endpoint đọc; file không tự xoay vòng.
 - **Prompt `agent-prompt/10` (v1.17.8, 2026-10-16):** bước VI_TRI thêm "tầng hiểu theo NGHĨA trong toàn bộ lời cư dân, kể cả viết tắt/nói tự nhiên (\"t3\", \"lầu 3\", \"tầng ba\"), kể cả khi tòa đã lấy từ hồ sơ" — gpt-6-luna bỏ qua "t3" (SIM-TKT-0087). CẤM thay bằng regex `t\d`. Đo agy: 4/4 cách viết tầng, G-LIVE mẫu 18/18; CHƯA đo luna.
 
-## 16. Phục vụ portal Next.js (hồ sơ 11, v1.7.0, 2026-10-09)
+## 18. Phục vụ portal Next.js (hồ sơ 11, v1.7.0, 2026-10-09)
 Hồ sơ: [`planning/11_2026-10-09_portal-backend-api/`](../planning/11_2026-10-09_portal-backend-api/plan.md) (SPEC-P01, SPEC-P04). Nguyên tắc:
 KHÔNG thêm trường/giá trị enum vào doc ticket JSONB (bản Render cũ đọc chung Supabase) — dữ liệu mới ở BẢNG MỚI, trường mới chỉ ở model response.
 - **Tài khoản portal:** `cudan`, `tiepnhan`, `quanly`, `vesinh`, `kythuat`, `kho` / `123456` (`accounts.yaml`, giữ tài khoản cũ); `Me.profile {tower, floor, apartment}`.
@@ -301,3 +253,55 @@ KHÔNG thêm trường/giá trị enum vào doc ticket JSONB (bản Render cũ �
 - **Route sai phòng ban:** `POST /mo/tickets/{id}/wrong-department` (T16), `POST /bql/tickets/{id}/wrong-department {KEEP|TO_BPTN}`.
 - **Response mới:** `TicketSummary`/`BqlTicketRow` có `staff_*`, `rating*`, `agent_source`, `agent_department`, `agent_scope`; `CatalogView.custom_materials_enabled`, `portal_extras_enabled`.
 - Test: `tests/test_maintenance/test_portal_backend_ext.py`, `test_portal_backend_ext2.py`.
+
+## 19. Nhật ký bàn giao ngày 2026-10-07 (lịch sử)
+
+> Các mục dưới đây từng nằm chen giữa §13 và §14. Giữ nguyên nội dung làm bằng chứng; **không phải trạng thái hiện hành** (vd cấu hình Luna cục bộ, kiểm tra Supabase, phạm vi Day04/Day05 đã được thay bởi các mục sau và bởi `brain4agent/`).
+
+### Local GPT-6 Luna configuration — 2026-10-07
+- Set `LLM_MODE=openai`, `MODEL_NAME=gpt-6-luna`, and a valid `OPENAI_API_KEY` in ignored `.env`. Model defaults and test mode remain unchanged.
+- `openai_client()` sets `reasoning_effort=none` for Luna (including vendor-prefixed name) to support the existing Chat Completions path; temperature stays 0. Safety still uses fixed rules.
+- Source: https://developers.openai.com/api/docs/models/gpt-6-luna and https://developers.openai.com/api/docs/guides/latest-model .
+- Verify real use through AI Logs `SUCCESS` and classification proposer `rules+llm:gpt-6-luna`; `FALLBACK_RULE` means the model failed and rules were used. Logs are in-memory and reset on restart.
+- Local GPT-6 Luna activation requested: .env now LLM_MODE=openai, MODEL_NAME=gpt-6-luna; proposer sets reasoning_effort=none for Luna Chat Completions. Real smoke call failed with OpenAIAuthenticationError (placeholder key), logged FALLBACK_RULE; successful real LLM usage is NOT verified. Replace OPENAI_API_KEY locally, then restart and verify AI Logs SUCCESS + rules+llm:gpt-6-luna. Targeted regression: 30 pass, ruff check/format exit0. No server running on localhost8000/8001/8080 at inspection; no push.
+
+
+#### Supabase connection diagnosis — 2026-10-07
+- Supabase read-only verification: truong authenticated, member of maintops_dev; schema USAGE and cases SELECT/INSERT/UPDATE privileges true (writes not exercised); revision0001_maintops_initial, cases53, transaction_read_only=on; client TLSv1.3 with verify-full. System DNS initially failed for pooler; DoH hostaddr override and official Supabase CA+certifi temporary bundle allowed verification. DNS/.env/system trust unchanged; no DB/Storage writes. Evidence: planning/06_2026-10-04_readme-refresh/evidence/integration-20261007/supabase-readonly.txt
+- Next normal-startup gate: resolve Session pooler hostname reliably and configure official CA bundle with sslmode=verify-full/sslrootcert; preserve MO_ALLOW_RESET=false. Temporary hostaddr probe is not application activation.
+- Official SSL guidance: https://supabase.com/docs/guides/platform/ssl-enforcement .
+
+
+#### Local Supabase configuration verified — 2026-10-07
+- User supplied Supabase secret key in local .env; GET bucket metadata returned200, private maintenance-photos, 5MiB, JPEG/PNG/WebP. Normal Session pooler hostname now connects as truong with official CA+certifi bundle/TLS verify-full. Local .env updated to postgres/supabase, reset=false, seed_on_empty=false; backup and CA under ignored data/. Application factories verified PostgresRepository/SupabasePhotoStore and cases53 with database read-only override. Server/jobs/uploads/LLM calls not run. Evidence: planning/06_2026-10-04_readme-refresh/evidence/integration-20261007/supabase-app-config.txt and supabase-storage-readonly.txt in same directory.
+- .env DATABASE_URL uses normal hostname, sslmode=verify-full, sslrootcert=data/certs/supabase-ca-bundle.pem (absolute local path in URL). Keep CA and local config backup out of Git. No fixed pooler IP is persisted.
+- Startup/demo against shared DB can run jobs and write records; pending a separate authorized runtime run. GPT-6 Luna client construction does not establish a successful model response.
+
+#### Shared Supabase demo — 2026-10-07
+- Shared Supabase demo SIM-TKT-0042 CLOSED; 2 simulated PNG photos byte/hash verified through API and Storage after restart; cases53->54, preexisting53 unchanged, stock unchanged; GPT-6 Luna SUCCESS / rules+llm:gpt-6-luna (2000.82ms); missing execution photo blocked completion; pytest2973 passed,29 pg deselected, ruff clean. Server127.0.0.1:8001 (jobs/seed/reset false).
+- Evidence: planning/07_2026-10-04_online-acceptance/evidence/supabase-demo-20261007/result.json; run_demo.py; pytest.txt; ruff-check.txt. Real AI response preserved in recovery_ai_logs; in-memory API AI Logs are empty after restart. No rating submitted. API flow exercised; no manual browser walkthrough/public deployment/physical maintenance acceptance. Day05/06 remain open.
+- Fixed Ticket.merged_children missing from the local model although CR-BPTN-03 §8/§13 defines it. Before fix, reading shared cases failed extra_forbidden and create returned422 after ingest. Typed list with empty default preserves stored links; unknown fields still forbidden. No migration, filtering, or rewriting of existing shared tickets. Recovered existing demo through engine.run_agent; no second ticket created. Two repository regression tests added. No merge/unmerge behavior newly implemented.
+- Prior placeholder-key/no-server/no-write entries above are historical and superseded for current runtime by this verification. MO_JOBS_ENABLED=false is set on this demo process (not changed in .env); use the same environment override on restart. UI: http://127.0.0.1:8001/ui/. Auth uses seeded demo accounts; no header bypass. Synthetic photos are solid-color fixtures explicitly labeled in PNG metadata and ticket notes; they do not show site work.
+
+### Day04 normalized acceptance scope — 2026-10-07T04:32:59.390139+00:00
+- User removed six unused cases from personal acceptance scope; active9=H01,H02,I01,A01,M01,U01,S04,G03,R01. day04-3 manifest/results/issues normalized from valid references, separated legacy8PASS/1BLOCKED and Supabase1PASS/1FAIL (create422 recovered but pending clean201 retest). No cross-build9/9 claim. All references/counts/source time provenance checked;3 corruption controls rejected. No app execution/shared writes/commit/push.
+- Records: planning/07_2026-10-04_online-acceptance/deliverables/manifest.json, results.json, issues.json, day04-summary.md; validation: evidence/normalization-20261007/validation.txt in that plan.
+
+### Child trapped safety false negative — 2026-10-07T04:38:20.572561+00:00
+- CRITICAL D4-11 OPEN: exact text có trẻ con bị kẹt ở sảnh chung cư tòa S5 -> local memory/mock NONE/OUT_OF_SCOPE/BPTN; S1 also fails, adding mắc gives EMERGENCY_PENDING_BQL/BQL. Root cause missing person+trapped wording in S-09 lexicon, primary owner Như Ý (engine/safety), Châm Anh integration/API retest. Screenshot TK-0046 live backend not queried/modified; no shared writes/LLM calls. Do not mark fixed; no source patch made.
+- Evidence: planning/07_2026-10-04_online-acceptance/evidence/normalization-20261007/safety-child-trapped.json; issue D4-11 in deliverables/issues.json. Safety runs before location/category and must catch this even when S5 is outside supported buildings.
+
+### Day05 labeling preparation — 2026-10-07T05:07:58.261170+00:00
+
+[Proposed data/backlog contracts](../planning/09_2026-10-07_day05-labels/specs/01-CONTRACTS.md) separate service classification from safety risk. Existing classify/assess behavior is unchanged; safety stop is evaluated before classification. Planned validators/runners are not implemented. Targets80 safety and40 classification require independent human acceptance and family-based held-out. D4-11 stays OPEN and owned by engine/safety; this plan does not claim a runtime fix.
+
+### Day05 tools and submission recheck — 2026-10-07T06:16:13.491588+00:00
+
+The earlier planned-tools note is superseded: offline tools now exist under planning/09_2026-10-07_day05-labels/deliverables/tools/. Fresh270 tests pass;ruff check/format pass. Backlog/structure validate; full dataset fails counts without gold, and baseline refuses to score.95 manifest hashes match; D4-11 still returns NONE for trapped-child wording at S1/S5. See [Day05 daily report](submission/daily/2026-10-05.md) and evidence/submission-review-20261007/ under that plan. This is documentation verification; no runtime changes or app version bump.
+
+
+Day05 submission entry point: [main report](submission/day05-report.md), with verified local preparation and pending human/data/baseline gates; no runtime change.
+
+
+### Latest develop integration — 2026-10-07T13:30:26.152115+00:00
+Imported reasoning Agent/P1 from develop04491ad; local proposer Luna option preserved.3341 Python tests and270 Day05 tools pass,ruff clean. New JSON reasoning client has not been live-tested with Luna. Postgres requires revision0002_p1_doc_shape; shared DB rollout must follow reasoning-agent OPERATIONS §5 (coordinate stopping old backends). No migration/restart/shared writes performed. [Integration evidence](../planning/06_2026-10-04_readme-refresh/evidence/integration-latest-20261007/integration-report.md).

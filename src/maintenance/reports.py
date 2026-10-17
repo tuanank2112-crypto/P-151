@@ -7,6 +7,7 @@ theo biến động của ticket trong database để visual lên biểu đồ v
 from __future__ import annotations
 
 from typing import Any
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -109,9 +110,28 @@ def generate_performance_report_from_db(cases: list[Any]) -> PerformanceReportRe
     """
     # Phân loại ticket thực tế trong database
     total_tickets = len(cases)
-    vs_cases = [c for c in cases if getattr(c.ticket, "department_id", None) == "ve_sinh" or getattr(c.ticket, "department_id", None) == "PB-CLN-01"]
-    kt_cases = [c for c in cases if getattr(c.ticket, "department_id", None) == "ky_thuat" or getattr(c.ticket, "department_id", None) == "PB-TEC-01"]
-    bql_cases = [c for c in cases if getattr(c.ticket, "department_id", None) == "bql" or getattr(c.ticket, "escalated", False) or (getattr(c.ticket, "blocker", None) and getattr(c.ticket.blocker, "code", "") in ("EMERGENCY_PENDING_BQL", "SAFETY_REVIEW_REQUIRED"))]
+    vs_cases = [
+        c
+        for c in cases
+        if getattr(c.ticket, "department_id", None) == "ve_sinh"
+        or getattr(c.ticket, "department_id", None) == "PB-CLN-01"
+    ]
+    kt_cases = [
+        c
+        for c in cases
+        if getattr(c.ticket, "department_id", None) == "ky_thuat"
+        or getattr(c.ticket, "department_id", None) == "PB-TEC-01"
+    ]
+    bql_cases = [
+        c
+        for c in cases
+        if getattr(c.ticket, "department_id", None) == "bql"
+        or getattr(c.ticket, "escalated", False)
+        or (
+            getattr(c.ticket, "blocker", None)
+            and getattr(c.ticket.blocker, "code", "") in ("EMERGENCY_PENDING_BQL", "SAFETY_REVIEW_REQUIRED")
+        )
+    ]
 
     def is_closed(c: Any) -> bool:
         return getattr(c.ticket, "status", "") in ("CLOSED", "RESOLVED")
@@ -140,7 +160,13 @@ def generate_performance_report_from_db(cases: list[Any]) -> PerformanceReportRe
         "tiep_nhan": {
             "nhan": 42 + extra_total,
             "da_xu_ly": 41 + max(0, tn_done - 70),
-            "ton": 4 + sum(1 for c in cases if getattr(c.ticket, "status", "") in ("RECEIVED", "VERIFYING", "NEED_INFO") and not getattr(c.ticket, "cancelled", False)),
+            "ton": 4
+            + sum(
+                1
+                for c in cases
+                if getattr(c.ticket, "status", "") in ("RECEIVED", "VERIFYING", "NEED_INFO")
+                and not getattr(c.ticket, "cancelled", False)
+            ),
         },
         "ve_sinh": {
             "nhan": 27 + extra_vs,

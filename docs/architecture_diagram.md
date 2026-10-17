@@ -4,18 +4,18 @@
 
 ## 1. Components — sơ đồ mục tiêu, bố cục gốc
 
-Các ghi chú sau mô tả code hiện có; sơ đồ giữ các thành phần mục tiêu như LangGraph/GPT-4o/Phoenix.
+Các ghi chú sau mô tả code hiện có (cập nhật 2026-10-17, v1.17.x); sơ đồ giữ bố cục gốc và các nhãn mục tiêu "Web /ui", "GPT-4o", "Phoenix & LangSmith".
 
-![Target components — original layout](diagrams/Diagrams%20Components.drawio.svg)
+![Target components — original layout](diagrams/Diagrams%20Components.svg)
 
 [Nguồn draw.io](diagrams/Diagrams%20Components.drawio) · [Mermaid](diagrams/Diagrams%20Components.mmd). SVG gốc có nguồn draw.io nhúng; file .drawio riêng được trích nguyên vẹn từ nguồn đó. Mermaid là bản đồng hành về ngữ nghĩa, không dùng để thay bố cục SVG.
 
-- Web App gọi FastAPI; xác thực/phân quyền và kiểm tra schema ở backend. HTTPS cần hạ tầng TLS; localhost dùng HTTP.
-- MaintenanceEngine chạy pipeline và các hành động người dùng; LangGraph mẫu trong src/agents chưa điều phối đường chạy này.
-- Safety dùng R1–R10 và lexicon. Guard LLM có trong code nhưng build_engine không truyền safety_llm, kể cả khi LLM_MODE=openai.
-- Phân loại dùng luật; LLM proposer chỉ bật với LLM_MODE=openai, model mặc định gpt-4o-mini, lỗi thì fallback về luật.
+- Giao diện là **Portal Next.js** (`portal/`) và PWA điện thoại (`src/mobile/`, `/app/`), thay cho "Web Application (/ui)" trong hình; `src/web/` đã xoá 2026-10-12. Portal gọi FastAPI `/api/v1`; xác thực/phân quyền và kiểm tra schema ở backend. HTTPS cần hạ tầng TLS; localhost dùng HTTP.
+- MaintenanceEngine chạy pipeline và các hành động người dùng. **Agent LangGraph** (`src/maintenance/agent/graph.py`, `StateGraph`) đã nằm trên đường chạy; `src/agents/` (LangGraph mẫu của template) thì không.
+- Safety dùng R1–R10 và lexicon làm lưới sàn; Agent LLM suy luận ngữ nghĩa và chỉ được nâng mức. Hook `safety_llm` riêng vẫn không bật trong build_engine.
+- Phân loại do Agent quyết định khi `LLM_MODE=openai` (model mặc định gpt-4o-mini, production `gpt-6-luna`), luật cố định chạy song song làm đối chứng; Agent lỗi thì rơi về luật (cờ `AGENT_FALLBACK`).
 - CaseRepository mặc định memory; tuỳ chọn PostgreSQL schema maintops. Mỗi mutation giữ engine.lock và lưu case, audit, notifications nguyên tử. Không đợi CLOSED mới lưu.
-- Ảnh đi qua backend: binary lưu local mặc định hoặc Supabase Storage tuỳ chọn; metadata nằm trong case. API có job retry/leo thang; session đăng nhập vẫn in-memory.
+- Ảnh đi qua backend: binary lưu local mặc định hoặc Supabase Storage tuỳ chọn; metadata nằm trong case. API có job retry/leo thang; token đăng nhập ký HMAC (`AUTH_TOKEN_SECRET`) nên mọi instance dùng chung phiên.
 
 ## 2. Data flow — sơ đồ mục tiêu, bố cục gốc
 
@@ -127,7 +127,8 @@ flowchart LR
 
 ## 3. Hiện có và mục tiêu
 
-Hiện có: FastAPI, engine Python, luật + LLM proposer tuỳ chọn, repository memory/PostgreSQL và ảnh local/Supabase. **LangGraph và Phoenix chưa tích hợp vào pipeline; GPT-4o là model mục tiêu 19/10.** Không coi package đã cài hoặc sơ đồ mục tiêu là bằng chứng tính năng đang chạy.
+**Đang chạy** (đã đo, xem [evaluation.md](evaluation.md)): FastAPI, engine Python, **Agent LangGraph + `gpt-6-luna`** với luật cố định làm sàn, portal Next.js + PWA, repository memory/PostgreSQL, ảnh local/Supabase, deploy Vercel + Supabase, log độ trễ/token của Agent ([ai-logs.md](ai-logs.md)).
+**Mục tiêu, chưa tích hợp:** Phoenix & LangSmith telemetry (nhãn trong hình), GPT-4o + vision. Không coi sơ đồ mục tiêu hay package đã cài là bằng chứng tính năng đang chạy; thành phần nào ghi "mục tiêu" ở trên thì chưa có trong code.
 
 ## 4. Đồng bộ và kiểm tra
 

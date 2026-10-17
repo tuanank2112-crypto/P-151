@@ -45,6 +45,7 @@ async def _maintenance_jobs() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Startup: fail fast on a bad photo-store, database URL or schema revision, build the engine (seeds only an empty store) and start the job loop; shutdown closes the portal client and stops the jobs."""
     settings = get_settings()
     print(
         f"Starting {settings.app_name} in {settings.app_env} mode (LLM_MODE={settings.llm_mode}, "
@@ -181,6 +182,7 @@ async def _proxy_to_portal(request: Request, path: str):
 
 @app.get("/", include_in_schema=False)
 async def root(request: Request):
+    """Serve the portal at `/`; without `PORTAL_URL` redirect to the phone app."""
     if PORTAL_URL:
         return await _proxy_to_portal(request, "")
     return RedirectResponse(url="/app/")  # without the portal, the phone app is the only UI served here
@@ -188,6 +190,7 @@ async def root(request: Request):
 
 @app.get("/health")
 async def health():
+    """Liveness check used by Docker and the Live URL."""
     return {"status": "ok", "env": settings.app_env}
 
 
@@ -195,6 +198,7 @@ async def health():
     "/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"], include_in_schema=False
 )
 async def portal_fallback(request: Request, path: str):
+    """Forward any other path to the portal when `PORTAL_URL` is set, else answer 404."""
     if PORTAL_URL:
         return await _proxy_to_portal(request, path)
     return JSONResponse(status_code=404, content={"detail": "Not found"})

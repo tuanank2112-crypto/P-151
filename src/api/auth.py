@@ -69,16 +69,19 @@ class AccountFile(BaseModel):
 
 @lru_cache
 def load_accounts(path: Path = FIXTURE_DIR / "accounts.yaml") -> AccountFile:
+    """Load and validate the demo accounts fixture (cached per path)."""
     return AccountFile.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
 
 
 def hash_password(password: str, *, salt: bytes | None = None, iterations: int = PBKDF2_ITERATIONS) -> str:
+    """PBKDF2-SHA256 hash as `pbkdf2_sha256$iterations$salt$digest` (salt and digest in hex)."""
     salt = salt or secrets.token_bytes(16)
     digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, iterations)
     return f"pbkdf2_sha256${iterations}${salt.hex()}${digest.hex()}"
 
 
 def verify_password(password: str, stored: str) -> bool:
+    """Constant-time check of a password against a stored hash string; a malformed string is simply False."""
     try:
         scheme, iterations, salt, expected = stored.split("$")
     except ValueError:
@@ -115,6 +118,7 @@ class AuthService:
     failures: dict[tuple[str, str], tuple[int, float]] = field(default_factory=dict)
 
     def login(self, username: str, password: str, client: str = "") -> tuple[str, Account]:
+        """Check credentials and return `(token, account)`; repeated failures lock the (username, client) pair with HTTP 429."""
         now = self.clock()
         username = username.strip().lower()
         key = (username, client)
@@ -157,12 +161,14 @@ class AuthService:
         return claims
 
     def account_for(self, token: str) -> Account | None:
+        """Return the account a valid, unrevoked token belongs to, or None."""
         claims = self._claims(token)
         if claims is None or claims.get("n") in self.revoked:
             return None
         return self.accounts.get(claims.get("u"))
 
     def logout(self, token: str) -> None:
+        """Revoke the token's nonce until it would have expired anyway (kept per instance)."""
         claims = self._claims(token)
         if claims is None:
             return
@@ -175,6 +181,7 @@ _service: AuthService | None = None
 
 
 def get_auth() -> AuthService:
+    """Return the process-wide AuthService, built on first use; tokens are signed when `AUTH_TOKEN_SECRET` is set."""
     global _service
     if _service is None:
         secret = get_settings().auth_token_secret
@@ -186,6 +193,7 @@ def get_auth() -> AuthService:
 
 
 def actor_header_allowed() -> bool:
+    """True only when `MO_ALLOW_ACTOR_HEADER` is on (tests and scripts, never production)."""
     return get_settings().mo_allow_actor_header
 
 
@@ -255,6 +263,7 @@ def _me(account: Account) -> Me:
 
 @router.post("/login", response_model=LoginResponse)
 def login(body: LoginRequest, request: Request, auth: Annotated[AuthService, Depends(get_auth)]) -> LoginResponse:
+    """Đăng nhập bằng tên và mật khẩu; trả token Bearer và thông tin tài khoản."""
     token, account = auth.login(body.username, body.password, request.client.host if request.client else "")
     return LoginResponse(access_token=token, user=_me(account))
 
@@ -264,6 +273,7 @@ def me(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
     auth: Annotated[AuthService, Depends(get_auth)],
 ) -> Me:
+    """Trả tài khoản của token hiện tại; token thiếu hoặc hết hạn bị từ chối."""
     account = auth.account_for(credentials.credentials) if credentials else None
     if account is None:
         raise HTTPException(status_code=401, detail="Cần đăng nhập", headers={"WWW-Authenticate": "Bearer"})
@@ -275,6 +285,7 @@ def logout(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
     auth: Annotated[AuthService, Depends(get_auth)],
 ) -> None:
+    """Đăng xuất: thu hồi token hiện tại."""
     if credentials:
         auth.logout(credentials.credentials)
 

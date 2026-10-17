@@ -79,16 +79,19 @@ class Settings(BaseSettings):
     chroma_persist_dir: str = "./data/chroma"
 
     def custom_materials_enabled(self) -> bool:
+        """Whether departments may add materials outside the catalog; on by default only for the memory store."""
         if self.mo_custom_materials is not None:
             return self.mo_custom_materials
         return self.mo_store == "memory"
 
     def portal_extras_enabled(self) -> bool:
+        """Whether the portal extras (rating tags and comments, staff) are on; on by default only for the memory store."""
         if self.mo_portal_extras is not None:
             return self.mo_portal_extras
         return self.mo_store == "memory"
 
     def stock_alerts_enabled(self) -> bool:
+        """Whether restock alerts are on; on by default only for the memory store."""
         if self.mo_stock_alerts is not None:
             return self.mo_stock_alerts
         return self.mo_store == "memory"
@@ -96,4 +99,5 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    """Cached application settings read from the environment and `.env`."""
     return Settings()
