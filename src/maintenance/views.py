@@ -59,6 +59,7 @@ def queue_sort_key(ticket: Ticket) -> tuple[int, int, str, str]:
 
 
 def sort_queue(cases: Iterable[Case]) -> list[Case]:
+    """Order cases by `queue_sort_key` (priority first, then age)."""
     return sorted(cases, key=lambda c: queue_sort_key(c.ticket))
 
 
@@ -170,6 +171,7 @@ def _can_rate(engine: MaintenanceEngine, ticket: Ticket, lookup: Mapping[str, Ca
 
 
 def staff_name(staff_id: str | None) -> str | None:
+    """Display name for a staff id, or None."""
     member = load_staff().member(staff_id) if staff_id else None
     return member.name if member else None
 
@@ -323,6 +325,7 @@ def bql_rows(
     blocker_owner_role: BlockerOwner | None = None,
     flag: TicketFlag | None = None,
 ) -> list[BqlTicketRow]:
+    """Rows of the BQL queue, filtered by the given status, department, blocker, risk, priority and overdue flags."""
     rows = []
     assignments: Mapping[str, Assignment] = engine.repo.assignments()
     details = engine.repo.rating_details()

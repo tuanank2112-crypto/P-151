@@ -1,6 +1,6 @@
 # `src/mobile/` — App điện thoại (PWA) cho mọi vai vận hành
 
-FastAPI phục vụ thư mục này ở `/app/` (`src/main.py`), cùng origin với API `/api/v1` và UI web `/ui/`.
+FastAPI phục vụ thư mục này ở `/app/` (`src/main.py`), cùng origin với API `/api/v1` và cổng web `portal/` (phục vụ ở `/`; UI tĩnh `/ui/` cũ đã gỡ).
 Plain JS (ES module) + CSS, KHÔNG Tailwind, KHÔNG bước build. Hồ sơ: [`planning/11_2026-10-09_mobile-pwa-app/`](../planning/11_2026-10-09_mobile-pwa-app/plan.md).
 **Giao diện = thiết kế `portal/`** (đợt 2, [`specs/SPEC-P04-PORTAL-UI.md`](../planning/11_2026-10-09_mobile-pwa-app/specs/SPEC-P04-PORTAL-UI.md)): class chép nguyên từ
 `portal/src/app/globals.css`, icon từ `portal/src/components/icons.tsx`, bố cục từ `shell.tsx`/`resident-app.tsx`/`management-app.tsx`.

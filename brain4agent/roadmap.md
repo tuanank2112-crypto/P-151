@@ -83,6 +83,8 @@ File này chứa danh sách các tính năng, mục tiêu sắp tới và tình 
 
 ## Đã hoàn thành (Done)
 
+- [x] **v1.17.11 (2026-10-17) — sửa tài liệu theo audit chương 9 (plan 29).** Còn mở: nhãn sơ đồ kiến trúc, `demo.mp4` (xoá khỏi git cần xác nhận), file mẫu ở root, `.ai-log/` có email, video thiếu giới thiệu team/ca biên, product/business có nguồn, pitch deck PDF, CI xanh (billing). Idea Vault: ghim phiên bản gián tiếp (lock file), docstring cho `store/` (còn 27%).
+- [x] **v1.17.10 (2026-10-17) — Evaluation Evidence theo chương 9 (plan 28).** Còn mở (cần người): phản hồi 3–5 người dùng, nhãn held-out ≥ 40 dòng, lặp LLM 3 lần, ảnh chụp terminal, đo độ trễ trên Live URL. Idea Vault: khi Agent lỗi mà luật cho `NONE` ⇒ chuyển Tiếp nhận xem (hiện rơi về luật, không gửi BQL); kiểm `reports.py` so mã phòng ban.
 - [x] **v1.17.9 (2026-10-16) — log latency mỗi lần gọi model ra `data/logs/latency.jsonl`.** Idea Vault: xoay vòng file + script p50/p95.
 - [x] **v1.17.8 (2026-10-16) — prompt `agent-prompt/10`: tầng hiểu theo nghĩa ("t3", "lầu 3").** Còn: đo lại trên production luna sau deploy (gửi "t3 nhiều rác quá").
 - [x] **v1.17.7 (2026-10-16) — portal: Tiếp nhận bổ sung vị trí/thông tin cho ticket MISSING_INFO rồi chuyển phòng** (ca an toàn không có form).

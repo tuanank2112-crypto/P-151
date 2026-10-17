@@ -40,11 +40,11 @@ def test_performance_report_endpoint(client):
     assert len(data["all_monthly"]) == 12
     dept_keys = {d["key"] for d in data["departments"]}
     assert dept_keys == {"bql", "tiep_nhan", "ve_sinh", "ky_thuat"}
-    
+
     # Internal MO endpoint
     res_mo = client.get("/api/v1/mo/reports/performance", headers=BQL_HEADERS)
     assert res_mo.status_code == 200
-    
+
     # Check role protection
     res_resident = client.get("/api/v1/bql/reports/performance", headers=RESIDENT_HEADERS)
     assert res_resident.status_code == 403

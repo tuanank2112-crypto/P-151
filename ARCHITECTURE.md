@@ -1,7 +1,7 @@
 # MaintenanceOps Agent — Kiến trúc hệ thống
 
 > Dữ liệu **mô phỏng** (`SIM-*`). Tài liệu này là bản tổng hợp kiến trúc; khi lệch thì thứ tự ưu tiên là: **code** → [CR-BPTN-03](docs/CR-BPTN-03.md) (spec nghiệp vụ duy nhất) → các tài liệu khác.
-> Phân biệt ba nhãn xuyên suốt: **Đang chạy** (có trong code), **Mục tiêu 19/10** (LangGraph, Phoenix, GPT-4o — chưa tích hợp), **Contract đích** (D-01 delta + snapshot — chưa code). Không coi sơ đồ mục tiêu là bằng chứng đã deploy.
+> Phân biệt ba nhãn xuyên suốt: **Đang chạy** (có trong code và đã đo), **Mục tiêu** (Phoenix & LangSmith, vision — chưa tích hợp), **Contract đích** (D-01 delta + snapshot — chưa code). Cập nhật hiện trạng 2026-10-17 (v1.17.x): LangGraph, `gpt-6-luna`, portal Next.js và deploy Vercel **đã chạy**.
 > Bản ResidentGPT (FAQ/RAG) trước đây là hướng cũ đã bỏ; xem lịch sử bằng `git log -- ARCHITECTURE.md`.
 
 ## 1. Bài toán và phạm vi
@@ -14,16 +14,18 @@ Ngoài phạm vi: Agent gán nhân viên (MVP không gán — `set_assignee` lu�
 
 ```mermaid
 flowchart LR
-    U["Cư dân · BPTN · Phòng ban · Kho · BQL"] --> W["Web UI tĩnh<br/>src/web (/ui)"]
+    U["Cư dân · BPTN · Phòng ban · Kho · BQL"] --> W["Portal Next.js (portal/)<br/>+ PWA src/mobile (/app)"]
     W -->|"REST /api/v1"| A["FastAPI<br/>src/main.py"]
-    A --> AU["auth.py<br/>session in-memory"]
+    A --> AU["auth.py<br/>token ký HMAC"]
     A --> R["routers/maintenance.py<br/>/mo · /resident · /bql"]
     A --> PH["photos.py<br/>kiểm magic bytes"]
     R --> E["MaintenanceEngine<br/>engine.py · engine.lock"]
     E --> S["safety.py<br/>luật R1–R10 + lexicon"]
     E --> PR["priority.py<br/>PRI-*"]
-    E --> RU["rules.py · proposer.py<br/>phân loại"]
-    RU -.->|"chỉ khi LLM_MODE=openai"| L["OpenAI-compatible LLM<br/>gpt-4o-mini mặc định"]
+    E --> RU["rules.py<br/>phân loại luật (sàn)"]
+    E --> AG["agent/ (LangGraph)<br/>quyết định có cấu trúc"]
+    AG -.->|"chỉ khi LLM_MODE=openai"| L["OpenAI-compatible LLM<br/>gpt-4o-mini mặc định · gpt-6-luna production"]
+    AG --> LOG["ai_logger.py<br/>/mo/ai-logs · latency.jsonl"]
     E --> CR["CaseRepository"]
     CR --> M["memory (mặc định)"]
     CR --> PG[("PostgreSQL schema maintops<br/>Supabase · Alembic")]
@@ -35,16 +37,17 @@ flowchart LR
 
 | Thành phần | Vai trò | Nguồn |
 |---|---|---|
-| Web UI | UI tĩnh; BPTN/BQL dùng chung shell, nút bị ẩn/khoá theo vai trò | [src/web/](src/web/) |
+| Giao diện | Portal Next.js cho 6 vai (Cư dân, Tiếp nhận, Vệ sinh, Kỹ thuật, BQL, Kho); PWA điện thoại; nút ẩn/khoá theo vai, quyền thật nằm ở backend. UI tĩnh `src/web/` đã xoá 2026-10-12 | [portal/](portal/) · [src/mobile/](src/mobile/) · [docs/portal.md](docs/portal.md) |
 | FastAPI | Gateway; xác thực, phân quyền, kiểm schema ở backend; lỗi store → 503/403 | [src/main.py](src/main.py) · [src/api/](src/api/) |
 | Engine | State machine + pipeline + hành động người + job; duy nhất nơi ghi dữ liệu | [src/maintenance/engine.py](src/maintenance/engine.py) |
 | Safety / Priority | Hàm thuần, từ vựng là **dữ liệu** | [safety.py](src/maintenance/safety.py) · [priority.py](src/maintenance/priority.py) · [lexicon.yaml](seed/maintenance_v1/lexicon.yaml) |
-| Phân loại | Luật cố định + LLM đề xuất có guard (lỗi → fallback luật) | [rules.py](src/maintenance/rules.py) · [proposer.py](src/maintenance/proposer.py) |
+| Phân loại và Agent | Agent LangGraph trả quyết định có cấu trúc (an toàn, loại việc, vị trí, ưu tiên, tài sản, vật tư); luật cố định làm sàn và đối chứng; Agent lỗi → rơi về luật (cờ `AGENT_FALLBACK`) | [src/maintenance/agent/](src/maintenance/agent/) · [rules.py](src/maintenance/rules.py) · [proposer.py](src/maintenance/proposer.py) |
+| AI log | Mỗi lượt gọi model ghi `AILogEntry` (RAM, `/mo/ai-logs`) và một dòng độ trễ/token vào `data/logs/latency.jsonl` | [ai_logger.py](src/maintenance/ai_logger.py) · [docs/ai-logs.md](docs/ai-logs.md) |
 | Store | `CaseRepository` (memory \| postgres) và `PhotoStore` (local \| supabase) | [src/maintenance/store/](src/maintenance/store/) |
 | Views | View cư dân (allow-list), hàng đợi BQL, `queue_sort_key` | [views.py](src/maintenance/views.py) |
-| LangGraph mẫu | **Không** nằm trên đường chạy MaintenanceOps | [src/agents/](src/agents/) |
+| LangGraph mẫu của template | **Không** nằm trên đường chạy MaintenanceOps (khác với `src/maintenance/agent/`) | [src/agents/](src/agents/) |
 
-Sơ đồ **mục tiêu** (bố cục gốc, có LangGraph / GPT-4o / Phoenix & LangSmith): [docs/architecture_diagram.md](docs/architecture_diagram.md) · [draw.io](docs/diagrams/Diagrams%20Components.drawio) · [SVG](docs/diagrams/Diagrams%20Components.drawio.svg).
+Sơ đồ **mục tiêu** (bố cục gốc; nhãn "Web /ui", "GPT-4o", "Phoenix & LangSmith" là thiết kế, xem §10): [docs/architecture_diagram.md](docs/architecture_diagram.md) · [draw.io](docs/diagrams/Diagrams%20Components.drawio) · [SVG](docs/diagrams/Diagrams%20Components.svg).
 
 ## 3. Pipeline Agent
 
@@ -124,7 +127,7 @@ Bất biến bắt buộc có test: chỉ BQL đóng/hủy · Agent không ghi `
 | 2 Chưa đủ chắc (diễn đạt nghi ngờ, sự việc đã qua, từ nhiều nghĩa…) | `UNCLEAR` | `SAFETY_REVIEW_REQUIRED` | **BPTN** | Đúng 3 lựa chọn: xác nhận an toàn · nâng khẩn cấp · yêu cầu cư dân bổ sung |
 | Không có | `NONE` | — | — | Đi tiếp flow thường |
 
-- Luật cố định **quyết định**, LLM **chỉ được nâng mức, không được hạ**. Bước 2b của `build_engine()` **không truyền `safety_llm`** nên guard LLM không bật, kể cả khi `LLM_MODE=openai`.
+- Luật cố định là **lưới sàn**; ngữ nghĩa (phủ định, "hình như", nhờ việc hay báo nguy) do Agent LLM suy luận và **chỉ được nâng mức, không được hạ**. Hook `safety_llm` (guard riêng của `assess_with_llm`) vẫn không bật trong `build_engine()`; việc nâng mức đi qua Agent (`src/maintenance/agent/`). Ca luật đã báo khẩn cấp thì Agent không được gọi để sửa.
 - Khẩn cấp: Agent không chẩn đoán, không tạo `WorkOrderDraft`, không giao phòng ban, không hướng dẫn xử lý.
 - Thời hạn (giờ lịch, cấu hình trong `sla_config`): Bậc 2 → leo thang BQL sau **4 giờ**; `NEED_INFO` an toàn (chủ cư dân) → leo thang sau **12 giờ**. Leo thang **không** tự coi ticket là an toàn.
 - Cư dân chỉ thấy nhãn chung "Đang được kiểm tra", không thấy `risk_*`, `reason_code`, `priority`.
@@ -150,7 +153,7 @@ Quyền được kiểm ở **backend** (router chỉ bọc method engine); UI �
 | Ticket · sổ audit · outbox · tồn kho | `CaseRepository`: `memory` (mặc định, RAM) hoặc `postgres` schema `maintops` (Alembic, Supabase Session pooler) | `MO_STORE` |
 | Ảnh | `PhotoStore`: `local` hoặc Supabase Storage bucket private; binary đi qua backend (không signed URL), metadata nằm trong case | `MO_PHOTO_STORE` |
 | Tĩnh | YAML trong [seed/maintenance_v1/](seed/maintenance_v1/): catalog + `sla_config`, accounts, tickets (12 ca + expected), `lexicon.yaml` | nạp lúc khởi tạo (đổi phải restart) |
-| Phiên đăng nhập | RAM (`auth.py`) | — |
+| Phiên đăng nhập | Token ký HMAC (`AUTH_TOKEN_SECRET`), kiểm được ở mọi instance serverless; portal giữ trong cookie httpOnly | `AUTH_TOKEN_SECRET` |
 
 - **Mỗi mutation = một transaction** qua `_mutate`: `get_for_update` (`FOR UPDATE`) → thao tác trên bản sao sâu → `save` (kiểm `version`) + audit + outbox cùng commit; fail closed. Lỗi DB → `ConcurrencyError` 409 / `StoreUnavailableError` 503 / `StorePermissionError` 403. Hành động bị từ chối ghi audit ở transaction riêng.
 - `audit_log` và `notifications` append-only (trigger chặn UPDATE/DELETE). `notifications` là **outbox**, không khẳng định đã gửi ra dịch vụ ngoài.
@@ -165,11 +168,14 @@ Prefix `/api/v1`; xác thực `POST /auth/login` → `Authorization: Bearer`. Ba
 
 | Biến | Mặc định | Ý nghĩa |
 |---|---|---|
-| `LLM_MODE` | `mock` | `mock`: chỉ luật; `openai`: bật LLM proposer (`MODEL_NAME`, mặc định `gpt-4o-mini`) |
+| `LLM_MODE` | `mock` | `mock`: chỉ luật; `openai`: bật Agent LLM (`MODEL_NAME`, mặc định `gpt-4o-mini`, production `gpt-6-luna`) |
 | `MO_STORE` / `MO_PHOTO_STORE` | `memory` / `local` | Lưu trữ ticket / ảnh |
 | `MO_JOBS_ENABLED` | `true` | Job retry + leo thang trong process API |
 | `MO_ALLOW_RESET` | `false` | Cho phép xoá dữ liệu trên DB chung |
 | `MO_ALLOW_ACTOR_HEADER` | `false` | `X-Actor-Id` thay token — **CẤM bật ở production** |
+| `MO_DB_POOL` | `pool` | `none` cho serverless (không giữ kết nối DB khi rảnh) |
+| `AUTH_TOKEN_SECRET` | — | Khoá ký token đăng nhập; bắt buộc để nhiều instance dùng chung phiên |
+| `MO_LATENCY_LOG` | `data/logs/latency.jsonl` | Đường dẫn file log độ trễ/token; `off` để tắt |
 
 Danh sách đầy đủ: [README.md](README.md) · [src/config.py](src/config.py).
 
@@ -178,13 +184,16 @@ Danh sách đầy đủ: [README.md](README.md) · [src/config.py](src/config.py
 | Hạng mục | Trạng thái |
 |---|---|
 | Engine, pipeline 2b→8→10, 5 method an toàn/khẩn cấp, `set_priority`, rating một lần | **Đang chạy** (CR-03 P0) |
+| P1: báo sai phòng ban sau khi làm (T16/T17/E02), gộp/hoàn tác gộp, tách phản ánh hai việc, trùng ca khẩn cấp, PRI-U1/U2, tín hiệu an toàn mở rộng | **Đang chạy** (v1.9–v1.17) |
+| Agent LangGraph (`src/maintenance/agent/`), model `gpt-6-luna` trên production, fallback luật | **Đang chạy**; đo ở [docs/evaluation.md](docs/evaluation.md) §7.1 |
 | Repository memory/PostgreSQL, ảnh local/Supabase, job retry/leo thang | **Đang chạy** |
-| LLM proposer (`gpt-4o-mini`), fallback luật | **Đang chạy**, tuỳ chọn |
-| Guard LLM an toàn | Có trong code, **không bật** (`safety_llm=None`) |
-| LangGraph điều phối pipeline, Phoenix & LangSmith telemetry, GPT-4o + vision | **Mục tiêu 19/10**, chưa tích hợp |
+| Portal Next.js (6 vai) + PWA điện thoại; vật tư theo yêu cầu/nhập kho; thông báo kho | **Đang chạy** |
+| Deploy online | **Đang chạy** (Vercel `p151-portal`, `p151-backend`; Supabase). Bản deploy do một người đẩy bằng CLI, chưa nối GitHub |
+| Log AI của Agent | **Đang chạy** (RAM + `latency.jsonl`), xem [docs/ai-logs.md](docs/ai-logs.md) |
+| Hook `safety_llm` (guard an toàn riêng) | Có trong code, **không bật** |
+| Phoenix & LangSmith telemetry, GPT-4o + vision | **Mục tiêu**, chưa tích hợp |
 | D-01: chỉ bổ sung mới + snapshot có cấu trúc cho LLM | **Contract đích**, chưa code ([contract](planning/02_2026-10-03_truong-mvp-prep/specs/01-CONTRACTS.md)) |
-| P1: T16/T17/E02 (báo sai phòng ban sau khi làm), gộp/hoàn tác gộp, PRI-U1/U2, tín hiệu S-06…S-08, S-10…S-13, C-01 | **P1**, sau 04/10 |
-| Deploy online | **Chưa có** — nghiệm thu hiện chỉ localhost ([hồ sơ 07](planning/07_2026-10-04_online-acceptance/plan.md)) |
+| CI GitHub Actions (ruff, pytest, coverage ≥ 60%) | Có workflow; đang đỏ do billing của tổ chức, chưa có lần chạy thật cho bước coverage |
 
 ## 11. Quyết định kiến trúc đã chốt
 
@@ -206,6 +215,7 @@ Toàn bộ D-01…D-13 và các quyết định bị thay thế: [CR-BPTN-03 §1
 | Spec nghiệp vụ (trạng thái, T01–T23, an toàn, priority, AC-01…20) | [docs/CR-BPTN-03.md](docs/CR-BPTN-03.md) |
 | Engine, 5 method khẩn cấp, luật R1–R10, test | [docs/maintenance.md](docs/maintenance.md) |
 | Sơ đồ components + data flow mục tiêu và khác biệt với code | [docs/architecture_diagram.md](docs/architecture_diagram.md) · [data-flow](docs/diagrams/maintenanceops-data-flow-20261019/README.md) |
+| Log AI, số đo, bằng chứng nộp bài | [docs/ai-logs.md](docs/ai-logs.md) · [docs/evaluation.md](docs/evaluation.md) |
 | UI flow | [docs/04_ui_flow_wireframe.md](docs/04_ui_flow_wireframe.md) |
 | Dữ liệu và lưu trữ | [brain4agent/-data-architecture.md](brain4agent/-data-architecture.md) |
 | Lịch sử hồ sơ/specs | [planning/](planning/) (05 component, 08 data flow, 01–02 persistence/engine) |

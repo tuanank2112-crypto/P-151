@@ -1,0 +1,42 @@
+model gpt-6-luna openai n 91
+errors [('u08', 'ValidationError: 1 validation error for RawTicket\noriginal_description\n  String should have at most ')]
+source {'SKIPPED_RULE_EMERGENCY': 36, 'AGENT': 54}
+fallbacks []
+scopes Counter({None: 36, 'IN_SCOPE': 32, 'OUT_OF_SCOPE': 21, 'UNCLEAR': 1})
+cats Counter({'KY_THUAT': 24, 'VE_SINH': 9})
+depts Counter({None: 62, 'DEPT_TECHNICAL': 21, 'DEPT_CLEANING': 7})
+status Counter({('VERIFYING', 'EMERGENCY_PENDING_BQL'): 42, ('ROUTED', None): 19, ('VERIFYING', 'SAFETY_REVIEW_REQUIRED'): 10, ('VERIFYING', 'PENDING_REVIEW'): 8, ('VERIFYING', 'OUT_OF_SCOPE'): 7, ('NEED_INFO', 'MISSING_INFO'): 3, ('ON_HOLD', 'WAITING_MATERIAL'): 1})
+safety 63/65 [('c08', 'EMERGENCY', ['NONE', 'UNCLEAR']), ('h03', 'UNCLEAR', 'EMERGENCY')]
+class 26/28 [('e11', None, ['UNCLEAR', 'TEC']), ('h22', 'CLN', ['UNCLEAR', 'TEC'])]
+location 8/9 [('f04', 'Tòa S9 / Tầng 3 / Hành lang', None)]
+priority 2/5 [('e05', None, 'HIGH'), ('h26', None, 'HIGH'), ('h27', None, 'HIGH')]
+cases failing any field 8 of 90 ['c08', 'e05', 'e11', 'f04', 'h03', 'h22', 'h26', 'h27']
+{'easy': [10, 10], 'medium': [31, 33], 'hard': [41, 47]}
+emergency strict 36 / 37 ['h03']
+injection 7 / 7
+agent calls 54 lat s mean 4.83 p50 4.84 p95 6.15 p99 6.46 max 6.64
+end-to-end s mean 3.00 p50 4.16 p95 5.89 p99 6.69
+emergency end-to-end n 42 p50 0.02 p95 5.26
+non-emergency end-to-end n 48 p50 4.86 p95 6.19
+log lines 54 status Counter({'SUCCESS': 54})
+tokens/call prompt mean 3817 completion mean 434 total sum 229549 prompt sum 206120 completion sum 23429
+tokens/ticket mean 2551 (total 229549 over 90 tickets; tickets skipped by the rule floor make no model call)
+log latency p50 4.84 p95 6.15 p99 6.46
+rule-bug case a04 expect ['EMERGENCY', 'UNCLEAR'] final EMERGENCY src AGENT
+rule-bug case a13 expect EMERGENCY final EMERGENCY src AGENT
+rule-bug case a14 expect EMERGENCY final EMERGENCY src AGENT
+rule-bug case c08 expect ['NONE', 'UNCLEAR'] final EMERGENCY src SKIPPED_RULE_EMERGENCY
+rule-bug case h03 expect EMERGENCY final UNCLEAR src AGENT
+rule-bug case h09 expect ['UNCLEAR', 'EMERGENCY'] final UNCLEAR src AGENT
+rule-bug case h10 expect EMERGENCY final EMERGENCY src AGENT
+rule-bug case u09 expect EMERGENCY final EMERGENCY src AGENT
+rule-bug case u10 expect EMERGENCY final EMERGENCY src AGENT
+wrong list detail:
+c08 hard {'safety': (False, 'EMERGENCY')} | Có người hút thuốc ở cầu thang bộ tầng 6 tòa S2, khói bay vào nhà em
+e05 medium {'priority': (False, None)} | Sảnh tòa S1 nước tràn ra sàn trơn trượt, có người suýt ngã
+e11 hard {'class': (False, None)} | Đèn hành lang tầng 3 tòa S1 rơi xuống vỡ, mảnh kính văng khắp sàn
+f04 hard {'location': (False, 'Tòa S9 / Tầng 3 / Hành lang')} | Đèn hành lang tầng 3 tòa S9 không sáng
+h03 medium {'safety': (False, 'UNCLEAR')} | Nghe tiếng nổ lớn từ phòng điện tầng 1 tòa S2
+h22 hard {'class': (False, 'CLN')} | Thang máy tòa S1 kêu to và có vết dầu trên sàn
+h26 hard {'priority': (False, None)} | Cửa thoát hiểm tầng 4 tòa S1 bị khóa từ bên ngoài
+h27 hard {'priority': (False, None)} | Cầu thang bộ tầng 2 tòa S2 gãy tay vịn, trẻ em hay chạy qua

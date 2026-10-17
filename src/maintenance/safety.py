@@ -159,9 +159,11 @@ class TextContext:
     conjunction_cuts: frozenset[int] = frozenset()
 
     def sentence(self, pos: int) -> Span:
+        """Span of the sentence that contains `pos`."""
         return _span(self.sentence_cuts, pos, len(self.norm))
 
     def clause(self, pos: int) -> Span:
+        """Span of the clause that contains `pos`."""
         return _span(self.clause_cuts, pos, len(self.norm))
 
     def original(self, start: int, end: int) -> str:
@@ -286,9 +288,11 @@ class _Coverage:
         self.cells = bytearray(size)
 
     def add(self, start: int, end: int) -> None:
+        """Mark the cells in [start, end) as covered."""
         self.cells[start:end] = b"\x01" * (end - start)
 
     def inside(self, start: int, end: int) -> bool:
+        """True when [start, end) is non-empty and every cell in it is covered."""
         return start < end and self.cells.find(0, start, end) == -1
 
 
@@ -928,6 +932,7 @@ SafetyLLMClient = Callable[[str], LLMSafetyAssessment]
 
 
 def first_sentence(text: str, limit: int = 120) -> str:
+    """First sentence of `text`, cut to `limit` characters."""
     stripped = text.strip()
     first = re.split(r"(?<=[.!?\n])\s+", stripped, maxsplit=1)[0].strip()
     return (first or stripped)[:limit]

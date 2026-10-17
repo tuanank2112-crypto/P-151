@@ -1,0 +1,173 @@
+.................................................x........xx....x.x....x [  1%]
+.......xx.x.............x....x.....xx...........x...xx........xxx....... [  3%]
+...x.................................................................... [  5%]
+........................................................................ [  7%]
+........................................................................ [  9%]
+........................................................................ [ 11%]
+........................................................................ [ 12%]
+........................................................................ [ 14%]
+........................................................................ [ 16%]
+........................................................................ [ 18%]
+........................................................................ [ 20%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 25%]
+........................................................................ [ 27%]
+........................................................................ [ 29%]
+........................................................................ [ 31%]
+........................................................................ [ 33%]
+........................................................................ [ 35%]
+........................................................................ [ 36%]
+........................................................................ [ 38%]
+........................................................................ [ 40%]
+........................................................................ [ 42%]
+........................................................................ [ 44%]
+........................................................................ [ 46%]
+........................................................................ [ 48%]
+..........................................................xx.x.......... [ 49%]
+x........x.................x.xxxx.x.................xxxx.....xx.xxx..... [ 51%]
+........................................................................ [ 53%]
+........................................................................ [ 55%]
+........................................................................ [ 57%]
+........................................................................ [ 59%]
+........................................................................ [ 61%]
+........................................................................ [ 62%]
+.....................F.......................................F.......... [ 64%]
+........................................................................ [ 66%]
+........................................................................ [ 68%]
+........................................................................ [ 70%]
+........................................................................ [ 72%]
+........................................................................ [ 73%]
+........................................................................ [ 75%]
+........................................................................ [ 77%]
+........................................................................ [ 79%]
+........................................................................ [ 81%]
+........................................................................ [ 83%]
+........................................................................ [ 85%]
+........................................................................ [ 86%]
+........................................................................ [ 88%]
+........................................................................ [ 90%]
+........................................................................ [ 92%]
+........................................................................ [ 94%]
+........................................................................ [ 96%]
+........................................................................ [ 98%]
+........................................................................ [ 99%]
+....                                                                     [100%]
+================================== FAILURES ===================================
+____________________ test_assess_is_linear_on_a_24kb_text _____________________
+
+    def test_assess_is_linear_on_a_24kb_text():
+        """R05 N-07 / Q26: 24 KB of repeated signals (one long clause, then many short ones) takes well under 1 s."""
+        long_clause = "Hành lang tầng 3 tòa S1 " + "có mùi khét " * 2000
+        many_clauses = "Hành lang tầng 3 tòa S1. " + "Có mùi khét, không có khói. " * 900
+        for text in (long_clause, many_clauses):
+            started = time.perf_counter()
+            result = assess(text, LEX)
+            elapsed = time.perf_counter() - started
+            print(f"assess {len(text)} chars: {elapsed:.3f}s")
+>           assert len(text) > 24000 and elapsed < 1.0 and result.risk_level == RiskLevel.EMERGENCY
+E           AssertionError: assert (25225 > 24000 and 1.2576419000106398 < 1.0)
+E            +  where 25225 = len('Hành lang tầng 3 tòa S1. Có mùi khét, không có khói. Có mùi khét, không có khói. Có mùi khét, không có khói. Có mùi k...khói. Có mùi khét, không có khói. Có mùi khét, không có khói. Có mùi khét, không có khói. Có mùi khét, không có khói. ')
+
+tests\test_maintenance\test_safety.py:492: AssertionError
+---------------------------- Captured stdout call -----------------------------
+assess 24024 chars: 0.707s
+assess 25225 chars: 1.258s
+_______________ test_assess_is_linear_on_adversarial_24kb_texts _______________
+
+    def test_assess_is_linear_on_adversarial_24kb_texts():
+        """R10 §3.11: six adversarial texts of at least 24000 characters each take less than one second."""
+        slowest = 0.0
+        for text in ADVERSARIAL_24KB:
+            started = time.perf_counter()
+            assess(text, LEX)
+            elapsed = time.perf_counter() - started
+            slowest = max(slowest, elapsed)
+>           assert len(text) >= 24000 and elapsed < 1.0, (len(text), elapsed)
+E           AssertionError: (24000, 1.464293999990332)
+E           assert (24000 >= 24000 and 1.464293999990332 < 1.0)
+E            +  where 24000 = len('có\u200bkhói bốc ra có\u200bkhói bốc ra có\u200bkhói bốc ra có\u200bkhói bốc ra có\u200bkhói bốc ra có\u200bkhói bốc ...\u200bkhói bốc ra có\u200bkhói bốc ra có\u200bkhói bốc ra có\u200bkhói bốc ra có\u200bkhói bốc ra có\u200bkhói bốc ra ')
+
+tests\test_maintenance\test_safety.py:797: AssertionError
+============================== warnings summary ===============================
+..\Users\caotr\AppData\Local\Programs\Python\Python311\Lib\site-packages\starlette\testclient.py:53
+  C:\Users\caotr\AppData\Local\Programs\Python\Python311\Lib\site-packages\starlette\testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.11.9-final-0 _______________
+
+Name                                                                    Stmts   Miss  Cover
+-------------------------------------------------------------------------------------------
+src\__init__.py                                                             0      0   100%
+src\agents\__init__.py                                                      0      0   100%
+src\agents\graph.py                                                        16      1    94%
+src\agents\nodes\__init__.py                                                0      0   100%
+src\agents\nodes\example_node.py                                           12      1    92%
+src\agents\state.py                                                         9      0   100%
+src\agents\tools\__init__.py                                                0      0   100%
+src\agents\tools\example_tool.py                                           31     31     0%
+src\api\__init__.py                                                         0      0   100%
+src\api\auth.py                                                           185      8    96%
+src\api\photos.py                                                         123      9    93%
+src\api\routers\__init__.py                                                 0      0   100%
+src\api\routers\maintenance.py                                            562     32    94%
+src\api\routes.py                                                          17      6    65%
+src\config.py                                                              57      2    96%
+src\main.py                                                               121      7    94%
+src\maintenance\__init__.py                                                 0      0   100%
+src\maintenance\agent\__init__.py                                           0      0   100%
+src\maintenance\agent\agent.py                                            116      2    98%
+src\maintenance\agent\baseline.py                                          85      2    98%
+src\maintenance\agent\client.py                                           222      4    98%
+src\maintenance\agent\graph.py                                             52      0   100%
+src\maintenance\agent\inputs.py                                            30      0   100%
+src\maintenance\agent\prompt.py                                            64      1    98%
+src\maintenance\agent\reconcile.py                                         77      1    99%
+src\maintenance\agent\schema.py                                           119      7    94%
+src\maintenance\agent\validate.py                                         101      0   100%
+src\maintenance\ai_logger.py                                               90      4    96%
+src\maintenance\catalog.py                                                410     15    96%
+src\maintenance\common.py                                                  16      2    88%
+src\maintenance\coordination\__init__.py                                    5      0   100%
+src\maintenance\coordination\department.py                                 70      1    99%
+src\maintenance\coordination\merge.py                                     193     12    94%
+src\maintenance\coordination\neighbors.py                                 136      5    96%
+src\maintenance\coordination\split.py                                     112      3    97%
+src\maintenance\demo.py                                                    54      1    98%
+src\maintenance\engine.py                                                2284    166    93%
+src\maintenance\enums.py                                                  201      0   100%
+src\maintenance\errors.py                                                  10      0   100%
+src\maintenance\material_policy.py                                         49      0   100%
+src\maintenance\messages.py                                                30      0   100%
+src\maintenance\migration.py                                               57      2    96%
+src\maintenance\models.py                                                 494     14    97%
+src\maintenance\priority.py                                                47      0   100%
+src\maintenance\proposer.py                                                70      8    89%
+src\maintenance\reports.py                                                 65      0   100%
+src\maintenance\rules.py                                                  172      0   100%
+src\maintenance\safety.py                                                 684      4    99%
+src\maintenance\store\__init__.py                                           3      0   100%
+src\maintenance\store\base.py                                              58      0   100%
+src\maintenance\store\memory.py                                           200     10    95%
+src\maintenance\store\migrations\versions\0001_maintops_initial.py         13      4    69%
+src\maintenance\store\migrations\versions\0002_p1_doc_shape.py              8      2    75%
+src\maintenance\store\migrations\versions\0003_material_items.py           13      4    69%
+src\maintenance\store\migrations\versions\0004_portal_extras.py            13      4    69%
+src\maintenance\store\migrations\versions\0005_stock_alerts.py             13      4    69%
+src\maintenance\store\migrations\versions\0006_stock_alert_tickets.py       9      2    78%
+src\maintenance\store\photos.py                                            95      3    97%
+src\maintenance\store\postgres.py                                         381    259    32%
+src\maintenance\views.py                                                  218     12    94%
+src\models\__init__.py                                                      0      0   100%
+src\models\schemas.py                                                       6      0   100%
+src\services\__init__.py                                                    0      0   100%
+src\services\llm.py                                                         5      5     0%
+-------------------------------------------------------------------------------------------
+TOTAL                                                                    8283    660    92%
+=========================== short test summary info ===========================
+FAILED tests/test_maintenance/test_safety.py::test_assess_is_linear_on_a_24kb_text
+FAILED tests/test_maintenance/test_safety.py::test_assess_is_linear_on_adversarial_24kb_texts
+2 failed, 3850 passed, 102 deselected, 40 xfailed, 1 warning in 675.72s (0:11:15)
+exit=1

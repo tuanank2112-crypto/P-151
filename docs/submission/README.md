@@ -10,11 +10,11 @@ Cuối cùng, từ các file này tổng hợp vào đúng vị trí chapter-09 
 | 3 | Architecture diagram | `docs/architecture.md` (hoặc png/svg) | ⬜ gộp | [diagrams/](../diagrams/), [architecture_diagram.md](../architecture_diagram.md) |
 | 4 | AI logs | `docs/` (link/screenshot LangSmith) | ⬜ | — |
 | 5 | Live URL | ghi trong README | ✅ có | <https://p151-portal.vercel.app/login> (xem [README](../../README.md)) |
-| 6 | Video demo | [`video-demo.md`](../video-demo.md) | ✅ có (link Drive + bản 3:29 trong repo) | [demo/](../demo/) |
-| 7 | Pitch deck | `docs/pitch-deck.pdf` | ⬜ | [planning/04_*](../../planning/04_2026-10-03_user-test-pitch/) |
+| 6 | Video demo | [`video-demo.md`](../video-demo.md) | ✅ có (link Drive; tệp mp4 không còn trong git) | [demo/](../demo/) |
+| 7 | Pitch deck | `docs/pitch-deck.pdf` | ⬜ chưa có PDF; nội dung 10 slide đã soạn | [pitch-deck-content.md](../pitch-deck-content.md), [planning/04_*](../../planning/04_2026-10-03_user-test-pitch/) |
 | 8 | Journal | [`journal.md`](../journal.md) | ✅ có | docs/ |
 | 9 | Worklog | [`worklog.md`](../worklog.md) | ✅ có | docs/ |
-| 10 | Evaluation evidence | `evaluation.md` (root repo) | 🟡 9 ca manual (8 PASS, 1 BLOCKED; localhost) | [evaluation.md](../../evaluation.md), [planning/02_*/deliverables/](../../planning/02_2026-10-03_truong-mvp-prep/deliverables/) |
+| 10 | Evaluation evidence | [`docs/evaluation.md`](../evaluation.md) | 🟡 có test+coverage, 91 câu khó (luật + Agent LLM), độ trễ, token; thiếu held-out, phản hồi người dùng | [evaluation.md](../evaluation.md), [eval/runs/](../eval/runs/), [planning/02_*/deliverables/](../../planning/02_2026-10-03_truong-mvp-prep/deliverables/) |
 
 Báo cáo từng ngày: [day01](day01-report.md) · [day02](day02-report.md) · [day03](day03-report.md) · [day04](day04-report.md) · [day05](day05-report.md).
 

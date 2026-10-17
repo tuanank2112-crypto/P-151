@@ -1,12 +1,15 @@
 # P-151 — MaintenanceOps Agent
 
+![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen) <sub>đo 2026-10-17 bằng `pytest --cov=src`; chi tiết [docs/evaluation.md](docs/evaluation.md) §7.3</sub>
+
 > Prototype **mô phỏng**. Toàn bộ dữ liệu (tiền tố `SIM-`), quy trình, định mức và kết quả là mô phỏng, không phải vận hành thật.
-> Spec đích duy nhất: [CR-BPTN-03](docs/CR-BPTN-03.md) (duyệt cho phạm vi MVP 04/10, D-08; code v1.17.9). Mục API bên dưới mô tả **code đang chạy**;
+> Spec đích duy nhất: [CR-BPTN-03](docs/CR-BPTN-03.md) (duyệt cho phạm vi MVP 04/10, D-08). Mục API bên dưới mô tả **code đang chạy**;
 > chỗ nào lệch CR-BPTN-03 thì theo CR-BPTN-03.
 
 ## Deliverables nộp bài
 
-- **Live URL:** <https://p151-portal.vercel.app/login>
+- **Live URL (giao diện):** <https://p151-portal.vercel.app/login>
+- **API backend:** <https://p151-backend.vercel.app/docs> (Swagger) · health: <https://p151-backend.vercel.app/health>
 - **Video demo:** thư mục Google Drive <https://drive.google.com/drive/folders/1_c2ZhS3hxWx7OUdAvLgjqlY_PkdI5ble?usp=sharing>
 
 | # | Deliverable | Vị trí |
@@ -14,13 +17,13 @@
 | 1 | Source code | [`src/`](src/), [`tests/`](tests/) |
 | 2 | README | file này |
 | 3 | Architecture diagram | [`docs/architecture_diagram.md`](docs/architecture_diagram.md), [`docs/diagrams/`](docs/diagrams/) |
-| 4 | AI logs | `.ai-log/session.jsonl`, màn hình log AI (`/mo/ai-logs`) |
-| 5 | Live URL | <https://p151-portal.vercel.app/login> |
+| 4 | AI logs | [`docs/ai-logs.md`](docs/ai-logs.md) (8 trace thật của Agent), `GET /api/v1/mo/ai-logs`, [`docs/eval/runs/`](docs/eval/runs/) |
+| 5 | Live URL | <https://p151-portal.vercel.app/login> · API <https://p151-backend.vercel.app/docs> |
 | 6 | Video demo | [`docs/video-demo.md`](docs/video-demo.md) · [Google Drive](https://drive.google.com/drive/folders/1_c2ZhS3hxWx7OUdAvLgjqlY_PkdI5ble?usp=sharing) |
-| 7 | Pitch deck | ⬜ chưa có file trong repo; hồ sơ chuẩn bị: [`planning/04_2026-10-03_user-test-pitch/`](planning/04_2026-10-03_user-test-pitch/) |
+| 7 | Pitch deck | ⬜ chưa có `docs/pitch-deck.pdf`; nội dung 10 slide và Q&A: [`docs/pitch-deck-content.md`](docs/pitch-deck-content.md) |
 | 8 | Journal | [`docs/journal.md`](docs/journal.md) |
 | 9 | Worklog | [`docs/worklog.md`](docs/worklog.md) |
-| 10 | Evaluation evidence | [`evaluation.md`](evaluation.md), [`docs/eval/runs/`](docs/eval/runs/) |
+| 10 | Evaluation evidence | [`docs/evaluation.md`](docs/evaluation.md), [`docs/eval/runs/`](docs/eval/runs/) |
 
 ## Vấn đề
 
@@ -29,22 +32,33 @@ BQL cần tạo và kiểm tra hồ sơ bảo trì một cách nhất quán, tru
 
 ## Giải pháp
 
-Cư dân gửi phản ánh vệ sinh hoặc đèn khu vực chung. Agent kiểm tra, chạy tầng an toàn, phân loại, tra tài sản/vật tư, rồi **đề xuất** tuyến tới phòng ban; BQL nghiệm thu.
+Cư dân gửi phản ánh vệ sinh hoặc đèn khu vực chung. Agent kiểm tra, chạy tầng an toàn, phân loại, tra tài sản/vật tư, rồi **đề xuất** tuyến tới phòng ban; Tiếp nhận (BPTN) xử lý ca cần người; BQL nghiệm thu.
 
-- **Tầng an toàn (bước 2b, chạy trước phân loại)**: luật cố định + từ vựng dữ liệu. Tín hiệu nguy hiểm (chất lạ, mùi khét, tia lửa, dây hở) →
-  Bậc 1 `EMERGENCY_PENDING_BQL` (chủ BQL) hoặc Bậc 2 `SAFETY_REVIEW_REQUIRED` (chủ BPTN).
-- **Phân loại**: playbook vệ sinh `PB-CLN-01` hoặc đèn khu vực chung `PB-TEC-01` bằng luật cố định, có thể kèm LLM đề xuất.
-- **Đề xuất team**: tra asset, tồn kho/vật tư → giao **phòng ban** (`ROUTED`); không còn lịch trực/capacity/team. Agent không gán người (`assignee_id=null`).
-- **Kiểm tra hồ sơ**: checklist, vật tư (3 phép đối soát), evidence tối thiểu → `READY_FOR_REVIEW`; mọi thao tác có audit.
+- **Tầng an toàn (bước 2b, chạy trước phân loại)**: luật cố định + từ vựng dữ liệu làm lưới sàn; ngữ nghĩa (phủ định, "hình như", nhờ việc hay báo nguy) do Agent LLM suy luận, chỉ được **nâng** mức. Tín hiệu nguy hiểm (chất lạ, mùi khét, tia lửa, dây hở, người bị kẹt) → Bậc 1 `EMERGENCY_PENDING_BQL` (chủ BQL) hoặc Bậc 2 `SAFETY_REVIEW_REQUIRED` (chủ BPTN).
+- **Phân loại**: Agent (LangGraph, `src/maintenance/agent/`) đọc phản ánh và trả quyết định có cấu trúc: loại việc, vị trí, ưu tiên, tài sản, vật tư; luật cố định chạy song song làm đối chứng. Hai playbook: vệ sinh `PB-CLN-01` và đèn khu vực chung `PB-TEC-01`.
+- **Giao phòng ban**: tra tài sản (mỗi khu vực một đèn), tồn kho/vật tư → `ROUTED` tới phòng ban; không còn lịch trực/capacity/team. Agent không gán người (`assignee_id=null`).
+- **Kiểm tra hồ sơ**: checklist, ảnh bắt buộc, số vật tư thực dùng → `READY_FOR_REVIEW`; BQL nghiệm thu hoặc trả làm lại; mọi thao tác có audit.
+- **Vật tư và kho**: phòng ban "Yêu cầu vật tư" khi thiếu, Kho "Nhập đủ" thì ticket tự chạy tiếp; cảnh báo kho cho cả hai phòng.
+
+## Giao diện
+
+Cổng web (Next.js) cho 6 vai: Cư dân, Tiếp nhận, Vệ sinh, Kỹ thuật, Quản lý (BQL), Kho; có thêm PWA điện thoại tại `/app/`. Toàn bộ ảnh theo vai: [`docs/screenshots/`](docs/screenshots/README.md).
+
+| Cư dân gửi phản ánh | Tiếp nhận phân loại |
+|---|---|
+| ![Cư dân gửi phản ánh](docs/screenshots/1-resident/02-resident-compose-filled-desktop.png) | ![Tiếp nhận](docs/screenshots/2-reception/02-reception-inbox-desktop.png) |
+| **Phòng Kỹ thuật** | **BQL tổng quan** |
+| ![Phòng Kỹ thuật](docs/screenshots/4-technical/01-technical-queue-desktop.png) | ![BQL tổng quan](docs/screenshots/5-management/01-mgmt-1-overview-desktop.png) |
 
 ## Tech Stack
 
 | Lớp | Công nghệ |
 |---|---|
-| Agent | Luật cố định + LLM đề xuất (LangChain, mặc định model `gpt-4o-mini`, production dùng `gpt-6-luna`); mặc định `LLM_MODE=mock` chỉ chạy luật |
-| Backend | FastAPI + Python 3.11; UI `portal/` (Next.js, gọi `/api/v1`) + PWA điện thoại `src/mobile/` (UI tĩnh `src/web/` đã xoá 2026-10-12) |
+| Agent | LangGraph + LangChain (`src/maintenance/agent/`), model `gpt-4o-mini` mặc định, production dùng `gpt-6-luna`; luật cố định làm lưới sàn an toàn. `LLM_MODE=mock` (mặc định) chỉ chạy luật, không cần khoá |
+| Backend | FastAPI + Python 3.11, Pydantic v2 |
+| Giao diện | `portal/` (Next.js, TypeScript, gọi `/api/v1`) + PWA điện thoại `src/mobile/` (JS thuần). UI tĩnh `src/web/` đã xoá 2026-10-12 |
 | Dữ liệu | **Mặc định in-memory** từ fixture YAML, reset được; tuỳ chọn PostgreSQL trên Supabase (`MO_STORE=postgres`, Alembic) + Supabase Storage cho ảnh |
-| DevOps | Docker Compose + GitHub Actions |
+| DevOps | Docker Compose (backend, portal, db), GitHub Actions (ruff + pytest + coverage ≥ 60%), Vercel (portal và backend) |
 
 ---
 
@@ -53,6 +67,8 @@ Cư dân gửi phản ánh vệ sinh hoặc đèn khu vực chung. Agent kiểm 
 Sơ đồ kiến trúc thành phần mục tiêu (Target Architecture v0.6) theo chuẩn [CR-BPTN-03](docs/CR-BPTN-03.md), thiết kế theo chuẩn C4 Component / Enterprise 3-Tier phục vụ Demo Day AI20K:
 
 ![MaintenanceOps target architecture](docs/diagrams/Diagrams%20Components.svg)
+
+> Sơ đồ SVG giữ bố cục gốc của bản mục tiêu. Các nhãn **"Web Application (/ui)"**, **"GPT-4o"** và **"Phoenix & LangSmith"** trong ảnh là thiết kế mục tiêu; **đang chạy** là Portal Next.js + PWA, `gpt-6-luna`, và log tự ghi ([`docs/ai-logs.md`](docs/ai-logs.md)). Phoenix/LangSmith chưa nối. Đối chiếu từng thành phần: [`ARCHITECTURE.md`](ARCHITECTURE.md) §10.
 
 <details>
 <summary><b>Nhấn để xem mã nguồn sơ đồ Mermaid</b></summary>
@@ -79,7 +95,7 @@ flowchart TB
     subgraph TIER1 ["TIER 1: Clients & API Gateway Boundary"]
         direction LR
         USERS["👥 <b>Users & Roles</b><br/><i>Resident · Operations Staff · Management BQL</i>"]:::clientStyle
-        WEB["💻 <b>Web Application (/ui)</b><br/><i>HTML5 / Vanilla JS Responsive · Role-based View</i>"]:::clientStyle
+        WEB["💻 <b>Portal Next.js + PWA</b><br/><i>portal/ · src/mobile/ · Role-based View</i>"]:::clientStyle
         API["⚡ <b>FastAPI Backend Gateway</b><br/><i>Python 3.11 · Validation Pydantic · Rate Limit & CORS</i>"]:::gatewayStyle
         AUTH["🔒 <b>Auth & Session Guard</b><br/><i>Bearer Token · RBAC · Actor Resolution</i>"]:::gatewayStyle
 
@@ -109,7 +125,7 @@ flowchart TB
         subgraph SUB_AGENT ["AI Agent Decision Engine (LangGraph Core)"]
             direction TB
             ST1["① Data Validation & Completeness<br/><i>Kiểm tra dữ liệu tối thiểu · Bắt MISSING_INFO</i>"]:::stageStyle
-            ST2["② Hybrid Classify & Priority<br/><i>Rules + GPT-4o Proposer · PRI Rules</i>"]:::agentStyle
+            ST2["② Hybrid Classify & Priority<br/><i>Rules + Agent LLM (LangGraph) · PRI Rules</i>"]:::agentStyle
             ST3["③ Duplicate Detection<br/><i>Quét trùng lặp phản ánh trong SLA window</i>"]:::stageStyle
             ST4["④ Asset & Stock Check<br/><i>Asset Catalog Lookup · Warehouse Stock SIM</i>"]:::stageStyle
             ST5["⑤ Packaging & Work Order<br/><i>ROUTED Giao Việc chuyển phòng ban</i>"]:::stageStyle
@@ -144,8 +160,8 @@ flowchart TB
         direction LR
         PG[("🐘 <b>PostgreSQL (Supabase)</b><br/><i>Schema maintops · SQLAlchemy<br/>Cases, Transitions & Audit Outbox</i>")]:::infraStyle
         BUCKET[("🪣 <b>Supabase Storage</b><br/><i>Private Photo Storage Bucket<br/>Bằng chứng hiện trường (Proxy API)</i>")]:::infraStyle
-        OPENAI["🤖 <b>OpenAI API (GPT-4o)</b><br/><i>Structured Outputs JSON Schema<br/>Categorization Proposer & Safety Scan</i>"]:::agentStyle
-        PHOENIX["📊 <b>Phoenix & LangSmith</b><br/><i>OpenTelemetry Agent Tracing<br/>LLM Latency & Cost · Evaluation Evidence</i>"]:::infraStyle
+        OPENAI["🤖 <b>OpenAI API (gpt-6-luna)</b><br/><i>Structured Outputs JSON Schema<br/>Categorization Proposer & Safety Scan</i>"]:::agentStyle
+        PHOENIX["📊 <b>AI log tự ghi (Phoenix/LangSmith: mục tiêu)</b><br/><i>latency.jsonl + /mo/ai-logs<br/>LLM Latency & Token · Evaluation Evidence</i>"]:::infraStyle
     end
 
     %% Outflows to Tier 3
@@ -180,7 +196,7 @@ Kiểm tra:
 
 - Health: <http://localhost:8000/health> → `{"status":"ok",...}`
 - Swagger UI: <http://localhost:8000/docs>
-- Giao diện: <http://localhost:8000/ui/>
+- Giao diện (portal): <http://localhost:8000/> · app điện thoại (PWA): <http://localhost:8000/app/>
 - `docker compose ps` — `backend` phải `healthy`.
 
 Dữ liệu in-memory: tắt/bật lại backend là về 12 ticket mẫu ban đầu.
@@ -192,7 +208,7 @@ Dữ liệu in-memory: tắt/bật lại backend là về 12 ticket mẫu ban đ
 | Khởi động / build lại sau khi sửa code | `docker compose up -d --build` | `make up` |
 | Xem log backend | `docker compose logs -f backend` | `make logs` |
 | Dừng | `docker compose down` | `make down` |
-| Chạy test trong container | `docker compose exec backend pytest tests/ -v` | |
+| Chạy test | ngoài container: `python -m pytest -q` (image Docker không chứa `tests/`, xem `.dockerignore`) | |
 
 Backend trong Docker **không** tự reload khi sửa code — chạy lại `make up`. Cần hot reload thì xem mục "Chạy ngoài Docker".
 
@@ -243,7 +259,7 @@ Với đường chạy nhanh **không biến nào bắt buộc**.
 | `LOG_LEVEL` | `INFO` | |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT` | `p151` ×3, `5432` | Chỉ cho container `db` của compose (dùng cho `pytest --pg`); backend **không** dùng |
 
-**Log AI** (`AI_LOG_API_KEY`, `LANGCHAIN_*`, `AI_LOG_*`): chỉ thành viên nhóm cần để nộp log công cụ AI cho khoá học; **giảng viên chạy demo không cần**.
+**Log công cụ lập trình** (`AI_LOG_API_KEY`, `LANGCHAIN_*`, `AI_LOG_*`, thư mục `.ai-log/`): chỉ thành viên nhóm cần để nộp log dùng công cụ AI cho khoá học; **không phải log của Agent** (log Agent: [`docs/ai-logs.md`](docs/ai-logs.md)). Người chạy demo không cần.
 Biến còn lại của template (`ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `CHROMA_PERSIST_DIR`, `PINECONE_*`, `NEXT_PUBLIC_API_URL`) không dùng trong flow MaintenanceOps.
 Cài hook một lần sau khi clone: `bash scripts/setup_hooks.sh` (Windows: `powershell -ExecutionPolicy Bypass -File scripts\setup_hooks.ps1`).
 
@@ -253,16 +269,14 @@ Cài hook một lần sau khi clone: `bash scripts/setup_hooks.sh` (Windows: `po
 
 ### Tài khoản demo
 
-Mật khẩu chung `Demo@2026` (dữ liệu mô phỏng, file `seed/maintenance_v1/accounts.yaml`):
+Dữ liệu mô phỏng, file `seed/maintenance_v1/accounts.yaml`. Có **hai bộ** tài khoản cùng tồn tại:
 
-| Username | Vai trò |
-|---|---|
-| `cudan01`, `cudan02` | Cư dân |
-| `bptn01` | BPTN |
-| `vesinh01`, `kythuat01` | Phòng Vệ sinh / Kỹ thuật |
-| `kho01` | Kho vật tư |
-| `bql01` | BQL |
-| `qa01` | QA nội bộ |
+| Bộ | Mật khẩu | Dùng để |
+|---|---|---|
+| Cổng web / app: `cudan`, `tiepnhan`, `quanly`, `vesinh`, `kythuat`, `kho` | `123456` | đăng nhập giao diện portal |
+| Kiểm thử API: `cudan01`, `cudan02`, `bptn01`, `vesinh01`, `kythuat01`, `kho01`, `bql01`, `qa01` | `Demo@2026` | ví dụ `curl` bên dưới, test tự động; `qa01` là QA nội bộ |
+
+Production tắt danh sách tài khoản demo (`APP_ENV=production`).
 
 ### Câu phản ánh mẫu
 
@@ -326,8 +340,7 @@ Cần đăng nhập `qa01` (`/mo/*` demo là của QA nội bộ):
 
 ### Giao diện
 
-Chạy xong mở <http://localhost:8000/ui/> và đăng nhập bằng tài khoản trên. Cư dân có thể đính kèm ảnh (không bắt buộc); phòng ban phải gửi ít nhất một ảnh sau xử lý mới báo hoàn thành được. Ảnh lưu ở `data/uploads/maintenance`.
-Tailwind Play CDN chỉ dùng cho prototype.
+Chạy xong mở <http://localhost:8000/> và đăng nhập bằng bộ tài khoản cổng web ở trên. Cư dân có thể đính kèm ảnh (không bắt buộc); phòng ban phải gửi ít nhất một ảnh sau xử lý mới báo hoàn thành được. Ảnh lưu ở `data/uploads/maintenance` (hoặc Supabase Storage khi `MO_PHOTO_STORE=supabase`).
 
 ---
 
@@ -349,6 +362,9 @@ Không cần PostgreSQL vì `MO_STORE=memory`. Nếu `make up` đang chạy back
 PYTHONUTF8=1 LLM_MODE=mock python -m pytest -q -p no:cacheprovider
 python -m ruff check src tests
 python -m ruff format --check src tests
+
+# kèm coverage (CI dùng ngưỡng 60%; số đo mới nhất 92%, xem docs/evaluation.md §7.3)
+python -m pytest tests -q --cov=src --cov-report=term
 ```
 
 Test dùng `LLM_MODE=mock` nên không cần khoá. Test Postgres (`pytest --pg`) chỉ chạy trên Docker local với DB tên kết thúc `_test`: đặt `MO_TEST_DATABASE_URL`.
@@ -383,18 +399,23 @@ Dùng khi muốn dữ liệu và ảnh lưu bền, dùng chung cả nhóm. Xin c
 ```
 src/
   maintenance/       Lõi nghiệp vụ: engine (state machine + pipeline), safety.py (tầng an toàn), priority.py, rules,
-                     proposer (LLM), views, catalog, store/ (memory | postgres + Alembic | ảnh), i18n/vi.yaml
-  api/               main routers: auth.py, photos.py, routers/maintenance.py (/mo, /resident, /bql)
-  web/               UI tĩnh (index.html, app.js)
-  agents/, api/routes.py   Code mẫu LangGraph + chat của template (không nằm trong flow)
+                     agent/ (Agent LangGraph + prompt), coordination/ (gộp, tách, trùng), store/ (memory | postgres + Alembic | ảnh),
+                     material_policy.py, reports.py, views.py, catalog.py, i18n/vi.yaml
+  api/               auth.py, photos.py, routers/maintenance.py (/mo, /resident, /bql)
+  mobile/            PWA điện thoại (JS thuần), phục vụ ở /app/
+  agents/, api/routes.py   Code mẫu LangGraph + chat của template (không nằm trong flow MaintenanceOps)
   config.py          Cấu hình (đọc từ .env)
   main.py            App entry point
-seed/maintenance_v1/     Catalog, 12 ticket kèm expected, tài khoản demo, từ vựng an toàn (lexicon.yaml)
+portal/              Cổng web Next.js (TypeScript), gọi /api/v1; có test vitest và script kiểm trình duyệt
+seed/maintenance_v1/     Catalog (13 khu vực/tài sản đèn, vật tư), 12 ticket kèm expected, tài khoản demo, từ vựng an toàn (lexicon.yaml)
 seed/maintenance_cr03/   Fixture đích CR-03: nhãn safety + expected outcome
-tests/test_maintenance/  pytest: acceptance, engine, API, auth, safety, emergency, priority, store
-docs/                    CR-BPTN-03.md (spec đích), maintenance.md (tài liệu module), diagrams/, guide/
+tests/test_maintenance/  pytest: acceptance, engine, API, auth, safety, emergency, priority, store, agent
+scripts/                 Công cụ đo và nộp log: eval_labels.py, eval_hard_cases.py, eval_hard_llm*.py, agent_live_eval.py
+docs/                    CR-BPTN-03.md (spec đích), evaluation.md, ai-logs.md, journal.md, worklog.md, video-demo.md,
+                         maintenance.md, portal.md, mobile.md, diagrams/, screenshots/, eval/runs/, guide/ (sách của BTC)
 planning/                Hồ sơ kế hoạch (spec-first); brain4agent/: bộ nhớ dự án cho AI agent
-Dockerfile, docker-compose.yml   Backend (+ PostgreSQL chỉ cho test)
+.github/workflows/ci.yml CI: ruff + pytest + coverage
+Dockerfile, docker-compose.yml   Backend, portal và PostgreSQL (db chỉ cho test `--pg`)
 ```
 
 ## API (code đang chạy; spec đích: [CR-BPTN-03](docs/CR-BPTN-03.md))
@@ -417,34 +438,39 @@ Prefix `/api/v1`. Xác thực: `POST /auth/login` → `Authorization: Bearer <to
 | POST | `/mo/tickets/{id}/accept`, `/return`, `/block`, `/resume-work` | Phòng ban | Nhận việc; trả sai phòng ban; hoãn; tiếp tục |
 | POST | `/mo/tickets/{id}/checklist/{item}`, `/materials/{code}`, `/evidence`, `/photos` | Phòng ban | Cập nhật khi xử lý |
 | POST | `/mo/tickets/{id}/complete` | Phòng ban | Báo hoàn thành → Agent đối soát |
-| POST | `/mo/warehouse/stock/{item_code}` | Kho | Nhập vật tư; ticket chờ vật tư tự chạy lại |
+| POST | `/mo/tickets/{id}/material-shortage`, `/material-usage` | Phòng ban | Yêu cầu vật tư khi thiếu; ghi số vật tư thực dùng (một lần, một giao dịch) |
+| GET/POST | `/mo/warehouse/stock`, `/mo/warehouse/stock/{item_code}`, `/mo/warehouse/requests`, `/mo/warehouse/usage` | Kho | Xem tồn kho; nhập vật tư (ticket chờ vật tư tự chạy lại); phiếu cần nhập; xếp hạng dùng vật tư |
+| GET/POST | `/mo/stock-alerts`, `/mo/stock-alerts/{id}/ack` | Phòng ban | Thông báo kho đã nhập lại |
 | GET | `/bql/tickets` | BQL | Hàng đợi đầy đủ; lọc `status`, `department_id`, `blocker_code`, `escalated`, `overdue` |
 | POST | `/bql/tickets/{id}/close`, `/rework`, `/cancel` | BQL | Nghiệm thu (từ `READY_FOR_REVIEW`); trả làm lại; hủy |
-| POST | `/bql/tickets/{id}/emergency/close`, `/emergency/downgrade` | BQL | Bậc 1: đã xử lý ngoài hệ thống; báo động giả |
+| POST | `/bql/tickets/{id}/emergency/close`, `/emergency/downgrade`, `/emergency/merge` | BQL | Bậc 1: đã xử lý ngoài hệ thống; báo động giả; gộp ca nghi trùng |
+| GET | `/bql/reports/performance` | BQL | Báo cáo hiệu suất phòng ban từ dữ liệu |
 | GET | `/mo/tickets`, `/mo/tickets/{id}`, `.../events`, `.../audit`, `.../notifications`, `/mo/catalog`, `/mo/ai-logs` | nội bộ | Hàng đợi, case đầy đủ, timeline, audit, outbox, danh mục, log AI |
 | POST | `/mo/tickets/{id}/transition`, `/resume`, `/jobs/run`, `/attempt` | theo bảng / QA | Chuyển trạng thái chung; chạy lại; job retry; thử hành động ngoài quyền (luôn `ACTION_DENIED` + audit) |
 | POST | `/mo/reset`, `/mo/evaluate`, `/mo/demo/{ticket_id}` | QA | Nạp lại fixture; chạy 12 ticket so expected; demo một ticket |
 
 Danh sách đầy đủ và schema: Swagger <http://localhost:8000/docs>. Chi tiết module: [`docs/maintenance.md`](docs/maintenance.md).
 
-**Phân loại bằng LLM** (`src/maintenance/proposer.py`): đặt `LLM_MODE=openai`. LLM chỉ đề xuất; luật cố định vẫn chạy song song: không thống nhất → `CATEGORY_UNCLEAR`; chỉ LLM thấy playbook → BPTN review; LLM lỗi → dùng luật. Tầng an toàn: LLM chỉ được **nâng** mức, không hạ.
+**Agent LLM** (`src/maintenance/agent/`, `proposer.py`): đặt `LLM_MODE=openai`. Agent suy luận ngữ nghĩa và trả quyết định có cấu trúc; luật cố định vẫn chạy song song làm đối chứng: không thống nhất → cờ `AGENT_DISAGREEMENT`; Agent lỗi → rơi về luật (cờ `AGENT_FALLBACK`). Tầng an toàn: Agent chỉ được **nâng** mức, không hạ. Log từng lượt gọi: [`docs/ai-logs.md`](docs/ai-logs.md).
 
 ## Tài liệu
 
-- Spec đích: [`docs/CR-BPTN-03.md`](docs/CR-BPTN-03.md); module engine: [`docs/maintenance.md`](docs/maintenance.md)
+- Spec đích: [`docs/CR-BPTN-03.md`](docs/CR-BPTN-03.md); module engine: [`docs/maintenance.md`](docs/maintenance.md); cổng web: [`docs/portal.md`](docs/portal.md); app điện thoại: [`docs/mobile.md`](docs/mobile.md)
 - Kiến trúc: [`ARCHITECTURE.md`](ARCHITECTURE.md), [`docs/architecture_diagram.md`](docs/architecture_diagram.md), [`docs/diagrams/`](docs/diagrams/)
-- Bài toán/PRD nền (v0.3, lệch thì CR-03 thắng): [`docs/01_problem_statement.md`](docs/01_problem_statement.md) … [`05_traceability_and_review.md`](docs/05_traceability_and_review.md)
-- Technical Guidebook: [`docs/guide/`](docs/guide/) hoặc <https://phoenix.note.transformerlabs.ai/technical-book>
+- Bài toán và yêu cầu (phần "Active" bám code hiện hành): [`docs/01_problem_statement.md`](docs/01_problem_statement.md), [`02_product_brief.md`](docs/02_product_brief.md), [`03_lean_prd.md`](docs/03_lean_prd.md), [`04_ui_flow_wireframe.md`](docs/04_ui_flow_wireframe.md), [`05_traceability_and_review.md`](docs/05_traceability_and_review.md), [`data-contract-v1.md`](docs/data-contract-v1.md), [`playbook-v1.md`](docs/playbook-v1.md)
+- Bằng chứng nộp bài: [`docs/evaluation.md`](docs/evaluation.md), [`docs/ai-logs.md`](docs/ai-logs.md), [`docs/video-demo.md`](docs/video-demo.md), [`docs/journal.md`](docs/journal.md), [`docs/worklog.md`](docs/worklog.md), [`docs/submission/`](docs/submission/README.md)
+- Technical Guidebook (của BTC): [`docs/guide/`](docs/guide/) hoặc <https://phoenix.note.transformerlabs.ai/technical-book>
 - Quy ước đóng góp: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
 ## Team
 
-| Thành viên | Vai trò | MSSV |
-|---|---|---|
-| Lê Thị Châm Anh | Trưởng nhóm - Backend | 2A202602846 |
-| Lê Như Ý | AI - Agent | 2A202602517 |
-| Cao Văn Trường | BA/PO | 2A202602562 |
-| Võ Đức Trí | Frontend | 2A202602603 |
+| Thành viên | Vai trò |
+|---|---|
+| Lê Thị Châm Anh | Trưởng nhóm - Backend |
+| Lê Như Ý | AI - Agent |
+| Cao Văn Trường | BA/PO |
+| Võ Đức Trí | Frontend |
+
 ## License
 
 MIT

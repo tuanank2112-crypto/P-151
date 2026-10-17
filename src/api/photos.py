@@ -42,6 +42,7 @@ _REF = re.compile(r"^[0-9a-f]{32}\.(jpg|png|webp)$")
 
 
 def upload_dir() -> Path:
+    """Return the local photo directory (`MO_UPLOAD_DIR`), creating it if it does not exist."""
     path = Path(get_settings().mo_upload_dir)
     path.mkdir(parents=True, exist_ok=True)
     return path
@@ -92,10 +93,12 @@ def check_photo_store() -> None:
 
 
 def new_ref(extension: str) -> str:
+    """Random reference for a stored photo: 32 hex characters plus the extension."""
     return f"{uuid.uuid4().hex}.{extension}"
 
 
 def save(data: bytes, extension: str) -> str:
+    """Store photo bytes through the configured PhotoStore and return the reference; a store failure becomes HTTP 502."""
     ref = new_ref(extension)
     try:
         photo_store().put(ref, data, _MEDIA_TYPES[extension])
@@ -118,6 +121,7 @@ class _PhotoCache:
         self._lock = threading.Lock()
 
     def get(self, ref: str) -> bytes | None:
+        """Return the cached bytes and mark them most recently used, or None."""
         with self._lock:
             data = self._items.get(ref)
             if data is not None:
@@ -125,6 +129,7 @@ class _PhotoCache:
             return data
 
     def put(self, ref: str, data: bytes) -> None:
+        """Cache the bytes; skip a photo larger than an eighth of the budget and evict the least recently used entries over budget."""
         if len(data) > self.budget // 8:  # one big photo must not empty the cache
             return
         with self._lock:
@@ -137,12 +142,14 @@ class _PhotoCache:
                 self._size -= len(dropped)
 
     def drop(self, ref: str) -> None:
+        """Forget one reference."""
         with self._lock:
             data = self._items.pop(ref, None)
             if data is not None:
                 self._size -= len(data)
 
     def clear(self) -> None:
+        """Empty the cache."""
         with self._lock:
             self._items.clear()
             self._size = 0

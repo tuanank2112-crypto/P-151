@@ -1,7 +1,7 @@
 # Báo cáo công việc ngày 04/10/2026 — Kiểm thử demo MaintenanceOps
 
 Người thực hiện: Cao Văn Trường · Thời gian: 2026-10-04 22:25 → 2026-10-05 11:49 (Asia/Saigon)
-Nguồn số liệu: [evaluation.md](../../evaluation.md) (output thực tế từng ca) · Ảnh: [evidence/ui/](../../planning/07_2026-10-04_online-acceptance/evidence/ui/) · Kế hoạch: [plan 07](../../planning/07_2026-10-04_online-acceptance/plan.md)
+Nguồn số liệu: [evaluation.md](../evaluation.md) (output thực tế từng ca) · Ảnh: [evidence/ui/](../../planning/07_2026-10-04_online-acceptance/evidence/ui/) · Kế hoạch: [plan 07](../../planning/07_2026-10-04_online-acceptance/plan.md)
 
 ## 1. Mục tiêu và phạm vi
 
