@@ -2,7 +2,7 @@
 
 | Mục | Nội dung |
 |---|---|
-| Video | `docs/demo/demo.mp4` (1440×900, 3 phút 29 giây, giọng Microsoft An) + phụ đề `docs/demo/demo.srt` |
+| Video | 1440×900, 3 phút 29 giây, giọng Microsoft An; tệp `demo.mp4` lưu ở Drive (đã gỡ khỏi git vì 13,4 MB), phụ đề `docs/demo/demo.srt` |
 | Câu chuyện | Một phản ánh “đèn hành lang tầng 12 tắt” đi trọn vòng đời qua 6 vai: Cư dân → Tiếp nhận → Kỹ thuật → Kho → Kỹ thuật → BQL → Cư dân |
 | Dữ liệu | Backend memory + LLM mock, dữ liệu mô phỏng `SIM-` (không phải Supabase, không phải dữ liệu thật). Ảnh hiện trường là ảnh vẽ, ghi rõ “Ảnh mô phỏng” |
 | Giọng | Microsoft An (vi-VN, offline). Một giọng cho mọi vai, mỗi nhân vật đổi cao độ/tốc độ: Thuyết minh chuẩn · Cư dân Minh Anh, Tiếp nhận Thu Trang cao hơn · Kỹ thuật Hùng, Thủ kho Minh Kho, BQL Long trầm hơn |

@@ -2,6 +2,13 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [v1.17.11] - 2026-10-17: sửa tài liệu theo audit chương 9 (PATCH, plan 29)
+- README: bỏ `/ui/`, `src/web/`, "3 phép đối soát"; thêm 4 ảnh giao diện, URL backend/health/docs, tài khoản demo hai bộ, cây thư mục mới (`portal/`, `src/mobile/`), bảng API còn thiếu, hàng deliverable #4 và #7; bỏ MSSV khỏi bảng team. `ARCHITECTURE.md` và `docs/architecture_diagram.md`: sửa các câu sai (LangGraph đã chạy, deploy Vercel đã có, `src/web/` đã xoá, token ký HMAC); sửa 2 link sơ đồ hỏng; sao `data-flow.svg` vào `docs/diagrams/`.
+- Mới: `docs/ai-logs.md` (8 trace thật khớp `results.json` và `latency.jsonl`), `docs/pitch-deck-content.md` (nội dung 10 slide + Q&A, chưa phải PDF). Viết lại phần Active của `docs/01`, `02`, `05`; `maintenance.md` đánh số lại (§17, §18) và gom nhật ký 2026-10-07 vào §19; `web.md` gắn nhãn lịch sử; `mobile.md`, `portal.md` sửa.
+- `requirements.txt` ghim `==` cho phụ thuộc trực tiếp (bộ đang chạy test xanh). Docker build exit 0; trong image: 3.852 pass, 0 fail, 40 xfail, 102 deselected (output `docs/eval/runs/outputs-20261017/pytest_docker_linux.txt`). Phụ thuộc gián tiếp chưa ghim.
+- Docstring cho hàm public: 61% → 73% (không tính hàm lồng nhau); `src/api/` 100%. Chỉ thêm docstring, ruff exit 0, 157 test liên quan pass.
+- Người dùng đã xoá `docs/demo/demo.mp4` khỏi working tree; tài liệu đã sửa cho khớp. Còn mở: WP3 nhãn sơ đồ, WP6, WP8, WP10–WP12, WP14 (cần người).
+
 ## [v1.17.10] - 2026-10-17: hoàn thiện Evaluation Evidence theo chương 9 (PATCH, plan 28)
 - `evaluation.md` chuyển vào `docs/evaluation.md`; dọn mâu thuẫn (§1, §4, §7), thống nhất cổng recall khẩn cấp 100%, rút bảng "thời gian tiết kiệm" không nguồn (thành giả thuyết cần kiểm chứng), tách chi phí mỗi lượt gọi (≈ 4.250 token) và mỗi ticket (≈ 2.551 token), gắn nhãn bằng chứng từ UI cũ `src/web/`, thêm bảng truy vết AC-01…AC-20 → test → mã (§7.4). Output máy lưu ở `docs/eval/runs/outputs-20261017/`.
 - CI: thêm `--cov=src --cov-fail-under=60`; hai test thời gian `test_assess_is_linear_*` bị chậm khi bật coverage nên tách sang bước riêng không coverage (`--deselect` + `-k linear`). README có badge coverage 92%.

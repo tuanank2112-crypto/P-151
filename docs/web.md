@@ -1,4 +1,6 @@
-# `src/web/` — UI tĩnh của backend MaintenanceOps
+# `src/web/` — UI tĩnh của backend MaintenanceOps (LỊCH SỬ)
+
+> **Đã gỡ bỏ 2026-10-12** (commit `refactor!: drop legacy /ui web and the portal's own database`): thư mục `src/web/` không còn trong repo và `/ui/` chỉ còn chuyển hướng. Giao diện hiện hành là cổng web [`portal/`](portal.md) và PWA [`src/mobile/`](mobile.md). Tài liệu này chỉ giữ để truy vết các quyết định cũ (chia trang, vật tư, đo UI); **không dùng làm hướng dẫn sửa mã**.
 
 FastAPI phục vụ thư mục này ở `/ui` (`src/main.py`). Plain JS + Tailwind Play CDN, không có bước build.
 Sau merge develop b6590ce (local 1.10.1), `/` có thể proxy portal Next.js theo `PORTAL_URL`; `/ui/` giữ UI engine Python và luồng vật tư plan16. Từ plan18 v1.11.0 local, portal dùng cùng API Python; workflow/DB riêng chỉ còn legacy rollback (xem `portal.md`).

@@ -252,6 +252,8 @@ Lệnh: `PYTHONUTF8=1 LLM_MODE=mock python -m pytest tests -q --cov=src --cov-re
 
 **2 fail:** `test_assess_is_linear_on_a_24kb_text` và `test_assess_is_linear_on_adversarial_24kb_texts` (`tests/test_maintenance/test_safety.py`), cùng khẳng định thời gian `< 1 giây`. Khi bật `--cov` mỗi dòng bị theo dõi nên chậm hơn; chạy lại **không** có coverage thì cả hai pass (8 pass cùng `test_auth_tokens.py`, 5,15 giây). Đây là test hiệu năng nhạy với công cụ đo, không phải lỗi logic. CI đã tách: bước coverage bỏ hai test này (`--deselect`), bước sau chạy chúng riêng. Lỗi `psycopg2` ghi ở bản trước (`test_serverless_mode_keeps_no_database_connection`) không xuất hiện ở máy này, nơi `psycopg2-binary` đã cài; `requirements.txt` có sẵn gói này nên CI cũng cài.
 
+**Chạy trong Linux (Docker, phiên bản đã ghim):** image build từ `requirements.txt` ghim phiên bản (Python 3.11 slim), chạy `pytest tests -q` bên trong container: **3.852 pass, 0 fail, 40 xfail, 102 deselected, 146 giây** (không bật coverage nên hai test thời gian pass). Output nguyên văn: [pytest_docker_linux.txt](eval/runs/outputs-20261017/pytest_docker_linux.txt). Đây là môi trường gần với runner GitHub Actions nhất đo được ở máy này; **chưa phải** lần chạy trên GitHub (Actions đang bị chặn do billing của tổ chức).
+
 `pytest` không giới hạn thư mục thu thập thêm test dưới `planning/` (vd `test_day05_tools.py`), nên `pytest tests` và `pytest` cho hai tổng khác nhau, không mâu thuẫn. Lint: `ruff check src tests` và `ruff format --check src tests` đều exit 0 sau khi sửa 5 lỗi (3 sắp xếp import/định dạng, 1 khoảng trắng, 1 đổi tên `_ReadDropped` → `_ReadDroppedError`).
 
 | Lớp | Coverage | Dòng (phủ/tổng) | Mục tiêu |
