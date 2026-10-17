@@ -221,3 +221,4 @@ Stash push -u may save successfully but exit1 without cleaning tracked files whe
 - Repo org `AI20K-Build-Phase-Cohort-4/P-151` (private): job fail 2–3 s, không log, annotation "recent account payments have failed or your spending limit needs to be increased" ⇒ billing org, không phải code. Chỉ chủ org gỡ được (Settings → Billing & plans).
 - Đẩy >3 nhánh/tag trong MỘT lần push ⇒ GitHub không tạo sự kiện push ⇒ CI không chạy. Đẩy lại từng nhánh `main`/`develop`.
 - PR đang xung đột (`mergeable: CONFLICTING`) ⇒ workflow `pull_request` không chạy, `gh pr checks` báo "no checks reported".
+- **Vercel deploy qua GitHub (2026-10-18):** (1) `.vercelignore` ở root repo áp cho CẢ project có Root Directory `portal/` ⇒ liệt kê `/portal` làm build portal lỗi "No Next.js version detected". (2) Ignored Build Step `[ "$VERCEL_ENV" != production ]` huỷ (`CANCELED`, không log) cả bản production ⇒ dùng `[ "$VERCEL_GIT_COMMIT_REF" != main ]`.
