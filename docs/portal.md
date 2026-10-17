@@ -103,7 +103,7 @@ Backend chamanh chốt vật tư là **số thực tế đã dùng, một lần 
 
 ## 9. Deploy Vercel qua GitHub (2026-10-18)
 - Vercel (tài khoản `lenq2112-4310`, gói Hobby) nối với repo public **`tuanank2112-crypto/P-151`**, KHÔNG nối repo org: Hobby không deploy repo private của organization và chặn commit của tác giả khác tài khoản (`-known-gotchas.md`). Production Branch = `main`.
-  - `p151-backend`: Root Directory = root repo; [`.vercelignore`](../.vercelignore) loại `portal/ planning/ docs/ tests/ brain4agent/ scripts/ …` (giữ `src/`, `seed/`, icon PWA `src/mobile/icons/*.png`).
+  - `p151-backend`: Root Directory = root repo; [`.vercelignore`](../.vercelignore) loại `planning/ docs/ tests/ brain4agent/ scripts/ …` (KHÔNG loại `portal/`: Vercel áp file này cho cả p151-portal) (giữ `src/`, `seed/`, icon PWA `src/mobile/icons/*.png`).
   - `p151-portal`: Root Directory = `portal`.
 - Luồng: merge vào `main` repo org ⇒ workflow `org-ci.yml` (nhánh mặc định `ci-sync` của repo public, bản sao ở `D:\p151-ci-sync`) chạy `ci.yml` của commit, gửi tick `ci/public-mirror` về repo org ⇒ CHỈ khi xanh mới đẩy commit đó sang `main` repo public ⇒ Vercel tự deploy production. Lịch 15 phút; chạy tay: `gh workflow run org-ci.yml -R tuanank2112-crypto/P-151 --ref ci-sync`.
 - Env cố định (Vercel → Settings → Environment Variables, Production) thay cho `-e` lúc deploy CLI: `MO_UPLOAD_DIR=/tmp/uploads`, `MO_LATENCY_LOG=/tmp/latency.jsonl`; các env khác giữ nguyên (`APP_ENV`, `MO_STORE=postgres`, `DATABASE_URL`, `AUTH_TOKEN_SECRET`, `LLM_MODE`, …).
