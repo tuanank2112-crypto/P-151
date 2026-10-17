@@ -2,6 +2,11 @@
 
 Tất cả các quyết định kiến trúc và lịch sử nâng cấp phiên bản của dự án.
 
+## [Unreleased] - 2026-10-17: audit tài liệu theo chapter-09 (docs only, không tăng version)
+- Thêm khối "Hiện trạng thực tế (audit 2026-10-17)" vào `docs/01`–`05`, `playbook-v1`, `data-contract-v1`: CR-03 đã duyệt phạm vi MVP (D-08), UI hiện hành = `portal/` + `src/mobile/`, Kho có màn hình, `src/web/` đã xoá. Sửa header `CR-BPTN-03.md`, `maintenance.md`, `README.md` (tech stack, bỏ lịch trực/capacity, pitch deck), `docs/submission/README.md` (Live URL, journal, worklog).
+- Đợt 2 (cùng ngày): viết lại phần Active của `docs/03`, `04`, `data-contract-v1`, `playbook-v1` theo code (portal, `DEPT_*`, 13 khu vực/asset, vật tư theo yêu cầu/nhập kho, tách/gộp khẩn cấp, 6 điều kiện readiness). Chuyển `JOURNAL.md`→`docs/journal.md`, `WORKLOG.md`→`docs/worklog.md` (worklog sinh từ git log, 242 commit/26 ngày), thêm `docs/video-demo.md`; sửa tham chiếu README/checklist.
+- CHƯA làm: Active của `docs/01`, `02`, `05` (chỉ có khối hiện trạng); không chạy lại ruff/pytest (người dùng từ chối lệnh). Drift ghi nhận: `src/main.py` `version="0.5.0-candidate"` ≠ 1.17.9; `CLAUDE.md` Bước 0 `init_brain.js` báo MODULE_NOT_FOUND (thiếu `../brain4agent.release`).
+
 ## [v1.17.9] - 2026-10-16: log latency từng lần gọi model ra file (PATCH)
 - Người dùng: thêm file log latency, không cần hiện cho user. `InMemoryAILogger.record` (`src/maintenance/ai_logger.py`) nay ghi thêm MỘT dòng JSON/lần gọi vào `data/logs/latency.jsonl` (`ts`, `log_id`, `ticket_id`, `model`, `status`, `latency_ms`, `prompt_tokens`, `completion_tokens`, `total_tokens`; KHÔNG ghi prompt/output). Phủ cả Agent lẫn `proposer` vì cùng đi qua `ai_logger`. Lỗi ghi file chỉ cảnh báo, không làm hỏng ticket. Env `MO_LATENCY_LOG` đổi đường dẫn, `off` tắt; `tests/conftest.py` đặt `off`. Không có API/portal đọc file; `data/` đã trong `.gitignore`.
 - Đo: `test_ai_logger.py` 11/11 (+2); ruff 3 file sạch; pytest toàn bộ 3830 pass, 1 fail có sẵn (`test_serverless_mode_keeps_no_database_connection`, thiếu `psycopg2` — đo lại khi stash vẫn fail). Chưa chạy server thật.

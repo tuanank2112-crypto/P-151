@@ -1,7 +1,7 @@
 # P-151 — MaintenanceOps Agent
 
 > Prototype **mô phỏng**. Toàn bộ dữ liệu (tiền tố `SIM-`), quy trình, định mức và kết quả là mô phỏng, không phải vận hành thật.
-> Spec đích duy nhất: [CR-BPTN-03](docs/CR-BPTN-03.md) (v0.6 candidate, `PROPOSED`). Mục API bên dưới mô tả **code đang chạy**;
+> Spec đích duy nhất: [CR-BPTN-03](docs/CR-BPTN-03.md) (duyệt cho phạm vi MVP 04/10, D-08; code v1.17.9). Mục API bên dưới mô tả **code đang chạy**;
 > chỗ nào lệch CR-BPTN-03 thì theo CR-BPTN-03.
 
 ## Deliverables nộp bài
@@ -16,10 +16,10 @@
 | 3 | Architecture diagram | [`docs/architecture_diagram.md`](docs/architecture_diagram.md), [`docs/diagrams/`](docs/diagrams/) |
 | 4 | AI logs | `.ai-log/session.jsonl`, màn hình log AI (`/mo/ai-logs`) |
 | 5 | Live URL | <https://p151-portal.vercel.app/login> |
-| 6 | Video demo | [Google Drive](https://drive.google.com/drive/folders/1_c2ZhS3hxWx7OUdAvLgjqlY_PkdI5ble?usp=sharing) |
-| 7 | Pitch deck | Trường phụ trách (chưa có trong repo) |
-| 8 | Journal | [`JOURNAL.md`](JOURNAL.md) |
-| 9 | Worklog | [`WORKLOG.md`](WORKLOG.md) |
+| 6 | Video demo | [`docs/video-demo.md`](docs/video-demo.md) · [Google Drive](https://drive.google.com/drive/folders/1_c2ZhS3hxWx7OUdAvLgjqlY_PkdI5ble?usp=sharing) |
+| 7 | Pitch deck | ⬜ chưa có file trong repo; hồ sơ chuẩn bị: [`planning/04_2026-10-03_user-test-pitch/`](planning/04_2026-10-03_user-test-pitch/) |
+| 8 | Journal | [`docs/journal.md`](docs/journal.md) |
+| 9 | Worklog | [`docs/worklog.md`](docs/worklog.md) |
 | 10 | Evaluation evidence | [`evaluation.md`](evaluation.md), [`docs/eval/runs/`](docs/eval/runs/) |
 
 ## Vấn đề
@@ -34,15 +34,15 @@ Cư dân gửi phản ánh vệ sinh hoặc đèn khu vực chung. Agent kiểm 
 - **Tầng an toàn (bước 2b, chạy trước phân loại)**: luật cố định + từ vựng dữ liệu. Tín hiệu nguy hiểm (chất lạ, mùi khét, tia lửa, dây hở) →
   Bậc 1 `EMERGENCY_PENDING_BQL` (chủ BQL) hoặc Bậc 2 `SAFETY_REVIEW_REQUIRED` (chủ BPTN).
 - **Phân loại**: playbook vệ sinh `PB-CLN-01` hoặc đèn khu vực chung `PB-TEC-01` bằng luật cố định, có thể kèm LLM đề xuất.
-- **Đề xuất team**: tra asset, tồn kho, lịch trực, capacity (fixture tĩnh) → `ROUTED` là đề xuất tuyến, không phải đã giao việc; Agent không gán người.
+- **Đề xuất team**: tra asset, tồn kho/vật tư → giao **phòng ban** (`ROUTED`); không còn lịch trực/capacity/team. Agent không gán người (`assignee_id=null`).
 - **Kiểm tra hồ sơ**: checklist, vật tư (3 phép đối soát), evidence tối thiểu → `READY_FOR_REVIEW`; mọi thao tác có audit.
 
 ## Tech Stack
 
 | Lớp | Công nghệ |
 |---|---|
-| Agent | Luật cố định + LLM đề xuất (LangChain, `gpt-4o-mini` qua OpenAI/OpenRouter); mặc định `LLM_MODE=mock` chỉ chạy luật |
-| Backend | FastAPI + Python 3.11; UI tĩnh `src/web/` (Tailwind CDN, JS thuần) |
+| Agent | Luật cố định + LLM đề xuất (LangChain, mặc định model `gpt-4o-mini`, production dùng `gpt-6-luna`); mặc định `LLM_MODE=mock` chỉ chạy luật |
+| Backend | FastAPI + Python 3.11; UI `portal/` (Next.js, gọi `/api/v1`) + PWA điện thoại `src/mobile/` (UI tĩnh `src/web/` đã xoá 2026-10-12) |
 | Dữ liệu | **Mặc định in-memory** từ fixture YAML, reset được; tuỳ chọn PostgreSQL trên Supabase (`MO_STORE=postgres`, Alembic) + Supabase Storage cho ảnh |
 | DevOps | Docker Compose + GitHub Actions |
 

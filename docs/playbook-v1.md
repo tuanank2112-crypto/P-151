@@ -1,13 +1,23 @@
 # MaintenanceOps Agent — Playbook v1
 
-> **Document status:** DRAFT · CHANGE CONTROL
-> **Version:** 1.2-candidate
-> **Ngày cập nhật:** 2026-10-01
+> **Document status:** IMPLEMENTED (phần Active, v1.17.9) · phần Historical giữ để truy vết
+> **Version:** 1.2-implemented (phần Active) · 1.2-candidate (lịch sử)
+> **Ngày cập nhật:** 2026-10-17 (phần Active)
 > **MVP baseline:** v0.3/Playbook v1.1 đã freeze; v0.6/Playbook v1.2 candidate theo `CR-BPTN-03`
 > **Freeze history:** v1.1 — 28/09/2026; v1.2 chưa freeze
 > **Owner duy nhất:** TV1 — Product / BA / Process  
 > **Business scope:** Hai playbook mô phỏng `PB-CLN-01`, `PB-TEC-01`
 > **Data classification:** `SIMULATED` — không phải quy trình, dữ liệu, SLA, định mức, tồn kho hoặc hướng dẫn vận hành thực tế của Vinhomes.
+
+## Hiện trạng thực tế (audit 2026-10-17, đối chiếu code v1.17.9)
+
+> Các câu "CR-03 `PROPOSED` / chưa có người duyệt / NOT READY" trong phần còn lại của file là **lịch sử tại 2026-10-01**. Hiện trạng:
+> - **Duyệt:** CR-BPTN-03 được duyệt cho phạm vi MVP 04/10 và D-01–D-07 (D-08: leader Lê Thị Châm Anh, ngày duyệt báo 2026-10-02, ghi nhận 2026-10-03). Chưa phải sign-off toàn bộ gate Day05/Day06.
+> - **Code:** engine CR-03 đã cài (xem [`maintenance.md`](maintenance.md)); phiên bản dự án 1.17.9. Dữ liệu chạy trên PostgreSQL/Supabase; production ở Vercel (xem [README](../README.md)).
+> - **UI:** UI hiện hành là [`portal/`](portal.md) (Next.js, gọi backend `/api/v1`) và PWA [`src/mobile/`](mobile.md). UI tĩnh `src/web/` đã xoá (2026-10-12); [`web.md`](web.md) chỉ còn là lịch sử.
+> - **Vai trò thật trên UI:** cư dân, Tiếp nhận (BPTN), Vệ sinh, Kỹ thuật, Quản lý (BQL), Kho. **Kho có màn hình** (tồn kho, duyệt cấp vật tư), khác câu "Kho không có màn hình" ở bản 0.6.
+> - **Agent:** LangGraph + LLM (`gpt-6-luna` trên production); ngữ nghĩa do LLM suy luận, tầng an toàn chỉ là lưới sàn hẹp (luật + từ vựng).
+> - **Khi lệch:** theo thứ tự code → `CR-BPTN-03.md` → file này.
 
 ## Changelog
 
@@ -18,128 +28,106 @@
 | 1.1 | 2026-09-27 | Chỉ giữ CLN/TEC; thêm asset/duty/stock gate, team-only routing, draft-without-route và route readiness | FINAL |
 | 1.1-freeze | 2026-09-28 | Đóng OD-09 và đưa Playbook v1.1 vào frozen baseline MaintenanceOps MVP v0.3 | FROZEN |
 | 1.2-candidate | 2026-10-01 | Bỏ team/duty; thêm safety, priority, merge, department routing, ON_HOLD, ảnh bắt buộc và BQL close/cancel | DRAFT · CHỜ PHÊ DUYỆT CR-03 |
+| 1.2-implemented | 2026-10-17 | Viết lại Active theo catalog.yaml: `DEPT_*`, 13 khu vực/asset, bóng đèn theo khu vực, ca làm việc, agent_policy | HIỆN HÀNH |
 
 ---
 
-# Active Playbook Registry v1.2 candidate
+# Active Playbook Registry v1.2 — hiện hành (khớp `seed/maintenance_v1/catalog.yaml`, audit 2026-10-17)
+
+> Playbook là dữ liệu mô phỏng, không phải SOP thật. Cấu hình ở [`seed/maintenance_v1/catalog.yaml`](../seed/maintenance_v1/catalog.yaml) và `lexicon.yaml`; ngưỡng nằm trong `sla_config`, không hardcode. Khi lệch: code → [`CR-BPTN-03.md`](CR-BPTN-03.md) → file này.
 
 ## 1. Registry boundary
 
 Registry read-only chỉ có:
 
-- `PB-CLN-01` — Vệ sinh khu vực chung → `SIM-DEPT-CLN-01`.
-- `PB-TEC-01` — Đèn chiếu sáng khu vực chung → `SIM-DEPT-TEC-01`.
+- `PB-CLN-01` — Vệ sinh khu vực chung → `DEPT_CLEANING` (Phòng Vệ sinh).
+- `PB-TEC-01` — Đèn chiếu sáng khu vực chung → `DEPT_TECHNICAL` (Phòng Kỹ thuật).
 
-Registry không phải CRUD feature. Không chứa CSKH, team/duty/capacity, lịch trực hoặc assignee. Tất cả catalog/fixture là synthetic và read-only.
+Bảng `playbook_departments` ánh xạ playbook → phòng ban. Không có CSKH, team/duty/capacity, lịch trực thật hoặc assignee. Phạm vi vị trí: Ocean Park tòa S1/S2 (`site.buildings`). Loại việc khác (vd lỗi cơ khí thang máy) → `OUT_OF_SCOPE` cho BPTN, không hỏi vị trí.
 
 ## 2. Common pipeline rules
 
-1. Validate raw/minimum data; raw text và ảnh bất biến.
-2. Chạy safety cho mọi ticket trước khi chọn playbook.
-3. Kiểm tra duplicate và đưa BPTN/BQL xử lý theo owner.
-4. Đề xuất playbook, phòng ban và priority; BPTN chỉ review khi có blocker.
-5. Tra asset cho kỹ thuật; vệ sinh `NOT_APPLICABLE`.
-6. Lập vật tư và kiểm tra stock mô phỏng.
-7. Chỉ khi `can_route=true`: tạo draft, set `department_id`, chuyển `ROUTED`.
-8. Phòng ban nhận → `IN_PROGRESS`, thực hiện checklist và nộp hồ sơ.
-9. Agent kiểm tra readiness; BQL close/rework/cancel.
+1. `2b` an toàn chạy trước mọi thứ; `2` dữ liệu tối thiểu (thiếu → `MISSING_INFO`, chủ BPTN).
+2. `3` phân loại + đề xuất phòng ban + priority (Agent LLM, luật làm sàn); `4` trùng/tách; `5` review khi cần.
+3. `6` asset (kỹ thuật); `7` vật tư/kho theo khu vực; `8` chỉ khi `can_route=true`: draft, `department_id`, `ROUTED`.
+4. Ngoài ca làm việc (`departments.shifts` 06:00–14:00, 14:00–22:00, +07:00) giữ `ROUTED + OUT_OF_HOURS`; chưa nhận sau 2 giờ nhắc mỗi 2 giờ (`not_accepted`).
+5. Phòng ban nhận → `IN_PROGRESS` → hoàn thành → bước `10` readiness → BQL đóng/trả làm lại/hủy.
+
+Job nền (`job_interval_minutes: 5`, tối đa 3 lần tự thử lại) chạy lại ticket mồ côi; không gỡ blocker an toàn.
 
 ## 3. Common safety layer
 
-- Bậc 1 gồm tín hiệu rõ như khói/lửa, mùi khét, tia lửa, dây điện hở, giật điện, quá nóng/chảy nhựa, nước vào thiết bị điện, người bị thương/mắc kẹt, mùi gas, vật sắp rơi, hóa chất/kim tiêm/máu/chất thải y tế; và tổ hợp đèn nhấp nháy với nóng/mùi/âm thanh bất thường.
-- Bậc 1 → `VERIFYING + EMERGENCY_PENDING_BQL`; không tạo draft/department.
-- Bậc 2 gồm diễn đạt nghi ngờ, sự việc đã qua, từ đa nghĩa hoặc âm thanh bất thường chưa đủ kết luận → `SAFETY_REVIEW_REQUIRED`.
-- BPTN chỉ có ba action cho Bậc 2; mọi action có audit, xác nhận an toàn bắt buộc lý do.
-- Phủ định như “không có mùi khét” không kích hoạt. “Bóng/đèn bị cháy, hỏng, chập chờn, nhấp nháy, nổ bóng” đứng một mình đi flow thường theo D-04 candidate; khi có khói/lửa/mùi/nóng/bị giật/bị thương thì lên Bậc 1.
-- Rule đọc cả có dấu/không dấu. LLM chỉ được nâng mức.
+- Bậc 1 → `VERIFYING + EMERGENCY_PENDING_BQL`; Bậc 2 → `SAFETY_REVIEW_REQUIRED` (BPTN, đúng 3 lựa chọn, 4 giờ lịch).
+- Tín hiệu rõ (khói/lửa, mùi khét, tia lửa, dây điện hở, giật điện, quá nóng, nước vào thiết bị điện, người bị thương/mắc kẹt, mùi gas, vật sắp rơi, hóa chất/kim tiêm/máu) do luật + từ vựng dữ liệu bắt làm sàn. **Ngữ nghĩa** (phủ định, "hình như", nhờ việc vs báo nguy, đèn cháy = đèn hỏng) do Agent LLM suy luận; CẤM vá bằng thêm/bớt regex trong `lexicon.yaml` (plan 06 Q01/Q30).
+- "Bóng/đèn bị cháy, hỏng, chập chờn" đứng một mình là `NONE` (B-01, D-04); kèm khói/lửa/mùi/nóng/giật thì lên Bậc 1.
+- Rule đọc có/không dấu; LLM chỉ nâng mức. Chi tiết luật R1–R10: [`maintenance.md`](maintenance.md) §3.
 
 ## 4. Common priority rules
 
-- `HIGH`: sự cố đèn ở lối đi chung, sảnh, cầu thang, hầm, lối thoát nhưng chưa có dấu hiệu emergency; hoặc vệ sinh cản trở/trơn trượt lối đi.
-- `MEDIUM`: ticket kỹ thuật/vệ sinh thông thường; mặc định khi chưa đủ vị trí để phân biệt.
-- `LOW`: vệ sinh thông thường, chưa ảnh hưởng trực tiếp đến sử dụng khu vực chung.
-- Tăng nặng theo duplicate/vulnerable-person rule trong CR-03. BPTN/BQL override phải có reason/audit.
+PRI-H1/H2/M1/M2/L1/D0 (CR-03 §7). `HIGH`: mất đèn ở lối đi/sảnh/cầu thang/hầm/lối thoát, hoặc vệ sinh cản trở/trơn trượt; `MEDIUM`: việc thông thường và mặc định khi chưa đủ vị trí; `LOW`: vệ sinh định kỳ. Báo trùng ≥ 3 nâng mức (`priority.duplicate_raise_at_count`). BPTN/BQL sửa phải có lý do + audit.
 
 ## 5. `PB-CLN-01` — Vệ sinh khu vực chung
 
 ### Trigger
+Phản ánh rác, bẩn, tràn đổ hoặc cần vệ sinh ở khu vực chung, không thuộc nhánh emergency.
 
-Phản ánh rác, bẩn, tràn đổ hoặc yêu cầu vệ sinh trong khu vực chung, không thuộc nhánh safety emergency.
+### Asset, vật tư, route
+- Asset: `NOT_APPLICABLE`. Phòng ban: `DEPT_CLEANING`.
+- Vật tư theo `playbook_materials`: `SIM-MAT-CLEAN-01` (dung dịch vệ sinh), `SIM-MAT-BAG-01` (túi rác). Mặc định Agent đề xuất `SIM-MAT-CLEAN-01` ×2.
+- Biết thiếu → `ON_HOLD + WAITING_MATERIAL`, không draft/route; phòng ban cũng có thể bấm "Yêu cầu vật tư".
 
-### Asset, material và route
+### Checklist và hồ sơ hoàn thành
+- Checklist `PB-CLN-01-CHK-V1`: CLN-CHK-01 (khu vực khớp location), CLN-CHK-02 (execution update ghi nhận), CLN-CHK-03 (hạng mục trong draft hoàn tất).
+- Ảnh ≥ 1 (bắt buộc). Vật tư thực dùng: được để rỗng. Ghi chú xử lý: tuỳ chọn.
 
-- Asset: `NOT_APPLICABLE`.
-- Department: `SIM-DEPT-CLN-01`.
-- Material plan/norm/stock dùng catalog synthetic. Biết thiếu → `ON_HOLD + WAITING_MATERIAL`; không draft/route.
-- Material `SIM-MAT-CLEAN-01` phải dùng cùng một đơn vị và số lượng giữa planned và norm cho fixture happy path; mọi variance phải là case có chủ đích, có reason.
-- `UNKNOWN` stock xử lý theo D-05 candidate.
-
-### Checklist và hồ sơ
-
-- Xác nhận khu vực; thực hiện vệ sinh; kiểm tra khu vực sau xử lý.
-- Result note không rỗng.
-- Material actual hoặc `NOT_APPLICABLE`.
-- Ít nhất một ảnh mô phỏng.
-- Material reconciliation hoàn tất.
-
-### Exception/safety examples
-
-Hóa chất đổ, kim tiêm, máu, chất thải y tế hoặc chất lạ kèm dấu hiệu nguy hại không đi thẳng vào checklist; chuyển safety branch theo §3.
+### Safety examples
+Hóa chất đổ, kim tiêm, máu, chất thải y tế hoặc chất lạ kèm dấu hiệu nguy hại → nhánh safety, không vào checklist.
 
 ## 6. `PB-TEC-01` — Đèn khu vực chung
 
 ### Trigger
+Đèn khu vực chung không hoạt động/chập chờn/hỏng, không có tín hiệu emergency.
 
-Đèn khu vực chung không hoạt động/chập chờn/hỏng, không có tín hiệu emergency sau safety layer.
+### Asset, vật tư, route
+- Phòng ban: `DEPT_TECHNICAL`. Cần đúng một asset `LIGHTING` **theo khu vực** (13 khu vực; ví dụ Hành lang, Sảnh thang máy, Thang máy, Cầu thang bộ, Phòng rác, Sảnh chính, Sảnh cư dân, Lối thoát hiểm, Hầm xe, Bãi đỗ xe, Sân chơi, Sân thượng, Lối đi) hoặc quyết định `ONSITE_BY_BPTN` có lý do + cờ + audit.
+- Không khớp khu vực → `VERIFYING + ASSET_UNCLEAR`; Agent không đoán. Thang máy là khu vực chung (cabin); lỗi cơ khí thang máy ngoài phạm vi.
+- Vật tư: **mỗi khu vực đúng một loại bóng** (`area_materials`), ví dụ Hành lang/Sảnh thang máy/Cầu thang bộ/Lối đi → `SIM-MAT-LAMP-01`; Thang máy/Phòng rác → `LAMP-03`; Sảnh chính/Sảnh cư dân → `LAMP-04`; Lối thoát hiểm → `LAMP-05`; Hầm xe/Bãi đỗ xe → `LAMP-07`; Sân chơi/Sân thượng → `LAMP-06`. Khu vực không liệt kê dùng `default_materials` (`LAMP-01` ×1).
+- Biết thiếu → `ON_HOLD`, chưa route; Kho nhập đủ → chạy lại từ bước 6; thông báo kho cho cả hai phòng.
 
-### Asset, material và route
-
-- Department: `SIM-DEPT-TEC-01`.
-- Cần đúng một `LIGHTING` asset hoặc quyết định `ONSITE_BY_BPTN` có reason/audit.
-- Không tìm thấy/nhiều asset → `VERIFYING + ASSET_UNCLEAR`; Agent không đoán.
-- Lập planned material và kiểm stock. Biết thiếu → `ON_HOLD`, chưa route; kho nhập đủ → chạy lại toàn bộ gate.
-- Chỉ tạo draft khi asset, review, department, risk và material gate cho phép.
-
-### Checklist và hồ sơ
-
-- Xác nhận asset/khu vực; kiểm tra an toàn theo checklist mô phỏng; xử lý theo playbook; kiểm tra kết quả.
-- Result note, material actual/N-A, ít nhất một ảnh và reconciliation là bắt buộc.
-- Playbook không phải hướng dẫn sửa điện thật và Agent không chẩn đoán/hướng dẫn xử lý nguy hiểm.
+### Checklist và hồ sơ hoàn thành
+- Checklist `PB-TEC-01-CHK-V1`: TEC-CHK-01 (location và đối tượng lighting), TEC-CHK-02 (checklist an toàn mô phỏng), TEC-CHK-03 (kết quả xử lý).
+- Ảnh ≥ 1 (bắt buộc). Vật tư thực dùng **≥ 1** (số nguyên dương, mã thuộc phòng Kỹ thuật).
+- Playbook không phải hướng dẫn sửa điện thật; Agent không chẩn đoán hay hướng dẫn xử lý nguy hiểm.
 
 ### Safety examples
-
-Mùi khét, tia lửa, dây điện hở, khói/lửa, giật điện, quá nóng/chảy nhựa hoặc nước vào thiết bị điện → Bậc 1. Câu nghi ngờ hoặc đa nghĩa chưa có tín hiệu đi kèm → Bậc 2 hoặc flow thường theo bẫy D-04/CR-03.
+Mùi khét, tia lửa, dây điện hở, khói/lửa, giật điện, quá nóng, nước vào thiết bị điện → Bậc 1. Câu nghi ngờ/đa nghĩa chưa có tín hiệu đi kèm → Bậc 2 hoặc flow thường theo B-01.
 
 ## 7. Department execution rules
 
-- Phòng ban chỉ bấm nhận ticket; chia người nội bộ ngoài hệ thống.
-- Trả sai phòng ban trước khi làm cần reason; lần thứ hai alert BQL.
-- Sau khi bắt đầu, chỉ báo BQL xem; không tự route lại. Dữ liệu thực hiện được giữ.
-- Thiếu vật tư sau khi nhận → `ON_HOLD + WAITING_MATERIAL`; không làm giả completion.
+- Phòng ban chỉ bấm nhận cả phòng; chia người nội bộ ngoài hệ thống; không có ô chọn nhân viên.
+- Trả sai phòng ban trước khi làm: lý do bắt buộc, lần thứ 2 leo thang BQL (`wrong_dept_return`). Sau khi bắt đầu: báo BQL (`WRONG_DEPT_AFTER_START`), dữ liệu giữ; BQL chuyển về BPTN (có `ExecutionSnapshot`) hoặc bác.
+- Thiếu vật tư: bấm "Yêu cầu vật tư" → `ON_HOLD + WAITING_MATERIAL` (leo thang BQL sau 24 giờ, kiểm lại tồn kho đầu mỗi ca); không làm giả completion.
+- Vật tư thực dùng ghi một lần lúc hoàn thành; ảnh bắt buộc.
 
 ## 8. Readiness and BQL rules
 
-`READY_FOR_REVIEW` cần đủ checklist, result note, material actual/N-A, ít nhất một ảnh, material reconciliation và không còn blocker mở. BQL duyệt → `CLOSED`; rework → `IN_PROGRESS + REWORK`, reset checklist, tăng count; từ ba lần escalate. Chỉ BQL cancel với reason/audit ở state được phép.
+`READY_FOR_REVIEW` cần 6 điều kiện: đã nhận việc, checklist đủ, ≥ 1 ảnh, vật tư đã nhập đúng luật, chênh lệch (nếu có) đã giải thích, không blocker mở. BQL duyệt → `CLOSED`; trả làm lại → `IN_PROGRESS + REWORK` **về chính phòng ban đang giữ**, reset checklist, lần 3 leo thang (`rework.escalate_at_count: 3`). Chỉ BQL hủy (lý do + audit). Không reopen. Rating một lần sau `CLOSED`, không đổi state/priority/phòng ban.
 
-Không có reopen. Rating một lần sau `CLOSED` không tác động state/priority/department.
+## 9. Agent policy (`agent_policy`)
 
-## 9. Removed rules
+`auto_split_mixed_reports: true` (tự tách phản ánh hai việc), `hold_near_open_emergency: false` (chỉ liên kết ca gần khẩn cấp), `max_material_qty: 10`, `max_duplicate_candidates: 8`, `max_job_agent_calls: 5`. Tắt được bằng cấu hình, không sửa code.
 
-- Duty lookup, team capacity, `routing_team_id`, `SIM-TEAM-*`, `SIM-DUTY-*`.
-- WorkOrderDraft không có route.
-- Bốn state v0.3 và EXCEPTION như top-level state.
-- Evidence ảnh tùy chọn.
-- Agent/BPTN đóng ticket hoặc gán nhân viên.
+## 10. Removed rules
 
-## 10. Candidate acceptance
+Duty lookup, team capacity, `routing_team_id`, `SIM-TEAM-*`, `SIM-DUTY-*`; WorkOrderDraft không có route; bốn state v0.3 và EXCEPTION như state top-level; evidence ảnh tùy chọn; Agent/BPTN đóng ticket hoặc gán nhân viên; Kho duyệt cấp vật tư; đối chiếu vật tư theo định mức/đề xuất Agent.
+
+## 11. Acceptance
 
 - Hai playbook dùng chung safety/priority/duplicate/permission layer.
-- Mọi route đích là `SIM-DEPT-*`, không phải team/person.
-- CLN asset N/A; TEC asset exact hoặc onsite-by-BPTN.
-- Known material shortage luôn chặn route; restock reruns all gates.
-- `assignee_id` luôn null.
-- Readiness và quyền close/cancel khớp Data Contract v1.2 candidate.
-- Chi tiết test theo AC-01–AC-18; chưa frozen cho đến khi CR-03 được duyệt và D-09 về `OUT_OF_HOURS` được chốt.
+- Mọi route đích là `DEPT_*`, không phải team/người; `assignee_id` luôn null.
+- CLN asset N/A; TEC asset đúng một theo khu vực hoặc `ONSITE_BY_BPTN`.
+- Thiếu vật tư đã biết luôn chặn route; nhập kho chạy lại các gate.
+- Bộ nhãn an toàn và fixture ở `seed/maintenance_cr03/`; test ở `tests/test_maintenance/`.
 
 ---
 

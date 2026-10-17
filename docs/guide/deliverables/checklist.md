@@ -42,12 +42,12 @@ weight: 1
 - **Tips:** Follow template trong `presentation/README.md`
 
 #### 8. Weekly Journal
-- **Location:** `/JOURNAL.md`
+- **Location:** `/docs/journal.md`
 - **Yêu cầu:** Ghi lại mỗi tuần: mục tiêu, hoàn thành, khó khăn, bài học
 - **Tips:** Template đã có sẵn, chỉ cần điền
 
 #### 9. Worklog
-- **Location:** `/WORKLOG.md`
+- **Location:** `/docs/worklog.md`
 - **Yêu cầu:** Ghi lại hàng ngày: ai làm gì, kết quả gì
 - **Tips:** Template đã có sẵn, cập nhật mỗi ngày
 

@@ -81,9 +81,10 @@ CLOSED=6; CANCELLED/MERGED ⇒ `cancelled`. Mã ticket = `ticket_id` backend. "B
 - Ảnh luôn qua proxy có phiên, `Cache-Control: private, no-store`.
 
 ## 6. Khác với bản develop gốc (v1.12.0, nhánh `feature/chamanh`)
+> **Đã bị §8 thay một phần (audit 2026-10-17):** nút "Yêu cầu vật tư" của Kỹ thuật và hàng "Phiếu vật tư cần nhập" của Kho ĐÃ CÓ LẠI từ v1.17.0/v1.17.6 (`POST material-shortage`, dùng chung `dept-parts.tsx` cho cả hai phòng). Vẫn đúng: không có bước duyệt cấp (`_material_approval_required()` luôn `False`), không có nút "Thêm vật tư mới" ở UI Kho; `approveMaterialsAction`/`addStockItemAction` chỉ là mã ngủ, không nút nào gọi.
 Backend chamanh chốt vật tư là **số thực tế đã dùng, một lần lưu** (plan 15-16), nên portal đổi như sau:
 - Vệ sinh / Kỹ thuật: form hoàn thành chọn vật tư theo `material_codes_by_department` + số nguyên ≥ 1, một `POST /mo/tickets/{id}/material-usage` trước `complete`. Vệ sinh được để rỗng, Kỹ thuật ≥ 1. Không đề xuất Agent, không lý do chênh lệch định mức.
-- Kỹ thuật: bỏ tab và nút "Yêu cầu vật tư" (`requestMaterialsAction` đã xoá).
+- Kỹ thuật: (v1.12.0) bỏ tab và nút "Yêu cầu vật tư" — **đã có lại ở v1.17.x, xem §8**.
 - Kho: chỉ còn tồn kho + "Nhập kho" cho mã sẵn có; bỏ "Thêm vật tư mới" và hàng đợi "Yêu cầu cấp phát". Ô ghi chú nhập hàng bỏ vì backend chưa nhận (BE-3).
 - Backend: `_material_approval_required()` luôn False; `custom_materials_enabled` luôn False. Action `approveMaterialsAction`/`addStockItemAction` còn trong code nhưng không có nút gọi.
 - Tiếp nhận, tab "Đã phân loại" (v1.12.3): chip lọc theo nơi ticket đang ở, tìm kiếm không dấu, "Xem thêm" 20 dòng; phân nhóm ở `src/lib/reception-done.ts` (stage ≤ 2 mà không có phòng ban = của BQL, không phải "chưa chuyển").

@@ -1,13 +1,23 @@
 # MaintenanceOps Agent — Lean PRD
 
-> **Document status:** DRAFT · CHANGE CONTROL
-> **Version:** 0.6-candidate
-> **Ngày cập nhật:** 2026-10-01
+> **Document status:** IMPLEMENTED (phần Active, v1.17.9) · phần Historical giữ để truy vết
+> **Version:** 1.0-implemented (phần Active) · 0.6-candidate (lịch sử)
+> **Ngày cập nhật:** 2026-10-17 (phần Active)
 > **MVP baseline:** v0.3 đã freeze; v0.6 candidate theo `CR-BPTN-03`
 > **Freeze history:** v0.3 — 28/09/2026; v0.6 chưa freeze
 > **Owner:** TV1 — Product / BA / Process  
 > **Reviewers:** TV2 — AI Agent / Data; TV4 — Integration / QA / Demo; Product approver/proxy BQL: Cao Văn Trường
 > **Data classification:** Chỉ dữ liệu mô phỏng; không phải quy trình/dữ liệu vận hành Vinhomes
+
+## Hiện trạng thực tế (audit 2026-10-17, đối chiếu code v1.17.9)
+
+> Các câu "CR-03 `PROPOSED` / chưa có người duyệt / NOT READY" trong phần còn lại của file là **lịch sử tại 2026-10-01**. Hiện trạng:
+> - **Duyệt:** CR-BPTN-03 được duyệt cho phạm vi MVP 04/10 và D-01–D-07 (D-08: leader Lê Thị Châm Anh, ngày duyệt báo 2026-10-02, ghi nhận 2026-10-03). Chưa phải sign-off toàn bộ gate Day05/Day06.
+> - **Code:** engine CR-03 đã cài (xem [`maintenance.md`](maintenance.md)); phiên bản dự án 1.17.9. Dữ liệu chạy trên PostgreSQL/Supabase; production ở Vercel (xem [README](../README.md)).
+> - **UI:** UI hiện hành là [`portal/`](portal.md) (Next.js, gọi backend `/api/v1`) và PWA [`src/mobile/`](mobile.md). UI tĩnh `src/web/` đã xoá (2026-10-12); [`web.md`](web.md) chỉ còn là lịch sử.
+> - **Vai trò thật trên UI:** cư dân, Tiếp nhận (BPTN), Vệ sinh, Kỹ thuật, Quản lý (BQL), Kho. **Kho có màn hình** (tồn kho, duyệt cấp vật tư), khác câu "Kho không có màn hình" ở bản 0.6.
+> - **Agent:** LangGraph + LLM (`gpt-6-luna` trên production); ngữ nghĩa do LLM suy luận, tầng an toàn chỉ là lưới sàn hẹp (luật + từ vựng).
+> - **Khi lệch:** theo thứ tự code → `CR-BPTN-03.md` → file này.
 
 ## Changelog
 
@@ -18,125 +28,125 @@
 | 0.3 | 2026-09-27 | Re-baseline hai playbook; thêm Asset/Duty lookup, stock gate, team-only routing, 12 ticket và 4 demo flow | DRAFT · Chờ sign-off |
 | 0.3-freeze | 2026-09-28 | Đóng OD-09 và freeze PRD trong MaintenanceOps MVP v0.3 | FROZEN |
 | 0.6-candidate | 2026-10-01 | Re-baseline PRD theo flow phòng ban và các rule safety/priority/merge/material/review trong CR-BPTN-03 | DRAFT · CHỜ PHÊ DUYỆT CR-03 |
+| 1.0-implemented | 2026-10-17 | Viết lại Active theo code v1.17.9: portal, vai Kho, vật tư theo yêu cầu/nhập, tách/gộp khẩn cấp, Agent LLM | HIỆN HÀNH |
 
 ---
 
-# Active Lean PRD — MaintenanceOps MVP v0.6 candidate
+# Active Lean PRD — MaintenanceOps hiện hành (khớp code v1.17.9, audit 2026-10-17)
+
+> Nguồn chân lý theo thứ tự: code → [`CR-BPTN-03.md`](CR-BPTN-03.md) → file này. Số chi tiết (transition, luật an toàn, priority) lấy ở CR-03 và [`maintenance.md`](maintenance.md); PRD không chép lại.
 
 ## 1. Objective và scope
 
-Prototype xử lý end-to-end hai loại ticket mô phỏng: vệ sinh khu vực chung (`PB-CLN-01`) và đèn khu vực chung (`PB-TEC-01`). Agent sàng lọc và đề xuất; BPTN/BQL quyết định các trường hợp cần con người; phòng ban nhận và báo cáo công việc. Không có duty/capacity theo team, route `SIM-TEAM-*` hoặc gán nhân viên.
+Prototype xử lý end-to-end hai loại ticket mô phỏng: vệ sinh khu vực chung (`PB-CLN-01`) và đèn khu vực chung (`PB-TEC-01`). Cư dân gửi phản ánh; Agent (LangGraph + LLM, có luật sàn an toàn) sàng lọc và đề xuất; Tiếp nhận (BPTN) và BQL quyết các trường hợp cần con người; **phòng ban** nhận việc và báo cáo; Kho nhập vật tư.
 
-## 2. Actors và quyền
+- Giao việc ở cấp **phòng ban** (`DEPT_CLEANING`, `DEPT_TECHNICAL`). Không team, duty, capacity, lịch trực thật; không gán nhân viên (`assignee_id` luôn `null`).
+- Dữ liệu mô phỏng (`SIM-`), phạm vi Ocean Park tòa S1/S2 (`catalog.yaml` `site.buildings`).
+- Chạy thật: backend FastAPI + PostgreSQL/Supabase (`MO_STORE=postgres`), UI `portal/` (Next.js) và PWA `src/mobile/`, production ở Vercel (README).
 
-| Actor | Quyền chính | Giới hạn bắt buộc |
-|---|---|---|
-| RESIDENT | Tạo/xem ticket của mình; append text/ảnh trong `NEED_INFO`; rating một lần sau `CLOSED` | Không sửa raw; không reopen; không thấy dữ liệu nội bộ |
-| AGENT/SYSTEM | Safety, duplicate, classification, priority, asset/material gate, pipeline, readiness | Không đóng/hủy, không xác nhận an toàn thay người, không gán nhân viên |
-| BPTN | Xử lý blocker BPTN, ba lựa chọn cho Bậc 2, merge/undo, chọn lại phòng ban/asset, override priority | Không tác động Bậc 1; không đóng/hủy |
-| DEPARTMENT | Nhận ticket, làm checklist, ghi kết quả/vật tư/ảnh, báo sai phòng ban | Không thấy ticket chưa route; không gán nhân viên; không đóng/hủy |
-| WAREHOUSE | `RECEIVE_STOCK` | Không duyệt xuất/điều chỉnh kho; không có UI riêng |
-| BQL | Xử lý khẩn cấp, review/rework, close/cancel, escalation và override | Không sửa raw resident data |
+## 2. Actors và quyền (tài khoản demo mật khẩu `123456`)
 
-## 3. Functional requirements active
+| Tài khoản UI | Actor | Quyền chính | Giới hạn bắt buộc |
+|---|---|---|---|
+| `cudan` | RESIDENT | Gửi phản ánh (tiêu đề, nội dung, nơi, ảnh); xem ticket của mình; bổ sung text/ảnh; đánh giá sao một lần (kèm thẻ, bình luận) sau `CLOSED` | Không sửa raw; không reopen; không thấy dữ liệu nội bộ |
+| `tiepnhan` | BPTN | Chờ phân loại: gỡ blocker BPTN, bổ sung vị trí/thông tin thiếu rồi chọn phòng ban, ba lựa chọn cho Bậc 2, gộp/hoàn tác, chọn lại phòng ban/asset, sửa priority có lý do; xem hiệu suất Agent | Không tác động Bậc 1; không đóng/hủy |
+| `vesinh`, `kythuat` | DEPARTMENT | Nhận việc cả phòng, trả sai phòng ban, tạm dừng, yêu cầu vật tư, nhập vật tư đã dùng, checklist, ảnh, hoàn thành | Chỉ thấy ticket của phòng mình; không thấy danh tính cư dân; không gán nhân viên; không đóng/hủy |
+| `kho` | WAREHOUSE | Xem tồn kho, nhập kho, xem phiếu vật tư cần nhập | Không duyệt xuất/điều chỉnh kho |
+| `quanly` | BQL | Xử lý khẩn cấp (gồm gộp ca nghi trùng), nghiệm thu, trả làm lại, đóng, hủy, leo thang, sửa priority; xem tổng quan, hiệu suất phòng ban; vào màn Kho | Không sửa raw của cư dân |
+| (hệ thống) | AGENT/SYSTEM | Safety, phân loại, priority, tách/gộp đề xuất, asset, vật tư, `can_route`, job retry/leo thang | Không đóng/hủy; không xác nhận an toàn thay người; không gỡ blocker khẩn cấp; không gán nhân viên |
 
-### FR-SAFETY-001 — Safety first
+Quyền do backend quyết (`ACTION_DENIED`, audit, không đổi state); UI chỉ ẩn/hiện nút. Đăng nhập dùng token ký HMAC (`AUTH_TOKEN_SECRET`) để nhiều instance serverless dùng chung phiên.
 
-- Chạy cho mọi ticket, trước duplicate/classification.
-- `risk_level=NONE|UNCLEAR|EMERGENCY`; nhận dạng tiếng Việt có/không dấu và phủ định.
-- Bậc 1 → `VERIFYING + EMERGENCY_PENDING_BQL`, dừng luồng thường; không draft, không phòng ban.
-- Bậc 2 → `VERIFYING + SAFETY_REVIEW_REQUIRED`; BPTN chỉ được: xác nhận an toàn có lý do, nâng khẩn cấp, hoặc yêu cầu bổ sung.
-- Nội dung bổ sung làm pipeline chạy lại safety. Quá hạn safety-context không được tự coi là an toàn.
-- LLM chỉ nâng, không hạ kết quả rule.
+## 3. Functional requirements hiện hành
 
-### FR-PRIORITY-001 — Priority có thể giải thích
+### FR-SAFETY-001 — Safety first, ngữ nghĩa do Agent
+- Chạy cho mọi ticket, bước `2b`, trước phân loại và trước kiểm tra dữ liệu thiếu. `risk_level=NONE|UNCLEAR|EMERGENCY`.
+- **Bất biến người dùng (plan 06 Q01/Q30):** hiểu ngữ nghĩa (phủ định, "hình như", nhờ việc vs báo nguy) là việc của Agent; luật cố định + từ vựng dữ liệu (`lexicon.yaml`) chỉ là lưới sàn hẹp cho tín hiệu rõ ràng. CẤM vá ngữ nghĩa bằng thêm/bớt regex.
+- Bậc 1 → `VERIFYING + EMERGENCY_PENDING_BQL`: không draft, không phòng ban; chỉ BQL xử lý; `resume()`/job không gỡ.
+- Bậc 2 → `VERIFYING + SAFETY_REVIEW_REQUIRED`: BPTN có đúng ba lựa chọn (xác nhận an toàn có lý do, nâng khẩn cấp, yêu cầu bổ sung); quá 4 giờ lịch leo thang BQL.
+- Bổ sung của cư dân được quét safety lại; LLM chỉ nâng, không hạ.
 
-- `HIGH`: mất đèn tại lối đi chung/sảnh/cầu thang/hầm/lối thoát; hoặc vệ sinh gây cản trở/trơn trượt lối đi.
-- `MEDIUM`: việc kỹ thuật/vệ sinh thông thường đã đủ rõ; cũng là mặc định khi vị trí chưa đủ để áp rule khác.
-- `LOW`: vệ sinh định kỳ, chưa ảnh hưởng trực tiếp đến sử dụng khu vực chung.
-- Duplicate count ≥ 3 và nhóm dễ tổn thương là tín hiệu tăng nặng theo CR-03.
-- BPTN/BQL được sửa với lý do và audit. `HIGH` chỉ nổi bật và lên đầu danh sách, không tự gửi thông báo ngay.
+### FR-AGENT-001 — Agent đề xuất, luật làm sàn
+- Phân loại (bước 3), đề xuất phòng ban và priority; hiểu vị trí tự nhiên ("t3", "lầu 3", "tầng ba" → tầng 3; prompt `agent-prompt/10`).
+- Agent không dùng được ⇒ luật quyết, cờ `AGENT_FALLBACK`; Agent và luật lệch ⇒ cờ `AGENT_DISAGREEMENT` (chỉ nhân viên thấy).
+- Đầu ra LLM luôn được kiểm với catalog (SPEC-P10); không khớp từ khoá trích dẫn để chặn.
+- Nhật ký gọi mô hình: `/api/v1/mo/ai-logs`; latency và token từng lần gọi ghi `data/logs/latency.jsonl`.
 
-### FR-DUPLICATE-001 — Gộp an toàn
+### FR-PRIORITY-001 — Priority giải thích được
+- `HIGH|MEDIUM|LOW`, nguồn `AGENT_RULE|AGENT_LLM|HUMAN_OVERRIDE`; luật PRI-H1/H2/M1/M2/L1/D0 (CR-03 §7); báo trùng ≥ 3 tăng mức. BPTN/BQL sửa phải có lý do và audit.
 
-- Đề xuất trùng khi cùng loại và vị trí trong cửa sổ 48 giờ; BPTN xác nhận hoặc bác.
-- Khi gộp: ticket con `MERGED`, liên kết hai chiều, raw không đổi; bổ sung mới được liên kết với ticket gốc.
-- BPTN/BQL có thể hoàn tác với lý do. Khi ticket gốc bị hủy, ticket con trở lại `RECEIVED`.
-- Ticket khẩn cấp chỉ BQL được gộp.
+### FR-DUPLICATE-001 — Trùng, gộp, tách
+- Nghi trùng: cùng loại và vị trí trong 48 giờ; BPTN xác nhận/bác; ticket con `MERGED` (liên kết hai chiều, hoàn tác được); ticket gộp đi theo trạng thái ticket gốc.
+- Ticket gần một ca khẩn cấp đang mở: chỉ liên kết (`related_ticket_ids`), mặc định không giữ ticket thường (`hold_near_open_emergency: false`); BQL thấy "Nghi trùng với ca khẩn cấp …" và gộp qua `POST /bql/tickets/{id}/emergency/merge`.
+- Phản ánh có hai việc (vệ sinh + kỹ thuật) cùng vị trí: Agent tự tách thành hai ticket (`auto_split_mixed_reports: true`), ticket gốc giữ việc thứ nhất; hoàn tác được.
 
-### FR-ASSET-001 — Asset kỹ thuật
+### FR-REVIEW-INFO-001 — Thiếu thông tin
+- `MISSING_INFO` thường do BPTN gỡ: nhập vị trí/thông tin cư dân cung cấp + lý do rồi chuyển phòng ban hoặc "để Agent phân loại"; vẫn thiếu vị trí thì không route. Cư dân vẫn tự bổ sung được.
+- `NEED_INFO` do an toàn (T06): chủ cư dân, BPTN không gỡ thay, leo thang BQL sau 12 giờ lịch.
 
-- `PB-TEC-01` cần đúng một asset hoặc `ONSITE_BY_BPTN`; `PB-CLN-01` là `NOT_APPLICABLE`.
-- Không rõ/nhiều asset → `VERIFYING + ASSET_UNCLEAR`.
-- BPTN chọn onsite phải ghi lý do, cờ và audit; Agent không tự đoán.
+### FR-ASSET-001 — Asset kỹ thuật theo khu vực
+- Mỗi khu vực một asset đèn đang dùng (13 khu vực trong `catalog.yaml`); khớp theo khu vực của vị trí, không theo tòa-tầng. `SIM-ASSET-LIGHT-001…006` đã `RETIRED_SIMULATED`, không chọn được.
+- `PB-CLN-01`: `NOT_APPLICABLE`. Kỹ thuật không khớp → `VERIFYING + ASSET_UNCLEAR`; BPTN chọn asset hoặc `ONSITE_BY_BPTN` (lý do + cờ + audit).
 
-### FR-MATERIAL-001 — Material và stock
-
-- Tồn kho đủ → tiếp tục.
-- Biết chắc thiếu → `ON_HOLD + WAITING_MATERIAL`; chưa giao phòng ban.
-- Kho nhập đủ → hệ thống tự chạy lại toàn bộ `can_route`.
-- Tồn kho không rõ → gắn `STOCK_CHECK_ON_ACCEPT` và đi tiếp theo D-05 của CR-03; đây là quyết định candidate cần sign-off.
-- Thiếu sau khi bắt đầu → `IN_PROGRESS → ON_HOLD`; đủ lại → `ON_HOLD → IN_PROGRESS`.
+### FR-MATERIAL-001 — Vật tư và kho
+- Mỗi khu vực một loại bóng (`area_materials`); vệ sinh dùng `playbook_materials`. Bước 7 tra tồn kho theo khu vực.
+- Đủ → tiếp; biết chắc thiếu → `ON_HOLD + WAITING_MATERIAL`, chưa giao; không rõ → cờ `STOCK_CHECK_ON_ACCEPT` và đi tiếp (D-05).
+- Phòng ban bấm **"Yêu cầu vật tư"** (`POST …/material-shortage`) khi thiếu; Kho thấy phiếu cần nhập, bấm "Nhập đủ" (`POST /mo/warehouse/stock/{item_code}`); engine chạy lại từ bước 6; thông báo kho (`StockAlert`) cho cả hai phòng ban. **Kho không duyệt xuất** (không có nút duyệt).
+- Khi hoàn thành, phòng ban ghi **số thực dùng một lần** (`POST …/material-usage`): mã thuộc phòng ban, số nguyên ≥ 1; Vệ sinh được để rỗng, Kỹ thuật ≥ 1; lưu một giao dịch, kho trừ theo delta, lỗi thì rollback toàn phần. Không còn đối chiếu định mức/đề xuất Agent (plan 15–16).
+- Hết hàng/Sắp hết/An toàn/Chưa kiểm kê tính theo `min_qty` từng mã (plan 19).
 
 ### FR-ROUTE-001 — Giao phòng ban
-
-`can_route=true` khi review hợp lệ, asset là `FOUND|ONSITE_BY_BPTN|NOT_APPLICABLE`, `proposed_department_id` tồn tại và rủi ro không phải emergency. Khi đó hệ thống đặt `department_id`, tạo `WorkOrderDraft` và chuyển `RECEIVED → ROUTED`. `assignee_id` luôn `null`.
+`can_route=true` khi review hợp lệ, asset là `FOUND|ONSITE_BY_BPTN|NOT_APPLICABLE`, đã có `proposed_department_id` và rủi ro không phải emergency. Khi đó đặt `department_id`, tạo `WorkOrderDraft`, `RECEIVED → ROUTED`. Ngoài ca của phòng ban (`catalog.yaml` `departments.shifts`) giữ `ROUTED + OUT_OF_HOURS`; chưa nhận sau 2 giờ nhắc lại (`NOT_ACCEPTED`).
 
 ### FR-DEPARTMENT-001 — Nhận và thực hiện
+- Bấm nhận cả phòng (`ROUTED → IN_PROGRESS`); chia người ngoài hệ thống.
+- Trả sai phòng ban trước khi làm: về `VERIFYING + WRONG_DEPT`, lý do bắt buộc, lần thứ 2 báo BQL. Sau khi bắt đầu: `WRONG_DEPT_AFTER_START`, giữ dữ liệu, BQL chuyển về BPTN hoặc bác.
+- Hoàn thành cần: checklist đủ, ảnh ≥ 1, vật tư đã nhập đúng luật, không blocker; ghi chú xử lý là tuỳ chọn.
 
-- `ROUTED → IN_PROGRESS` khi phòng ban bấm nhận.
-- Sai phòng ban trước khi làm: trả `VERIFYING + WRONG_DEPT`, lý do bắt buộc, tăng bộ đếm; từ 2 lần báo BQL.
-- Sai sau khi làm: `VERIFYING + WRONG_DEPT_AFTER_START`, giữ dữ liệu; BQL chuyển về BPTN hoặc bác báo cáo.
-- Phòng ban nộp checklist hoàn tất, ghi chú kết quả, vật tư thực dùng hoặc N/A, và ít nhất một ảnh.
+### FR-REVIEW-001 — Nghiệm thu và kết thúc
+- Đủ 6 điều kiện (`ReadinessEvaluation`) → `READY_FOR_REVIEW`. BQL duyệt → `CLOSED`; trả lại → `IN_PROGRESS + REWORK` **về chính phòng ban đang giữ**, lý do bắt buộc, reset checklist, từ lần 3 leo thang.
+- Chỉ BQL hủy (lý do + audit); ticket `MERGED` phải hoàn tác trước. Khẩn cấp: BQL hạ báo nhầm, gộp hoặc đóng `EMERGENCY_HANDLED` với ghi chú.
+- Rating 1–5, một lần sau `CLOSED`; không đổi state/priority/phòng ban. Không reopen; chưa hài lòng → ticket mới (`follow_up_of`).
 
-### FR-REVIEW-001 — Kiểm duyệt và kết thúc
-
-- Đủ hồ sơ → `READY_FOR_REVIEW`.
-- BQL duyệt → `CLOSED`; trả lại → `IN_PROGRESS + REWORK`, lý do bắt buộc, reset checklist, tăng `rework_count`; từ 3 lần leo thang.
-- Chỉ BQL hủy từ bảy trạng thái chưa kết thúc trong CR-03; lý do và audit bắt buộc. Ticket `MERGED` phải undo trước.
-- Rating 1–5 sao, comment tùy chọn, một lần sau `CLOSED`; không đổi state/priority/phòng ban.
-- Không reopen. Cư dân chưa hài lòng tạo ticket mới; BQL có thể liên kết `follow_up_of`.
+### FR-REPORT-001 — Báo cáo
+- Hiệu suất Agent (đề xuất đúng/sai, số đúng và số sai cạnh nhau) ở Tiếp nhận; hiệu suất phòng ban và báo cáo từ DB (`GET /bql/reports/performance`) ở BQL; kho có xếp hạng dùng vật tư N ngày (`GET /mo/warehouse/usage`).
 
 ## 4. Canonical state machine
 
-Các state hợp lệ: `RECEIVED`, `VERIFYING`, `NEED_INFO`, `ON_HOLD`, `ROUTED`, `IN_PROGRESS`, `READY_FOR_REVIEW`, `MERGED`, `CLOSED`, `CANCELLED`. Không có state `EMERGENCY`, `CHỜ XÁC MINH` hoặc `EXCEPTION` trong candidate. Ý nghĩa trước đây của xác minh/ngoại lệ được biểu diễn bằng `VERIFYING` cùng `reason_code` và `blocker_owner_role`.
-
-Transition allowlist dùng T01–T23 trong CR-BPTN-03 §4. Mọi cặp ngoài allowlist → `INVALID_TRANSITION`; actor sai → `ACTION_DENIED`, có audit và không đổi state.
+10 state: `RECEIVED`, `VERIFYING`, `NEED_INFO`, `ON_HOLD`, `ROUTED`, `IN_PROGRESS`, `READY_FOR_REVIEW`, `MERGED`, `CLOSED`, `CANCELLED`. Không có `EMERGENCY`/`CHỜ XÁC MINH`/`EXCEPTION`. Transition allowlist T01–T23 (CR-03 §4) cài thành bảng `TRANSITIONS` (25 dòng) trong `engine.py`; cặp ngoài bảng → `INVALID_TRANSITION`, actor sai → `ACTION_DENIED` (audit, không đổi state). Blocker (`ReasonCode` + `BlockerOwner`) giải thích vì sao ticket dừng; mỗi ticket tối đa một blocker mở.
 
 ## 5. Pipeline
 
 ```text
-ingest/minimum data
-→ safety
-→ duplicate
-→ playbook + department + priority
-→ review khi cần
-→ asset
-→ material/stock
-→ can_route + draft + ROUTED
-→ department accept/execute/report
-→ readiness
-→ BQL close/rework/cancel
+2b an toàn → 2 dữ liệu tối thiểu → 3 phân loại + phòng ban + priority → 4 trùng/tách
+→ 5 review → 6 asset → 7 vật tư/kho → 8 can_route + draft + ROUTED
+→ phòng ban nhận/làm/báo → 10 readiness → BQL đóng / trả làm lại / hủy
 ```
-
-Một ticket chỉ có một blocker mở. Blocker được gắn owner `RESIDENT|BPTN|DEPARTMENT|WAREHOUSE|BQL|SYSTEM` để biết ai phải hành động tiếp.
+Gỡ blocker thì chạy lại từ bước tương ứng (CR-03 §5.2, `maintenance.md` §2).
 
 ## 6. NFR và evaluation
 
-- Raw text/ảnh bất biến; bổ sung append-only; audit cho transition và override.
+- Raw text/ảnh bất biến; bổ sung append-only; mọi ghi qua `_mutate` (bản sao sâu → audit → commit, fail closed) và `engine.lock`.
 - Nội dung cư dân là input không tin cậy, không phải chỉ dẫn cho Agent.
-- Prototype deterministic/replayable, hiển thị nhãn dữ liệu mô phỏng.
-- Bộ safety eval có ít nhất 40 câu, gồm bẫy phủ định/từ đa nghĩa/có và không dấu; mục tiêu không bỏ sót Bậc 1.
-- Acceptance catalog active là AC-01–AC-18 của CR-BPTN-03.
-- Dataset 12 ticket của v0.3 không còn là giới hạn test duy nhất; giữ fixture tương thích và bổ sung safety/priority/transition cases theo CR-03.
+- Ảnh: `private, no-cache` + `ETag`; upload kiểm quyền trước khi xét file. Danh sách ~0,2 s trên Supabase (cache `list()` theo `xmin`).
+- Test: pytest (mặc định `LLM_MODE=mock`), vitest cho portal, ruff; số đo mới nhất ghi ở `brain4agent/changelog.md`. Eval Agent thật: `scripts/agent_live_eval.py`; báo cáo [`../evaluation.md`](../evaluation.md), chạy ở [`eval/runs/`](eval/runs/).
+- Acceptance chuẩn: AC-01–AC-18 của CR-03 + safety ≥ 40 câu có nhãn (0 bỏ sót Bậc 1, đo cả báo nhầm).
 
-## 7. Open decisions trước khi freeze
+## 7. Trạng thái quyết định (CR-03 §17)
 
-- D-02: thời hạn safety review 4 giờ và bổ sung trong safety context 12 giờ.
-- D-03: ngưỡng ba phản ánh trùng để tăng priority.
-- D-05: tồn kho `UNKNOWN` có được route với `STOCK_CHECK_ON_ACCEPT` hay phải chờ xác minh.
-- D-08: tên người phê duyệt và bằng chứng sign-off CR-BPTN-03.
-- D-09: nguồn xác định `OUT_OF_HOURS` sau khi bỏ duty/lịch trực; phải dùng cấu hình mô phỏng rõ ràng hoặc bỏ reason này.
+| ID | Nội dung | Trạng thái |
+|---|---|---|
+| D-02 | Bậc 2: 4 giờ lịch; bổ sung khi nghi nguy hiểm: 12 giờ lịch | Đã cài (`sla_config`) |
+| D-03 | Ngưỡng báo trùng nâng priority = 3 | Đã cài |
+| D-05 | Tồn kho không rõ → đi tiếp với `STOCK_CHECK_ON_ACCEPT` | Đã cài |
+| D-08 | Người duyệt: leader Lê Thị Châm Anh, phạm vi MVP 04/10 + D-01–D-07 | Duyệt (ghi nhận 2026-10-03); chưa là sign-off cho gate Day05/Day06 |
+| D-09 | Phân loại trước kiểm tra trùng; `2b` vẫn trước phân loại | Đã cài |
+| (OUT_OF_HOURS) | Nguồn: ca làm việc `departments.shifts` trong `catalog.yaml`, không dùng duty/lịch trực | Đã cài |
+| D-13 | Không gán nhân viên | Đã cài (`set_assignee` luôn `ACTION_DENIED`) |
+
+## 8. Ngoài phạm vi
+
+CSKH; gán nhân viên; duty/capacity theo team; lịch trực/kho thật; tối ưu nhân sự; thanh toán/hóa đơn/báo giá; chatbot; phân tích ảnh bằng AI; reopen; tích hợp hệ thống vận hành thật; loại việc ngoài hai playbook (vd cơ khí thang máy — ngoài phạm vi, giữ `OUT_OF_SCOPE`).
 
 ---
 

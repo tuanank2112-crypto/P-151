@@ -1,13 +1,23 @@
 # MaintenanceOps Agent — Data Contract v1
 
-> **Document status:** DRAFT · CHANGE CONTROL — cross-review với Playbook v1.2-candidate
-> **Version:** 1.2-candidate
-> **Ngày cập nhật:** 2026-10-01
+> **Document status:** IMPLEMENTED (phần Active, v1.17.9) · phần Historical giữ để truy vết
+> **Version:** 1.2-implemented (phần Active) · 1.2-candidate (lịch sử)
+> **Ngày cập nhật:** 2026-10-17 (phần Active)
 > **MVP baseline:** v0.3/Data Contract v1.1 đã freeze; v0.6/Data Contract v1.2 candidate theo `CR-BPTN-03`
 > **Freeze history:** v1.1 — 28/09/2026; v1.2 chưa freeze
 > **Owner duy nhất:** Agent B — AI/Data Owner  
 > **Business reviewer:** Agent A — Product/BA Owner  
 > **Data classification:** `SIMULATED` — toàn bộ instance, workflow, rule, checklist, vật tư, bằng chứng, định mức và kết quả trong contract này là dữ liệu mô phỏng; không phải dữ liệu hoặc quy trình vận hành thật của Vinhomes.
+
+## Hiện trạng thực tế (audit 2026-10-17, đối chiếu code v1.17.9)
+
+> Các câu "CR-03 `PROPOSED` / chưa có người duyệt / NOT READY" trong phần còn lại của file là **lịch sử tại 2026-10-01**. Hiện trạng:
+> - **Duyệt:** CR-BPTN-03 được duyệt cho phạm vi MVP 04/10 và D-01–D-07 (D-08: leader Lê Thị Châm Anh, ngày duyệt báo 2026-10-02, ghi nhận 2026-10-03). Chưa phải sign-off toàn bộ gate Day05/Day06.
+> - **Code:** engine CR-03 đã cài (xem [`maintenance.md`](maintenance.md)); phiên bản dự án 1.17.9. Dữ liệu chạy trên PostgreSQL/Supabase; production ở Vercel (xem [README](../README.md)).
+> - **UI:** UI hiện hành là [`portal/`](portal.md) (Next.js, gọi backend `/api/v1`) và PWA [`src/mobile/`](mobile.md). UI tĩnh `src/web/` đã xoá (2026-10-12); [`web.md`](web.md) chỉ còn là lịch sử.
+> - **Vai trò thật trên UI:** cư dân, Tiếp nhận (BPTN), Vệ sinh, Kỹ thuật, Quản lý (BQL), Kho. **Kho có màn hình** (tồn kho, duyệt cấp vật tư), khác câu "Kho không có màn hình" ở bản 0.6.
+> - **Agent:** LangGraph + LLM (`gpt-6-luna` trên production); ngữ nghĩa do LLM suy luận, tầng an toàn chỉ là lưới sàn hẹp (luật + từ vựng).
+> - **Khi lệch:** theo thứ tự code → `CR-BPTN-03.md` → file này.
 
 ## Changelog
 
@@ -20,155 +30,125 @@
 | 1.1-freeze | 2026-09-28 | Đóng OD-09 và đưa Data Contract v1.1 vào frozen baseline MaintenanceOps MVP v0.3 | FROZEN |
 | 1.2-candidate | 2026-10-01 | Thay team/duty contract bằng department flow; thêm safety, priority, blocker, merge, resident addition, close/cancel/rating | DRAFT · CHỜ PHÊ DUYỆT CR-03 |
 | 1.2-p14 | 2026-10-10 | `Asset` theo KHU VỰC (plan 14): thêm `name`, `area`; `location_normalized` chỉ còn ở asset `RETIRED_SIMULATED`; lookup so khu vực của vị trí; mỗi khu vực ≤1 asset active. Xem §5.4, VAL-ASSET-001 | ÁP DỤNG (người dùng chốt 2026-10-10) |
+| 1.2-implemented | 2026-10-17 | Viết lại Active theo `models.py`/`enums.py` (17 ReasonCode, split, StockAlert, RatingDetail, 6 điều kiện readiness) | HIỆN HÀNH |
 
 ---
 
-# Active Data Contract v1.2 candidate
+# Active Data Contract v1.2 — hiện hành (khớp `src/maintenance/models.py`, `SCHEMA_VERSION="1.2"`, audit 2026-10-17)
 
-## A. Canonical enums
+> Nguồn chân lý là code: [`src/maintenance/enums.py`](../src/maintenance/enums.py), [`models.py`](../src/maintenance/models.py), [`store/base.py`](../src/maintenance/store/base.py). Mọi model là Pydantic `extra="forbid"`; sai schema là `ValidationError` lúc nạp. Khi tài liệu này lệch code thì code thắng và ghi drift tại đây.
+
+## A. Canonical enums (`enums.py`)
 
 ```text
-TicketStatus = RECEIVED | VERIFYING | NEED_INFO | ON_HOLD | ROUTED |
-               IN_PROGRESS | READY_FOR_REVIEW | MERGED | CLOSED | CANCELLED
-
-RiskLevel = NONE | UNCLEAR | EMERGENCY
-Priority = HIGH | MEDIUM | LOW
+TicketStatus = RECEIVED | VERIFYING | NEED_INFO | ON_HOLD | ROUTED | IN_PROGRESS | READY_FOR_REVIEW | MERGED | CLOSED | CANCELLED
+  (terminal: CLOSED, MERGED, CANCELLED; side: NEED_INFO, ON_HOLD)
+RiskLevel = NONE | UNCLEAR | EMERGENCY          SignalStatus = PRESENT | ABSENT | UNCLEAR     DetectedBy = RULE | LLM
+Priority = HIGH | MEDIUM | LOW                  PrioritySource = AGENT_RULE | AGENT_LLM | HUMAN_OVERRIDE
 ClosureKind = NORMAL | EMERGENCY_HANDLED
-AssignmentScope = DEPARTMENT_ONLY
-AssetResolution = FOUND | ONSITE_BY_BPTN | NOT_APPLICABLE | NOT_FOUND | AMBIGUOUS
-StockStatus = SUFFICIENT | INSUFFICIENT | UNKNOWN | NOT_APPLICABLE
+Department = DEPT_CLEANING | DEPT_TECHNICAL
+BlockerOwner = RESIDENT | BPTN | DEPARTMENT | WAREHOUSE | SYSTEM | BQL
+ServiceCategory = VE_SINH | KY_THUAT | UNKNOWN  TicketType = COMMON_AREA_CLEANING | COMMON_AREA_LIGHTING | UNKNOWN
+PlaybookId = PB-CLN-01 | PB-TEC-01              ReviewStatus = NOT_REQUIRED | PENDING_REVIEW | CONFIRMED
+AssetResolution = FOUND | ONSITE_BY_BPTN | NOT_APPLICABLE
+AssetLookupStatus = MATCHED | NOT_FOUND | AMBIGUOUS | LOCKED_BY_BPTN | CHECK_ONSITE | NOT_APPLICABLE
+MaterialStockStatus = SUFFICIENT | INSUFFICIENT | UNKNOWN | NOT_APPLICABLE
+TicketFlag = ASSET_CHECK_ONSITE | STOCK_CHECK_ON_ACCEPT | AGENT_FALLBACK | AGENT_DISAGREEMENT
+ActorRole = SYSTEM | AGENT | RESIDENT | BPTN | DEPARTMENT | WAREHOUSE | BQL | QA_INTERNAL
 ```
 
-`ReasonCode` active gồm `MISSING_INFO`, `DUPLICATE`, `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE`, `PENDING_REVIEW`, `ASSET_UNCLEAR`, `WRONG_DEPT`, `SAFETY_REVIEW_REQUIRED`, `EMERGENCY_PENDING_BQL`, `WRONG_DEPT_AFTER_START`, `WAITING_MATERIAL`, `BLOCKED_ONSITE`, `OUT_OF_HOURS`, `NOT_ACCEPTED`, `REWORK`.
+`ReasonCode` (17): `MISSING_INFO`, `DUPLICATE`, `CATEGORY_UNCLEAR`, `OUT_OF_SCOPE`, `PENDING_REVIEW`, `ASSET_UNCLEAR`, `WAITING_MATERIAL`, `OUT_OF_HOURS`, `NOT_ACCEPTED`, `WRONG_DEPT`, `BLOCKED_ONSITE`, `REWORK`, `SAFETY_REVIEW_REQUIRED`, `EMERGENCY_PENDING_BQL`, `WRONG_DEPT_AFTER_START`, `WAITING_EMERGENCY` (ON_HOLD, chủ SYSTEM, plan 06).
+Nhóm blocker: `BPTN_REASONS` (BPTN gỡ), `SAFETY_REASONS` (không `resume()`/job nào gỡ), `BQL_REASONS` (BPTN bị `ACTION_DENIED`).
 
-## B. Ticket
+Phiên bản: `SCHEMA_VERSION="1.2"`, `PLAYBOOK_VERSION="1.1"`.
+
+## B. Ticket (`models.Ticket`)
 
 | Field | Rule |
 |---|---|
-| `ticket_id` | Required; synthetic fixture dùng `SIM-TKT-*` |
-| `resident_raw_text`, `resident_raw_images[]` | Required theo ingest policy; immutable + integrity marker |
-| `status` | Một giá trị trong `TicketStatus` |
-| `reason_code`, `blocker_owner_role` | Nullable; required theo state/reason matrix; chỉ một blocker mở |
-| `service_category`, `playbook_id`, `playbook_version` | Proposal/confirmed value theo pipeline |
-| `proposed_department_id`, `department_id` | `SIM-DEPT-*`; department_id required từ `ROUTED`, trừ emergency closure |
-| `assignee_id` | Nullable column nhưng validator bắt buộc `null` |
-| `priority`, `priority_source`, `priority_rule_id`, `priority_reason` | Required sau classification; override cần actor/reason/audit |
-| `risk_level`, `risk_signals[]`, `risk_amplifiers[]` | Required sau safety scan |
-| `safety_cleared_by/at`, `safety_clear_reason`, `safety_context` | Có điều kiện theo action safety |
-| `merged_into`, `merged_children[]`, `related_ticket_ids[]`, `duplicate_rejected_of[]` | Liên kết hai chiều và undo merge |
-| `duplicate_count`, `wrong_department_return_count`, `rework_count` | Số nguyên không âm; ngưỡng lấy từ config |
-| `follow_up_of`, `closure_kind` | Có điều kiện; emergency close không cần department |
-| `escalated`, `flags[]` | Bao gồm `ASSET_CHECK_ONSITE`, `STOCK_CHECK_ON_ACCEPT` |
-| `created_at`, `updated_at`, `closed_at`, `cancelled_at` | ISO-8601; set theo event |
+| `ticket_id`, `raw: RawTicket`, `raw_integrity_marker`, `resident_id`, `source_revision`, `dataset_version` | Required. `RawTicket` = `ticket_id`, `created_at`, `original_description` (≤ `MAX_DESCRIPTION_CHARS`, quá dài là 422, không cắt), `original_evidence_refs`, `channel`. Bất biến |
+| `status` | `TicketStatus` |
+| `blocker: Blocker \| None` | `code`, `owner_role`, `since`, `resume_step` (2–8), `auto_retry_count`, `next_retry_at`, `escalate_at`, `escalated`, `eta`, `public_message`, `internal_note`, `related_ticket_id`, `resolved_at/by`. Mã được phép theo `BLOCKER_CODES_BY_STATUS`; trạng thái cần blocker theo `STATUSES_REQUIRING_BLOCKER` |
+| `proposed_department_id`, `department_id` | `Department`; `department_id` chỉ đặt ở bước 8; bắt buộc từ `ROUTED` trở đi, trừ `CLOSED + EMERGENCY_HANDLED` |
+| `assignee_id` | Kiểu `None`: giá trị khác null là `ValidationError` |
+| `locked_fields: LockedFields` | BPTN khoá `category`, `location`, `asset_id`, `department` |
+| `review_status`, `asset_resolution` | Bước 5, bước 6 |
+| `flags[]` | `TicketFlag` |
+| `risk_level`, `risk_signals[]`, `safety_cleared_by/at/reason`, `safety_context` | Ba field `safety_cleared_*` cùng đặt hoặc cùng null; `safety_context` chỉ true khi `NEED_INFO` |
+| `priority`, `priority_source`, `priority_rule_id`, `priority_reason` | `priority` và `priority_source` cùng đặt/null; `HUMAN_OVERRIDE` bắt buộc `priority_reason` |
+| `merged_into`, `merged_children[]`, `related_ticket_ids[]`, `duplicate_count` | `MERGED` iff `merged_into`; không tự liên kết; không lặp id |
+| `split_from`, `split_children[]`, `split_category` | Tách phản ánh hai việc: `split_category` đặt iff ticket thuộc một lần tách; không đồng thời có `split_from` và `split_children`; `split_category` ∈ `VE_SINH\|KY_THUAT` |
+| `follow_up_of`, `closure_kind`, `closed_by/at`, `cancel_reason` | `CLOSED` iff `closed_by`+`closed_at`+`closure_kind`; `CANCELLED` bắt buộc `cancel_reason` |
+| `rework_count`, `wrong_department_return_count`, `dispatched_at`, `accepted_at` | Số nguyên ≥ 0 / mốc thời gian |
+| `rating` | 1–5, ghi một lần (guard ở `engine.rate`) |
+| `playbook_id`/`asset_id` (trên `Case`/draft) | Ticket vệ sinh phải có `asset_id=null` |
+
+Chi tiết đánh giá nằm ở bảng riêng: `RatingDetail(ticket_id, tags[], comment, created_at)` (`maintops.rating_details`).
 
 ## C. ResidentAddition
 
-```text
-addition_id: SIM-ADD-*
-ticket_id: SIM-TKT-*
-text: string | null
-image_refs: string[]
-created_by_role: RESIDENT
-created_at: datetime
-immutable: true
-```
+`addition_id: SIM-ADD-*`, `ticket_id`, `content` (không rỗng, ≤ `MAX_DESCRIPTION_CHARS`), `submitted_by`, `submitted_at`, `merged_from?`, `copied_from?` (không cùng đặt). Append-only; ảnh bổ sung là `EvidenceRecord` nguồn `RESIDENT_ORIGINAL`. Sau append hệ thống chuyển theo T03 và quét safety lại.
 
-Chỉ append khi ticket `NEED_INFO`. Ít nhất text không rỗng hoặc một ảnh. Không update/delete raw hoặc addition đã ghi. Sau append, hệ thống chuyển theo T03 và chạy lại safety.
+## D. RiskSignal và Safety
 
-## D. RiskSignal và SafetyDecision
-
-`RiskSignal` gồm `signal_id`, `status=PRESENT|ABSENT|UNCERTAIN`, `source_quote`, `detected_by=RULE|LLM`. Kết quả rule `PRESENT` không được LLM hạ xuống. `SafetyDecision` lưu action, actor, reason/note, before/after risk/blocker, timestamp và audit reference.
+`RiskSignal`: `signal_id` ∈ `S-nn | T2-0n`, `status`, `source_quote` (nguyên văn, giữ dấu; S-14 nối hai đoạn bằng ` | `), `detected_by`, `rule_id` (`S-xx|T2-xx|B-01|B-02|B-04|LLM`). Rule `PRESENT` không bị LLM hạ. Mỗi quyết định người (`SAFETY_CONFIRM_SAFE`, `SAFETY_ESCALATE`, `SAFETY_REQUEST_INFO`, `EMERGENCY_CLOSE`, `EMERGENCY_DOWNGRADE`) ghi `AuditEvent` có lý do.
 
 ## E. AgentClassificationProposal
 
-```text
-proposal_id
-ticket_id
-service_category
-playbook_id
-playbook_version
-proposed_department_id
-priority
-priority_rule_id
-priority_reason
-asset_id
-asset_resolution
-asset_match_reason
-material_plan[]
-stock_status
-can_route
-can_route_failures[]
-model_or_rule_version
-created_at
-```
-
-Không còn `routing_team_id`, `duty_lookup_status`, `duty_source_ref` hoặc team capacity trong active candidate.
+`proposal_id: SIM-ACP-*`, `ticket_id`, `proposal_revision ≥ 1`, `service_category_proposed`, `ticket_type_proposed`, `playbook_id`, `playbook_version="1.1"`, `category_source ∈ AGENT|BPTN_LOCKED|AGENT_SPLIT|AGENT_LLM`, `asset_type?`, `reported_symptom?`, `location_proposed?`, `asset_id?`, `asset_lookup_status`, `asset_match_reason`, `matched_rule_ids[≥1]`, `classification_reason`, `source_references[≥1]`, `created_at`. `ClassificationRecord` thêm `rule_id`, `needs_review` (đề xuất chỉ từ LLM ⇒ bước 5 hỏi BPTN), `proposer`, `notes`. Không còn `routing_team_id`, `duty_lookup_status`, `duty_source_ref`, team capacity.
 
 ## F. WorkOrderDraft
 
-```text
-work_order_draft_id: SIM-WO-*
-ticket_id: SIM-TKT-*
-playbook_id / playbook_version
-department_id: SIM-DEPT-*
-assignment_scope: DEPARTMENT_ONLY
-assignee_id: null
-asset_id: SIM-ASSET-* | null
-checklist_items[]
-planned_materials[]
-stock_status
-flags[]
-readiness_evaluation
-created_at / updated_at
-```
+`work_order_draft_id: SIM-WOD-*`, `ticket_id`, `proposal_id`, `playbook_id/version`, `source_revision`, `draft_revision ≥ 1`, `draft_status="DRAFT"`, `scope_summary`, `matched_rule_ids`, `source_references`, `location`, `asset_id?`, `department_id: Department`, `flags[]`, `assignee_id=null`, `material_stock_status`, `checklist_template_id`, `checklist_item_ids[≥1]`, `material_requirement_mode (TRACKED|N_A)`, `material_gate_status (RECONCILED|NEEDS_CLARIFICATION|N/A)`, `material_line_ids[]`, `evidence_requirements[≥1]`, `readiness_evaluation?`, `non_blocking_warnings[]`. Draft chỉ tạo cùng bước 8 khi `can_route=true`.
 
-Draft chỉ được tạo cùng T13 khi `can_route=true`. Không có active contract cho draft-without-route. Không có assignment mode/team/duty object.
+## G. Asset, vật tư, kho
 
-## G. Asset và vật tư
+- `Asset`: `asset_id: SIM-ASSET-*`, `asset_type=LIGHTING`, `name`, `area` (nhãn của `rules.AREA_PATTERNS`), `location_normalized?` (chỉ asset ngừng dùng), `asset_status ∈ ACTIVE_SIMULATED|RETIRED_SIMULATED`, `linked_playbook_id=PB-TEC-01`, `source_ref`, `synthetic`, `read_only=true`. Mỗi khu vực tối đa một asset ACTIVE (13 khu vực); `SIM-ASSET-LIGHT-001…006` RETIRED.
+- `MaterialCatalogItem`: `item_code: SIM-*`, `item_name`, `unit`, `norm_qty` (số iff `norm_label=SYNTHETIC`), `simulated_stock_qty` (`null` = không rõ), `min_qty` (ngưỡng cảnh báo kho; `null` = không cảnh báo).
+- `MaterialLine`: `material_line_id: SIM-MAT-*`, `planned_qty`, `issued_qty`, `used_qty`, `material_stock_status`, `comparison_results` (0 hoặc đúng 3 phép), `reconciliation_status`. Từ plan 15–16 số **thực dùng** do phòng ban ghi một lần (`material-usage`), không đối chiếu định mức/đề xuất; phép so duy nhất còn chặn là đã dùng ≠ đã xuất mà không có lý do.
+- `StockAlert` (`SIM-SAL-*`, bảng `0005/0006`): `item_code`, `item_name`, `department_id`, `qty_added`, `qty_before`, `qty_after`, `received_by`, `ticket_ids[]` (ticket đang chờ mặt hàng này; engine chạy lại chúng), `acknowledged_by/at`.
+- `MaterialRequestView` (`PVT-<ticket_id>`): view dẫn xuất từ ticket `ON_HOLD + WAITING_MATERIAL`, KHÔNG lưu; `source ∈ AGENT|DEPARTMENT`, `lines[]` (`needed_qty`, `stock_qty`, `shortage_qty`), `status=OPEN`.
 
-`Asset` giữ các field `asset_id`, `asset_type`, `name`, `area`, `location_normalized` (chỉ asset ngừng dùng), `asset_status`, `linked_playbook_id`, `source_ref`, `synthetic=true`, `read_only=true`. Asset ID dùng `SIM-ASSET-*`. Từ plan 14 (2026-10-10) mỗi khu vực một asset đèn — Hành lang, Sảnh thang máy, Cầu thang bộ, Phòng rác — không chia theo tòa-tầng.
+## H. Báo cáo phòng ban, evidence, rating
 
-`MaterialLine` phải tách planned/norm/issued/actual và reconciliation. `stock_status=INSUFFICIENT` trước route tạo `WAITING_MATERIAL`; `UNKNOWN` đặt flag theo D-05 candidate; Agent không duyệt xuất kho hay điều chỉnh tồn.
+- `ChecklistItem` (`SIM-CHK-*`): `status ∈ PENDING|COMPLETED`; template `PB-CLN-01-CHK-V1`, `PB-TEC-01-CHK-V1` (3 mục mỗi template).
+- `EvidenceRecord` (`SIM-EVD-*`): `evidence_type ∈ PROCESSING_NOTE|RESULT_NOTE|SIMULATED_IMAGE|RESIDENT_ORIGINAL`, `source ∈ RESIDENT_ORIGINAL|DEPARTMENT_EXECUTION|SYSTEM_SIMULATED`, `merged_from`/`copied_from` chỉ dùng cho `RESIDENT_ORIGINAL`. Ảnh lưu theo `MO_PHOTO_STORE` (local|supabase), không phân tích nội dung.
+- `ReadinessEvaluation` (bước 10) gồm 6 điều kiện bắt buộc: `department_accepted`, `checklist_complete`, `photo_present` (≥ 1 ảnh), `materials_entered`, `variance_explained`, `no_open_blocker`; `processing_note_present` chỉ ghi nhận (ghi chú tuỳ chọn).
+- Rating: `Ticket.rating` 1–5 một lần + `RatingDetail`.
 
-`StockReceiptEvent` gồm `event_id`, `material_id`, `quantity_or_availability`, `actor_role=WAREHOUSE`, `source_ref`, `synthetic=true`, `occurred_at`. Event kích hoạt việc tính lại toàn bộ route conditions.
+## I. Merge, split, status, audit, notification
 
-## H. Department report, evidence và rating
-
-- `DepartmentReport`: result note bắt buộc; material actual hoặc chuỗi `NOT_APPLICABLE`; checklist states; submitted_at.
-- `EvidenceRecord`: ít nhất một `SIMULATED_IMAGE` hợp lệ để READY; chỉ validate loại/kích thước/số lượng, không phân tích nội dung ảnh.
-- `Rating`: `rating_id`, `ticket_id`, `stars=1..5`, `comment?`, `submitted_by`, `submitted_at`; unique theo ticket/resident và chỉ khi root/target đã `CLOSED`. Immutable sau submit.
-
-## I. Merge, status và audit
-
-- `TicketRelation` lưu source/target/type, created/undone actor/time/reason; merge active phải đối xứng ở view/model.
-- Mỗi transition tạo đúng một `StatusEvent` với from/to, action, actor, reason/note, timestamp, correlation ID.
-- Mỗi action bị từ chối tạo `AuditEvent` nhưng không tạo `StatusEvent` và không đổi state.
-- Hành động cần lý do: safety clear, priority override, wrong-department return/report, merge undo, rework, cancel, emergency close/downgrade và BQL reassignment.
+- Mỗi transition tạo đúng một `StatusEvent` (`SIM-EVT-*`: `from_status`, `to_status`, `reason_code`, `actor_role/id`, `public_message`, `internal_note`, `public`, `created_at`). Action bị từ chối tạo `AuditEvent` (`ACTION_DENIED`), không tạo `StatusEvent`.
+- `AuditEvent` (`SIM-AUD-*`): `entity_type/id`, `action: Action`, `actor_id/role`, `timestamp`, `field_name`, `old_value`, `new_value`, `reason` (không rỗng), `rule_id`, `playbook_version`, `schema_version="1.2"`, `run_id`.
+- `Action` bổ sung cho P1: `AGENT_DECISION`, `BQL_MERGE`, `MERGE_UNDO`, `CREATE_FOLLOW_UP`, `REPORT_WRONG_DEPT`, `BQL_KEEP_DEPARTMENT`, `BQL_REASSIGN_TO_BPTN`, `SPLIT_TICKET`, `SPLIT_UNDO`, `LINK_TICKETS`.
+- `ExecutionSnapshot` (`SIM-SNP-*`): bản sao sâu dữ liệu thực hiện khi BQL gửi ticket đã bắt đầu về BPTN.
+- `Notification` (`SIM-NTF-*`): `type ∈ ticket.status_changed|department.dispatch|department.reconcile_failed|reminder|escalation|emergency.created|safety.review_escalated|material.shortage`, `audience: BlockerOwner`.
+- Tách phản ánh hai việc: `SPLIT_PAIR = (VE_SINH, KY_THUAT)`; ticket gốc giữ phần tử 0, ticket con nhận phần tử 1.
 
 ## J. State and permission validators
 
-1. Chỉ transition T01–T23 trong CR-BPTN-03 §4.1; ngoài allowlist → `INVALID_TRANSITION`.
-2. Actor sai → `ACTION_DENIED`; BPTN không được sửa blocker thuộc BQL.
-3. Chỉ BQL tạo `CLOSED`/`CANCELLED`; BPTN/BQL tạo `MERGED` theo rule.
-4. `EMERGENCY_PENDING_BQL` không được auto-resume/job gỡ.
+1. Chỉ transition trong bảng `TRANSITIONS` (CR-03 §4.1); ngoài bảng → `INVALID_TRANSITION`.
+2. Actor sai → `ACTION_DENIED`; BPTN bị chặn khi ticket mang blocker thuộc `BQL_REASONS`.
+3. Chỉ BQL tạo `CLOSED`/`CANCELLED`.
+4. Blocker `SAFETY_REASONS` không bị `resume()`/job gỡ.
 5. `ROUTED|IN_PROGRESS|READY_FOR_REVIEW|CLOSED` cần `department_id`, trừ `CLOSED + EMERGENCY_HANDLED`.
 6. `SET_ASSIGNEE` luôn bị từ chối; `assignee_id` luôn null.
-7. `READY_FOR_REVIEW` cần checklist complete, result note, material actual/N-A, ≥1 image, reconciliation complete và không blocker mở trừ REWORK theo transition.
-8. `MERGED` không hủy trực tiếp; undo trước. Không có transition reopen.
-9. Resident view dùng allowlist và loại bỏ risk/reason/internal/material/assignee/retry data.
+7. Mọi ghi qua `_mutate` (bản sao sâu → audit → commit, fail closed) và giữ `engine.lock`; mọi đổi trạng thái qua `_apply_transition`.
+8. `MERGED` không hủy trực tiếp; hoàn tác trước. Không có transition reopen.
+9. View cư dân dùng allow-list, loại bỏ risk/reason/internal/material/assignee/retry.
+10. Guard vật tư (`material_policy.py`): mã thuộc phòng ban, số nguyên dương, Kỹ thuật ≥ 1; lỗi `material_required`/`material_invalid`.
 
-## K. Removed from active v1.2 candidate
+## K. Persistence
 
-- Entity `DutyAvailability`.
-- `routing_team_id`, `SIM-TEAM-*`, `SIM-DUTY-*`, team capacity và team-only routing.
-- Bốn state v0.3 và `route_status` như bộ quyết định chính.
-- Draft tồn tại khi route không hợp lệ.
-- Evidence ảnh tùy chọn.
-- Reopen fields và transition.
+`CaseRepository` theo `MO_STORE` (`memory` mặc định | `postgres` schema `maintops`, Alembic `0001…0006`); ảnh theo `MO_PHOTO_STORE`. `PostgresRepository.list()` cache theo `xmin`, object từ `list()` chỉ đọc. Serverless dùng `MO_DB_POOL=none`. Xem [`../brain4agent/-data-architecture.md`](../brain4agent/-data-architecture.md).
 
-## L. Contract status
+## L. Đã bỏ khỏi contract hiện hành
 
-Contract này chưa frozen vì D-02/D-03/D-05/D-09 và approver CR-03 chưa chốt. Nếu code nền `a305fc0` khác schema/transition trên, ghi implementation drift; không sửa contract để che drift.
+`DutyAvailability`, `routing_team_id`, `SIM-TEAM-*`, `SIM-DUTY-*`, team capacity; bốn state v0.3 và `route_status` như bộ quyết định chính; draft tồn tại khi route không hợp lệ; evidence ảnh tùy chọn; reopen; `AssignmentScope`/`assignment_mode`; đối chiếu vật tư theo định mức/đề xuất Agent (plan 15).
+
+## M. Contract status
+
+Contract bám code ở `SCHEMA_VERSION=1.2`; D-02/D-03/D-05/D-09 đã cài (xem [`03_lean_prd.md`](03_lean_prd.md) §7). Drift đã biết: `src/main.py` đặt `version="0.5.0-candidate"` cho FastAPI, khác version dự án 1.17.9.
 
 ---
 

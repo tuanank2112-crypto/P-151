@@ -713,3 +713,6 @@ Commit + push plan 12; ảnh xem lại 56 ms > 50 ms; thẩm định độc lậ
 - 16/10 v1.17.7: form Tiếp nhận cho MISSING_INFO (vị trí/thông tin/lý do + Vệ sinh/Kỹ thuật/để Agent). vitest 170. Google Doc cập nhật: [c] xác nhận bỏ Phân tích Agent, [f] "bỏ khung đi" = khung AGENT (production chưa deploy), [g] tách 2 phòng: logic có (agy tách đúng), production luna SCHEMA_INVALID ở 0088. "t3": agy hiểu, luna không ⇒ đề xuất prompt/reasoning, chưa làm.
 - v1.17.8: người dùng chọn sửa prompt (không reasoning_effort) ⇒ `agent-prompt/10` (REF plan 06 + prompt.py + test /10). agy: t3/lầu 3/T5/tầng ba 4/4, G-LIVE mẫu 18/18; pytest 3961. Ruff toàn repo đỏ CÓ SẴN (5 check + 5 format, kể cả dòng 215 test_agent_prompt.py của develop). Chưa đo luna.
 - v1.17.9: người dùng xin file log latency (không hiện cho user) ⇒ `ai_logger.record` ghi JSONL `data/logs/latency.jsonl`, env `MO_LATENCY_LOG`. test_ai_logger 11/11; pytest 3830 pass, 1 fail có sẵn (thiếu psycopg2).
+
+- 2026-10-17: audit 9 tài liệu docs/ theo chapter-09; thêm khối hiện trạng + sửa header (xem changelog [Unreleased]). Chưa viết lại Active PRD/UI theo portal.
+- 2026-10-17 (đợt 2): viết lại Active PRD/UI/data-contract/playbook theo code; chuyển journal/worklog vào docs/, thêm docs/video-demo.md. Còn: Active của 01/02/05, evaluation.md vẫn ở root.
