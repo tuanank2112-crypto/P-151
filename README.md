@@ -379,6 +379,88 @@ Dùng khi muốn dữ liệu và ảnh lưu bền, dùng chung cả nhóm. Xin c
 
 ---
 
+## Hướng dẫn vận hành và rollback
+
+Gồm hai môi trường: **bản online** (Vercel + Supabase) và **bản Docker** trên máy. Thứ tự bắt buộc khi nâng cấp: **ghi mốc quay lui → migrate DB → deploy/build → kiểm tra**.
+
+### 1. Vận hành bản online
+
+| Thành phần | Chạy ở đâu |
+|---|---|
+| Giao diện (Next.js, `portal/`) | Vercel, project `p151-portal` — <https://p151-portal.vercel.app/login> |
+| Backend (FastAPI, `src/`) | Vercel, project `p151-backend` |
+| Dữ liệu và ảnh | Supabase (PostgreSQL schema `maintops`, Storage) |
+
+- Cả hai project Vercel phải đặt vùng chạy **`sin1`** (Singapore, cùng vùng Supabase). Để mặc định `iad1` thì mỗi lời gọi API chậm khoảng 2,4 s thay vì 0,7 s.
+- Biến môi trường bắt buộc của backend online: `MO_STORE=postgres`, `DATABASE_URL` (Session pooler), `MO_PHOTO_STORE=supabase`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, **`AUTH_TOKEN_SECRET`** (thiếu thì mỗi instance tự sinh khoá riêng, đăng nhập sẽ lỗi 401 ngẫu nhiên), **`MO_DB_POOL=none`** (Supabase pooler chỉ cho 15 kết nối; để pool thì backend trả 503). Khoá LLM (`LLM_MODE`, `OPENAI_API_KEY`) chỉ đặt trong biến môi trường của Vercel, không commit. Thiếu khoá LLM thì hệ thống tự rơi về luật cố định.
+- Cờ tính năng: `MO_STOCK_ALERTS=true` (cảnh báo hết hàng), `MO_AGENT_ENABLED` (bật/tắt Agent), `MO_LATENCY_LOG` (ghi thời gian từng lời gọi model; `off` để tắt).
+- Kiểm tra sau mỗi lần deploy (đủ cả ba mới coi là xong): (a) `GET <backend>/health` trả `{"status":"ok",...}`; (b) đăng nhập được ở trang `/login`, mở danh sách phiếu mà không bị 401 xen kẽ; (c) một phản ánh thử đi qua đủ: gửi → phân loại → giao phòng ban.
+- Lưu ý khi deploy bằng CLI: `vercel deploy` chạy trong thư mục có `.git` có thể bị chặn vì tác giả commit không thuộc tài khoản Vercel (bản deploy nằm ở trạng thái Blocked, lệnh treo không báo lỗi). Cách làm: xuất mã nguồn sạch (`git archive HEAD`) ra thư mục tạm, `vercel link` rồi `vercel deploy --prod` từ đó.
+
+### 2. Chạy bản Docker trên máy
+
+1. `cp .env.example .env`. Compose có service `portal` nên **bắt buộc** `SESSION_SECRET`; `.env.example` chưa có dòng này, tự thêm (thiếu thì `docker compose` dừng với lỗi `SESSION_SECRET must be set in .env`):
+   ```bash
+   echo "SESSION_SECRET=$(python -c 'import secrets;print(secrets.token_hex(32))')" >> .env
+   ```
+2. Dùng DB chung (`MO_STORE=postgres`): **chủ DB** chạy migration trước khi bật code mới, vì khi khởi động hệ thống không tự tạo schema:
+   ```bash
+   python -m alembic -c src/maintenance/store/alembic.ini current   # xem revision hiện tại
+   python -m alembic -c src/maintenance/store/alembic.ini upgrade head
+   ```
+3. Build và chạy: `docker compose up -d --build` (hoặc `make up`).
+4. Kiểm tra: `docker compose ps` (`backend` là `healthy`, `portal` là `running`); `curl -s http://localhost:8000/health`; mở <http://localhost:8000/> và đăng nhập tài khoản demo.
+
+### 3. Ghi mốc quay lui TRƯỚC khi nâng cấp
+
+```bash
+git rev-parse --short HEAD                                         # SHA đang chạy ổn, ghi lại
+python -m alembic -c src/maintenance/store/alembic.ini current     # revision DB hiện tại
+tar czf data-backup-$(date +%Y%m%d).tgz data/                      # ảnh upload (PowerShell: Compress-Archive data -DestinationPath data-backup.zip)
+```
+
+Với Supabase: chụp backup từ Dashboard (Database → Backups) hoặc dùng `pg_dump` trước khi `upgrade`. Với Vercel: ghi lại địa chỉ của bản deploy production đang chạy ổn, để quay lại khi cần. Hạ revision (`downgrade`) chỉ đưa schema về cũ, **không** khôi phục dữ liệu đã bị xoá cùng cột.
+
+### 4. Rollback
+
+Chọn mức nhẹ nhất đủ dùng.
+
+| Tình huống | Rollback |
+|---|---|
+| Sai biến môi trường | Sửa biến (Vercel Dashboard hoặc `.env`) rồi deploy/khởi động lại, không cần build lại code |
+| Tính năng mới gây lỗi, DB vẫn tương thích | Chỉ quay lui code (4a). Nếu là tính năng có cờ, tắt cờ trước (ví dụ `MO_STOCK_ALERTS=false`) |
+| Migration mới gây lỗi | Quay lui code **và** `alembic downgrade` (4b) |
+| Dữ liệu hỏng | Khôi phục backup (4c); chủ DB làm và cần xác nhận trước |
+
+**4a. Quay lui code.** Bản online: trên Vercel Dashboard → Deployments, chọn bản production cũ đã ghi lại và promote lại về Production (hoặc `vercel rollback`), làm cho cả `p151-backend` và `p151-portal` nếu cả hai bị ảnh hưởng. Mã nguồn: dùng `git revert` để không xoá lịch sử:
+
+```bash
+git revert --no-edit <sha-commit-hoac-merge>     # merge commit thì thêm -m 1
+docker compose up -d --build                     # bản Docker
+```
+
+Chỉ dùng `git checkout <SHA-đã-ghi>` để chạy thử tạm trên máy cá nhân. **Cấm** `git reset --hard` và `git push --force` lên nhánh chung.
+
+**4b. Quay lui schema.** Chỉ khi code cũ không chạy được với schema mới. Dừng backend trước để không ghi dở:
+
+```bash
+docker compose stop backend portal
+python -m alembic -c src/maintenance/store/alembic.ini downgrade -1      # lùi một revision
+# hoặc về đúng mốc đã ghi: ... downgrade 0005_stock_alerts
+python -m alembic -c src/maintenance/store/alembic.ini current           # xác nhận
+git revert ... && docker compose up -d --build                           # đưa code về khớp schema
+```
+
+Chuỗi revision hiện có: `0001_maintops_initial → 0002_p1_doc_shape → 0003_material_items → 0004_portal_extras → 0005_stock_alerts → 0006_stock_alert_tickets`. Mỗi revision có `downgrade()`. **Cấm `downgrade` trên DB dùng chung** khi các nhánh khác còn chạy trên revision mới hơn, vì sẽ làm gãy các nhánh đó; hỏi cả nhóm trước.
+
+**4c. Khôi phục dữ liệu.** Ảnh: giải nén `data-backup-*.tgz` đè vào `data/`. DB Supabase: restore từ backup đã chụp. Chế độ `MO_STORE=memory` không có gì để khôi phục, khởi động lại là về 12 phiếu mẫu.
+
+Sau mọi rollback, chạy lại bước kiểm tra ở mục 1 hoặc mục 2, rồi ghi sự cố vào [`brain4agent/-known-gotchas.md`](brain4agent/-known-gotchas.md).
+
+> Phần Vercel (promote bản cũ, `vercel rollback`) chưa được thử trong repo này. Thử một lần trên bản không quan trọng trước ngày nộp.
+
+---
+
 ## Xử lý sự cố thường gặp
 
 | Triệu chứng | Cách xử lý |
@@ -386,6 +468,7 @@ Dùng khi muốn dữ liệu và ảnh lưu bền, dùng chung cả nhóm. Xin c
 | `failed to connect to the docker API` / `Cannot connect to the Docker daemon` | Docker Desktop chưa chạy — mở và đợi báo "Engine running" |
 | `port is already allocated` (8000 hoặc 5432) | Đổi `APP_PORT` / `POSTGRES_PORT` trong `.env`, hoặc tắt chương trình đang dùng cổng |
 | `env file .env not found` | Chưa tạo `.env` — `cp .env.example .env` |
+| `SESSION_SECRET must be set in .env` | Thêm `SESSION_SECRET` vào `.env` — xem "Hướng dẫn vận hành và rollback" mục 2 |
 | Sửa code nhưng không thấy thay đổi | Chạy `make up` để build lại image |
 | Thêm thư viện vào `requirements.txt` | `make up` để build lại; người khác cũng cần `make up` sau khi pull |
 | `There was an error parsing the body` khi gửi tiếng Việt bằng `curl -d` trên Windows | Truyền body qua file (`--data-binary @body.json`) hoặc dùng PowerShell / Swagger như mục trên |
